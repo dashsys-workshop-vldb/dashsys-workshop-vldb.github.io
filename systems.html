@@ -145,9 +145,8 @@ body, html {
 
 <p>
 The DASHSys Systems Track focuses on practical systems that support
-data-centric agents operating over structured databases and APIs. Participants design systems that
-translate natural language questions into structured query plans
-combining database queries and API calls.
+data-centric agents operating over structured databases and APIs. Participants design agentic systems that
+answer natural language questions by iteratively executing SQL queries and API calls.
 </p>
 
 <p>
@@ -173,6 +172,15 @@ systems.
 
 <p>Each input consists of a <b>natural language user query</b>.</p>
 
+<h3>Tools</h3>
+
+<p>The agent has access to two tools:</p>
+
+<ul>
+<li><b>execute_sql</b>: executes a SQL query against the database and returns results</li>
+<li><b>call_api(method, url, params, headers)</b>: makes an API call and returns the response</li>
+</ul>
+
 <h3>Sample Dataset</h3>
 
 <p>The provided dataset (zip file) contains example queries, ground truth SQLs, APIs, and the database schema. Participants can use this dataset to build and refine their systems.</p>
@@ -187,14 +195,15 @@ systems.
 <p>Participants provide the following for each query:</p>
 
 <ul>
-<li>A <b>filled system prompt</b> populated with relevant information (e.g., schema context, available APIs) for the query</li>
-<li>An <b>output trajectory JSON</b></li>
+<li>A <b>metadata JSON</b> containing the query-specific context selected by the participant's system (e.g., relevant schema and API specifications)</li>
+<li>A <b>filled system prompt</b> with the user query and metadata populated</li>
+<li>An <b>agent output trajectory JSON</b></li>
 </ul>
 
 <p>Additionally, participants submit:</p>
 
 <ul>
-<li>A <b>system prompt template</b> with placeholders for user query and relevant information</li>
+<li>A <b>system prompt template</b> with placeholders for the user query and metadata</li>
 <li>A <b>zipped archive</b> of the system's source code</li>
 </ul>
 
@@ -215,7 +224,7 @@ Organizers will execute each participant's system prompt using the
 <a href="https://code.claude.com/docs/en/agent-sdk/overview">Claude Agent SDK</a> or
 <a href="https://openai.github.io/openai-agents-python/">OpenAI Agents SDK</a>.
 The agent harness can be run with any LLM model. For each query, the evaluation harness runs the submitted system prompt against
-the chosen model and collects the response and a trajectory JSON capturing the full agent execution trace.
+a chosen model (not necessarily the latest) and collects the response and a trajectory JSON capturing the full agent execution trace.
 </p>
 
 <p>Submissions are evaluated and ranked along two dimensions: <b>correctness</b> and <b>efficiency</b>.</p>
@@ -238,6 +247,8 @@ the chosen model and collects the response and a trajectory JSON capturing the f
 <li><b>Total tokens</b> consumed (input + output)</li>
 <li><b>Wall time</b> for end-to-end execution</li>
 </ul>
+
+<p>Organizers will also run the participant's submitted code to measure end-to-end wall clock time, including any pre-processing and context selection steps beyond the agent execution itself.</p>
 
 <p>Participant-submitted trajectory JSONs will be cross-validated against organizer evaluation runs to ensure reproducibility of results.</p>
 
@@ -400,7 +411,7 @@ System description papers must follow the <b>VLDB formatting guidelines</b>.
 <h2>Contact</h2>
 
 <p>
-For questions about the shared task, dataset, or submission process,
+For questions about the systems track, dataset, or submission process,
 please visit the workshop website:
 </p>
 
