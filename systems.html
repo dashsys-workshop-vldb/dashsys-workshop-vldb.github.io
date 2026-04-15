@@ -87,13 +87,8 @@ body, html {
     <div class="w3-right w3-hide-small">
       <a href="index.html#home" class="w3-bar-item w3-button">Home</a>
       <a href="index.html#keynotepanel" class="w3-bar-item w3-button">Keynotes & Panels</a>
-      <div class="w3-dropdown-hover">
-        <button class="w3-button">Program &#9662;</button>
-        <div class="w3-dropdown-content w3-bar-block w3-card-4">
-          <a href="index.html#program" class="w3-bar-item w3-button">Program</a>
-          <a href="systems.html" class="w3-bar-item w3-button">Systems Track</a>
-        </div>
-      </div>
+      <a href="index.html#program" class="w3-bar-item w3-button">Program</a>
+      <a href="systems.html" class="w3-bar-item w3-button">Systems Track</a>
 	  <a href="index.html#acpapers" class="w3-bar-item w3-button">Accepted Papers</a>
       <a href="index.html#cfp" class="w3-bar-item w3-button"><i class="fa"></i>Call for Papers</a>
       <a href="index.html#dates" class="w3-bar-item w3-button"><i class="fa"></i>Important Dates</a>
@@ -144,31 +139,23 @@ body, html {
 
 <h2>Systems Track Overview</h2>
 
-  <p>In addition to the general research track, DASHSys features a dedicated <b>Real-World Systems Track</b> focused on deployed, production-grade, and demo-ready systems.</p>
+  <p>In addition to the general research track, DASHSys features a dedicated <b>Real-World Systems Track</b>, a competition where participants build production-grade systems for data-centric agents. Submissions are evaluated on the <b>correctness</b> of responses and <b>efficiency</b> of the system.</p>
+
+<p>Winners of the competition will receive monetary prizes.</p>
 
 <p>
 The DASHSys Systems Track focuses on practical systems that support
-data-centric agents operating over structured databases, APIs, and
-heterogeneous information sources. Participants design systems that
+data-centric agents operating over structured databases and APIs. Participants design systems that
 translate natural language questions into structured query plans
 combining database queries and API calls.
 </p>
 
 <p>
 The track emphasizes robust prompt design and system architectures that
-generalize across models and evolving schemas. Submissions should
+generalize across models and agentic harnesses. Submissions should
 demonstrate practical solutions for building reliable agent-driven data
 systems.
 </p>
-
-  <p>Submissions should clearly describe:</p>
-  <ul>
-    <li>The system architecture and design principles</li>
-    <li>The real-world problem setting and deployment context</li>
-    <li>Key technical challenges and solutions</li>
-    <li>Evaluation methodology (e.g., performance, cost, reliability, usability)</li>
-    <li>Lessons learned and open challenges</li>
-  </ul>
 
 
 </div>
@@ -184,91 +171,38 @@ systems.
 
 <h3>Input</h3>
 
-<table>
-<tr>
-<th>Component</th>
-<th>Description</th>
-</tr>
+<p>Each input consists of a <b>natural language user query</b>.</p>
 
-<tr>
-<td>Natural language question</td>
-<td>User query <b>q</b></td>
-</tr>
+<h3>Sample Dataset</h3>
 
-<tr>
-<td>Database schema</td>
-<td>Tables, columns, types, and relationships</td>
-</tr>
+<p>The provided dataset (zip file) contains example queries, ground truth SQLs, APIs, and the database schema. Participants can use this dataset to build and refine their systems.</p>
 
-<tr>
-<td>Entity catalog</td>
-<td>Dimension/metric definitions and valid values</td>
-</tr>
+<p>API specifications (OpenAPI YAML) can be obtained from:
+<a href="https://developer-stage.adobe.com/experience-platform-apis/">Adobe Experience Platform APIs</a> and
+<a href="https://developer.adobe.com/journey-optimizer-apis/">Adobe Journey Optimizer APIs</a>.
+</p>
 
-<tr>
-<td>API specification</td>
-<td>Endpoints, parameters, and response formats</td>
-</tr>
+<h3>Deliverables</h3>
 
-</table>
-
-<br>
-
-<h3>Output</h3>
-
-Systems must generate a <b>structured JSON response</b> containing:
-
-<table>
-
-<tr>
-<th>Output Component</th>
-<th>Description</th>
-</tr>
-
-<tr>
-<td>Full LLM prompt</td>
-<td>System instructions, few-shot examples, schema context, and user query</td>
-</tr>
-
-<tr>
-<td>SQL queries</td>
-<td>Queries retrieving relevant database information</td>
-</tr>
-
-<tr>
-<td>API calls</td>
-<td>Specifications to retrieve supplementary data</td>
-</tr>
-
-<tr>
-<td>Link to GitHub code repository</td>
-<td>URL to the repository containing the submitted system's code</td>
-</tr>
-
-</table>
-
-<br>
-
-Participants submit:
+<p>Participants provide the following for each query:</p>
 
 <ul>
-
-<li>the <b>full prompt</b> (primary artifact)</li>
-<li>generated <b>SQL queries</b></li>
-<li>generated <b>API calls</b></li>
-
+<li>A <b>filled system prompt</b> populated with relevant information (e.g., schema context, available APIs) for the query</li>
+<li>An <b>output trajectory JSON</b> from their own runs</li>
 </ul>
 
-<p>
-SQL/API execution environments are not provided, but participants may
-simulate them during development.
-</p>
+<p>Additionally, participants submit:</p>
+
+<ul>
+<li>A <b>system prompt template</b> with placeholders for user query and relevant information</li>
+<li>A <b>zipped archive</b> of the system's source code</li>
+</ul>
+
+<p>The test set will be released approximately 48 hours before the submission deadline. Participants must submit the deliverables as described above within this window.</p>
 
 </div>
 
 <hr>
-
-
 
 <!-- Evaluation -->
 
@@ -276,31 +210,36 @@ simulate them during development.
 
 <h2>Evaluation</h2>
 
-<p>Systems will be evaluated on:</p>
+<p>
+Organizers will execute each participant's system prompt using the
+<a href="https://code.claude.com/docs/en/agent-sdk/overview">Claude Agent SDK</a> or
+<a href="https://openai.github.io/openai-agents-python/">OpenAI Agents SDK</a>.
+The agent harness can be run with any LLM model. For each query, the evaluation harness runs the submitted system prompt against
+the chosen model and collects the response and a trajectory JSON capturing the full agent execution trace.
+</p>
+
+<p>Submissions are evaluated and ranked along two dimensions: <b>correctness</b> and <b>efficiency</b>.</p>
+
+<h3>Correctness</h3>
+<p>The correctness of the generated SQLs, API calls, and the final response is measured against the ground truth. Each component is scored independently:</p>
 
 <ul>
-<li><b>Correctness</b></li>
-<li><b>Completeness</b></li>
-<li><b>Structural validity</b> of generated query plans</li>
+<li><b>SQL correctness</b>: accuracy of generated SQL queries</li>
+<li><b>API correctness</b>: accuracy of generated API calls</li>
+<li><b>Response correctness</b>: quality and accuracy of the final answer to the user query</li>
 </ul>
 
-<h3>Out-of-sample Generalization</h3>
+<h3>Efficiency</h3>
+<p>Resource usage during agent execution, measured from the trajectory JSON:</p>
 
-<p>
-A held-out dataset subset will test system generalization to unseen
-schema elements.
-</p>
+<ul>
+<li><b>Number of turns</b> in the agent conversation</li>
+<li><b>Number of tool calls</b> made during execution</li>
+<li><b>Total tokens</b> consumed (input + output)</li>
+<li><b>Wall time</b> for end-to-end execution</li>
+</ul>
 
-<p>
-For these cases, organizers will re-execute the submitted prompt using
-an undisclosed model from the GPT-3.5 → GPT-5 family to regenerate SQL
-and API calls.
-</p>
-
-<p>
-This evaluates prompt robustness across different model capability
-levels rather than overfitting to a specific model.
-</p>
+<p>Participant-submitted trajectory JSONs will be cross-validated against organizer evaluation runs to ensure reproducibility of results.</p>
 
 </div>
 
@@ -308,44 +247,6 @@ levels rather than overfitting to a specific model.
 
 
 
-<!-- Dataset -->
-
-<div class="w3-container" style="padding:0px 16px">
-
-<h2>Dataset & Submission Format</h2>
-
-<table>
-
-<tr>
-<th>Item</th>
-<th>Details</th>
-</tr>
-
-<tr>
-<td>Training dataset</td>
-<td>Will be released on April 9, 2026</td>
-</tr>
-
-<tr>
-<td>Validation dataset</td>
-<td>Will be released on April 9, 2026</td>
-</tr>
-
-<tr>
-<td>Test dataset</td>
-<td>Released ~48 hours before submission deadline</td>
-</tr>
-
-<tr>
-<td>Documentation</td>
-<td>Provided with dataset release</td>
-</tr>
-
-</table>
-
-</div>
-
-<hr>
 
 
 
@@ -412,8 +313,7 @@ levels rather than overfitting to a specific model.
 <h2>Submission Guidelines</h2>
 
 <p>
-System descriptions must follow the <b>VLDB Real-World Systems Track
-format</b>.
+System description papers must follow the <b>VLDB formatting guidelines</b>.
 </p>
 
 <ul>
@@ -423,14 +323,15 @@ format</b>.
 
 </ul>
 
-<p>Submissions should include:</p>
+<p>Submissions should clearly describe:</p>
 
 <ul>
 
-<li>System architecture</li>
-<li>Prompting or training strategies</li>
-<li>Ablation studies</li>
-<li>Benchmark results</li>
+<li>System architecture and design principles</li>
+<li>Prompting or training strategies employed</li>
+<li>Key technical challenges and solutions</li>
+<li>Evaluation methodology with benchmark results and ablation studies</li>
+<li>Lessons learned and open challenges</li>
 
 </ul>
 
@@ -438,7 +339,7 @@ format</b>.
 
 <ul>
 
-<li>Double-anonymous peer review</li>
+<li>Double-blind anonymous peer review</li>
 <li>Accepted papers appear in <b>VLDB workshop proceedings</b></li>
 
 </ul>
@@ -478,10 +379,11 @@ format</b>.
 
 <ul>
 
-<li>Vineeth Mohan (Adobe)</li>
-<li>Gromit Chan (Adobe)</li>
-<li>Raghavendra Addanki (Adobe)</li>
-<li>Shaddy Garg (Adobe)</li>
+<li>Vineeth Mohan, Adobe Inc. <a href="mailto:vineethm@adobe.com"><i class="fa fa-envelope"></i></a></li>
+<li>Gromit Chan, Adobe Research <a href="mailto:ychan@adobe.com"><i class="fa fa-envelope"></i></a></li>
+<li>Raghav Addanki, Adobe Research <a href="mailto:raddanki@adobe.com"><i class="fa fa-envelope"></i></a></li>
+<li>Shaddy Garg, Adobe Inc.</li>
+<li>Aman Sehgal, Adobe Inc.</li>
 
 </ul>
 
