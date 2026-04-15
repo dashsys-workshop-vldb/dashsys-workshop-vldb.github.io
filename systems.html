@@ -12,6 +12,7 @@
 <style>
 body,h1,h2,h3,h4,h5,h6 {font-family: "Rubik", sans-serif}
 h1,h2,h3,h4,h5,h6 {font-family: "Rubik", sans-serif; color:#563d2d}
+code:not(pre code) {background:#f0f0f0; border:1px solid #ddd; border-radius:4px; padding:1px 5px; font-size:0.88em;}
 
 :target::before {
     content: "";
@@ -169,17 +170,13 @@ systems.
 
 <h2>Task Description</h2>
 
-<h3>Input</h3>
-
-<p>Each input consists of a <b>natural language user query</b>.</p>
-
-<h3>Tools</h3>
-
-<p>The agent has access to two tools:</p>
+<p><b>Input:</b> A natural language user query.</p>
+<p><b>Output:</b> A response derived by executing SQL queries against a database and/or making REST API calls, along with the full agent trajectory capturing each step taken.</p>
+<p><b>Tools:</b> The following two tools must be implemented in the agent system:</p>
 
 <ul>
-<li><b>execute_sql</b>: executes a SQL query against the database and returns results</li>
-<li><b>call_api(method, url, params, headers)</b>: makes an API call and returns the response</li>
+<li><b>execute_sql(sql)</b>: executes a SQL query against the database and returns results</li>
+<li><b>call_api(method, url, params, headers)</b>: makes an API call against the provisioned sandbox and returns the response</li>
 </ul>
 
 <h3>Sample Dataset</h3>
@@ -189,45 +186,40 @@ systems.
 <p>
 <a href="https://github.com/dashsys-workshop-vldb/dashsys-workshop-vldb.github.io/blob/master/data/data.json" style="color:#1a73e8; text-decoration:none;">
 <i class="fa fa-download" style="margin-right:5px"></i>data.json</a>
-&mdash; 35 labeled examples. Each example provides the <b>gold final answer</b> (ground truth) for a natural language query — use these to build and validate your system.
-Each entry has four fields:
-</p>
-
-<details style="margin-bottom:8px">
-<summary style="cursor:pointer; color:#563d2d; font-weight:bold">Single entry format (gold ground truth)</summary>
-<pre style="margin-top:8px"><code class="language-json">{
-  "query":    "&lt;user query&gt;",
-  "reasoning": "&lt;how the result was derived&gt;",
-  "gold_sql": "&lt;SQL query against the KG database&gt;",
-  "gold_api": ["&lt;API endpoint(s) called&gt;"]
-}</code></pre>
-</details>
-
-<p>
-The illustration examples show only the <b>final answer</b>. Participants must submit the <b>full agent trajectory</b> —
-a list of JSON objects in the same format, one per reasoning step, with the last entry being the final answer.
-For example, the agent may explore multiple approaches before converging:
+&mdash; 35 labeled examples, each showing a complete agent trajectory. Use these to understand the expected submission format and validate your system.
+Each entry has five fields:
 </p>
 
 <details style="margin-bottom:12px">
-<summary style="cursor:pointer; color:#563d2d; font-weight:bold">Trajectory format (submission)</summary>
-<pre style="margin-top:8px"><code class="language-json">[
-  {
-    "query":    "&lt;user query&gt;",
-    "reasoning": "&lt;intermediate reasoning step&gt;",
-    "gold_sql": "&lt;intermediate SQL attempt&gt;",
-    "gold_api": ["&lt;intermediate API call&gt;"]
-  },
-  {
-    "query":    "&lt;user query&gt;",
-    "reasoning": "&lt;how the final result was derived&gt;",
-    "gold_sql": "&lt;final SQL query&gt;",
-    "gold_api": ["&lt;final API endpoint(s)&gt;"]
-  }
-]</code></pre>
+<summary style="cursor:pointer; color:#563d2d; font-weight:bold">Entry format</summary>
+<pre style="margin-top:8px"><code class="language-json">{
+  "query": "&lt;user query&gt;",
+  "trace": [
+    {
+      "step": 1,
+      "action": "sql_query",
+      "sql": "&lt;SQL executed&gt;",
+      "results": ["&lt;...&gt;"],
+      "status": "success"
+    },
+    {
+      "step": 2,
+      "action": "api_call",
+      "api_call": {
+        "method": "GET",
+        "url": "&lt;endpoint&gt;",
+        "params": {"&lt;key&gt;": "&lt;value&gt;"},
+        "result_preview": ["&lt;...&gt;"]
+      }
+    }
+  ],
+  "answer":   "&lt;final answer&gt;",           // correctness evaluation
+  "gold_sql": "&lt;reference SQL query&gt;",    // correctness evaluation
+  "gold_api": ["&lt;reference API call(s)&gt;"] // correctness evaluation
+}</code></pre>
 </details>
 
-<p>See the <a href="#evaluation">Evaluation</a> section for how trajectories are scored.</p>
+<p><code>answer</code>, <code>gold_sql</code>, and <code>gold_api</code> are used for <b>correctness</b> scoring; <code>trace</code> is used for <b>efficiency</b> scoring — see the <a href="#evaluation">Evaluation</a> section for details.</p>
 
 <h4>Knowledge Graph Database</h4>
 
@@ -259,14 +251,23 @@ For example, the agent may explore multiple approaches before converging:
 
 <details style="margin-bottom:8px">
 <summary style="cursor:pointer; font-weight:bold">SQL &mdash; run locally, no credentials needed</summary>
-<pre style="margin-top:8px"><code class="language-python">import duckdb
+<pre style="margin-top:8px"><code class="language-python">import os
+import duckdb
 
-# Load all KG snapshot parquet files as queryable views
+SNAPSHOT_DIR = "DBSnapshot"  # path to the KG snapshot folder
+
+# Register every parquet file as a queryable view
 con = duckdb.connect()
-# register each .parquet file as a table ...
+for fname in os.listdir(SNAPSHOT_DIR):
+    if fname.endswith(".parquet"):
+        table = fname[: -len(".parquet")]
+        con.execute(
+            f"CREATE VIEW {table} AS SELECT * FROM read_parquet('{SNAPSHOT_DIR}/{fname}')"
+        )
 
-# Run your SQL against the registered tables
-result = con.execute("&lt;your SQL query&gt;").df()</code></pre>
+# Run any SQL query against the registered tables
+sql = "SELECT * FROM dim_campaign LIMIT 10"
+print(con.execute(sql).df())</code></pre>
 </details>
 
 <details style="margin-bottom:16px">
@@ -274,15 +275,38 @@ result = con.execute("&lt;your SQL query&gt;").df()</code></pre>
 <pre style="margin-top:8px"><code class="language-python">import requests
 
 # Credentials provided upon registration
-token = get_bearer_token(client_id, client_secret)
+CLIENT_ID     = "provided upon registration"
+CLIENT_SECRET = "provided upon registration"
+IMS_ORG       = "provided upon registration"
+SANDBOX       = "provided upon registration"
+
+BASE_URL      = "https://platform.adobe.io"
+IMS_TOKEN_URL = "https://ims-na1.adobelogin.com/ims/token/v3"
+
+# Generate bearer token
+resp = requests.post(
+    IMS_TOKEN_URL,
+    headers={"Content-Type": "application/x-www-form-urlencoded"},
+    data={
+        "grant_type":    "client_credentials",
+        "client_id":     CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "scope":         "openid,AdobeID,read_organizations,additional_info.projectedProductContext,session",
+    },
+)
+access_token = resp.json()["access_token"]
 
 headers = {
-    "Authorization": f"Bearer {token}",
-    "x-sandbox-name": sandbox_name,
-    # ...
+    "Authorization": f"Bearer {access_token}",
+    "x-api-key":        CLIENT_ID,
+    "x-gw-ims-org-id":  IMS_ORG,
+    "x-sandbox-name":   SANDBOX,
+    "Content-Type":     "application/json",
 }
 
-response = requests.get("https://platform.adobe.io/&lt;endpoint&gt;", headers=headers)</code></pre>
+# Make API calls against the provisioned sandbox
+response = requests.get(f"{BASE_URL}/&lt;endpoint&gt;", headers=headers)
+print(response.json())</code></pre>
 </details>
 
 <h3>API Specifications</h3>
