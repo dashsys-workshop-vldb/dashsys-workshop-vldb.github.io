@@ -9,7 +9,7 @@ Status: **no measured strict-score improvement**.
 | strict_final_score | 0.649 | 0.6486 | -0.0004 |
 | strict_correctness | 0.6743 | 0.6743 | 0.0 |
 | estimated_tokens | 851.7714 | 899.2286 | 47.4572 |
-| runtime | 0.0102 | 0.0115 | 0.0013 |
+| runtime | 0.0102 | 0.0117 | 0.0015 |
 | tool_calls | 1.4571 | 1.4571 | 0.0 |
 
 ## Gate Results
@@ -17,11 +17,14 @@ Status: **no measured strict-score improvement**.
 - Packaged preferred strategy: `SQL_FIRST_API_VERIFY`
 - Strict score regression gate OK: True
 - Estimated-token overhead: 5.57% (gate OK: True)
-- Runtime overhead: 12.75% (gate OK: True)
+- Runtime overhead: 14.71% (gate OK: True)
 - Tool-call delta: 0.0 (gate OK: True)
 - Value retrieval budget: 250 ms (budget OK: True)
 - Value retrieval cache key algorithm: `sha256` (reproducible: True)
 - Candidate risk clusters reported: 8
+- Retrieval cluster gate: retrieval-cluster improvement measured (passed: True)
+- Improved retrieval clusters: zero_score_margin, missing_gold_api_in_top_k, batch_endpoint_confusion, tag_api_confusion, schema_vs_dataset_confusion
+- Ranking-only no score claim: True
 - Secret scan OK: True
 - Visualization artifacts directory: `/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/visualizations`
 - Visualization artifacts inside final submission: 0
@@ -38,6 +41,12 @@ Status: **no measured strict-score improvement**.
 | `ENABLE_QUERY_DECOMPOSITION` | True |
 | `ENABLE_QUERY_FAMILY_EXAMPLES` | False |
 | `ENABLE_RESEARCH_SPAN_EXPORT` | True |
+| `ENABLE_HYBRID_CANDIDATE_SCORING` | True |
+| `ENABLE_ENDPOINT_FAMILY_RANKING` | True |
+| `ENABLE_STRUCTURAL_SCHEMA_PRESERVATION` | True |
+| `ENABLE_VALUE_TO_API_RANKING` | True |
+| `ENABLE_GATED_RISK_CLUSTER_REPAIR` | True |
+| `ENABLE_GATED_RISK_CLUSTER_REPAIR_EXECUTION` | False |
 
 ## Technique Summary
 
@@ -50,19 +59,23 @@ Status: **no measured strict-score improvement**.
 | Gated SQL candidates | DIN-SQL/self-correction | `dashagent/gated_sql_candidates.py` | True | False | checkpoint_gated_sql_candidate_selection |
 | Query-family examples | DAIL-SQL | `dashagent/query_family_examples.py` | False | False | checkpoint_query_family_examples |
 | Span export | OpenAI Agents SDK tracing | `dashagent/span_exporter.py` | True | False | spans.json |
+| Hybrid candidate scoring | Blended RAG / rank fusion | `dashagent/candidate_ranker.py` | True | False | checkpoint_hybrid_candidate_scoring/report metrics |
+| Endpoint family ranking | domain-aware retrieval | `dashagent/endpoint_family_ranker.py` | True | False | checkpoint_endpoint_family_ranking/report metrics |
+| Value-to-API ranking | CHESS value grounding | `dashagent/endpoint_family_ranker.py` | True | False | checkpoint_value_to_api_ranking/report metrics |
+| Gated risk-cluster repair | CHASE-SQL-style candidate repair | `dashagent/candidate_context_builder.py` | True | False | checkpoint_gated_risk_cluster_repair/report metrics |
 
 ## Diagnostic Candidate Risk Clusters
 
-| Cluster | Count | Diagnostic only | Behavior changing? |
-| --- | ---: | --- | --- |
-| `batch_endpoint_confusion` | 11 | True | False |
-| `broad_domain_api_confusion` | 11 | True | False |
-| `low_confidence` | 14 | True | False |
-| `missing_gold_api_in_top_k` | 15 | True | False |
-| `missing_gold_table_in_top_k` | 2 | True | False |
-| `schema_vs_dataset_confusion` | 8 | True | False |
-| `tag_api_confusion` | 4 | True | False |
-| `zero_score_margin` | 32 | True | False |
+| Cluster | Before | After | Delta | Improved? | Diagnostic only | Behavior changing? |
+| --- | ---: | ---: | ---: | --- | --- | --- |
+| `batch_endpoint_confusion` | 8 | 5 | -3 | True | True | False |
+| `broad_domain_api_confusion` | 4 | 1 | -3 | True | True | False |
+| `low_confidence` | 14 | 2 | -12 | True | True | False |
+| `missing_gold_api_in_top_k` | 15 | 7 | -8 | True | True | False |
+| `missing_gold_table_in_top_k` | 4 | 2 | -2 | True | True | False |
+| `schema_vs_dataset_confusion` | 4 | 0 | -4 | True | True | False |
+| `tag_api_confusion` | 4 | 1 | -3 | True | True | False |
+| `zero_score_margin` | 32 | 6 | -26 | True | True | False |
 
 ## Research Safety Audit
 
@@ -75,9 +88,11 @@ Status: **no measured strict-score improvement**.
 ## Notes
 
 - Value retrieval cache filenames use stable SHA-256 keys instead of Python process-salted hash().
-- Candidate risk clusters are diagnostic-only and do not change candidate ranking or SQL/API generation.
+- Hybrid candidate ranking is report-only for SQL_FIRST_API_VERIFY; it does not change executed SQL/API plans.
+- Candidate risk clusters compare old retrieval ordering with ranking/report-only ordering.
+- If execution repair remains disabled, ranking changes are not claimed as accuracy improvements.
 - SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.
 - No live API evidence is fabricated; Adobe API remains dry-run without credentials.
 - Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.
 - Inactive techniques appear compactly in visualization status tables, not as empty checkpoints.
-- Behavior-changing modules are feature-flagged; strict score and efficiency gates decide whether they remain active.
+- Behavior-changing repair execution is feature-flagged off by default; strict score and efficiency gates decide whether it can ever be enabled.

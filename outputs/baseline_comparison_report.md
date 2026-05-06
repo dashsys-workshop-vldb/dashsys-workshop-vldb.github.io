@@ -7,9 +7,9 @@
 | RAW_REAL_LLM_TWO_TOOLS_BASELINE | Raw real LLM with execute_sql/call_api only | n/a - tool-loop diagnostic baseline | n/a - tool-loop diagnostic baseline | n/a - tool-loop diagnostic baseline | 1.2571 | 1318.3429 | 4.8366 | mixed_valid_and_failed_tool_agent_runs |
 | GUIDED_REAL_LLM_TWO_TOOLS_BASELINE | Guided real LLM with execute_sql/call_api plus schema/API affordances | n/a - tool-loop diagnostic baseline | n/a - tool-loop diagnostic baseline | n/a - tool-loop diagnostic baseline | 1.2 | 2057.3429 | 3.625 | mixed_valid_and_failed_tool_agent_runs |
 | REAL_LLM_TWO_TOOLS_BASELINE | Backward-compatible alias for the raw real LLM baseline | n/a - tool-loop diagnostic baseline | n/a - tool-loop diagnostic baseline | n/a - tool-loop diagnostic baseline | n/a | n/a | n/a | not_run |
-| LLM_FREE_AGENT_BASELINE | Deterministic approximation of a broad LLM agent | 0.6707 | 0.4879 | 0.4529 | 2.1143 | 1018.6 | 0.0187 | n/a |
-| SQL_ONLY_BASELINE | Local DB only | 0.5763 | 0.2983 | 0.2795 | 1.0 | 751.1143 | 0.0126 | n/a |
-| SQL_FIRST_API_VERIFY | Current deterministic optimized backend | 0.8407 | 0.6743 | 0.6486 | 1.4571 | 894.4286 | 0.0112 | n/a |
+| LLM_FREE_AGENT_BASELINE | Deterministic approximation of a broad LLM agent | 0.6707 | 0.4879 | 0.4529 | 2.1143 | 1023.4 | 0.019 | n/a |
+| SQL_ONLY_BASELINE | Local DB only | 0.5763 | 0.2983 | 0.2794 | 1.0 | 755.9143 | 0.0127 | n/a |
+| SQL_FIRST_API_VERIFY | Current deterministic optimized backend | 0.8407 | 0.6743 | 0.6486 | 1.4571 | 899.2286 | 0.0117 | n/a |
 | CANDIDATE_GUIDED_LLM_SQL | Optional candidate-context LLM SQL with fallback | n/a | n/a | n/a | n/a | n/a | n/a | n/a |
 | FULL_SCHEMA_LLM_SQL | Optional full-schema LLM SQL with fallback | n/a | n/a | n/a | n/a | n/a | n/a | n/a |
 | LLM_SQL_FIRST_API_VERIFY | Optional LLM SQL plus deterministic API verification | n/a | n/a | n/a | n/a | n/a | n/a | n/a |
@@ -124,8 +124,8 @@ These rows are not treated as successful real tool-using baseline runs.
 | overall correctness | 0.4879 | 0.6743 | 0.1864 | 0.382 |
 | final score | 0.4529 | 0.6486 | 0.1957 | 0.4321 |
 | tool calls | 2.1143 | 1.4571 | -0.6572 | -0.3108 |
-| tokens | 1018.6 | 894.4286 | -124.1714 | -0.1219 |
-| runtime | 0.0187 | 0.0112 | -0.0075 | -0.4011 |
+| tokens | 1023.4 | 899.2286 | -124.1714 | -0.1213 |
+| runtime | 0.019 | 0.0117 | -0.0073 | -0.3842 |
 
 ## Technique Contribution
 

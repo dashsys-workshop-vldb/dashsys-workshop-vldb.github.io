@@ -13,8 +13,8 @@
 | Runtime | 0.1249 |
 | Estimated tokens | n/a - estimated_tokens missing |
 | Checkpoint count | 0 |
-| Candidate context mode | metadata_context_estimate_inferred |
-| Context mode note | display-only inferred from context token estimate |
+| Candidate context mode | candidate |
+| Context mode note | recorded in checkpoint/trajectory |
 
 ```mermaid
 flowchart TD
@@ -31,7 +31,7 @@ flowchart TD
     router -->|clean + extract| normalizer --> tokens
   end
   subgraph ContextSelection["Context Selection"]
-    context["Context Mode<br/>metadata_context_estimate_inferred"]
+    context["Context Mode<br/>candidate"]
     candidates["Context<br/>tables=none&lt;br/&gt;apis=none"]
     tokens -->|score relevance| context --> candidates
   end
@@ -112,6 +112,21 @@ No successful evidence was available from executed tools.
 | Gated SQL candidates | DIN-SQL / self-correction | False | Hard-case candidate validation before one execution | prevents invalid hard-case SQL from being selected | validates only; executes one selected plan | checkpoint_gated_sql_candidate_selection |
 | Query-family examples | DAIL-SQL | False | Optional family hints for LLM SQL | makes technique visibility auditable | optional LLM-only token cost | checkpoint_query_family_examples |
 | Span export | OpenAI Agents SDK tracing | True | Local span-style checkpoint export | makes technique visibility auditable | diagnostic overhead only | spans.json |
+| Hybrid candidate scoring | Blended RAG / rank fusion | True | Report-only candidate separation scoring | makes technique visibility auditable | diagnostic overhead only | checkpoint_hybrid_candidate_scoring |
+| Endpoint family ranking | Domain-aware retrieval | True | Report-only endpoint family reranking | makes technique visibility auditable | diagnostic overhead only | checkpoint_endpoint_family_ranking |
+| Structural schema preservation | RSL-SQL | True | Report-only bridge/relationship preservation diagnostics | keeps relevant tables, columns, and bridges visible | diagnostic overhead only | checkpoint_structural_schema_preservation |
+| Value-to-API ranking | CHESS | False | High-confidence entity matches can boost API-family ranking in reports | grounds named entities and IDs before planning | bounded cached retrieval budget | checkpoint_value_to_api_ranking |
+| Gated risk-cluster repair | CHASE-SQL-style repair | True | Diagnostic repaired candidate comparison without execution change | makes technique visibility auditable | diagnostic overhead only | checkpoint_gated_risk_cluster_repair |
+
+## Candidate Ranking Diagnostics
+
+| Technique | Active | Output | Correctness role | Efficiency role |
+| --- | --- | --- | --- | --- |
+| Hybrid Candidate Scoring | True | {"ranking_changed": true, "score_margin": 0.19, "top_candidate_score": 1.8, "top_components": {"alias_score": 1.2, "endpoint_family_score": 0.0, "lexical_score": 0.0, "name": "dim_segment", "reciprocal_rank_fusion": 0.032258, "score_explanation": "base=2.000; lexical=0.000; alias=1.200; value=0.000; structural=0.000; endpoint_family=0.000", "structural_score": 0.0, "truncated_fields": 1, "value_match_score": 0.0}} | separates candidate context without changing executed plan | report-only scoring; no extra tools |
+| Endpoint Family Ranker | True | {"boost_reason": {"items": ["batch_details: batch-shaped ID", "batch_files: batch ID with files/download terms", "audit_events: audit/change vocabulary"], "total_items": 3, "truncated_items": false}, "endpoint_family": "batch_files", "endpoint_family_confidence": 1.0, "ranking_changed": true} | reduces endpoint-family confusion in candidate context | reranks metadata only |
+| Structural Schema Preservation | True | {"structural_confidence_delta": 0.1, "structural_reason": "bridge-table heuristic", "structural_tables_added": {"items": ["br_campaign_segment", "hkg_br_segment_target", "hkg_br_blueprint_collection"], "total_items": 9, "truncated_items": true}} | keeps relationship bridge tables visible | adds only compact schema context |
+| Value-to-API Ranking | False | {"active": false, "boost_applied": true, "value_match_used_for_api_ranking": false} | uses only high-confidence retrieved values for endpoint family boosts | reuses existing value retrieval diagnostics |
+| Gated Risk Cluster Repair | True | {"active": true, "candidate_count": 2, "cost_delta": 0, "diagnostic_only": true, "execution_repair_enabled": false, "expected_correctness_gain": "retrieval-only candidate separation; no accuracy claim without execution change", "hard_case_triggered": true, "rejected_candidate_reason": "lower endpoint-family confidence or lower hybrid score", "truncated_fields": 2} | compares a repaired candidate without executing losing plans | diagnostic-only; zero tool-call delta |
 
 ## Value Retrieval Cache
 
@@ -146,11 +161,11 @@ No successful evidence was available from executed tools.
   "context": {
     "candidate_apis": "n/a - no candidate APIs recorded",
     "candidate_tables": "n/a - no candidate tables recorded",
-    "confidence": "n/a - no candidate confidence recorded",
-    "context_mode": "metadata_context_estimate_inferred",
-    "context_mode_note": "display-only inferred from context token estimate",
+    "confidence": 0.758,
+    "context_mode": "candidate",
+    "context_mode_note": "recorded in checkpoint/trajectory",
     "estimated_context_tokens": 1338,
-    "score_margin": "n/a - no candidate score margin recorded"
+    "score_margin": 0.19
   },
   "evidence": {
     "dry_run_only": "n/a - no API call in trajectory",

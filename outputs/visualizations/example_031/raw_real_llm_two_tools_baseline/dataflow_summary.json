@@ -12,6 +12,93 @@
     "result_preview": "n/a - no API result preview recorded",
     "validation": "n/a - no validation step recorded"
   },
+  "candidate_ranking": {
+    "endpoint_family_ranking": {
+      "active": true,
+      "correctness_role": "reduces endpoint-family confusion in candidate context",
+      "efficiency_role": "reranks metadata only",
+      "output": {
+        "boost_reason": [
+          "batch_details: batch-shaped ID",
+          "batch_files: batch ID with files/download terms",
+          "audit_events: audit/change vocabulary"
+        ],
+        "endpoint_family": "batch_files",
+        "endpoint_family_confidence": 1.0,
+        "ranking_changed": true
+      }
+    },
+    "gated_risk_cluster_repair": {
+      "active": true,
+      "correctness_role": "compares a repaired candidate without executing losing plans",
+      "efficiency_role": "diagnostic-only; zero tool-call delta",
+      "output": {
+        "active": true,
+        "candidate_count": 2,
+        "cost_delta": 0,
+        "diagnostic_only": true,
+        "execution_repair_enabled": false,
+        "expected_correctness_gain": "retrieval-only candidate separation; no accuracy claim without execution change",
+        "hard_case_triggered": true,
+        "rejected_candidate_reason": "lower endpoint-family confidence or lower hybrid score",
+        "risk_cluster": null,
+        "selected_candidate": "export_batch_files"
+      }
+    },
+    "hybrid_candidate_scoring": {
+      "active": true,
+      "correctness_role": "separates candidate context without changing executed plan",
+      "efficiency_role": "report-only scoring; no extra tools",
+      "output": {
+        "ranking_changed": true,
+        "score_margin": 0.19,
+        "top_candidate_score": 1.8,
+        "top_components": {
+          "alias_score": 1.2,
+          "endpoint_family_score": 0.0,
+          "lexical_score": 0.0,
+          "name": "dim_segment",
+          "reciprocal_rank_fusion": 0.032258,
+          "score_explanation": "base=2.000; lexical=0.000; alias=1.200; value=0.000; structural=0.000; endpoint_family=0.000",
+          "structural_score": 0.0,
+          "value_match_score": 0.0,
+          "weighted_score_fusion": 1.8
+        }
+      }
+    },
+    "structural_schema_preservation": {
+      "active": true,
+      "correctness_role": "keeps relationship bridge tables visible",
+      "efficiency_role": "adds only compact schema context",
+      "output": {
+        "structural_confidence_delta": 0.1,
+        "structural_reason": "bridge-table heuristic",
+        "structural_tables_added": [
+          "br_campaign_segment",
+          "hkg_br_segment_target",
+          "hkg_br_blueprint_collection",
+          "hkg_br_collection_property",
+          "hkg_br_collection_segment",
+          "hkg_br_source_collection",
+          "hkg_br_base_segment_used_by_dependent_segment",
+          "hkg_br_segment_property",
+          "hkg_br_target_property"
+        ]
+      }
+    },
+    "value_to_api_ranking": {
+      "active": false,
+      "correctness_role": "uses only high-confidence retrieved values for endpoint family boosts",
+      "efficiency_role": "reuses existing value retrieval diagnostics",
+      "output": {
+        "active": false,
+        "boost_applied": true,
+        "boosted_endpoint_family": null,
+        "value_match_confidence": null,
+        "value_match_used_for_api_ranking": false
+      }
+    }
+  },
   "checkpoint_count": 0,
   "checkpoint_effect": {
     "checkpoint_id": "n/a",
@@ -22,11 +109,11 @@
   "context": {
     "candidate_apis": "n/a - no candidate APIs recorded",
     "candidate_tables": "n/a - no candidate tables recorded",
-    "confidence": "n/a - no candidate confidence recorded",
-    "context_mode": "metadata_context_estimate_inferred",
-    "context_mode_note": "display-only inferred from context token estimate",
+    "confidence": 0.758,
+    "context_mode": "candidate",
+    "context_mode_note": "recorded in checkpoint/trajectory",
     "estimated_context_tokens": 1338,
-    "score_margin": "n/a - no candidate score margin recorded"
+    "score_margin": 0.19
   },
   "evidence": {
     "dry_run_only": "n/a - no API call in trajectory",
@@ -134,6 +221,51 @@
       "source_inspiration": "OpenAI Agents SDK tracing",
       "technique": "Span export",
       "visualization_checkpoint": "spans.json"
+    },
+    {
+      "active": true,
+      "correctness_impact": "makes technique visibility auditable",
+      "effect_on_dataflow": "Report-only candidate separation scoring",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "Blended RAG / rank fusion",
+      "technique": "Hybrid candidate scoring",
+      "visualization_checkpoint": "checkpoint_hybrid_candidate_scoring"
+    },
+    {
+      "active": true,
+      "correctness_impact": "makes technique visibility auditable",
+      "effect_on_dataflow": "Report-only endpoint family reranking",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "Domain-aware retrieval",
+      "technique": "Endpoint family ranking",
+      "visualization_checkpoint": "checkpoint_endpoint_family_ranking"
+    },
+    {
+      "active": true,
+      "correctness_impact": "keeps relevant tables, columns, and bridges visible",
+      "effect_on_dataflow": "Report-only bridge/relationship preservation diagnostics",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "RSL-SQL",
+      "technique": "Structural schema preservation",
+      "visualization_checkpoint": "checkpoint_structural_schema_preservation"
+    },
+    {
+      "active": false,
+      "correctness_impact": "grounds named entities and IDs before planning",
+      "effect_on_dataflow": "High-confidence entity matches can boost API-family ranking in reports",
+      "efficiency_impact": "bounded cached retrieval budget",
+      "source_inspiration": "CHESS",
+      "technique": "Value-to-API ranking",
+      "visualization_checkpoint": "checkpoint_value_to_api_ranking"
+    },
+    {
+      "active": true,
+      "correctness_impact": "makes technique visibility auditable",
+      "effect_on_dataflow": "Diagnostic repaired candidate comparison without execution change",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "CHASE-SQL-style repair",
+      "technique": "Gated risk-cluster repair",
+      "visualization_checkpoint": "checkpoint_gated_risk_cluster_repair"
     }
   ],
   "route": {

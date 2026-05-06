@@ -128,4 +128,19 @@ The packaged preferred strategy remains `SQL_FIRST_API_VERIFY`.
 - Value retrieval cache status is visible in dataflow reports when the retrieval checkpoint is active: `cache_hit`, `cache_key_algorithm`, `cache_reproducible`, `retrieval_ms`, and budget status.
 - SQLGlot AST validation reporting now exposes parse errors, selected tables/columns, unknown tables/columns, destructive-command detection, and closest suggestions without changing `SQL_FIRST_API_VERIFY` execution behavior.
 - Candidate context reports now include diagnostic-only `candidate_risk_clusters`; these clusters do not change candidate ranking, SQL/API generation, or answer behavior.
-- Latest strict gate result remains stable: `SQL_FIRST_API_VERIFY` final score `0.6486`, correctness `0.6743`, tool calls `1.4571`, estimated-token overhead `5.57%`, runtime overhead `12.75%`.
+- Latest strict gate result remains stable: `SQL_FIRST_API_VERIFY` final score `0.6486`, correctness `0.6743`, tool calls `1.4571`, estimated-token overhead `5.57%`, runtime overhead `14.71%`.
+
+## 12. Ranking-First Candidate Retrieval Addendum
+
+- Added ranking/report-only hybrid candidate scoring and endpoint-family reranking. These diagnostics reduce candidate risk clusters but do not change executed `SQL_FIRST_API_VERIFY` SQL/API plans.
+- Added reciprocal-rank-fusion diagnostics alongside weighted score fusion so ranking separation can be audited without relying only on calibrated weights.
+- Added structural schema-preservation diagnostics and value-to-API ranking metrics; value boosts require high-confidence value matches and remain auditable.
+- Added gated risk-cluster repair diagnostics with execution repair disabled by default.
+- Candidate risk cluster gate passed:
+  - `zero_score_margin`: 32 → 6
+  - `missing_gold_api_in_top_k`: 15 → 7
+  - `batch_endpoint_confusion`: 8 → 5
+  - `tag_api_confusion`: 4 → 1
+  - `schema_vs_dataset_confusion`: 4 → 0
+- No score claim is made from these ranking-only changes: strict final score remains `0.6486`, strict correctness remains `0.6743`, and the report labels this as retrieval/candidate diagnostics improvement.
+- `python3 -m pytest`: 145 passed. Strict eval, packaging, query output packaging, readiness, and `no_secret_scan.ok` all passed after this pass.

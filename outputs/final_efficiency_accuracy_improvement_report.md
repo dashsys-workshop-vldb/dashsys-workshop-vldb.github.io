@@ -10,6 +10,7 @@ DASHSys remains stable on the packaged path: `SQL_FIRST_API_VERIFY` is still the
 - Added guided-only schema affordance, endpoint repair, virtual schema guidance, validation feedback, duplicate-call tracking, and uncertainty-safe answer wording.
 - Added evidence availability fields so reports separate tool invocation from usable evidence.
 - Added adaptive candidate context modes: `candidate`, `expanded_candidate`, `hybrid`, and `full_schema`.
+- Added ranking/report-only hybrid candidate scoring, reciprocal-rank diagnostics, endpoint-family ranking, structural preservation metrics, value-to-API ranking metrics, and gated risk-cluster repair diagnostics.
 - Added detailed dataflow visualization reports under `outputs/visualizations/`.
 
 ## What Did Not Change
@@ -64,23 +65,38 @@ Guided validation feedback explains invalid generic table choices. For example, 
 
 | Metric | Value |
 | --- | ---: |
-| Candidate context tokens | 896.4857 |
+| Candidate context tokens | 4301.4 |
 | Full schema context tokens | 4682 |
-| Compression ratio | 0.1915 |
-| Table recall@3 | 0.7444 |
-| Table recall@5 | 0.8222 |
-| API recall@3 | 0.4677 |
-| API recall@5 | 0.5484 |
-| Low-confidence count | 14 |
-| Zero-margin count | 32 |
-| Recommended fallback rate | 0.9143 |
+| Compression ratio | 0.9187 |
+| Table recall@3 | 0.7778 |
+| Table recall@5 | 0.9333 |
+| API recall@3 | 0.7581 |
+| API recall@5 | 0.7903 |
+| Low-confidence count | 2 |
+| Zero-margin count | 6 |
+| Recommended fallback rate | 0.1714 |
 
 | Context mode | Count |
 | --- | ---: |
-| candidate | 3 |
-| hybrid | 32 |
+| candidate | 18 |
+| expanded_candidate | 11 |
+| hybrid | 6 |
 
-Candidate context is useful for compression, but the low-confidence and zero-margin rate remains high enough that hybrid/full-schema fallback is still required for robustness.
+The ranking/report-only pass improved candidate separation and API recall while keeping execution unchanged. Candidate diagnostics are larger than the prior compact context because they now include before/after ranking evidence; this is reported as diagnostic overhead, not a packaged execution cost.
+
+## Ranking-Only Candidate Risk Cluster Gate
+
+These improvements affect retrieval diagnostics and candidate ordering in reports. Since execution repair remains disabled, this report does not claim accuracy improvement from ranking changes alone.
+
+| Cluster | Before | After | Delta |
+| --- | ---: | ---: | ---: |
+| zero_score_margin | 32 | 6 | -26 |
+| missing_gold_api_in_top_k | 15 | 7 | -8 |
+| batch_endpoint_confusion | 8 | 5 | -3 |
+| tag_api_confusion | 4 | 1 | -3 |
+| schema_vs_dataset_confusion | 4 | 0 | -4 |
+
+Cluster gate status: retrieval-cluster improvement measured.
 
 ## Curated Join Hint Audit
 
@@ -90,10 +106,10 @@ Candidate context is useful for compression, but the low-confidence and zero-mar
 
 | Gate | Result |
 | --- | --- |
-| `SQL_FIRST_API_VERIFY` strict final score | 0.649, no material regression |
+| `SQL_FIRST_API_VERIFY` strict final score | 0.6486, no material regression |
 | `SQL_FIRST_API_VERIFY` strict correctness | 0.6743 |
-| `SQL_FIRST_API_VERIFY` estimated tokens | 851.7714 |
-| `SQL_FIRST_API_VERIFY` runtime | 0.0105 |
+| `SQL_FIRST_API_VERIFY` estimated tokens | 899.2286 |
+| `SQL_FIRST_API_VERIFY` runtime | 0.0117 |
 | Packaged preferred strategy | `SQL_FIRST_API_VERIFY` |
 | Strict missing-gold behavior | preserved |
 | Raw baseline availability | available |
@@ -124,7 +140,7 @@ Candidate context is useful for compression, but the low-confidence and zero-mar
 
 ## Strict Eval, Packaging, Readiness
 
-- `python3 -m pytest`: 108 passed.
+- `python3 -m pytest`: 145 passed.
 - `python3 scripts/run_dev_eval.py --strict`: passed.
 - Packaging and readiness are rerun in the final validation step.
 - Visualization files are generated only under `outputs/visualizations/` and are not part of `outputs/final_submission/`.
@@ -132,7 +148,7 @@ Candidate context is useful for compression, but the low-confidence and zero-mar
 ## Remaining Issues
 
 - Adobe credentials are unavailable locally, so API evidence remains dry-run.
-- Candidate context still has many low-confidence or zero-margin cases.
+- Candidate context has fewer low-confidence and zero-margin cases, but the diagnostic payload is larger and remains report-only.
 - Guided baseline costs more tokens than raw.
 - Real LLM baseline behavior is provider/model-dependent and can fail at request time.
 

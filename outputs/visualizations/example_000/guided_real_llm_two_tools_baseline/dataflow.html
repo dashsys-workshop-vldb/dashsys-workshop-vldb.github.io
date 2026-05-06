@@ -22,7 +22,7 @@
     router --&gt;|clean + extract| normalizer --&gt; tokens
   end
   subgraph ContextSelection[&quot;Context Selection&quot;]
-    context[&quot;Context Mode&lt;br/&gt;metadata_context_estimate_inferred&quot;]
+    context[&quot;Context Mode&lt;br/&gt;candidate&quot;]
     candidates[&quot;Context&lt;br/&gt;tables=none&amp;lt;br/&amp;gt;apis=none&quot;]
     tokens --&gt;|score relevance| context --&gt; candidates
   end
@@ -79,8 +79,8 @@
 | Runtime | 3.7744 |
 | Estimated tokens | n/a - estimated_tokens missing |
 | Checkpoint count | 0 |
-| Candidate context mode | metadata_context_estimate_inferred |
-| Context mode note | display-only inferred from context token estimate |
+| Candidate context mode | candidate |
+| Context mode note | recorded in checkpoint/trajectory |
 
 ```mermaid
 flowchart TD
@@ -97,7 +97,7 @@ flowchart TD
     router --&gt;|clean + extract| normalizer --&gt; tokens
   end
   subgraph ContextSelection[&quot;Context Selection&quot;]
-    context[&quot;Context Mode&lt;br/&gt;metadata_context_estimate_inferred&quot;]
+    context[&quot;Context Mode&lt;br/&gt;candidate&quot;]
     candidates[&quot;Context&lt;br/&gt;tables=none&amp;lt;br/&amp;gt;apis=none&quot;]
     tokens --&gt;|score relevance| context --&gt; candidates
   end
@@ -178,6 +178,21 @@ SQL evidence is available. API tool was invoked and validated, but live API evid
 | Gated SQL candidates | DIN-SQL / self-correction | False | Hard-case candidate validation before one execution | prevents invalid hard-case SQL from being selected | validates only; executes one selected plan | checkpoint_gated_sql_candidate_selection |
 | Query-family examples | DAIL-SQL | False | Optional family hints for LLM SQL | makes technique visibility auditable | optional LLM-only token cost | checkpoint_query_family_examples |
 | Span export | OpenAI Agents SDK tracing | True | Local span-style checkpoint export | makes technique visibility auditable | diagnostic overhead only | spans.json |
+| Hybrid candidate scoring | Blended RAG / rank fusion | True | Report-only candidate separation scoring | makes technique visibility auditable | diagnostic overhead only | checkpoint_hybrid_candidate_scoring |
+| Endpoint family ranking | Domain-aware retrieval | True | Report-only endpoint family reranking | makes technique visibility auditable | diagnostic overhead only | checkpoint_endpoint_family_ranking |
+| Structural schema preservation | RSL-SQL | True | Report-only bridge/relationship preservation diagnostics | keeps relevant tables, columns, and bridges visible | diagnostic overhead only | checkpoint_structural_schema_preservation |
+| Value-to-API ranking | CHESS | False | High-confidence entity matches can boost API-family ranking in reports | grounds named entities and IDs before planning | bounded cached retrieval budget | checkpoint_value_to_api_ranking |
+| Gated risk-cluster repair | CHASE-SQL-style repair | True | Diagnostic repaired candidate comparison without execution change | makes technique visibility auditable | diagnostic overhead only | checkpoint_gated_risk_cluster_repair |
+
+## Candidate Ranking Diagnostics
+
+| Technique | Active | Output | Correctness role | Efficiency role |
+| --- | --- | --- | --- | --- |
+| Hybrid Candidate Scoring | True | {&quot;ranking_changed&quot;: true, &quot;score_margin&quot;: 1.3, &quot;top_candidate_score&quot;: 1.8, &quot;top_components&quot;: {&quot;alias_score&quot;: 1.2, &quot;endpoint_family_score&quot;: 0.0, &quot;lexical_score&quot;: 0.0, &quot;name&quot;: &quot;dim_campaign&quot;, &quot;reciprocal_rank_fusion&quot;: 0.032787, &quot;score_explanation&quot;: &quot;base=2.000; lexical=0.000; alias=1.200; value=0.000; structural=0.000; endpoint_family=0.000&quot;, &quot;structural_score&quot;: 0.0, &quot;truncated_fields&quot;: 1, &quot;value_match_score&quot;: 0.0}} | separates candidate context without changing executed plan | report-only scoring; no extra tools |
+| Endpoint Family Ranker | True | {&quot;boost_reason&quot;: {&quot;items&quot;: [&quot;journey_list: journey/campaign vocabulary&quot;], &quot;total_items&quot;: 1, &quot;truncated_items&quot;: false}, &quot;endpoint_family&quot;: &quot;journey_list&quot;, &quot;endpoint_family_confidence&quot;: 1.0, &quot;ranking_changed&quot;: false} | reduces endpoint-family confusion in candidate context | reranks metadata only |
+| Structural Schema Preservation | True | {&quot;structural_confidence_delta&quot;: 0.1, &quot;structural_reason&quot;: &quot;bridge-table heuristic&quot;, &quot;structural_tables_added&quot;: {&quot;items&quot;: [&quot;br_campaign_segment&quot;, &quot;hkg_br_segment_target&quot;, &quot;hkg_br_source_collection&quot;], &quot;total_items&quot;: 7, &quot;truncated_items&quot;: true}} | keeps relationship bridge tables visible | adds only compact schema context |
+| Value-to-API Ranking | False | {&quot;active&quot;: false, &quot;boost_applied&quot;: true, &quot;value_match_used_for_api_ranking&quot;: false} | uses only high-confidence retrieved values for endpoint family boosts | reuses existing value retrieval diagnostics |
+| Gated Risk Cluster Repair | True | {&quot;active&quot;: true, &quot;candidate_count&quot;: 2, &quot;cost_delta&quot;: 0, &quot;diagnostic_only&quot;: true, &quot;execution_repair_enabled&quot;: false, &quot;expected_correctness_gain&quot;: &quot;retrieval-only candidate separation; no accuracy claim without execution change&quot;, &quot;hard_case_triggered&quot;: true, &quot;rejected_candidate_reason&quot;: &quot;lower endpoint-family confidence or lower hybrid score&quot;, &quot;truncated_fields&quot;: 2} | compares a repaired candidate without executing losing plans | diagnostic-only; zero tool-call delta |
 
 ## Value Retrieval Cache
 
@@ -228,10 +243,10 @@ SQL evidence is available. API tool was invoked and validated, but live API evid
     &quot;candidate_apis&quot;: &quot;n/a - no candidate APIs recorded&quot;,
     &quot;candidate_tables&quot;: &quot;n/a - no candidate tables recorded&quot;,
     &quot;confidence&quot;: 0.8,
-    &quot;context_mode&quot;: &quot;metadata_context_estimate_inferred&quot;,
-    &quot;context_mode_note&quot;: &quot;display-only inferred from context token estimate&quot;,
+    &quot;context_mode&quot;: &quot;candidate&quot;,
+    &quot;context_mode_note&quot;: &quot;recorded in checkpoint/trajectory&quot;,
     &quot;estimated_context_tokens&quot;: 2053,
-    &quot;score_margin&quot;: &quot;n/a - no candidate score margin recorded&quot;
+    &quot;score_margin&quot;: 1.3
   },
   &quot;evidence&quot;: {
     &quot;dry_run_only&quot;: true,
