@@ -38,7 +38,6 @@ REQUIRED_PATHS = [
     "scripts/generate_research_inspired_report.py",
     "scripts/run_shadow_repair_eval.py",
     "scripts/run_compact_context_shadow_eval.py",
-    "scripts/run_compact_context_measured_eval.py",
     "scripts/run_risk_efficiency_shadow_eval.py",
     "scripts/tune_thresholds.py",
     "scripts/run_robustness_eval.py",

@@ -10,7 +10,7 @@
 | Variant | n/a - not a baseline variant |
 | Final answer preview | The journey "Birthday Message" has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable. |
 | Tool call count | 2 |
-| Runtime | 0.012407125090248883 |
+| Runtime | 0.012170624919235706 |
 | Estimated tokens | 950 |
 | Checkpoint count | 24 |
 | Candidate context mode | candidate |
@@ -68,7 +68,7 @@ flowchart TD
     verifier -->|safe answer| answer
   end
   subgraph Metrics
-    metrics["Metrics<br/>tools=2<br/>tokens=950<br/>runtime=0.012407125090248883"]
+    metrics["Metrics<br/>tools=2<br/>tokens=950<br/>runtime=0.012170624919235706"]
     answer -->|record trajectory| metrics
   end
 ```

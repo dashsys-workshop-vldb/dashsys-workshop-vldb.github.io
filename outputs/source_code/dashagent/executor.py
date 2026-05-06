@@ -44,10 +44,8 @@ from .llm_sql_generator import generate_sql_with_llm, repair_sql_with_llm
 from .query_decomposer import decompose_query
 from .query_family_examples import examples_for_family, few_shot_public_overlap_check
 from .query_analysis import analyze_query
-from .risk_efficiency_controller import classify_candidate_risk
 from .router import QueryRouter
 from .schema_index import SchemaIndex
-from .schema_context_voter import vote_schema_contexts
 from .simple_prompt_gate import decide_simple_prompt
 from .prompt_router import LLM_DIRECT, route_prompt
 from .trajectory import TrajectoryLogger, estimate_tokens
@@ -315,15 +313,6 @@ class AgentExecutor:
             efficiency_role="filters unrelated schema and endpoint candidates",
         )
         broad = strategy == "LLM_FREE_AGENT_BASELINE"
-        compact_context_experiment = self._compact_context_experiment_candidate(
-            query=query,
-            strategy=strategy,
-        )
-        compact_context_override = (
-            compact_context_experiment.get("compact_context")
-            if compact_context_experiment.get("eligible")
-            else None
-        )
         metadata = self.metadata_selector.select(
             query,
             routing,
@@ -331,7 +320,6 @@ class AgentExecutor:
             query_id=qid,
             broad_context=broad,
             analysis=analysis,
-            compact_context_override=compact_context_override,
         )
         self.metadata_selector.save(metadata, out_dir)
 
@@ -358,24 +346,6 @@ class AgentExecutor:
             correctness_role="keeps required tables, columns, joins, and API candidates visible",
             efficiency_role="limits context size for non-baseline strategies",
         )
-        if compact_context_experiment.get("active"):
-            checkpoint_logger.add_checkpoint(
-                "checkpoint_compact_context_measured_experiment",
-                stage="metadata packing",
-                technique="feature-flagged compact context measured experiment",
-                input_summary={
-                    "flag_enabled": self.config.enable_compact_context_when_schema_vote_safe,
-                    "strategy": strategy,
-                },
-                output={
-                    key: value
-                    for key, value in compact_context_experiment.items()
-                    if key != "compact_context"
-                },
-                effect="uses compact candidate context only in isolated measured experiments when schema voting says it is safe",
-                correctness_role="requires high-risk schema-vote agreement and disabled repair execution before changing experiment metadata",
-                efficiency_role="measures prompt/context-token impact without changing packaged defaults",
-            )
         preprocessing_time = time.perf_counter() - preprocessing_start
 
         planning_start = time.perf_counter()
@@ -762,90 +732,6 @@ class AgentExecutor:
             "trajectory": trajectory_payload,
         }
 
-    def _compact_context_experiment_candidate(self, *, query: str, strategy: str) -> dict[str, Any]:
-        if not self.config.enable_compact_context_when_schema_vote_safe:
-            return {"active": False, "eligible": False, "reason": "ENABLE_COMPACT_CONTEXT_WHEN_SCHEMA_VOTE_SAFE is off"}
-        reasons: list[str] = []
-        if strategy != "SQL_FIRST_API_VERIFY":
-            reasons.append("strategy is not SQL_FIRST_API_VERIFY")
-        if self.config.enable_gated_risk_cluster_repair_execution:
-            reasons.append("repair execution is enabled")
-        if reasons:
-            return {
-                "active": True,
-                "eligible": False,
-                "reason": "; ".join(reasons),
-                "packaged_default": False,
-                "behavior_changed": False,
-            }
-        compact_context = build_candidate_context(
-            query,
-            self.schema_index,
-            self.endpoint_catalog,
-            enable_hybrid_ranking=self.config.enable_hybrid_candidate_scoring,
-            enable_endpoint_family_ranking=self.config.enable_endpoint_family_ranking,
-            enable_structural_preservation=self.config.enable_structural_schema_preservation,
-            enable_value_to_api_ranking=self.config.enable_value_to_api_ranking,
-            enable_gated_risk_cluster_repair=self.config.enable_gated_risk_cluster_repair,
-        )
-        risk_policy = classify_candidate_risk(
-            compact_context,
-            risk_cluster=(compact_context.get("gated_risk_cluster_repair") or {}).get("risk_cluster"),
-        )
-        schema_vote = vote_schema_contexts(
-            query=query,
-            compact_context=compact_context,
-            schema_index=self.schema_index,
-            endpoint_catalog=self.endpoint_catalog,
-            risk_level=risk_policy["risk_level"],
-        )
-        compact_tables = schema_vote.get("compact_candidate_tables") or []
-        fallback_tables = schema_vote.get("fallback_candidate_tables") or []
-        compact_apis = schema_vote.get("compact_candidate_apis") or []
-        fallback_apis = schema_vote.get("fallback_candidate_apis") or []
-        table_top_agreement = _top_items_agree(compact_tables, fallback_tables)
-        api_top_agreement = _top_items_agree(compact_apis, fallback_apis) or (not compact_apis and not fallback_apis)
-        eligible = bool(
-            risk_policy.get("risk_level") == "high"
-            and schema_vote.get("schema_vote_agreement") is True
-            and schema_vote.get("compact_context_safe") is True
-            and table_top_agreement
-            and api_top_agreement
-        )
-        if not eligible:
-            if risk_policy.get("risk_level") != "high":
-                reasons.append("risk_level is not high")
-            if schema_vote.get("schema_vote_agreement") is not True:
-                reasons.append("schema_vote_agreement is not true")
-            if schema_vote.get("compact_context_safe") is not True:
-                reasons.append("compact_context_safe is not true")
-            if not table_top_agreement:
-                reasons.append("compact/fallback top tables do not agree")
-            if not api_top_agreement:
-                reasons.append("compact/fallback top APIs do not agree")
-        return {
-            "active": True,
-            "eligible": eligible,
-            "reason": "compact context enabled for measured experiment" if eligible else "; ".join(reasons),
-            "risk_level": risk_policy.get("risk_level"),
-            "accuracy_risk": risk_policy.get("accuracy_risk"),
-            "schema_vote_agreement": schema_vote.get("schema_vote_agreement"),
-            "compact_context_safe": schema_vote.get("compact_context_safe"),
-            "table_top_agreement": table_top_agreement,
-            "api_top_agreement": api_top_agreement,
-            "compact_candidate_tables": compact_tables[:8],
-            "fallback_candidate_tables": fallback_tables[:8],
-            "compact_candidate_apis": compact_apis[:8],
-            "fallback_candidate_apis": fallback_apis[:8],
-            "compact_context_tokens": schema_vote.get("compact_context_tokens"),
-            "fallback_context_tokens": schema_vote.get("fallback_context_tokens"),
-            "token_delta": schema_vote.get("token_delta"),
-            "packaged_default": False,
-            "behavior_changed": eligible,
-            "repair_execution_enabled": self.config.enable_gated_risk_cluster_repair_execution,
-            "compact_context": compact_context,
-        }
-
     def _create_llm_sql_plan(
         self,
         query: str,
@@ -1013,14 +899,6 @@ class AgentExecutor:
 def slugify(text: str, max_length: int = 48) -> str:
     slug = re.sub(r"[^a-zA-Z0-9]+", "_", text.lower()).strip("_")
     return (slug[:max_length] or "query").strip("_")
-
-
-def _top_items_agree(left: list[Any], right: list[Any]) -> bool:
-    if not left or not right:
-        return False
-    left_norm = [str(item).strip().lower() for item in left[:3] if str(item).strip()]
-    right_norm = [str(item).strip().lower() for item in right[:3] if str(item).strip()]
-    return bool(left_norm and right_norm and set(left_norm) & set(right_norm))
 
 
 def render_system_prompt(config: Config, metadata: dict[str, Any]) -> str:

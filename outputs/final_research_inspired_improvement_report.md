@@ -37,11 +37,6 @@ Status: **no measured strict-score improvement**.
 - No behavior-changing flags were enabled in this pass.
 - Schema vote active/agreement/compact-safe: 28/28/28
 - Compact-context shadow eval rows: 28 (avg token delta: -1220.7857; measured efficiency improvement claimed: False)
-- Compact-context measured eval rows: 28 (avg score delta: -0.0; avg token delta: 4.2857; avg runtime delta: 0.0017)
-- Compact-context experimental measured efficiency improvement claimed: False
-- Compact-context official measured efficiency improvement claimed: False
-- Compact-context measured eval changed packaged execution: False
-- Compact-context feature flag default/enabled-for-experiment: False/True
 - Risk-efficiency shadow eval rows: 7 (avg token delta: -264.0; avg runtime delta: -0.025; measured efficiency improvement claimed: False)
 - Secret scan OK: True
 - Visualization artifacts directory: `/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/visualizations`
@@ -70,7 +65,6 @@ Status: **no measured strict-score improvement**.
 | `ENABLE_REPAIR_FOR_SCHEMA_DATASET_CONFUSION` | False |
 | `ENABLE_REPAIR_FOR_ZERO_SCORE_MARGIN` | False |
 | `ENABLE_REPAIR_FOR_MISSING_API_TOPK` | False |
-| `ENABLE_COMPACT_CONTEXT_WHEN_SCHEMA_VOTE_SAFE` | False |
 
 ## Technique Summary
 
@@ -134,7 +128,6 @@ Execution repair remains disabled by default. These recommendations are offline 
 - Any repair canary enablement is a recommendation only; canary flags remain disabled by default.
 - Risk-based efficiency savings are labeled as estimates; no measured efficiency improvement is claimed because packaged execution did not skip modules.
 - Schema context voting compares compact and broader context for high-risk diagnostics only and does not change executed SQL/API plans.
-- Compact-context measured eval is isolated under outputs/compact_context_measured_eval and does not update official packaged scores or submission metrics.
 - SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.
 - No live API evidence is fabricated; Adobe API remains dry-run without credentials.
 - Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.

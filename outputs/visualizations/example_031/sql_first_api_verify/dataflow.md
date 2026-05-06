@@ -10,7 +10,7 @@
 | Variant | n/a - not a baseline variant |
 | Final answer preview | Batch file details require live API evidence. Live API verification was not executed because Adobe credentials are unavailable. |
 | Tool call count | 1 |
-| Runtime | 0.010271625011228025 |
+| Runtime | 0.010335583938285708 |
 | Estimated tokens | 758 |
 | Checkpoint count | 21 |
 | Candidate context mode | candidate |
@@ -68,7 +68,7 @@ flowchart TD
     verifier -->|safe answer| answer
   end
   subgraph Metrics
-    metrics["Metrics<br/>tools=1<br/>tokens=758<br/>runtime=0.010271625011228025"]
+    metrics["Metrics<br/>tools=1<br/>tokens=758<br/>runtime=0.010335583938285708"]
     answer -->|record trajectory| metrics
   end
 ```

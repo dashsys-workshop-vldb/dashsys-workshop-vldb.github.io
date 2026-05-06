@@ -10,7 +10,7 @@
 | Variant | n/a - not a baseline variant |
 | Final answer preview | Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable. |
 | Tool call count | 2 |
-| Runtime | 0.010987790999934077 |
+| Runtime | 0.011098042014054954 |
 | Estimated tokens | 887 |
 | Checkpoint count | 22 |
 | Candidate context mode | hybrid |
@@ -68,7 +68,7 @@ flowchart TD
     verifier -->|safe answer| answer
   end
   subgraph Metrics
-    metrics["Metrics<br/>tools=2<br/>tokens=887<br/>runtime=0.010987790999934077"]
+    metrics["Metrics<br/>tools=2<br/>tokens=887<br/>runtime=0.011098042014054954"]
     answer -->|record trajectory| metrics
   end
 ```
@@ -136,7 +136,7 @@ API tool was invoked and validated, but live evidence was unavailable because Ad
 
 | Risk cluster | Current candidate | Repaired candidate | Safety verdict | Score delta | Tool/cost delta | Enable recommendation |
 | --- | --- | --- | --- | ---: | --- | --- |
-| zero_score_margin | {"api": {"items": [{"method": "GET", "params": {"filter": "state eq 'failed'", "limit": "50"}, "path": "/data/foundation/flowservice/flows"}], "total_items": 1, "truncated_items": false}, "score": 0.6744, "sql": {"items": ["SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"], "total_items": 1, "truncated_items": false}} | {"api": {"items": [{"endpoint_family": "flow_runs", "endpoint_id": "flowservice_runs", "method": "GET", "params": {"limit": 50}, "path": "/data/foundation/flowservice/runs"}], "total_items": 1, "truncated_items": false}, "score": 0.6744, "sql": {"items": ["SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"], "total_items": 1, "truncated_items": false}} | safe | 0.0 | {'tool_delta': 0, 'token_delta': 0, 'runtime_delta': 0.0} | safe_shadow_tie_recommend_canary |
+| zero_score_margin | {"api": {"items": [{"method": "GET", "params": {"filter": "state eq 'failed'", "limit": "50"}, "path": "/data/foundation/flowservice/flows"}], "total_items": 1, "truncated_items": false}, "score": 0.6744, "sql": {"items": ["SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"], "total_items": 1, "truncated_items": false}} | {"api": {"items": [{"endpoint_family": "flow_runs", "endpoint_id": "flowservice_runs", "method": "GET", "params": {"limit": 50}, "path": "/data/foundation/flowservice/runs"}], "total_items": 1, "truncated_items": false}, "score": 0.6744, "sql": {"items": ["SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"], "total_items": 1, "truncated_items": false}} | safe | 0.0 | {'tool_delta': 0, 'token_delta': 0, 'runtime_delta': 0.0} | safe_shadow_tie_keep_disabled |
 | execution changed? | False | reason | offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled | decision hash | 2528515962e3455e | |
 
 ## Risk-Based Efficiency Controller
