@@ -7,7 +7,7 @@
   "current_plan_sql": [
     "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20"
   ],
-  "current_runtime": 0.0101,
+  "current_runtime": 0.0099,
   "current_strict_score": 0.7027,
   "current_tokens": 671,
   "current_tool_calls": 1,
@@ -26,10 +26,11 @@
     "repair_safety_verifier",
     "schema_context_voting"
   ],
+  "offline_score_delta": -0.0125,
   "packaged_execution_changed": false,
   "query": "show me the field for Person: Birthday Today 001",
   "query_id": "example_008",
-  "rejection_reason": "Repair safety verifier did not pass.; Endpoint family confidence 0.0000 is below 0.85.; Compact-vs-broader schema context vote did not agree.; Repaired plan would increase tool calls.; Repaired plan would increase tool calls from 1 to 2.; Endpoint family confidence 0.0000 is below 0.75.",
+  "rejection_reason": "Repair safety verifier did not pass.; Endpoint family confidence 0.0000 is below 0.85.; Compact-vs-broader schema context vote did not agree.; Repaired plan would increase tool calls.; Offline shadow strict score regressed by -0.0125; keep the current plan.; Repaired plan would increase tool calls from 1 to 2.; Endpoint family confidence 0.0000 is below 0.75.; Offline shadow strict score regressed by -0.0125; this score gate is used only when offline_score_delta is present.",
   "repair_candidate_selector": {
     "behavior_changed": false,
     "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
@@ -39,6 +40,7 @@
       "endpoint_family_confidence",
       "safety_verifier",
       "schema_vote_agreement",
+      "score_regression",
       "tool_call_increase"
     ],
     "no_op": false,
@@ -47,7 +49,8 @@
       "Repair safety verifier did not pass.",
       "Endpoint family confidence 0.0000 is below 0.85.",
       "Compact-vs-broader schema context vote did not agree.",
-      "Repaired plan would increase tool calls."
+      "Repaired plan would increase tool calls.",
+      "Offline shadow strict score regressed by -0.0125; keep the current plan."
     ],
     "recommendation": "keep_current",
     "safe_to_select_repaired": false,
@@ -74,7 +77,7 @@
   "repaired_plan_sql": [
     "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20"
   ],
-  "repaired_runtime": 0.0101,
+  "repaired_runtime": 0.0099,
   "repaired_strict_score": 0.6902,
   "repaired_tokens": 671,
   "repaired_tool_calls": 2,
@@ -127,11 +130,13 @@
     "efficiency_role": "rejects repairs that increase packaged tool-call cost",
     "failed_checks": [
       "endpoint_family_confidence",
+      "score_regression",
       "tool_call_increase"
     ],
     "reasons": [
       "Repaired plan would increase tool calls from 1 to 2.",
-      "Endpoint family confidence 0.0000 is below 0.75."
+      "Endpoint family confidence 0.0000 is below 0.75.",
+      "Offline shadow strict score regressed by -0.0125; this score gate is used only when offline_score_delta is present."
     ],
     "safe": false,
     "sql_validation": {
@@ -171,7 +176,7 @@
   },
   "schema_vote_agreement": null,
   "score_delta": -0.0125,
-  "shadow_runtime": 0.0117,
+  "shadow_runtime": 0.0084,
   "token_delta": 0,
   "token_saved_estimate": 264,
   "tool_delta": 1,

@@ -115,3 +115,19 @@ def test_selector_rejects_failed_safety_and_dry_run_live_evidence():
 
     assert "safety_verifier" in result["failed_checks"]
     assert "dry_run_live_evidence" in result["failed_checks"]
+
+
+def test_selector_rejects_offline_score_regression_only_when_present():
+    without_score = select_repair_candidate(_current_plan(), _repaired_plan(), _safety(), {}, _schema_vote())
+    with_regression = select_repair_candidate(
+        _current_plan(),
+        _repaired_plan(offline_score_delta=-0.01),
+        _safety(),
+        {},
+        _schema_vote(),
+    )
+
+    assert without_score["safe_to_select_repaired"] is True
+    assert "score_regression" not in without_score["failed_checks"]
+    assert with_regression["safe_to_select_repaired"] is False
+    assert "score_regression" in with_regression["failed_checks"]

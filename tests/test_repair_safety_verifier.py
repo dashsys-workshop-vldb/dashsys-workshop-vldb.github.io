@@ -36,6 +36,38 @@ def test_repair_safety_accepts_valid_catalog_backed_replacement(tiny_project):
 
     assert verdict["safe"] is True
     assert verdict["failed_checks"] == []
+    assert "score_regression" not in verdict["failed_checks"]
+
+
+def test_repair_safety_uses_offline_score_delta_only_when_present(tiny_project):
+    executor = AgentExecutor(tiny_project)
+    current = {
+        "sql": ["SELECT COUNT(*) AS count FROM dim_campaign"],
+        "api_calls": [{"method": "GET", "path": "/ajo/journey", "params": {}}],
+        "tool_call_count": 2,
+        "expected_answer_shape": "journey_list",
+    }
+    repaired = {
+        **current,
+        "fusion_agreement": True,
+        "endpoint_family_confidence": 0.95,
+        "dry_run_only": True,
+        "live_api_evidence_available": False,
+    }
+
+    without_score = verify_repair_safety(current, repaired, _trajectory(), executor.schema_index, EndpointCatalog(tiny_project))
+    with_regression = verify_repair_safety(
+        current,
+        {**repaired, "offline_score_delta": -0.1},
+        _trajectory(),
+        executor.schema_index,
+        EndpointCatalog(tiny_project),
+    )
+
+    assert without_score["safe"] is True
+    assert "score_regression" not in without_score["failed_checks"]
+    assert with_regression["safe"] is False
+    assert "score_regression" in with_regression["failed_checks"]
 
 
 def test_repair_safety_rejects_invalid_sql_endpoint_and_cost(tiny_project):

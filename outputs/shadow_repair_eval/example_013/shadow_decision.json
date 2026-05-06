@@ -17,7 +17,7 @@
   "current_plan_sql": [
     "SELECT DISTINCT D.\"COLLECTIONID\" AS collection_id, D.\"NAME\" AS collection_name, D.\"UPDATEDTIME\" AS updated_time FROM \"dim_collection\" AS D WHERE D.\"UPDATEDTIME\" >= DATEADD(DAY, -90, CURRENT_DATE) ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50"
   ],
-  "current_runtime": 0.0149,
+  "current_runtime": 0.0147,
   "current_strict_score": 0.7149,
   "current_tokens": 1307,
   "current_tool_calls": 2,
@@ -31,10 +31,11 @@
   "measured_accuracy_improvement_claimed": false,
   "measured_efficiency_improvement_claimed": false,
   "module_skipped_by_risk": [],
+  "offline_score_delta": -0.1487,
   "packaged_execution_changed": false,
   "query": "Show recent changes in datasets.",
   "query_id": "example_013",
-  "rejection_reason": "Repair safety verifier did not pass.; SQLGlot AST validation did not pass for the repaired SQL.; Unknown columns: DAY",
+  "rejection_reason": "Repair safety verifier did not pass.; SQLGlot AST validation did not pass for the repaired SQL.; Offline shadow strict score regressed by -0.1487; keep the current plan.; Unknown columns: DAY; Offline shadow strict score regressed by -0.1487; this score gate is used only when offline_score_delta is present.",
   "repair_candidate_selector": {
     "behavior_changed": false,
     "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
@@ -42,13 +43,15 @@
     "efficiency_role": "rejects repaired candidates with any tool-call increase",
     "failed_checks": [
       "safety_verifier",
+      "score_regression",
       "sql_ast_validation"
     ],
     "no_op": false,
     "packaged_execution_changed": false,
     "reasons": [
       "Repair safety verifier did not pass.",
-      "SQLGlot AST validation did not pass for the repaired SQL."
+      "SQLGlot AST validation did not pass for the repaired SQL.",
+      "Offline shadow strict score regressed by -0.1487; keep the current plan."
     ],
     "recommendation": "keep_current",
     "safe_to_select_repaired": false,
@@ -75,7 +78,7 @@
   "repaired_plan_sql": [
     "SELECT DISTINCT D.\"COLLECTIONID\" AS collection_id, D.\"NAME\" AS collection_name, D.\"UPDATEDTIME\" AS updated_time FROM \"dim_collection\" AS D WHERE D.\"UPDATEDTIME\" >= DATEADD(DAY, -90, CURRENT_DATE) ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50"
   ],
-  "repaired_runtime": 0.0149,
+  "repaired_runtime": 0.0147,
   "repaired_strict_score": 0.5662,
   "repaired_tokens": 1307,
   "repaired_tool_calls": 2,
@@ -126,10 +129,12 @@
     "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
     "efficiency_role": "rejects repairs that increase packaged tool-call cost",
     "failed_checks": [
+      "score_regression",
       "sql_validation"
     ],
     "reasons": [
-      "Unknown columns: DAY"
+      "Unknown columns: DAY",
+      "Offline shadow strict score regressed by -0.1487; this score gate is used only when offline_score_delta is present."
     ],
     "safe": false,
     "sql_validation": {
@@ -220,7 +225,7 @@
   },
   "schema_vote_agreement": true,
   "score_delta": -0.1487,
-  "shadow_runtime": 0.0114,
+  "shadow_runtime": 0.0063,
   "token_delta": 0,
   "token_saved_estimate": 0,
   "tool_delta": 0,

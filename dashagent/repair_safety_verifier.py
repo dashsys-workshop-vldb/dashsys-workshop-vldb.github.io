@@ -65,6 +65,15 @@ def verify_repair_safety(
         failed_checks.append("dry_run_live_evidence")
         reasons.append("Dry-run API output was marked as live API evidence.")
 
+    if "offline_score_delta" in repaired_plan:
+        offline_score_delta = float(repaired_plan.get("offline_score_delta") or 0.0)
+        if offline_score_delta < 0:
+            failed_checks.append("score_regression")
+            reasons.append(
+                f"Offline shadow strict score regressed by {offline_score_delta:.4f}; "
+                "this score gate is used only when offline_score_delta is present."
+            )
+
     unsupported = _unsupported_claim_count(trajectory)
     if unsupported > 0:
         failed_checks.append("unsupported_claims")

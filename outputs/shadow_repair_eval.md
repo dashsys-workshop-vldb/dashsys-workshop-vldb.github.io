@@ -7,14 +7,14 @@ Shadow repair execution is **disabled by default**. This report compares current
 - repaired_better_count: 1
 - repaired_equal_count: 26
 - repaired_worse_count: 8
-- unsafe_repair_count: 34
+- unsafe_repair_count: 35
 - safe_repaired_better_count: 0
 - safe_repaired_equal_count: 14
-- safe_repaired_worse_count: 1
-- safe_avg_score_delta: -0.0077
+- safe_repaired_worse_count: 0
+- safe_avg_score_delta: 0.0
 - safe_avg_tool_delta: 0.0
-- unsafe_avg_score_delta: -0.0567
-- unsafe_failure_reason_counts: {'api_validation': 2, 'endpoint_family_confidence': 5, 'fusion_agreement': 14, 'sql_validation': 2, 'tool_call_increase': 1}
+- unsafe_avg_score_delta: -0.0595
+- unsafe_failure_reason_counts: {'api_validation': 2, 'endpoint_family_confidence': 5, 'fusion_agreement': 14, 'score_regression': 8, 'sql_validation': 2, 'tool_call_increase': 1}
 - avg_score_delta: -0.0357
 - avg_tool_delta: 0.0286
 - avg_runtime_delta: 0.0
@@ -29,14 +29,14 @@ Shadow repair execution is **disabled by default**. This report compares current
 | `example_001` | `not_targeted` | 0.7902 | 0.7902 | 0.0 | False | no_op_shadow_tie_keep_current |
 | `example_002` | `not_targeted` | 0.761 | 0.761 | 0.0 | False | no_op_shadow_tie_keep_current |
 | `example_003` | `missing_gold_api_in_top_k` | 0.7156 | 0.7156 | 0.0 | False | no_op_shadow_tie_keep_current |
-| `example_004` | `zero_score_margin` | 0.6744 | 0.6744 | 0.0 | True | safe_shadow_tie_recommend_canary |
+| `example_004` | `zero_score_margin` | 0.6744 | 0.6744 | 0.0 | False | safe_shadow_tie_keep_disabled |
 | `example_005` | `zero_score_margin` | 0.913 | 0.7472 | -0.1658 | False | keep_current_repair_selector_rejected |
 | `example_006` | `schema_vs_dataset_confusion` | 0.7272 | 0.7272 | 0.0 | False | no_op_shadow_tie_keep_current |
 | `example_007` | `schema_vs_dataset_confusion` | 0.6552 | 0.77 | 0.1148 | False | keep_current_repair_selector_rejected |
 | `example_008` | `not_targeted` | 0.7027 | 0.6902 | -0.0125 | False | keep_current_repair_selector_rejected |
 | `example_009` | `missing_gold_api_in_top_k` | 0.7576 | 0.7576 | 0.0 | False | no_op_shadow_tie_keep_current |
 | `example_010` | `zero_score_margin` | 0.7898 | 0.6496 | -0.1402 | False | keep_current_repair_selector_rejected |
-| `example_011` | `missing_gold_api_in_top_k` | 0.7455 | 0.6307 | -0.1148 | False | reject_score_regression |
+| `example_011` | `missing_gold_api_in_top_k` | 0.7455 | 0.6307 | -0.1148 | False | keep_current_repair_selector_rejected |
 | `example_012` | `missing_gold_api_in_top_k` | 0.7287 | 0.5629 | -0.1658 | False | keep_current_repair_selector_rejected |
 | `example_013` | `missing_gold_api_in_top_k` | 0.7149 | 0.5662 | -0.1487 | False | keep_current_repair_selector_rejected |
 | `example_014` | `not_targeted` | 0.7654 | 0.7654 | 0.0 | False | no_op_shadow_tie_keep_current |

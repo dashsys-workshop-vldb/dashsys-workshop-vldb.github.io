@@ -15,12 +15,12 @@
   "current_plan_sql": [
     "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B"
   ],
-  "current_runtime": 0.0103,
+  "current_runtime": 0.0102,
   "current_strict_score": 0.7455,
   "current_tokens": 832,
   "current_tool_calls": 2,
-  "decision": "reject_score_regression",
-  "decision_hash": "2a4ccc6ad56475bc",
+  "decision": "keep_current_repair_selector_rejected",
+  "decision_hash": "fc4f34dd667d83dd",
   "dry_run_only": true,
   "evidence_available": true,
   "execution_changed": false,
@@ -29,24 +29,29 @@
   "measured_accuracy_improvement_claimed": false,
   "measured_efficiency_improvement_claimed": false,
   "module_skipped_by_risk": [],
+  "offline_score_delta": -0.1148,
   "packaged_execution_changed": false,
   "query": "How many schemas do I have?",
   "query_id": "example_011",
-  "rejection_reason": "Repaired plan passed strict report-only selector gates.",
+  "rejection_reason": "Repair safety verifier did not pass.; Offline shadow strict score regressed by -0.1148; keep the current plan.; Offline shadow strict score regressed by -0.1148; this score gate is used only when offline_score_delta is present.",
   "repair_candidate_selector": {
     "behavior_changed": false,
     "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
     "diagnostic_only": true,
     "efficiency_role": "rejects repaired candidates with any tool-call increase",
-    "failed_checks": [],
+    "failed_checks": [
+      "safety_verifier",
+      "score_regression"
+    ],
     "no_op": false,
     "packaged_execution_changed": false,
     "reasons": [
-      "Repaired plan passed strict report-only selector gates."
+      "Repair safety verifier did not pass.",
+      "Offline shadow strict score regressed by -0.1148; keep the current plan."
     ],
-    "recommendation": "select_repaired_shadow_candidate",
-    "safe_to_select_repaired": true,
-    "selected_plan": "repaired"
+    "recommendation": "keep_current",
+    "safe_to_select_repaired": false,
+    "selected_plan": "current"
   },
   "repair_decision": {
     "changed": true,
@@ -69,7 +74,7 @@
   "repaired_plan_sql": [
     "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B"
   ],
-  "repaired_runtime": 0.0103,
+  "repaired_runtime": 0.0102,
   "repaired_strict_score": 0.6307,
   "repaired_tokens": 832,
   "repaired_tool_calls": 2,
@@ -119,11 +124,13 @@
     "confidence": 0.994,
     "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
     "efficiency_role": "rejects repairs that increase packaged tool-call cost",
-    "failed_checks": [],
-    "reasons": [
-      "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+    "failed_checks": [
+      "score_regression"
     ],
-    "safe": true,
+    "reasons": [
+      "Offline shadow strict score regressed by -0.1148; this score gate is used only when offline_score_delta is present."
+    ],
+    "safe": false,
     "sql_validation": {
       "ast_summaries": [
         {
@@ -198,7 +205,7 @@
   },
   "schema_vote_agreement": true,
   "score_delta": -0.1148,
-  "shadow_runtime": 0.013,
+  "shadow_runtime": 0.0106,
   "token_delta": 0,
   "token_saved_estimate": 0,
   "tool_delta": 0,

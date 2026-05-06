@@ -16,7 +16,7 @@
   "current_plan_sql": [
     "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAME\" AS target_name FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"CREATEDTIME\" >= DATEADD(MONTH, -3, CURRENT_DATE) LIMIT 3"
   ],
-  "current_runtime": 0.0134,
+  "current_runtime": 0.0125,
   "current_strict_score": 0.7287,
   "current_tokens": 1200,
   "current_tool_calls": 2,
@@ -30,10 +30,11 @@
   "measured_accuracy_improvement_claimed": false,
   "measured_efficiency_improvement_claimed": false,
   "module_skipped_by_risk": [],
+  "offline_score_delta": -0.1658,
   "packaged_execution_changed": false,
   "query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
   "query_id": "example_012",
-  "rejection_reason": "Repair safety verifier did not pass.; SQLGlot AST validation did not pass for the repaired SQL.; Unknown columns: MONTH",
+  "rejection_reason": "Repair safety verifier did not pass.; SQLGlot AST validation did not pass for the repaired SQL.; Offline shadow strict score regressed by -0.1658; keep the current plan.; Unknown columns: MONTH; Offline shadow strict score regressed by -0.1658; this score gate is used only when offline_score_delta is present.",
   "repair_candidate_selector": {
     "behavior_changed": false,
     "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
@@ -41,13 +42,15 @@
     "efficiency_role": "rejects repaired candidates with any tool-call increase",
     "failed_checks": [
       "safety_verifier",
+      "score_regression",
       "sql_ast_validation"
     ],
     "no_op": false,
     "packaged_execution_changed": false,
     "reasons": [
       "Repair safety verifier did not pass.",
-      "SQLGlot AST validation did not pass for the repaired SQL."
+      "SQLGlot AST validation did not pass for the repaired SQL.",
+      "Offline shadow strict score regressed by -0.1658; keep the current plan."
     ],
     "recommendation": "keep_current",
     "safe_to_select_repaired": false,
@@ -75,7 +78,7 @@
   "repaired_plan_sql": [
     "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAME\" AS target_name FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"CREATEDTIME\" >= DATEADD(MONTH, -3, CURRENT_DATE) LIMIT 3"
   ],
-  "repaired_runtime": 0.0134,
+  "repaired_runtime": 0.0125,
   "repaired_strict_score": 0.5629,
   "repaired_tokens": 1200,
   "repaired_tool_calls": 2,
@@ -126,10 +129,12 @@
     "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
     "efficiency_role": "rejects repairs that increase packaged tool-call cost",
     "failed_checks": [
+      "score_regression",
       "sql_validation"
     ],
     "reasons": [
-      "Unknown columns: MONTH"
+      "Unknown columns: MONTH",
+      "Offline shadow strict score regressed by -0.1658; this score gate is used only when offline_score_delta is present."
     ],
     "safe": false,
     "sql_validation": {
@@ -226,7 +231,7 @@
   },
   "schema_vote_agreement": true,
   "score_delta": -0.1658,
-  "shadow_runtime": 0.0135,
+  "shadow_runtime": 0.0074,
   "token_delta": 0,
   "token_saved_estimate": 0,
   "tool_delta": 0,

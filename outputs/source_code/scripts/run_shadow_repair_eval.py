@@ -183,8 +183,6 @@ def _evaluate_example(config: Config, executor: AgentExecutor, example: EvalExam
             "dry_run_only": bool(repaired_api and executor.api_client.dry_run),
         }
     )
-    safety = verify_repair_safety(current_plan, repaired_plan, trajectory, executor.schema_index, executor.endpoint_catalog)
-    selector = select_repair_candidate(current_plan, repaired_plan, safety, context, schema_vote)
     current_scores = _score_plan(executor, trajectory, current_sql, current_api, example)
     repaired_scores = _score_plan(executor, trajectory, current_sql, repaired_api, example)
     elapsed = time.perf_counter() - start
@@ -192,9 +190,12 @@ def _evaluate_example(config: Config, executor: AgentExecutor, example: EvalExam
     tool_delta = int(repaired_scores["tool_call_count"]) - int(current_scores["tool_call_count"])
     token_delta = int(repaired_scores["estimated_tokens"]) - int(current_scores["estimated_tokens"])
     runtime_delta = round(float(repaired_scores["runtime"]) - float(current_scores["runtime"]), 4)
+    repaired_plan["offline_score_delta"] = score_delta
+    safety = verify_repair_safety(current_plan, repaired_plan, trajectory, executor.schema_index, executor.endpoint_catalog)
+    selector = select_repair_candidate(current_plan, repaired_plan, safety, context, schema_vote)
     safe_to_enable = bool(
         selector.get("safe_to_select_repaired")
-        and score_delta >= 0
+        and score_delta > 0
         and tool_delta <= 0
         and token_delta <= max(1, int(current_scores["estimated_tokens"] * 0.10))
         and runtime_delta <= max(0.001, float(current_scores["runtime"]) * 0.20)
@@ -213,6 +214,7 @@ def _evaluate_example(config: Config, executor: AgentExecutor, example: EvalExam
         "current_strict_score": current_scores["final_score"],
         "repaired_strict_score": repaired_scores["final_score"],
         "score_delta": score_delta,
+        "offline_score_delta": score_delta,
         "current_tool_calls": current_scores["tool_call_count"],
         "repaired_tool_calls": repaired_scores["tool_call_count"],
         "tool_delta": tool_delta,
@@ -455,7 +457,7 @@ def _decision_label(
     if safe_to_enable:
         if score_delta > 0:
             return "safe_shadow_improvement_recommend_canary"
-        return "safe_shadow_tie_recommend_canary"
+        return "safe_shadow_tie_keep_disabled"
     if selector and selector.get("safe_to_select_repaired") is False:
         return "keep_current_repair_selector_rejected"
     if not safety.get("safe"):
@@ -466,6 +468,8 @@ def _decision_label(
         return "reject_efficiency_regression"
     if score_delta < 0:
         return "reject_score_regression"
+    if safety.get("safe") and selector and selector.get("safe_to_select_repaired") and score_delta == 0:
+        return "safe_shadow_tie_keep_disabled"
     return "diagnostic_only_no_enablement"
 
 
@@ -522,26 +526,59 @@ def build_cluster_canary_recommendations(rows: list[dict[str, Any]]) -> dict[str
         better = [row for row in cluster_rows if float(row.get("score_delta") or 0.0) > 0]
         equal = [row for row in cluster_rows if float(row.get("score_delta") or 0.0) == 0]
         worse = [row for row in cluster_rows if float(row.get("score_delta") or 0.0) < 0]
+        safety_safe = [row for row in cluster_rows if (row.get("safety_verdict") or {}).get("safe") is True]
+        safe_worse = [row for row in safety_safe if float(row.get("score_delta") or 0.0) < 0]
+        safe_avg_score = _avg(row.get("score_delta") for row in safety_safe)
         avg_score = _avg(row.get("score_delta") for row in cluster_rows)
         avg_tool = _avg(row.get("tool_delta") for row in cluster_rows)
         avg_token = _avg(row.get("token_delta") for row in cluster_rows)
         avg_runtime = _avg(row.get("runtime_delta") for row in cluster_rows)
         all_safe = bool(cluster_rows) and all(row.get("repair_safe_to_enable") for row in cluster_rows)
+        behavior_flags_disabled = all(not row.get("behavior_changing_flags_enabled") for row in cluster_rows)
         recommended_flag = CLUSTER_FLAGS.get(cluster)
-        gates_pass = bool(recommended_flag) and len(worse) == 0 and avg_score >= 0 and avg_tool <= 0 and avg_token <= 0 and avg_runtime <= 0 and all_safe
+        gates_pass = (
+            bool(recommended_flag)
+            and len(better) > 0
+            and len(worse) == 0
+            and len(safe_worse) == 0
+            and safe_avg_score >= 0
+            and avg_score >= 0
+            and avg_tool <= 0
+            and avg_token <= 0
+            and avg_runtime <= 0
+            and all_safe
+            and behavior_flags_disabled
+        )
         recommendations[cluster] = {
             "shadow_eval_rows": len(cluster_rows),
             "repaired_better_count": len(better),
             "repaired_equal_count": len(equal),
             "repaired_worse_count": len(worse),
+            "safe_repaired_worse_count": len(safe_worse),
+            "safe_avg_score_delta": safe_avg_score,
             "avg_score_delta": avg_score,
             "avg_tool_call_delta": avg_tool,
             "avg_token_delta": avg_token,
             "avg_runtime_delta": avg_runtime,
+            "strictly_better_row_count": len(better),
+            "behavior_changing_flags_disabled": behavior_flags_disabled,
             "safe_to_enable_canary": gates_pass,
             "recommended_flag": recommended_flag,
             "recommendation": "recommend_canary_enablement" if gates_pass else "keep_disabled",
-            "rejection_reason": "" if gates_pass else _cluster_rejection_reason(cluster, cluster_rows, worse, avg_score, avg_tool, avg_token, avg_runtime, all_safe),
+            "rejection_reason": "" if gates_pass else _cluster_rejection_reason(
+                cluster,
+                cluster_rows,
+                worse,
+                avg_score,
+                avg_tool,
+                avg_token,
+                avg_runtime,
+                all_safe,
+                safe_worse=safe_worse,
+                safe_avg_score=safe_avg_score,
+                better=better,
+                behavior_flags_disabled=behavior_flags_disabled,
+            ),
         }
     return recommendations
 
@@ -741,13 +778,26 @@ def _cluster_rejection_reason(
     avg_token: float,
     avg_runtime: float,
     all_safe: bool,
+    *,
+    safe_worse: list[dict[str, Any]] | None = None,
+    safe_avg_score: float = 0.0,
+    better: list[dict[str, Any]] | None = None,
+    behavior_flags_disabled: bool = True,
 ) -> str:
+    safe_worse = safe_worse or []
+    better = better or []
     if not rows:
         return "No shadow rows for this cluster."
     if not CLUSTER_FLAGS.get(cluster):
         return "No canary flag is defined for this broad diagnostic cluster."
+    if not better:
+        return "No repaired row is strictly better; ties are kept disabled."
     if worse:
         return "At least one repaired row scored worse."
+    if safe_worse:
+        return "At least one row marked safe by the verifier scored worse."
+    if safe_avg_score < 0:
+        return "Safe repaired rows have a negative average score delta."
     if avg_score < 0:
         return "Average score delta is negative."
     if avg_tool > 0:
@@ -758,6 +808,8 @@ def _cluster_rejection_reason(
         return "Average runtime delta is positive."
     if not all_safe:
         return "One or more rows failed the repair safety verifier."
+    if not behavior_flags_disabled:
+        return "Behavior-changing flags were enabled; this pass is report-only."
     return "Cluster canary gates did not pass."
 
 

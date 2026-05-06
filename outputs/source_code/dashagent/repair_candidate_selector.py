@@ -62,6 +62,14 @@ def select_repair_candidate(
         failed.append("dry_run_live_evidence")
         reasons.append("Dry-run API was marked as live evidence.")
 
+    if "offline_score_delta" in repaired_plan:
+        offline_score_delta = float(repaired_plan.get("offline_score_delta") or 0.0)
+        if offline_score_delta < 0:
+            failed.append("score_regression")
+            reasons.append(
+                f"Offline shadow strict score regressed by {offline_score_delta:.4f}; keep the current plan."
+            )
+
     safe_to_select = not failed
     if safe_to_select:
         reasons.append("Repaired plan passed strict report-only selector gates.")

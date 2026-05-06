@@ -9,7 +9,7 @@ Status: **no measured strict-score improvement**.
 | strict_final_score | 0.649 | 0.6486 | -0.0004 |
 | strict_correctness | 0.6743 | 0.6743 | 0.0 |
 | estimated_tokens | 851.7714 | 899.2286 | 47.4572 |
-| runtime | 0.0102 | 0.0115 | 0.0013 |
+| runtime | 0.0102 | 0.0117 | 0.0015 |
 | tool_calls | 1.4571 | 1.4571 | 0.0 |
 
 ## Gate Results
@@ -17,7 +17,7 @@ Status: **no measured strict-score improvement**.
 - Packaged preferred strategy: `SQL_FIRST_API_VERIFY`
 - Strict score regression gate OK: True
 - Estimated-token overhead: 5.57% (gate OK: True)
-- Runtime overhead: 12.75% (gate OK: True)
+- Runtime overhead: 14.71% (gate OK: True)
 - Tool-call delta: 0.0 (gate OK: True)
 - Value retrieval budget: 250 ms (budget OK: True)
 - Value retrieval cache key algorithm: `sha256` (reproducible: True)
@@ -27,7 +27,7 @@ Status: **no measured strict-score improvement**.
 - Ranking-only no score claim: True
 - Shadow repair eval ran: True
 - Shadow repair execution enabled: False
-- Shadow repaired better/equal/worse/unsafe: 1/26/8/34
+- Shadow repaired better/equal/worse/unsafe: 1/26/8/35
 - Risk level distribution: {'high': 28, 'low': 2, 'medium': 5}
 - Risk-controller estimated token savings total: 1848.0 (estimated only: True)
 - Risk-controller estimated runtime savings total ms: 175.0 (measured efficiency improvement claimed: False)

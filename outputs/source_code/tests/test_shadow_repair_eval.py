@@ -10,6 +10,8 @@ from pathlib import Path
 from dashagent.executor import AgentExecutor
 from scripts.run_shadow_repair_eval import (
     _decision_label,
+    build_paired_summary,
+    build_cluster_canary_recommendations,
     build_schema_dataset_repair_analysis,
     decision_hash,
     run_shadow_repair_eval,
@@ -62,6 +64,71 @@ def test_no_op_shadow_tie_keeps_current_and_never_recommends_canary():
     assert decision == "no_op_shadow_tie_keep_current"
 
 
+def test_safe_shadow_tie_label_keeps_disabled():
+    decision = _decision_label(
+        0.0,
+        {"safe": True},
+        0,
+        0,
+        0.0,
+        True,
+        {"no_op": False, "safe_to_select_repaired": True},
+    )
+
+    assert decision == "safe_shadow_tie_keep_disabled"
+
+
+def test_safe_only_aggregates_use_safety_verdict_and_count_failures():
+    summary = build_paired_summary(
+        [
+            {"score_delta": 0.2, "tool_delta": 0, "runtime_delta": 0, "token_delta": 0, "safety_verdict": {"safe": True}},
+            {"score_delta": -0.1, "tool_delta": 1, "runtime_delta": 0, "token_delta": 0, "safety_verdict": {"safe": False, "failed_checks": ["api_validation"]}},
+            {"score_delta": 0.0, "tool_delta": 0, "runtime_delta": 0, "token_delta": 0, "safety_verdict": {"safe": False, "failed_checks": ["api_validation", "fusion_agreement"]}},
+        ]
+    )
+
+    assert summary["safe_repaired_better_count"] == 1
+    assert summary["safe_repaired_equal_count"] == 0
+    assert summary["safe_repaired_worse_count"] == 0
+    assert summary["unsafe_failure_reason_counts"] == {"api_validation": 2, "fusion_agreement": 1}
+
+
+def test_cluster_canary_requires_strict_improvement_and_no_safe_worse():
+    tie_only = build_cluster_canary_recommendations(
+        [
+            {
+                "risk_cluster": "zero_score_margin",
+                "score_delta": 0.0,
+                "tool_delta": 0,
+                "token_delta": 0,
+                "runtime_delta": 0,
+                "repair_safe_to_enable": True,
+                "safety_verdict": {"safe": True},
+                "behavior_changing_flags_enabled": False,
+            }
+        ]
+    )
+    safe_worse = build_cluster_canary_recommendations(
+        [
+            {
+                "risk_cluster": "zero_score_margin",
+                "score_delta": -0.1,
+                "tool_delta": 0,
+                "token_delta": 0,
+                "runtime_delta": 0,
+                "repair_safe_to_enable": True,
+                "safety_verdict": {"safe": True},
+                "behavior_changing_flags_enabled": False,
+            }
+        ]
+    )
+
+    assert tie_only["zero_score_margin"]["safe_to_enable_canary"] is False
+    assert "strictly better" in tie_only["zero_score_margin"]["rejection_reason"]
+    assert safe_worse["zero_score_margin"]["safe_to_enable_canary"] is False
+    assert safe_worse["zero_score_margin"]["safe_repaired_worse_count"] == 1
+
+
 def test_schema_dataset_repair_analysis_marks_failure_type_and_signal():
     analysis = build_schema_dataset_repair_analysis(
         [
@@ -97,6 +164,27 @@ def test_shadow_eval_does_not_change_packaged_sql_first_execution(tiny_project):
     assert before["trajectory"]["tool_call_count"] == after["trajectory"]["tool_call_count"]
     assert before["final_answer"] == after["final_answer"]
     assert before["trajectory"].keys() == after["trajectory"].keys()
+
+
+def test_offline_score_delta_is_shadow_only_and_not_packaged_outputs(tiny_project):
+    _ = run_shadow_repair_eval(tiny_project)
+    AgentExecutor(tiny_project).run(
+        "How many campaigns are there?",
+        strategy="SQL_FIRST_API_VERIFY",
+        query_id="offline_boundary",
+        output_dir=tiny_project.outputs_dir / "eval" / "offline_boundary" / "sql_first_api_verify",
+    )
+    final_submission = tiny_project.outputs_dir / "final_submission" / "query_001"
+    final_submission.mkdir(parents=True, exist_ok=True)
+    (final_submission / "trajectory.json").write_text(
+        '{"strategy":"SQL_FIRST_API_VERIFY","tool_call_count":1}',
+        encoding="utf-8",
+    )
+
+    for root in [tiny_project.outputs_dir / "eval", tiny_project.outputs_dir / "final_submission"]:
+        for path in root.rglob("*.json"):
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            assert not _json_contains_key_or_string(payload, "offline_score_delta")
 
 
 def test_shadow_script_artifact_isolation_exact_paths(tiny_project):
@@ -188,3 +276,13 @@ def _hash_tree(root: Path) -> dict[str, str]:
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         hashes[str(path.relative_to(root))] = digest
     return hashes
+
+
+def _json_contains_key_or_string(value, needle: str) -> bool:
+    if isinstance(value, dict):
+        return any(key == needle or _json_contains_key_or_string(item, needle) for key, item in value.items())
+    if isinstance(value, list):
+        return any(_json_contains_key_or_string(item, needle) for item in value)
+    if isinstance(value, str):
+        return value == needle
+    return False
