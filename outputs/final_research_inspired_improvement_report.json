@@ -311,14 +311,14 @@
   },
   "current": {
     "estimated_tokens": 899.2286,
-    "runtime": 0.0111,
+    "runtime": 0.0114,
     "strict_correctness": 0.6743,
     "strict_final_score": 0.6486,
     "tool_calls": 1.4571
   },
   "delta": {
     "estimated_tokens": 47.4572,
-    "runtime": 0.0009,
+    "runtime": 0.0012,
     "strict_correctness": 0.0,
     "strict_final_score": -0.0004,
     "tool_calls": 0.0
@@ -356,6 +356,7 @@
     "Schema context voting compares compact and broader context for high-risk diagnostics only and does not change executed SQL/API plans.",
     "Compact-context measured eval is experimental only and does not update official packaged scores or submission metrics.",
     "Official-token reduction eval is experimental only and does not update official packaged scores or submission metrics.",
+    "Official-token reduction canary is isolated and does not update official packaged scores or submission metrics.",
     "SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.",
     "No live API evidence is fabricated; Adobe API remains dry-run without credentials.",
     "Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.",
@@ -418,6 +419,48 @@
       "total_estimated_component_tokens": 223944
     },
     "notes": []
+  },
+  "official_token_reduction_canary": {
+    "artifact_isolation": {
+      "allowed_outputs": [
+        "outputs/official_token_reduction_canary.json",
+        "outputs/official_token_reduction_canary.md",
+        "outputs/official_token_reduction_canary/"
+      ],
+      "canary_output_root": "outputs/official_token_reduction_canary/<query_id>/sql_first_api_verify/",
+      "writes_eval_outputs": false,
+      "writes_final_submission": false,
+      "writes_packaged_query_outputs": false
+    },
+    "notes": [
+      "This is a canary evaluation, not a packaged submission change.",
+      "ENABLE_OFFICIAL_TOKEN_REDUCTION remains default false.",
+      "Packaged SQL_FIRST_API_VERIFY outputs are unchanged when protected hashes match.",
+      "No official packaged efficiency improvement is claimed yet.",
+      "Promotion requires a separate explicit task after this canary passes."
+    ],
+    "protected_output_hashes_unchanged": true,
+    "summary": {
+      "answer_changed_count": 0,
+      "api_changed_count": 0,
+      "avg_runtime_delta": 0.0012,
+      "avg_score_delta": 0.0006,
+      "avg_token_delta": -67.7714,
+      "avg_tool_delta": 0.0,
+      "dry_run_label_failure_count": 0,
+      "formula_failure_count": 0,
+      "live_api_evidence_fabricated_count": 0,
+      "official_packaged_efficiency_improvement_claimed": false,
+      "packaged_execution_changed": false,
+      "protected_output_hashes_unchanged": true,
+      "recommendation": "safe_for_packaged_flag_trial",
+      "required_field_failure_count": 0,
+      "safe_rows": 35,
+      "sql_changed_count": 0,
+      "strict_scorer_failure_count": 0,
+      "total_rows": 35,
+      "unsafe_rows": 0
+    }
   },
   "official_token_reduction_eval": {
     "artifact_isolation": {
@@ -835,6 +878,16 @@
     "official_token_expected_savings_estimate": 5258,
     "official_token_reduction_avg_score_delta": 0.0006,
     "official_token_reduction_avg_token_delta": -67.7714,
+    "official_token_reduction_canary_avg_score_delta": 0.0006,
+    "official_token_reduction_canary_avg_token_delta": -67.7714,
+    "official_token_reduction_canary_feature_flag_default": false,
+    "official_token_reduction_canary_official_efficiency_claimed": false,
+    "official_token_reduction_canary_packaged_execution_changed": false,
+    "official_token_reduction_canary_protected_hashes_unchanged": true,
+    "official_token_reduction_canary_ran": true,
+    "official_token_reduction_canary_recommendation": "safe_for_packaged_flag_trial",
+    "official_token_reduction_canary_safe_rows": 35,
+    "official_token_reduction_canary_unsafe_rows": 0,
     "official_token_reduction_eval_ran": true,
     "official_token_reduction_feature_flag_default": false,
     "official_token_reduction_official_efficiency_claimed": false,
@@ -902,7 +955,7 @@
       "medium": 5
     },
     "runtime_gate_ok": true,
-    "runtime_overhead_pct": 0.0882,
+    "runtime_overhead_pct": 0.1176,
     "schema_vote_active_count": 28,
     "schema_vote_agreement_count": 28,
     "shadow_repair_better_count": 1,

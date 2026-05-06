@@ -41,6 +41,7 @@ REQUIRED_PATHS = [
     "scripts/run_compact_context_shadow_eval.py",
     "scripts/run_compact_context_measured_eval.py",
     "scripts/run_official_token_reduction_eval.py",
+    "scripts/run_official_token_reduction_canary.py",
     "scripts/run_risk_efficiency_shadow_eval.py",
     "scripts/tune_thresholds.py",
     "scripts/run_robustness_eval.py",

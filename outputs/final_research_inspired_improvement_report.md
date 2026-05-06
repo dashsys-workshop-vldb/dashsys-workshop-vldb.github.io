@@ -9,7 +9,7 @@ Status: **no measured strict-score improvement**.
 | strict_final_score | 0.649 | 0.6486 | -0.0004 |
 | strict_correctness | 0.6743 | 0.6743 | 0.0 |
 | estimated_tokens | 851.7714 | 899.2286 | 47.4572 |
-| runtime | 0.0102 | 0.0111 | 0.0009 |
+| runtime | 0.0102 | 0.0114 | 0.0012 |
 | tool_calls | 1.4571 | 1.4571 | 0.0 |
 
 ## Gate Results
@@ -17,7 +17,7 @@ Status: **no measured strict-score improvement**.
 - Packaged preferred strategy: `SQL_FIRST_API_VERIFY`
 - Strict score regression gate OK: True
 - Estimated-token overhead: 5.57% (gate OK: True)
-- Runtime overhead: 8.82% (gate OK: True)
+- Runtime overhead: 11.76% (gate OK: True)
 - Tool-call delta: 0.0 (gate OK: True)
 - Value retrieval budget: 250 ms (budget OK: True)
 - Value retrieval cache key algorithm: `sha256` (reproducible: True)
@@ -51,6 +51,11 @@ Status: **no measured strict-score improvement**.
 - Official token reduction changed packaged execution: False
 - Official token reduction feature flag default: False
 - Official token reduction official efficiency claim: False
+- Official token reduction canary ran: True (safe rows: 35; unsafe rows: 0; avg token delta: -67.7714; avg score delta: 0.0006; recommendation: safe_for_packaged_flag_trial)
+- Official token reduction canary protected output hashes unchanged: True
+- Official token reduction canary changed packaged execution: False
+- Official token reduction canary feature flag default: False
+- Official token reduction canary official efficiency claim: False
 - Risk-efficiency shadow eval rows: 7 (avg token delta: -264.0; avg runtime delta: -0.025; measured efficiency improvement claimed: False)
 - Secret scan OK: True
 - Visualization artifacts directory: `/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/visualizations`
@@ -146,6 +151,7 @@ Execution repair remains disabled by default. These recommendations are offline 
 - Schema context voting compares compact and broader context for high-risk diagnostics only and does not change executed SQL/API plans.
 - Compact-context measured eval is experimental only and does not update official packaged scores or submission metrics.
 - Official-token reduction eval is experimental only and does not update official packaged scores or submission metrics.
+- Official-token reduction canary is isolated and does not update official packaged scores or submission metrics.
 - SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.
 - No live API evidence is fabricated; Adobe API remains dry-run without credentials.
 - Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.

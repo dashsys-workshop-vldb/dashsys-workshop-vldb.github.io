@@ -51,6 +51,7 @@ def generate_report(config: Config) -> dict[str, Any]:
     compact_measured_report = _load_json(config.outputs_dir / "compact_context_measured_eval.json")
     official_token_accounting_report = _load_json(config.outputs_dir / "official_token_accounting_report.json")
     official_token_reduction_report = _load_json(config.outputs_dir / "official_token_reduction_eval.json")
+    official_token_reduction_canary_report = _load_json(config.outputs_dir / "official_token_reduction_canary.json")
     risk_shadow_report = _load_json(config.outputs_dir / "risk_efficiency_shadow_eval.json")
     current = strict.get("summary", {}).get("by_strategy", {}).get("SQL_FIRST_API_VERIFY", {})
     final_score = current.get("avg_final_score", 0.0)
@@ -180,6 +181,16 @@ def generate_report(config: Config) -> dict[str, Any]:
             "official_token_reduction_packaged_execution_changed": official_token_reduction_report.get("summary", {}).get("packaged_execution_changed", False),
             "official_token_reduction_feature_flag_default": official_token_reduction_report.get("feature_flag_default", config.enable_official_token_reduction),
             "official_token_reduction_official_efficiency_claimed": official_token_reduction_report.get("summary", {}).get("official_measured_efficiency_improvement_claimed", False),
+            "official_token_reduction_canary_ran": bool(official_token_reduction_canary_report.get("rows")),
+            "official_token_reduction_canary_safe_rows": official_token_reduction_canary_report.get("summary", {}).get("safe_rows", 0),
+            "official_token_reduction_canary_unsafe_rows": official_token_reduction_canary_report.get("summary", {}).get("unsafe_rows", 0),
+            "official_token_reduction_canary_avg_token_delta": official_token_reduction_canary_report.get("summary", {}).get("avg_token_delta"),
+            "official_token_reduction_canary_avg_score_delta": official_token_reduction_canary_report.get("summary", {}).get("avg_score_delta"),
+            "official_token_reduction_canary_recommendation": official_token_reduction_canary_report.get("summary", {}).get("recommendation", "not_run"),
+            "official_token_reduction_canary_protected_hashes_unchanged": official_token_reduction_canary_report.get("summary", {}).get("protected_output_hashes_unchanged", False),
+            "official_token_reduction_canary_packaged_execution_changed": official_token_reduction_canary_report.get("summary", {}).get("packaged_execution_changed", False),
+            "official_token_reduction_canary_feature_flag_default": official_token_reduction_canary_report.get("feature_flag_default", config.enable_official_token_reduction),
+            "official_token_reduction_canary_official_efficiency_claimed": official_token_reduction_canary_report.get("summary", {}).get("official_packaged_efficiency_improvement_claimed", False),
             "risk_efficiency_shadow_eval_ran": bool(risk_shadow_report.get("rows")),
             "risk_efficiency_shadow_row_count": risk_shadow_report.get("summary", {}).get("row_count", 0),
             "risk_efficiency_shadow_avg_token_delta": risk_shadow_report.get("summary", {}).get("avg_token_delta"),
@@ -236,6 +247,12 @@ def generate_report(config: Config) -> dict[str, Any]:
             "artifact_isolation": official_token_reduction_report.get("artifact_isolation", {}),
             "notes": official_token_reduction_report.get("notes", []),
         },
+        "official_token_reduction_canary": {
+            "summary": official_token_reduction_canary_report.get("summary", {}),
+            "artifact_isolation": official_token_reduction_canary_report.get("artifact_isolation", {}),
+            "protected_output_hashes_unchanged": official_token_reduction_canary_report.get("protected_output_hashes_unchanged"),
+            "notes": official_token_reduction_canary_report.get("notes", []),
+        },
         "risk_efficiency_shadow_eval": {
             "summary": risk_shadow_report.get("summary", {}),
             "artifact_isolation": risk_shadow_report.get("artifact_isolation", {}),
@@ -252,6 +269,7 @@ def generate_report(config: Config) -> dict[str, Any]:
             "Schema context voting compares compact and broader context for high-risk diagnostics only and does not change executed SQL/API plans.",
             "Compact-context measured eval is experimental only and does not update official packaged scores or submission metrics.",
             "Official-token reduction eval is experimental only and does not update official packaged scores or submission metrics.",
+            "Official-token reduction canary is isolated and does not update official packaged scores or submission metrics.",
             "SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.",
             "No live API evidence is fabricated; Adobe API remains dry-run without credentials.",
             "Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.",
@@ -351,6 +369,20 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"{report['summary']['official_token_reduction_feature_flag_default']}",
             f"- Official token reduction official efficiency claim: "
             f"{report['summary']['official_token_reduction_official_efficiency_claimed']}",
+            f"- Official token reduction canary ran: {report['summary']['official_token_reduction_canary_ran']} "
+            f"(safe rows: {report['summary']['official_token_reduction_canary_safe_rows']}; "
+            f"unsafe rows: {report['summary']['official_token_reduction_canary_unsafe_rows']}; "
+            f"avg token delta: {report['summary']['official_token_reduction_canary_avg_token_delta']}; "
+            f"avg score delta: {report['summary']['official_token_reduction_canary_avg_score_delta']}; "
+            f"recommendation: {report['summary']['official_token_reduction_canary_recommendation']})",
+            f"- Official token reduction canary protected output hashes unchanged: "
+            f"{report['summary']['official_token_reduction_canary_protected_hashes_unchanged']}",
+            f"- Official token reduction canary changed packaged execution: "
+            f"{report['summary']['official_token_reduction_canary_packaged_execution_changed']}",
+            f"- Official token reduction canary feature flag default: "
+            f"{report['summary']['official_token_reduction_canary_feature_flag_default']}",
+            f"- Official token reduction canary official efficiency claim: "
+            f"{report['summary']['official_token_reduction_canary_official_efficiency_claimed']}",
             f"- Risk-efficiency shadow eval rows: {report['summary']['risk_efficiency_shadow_row_count']} "
             f"(avg token delta: {report['summary']['risk_efficiency_shadow_avg_token_delta']}; "
             f"avg runtime delta: {report['summary']['risk_efficiency_shadow_avg_runtime_delta']}; "

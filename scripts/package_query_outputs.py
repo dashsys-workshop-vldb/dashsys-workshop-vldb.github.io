@@ -20,6 +20,7 @@ REQUIRED_QUERY_FILES = ["metadata.json", "filled_system_prompt.txt", "trajectory
 NON_SUBMISSION_OUTPUT_DIRS = {
     "compact_context_measured_eval",
     "official_token_reduction_eval",
+    "official_token_reduction_canary",
     "shadow_repair_eval",
     "visualizations",
     "final_submission",

@@ -17,6 +17,13 @@ from dashagent.token_reduction_policy import (
     official_estimated_tokens,
 )
 from scripts.generate_official_token_accounting_report import generate_official_token_accounting_report
+from scripts.package_query_outputs import NON_SUBMISSION_OUTPUT_DIRS, discover_query_output_dirs
+from scripts.run_official_token_reduction_canary import (
+    _canary_safe,
+    _summary as _canary_summary,
+    protected_output_hash_snapshot,
+    run_official_token_reduction_canary,
+)
 from scripts.run_official_token_reduction_eval import (
     REQUIRED_ROW_FIELDS,
     _reduction_safe,
@@ -146,6 +153,64 @@ def test_official_token_reduction_script_writes_only_allowed_outputs(tiny_projec
     assert not (outputs / "final_submission").exists()
 
 
+def test_official_token_reduction_canary_isolated_and_hash_protected(tiny_project):
+    _write_official_token_inputs(tiny_project)
+    final_submission = tiny_project.outputs_dir / "final_submission"
+    final_submission.mkdir(parents=True)
+    (final_submission / "manifest.json").write_text(json.dumps({"preferred_strategy": "SQL_FIRST_API_VERIFY"}), encoding="utf-8")
+    before_final_submission_hash = _tree_hash(final_submission)
+    before_hashes = protected_output_hash_snapshot(tiny_project)
+
+    payload = run_official_token_reduction_canary(tiny_project)
+
+    assert payload["feature_flag_default"] is False
+    assert payload["feature_flag_enabled_for_canary"] is True
+    assert payload["packaged_execution_changed"] is False
+    assert payload["protected_output_hashes_unchanged"] is True
+    assert payload["protected_output_hashes_before"] == before_hashes
+    assert payload["protected_output_hashes_after"] == protected_output_hash_snapshot(tiny_project)
+    assert payload["summary"]["total_rows"] == 1
+    row = payload["rows"][0]
+    assert row["canary_formula_matches"] is True
+    assert row["strict_scorer_check_passed"] is True
+    assert row["required_fields_preserved"] is True
+    assert row["live_api_evidence_fabricated"] is False
+    assert (tiny_project.outputs_dir / "official_token_reduction_canary" / "tiny_001" / "sql_first_api_verify" / "trajectory.json").exists()
+    assert not (tiny_project.outputs_dir / "eval").exists()
+    assert _tree_hash(final_submission) == before_final_submission_hash
+
+
+def test_official_token_reduction_canary_script_writes_only_allowed_outputs(tiny_project):
+    _write_official_token_inputs(tiny_project)
+    env = os.environ.copy()
+    env.update(
+        {
+            "DASHAGENT_ROOT": str(tiny_project.project_root),
+            "DASHAGENT_DATA_DIR": str(tiny_project.data_dir),
+            "DASHAGENT_DBSNAPSHOT_DIR": str(tiny_project.dbsnapshot_dir),
+            "DASHAGENT_DATA_JSON": str(tiny_project.data_json_path),
+            "DASHAGENT_OUTPUTS_DIR": str(tiny_project.outputs_dir),
+            "DASHAGENT_PROMPTS_DIR": str(tiny_project.prompts_dir),
+        }
+    )
+    root = Path(__file__).resolve().parents[1]
+    result = subprocess.run(
+        [sys.executable, str(root / "scripts" / "run_official_token_reduction_canary.py")],
+        cwd=root,
+        env=env,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    outputs = tiny_project.outputs_dir
+    assert (outputs / "official_token_reduction_canary.json").exists()
+    assert (outputs / "official_token_reduction_canary.md").exists()
+    assert (outputs / "official_token_reduction_canary" / "tiny_001" / "sql_first_api_verify" / "trajectory.json").exists()
+    assert not (outputs / "eval").exists()
+    assert not (outputs / "final_submission").exists()
+
+
 def test_reduction_safe_to_enable_requires_all_gates():
     safe_row = {
         "score_delta": 0.0,
@@ -177,6 +242,90 @@ def test_reduction_safe_to_enable_requires_all_gates():
         row = dict(safe_row)
         row[key] = value
         assert _reduction_safe(row)[0] is False
+
+
+def test_canary_safe_to_promote_requires_all_gates():
+    safe_row = {
+        "score_delta": 0.0,
+        "token_delta": -5,
+        "tool_delta": 0,
+        "final_answer_changed": False,
+        "sql_changed": False,
+        "api_changed": False,
+        "required_fields_preserved": True,
+        "dry_run_labels_preserved": True,
+        "live_api_evidence_fabricated": False,
+        "canary_formula_matches": True,
+        "strict_scorer_check_passed": True,
+        "protected_hashes_unchanged": True,
+    }
+    assert _canary_safe(safe_row)[0] is True
+
+    for key, value in [
+        ("score_delta", -0.1),
+        ("token_delta", 0),
+        ("tool_delta", 1),
+        ("final_answer_changed", True),
+        ("sql_changed", True),
+        ("api_changed", True),
+        ("required_fields_preserved", False),
+        ("dry_run_labels_preserved", False),
+        ("live_api_evidence_fabricated", True),
+        ("canary_formula_matches", False),
+        ("strict_scorer_check_passed", False),
+        ("protected_hashes_unchanged", False),
+    ]:
+        row = dict(safe_row)
+        row[key] = value
+        assert _canary_safe(row)[0] is False
+
+
+def test_canary_summary_recommends_trial_only_when_all_gates_pass():
+    safe_row = {
+        "canary_safe_to_promote": True,
+        "score_delta": 0.0,
+        "token_delta": -5,
+        "runtime_delta": 0.0,
+        "tool_delta": 0,
+        "final_answer_changed": False,
+        "sql_changed": False,
+        "api_changed": False,
+        "required_fields_preserved": True,
+        "dry_run_labels_preserved": True,
+        "live_api_evidence_fabricated": False,
+        "canary_formula_matches": True,
+        "strict_scorer_check_passed": True,
+    }
+
+    assert _canary_summary([safe_row], protected_unchanged=True)["recommendation"] == "safe_for_packaged_flag_trial"
+    row = dict(safe_row)
+    row["canary_safe_to_promote"] = False
+    row["token_delta"] = 0
+    assert _canary_summary([row], protected_unchanged=True)["recommendation"] == "unsafe_do_not_enable"
+    assert _canary_summary([safe_row], protected_unchanged=False)["recommendation"] == "unsafe_do_not_enable"
+    assert _canary_summary([], protected_unchanged=True)["recommendation"] == "keep_default_off"
+
+
+def test_official_token_canary_is_excluded_from_query_packaging(tiny_project):
+    canary_dir = tiny_project.outputs_dir / "official_token_reduction_canary" / "tiny_001" / "sql_first_api_verify"
+    canary_dir.mkdir(parents=True)
+    (canary_dir / "metadata.json").write_text("{}", encoding="utf-8")
+    (canary_dir / "filled_system_prompt.txt").write_text("prompt", encoding="utf-8")
+    (canary_dir / "trajectory.json").write_text(
+        json.dumps({"query_id": "tiny_001", "strategy": "SQL_FIRST_API_VERIFY", "final_answer": "x", "tool_call_count": 1, "runtime": 0.0, "estimated_tokens": 1}),
+        encoding="utf-8",
+    )
+
+    assert "official_token_reduction_canary" in NON_SUBMISSION_OUTPUT_DIRS
+    assert canary_dir not in discover_query_output_dirs(tiny_project.outputs_dir)
+
+
+def test_official_token_defaults_keep_repair_and_compact_disabled(tiny_project):
+    config = Config.from_env(tiny_project.project_root)
+
+    assert config.enable_official_token_reduction is False
+    assert config.enable_gated_risk_cluster_repair_execution is False
+    assert config.enable_compact_context_when_schema_vote_safe is False
 
 
 def test_official_token_flag_off_preserves_sql_first_outputs_and_submission_hash(tiny_project):
