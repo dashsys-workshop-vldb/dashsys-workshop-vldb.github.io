@@ -3,8 +3,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -13,44 +11,46 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from dashagent.config import Config
-from dashagent.dataflow_visualizer import build_html_report, build_markdown_report, build_mermaid_graph, load_trajectory
+from dashagent.dataflow_visualizer import (
+    build_dataflow_summary,
+    build_html_report,
+    build_markdown_report,
+    build_mermaid_graph,
+    default_visualization_dir,
+    load_trajectory,
+    write_dataflow_artifacts,
+)
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Generate Mermaid/Markdown/HTML dataflow visualization from a trajectory.")
+    parser = argparse.ArgumentParser(description="Generate Mermaid/Markdown/HTML/JSON dataflow visualization from a trajectory.")
     parser.add_argument("trajectory", help="Path to trajectory.json")
-    parser.add_argument("--out-dir", default=None, help="Output directory. Defaults to outputs/demo_dataflow.")
-    parser.add_argument("--format", choices=["mmd", "md", "html", "all"], default="all")
+    parser.add_argument("--out-dir", default=None, help="Output directory. Defaults to outputs/visualizations/<query_id>/<strategy>.")
+    parser.add_argument("--format", choices=["mmd", "md", "html", "json", "all"], default="all")
+    parser.add_argument("--overwrite", action="store_true", help="Overwrite existing visualization files.")
     args = parser.parse_args()
     config = Config.from_env(ROOT)
-    out_dir = Path(args.out_dir) if args.out_dir else config.outputs_dir / "demo_dataflow"
-    out_dir.mkdir(parents=True, exist_ok=True)
     trajectory = load_trajectory(args.trajectory)
-    written = []
-    if args.format in {"mmd", "all"}:
-        path = out_dir / "dataflow.mmd"
-        path.write_text(build_mermaid_graph(trajectory), encoding="utf-8")
-        written.append(str(path))
-    if args.format in {"md", "all"}:
-        path = out_dir / "dataflow.md"
-        path.write_text(build_markdown_report(trajectory), encoding="utf-8")
-        written.append(str(path))
-    if args.format in {"html", "all"}:
-        path = out_dir / "dataflow.html"
-        path.write_text(build_html_report(trajectory), encoding="utf-8")
-        written.append(str(path))
-    mmdc = shutil.which("mmdc")
-    svg_path = None
-    if args.format == "all" and mmdc:
-        mmd_path = out_dir / "dataflow.mmd"
-        svg_path = out_dir / "dataflow.svg"
-        try:
-            subprocess.run([mmdc, "-i", str(mmd_path), "-o", str(svg_path)], check=False, capture_output=True, text=True)
-            if svg_path.exists():
-                written.append(str(svg_path))
-        except Exception:
-            svg_path = None
-    print(json.dumps({"trajectory": args.trajectory, "out_dir": str(out_dir), "written": written, "mermaid_cli": bool(mmdc), "svg": str(svg_path) if svg_path and svg_path.exists() else None}, indent=2, sort_keys=True))
+    out_dir = Path(args.out_dir) if args.out_dir else default_visualization_dir(config.outputs_dir, trajectory)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    if "final_submission" in out_dir.parts:
+        raise SystemExit("Refusing to write visualization artifacts under outputs/final_submission")
+    if args.format == "all":
+        files = write_dataflow_artifacts(trajectory, out_dir, overwrite=True)
+    else:
+        files = {}
+        writers = {
+            "mmd": ("dataflow.mmd", build_mermaid_graph(trajectory)),
+            "md": ("dataflow.md", build_markdown_report(trajectory)),
+            "html": ("dataflow.html", build_html_report(trajectory)),
+            "json": ("dataflow_summary.json", json.dumps(build_dataflow_summary(trajectory), indent=2, sort_keys=True, default=str)),
+        }
+        filename, content = writers[args.format]
+        path = out_dir / filename
+        if args.overwrite or not path.exists():
+            path.write_text(content, encoding="utf-8")
+        files[args.format] = str(path)
+    print(json.dumps({"trajectory": args.trajectory, "out_dir": str(out_dir), "written": files}, indent=2, sort_keys=True))
     return 0
 
 

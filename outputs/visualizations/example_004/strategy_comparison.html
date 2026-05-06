@@ -1,0 +1,99 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>DASHSys Strategy Comparison</title>
+<script type="module">import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; mermaid.initialize({startOnLoad:true});</script>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;margin:32px;line-height:1.45} pre{background:#f6f8fa;padding:12px;overflow:auto;white-space:pre-wrap} table{border-collapse:collapse;width:100%;margin:12px 0} td,th{border:1px solid #d0d7de;padding:6px;vertical-align:top}</style>
+</head><body><div class="mermaid">flowchart LR
+  prompt[&quot;Query&lt;br/&gt;example_004&quot;]
+  prompt --&gt; s0_route[&quot;SQL_FIRST_API_VERIFY&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s0_route --&gt; s0_tools[&quot;tools=2&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s0_tools --&gt; s0_evidence[&quot;evidence=False&lt;br/&gt;dry_run=True&quot;]
+  s0_evidence --&gt; s0_answer[&quot;answer&lt;br/&gt;Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned &quot;]
+  prompt --&gt; s1_route[&quot;SQL_FIRST_API_VERIFY&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s1_route --&gt; s1_tools[&quot;tools=2&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s1_tools --&gt; s1_evidence[&quot;evidence=False&lt;br/&gt;dry_run=True&quot;]
+  s1_evidence --&gt; s1_answer[&quot;answer&lt;br/&gt;Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned &quot;]
+  prompt --&gt; s2_route[&quot;Raw&lt;br/&gt;route=n/a - no prompt router decision&quot;]
+  s2_route --&gt; s2_tools[&quot;tools=3&lt;br/&gt;invalid=1&quot;]
+  s2_tools --&gt; s2_evidence[&quot;evidence=True&lt;br/&gt;dry_run=True&quot;]
+  s2_evidence --&gt; s2_answer[&quot;answer&lt;br/&gt;I was unable to retrieve the IDs of failed dataflow runs. The local database does not contain a tabl&quot;]
+  prompt --&gt; s3_route[&quot;Guided&lt;br/&gt;route=n/a - no prompt router decision&quot;]
+  s3_route --&gt; s3_tools[&quot;tools=2&lt;br/&gt;invalid=0&quot;]
+  s3_tools --&gt; s3_evidence[&quot;evidence=False&lt;br/&gt;dry_run=True&quot;]
+  s3_evidence --&gt; s3_answer[&quot;answer&lt;br/&gt;The executed query did not find evidence of any failed dataflow runs in the local database. Addition&quot;]
+  prompt --&gt; s4_route[&quot;Optimized Controller&lt;br/&gt;route=n/a - no prompt router decision&quot;]
+  s4_route --&gt; s4_tools[&quot;tools=2&lt;br/&gt;invalid=0&quot;]
+  s4_tools --&gt; s4_evidence[&quot;evidence=False&lt;br/&gt;dry_run=n/a - no API call in trajectory&quot;]
+  s4_evidence --&gt; s4_answer[&quot;answer&lt;br/&gt;There are no failed dataflow runs to report. The SQL query returned zero rows, and live API verifica&quot;]
+  prompt --&gt; s5_route[&quot;DETERMINISTIC_ROUTER_SELECTED_METADATA&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s5_route --&gt; s5_tools[&quot;tools=2&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s5_tools --&gt; s5_evidence[&quot;evidence=False&lt;br/&gt;dry_run=True&quot;]
+  s5_evidence --&gt; s5_answer[&quot;answer&lt;br/&gt;Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned &quot;]
+  prompt --&gt; s6_route[&quot;LLM_FREE_AGENT_BASELINE&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s6_route --&gt; s6_tools[&quot;tools=2&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s6_tools --&gt; s6_evidence[&quot;evidence=False&lt;br/&gt;dry_run=True&quot;]
+  s6_evidence --&gt; s6_answer[&quot;answer&lt;br/&gt;Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned &quot;]
+  prompt --&gt; s7_route[&quot;SQL_ONLY_BASELINE&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s7_route --&gt; s7_tools[&quot;tools=1&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s7_tools --&gt; s7_evidence[&quot;evidence=False&lt;br/&gt;dry_run=n/a - no API call in trajectory&quot;]
+  s7_evidence --&gt; s7_answer[&quot;answer&lt;br/&gt;Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned &quot;]
+  prompt --&gt; s8_route[&quot;TEMPLATE_FIRST&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s8_route --&gt; s8_tools[&quot;tools=2&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s8_tools --&gt; s8_evidence[&quot;evidence=False&lt;br/&gt;dry_run=True&quot;]
+  s8_evidence --&gt; s8_answer[&quot;answer&lt;br/&gt;Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned &quot;]
+</div><pre># Strategy Comparison: example_004
+
+This view compares deterministic, Raw real LLM, Guided real LLM, and optimized-controller paths when those artifacts exist.
+
+```mermaid
+flowchart LR
+  prompt[&quot;Query&lt;br/&gt;example_004&quot;]
+  prompt --&gt; s0_route[&quot;SQL_FIRST_API_VERIFY&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s0_route --&gt; s0_tools[&quot;tools=2&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s0_tools --&gt; s0_evidence[&quot;evidence=False&lt;br/&gt;dry_run=True&quot;]
+  s0_evidence --&gt; s0_answer[&quot;answer&lt;br/&gt;Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned &quot;]
+  prompt --&gt; s1_route[&quot;SQL_FIRST_API_VERIFY&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s1_route --&gt; s1_tools[&quot;tools=2&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s1_tools --&gt; s1_evidence[&quot;evidence=False&lt;br/&gt;dry_run=True&quot;]
+  s1_evidence --&gt; s1_answer[&quot;answer&lt;br/&gt;Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned &quot;]
+  prompt --&gt; s2_route[&quot;Raw&lt;br/&gt;route=n/a - no prompt router decision&quot;]
+  s2_route --&gt; s2_tools[&quot;tools=3&lt;br/&gt;invalid=1&quot;]
+  s2_tools --&gt; s2_evidence[&quot;evidence=True&lt;br/&gt;dry_run=True&quot;]
+  s2_evidence --&gt; s2_answer[&quot;answer&lt;br/&gt;I was unable to retrieve the IDs of failed dataflow runs. The local database does not contain a tabl&quot;]
+  prompt --&gt; s3_route[&quot;Guided&lt;br/&gt;route=n/a - no prompt router decision&quot;]
+  s3_route --&gt; s3_tools[&quot;tools=2&lt;br/&gt;invalid=0&quot;]
+  s3_tools --&gt; s3_evidence[&quot;evidence=False&lt;br/&gt;dry_run=True&quot;]
+  s3_evidence --&gt; s3_answer[&quot;answer&lt;br/&gt;The executed query did not find evidence of any failed dataflow runs in the local database. Addition&quot;]
+  prompt --&gt; s4_route[&quot;Optimized Controller&lt;br/&gt;route=n/a - no prompt router decision&quot;]
+  s4_route --&gt; s4_tools[&quot;tools=2&lt;br/&gt;invalid=0&quot;]
+  s4_tools --&gt; s4_evidence[&quot;evidence=False&lt;br/&gt;dry_run=n/a - no API call in trajectory&quot;]
+  s4_evidence --&gt; s4_answer[&quot;answer&lt;br/&gt;There are no failed dataflow runs to report. The SQL query returned zero rows, and live API verifica&quot;]
+  prompt --&gt; s5_route[&quot;DETERMINISTIC_ROUTER_SELECTED_METADATA&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s5_route --&gt; s5_tools[&quot;tools=2&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s5_tools --&gt; s5_evidence[&quot;evidence=False&lt;br/&gt;dry_run=True&quot;]
+  s5_evidence --&gt; s5_answer[&quot;answer&lt;br/&gt;Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned &quot;]
+  prompt --&gt; s6_route[&quot;LLM_FREE_AGENT_BASELINE&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s6_route --&gt; s6_tools[&quot;tools=2&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s6_tools --&gt; s6_evidence[&quot;evidence=False&lt;br/&gt;dry_run=True&quot;]
+  s6_evidence --&gt; s6_answer[&quot;answer&lt;br/&gt;Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned &quot;]
+  prompt --&gt; s7_route[&quot;SQL_ONLY_BASELINE&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s7_route --&gt; s7_tools[&quot;tools=1&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s7_tools --&gt; s7_evidence[&quot;evidence=False&lt;br/&gt;dry_run=n/a - no API call in trajectory&quot;]
+  s7_evidence --&gt; s7_answer[&quot;answer&lt;br/&gt;Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned &quot;]
+  prompt --&gt; s8_route[&quot;TEMPLATE_FIRST&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s8_route --&gt; s8_tools[&quot;tools=2&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s8_tools --&gt; s8_evidence[&quot;evidence=False&lt;br/&gt;dry_run=True&quot;]
+  s8_evidence --&gt; s8_answer[&quot;answer&lt;br/&gt;Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned &quot;]
+```
+
+| Variant | Strategy | Route | Context mode | SQL preview | API endpoint | Tool calls | Invalid calls | Endpoint repairs | Evidence available | Dry-run only | Runtime | Tokens | Final answer preview |
+| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | --- | --- | ---: | ---: | --- |
+| SQL_FIRST_API_VERIFY | `LLM_SQL_FIRST_API_VERIFY` | SQL_PLUS_API | n/a - no candidate context mode recorded | SELECT &quot;DATAFLOWNAME&quot;, &quot;STATE&quot;, &quot;TARGETID&quot;, &quot;CONNECTIONSPECID&quot;, &quot;NAME&quot; FROM &quot;dim_target&quot; WHERE LOWER(CAST(&quot;STATE&quot; AS VARCHAR)) LIKE LOWER(&#x27;%failed%&#x27;) LIMIT 50 | GET /data/foundation/flowservice/flows | 2 | n/a - no invalid-call metric recorded | n/a - no endpoint-repair metric recorded | False | True | 0.011947459075599909 | 812 | Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable. |
+| SQL_FIRST_API_VERIFY | `SQL_FIRST_API_VERIFY` | SQL_PLUS_API | n/a - no candidate context mode recorded | SELECT &quot;DATAFLOWNAME&quot;, &quot;STATE&quot;, &quot;TARGETID&quot;, &quot;CONNECTIONSPECID&quot;, &quot;NAME&quot; FROM &quot;dim_target&quot; WHERE LOWER(CAST(&quot;STATE&quot; AS VARCHAR)) LIKE LOWER(&#x27;%failed%&#x27;) LIMIT 50 | GET /data/foundation/flowservice/flows | 2 | n/a - no invalid-call metric recorded | n/a - no endpoint-repair metric recorded | False | True | 0.009926999919116497 | 852 | Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable. |
+| Raw | `RAW_REAL_LLM_TWO_TOOLS_BASELINE` | n/a - no prompt router decision | n/a - no candidate context mode recorded | SELECT ID FROM dataflow_runs WHERE status = &#x27;failed&#x27; | GET /data/core/ups/segment/definitions | 3 | 1 | 0 | True | True | 6.4608 | n/a - estimated_tokens missing | I was unable to retrieve the IDs of failed dataflow runs. The local database does not contain a table named `dataflow_runs`, and the API call could not be executed due to unavailable credentials. Therefore, I cannot prov... |
+| Guided | `GUIDED_REAL_LLM_TWO_TOOLS_BASELINE` | n/a - no prompt router decision | n/a - no candidate context mode recorded | SELECT DATAFLOWID FROM dim_connector WHERE STATE = &#x27;failed&#x27; | GET /ajo/journey | 2 | 0 | 1 | False | True | 3.0491 | n/a - estimated_tokens missing | The executed query did not find evidence of any failed dataflow runs in the local database. Additionally, the API call to check for live journey statuses could not be executed due to unavailable Adobe credentials. |
+| Optimized Controller | `LLM_CONTROLLER_OPTIMIZED_AGENT` | n/a - no prompt router decision | n/a - no candidate context mode recorded | n/a - no SQL call in trajectory | n/a - no API call in trajectory | 2 | 0 | 0 | False | n/a - no API call in trajectory | 1.0852 | n/a - estimated_tokens missing | There are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed due to the unavailability of Adobe credentials. |
+| DETERMINISTIC_ROUTER_SELECTED_METADATA | `DETERMINISTIC_ROUTER_SELECTED_METADATA` | SQL_PLUS_API | n/a - no candidate context mode recorded | SELECT &quot;DATAFLOWNAME&quot;, &quot;STATE&quot;, &quot;TARGETID&quot;, &quot;CONNECTIONSPECID&quot;, &quot;NAME&quot; FROM &quot;dim_target&quot; WHERE LOWER(CAST(&quot;STATE&quot; AS VARCHAR)) LIKE LOWER(&#x27;%failed%&#x27;) LIMIT 50 | GET /data/foundation/flowservice/flows | 2 | n/a - no invalid-call metric recorded | n/a - no endpoint-repair metric recorded | False | True | 0.010147165972739458 | 786 | Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable. |
+| LLM_FREE_AGENT_BASELINE | `LLM_FREE_AGENT_BASELINE` | SQL_PLUS_API | n/a - no candidate context mode recorded | SELECT &quot;DATAFLOWNAME&quot;, &quot;STATE&quot;, &quot;TARGETID&quot;, &quot;CONNECTIONSPECID&quot;, &quot;NAME&quot; FROM &quot;dim_target&quot; WHERE LOWER(CAST(&quot;STATE&quot; AS VARCHAR)) LIKE LOWER(&#x27;%failed%&#x27;) LIMIT 50 | GET /data/foundation/flowservice/flows | 2 | n/a - no invalid-call metric recorded | n/a - no endpoint-repair metric recorded | False | True | 0.015830041957087815 | 786 | Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable. |
+| SQL_ONLY_BASELINE | `SQL_ONLY_BASELINE` | SQL_PLUS_API | n/a - no candidate context mode recorded | SELECT &quot;DATAFLOWNAME&quot;, &quot;STATE&quot;, &quot;TARGETID&quot;, &quot;CONNECTIONSPECID&quot;, &quot;NAME&quot; FROM &quot;dim_target&quot; WHERE LOWER(CAST(&quot;STATE&quot; AS VARCHAR)) LIKE LOWER(&#x27;%failed%&#x27;) LIMIT 50 | n/a - no API call in trajectory | 1 | n/a - no invalid-call metric recorded | n/a - no endpoint-repair metric recorded | False | n/a - no API call in trajectory | 0.009002708946354687 | 550 | Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and API evidence was not requested. |
+| TEMPLATE_FIRST | `TEMPLATE_FIRST` | SQL_PLUS_API | n/a - no candidate context mode recorded | SELECT &quot;DATAFLOWNAME&quot;, &quot;STATE&quot;, &quot;TARGETID&quot;, &quot;CONNECTIONSPECID&quot;, &quot;NAME&quot; FROM &quot;dim_target&quot; WHERE LOWER(CAST(&quot;STATE&quot; AS VARCHAR)) LIKE LOWER(&#x27;%failed%&#x27;) LIMIT 50 | GET /data/foundation/flowservice/flows | 2 | n/a - no invalid-call metric recorded | n/a - no endpoint-repair metric recorded | False | True | 0.009953291970305145 | 776 | Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable. |
+</pre></body></html>

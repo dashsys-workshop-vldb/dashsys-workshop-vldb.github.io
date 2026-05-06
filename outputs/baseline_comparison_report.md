@@ -2,71 +2,82 @@
 
 ## Summary Table
 
-| System | Description | Normal correctness | Strict correctness | Final score | Tool calls | Tokens | LLM status |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| RAW_REAL_LLM_TWO_TOOLS_BASELINE | Raw real LLM with execute_sql/call_api only |  |  |  |  |  | mixed_valid_and_failed_tool_agent_runs |
-| GUIDED_REAL_LLM_TWO_TOOLS_BASELINE | Guided real LLM with execute_sql/call_api plus schema/API affordances |  |  |  |  |  | valid_tool_agent_run |
-| REAL_LLM_TWO_TOOLS_BASELINE | Backward-compatible alias for the raw real LLM baseline |  |  |  |  |  | not_run |
-| LLM_FREE_AGENT_BASELINE | Deterministic approximation of a broad LLM agent | 0.6707 | 0.4879 | 0.4533 | 2.1143 | 975.9429 | n/a |
-| SQL_ONLY_BASELINE | Local DB only | 0.5763 | 0.2983 | 0.2799 | 1.0 | 708.4571 | n/a |
-| SQL_FIRST_API_VERIFY | Current deterministic optimized backend | 0.8407 | 0.6743 | 0.649 | 1.4571 | 851.7714 | n/a |
-| CANDIDATE_GUIDED_LLM_SQL | Optional candidate-context LLM SQL with fallback |  |  |  |  |  | n/a |
-| FULL_SCHEMA_LLM_SQL | Optional full-schema LLM SQL with fallback |  |  |  |  |  | n/a |
-| LLM_SQL_FIRST_API_VERIFY | Optional LLM SQL plus deterministic API verification |  |  |  |  |  | n/a |
-| LLM_CONTROLLER_OPTIMIZED_AGENT | Optional LLM controller with optimized backend tool |  |  |  |  |  | valid_tool_agent_run |
+| System | Description | Normal correctness | Strict correctness | Final score | Tool calls | Tokens | Runtime | LLM status |
+| --- | --- | --- | --- | --- | ---: | ---: | ---: | --- |
+| RAW_REAL_LLM_TWO_TOOLS_BASELINE | Raw real LLM with execute_sql/call_api only | n/a - tool-loop diagnostic baseline | n/a - tool-loop diagnostic baseline | n/a - tool-loop diagnostic baseline | 1.2571 | 1318.3429 | 4.8366 | mixed_valid_and_failed_tool_agent_runs |
+| GUIDED_REAL_LLM_TWO_TOOLS_BASELINE | Guided real LLM with execute_sql/call_api plus schema/API affordances | n/a - tool-loop diagnostic baseline | n/a - tool-loop diagnostic baseline | n/a - tool-loop diagnostic baseline | 1.2 | 2057.3429 | 3.625 | mixed_valid_and_failed_tool_agent_runs |
+| REAL_LLM_TWO_TOOLS_BASELINE | Backward-compatible alias for the raw real LLM baseline | n/a - tool-loop diagnostic baseline | n/a - tool-loop diagnostic baseline | n/a - tool-loop diagnostic baseline | n/a | n/a | n/a | not_run |
+| LLM_FREE_AGENT_BASELINE | Deterministic approximation of a broad LLM agent | 0.6707 | 0.4879 | 0.4533 | 2.1143 | 975.9429 | 0.0177 | n/a |
+| SQL_ONLY_BASELINE | Local DB only | 0.5763 | 0.2983 | 0.2799 | 1.0 | 708.4571 | 0.0111 | n/a |
+| SQL_FIRST_API_VERIFY | Current deterministic optimized backend | 0.8407 | 0.6743 | 0.649 | 1.4571 | 851.7714 | 0.0103 | n/a |
+| CANDIDATE_GUIDED_LLM_SQL | Optional candidate-context LLM SQL with fallback | n/a | n/a | n/a | n/a | n/a | n/a | n/a |
+| FULL_SCHEMA_LLM_SQL | Optional full-schema LLM SQL with fallback | n/a | n/a | n/a | n/a | n/a | n/a | n/a |
+| LLM_SQL_FIRST_API_VERIFY | Optional LLM SQL plus deterministic API verification | n/a | n/a | n/a | n/a | n/a | n/a | n/a |
+| LLM_CONTROLLER_OPTIMIZED_AGENT | Optional LLM controller with optimized backend tool | n/a | n/a | n/a | n/a | n/a | n/a | valid_tool_agent_run |
+
+Note: RAW/GUIDED real LLM rows are diagnostic tool-loop baselines. They show tool-use reliability and efficiency, while `SQL_FIRST_API_VERIFY` remains the packaged scoring strategy.
 
 ## Raw vs Guided Real LLM Tool Loops
 
 | Variant | Rows | Successful | Failed | Valid run rate | Tool execution success rate | Avg valid tool calls | Avg invalid tool calls | Avg endpoint repairs | Avg schema hints |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Raw | 35 | 34 | 1 | 0.9714 | 0.9714 | 1.5882 | 0.5429 | 0.0 | 0.0 |
-| Guided | 35 | 35 | 0 | 1.0 | 1.0 | 1.7429 | 0.0286 | 0.9429 | 0.0 |
+| Raw | 35 | 27 | 8 | 0.7714 | 0.7714 | 1.6296 | 0.3143 | 0.0 | 0.0 |
+| Guided | 35 | 26 | 9 | 0.7429 | 0.7429 | 1.6154 | 0.0286 | 0.6286 | 0.0286 |
+
+## Tool Execution vs Evidence Availability
+
+A dry-run API call means the tool was invoked and validated, but live evidence was unavailable because Adobe credentials were missing. Dry-run API calls are not counted as successful live evidence.
+
+| Variant | Dry-run only API calls | Avg successful evidence count | Avg invalid tool calls |
+| --- | ---: | ---: | ---: |
+| Raw | 15 | 0.3714 | 0.3143 |
+| Guided | 24 | 0.2857 | 0.0286 |
 
 ## Tool Failure Categories
 
 | Category | Raw | Guided |
 | --- | ---: | ---: |
-| dry_run_only_api_count | 21 | 36 |
+| dry_run_only_api_count | 15 | 24 |
 | duplicate_invalid_call_count | 0 | 0 |
-| max_turns_exceeded_count | 1 | 0 |
-| no_final_answer_count | 1 | 0 |
-| schema_introspection_failure_count | 5 | 0 |
-| unknown_column_count | 3 | 0 |
-| unknown_endpoint_count | 0 | 1 |
-| unknown_table_count | 16 | 0 |
+| max_turns_exceeded_count | 0 | 0 |
+| no_final_answer_count | 8 | 9 |
+| schema_introspection_failure_count | 4 | 1 |
+| unknown_column_count | 1 | 1 |
+| unknown_endpoint_count | 0 | 0 |
+| unknown_table_count | 9 | 0 |
 | unsupported_negative_answer_count | 4 | 0 |
 
 ## Token And Runtime Efficiency
 
 | Variant | Avg prompt/context tokens | Avg runtime | Avg tool calls |
 | --- | ---: | ---: | ---: |
-| Raw | 1318.3429 | 4.0898 | 1.6571 |
-| Guided | 2057.3429 | 4.1965 | 1.7429 |
+| Raw | 1318.3429 | 4.8366 | 1.2571 |
+| Guided | 2057.3429 | 3.625 | 1.2 |
 
 ## Successful Real LLM Tool Loops
 
-| Query ID | Tool calls | Tool calls executed? | Valid run? |
-| --- | ---: | --- | --- |
-| `example_000` | 2 | True | True |
-| `example_000` | 2 | True | True |
-| `example_001` | 2 | True | True |
-| `example_001` | 1 | True | True |
-| `example_002` | 1 | True | True |
-| `example_002` | 1 | True | True |
-| `example_003` | 1 | True | True |
-| `example_003` | 2 | True | True |
-| `example_004` | 4 | True | True |
-| `example_004` | 2 | True | True |
-| `example_005` | 1 | True | True |
-| `example_005` | 1 | True | True |
-| `example_006` | 2 | True | True |
-| `example_006` | 1 | True | True |
-| `example_007` | 2 | True | True |
-| `example_007` | 1 | True | True |
-| `example_008` | 1 | True | True |
-| `example_008` | 1 | True | True |
-| `example_009` | 1 | True | True |
-| `example_009` | 4 | True | True |
+| Variant | Query ID | Tool calls | Tool calls executed? | Valid run? | Evidence count | Dry-run only? | Invalid calls | Endpoint repairs |
+| --- | --- | ---: | --- | --- | ---: | --- | ---: | ---: |
+| Raw | `example_000` | 2 | True | True | 0 | True | 0 | 0 |
+| Guided | `example_000` | 2 | True | True | 1 | True | 0 | 1 |
+| Raw | `example_001` | 2 | True | True | 0 | False | 1 | 0 |
+| Guided | `example_001` | 1 | True | True | 0 | False | 0 | 0 |
+| Raw | `example_002` | 1 | True | True | 1 | False | 0 | 0 |
+| Guided | `example_002` | 1 | True | True | 1 | False | 0 | 0 |
+| Raw | `example_003` | 1 | True | True | 0 | True | 0 | 0 |
+| Guided | `example_003` | 2 | True | True | 0 | True | 0 | 2 |
+| Raw | `example_004` | 3 | True | True | 1 | True | 1 | 0 |
+| Guided | `example_004` | 2 | True | True | 0 | True | 0 | 1 |
+| Raw | `example_005` | 1 | True | True | 0 | True | 0 | 0 |
+| Guided | `example_005` | 1 | True | True | 0 | True | 0 | 1 |
+| Raw | `example_006` | 2 | True | True | 0 | True | 1 | 0 |
+| Guided | `example_006` | 1 | True | True | 0 | True | 0 | 0 |
+| Raw | `example_007` | 2 | True | True | 0 | True | 1 | 0 |
+| Guided | `example_007` | 1 | True | True | 0 | True | 0 | 1 |
+| Raw | `example_008` | 1 | True | True | 0 | False | 0 | 0 |
+| Guided | `example_008` | 1 | True | True | 0 | False | 0 | 0 |
+| Raw | `example_009` | 3 | True | True | 0 | False | 2 | 0 |
+| Guided | `example_009` | 1 | True | True | 1 | False | 0 | 0 |
 
 ## Failed Real LLM Tool Loops
 
@@ -74,9 +85,25 @@ Some real LLM calls did not complete valid tool-using runs.
 
 These rows are not treated as successful real tool-using baseline runs.
 
-| Query ID | Tool calls | Tool calls executed? | Failure reason |
-| --- | ---: | --- | --- |
-| `example_033` | 4 | False | no_valid_tool_calls_executed |
+| Variant | Query ID | Tool calls | Tool calls executed? | Failure reason |
+| --- | --- | ---: | --- | --- |
+| Guided | `example_026` | 0 | False | llm_request_failed |
+| Raw | `example_027` | 0 | False | llm_request_failed |
+| Guided | `example_027` | 0 | False | llm_request_failed |
+| Raw | `example_028` | 0 | False | llm_request_failed |
+| Guided | `example_028` | 0 | False | llm_request_failed |
+| Raw | `example_029` | 0 | False | llm_request_failed |
+| Guided | `example_029` | 0 | False | llm_request_failed |
+| Raw | `example_030` | 0 | False | llm_request_failed |
+| Guided | `example_030` | 0 | False | llm_request_failed |
+| Raw | `example_031` | 0 | False | llm_request_failed |
+| Guided | `example_031` | 0 | False | llm_request_failed |
+| Raw | `example_032` | 0 | False | llm_request_failed |
+| Guided | `example_032` | 0 | False | llm_request_failed |
+| Raw | `example_033` | 0 | False | llm_request_failed |
+| Guided | `example_033` | 0 | False | llm_request_failed |
+| Raw | `example_034` | 0 | False | llm_request_failed |
+| Guided | `example_034` | 0 | False | llm_request_failed |
 
 ## Improvement: Optimized vs Naive
 

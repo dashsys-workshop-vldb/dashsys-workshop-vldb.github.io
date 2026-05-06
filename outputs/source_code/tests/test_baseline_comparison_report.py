@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from scripts.generate_baseline_comparison_report import generate_report
+from scripts.generate_baseline_comparison_report import generate_report, render_markdown
 
 
 def test_baseline_comparison_report_from_minimal_inputs(tiny_project):
@@ -139,3 +139,58 @@ def test_raw_and_guided_baseline_metrics_are_separate(tiny_project):
     assert report["failure_category_summary"]["raw"]["unknown_table_count"] == 1
     assert report["guided_real_llm_tool_loops"]["avg_endpoint_repairs"] == 1
     assert report["efficiency_comparison"]["guided"]["avg_prompt_context_tokens"] == 1200
+
+
+def test_baseline_markdown_has_diagnostic_cells_and_variant_columns(tiny_project):
+    tiny_project.outputs_dir.mkdir(parents=True, exist_ok=True)
+    (tiny_project.outputs_dir / "eval_results.json").write_text(
+        json.dumps({"summary": {"by_strategy": {}}, "rows": []}),
+        encoding="utf-8",
+    )
+    (tiny_project.outputs_dir / "llm_baseline_eval.json").write_text(
+        json.dumps(
+            {
+                "skipped": False,
+                "rows": [
+                    {
+                        "query_id": "example_000",
+                        "system": "RAW_REAL_LLM_TWO_TOOLS_BASELINE",
+                        "baseline_variant": "raw",
+                        "real_llm_called": True,
+                        "tool_calls_executed": True,
+                        "valid_agent_run": True,
+                        "skipped_or_failed": False,
+                        "tool_call_count": 2,
+                        "prompt_context_tokens": 100,
+                        "runtime": 1.2,
+                        "successful_evidence_count": 1,
+                        "invalid_tool_call_count": 1,
+                        "repaired_endpoint_count": 0,
+                    },
+                    {
+                        "query_id": "example_000",
+                        "system": "GUIDED_REAL_LLM_TWO_TOOLS_BASELINE",
+                        "baseline_variant": "guided",
+                        "real_llm_called": True,
+                        "tool_calls_executed": True,
+                        "valid_agent_run": True,
+                        "skipped_or_failed": False,
+                        "tool_call_count": 1,
+                        "prompt_context_tokens": 180,
+                        "runtime": 1.4,
+                        "successful_evidence_count": 2,
+                        "dry_run_only_api_count": 1,
+                        "invalid_tool_call_count": 0,
+                        "repaired_endpoint_count": 1,
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    markdown = render_markdown(generate_report(tiny_project))
+    assert "n/a - tool-loop diagnostic baseline" in markdown
+    assert "| Variant | Query ID | Tool calls | Tool calls executed? | Valid run? | Evidence count | Dry-run only? | Invalid calls | Endpoint repairs |" in markdown
+    assert "| Raw | `example_000` | 2 | True | True | 1 | False | 1 | 0 |" in markdown
+    assert "| Guided | `example_000` | 1 | True | True | 2 | True | 0 | 1 |" in markdown
+    assert "Dry-run API calls are not counted as successful live evidence" in markdown

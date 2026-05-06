@@ -1,0 +1,131 @@
+{
+  "answer": {
+    "answer_verification": {
+      "errors": {
+        "items": [],
+        "total_items": 0,
+        "truncated_items": false
+      },
+      "rewrite_applied": false,
+      "supported_claims_count": 2,
+      "unsupported_claims_count": 0,
+      "verifier_passed": true
+    },
+    "empty_result_uncertainty": "n/a - no empty-result uncertainty wording detected",
+    "final_answer_preview": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable."
+  },
+  "api": {
+    "dry_run": true,
+    "endpoint": "GET /data/foundation/flowservice/flows",
+    "endpoint_repair": "n/a - no endpoint repair recorded",
+    "live_evidence_available": false,
+    "result_preview": "n/a - no API result preview recorded",
+    "validation": "ok"
+  },
+  "checkpoint_count": 20,
+  "checkpoint_effect": {
+    "checkpoint_id": "checkpoint_01_raw_query",
+    "correctness_role": "keeps later normalization from changing the user-facing question",
+    "effect": "preserves the original query for reproducibility",
+    "efficiency_role": "starts one trace without extra tool calls"
+  },
+  "context": {
+    "candidate_apis": {
+      "items": [
+        "flowservice_runs",
+        "audit_events",
+        "export_batch_failed"
+      ],
+      "total_items": 3,
+      "truncated_items": false
+    },
+    "candidate_tables": {
+      "items": [
+        "dim_connector",
+        "dim_target"
+      ],
+      "total_items": 2,
+      "truncated_items": false
+    },
+    "confidence": 0.88,
+    "context_mode": "n/a - no candidate context mode recorded",
+    "estimated_context_tokens": 565,
+    "score_margin": "n/a - no candidate score margin recorded"
+  },
+  "evidence": {
+    "dry_run_only": true,
+    "evidence_available": false,
+    "explanation": "API tool was invoked and validated, but live evidence was unavailable because Adobe credentials were missing.",
+    "successful_evidence_count": 0,
+    "zero_row_uncertain": true
+  },
+  "execution": {
+    "call_api_calls": 1,
+    "duplicate_invalid_calls": "n/a - no duplicate-invalid metric recorded",
+    "endpoint_repairs": "n/a - no endpoint-repair metric recorded",
+    "execute_sql_calls": 1,
+    "invalid_tool_calls": "n/a - no invalid-call metric recorded",
+    "schema_hint_injections": "n/a - no schema-hint metric recorded",
+    "tool_call_count": 2,
+    "valid_tool_calls": 2
+  },
+  "metrics": {
+    "answer_time": 0.0003926660865545273,
+    "checkpoint_count": 20,
+    "estimated_tokens": 852,
+    "execution_time": 0.00037958298344165087,
+    "planning_time": 0.0003044579643756151,
+    "preprocessing_time": 0.001963666989468038,
+    "prompt_context_tokens": "n/a - prompt_context_tokens missing",
+    "runtime": 0.009926999919116497
+  },
+  "normalization": {
+    "matching_text": "show me the ids of failed dataflow runs",
+    "normalized_query": "Show me the IDs of failed dataflow runs"
+  },
+  "planning": {
+    "call_budget": {
+      "final_planned_calls": 2,
+      "max_api_calls": 1,
+      "max_sql_calls": 1,
+      "max_total_tool_calls": 2,
+      "planned_api_calls": 1,
+      "planned_sql_calls": 1
+    },
+    "optimizer_decision": "{\"candidate_scores\": {\"generic_sql_first\": 14.2735}, \"candidate_tool_calls\": {\"generic_sql_first\": 2}, \"selected\": \"generic_sql_first\"}",
+    "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve the answer. Fast path: failed_dataflow_flows.",
+    "selected_strategy": "SQL_FIRST_API_VERIFY"
+  },
+  "query_id": "example_004",
+  "route": {
+    "api_policy": "n/a - no API policy recorded",
+    "confidence": 0.88,
+    "mode": "SQL_PLUS_API",
+    "risk": "medium"
+  },
+  "sql": {
+    "preview": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50",
+    "result_preview": "n/a - no SQL rows preview recorded",
+    "row_count": 0,
+    "validation": "ok"
+  },
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "tokens": {
+    "domains": {
+      "items": [
+        "destination_dataflow"
+      ],
+      "total_items": 1,
+      "truncated_items": false
+    },
+    "statuses": {
+      "items": [
+        "failed"
+      ],
+      "total_items": 1,
+      "truncated_items": false
+    }
+  },
+  "user_query": "Show me the IDs of failed dataflow runs",
+  "variant": "n/a - not a baseline variant"
+}

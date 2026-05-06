@@ -71,12 +71,21 @@ def generate_report(config: Config) -> dict[str, Any]:
     strict_summary = summary_rows(strict)
     systems = []
     for system, description in SYSTEMS:
+        rows_for_system = llm_rows(llm, system)
+        llm_summary = summarize_llm_rows(rows_for_system) if rows_for_system else {}
         row = {
             "system": system,
             "description": description,
             "normal": normal_summary.get(system),
             "strict": strict_summary.get(system),
             "llm_status": llm_status(system, llm),
+            "llm_diagnostics": llm_summary,
+            "summary_display": system_summary_display(
+                system,
+                normal_summary.get(system),
+                strict_summary.get(system),
+                llm_summary,
+            ),
         }
         systems.append(row)
     optimized = strict_summary.get("SQL_FIRST_API_VERIFY") or normal_summary.get("SQL_FIRST_API_VERIFY") or {}
@@ -206,11 +215,14 @@ def summarize_llm_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "failed_count": len(failed),
         "valid_agent_run_rate": round(len(valid) / len(rows), 4) if rows else 0.0,
         "tool_execution_success_rate": round(sum(bool(row.get("tool_calls_executed")) for row in rows) / len(rows), 4) if rows else 0.0,
+        "avg_tool_calls": avg([row.get("tool_call_count", 0) for row in rows]),
         "avg_valid_tool_calls": avg([row.get("tool_call_count", 0) for row in valid]),
         "avg_invalid_tool_calls": avg([row.get("invalid_tool_call_count", 0) for row in rows]),
         "avg_endpoint_repairs": avg([row.get("repaired_endpoint_count", 0) for row in rows]),
         "avg_schema_hint_injections": avg([row.get("schema_hint_injected", 0) for row in rows]),
         "avg_successful_evidence_count": avg([row.get("successful_evidence_count", 0) for row in rows]),
+        "avg_prompt_context_tokens": avg([row.get("prompt_context_tokens", 0) for row in rows]),
+        "avg_runtime": avg([row.get("runtime", 0) for row in rows]),
     }
 
 
@@ -243,6 +255,40 @@ def efficiency_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
 
 def avg(values: list[float | int]) -> float:
     return round(sum(values) / len(values), 4) if values else 0.0
+
+
+def system_summary_display(
+    system: str,
+    normal: dict[str, Any] | None,
+    strict: dict[str, Any] | None,
+    llm_summary: dict[str, Any],
+) -> dict[str, Any]:
+    diagnostic = system in {REAL_LLM_TWO_TOOLS_BASELINE, RAW_REAL_LLM_TWO_TOOLS_BASELINE, GUIDED_REAL_LLM_TWO_TOOLS_BASELINE}
+    diagnostic_label = "n/a - tool-loop diagnostic baseline"
+    normal = normal or {}
+    strict = strict or {}
+    if diagnostic and not normal and not strict:
+        return {
+            "normal_correctness": diagnostic_label,
+            "strict_correctness": diagnostic_label,
+            "final_score": diagnostic_label,
+            "tool_calls": llm_summary.get("avg_tool_calls", "n/a"),
+            "tokens": llm_summary.get("avg_prompt_context_tokens", "n/a"),
+            "runtime": llm_summary.get("avg_runtime", "n/a"),
+        }
+    selected = strict or normal
+    return {
+        "normal_correctness": _display_cell(normal.get("avg_correctness_score")),
+        "strict_correctness": _display_cell(strict.get("avg_correctness_score")),
+        "final_score": _display_cell(selected.get("avg_final_score")),
+        "tool_calls": _display_cell(selected.get("avg_tool_call_count")),
+        "tokens": _display_cell(selected.get("avg_estimated_tokens")),
+        "runtime": _display_cell(selected.get("avg_runtime")),
+    }
+
+
+def _display_cell(value: Any) -> Any:
+    return value if value not in (None, "") else "n/a"
 
 
 def deterministic_approximation_rows(systems: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -336,25 +382,31 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         "## Summary Table",
         "",
-        "| System | Description | Normal correctness | Strict correctness | Final score | Tool calls | Tokens | LLM status |",
-        "| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| System | Description | Normal correctness | Strict correctness | Final score | Tool calls | Tokens | Runtime | LLM status |",
+        "| --- | --- | --- | --- | --- | ---: | ---: | ---: | --- |",
     ]
     for row in report["systems"]:
-        normal = row.get("normal") or {}
-        strict = row.get("strict") or {}
         status = row.get("llm_status", {})
+        display = row.get("summary_display", {})
         lines.append(
-            "| {system} | {desc} | {normal_corr} | {strict_corr} | {final} | {tools} | {tokens} | {status} |".format(
+            "| {system} | {desc} | {normal_corr} | {strict_corr} | {final} | {tools} | {tokens} | {runtime} | {status} |".format(
                 system=row["system"],
                 desc=row["description"],
-                normal_corr=normal.get("avg_correctness_score", ""),
-                strict_corr=strict.get("avg_correctness_score", ""),
-                final=(strict or normal).get("avg_final_score", ""),
-                tools=(strict or normal).get("avg_tool_call_count", ""),
-                tokens=(strict or normal).get("avg_estimated_tokens", ""),
+                normal_corr=display.get("normal_correctness", "n/a"),
+                strict_corr=display.get("strict_correctness", "n/a"),
+                final=display.get("final_score", "n/a"),
+                tools=display.get("tool_calls", "n/a"),
+                tokens=display.get("tokens", "n/a"),
+                runtime=display.get("runtime", "n/a"),
                 status=status.get("status", "n/a"),
             )
         )
+    lines.extend(
+        [
+            "",
+            "Note: RAW/GUIDED real LLM rows are diagnostic tool-loop baselines. They show tool-use reliability and efficiency, while `SQL_FIRST_API_VERIFY` remains the packaged scoring strategy.",
+        ]
+    )
     lines.extend(
         [
             "",
@@ -375,14 +427,34 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
+            "## Tool Execution vs Evidence Availability",
+            "",
+            "A dry-run API call means the tool was invoked and validated, but live evidence was unavailable because Adobe credentials were missing. Dry-run API calls are not counted as successful live evidence.",
+            "",
+            "| Variant | Dry-run only API calls | Avg successful evidence count | Avg invalid tool calls |",
+            "| --- | ---: | ---: | ---: |",
+        ]
+    )
+    raw_failures = report.get("failure_category_summary", {}).get("raw", {})
+    guided_failures = report.get("failure_category_summary", {}).get("guided", {})
+    for label, summary_key, failure_key in [
+        ("Raw", "raw_real_llm_tool_loops", "raw"),
+        ("Guided", "guided_real_llm_tool_loops", "guided"),
+    ]:
+        item = report.get(summary_key, {})
+        failures = report.get("failure_category_summary", {}).get(failure_key, {})
+        lines.append(
+            f"| {label} | {failures.get('dry_run_only_api_count', 0)} | {item.get('avg_successful_evidence_count', 0)} | {item.get('avg_invalid_tool_calls', 0)} |"
+        )
+    lines.extend(
+        [
+            "",
             "## Tool Failure Categories",
             "",
             "| Category | Raw | Guided |",
             "| --- | ---: | ---: |",
         ]
     )
-    raw_failures = report.get("failure_category_summary", {}).get("raw", {})
-    guided_failures = report.get("failure_category_summary", {}).get("guided", {})
     for key in sorted(set(raw_failures) | set(guided_failures)):
         lines.append(f"| {key} | {raw_failures.get(key, 0)} | {guided_failures.get(key, 0)} |")
     lines.extend(
@@ -404,13 +476,14 @@ def render_markdown(report: dict[str, Any]) -> str:
                 "",
                 "## Successful Real LLM Tool Loops",
                 "",
-                "| Query ID | Tool calls | Tool calls executed? | Valid run? |",
-                "| --- | ---: | --- | --- |",
+                "| Variant | Query ID | Tool calls | Tool calls executed? | Valid run? | Evidence count | Dry-run only? | Invalid calls | Endpoint repairs |",
+                "| --- | --- | ---: | --- | --- | ---: | --- | ---: | ---: |",
             ]
         )
         for row in successful_real[:20]:
+            dry_run_only = bool(row.get("dry_run_only_api_count")) or any(call.get("dry_run_only") for call in row.get("llm_tool_calls", []))
             lines.append(
-                f"| `{row.get('query_id')}` | {row.get('tool_call_count')} | {row.get('tool_calls_executed')} | {row.get('valid_agent_run')} |"
+                f"| {variant_label(row)} | `{row.get('query_id')}` | {row.get('tool_call_count')} | {row.get('tool_calls_executed')} | {row.get('valid_agent_run')} | {row.get('successful_evidence_count', 0)} | {dry_run_only} | {row.get('invalid_tool_call_count', 0)} | {row.get('repaired_endpoint_count', 0)} |"
             )
     failed_real = report.get("failed_real_llm_tool_loops", [])
     if failed_real:
@@ -425,13 +498,13 @@ def render_markdown(report: dict[str, Any]) -> str:
                 "",
                 "These rows are not treated as successful real tool-using baseline runs.",
                 "",
-                "| Query ID | Tool calls | Tool calls executed? | Failure reason |",
-                "| --- | ---: | --- | --- |",
+                "| Variant | Query ID | Tool calls | Tool calls executed? | Failure reason |",
+                "| --- | --- | ---: | --- | --- |",
             ]
         )
         for row in failed_real[:20]:
             lines.append(
-                f"| `{row.get('query_id')}` | {row.get('tool_call_count')} | {row.get('tool_calls_executed')} | {row.get('failure_reason')} |"
+                f"| {variant_label(row)} | `{row.get('query_id')}` | {row.get('tool_call_count')} | {row.get('tool_calls_executed')} | {row.get('failure_reason')} |"
             )
     lines.extend(["", "## Improvement: Optimized vs Naive", "", "| Metric | Naive | Optimized | Absolute gain | Relative gain |", "| --- | ---: | ---: | ---: | ---: |"])
     for row in report["improvement_vs_naive"]:
@@ -443,6 +516,17 @@ def render_markdown(report: dict[str, Any]) -> str:
     for row in report["failure_comparison"]:
         lines.append(f"| `{row['query_id']}` | {row['naive_final_score']} | {row['optimized_final_score']} | {row['delta']} | {row['likely_reason']} |")
     return "\n".join(lines) + "\n"
+
+
+def variant_label(row: dict[str, Any]) -> str:
+    system = row.get("system")
+    if system == RAW_REAL_LLM_TWO_TOOLS_BASELINE or row.get("baseline_variant") == "raw":
+        return "Raw"
+    if system == GUIDED_REAL_LLM_TWO_TOOLS_BASELINE or row.get("baseline_variant") == "guided":
+        return "Guided"
+    if system == LLM_CONTROLLER_OPTIMIZED_AGENT:
+        return "Optimized Controller"
+    return str(row.get("baseline_variant") or system or "n/a")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,99 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>DASHSys Strategy Comparison</title>
+<script type="module">import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; mermaid.initialize({startOnLoad:true});</script>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;margin:32px;line-height:1.45} pre{background:#f6f8fa;padding:12px;overflow:auto;white-space:pre-wrap} table{border-collapse:collapse;width:100%;margin:12px 0} td,th{border:1px solid #d0d7de;padding:6px;vertical-align:top}</style>
+</head><body><div class="mermaid">flowchart LR
+  prompt[&quot;Query&lt;br/&gt;example_000&quot;]
+  prompt --&gt; s0_route[&quot;SQL_FIRST_API_VERIFY&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s0_route --&gt; s0_tools[&quot;tools=2&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s0_tools --&gt; s0_evidence[&quot;evidence=True&lt;br/&gt;dry_run=True&quot;]
+  s0_evidence --&gt; s0_answer[&quot;answer&lt;br/&gt;The journey &amp;quot;Birthday Message&amp;quot; has not been published. The database shows a null published&quot;]
+  prompt --&gt; s1_route[&quot;SQL_FIRST_API_VERIFY&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s1_route --&gt; s1_tools[&quot;tools=2&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s1_tools --&gt; s1_evidence[&quot;evidence=True&lt;br/&gt;dry_run=True&quot;]
+  s1_evidence --&gt; s1_answer[&quot;answer&lt;br/&gt;The journey &amp;quot;Birthday Message&amp;quot; has not been published. The database shows a null published&quot;]
+  prompt --&gt; s2_route[&quot;Raw&lt;br/&gt;route=n/a - no prompt router decision&quot;]
+  s2_route --&gt; s2_tools[&quot;tools=2&lt;br/&gt;invalid=0&quot;]
+  s2_tools --&gt; s2_evidence[&quot;evidence=False&lt;br/&gt;dry_run=True&quot;]
+  s2_evidence --&gt; s2_answer[&quot;answer&lt;br/&gt;The executed query did not find evidence for Birthday Message. This is not a hard proof that it does&quot;]
+  prompt --&gt; s3_route[&quot;Guided&lt;br/&gt;route=n/a - no prompt router decision&quot;]
+  s3_route --&gt; s3_tools[&quot;tools=2&lt;br/&gt;invalid=0&quot;]
+  s3_tools --&gt; s3_evidence[&quot;evidence=True&lt;br/&gt;dry_run=True&quot;]
+  s3_evidence --&gt; s3_answer[&quot;answer&lt;br/&gt;The journey &amp;quot;Birthday Message&amp;quot; was published on **March 31, 2026**. However, I was unable &quot;]
+  prompt --&gt; s4_route[&quot;Optimized Controller&lt;br/&gt;route=n/a - no prompt router decision&quot;]
+  s4_route --&gt; s4_tools[&quot;tools=2&lt;br/&gt;invalid=0&quot;]
+  s4_tools --&gt; s4_evidence[&quot;evidence=False&lt;br/&gt;dry_run=n/a - no API call in trajectory&quot;]
+  s4_evidence --&gt; s4_answer[&quot;answer&lt;br/&gt;The journey &amp;quot;Birthday Message&amp;quot; has not been published, as indicated by a null published_ti&quot;]
+  prompt --&gt; s5_route[&quot;DETERMINISTIC_ROUTER_SELECTED_METADATA&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s5_route --&gt; s5_tools[&quot;tools=2&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s5_tools --&gt; s5_evidence[&quot;evidence=True&lt;br/&gt;dry_run=True&quot;]
+  s5_evidence --&gt; s5_answer[&quot;answer&lt;br/&gt;The journey &amp;quot;Birthday Message&amp;quot; has not been published. The database shows a null published&quot;]
+  prompt --&gt; s6_route[&quot;LLM_FREE_AGENT_BASELINE&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s6_route --&gt; s6_tools[&quot;tools=2&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s6_tools --&gt; s6_evidence[&quot;evidence=False&lt;br/&gt;dry_run=True&quot;]
+  s6_evidence --&gt; s6_answer[&quot;answer&lt;br/&gt;The journey &amp;quot;Birthday Message&amp;quot; has not been published. The database shows a null published&quot;]
+  prompt --&gt; s7_route[&quot;SQL_ONLY_BASELINE&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s7_route --&gt; s7_tools[&quot;tools=1&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s7_tools --&gt; s7_evidence[&quot;evidence=True&lt;br/&gt;dry_run=n/a - no API call in trajectory&quot;]
+  s7_evidence --&gt; s7_answer[&quot;answer&lt;br/&gt;The journey &amp;quot;Birthday Message&amp;quot; has not been published. The database shows a null published&quot;]
+  prompt --&gt; s8_route[&quot;TEMPLATE_FIRST&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s8_route --&gt; s8_tools[&quot;tools=2&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s8_tools --&gt; s8_evidence[&quot;evidence=True&lt;br/&gt;dry_run=True&quot;]
+  s8_evidence --&gt; s8_answer[&quot;answer&lt;br/&gt;The journey &amp;quot;Birthday Message&amp;quot; has not been published. The database shows a null published&quot;]
+</div><pre># Strategy Comparison: example_000
+
+This view compares deterministic, Raw real LLM, Guided real LLM, and optimized-controller paths when those artifacts exist.
+
+```mermaid
+flowchart LR
+  prompt[&quot;Query&lt;br/&gt;example_000&quot;]
+  prompt --&gt; s0_route[&quot;SQL_FIRST_API_VERIFY&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s0_route --&gt; s0_tools[&quot;tools=2&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s0_tools --&gt; s0_evidence[&quot;evidence=True&lt;br/&gt;dry_run=True&quot;]
+  s0_evidence --&gt; s0_answer[&quot;answer&lt;br/&gt;The journey &amp;quot;Birthday Message&amp;quot; has not been published. The database shows a null published&quot;]
+  prompt --&gt; s1_route[&quot;SQL_FIRST_API_VERIFY&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s1_route --&gt; s1_tools[&quot;tools=2&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s1_tools --&gt; s1_evidence[&quot;evidence=True&lt;br/&gt;dry_run=True&quot;]
+  s1_evidence --&gt; s1_answer[&quot;answer&lt;br/&gt;The journey &amp;quot;Birthday Message&amp;quot; has not been published. The database shows a null published&quot;]
+  prompt --&gt; s2_route[&quot;Raw&lt;br/&gt;route=n/a - no prompt router decision&quot;]
+  s2_route --&gt; s2_tools[&quot;tools=2&lt;br/&gt;invalid=0&quot;]
+  s2_tools --&gt; s2_evidence[&quot;evidence=False&lt;br/&gt;dry_run=True&quot;]
+  s2_evidence --&gt; s2_answer[&quot;answer&lt;br/&gt;The executed query did not find evidence for Birthday Message. This is not a hard proof that it does&quot;]
+  prompt --&gt; s3_route[&quot;Guided&lt;br/&gt;route=n/a - no prompt router decision&quot;]
+  s3_route --&gt; s3_tools[&quot;tools=2&lt;br/&gt;invalid=0&quot;]
+  s3_tools --&gt; s3_evidence[&quot;evidence=True&lt;br/&gt;dry_run=True&quot;]
+  s3_evidence --&gt; s3_answer[&quot;answer&lt;br/&gt;The journey &amp;quot;Birthday Message&amp;quot; was published on **March 31, 2026**. However, I was unable &quot;]
+  prompt --&gt; s4_route[&quot;Optimized Controller&lt;br/&gt;route=n/a - no prompt router decision&quot;]
+  s4_route --&gt; s4_tools[&quot;tools=2&lt;br/&gt;invalid=0&quot;]
+  s4_tools --&gt; s4_evidence[&quot;evidence=False&lt;br/&gt;dry_run=n/a - no API call in trajectory&quot;]
+  s4_evidence --&gt; s4_answer[&quot;answer&lt;br/&gt;The journey &amp;quot;Birthday Message&amp;quot; has not been published, as indicated by a null published_ti&quot;]
+  prompt --&gt; s5_route[&quot;DETERMINISTIC_ROUTER_SELECTED_METADATA&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s5_route --&gt; s5_tools[&quot;tools=2&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s5_tools --&gt; s5_evidence[&quot;evidence=True&lt;br/&gt;dry_run=True&quot;]
+  s5_evidence --&gt; s5_answer[&quot;answer&lt;br/&gt;The journey &amp;quot;Birthday Message&amp;quot; has not been published. The database shows a null published&quot;]
+  prompt --&gt; s6_route[&quot;LLM_FREE_AGENT_BASELINE&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s6_route --&gt; s6_tools[&quot;tools=2&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s6_tools --&gt; s6_evidence[&quot;evidence=False&lt;br/&gt;dry_run=True&quot;]
+  s6_evidence --&gt; s6_answer[&quot;answer&lt;br/&gt;The journey &amp;quot;Birthday Message&amp;quot; has not been published. The database shows a null published&quot;]
+  prompt --&gt; s7_route[&quot;SQL_ONLY_BASELINE&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s7_route --&gt; s7_tools[&quot;tools=1&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s7_tools --&gt; s7_evidence[&quot;evidence=True&lt;br/&gt;dry_run=n/a - no API call in trajectory&quot;]
+  s7_evidence --&gt; s7_answer[&quot;answer&lt;br/&gt;The journey &amp;quot;Birthday Message&amp;quot; has not been published. The database shows a null published&quot;]
+  prompt --&gt; s8_route[&quot;TEMPLATE_FIRST&lt;br/&gt;route=SQL_PLUS_API&quot;]
+  s8_route --&gt; s8_tools[&quot;tools=2&lt;br/&gt;invalid=n/a - no invalid-call metric recorded&quot;]
+  s8_tools --&gt; s8_evidence[&quot;evidence=True&lt;br/&gt;dry_run=True&quot;]
+  s8_evidence --&gt; s8_answer[&quot;answer&lt;br/&gt;The journey &amp;quot;Birthday Message&amp;quot; has not been published. The database shows a null published&quot;]
+```
+
+| Variant | Strategy | Route | Context mode | SQL preview | API endpoint | Tool calls | Invalid calls | Endpoint repairs | Evidence available | Dry-run only | Runtime | Tokens | Final answer preview |
+| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | --- | --- | ---: | ---: | --- |
+| SQL_FIRST_API_VERIFY | `LLM_SQL_FIRST_API_VERIFY` | SQL_PLUS_API | n/a - no candidate context mode recorded | SELECT &quot;NAME&quot; AS campaign_name, &quot;LASTDEPLOYEDTIME&quot; AS published_time FROM &quot;dim_campaign&quot; LIMIT 50 | GET /ajo/journey | 2 | n/a - no invalid-call metric recorded | n/a - no endpoint-repair metric recorded | True | True | 0.01375787507276982 | 719 | The journey &quot;Birthday Message&quot; has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable. |
+| SQL_FIRST_API_VERIFY | `SQL_FIRST_API_VERIFY` | SQL_PLUS_API | n/a - no candidate context mode recorded | SELECT &quot;NAME&quot; AS campaign_name, &quot;LASTDEPLOYEDTIME&quot; AS published_time FROM &quot;dim_campaign&quot; LIMIT 50 | GET /ajo/journey | 2 | n/a - no invalid-call metric recorded | n/a - no endpoint-repair metric recorded | True | True | 0.010044333059340715 | 759 | The journey &quot;Birthday Message&quot; has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable. |
+| Raw | `RAW_REAL_LLM_TWO_TOOLS_BASELINE` | n/a - no prompt router decision | n/a - no candidate context mode recorded | SELECT UPDATEDTIME FROM dim_campaign WHERE CAMPAIGNID IN (SELECT CAMPAIGNID FROM br_campaign_segment WHERE LABELSSEGMENT = &#x27;Birthday Message&#x27;) | GET /ajo/journey | 2 | 0 | 0 | False | True | 10.1537 | n/a - estimated_tokens missing | The executed query did not find evidence for Birthday Message. This is not a hard proof that it does not exist, because the query/schema choice may be incomplete. |
+| Guided | `GUIDED_REAL_LLM_TWO_TOOLS_BASELINE` | n/a - no prompt router decision | n/a - no candidate context mode recorded | SELECT UPDATEDTIME FROM dim_campaign WHERE NAME = &#x27;Birthday Message&#x27; | GET /ajo/journey | 2 | 0 | 1 | True | True | 3.7744 | n/a - estimated_tokens missing | The journey &quot;Birthday Message&quot; was published on **March 31, 2026**. However, I was unable to verify its current status via the API due to unavailable credentials. |
+| Optimized Controller | `LLM_CONTROLLER_OPTIMIZED_AGENT` | n/a - no prompt router decision | n/a - no candidate context mode recorded | n/a - no SQL call in trajectory | n/a - no API call in trajectory | 2 | 0 | 0 | False | n/a - no API call in trajectory | 1.3962 | n/a - estimated_tokens missing | The journey &quot;Birthday Message&quot; has not been published, as indicated by a null published_time in the database. Live API verification could not be executed due to the unavailability of Adobe credentials. |
+| DETERMINISTIC_ROUTER_SELECTED_METADATA | `DETERMINISTIC_ROUTER_SELECTED_METADATA` | SQL_PLUS_API | n/a - no candidate context mode recorded | SELECT &quot;NAME&quot; AS campaign_name, &quot;LASTDEPLOYEDTIME&quot; AS published_time FROM &quot;dim_campaign&quot; LIMIT 50 | GET /ajo/journey | 2 | n/a - no invalid-call metric recorded | n/a - no endpoint-repair metric recorded | True | True | 0.010027958080172539 | 682 | The journey &quot;Birthday Message&quot; has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable. |
+| LLM_FREE_AGENT_BASELINE | `LLM_FREE_AGENT_BASELINE` | SQL_PLUS_API | n/a - no candidate context mode recorded | SELECT &quot;IMSORGID&quot;, &quot;LASTDEPLOYEDTIME&quot;, &quot;STATE&quot;, &quot;SANDBOXNAME&quot;, &quot;NAME&quot;, &quot;SANDBOXID&quot;, &quot;STATUS&quot;, &quot;CAMPAIGNID&quot; FROM &quot;dim_campaign&quot; WHERE LOWER(CAST(&quot;SANDBOXNAME&quot; AS VARCHAR)) LIKE LOWER(&#x27;%Birthday Message%&#x27;) AND LOWER(CAST(&quot;STATUS&quot; AS VARCHAR)) LIKE LOWER(&#x27;%published%&#x27;) LIMIT 50 | GET /ajo/journey | 2 | n/a - no invalid-call metric recorded | n/a - no endpoint-repair metric recorded | False | True | 0.016719542094506323 | 764 | The journey &quot;Birthday Message&quot; has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable. |
+| SQL_ONLY_BASELINE | `SQL_ONLY_BASELINE` | SQL_PLUS_API | n/a - no candidate context mode recorded | SELECT &quot;NAME&quot; AS campaign_name, &quot;LASTDEPLOYEDTIME&quot; AS published_time FROM &quot;dim_campaign&quot; LIMIT 50 | n/a - no API call in trajectory | 1 | n/a - no invalid-call metric recorded | n/a - no endpoint-repair metric recorded | True | n/a - no API call in trajectory | 0.011505834059789777 | 486 | The journey &quot;Birthday Message&quot; has not been published. The database shows a null published_time for this journey, and API evidence was not requested. |
+| TEMPLATE_FIRST | `TEMPLATE_FIRST` | SQL_PLUS_API | n/a - no candidate context mode recorded | SELECT &quot;NAME&quot; AS campaign_name, &quot;LASTDEPLOYEDTIME&quot; AS published_time FROM &quot;dim_campaign&quot; LIMIT 50 | GET /ajo/journey | 2 | n/a - no invalid-call metric recorded | n/a - no endpoint-repair metric recorded | True | True | 0.009816540987230837 | 676 | The journey &quot;Birthday Message&quot; has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable. |
+</pre></body></html>

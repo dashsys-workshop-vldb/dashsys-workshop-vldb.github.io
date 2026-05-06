@@ -1,91 +1,66 @@
 # DASHSys Efficiency And Accuracy Improvement Report
 
-## 1. What Changed
+## Executive Summary
 
-This pass keeps `SQL_FIRST_API_VERIFY` as the packaged deterministic default and adds a clean raw-vs-guided real LLM baseline split.
+DASHSys remains stable on the packaged path: `SQL_FIRST_API_VERIFY` is still the default submission strategy, strict scoring still passes, and no secret leakage was detected in the submission checks. The raw and guided real-LLM tool-loop baselines are now clearly separated. In the latest OpenRouter-backed run, guided mode sharply reduced invalid tool behavior, especially unknown-table and unsupported-negative-answer failures, while using more prompt/context tokens. Several late real-provider requests failed at the LLM-request level; those rows are reported as failed tool loops and are not counted as successful baselines.
 
-- `RAW_REAL_LLM_TWO_TOOLS_BASELINE`: real LLM plus only `execute_sql` and `call_api`, with minimal affordance and normal validation.
-- `GUIDED_REAL_LLM_TWO_TOOLS_BASELINE`: the same two tools, plus schema affordance, endpoint repair, virtual schema guidance, actionable validation feedback, duplicate-call tracking, and uncertainty-safe answer wording.
-- `REAL_LLM_TWO_TOOLS_BASELINE` remains the backward-compatible raw-baseline concept.
-- Candidate context now records adaptive modes: `candidate`, `expanded_candidate`, `hybrid`, or `full_schema`.
-- Reports now distinguish tool invocation, validation, execution attempt, execution success, dry-run-only API calls, and evidence availability.
+## What Changed
 
-## 2. Raw Baseline vs Guided Baseline
+- Split real LLM tool diagnostics into `RAW_REAL_LLM_TWO_TOOLS_BASELINE` and `GUIDED_REAL_LLM_TWO_TOOLS_BASELINE`.
+- Added guided-only schema affordance, endpoint repair, virtual schema guidance, validation feedback, duplicate-call tracking, and uncertainty-safe answer wording.
+- Added evidence availability fields so reports separate tool invocation from usable evidence.
+- Added adaptive candidate context modes: `candidate`, `expanded_candidate`, `hybrid`, and `full_schema`.
+- Added detailed dataflow visualization reports under `outputs/visualizations/`.
 
-Latest provider-backed run used OpenRouter through the OpenAI-compatible tool-calling path.
+## What Did Not Change
+
+- `SQL_FIRST_API_VERIFY` remains the packaged default.
+- Strict evaluation was not weakened; missing gold fields remain unscored rather than free `1.0`.
+- Validators, secret redaction, checkpoint logging, packaging, and readiness checks remain in place.
+- Adobe API remains dry-run when credentials are unavailable; dry-run API calls are not live evidence.
+- Raw baseline remains the fair naive real LLM + two tools comparison.
+
+## Raw vs Guided Comparison
 
 | Metric | Raw baseline | Guided baseline |
 | --- | ---: | ---: |
 | Rows | 35 | 35 |
-| Valid runs | 34 | 35 |
-| Failed runs | 1 | 0 |
-| Average invalid tool calls | 0.5429 | 0.0286 |
-| Endpoint repairs | 0 | 33 |
-| Schema hint injections | 0 | 0 |
+| Successful tool-loop rows | 27 | 26 |
+| Failed tool-loop rows | 8 | 9 |
+| Valid run rate | 0.7714 | 0.7429 |
+| Average tool calls | 1.2571 | 1.2 |
+| Average invalid tool calls | 0.3143 | 0.0286 |
+| Unknown table errors | 9 | 0 |
+| Unsupported negative answers | 4 | 0 |
+| Endpoint repairs | 0 | 22 total / 0.6286 average |
 | Average prompt/context tokens | 1318.3429 | 2057.3429 |
-| Average runtime | 4.0898 | 4.1965 |
+| Average runtime | 4.8366 | 3.625 |
 
-Guided uses more prompt/context tokens because it includes explicit schema/API affordance. The cost is visible and modest in runtime for this run, while tool validity improved: invalid tool calls dropped sharply and all guided rows completed as valid runs.
+Guided mode costs more context because it gives the model allowed tables, API affordances, and actionable feedback. The fresh provider run had several request-level failures for both variants; those are model/provider reliability issues rather than successful or scored tool-loop runs. Among completed tool loops, guided mode still reduced invalid calls and removed unknown-table failures.
 
-## 3. Tool Execution vs Evidence Success
+## Tool Execution vs Evidence Success
 
-The tool loop now records:
+Dry-run API calls mean the tool was invoked and validated, and execution was attempted through the DASHSys API wrapper, but live evidence was unavailable because Adobe credentials were missing. These calls are not counted as successful live evidence.
 
-- `tool_invoked`
-- `tool_validation_ok`
-- `tool_execution_attempted`
-- `tool_execution_ok`
-- `evidence_available`
-- `dry_run_only`
-- `successful_evidence_count`
+| Metric | Raw | Guided |
+| --- | ---: | ---: |
+| Dry-run-only API count | 15 | 24 |
+| Average successful evidence count | 0.3714 | 0.2857 |
+| Average invalid tool calls | 0.3143 | 0.0286 |
 
-Dry-run API calls count as tool invocations and execution attempts, but do not count as evidence when Adobe credentials are unavailable. SQL returning rows or meaningful aggregate rows counts as evidence. Zero-row SQL is treated as uncertain unless supported by strong schema context.
+## Empty-Result Uncertainty
 
-## 4. Empty-Result Uncertainty
+When SQL returns zero rows through an inferred schema or after prior validation issues, the baseline wording avoids hard negatives such as "not found" or "does not exist." It uses uncertainty phrasing such as: "The executed query did not find evidence for X." This keeps failed or weak tool paths from becoming unsupported factual claims.
 
-Raw sample:
+## Endpoint Repair Examples
 
-`When was the journey 'Birthday Message' published?`
+Guided endpoint repair is catalog-constrained. For batch-file style requests, aliases like `/data/core/ups/batch/{id}/files` are repaired to `/data/foundation/export/batches/{batch_id}/files` when the endpoint family and extracted ID are safe. The report records original endpoint, repaired endpoint, reason, and confidence.
 
-The raw baseline produced a zero-row/uncertain path and the answer was rewritten to:
+## Schema Feedback Examples
 
-`The executed query did not find evidence for Birthday Message. This is not a hard proof that it does not exist, because the query/schema choice may be incomplete.`
+Guided validation feedback explains invalid generic table choices. For example, a journey/campaign prompt that tries `journey` is pointed toward allowed schema such as `dim_campaign`; introspection attempts like `information_schema` and `sqlite_master` return guided schema feedback instead of being treated as real database internals.
 
-This prevents unsupported hard negatives such as "not found" or "does not exist" when the executed query may be incomplete.
-
-## 5. Endpoint Repair Examples
-
-Guided sample:
-
-`Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?`
-
-The guided baseline repaired batch-file aliases to the catalog endpoint family:
-
-- from `/data/core/ups/batch/{id}/files`
-- to `/data/foundation/export/batches/{batch_id}/files`
-
-The final answer still reported that Adobe credentials were unavailable, so the API was dry-run only and not counted as live evidence.
-
-## 6. Schema Feedback Examples
-
-Guided SQL validation now suggests safe tables for invalid generic names:
-
-- invalid `journey` suggests `dim_campaign`
-- `information_schema`, `sqlite_master`, and `duckdb_tables` are not executed as DB internals
-- guided virtual schema guidance exposes `__schema_tables`, `__schema_columns`, and `DESCRIBE <allowed_table>`
-
-The raw baseline is isolated from these features by tests, preserving the clean naive comparison.
-
-## 7. Curated Join Hint Audit
-
-`outputs/candidate_context_report.json` now includes `curated_join_hint_audit`.
-
-- Join hint count: 35
-- `used_gold_patterns`: false
-- Sources are classified as schema-level relationship, naming convention, bridge-table heuristic, or manual general rule.
-- No join hint is derived from gold SQL, exact public query strings, or public answer patterns.
-
-## 8. Candidate Context Mode Distribution
+## Candidate Context Mode Distribution
 
 | Metric | Value |
 | --- | ---: |
@@ -100,68 +75,70 @@ The raw baseline is isolated from these features by tests, preserving the clean 
 | Zero-margin count | 32 |
 | Recommended fallback rate | 0.9143 |
 
-Context mode distribution:
-
-| Mode | Count |
+| Context mode | Count |
 | --- | ---: |
 | candidate | 3 |
 | hybrid | 32 |
 
-This means candidate retrieval remains useful for compression, but weak or tied contexts are not over-trusted; most examples recommend hybrid/full-schema fallback.
+Candidate context is useful for compression, but the low-confidence and zero-margin rate remains high enough that hybrid/full-schema fallback is still required for robustness.
 
-## 9. Before/After Regression Table
+## Curated Join Hint Audit
 
-| Gate | Before / reference | After | Result |
-| --- | ---: | ---: | --- |
-| `SQL_FIRST_API_VERIFY` strict final score | 0.649 reference from strict rerun | 0.649 | pass |
-| `SQL_FIRST_API_VERIFY` strict correctness | 0.6743 | 0.6743 | pass |
-| Packaged preferred strategy | `SQL_FIRST_API_VERIFY` | `SQL_FIRST_API_VERIFY` | pass |
-| `no_secret_scan.ok` | true | true | pass |
-| Strict missing-gold behavior | unscored, not free 1.0 | preserved | pass |
-| Raw baseline available | required | available | pass |
-| Guided baseline separate | required | reported separately | pass |
+`outputs/candidate_context_report.json` includes `curated_join_hint_audit`. The audit reports `used_gold_patterns: false`; join hints are classified as schema-level relationships, naming conventions, bridge-table heuristics, or manual general rules. No join hint is derived from gold SQL, exact public query strings, or public answer patterns.
 
-`SQL_FIRST_API_VERIFY` token count and runtime stayed materially stable in strict mode: 851.7714 estimated tokens and 0.0103 average runtime.
+## Before/After Regression Table
 
-## 10. Failure-Category Before/After Table
+| Gate | Result |
+| --- | --- |
+| `SQL_FIRST_API_VERIFY` strict final score | 0.649, no material regression |
+| `SQL_FIRST_API_VERIFY` strict correctness | 0.6743 |
+| `SQL_FIRST_API_VERIFY` estimated tokens | 851.7714 |
+| `SQL_FIRST_API_VERIFY` runtime | 0.0105 |
+| Packaged preferred strategy | `SQL_FIRST_API_VERIFY` |
+| Strict missing-gold behavior | preserved |
+| Raw baseline availability | available |
+| Guided baseline reporting | separate from raw |
+
+## Failure-Category Table
 
 | Category | Raw | Guided | Result |
 | --- | ---: | ---: | --- |
-| unknown_table_count | 16 | 0 | improved |
-| unknown_column_count | 3 | 0 | improved |
-| schema_introspection_failure_count | 5 | 0 | improved |
+| unknown_table_count | 9 | 0 | improved |
+| unknown_column_count | 1 | 1 | stable |
+| unknown_endpoint_count | 0 | 0 | stable |
+| schema_introspection_failure_count | 4 | 1 | improved |
 | duplicate_invalid_call_count | 0 | 0 | stable |
-| dry_run_only_api_count | 21 | 36 | expected: guided reaches more catalog API paths, but dry-run remains non-evidence without Adobe credentials |
+| dry_run_only_api_count | 15 | 24 | guided reaches more API paths, still dry-run-only without Adobe credentials |
 | unsupported_negative_answer_count | 4 | 0 | improved |
-| max_turns_exceeded_count | 1 | 0 | improved |
-| no_final_answer_count | 1 | 0 | improved |
-| unknown_endpoint_count | 0 | 1 | explained: one guided run reached an endpoint validation path that raw did not attempt in this stochastic provider run; it was not counted as successful live evidence |
+| max_turns_exceeded_count | 0 | 0 | stable |
+| no_final_answer_count | 8 | 9 | provider request failures in this run; failed rows stay separate |
 
-Guided reduced the main invalid-call categories. The one unknown-endpoint category is reported rather than hidden.
+## Token And Runtime Efficiency
 
-## 11. Efficiency Gates
-
-| Metric | Raw | Guided | Tradeoff |
+| Metric | Raw | Guided | Interpretation |
 | --- | ---: | ---: | --- |
 | Avg prompt/context tokens | 1318.3429 | 2057.3429 | Guided costs more context |
-| Avg runtime | 4.0898 | 4.1965 | Guided slightly slower |
-| Valid run rate | 0.9714 | 1.0 | Guided improved reliability |
-| Avg invalid calls | 0.5429 | 0.0286 | Guided reduced waste |
+| Avg runtime | 4.8366 | 3.625 | Guided was faster in this provider run despite larger context |
+| Avg invalid tool calls | 0.3143 | 0.0286 | Guided reduces wasted invalid calls |
+| Valid run rate | 0.7714 | 0.7429 | Provider request failures affected guided late rows |
 
-The guided baseline is more expensive, but the report exposes the tradeoff directly. The deterministic packaged path is unchanged.
+## Strict Eval, Packaging, Readiness
 
-## 12. Strict Eval, Packaging, Readiness
-
+- `python3 -m pytest`: 108 passed.
 - `python3 scripts/run_dev_eval.py --strict`: passed.
-- `python3 -m pytest`: 102 passed.
-- `python3 scripts/package_submission.py`: passed.
-- `python3 scripts/package_query_outputs.py`: passed.
-- `python3 scripts/check_submission_ready.py`: passed.
-- `outputs/final_submission_manifest.json` reports `preferred_strategy: SQL_FIRST_API_VERIFY` and `no_secret_scan.ok: true`.
+- Packaging and readiness are rerun in the final validation step.
+- Visualization files are generated only under `outputs/visualizations/` and are not part of `outputs/final_submission/`.
 
-## 13. Remaining Risks
+## Remaining Issues
 
-- Live Adobe API credentials are still unavailable, so API calls remain dry-run in local evaluation.
-- Real LLM baseline behavior varies by provider/model and can still choose weak SQL/API paths.
-- Guided baseline improves tool reliability but should not replace the raw baseline for fair naive comparison.
-- Candidate context has strong compression but low/zero-margin cases are common, so hybrid/full-schema fallback remains important.
+- Adobe credentials are unavailable locally, so API evidence remains dry-run.
+- Candidate context still has many low-confidence or zero-margin cases.
+- Guided baseline costs more tokens than raw.
+- Real LLM baseline behavior is provider/model-dependent and can fail at request time.
+
+## Next Steps
+
+- Re-run with Adobe credentials to measure live API evidence.
+- Re-run provider-backed baselines after rate/request stability improves.
+- Tune candidate retrieval only with hidden-test-safe schema/API retrieval rules.
+- Keep `SQL_FIRST_API_VERIFY` as default unless an LLM path beats it under strict scoring and efficiency checks.
