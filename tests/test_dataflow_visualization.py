@@ -172,6 +172,32 @@ def fake_trajectory():
                 "behavior_changed": False,
             },
         },
+        "_compact_context_shadow_eval_row": {
+            "current_score": 0.6,
+            "compact_context_score": 0.6,
+            "score_delta": 0.0,
+            "token_delta": -42,
+            "runtime_delta": 0.0,
+            "tool_call_delta": 0,
+            "final_answer_difference": False,
+            "packaged_execution_changed": False,
+            "measured_accuracy_improvement_claimed": False,
+            "measured_efficiency_improvement_claimed": False,
+        },
+        "_risk_efficiency_shadow_eval_row": {
+            "risk_level": "medium",
+            "module_skipped_by_risk": ["shadow_repair"],
+            "current_score": 0.6,
+            "risk_skipping_score": 0.6,
+            "score_delta": 0.0,
+            "token_delta": -12,
+            "runtime_delta": -0.01,
+            "tool_call_delta": 0,
+            "final_answer_difference": False,
+            "packaged_execution_changed": False,
+            "measured_accuracy_improvement_claimed": False,
+            "measured_efficiency_improvement_claimed": False,
+        },
     }
 
 
@@ -202,6 +228,11 @@ def test_dataflow_outputs_mermaid_markdown_html_and_redacts():
     assert "token/runtime savings in this section are estimates" in md.lower()
     assert "Schema Context Voting" in md
     assert "compact and fallback top candidates agree" in md
+    assert "Compact Context Shadow Evaluation" in md
+    assert "Risk-Efficiency Shadow Evaluation" in md
+    assert "packaged_execution_changed" in md
+    assert "measured_accuracy_improvement_claimed" in md
+    assert "measured_efficiency_improvement_claimed" in md
     assert "Hybrid Candidate Scoring" in md
     assert "Endpoint Family Ranker" in md
     assert "SQLGlot AST validation" in md
@@ -249,6 +280,8 @@ def test_dataflow_artifacts_are_real_values_and_not_final_submission(tmp_path):
     assert "checkpoint_hybrid_candidate_scoring" in spans
     assert "checkpoint_risk_efficiency_controller" in spans
     assert "checkpoint_schema_context_voting" in spans
+    assert "checkpoint_compact_context_shadow_eval" in spans
+    assert "checkpoint_risk_efficiency_shadow_eval" in spans
 
 
 def test_dataflow_mermaid_required_subgraphs_and_missing_fields():

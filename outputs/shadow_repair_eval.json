@@ -9,6 +9,8 @@
     "writes_final_submission": false,
     "writes_packaged_query_outputs": false
   },
+  "behavior_changing_flags_enabled": false,
+  "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
   "canary_flags_default_zero": {
     "ENABLE_REPAIR_FOR_BATCH_ENDPOINT_CONFUSION": false,
     "ENABLE_REPAIR_FOR_MISSING_API_TOPK": false,
@@ -102,13 +104,17 @@
       "shadow_eval_rows": 6
     }
   },
+  "measured_accuracy_improvement_claimed": false,
+  "measured_efficiency_improvement_claimed": false,
   "mode": "offline_shadow_repair_eval",
   "notes": [
     "Gold labels are used only by the offline strict scorer, never to generate repaired plans.",
     "Shadow repaired plan scoring reuses existing deterministic answer text and verifier diagnostics; no LLM answer generation is introduced.",
     "Dry-run API calls are not counted as live API evidence.",
-    "Execution repair remains disabled by default and this script does not alter packaged SQL_FIRST_API_VERIFY outputs."
+    "Execution repair remains disabled by default and this script does not alter packaged SQL_FIRST_API_VERIFY outputs.",
+    "No behavior-changing flags were enabled in this pass."
   ],
+  "packaged_execution_changed": false,
   "packaged_strategy_unchanged": true,
   "paired_shadow_eval_summary": {
     "avg_runtime_delta": 0.0,
@@ -155,7 +161,20 @@
     "repaired_better_count": 1,
     "repaired_equal_count": 26,
     "repaired_worse_count": 8,
-    "unsafe_repair_count": 21
+    "safe_avg_score_delta": -0.0077,
+    "safe_avg_tool_delta": 0.0,
+    "safe_repaired_better_count": 0,
+    "safe_repaired_equal_count": 14,
+    "safe_repaired_worse_count": 1,
+    "unsafe_avg_score_delta": -0.0567,
+    "unsafe_failure_reason_counts": {
+      "api_validation": 2,
+      "endpoint_family_confidence": 5,
+      "fusion_agreement": 14,
+      "sql_validation": 2,
+      "tool_call_increase": 1
+    },
+    "unsafe_repair_count": 34
   },
   "preferred_strategy": "SQL_FIRST_API_VERIFY",
   "repair_execution_enabled": false,
@@ -175,6 +194,8 @@
   "rows": [
     {
       "accuracy_risk": "low - candidates are separated and schema/API signals are consistent",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": null,
       "current_plan_api": [
         {
@@ -188,31 +209,53 @@
       "current_plan_sql": [
         "SELECT \"NAME\" AS campaign_name, \"LASTDEPLOYEDTIME\" AS published_time FROM \"dim_campaign\" LIMIT 50"
       ],
-      "current_runtime": 0.013,
+      "current_runtime": 0.0124,
       "current_strict_score": 0.6903,
       "current_tokens": 950,
       "current_tool_calls": 2,
-      "decision": "safe_shadow_tie_recommend_canary",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "8b91ef00205c19c0",
       "dry_run_only": true,
       "evidence_available": true,
       "execution_changed": false,
       "fallback_reason": "schema voting is reserved for high-risk diagnostics",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [
         "value_retrieval",
         "shadow_repair",
         "repair_safety_verifier",
         "schema_context_voting"
       ],
+      "packaged_execution_changed": false,
       "query": "When was the journey 'Birthday Message' published?",
       "query_id": "example_000",
-      "rejection_reason": "",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.; Compact-vs-broader schema context vote did not agree.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "no_op_repair",
+          "schema_vote_agreement"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan.",
+          "Compact-vs-broader schema context vote did not agree."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
       },
-      "repair_safe_to_enable": true,
+      "repair_safe_to_enable": false,
       "repaired_plan_api": [
         {
           "method": "GET",
@@ -225,7 +268,7 @@
       "repaired_plan_sql": [
         "SELECT \"NAME\" AS campaign_name, \"LASTDEPLOYEDTIME\" AS published_time FROM \"dim_campaign\" LIMIT 50"
       ],
-      "repaired_runtime": 0.013,
+      "repaired_runtime": 0.0124,
       "repaired_strict_score": 0.6903,
       "repaired_tokens": 950,
       "repaired_tool_calls": 2,
@@ -315,7 +358,7 @@
       },
       "schema_vote_agreement": null,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0927,
+      "shadow_runtime": 0.0956,
       "token_delta": 0,
       "token_saved_estimate": 264,
       "tool_delta": 0,
@@ -323,6 +366,8 @@
     },
     {
       "accuracy_risk": "medium - candidate confidence or endpoint confidence is not strong enough for compact-only diagnostics",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": null,
       "current_plan_api": [
         {
@@ -336,31 +381,53 @@
       "current_plan_sql": [
         "SELECT J.\"CAMPAIGNID\" AS campaign_id, J.\"NAME\" AS campaign_name, J.\"STATE\" AS campaign_state, J.\"UPDATEDTIME\" AS updated_time FROM \"dim_campaign\" AS J WHERE LOWER(CAST(J.\"STATE\" AS VARCHAR)) NOT IN ('deployed', 'redeployed') LIMIT 50"
       ],
-      "current_runtime": 0.0119,
+      "current_runtime": 0.0115,
       "current_strict_score": 0.7902,
       "current_tokens": 996,
       "current_tool_calls": 2,
-      "decision": "safe_shadow_tie_recommend_canary",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "d4048a0dc950bb7d",
       "dry_run_only": true,
       "evidence_available": true,
       "execution_changed": false,
       "fallback_reason": "schema voting is reserved for high-risk diagnostics",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [
         "value_retrieval",
         "shadow_repair",
         "repair_safety_verifier",
         "schema_context_voting"
       ],
+      "packaged_execution_changed": false,
       "query": "Give me inactive journeys",
       "query_id": "example_001",
-      "rejection_reason": "",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.; Compact-vs-broader schema context vote did not agree.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "no_op_repair",
+          "schema_vote_agreement"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan.",
+          "Compact-vs-broader schema context vote did not agree."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
       },
-      "repair_safe_to_enable": true,
+      "repair_safe_to_enable": false,
       "repaired_plan_api": [
         {
           "method": "GET",
@@ -373,7 +440,7 @@
       "repaired_plan_sql": [
         "SELECT J.\"CAMPAIGNID\" AS campaign_id, J.\"NAME\" AS campaign_name, J.\"STATE\" AS campaign_state, J.\"UPDATEDTIME\" AS updated_time FROM \"dim_campaign\" AS J WHERE LOWER(CAST(J.\"STATE\" AS VARCHAR)) NOT IN ('deployed', 'redeployed') LIMIT 50"
       ],
-      "repaired_runtime": 0.0119,
+      "repaired_runtime": 0.0115,
       "repaired_strict_score": 0.7902,
       "repaired_tokens": 996,
       "repaired_tool_calls": 2,
@@ -466,7 +533,7 @@
       },
       "schema_vote_agreement": null,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0182,
+      "shadow_runtime": 0.0227,
       "token_delta": 0,
       "token_saved_estimate": 264,
       "tool_delta": 0,
@@ -474,6 +541,8 @@
     },
     {
       "accuracy_risk": "low - candidates are separated and schema/API signals are consistent",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": null,
       "current_plan_api": [
         {
@@ -487,31 +556,53 @@
       "current_plan_sql": [
         "SELECT CAMPAIGN.\"NAME\" AS CAMPAIGNNAME, CAMPAIGN.\"CAMPAIGNID\" AS CAMPAIGNID FROM \"dim_campaign\" AS CAMPAIGN"
       ],
-      "current_runtime": 0.0107,
+      "current_runtime": 0.0106,
       "current_strict_score": 0.761,
       "current_tokens": 814,
       "current_tool_calls": 2,
-      "decision": "safe_shadow_tie_recommend_canary",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "eebe841f2a2aed58",
       "dry_run_only": true,
       "evidence_available": true,
       "execution_changed": false,
       "fallback_reason": "schema voting is reserved for high-risk diagnostics",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [
         "value_retrieval",
         "shadow_repair",
         "repair_safety_verifier",
         "schema_context_voting"
       ],
+      "packaged_execution_changed": false,
       "query": "List all journeys",
       "query_id": "example_002",
-      "rejection_reason": "",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.; Compact-vs-broader schema context vote did not agree.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "no_op_repair",
+          "schema_vote_agreement"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan.",
+          "Compact-vs-broader schema context vote did not agree."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
       },
-      "repair_safe_to_enable": true,
+      "repair_safe_to_enable": false,
       "repaired_plan_api": [
         {
           "method": "GET",
@@ -524,7 +615,7 @@
       "repaired_plan_sql": [
         "SELECT CAMPAIGN.\"NAME\" AS CAMPAIGNNAME, CAMPAIGN.\"CAMPAIGNID\" AS CAMPAIGNID FROM \"dim_campaign\" AS CAMPAIGN"
       ],
-      "repaired_runtime": 0.0107,
+      "repaired_runtime": 0.0106,
       "repaired_strict_score": 0.761,
       "repaired_tokens": 814,
       "repaired_tool_calls": 2,
@@ -614,7 +705,7 @@
       },
       "schema_vote_agreement": null,
       "score_delta": 0.0,
-      "shadow_runtime": 0.006,
+      "shadow_runtime": 0.0077,
       "token_delta": 0,
       "token_saved_estimate": 264,
       "tool_delta": 0,
@@ -622,6 +713,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -644,21 +737,45 @@
       "current_plan_sql": [
         "SELECT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, A.\"TOTALMEMBERS\" AS total_profiles, A.\"CREATEDTIME\" AS created_time, A.\"UPDATEDTIME\" AS updated_time FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"DATAFLOWNAME\" = 'SMS Opt-In' OR D.\"NAME\" = 'SMS Opt-In' ORDER BY A.\"NAME\""
       ],
-      "current_runtime": 0.0149,
+      "current_runtime": 0.0143,
       "current_strict_score": 0.7156,
       "current_tokens": 1638,
       "current_tool_calls": 3,
-      "decision": "reject_unsafe_repair",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "ee729da7b42200ff",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
       "query_id": "example_003",
-      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.; Repair safety verifier did not pass.; Weighted score fusion and RRF/family signals did not agree.; Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "fusion_agreement",
+          "no_op_repair",
+          "safety_verifier"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan.",
+          "Repair safety verifier did not pass.",
+          "Weighted score fusion and RRF/family signals did not agree."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
@@ -685,7 +802,7 @@
       "repaired_plan_sql": [
         "SELECT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, A.\"TOTALMEMBERS\" AS total_profiles, A.\"CREATEDTIME\" AS created_time, A.\"UPDATEDTIME\" AS updated_time FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"DATAFLOWNAME\" = 'SMS Opt-In' OR D.\"NAME\" = 'SMS Opt-In' ORDER BY A.\"NAME\""
       ],
-      "repaired_runtime": 0.0149,
+      "repaired_runtime": 0.0143,
       "repaired_strict_score": 0.7156,
       "repaired_tokens": 1638,
       "repaired_tool_calls": 3,
@@ -827,7 +944,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0214,
+      "shadow_runtime": 0.0242,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -835,6 +952,8 @@
     },
     {
       "accuracy_risk": "high - zero_score_margin, risk_cluster:zero_score_margin",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -849,7 +968,7 @@
       "current_plan_sql": [
         "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"
       ],
-      "current_runtime": 0.0112,
+      "current_runtime": 0.011,
       "current_strict_score": 0.6744,
       "current_tokens": 887,
       "current_tool_calls": 2,
@@ -860,10 +979,28 @@
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "Show me the IDs of failed dataflow runs",
       "query_id": "example_004",
       "rejection_reason": "",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [],
+        "no_op": false,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Repaired plan passed strict report-only selector gates."
+        ],
+        "recommendation": "select_repaired_shadow_candidate",
+        "safe_to_select_repaired": true,
+        "selected_plan": "repaired"
+      },
       "repair_decision": {
         "changed": true,
         "endpoint_id": "flowservice_runs",
@@ -885,7 +1022,7 @@
       "repaired_plan_sql": [
         "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"
       ],
-      "repaired_runtime": 0.0112,
+      "repaired_runtime": 0.011,
       "repaired_strict_score": 0.6744,
       "repaired_tokens": 887,
       "repaired_tool_calls": 2,
@@ -1019,7 +1156,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.0,
-      "shadow_runtime": 0.011,
+      "shadow_runtime": 0.0119,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -1027,6 +1164,8 @@
     },
     {
       "accuracy_risk": "high - zero_score_margin, risk_cluster:zero_score_margin",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -1046,17 +1185,41 @@
       "current_strict_score": 0.913,
       "current_tokens": 1365,
       "current_tool_calls": 2,
-      "decision": "reject_unsafe_repair",
+      "decision": "keep_current_repair_selector_rejected",
       "decision_hash": "2f85871696e834ff",
       "dry_run_only": true,
       "evidence_available": true,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
       "query_id": "example_005",
-      "rejection_reason": "Invalid repaired endpoint: GET /data/foundation/export/batches/{batch_id}/files; Endpoint path contains unresolved path parameters.; Endpoint family confidence 0.0000 is below 0.75.; Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "rejection_reason": "Repair safety verifier did not pass.; Weighted score fusion and RRF/family signals did not agree.; Endpoint family confidence 0.0000 is below 0.85.; Invalid repaired endpoint: GET /data/foundation/export/batches/{batch_id}/files; Endpoint path contains unresolved path parameters.; Endpoint family confidence 0.0000 is below 0.75.; Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "endpoint_family_confidence",
+          "fusion_agreement",
+          "safety_verifier"
+        ],
+        "no_op": false,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Repair safety verifier did not pass.",
+          "Weighted score fusion and RRF/family signals did not agree.",
+          "Endpoint family confidence 0.0000 is below 0.85."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": true,
         "endpoint_id": "export_batch_files",
@@ -1235,7 +1398,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": -0.1658,
-      "shadow_runtime": 0.0129,
+      "shadow_runtime": 0.0135,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -1243,6 +1406,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:schema_vs_dataset_confusion",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -1257,26 +1422,46 @@
       "current_plan_sql": [
         "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1"
       ],
-      "current_runtime": 0.0122,
+      "current_runtime": 0.0124,
       "current_strict_score": 0.7272,
       "current_tokens": 1154,
       "current_tool_calls": 2,
-      "decision": "safe_shadow_tie_recommend_canary",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "e6033ce83757f84a",
       "dry_run_only": true,
       "evidence_available": true,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "How many datasets have been ingested using the same schema in the prod sandbox?",
       "query_id": "example_006",
-      "rejection_reason": "",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "no_op_repair"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
       },
-      "repair_safe_to_enable": true,
+      "repair_safe_to_enable": false,
       "repaired_plan_api": [
         {
           "method": "GET",
@@ -1290,7 +1475,7 @@
       "repaired_plan_sql": [
         "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1"
       ],
-      "repaired_runtime": 0.0122,
+      "repaired_runtime": 0.0124,
       "repaired_strict_score": 0.7272,
       "repaired_tokens": 1154,
       "repaired_tool_calls": 2,
@@ -1425,7 +1610,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0118,
+      "shadow_runtime": 0.0121,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -1433,6 +1618,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:schema_vs_dataset_confusion",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -1447,21 +1634,41 @@
       "current_plan_sql": [
         "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_collection\" AS BC JOIN \"dim_collection\" AS C ON BC.\"COLLECTIONID\" = C.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS B ON BC.\"BLUEPRINTID\" = B.\"BLUEPRINTID\" WHERE B.\"NAME\" = 'hkg_adls_profile_count_history'"
       ],
-      "current_runtime": 0.0138,
+      "current_runtime": 0.0135,
       "current_strict_score": 0.6552,
       "current_tokens": 1283,
       "current_tool_calls": 2,
-      "decision": "reject_unsafe_repair",
+      "decision": "keep_current_repair_selector_rejected",
       "decision_hash": "71f976e82797b1cb",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "List all datasets that use the schema 'hkg_adls_profile_count_history'.",
       "query_id": "example_007",
-      "rejection_reason": "Invalid repaired endpoint: GET /data/foundation/schemaregistry/tenant/schemas/{schema_id}; Endpoint path contains unresolved path parameters.",
+      "rejection_reason": "Repair safety verifier did not pass.; Invalid repaired endpoint: GET /data/foundation/schemaregistry/tenant/schemas/{schema_id}; Endpoint path contains unresolved path parameters.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "safety_verifier"
+        ],
+        "no_op": false,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Repair safety verifier did not pass."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": true,
         "endpoint_id": "schema_registry_schema",
@@ -1481,7 +1688,7 @@
       "repaired_plan_sql": [
         "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_collection\" AS BC JOIN \"dim_collection\" AS C ON BC.\"COLLECTIONID\" = C.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS B ON BC.\"BLUEPRINTID\" = B.\"BLUEPRINTID\" WHERE B.\"NAME\" = 'hkg_adls_profile_count_history'"
       ],
-      "repaired_runtime": 0.0138,
+      "repaired_runtime": 0.0135,
       "repaired_strict_score": 0.77,
       "repaired_tokens": 1283,
       "repaired_tool_calls": 2,
@@ -1621,7 +1828,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.1148,
-      "shadow_runtime": 0.0151,
+      "shadow_runtime": 0.0164,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -1629,31 +1836,59 @@
     },
     {
       "accuracy_risk": "medium - candidate confidence or endpoint confidence is not strong enough for compact-only diagnostics",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": null,
       "current_plan_api": [],
       "current_plan_sql": [
         "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20"
       ],
-      "current_runtime": 0.0099,
+      "current_runtime": 0.0101,
       "current_strict_score": 0.7027,
       "current_tokens": 671,
       "current_tool_calls": 1,
-      "decision": "reject_unsafe_repair",
+      "decision": "keep_current_repair_selector_rejected",
       "decision_hash": "d56d712659788f46",
       "dry_run_only": true,
       "evidence_available": true,
       "execution_changed": false,
       "fallback_reason": "schema voting is reserved for high-risk diagnostics",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [
         "value_retrieval",
         "shadow_repair",
         "repair_safety_verifier",
         "schema_context_voting"
       ],
+      "packaged_execution_changed": false,
       "query": "show me the field for Person: Birthday Today 001",
       "query_id": "example_008",
-      "rejection_reason": "Repaired plan would increase tool calls from 1 to 2.; Endpoint family confidence 0.0000 is below 0.75.",
+      "rejection_reason": "Repair safety verifier did not pass.; Endpoint family confidence 0.0000 is below 0.85.; Compact-vs-broader schema context vote did not agree.; Repaired plan would increase tool calls.; Repaired plan would increase tool calls from 1 to 2.; Endpoint family confidence 0.0000 is below 0.75.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "endpoint_family_confidence",
+          "safety_verifier",
+          "schema_vote_agreement",
+          "tool_call_increase"
+        ],
+        "no_op": false,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Repair safety verifier did not pass.",
+          "Endpoint family confidence 0.0000 is below 0.85.",
+          "Compact-vs-broader schema context vote did not agree.",
+          "Repaired plan would increase tool calls."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": true,
         "endpoint_id": "audit_events",
@@ -1675,7 +1910,7 @@
       "repaired_plan_sql": [
         "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20"
       ],
-      "repaired_runtime": 0.0099,
+      "repaired_runtime": 0.0101,
       "repaired_strict_score": 0.6902,
       "repaired_tokens": 671,
       "repaired_tool_calls": 2,
@@ -1772,7 +2007,7 @@
       },
       "schema_vote_agreement": null,
       "score_delta": -0.0125,
-      "shadow_runtime": 0.012,
+      "shadow_runtime": 0.0117,
       "token_delta": 0,
       "token_saved_estimate": 264,
       "tool_delta": 1,
@@ -1780,6 +2015,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -1794,26 +2031,46 @@
       "current_plan_sql": [
         "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\" AS updated_time, S.\"REQUIREDFIELDS\" AS required_fields, COUNT(DISTINCT SD.\"COLLECTIONID\") AS collection_count, COUNT(DISTINCT SA.\"PROPERTY\") AS property_count FROM \"dim_blueprint\" AS S LEFT JOIN \"hkg_br_blueprint_collection\" AS SD ON S.\"BLUEPRINTID\" = SD.\"BLUEPRINTID\" LEFT JOIN \"hkg_br_blueprint_property\" AS SA ON S.\"BLUEPRINTID\" = SA.\"BLUEPRINTID\" WHERE LOWER(S.\"NAME\") = LOWER('weRetail: Customer Actions') GROUP BY S.\"BLUEPRINTID\", S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\", S.\"REQUIREDFIELDS\" LIMIT 3"
       ],
-      "current_runtime": 0.0134,
+      "current_runtime": 0.0131,
       "current_strict_score": 0.7576,
       "current_tokens": 1631,
       "current_tool_calls": 2,
-      "decision": "safe_shadow_tie_recommend_canary",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "5234aa37629bcd82",
       "dry_run_only": true,
       "evidence_available": true,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "Provide more details for the schema 'weRetail: Customer Actions'",
       "query_id": "example_009",
-      "rejection_reason": "",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "no_op_repair"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
       },
-      "repair_safe_to_enable": true,
+      "repair_safe_to_enable": false,
       "repaired_plan_api": [
         {
           "method": "GET",
@@ -1827,7 +2084,7 @@
       "repaired_plan_sql": [
         "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\" AS updated_time, S.\"REQUIREDFIELDS\" AS required_fields, COUNT(DISTINCT SD.\"COLLECTIONID\") AS collection_count, COUNT(DISTINCT SA.\"PROPERTY\") AS property_count FROM \"dim_blueprint\" AS S LEFT JOIN \"hkg_br_blueprint_collection\" AS SD ON S.\"BLUEPRINTID\" = SD.\"BLUEPRINTID\" LEFT JOIN \"hkg_br_blueprint_property\" AS SA ON S.\"BLUEPRINTID\" = SA.\"BLUEPRINTID\" WHERE LOWER(S.\"NAME\") = LOWER('weRetail: Customer Actions') GROUP BY S.\"BLUEPRINTID\", S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\", S.\"REQUIREDFIELDS\" LIMIT 3"
       ],
-      "repaired_runtime": 0.0134,
+      "repaired_runtime": 0.0131,
       "repaired_strict_score": 0.7576,
       "repaired_tokens": 1631,
       "repaired_tool_calls": 2,
@@ -1966,7 +2223,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0138,
+      "shadow_runtime": 0.0151,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -1974,6 +2231,8 @@
     },
     {
       "accuracy_risk": "high - zero_score_margin, risk_cluster:zero_score_margin",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -1992,17 +2251,39 @@
       "current_strict_score": 0.7898,
       "current_tokens": 1056,
       "current_tool_calls": 2,
-      "decision": "reject_unsafe_repair",
+      "decision": "keep_current_repair_selector_rejected",
       "decision_hash": "6608de8cd8267388",
       "dry_run_only": true,
       "evidence_available": true,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "Count the number of XDM Experience Event schemas that are enabled for profile.",
       "query_id": "example_010",
-      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "rejection_reason": "Repair safety verifier did not pass.; Weighted score fusion and RRF/family signals did not agree.; Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "fusion_agreement",
+          "safety_verifier"
+        ],
+        "no_op": false,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Repair safety verifier did not pass.",
+          "Weighted score fusion and RRF/family signals did not agree."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": true,
         "endpoint_id": "schemas_short",
@@ -2158,7 +2439,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": -0.1402,
-      "shadow_runtime": 0.0116,
+      "shadow_runtime": 0.0124,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -2166,6 +2447,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -2179,7 +2462,7 @@
       "current_plan_sql": [
         "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B"
       ],
-      "current_runtime": 0.0105,
+      "current_runtime": 0.0103,
       "current_strict_score": 0.7455,
       "current_tokens": 832,
       "current_tool_calls": 2,
@@ -2190,10 +2473,28 @@
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "How many schemas do I have?",
       "query_id": "example_011",
-      "rejection_reason": "Repair passed conservative SQL/API, fusion, evidence, and cost checks.",
+      "rejection_reason": "Repaired plan passed strict report-only selector gates.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [],
+        "no_op": false,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Repaired plan passed strict report-only selector gates."
+        ],
+        "recommendation": "select_repaired_shadow_candidate",
+        "safe_to_select_repaired": true,
+        "selected_plan": "repaired"
+      },
       "repair_decision": {
         "changed": true,
         "endpoint_id": "schema_registry_schemas",
@@ -2215,7 +2516,7 @@
       "repaired_plan_sql": [
         "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B"
       ],
-      "repaired_runtime": 0.0105,
+      "repaired_runtime": 0.0103,
       "repaired_strict_score": 0.6307,
       "repaired_tokens": 832,
       "repaired_tool_calls": 2,
@@ -2344,7 +2645,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": -0.1148,
-      "shadow_runtime": 0.0119,
+      "shadow_runtime": 0.013,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -2352,6 +2653,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -2370,17 +2673,39 @@
       "current_strict_score": 0.7287,
       "current_tokens": 1200,
       "current_tool_calls": 2,
-      "decision": "reject_unsafe_repair",
+      "decision": "keep_current_repair_selector_rejected",
       "decision_hash": "c336c0739a887c72",
       "dry_run_only": true,
       "evidence_available": true,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
       "query_id": "example_012",
-      "rejection_reason": "Unknown columns: MONTH",
+      "rejection_reason": "Repair safety verifier did not pass.; SQLGlot AST validation did not pass for the repaired SQL.; Unknown columns: MONTH",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "safety_verifier",
+          "sql_ast_validation"
+        ],
+        "no_op": false,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Repair safety verifier did not pass.",
+          "SQLGlot AST validation did not pass for the repaired SQL."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": true,
         "endpoint_id": "ups_audiences",
@@ -2554,7 +2879,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": -0.1658,
-      "shadow_runtime": 0.0123,
+      "shadow_runtime": 0.0135,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -2562,6 +2887,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -2577,21 +2904,43 @@
       "current_plan_sql": [
         "SELECT DISTINCT D.\"COLLECTIONID\" AS collection_id, D.\"NAME\" AS collection_name, D.\"UPDATEDTIME\" AS updated_time FROM \"dim_collection\" AS D WHERE D.\"UPDATEDTIME\" >= DATEADD(DAY, -90, CURRENT_DATE) ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50"
       ],
-      "current_runtime": 0.015,
+      "current_runtime": 0.0149,
       "current_strict_score": 0.7149,
       "current_tokens": 1307,
       "current_tool_calls": 2,
-      "decision": "reject_unsafe_repair",
+      "decision": "keep_current_repair_selector_rejected",
       "decision_hash": "fe906648641ba78b",
       "dry_run_only": true,
       "evidence_available": true,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "Show recent changes in datasets.",
       "query_id": "example_013",
-      "rejection_reason": "Unknown columns: DAY",
+      "rejection_reason": "Repair safety verifier did not pass.; SQLGlot AST validation did not pass for the repaired SQL.; Unknown columns: DAY",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "safety_verifier",
+          "sql_ast_validation"
+        ],
+        "no_op": false,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Repair safety verifier did not pass.",
+          "SQLGlot AST validation did not pass for the repaired SQL."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": true,
         "endpoint_id": "catalog_datasets",
@@ -2613,7 +2962,7 @@
       "repaired_plan_sql": [
         "SELECT DISTINCT D.\"COLLECTIONID\" AS collection_id, D.\"NAME\" AS collection_name, D.\"UPDATEDTIME\" AS updated_time FROM \"dim_collection\" AS D WHERE D.\"UPDATEDTIME\" >= DATEADD(DAY, -90, CURRENT_DATE) ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50"
       ],
-      "repaired_runtime": 0.015,
+      "repaired_runtime": 0.0149,
       "repaired_strict_score": 0.5662,
       "repaired_tokens": 1307,
       "repaired_tool_calls": 2,
@@ -2758,7 +3107,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": -0.1487,
-      "shadow_runtime": 0.0107,
+      "shadow_runtime": 0.0114,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -2766,6 +3115,8 @@
     },
     {
       "accuracy_risk": "medium - candidate confidence or endpoint confidence is not strong enough for compact-only diagnostics",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": null,
       "current_plan_api": [
         {
@@ -2780,26 +3131,52 @@
       "current_plan_sql": [
         "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS created_time FROM \"dim_collection\" AS C WHERE C.\"CREATEDBY\" ILIKE '%download%'"
       ],
-      "current_runtime": 0.0108,
+      "current_runtime": 0.0106,
       "current_strict_score": 0.7654,
       "current_tokens": 868,
       "current_tool_calls": 2,
-      "decision": "reject_unsafe_repair",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "5ad03644b245545c",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "schema voting is reserved for high-risk diagnostics",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [
         "value_retrieval",
         "shadow_repair",
         "repair_safety_verifier",
         "schema_context_voting"
       ],
+      "packaged_execution_changed": false,
       "query": "Show me all entities created by download",
       "query_id": "example_014",
-      "rejection_reason": "Endpoint family confidence 0.7425 is below 0.75.",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.; Repair safety verifier did not pass.; Endpoint family confidence 0.7425 is below 0.85.; Compact-vs-broader schema context vote did not agree.; Endpoint family confidence 0.7425 is below 0.75.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "endpoint_family_confidence",
+          "no_op_repair",
+          "safety_verifier",
+          "schema_vote_agreement"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan.",
+          "Repair safety verifier did not pass.",
+          "Endpoint family confidence 0.7425 is below 0.85.",
+          "Compact-vs-broader schema context vote did not agree."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
@@ -2818,7 +3195,7 @@
       "repaired_plan_sql": [
         "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS created_time FROM \"dim_collection\" AS C WHERE C.\"CREATEDBY\" ILIKE '%download%'"
       ],
-      "repaired_runtime": 0.0108,
+      "repaired_runtime": 0.0106,
       "repaired_strict_score": 0.7654,
       "repaired_tokens": 868,
       "repaired_tool_calls": 2,
@@ -2913,7 +3290,7 @@
       },
       "schema_vote_agreement": null,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0083,
+      "shadow_runtime": 0.009,
       "token_delta": 0,
       "token_saved_estimate": 264,
       "tool_delta": 0,
@@ -2921,6 +3298,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:tag_api_confusion",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -2932,26 +3311,46 @@
         }
       ],
       "current_plan_sql": [],
-      "current_runtime": 0.0094,
+      "current_runtime": 0.0092,
       "current_strict_score": 0.6672,
       "current_tokens": 514,
       "current_tool_calls": 1,
-      "decision": "safe_shadow_tie_recommend_canary",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "b2f13b45e1e299a6",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "How many tags exist in this sandbox?",
       "query_id": "example_015",
-      "rejection_reason": "",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "no_op_repair"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
       },
-      "repair_safe_to_enable": true,
+      "repair_safe_to_enable": false,
       "repaired_plan_api": [
         {
           "method": "GET",
@@ -2962,7 +3361,7 @@
         }
       ],
       "repaired_plan_sql": [],
-      "repaired_runtime": 0.0094,
+      "repaired_runtime": 0.0092,
       "repaired_strict_score": 0.6672,
       "repaired_tokens": 514,
       "repaired_tool_calls": 1,
@@ -3075,7 +3474,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0056,
+      "shadow_runtime": 0.0064,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -3083,6 +3482,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:tag_api_confusion",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -3094,26 +3495,46 @@
         }
       ],
       "current_plan_sql": [],
-      "current_runtime": 0.0095,
+      "current_runtime": 0.0098,
       "current_strict_score": 0.6621,
       "current_tokens": 635,
       "current_tool_calls": 1,
-      "decision": "safe_shadow_tie_recommend_canary",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "2d68604c2c4efa64",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "List all tags in this sandbox.",
       "query_id": "example_016",
-      "rejection_reason": "",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "no_op_repair"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
       },
-      "repair_safe_to_enable": true,
+      "repair_safe_to_enable": false,
       "repaired_plan_api": [
         {
           "method": "GET",
@@ -3124,7 +3545,7 @@
         }
       ],
       "repaired_plan_sql": [],
-      "repaired_runtime": 0.0095,
+      "repaired_runtime": 0.0098,
       "repaired_strict_score": 0.6621,
       "repaired_tokens": 635,
       "repaired_tool_calls": 1,
@@ -3237,7 +3658,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0055,
+      "shadow_runtime": 0.0062,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -3245,6 +3666,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:tag_api_confusion",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -3264,21 +3687,45 @@
         }
       ],
       "current_plan_sql": [],
-      "current_runtime": 0.0117,
+      "current_runtime": 0.0119,
       "current_strict_score": 0.5292,
       "current_tokens": 963,
       "current_tool_calls": 2,
-      "decision": "reject_unsafe_repair",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "a6049d74809b8702",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "Which tags belong to the category 'Uncategorized'?",
       "query_id": "example_017",
-      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.; Repair safety verifier did not pass.; Weighted score fusion and RRF/family signals did not agree.; Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "fusion_agreement",
+          "no_op_repair",
+          "safety_verifier"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan.",
+          "Repair safety verifier did not pass.",
+          "Weighted score fusion and RRF/family signals did not agree."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
@@ -3302,7 +3749,7 @@
         }
       ],
       "repaired_plan_sql": [],
-      "repaired_runtime": 0.0117,
+      "repaired_runtime": 0.0119,
       "repaired_strict_score": 0.5292,
       "repaired_tokens": 963,
       "repaired_tool_calls": 2,
@@ -3425,6 +3872,8 @@
     },
     {
       "accuracy_risk": "high - zero_score_margin, risk_cluster:zero_score_margin",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -3434,21 +3883,43 @@
         }
       ],
       "current_plan_sql": [],
-      "current_runtime": 0.01,
+      "current_runtime": 0.0103,
       "current_strict_score": 0.6654,
       "current_tokens": 758,
       "current_tool_calls": 1,
-      "decision": "reject_unsafe_repair",
+      "decision": "keep_current_repair_selector_rejected",
       "decision_hash": "21cd02996e624cf5",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "Show me the details of the tag named 'cool'.",
       "query_id": "example_018",
-      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "rejection_reason": "Repair safety verifier did not pass.; Weighted score fusion and RRF/family signals did not agree.; Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "fusion_agreement",
+          "safety_verifier"
+        ],
+        "no_op": false,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Repair safety verifier did not pass.",
+          "Weighted score fusion and RRF/family signals did not agree."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": true,
         "endpoint_id": "unified_tag_categories",
@@ -3468,7 +3939,7 @@
         }
       ],
       "repaired_plan_sql": [],
-      "repaired_runtime": 0.01,
+      "repaired_runtime": 0.0103,
       "repaired_strict_score": 0.4741,
       "repaired_tokens": 758,
       "repaired_tool_calls": 1,
@@ -3584,7 +4055,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": -0.1913,
-      "shadow_runtime": 0.0054,
+      "shadow_runtime": 0.0065,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -3592,6 +4063,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -3603,26 +4076,46 @@
         }
       ],
       "current_plan_sql": [],
-      "current_runtime": 0.0097,
+      "current_runtime": 0.0095,
       "current_strict_score": 0.5344,
       "current_tokens": 659,
       "current_tool_calls": 1,
-      "decision": "safe_shadow_tie_recommend_canary",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "281dfc9c1e3051df",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "List all merge policies in this sandbox.",
       "query_id": "example_019",
-      "rejection_reason": "",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "no_op_repair"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
       },
-      "repair_safe_to_enable": true,
+      "repair_safe_to_enable": false,
       "repaired_plan_api": [
         {
           "method": "GET",
@@ -3633,7 +4126,7 @@
         }
       ],
       "repaired_plan_sql": [],
-      "repaired_runtime": 0.0097,
+      "repaired_runtime": 0.0095,
       "repaired_strict_score": 0.5344,
       "repaired_tokens": 659,
       "repaired_tool_calls": 1,
@@ -3746,7 +4239,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0057,
+      "shadow_runtime": 0.0062,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -3754,6 +4247,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:broad_domain_api_confusion",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -3769,22 +4264,42 @@
       "current_strict_score": 0.5369,
       "current_tokens": 542,
       "current_tool_calls": 1,
-      "decision": "safe_shadow_tie_recommend_canary",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "9a423a097167426e",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "How many merge policies are configured in this sandbox?",
       "query_id": "example_020",
-      "rejection_reason": "",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "no_op_repair"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
       },
-      "repair_safe_to_enable": true,
+      "repair_safe_to_enable": false,
       "repaired_plan_api": [
         {
           "method": "GET",
@@ -3908,7 +4423,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0056,
+      "shadow_runtime": 0.0068,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -3916,6 +4431,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -3927,26 +4444,46 @@
         }
       ],
       "current_plan_sql": [],
-      "current_runtime": 0.0107,
+      "current_runtime": 0.0105,
       "current_strict_score": 0.5394,
       "current_tokens": 784,
       "current_tool_calls": 1,
-      "decision": "safe_shadow_tie_recommend_canary",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "2e8b1191137a0973",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "Show the default merge policy for schema class '_xdm.context.profile'.",
       "query_id": "example_021",
-      "rejection_reason": "",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "no_op_repair"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
       },
-      "repair_safe_to_enable": true,
+      "repair_safe_to_enable": false,
       "repaired_plan_api": [
         {
           "method": "GET",
@@ -3957,7 +4494,7 @@
         }
       ],
       "repaired_plan_sql": [],
-      "repaired_runtime": 0.0107,
+      "repaired_runtime": 0.0105,
       "repaired_strict_score": 0.5394,
       "repaired_tokens": 784,
       "repaired_tool_calls": 1,
@@ -4070,7 +4607,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0058,
+      "shadow_runtime": 0.0064,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -4078,6 +4615,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -4093,17 +4632,41 @@
       "current_strict_score": 0.5406,
       "current_tokens": 696,
       "current_tool_calls": 1,
-      "decision": "reject_unsafe_repair",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "e934818a91c237ee",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "How many segment definitions exist in this sandbox?",
       "query_id": "example_022",
-      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.; Repair safety verifier did not pass.; Weighted score fusion and RRF/family signals did not agree.; Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "fusion_agreement",
+          "no_op_repair",
+          "safety_verifier"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan.",
+          "Repair safety verifier did not pass.",
+          "Weighted score fusion and RRF/family signals did not agree."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
@@ -4233,7 +4796,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0064,
+      "shadow_runtime": 0.0073,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -4241,6 +4804,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -4252,21 +4817,45 @@
         }
       ],
       "current_plan_sql": [],
-      "current_runtime": 0.0097,
+      "current_runtime": 0.0095,
       "current_strict_score": 0.5401,
       "current_tokens": 682,
       "current_tool_calls": 1,
-      "decision": "reject_unsafe_repair",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "209dc36ee96ee4bd",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "List all segment definitions.",
       "query_id": "example_023",
-      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.; Repair safety verifier did not pass.; Weighted score fusion and RRF/family signals did not agree.; Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "fusion_agreement",
+          "no_op_repair",
+          "safety_verifier"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan.",
+          "Repair safety verifier did not pass.",
+          "Weighted score fusion and RRF/family signals did not agree."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
@@ -4282,7 +4871,7 @@
         }
       ],
       "repaired_plan_sql": [],
-      "repaired_runtime": 0.0097,
+      "repaired_runtime": 0.0095,
       "repaired_strict_score": 0.5401,
       "repaired_tokens": 682,
       "repaired_tool_calls": 1,
@@ -4396,7 +4985,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0062,
+      "shadow_runtime": 0.007,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -4404,6 +4993,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -4416,21 +5007,45 @@
         }
       ],
       "current_plan_sql": [],
-      "current_runtime": 0.0097,
+      "current_runtime": 0.0099,
       "current_strict_score": 0.5361,
       "current_tokens": 712,
       "current_tool_calls": 1,
-      "decision": "reject_unsafe_repair",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "50ae44658bc6aa49",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "Which segment definitions were updated most recently?",
       "query_id": "example_024",
-      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.; Repair safety verifier did not pass.; Weighted score fusion and RRF/family signals did not agree.; Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "fusion_agreement",
+          "no_op_repair",
+          "safety_verifier"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan.",
+          "Repair safety verifier did not pass.",
+          "Weighted score fusion and RRF/family signals did not agree."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
@@ -4447,7 +5062,7 @@
         }
       ],
       "repaired_plan_sql": [],
-      "repaired_runtime": 0.0097,
+      "repaired_runtime": 0.0099,
       "repaired_strict_score": 0.5361,
       "repaired_tokens": 712,
       "repaired_tool_calls": 1,
@@ -4561,7 +5176,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0062,
+      "shadow_runtime": 0.0066,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -4569,6 +5184,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -4580,21 +5197,45 @@
         }
       ],
       "current_plan_sql": [],
-      "current_runtime": 0.01,
+      "current_runtime": 0.0097,
       "current_strict_score": 0.5355,
       "current_tokens": 689,
       "current_tool_calls": 1,
-      "decision": "reject_unsafe_repair",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "cbcbdbf375a77ea8",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "List all segment evaluation jobs.",
       "query_id": "example_025",
-      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.; Repair safety verifier did not pass.; Weighted score fusion and RRF/family signals did not agree.; Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "fusion_agreement",
+          "no_op_repair",
+          "safety_verifier"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan.",
+          "Repair safety verifier did not pass.",
+          "Weighted score fusion and RRF/family signals did not agree."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
@@ -4610,7 +5251,7 @@
         }
       ],
       "repaired_plan_sql": [],
-      "repaired_runtime": 0.01,
+      "repaired_runtime": 0.0097,
       "repaired_strict_score": 0.5355,
       "repaired_tokens": 689,
       "repaired_tool_calls": 1,
@@ -4724,7 +5365,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0059,
+      "shadow_runtime": 0.0065,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -4732,6 +5373,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -4743,21 +5386,45 @@
         }
       ],
       "current_plan_sql": [],
-      "current_runtime": 0.0102,
+      "current_runtime": 0.01,
       "current_strict_score": 0.5407,
       "current_tokens": 727,
       "current_tool_calls": 1,
-      "decision": "reject_unsafe_repair",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "d9165c7d998a609a",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "How many segment jobs are currently processing?",
       "query_id": "example_026",
-      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.; Repair safety verifier did not pass.; Weighted score fusion and RRF/family signals did not agree.; Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "fusion_agreement",
+          "no_op_repair",
+          "safety_verifier"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan.",
+          "Repair safety verifier did not pass.",
+          "Weighted score fusion and RRF/family signals did not agree."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
@@ -4773,7 +5440,7 @@
         }
       ],
       "repaired_plan_sql": [],
-      "repaired_runtime": 0.0102,
+      "repaired_runtime": 0.01,
       "repaired_strict_score": 0.5407,
       "repaired_tokens": 727,
       "repaired_tool_calls": 1,
@@ -4887,7 +5554,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0063,
+      "shadow_runtime": 0.0072,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -4895,6 +5562,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -4906,21 +5575,45 @@
         }
       ],
       "current_plan_sql": [],
-      "current_runtime": 0.0112,
+      "current_runtime": 0.0117,
       "current_strict_score": 0.6017,
       "current_tokens": 776,
       "current_tool_calls": 1,
-      "decision": "reject_unsafe_repair",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "0d1813b83f4354e8",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "Show all segment jobs with status 'QUEUED'.",
       "query_id": "example_027",
-      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.; Repair safety verifier did not pass.; Weighted score fusion and RRF/family signals did not agree.; Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "fusion_agreement",
+          "no_op_repair",
+          "safety_verifier"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan.",
+          "Repair safety verifier did not pass.",
+          "Weighted score fusion and RRF/family signals did not agree."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
@@ -4936,7 +5629,7 @@
         }
       ],
       "repaired_plan_sql": [],
-      "repaired_runtime": 0.0112,
+      "repaired_runtime": 0.0117,
       "repaired_strict_score": 0.6017,
       "repaired_tokens": 776,
       "repaired_tool_calls": 1,
@@ -5050,7 +5743,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0063,
+      "shadow_runtime": 0.0072,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -5058,6 +5751,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -5070,21 +5765,45 @@
         }
       ],
       "current_plan_sql": [],
-      "current_runtime": 0.0111,
+      "current_runtime": 0.0107,
       "current_strict_score": 0.5348,
       "current_tokens": 694,
       "current_tool_calls": 1,
-      "decision": "reject_unsafe_repair",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "a57500e1a1ed5e20",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "List the most recently created batches.",
       "query_id": "example_028",
-      "rejection_reason": "Endpoint family confidence 0.7400 is below 0.75.",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.; Repair safety verifier did not pass.; Endpoint family confidence 0.7400 is below 0.85.; Endpoint family confidence 0.7400 is below 0.75.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "endpoint_family_confidence",
+          "no_op_repair",
+          "safety_verifier"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan.",
+          "Repair safety verifier did not pass.",
+          "Endpoint family confidence 0.7400 is below 0.85."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
@@ -5101,7 +5820,7 @@
         }
       ],
       "repaired_plan_sql": [],
-      "repaired_runtime": 0.0111,
+      "repaired_runtime": 0.0107,
       "repaired_strict_score": 0.5348,
       "repaired_tokens": 694,
       "repaired_tool_calls": 1,
@@ -5216,7 +5935,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.0,
-      "shadow_runtime": 0.006,
+      "shadow_runtime": 0.0069,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -5224,6 +5943,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -5236,26 +5957,48 @@
         }
       ],
       "current_plan_sql": [],
-      "current_runtime": 0.0112,
+      "current_runtime": 0.0107,
       "current_strict_score": 0.5345,
       "current_tokens": 640,
       "current_tool_calls": 1,
-      "decision": "safe_shadow_tie_recommend_canary",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "07d4e6c59959c206",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "How many batches have status 'success'?",
       "query_id": "example_029",
-      "rejection_reason": "",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.; Endpoint family confidence 0.8075 is below 0.85.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "endpoint_family_confidence",
+          "no_op_repair"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan.",
+          "Endpoint family confidence 0.8075 is below 0.85."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
       },
-      "repair_safe_to_enable": true,
+      "repair_safe_to_enable": false,
       "repaired_plan_api": [
         {
           "method": "GET",
@@ -5267,7 +6010,7 @@
         }
       ],
       "repaired_plan_sql": [],
-      "repaired_runtime": 0.0112,
+      "repaired_runtime": 0.0107,
       "repaired_strict_score": 0.5345,
       "repaired_tokens": 640,
       "repaired_tool_calls": 1,
@@ -5380,7 +6123,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0053,
+      "shadow_runtime": 0.0057,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -5388,6 +6131,8 @@
     },
     {
       "accuracy_risk": "high - low_confidence, zero_score_margin, risk_cluster:zero_score_margin",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -5397,26 +6142,48 @@
         }
       ],
       "current_plan_sql": [],
-      "current_runtime": 0.0102,
+      "current_runtime": 0.0103,
       "current_strict_score": 0.5308,
       "current_tokens": 734,
       "current_tool_calls": 1,
-      "decision": "safe_shadow_tie_recommend_canary",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "f225bf75d1b22b4b",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "Show the details of batch 01KP69BPA5ZKFB7HCDYPE4GN6F.",
       "query_id": "example_030",
-      "rejection_reason": "",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.; Endpoint family confidence 0.8075 is below 0.85.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "endpoint_family_confidence",
+          "no_op_repair"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan.",
+          "Endpoint family confidence 0.8075 is below 0.85."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
       },
-      "repair_safe_to_enable": true,
+      "repair_safe_to_enable": false,
       "repaired_plan_api": [
         {
           "method": "GET",
@@ -5425,7 +6192,7 @@
         }
       ],
       "repaired_plan_sql": [],
-      "repaired_runtime": 0.0102,
+      "repaired_runtime": 0.0103,
       "repaired_strict_score": 0.5308,
       "repaired_tokens": 734,
       "repaired_tool_calls": 1,
@@ -5540,7 +6307,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0048,
+      "shadow_runtime": 0.0053,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -5548,6 +6315,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:batch_endpoint_confusion",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -5557,26 +6326,46 @@
         }
       ],
       "current_plan_sql": [],
-      "current_runtime": 0.0108,
+      "current_runtime": 0.0103,
       "current_strict_score": 0.5339,
       "current_tokens": 758,
       "current_tool_calls": 1,
-      "decision": "safe_shadow_tie_recommend_canary",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "7c20bbc4f49528d9",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?",
       "query_id": "example_031",
-      "rejection_reason": "",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "no_op_repair"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
       },
-      "repair_safe_to_enable": true,
+      "repair_safe_to_enable": false,
       "repaired_plan_api": [
         {
           "method": "GET",
@@ -5585,7 +6374,7 @@
         }
       ],
       "repaired_plan_sql": [],
-      "repaired_runtime": 0.0108,
+      "repaired_runtime": 0.0103,
       "repaired_strict_score": 0.5339,
       "repaired_tokens": 758,
       "repaired_tool_calls": 1,
@@ -5698,7 +6487,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0064,
+      "shadow_runtime": 0.0073,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -5706,6 +6495,8 @@
     },
     {
       "accuracy_risk": "high - risk_cluster:batch_endpoint_confusion",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -5715,21 +6506,45 @@
         }
       ],
       "current_plan_sql": [],
-      "current_runtime": 0.0105,
+      "current_runtime": 0.0106,
       "current_strict_score": 0.6711,
       "current_tokens": 821,
       "current_tool_calls": 1,
-      "decision": "reject_unsafe_repair",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "213c7019cb2ae888",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
       "query_id": "example_032",
-      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.; Repair safety verifier did not pass.; Weighted score fusion and RRF/family signals did not agree.; Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "fusion_agreement",
+          "no_op_repair",
+          "safety_verifier"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan.",
+          "Repair safety verifier did not pass.",
+          "Weighted score fusion and RRF/family signals did not agree."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
@@ -5743,7 +6558,7 @@
         }
       ],
       "repaired_plan_sql": [],
-      "repaired_runtime": 0.0105,
+      "repaired_runtime": 0.0106,
       "repaired_strict_score": 0.6711,
       "repaired_tokens": 821,
       "repaired_tool_calls": 1,
@@ -5858,7 +6673,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": 0.0,
-      "shadow_runtime": 0.0051,
+      "shadow_runtime": 0.0057,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -5866,6 +6681,8 @@
     },
     {
       "accuracy_risk": "medium - candidate confidence or endpoint confidence is not strong enough for compact-only diagnostics",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": null,
       "current_plan_api": [
         {
@@ -5886,26 +6703,52 @@
         }
       ],
       "current_plan_sql": [],
-      "current_runtime": 0.0208,
+      "current_runtime": 0.0217,
       "current_strict_score": 0.672,
       "current_tokens": 1124,
       "current_tool_calls": 1,
-      "decision": "reject_unsafe_repair",
+      "decision": "no_op_shadow_tie_keep_current",
       "decision_hash": "5135231709d59c23",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "schema voting is reserved for high-risk diagnostics",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [
         "value_retrieval",
         "shadow_repair",
         "repair_safety_verifier",
         "schema_context_voting"
       ],
+      "packaged_execution_changed": false,
       "query": "What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'?",
       "query_id": "example_033",
-      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "rejection_reason": "Current and repaired plans are identical; keep the current plan.; Repair safety verifier did not pass.; Weighted score fusion and RRF/family signals did not agree.; Compact-vs-broader schema context vote did not agree.; Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "fusion_agreement",
+          "no_op_repair",
+          "safety_verifier",
+          "schema_vote_agreement"
+        ],
+        "no_op": true,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Current and repaired plans are identical; keep the current plan.",
+          "Repair safety verifier did not pass.",
+          "Weighted score fusion and RRF/family signals did not agree.",
+          "Compact-vs-broader schema context vote did not agree."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": false,
         "reason": "top ranked endpoint already matches current API"
@@ -5930,7 +6773,7 @@
         }
       ],
       "repaired_plan_sql": [],
-      "repaired_runtime": 0.0208,
+      "repaired_runtime": 0.0217,
       "repaired_strict_score": 0.672,
       "repaired_tokens": 1124,
       "repaired_tool_calls": 1,
@@ -6013,6 +6856,8 @@
     },
     {
       "accuracy_risk": "high - low_confidence, zero_score_margin, risk_cluster:zero_score_margin",
+      "behavior_changing_flags_enabled": false,
+      "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
       "compact_context_safe": true,
       "current_plan_api": [
         {
@@ -6042,17 +6887,41 @@
       "current_strict_score": 0.6621,
       "current_tokens": 913,
       "current_tool_calls": 1,
-      "decision": "reject_unsafe_repair",
+      "decision": "keep_current_repair_selector_rejected",
       "decision_hash": "bc049c96aa1f1861",
       "dry_run_only": true,
       "evidence_available": false,
       "execution_changed": false,
       "fallback_reason": "compact and fallback top candidates agree",
       "live_api_evidence_available": false,
+      "measured_accuracy_improvement_claimed": false,
+      "measured_efficiency_improvement_claimed": false,
       "module_skipped_by_risk": [],
+      "packaged_execution_changed": false,
       "query": "Show ingestion record counts and batch success counts for the last 90 days.",
       "query_id": "example_034",
-      "rejection_reason": "Endpoint family confidence 0.0000 is below 0.75.; Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "rejection_reason": "Repair safety verifier did not pass.; Weighted score fusion and RRF/family signals did not agree.; Endpoint family confidence 0.0000 is below 0.85.; Endpoint family confidence 0.0000 is below 0.75.; Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_candidate_selector": {
+        "behavior_changed": false,
+        "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+        "diagnostic_only": true,
+        "efficiency_role": "rejects repaired candidates with any tool-call increase",
+        "failed_checks": [
+          "endpoint_family_confidence",
+          "fusion_agreement",
+          "safety_verifier"
+        ],
+        "no_op": false,
+        "packaged_execution_changed": false,
+        "reasons": [
+          "Repair safety verifier did not pass.",
+          "Weighted score fusion and RRF/family signals did not agree.",
+          "Endpoint family confidence 0.0000 is below 0.85."
+        ],
+        "recommendation": "keep_current",
+        "safe_to_select_repaired": false,
+        "selected_plan": "current"
+      },
       "repair_decision": {
         "changed": true,
         "endpoint_id": "ups_audiences",
@@ -6192,7 +7061,7 @@
       },
       "schema_vote_agreement": true,
       "score_delta": -0.425,
-      "shadow_runtime": 0.0058,
+      "shadow_runtime": 0.0063,
       "token_delta": 0,
       "token_saved_estimate": 0,
       "tool_delta": 0,
@@ -6205,5 +7074,94 @@
     "compact_context_safe_count": 29,
     "diagnostic_only": true,
     "execution_changed": false
+  },
+  "schema_dataset_repair_analysis": {
+    "cluster": "schema_vs_dataset_confusion",
+    "diagnostic_only": true,
+    "repair_execution_enabled": false,
+    "row_count": 2,
+    "rows": [
+      {
+        "current_plan": {
+          "api": [
+            {
+              "method": "GET",
+              "params": {
+                "limit": "25",
+                "property": "schema.name"
+              },
+              "path": "/data/foundation/catalog/dataSets"
+            }
+          ],
+          "sql": [
+            "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1"
+          ]
+        },
+        "decision": "no_op_shadow_tie_keep_current",
+        "failure_type": "none",
+        "missing_signal": "no missing signal",
+        "query": "How many datasets have been ingested using the same schema in the prod sandbox?",
+        "query_id": "example_006",
+        "repaired_plan": {
+          "api": [
+            {
+              "method": "GET",
+              "params": {
+                "limit": "25",
+                "property": "schema.name"
+              },
+              "path": "/data/foundation/catalog/dataSets"
+            }
+          ],
+          "sql": [
+            "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1"
+          ]
+        },
+        "safety_failed_checks": [],
+        "score_delta": 0.0,
+        "selector_decision": "keep_current"
+      },
+      {
+        "current_plan": {
+          "api": [
+            {
+              "method": "GET",
+              "params": {
+                "filter": "schemaName==\"hkg_adls_profile_count_history\"",
+                "limit": "3"
+              },
+              "path": "/data/foundation/catalog/dataSets"
+            }
+          ],
+          "sql": [
+            "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_collection\" AS BC JOIN \"dim_collection\" AS C ON BC.\"COLLECTIONID\" = C.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS B ON BC.\"BLUEPRINTID\" = B.\"BLUEPRINTID\" WHERE B.\"NAME\" = 'hkg_adls_profile_count_history'"
+          ]
+        },
+        "decision": "keep_current_repair_selector_rejected",
+        "failure_type": "real_risk",
+        "missing_signal": "catalog-backed endpoint replacement",
+        "query": "List all datasets that use the schema 'hkg_adls_profile_count_history'.",
+        "query_id": "example_007",
+        "repaired_plan": {
+          "api": [
+            {
+              "endpoint_family": "schema_detail",
+              "endpoint_id": "schema_registry_schema",
+              "method": "GET",
+              "params": {},
+              "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}"
+            }
+          ],
+          "sql": [
+            "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_collection\" AS BC JOIN \"dim_collection\" AS C ON BC.\"COLLECTIONID\" = C.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS B ON BC.\"BLUEPRINTID\" = B.\"BLUEPRINTID\" WHERE B.\"NAME\" = 'hkg_adls_profile_count_history'"
+          ]
+        },
+        "safety_failed_checks": [
+          "api_validation"
+        ],
+        "score_delta": 0.1148,
+        "selector_decision": "keep_current"
+      }
+    ]
   }
 }

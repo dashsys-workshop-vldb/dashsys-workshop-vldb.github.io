@@ -88,6 +88,15 @@ These clusters compare baseline retrieval ordering with the ranking/report-only 
 | `tag_api_confusion` | 3 | 0 | 3 | 0 | False | `ENABLE_REPAIR_FOR_TAG_API_CONFUSION` |
 | `zero_score_margin` | 6 | 0 | 2 | 4 | False | `ENABLE_REPAIR_FOR_ZERO_SCORE_MARGIN` |
 
+## Shadow Efficiency Report Linkage
+
+- These linked reports are replay-only diagnostics; they do not change packaged execution or claim measured accuracy/efficiency improvement.
+
+| Report | Available | Rows | Packaged execution changed? | Measured accuracy claimed? | Measured efficiency claimed? |
+| --- | --- | ---: | --- | --- | --- |
+| Compact context shadow eval | True | 28 | False | False | False |
+| Risk-efficiency shadow eval | True | 7 | False | False | False |
+
 ## Risk-Based Efficiency Controller
 
 This section is diagnostic only. Token/runtime savings are estimates from module policy and are not measured efficiency gains because packaged execution is unchanged.

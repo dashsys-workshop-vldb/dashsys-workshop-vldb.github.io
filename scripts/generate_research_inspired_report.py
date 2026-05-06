@@ -47,6 +47,8 @@ def generate_report(config: Config) -> dict[str, Any]:
     manifest = _load_json(config.outputs_dir / "final_submission_manifest.json")
     candidate_report = _load_json(config.outputs_dir / "candidate_context_report.json")
     shadow_report = _load_json(config.outputs_dir / "shadow_repair_eval.json")
+    compact_shadow_report = _load_json(config.outputs_dir / "compact_context_shadow_eval.json")
+    risk_shadow_report = _load_json(config.outputs_dir / "risk_efficiency_shadow_eval.json")
     current = strict.get("summary", {}).get("by_strategy", {}).get("SQL_FIRST_API_VERIFY", {})
     final_score = current.get("avg_final_score", 0.0)
     correctness = current.get("avg_correctness_score", 0.0)
@@ -135,9 +137,24 @@ def generate_report(config: Config) -> dict[str, Any]:
             "risk_controller_estimated_runtime_savings_ms_total": candidate_report.get("summary", {}).get("estimated_runtime_savings_ms_total", 0),
             "risk_controller_savings_are_estimates": True,
             "measured_efficiency_improvement_claimed": False,
+            "packaged_execution_changed": False,
+            "measured_accuracy_improvement_claimed": False,
+            "behavior_changing_flags_enabled": False,
+            "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
             "schema_vote_active_count": candidate_report.get("summary", {}).get("schema_vote_active_count", 0),
             "schema_vote_agreement_count": candidate_report.get("summary", {}).get("schema_vote_agreement_count", 0),
             "compact_context_safe_count": candidate_report.get("summary", {}).get("compact_context_safe_count", 0),
+            "compact_context_shadow_eval_ran": bool(compact_shadow_report.get("rows")),
+            "compact_context_shadow_row_count": compact_shadow_report.get("summary", {}).get("row_count", 0),
+            "compact_context_shadow_avg_token_delta": compact_shadow_report.get("summary", {}).get("avg_token_delta"),
+            "compact_context_shadow_measured_accuracy_improvement_claimed": compact_shadow_report.get("summary", {}).get("measured_accuracy_improvement_claimed", False),
+            "compact_context_shadow_measured_efficiency_improvement_claimed": compact_shadow_report.get("summary", {}).get("measured_efficiency_improvement_claimed", False),
+            "risk_efficiency_shadow_eval_ran": bool(risk_shadow_report.get("rows")),
+            "risk_efficiency_shadow_row_count": risk_shadow_report.get("summary", {}).get("row_count", 0),
+            "risk_efficiency_shadow_avg_token_delta": risk_shadow_report.get("summary", {}).get("avg_token_delta"),
+            "risk_efficiency_shadow_avg_runtime_delta": risk_shadow_report.get("summary", {}).get("avg_runtime_delta"),
+            "risk_efficiency_shadow_measured_accuracy_improvement_claimed": risk_shadow_report.get("summary", {}).get("measured_accuracy_improvement_claimed", False),
+            "risk_efficiency_shadow_measured_efficiency_improvement_claimed": risk_shadow_report.get("summary", {}).get("measured_efficiency_improvement_claimed", False),
         },
         "baseline": BASELINE_SQL_FIRST,
         "current": metrics,
@@ -167,6 +184,16 @@ def generate_report(config: Config) -> dict[str, Any]:
             "schema_context_voting_summary": shadow_report.get("schema_context_voting_summary", {}),
             "notes": shadow_report.get("notes", []),
         },
+        "compact_context_shadow_eval": {
+            "summary": compact_shadow_report.get("summary", {}),
+            "artifact_isolation": compact_shadow_report.get("artifact_isolation", {}),
+            "notes": compact_shadow_report.get("notes", []),
+        },
+        "risk_efficiency_shadow_eval": {
+            "summary": risk_shadow_report.get("summary", {}),
+            "artifact_isolation": risk_shadow_report.get("artifact_isolation", {}),
+            "notes": risk_shadow_report.get("notes", []),
+        },
         "notes": [
             "Value retrieval cache filenames use stable SHA-256 keys instead of Python process-salted hash().",
             "Hybrid candidate ranking is report-only for SQL_FIRST_API_VERIFY; it does not change executed SQL/API plans.",
@@ -181,6 +208,7 @@ def generate_report(config: Config) -> dict[str, Any]:
             "Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.",
             "Inactive techniques appear compactly in visualization status tables, not as empty checkpoints.",
             "Behavior-changing repair execution is feature-flagged off by default; strict score and efficiency gates decide whether it can ever be enabled.",
+            "No behavior-changing flags were enabled in this pass.",
         ],
     }
 
@@ -232,8 +260,19 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"(estimated only: {report['summary']['risk_controller_savings_are_estimates']})",
             f"- Risk-controller estimated runtime savings total ms: {report['summary']['risk_controller_estimated_runtime_savings_ms_total']} "
             f"(measured efficiency improvement claimed: {report['summary']['measured_efficiency_improvement_claimed']})",
+            f"- Packaged execution changed: {report['summary']['packaged_execution_changed']}",
+            f"- Measured accuracy improvement claimed: {report['summary']['measured_accuracy_improvement_claimed']}",
+            f"- Measured efficiency improvement claimed: {report['summary']['measured_efficiency_improvement_claimed']}",
+            f"- {report['summary']['behavior_changing_flags_note']}",
             f"- Schema vote active/agreement/compact-safe: {report['summary']['schema_vote_active_count']}/"
             f"{report['summary']['schema_vote_agreement_count']}/{report['summary']['compact_context_safe_count']}",
+            f"- Compact-context shadow eval rows: {report['summary']['compact_context_shadow_row_count']} "
+            f"(avg token delta: {report['summary']['compact_context_shadow_avg_token_delta']}; "
+            f"measured efficiency improvement claimed: {report['summary']['compact_context_shadow_measured_efficiency_improvement_claimed']})",
+            f"- Risk-efficiency shadow eval rows: {report['summary']['risk_efficiency_shadow_row_count']} "
+            f"(avg token delta: {report['summary']['risk_efficiency_shadow_avg_token_delta']}; "
+            f"avg runtime delta: {report['summary']['risk_efficiency_shadow_avg_runtime_delta']}; "
+            f"measured efficiency improvement claimed: {report['summary']['risk_efficiency_shadow_measured_efficiency_improvement_claimed']})",
             f"- Secret scan OK: {report['summary']['no_secret_scan_ok']}",
             f"- Visualization artifacts directory: `{report['summary']['visualization_artifacts_dir']}`",
             f"- Visualization artifacts inside final submission: {report['summary']['visualizations_in_final_submission']}",

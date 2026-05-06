@@ -119,6 +119,8 @@ API tool was invoked and validated, but live evidence was unavailable because Ad
 | Gated risk-cluster repair | CHASE-SQL-style repair | True | Diagnostic repaired candidate comparison without execution change | makes technique visibility auditable | diagnostic overhead only | checkpoint_gated_risk_cluster_repair |
 | Risk-based efficiency controller | adaptive retrieval control | True | Diagnostic policy that estimates skipped module cost by risk level | makes technique visibility auditable | diagnostic overhead only | checkpoint_risk_efficiency_controller |
 | Schema context voting | full-vs-compact context voting | False | High-risk diagnostic comparison of compact and broader context | makes technique visibility auditable | diagnostic overhead only | checkpoint_schema_context_voting |
+| Compact context shadow eval | shadow replay | False | Replay-only compact-context cost comparison | makes technique visibility auditable | diagnostic overhead only | checkpoint_compact_context_shadow_eval |
+| Risk-efficiency shadow eval | shadow replay | True | Replay-only diagnostic module-skipping cost comparison | makes technique visibility auditable | diagnostic overhead only | checkpoint_risk_efficiency_shadow_eval |
 
 ## Candidate Ranking Diagnostics
 
@@ -134,7 +136,7 @@ API tool was invoked and validated, but live evidence was unavailable because Ad
 
 | Risk cluster | Current candidate | Repaired candidate | Safety verdict | Score delta | Tool/cost delta | Enable recommendation |
 | --- | --- | --- | --- | ---: | --- | --- |
-| not_targeted | {"api": {"items": [{"method": "GET", "params": {"filter": "name==Birthday Message"}, "path": "/ajo/journey"}], "total_items": 1, "truncated_items": false}, "score": 0.6903, "sql": {"items": ["SELECT \"NAME\" AS campaign_name, \"LASTDEPLOYEDTIME\" AS published_time FROM \"dim_campaign\" LIMIT 50"], "total_items": 1, "truncated_items": false}} | {"api": {"items": [{"method": "GET", "params": {"filter": "name==Birthday Message"}, "path": "/ajo/journey"}], "total_items": 1, "truncated_items": false}, "score": 0.6903, "sql": {"items": ["SELECT \"NAME\" AS campaign_name, \"LASTDEPLOYEDTIME\" AS published_time FROM \"dim_campaign\" LIMIT 50"], "total_items": 1, "truncated_items": false}} | safe | 0.0 | {'tool_delta': 0, 'token_delta': 0, 'runtime_delta': 0.0} | safe_shadow_tie_recommend_canary |
+| not_targeted | {"api": {"items": [{"method": "GET", "params": {"filter": "name==Birthday Message"}, "path": "/ajo/journey"}], "total_items": 1, "truncated_items": false}, "score": 0.6903, "sql": {"items": ["SELECT \"NAME\" AS campaign_name, \"LASTDEPLOYEDTIME\" AS published_time FROM \"dim_campaign\" LIMIT 50"], "total_items": 1, "truncated_items": false}} | {"api": {"items": [{"method": "GET", "params": {"filter": "name==Birthday Message"}, "path": "/ajo/journey"}], "total_items": 1, "truncated_items": false}, "score": 0.6903, "sql": {"items": ["SELECT \"NAME\" AS campaign_name, \"LASTDEPLOYEDTIME\" AS published_time FROM \"dim_campaign\" LIMIT 50"], "total_items": 1, "truncated_items": false}} | safe | 0.0 | {'tool_delta': 0, 'token_delta': 0, 'runtime_delta': 0.0} | no_op_shadow_tie_keep_current |
 | execution changed? | False | reason | offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled | decision hash | 8b91ef00205c19c0 | |
 
 ## Risk-Based Efficiency Controller
@@ -169,6 +171,29 @@ Schema context voting is diagnostic guidance for high-risk rows and does not cha
 | fallback_candidate_apis | n/a |
 | token_delta | n/a |
 | behavior_changed | False |
+
+## Compact Context Shadow Evaluation
+
+| Field | Value |
+| --- | --- |
+| status | n/a - no compact-context shadow eval row attached |
+
+## Risk-Efficiency Shadow Evaluation
+
+| Field | Value |
+| --- | --- |
+| risk_level | low |
+| module_skipped_by_risk | {"items": ["value_retrieval", "shadow_repair", "repair_safety_verifier"], "total_items": 4, "truncated_items": true} |
+| current_score | 0.6903 |
+| risk_skipping_score | 0.6903 |
+| score_delta | 0.0 |
+| token_delta | -264 |
+| runtime_delta | -0.025 |
+| tool_call_delta | 0 |
+| final_answer_difference | False |
+| packaged_execution_changed | False |
+| measured_accuracy_improvement_claimed | False |
+| measured_efficiency_improvement_claimed | False |
 
 ## Value Retrieval Cache
 

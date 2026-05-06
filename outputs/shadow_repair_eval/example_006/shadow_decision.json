@@ -1,5 +1,7 @@
 {
   "accuracy_risk": "high - risk_cluster:schema_vs_dataset_confusion",
+  "behavior_changing_flags_enabled": false,
+  "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
   "compact_context_safe": true,
   "current_plan_api": [
     {
@@ -14,26 +16,46 @@
   "current_plan_sql": [
     "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1"
   ],
-  "current_runtime": 0.0122,
+  "current_runtime": 0.0124,
   "current_strict_score": 0.7272,
   "current_tokens": 1154,
   "current_tool_calls": 2,
-  "decision": "safe_shadow_tie_recommend_canary",
+  "decision": "no_op_shadow_tie_keep_current",
   "decision_hash": "e6033ce83757f84a",
   "dry_run_only": true,
   "evidence_available": true,
   "execution_changed": false,
   "fallback_reason": "compact and fallback top candidates agree",
   "live_api_evidence_available": false,
+  "measured_accuracy_improvement_claimed": false,
+  "measured_efficiency_improvement_claimed": false,
   "module_skipped_by_risk": [],
+  "packaged_execution_changed": false,
   "query": "How many datasets have been ingested using the same schema in the prod sandbox?",
   "query_id": "example_006",
-  "rejection_reason": "",
+  "rejection_reason": "Current and repaired plans are identical; keep the current plan.",
+  "repair_candidate_selector": {
+    "behavior_changed": false,
+    "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+    "diagnostic_only": true,
+    "efficiency_role": "rejects repaired candidates with any tool-call increase",
+    "failed_checks": [
+      "no_op_repair"
+    ],
+    "no_op": true,
+    "packaged_execution_changed": false,
+    "reasons": [
+      "Current and repaired plans are identical; keep the current plan."
+    ],
+    "recommendation": "keep_current",
+    "safe_to_select_repaired": false,
+    "selected_plan": "current"
+  },
   "repair_decision": {
     "changed": false,
     "reason": "top ranked endpoint already matches current API"
   },
-  "repair_safe_to_enable": true,
+  "repair_safe_to_enable": false,
   "repaired_plan_api": [
     {
       "method": "GET",
@@ -47,7 +69,7 @@
   "repaired_plan_sql": [
     "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1"
   ],
-  "repaired_runtime": 0.0122,
+  "repaired_runtime": 0.0124,
   "repaired_strict_score": 0.7272,
   "repaired_tokens": 1154,
   "repaired_tool_calls": 2,
@@ -182,7 +204,7 @@
   },
   "schema_vote_agreement": true,
   "score_delta": 0.0,
-  "shadow_runtime": 0.0118,
+  "shadow_runtime": 0.0121,
   "token_delta": 0,
   "token_saved_estimate": 0,
   "tool_delta": 0,

@@ -15,6 +15,8 @@ if str(ROOT) not in sys.path:
 from dashagent.config import Config
 from dashagent.dataflow_visualizer import (
     attach_candidate_report_row,
+    attach_compact_context_shadow_row,
+    attach_risk_efficiency_shadow_row,
     attach_shadow_repair_row,
     build_dataflow_summary,
     default_visualization_dir,
@@ -61,7 +63,7 @@ def generate_all(
 ) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
     for trajectory_path in discover_trajectory_paths(config.outputs_dir, query_ids, strategies):
-        trajectory = attach_shadow_repair_row(attach_candidate_report_row(load_trajectory(trajectory_path), config.outputs_dir), config.outputs_dir)
+        trajectory = enrich_trajectory(load_trajectory(trajectory_path), config.outputs_dir)
         out_dir = default_visualization_dir(config.outputs_dir, trajectory)
         if "final_submission" in out_dir.parts:
             raise RuntimeError(f"Refusing to write visualization under final_submission: {out_dir}")
@@ -71,7 +73,7 @@ def generate_all(
             return entries
 
     for row in discover_llm_rows(config.outputs_dir, query_ids, strategies):
-        trajectory = attach_shadow_repair_row(attach_candidate_report_row(trajectory_from_llm_row(row), config.outputs_dir), config.outputs_dir)
+        trajectory = enrich_trajectory(trajectory_from_llm_row(row), config.outputs_dir)
         out_dir = default_visualization_dir(config.outputs_dir, trajectory)
         if "final_submission" in out_dir.parts:
             raise RuntimeError(f"Refusing to write visualization under final_submission: {out_dir}")
@@ -80,6 +82,14 @@ def generate_all(
         if limit is not None and len(entries) >= limit:
             return entries
     return entries
+
+
+def enrich_trajectory(trajectory: dict[str, Any], outputs_dir: Path) -> dict[str, Any]:
+    trajectory = attach_candidate_report_row(trajectory, outputs_dir)
+    trajectory = attach_shadow_repair_row(trajectory, outputs_dir)
+    trajectory = attach_compact_context_shadow_row(trajectory, outputs_dir)
+    trajectory = attach_risk_efficiency_shadow_row(trajectory, outputs_dir)
+    return trajectory
 
 
 def discover_trajectory_paths(outputs_dir: Path, query_ids: list[str], strategies: set[str]) -> list[Path]:

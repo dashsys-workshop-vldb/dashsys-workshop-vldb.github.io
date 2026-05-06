@@ -1,5 +1,7 @@
 {
   "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k",
+  "behavior_changing_flags_enabled": false,
+  "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
   "compact_context_safe": true,
   "current_plan_api": [
     {
@@ -22,21 +24,45 @@
   "current_plan_sql": [
     "SELECT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, A.\"TOTALMEMBERS\" AS total_profiles, A.\"CREATEDTIME\" AS created_time, A.\"UPDATEDTIME\" AS updated_time FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"DATAFLOWNAME\" = 'SMS Opt-In' OR D.\"NAME\" = 'SMS Opt-In' ORDER BY A.\"NAME\""
   ],
-  "current_runtime": 0.0149,
+  "current_runtime": 0.0143,
   "current_strict_score": 0.7156,
   "current_tokens": 1638,
   "current_tool_calls": 3,
-  "decision": "reject_unsafe_repair",
+  "decision": "no_op_shadow_tie_keep_current",
   "decision_hash": "ee729da7b42200ff",
   "dry_run_only": true,
   "evidence_available": false,
   "execution_changed": false,
   "fallback_reason": "compact and fallback top candidates agree",
   "live_api_evidence_available": false,
+  "measured_accuracy_improvement_claimed": false,
+  "measured_efficiency_improvement_claimed": false,
   "module_skipped_by_risk": [],
+  "packaged_execution_changed": false,
   "query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
   "query_id": "example_003",
-  "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+  "rejection_reason": "Current and repaired plans are identical; keep the current plan.; Repair safety verifier did not pass.; Weighted score fusion and RRF/family signals did not agree.; Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+  "repair_candidate_selector": {
+    "behavior_changed": false,
+    "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+    "diagnostic_only": true,
+    "efficiency_role": "rejects repaired candidates with any tool-call increase",
+    "failed_checks": [
+      "fusion_agreement",
+      "no_op_repair",
+      "safety_verifier"
+    ],
+    "no_op": true,
+    "packaged_execution_changed": false,
+    "reasons": [
+      "Current and repaired plans are identical; keep the current plan.",
+      "Repair safety verifier did not pass.",
+      "Weighted score fusion and RRF/family signals did not agree."
+    ],
+    "recommendation": "keep_current",
+    "safe_to_select_repaired": false,
+    "selected_plan": "current"
+  },
   "repair_decision": {
     "changed": false,
     "reason": "top ranked endpoint already matches current API"
@@ -63,7 +89,7 @@
   "repaired_plan_sql": [
     "SELECT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, A.\"TOTALMEMBERS\" AS total_profiles, A.\"CREATEDTIME\" AS created_time, A.\"UPDATEDTIME\" AS updated_time FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"DATAFLOWNAME\" = 'SMS Opt-In' OR D.\"NAME\" = 'SMS Opt-In' ORDER BY A.\"NAME\""
   ],
-  "repaired_runtime": 0.0149,
+  "repaired_runtime": 0.0143,
   "repaired_strict_score": 0.7156,
   "repaired_tokens": 1638,
   "repaired_tool_calls": 3,
@@ -205,7 +231,7 @@
   },
   "schema_vote_agreement": true,
   "score_delta": 0.0,
-  "shadow_runtime": 0.0214,
+  "shadow_runtime": 0.0242,
   "token_delta": 0,
   "token_saved_estimate": 0,
   "tool_delta": 0,

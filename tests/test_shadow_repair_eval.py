@@ -8,7 +8,13 @@ import sys
 from pathlib import Path
 
 from dashagent.executor import AgentExecutor
-from scripts.run_shadow_repair_eval import decision_hash, run_shadow_repair_eval
+from scripts.run_shadow_repair_eval import (
+    _decision_label,
+    build_paired_summary,
+    build_schema_dataset_repair_analysis,
+    decision_hash,
+    run_shadow_repair_eval,
+)
 
 
 def test_shadow_repair_eval_rows_have_paired_summary_and_stable_hash(tiny_project):
@@ -19,12 +25,82 @@ def test_shadow_repair_eval_rows_have_paired_summary_and_stable_hash(tiny_projec
     assert "cluster_canary_recommendations" in payload_one
     assert "risk_efficiency_controller_summary" in payload_one
     assert "schema_context_voting_summary" in payload_one
+    assert "schema_dataset_repair_analysis" in payload_one
+    assert payload_one["packaged_execution_changed"] is False
+    assert payload_one["measured_accuracy_improvement_claimed"] is False
+    assert payload_one["measured_efficiency_improvement_claimed"] is False
+    assert payload_one["behavior_changing_flags_note"] == "No behavior-changing flags were enabled in this pass."
     assert payload_one["rows"]
     assert payload_one["rows"][0]["decision_hash"] == decision_hash(payload_one["rows"][0])
     assert "risk_level" in payload_one["rows"][0]
     assert "schema_context_vote" in payload_one["rows"][0]
     assert payload_one["rows"][0]["savings_are_estimates"] is True
+    assert payload_one["rows"][0]["packaged_execution_changed"] is False
+    for field in [
+        "safe_repaired_better_count",
+        "safe_repaired_equal_count",
+        "safe_repaired_worse_count",
+        "safe_avg_score_delta",
+        "safe_avg_tool_delta",
+        "unsafe_avg_score_delta",
+        "unsafe_failure_reason_counts",
+    ]:
+        assert field in payload_one["paired_shadow_eval_summary"]
     assert [row["decision_hash"] for row in payload_one["rows"]] == [row["decision_hash"] for row in payload_two["rows"]]
+
+
+def test_no_op_shadow_tie_keeps_current_and_never_recommends_canary():
+    decision = _decision_label(
+        0.0,
+        {"safe": True},
+        0,
+        0,
+        0.0,
+        False,
+        {"no_op": True, "safe_to_select_repaired": False},
+    )
+
+    assert decision == "no_op_shadow_tie_keep_current"
+
+
+def test_safe_only_aggregates_use_safety_verdict_and_count_failures():
+    summary = build_paired_summary(
+        [
+            {"score_delta": 0.2, "tool_delta": 0, "runtime_delta": 0, "token_delta": 0, "safety_verdict": {"safe": True}},
+            {"score_delta": -0.1, "tool_delta": 1, "runtime_delta": 0, "token_delta": 0, "safety_verdict": {"safe": False, "failed_checks": ["api_validation"]}},
+            {"score_delta": 0.0, "tool_delta": 0, "runtime_delta": 0, "token_delta": 0, "safety_verdict": {"safe": False, "failed_checks": ["api_validation", "fusion_agreement"]}},
+        ]
+    )
+
+    assert summary["safe_repaired_better_count"] == 1
+    assert summary["safe_repaired_equal_count"] == 0
+    assert summary["safe_repaired_worse_count"] == 0
+    assert summary["unsafe_failure_reason_counts"] == {"api_validation": 2, "fusion_agreement": 1}
+
+
+def test_schema_dataset_repair_analysis_marks_failure_type_and_signal():
+    analysis = build_schema_dataset_repair_analysis(
+        [
+            {
+                "query_id": "q1",
+                "query": "Which datasets use a schema?",
+                "risk_cluster": "schema_vs_dataset_confusion",
+                "current_plan_sql": ["SELECT 1"],
+                "current_plan_api": [{"path": "/schemas"}],
+                "repaired_plan_sql": ["SELECT 1"],
+                "repaired_plan_api": [{"path": "/data/foundation/catalog/dataSets"}],
+                "score_delta": 0.1,
+                "safety_verdict": {"failed_checks": ["endpoint_family_confidence"]},
+                "repair_candidate_selector": {"recommendation": "keep_current"},
+                "decision": "keep_current_repair_selector_rejected",
+            }
+        ]
+    )
+
+    assert analysis["row_count"] == 1
+    row = analysis["rows"][0]
+    assert row["failure_type"] == "verifier_strictness"
+    assert "endpoint family confidence" in row["missing_signal"]
 
 
 def test_shadow_eval_does_not_change_packaged_sql_first_execution(tiny_project):

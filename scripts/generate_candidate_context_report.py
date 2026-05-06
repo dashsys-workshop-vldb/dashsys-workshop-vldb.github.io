@@ -195,6 +195,8 @@ def generate_candidate_context_report(config: Config) -> dict[str, Any]:
         rows.append(row)
     avg_candidate = avg(candidate_tokens)
     shadow_report = _load_shadow_repair_report(config.outputs_dir)
+    compact_shadow_report = _load_json(config.outputs_dir / "compact_context_shadow_eval.json")
+    risk_shadow_report = _load_json(config.outputs_dir / "risk_efficiency_shadow_eval.json")
     risk_distribution = Counter(row.get("risk_level") for row in rows)
     schema_votes = [row.get("schema_context_vote") for row in rows if isinstance(row.get("schema_context_vote"), dict)]
     return {
@@ -236,6 +238,20 @@ def generate_candidate_context_report(config: Config) -> dict[str, Any]:
             "cluster_canary_recommendations": shadow_report.get("cluster_canary_recommendations", {}),
             "repair_execution_enabled": shadow_report.get("repair_execution_enabled", False),
         },
+        "compact_context_shadow_eval": {
+            "available": bool(compact_shadow_report.get("rows")),
+            "summary": compact_shadow_report.get("summary", {}),
+            "packaged_execution_changed": compact_shadow_report.get("summary", {}).get("packaged_execution_changed", False),
+            "measured_accuracy_improvement_claimed": compact_shadow_report.get("summary", {}).get("measured_accuracy_improvement_claimed", False),
+            "measured_efficiency_improvement_claimed": compact_shadow_report.get("summary", {}).get("measured_efficiency_improvement_claimed", False),
+        },
+        "risk_efficiency_shadow_eval": {
+            "available": bool(risk_shadow_report.get("rows")),
+            "summary": risk_shadow_report.get("summary", {}),
+            "packaged_execution_changed": risk_shadow_report.get("summary", {}).get("packaged_execution_changed", False),
+            "measured_accuracy_improvement_claimed": risk_shadow_report.get("summary", {}).get("measured_accuracy_improvement_claimed", False),
+            "measured_efficiency_improvement_claimed": risk_shadow_report.get("summary", {}).get("measured_efficiency_improvement_claimed", False),
+        },
         "curated_join_hint_audit": curated_join_hint_audit(executor.schema_index),
         "rows": rows,
     }
@@ -271,7 +287,10 @@ def avg(values: list[float | int]) -> float:
 
 
 def _load_shadow_repair_report(outputs_dir: Path) -> dict[str, Any]:
-    path = outputs_dir / "shadow_repair_eval.json"
+    return _load_json(outputs_dir / "shadow_repair_eval.json")
+
+
+def _load_json(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
     try:
@@ -473,6 +492,25 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"{cluster.get('repaired_equal_count')} | {cluster.get('repaired_worse_count')} | "
             f"{cluster.get('safe_to_enable_canary')} | `{cluster.get('recommended_flag')}` |"
         )
+    compact_shadow = report.get("compact_context_shadow_eval", {})
+    risk_shadow = report.get("risk_efficiency_shadow_eval", {})
+    lines.extend(
+        [
+            "",
+            "## Shadow Efficiency Report Linkage",
+            "",
+            "- These linked reports are replay-only diagnostics; they do not change packaged execution or claim measured accuracy/efficiency improvement.",
+            "",
+            "| Report | Available | Rows | Packaged execution changed? | Measured accuracy claimed? | Measured efficiency claimed? |",
+            "| --- | --- | ---: | --- | --- | --- |",
+            f"| Compact context shadow eval | {compact_shadow.get('available')} | {compact_shadow.get('summary', {}).get('row_count', 0)} | "
+            f"{compact_shadow.get('packaged_execution_changed')} | {compact_shadow.get('measured_accuracy_improvement_claimed')} | "
+            f"{compact_shadow.get('measured_efficiency_improvement_claimed')} |",
+            f"| Risk-efficiency shadow eval | {risk_shadow.get('available')} | {risk_shadow.get('summary', {}).get('row_count', 0)} | "
+            f"{risk_shadow.get('packaged_execution_changed')} | {risk_shadow.get('measured_accuracy_improvement_claimed')} | "
+            f"{risk_shadow.get('measured_efficiency_improvement_claimed')} |",
+        ]
+    )
     lines.extend(
         [
             "",

@@ -36,6 +36,8 @@ def checkpoints_to_spans(trajectory: dict[str, Any]) -> dict[str, Any]:
         previous_id = span_id
     candidate_row = trajectory.get("_candidate_context_report_row") or {}
     shadow_row = trajectory.get("_shadow_repair_eval_row") or {}
+    compact_shadow_row = trajectory.get("_compact_context_shadow_eval_row") or {}
+    risk_shadow_row = trajectory.get("_risk_efficiency_shadow_eval_row") or {}
     for technique, checkpoint_id, output_key in [
         ("Hybrid Candidate Scoring", "checkpoint_hybrid_candidate_scoring", "hybrid_candidate_scoring"),
         ("Endpoint Family Ranking", "checkpoint_endpoint_family_ranking", "endpoint_family_ranking"),
@@ -69,6 +71,33 @@ def checkpoints_to_spans(trajectory: dict[str, Any]) -> dict[str, Any]:
             )
         )
         previous_id = span_id
+    for technique, checkpoint_id, payload in [
+        ("Compact Context Shadow Eval", "checkpoint_compact_context_shadow_eval", compact_shadow_row),
+        ("Risk-Efficiency Shadow Eval", "checkpoint_risk_efficiency_shadow_eval", risk_shadow_row),
+    ]:
+        if not payload:
+            continue
+        span_id = f"span_{len(spans):03d}_{checkpoint_id}"
+        spans.append(
+            redact_secrets(
+                {
+                    "span_id": span_id,
+                    "parent_id": previous_id,
+                    "stage": "shadow diagnostics",
+                    "technique": technique,
+                    "checkpoint_id": checkpoint_id,
+                    "span_kind": checkpoint_id.removeprefix("checkpoint_") + "_span",
+                    "started_at": None,
+                    "ended_at": None,
+                    "input_summary": "shadow replay report row",
+                    "output_summary": compact_preview(payload, 500),
+                    "correctness_role": "replays current SQL_FIRST outputs without claiming accuracy improvement",
+                    "efficiency_role": "reports estimated deltas only; packaged execution unchanged",
+                    "visualization_label": technique,
+                }
+            )
+        )
+        previous_id = span_id
     return {
         "query_id": trajectory.get("query_id"),
         "strategy": trajectory.get("strategy") or trajectory.get("system"),
@@ -94,6 +123,8 @@ def research_technique_status(trajectory: dict[str, Any]) -> list[dict[str, Any]
         ("Gated risk-cluster repair", "CHASE-SQL-style repair", "checkpoint_gated_risk_cluster_repair", "Diagnostic repaired candidate comparison without execution change"),
         ("Risk-based efficiency controller", "adaptive retrieval control", "checkpoint_risk_efficiency_controller", "Diagnostic policy that estimates skipped module cost by risk level"),
         ("Schema context voting", "full-vs-compact context voting", "checkpoint_schema_context_voting", "High-risk diagnostic comparison of compact and broader context"),
+        ("Compact context shadow eval", "shadow replay", "checkpoint_compact_context_shadow_eval", "Replay-only compact-context cost comparison"),
+        ("Risk-efficiency shadow eval", "shadow replay", "checkpoint_risk_efficiency_shadow_eval", "Replay-only diagnostic module-skipping cost comparison"),
     ]
     candidate_row = trajectory.get("_candidate_context_report_row") or {}
     candidate_active = {
@@ -109,6 +140,10 @@ def research_technique_status(trajectory: dict[str, Any]) -> list[dict[str, Any]
     if shadow_row:
         candidate_active["checkpoint_risk_efficiency_controller"] = bool((shadow_row.get("risk_efficiency_controller") or {}).get("active"))
         candidate_active["checkpoint_schema_context_voting"] = bool((shadow_row.get("schema_context_vote") or {}).get("active"))
+    if trajectory.get("_compact_context_shadow_eval_row"):
+        candidate_active["checkpoint_compact_context_shadow_eval"] = True
+    if trajectory.get("_risk_efficiency_shadow_eval_row"):
+        candidate_active["checkpoint_risk_efficiency_shadow_eval"] = True
     return [
         {
             "technique": name,

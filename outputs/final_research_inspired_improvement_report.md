@@ -27,11 +27,17 @@ Status: **no measured strict-score improvement**.
 - Ranking-only no score claim: True
 - Shadow repair eval ran: True
 - Shadow repair execution enabled: False
-- Shadow repaired better/equal/worse/unsafe: 1/26/8/21
+- Shadow repaired better/equal/worse/unsafe: 1/26/8/34
 - Risk level distribution: {'high': 28, 'low': 2, 'medium': 5}
 - Risk-controller estimated token savings total: 1848.0 (estimated only: True)
 - Risk-controller estimated runtime savings total ms: 175.0 (measured efficiency improvement claimed: False)
+- Packaged execution changed: False
+- Measured accuracy improvement claimed: False
+- Measured efficiency improvement claimed: False
+- No behavior-changing flags were enabled in this pass.
 - Schema vote active/agreement/compact-safe: 28/28/28
+- Compact-context shadow eval rows: 28 (avg token delta: -1220.7857; measured efficiency improvement claimed: False)
+- Risk-efficiency shadow eval rows: 7 (avg token delta: -264.0; avg runtime delta: -0.025; measured efficiency improvement claimed: False)
 - Secret scan OK: True
 - Visualization artifacts directory: `/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/visualizations`
 - Visualization artifacts inside final submission: 0
@@ -127,3 +133,4 @@ Execution repair remains disabled by default. These recommendations are offline 
 - Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.
 - Inactive techniques appear compactly in visualization status tables, not as empty checkpoints.
 - Behavior-changing repair execution is feature-flagged off by default; strict score and efficiency gates decide whether it can ever be enabled.
+- No behavior-changing flags were enabled in this pass.

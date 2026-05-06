@@ -7,48 +7,59 @@ Shadow repair execution is **disabled by default**. This report compares current
 - repaired_better_count: 1
 - repaired_equal_count: 26
 - repaired_worse_count: 8
-- unsafe_repair_count: 21
+- unsafe_repair_count: 34
+- safe_repaired_better_count: 0
+- safe_repaired_equal_count: 14
+- safe_repaired_worse_count: 1
+- safe_avg_score_delta: -0.0077
+- safe_avg_tool_delta: 0.0
+- unsafe_avg_score_delta: -0.0567
+- unsafe_failure_reason_counts: {'api_validation': 2, 'endpoint_family_confidence': 5, 'fusion_agreement': 14, 'sql_validation': 2, 'tool_call_increase': 1}
 - avg_score_delta: -0.0357
 - avg_tool_delta: 0.0286
 - avg_runtime_delta: 0.0
+- Packaged execution changed: False
+- Measured accuracy improvement claimed: False
+- Measured efficiency improvement claimed: False
+- No behavior-changing flags were enabled in this pass.
 
 | Query ID | Cluster | Current score | Repaired score | Delta | Safe? | Decision |
 | --- | --- | ---: | ---: | ---: | --- | --- |
-| `example_000` | `not_targeted` | 0.6903 | 0.6903 | 0.0 | True | safe_shadow_tie_recommend_canary |
-| `example_001` | `not_targeted` | 0.7902 | 0.7902 | 0.0 | True | safe_shadow_tie_recommend_canary |
-| `example_002` | `not_targeted` | 0.761 | 0.761 | 0.0 | True | safe_shadow_tie_recommend_canary |
-| `example_003` | `missing_gold_api_in_top_k` | 0.7156 | 0.7156 | 0.0 | False | reject_unsafe_repair |
+| `example_000` | `not_targeted` | 0.6903 | 0.6903 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_001` | `not_targeted` | 0.7902 | 0.7902 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_002` | `not_targeted` | 0.761 | 0.761 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_003` | `missing_gold_api_in_top_k` | 0.7156 | 0.7156 | 0.0 | False | no_op_shadow_tie_keep_current |
 | `example_004` | `zero_score_margin` | 0.6744 | 0.6744 | 0.0 | True | safe_shadow_tie_recommend_canary |
-| `example_005` | `zero_score_margin` | 0.913 | 0.7472 | -0.1658 | False | reject_unsafe_repair |
-| `example_006` | `schema_vs_dataset_confusion` | 0.7272 | 0.7272 | 0.0 | True | safe_shadow_tie_recommend_canary |
-| `example_007` | `schema_vs_dataset_confusion` | 0.6552 | 0.77 | 0.1148 | False | reject_unsafe_repair |
-| `example_008` | `not_targeted` | 0.7027 | 0.6902 | -0.0125 | False | reject_unsafe_repair |
-| `example_009` | `missing_gold_api_in_top_k` | 0.7576 | 0.7576 | 0.0 | True | safe_shadow_tie_recommend_canary |
-| `example_010` | `zero_score_margin` | 0.7898 | 0.6496 | -0.1402 | False | reject_unsafe_repair |
+| `example_005` | `zero_score_margin` | 0.913 | 0.7472 | -0.1658 | False | keep_current_repair_selector_rejected |
+| `example_006` | `schema_vs_dataset_confusion` | 0.7272 | 0.7272 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_007` | `schema_vs_dataset_confusion` | 0.6552 | 0.77 | 0.1148 | False | keep_current_repair_selector_rejected |
+| `example_008` | `not_targeted` | 0.7027 | 0.6902 | -0.0125 | False | keep_current_repair_selector_rejected |
+| `example_009` | `missing_gold_api_in_top_k` | 0.7576 | 0.7576 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_010` | `zero_score_margin` | 0.7898 | 0.6496 | -0.1402 | False | keep_current_repair_selector_rejected |
 | `example_011` | `missing_gold_api_in_top_k` | 0.7455 | 0.6307 | -0.1148 | False | reject_score_regression |
-| `example_012` | `missing_gold_api_in_top_k` | 0.7287 | 0.5629 | -0.1658 | False | reject_unsafe_repair |
-| `example_013` | `missing_gold_api_in_top_k` | 0.7149 | 0.5662 | -0.1487 | False | reject_unsafe_repair |
-| `example_014` | `not_targeted` | 0.7654 | 0.7654 | 0.0 | False | reject_unsafe_repair |
-| `example_015` | `tag_api_confusion` | 0.6672 | 0.6672 | 0.0 | True | safe_shadow_tie_recommend_canary |
-| `example_016` | `tag_api_confusion` | 0.6621 | 0.6621 | 0.0 | True | safe_shadow_tie_recommend_canary |
-| `example_017` | `tag_api_confusion` | 0.5292 | 0.5292 | 0.0 | False | reject_unsafe_repair |
-| `example_018` | `zero_score_margin` | 0.6654 | 0.4741 | -0.1913 | False | reject_unsafe_repair |
-| `example_019` | `missing_gold_api_in_top_k` | 0.5344 | 0.5344 | 0.0 | True | safe_shadow_tie_recommend_canary |
-| `example_020` | `broad_domain_api_confusion` | 0.5369 | 0.5369 | 0.0 | True | safe_shadow_tie_recommend_canary |
-| `example_021` | `missing_gold_api_in_top_k` | 0.5394 | 0.5394 | 0.0 | True | safe_shadow_tie_recommend_canary |
-| `example_022` | `missing_gold_api_in_top_k` | 0.5406 | 0.5406 | 0.0 | False | reject_unsafe_repair |
-| `example_023` | `missing_gold_api_in_top_k` | 0.5401 | 0.5401 | 0.0 | False | reject_unsafe_repair |
-| `example_024` | `missing_gold_api_in_top_k` | 0.5361 | 0.5361 | 0.0 | False | reject_unsafe_repair |
-| `example_025` | `missing_gold_api_in_top_k` | 0.5355 | 0.5355 | 0.0 | False | reject_unsafe_repair |
-| `example_026` | `missing_gold_api_in_top_k` | 0.5407 | 0.5407 | 0.0 | False | reject_unsafe_repair |
-| `example_027` | `missing_gold_api_in_top_k` | 0.6017 | 0.6017 | 0.0 | False | reject_unsafe_repair |
-| `example_028` | `missing_gold_api_in_top_k` | 0.5348 | 0.5348 | 0.0 | False | reject_unsafe_repair |
-| `example_029` | `missing_gold_api_in_top_k` | 0.5345 | 0.5345 | 0.0 | True | safe_shadow_tie_recommend_canary |
-| `example_030` | `zero_score_margin` | 0.5308 | 0.5308 | 0.0 | True | safe_shadow_tie_recommend_canary |
-| `example_031` | `batch_endpoint_confusion` | 0.5339 | 0.5339 | 0.0 | True | safe_shadow_tie_recommend_canary |
-| `example_032` | `batch_endpoint_confusion` | 0.6711 | 0.6711 | 0.0 | False | reject_unsafe_repair |
-| `example_033` | `not_targeted` | 0.672 | 0.672 | 0.0 | False | reject_unsafe_repair |
-| `example_034` | `zero_score_margin` | 0.6621 | 0.2371 | -0.425 | False | reject_unsafe_repair |
+| `example_012` | `missing_gold_api_in_top_k` | 0.7287 | 0.5629 | -0.1658 | False | keep_current_repair_selector_rejected |
+| `example_013` | `missing_gold_api_in_top_k` | 0.7149 | 0.5662 | -0.1487 | False | keep_current_repair_selector_rejected |
+| `example_014` | `not_targeted` | 0.7654 | 0.7654 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_015` | `tag_api_confusion` | 0.6672 | 0.6672 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_016` | `tag_api_confusion` | 0.6621 | 0.6621 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_017` | `tag_api_confusion` | 0.5292 | 0.5292 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_018` | `zero_score_margin` | 0.6654 | 0.4741 | -0.1913 | False | keep_current_repair_selector_rejected |
+| `example_019` | `missing_gold_api_in_top_k` | 0.5344 | 0.5344 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_020` | `broad_domain_api_confusion` | 0.5369 | 0.5369 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_021` | `missing_gold_api_in_top_k` | 0.5394 | 0.5394 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_022` | `missing_gold_api_in_top_k` | 0.5406 | 0.5406 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_023` | `missing_gold_api_in_top_k` | 0.5401 | 0.5401 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_024` | `missing_gold_api_in_top_k` | 0.5361 | 0.5361 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_025` | `missing_gold_api_in_top_k` | 0.5355 | 0.5355 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_026` | `missing_gold_api_in_top_k` | 0.5407 | 0.5407 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_027` | `missing_gold_api_in_top_k` | 0.6017 | 0.6017 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_028` | `missing_gold_api_in_top_k` | 0.5348 | 0.5348 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_029` | `missing_gold_api_in_top_k` | 0.5345 | 0.5345 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_030` | `zero_score_margin` | 0.5308 | 0.5308 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_031` | `batch_endpoint_confusion` | 0.5339 | 0.5339 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_032` | `batch_endpoint_confusion` | 0.6711 | 0.6711 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_033` | `not_targeted` | 0.672 | 0.672 | 0.0 | False | no_op_shadow_tie_keep_current |
+| `example_034` | `zero_score_margin` | 0.6621 | 0.2371 | -0.425 | False | keep_current_repair_selector_rejected |
 
 ## Cluster Canary Recommendation
 
@@ -60,6 +71,15 @@ Shadow repair execution is **disabled by default**. This report compares current
 | `tag_api_confusion` | 3 | 0 | 3 | 0 | 0.0 | 0.0 | 0.0 | 0.0 | False | `ENABLE_REPAIR_FOR_TAG_API_CONFUSION` | keep_disabled |
 | `schema_vs_dataset_confusion` | 2 | 1 | 1 | 0 | 0.0574 | 0.0 | 0.0 | 0.0 | False | `ENABLE_REPAIR_FOR_SCHEMA_DATASET_CONFUSION` | keep_disabled |
 | `broad_domain_api_confusion` | 1 | 0 | 1 | 0 | 0.0 | 0.0 | 0.0 | 0.0 | False | `None` | keep_disabled |
+
+## Schema/Dataset Repair Analysis
+
+This focused analysis explains why the positive schema/dataset shadow delta still does not enable repair execution.
+
+| Query ID | Score delta | Failed checks | Failure type | Missing signal | Selector decision |
+| --- | ---: | --- | --- | --- | --- |
+| `example_006` | 0.0 | none | none | no missing signal | keep_current |
+| `example_007` | 0.1148 | api_validation | real_risk | catalog-backed endpoint replacement | keep_current |
 
 ## Diagnostic Risk-Based Efficiency Controller
 

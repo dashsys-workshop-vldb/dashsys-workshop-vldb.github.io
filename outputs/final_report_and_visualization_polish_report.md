@@ -187,3 +187,36 @@ The packaged preferred strategy remains `SQL_FIRST_API_VERIFY`.
   - preferred strategy: `SQL_FIRST_API_VERIFY`
   - repair execution enabled: false
   - `no_secret_scan.ok`: true
+
+## 15. Shadow Repair Cleanup And Diagnostic Efficiency Addendum
+
+- No behavior-changing flags were enabled in this pass.
+- Packaged execution changed: false.
+- Measured accuracy improvement claimed: false.
+- Measured efficiency improvement claimed: false.
+- No-op shadow ties now use `no_op_shadow_tie_keep_current`; 25 identical current/repaired rows were kept as current-plan diagnostics and none set `repair_safe_to_enable=true`.
+- Safe-only shadow aggregates were added to `outputs/shadow_repair_eval.json` and `.md`: safe better/equal/worse = 0/14/1, safe avg score delta = -0.0077, safe avg tool delta = 0.0, unsafe avg score delta = -0.0567.
+- `Schema/Dataset Repair Analysis` is now present in the shadow report with failed checks, failure type, missing signal, and selector decision for schema/dataset rows.
+- Added replay-only compact-context shadow eval: `outputs/compact_context_shadow_eval.json` and `.md` with 28 rows, avg token delta -1220.7857, no score/tool/answer change, and packaged execution unchanged.
+- Added replay-only risk-efficiency shadow eval: `outputs/risk_efficiency_shadow_eval.json` and `.md` with 7 low/medium-risk rows, avg estimated token delta -264.0, avg estimated runtime delta -0.025, and packaged execution unchanged.
+- Dataflow visualizations now attach compact-context and risk-efficiency shadow rows when available, and `spans.json` includes compact/risk shadow diagnostic spans.
+- Latest validation after this cleanup pass:
+  - `python3 -m pytest`: 171 passed
+  - `python3 scripts/run_shadow_repair_eval.py`: passed twice with stable decision hashes
+  - `python3 scripts/run_compact_context_shadow_eval.py`: passed
+  - `python3 scripts/run_risk_efficiency_shadow_eval.py`: passed
+  - `python3 scripts/generate_candidate_context_report.py`: passed
+  - `python3 scripts/generate_research_inspired_report.py`: passed
+  - `python3 scripts/generate_all_dataflow_visualizations.py`: passed
+  - `python3 scripts/run_dev_eval.py --strict`: passed
+  - `python3 scripts/package_submission.py`: passed
+  - `python3 scripts/package_query_outputs.py`: passed
+  - `python3 scripts/check_submission_ready.py`: passed
+  - strict `SQL_FIRST_API_VERIFY` final score: 0.6486
+  - strict correctness: 0.6743
+  - average tool calls: 1.4571
+  - estimated tokens: 899.2286
+  - average runtime: 0.0117
+  - preferred strategy: `SQL_FIRST_API_VERIFY`
+  - repair execution enabled: false
+  - `no_secret_scan.ok`: true

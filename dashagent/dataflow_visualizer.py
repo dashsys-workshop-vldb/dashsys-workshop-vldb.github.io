@@ -53,6 +53,39 @@ def attach_shadow_repair_row(trajectory: dict[str, Any], outputs_dir: Path) -> d
     return trajectory
 
 
+def attach_compact_context_shadow_row(trajectory: dict[str, Any], outputs_dir: Path) -> dict[str, Any]:
+    return _attach_report_row(
+        trajectory,
+        outputs_dir / "compact_context_shadow_eval.json",
+        "_compact_context_shadow_eval_row",
+    )
+
+
+def attach_risk_efficiency_shadow_row(trajectory: dict[str, Any], outputs_dir: Path) -> dict[str, Any]:
+    return _attach_report_row(
+        trajectory,
+        outputs_dir / "risk_efficiency_shadow_eval.json",
+        "_risk_efficiency_shadow_eval_row",
+    )
+
+
+def _attach_report_row(trajectory: dict[str, Any], report_path: Path, key: str) -> dict[str, Any]:
+    if not report_path.exists():
+        return trajectory
+    try:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+    except Exception:
+        return trajectory
+    query_id = str(trajectory.get("query_id") or "")
+    query = str(trajectory.get("original_query") or trajectory.get("query") or "")
+    for row in report.get("rows", []) or []:
+        if str(row.get("query_id") or "") == query_id or (query and str(row.get("query") or "") == query):
+            enriched = dict(trajectory)
+            enriched[key] = row
+            return enriched
+    return trajectory
+
+
 def extract_checkpoint_map(trajectory: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {
         str(checkpoint.get("checkpoint_id")): checkpoint
@@ -232,6 +265,8 @@ def build_dataflow_summary(trajectory: dict[str, Any]) -> dict[str, Any]:
             "risk_efficiency_controller": _risk_efficiency_summary(trajectory),
             "schema_context_vote": _schema_context_vote_summary(trajectory),
             "shadow_repair": _shadow_repair_summary(trajectory),
+            "compact_context_shadow": _compact_context_shadow_summary(trajectory),
+            "risk_efficiency_shadow": _risk_efficiency_shadow_summary(trajectory),
         }
     )
 
@@ -481,6 +516,52 @@ def build_schema_context_vote_table(summary: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def build_compact_context_shadow_table(summary: dict[str, Any]) -> str:
+    row = summary.get("compact_context_shadow")
+    lines = ["| Field | Value |", "| --- | --- |"]
+    if not isinstance(row, dict) or not row.get("available", True):
+        lines.append(f"| status | {_md(row)} |")
+        return "\n".join(lines) + "\n"
+    for key in [
+        "current_score",
+        "compact_context_score",
+        "score_delta",
+        "token_delta",
+        "runtime_delta",
+        "tool_call_delta",
+        "final_answer_difference",
+        "packaged_execution_changed",
+        "measured_accuracy_improvement_claimed",
+        "measured_efficiency_improvement_claimed",
+    ]:
+        lines.append(f"| {key} | {_md(_brief(row.get(key), 500) or 'n/a')} |")
+    return "\n".join(lines) + "\n"
+
+
+def build_risk_efficiency_shadow_table(summary: dict[str, Any]) -> str:
+    row = summary.get("risk_efficiency_shadow")
+    lines = ["| Field | Value |", "| --- | --- |"]
+    if not isinstance(row, dict) or not row.get("available", True):
+        lines.append(f"| status | {_md(row)} |")
+        return "\n".join(lines) + "\n"
+    for key in [
+        "risk_level",
+        "module_skipped_by_risk",
+        "current_score",
+        "risk_skipping_score",
+        "score_delta",
+        "token_delta",
+        "runtime_delta",
+        "tool_call_delta",
+        "final_answer_difference",
+        "packaged_execution_changed",
+        "measured_accuracy_improvement_claimed",
+        "measured_efficiency_improvement_claimed",
+    ]:
+        lines.append(f"| {key} | {_md(_brief(row.get(key), 500) or 'n/a')} |")
+    return "\n".join(lines) + "\n"
+
+
 def build_markdown_report(trajectory: dict[str, Any]) -> str:
     summary = build_dataflow_summary(trajectory)
     lines = [
@@ -557,6 +638,14 @@ def build_markdown_report(trajectory: dict[str, Any]) -> str:
         "Schema context voting is diagnostic guidance for high-risk rows and does not change executed SQL/API plans.",
         "",
         build_schema_context_vote_table(summary).strip(),
+        "",
+        "## Compact Context Shadow Evaluation",
+        "",
+        build_compact_context_shadow_table(summary).strip(),
+        "",
+        "## Risk-Efficiency Shadow Evaluation",
+        "",
+        build_risk_efficiency_shadow_table(summary).strip(),
         "",
         "## Value Retrieval Cache",
         "",
@@ -909,6 +998,20 @@ def _schema_context_vote_summary(trajectory: dict[str, Any]) -> Any:
     if isinstance(candidate, dict) and isinstance(candidate.get("schema_context_vote"), dict):
         return {"available": True, **candidate["schema_context_vote"]}
     return _value(None, "no schema context voting diagnostic row attached")
+
+
+def _compact_context_shadow_summary(trajectory: dict[str, Any]) -> Any:
+    row = trajectory.get("_compact_context_shadow_eval_row")
+    if isinstance(row, dict):
+        return {"available": True, **row}
+    return _value(None, "no compact-context shadow eval row attached")
+
+
+def _risk_efficiency_shadow_summary(trajectory: dict[str, Any]) -> Any:
+    row = trajectory.get("_risk_efficiency_shadow_eval_row")
+    if isinstance(row, dict):
+        return {"available": True, **row}
+    return _value(None, "no risk-efficiency shadow eval row attached")
 
 
 def _find_context_mode(

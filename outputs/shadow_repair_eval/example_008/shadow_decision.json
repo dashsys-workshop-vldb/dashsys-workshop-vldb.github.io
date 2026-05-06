@@ -1,30 +1,58 @@
 {
   "accuracy_risk": "medium - candidate confidence or endpoint confidence is not strong enough for compact-only diagnostics",
+  "behavior_changing_flags_enabled": false,
+  "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
   "compact_context_safe": null,
   "current_plan_api": [],
   "current_plan_sql": [
     "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20"
   ],
-  "current_runtime": 0.0099,
+  "current_runtime": 0.0101,
   "current_strict_score": 0.7027,
   "current_tokens": 671,
   "current_tool_calls": 1,
-  "decision": "reject_unsafe_repair",
+  "decision": "keep_current_repair_selector_rejected",
   "decision_hash": "d56d712659788f46",
   "dry_run_only": true,
   "evidence_available": true,
   "execution_changed": false,
   "fallback_reason": "schema voting is reserved for high-risk diagnostics",
   "live_api_evidence_available": false,
+  "measured_accuracy_improvement_claimed": false,
+  "measured_efficiency_improvement_claimed": false,
   "module_skipped_by_risk": [
     "value_retrieval",
     "shadow_repair",
     "repair_safety_verifier",
     "schema_context_voting"
   ],
+  "packaged_execution_changed": false,
   "query": "show me the field for Person: Birthday Today 001",
   "query_id": "example_008",
-  "rejection_reason": "Repaired plan would increase tool calls from 1 to 2.; Endpoint family confidence 0.0000 is below 0.75.",
+  "rejection_reason": "Repair safety verifier did not pass.; Endpoint family confidence 0.0000 is below 0.85.; Compact-vs-broader schema context vote did not agree.; Repaired plan would increase tool calls.; Repaired plan would increase tool calls from 1 to 2.; Endpoint family confidence 0.0000 is below 0.75.",
+  "repair_candidate_selector": {
+    "behavior_changed": false,
+    "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+    "diagnostic_only": true,
+    "efficiency_role": "rejects repaired candidates with any tool-call increase",
+    "failed_checks": [
+      "endpoint_family_confidence",
+      "safety_verifier",
+      "schema_vote_agreement",
+      "tool_call_increase"
+    ],
+    "no_op": false,
+    "packaged_execution_changed": false,
+    "reasons": [
+      "Repair safety verifier did not pass.",
+      "Endpoint family confidence 0.0000 is below 0.85.",
+      "Compact-vs-broader schema context vote did not agree.",
+      "Repaired plan would increase tool calls."
+    ],
+    "recommendation": "keep_current",
+    "safe_to_select_repaired": false,
+    "selected_plan": "current"
+  },
   "repair_decision": {
     "changed": true,
     "endpoint_id": "audit_events",
@@ -46,7 +74,7 @@
   "repaired_plan_sql": [
     "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20"
   ],
-  "repaired_runtime": 0.0099,
+  "repaired_runtime": 0.0101,
   "repaired_strict_score": 0.6902,
   "repaired_tokens": 671,
   "repaired_tool_calls": 2,
@@ -143,7 +171,7 @@
   },
   "schema_vote_agreement": null,
   "score_delta": -0.0125,
-  "shadow_runtime": 0.012,
+  "shadow_runtime": 0.0117,
   "token_delta": 0,
   "token_saved_estimate": 264,
   "tool_delta": 1,

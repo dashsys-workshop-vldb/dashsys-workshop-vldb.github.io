@@ -13,6 +13,8 @@ if str(ROOT) not in sys.path:
 from dashagent.config import Config
 from dashagent.dataflow_visualizer import (
     attach_candidate_report_row,
+    attach_compact_context_shadow_row,
+    attach_risk_efficiency_shadow_row,
     attach_shadow_repair_row,
     build_dataflow_summary,
     build_html_report,
@@ -32,7 +34,11 @@ def main() -> int:
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing visualization files.")
     args = parser.parse_args()
     config = Config.from_env(ROOT)
-    trajectory = attach_shadow_repair_row(attach_candidate_report_row(load_trajectory(args.trajectory), config.outputs_dir), config.outputs_dir)
+    trajectory = load_trajectory(args.trajectory)
+    trajectory = attach_candidate_report_row(trajectory, config.outputs_dir)
+    trajectory = attach_shadow_repair_row(trajectory, config.outputs_dir)
+    trajectory = attach_compact_context_shadow_row(trajectory, config.outputs_dir)
+    trajectory = attach_risk_efficiency_shadow_row(trajectory, config.outputs_dir)
     out_dir = Path(args.out_dir) if args.out_dir else default_visualization_dir(config.outputs_dir, trajectory)
     out_dir.mkdir(parents=True, exist_ok=True)
     if "final_submission" in out_dir.parts:
