@@ -18,6 +18,8 @@ from dashagent.executor import AgentExecutor
 from dashagent.query_tokens import extract_query_tokens
 from dashagent.report_run import report_metadata
 
+SCHEMA_DATASET_RELATION_TABLES = ("dim_blueprint", "dim_collection", "hkg_br_blueprint_collection")
+
 
 HIDDEN_STYLE_CASES = [
     {"case_id": "batch_files_a", "query": "Find downloadable file assets for export batch 69de8a0e0cc6102b5d11f01e", "accepted_families": ["batch_files"], "expected_api": "export_batch_files", "expected_tables": []},
@@ -123,6 +125,14 @@ def _evaluate_case(case: dict[str, Any], config: Config, executor: AgentExecutor
     ranked = rank_endpoint_candidates(tokens, catalog.endpoints)
     family = ranked["detected_family"]["endpoint_family"]
     top_api = (ranked.get("ranked_endpoints") or [{}])[0].get("id")
+    before_context = None
+    if case["case_id"] == "schema_dataset_b":
+        before_context = build_candidate_context(
+            query,
+            executor.schema_index,
+            catalog,
+            enable_structural_preservation=False,
+        )
     context = build_candidate_context(query, executor.schema_index, catalog)
     tables = [str(table) for table in context.get("candidate_tables") or []]
     existing_expected_tables = [table for table in case.get("expected_tables") or [] if table in executor.schema_index.tables]
@@ -139,7 +149,7 @@ def _evaluate_case(case: dict[str, Any], config: Config, executor: AgentExecutor
         failures.append("schema_family_missing")
     if not flags_ok:
         failures.append("default_flag_enabled")
-    return {
+    row = {
         "case_id": case["case_id"],
         "query": query,
         "predicted_endpoint_family": family,
@@ -158,6 +168,32 @@ def _evaluate_case(case: dict[str, Any], config: Config, executor: AgentExecutor
         "failure_categories": failures,
         "passed": not failures,
     }
+    if case["case_id"] == "schema_dataset_b":
+        before_tables = _schema_dataset_observed_tables(before_context or {}, executor.schema_index)
+        after_tables = _schema_dataset_observed_tables(context, executor.schema_index)
+        missing_after = [table for table in existing_expected_tables if table not in after_tables]
+        row.update(
+            {
+                "expected_schema_tables": existing_expected_tables,
+                "observed_schema_tables_before": before_tables,
+                "observed_schema_tables_after": after_tables,
+                "pass_fail_reason": (
+                    "all expected schema/dataset tables observed after relation preservation"
+                    if not missing_after
+                    else f"missing expected schema/dataset tables after relation preservation: {', '.join(missing_after)}"
+                ),
+            }
+        )
+    return row
+
+
+def _schema_dataset_observed_tables(context: dict[str, Any], schema_index: Any) -> list[str]:
+    tables = set(str(table) for table in context.get("candidate_tables") or [])
+    return [
+        table
+        for table in SCHEMA_DATASET_RELATION_TABLES
+        if table in tables and table in getattr(schema_index, "tables", {})
+    ]
 
 
 def render_markdown(payload: dict[str, Any]) -> str:
@@ -179,6 +215,19 @@ def render_markdown(payload: dict[str, Any]) -> str:
         lines.append(
             f"| `{row['case_id']}` | {row['predicted_endpoint_family']} | {row['top_ranked_api']} | "
             f"{row['family_stable']} | {row['schema_stable']} | {row['passed']} | {', '.join(row['failure_categories'])} |"
+        )
+    schema_dataset_b = next((row for row in payload["rows"] if row["case_id"] == "schema_dataset_b"), None)
+    if schema_dataset_b:
+        lines.extend(
+            [
+                "",
+                "## Schema Dataset B Diagnostic",
+                "",
+                f"- Expected schema tables: {schema_dataset_b.get('expected_schema_tables', [])}",
+                f"- Observed schema tables before relation preservation: {schema_dataset_b.get('observed_schema_tables_before', [])}",
+                f"- Observed schema tables after relation preservation: {schema_dataset_b.get('observed_schema_tables_after', [])}",
+                f"- Pass/fail reason: {schema_dataset_b.get('pass_fail_reason')}",
+            ]
         )
     return "\n".join(lines) + "\n"
 

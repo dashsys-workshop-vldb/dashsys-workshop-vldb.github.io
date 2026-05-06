@@ -57,3 +57,10 @@
 | `broad_sandbox_a` | None | audit_events | True | True | True |  |
 | `broad_sandbox_b` | None | audit_events | True | True | True |  |
 | `broad_sandbox_c` | None | audit_events | True | True | True |  |
+
+## Schema Dataset B Diagnostic
+
+- Expected schema tables: ['dim_blueprint', 'dim_collection']
+- Observed schema tables before relation preservation: ['dim_blueprint', 'dim_collection', 'hkg_br_blueprint_collection']
+- Observed schema tables after relation preservation: ['dim_blueprint', 'dim_collection', 'hkg_br_blueprint_collection']
+- Pass/fail reason: all expected schema/dataset tables observed after relation preservation

@@ -88,6 +88,7 @@ def generate_winner_readiness_report(config: Config) -> dict[str, Any]:
         "ast_guided_sql_candidate_canary": reports["ast_guided_sql_candidate_canary"].get("summary", {}),
         "repair_selector_v3_shadow_eval": reports["repair_selector_v3_shadow_eval"].get("summary", {}),
         "accuracy_promotion_decision_report": reports["accuracy_promotion_decision_report"].get("summary", {}),
+        "accuracy_promotion_decision_freshness": reports["accuracy_promotion_decision_report"].get("freshness", {}),
         "visualization_dataflow_completeness": {
             "official_token_reduction_visible": True,
             "research_technique_tables_present": True,
@@ -126,6 +127,8 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- Official-token packaged trial recommendation: `{payload['official_token_reduction_packaged_trial'].get('recommendation')}`",
         f"- Official-token promotion recommendation: `{payload['official_token_reduction_promotion_report'].get('recommendation')}`",
         f"- Hidden-style passed/total: {payload['hidden_style_eval'].get('passed_cases')}/{payload['hidden_style_eval'].get('total_cases')}",
+        f"- Hidden-style family/schema stability: {payload['hidden_style_eval'].get('family_stability_rate')} / {payload['hidden_style_eval'].get('schema_stability_rate')}",
+        f"- Accuracy decision hidden-style fresh: {payload.get('accuracy_promotion_decision_freshness', {}).get('fresh')}",
         f"- Endpoint-family risky rows: {payload['endpoint_family_failure_report'].get('risky_rows')}",
         f"- Endpoint/schema rule candidates: {payload['endpoint_schema_rule_candidate_eval'].get('candidate_rules')}",
         f"- Endpoint/schema canary recommendation: `{payload['endpoint_schema_rule_canary'].get('recommendation')}`",
@@ -164,6 +167,8 @@ def _final_recommendation(
     total = int(hidden.get("total_cases") or 0)
     pass_rate = (float(hidden.get("passed_cases") or 0) / total) if total else 0.0
     if total < 48 or pass_rate < 0.98 or float(hidden.get("family_stability_rate") or 0.0) < 0.98 or float(hidden.get("schema_stability_rate") or 0.0) < 0.98:
+        return "do_not_submit_until_regression_fixed"
+    if accuracy.get("recommendation") == "do_not_submit_until_regression_fixed":
         return "do_not_submit_until_regression_fixed"
     if accuracy.get("recommendation") in {"promote_endpoint_schema_rules", "promote_ast_guided_sql"}:
         return "ready_to_submit_with_official_token_reduction_plus_safe_accuracy_rules"

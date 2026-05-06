@@ -221,7 +221,11 @@ def generate_report(config: Config) -> dict[str, Any]:
             "official_token_reduction_promotion_score_delta": official_token_reduction_promotion_report.get("summary", {}).get("score_delta"),
             "official_token_reduction_promotion_final_submission_diff": official_token_reduction_promotion_report.get("summary", {}).get("final_submission_format_unchanged"),
             "hidden_style_eval_passed_cases": hidden_style_report.get("summary", {}).get("passed_cases", 0),
+            "hidden_style_eval_failed_cases": hidden_style_report.get("summary", {}).get("failed_cases", 0),
             "hidden_style_eval_total_cases": hidden_style_report.get("summary", {}).get("total_cases", 0),
+            "hidden_style_eval_family_stability_rate": hidden_style_report.get("summary", {}).get("family_stability_rate", 0.0),
+            "hidden_style_eval_schema_stability_rate": hidden_style_report.get("summary", {}).get("schema_stability_rate", 0.0),
+            "accuracy_promotion_hidden_style_fresh": accuracy_decision_report.get("freshness", {}).get("fresh"),
             "endpoint_family_failure_risky_rows": endpoint_failure_report.get("summary", {}).get("risky_rows", 0),
             "endpoint_schema_rule_candidate_rules": endpoint_schema_rule_candidate_report.get("summary", {}).get("candidate_rules", 0),
             "endpoint_schema_rule_candidate_safe_rules": endpoint_schema_rule_candidate_report.get("summary", {}).get("safe_for_future_canary_rules", 0),
@@ -472,6 +476,11 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"recommendation={report['summary']['official_token_reduction_promotion_recommendation']}",
             f"- Hidden-style eval passed/total: "
             f"{report['summary']['hidden_style_eval_passed_cases']}/{report['summary']['hidden_style_eval_total_cases']}",
+            f"- Hidden-style eval failed cases: {report['summary']['hidden_style_eval_failed_cases']}",
+            f"- Hidden-style family/schema stability: "
+            f"{report['summary']['hidden_style_eval_family_stability_rate']} / "
+            f"{report['summary']['hidden_style_eval_schema_stability_rate']}",
+            f"- Accuracy decision hidden-style fresh: {report['summary']['accuracy_promotion_hidden_style_fresh']}",
             f"- Endpoint-family failure risky rows: {report['summary']['endpoint_family_failure_risky_rows']}",
             f"- Endpoint/schema rule candidates: {report['summary']['endpoint_schema_rule_candidate_rules']} "
             f"(safe for future canary: {report['summary']['endpoint_schema_rule_candidate_safe_rules']})",

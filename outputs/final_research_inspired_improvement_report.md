@@ -9,7 +9,7 @@ Status: **strict-score improvement measured**.
 | strict_final_score | 0.649 | 0.6491 | 0.0001 |
 | strict_correctness | 0.6743 | 0.6743 | 0.0 |
 | estimated_tokens | 851.7714 | 831.4571 | -20.3143 |
-| runtime | 0.0102 | 0.0112 | 0.001 |
+| runtime | 0.0102 | 0.0115 | 0.0013 |
 | tool_calls | 1.4571 | 1.4571 | 0.0 |
 
 ## Gate Results
@@ -17,7 +17,7 @@ Status: **strict-score improvement measured**.
 - Packaged preferred strategy: `SQL_FIRST_API_VERIFY`
 - Strict score regression gate OK: True
 - Estimated-token overhead: -2.38% (gate OK: True)
-- Runtime overhead: 9.80% (gate OK: True)
+- Runtime overhead: 12.75% (gate OK: True)
 - Tool-call delta: 0.0 (gate OK: True)
 - Value retrieval budget: 250 ms (budget OK: True)
 - Value retrieval cache key algorithm: `sha256` (reproducible: True)
@@ -59,6 +59,9 @@ Status: **strict-score improvement measured**.
 - Official token reduction packaged trial ran: True (safe rows: 35; unsafe rows: 0; avg token delta: -67.7714; avg runtime delta: 0.0005; recommendation: safe_to_make_packaged_default_in_future)
 - Official token reduction promotion: attempted=True; kept=True; score delta=0.0005; token delta=-67.7715; final submission diff OK=True; recommendation=promoted_keep_enabled
 - Hidden-style eval passed/total: 48/48
+- Hidden-style eval failed cases: 0
+- Hidden-style family/schema stability: 1.0 / 1.0
+- Accuracy decision hidden-style fresh: True
 - Endpoint-family failure risky rows: 35
 - Endpoint/schema rule candidates: 10 (safe for future canary: 9)
 - Endpoint/schema rule canary recommendation: keep_shadow_only (API top-k hit-rate delta: 0.0)
