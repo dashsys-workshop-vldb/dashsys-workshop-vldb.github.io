@@ -222,19 +222,24 @@
       "writes_final_submission": false,
       "writes_packaged_query_outputs": false
     },
+    "measurement_caveat": "Schema-vote fallback_context_tokens is a broader-context diagnostic estimate, not necessarily the official current prompt size. The official current path can already be compact-like, so replacing it with schema-vote compact metadata may not save prompt tokens. The official trajectory estimated_tokens metric is computed from query, compact step records, and final answer; it excludes checkpoints and the full filled prompt/context payload. Therefore large replay-estimated context savings can coexist with flat or positive measured total estimated_tokens.",
     "notes": [
       "Measured efficiency improvement is experimental only, not packaged-submission improvement.",
       "Baseline rows are read from current SQL_FIRST_API_VERIFY strict outputs.",
       "Compact-enabled runs write only under outputs/compact_context_measured_eval/<query_id>/compact_sql_first/.",
       "The packaged SQL_FIRST_API_VERIFY path and final submission artifacts are not modified by this script.",
-      "Repair execution and all repair canaries remain disabled."
+      "Repair execution and all repair canaries remain disabled.",
+      "Trajectory estimated_tokens remains the official efficiency metric, but it is not a full prompt-token measurement."
     ],
     "summary": {
       "answer_changed_count": 0,
       "api_changed_count": 0,
-      "avg_runtime_delta": 0.002,
+      "avg_runtime_delta": 0.0016,
       "avg_score_delta": -0.0,
       "avg_token_delta": 4.3214,
+      "avg_token_delta_checkpoint_overhead": 232.5,
+      "avg_token_delta_context_only": 206.75,
+      "avg_token_delta_total": 4.3214,
       "avg_tool_delta": 0.0,
       "behavior_changing_flags_enabled": false,
       "eligible_rows": 28,
@@ -246,8 +251,32 @@
       "safe_to_enable_rows": 0,
       "skipped_rows": 7,
       "sql_changed_count": 0,
+      "token_measurement_classification_counts": {
+        "context_and_total_improved": 0,
+        "context_metric_unavailable_or_unreliable": 0,
+        "context_only_improved_total_not_improved": 8,
+        "total_tokens_not_improved": 20
+      },
       "total_rows": 35,
       "unsafe_rows": 28
+    },
+    "token_accounting_analysis": {
+      "avg_token_delta_checkpoint_overhead": 232.5,
+      "avg_token_delta_context_only": 206.75,
+      "avg_token_delta_total": 4.3214,
+      "checkpoint_overhead_in_total_tokens": false,
+      "classification_counts": {
+        "context_and_total_improved": 0,
+        "context_metric_unavailable_or_unreliable": 0,
+        "context_only_improved_total_not_improved": 8,
+        "total_tokens_not_improved": 20
+      },
+      "eligible_rows": 28,
+      "estimated_tokens_source": "trajectory estimated_tokens = estimate_tokens({query, non-diagnostic steps, answer})",
+      "fallback_context_tokens_are_diagnostic_estimates": true,
+      "measurement_caveat": "Schema-vote fallback_context_tokens is a broader-context diagnostic estimate, not necessarily the official current prompt size. The official current path can already be compact-like, so replacing it with schema-vote compact metadata may not save prompt tokens. The official trajectory estimated_tokens metric is computed from query, compact step records, and final answer; it excludes checkpoints and the full filled prompt/context payload. Therefore large replay-estimated context savings can coexist with flat or positive measured total estimated_tokens.",
+      "metric_mismatch_explanation": "some rows had context-only savings, but average context proxy and total estimated tokens did not improve",
+      "official_current_context_already_compact_like_rows": 28
     }
   },
   "compact_context_shadow_eval": {
@@ -673,15 +702,24 @@
     "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
     "candidate_risk_cluster_count": 8,
     "compact_context_feature_flag_default": false,
-    "compact_context_measured_avg_runtime_delta": 0.002,
+    "compact_context_measured_avg_runtime_delta": 0.0016,
     "compact_context_measured_avg_token_delta": 4.3214,
+    "compact_context_measured_avg_token_delta_context_only": 206.75,
+    "compact_context_measured_avg_token_delta_total": 4.3214,
     "compact_context_measured_eligible_rows": 28,
     "compact_context_measured_eval_ran": true,
     "compact_context_measured_experimental_efficiency_claimed": false,
+    "compact_context_measured_measurement_caveat": "Schema-vote fallback_context_tokens is a broader-context diagnostic estimate, not necessarily the official current prompt size. The official current path can already be compact-like, so replacing it with schema-vote compact metadata may not save prompt tokens. The official trajectory estimated_tokens metric is computed from query, compact step records, and final answer; it excludes checkpoints and the full filled prompt/context payload. Therefore large replay-estimated context savings can coexist with flat or positive measured total estimated_tokens.",
     "compact_context_measured_official_efficiency_claimed": false,
     "compact_context_measured_packaged_execution_changed": false,
     "compact_context_measured_recommendation": "unsafe_do_not_enable",
     "compact_context_measured_safe_rows": 0,
+    "compact_context_measured_token_classification_counts": {
+      "context_and_total_improved": 0,
+      "context_metric_unavailable_or_unreliable": 0,
+      "context_only_improved_total_not_improved": 8,
+      "total_tokens_not_improved": 20
+    },
     "compact_context_safe_count": 28,
     "compact_context_shadow_avg_token_delta": -1220.7857,
     "compact_context_shadow_eval_ran": true,

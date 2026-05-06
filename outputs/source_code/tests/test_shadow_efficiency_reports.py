@@ -13,7 +13,9 @@ from dashagent.eval_harness import first_generated_sql, generated_api_calls
 from dashagent.executor import AgentExecutor
 from scripts.run_compact_context_measured_eval import (
     REQUIRED_ROW_FIELDS,
+    _classify_token_measurement,
     _experiment_safe,
+    render_markdown,
     run_compact_context_measured_eval,
     verify_shadow_safety_gate,
 )
@@ -111,6 +113,27 @@ def test_compact_context_measured_eval_isolated_and_experimental(tiny_project):
     assert row["compact_context_safe"] is True
     assert "score_delta" in row
     assert "token_delta" in row
+    assert "current_total_estimated_tokens" in row
+    assert "compact_total_estimated_tokens" in row
+    assert "current_context_tokens" in row
+    assert "compact_context_tokens" in row
+    assert "fallback_context_tokens" in row
+    assert "checkpoint_overhead_tokens" in row
+    assert row["checkpoint_overhead_in_total_tokens"] is False
+    assert "answer_generation_tokens" in row
+    assert row["token_delta_total"] == row["compact_total_estimated_tokens"] - row["current_total_estimated_tokens"]
+    assert row["token_delta"] == row["token_delta_total"]
+    if row["current_context_tokens"] is not None and row["compact_context_tokens"] is not None:
+        assert row["token_delta_context_only"] == row["compact_context_tokens"] - row["current_context_tokens"]
+    assert row["token_measurement_classification"] in {
+        "total_tokens_not_improved",
+        "context_only_improved_total_not_improved",
+        "context_and_total_improved",
+        "context_metric_unavailable_or_unreliable",
+    }
+    assert "Token Accounting Analysis" in render_markdown(payload_one)
+    assert "Measurement Caveat" in render_markdown(payload_one)
+    assert "measurement_caveat" in payload_one
     assert "runtime_delta" in row
     assert "experiment_safe_to_enable" in row
     assert (tiny_project.outputs_dir / "compact_context_measured_eval" / "tiny_001" / "compact_sql_first" / "trajectory.json").exists()
@@ -184,6 +207,10 @@ def test_experiment_safe_to_enable_requires_all_gates():
         "api_changed": False,
         "tool_delta": 0,
         "token_delta": -10,
+        "token_delta_total": -10,
+        "token_delta_context_only": -5,
+        "current_context_tokens": 50,
+        "compact_context_tokens": 45,
         "runtime_delta": 0.0,
         "no_live_api_evidence_fabricated": True,
     }
@@ -193,17 +220,66 @@ def test_experiment_safe_to_enable_requires_all_gates():
         ("score_delta", -0.1),
         ("final_answer_changed", True),
         ("tool_delta", 1),
-        ("token_delta", 0),
+        ("token_delta_total", 0),
         ("no_live_api_evidence_fabricated", False),
     ]:
         row = dict(safe_row)
         row[key] = value
         assert _experiment_safe(row, runtime_noise_acceptable=False) is False
 
+    context_only_row = dict(safe_row)
+    context_only_row["token_delta_total"] = 4
+    context_only_row["token_delta_context_only"] = -20
+    assert _experiment_safe(context_only_row, runtime_noise_acceptable=False) is False
+
+    missing_current_context = dict(safe_row)
+    missing_current_context["current_context_tokens"] = None
+    assert _experiment_safe(missing_current_context, runtime_noise_acceptable=False) is False
+
+    missing_compact_context = dict(safe_row)
+    missing_compact_context["compact_context_tokens"] = None
+    assert _experiment_safe(missing_compact_context, runtime_noise_acceptable=False) is False
+
     runtime_row = dict(safe_row)
     runtime_row["runtime_delta"] = 0.01
     assert _experiment_safe(runtime_row, runtime_noise_acceptable=False) is False
     assert _experiment_safe(runtime_row, runtime_noise_acceptable=True) is True
+
+
+def test_compact_token_measurement_classification_handles_metric_mismatch():
+    assert (
+        _classify_token_measurement(
+            {
+                "current_context_tokens": None,
+                "compact_context_tokens": 40,
+                "token_delta_total": -1,
+                "token_delta_context_only": None,
+            }
+        )
+        == "context_metric_unavailable_or_unreliable"
+    )
+    assert (
+        _classify_token_measurement(
+            {
+                "current_context_tokens": 100,
+                "compact_context_tokens": 80,
+                "token_delta_total": 4,
+                "token_delta_context_only": -20,
+            }
+        )
+        == "context_only_improved_total_not_improved"
+    )
+    assert (
+        _classify_token_measurement(
+            {
+                "current_context_tokens": 100,
+                "compact_context_tokens": 80,
+                "token_delta_total": -4,
+                "token_delta_context_only": -20,
+            }
+        )
+        == "context_and_total_improved"
+    )
 
 
 def test_compact_context_flag_off_preserves_sql_first_outputs_and_submission_hash(tiny_project):

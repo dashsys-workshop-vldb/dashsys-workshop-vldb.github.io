@@ -155,6 +155,10 @@ def generate_report(config: Config) -> dict[str, Any]:
             "compact_context_measured_eligible_rows": compact_measured_report.get("summary", {}).get("eligible_rows", 0),
             "compact_context_measured_safe_rows": compact_measured_report.get("summary", {}).get("safe_to_enable_rows", 0),
             "compact_context_measured_avg_token_delta": compact_measured_report.get("summary", {}).get("avg_token_delta"),
+            "compact_context_measured_avg_token_delta_total": compact_measured_report.get("summary", {}).get("avg_token_delta_total"),
+            "compact_context_measured_avg_token_delta_context_only": compact_measured_report.get("summary", {}).get("avg_token_delta_context_only"),
+            "compact_context_measured_token_classification_counts": compact_measured_report.get("summary", {}).get("token_measurement_classification_counts", {}),
+            "compact_context_measured_measurement_caveat": compact_measured_report.get("measurement_caveat"),
             "compact_context_measured_avg_runtime_delta": compact_measured_report.get("summary", {}).get("avg_runtime_delta"),
             "compact_context_measured_experimental_efficiency_claimed": compact_measured_report.get("summary", {}).get("measured_efficiency_improvement_claimed", False),
             "compact_context_measured_official_efficiency_claimed": compact_measured_report.get("summary", {}).get("official_measured_efficiency_improvement_claimed", False),
@@ -203,6 +207,8 @@ def generate_report(config: Config) -> dict[str, Any]:
         },
         "compact_context_measured_eval": {
             "summary": compact_measured_report.get("summary", {}),
+            "token_accounting_analysis": compact_measured_report.get("token_accounting_analysis", {}),
+            "measurement_caveat": compact_measured_report.get("measurement_caveat"),
             "artifact_isolation": compact_measured_report.get("artifact_isolation", {}),
             "notes": compact_measured_report.get("notes", []),
         },
@@ -290,9 +296,14 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"- Compact-context measured eval ran: {report['summary']['compact_context_measured_eval_ran']} "
             f"(eligible rows: {report['summary']['compact_context_measured_eligible_rows']}; "
             f"safe rows: {report['summary']['compact_context_measured_safe_rows']}; "
-            f"avg token delta: {report['summary']['compact_context_measured_avg_token_delta']}; "
+            f"avg total token delta: {report['summary']['compact_context_measured_avg_token_delta_total']}; "
+            f"avg context-only token delta: {report['summary']['compact_context_measured_avg_token_delta_context_only']}; "
             f"avg runtime delta: {report['summary']['compact_context_measured_avg_runtime_delta']}; "
             f"recommendation: {report['summary']['compact_context_measured_recommendation']})",
+            f"- Compact-context token classification counts: "
+            f"{report['summary']['compact_context_measured_token_classification_counts']}",
+            f"- Compact-context measured caveat: "
+            f"{report['summary']['compact_context_measured_measurement_caveat'] or 'not run'}",
             f"- Compact-context experimental measured efficiency improvement claimed: "
             f"{report['summary']['compact_context_measured_experimental_efficiency_claimed']}",
             f"- Compact-context official measured efficiency improvement claimed: "

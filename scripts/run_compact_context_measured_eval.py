@@ -25,6 +25,7 @@ from dashagent.eval_harness import (
     score_sql_strict,
 )
 from dashagent.executor import AgentExecutor
+from dashagent.trajectory import estimate_tokens
 
 
 CANARY_CONFIG_FIELDS = [
@@ -46,6 +47,18 @@ REQUIRED_ROW_FIELDS = [
     "current_tokens",
     "compact_tokens",
     "token_delta",
+    "current_total_estimated_tokens",
+    "compact_total_estimated_tokens",
+    "current_context_tokens",
+    "compact_context_tokens",
+    "fallback_context_tokens",
+    "checkpoint_overhead_tokens",
+    "checkpoint_overhead_in_total_tokens",
+    "answer_generation_tokens",
+    "token_delta_total",
+    "token_delta_context_only",
+    "token_delta_checkpoint_overhead",
+    "token_measurement_classification",
     "current_runtime",
     "compact_runtime",
     "runtime_delta",
@@ -111,6 +124,7 @@ def run_compact_context_measured_eval(config: Config) -> dict[str, Any]:
             )
         )
     summary = _summary(rows)
+    token_accounting_analysis = _token_accounting_analysis(rows)
     payload = {
         "mode": "compact_context_measured_eval",
         "shadow_safety_gate": shadow_gate,
@@ -125,6 +139,8 @@ def run_compact_context_measured_eval(config: Config) -> dict[str, Any]:
         "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
         "rows": rows,
         "summary": summary,
+        "token_accounting_analysis": token_accounting_analysis,
+        "measurement_caveat": token_accounting_analysis["measurement_caveat"],
         "artifact_isolation": {
             "allowed_outputs": [
                 "outputs/compact_context_measured_eval.json",
@@ -142,6 +158,7 @@ def run_compact_context_measured_eval(config: Config) -> dict[str, Any]:
             "Compact-enabled runs write only under outputs/compact_context_measured_eval/<query_id>/compact_sql_first/.",
             "The packaged SQL_FIRST_API_VERIFY path and final submission artifacts are not modified by this script.",
             "Repair execution and all repair canaries remain disabled.",
+            "Trajectory estimated_tokens remains the official efficiency metric, but it is not a full prompt-token measurement.",
         ],
     }
     return payload
@@ -232,6 +249,15 @@ def _evaluate_candidate_row(
     final_answer_changed = current_answer != compact_answer
     runtime_delta = round(compact_runtime - current_runtime, 4)
     runtime_noise_acceptable = 0 < runtime_delta <= max(0.002, current_runtime * 0.20)
+    token_accounting = _token_accounting(
+        current_trajectory=current_trajectory,
+        compact_trajectory=compact_trajectory,
+        current_total_estimated_tokens=current_tokens,
+        compact_total_estimated_tokens=compact_tokens,
+        current_answer=current_answer,
+        compact_answer=compact_answer,
+        vote=candidate.get("schema_context_vote") or {},
+    )
     row = {
         **base,
         "eligible": True,
@@ -240,6 +266,7 @@ def _evaluate_candidate_row(
         "score_delta": round(compact_score - current_score, 4),
         "compact_tokens": compact_tokens,
         "token_delta": compact_tokens - current_tokens,
+        **token_accounting,
         "compact_runtime": round(compact_runtime, 4),
         "runtime_delta": runtime_delta,
         "runtime_delta_explanation": "positive delta within local timing-noise bound" if runtime_noise_acceptable else "",
@@ -271,6 +298,9 @@ def _base_row(
     current_answer: str,
 ) -> dict[str, Any]:
     vote = candidate.get("schema_context_vote") or {}
+    current_total_estimated_tokens = _int_or_none(strict.get("estimated_tokens") or trajectory.get("estimated_tokens"))
+    current_context_tokens = _metadata_prompt_tokens(trajectory)
+    answer_generation_tokens = _answer_generation_tokens(current_answer)
     row = {
         "query_id": candidate.get("query_id"),
         "query": candidate.get("query") or strict.get("query") or trajectory.get("original_query"),
@@ -279,9 +309,22 @@ def _base_row(
         "current_score": strict.get("final_score"),
         "compact_score": None,
         "score_delta": None,
-        "current_tokens": strict.get("estimated_tokens") or trajectory.get("estimated_tokens"),
+        "current_tokens": current_total_estimated_tokens,
         "compact_tokens": None,
         "token_delta": None,
+        "current_total_estimated_tokens": current_total_estimated_tokens,
+        "compact_total_estimated_tokens": None,
+        "current_context_tokens": current_context_tokens,
+        "compact_context_tokens": None,
+        "fallback_context_tokens": vote.get("fallback_context_tokens"),
+        "checkpoint_overhead_tokens": None,
+        "checkpoint_overhead_in_total_tokens": False,
+        "answer_generation_tokens": answer_generation_tokens,
+        "token_delta_total": None,
+        "token_delta_context_only": None,
+        "token_delta_checkpoint_overhead": None,
+        "token_measurement_classification": "context_metric_unavailable_or_unreliable",
+        "token_measurement_note": "compact run was not executed, so compact context tokens are unavailable",
         "current_runtime": strict.get("runtime") or trajectory.get("runtime"),
         "compact_runtime": None,
         "runtime_delta": None,
@@ -303,8 +346,7 @@ def _base_row(
         "compact_apis": vote.get("compact_candidate_apis") or [],
         "fallback_tables": vote.get("fallback_candidate_tables") or [],
         "fallback_apis": vote.get("fallback_candidate_apis") or [],
-        "compact_context_tokens": vote.get("compact_context_tokens"),
-        "fallback_context_tokens": vote.get("fallback_context_tokens"),
+        "schema_vote_compact_context_tokens": vote.get("compact_context_tokens"),
         "expected_token_savings": vote.get("token_delta"),
         "risk_level": candidate.get("risk_level"),
         "experiment_safe_to_enable": False,
@@ -388,7 +430,96 @@ def _score_compact_result(
     }
 
 
+def _token_accounting(
+    *,
+    current_trajectory: dict[str, Any],
+    compact_trajectory: dict[str, Any],
+    current_total_estimated_tokens: int,
+    compact_total_estimated_tokens: int,
+    current_answer: str,
+    compact_answer: str,
+    vote: dict[str, Any],
+) -> dict[str, Any]:
+    current_context_tokens = _metadata_prompt_tokens(current_trajectory)
+    compact_context_tokens = _metadata_prompt_tokens(compact_trajectory)
+    current_checkpoint_overhead = _compact_checkpoint_overhead_tokens(current_trajectory)
+    compact_checkpoint_overhead = _compact_checkpoint_overhead_tokens(compact_trajectory)
+    token_delta_total = compact_total_estimated_tokens - current_total_estimated_tokens
+    token_delta_context_only = (
+        compact_context_tokens - current_context_tokens
+        if current_context_tokens is not None and compact_context_tokens is not None
+        else None
+    )
+    token_delta_checkpoint_overhead = compact_checkpoint_overhead - current_checkpoint_overhead
+    fields = {
+        "current_total_estimated_tokens": current_total_estimated_tokens,
+        "compact_total_estimated_tokens": compact_total_estimated_tokens,
+        "current_context_tokens": current_context_tokens,
+        "compact_context_tokens": compact_context_tokens,
+        "fallback_context_tokens": vote.get("fallback_context_tokens"),
+        "checkpoint_overhead_tokens": compact_checkpoint_overhead,
+        "checkpoint_overhead_in_total_tokens": False,
+        "answer_generation_tokens": {
+            "current": _answer_generation_tokens(current_answer),
+            "compact": _answer_generation_tokens(compact_answer),
+        },
+        "token_delta_total": token_delta_total,
+        "token_delta_context_only": token_delta_context_only,
+        "token_delta_checkpoint_overhead": token_delta_checkpoint_overhead,
+        "schema_vote_compact_context_tokens": vote.get("compact_context_tokens"),
+        "expected_token_savings": vote.get("token_delta"),
+    }
+    fields["token_measurement_classification"] = _classify_token_measurement(fields)
+    fields["token_measurement_note"] = _token_measurement_note(fields)
+    return fields
+
+
+def _metadata_prompt_tokens(trajectory: dict[str, Any]) -> int | None:
+    for step in trajectory.get("steps", []) or []:
+        if step.get("kind") == "metadata":
+            return _int_or_none(step.get("prompt_tokens"))
+    return None
+
+
+def _compact_checkpoint_overhead_tokens(trajectory: dict[str, Any]) -> int:
+    for checkpoint in trajectory.get("checkpoints", []) or []:
+        if checkpoint.get("checkpoint_id") == "checkpoint_compact_context_experiment":
+            return estimate_tokens(checkpoint)
+    return 0
+
+
+def _answer_generation_tokens(answer: Any) -> int:
+    return estimate_tokens(str(answer or ""))
+
+
+def _classify_token_measurement(row: dict[str, Any]) -> str:
+    current_context = row.get("current_context_tokens")
+    compact_context = row.get("compact_context_tokens")
+    if current_context is None or compact_context is None:
+        return "context_metric_unavailable_or_unreliable"
+    total_delta = row.get("token_delta_total")
+    context_delta = row.get("token_delta_context_only")
+    if total_delta is not None and context_delta is not None and float(total_delta) < 0 and float(context_delta) < 0:
+        return "context_and_total_improved"
+    if total_delta is not None and context_delta is not None and float(context_delta) < 0 <= float(total_delta):
+        return "context_only_improved_total_not_improved"
+    return "total_tokens_not_improved"
+
+
+def _token_measurement_note(row: dict[str, Any]) -> str:
+    classification = row.get("token_measurement_classification")
+    if classification == "context_metric_unavailable_or_unreliable":
+        return "metadata prompt_tokens were unavailable for current or compact trajectory, so context-only savings are not reliable"
+    if classification == "context_only_improved_total_not_improved":
+        return "measured metadata prompt/context tokens decreased, but official trajectory estimated_tokens did not decrease"
+    if classification == "context_and_total_improved":
+        return "measured metadata prompt/context tokens and official trajectory estimated_tokens both decreased"
+    return "official trajectory estimated_tokens did not decrease; compact context is diagnostic-only for this row"
+
+
 def _experiment_safe(row: dict[str, Any], runtime_noise_acceptable: bool) -> bool:
+    if row.get("current_context_tokens") is None or row.get("compact_context_tokens") is None:
+        return False
     return bool(
         row.get("eligible")
         and float(row.get("score_delta") or 0.0) >= 0
@@ -396,7 +527,7 @@ def _experiment_safe(row: dict[str, Any], runtime_noise_acceptable: bool) -> boo
         and (row.get("sql_changed") is False or row.get("sql_semantically_equivalent") is True)
         and (row.get("api_changed") is False or row.get("api_semantically_equivalent") is True)
         and int(row.get("tool_delta") or 0) <= 0
-        and int(row.get("token_delta") or 0) < 0
+        and int(row.get("token_delta_total") or 0) < 0
         and (float(row.get("runtime_delta") or 0.0) <= 0 or runtime_noise_acceptable)
         and row.get("no_live_api_evidence_fabricated") is True
     )
@@ -422,6 +553,10 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "unsafe_rows": len(unsafe),
         "avg_score_delta": _avg(row.get("score_delta") for row in eligible),
         "avg_token_delta": _avg(row.get("token_delta") for row in eligible),
+        "avg_token_delta_total": _avg(row.get("token_delta_total") for row in eligible),
+        "avg_token_delta_context_only": _avg(row.get("token_delta_context_only") for row in eligible),
+        "avg_token_delta_checkpoint_overhead": _avg(row.get("token_delta_checkpoint_overhead") for row in eligible),
+        "token_measurement_classification_counts": _classification_counts(eligible),
         "avg_runtime_delta": _avg(row.get("runtime_delta") for row in eligible),
         "avg_tool_delta": _avg(row.get("tool_delta") for row in eligible),
         "answer_changed_count": answer_changed,
@@ -436,8 +571,54 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _token_accounting_analysis(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    eligible = [row for row in rows if row.get("eligible")]
+    classification_counts = _classification_counts(eligible)
+    avg_total = _avg(row.get("token_delta_total") for row in eligible)
+    avg_context = _avg(row.get("token_delta_context_only") for row in eligible)
+    avg_checkpoint = _avg(row.get("token_delta_checkpoint_overhead") for row in eligible)
+    current_compact_like = sum(
+        1
+        for row in eligible
+        if row.get("current_context_tokens") is not None
+        and row.get("fallback_context_tokens") is not None
+        and int(row["current_context_tokens"]) <= int(row["fallback_context_tokens"])
+    )
+    measurement_caveat = (
+        "Schema-vote fallback_context_tokens is a broader-context diagnostic estimate, not necessarily the official "
+        "current prompt size. The official current path can already be compact-like, so replacing it with schema-vote "
+        "compact metadata may not save prompt tokens. The official trajectory estimated_tokens metric is computed from "
+        "query, compact step records, and final answer; it excludes checkpoints and the full filled prompt/context "
+        "payload. Therefore large replay-estimated context savings can coexist with flat or positive measured total "
+        "estimated_tokens."
+    )
+    mismatch_explanation = "total estimated tokens did not improve"
+    if classification_counts.get("context_metric_unavailable_or_unreliable", 0):
+        mismatch_explanation = "context proxy was missing or unreliable for at least one row"
+    elif avg_context < 0 <= avg_total:
+        mismatch_explanation = "average context proxy improved, but official total estimated tokens did not improve"
+    elif classification_counts.get("context_only_improved_total_not_improved", 0):
+        mismatch_explanation = "some rows had context-only savings, but average context proxy and total estimated tokens did not improve"
+    elif avg_context >= 0 and avg_total >= 0:
+        mismatch_explanation = "official current path already appears compact-like; measured context proxy and total estimated tokens did not improve"
+    return {
+        "eligible_rows": len(eligible),
+        "avg_token_delta_total": avg_total,
+        "avg_token_delta_context_only": avg_context,
+        "avg_token_delta_checkpoint_overhead": avg_checkpoint,
+        "classification_counts": classification_counts,
+        "official_current_context_already_compact_like_rows": current_compact_like,
+        "fallback_context_tokens_are_diagnostic_estimates": True,
+        "estimated_tokens_source": "trajectory estimated_tokens = estimate_tokens({query, non-diagnostic steps, answer})",
+        "checkpoint_overhead_in_total_tokens": False,
+        "measurement_caveat": measurement_caveat,
+        "metric_mismatch_explanation": mismatch_explanation,
+    }
+
+
 def render_markdown(payload: dict[str, Any]) -> str:
     summary = payload.get("summary", {})
+    analysis = payload.get("token_accounting_analysis", {})
     lines = [
         "# Compact Context Measured Evaluation",
         "",
@@ -454,18 +635,38 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- Unsafe rows: {summary.get('unsafe_rows')}",
         f"- Avg score delta: {summary.get('avg_score_delta')}",
         f"- Avg token delta: {summary.get('avg_token_delta')}",
+        f"- Avg total token delta: {summary.get('avg_token_delta_total')}",
+        f"- Avg context-only token delta: {summary.get('avg_token_delta_context_only')}",
+        f"- Avg checkpoint-overhead token delta: {summary.get('avg_token_delta_checkpoint_overhead')}",
         f"- Avg runtime delta: {summary.get('avg_runtime_delta')}",
         f"- Avg tool delta: {summary.get('avg_tool_delta')}",
         f"- Recommendation: `{summary.get('recommendation')}`",
         "",
-        "| Query ID | Eligible | Skip reason | Score delta | Token delta | Runtime delta | Tool delta | Answer changed? | Safe? |",
-        "| --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- |",
+        "## Token Accounting Analysis",
+        "",
+        f"- Avg total estimated-token delta: {analysis.get('avg_token_delta_total')}",
+        f"- Avg context-only prompt-token delta: {analysis.get('avg_token_delta_context_only')}",
+        f"- Avg compact checkpoint-overhead token delta: {analysis.get('avg_token_delta_checkpoint_overhead')}",
+        f"- Classification counts: `{json.dumps(analysis.get('classification_counts', {}), sort_keys=True)}`",
+        f"- Official current context already compact-like rows: {analysis.get('official_current_context_already_compact_like_rows')}",
+        f"- Fallback context tokens are diagnostic estimates: {analysis.get('fallback_context_tokens_are_diagnostic_estimates')}",
+        f"- Estimated token source: {analysis.get('estimated_tokens_source')}",
+        f"- Checkpoint overhead included in total tokens: {analysis.get('checkpoint_overhead_in_total_tokens')}",
+        f"- Metric mismatch explanation: {analysis.get('metric_mismatch_explanation')}",
+        "",
+        "## Measurement Caveat",
+        "",
+        str(payload.get("measurement_caveat") or analysis.get("measurement_caveat") or ""),
+        "",
+        "| Query ID | Eligible | Skip reason | Score delta | Total token delta | Context token delta | Runtime delta | Tool delta | Token classification | Safe? |",
+        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |",
     ]
     for row in payload.get("rows", []):
         lines.append(
             f"| `{row.get('query_id')}` | {row.get('eligible')} | {row.get('skip_reason') or ''} | "
-            f"{row.get('score_delta')} | {row.get('token_delta')} | {row.get('runtime_delta')} | "
-            f"{row.get('tool_delta')} | {row.get('final_answer_changed')} | {row.get('experiment_safe_to_enable')} |"
+            f"{row.get('score_delta')} | {row.get('token_delta_total')} | {row.get('token_delta_context_only')} | "
+            f"{row.get('runtime_delta')} | {row.get('tool_delta')} | "
+            f"{row.get('token_measurement_classification')} | {row.get('experiment_safe_to_enable')} |"
         )
     return "\n".join(lines) + "\n"
 
@@ -520,6 +721,28 @@ def _preview(text: Any, limit: int = 160) -> str:
 def _avg(values: Any) -> float:
     numbers = [float(value) for value in values if value is not None]
     return round(sum(numbers) / len(numbers), 4) if numbers else 0.0
+
+
+def _classification_counts(rows: list[dict[str, Any]]) -> dict[str, int]:
+    counts = {
+        "total_tokens_not_improved": 0,
+        "context_only_improved_total_not_improved": 0,
+        "context_and_total_improved": 0,
+        "context_metric_unavailable_or_unreliable": 0,
+    }
+    for row in rows:
+        key = str(row.get("token_measurement_classification") or "context_metric_unavailable_or_unreliable")
+        counts[key] = counts.get(key, 0) + 1
+    return counts
+
+
+def _int_or_none(value: Any) -> int | None:
+    if value is None or value == "":
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _top_items_agree(left: list[Any], right: list[Any]) -> bool:

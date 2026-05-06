@@ -37,7 +37,9 @@ Status: **no measured strict-score improvement**.
 - No behavior-changing flags were enabled in this pass.
 - Schema vote active/agreement/compact-safe: 28/28/28
 - Compact-context shadow eval rows: 28 (avg token delta: -1220.7857; measured efficiency improvement claimed: False)
-- Compact-context measured eval ran: True (eligible rows: 28; safe rows: 0; avg token delta: 4.3214; avg runtime delta: 0.002; recommendation: unsafe_do_not_enable)
+- Compact-context measured eval ran: True (eligible rows: 28; safe rows: 0; avg total token delta: 4.3214; avg context-only token delta: 206.75; avg runtime delta: 0.0016; recommendation: unsafe_do_not_enable)
+- Compact-context token classification counts: {'context_and_total_improved': 0, 'context_metric_unavailable_or_unreliable': 0, 'context_only_improved_total_not_improved': 8, 'total_tokens_not_improved': 20}
+- Compact-context measured caveat: Schema-vote fallback_context_tokens is a broader-context diagnostic estimate, not necessarily the official current prompt size. The official current path can already be compact-like, so replacing it with schema-vote compact metadata may not save prompt tokens. The official trajectory estimated_tokens metric is computed from query, compact step records, and final answer; it excludes checkpoints and the full filled prompt/context payload. Therefore large replay-estimated context savings can coexist with flat or positive measured total estimated_tokens.
 - Compact-context experimental measured efficiency improvement claimed: False
 - Compact-context official measured efficiency improvement claimed: False
 - Compact-context measured eval changed packaged execution: False
