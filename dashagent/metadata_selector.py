@@ -30,6 +30,7 @@ class MetadataSelector:
         query_id: str,
         broad_context: bool = False,
         analysis: QueryAnalysis | None = None,
+        compact_context_override: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         selected_tables = routing.candidate_tables
         if broad_context:
@@ -90,6 +91,8 @@ class MetadataSelector:
             "constraints": self._constraints(broad_context),
             "answer_policy": self._answer_policy(broad_context),
         }
+        if compact_context_override:
+            metadata.update(self._compact_context_metadata_override(compact_context_override))
         if context_card:
             metadata["context_card"] = context_card
         if analysis and not broad_context:
@@ -103,6 +106,47 @@ class MetadataSelector:
             }
             metadata["nlp_diagnostics"] = {key: value for key, value in nlp.items() if value not in ([], {}, "", None)}
         return metadata
+
+    def _compact_context_metadata_override(self, compact_context: dict[str, Any]) -> dict[str, Any]:
+        selected_tables = [
+            table
+            for table in compact_context.get("candidate_tables", [])
+            if table in self.schema_index.tables
+        ]
+        candidate_columns = compact_context.get("candidate_columns") or {}
+        selected_columns = {
+            table: [
+                column
+                for column in candidate_columns.get(table, [])
+                if column in self.schema_index.columns_for(table)
+            ][:16]
+            for table in selected_tables
+        }
+        selected_columns = {
+            table: columns or self._columns_for_strategy(table, False)
+            for table, columns in selected_columns.items()
+        }
+        selected_apis = [
+            compact_endpoint(api)
+            for api in compact_context.get("candidate_apis", [])
+            if isinstance(api, dict) and api.get("id") and api.get("method") and api.get("path")
+        ]
+        return {
+            "selected_tables": selected_tables,
+            "selected_columns": selected_columns,
+            "selected_join_hints": compact_context.get("candidate_join_hints", []),
+            "selected_apis": selected_apis,
+            "compact_context_experiment": {
+                "enabled": True,
+                "source": "schema_vote_safe_candidate_context",
+                "context_mode": compact_context.get("context_mode"),
+                "confidence": compact_context.get("confidence"),
+                "score_margin": compact_context.get("score_margin"),
+                "estimated_tokens": compact_context.get("estimated_tokens"),
+                "packaged_default": False,
+                "packaged_execution_changed": False,
+            },
+        }
 
     def _columns_for_strategy(
         self,

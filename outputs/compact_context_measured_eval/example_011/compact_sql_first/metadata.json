@@ -1,0 +1,220 @@
+{
+  "answer_policy": [
+    "Answer from evidence only.",
+    "Say not found/dry-run when evidence is empty."
+  ],
+  "compact_context_experiment": {
+    "confidence": 0.9831,
+    "context_mode": "candidate",
+    "enabled": true,
+    "estimated_tokens": 4595,
+    "packaged_default": false,
+    "packaged_execution_changed": false,
+    "score_margin": 0.5,
+    "source": "schema_vote_safe_candidate_context"
+  },
+  "constraints": [
+    "Use validated SQL/API only.",
+    "Prefer fewer tool calls when evidence is sufficient."
+  ],
+  "context_card": {
+    "answer_policy": "Use blueprint/collection joins for local schema-dataset evidence; API may validate catalog/schema registry.",
+    "api_families": [
+      "datasets_by_schema",
+      "schema_registry_by_id",
+      "schema_by_name",
+      "schema_list"
+    ],
+    "api_mode": "required",
+    "family": "schema_dataset",
+    "join_path": [
+      "dim_blueprint.blueprintid = hkg_br_blueprint_collection.blueprintid",
+      "hkg_br_blueprint_collection.collectionid = dim_collection.collectionid"
+    ],
+    "required_ids": [
+      "schema_id",
+      "blueprint_id",
+      "collection_id"
+    ],
+    "tables": [
+      "dim_blueprint",
+      "hkg_br_blueprint_collection",
+      "dim_collection"
+    ]
+  },
+  "domain_type": "DATASET_SCHEMA",
+  "known_example_patterns": [
+    {
+      "method": "GET",
+      "params": {
+        "limit": "25"
+      },
+      "path": "/schemas"
+    }
+  ],
+  "nlp_diagnostics": {
+    "relevance": {
+      "lookup_paths": [
+        "schema_dataset"
+      ]
+    },
+    "rewrites": [
+      "important_plurals->singular"
+    ]
+  },
+  "query": "How many schemas do I have?",
+  "query_id": "example_011",
+  "route_type": "SQL_ONLY",
+  "selected_apis": [
+    {
+      "id": "schema_registry_schemas",
+      "method": "GET",
+      "path": "/data/foundation/schemaregistry/tenant/schemas"
+    },
+    {
+      "id": "schemas_short",
+      "method": "GET",
+      "path": "/schemas"
+    },
+    {
+      "id": "schema_registry_schema",
+      "method": "GET",
+      "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}"
+    },
+    {
+      "id": "audit_events",
+      "method": "GET",
+      "path": "/data/foundation/audit/events"
+    },
+    {
+      "id": "audit_events_short",
+      "method": "GET",
+      "path": "/audit/events"
+    }
+  ],
+  "selected_columns": {
+    "br_campaign_segment": [
+      "SEGMENTID",
+      "CAMPAIGNID"
+    ],
+    "dim_blueprint": [
+      "BLUEPRINTID",
+      "CREATEDCLIENTID",
+      "CREATEDTIME",
+      "UPDATEDCLIENTID",
+      "UPDATEDTIME",
+      "NAME",
+      "BLUEPRINTTYPE",
+      "DESCRIPTION",
+      "IMMUTABLETAGS",
+      "ISBEHAVIORRECORDTYPE",
+      "ISBEHAVIORTIMESERIESTYPE",
+      "ISPROFILEENABLED",
+      "UPDATEDBY"
+    ],
+    "dim_collection": [
+      "COLLECTIONID",
+      "CREATEDCLIENTID",
+      "CREATEDTIME",
+      "UPDATEDTIME",
+      "NAME",
+      "ROWCOUNT",
+      "ISIDENTITYENABLED",
+      "ISPROFILEENABLED",
+      "ISSYSTEM",
+      "ISTTLSET",
+      "LABELSCOLLECTION",
+      "STORAGESIZEINBYTES",
+      "UPDATEDBY"
+    ],
+    "hkg_br_base_segment_used_by_dependent_segment": [
+      "SEGMENTID",
+      "DEPENDENTSEGMENTID"
+    ],
+    "hkg_br_blueprint_collection": [
+      "BLUEPRINTID",
+      "COLLECTIONID",
+      "LABELSBLUEPRINT",
+      "LABELSCOLLECTION"
+    ],
+    "hkg_br_blueprint_property": [
+      "BLUEPRINTID"
+    ],
+    "hkg_br_collection_property": [
+      "COLLECTIONID"
+    ],
+    "hkg_br_collection_segment": [
+      "SEGMENTID",
+      "COLLECTIONID"
+    ],
+    "hkg_br_segment_property": [
+      "SEGMENTID"
+    ],
+    "hkg_br_segment_target": [
+      "SEGMENTID",
+      "TARGETID"
+    ],
+    "hkg_br_source_collection": [
+      "DATAFLOWNAME",
+      "COLLECTIONID",
+      "DATAFLOWID",
+      "SOURCEID"
+    ]
+  },
+  "selected_join_hints": [
+    {
+      "path": "dim_blueprint.BLUEPRINTID->hkg_br_blueprint_collection.BLUEPRINTID",
+      "reason": "Matching ID-like column name.",
+      "score": 1.4
+    },
+    {
+      "path": "dim_collection.COLLECTIONID->hkg_br_blueprint_collection.COLLECTIONID",
+      "reason": "Matching ID-like column name.",
+      "score": 1.4
+    },
+    {
+      "path": "dim_blueprint.BLUEPRINTID->hkg_br_blueprint_property.BLUEPRINTID",
+      "reason": "Matching ID-like column name.",
+      "score": 0.7
+    },
+    {
+      "path": "dim_collection.COLLECTIONID->hkg_br_collection_property.COLLECTIONID",
+      "reason": "Matching ID-like column name.",
+      "score": 0.7
+    },
+    {
+      "path": "dim_collection.COLLECTIONID->hkg_br_collection_segment.COLLECTIONID",
+      "reason": "Matching ID-like column name.",
+      "score": 0.7
+    },
+    {
+      "path": "dim_collection.COLLECTIONID->hkg_br_source_collection.COLLECTIONID",
+      "reason": "Matching ID-like column name.",
+      "score": 0.7
+    },
+    {
+      "path": "hkg_br_blueprint_collection.COLLECTIONID->hkg_br_collection_property.COLLECTIONID",
+      "reason": "Matching ID-like column name.",
+      "score": 0.7
+    },
+    {
+      "path": "hkg_br_blueprint_collection.COLLECTIONID->hkg_br_collection_segment.COLLECTIONID",
+      "reason": "Matching ID-like column name.",
+      "score": 0.7
+    }
+  ],
+  "selected_tables": [
+    "hkg_br_blueprint_collection",
+    "dim_blueprint",
+    "dim_collection",
+    "br_campaign_segment",
+    "hkg_br_collection_segment",
+    "hkg_br_base_segment_used_by_dependent_segment",
+    "hkg_br_segment_property",
+    "hkg_br_segment_target",
+    "hkg_br_blueprint_property",
+    "hkg_br_collection_property",
+    "hkg_br_source_collection"
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY"
+}
