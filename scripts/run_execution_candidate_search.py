@@ -14,7 +14,7 @@ if str(ROOT) not in sys.path:
 from dashagent.answer_synthesizer import synthesize_answer_with_diagnostics
 from dashagent.config import Config
 from dashagent.eval_harness import EvalHarness, first_generated_sql, generated_api_calls, normalize_sql
-from dashagent.execution_based_candidate_selector import evaluate_candidate_safety, holdout_regression_gate, select_best_candidate
+from dashagent.execution_based_candidate_selector import collect_candidate_gate_failures, holdout_regression_gate, select_best_candidate
 from dashagent.executor import AgentExecutor
 from dashagent.report_run import report_metadata
 from dashagent.targeted_candidate_generator import generate_targeted_candidates
@@ -207,12 +207,15 @@ def _execute_and_score_candidate(
     candidate_tools = int(trajectory.get("tool_call_count") or 0)
     sql_validation_ok = _sql_validation_ok(trajectory, bool(candidate.get("sql")))
     api_validation_ok = _api_validation_ok(trajectory, bool(candidate.get("api_call")))
+    sql_errors = _validation_errors(trajectory, "sql")
+    api_errors = _validation_errors(trajectory, "api")
     sql_changed = normalize_sql(baseline_sql) != normalize_sql(candidate_sql)
     api_changed = _canonical_api(baseline_api) != _canonical_api(candidate_api)
     answer_changed = answer != baseline_answer
     correctness_delta = round(candidate_correctness - baseline_correctness, 4)
     row = {
         "query_id": query_id,
+        "query": strict_row.get("query") or example.query,
         "candidate_id": candidate_id,
         "candidate": candidate,
         "output_dir": str(output_dir),
@@ -247,15 +250,25 @@ def _execute_and_score_candidate(
         "live_api_evidence_fabricated": _live_api_evidence_available(trajectory) and not _live_api_evidence_available(baseline_trajectory),
         "sql_validation_ok": sql_validation_ok,
         "sql_ast_valid": sql_validation_ok,
+        "sql_validation_errors": sql_errors,
+        "unknown_tables": _matching_validation_errors(sql_errors, "Unknown table:"),
+        "unknown_columns": _matching_validation_errors(sql_errors, "Unknown column:"),
+        "destructive_sql_detected": any("blocked write" in error or "environment-changing" in error for error in sql_errors),
+        "invalid_sql_detected": bool(candidate.get("sql")) and not sql_validation_ok,
         "api_validation_ok": api_validation_ok,
+        "api_validation_errors": api_errors,
+        "api_catalog_valid": not any("Unknown or disallowed endpoint" in error for error in api_errors),
+        "unresolved_api_placeholders": _matching_validation_errors(api_errors, "unresolved path"),
+        "invalid_api_detected": bool(candidate.get("api_call")) and not api_validation_ok,
         "leakage_check_passed": candidate.get("leakage_check_passed") is True,
         "leakage_reasons": candidate.get("leakage_reasons", []),
         "holdout_regression_passed": holdout.get("passed") is True,
         "holdout_regression_gate": holdout,
     }
-    safe, reason = evaluate_candidate_safety(row)
-    row["safe_for_packaged_trial"] = safe
-    row["rejection_reason"] = reason
+    failed_checks = collect_candidate_gate_failures(row)
+    row["selector_failed_checks"] = failed_checks
+    row["safe_for_packaged_trial"] = not failed_checks
+    row["rejection_reason"] = "; ".join(failed_checks)
     return row
 
 
@@ -299,9 +312,12 @@ def _run_candidate_plan(
     if sql:
         validation = executor.sql_validator.validate(str(sql))
         logger.add_validation("sql", validation)
-        result = executor.db.execute_sql(str(sql))
-        logger.add_sql_call(str(sql), validation, result)
-        tool_results.append({"type": "sql", "payload": result})
+        if validation.ok:
+            result = executor.db.execute_sql(str(sql))
+            logger.add_sql_call(str(sql), validation, result)
+            tool_results.append({"type": "sql", "payload": result})
+        else:
+            logger.add_error("Candidate SQL validation failed; SQL was not executed.")
     api_call = candidate.get("api_call") or {}
     path = api_call.get("path") or api_call.get("url")
     if path:
@@ -309,9 +325,12 @@ def _run_candidate_plan(
         params = api_call.get("params") if isinstance(api_call.get("params"), dict) else {}
         validation = executor.api_validator.validate(method, str(path), params, {})
         logger.add_validation("api", validation)
-        result = executor.api_client.call_api(method, str(path), params=params, headers={})
-        logger.add_api_call(method, str(path), params, {}, validation, result)
-        tool_results.append({"type": "api", "payload": result})
+        if validation.ok:
+            result = executor.api_client.call_api(method, str(path), params=params, headers={})
+            logger.add_api_call(method, str(path), params, {}, validation, result)
+            tool_results.append({"type": "api", "payload": result})
+        else:
+            logger.add_error("Candidate API validation failed; API was not called.")
     answer = synthesize_answer_with_diagnostics(query, tool_results)
     logger.add_step("answer_diagnostics", answer.diagnostics)
     trajectory = logger.finish(answer.answer)
@@ -343,16 +362,38 @@ def _api_validation_ok(trajectory: dict[str, Any], expected_api: bool) -> bool:
     return bool(validations) and all(item.get("ok") is True for item in validations)
 
 
+def _validation_errors(trajectory: dict[str, Any], target: str) -> list[str]:
+    errors: list[str] = []
+    for step in trajectory.get("steps", []):
+        if step.get("kind") != "validation" or step.get("target") != target:
+            continue
+        result = step.get("result") or {}
+        for error in result.get("errors") or []:
+            errors.append(str(error))
+    return errors
+
+
+def _matching_validation_errors(errors: list[str], pattern: str) -> list[str]:
+    lowered = pattern.lower()
+    return [error for error in errors if lowered in error.lower()]
+
+
 def _summary(rows: list[dict[str, Any]], selected: list[dict[str, Any]], strict: dict[str, Any]) -> dict[str, Any]:
     strict_summary = (strict.get("summary") or {}).get("by_strategy", {}).get("SQL_FIRST_API_VERIFY", {})
     best_total_delta = round(sum(float(row.get("score_delta") or 0.0) for row in selected), 4)
     baseline_score = float(strict_summary.get("avg_final_score") or 0.6491)
     total_examples = int(strict_summary.get("count") or len([r for r in strict.get("rows", []) if r.get("strategy") == "SQL_FIRST_API_VERIFY"]) or 35)
     best_projected_score = round(baseline_score + (best_total_delta / max(1, total_examples)), 4)
+    rejection_counts: dict[str, int] = {}
+    for row in rows:
+        for candidate in row.get("candidates", []) or []:
+            for check in candidate.get("selector_failed_checks", []) or []:
+                rejection_counts[str(check)] = rejection_counts.get(str(check), 0) + 1
     return {
         "total_target_rows": len(rows),
         "safe_rows": len(selected),
         "unsafe_rows": len(rows) - len(selected),
+        "candidate_rejection_reason_counts": dict(sorted(rejection_counts.items())),
         "best_total_score_delta": best_total_delta,
         "best_projected_strict_final_score": best_projected_score,
         "target_0_70_reached": best_projected_score >= 0.7000,
@@ -397,9 +438,19 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- Recommendation: `{summary['recommendation']}`",
         f"- Packaged execution changed: {summary['packaged_execution_changed']}",
         "",
-        "## Selected Improvements",
+        "## Selector Gate Rejections",
         "",
     ]
+    rejection_counts = summary.get("candidate_rejection_reason_counts") or {}
+    if rejection_counts:
+        lines.extend(f"- `{reason}`: {count}" for reason, count in rejection_counts.items())
+    else:
+        lines.append("- None.")
+    lines.extend([
+        "",
+        "## Selected Improvements",
+        "",
+    ])
     if summary["selected_query_ids"]:
         lines.extend(f"- {query_id}" for query_id in summary["selected_query_ids"])
     else:
