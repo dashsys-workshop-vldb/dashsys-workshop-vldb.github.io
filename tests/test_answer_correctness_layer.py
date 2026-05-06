@@ -111,6 +111,94 @@ def test_weak_family_answers_are_intent_matched_and_dry_run_safe():
     assert merge.startswith("The merge policy count")
 
 
+def test_evidence_aware_dry_run_answers_are_default_off(monkeypatch):
+    monkeypatch.delenv("ENABLE_EVIDENCE_AWARE_DRY_RUN_ANSWERS", raising=False)
+    answer = synthesize_answer(
+        "Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?",
+        [
+            {
+                "type": "api",
+                "step": {
+                    "family": "batch_export_files",
+                    "params": {"batchId": "69de8a0e0cc6102b5d11f01e"},
+                },
+                "payload": {"ok": False, "dry_run": True},
+            }
+        ],
+    )
+    assert answer.startswith("Batch file details require live API evidence")
+    assert "Selected dry-run request evidence" not in answer
+
+
+def test_evidence_aware_dry_run_ignores_fake_payload_preview(monkeypatch):
+    monkeypatch.setenv("ENABLE_EVIDENCE_AWARE_DRY_RUN_ANSWERS", "1")
+    answer = synthesize_answer(
+        "Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?",
+        [
+            {
+                "type": "api",
+                "step": {
+                    "family": "batch_export_files",
+                    "params": {"batchId": "69de8a0e0cc6102b5d11f01e"},
+                },
+                "payload": {
+                    "ok": False,
+                    "dry_run": True,
+                    "result_preview": {
+                        "files": [
+                            {
+                                "fileName": "fabricated.csv",
+                                "status": "ready",
+                                "size": 42,
+                            }
+                        ]
+                    },
+                },
+            }
+        ],
+    )
+    assert "69de8a0e0cc6102b5d11f01e" in answer
+    assert "file list or file details is unavailable in dry-run mode" in answer
+    assert "fabricated.csv" not in answer
+    assert "ready" not in answer
+    assert "42" not in answer
+    assert "Live API verification was not executed" in answer
+
+
+def test_evidence_aware_dry_run_uses_sql_and_safe_request_params_only(monkeypatch):
+    monkeypatch.setenv("ENABLE_EVIDENCE_AWARE_DRY_RUN_ANSWERS", "1")
+    answer = synthesize_answer(
+        "How many batches have status 'success'?",
+        [
+            {
+                "type": "sql",
+                "payload": {
+                    "ok": True,
+                    "rows": [{"status": "success", "count": 3}],
+                    "row_count": 1,
+                },
+            },
+            {
+                "type": "api",
+                "step": {
+                    "family": "successful_batch_count",
+                    "params": {
+                        "status": "success",
+                        "limit": 100,
+                        "access_token": "should-not-appear",
+                    },
+                },
+                "payload": {"ok": False, "dry_run": True},
+            },
+        ],
+    )
+    assert "The database returned 1 matching row(s)" in answer
+    assert "status=success" in answer
+    assert "limit=100" not in answer
+    assert "should-not-appear" not in answer
+    assert "batch count is unavailable in dry-run mode" in answer
+
+
 def test_live_like_family_answers_use_payload_evidence_only():
     tag_answer = synthesize_answer(
         "Show me the details of the tag named 'cool'.",
