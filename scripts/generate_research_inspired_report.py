@@ -48,6 +48,7 @@ def generate_report(config: Config) -> dict[str, Any]:
     candidate_report = _load_json(config.outputs_dir / "candidate_context_report.json")
     shadow_report = _load_json(config.outputs_dir / "shadow_repair_eval.json")
     compact_shadow_report = _load_json(config.outputs_dir / "compact_context_shadow_eval.json")
+    compact_measured_report = _load_json(config.outputs_dir / "compact_context_measured_eval.json")
     risk_shadow_report = _load_json(config.outputs_dir / "risk_efficiency_shadow_eval.json")
     current = strict.get("summary", {}).get("by_strategy", {}).get("SQL_FIRST_API_VERIFY", {})
     final_score = current.get("avg_final_score", 0.0)
@@ -85,6 +86,7 @@ def generate_report(config: Config) -> dict[str, Any]:
         "ENABLE_REPAIR_FOR_SCHEMA_DATASET_CONFUSION": config.enable_repair_for_schema_dataset_confusion,
         "ENABLE_REPAIR_FOR_ZERO_SCORE_MARGIN": config.enable_repair_for_zero_score_margin,
         "ENABLE_REPAIR_FOR_MISSING_API_TOPK": config.enable_repair_for_missing_api_topk,
+        "ENABLE_COMPACT_CONTEXT_WHEN_SCHEMA_VOTE_SAFE": config.enable_compact_context_when_schema_vote_safe,
     }
     techniques = [
         ("SQLGlot AST validation", "SQLGlot", "dashagent/sql_ast_tools.py", config.enable_sql_ast_validation, "checkpoint_sql_ast_validation"),
@@ -149,6 +151,16 @@ def generate_report(config: Config) -> dict[str, Any]:
             "compact_context_shadow_avg_token_delta": compact_shadow_report.get("summary", {}).get("avg_token_delta"),
             "compact_context_shadow_measured_accuracy_improvement_claimed": compact_shadow_report.get("summary", {}).get("measured_accuracy_improvement_claimed", False),
             "compact_context_shadow_measured_efficiency_improvement_claimed": compact_shadow_report.get("summary", {}).get("measured_efficiency_improvement_claimed", False),
+            "compact_context_measured_eval_ran": bool(compact_measured_report.get("rows")),
+            "compact_context_measured_row_count": compact_measured_report.get("summary", {}).get("row_count", 0),
+            "compact_context_measured_avg_score_delta": compact_measured_report.get("summary", {}).get("avg_score_delta"),
+            "compact_context_measured_avg_token_delta": compact_measured_report.get("summary", {}).get("avg_token_delta"),
+            "compact_context_measured_avg_runtime_delta": compact_measured_report.get("summary", {}).get("avg_runtime_delta"),
+            "compact_context_measured_experimental_efficiency_claimed": compact_measured_report.get("summary", {}).get("experimental_measured_efficiency_improvement_claimed", False),
+            "compact_context_measured_official_efficiency_claimed": compact_measured_report.get("summary", {}).get("official_measured_efficiency_improvement_claimed", False),
+            "compact_context_measured_packaged_execution_changed": compact_measured_report.get("summary", {}).get("packaged_execution_changed", False),
+            "compact_context_feature_flag_default": compact_measured_report.get("feature_flag_default", False),
+            "compact_context_feature_flag_enabled_for_experiment": compact_measured_report.get("feature_flag_enabled_for_experiment", False),
             "risk_efficiency_shadow_eval_ran": bool(risk_shadow_report.get("rows")),
             "risk_efficiency_shadow_row_count": risk_shadow_report.get("summary", {}).get("row_count", 0),
             "risk_efficiency_shadow_avg_token_delta": risk_shadow_report.get("summary", {}).get("avg_token_delta"),
@@ -189,6 +201,12 @@ def generate_report(config: Config) -> dict[str, Any]:
             "artifact_isolation": compact_shadow_report.get("artifact_isolation", {}),
             "notes": compact_shadow_report.get("notes", []),
         },
+        "compact_context_measured_eval": {
+            "summary": compact_measured_report.get("summary", {}),
+            "artifact_isolation": compact_measured_report.get("artifact_isolation", {}),
+            "acceptance_criteria": compact_measured_report.get("acceptance_criteria", {}),
+            "notes": compact_measured_report.get("notes", []),
+        },
         "risk_efficiency_shadow_eval": {
             "summary": risk_shadow_report.get("summary", {}),
             "artifact_isolation": risk_shadow_report.get("artifact_isolation", {}),
@@ -203,6 +221,7 @@ def generate_report(config: Config) -> dict[str, Any]:
             "Any repair canary enablement is a recommendation only; canary flags remain disabled by default.",
             "Risk-based efficiency savings are labeled as estimates; no measured efficiency improvement is claimed because packaged execution did not skip modules.",
             "Schema context voting compares compact and broader context for high-risk diagnostics only and does not change executed SQL/API plans.",
+            "Compact-context measured eval is isolated under outputs/compact_context_measured_eval and does not update official packaged scores or submission metrics.",
             "SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.",
             "No live API evidence is fabricated; Adobe API remains dry-run without credentials.",
             "Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.",
@@ -269,6 +288,19 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"- Compact-context shadow eval rows: {report['summary']['compact_context_shadow_row_count']} "
             f"(avg token delta: {report['summary']['compact_context_shadow_avg_token_delta']}; "
             f"measured efficiency improvement claimed: {report['summary']['compact_context_shadow_measured_efficiency_improvement_claimed']})",
+            f"- Compact-context measured eval rows: {report['summary']['compact_context_measured_row_count']} "
+            f"(avg score delta: {report['summary']['compact_context_measured_avg_score_delta']}; "
+            f"avg token delta: {report['summary']['compact_context_measured_avg_token_delta']}; "
+            f"avg runtime delta: {report['summary']['compact_context_measured_avg_runtime_delta']})",
+            f"- Compact-context experimental measured efficiency improvement claimed: "
+            f"{report['summary']['compact_context_measured_experimental_efficiency_claimed']}",
+            f"- Compact-context official measured efficiency improvement claimed: "
+            f"{report['summary']['compact_context_measured_official_efficiency_claimed']}",
+            f"- Compact-context measured eval changed packaged execution: "
+            f"{report['summary']['compact_context_measured_packaged_execution_changed']}",
+            f"- Compact-context feature flag default/enabled-for-experiment: "
+            f"{report['summary']['compact_context_feature_flag_default']}/"
+            f"{report['summary']['compact_context_feature_flag_enabled_for_experiment']}",
             f"- Risk-efficiency shadow eval rows: {report['summary']['risk_efficiency_shadow_row_count']} "
             f"(avg token delta: {report['summary']['risk_efficiency_shadow_avg_token_delta']}; "
             f"avg runtime delta: {report['summary']['risk_efficiency_shadow_avg_runtime_delta']}; "

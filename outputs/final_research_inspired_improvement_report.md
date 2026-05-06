@@ -9,7 +9,7 @@ Status: **no measured strict-score improvement**.
 | strict_final_score | 0.649 | 0.6486 | -0.0004 |
 | strict_correctness | 0.6743 | 0.6743 | 0.0 |
 | estimated_tokens | 851.7714 | 899.2286 | 47.4572 |
-| runtime | 0.0102 | 0.0116 | 0.0014 |
+| runtime | 0.0102 | 0.0114 | 0.0012 |
 | tool_calls | 1.4571 | 1.4571 | 0.0 |
 
 ## Gate Results
@@ -17,7 +17,7 @@ Status: **no measured strict-score improvement**.
 - Packaged preferred strategy: `SQL_FIRST_API_VERIFY`
 - Strict score regression gate OK: True
 - Estimated-token overhead: 5.57% (gate OK: True)
-- Runtime overhead: 13.73% (gate OK: True)
+- Runtime overhead: 11.76% (gate OK: True)
 - Tool-call delta: 0.0 (gate OK: True)
 - Value retrieval budget: 250 ms (budget OK: True)
 - Value retrieval cache key algorithm: `sha256` (reproducible: True)
@@ -37,6 +37,11 @@ Status: **no measured strict-score improvement**.
 - No behavior-changing flags were enabled in this pass.
 - Schema vote active/agreement/compact-safe: 28/28/28
 - Compact-context shadow eval rows: 28 (avg token delta: -1220.7857; measured efficiency improvement claimed: False)
+- Compact-context measured eval rows: 28 (avg score delta: -0.0; avg token delta: 4.2857; avg runtime delta: 0.0017)
+- Compact-context experimental measured efficiency improvement claimed: False
+- Compact-context official measured efficiency improvement claimed: False
+- Compact-context measured eval changed packaged execution: False
+- Compact-context feature flag default/enabled-for-experiment: False/True
 - Risk-efficiency shadow eval rows: 7 (avg token delta: -264.0; avg runtime delta: -0.025; measured efficiency improvement claimed: False)
 - Secret scan OK: True
 - Visualization artifacts directory: `/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/visualizations`
@@ -65,6 +70,7 @@ Status: **no measured strict-score improvement**.
 | `ENABLE_REPAIR_FOR_SCHEMA_DATASET_CONFUSION` | False |
 | `ENABLE_REPAIR_FOR_ZERO_SCORE_MARGIN` | False |
 | `ENABLE_REPAIR_FOR_MISSING_API_TOPK` | False |
+| `ENABLE_COMPACT_CONTEXT_WHEN_SCHEMA_VOTE_SAFE` | False |
 
 ## Technique Summary
 
@@ -128,6 +134,7 @@ Execution repair remains disabled by default. These recommendations are offline 
 - Any repair canary enablement is a recommendation only; canary flags remain disabled by default.
 - Risk-based efficiency savings are labeled as estimates; no measured efficiency improvement is claimed because packaged execution did not skip modules.
 - Schema context voting compares compact and broader context for high-risk diagnostics only and does not change executed SQL/API plans.
+- Compact-context measured eval is isolated under outputs/compact_context_measured_eval and does not update official packaged scores or submission metrics.
 - SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.
 - No live API evidence is fabricated; Adobe API remains dry-run without credentials.
 - Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.

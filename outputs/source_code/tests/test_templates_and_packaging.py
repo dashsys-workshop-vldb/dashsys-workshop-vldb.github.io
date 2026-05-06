@@ -220,6 +220,34 @@ def test_hidden_output_packager_helpers_and_no_secret_scan(tmp_path: Path):
     assert scan_for_output_secrets(final_dir)["ok"] is True
 
 
+def test_packager_excludes_compact_measured_experiment_outputs(tmp_path: Path):
+    outputs = tmp_path / "outputs"
+    official = outputs / "eval" / "example_001" / "sql_first_api_verify"
+    experiment = outputs / "compact_context_measured_eval" / "example_001" / "compact_sql_first"
+    for directory in [official, experiment]:
+        directory.mkdir(parents=True)
+        (directory / "metadata.json").write_text("{}", encoding="utf-8")
+        (directory / "filled_system_prompt.txt").write_text("prompt", encoding="utf-8")
+        (directory / "trajectory.json").write_text(
+            json.dumps(
+                {
+                    "strategy": "SQL_FIRST_API_VERIFY",
+                    "original_query": "q",
+                    "final_answer": "answer",
+                    "tool_call_count": 1,
+                    "runtime": 0.1,
+                    "estimated_tokens": 10,
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    found = discover_query_output_dirs(outputs)
+
+    assert official in found
+    assert experiment not in found
+
+
 def test_submission_readiness_checker_accepts_valid_packaged_outputs(tiny_project):
     tiny_project.outputs_dir.mkdir(parents=True, exist_ok=True)
     (tiny_project.outputs_dir / "source_code.zip").write_bytes(b"zip")

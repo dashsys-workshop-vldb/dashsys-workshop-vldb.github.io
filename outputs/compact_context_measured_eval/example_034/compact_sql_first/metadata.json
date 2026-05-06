@@ -1,0 +1,158 @@
+{
+  "answer_policy": [
+    "Answer from evidence only.",
+    "Say not found/dry-run when evidence is empty."
+  ],
+  "compact_context_experiment": {
+    "confidence": 0.33,
+    "context_mode": "hybrid",
+    "enabled": true,
+    "estimated_tokens": 3836,
+    "packaged_default": false,
+    "score_margin": 0.0,
+    "source": "schema_vote_safe_candidate_context"
+  },
+  "constraints": [
+    "Use validated SQL/API only.",
+    "Prefer fewer tool calls when evidence is sufficient."
+  ],
+  "context_card": {
+    "answer_policy": "Observability metrics require live API values; render returned date/value points only.",
+    "api_families": [
+      "observability_metrics"
+    ],
+    "api_mode": "required",
+    "family": "observability",
+    "join_path": [],
+    "required_ids": [],
+    "tables": []
+  },
+  "domain_type": "COUNT_AGGREGATION",
+  "known_example_patterns": [
+    {
+      "method": "POST",
+      "params": {
+        "end": "2026-03-31T23:59:59.000Z",
+        "granularity": "day",
+        "metrics": "[{'name': 'timeseries.ingestion.dataset.recordsuccess.count', 'filters': [], 'aggregator': 'sum'}]",
+        "start": "2026-03-15T00:00:00.000Z"
+      },
+      "path": "/data/infrastructure/observability/insights/metrics"
+    }
+  ],
+  "nlp_diagnostics": {
+    "relevance": {
+      "lookup_paths": [
+        "observability",
+        "batch"
+      ]
+    },
+    "rewrites": [
+      "\\bbatch\\s+success\\b->batchsuccess"
+    ]
+  },
+  "query": "Show ingestion record counts and batch success counts for the last 90 days.",
+  "query_id": "example_034",
+  "route_type": "API_ONLY",
+  "selected_apis": [
+    {
+      "id": "ups_audiences",
+      "method": "GET",
+      "path": "/data/core/ups/audiences"
+    },
+    {
+      "id": "audit_events",
+      "method": "GET",
+      "path": "/data/foundation/audit/events"
+    },
+    {
+      "id": "audit_events_short",
+      "method": "GET",
+      "path": "/audit/events"
+    },
+    {
+      "id": "catalog_datasets",
+      "method": "GET",
+      "path": "/data/foundation/catalog/dataSets"
+    },
+    {
+      "id": "export_batch_failed",
+      "method": "GET",
+      "path": "/data/foundation/export/batches/{batch_id}/failed"
+    }
+  ],
+  "selected_columns": {
+    "br_campaign_segment": [
+      "SEGMENTID",
+      "CAMPAIGNID"
+    ],
+    "dim_campaign": [
+      "UPDATEDTIME",
+      "STARTDATE",
+      "IMSORGID",
+      "LASTDEPLOYEDTIME",
+      "STATE",
+      "CAMPAIGNTYPE",
+      "STOPPEDTIME",
+      "FINISHEDTIME",
+      "SANDBOXNAME",
+      "NAME",
+      "SANDBOXID",
+      "STATUS",
+      "CAMPAIGNID",
+      "CAMPAIGNACTIVITYCOUNT",
+      "CREATEDTIME"
+    ],
+    "dim_segment": [
+      "SEGMENTID",
+      "UPDATEDTIME",
+      "ISACCOUNTSEGMENT",
+      "NAME",
+      "EVALUATIONCOMPLETEDTIME",
+      "LIFECYCLESTATUS",
+      "CREATEDTIME",
+      "TYPE",
+      "MERGEPOLICYID"
+    ],
+    "hkg_br_blueprint_property": [
+      "BLUEPRINTID"
+    ],
+    "hkg_br_collection_property": [
+      "COLLECTIONID"
+    ],
+    "hkg_br_collection_segment": [
+      "SEGMENTID",
+      "COLLECTIONID"
+    ],
+    "hkg_br_segment_property": [
+      "SEGMENTID"
+    ],
+    "hkg_br_segment_target": [
+      "SEGMENTID",
+      "TARGETID"
+    ],
+    "hkg_br_source_collection": [
+      "DATAFLOWNAME",
+      "COLLECTIONID",
+      "DATAFLOWID",
+      "SOURCEID"
+    ],
+    "hkg_br_target_property": [
+      "TARGETID"
+    ]
+  },
+  "selected_join_hints": [],
+  "selected_tables": [
+    "dim_campaign",
+    "dim_segment",
+    "br_campaign_segment",
+    "hkg_br_blueprint_property",
+    "hkg_br_collection_property",
+    "hkg_br_segment_target",
+    "hkg_br_collection_segment",
+    "hkg_br_segment_property",
+    "hkg_br_target_property",
+    "hkg_br_source_collection"
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY"
+}

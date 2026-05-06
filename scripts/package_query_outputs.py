@@ -17,6 +17,13 @@ from dashagent.trajectory import redact_secrets
 
 
 REQUIRED_QUERY_FILES = ["metadata.json", "filled_system_prompt.txt", "trajectory.json"]
+NON_SUBMISSION_OUTPUT_DIRS = {
+    "compact_context_measured_eval",
+    "shadow_repair_eval",
+    "visualizations",
+    "final_submission",
+    "source_code",
+}
 
 
 def main() -> int:
@@ -82,7 +89,7 @@ def main() -> int:
 def discover_query_output_dirs(outputs_dir: Path) -> list[Path]:
     candidates = []
     for path in outputs_dir.rglob("trajectory.json"):
-        if any(part in {"final_submission", "source_code"} or part.startswith("probe") for part in path.parts):
+        if any(part in NON_SUBMISSION_OUTPUT_DIRS or part.startswith("probe") for part in path.parts):
             continue
         directory = path.parent
         if all((directory / filename).exists() for filename in REQUIRED_QUERY_FILES):

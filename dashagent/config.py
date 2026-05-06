@@ -65,6 +65,7 @@ class Config:
     enable_repair_for_schema_dataset_confusion: bool = False
     enable_repair_for_zero_score_margin: bool = False
     enable_repair_for_missing_api_topk: bool = False
+    enable_compact_context_when_schema_vote_safe: bool = False
     value_retrieval_max_tables: int = 6
     value_retrieval_max_columns: int = 18
     value_retrieval_max_rows_per_column: int = 500
@@ -117,6 +118,7 @@ class Config:
             enable_repair_for_schema_dataset_confusion=os.getenv("ENABLE_REPAIR_FOR_SCHEMA_DATASET_CONFUSION", "0") == "1",
             enable_repair_for_zero_score_margin=os.getenv("ENABLE_REPAIR_FOR_ZERO_SCORE_MARGIN", "0") == "1",
             enable_repair_for_missing_api_topk=os.getenv("ENABLE_REPAIR_FOR_MISSING_API_TOPK", "0") == "1",
+            enable_compact_context_when_schema_vote_safe=os.getenv("ENABLE_COMPACT_CONTEXT_WHEN_SCHEMA_VOTE_SAFE", "0") == "1",
             value_retrieval_max_tables=int(os.getenv("VALUE_RETRIEVAL_MAX_TABLES", "6")),
             value_retrieval_max_columns=int(os.getenv("VALUE_RETRIEVAL_MAX_COLUMNS", "18")),
             value_retrieval_max_rows_per_column=int(os.getenv("VALUE_RETRIEVAL_MAX_ROWS_PER_COLUMN", "500")),

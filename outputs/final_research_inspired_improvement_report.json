@@ -210,6 +210,49 @@
       "likely_safe_improvement": "Improve tie-break diagnostics or fall back to hybrid/full schema context; do not force a table choice from a tied score."
     }
   },
+  "compact_context_measured_eval": {
+    "acceptance_criteria": {
+      "all_score_delta_nonnegative": false,
+      "avg_runtime_delta_nonpositive": false,
+      "avg_token_delta_negative": false,
+      "no_final_answer_changes": true,
+      "no_live_api_evidence_fabricated": true,
+      "tool_delta_nonpositive": true
+    },
+    "artifact_isolation": {
+      "allowed_experiment_output_root": "outputs/compact_context_measured_eval/<query_id>/compact_sql_first/",
+      "allowed_report_outputs": [
+        "outputs/compact_context_measured_eval.json",
+        "outputs/compact_context_measured_eval.md"
+      ],
+      "writes_eval_outputs": false,
+      "writes_final_submission": false,
+      "writes_packaged_query_outputs": false
+    },
+    "notes": [
+      "This is an isolated measured experiment; it does not update official eval results or submission metrics.",
+      "Baseline rows are read from existing SQL_FIRST_API_VERIFY strict outputs.",
+      "Compact-enabled runs write only under outputs/compact_context_measured_eval/<query_id>/compact_sql_first/.",
+      "Measured efficiency improvement is experimental only and is not claimed for packaged SQL_FIRST_API_VERIFY."
+    ],
+    "summary": {
+      "api_changed_count": 0,
+      "avg_runtime_delta": 0.0017,
+      "avg_score_delta": -0.0,
+      "avg_token_delta": 4.2857,
+      "avg_tool_delta": 0.0,
+      "experiment_safe_to_enable_count": 0,
+      "experimental_measured_accuracy_improvement_claimed": false,
+      "experimental_measured_efficiency_improvement_claimed": false,
+      "final_answer_changed_count": 0,
+      "official_measured_accuracy_improvement_claimed": false,
+      "official_measured_efficiency_improvement_claimed": false,
+      "official_submission_metrics_updated": false,
+      "packaged_execution_changed": false,
+      "row_count": 28,
+      "sql_changed_count": 0
+    }
+  },
   "compact_context_shadow_eval": {
     "artifact_isolation": {
       "allowed_outputs": [
@@ -242,19 +285,20 @@
   },
   "current": {
     "estimated_tokens": 899.2286,
-    "runtime": 0.0116,
+    "runtime": 0.0114,
     "strict_correctness": 0.6743,
     "strict_final_score": 0.6486,
     "tool_calls": 1.4571
   },
   "delta": {
     "estimated_tokens": 47.4572,
-    "runtime": 0.0014,
+    "runtime": 0.0012,
     "strict_correctness": 0.0,
     "strict_final_score": -0.0004,
     "tool_calls": 0.0
   },
   "feature_flags": {
+    "ENABLE_COMPACT_CONTEXT_WHEN_SCHEMA_VOTE_SAFE": false,
     "ENABLE_ENDPOINT_FAMILY_RANKING": true,
     "ENABLE_GATED_RISK_CLUSTER_REPAIR": true,
     "ENABLE_GATED_RISK_CLUSTER_REPAIR_EXECUTION": false,
@@ -283,6 +327,7 @@
     "Any repair canary enablement is a recommendation only; canary flags remain disabled by default.",
     "Risk-based efficiency savings are labeled as estimates; no measured efficiency improvement is claimed because packaged execution did not skip modules.",
     "Schema context voting compares compact and broader context for high-risk diagnostics only and does not change executed SQL/API plans.",
+    "Compact-context measured eval is isolated under outputs/compact_context_measured_eval and does not update official packaged scores or submission metrics.",
     "SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.",
     "No live API evidence is fabricated; Adobe API remains dry-run without credentials.",
     "Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.",
@@ -630,6 +675,16 @@
     "behavior_changing_flags_enabled": false,
     "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
     "candidate_risk_cluster_count": 8,
+    "compact_context_feature_flag_default": false,
+    "compact_context_feature_flag_enabled_for_experiment": true,
+    "compact_context_measured_avg_runtime_delta": 0.0017,
+    "compact_context_measured_avg_score_delta": -0.0,
+    "compact_context_measured_avg_token_delta": 4.2857,
+    "compact_context_measured_eval_ran": true,
+    "compact_context_measured_experimental_efficiency_claimed": false,
+    "compact_context_measured_official_efficiency_claimed": false,
+    "compact_context_measured_packaged_execution_changed": false,
+    "compact_context_measured_row_count": 28,
     "compact_context_safe_count": 28,
     "compact_context_shadow_avg_token_delta": -1220.7857,
     "compact_context_shadow_eval_ran": true,
@@ -668,7 +723,7 @@
       "medium": 5
     },
     "runtime_gate_ok": true,
-    "runtime_overhead_pct": 0.1373,
+    "runtime_overhead_pct": 0.1176,
     "schema_vote_active_count": 28,
     "schema_vote_agreement_count": 28,
     "shadow_repair_better_count": 1,
