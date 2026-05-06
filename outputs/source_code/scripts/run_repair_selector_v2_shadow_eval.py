@@ -44,12 +44,14 @@ def run_repair_selector_v2_shadow_eval(config: Config) -> dict[str, Any]:
             "api_calls": row.get("current_plan_api") or [],
             "tool_call_count": row.get("current_tool_calls"),
             "expected_answer_shape": _answer_shape(row),
+            "final_answer": row.get("current_final_answer"),
         }
         repaired_plan = {
             "sql": row.get("repaired_plan_sql") or [],
             "api_calls": row.get("repaired_plan_api") or [],
             "tool_call_count": row.get("repaired_tool_calls"),
             "expected_answer_shape": _answer_shape(row),
+            "final_answer": row.get("repaired_final_answer"),
             "fusion_agreement": not _has_failed(row, "fusion_agreement"),
             "endpoint_family_confidence": _endpoint_confidence(row),
             "offline_score_delta": row.get("offline_score_delta", row.get("score_delta")),
@@ -74,6 +76,7 @@ def run_repair_selector_v2_shadow_eval(config: Config) -> dict[str, Any]:
                 "repaired_ast_quality_score": ast_repaired.get("ast_quality_score"),
                 "selector_v2": selection,
                 "selected_plan": selection.get("selected_plan"),
+                "decision_label": selection.get("decision_label"),
                 "repair_safe_to_enable": False,
                 "execution_changed": False,
             }
@@ -81,11 +84,15 @@ def run_repair_selector_v2_shadow_eval(config: Config) -> dict[str, Any]:
     better = [row for row in rows if float(row.get("score_delta") or 0.0) > 0 and row["selector_v2"].get("safe_to_select_repaired")]
     worse = [row for row in rows if float(row.get("score_delta") or 0.0) < 0]
     safe_worse = [row for row in worse if row["selector_v2"].get("safe_to_select_repaired")]
+    no_op = [row for row in rows if row["selector_v2"].get("decision_label") == "no_op_tie_keep_current"]
+    score_ties = [row for row in rows if row["selector_v2"].get("decision_label") == "score_tie_keep_current"]
     summary = {
         "total_rows": len(rows),
         "repaired_worse_count": len(worse),
         "safe_repaired_worse_count": len(safe_worse),
         "strictly_better_selected_count": len(better),
+        "no_op_tie_keep_current_count": len(no_op),
+        "score_tie_keep_current_count": len(score_ties),
         "avg_score_delta": _avg(row.get("score_delta") for row in rows),
         "avg_tool_delta": _avg(row.get("tool_delta") for row in rows),
         "success": len(worse) == 0 and len(safe_worse) == 0 and len(better) > 0 and _avg(row.get("score_delta") for row in rows) >= 0 and _avg(row.get("tool_delta") for row in rows) <= 0,
@@ -124,17 +131,19 @@ def render_markdown(payload: dict[str, Any]) -> str:
         "",
         f"- Success: {summary['success']}",
         f"- Strictly better selected count: {summary['strictly_better_selected_count']}",
+        f"- No-op ties kept current: {summary['no_op_tie_keep_current_count']}",
+        f"- Score ties kept current: {summary['score_tie_keep_current_count']}",
         f"- Repaired worse count: {summary['repaired_worse_count']}",
         f"- Safe repaired worse count: {summary['safe_repaired_worse_count']}",
         "",
-        "| Query ID | Cluster | Score delta | Tool delta | Selected | Failed checks |",
-        "| --- | --- | ---: | ---: | --- | --- |",
+        "| Query ID | Cluster | Score delta | Tool delta | Selected | Decision | Failed checks |",
+        "| --- | --- | ---: | ---: | --- | --- | --- |",
     ]
     for row in payload["rows"]:
         selector = row["selector_v2"]
         lines.append(
             f"| `{row['query_id']}` | {row['risk_cluster']} | {row['score_delta']} | {row['tool_delta']} | "
-            f"{selector.get('selected_plan')} | {', '.join(selector.get('failed_checks') or [])} |"
+            f"{selector.get('selected_plan')} | {selector.get('decision_label')} | {', '.join(selector.get('failed_checks') or [])} |"
         )
     return "\n".join(lines) + "\n"
 

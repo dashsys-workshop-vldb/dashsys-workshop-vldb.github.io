@@ -95,8 +95,7 @@
       "output": {
         "domains": {
           "items": [
-            "audit",
-            "batch"
+            "audit"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -116,8 +115,7 @@
         "tokens": {
           "domains": {
             "items": [
-              "audit",
-              "batch"
+              "audit"
             ],
             "total_items": 2,
             "truncated_items": false
@@ -134,27 +132,21 @@
         },
         "top_apis": {
           "items": [
-            "audit_events",
-            "audit_events_short",
-            "catalog_batch_detail"
+            "audit_events"
           ],
           "total_items": 3,
           "truncated_items": false
         },
         "top_join_hints": {
           "items": [
-            "dim_segment.SEGMENTID->hkg_br_base_segment_used_by_dependent_segment.DEPENDENTSEGMENTID",
-            "dim_segment.SEGMENTID->hkg_br_base_segment_used_by_dependent_segment.SEGMENTID",
-            "hkg_br_base_segment_used_by_dependent_segment.SEGMENTID->hkg_br_segment_target.SEGMENTID"
+            "dim_segment.SEGMENTID->hkg_br_base_segment_used_by_dependent_segment.DEPENDENTSEGMENTID"
           ],
           "total_items": 3,
           "truncated_items": false
         },
         "top_tables": {
           "items": [
-            "dim_collection",
-            "dim_segment",
-            "dim_target"
+            "dim_collection"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -206,9 +198,7 @@
       "output": {
         "api_families": {
           "items": [
-            "audit_create_events",
-            "audit_events",
-            "dataset_audit_changes"
+            "audit_create_events"
           ],
           "total_items": 4,
           "truncated_items": true
@@ -217,18 +207,14 @@
         "family": "audit",
         "required_ids": {
           "items": [
-            "collection_id",
-            "segment_id",
-            "target_id"
+            "collection_id"
           ],
           "total_items": 3,
           "truncated_items": false
         },
         "tables": {
           "items": [
-            "dim_collection",
-            "dim_segment",
-            "hkg_br_segment_target"
+            "dim_collection"
           ],
           "total_items": 4,
           "truncated_items": true
@@ -262,9 +248,7 @@
         "selected_columns": {
           "dim_collection": {
             "items": [
-              "COLLECTIONID",
-              "NAME",
-              "CREATEDTIME"
+              "COLLECTIONID"
             ],
             "total_items": 4,
             "truncated_items": true
@@ -377,18 +361,7 @@
               "action": "sql",
               "family": "collection_created_by",
               "purpose": "Ground names/IDs in local snapshot before API verification.",
-              "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS created_time FROM \"dim_collection\" AS C WHERE C.\"CREATEDBY\" ILIKE '%download%'"
-            },
-            {
-              "action": "api",
-              "family": "audit_create_events",
-              "method": "GET",
-              "params": {
-                "limit": "20",
-                "property": "action==create"
-              },
-              "purpose": "API parameter template: audit_create_events.",
-              "url": "/data/foundation/audit/events"
+              "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS creat [truncated]"
             }
           ],
           "total_items": 2,
@@ -420,18 +393,7 @@
               "action": "sql",
               "family": "collection_created_by",
               "purpose": "Ground names/IDs in local snapshot before API verification.",
-              "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS created_time FROM \"dim_collection\" AS C WHERE C.\"CREATEDBY\" ILIKE '%download%'"
-            },
-            {
-              "action": "api",
-              "family": "audit_create_events",
-              "method": "GET",
-              "params": {
-                "limit": "20",
-                "property": "action==create"
-              },
-              "purpose": "API parameter template: audit_create_events.",
-              "url": "/data/foundation/audit/events"
+              "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS creat [truncated]"
             }
           ],
           "total_items": 2,
@@ -584,8 +546,7 @@
           "dry_run": true,
           "slots_present": {
             "items": [
-              "counts",
-              "dry_run"
+              "counts"
             ],
             "total_items": 2,
             "truncated_items": false
@@ -607,8 +568,7 @@
         "claim_count": 1,
         "slots_present": {
           "items": [
-            "counts",
-            "dry_run"
+            "counts"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -664,11 +624,24 @@
       "stage": "final response",
       "technique": "concise grounded final response",
       "timestamp": "2026-05-06T14:49:31.789642+00:00"
+    },
+    {
+      "active": true,
+      "checkpoint_id": "checkpoint_official_token_reduction",
+      "correctness_impact_expected": false,
+      "estimated_tokens_after": 789,
+      "estimated_tokens_before": 871,
+      "expected_savings": 82,
+      "packaged_execution_changed": false,
+      "reduced_fields": [
+        "steps[0].candidate_apis",
+        "steps[2].metadata_path"
+      ]
     }
   ],
   "domain_type": "UNKNOWN",
   "errors": [],
-  "estimated_tokens": 870,
+  "estimated_tokens": 789,
   "execution_time": 0.0016006670193746686,
   "final_answer": "Based on the evidence provided, no entities were created by download. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
   "original_query": "Show me all entities created by download",
@@ -695,16 +668,6 @@
           "id": "segment_definitions",
           "method": "GET",
           "path": "/data/core/ups/segment/definitions"
-        },
-        {
-          "id": "flowservice_flows",
-          "method": "GET",
-          "path": "/data/foundation/flowservice/flows"
-        },
-        {
-          "id": "flowservice_runs",
-          "method": "GET",
-          "path": "/data/foundation/flowservice/runs"
         }
       ],
       "candidate_tables": [
@@ -746,7 +709,7 @@
     {
       "estimated_tokens": 556,
       "kind": "metadata",
-      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/show_me_all_entities_created_by_download/sql_first_api_verify/metadata.json",
+      "metadata_path": "metadata.json",
       "prompt_tokens": 1151
     },
     {

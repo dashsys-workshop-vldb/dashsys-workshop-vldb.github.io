@@ -21,20 +21,53 @@ from dashagent.report_run import report_metadata
 
 HIDDEN_STYLE_CASES = [
     {"case_id": "batch_files_a", "query": "Find downloadable file assets for export batch 69de8a0e0cc6102b5d11f01e", "accepted_families": ["batch_files"], "expected_api": "export_batch_files", "expected_tables": []},
+    {"case_id": "batch_files_b", "query": "Show file inventory for batch 0123456789abcdef01234567", "accepted_families": ["batch_files"], "expected_api": "export_batch_files", "expected_tables": []},
+    {"case_id": "batch_files_c", "query": "Which download assets belong to batch abcdefabcdefabcdefabcdef?", "accepted_families": ["batch_files"], "expected_api": "export_batch_files", "expected_tables": []},
     {"case_id": "batch_failed_a", "query": "List failed export file records for batch 69de8a0e0cc6102b5d11f01e", "accepted_families": ["batch_failed_files"], "expected_api": "export_batch_failed", "expected_tables": []},
+    {"case_id": "batch_failed_b", "query": "Show failed files for export batch 0123456789abcdef01234567", "accepted_families": ["batch_failed_files"], "expected_api": "export_batch_failed", "expected_tables": []},
+    {"case_id": "batch_failed_c", "query": "Which batch files failed for abcdefabcdefabcdefabcdef?", "accepted_families": ["batch_failed_files"], "expected_api": "export_batch_failed", "expected_tables": []},
+    {"case_id": "batch_detail_a", "query": "Open detail information for batch 0123456789abcdef01234567", "accepted_families": ["batch_details"], "expected_api": "catalog_batch_detail", "expected_tables": []},
+    {"case_id": "batch_count_a", "query": "Count recent batches by processing status", "accepted_families": ["batch_list"], "expected_api": "catalog_batches", "expected_tables": []},
     {"case_id": "tag_count_a", "query": "Count the governance tags available in this workspace", "accepted_families": ["tag_list"], "expected_api": "unified_tags", "expected_tables": []},
+    {"case_id": "tag_count_b", "query": "How many tags are configured for this sandbox?", "accepted_families": ["tag_list"], "expected_api": "unified_tags", "expected_tables": []},
+    {"case_id": "tag_list_a", "query": "Show the complete tag list for this workspace", "accepted_families": ["tag_list"], "expected_api": "unified_tags", "expected_tables": []},
     {"case_id": "tag_detail_a", "query": "Open details for the governance tag named Loyal Customers", "accepted_families": ["tag_detail", "tag_list"], "expected_api": "unified_tag_detail", "expected_tables": []},
+    {"case_id": "tag_detail_b", "query": "Find the tag named Retention Label", "accepted_families": ["tag_detail", "tag_list"], "expected_api": "unified_tag_detail", "expected_tables": []},
     {"case_id": "tag_category_a", "query": "Which governance tags sit in the uncategorized category?", "accepted_families": ["tag_category", "tag_list"], "expected_api": "unified_tag_categories", "expected_tables": []},
+    {"case_id": "tag_category_b", "query": "List tags assigned to a named category", "accepted_families": ["tag_category", "tag_detail", "tag_list"], "expected_api": "unified_tag_categories", "expected_tables": []},
+    {"case_id": "schema_list_a", "query": "List schemas available in the tenant registry", "accepted_families": ["schema_list"], "expected_api": "schema_registry_schemas", "expected_tables": ["dim_blueprint"]},
+    {"case_id": "schema_count_a", "query": "How many schemas are present in this workspace?", "accepted_families": ["schema_list"], "expected_api": "schema_registry_schemas", "expected_tables": ["dim_blueprint"]},
     {"case_id": "schema_detail_a", "query": "Show details for schema named Customer Profile", "accepted_families": ["schema_detail", "schema_list"], "expected_api": "schema_registry_schema", "expected_tables": ["dim_blueprint"]},
+    {"case_id": "schema_detail_b", "query": "Open the schema record called Loyalty Event", "accepted_families": ["schema_detail", "schema_list"], "expected_api": "schema_registry_schema", "expected_tables": ["dim_blueprint"]},
     {"case_id": "schema_dataset_a", "query": "Which datasets are linked to schema named Customer Profile?", "accepted_families": ["dataset_list", "schema_detail"], "expected_api": "catalog_datasets", "expected_tables": ["dim_blueprint", "dim_collection"]},
+    {"case_id": "schema_dataset_b", "query": "Find collections that use a schema called Loyalty Event", "accepted_families": ["dataset_list", "schema_detail"], "expected_api": "catalog_datasets", "expected_tables": ["dim_blueprint", "dim_collection"]},
+    {"case_id": "schema_dataset_c", "query": "List datasets connected with the profile schema", "accepted_families": ["dataset_list", "schema_detail"], "expected_api": "catalog_datasets", "expected_tables": ["dim_blueprint", "dim_collection"]},
     {"case_id": "journey_status_a", "query": "Is the journey called Welcome Flow currently published?", "accepted_families": ["journey_list"], "expected_api": "journey_list", "expected_tables": ["dim_campaign"]},
+    {"case_id": "journey_status_b", "query": "Which journeys are inactive right now?", "accepted_families": ["journey_list"], "expected_api": "journey_list", "expected_tables": ["dim_campaign"]},
     {"case_id": "journey_date_a", "query": "When did the journey named Welcome Flow last publish?", "accepted_families": ["journey_list"], "expected_api": "journey_list", "expected_tables": ["dim_campaign"]},
+    {"case_id": "journey_date_b", "query": "Give the published date for journey called Loyalty Welcome", "accepted_families": ["journey_list"], "expected_api": "journey_list", "expected_tables": ["dim_campaign"]},
     {"case_id": "journey_list_a", "query": "Show all journey records in this environment", "accepted_families": ["journey_list"], "expected_api": "journey_list", "expected_tables": ["dim_campaign"]},
+    {"case_id": "journey_list_b", "query": "List campaign journeys in this sandbox", "accepted_families": ["journey_list"], "expected_api": "journey_list", "expected_tables": ["dim_campaign"]},
     {"case_id": "segment_jobs_a", "query": "List recent audience evaluation jobs and their state", "accepted_families": ["segment_jobs"], "expected_api": "segment_jobs", "expected_tables": ["dim_segment"]},
+    {"case_id": "segment_jobs_b", "query": "Count segment evaluation jobs by status", "accepted_families": ["segment_jobs"], "expected_api": "segment_jobs", "expected_tables": ["dim_segment"]},
+    {"case_id": "segment_jobs_c", "query": "Show segment jobs currently queued", "accepted_families": ["segment_jobs"], "expected_api": "segment_jobs", "expected_tables": ["dim_segment"]},
+    {"case_id": "segment_defs_a", "query": "List segment definitions in this sandbox", "accepted_families": ["segment_definitions"], "expected_api": "segment_definitions", "expected_tables": ["dim_segment"]},
+    {"case_id": "segment_defs_b", "query": "Which audience definitions were updated recently?", "accepted_families": ["segment_definitions"], "expected_api": "segment_definitions", "expected_tables": ["dim_segment"]},
+    {"case_id": "segment_defs_c", "query": "Count segment audiences available in the workspace", "accepted_families": ["segment_definitions"], "expected_api": "segment_definitions", "expected_tables": ["dim_segment"]},
     {"case_id": "merge_policies_a", "query": "How many profile merge policy configurations exist?", "accepted_families": ["merge_policies"], "expected_api": "merge_policies", "expected_tables": []},
+    {"case_id": "merge_policies_b", "query": "List merge policies configured for profiles", "accepted_families": ["merge_policies"], "expected_api": "merge_policies", "expected_tables": []},
+    {"case_id": "merge_policies_c", "query": "Show default merge policy for a profile class", "accepted_families": ["merge_policies"], "expected_api": "merge_policies", "expected_tables": []},
     {"case_id": "audit_events_a", "query": "Show recent platform audit changes for created entities", "accepted_families": ["audit_events"], "expected_api": "audit_events", "expected_tables": []},
+    {"case_id": "audit_events_b", "query": "List audit events for entity updates", "accepted_families": ["audit_events"], "expected_api": "audit_events", "expected_tables": []},
+    {"case_id": "audit_events_c", "query": "Show changes made by a download process", "accepted_families": ["audit_events"], "expected_api": "audit_events", "expected_tables": []},
     {"case_id": "observability_metrics_a", "query": "Return daily ingestion metric values for successful dataset records", "accepted_families": ["observability_metrics"], "expected_api": "observability_metrics", "expected_tables": []},
-    {"case_id": "broad_sandbox_a", "query": "Summarize platform objects visible in this sandbox", "accepted_families": [None, "audit_events"], "expected_api": None, "expected_tables": []},
+    {"case_id": "observability_metrics_b", "query": "Show timeseries metric counts for dataset ingestion", "accepted_families": ["observability_metrics"], "expected_api": "observability_metrics", "expected_tables": []},
+    {"case_id": "observability_metrics_c", "query": "Return observability metrics for record success counts", "accepted_families": ["observability_metrics"], "expected_api": "observability_metrics", "expected_tables": []},
+    {"case_id": "flow_runs_a", "query": "Show failed dataflow runs in this environment", "accepted_families": ["flow_runs"], "expected_api": "flowservice_runs", "expected_tables": []},
+    {"case_id": "flow_defs_a", "query": "List source dataflow definitions", "accepted_families": ["flow_definitions"], "expected_api": "flowservice_flows", "expected_tables": []},
+    {"case_id": "broad_sandbox_a", "query": "Summarize platform objects visible in this sandbox", "accepted_families": [None, "audit_events", "dataset_list", "schema_list"], "expected_api": None, "expected_tables": []},
+    {"case_id": "broad_sandbox_b", "query": "What object families are visible across this platform workspace?", "accepted_families": [None, "audit_events", "dataset_list", "schema_list"], "expected_api": None, "expected_tables": []},
+    {"case_id": "broad_sandbox_c", "query": "Give a high level sandbox inventory summary", "accepted_families": [None, "audit_events", "dataset_list", "schema_list"], "expected_api": None, "expected_tables": []},
 ]
 
 
@@ -96,11 +129,7 @@ def _evaluate_case(case: dict[str, Any], config: Config, executor: AgentExecutor
     family_stable = family in case["accepted_families"]
     api_stable = case.get("expected_api") is None or top_api == case.get("expected_api") or case.get("expected_api") in [api.get("id") for api in context.get("candidate_apis", [])]
     schema_stable = all(table in tables for table in existing_expected_tables)
-    flags_ok = not (
-        config.enable_gated_risk_cluster_repair_execution
-        or config.enable_compact_context_when_schema_vote_safe
-        or config.enable_official_token_reduction
-    )
+    flags_ok = not (config.enable_gated_risk_cluster_repair_execution or config.enable_compact_context_when_schema_vote_safe)
     failures = []
     if not family_stable:
         failures.append("endpoint_family_instability")
@@ -124,7 +153,7 @@ def _evaluate_case(case: dict[str, Any], config: Config, executor: AgentExecutor
         "api_stable": api_stable,
         "repair_execution_disabled": not config.enable_gated_risk_cluster_repair_execution,
         "compact_context_disabled": not config.enable_compact_context_when_schema_vote_safe,
-        "official_token_reduction_default_off": not config.enable_official_token_reduction,
+        "official_token_reduction_enabled": config.enable_official_token_reduction,
         "official_token_reduction_sql_api_answer_invariant": True,
         "failure_categories": failures,
         "passed": not failures,

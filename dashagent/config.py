@@ -66,7 +66,7 @@ class Config:
     enable_repair_for_zero_score_margin: bool = False
     enable_repair_for_missing_api_topk: bool = False
     enable_compact_context_when_schema_vote_safe: bool = False
-    enable_official_token_reduction: bool = False
+    enable_official_token_reduction: bool = True
     value_retrieval_max_tables: int = 6
     value_retrieval_max_columns: int = 18
     value_retrieval_max_rows_per_column: int = 500
@@ -120,7 +120,7 @@ class Config:
             enable_repair_for_zero_score_margin=os.getenv("ENABLE_REPAIR_FOR_ZERO_SCORE_MARGIN", "0") == "1",
             enable_repair_for_missing_api_topk=os.getenv("ENABLE_REPAIR_FOR_MISSING_API_TOPK", "0") == "1",
             enable_compact_context_when_schema_vote_safe=os.getenv("ENABLE_COMPACT_CONTEXT_WHEN_SCHEMA_VOTE_SAFE", "0") == "1",
-            enable_official_token_reduction=os.getenv("ENABLE_OFFICIAL_TOKEN_REDUCTION", "0") == "1",
+            enable_official_token_reduction=os.getenv("ENABLE_OFFICIAL_TOKEN_REDUCTION", "1") != "0",
             value_retrieval_max_tables=int(os.getenv("VALUE_RETRIEVAL_MAX_TABLES", "6")),
             value_retrieval_max_columns=int(os.getenv("VALUE_RETRIEVAL_MAX_COLUMNS", "18")),
             value_retrieval_max_rows_per_column=int(os.getenv("VALUE_RETRIEVAL_MAX_ROWS_PER_COLUMN", "500")),

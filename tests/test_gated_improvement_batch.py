@@ -10,9 +10,11 @@ from dashagent.report_run import report_metadata, runtime_budget_for_row, runtim
 from dashagent.sql_ast_candidate_ranker import rank_sql_candidate_ast
 from scripts.analyze_schema_dataset_positive_repair import analyze_schema_dataset_positive_repair
 from scripts.generate_endpoint_family_failure_report import generate_endpoint_family_failure_report
+from scripts.generate_official_token_reduction_promotion_report import compare_final_submission_structure
 from scripts.generate_sql_ast_candidate_ranking_report import generate_sql_ast_candidate_ranking_report
 from scripts.generate_winner_readiness_report import generate_winner_readiness_report
 from scripts.package_query_outputs import NON_SUBMISSION_OUTPUT_DIRS, discover_query_output_dirs
+from scripts.run_endpoint_schema_rule_candidate_eval import run_endpoint_schema_rule_candidate_eval
 from scripts.run_hidden_style_eval import run_hidden_style_eval
 from scripts.run_official_token_reduction_packaged_trial import _safe_to_promote, run_official_token_reduction_packaged_trial
 from tests.test_official_token_reduction import _tree_hash, _write_official_token_inputs
@@ -40,7 +42,7 @@ def test_official_token_packaged_trial_is_isolated_and_excluded(tiny_project):
 
     payload = run_official_token_reduction_packaged_trial(tiny_project)
 
-    assert payload["feature_flag_default"] is False
+    assert payload["feature_flag_default"] is True
     assert payload["packaged_execution_changed"] is False
     assert payload["protected_output_hashes_unchanged"] is True
     assert payload["summary"]["total_rows"] == 1
@@ -105,16 +107,23 @@ def test_hidden_style_eval_outputs_flags_and_cases(tiny_project):
     assert payload["compact_context_enabled"] is False
     assert payload["summary"]["total_cases"] >= 10
     assert payload["summary"]["family_stability_rate"] > 0
+    assert payload["summary"]["total_cases"] >= 40
+    assert payload["summary"]["family_stability_rate"] >= 0.95
+    assert payload["summary"]["schema_stability_rate"] >= 0.95
 
 
 def test_endpoint_and_ast_reports_are_report_only(tiny_project):
     _write_official_token_inputs(tiny_project)
 
     endpoint = generate_endpoint_family_failure_report(tiny_project)
+    candidates = run_endpoint_schema_rule_candidate_eval(tiny_project)
     ast = generate_sql_ast_candidate_ranking_report(tiny_project)
 
     assert endpoint["report_only"] is True
     assert endpoint["gold_used_for_generation"] is False
+    assert candidates["report_only"] is True
+    assert candidates["gold_used_for_generation"] is False
+    assert candidates["public_query_strings_used_for_generation"] is False
     assert ast["report_only"] is True
     assert ast["summary"]["candidate_count"] >= 1
 
@@ -139,7 +148,15 @@ def test_repair_selector_v2_rejects_risky_repairs():
     current = {"sql": ["SELECT 1"], "api_calls": [], "tool_call_count": 1, "expected_answer_shape": "count"}
     repaired = {"sql": ["SELECT 1"], "api_calls": [], "tool_call_count": 1, "expected_answer_shape": "count", "fusion_agreement": True, "endpoint_family_confidence": 1.0, "offline_score_delta": 0.0}
 
-    assert select_repair_candidate_v2(current, repaired, safe, ast_current={"ast_quality_score": 1}, ast_repaired={"ast_quality_score": 1})["safe_to_select_repaired"] is True
+    tied = select_repair_candidate_v2(current, repaired, safe, ast_current={"ast_quality_score": 1}, ast_repaired={"ast_quality_score": 1})
+    assert tied["safe_to_select_repaired"] is False
+    assert tied["selected_plan"] == "current"
+    assert tied["decision_label"] == "no_op_tie_keep_current"
+    repaired["sql"] = ["SELECT 2"]
+    repaired["offline_score_delta"] = 0.0
+    score_tie = select_repair_candidate_v2(current, repaired, safe, ast_current={"ast_quality_score": 1}, ast_repaired={"ast_quality_score": 1})
+    assert score_tie["safe_to_select_repaired"] is False
+    assert score_tie["decision_label"] == "score_tie_keep_current"
     repaired["offline_score_delta"] = -0.1
     rejected = select_repair_candidate_v2(current, repaired, safe, ast_current={"ast_quality_score": 1}, ast_repaired={"ast_quality_score": 1})
     assert rejected["safe_to_select_repaired"] is False
@@ -148,13 +165,13 @@ def test_repair_selector_v2_rejects_risky_repairs():
 
 def test_winner_readiness_requires_fresh_reports(tiny_project):
     start_report_run(tiny_project.outputs_dir)
-    stale_path = tiny_project.outputs_dir / "official_token_reduction_packaged_trial.json"
+    stale_path = tiny_project.outputs_dir / "official_token_reduction_promotion_report.json"
     stale_path.write_text(json.dumps({"run_id": "old"}), encoding="utf-8")
 
     try:
         generate_winner_readiness_report(tiny_project)
     except RuntimeError as exc:
-        assert "official_token_reduction_packaged_trial" in str(exc)
+        assert "official_token_reduction_promotion_report" in str(exc)
     else:
         raise AssertionError("winner readiness should fail on stale reports")
 
@@ -162,6 +179,28 @@ def test_winner_readiness_requires_fresh_reports(tiny_project):
 def test_defaults_remain_disabled(tiny_project):
     config = Config.from_env(tiny_project.project_root)
 
-    assert config.enable_official_token_reduction is False
+    assert config.enable_official_token_reduction is True
     assert config.enable_compact_context_when_schema_vote_safe is False
     assert config.enable_gated_risk_cluster_repair_execution is False
+
+
+def test_final_submission_structure_diff_rejects_experimental_roots(tiny_project):
+    final_submission = tiny_project.outputs_dir / "final_submission"
+    query_dir = final_submission / "query_001"
+    query_dir.mkdir(parents=True)
+    for name in ["metadata.json", "filled_system_prompt.txt"]:
+        (query_dir / name).write_text("{}", encoding="utf-8")
+    (query_dir / "trajectory.json").write_text(
+        json.dumps({"strategy": "SQL_FIRST_API_VERIFY", "final_answer": "x", "tool_call_count": 1, "runtime": 0.0, "estimated_tokens": 1}),
+        encoding="utf-8",
+    )
+    manifest = {
+        "preferred_strategy": "SQL_FIRST_API_VERIFY",
+        "total_number_of_queries": 1,
+        "queries": [{"query_id": "query_001"}],
+    }
+    (tiny_project.outputs_dir / "final_submission_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+
+    diff = compare_final_submission_structure(tiny_project, manifest)
+
+    assert diff["unchanged"] is True

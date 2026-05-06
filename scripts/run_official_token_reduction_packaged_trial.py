@@ -132,8 +132,8 @@ def run_official_token_reduction_packaged_trial(config: Config) -> dict[str, Any
             "writes_packaged_query_outputs": False,
         },
         "notes": [
-            "This is a packaged flag trial only; ENABLE_OFFICIAL_TOKEN_REDUCTION remains default false.",
-            "Promotion to packaged outputs requires a later explicit task.",
+            "This is an isolated packaged flag trial; current Config.from_env default is reported in feature_flag_default.",
+            "Promotion to packaged outputs is now governed by the separate promotion report.",
             "Strict scoring and estimated-token formula match the official eval helpers.",
         ],
     }

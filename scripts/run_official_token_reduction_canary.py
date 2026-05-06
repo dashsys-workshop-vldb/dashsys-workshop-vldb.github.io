@@ -150,7 +150,7 @@ def run_official_token_reduction_canary(config: Config) -> dict[str, Any]:
         },
         "notes": [
             "This is a canary evaluation, not a packaged submission change.",
-            "ENABLE_OFFICIAL_TOKEN_REDUCTION remains default false.",
+            "ENABLE_OFFICIAL_TOKEN_REDUCTION default state is reported in feature_flag_default.",
             "Packaged SQL_FIRST_API_VERIFY outputs are unchanged when protected hashes match.",
             "No official packaged efficiency improvement is claimed yet.",
             "Promotion requires a separate explicit task after this canary passes.",
@@ -343,7 +343,7 @@ def render_markdown(payload: dict[str, Any]) -> str:
         "",
         "This is a canary evaluation, not a packaged submission change.",
         "",
-        f"- ENABLE_OFFICIAL_TOKEN_REDUCTION remains default false: {payload.get('feature_flag_default') is False}",
+        f"- ENABLE_OFFICIAL_TOKEN_REDUCTION feature flag default: {payload.get('feature_flag_default')}",
         f"- Packaged SQL_FIRST outputs are unchanged: {payload.get('protected_output_hashes_unchanged')}",
         f"- Packaged execution changed: {payload.get('packaged_execution_changed')}",
         f"- No official packaged efficiency improvement is claimed: "

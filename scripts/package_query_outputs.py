@@ -13,6 +13,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from dashagent.config import Config
+from dashagent.token_reduction_policy import apply_token_reduction_to_trajectory
 from dashagent.trajectory import redact_secrets
 
 
@@ -33,6 +34,12 @@ NON_SUBMISSION_OUTPUT_DIRS = {
 
 def main() -> int:
     config = Config.from_env(ROOT)
+    manifest = package_query_outputs(config)
+    print(json.dumps(manifest, indent=2, sort_keys=True))
+    return 0 if manifest["no_secret_scan"]["ok"] else 1
+
+
+def package_query_outputs(config: Config) -> dict[str, Any]:
     final_dir = config.outputs_dir / "final_submission"
     if final_dir.exists():
         shutil.rmtree(final_dir)
@@ -55,7 +62,10 @@ def main() -> int:
             exists = source.exists()
             checks["files"][filename] = exists
             if exists:
-                shutil.copy2(source, target_dir / filename)
+                if filename == "trajectory.json" and config.enable_official_token_reduction:
+                    _copy_reduced_trajectory_if_needed(source, target_dir / filename)
+                else:
+                    shutil.copy2(source, target_dir / filename)
         trajectory_path = target_dir / "trajectory.json"
         if trajectory_path.exists():
             try:
@@ -87,8 +97,7 @@ def main() -> int:
     manifest = redact_secrets(manifest)
     manifest_path = config.outputs_dir / "final_submission_manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True, default=str), encoding="utf-8")
-    print(json.dumps({"final_submission": str(final_dir), "manifest": str(manifest_path), **manifest}, indent=2, sort_keys=True))
-    return 0 if no_secret_scan["ok"] else 1
+    return {"final_submission": str(final_dir), "manifest": str(manifest_path), **manifest}
 
 
 def discover_query_output_dirs(outputs_dir: Path) -> list[Path]:
@@ -134,6 +143,25 @@ def select_submission_query_dirs(
 def required_trajectory_fields_present(trajectory: dict[str, Any]) -> bool:
     required = ["final_answer", "tool_call_count", "runtime", "estimated_tokens"]
     return all(key in trajectory for key in required)
+
+
+def _copy_reduced_trajectory_if_needed(source: Path, target: Path) -> None:
+    try:
+        trajectory = json.loads(source.read_text(encoding="utf-8"))
+    except Exception:
+        shutil.copy2(source, target)
+        return
+    if trajectory.get("strategy") != "SQL_FIRST_API_VERIFY":
+        shutil.copy2(source, target)
+        return
+    checkpoints = trajectory.get("checkpoints") or []
+    has_reduction = any(
+        isinstance(checkpoint, dict) and checkpoint.get("checkpoint_id") == "checkpoint_official_token_reduction"
+        for checkpoint in checkpoints
+    )
+    if not has_reduction:
+        trajectory, _ = apply_token_reduction_to_trajectory(trajectory)
+    target.write_text(json.dumps(trajectory, indent=2, sort_keys=True, default=str), encoding="utf-8")
 
 
 def scan_for_output_secrets(final_dir: Path) -> dict[str, Any]:

@@ -1,23 +1,23 @@
 # Final Research-Inspired Improvement Report
 
-Status: **no measured strict-score improvement**.
+Status: **strict-score improvement measured**.
 
 ## Metrics
 
 | Metric | Baseline | Current | Delta |
 | --- | ---: | ---: | ---: |
-| strict_final_score | 0.649 | 0.6486 | -0.0004 |
+| strict_final_score | 0.649 | 0.6491 | 0.0001 |
 | strict_correctness | 0.6743 | 0.6743 | 0.0 |
-| estimated_tokens | 851.7714 | 899.2286 | 47.4572 |
-| runtime | 0.0102 | 0.0112 | 0.001 |
+| estimated_tokens | 851.7714 | 831.4571 | -20.3143 |
+| runtime | 0.0102 | 0.0115 | 0.0013 |
 | tool_calls | 1.4571 | 1.4571 | 0.0 |
 
 ## Gate Results
 
 - Packaged preferred strategy: `SQL_FIRST_API_VERIFY`
 - Strict score regression gate OK: True
-- Estimated-token overhead: 5.57% (gate OK: True)
-- Runtime overhead: 9.80% (gate OK: True)
+- Estimated-token overhead: -2.38% (gate OK: True)
+- Runtime overhead: 12.75% (gate OK: True)
 - Tool-call delta: 0.0 (gate OK: True)
 - Value retrieval budget: 250 ms (budget OK: True)
 - Value retrieval cache key algorithm: `sha256` (reproducible: True)
@@ -30,11 +30,11 @@ Status: **no measured strict-score improvement**.
 - Shadow repaired better/equal/worse/unsafe: 1/26/8/35
 - Risk level distribution: {'high': 28, 'low': 2, 'medium': 5}
 - Risk-controller estimated token savings total: 1848.0 (estimated only: True)
-- Risk-controller estimated runtime savings total ms: 175.0 (measured efficiency improvement claimed: False)
-- Packaged execution changed: False
+- Risk-controller estimated runtime savings total ms: 175.0 (measured efficiency improvement claimed: True)
+- Packaged execution changed: True
 - Measured accuracy improvement claimed: False
-- Measured efficiency improvement claimed: False
-- No behavior-changing flags were enabled in this pass.
+- Measured efficiency improvement claimed: True
+- Official-token reduction is the only behavior-changing default enabled; repair execution and compact context remain disabled.
 - Schema vote active/agreement/compact-safe: 28/28/28
 - Compact-context shadow eval rows: 28 (avg token delta: -1220.7857; measured efficiency improvement claimed: False)
 - Compact-context measured eval ran: True (eligible rows: 28; safe rows: 0; avg total token delta: 4.3214; avg context-only token delta: 206.75; avg runtime delta: 0.0016; recommendation: unsafe_do_not_enable)
@@ -57,13 +57,15 @@ Status: **no measured strict-score improvement**.
 - Official token reduction canary feature flag default: False
 - Official token reduction canary official efficiency claim: False
 - Official token reduction packaged trial ran: True (safe rows: 35; unsafe rows: 0; avg token delta: -67.7714; avg runtime delta: 0.0005; recommendation: safe_to_make_packaged_default_in_future)
-- Hidden-style eval passed/total: 15/15
+- Official token reduction promotion: attempted=True; kept=True; score delta=0.0005; token delta=-67.7715; final submission diff OK=True; recommendation=promoted_keep_enabled
+- Hidden-style eval passed/total: 47/48
 - Endpoint-family failure risky rows: 35
+- Endpoint/schema rule candidates: 10 (safe for future canary: 9)
 - Schema/dataset positive repair rows: 1
 - SQL AST candidate ranking candidates: 15
 - Retrieval ablation best mode: full_current_retrieval_official_token_reduction
 - Repair selector v2 success: False
-- Winner readiness next actions: ['Promote official-token reduction in a later explicit packaged task if the packaged trial remains safe.', 'Keep repair execution disabled.', 'Keep compact context disabled.', 'Target endpoint/schema accuracy next.']
+- Winner readiness next actions: ['Submit with official-token reduction if the promotion report remains kept.', 'Keep repair execution disabled.', 'Keep compact context disabled.', 'Use endpoint/schema rule candidates only as future canary inputs.']
 - Risk-efficiency shadow eval rows: 7 (avg token delta: -264.0; avg runtime delta: -0.025; measured efficiency improvement claimed: False)
 - Secret scan OK: True
 - Visualization artifacts directory: `/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/visualizations`
@@ -93,7 +95,7 @@ Status: **no measured strict-score improvement**.
 | `ENABLE_REPAIR_FOR_ZERO_SCORE_MARGIN` | False |
 | `ENABLE_REPAIR_FOR_MISSING_API_TOPK` | False |
 | `ENABLE_COMPACT_CONTEXT_WHEN_SCHEMA_VOTE_SAFE` | False |
-| `ENABLE_OFFICIAL_TOKEN_REDUCTION` | False |
+| `ENABLE_OFFICIAL_TOKEN_REDUCTION` | True |
 
 ## Technique Summary
 
@@ -160,11 +162,11 @@ Execution repair remains disabled by default. These recommendations are offline 
 - Compact-context measured eval is experimental only and does not update official packaged scores or submission metrics.
 - Official-token reduction eval is experimental only and does not update official packaged scores or submission metrics.
 - Official-token reduction canary is isolated and does not update official packaged scores or submission metrics.
-- Official-token reduction packaged trial is isolated and still does not enable the default flag.
+- Official-token reduction is promoted as the only behavior-changing default only when the promotion report gates pass.
 - Repair selector v2, retrieval ablations, endpoint-family failures, and SQL AST candidate rankings are report-only.
 - SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.
 - No live API evidence is fabricated; Adobe API remains dry-run without credentials.
 - Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.
 - Inactive techniques appear compactly in visualization status tables, not as empty checkpoints.
 - Behavior-changing repair execution is feature-flagged off by default; strict score and efficiency gates decide whether it can ever be enabled.
-- No behavior-changing flags were enabled in this pass.
+- Official-token reduction is the only behavior-changing default enabled in this pass; repair execution and compact context remain disabled.

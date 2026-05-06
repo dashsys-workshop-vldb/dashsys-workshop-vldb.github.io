@@ -310,17 +310,17 @@
     }
   },
   "current": {
-    "estimated_tokens": 899.2286,
-    "runtime": 0.0112,
+    "estimated_tokens": 831.4571,
+    "runtime": 0.0115,
     "strict_correctness": 0.6743,
-    "strict_final_score": 0.6486,
+    "strict_final_score": 0.6491,
     "tool_calls": 1.4571
   },
   "delta": {
-    "estimated_tokens": 47.4572,
-    "runtime": 0.001,
+    "estimated_tokens": -20.3143,
+    "runtime": 0.0013,
     "strict_correctness": 0.0,
-    "strict_final_score": -0.0004,
+    "strict_final_score": 0.0001,
     "tool_calls": 0.0
   },
   "endpoint_family_failure_report": {
@@ -341,6 +341,17 @@
       "risky_rows": 35
     }
   },
+  "endpoint_schema_rule_candidate_eval": {
+    "summary": {
+      "affected_query_count": 25,
+      "candidate_rules": 10,
+      "compact_context_enabled": false,
+      "hidden_style_gate_passed": true,
+      "repair_execution_enabled": false,
+      "safe_for_future_canary_rules": 9,
+      "total_top_k_api_hit_delta": 0
+    }
+  },
   "feature_flags": {
     "ENABLE_COMPACT_CONTEXT_WHEN_SCHEMA_VOTE_SAFE": false,
     "ENABLE_ENDPOINT_FAMILY_RANKING": true,
@@ -348,7 +359,7 @@
     "ENABLE_GATED_RISK_CLUSTER_REPAIR_EXECUTION": false,
     "ENABLE_GATED_SQL_CANDIDATES": true,
     "ENABLE_HYBRID_CANDIDATE_SCORING": true,
-    "ENABLE_OFFICIAL_TOKEN_REDUCTION": false,
+    "ENABLE_OFFICIAL_TOKEN_REDUCTION": true,
     "ENABLE_QUERY_DECOMPOSITION": true,
     "ENABLE_QUERY_FAMILY_EXAMPLES": false,
     "ENABLE_REPAIR_FOR_BATCH_ENDPOINT_CONFUSION": false,
@@ -365,12 +376,17 @@
   },
   "hidden_style_eval": {
     "summary": {
-      "failed_cases": 0,
+      "failed_cases": 1,
       "family_stability_rate": 1.0,
-      "passed_cases": 15,
-      "schema_stability_rate": 1.0,
-      "top_failure_categories": [],
-      "total_cases": 15
+      "passed_cases": 47,
+      "schema_stability_rate": 0.9792,
+      "top_failure_categories": [
+        [
+          "schema_family_missing",
+          1
+        ]
+      ],
+      "total_cases": 48
     }
   },
   "notes": [
@@ -385,14 +401,14 @@
     "Compact-context measured eval is experimental only and does not update official packaged scores or submission metrics.",
     "Official-token reduction eval is experimental only and does not update official packaged scores or submission metrics.",
     "Official-token reduction canary is isolated and does not update official packaged scores or submission metrics.",
-    "Official-token reduction packaged trial is isolated and still does not enable the default flag.",
+    "Official-token reduction is promoted as the only behavior-changing default only when the promotion report gates pass.",
     "Repair selector v2, retrieval ablations, endpoint-family failures, and SQL AST candidate rankings are report-only.",
     "SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.",
     "No live API evidence is fabricated; Adobe API remains dry-run without credentials.",
     "Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.",
     "Inactive techniques appear compactly in visualization status tables, not as empty checkpoints.",
     "Behavior-changing repair execution is feature-flagged off by default; strict score and efficiency gates decide whether it can ever be enabled.",
-    "No behavior-changing flags were enabled in this pass."
+    "Official-token reduction is the only behavior-changing default enabled in this pass; repair execution and compact context remain disabled."
   ],
   "official_token_accounting_report": {
     "aggregate": {
@@ -574,13 +590,63 @@
       "unsafe_rows": 0
     }
   },
+  "official_token_reduction_promotion_report": {
+    "final_submission_diff": {
+      "all_trajectories_valid": true,
+      "current_query_count": 73,
+      "experimental_output_roots_included": [],
+      "preferred_strategy": "SQL_FIRST_API_VERIFY",
+      "previous_query_count": 73,
+      "required_fields_preserved": true,
+      "same_required_files": true,
+      "unchanged": true
+    },
+    "gates": {
+      "compact_context_disabled_gate": true,
+      "estimated_tokens_gate": true,
+      "final_submission_diff_gate": true,
+      "no_secret_scan_gate": true,
+      "official_token_reduction_default_on_gate": true,
+      "preferred_strategy_sql_first": true,
+      "readiness_gate": true,
+      "repair_execution_disabled_gate": true,
+      "strict_correctness_gate": true,
+      "strict_final_score_gate": true,
+      "tool_calls_gate": true
+    },
+    "summary": {
+      "baseline_correctness": 0.6743,
+      "baseline_estimated_tokens": 899.2286,
+      "baseline_runtime": 0.0112,
+      "baseline_strict_score": 0.6486,
+      "baseline_tool_calls": 1.4571,
+      "compact_context_enabled": false,
+      "final_submission_format_unchanged": true,
+      "no_secret_scan_ok": true,
+      "promoted_correctness": 0.6743,
+      "promoted_estimated_tokens": 831.4571,
+      "promoted_runtime": 0.0115,
+      "promoted_strict_score": 0.6491,
+      "promoted_tool_calls": 1.4571,
+      "promotion_attempted": true,
+      "promotion_kept": true,
+      "recommendation": "promoted_keep_enabled",
+      "repair_execution_enabled": false,
+      "runtime_delta": 0.0003,
+      "score_delta": 0.0005,
+      "token_delta": -67.7715,
+      "tool_delta": 0.0
+    }
+  },
   "repair_selector_v2_shadow_eval": {
     "summary": {
       "avg_score_delta": -0.0357,
       "avg_tool_delta": 0.0286,
+      "no_op_tie_keep_current_count": 25,
       "repair_execution_enabled": false,
       "repaired_worse_count": 8,
       "safe_repaired_worse_count": 0,
+      "score_tie_keep_current_count": 1,
       "strictly_better_selected_count": 0,
       "success": false,
       "total_rows": 35
@@ -946,8 +1012,8 @@
     }
   },
   "summary": {
-    "behavior_changing_flags_enabled": false,
-    "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
+    "behavior_changing_flags_enabled": true,
+    "behavior_changing_flags_note": "Official-token reduction is the only behavior-changing default enabled; repair execution and compact context remain disabled.",
     "candidate_risk_cluster_count": 8,
     "compact_context_feature_flag_default": false,
     "compact_context_measured_avg_runtime_delta": 0.0016,
@@ -975,12 +1041,14 @@
     "compact_context_shadow_measured_efficiency_improvement_claimed": false,
     "compact_context_shadow_row_count": 28,
     "endpoint_family_failure_risky_rows": 35,
+    "endpoint_schema_rule_candidate_rules": 10,
+    "endpoint_schema_rule_candidate_safe_rules": 9,
     "estimated_tokens_gate_ok": true,
     "final_submission_format_unchanged": true,
-    "hidden_style_eval_passed_cases": 15,
-    "hidden_style_eval_total_cases": 15,
+    "hidden_style_eval_passed_cases": 47,
+    "hidden_style_eval_total_cases": 48,
     "measured_accuracy_improvement_claimed": false,
-    "measured_efficiency_improvement_claimed": false,
+    "measured_efficiency_improvement_claimed": true,
     "no_secret_scan_ok": true,
     "official_token_accounting_ran": true,
     "official_token_biggest_reducible_fields": [
@@ -1012,6 +1080,12 @@
     "official_token_reduction_packaged_trial_recommendation": "safe_to_make_packaged_default_in_future",
     "official_token_reduction_packaged_trial_safe_rows": 35,
     "official_token_reduction_packaged_trial_unsafe_rows": 0,
+    "official_token_reduction_promotion_attempted": true,
+    "official_token_reduction_promotion_final_submission_diff": true,
+    "official_token_reduction_promotion_kept": true,
+    "official_token_reduction_promotion_recommendation": "promoted_keep_enabled",
+    "official_token_reduction_promotion_score_delta": 0.0005,
+    "official_token_reduction_promotion_token_delta": -67.7715,
     "official_token_reduction_recommendation": "safe_for_future_canary",
     "official_token_reduction_safe_rows": 35,
     "official_token_top_contributors": [
@@ -1048,7 +1122,7 @@
         "tokens": 2175
       }
     ],
-    "packaged_execution_changed": false,
+    "packaged_execution_changed": true,
     "packaged_preferred_strategy": "SQL_FIRST_API_VERIFY",
     "ranking_only_no_score_claim": true,
     "repair_selector_v2_success": false,
@@ -1077,7 +1151,7 @@
       "medium": 5
     },
     "runtime_gate_ok": true,
-    "runtime_overhead_pct": 0.098,
+    "runtime_overhead_pct": 0.1275,
     "schema_dataset_positive_repair_rows": 1,
     "schema_vote_active_count": 28,
     "schema_vote_agreement_count": 28,
@@ -1088,9 +1162,9 @@
     "shadow_repair_unsafe_count": 35,
     "shadow_repair_worse_count": 8,
     "sql_ast_candidate_ranking_candidates": 15,
-    "status": "no measured strict-score improvement",
+    "status": "strict-score improvement measured",
     "strict_score_regression_ok": true,
-    "token_overhead_pct": 0.0557,
+    "token_overhead_pct": -0.0238,
     "tool_call_delta": 0.0,
     "tool_call_gate_ok": true,
     "value_retrieval_budget_ms": 250,
@@ -1100,10 +1174,10 @@
     "visualization_artifacts_dir": "/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/visualizations",
     "visualizations_in_final_submission": 0,
     "winner_readiness_recommended_next_action": [
-      "Promote official-token reduction in a later explicit packaged task if the packaged trial remains safe.",
+      "Submit with official-token reduction if the promotion report remains kept.",
       "Keep repair execution disabled.",
       "Keep compact context disabled.",
-      "Target endpoint/schema accuracy next."
+      "Use endpoint/schema rule candidates only as future canary inputs."
     ]
   },
   "techniques": [
@@ -1240,20 +1314,20 @@
   ],
   "winner_readiness_report": {
     "packaged": {
-      "estimated_tokens": 899.2286,
+      "estimated_tokens": 831.4571,
       "final_submission_ready": true,
       "no_secret_scan_ok": true,
       "preferred_strategy": "SQL_FIRST_API_VERIFY",
-      "runtime": 0.0112,
+      "runtime": 0.0115,
       "strict_correctness": 0.6743,
-      "strict_final_score": 0.6486,
+      "strict_final_score": 0.6491,
       "tool_calls": 1.4571
     },
     "recommended_next_action": [
-      "Promote official-token reduction in a later explicit packaged task if the packaged trial remains safe.",
+      "Submit with official-token reduction if the promotion report remains kept.",
       "Keep repair execution disabled.",
       "Keep compact context disabled.",
-      "Target endpoint/schema accuracy next."
+      "Use endpoint/schema rule candidates only as future canary inputs."
     ]
   }
 }

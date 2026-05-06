@@ -34,6 +34,9 @@ from scripts.run_official_token_reduction_eval import (
 def test_official_token_reduction_flag_defaults_and_env(monkeypatch, tiny_project):
     monkeypatch.delenv("ENABLE_OFFICIAL_TOKEN_REDUCTION", raising=False)
     monkeypatch.setenv("DASHAGENT_ROOT", str(tiny_project.project_root))
+    assert Config.from_env(tiny_project.project_root).enable_official_token_reduction is True
+
+    monkeypatch.setenv("ENABLE_OFFICIAL_TOKEN_REDUCTION", "0")
     assert Config.from_env(tiny_project.project_root).enable_official_token_reduction is False
 
     monkeypatch.setenv("ENABLE_OFFICIAL_TOKEN_REDUCTION", "1")
@@ -105,7 +108,7 @@ def test_official_token_reduction_eval_isolated_and_formula_exact(tiny_project):
 
     payload = run_official_token_reduction_eval(tiny_project)
 
-    assert payload["feature_flag_default"] is False
+    assert payload["feature_flag_default"] is True
     assert payload["feature_flag_enabled_for_experiment"] is True
     assert payload["packaged_execution_changed"] is False
     assert payload["summary"]["total_rows"] == 1
@@ -163,7 +166,7 @@ def test_official_token_reduction_canary_isolated_and_hash_protected(tiny_projec
 
     payload = run_official_token_reduction_canary(tiny_project)
 
-    assert payload["feature_flag_default"] is False
+    assert payload["feature_flag_default"] is True
     assert payload["feature_flag_enabled_for_canary"] is True
     assert payload["packaged_execution_changed"] is False
     assert payload["protected_output_hashes_unchanged"] is True
@@ -323,7 +326,7 @@ def test_official_token_canary_is_excluded_from_query_packaging(tiny_project):
 def test_official_token_defaults_keep_repair_and_compact_disabled(tiny_project):
     config = Config.from_env(tiny_project.project_root)
 
-    assert config.enable_official_token_reduction is False
+    assert config.enable_official_token_reduction is True
     assert config.enable_gated_risk_cluster_repair_execution is False
     assert config.enable_compact_context_when_schema_vote_safe is False
 

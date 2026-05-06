@@ -53,8 +53,10 @@ def generate_report(config: Config) -> dict[str, Any]:
     official_token_reduction_report = _load_json(config.outputs_dir / "official_token_reduction_eval.json")
     official_token_reduction_canary_report = _load_json(config.outputs_dir / "official_token_reduction_canary.json")
     official_token_reduction_trial_report = _load_json(config.outputs_dir / "official_token_reduction_packaged_trial.json")
+    official_token_reduction_promotion_report = _load_json(config.outputs_dir / "official_token_reduction_promotion_report.json")
     hidden_style_report = _load_json(config.outputs_dir / "hidden_style_eval.json")
     endpoint_failure_report = _load_json(config.outputs_dir / "endpoint_family_failure_report.json")
+    endpoint_schema_rule_candidate_report = _load_json(config.outputs_dir / "endpoint_schema_rule_candidate_eval.json")
     schema_dataset_positive_report = _load_json(config.outputs_dir / "schema_dataset_positive_repair_analysis.json")
     sql_ast_candidate_report = _load_json(config.outputs_dir / "sql_ast_candidate_ranking_report.json")
     retrieval_ablation_report = _load_json(config.outputs_dir / "retrieval_ablation_report.json")
@@ -150,11 +152,11 @@ def generate_report(config: Config) -> dict[str, Any]:
             "risk_controller_estimated_token_savings_total": candidate_report.get("summary", {}).get("estimated_token_savings_total", 0),
             "risk_controller_estimated_runtime_savings_ms_total": candidate_report.get("summary", {}).get("estimated_runtime_savings_ms_total", 0),
             "risk_controller_savings_are_estimates": True,
-            "measured_efficiency_improvement_claimed": False,
-            "packaged_execution_changed": False,
+            "measured_efficiency_improvement_claimed": official_token_reduction_promotion_report.get("summary", {}).get("promotion_kept", False),
+            "packaged_execution_changed": official_token_reduction_promotion_report.get("summary", {}).get("promotion_kept", False),
             "measured_accuracy_improvement_claimed": False,
-            "behavior_changing_flags_enabled": False,
-            "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
+            "behavior_changing_flags_enabled": config.enable_official_token_reduction,
+            "behavior_changing_flags_note": "Official-token reduction is the only behavior-changing default enabled; repair execution and compact context remain disabled.",
             "schema_vote_active_count": candidate_report.get("summary", {}).get("schema_vote_active_count", 0),
             "schema_vote_agreement_count": candidate_report.get("summary", {}).get("schema_vote_agreement_count", 0),
             "compact_context_safe_count": candidate_report.get("summary", {}).get("compact_context_safe_count", 0),
@@ -205,9 +207,17 @@ def generate_report(config: Config) -> dict[str, Any]:
             "official_token_reduction_packaged_trial_avg_token_delta": official_token_reduction_trial_report.get("summary", {}).get("avg_token_delta"),
             "official_token_reduction_packaged_trial_avg_runtime_delta": official_token_reduction_trial_report.get("summary", {}).get("avg_runtime_delta"),
             "official_token_reduction_packaged_trial_recommendation": official_token_reduction_trial_report.get("summary", {}).get("recommendation", "not_run"),
+            "official_token_reduction_promotion_attempted": official_token_reduction_promotion_report.get("summary", {}).get("promotion_attempted", False),
+            "official_token_reduction_promotion_kept": official_token_reduction_promotion_report.get("summary", {}).get("promotion_kept", False),
+            "official_token_reduction_promotion_recommendation": official_token_reduction_promotion_report.get("summary", {}).get("recommendation", "not_run"),
+            "official_token_reduction_promotion_token_delta": official_token_reduction_promotion_report.get("summary", {}).get("token_delta"),
+            "official_token_reduction_promotion_score_delta": official_token_reduction_promotion_report.get("summary", {}).get("score_delta"),
+            "official_token_reduction_promotion_final_submission_diff": official_token_reduction_promotion_report.get("summary", {}).get("final_submission_format_unchanged"),
             "hidden_style_eval_passed_cases": hidden_style_report.get("summary", {}).get("passed_cases", 0),
             "hidden_style_eval_total_cases": hidden_style_report.get("summary", {}).get("total_cases", 0),
             "endpoint_family_failure_risky_rows": endpoint_failure_report.get("summary", {}).get("risky_rows", 0),
+            "endpoint_schema_rule_candidate_rules": endpoint_schema_rule_candidate_report.get("summary", {}).get("candidate_rules", 0),
+            "endpoint_schema_rule_candidate_safe_rules": endpoint_schema_rule_candidate_report.get("summary", {}).get("safe_for_future_canary_rules", 0),
             "schema_dataset_positive_repair_rows": schema_dataset_positive_report.get("summary", {}).get("positive_schema_dataset_rows", 0),
             "sql_ast_candidate_ranking_candidates": sql_ast_candidate_report.get("summary", {}).get("candidate_count", 0),
             "retrieval_ablation_best_mode": retrieval_ablation_report.get("summary", {}).get("best_final_score_mode"),
@@ -280,8 +290,14 @@ def generate_report(config: Config) -> dict[str, Any]:
             "artifact_isolation": official_token_reduction_trial_report.get("artifact_isolation", {}),
             "notes": official_token_reduction_trial_report.get("notes", []),
         },
+        "official_token_reduction_promotion_report": {
+            "summary": official_token_reduction_promotion_report.get("summary", {}),
+            "gates": official_token_reduction_promotion_report.get("gates", {}),
+            "final_submission_diff": official_token_reduction_promotion_report.get("final_submission_diff", {}),
+        },
         "hidden_style_eval": {"summary": hidden_style_report.get("summary", {})},
         "endpoint_family_failure_report": {"summary": endpoint_failure_report.get("summary", {})},
+        "endpoint_schema_rule_candidate_eval": {"summary": endpoint_schema_rule_candidate_report.get("summary", {})},
         "schema_dataset_positive_repair_analysis": {"summary": schema_dataset_positive_report.get("summary", {})},
         "sql_ast_candidate_ranking_report": {"summary": sql_ast_candidate_report.get("summary", {})},
         "retrieval_ablation_report": {"summary": retrieval_ablation_report.get("summary", {})},
@@ -307,14 +323,14 @@ def generate_report(config: Config) -> dict[str, Any]:
             "Compact-context measured eval is experimental only and does not update official packaged scores or submission metrics.",
             "Official-token reduction eval is experimental only and does not update official packaged scores or submission metrics.",
             "Official-token reduction canary is isolated and does not update official packaged scores or submission metrics.",
-            "Official-token reduction packaged trial is isolated and still does not enable the default flag.",
+            "Official-token reduction is promoted as the only behavior-changing default only when the promotion report gates pass.",
             "Repair selector v2, retrieval ablations, endpoint-family failures, and SQL AST candidate rankings are report-only.",
             "SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.",
             "No live API evidence is fabricated; Adobe API remains dry-run without credentials.",
             "Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.",
             "Inactive techniques appear compactly in visualization status tables, not as empty checkpoints.",
             "Behavior-changing repair execution is feature-flagged off by default; strict score and efficiency gates decide whether it can ever be enabled.",
-            "No behavior-changing flags were enabled in this pass.",
+            "Official-token reduction is the only behavior-changing default enabled in this pass; repair execution and compact context remain disabled.",
         ],
     }
 
@@ -429,9 +445,17 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"avg token delta: {report['summary']['official_token_reduction_packaged_trial_avg_token_delta']}; "
             f"avg runtime delta: {report['summary']['official_token_reduction_packaged_trial_avg_runtime_delta']}; "
             f"recommendation: {report['summary']['official_token_reduction_packaged_trial_recommendation']})",
+            f"- Official token reduction promotion: attempted={report['summary']['official_token_reduction_promotion_attempted']}; "
+            f"kept={report['summary']['official_token_reduction_promotion_kept']}; "
+            f"score delta={report['summary']['official_token_reduction_promotion_score_delta']}; "
+            f"token delta={report['summary']['official_token_reduction_promotion_token_delta']}; "
+            f"final submission diff OK={report['summary']['official_token_reduction_promotion_final_submission_diff']}; "
+            f"recommendation={report['summary']['official_token_reduction_promotion_recommendation']}",
             f"- Hidden-style eval passed/total: "
             f"{report['summary']['hidden_style_eval_passed_cases']}/{report['summary']['hidden_style_eval_total_cases']}",
             f"- Endpoint-family failure risky rows: {report['summary']['endpoint_family_failure_risky_rows']}",
+            f"- Endpoint/schema rule candidates: {report['summary']['endpoint_schema_rule_candidate_rules']} "
+            f"(safe for future canary: {report['summary']['endpoint_schema_rule_candidate_safe_rules']})",
             f"- Schema/dataset positive repair rows: {report['summary']['schema_dataset_positive_repair_rows']}",
             f"- SQL AST candidate ranking candidates: {report['summary']['sql_ast_candidate_ranking_candidates']}",
             f"- Retrieval ablation best mode: {report['summary']['retrieval_ablation_best_mode']}",

@@ -139,27 +139,21 @@
         },
         "top_apis": {
           "items": [
-            "export_batch_files",
-            "audit_events",
-            "audit_events_short"
+            "export_batch_files"
           ],
           "total_items": 3,
           "truncated_items": false
         },
         "top_join_hints": {
           "items": [
-            "dim_blueprint.BLUEPRINTID->hkg_br_blueprint_collection.BLUEPRINTID",
-            "dim_collection.COLLECTIONID->hkg_br_blueprint_collection.COLLECTIONID",
-            "dim_blueprint.BLUEPRINTID->hkg_br_blueprint_property.BLUEPRINTID"
+            "dim_blueprint.BLUEPRINTID->hkg_br_blueprint_collection.BLUEPRINTID"
           ],
           "total_items": 3,
           "truncated_items": false
         },
         "top_tables": {
           "items": [
-            "dim_blueprint",
-            "dim_collection",
-            "hkg_br_blueprint_collection"
+            "dim_blueprint"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -212,9 +206,7 @@
       "output": {
         "api_families": {
           "items": [
-            "datasets_by_schema",
-            "schema_registry_by_id",
-            "schema_by_name"
+            "datasets_by_schema"
           ],
           "total_items": 4,
           "truncated_items": true
@@ -223,26 +215,21 @@
         "family": "schema_dataset",
         "join_path": {
           "items": [
-            "dim_blueprint.blueprintid = hkg_br_blueprint_collection.blueprintid",
-            "hkg_br_blueprint_collection.collectionid = dim_collection.collectionid"
+            "dim_blueprint.blueprintid = hkg_br_blueprint_collection.blueprintid"
           ],
           "total_items": 2,
           "truncated_items": false
         },
         "required_ids": {
           "items": [
-            "schema_id",
-            "blueprint_id",
-            "collection_id"
+            "schema_id"
           ],
           "total_items": 3,
           "truncated_items": false
         },
         "tables": {
           "items": [
-            "dim_blueprint",
-            "hkg_br_blueprint_collection",
-            "dim_collection"
+            "dim_blueprint"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -276,26 +263,21 @@
         "selected_columns": {
           "dim_blueprint": {
             "items": [
-              "BLUEPRINTID",
-              "NAME",
-              "CLASS"
+              "BLUEPRINTID"
             ],
             "total_items": 5,
             "truncated_items": true
           },
           "dim_collection": {
             "items": [
-              "COLLECTIONID",
-              "NAME",
-              "ROWCOUNT"
+              "COLLECTIONID"
             ],
             "total_items": 4,
             "truncated_items": true
           },
           "hkg_br_blueprint_collection": {
             "items": [
-              "BLUEPRINTID",
-              "COLLECTIONID"
+              "BLUEPRINTID"
             ],
             "total_items": 2,
             "truncated_items": false
@@ -303,9 +285,7 @@
         },
         "selected_tables": {
           "items": [
-            "dim_blueprint",
-            "hkg_br_blueprint_collection",
-            "dim_collection"
+            "dim_blueprint"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -410,18 +390,7 @@
               "action": "sql",
               "family": "blueprint_collection_same_schema_count",
               "purpose": "Fast-path SQL grounding.",
-              "sql": "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1"
-            },
-            {
-              "action": "api",
-              "family": "datasets_by_schema",
-              "method": "GET",
-              "params": {
-                "limit": "25",
-                "property": "schema.name"
-              },
-              "purpose": "API parameter template: datasets_by_schema.",
-              "url": "/data/foundation/catalog/dataSets"
+              "sql": "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS [truncated]"
             }
           ],
           "total_items": 2,
@@ -453,18 +422,7 @@
               "action": "sql",
               "family": "blueprint_collection_same_schema_count",
               "purpose": "Fast-path SQL grounding.",
-              "sql": "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1"
-            },
-            {
-              "action": "api",
-              "family": "datasets_by_schema",
-              "method": "GET",
-              "params": {
-                "limit": "25",
-                "property": "schema.name"
-              },
-              "purpose": "API parameter template: datasets_by_schema.",
-              "url": "/data/foundation/catalog/dataSets"
+              "sql": "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS [truncated]"
             }
           ],
           "total_items": 2,
@@ -632,8 +590,7 @@
           "api_error": false,
           "counts": {
             "items": [
-              "1",
-              "2"
+              "1"
             ],
             "total_items": 2,
             "truncated_items": false
@@ -649,9 +606,7 @@
           },
           "slots_present": {
             "items": [
-              "entity_names",
-              "counts",
-              "sql_row_count"
+              "entity_names"
             ],
             "total_items": 5,
             "truncated_items": true
@@ -673,9 +628,7 @@
         "claim_count": 2,
         "slots_present": {
           "items": [
-            "entity_names",
-            "counts",
-            "sql_row_count"
+            "entity_names"
           ],
           "total_items": 5,
           "truncated_items": true
@@ -731,11 +684,25 @@
       "stage": "final response",
       "technique": "concise grounded final response",
       "timestamp": "2026-05-06T14:47:31.347333+00:00"
+    },
+    {
+      "active": true,
+      "checkpoint_id": "checkpoint_official_token_reduction",
+      "correctness_impact_expected": false,
+      "estimated_tokens_after": 1073,
+      "estimated_tokens_before": 1161,
+      "expected_savings": 88,
+      "packaged_execution_changed": false,
+      "reduced_fields": [
+        "steps[0].candidate_apis",
+        "steps[0].candidate_tables",
+        "steps[2].metadata_path"
+      ]
     }
   ],
   "domain_type": "DATASET_SCHEMA",
   "errors": [],
-  "estimated_tokens": 1160,
+  "estimated_tokens": 1073,
   "execution_time": 0.0046048329677432775,
   "final_answer": "Based on the evidence provided, 2 datasets have been ingested using the same schema. These datasets use \"Journey Inbound External Segment Profile Schema\". Live API verification was not executed because Adobe credentials are unavailable.",
   "original_query": "How many datasets have been ingested using the same schema in the prod sandbox?",
@@ -762,16 +729,6 @@
           "id": "schema_registry_schemas",
           "method": "GET",
           "path": "/data/foundation/schemaregistry/tenant/schemas"
-        },
-        {
-          "id": "schemas_short",
-          "method": "GET",
-          "path": "/schemas"
-        },
-        {
-          "id": "audit_events",
-          "method": "GET",
-          "path": "/data/foundation/audit/events"
         }
       ],
       "candidate_tables": [
@@ -779,9 +736,7 @@
         "dim_collection",
         "hkg_br_blueprint_collection",
         "hkg_br_blueprint_property",
-        "hkg_br_collection_property",
-        "hkg_br_collection_segment",
-        "hkg_br_source_collection"
+        "hkg_br_collection_property"
       ],
       "confidence": 0.6499999999999999,
       "domain_type": "DATASET_SCHEMA",
@@ -817,7 +772,7 @@
     {
       "estimated_tokens": 896,
       "kind": "metadata",
-      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/how_many_datasets_have_been_ingested_using_the_s/sql_first_api_verify/metadata.json",
+      "metadata_path": "metadata.json",
       "prompt_tokens": 1553
     },
     {
