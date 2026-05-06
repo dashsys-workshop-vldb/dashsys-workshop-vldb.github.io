@@ -128,6 +128,13 @@ No successful evidence was available from executed tools.
 | Value-to-API Ranking | False | {"active": false, "boost_applied": true, "value_match_used_for_api_ranking": false} | uses only high-confidence retrieved values for endpoint family boosts | reuses existing value retrieval diagnostics |
 | Gated Risk Cluster Repair | True | {"active": true, "candidate_count": 2, "cost_delta": 0, "diagnostic_only": true, "execution_repair_enabled": false, "expected_correctness_gain": "retrieval-only candidate separation; no accuracy claim without execution change", "hard_case_triggered": true, "rejected_candidate_reason": "lower endpoint-family confidence or lower hybrid score", "truncated_fields": 2} | compares a repaired candidate without executing losing plans | diagnostic-only; zero tool-call delta |
 
+## Shadow Repair / What-if Evaluation
+
+| Risk cluster | Current candidate | Repaired candidate | Safety verdict | Score delta | Tool/cost delta | Enable recommendation |
+| --- | --- | --- | --- | ---: | --- | --- |
+| batch_endpoint_confusion | {"api": {"items": [{"method": "GET", "path": "/data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files"}], "total_items": 1, "truncated_items": false}, "score": 0.5339} | {"api": {"items": [{"method": "GET", "path": "/data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files"}], "total_items": 1, "truncated_items": false}, "score": 0.5339} | safe | 0.0 | {'tool_delta': 0, 'token_delta': 0, 'runtime_delta': 0.0} | safe_shadow_tie_recommend_canary |
+| execution changed? | False | reason | offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled | decision hash | 7c20bbc4f49528d9 | |
+
 ## Value Retrieval Cache
 
 | Field | Value |

@@ -128,6 +128,13 @@ SQL evidence is available. API tool was invoked and validated, but live API evid
 | Value-to-API Ranking | False | {"active": false, "boost_applied": true, "value_match_used_for_api_ranking": false} | uses only high-confidence retrieved values for endpoint family boosts | reuses existing value retrieval diagnostics |
 | Gated Risk Cluster Repair | False | {"active": false, "candidate_count": 1, "cost_delta": 0, "diagnostic_only": true, "execution_repair_enabled": false, "expected_correctness_gain": "retrieval-only candidate separation; no accuracy claim without execution change", "hard_case_triggered": false, "selected_candidate": "journey_list"} | compares a repaired candidate without executing losing plans | diagnostic-only; zero tool-call delta |
 
+## Shadow Repair / What-if Evaluation
+
+| Risk cluster | Current candidate | Repaired candidate | Safety verdict | Score delta | Tool/cost delta | Enable recommendation |
+| --- | --- | --- | --- | ---: | --- | --- |
+| not_targeted | {"api": {"items": [{"method": "GET", "params": {"pageSize": "10"}, "path": "/ajo/journey"}], "total_items": 1, "truncated_items": false}, "score": 0.761, "sql": {"items": ["SELECT CAMPAIGN.\"NAME\" AS CAMPAIGNNAME, CAMPAIGN.\"CAMPAIGNID\" AS CAMPAIGNID FROM \"dim_campaign\" AS CAMPAIGN"], "total_items": 1, "truncated_items": false}} | {"api": {"items": [{"method": "GET", "params": {"pageSize": "10"}, "path": "/ajo/journey"}], "total_items": 1, "truncated_items": false}, "score": 0.761, "sql": {"items": ["SELECT CAMPAIGN.\"NAME\" AS CAMPAIGNNAME, CAMPAIGN.\"CAMPAIGNID\" AS CAMPAIGNID FROM \"dim_campaign\" AS CAMPAIGN"], "total_items": 1, "truncated_items": false}} | safe | 0.0 | {'tool_delta': 0, 'token_delta': 0, 'runtime_delta': 0.0} | safe_shadow_tie_recommend_canary |
+| execution changed? | False | reason | offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled | decision hash | eebe841f2a2aed58 | |
+
 ## Value Retrieval Cache
 
 | Field | Value |

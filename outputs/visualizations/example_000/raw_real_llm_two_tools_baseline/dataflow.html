@@ -194,6 +194,13 @@ API tool was invoked and validated, but live evidence was unavailable because Ad
 | Value-to-API Ranking | False | {&quot;active&quot;: false, &quot;boost_applied&quot;: true, &quot;value_match_used_for_api_ranking&quot;: false} | uses only high-confidence retrieved values for endpoint family boosts | reuses existing value retrieval diagnostics |
 | Gated Risk Cluster Repair | True | {&quot;active&quot;: true, &quot;candidate_count&quot;: 2, &quot;cost_delta&quot;: 0, &quot;diagnostic_only&quot;: true, &quot;execution_repair_enabled&quot;: false, &quot;expected_correctness_gain&quot;: &quot;retrieval-only candidate separation; no accuracy claim without execution change&quot;, &quot;hard_case_triggered&quot;: true, &quot;rejected_candidate_reason&quot;: &quot;lower endpoint-family confidence or lower hybrid score&quot;, &quot;truncated_fields&quot;: 2} | compares a repaired candidate without executing losing plans | diagnostic-only; zero tool-call delta |
 
+## Shadow Repair / What-if Evaluation
+
+| Risk cluster | Current candidate | Repaired candidate | Safety verdict | Score delta | Tool/cost delta | Enable recommendation |
+| --- | --- | --- | --- | ---: | --- | --- |
+| not_targeted | {&quot;api&quot;: {&quot;items&quot;: [{&quot;method&quot;: &quot;GET&quot;, &quot;params&quot;: {&quot;filter&quot;: &quot;name==Birthday Message&quot;}, &quot;path&quot;: &quot;/ajo/journey&quot;}], &quot;total_items&quot;: 1, &quot;truncated_items&quot;: false}, &quot;score&quot;: 0.6903, &quot;sql&quot;: {&quot;items&quot;: [&quot;SELECT \&quot;NAME\&quot; AS campaign_name, \&quot;LASTDEPLOYEDTIME\&quot; AS published_time FROM \&quot;dim_campaign\&quot; LIMIT 50&quot;], &quot;total_items&quot;: 1, &quot;truncated_items&quot;: false}} | {&quot;api&quot;: {&quot;items&quot;: [{&quot;method&quot;: &quot;GET&quot;, &quot;params&quot;: {&quot;filter&quot;: &quot;name==Birthday Message&quot;}, &quot;path&quot;: &quot;/ajo/journey&quot;}], &quot;total_items&quot;: 1, &quot;truncated_items&quot;: false}, &quot;score&quot;: 0.6903, &quot;sql&quot;: {&quot;items&quot;: [&quot;SELECT \&quot;NAME\&quot; AS campaign_name, \&quot;LASTDEPLOYEDTIME\&quot; AS published_time FROM \&quot;dim_campaign\&quot; LIMIT 50&quot;], &quot;total_items&quot;: 1, &quot;truncated_items&quot;: false}} | safe | 0.0 | {&#x27;tool_delta&#x27;: 0, &#x27;token_delta&#x27;: 0, &#x27;runtime_delta&#x27;: 0.0} | safe_shadow_tie_recommend_canary |
+| execution changed? | False | reason | offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled | decision hash | 8b91ef00205c19c0 | |
+
 ## Value Retrieval Cache
 
 | Field | Value |

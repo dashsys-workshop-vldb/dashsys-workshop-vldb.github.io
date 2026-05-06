@@ -1,0 +1,124 @@
+{
+  "current_plan_api": [
+    {
+      "method": "GET",
+      "params": {
+        "limit": "50",
+        "property": "inheritedAttributes.properties.isDestinationFlow==true",
+        "sort": "updatedTime:desc"
+      },
+      "path": "/data/foundation/flowservice/flows"
+    }
+  ],
+  "current_plan_sql": [
+    "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS target_name, D.\"DESCRIPTION\", D.\"STATE\", D.\"CONNECTIONSPECID\" AS connection_spec_id, D.\"CREATEDTIME\" AS created_time, D.\"UPDATEDTIME\" AS modified, D.\"INTERVAL\", D.\"FREQUENCY\" FROM \"dim_target\" AS D ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50"
+  ],
+  "current_runtime": 0.0143,
+  "current_strict_score": 0.913,
+  "current_tokens": 1365,
+  "current_tool_calls": 2,
+  "decision": "reject_unsafe_repair",
+  "decision_hash": "2f85871696e834ff",
+  "dry_run_only": true,
+  "evidence_available": true,
+  "execution_changed": false,
+  "live_api_evidence_available": false,
+  "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
+  "query_id": "example_005",
+  "rejection_reason": "Invalid repaired endpoint: GET /data/foundation/export/batches/{batch_id}/files; Endpoint path contains unresolved path parameters.; Endpoint family confidence 0.0000 is below 0.75.; Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+  "repair_decision": {
+    "changed": true,
+    "endpoint_id": "export_batch_files",
+    "kind": "replace_first_api",
+    "reason": "candidate-derived endpoint family rerank"
+  },
+  "repair_safe_to_enable": false,
+  "repaired_plan_api": [
+    {
+      "endpoint_family": "batch_files",
+      "endpoint_id": "export_batch_files",
+      "method": "GET",
+      "params": {},
+      "path": "/data/foundation/export/batches/{batch_id}/files"
+    }
+  ],
+  "repaired_plan_sql": [
+    "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS target_name, D.\"DESCRIPTION\", D.\"STATE\", D.\"CONNECTIONSPECID\" AS connection_spec_id, D.\"CREATEDTIME\" AS created_time, D.\"UPDATEDTIME\" AS modified, D.\"INTERVAL\", D.\"FREQUENCY\" FROM \"dim_target\" AS D ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50"
+  ],
+  "repaired_runtime": 0.0143,
+  "repaired_strict_score": 0.7472,
+  "repaired_tokens": 1365,
+  "repaired_tool_calls": 2,
+  "risk_cluster": "zero_score_margin",
+  "runtime_delta": 0.0,
+  "safety_verdict": {
+    "api_validation": {
+      "errors": [
+        "Invalid repaired endpoint: GET /data/foundation/export/batches/{batch_id}/files; Endpoint path contains unresolved path parameters."
+      ],
+      "ok": false,
+      "repaired_aliases": [
+        {
+          "confidence": 0.9,
+          "endpoint_id": "export_batch_files",
+          "method": "GET",
+          "original_url": "/data/foundation/export/batches/{batch_id}/files",
+          "params": {},
+          "reason": "batch file/download alias repaired to export files endpoint",
+          "repaired": true,
+          "repaired_url": "/data/foundation/export/batches/{batch_id}/files",
+          "url": "/data/foundation/export/batches/{batch_id}/files"
+        }
+      ]
+    },
+    "confidence": 0.4,
+    "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+    "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+    "failed_checks": [
+      "api_validation",
+      "endpoint_family_confidence",
+      "fusion_agreement"
+    ],
+    "reasons": [
+      "Invalid repaired endpoint: GET /data/foundation/export/batches/{batch_id}/files; Endpoint path contains unresolved path parameters.",
+      "Endpoint family confidence 0.0000 is below 0.75.",
+      "Weighted score fusion and reciprocal-rank/family diagnostics did not agree."
+    ],
+    "safe": false,
+    "sql_validation": {
+      "ast_summaries": [
+        {
+          "closest_column_suggestions": {},
+          "closest_table_suggestions": {},
+          "destructive_sql_detected": false,
+          "normalized_sql": "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS target_name, D.\"DESCRIPTION\", D.\"STATE\", D.\"CONNECTIONSPECID\" AS connection_spec_id, D.\"CREATEDTIME\" AS created_time, D.\"UPDATEDTIME\" AS modified, D.\"INTERVAL\", D.\"FREQUENCY\" FROM \"dim_target\" AS D ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50",
+          "parsed_ok": true,
+          "selected_columns": [
+            "D.DESCRIPTION",
+            "D.STATE",
+            "D.INTERVAL",
+            "D.FREQUENCY",
+            "D.TARGETID",
+            "D.DATAFLOWNAME",
+            "D.NAME",
+            "D.CONNECTIONSPECID",
+            "D.CREATEDTIME",
+            "D.UPDATEDTIME"
+          ],
+          "selected_tables": [
+            "dim_target"
+          ],
+          "unknown_columns": [],
+          "unknown_tables": []
+        }
+      ],
+      "errors": [],
+      "ok": true
+    }
+  },
+  "score_delta": -0.1658,
+  "shadow_runtime": 0.0089,
+  "token_delta": 0,
+  "tool_delta": 0,
+  "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+}

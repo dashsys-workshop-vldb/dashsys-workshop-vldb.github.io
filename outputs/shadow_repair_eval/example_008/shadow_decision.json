@@ -1,0 +1,95 @@
+{
+  "current_plan_api": [],
+  "current_plan_sql": [
+    "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20"
+  ],
+  "current_runtime": 0.0099,
+  "current_strict_score": 0.7027,
+  "current_tokens": 671,
+  "current_tool_calls": 1,
+  "decision": "reject_unsafe_repair",
+  "decision_hash": "d56d712659788f46",
+  "dry_run_only": true,
+  "evidence_available": true,
+  "execution_changed": false,
+  "live_api_evidence_available": false,
+  "query": "show me the field for Person: Birthday Today 001",
+  "query_id": "example_008",
+  "rejection_reason": "Repaired plan would increase tool calls from 1 to 2.; Endpoint family confidence 0.0000 is below 0.75.",
+  "repair_decision": {
+    "changed": true,
+    "endpoint_id": "audit_events",
+    "kind": "diagnostic_add_api",
+    "reason": "no current API call; diagnostic only and unsafe if tool calls increase"
+  },
+  "repair_safe_to_enable": false,
+  "repaired_plan_api": [
+    {
+      "endpoint_family": "audit_events",
+      "endpoint_id": "audit_events",
+      "method": "GET",
+      "params": {
+        "limit": 20
+      },
+      "path": "/data/foundation/audit/events"
+    }
+  ],
+  "repaired_plan_sql": [
+    "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20"
+  ],
+  "repaired_runtime": 0.0099,
+  "repaired_strict_score": 0.6902,
+  "repaired_tokens": 671,
+  "repaired_tool_calls": 2,
+  "risk_cluster": "not_targeted",
+  "runtime_delta": 0.0,
+  "safety_verdict": {
+    "api_validation": {
+      "errors": [],
+      "ok": true,
+      "repaired_aliases": []
+    },
+    "confidence": 0.6,
+    "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+    "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+    "failed_checks": [
+      "endpoint_family_confidence",
+      "tool_call_increase"
+    ],
+    "reasons": [
+      "Repaired plan would increase tool calls from 1 to 2.",
+      "Endpoint family confidence 0.0000 is below 0.75."
+    ],
+    "safe": false,
+    "sql_validation": {
+      "ast_summaries": [
+        {
+          "closest_column_suggestions": {},
+          "closest_table_suggestions": {},
+          "destructive_sql_detected": false,
+          "normalized_sql": "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20",
+          "parsed_ok": true,
+          "selected_columns": [
+            "SP.PROPERTY",
+            "S.NAME",
+            "SP.SEGMENTID",
+            "S.SEGMENTID"
+          ],
+          "selected_tables": [
+            "hkg_br_segment_property",
+            "dim_segment"
+          ],
+          "unknown_columns": [],
+          "unknown_tables": []
+        }
+      ],
+      "errors": [],
+      "ok": true
+    }
+  },
+  "score_delta": -0.0125,
+  "shadow_runtime": 0.0116,
+  "token_delta": 0,
+  "tool_delta": 1,
+  "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+}

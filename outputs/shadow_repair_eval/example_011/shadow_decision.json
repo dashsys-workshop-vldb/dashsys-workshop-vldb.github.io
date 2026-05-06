@@ -1,0 +1,95 @@
+{
+  "current_plan_api": [
+    {
+      "method": "GET",
+      "params": {
+        "limit": "25"
+      },
+      "path": "/schemas"
+    }
+  ],
+  "current_plan_sql": [
+    "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B"
+  ],
+  "current_runtime": 0.0105,
+  "current_strict_score": 0.7455,
+  "current_tokens": 832,
+  "current_tool_calls": 2,
+  "decision": "reject_score_regression",
+  "decision_hash": "2a4ccc6ad56475bc",
+  "dry_run_only": true,
+  "evidence_available": true,
+  "execution_changed": false,
+  "live_api_evidence_available": false,
+  "query": "How many schemas do I have?",
+  "query_id": "example_011",
+  "rejection_reason": "Repair passed conservative SQL/API, fusion, evidence, and cost checks.",
+  "repair_decision": {
+    "changed": true,
+    "endpoint_id": "schema_registry_schemas",
+    "kind": "replace_first_api",
+    "reason": "candidate-derived endpoint family rerank"
+  },
+  "repair_safe_to_enable": false,
+  "repaired_plan_api": [
+    {
+      "endpoint_family": "schema_list",
+      "endpoint_id": "schema_registry_schemas",
+      "method": "GET",
+      "params": {
+        "limit": 25
+      },
+      "path": "/data/foundation/schemaregistry/tenant/schemas"
+    }
+  ],
+  "repaired_plan_sql": [
+    "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B"
+  ],
+  "repaired_runtime": 0.0105,
+  "repaired_strict_score": 0.6307,
+  "repaired_tokens": 832,
+  "repaired_tool_calls": 2,
+  "risk_cluster": "missing_gold_api_in_top_k",
+  "runtime_delta": 0.0,
+  "safety_verdict": {
+    "api_validation": {
+      "errors": [],
+      "ok": true,
+      "repaired_aliases": []
+    },
+    "confidence": 0.994,
+    "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+    "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+    "failed_checks": [],
+    "reasons": [
+      "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+    ],
+    "safe": true,
+    "sql_validation": {
+      "ast_summaries": [
+        {
+          "closest_column_suggestions": {},
+          "closest_table_suggestions": {},
+          "destructive_sql_detected": false,
+          "normalized_sql": "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B",
+          "parsed_ok": true,
+          "selected_columns": [
+            "B.BLUEPRINTID"
+          ],
+          "selected_tables": [
+            "dim_blueprint"
+          ],
+          "unknown_columns": [],
+          "unknown_tables": []
+        }
+      ],
+      "errors": [],
+      "ok": true
+    }
+  },
+  "score_delta": -0.1148,
+  "shadow_runtime": 0.0092,
+  "token_delta": 0,
+  "tool_delta": 0,
+  "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+}

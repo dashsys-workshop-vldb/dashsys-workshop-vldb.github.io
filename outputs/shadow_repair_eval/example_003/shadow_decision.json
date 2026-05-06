@@ -1,0 +1,122 @@
+{
+  "current_plan_api": [
+    {
+      "method": "GET",
+      "params": {
+        "limit": "5",
+        "property": "destinationId==<destination_id>"
+      },
+      "path": "/data/core/ups/audiences"
+    },
+    {
+      "method": "GET",
+      "params": {
+        "limit": "5",
+        "property": "inheritedAttributes.properties.isDestinationFlow==true"
+      },
+      "path": "/data/foundation/flowservice/flows"
+    }
+  ],
+  "current_plan_sql": [
+    "SELECT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, A.\"TOTALMEMBERS\" AS total_profiles, A.\"CREATEDTIME\" AS created_time, A.\"UPDATEDTIME\" AS updated_time FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"DATAFLOWNAME\" = 'SMS Opt-In' OR D.\"NAME\" = 'SMS Opt-In' ORDER BY A.\"NAME\""
+  ],
+  "current_runtime": 0.0149,
+  "current_strict_score": 0.7156,
+  "current_tokens": 1638,
+  "current_tool_calls": 3,
+  "decision": "reject_unsafe_repair",
+  "decision_hash": "ee729da7b42200ff",
+  "dry_run_only": true,
+  "evidence_available": false,
+  "execution_changed": false,
+  "live_api_evidence_available": false,
+  "query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+  "query_id": "example_003",
+  "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+  "repair_decision": {
+    "changed": false,
+    "reason": "top ranked endpoint already matches current API"
+  },
+  "repair_safe_to_enable": false,
+  "repaired_plan_api": [
+    {
+      "method": "GET",
+      "params": {
+        "limit": "5",
+        "property": "destinationId==<destination_id>"
+      },
+      "path": "/data/core/ups/audiences"
+    },
+    {
+      "method": "GET",
+      "params": {
+        "limit": "5",
+        "property": "inheritedAttributes.properties.isDestinationFlow==true"
+      },
+      "path": "/data/foundation/flowservice/flows"
+    }
+  ],
+  "repaired_plan_sql": [
+    "SELECT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, A.\"TOTALMEMBERS\" AS total_profiles, A.\"CREATEDTIME\" AS created_time, A.\"UPDATEDTIME\" AS updated_time FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"DATAFLOWNAME\" = 'SMS Opt-In' OR D.\"NAME\" = 'SMS Opt-In' ORDER BY A.\"NAME\""
+  ],
+  "repaired_runtime": 0.0149,
+  "repaired_strict_score": 0.7156,
+  "repaired_tokens": 1638,
+  "repaired_tool_calls": 3,
+  "risk_cluster": "missing_gold_api_in_top_k",
+  "runtime_delta": 0.0,
+  "safety_verdict": {
+    "api_validation": {
+      "errors": [],
+      "ok": true,
+      "repaired_aliases": []
+    },
+    "confidence": 0.8,
+    "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+    "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+    "failed_checks": [
+      "fusion_agreement"
+    ],
+    "reasons": [
+      "Weighted score fusion and reciprocal-rank/family diagnostics did not agree."
+    ],
+    "safe": false,
+    "sql_validation": {
+      "ast_summaries": [
+        {
+          "closest_column_suggestions": {},
+          "closest_table_suggestions": {},
+          "destructive_sql_detected": false,
+          "normalized_sql": "SELECT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, A.\"TOTALMEMBERS\" AS total_profiles, A.\"CREATEDTIME\" AS created_time, A.\"UPDATEDTIME\" AS updated_time FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"DATAFLOWNAME\" = 'SMS Opt-In' OR D.\"NAME\" = 'SMS Opt-In' ORDER BY A.\"NAME\"",
+          "parsed_ok": true,
+          "selected_columns": [
+            "A.SEGMENTID",
+            "A.NAME",
+            "A.TOTALMEMBERS",
+            "A.CREATEDTIME",
+            "A.UPDATEDTIME",
+            "AD.SEGMENTID",
+            "AD.TARGETID",
+            "D.TARGETID",
+            "D.DATAFLOWNAME",
+            "D.NAME"
+          ],
+          "selected_tables": [
+            "dim_segment",
+            "hkg_br_segment_target",
+            "dim_target"
+          ],
+          "unknown_columns": [],
+          "unknown_tables": []
+        }
+      ],
+      "errors": [],
+      "ok": true
+    }
+  },
+  "score_delta": 0.0,
+  "shadow_runtime": 0.0171,
+  "token_delta": 0,
+  "tool_delta": 0,
+  "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+}

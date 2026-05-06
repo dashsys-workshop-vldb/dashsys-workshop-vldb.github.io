@@ -10,7 +10,7 @@
 | Variant | n/a - not a baseline variant |
 | Final answer preview | Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable. |
 | Tool call count | 2 |
-| Runtime | 0.01086095895152539 |
+| Runtime | 0.011179207940585911 |
 | Estimated tokens | 887 |
 | Checkpoint count | 22 |
 | Candidate context mode | hybrid |
@@ -68,7 +68,7 @@ flowchart TD
     verifier -->|safe answer| answer
   end
   subgraph Metrics
-    metrics["Metrics<br/>tools=2<br/>tokens=887<br/>runtime=0.01086095895152539"]
+    metrics["Metrics<br/>tools=2<br/>tokens=887<br/>runtime=0.011179207940585911"]
     answer -->|record trajectory| metrics
   end
 ```
@@ -127,6 +127,13 @@ API tool was invoked and validated, but live evidence was unavailable because Ad
 | Structural Schema Preservation | True | {"structural_confidence_delta": 0.1, "structural_reason": "bridge-table heuristic", "structural_tables_added": {"items": ["br_campaign_segment", "hkg_br_segment_target", "hkg_br_source_collection"], "total_items": 9, "truncated_items": true}} | keeps relationship bridge tables visible | adds only compact schema context |
 | Value-to-API Ranking | False | {"active": false, "boost_applied": true, "value_match_used_for_api_ranking": false} | uses only high-confidence retrieved values for endpoint family boosts | reuses existing value retrieval diagnostics |
 | Gated Risk Cluster Repair | True | {"active": true, "candidate_count": 2, "cost_delta": 0, "diagnostic_only": true, "execution_repair_enabled": false, "expected_correctness_gain": "retrieval-only candidate separation; no accuracy claim without execution change", "hard_case_triggered": true, "rejected_candidate_reason": "lower endpoint-family confidence or lower hybrid score", "truncated_fields": 2} | compares a repaired candidate without executing losing plans | diagnostic-only; zero tool-call delta |
+
+## Shadow Repair / What-if Evaluation
+
+| Risk cluster | Current candidate | Repaired candidate | Safety verdict | Score delta | Tool/cost delta | Enable recommendation |
+| --- | --- | --- | --- | ---: | --- | --- |
+| zero_score_margin | {"api": {"items": [{"method": "GET", "params": {"filter": "state eq 'failed'", "limit": "50"}, "path": "/data/foundation/flowservice/flows"}], "total_items": 1, "truncated_items": false}, "score": 0.6744, "sql": {"items": ["SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"], "total_items": 1, "truncated_items": false}} | {"api": {"items": [{"endpoint_family": "flow_runs", "endpoint_id": "flowservice_runs", "method": "GET", "params": {"limit": 50}, "path": "/data/foundation/flowservice/runs"}], "total_items": 1, "truncated_items": false}, "score": 0.6744, "sql": {"items": ["SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"], "total_items": 1, "truncated_items": false}} | safe | 0.0 | {'tool_delta': 0, 'token_delta': 0, 'runtime_delta': 0.0} | safe_shadow_tie_recommend_canary |
+| execution changed? | False | reason | offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled | decision hash | 2528515962e3455e | |
 
 ## Value Retrieval Cache
 

@@ -66,6 +66,21 @@ These clusters compare baseline retrieval ordering with the ranking/report-only 
 - Improved target clusters: zero_score_margin, missing_gold_api_in_top_k, batch_endpoint_confusion, tag_api_confusion, schema_vs_dataset_confusion
 - No score claim: ranking-only changes are reported as retrieval diagnostics unless strict-score improvement is measured.
 
+## Shadow Repair Evaluation Linkage
+
+- Shadow repair eval available: True
+- Repair execution enabled: False
+- Canary recommendations are offline what-if diagnostics and do not change SQL_FIRST_API_VERIFY execution.
+
+| Cluster | Rows | Better | Equal | Worse | Safe to enable? | Recommended flag |
+| --- | ---: | ---: | ---: | ---: | --- | --- |
+| `batch_endpoint_confusion` | 2 | 0 | 2 | 0 | False | `ENABLE_REPAIR_FOR_BATCH_ENDPOINT_CONFUSION` |
+| `broad_domain_api_confusion` | 1 | 0 | 1 | 0 | False | `None` |
+| `missing_gold_api_in_top_k` | 15 | 0 | 12 | 3 | False | `ENABLE_REPAIR_FOR_MISSING_API_TOPK` |
+| `schema_vs_dataset_confusion` | 2 | 1 | 1 | 0 | False | `ENABLE_REPAIR_FOR_SCHEMA_DATASET_CONFUSION` |
+| `tag_api_confusion` | 3 | 0 | 3 | 0 | False | `ENABLE_REPAIR_FOR_TAG_API_CONFUSION` |
+| `zero_score_margin` | 6 | 0 | 2 | 4 | False | `ENABLE_REPAIR_FOR_ZERO_SCORE_MARGIN` |
+
 ## Curated Join Hint Audit
 
 Used gold patterns: False

@@ -1,0 +1,3211 @@
+{
+  "artifact_isolation": {
+    "allowed_outputs": [
+      "outputs/shadow_repair_eval.json",
+      "outputs/shadow_repair_eval.md",
+      "outputs/shadow_repair_eval/"
+    ],
+    "writes_eval_outputs": false,
+    "writes_final_submission": false,
+    "writes_packaged_query_outputs": false
+  },
+  "canary_flags_default_zero": {
+    "ENABLE_REPAIR_FOR_BATCH_ENDPOINT_CONFUSION": false,
+    "ENABLE_REPAIR_FOR_MISSING_API_TOPK": false,
+    "ENABLE_REPAIR_FOR_SCHEMA_DATASET_CONFUSION": false,
+    "ENABLE_REPAIR_FOR_TAG_API_CONFUSION": false,
+    "ENABLE_REPAIR_FOR_ZERO_SCORE_MARGIN": false
+  },
+  "cluster_canary_recommendations": {
+    "batch_endpoint_confusion": {
+      "avg_runtime_delta": 0.0,
+      "avg_score_delta": 0.0,
+      "avg_token_delta": 0.0,
+      "avg_tool_call_delta": 0.0,
+      "recommendation": "keep_disabled",
+      "recommended_flag": "ENABLE_REPAIR_FOR_BATCH_ENDPOINT_CONFUSION",
+      "rejection_reason": "One or more rows failed the repair safety verifier.",
+      "repaired_better_count": 0,
+      "repaired_equal_count": 2,
+      "repaired_worse_count": 0,
+      "safe_to_enable_canary": false,
+      "shadow_eval_rows": 2
+    },
+    "broad_domain_api_confusion": {
+      "avg_runtime_delta": 0.0,
+      "avg_score_delta": 0.0,
+      "avg_token_delta": 0.0,
+      "avg_tool_call_delta": 0.0,
+      "recommendation": "keep_disabled",
+      "recommended_flag": null,
+      "rejection_reason": "No canary flag is defined for this broad diagnostic cluster.",
+      "repaired_better_count": 0,
+      "repaired_equal_count": 1,
+      "repaired_worse_count": 0,
+      "safe_to_enable_canary": false,
+      "shadow_eval_rows": 1
+    },
+    "missing_gold_api_in_top_k": {
+      "avg_runtime_delta": 0.0,
+      "avg_score_delta": -0.0286,
+      "avg_token_delta": 0.0,
+      "avg_tool_call_delta": 0.0,
+      "recommendation": "keep_disabled",
+      "recommended_flag": "ENABLE_REPAIR_FOR_MISSING_API_TOPK",
+      "rejection_reason": "At least one repaired row scored worse.",
+      "repaired_better_count": 0,
+      "repaired_equal_count": 12,
+      "repaired_worse_count": 3,
+      "safe_to_enable_canary": false,
+      "shadow_eval_rows": 15
+    },
+    "schema_vs_dataset_confusion": {
+      "avg_runtime_delta": 0.0,
+      "avg_score_delta": 0.0574,
+      "avg_token_delta": 0.0,
+      "avg_tool_call_delta": 0.0,
+      "recommendation": "keep_disabled",
+      "recommended_flag": "ENABLE_REPAIR_FOR_SCHEMA_DATASET_CONFUSION",
+      "rejection_reason": "One or more rows failed the repair safety verifier.",
+      "repaired_better_count": 1,
+      "repaired_equal_count": 1,
+      "repaired_worse_count": 0,
+      "safe_to_enable_canary": false,
+      "shadow_eval_rows": 2
+    },
+    "tag_api_confusion": {
+      "avg_runtime_delta": 0.0,
+      "avg_score_delta": 0.0,
+      "avg_token_delta": 0.0,
+      "avg_tool_call_delta": 0.0,
+      "recommendation": "keep_disabled",
+      "recommended_flag": "ENABLE_REPAIR_FOR_TAG_API_CONFUSION",
+      "rejection_reason": "One or more rows failed the repair safety verifier.",
+      "repaired_better_count": 0,
+      "repaired_equal_count": 3,
+      "repaired_worse_count": 0,
+      "safe_to_enable_canary": false,
+      "shadow_eval_rows": 3
+    },
+    "zero_score_margin": {
+      "avg_runtime_delta": 0.0,
+      "avg_score_delta": -0.1537,
+      "avg_token_delta": 0.0,
+      "avg_tool_call_delta": 0.0,
+      "recommendation": "keep_disabled",
+      "recommended_flag": "ENABLE_REPAIR_FOR_ZERO_SCORE_MARGIN",
+      "rejection_reason": "At least one repaired row scored worse.",
+      "repaired_better_count": 0,
+      "repaired_equal_count": 2,
+      "repaired_worse_count": 4,
+      "safe_to_enable_canary": false,
+      "shadow_eval_rows": 6
+    }
+  },
+  "mode": "offline_shadow_repair_eval",
+  "notes": [
+    "Gold labels are used only by the offline strict scorer, never to generate repaired plans.",
+    "Shadow repaired plan scoring reuses existing deterministic answer text and verifier diagnostics; no LLM answer generation is introduced.",
+    "Dry-run API calls are not counted as live API evidence.",
+    "Execution repair remains disabled by default and this script does not alter packaged SQL_FIRST_API_VERIFY outputs."
+  ],
+  "packaged_strategy_unchanged": true,
+  "paired_shadow_eval_summary": {
+    "avg_runtime_delta": 0.0,
+    "avg_score_delta": -0.0357,
+    "avg_token_delta": 0.0,
+    "avg_tool_delta": 0.0286,
+    "decision_hashes": [
+      "8b91ef00205c19c0",
+      "d4048a0dc950bb7d",
+      "eebe841f2a2aed58",
+      "ee729da7b42200ff",
+      "2528515962e3455e",
+      "2f85871696e834ff",
+      "e6033ce83757f84a",
+      "71f976e82797b1cb",
+      "d56d712659788f46",
+      "5234aa37629bcd82",
+      "6608de8cd8267388",
+      "2a4ccc6ad56475bc",
+      "c336c0739a887c72",
+      "fe906648641ba78b",
+      "5ad03644b245545c",
+      "b2f13b45e1e299a6",
+      "2d68604c2c4efa64",
+      "a6049d74809b8702",
+      "21cd02996e624cf5",
+      "281dfc9c1e3051df",
+      "9a423a097167426e",
+      "2e8b1191137a0973",
+      "e934818a91c237ee",
+      "209dc36ee96ee4bd",
+      "50ae44658bc6aa49",
+      "cbcbdbf375a77ea8",
+      "d9165c7d998a609a",
+      "0d1813b83f4354e8",
+      "a57500e1a1ed5e20",
+      "07d4e6c59959c206",
+      "f225bf75d1b22b4b",
+      "7c20bbc4f49528d9",
+      "213c7019cb2ae888",
+      "5135231709d59c23",
+      "bc049c96aa1f1861"
+    ],
+    "repaired_better_count": 1,
+    "repaired_equal_count": 26,
+    "repaired_worse_count": 8,
+    "unsafe_repair_count": 21
+  },
+  "preferred_strategy": "SQL_FIRST_API_VERIFY",
+  "repair_execution_enabled": false,
+  "rows": [
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "filter": "name==Birthday Message"
+          },
+          "path": "/ajo/journey"
+        }
+      ],
+      "current_plan_sql": [
+        "SELECT \"NAME\" AS campaign_name, \"LASTDEPLOYEDTIME\" AS published_time FROM \"dim_campaign\" LIMIT 50"
+      ],
+      "current_runtime": 0.013,
+      "current_strict_score": 0.6903,
+      "current_tokens": 950,
+      "current_tool_calls": 2,
+      "decision": "safe_shadow_tie_recommend_canary",
+      "decision_hash": "8b91ef00205c19c0",
+      "dry_run_only": true,
+      "evidence_available": true,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "When was the journey 'Birthday Message' published?",
+      "query_id": "example_000",
+      "rejection_reason": "",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": true,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "filter": "name==Birthday Message"
+          },
+          "path": "/ajo/journey"
+        }
+      ],
+      "repaired_plan_sql": [
+        "SELECT \"NAME\" AS campaign_name, \"LASTDEPLOYEDTIME\" AS published_time FROM \"dim_campaign\" LIMIT 50"
+      ],
+      "repaired_runtime": 0.013,
+      "repaired_strict_score": 0.6903,
+      "repaired_tokens": 950,
+      "repaired_tool_calls": 2,
+      "risk_cluster": "not_targeted",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 1.0,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [],
+        "reasons": [
+          "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+        ],
+        "safe": true,
+        "sql_validation": {
+          "ast_summaries": [
+            {
+              "closest_column_suggestions": {},
+              "closest_table_suggestions": {},
+              "destructive_sql_detected": false,
+              "normalized_sql": "SELECT \"NAME\" AS campaign_name, \"LASTDEPLOYEDTIME\" AS published_time FROM \"dim_campaign\" LIMIT 50",
+              "parsed_ok": true,
+              "selected_columns": [
+                "NAME",
+                "LASTDEPLOYEDTIME"
+              ],
+              "selected_tables": [
+                "dim_campaign"
+              ],
+              "unknown_columns": [],
+              "unknown_tables": []
+            }
+          ],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0948,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "filter": "status!=live"
+          },
+          "path": "/ajo/journey"
+        }
+      ],
+      "current_plan_sql": [
+        "SELECT J.\"CAMPAIGNID\" AS campaign_id, J.\"NAME\" AS campaign_name, J.\"STATE\" AS campaign_state, J.\"UPDATEDTIME\" AS updated_time FROM \"dim_campaign\" AS J WHERE LOWER(CAST(J.\"STATE\" AS VARCHAR)) NOT IN ('deployed', 'redeployed') LIMIT 50"
+      ],
+      "current_runtime": 0.0119,
+      "current_strict_score": 0.7902,
+      "current_tokens": 996,
+      "current_tool_calls": 2,
+      "decision": "safe_shadow_tie_recommend_canary",
+      "decision_hash": "d4048a0dc950bb7d",
+      "dry_run_only": true,
+      "evidence_available": true,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "Give me inactive journeys",
+      "query_id": "example_001",
+      "rejection_reason": "",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": true,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "filter": "status!=live"
+          },
+          "path": "/ajo/journey"
+        }
+      ],
+      "repaired_plan_sql": [
+        "SELECT J.\"CAMPAIGNID\" AS campaign_id, J.\"NAME\" AS campaign_name, J.\"STATE\" AS campaign_state, J.\"UPDATEDTIME\" AS updated_time FROM \"dim_campaign\" AS J WHERE LOWER(CAST(J.\"STATE\" AS VARCHAR)) NOT IN ('deployed', 'redeployed') LIMIT 50"
+      ],
+      "repaired_runtime": 0.0119,
+      "repaired_strict_score": 0.7902,
+      "repaired_tokens": 996,
+      "repaired_tool_calls": 2,
+      "risk_cluster": "not_targeted",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 1.0,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [],
+        "reasons": [
+          "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+        ],
+        "safe": true,
+        "sql_validation": {
+          "ast_summaries": [
+            {
+              "closest_column_suggestions": {},
+              "closest_table_suggestions": {},
+              "destructive_sql_detected": false,
+              "normalized_sql": "SELECT J.\"CAMPAIGNID\" AS campaign_id, J.\"NAME\" AS campaign_name, J.\"STATE\" AS campaign_state, J.\"UPDATEDTIME\" AS updated_time FROM \"dim_campaign\" AS J WHERE NOT LOWER(CAST(J.\"STATE\" AS TEXT)) IN ('deployed', 'redeployed') LIMIT 50",
+              "parsed_ok": true,
+              "selected_columns": [
+                "J.CAMPAIGNID",
+                "J.NAME",
+                "J.STATE",
+                "J.UPDATEDTIME"
+              ],
+              "selected_tables": [
+                "dim_campaign"
+              ],
+              "unknown_columns": [],
+              "unknown_tables": []
+            }
+          ],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0176,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "pageSize": "10"
+          },
+          "path": "/ajo/journey"
+        }
+      ],
+      "current_plan_sql": [
+        "SELECT CAMPAIGN.\"NAME\" AS CAMPAIGNNAME, CAMPAIGN.\"CAMPAIGNID\" AS CAMPAIGNID FROM \"dim_campaign\" AS CAMPAIGN"
+      ],
+      "current_runtime": 0.0107,
+      "current_strict_score": 0.761,
+      "current_tokens": 814,
+      "current_tool_calls": 2,
+      "decision": "safe_shadow_tie_recommend_canary",
+      "decision_hash": "eebe841f2a2aed58",
+      "dry_run_only": true,
+      "evidence_available": true,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "List all journeys",
+      "query_id": "example_002",
+      "rejection_reason": "",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": true,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "pageSize": "10"
+          },
+          "path": "/ajo/journey"
+        }
+      ],
+      "repaired_plan_sql": [
+        "SELECT CAMPAIGN.\"NAME\" AS CAMPAIGNNAME, CAMPAIGN.\"CAMPAIGNID\" AS CAMPAIGNID FROM \"dim_campaign\" AS CAMPAIGN"
+      ],
+      "repaired_runtime": 0.0107,
+      "repaired_strict_score": 0.761,
+      "repaired_tokens": 814,
+      "repaired_tool_calls": 2,
+      "risk_cluster": "not_targeted",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 1.0,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [],
+        "reasons": [
+          "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+        ],
+        "safe": true,
+        "sql_validation": {
+          "ast_summaries": [
+            {
+              "closest_column_suggestions": {},
+              "closest_table_suggestions": {},
+              "destructive_sql_detected": false,
+              "normalized_sql": "SELECT CAMPAIGN.\"NAME\" AS CAMPAIGNNAME, CAMPAIGN.\"CAMPAIGNID\" AS CAMPAIGNID FROM \"dim_campaign\" AS CAMPAIGN",
+              "parsed_ok": true,
+              "selected_columns": [
+                "CAMPAIGN.NAME",
+                "CAMPAIGN.CAMPAIGNID"
+              ],
+              "selected_tables": [
+                "dim_campaign"
+              ],
+              "unknown_columns": [],
+              "unknown_tables": []
+            }
+          ],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.006,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "5",
+            "property": "destinationId==<destination_id>"
+          },
+          "path": "/data/core/ups/audiences"
+        },
+        {
+          "method": "GET",
+          "params": {
+            "limit": "5",
+            "property": "inheritedAttributes.properties.isDestinationFlow==true"
+          },
+          "path": "/data/foundation/flowservice/flows"
+        }
+      ],
+      "current_plan_sql": [
+        "SELECT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, A.\"TOTALMEMBERS\" AS total_profiles, A.\"CREATEDTIME\" AS created_time, A.\"UPDATEDTIME\" AS updated_time FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"DATAFLOWNAME\" = 'SMS Opt-In' OR D.\"NAME\" = 'SMS Opt-In' ORDER BY A.\"NAME\""
+      ],
+      "current_runtime": 0.0149,
+      "current_strict_score": 0.7156,
+      "current_tokens": 1638,
+      "current_tool_calls": 3,
+      "decision": "reject_unsafe_repair",
+      "decision_hash": "ee729da7b42200ff",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+      "query_id": "example_003",
+      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "5",
+            "property": "destinationId==<destination_id>"
+          },
+          "path": "/data/core/ups/audiences"
+        },
+        {
+          "method": "GET",
+          "params": {
+            "limit": "5",
+            "property": "inheritedAttributes.properties.isDestinationFlow==true"
+          },
+          "path": "/data/foundation/flowservice/flows"
+        }
+      ],
+      "repaired_plan_sql": [
+        "SELECT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, A.\"TOTALMEMBERS\" AS total_profiles, A.\"CREATEDTIME\" AS created_time, A.\"UPDATEDTIME\" AS updated_time FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"DATAFLOWNAME\" = 'SMS Opt-In' OR D.\"NAME\" = 'SMS Opt-In' ORDER BY A.\"NAME\""
+      ],
+      "repaired_runtime": 0.0149,
+      "repaired_strict_score": 0.7156,
+      "repaired_tokens": 1638,
+      "repaired_tool_calls": 3,
+      "risk_cluster": "missing_gold_api_in_top_k",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.8,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [
+          "fusion_agreement"
+        ],
+        "reasons": [
+          "Weighted score fusion and reciprocal-rank/family diagnostics did not agree."
+        ],
+        "safe": false,
+        "sql_validation": {
+          "ast_summaries": [
+            {
+              "closest_column_suggestions": {},
+              "closest_table_suggestions": {},
+              "destructive_sql_detected": false,
+              "normalized_sql": "SELECT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, A.\"TOTALMEMBERS\" AS total_profiles, A.\"CREATEDTIME\" AS created_time, A.\"UPDATEDTIME\" AS updated_time FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"DATAFLOWNAME\" = 'SMS Opt-In' OR D.\"NAME\" = 'SMS Opt-In' ORDER BY A.\"NAME\"",
+              "parsed_ok": true,
+              "selected_columns": [
+                "A.SEGMENTID",
+                "A.NAME",
+                "A.TOTALMEMBERS",
+                "A.CREATEDTIME",
+                "A.UPDATEDTIME",
+                "AD.SEGMENTID",
+                "AD.TARGETID",
+                "D.TARGETID",
+                "D.DATAFLOWNAME",
+                "D.NAME"
+              ],
+              "selected_tables": [
+                "dim_segment",
+                "hkg_br_segment_target",
+                "dim_target"
+              ],
+              "unknown_columns": [],
+              "unknown_tables": []
+            }
+          ],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0171,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "filter": "state eq 'failed'",
+            "limit": "50"
+          },
+          "path": "/data/foundation/flowservice/flows"
+        }
+      ],
+      "current_plan_sql": [
+        "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"
+      ],
+      "current_runtime": 0.0112,
+      "current_strict_score": 0.6744,
+      "current_tokens": 887,
+      "current_tool_calls": 2,
+      "decision": "safe_shadow_tie_recommend_canary",
+      "decision_hash": "2528515962e3455e",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "Show me the IDs of failed dataflow runs",
+      "query_id": "example_004",
+      "rejection_reason": "",
+      "repair_decision": {
+        "changed": true,
+        "endpoint_id": "flowservice_runs",
+        "kind": "replace_first_api",
+        "reason": "candidate-derived endpoint family rerank"
+      },
+      "repair_safe_to_enable": true,
+      "repaired_plan_api": [
+        {
+          "endpoint_family": "flow_runs",
+          "endpoint_id": "flowservice_runs",
+          "method": "GET",
+          "params": {
+            "limit": 50
+          },
+          "path": "/data/foundation/flowservice/runs"
+        }
+      ],
+      "repaired_plan_sql": [
+        "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"
+      ],
+      "repaired_runtime": 0.0112,
+      "repaired_strict_score": 0.6744,
+      "repaired_tokens": 887,
+      "repaired_tool_calls": 2,
+      "risk_cluster": "zero_score_margin",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 1.0,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [],
+        "reasons": [
+          "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+        ],
+        "safe": true,
+        "sql_validation": {
+          "ast_summaries": [
+            {
+              "closest_column_suggestions": {},
+              "closest_table_suggestions": {},
+              "destructive_sql_detected": false,
+              "normalized_sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS TEXT)) LIKE LOWER('%failed%') LIMIT 50",
+              "parsed_ok": true,
+              "selected_columns": [
+                "DATAFLOWNAME",
+                "STATE",
+                "TARGETID",
+                "CONNECTIONSPECID",
+                "NAME"
+              ],
+              "selected_tables": [
+                "dim_target"
+              ],
+              "unknown_columns": [],
+              "unknown_tables": []
+            }
+          ],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0091,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "50",
+            "property": "inheritedAttributes.properties.isDestinationFlow==true",
+            "sort": "updatedTime:desc"
+          },
+          "path": "/data/foundation/flowservice/flows"
+        }
+      ],
+      "current_plan_sql": [
+        "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS target_name, D.\"DESCRIPTION\", D.\"STATE\", D.\"CONNECTIONSPECID\" AS connection_spec_id, D.\"CREATEDTIME\" AS created_time, D.\"UPDATEDTIME\" AS modified, D.\"INTERVAL\", D.\"FREQUENCY\" FROM \"dim_target\" AS D ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50"
+      ],
+      "current_runtime": 0.0143,
+      "current_strict_score": 0.913,
+      "current_tokens": 1365,
+      "current_tool_calls": 2,
+      "decision": "reject_unsafe_repair",
+      "decision_hash": "2f85871696e834ff",
+      "dry_run_only": true,
+      "evidence_available": true,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
+      "query_id": "example_005",
+      "rejection_reason": "Invalid repaired endpoint: GET /data/foundation/export/batches/{batch_id}/files; Endpoint path contains unresolved path parameters.; Endpoint family confidence 0.0000 is below 0.75.; Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_decision": {
+        "changed": true,
+        "endpoint_id": "export_batch_files",
+        "kind": "replace_first_api",
+        "reason": "candidate-derived endpoint family rerank"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "endpoint_family": "batch_files",
+          "endpoint_id": "export_batch_files",
+          "method": "GET",
+          "params": {},
+          "path": "/data/foundation/export/batches/{batch_id}/files"
+        }
+      ],
+      "repaired_plan_sql": [
+        "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS target_name, D.\"DESCRIPTION\", D.\"STATE\", D.\"CONNECTIONSPECID\" AS connection_spec_id, D.\"CREATEDTIME\" AS created_time, D.\"UPDATEDTIME\" AS modified, D.\"INTERVAL\", D.\"FREQUENCY\" FROM \"dim_target\" AS D ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50"
+      ],
+      "repaired_runtime": 0.0143,
+      "repaired_strict_score": 0.7472,
+      "repaired_tokens": 1365,
+      "repaired_tool_calls": 2,
+      "risk_cluster": "zero_score_margin",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [
+            "Invalid repaired endpoint: GET /data/foundation/export/batches/{batch_id}/files; Endpoint path contains unresolved path parameters."
+          ],
+          "ok": false,
+          "repaired_aliases": [
+            {
+              "confidence": 0.9,
+              "endpoint_id": "export_batch_files",
+              "method": "GET",
+              "original_url": "/data/foundation/export/batches/{batch_id}/files",
+              "params": {},
+              "reason": "batch file/download alias repaired to export files endpoint",
+              "repaired": true,
+              "repaired_url": "/data/foundation/export/batches/{batch_id}/files",
+              "url": "/data/foundation/export/batches/{batch_id}/files"
+            }
+          ]
+        },
+        "confidence": 0.4,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [
+          "api_validation",
+          "endpoint_family_confidence",
+          "fusion_agreement"
+        ],
+        "reasons": [
+          "Invalid repaired endpoint: GET /data/foundation/export/batches/{batch_id}/files; Endpoint path contains unresolved path parameters.",
+          "Endpoint family confidence 0.0000 is below 0.75.",
+          "Weighted score fusion and reciprocal-rank/family diagnostics did not agree."
+        ],
+        "safe": false,
+        "sql_validation": {
+          "ast_summaries": [
+            {
+              "closest_column_suggestions": {},
+              "closest_table_suggestions": {},
+              "destructive_sql_detected": false,
+              "normalized_sql": "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS target_name, D.\"DESCRIPTION\", D.\"STATE\", D.\"CONNECTIONSPECID\" AS connection_spec_id, D.\"CREATEDTIME\" AS created_time, D.\"UPDATEDTIME\" AS modified, D.\"INTERVAL\", D.\"FREQUENCY\" FROM \"dim_target\" AS D ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50",
+              "parsed_ok": true,
+              "selected_columns": [
+                "D.DESCRIPTION",
+                "D.STATE",
+                "D.INTERVAL",
+                "D.FREQUENCY",
+                "D.TARGETID",
+                "D.DATAFLOWNAME",
+                "D.NAME",
+                "D.CONNECTIONSPECID",
+                "D.CREATEDTIME",
+                "D.UPDATEDTIME"
+              ],
+              "selected_tables": [
+                "dim_target"
+              ],
+              "unknown_columns": [],
+              "unknown_tables": []
+            }
+          ],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": -0.1658,
+      "shadow_runtime": 0.0089,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "25",
+            "property": "schema.name"
+          },
+          "path": "/data/foundation/catalog/dataSets"
+        }
+      ],
+      "current_plan_sql": [
+        "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1"
+      ],
+      "current_runtime": 0.0122,
+      "current_strict_score": 0.7272,
+      "current_tokens": 1154,
+      "current_tool_calls": 2,
+      "decision": "safe_shadow_tie_recommend_canary",
+      "decision_hash": "e6033ce83757f84a",
+      "dry_run_only": true,
+      "evidence_available": true,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "How many datasets have been ingested using the same schema in the prod sandbox?",
+      "query_id": "example_006",
+      "rejection_reason": "",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": true,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "25",
+            "property": "schema.name"
+          },
+          "path": "/data/foundation/catalog/dataSets"
+        }
+      ],
+      "repaired_plan_sql": [
+        "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1"
+      ],
+      "repaired_runtime": 0.0122,
+      "repaired_strict_score": 0.7272,
+      "repaired_tokens": 1154,
+      "repaired_tool_calls": 2,
+      "risk_cluster": "schema_vs_dataset_confusion",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.9765,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [],
+        "reasons": [
+          "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+        ],
+        "safe": true,
+        "sql_validation": {
+          "ast_summaries": [
+            {
+              "closest_column_suggestions": {},
+              "closest_table_suggestions": {},
+              "destructive_sql_detected": false,
+              "normalized_sql": "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1",
+              "parsed_ok": true,
+              "selected_columns": [
+                "S.BLUEPRINTID",
+                "S.NAME",
+                "D.COLLECTIONID",
+                "DS.COLLECTIONID",
+                "DS.BLUEPRINTID"
+              ],
+              "selected_tables": [
+                "dim_collection",
+                "hkg_br_blueprint_collection",
+                "dim_blueprint"
+              ],
+              "unknown_columns": [],
+              "unknown_tables": []
+            }
+          ],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0086,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "filter": "schemaName==\"hkg_adls_profile_count_history\"",
+            "limit": "3"
+          },
+          "path": "/data/foundation/catalog/dataSets"
+        }
+      ],
+      "current_plan_sql": [
+        "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_collection\" AS BC JOIN \"dim_collection\" AS C ON BC.\"COLLECTIONID\" = C.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS B ON BC.\"BLUEPRINTID\" = B.\"BLUEPRINTID\" WHERE B.\"NAME\" = 'hkg_adls_profile_count_history'"
+      ],
+      "current_runtime": 0.0138,
+      "current_strict_score": 0.6552,
+      "current_tokens": 1283,
+      "current_tool_calls": 2,
+      "decision": "reject_unsafe_repair",
+      "decision_hash": "71f976e82797b1cb",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "List all datasets that use the schema 'hkg_adls_profile_count_history'.",
+      "query_id": "example_007",
+      "rejection_reason": "Invalid repaired endpoint: GET /data/foundation/schemaregistry/tenant/schemas/{schema_id}; Endpoint path contains unresolved path parameters.",
+      "repair_decision": {
+        "changed": true,
+        "endpoint_id": "schema_registry_schema",
+        "kind": "replace_first_api",
+        "reason": "candidate-derived endpoint family rerank"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "endpoint_family": "schema_detail",
+          "endpoint_id": "schema_registry_schema",
+          "method": "GET",
+          "params": {},
+          "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}"
+        }
+      ],
+      "repaired_plan_sql": [
+        "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_collection\" AS BC JOIN \"dim_collection\" AS C ON BC.\"COLLECTIONID\" = C.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS B ON BC.\"BLUEPRINTID\" = B.\"BLUEPRINTID\" WHERE B.\"NAME\" = 'hkg_adls_profile_count_history'"
+      ],
+      "repaired_runtime": 0.0138,
+      "repaired_strict_score": 0.77,
+      "repaired_tokens": 1283,
+      "repaired_tool_calls": 2,
+      "risk_cluster": "schema_vs_dataset_confusion",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [
+            "Invalid repaired endpoint: GET /data/foundation/schemaregistry/tenant/schemas/{schema_id}; Endpoint path contains unresolved path parameters."
+          ],
+          "ok": false,
+          "repaired_aliases": []
+        },
+        "confidence": 0.788,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [
+          "api_validation"
+        ],
+        "reasons": [
+          "Invalid repaired endpoint: GET /data/foundation/schemaregistry/tenant/schemas/{schema_id}; Endpoint path contains unresolved path parameters."
+        ],
+        "safe": false,
+        "sql_validation": {
+          "ast_summaries": [
+            {
+              "closest_column_suggestions": {},
+              "closest_table_suggestions": {},
+              "destructive_sql_detected": false,
+              "normalized_sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_collection\" AS BC JOIN \"dim_collection\" AS C ON BC.\"COLLECTIONID\" = C.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS B ON BC.\"BLUEPRINTID\" = B.\"BLUEPRINTID\" WHERE B.\"NAME\" = 'hkg_adls_profile_count_history'",
+              "parsed_ok": true,
+              "selected_columns": [
+                "C.COLLECTIONID",
+                "C.NAME",
+                "BC.COLLECTIONID",
+                "BC.BLUEPRINTID",
+                "B.BLUEPRINTID",
+                "B.NAME"
+              ],
+              "selected_tables": [
+                "hkg_br_blueprint_collection",
+                "dim_collection",
+                "dim_blueprint"
+              ],
+              "unknown_columns": [],
+              "unknown_tables": []
+            }
+          ],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.1148,
+      "shadow_runtime": 0.0124,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [],
+      "current_plan_sql": [
+        "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20"
+      ],
+      "current_runtime": 0.0099,
+      "current_strict_score": 0.7027,
+      "current_tokens": 671,
+      "current_tool_calls": 1,
+      "decision": "reject_unsafe_repair",
+      "decision_hash": "d56d712659788f46",
+      "dry_run_only": true,
+      "evidence_available": true,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "show me the field for Person: Birthday Today 001",
+      "query_id": "example_008",
+      "rejection_reason": "Repaired plan would increase tool calls from 1 to 2.; Endpoint family confidence 0.0000 is below 0.75.",
+      "repair_decision": {
+        "changed": true,
+        "endpoint_id": "audit_events",
+        "kind": "diagnostic_add_api",
+        "reason": "no current API call; diagnostic only and unsafe if tool calls increase"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "endpoint_family": "audit_events",
+          "endpoint_id": "audit_events",
+          "method": "GET",
+          "params": {
+            "limit": 20
+          },
+          "path": "/data/foundation/audit/events"
+        }
+      ],
+      "repaired_plan_sql": [
+        "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20"
+      ],
+      "repaired_runtime": 0.0099,
+      "repaired_strict_score": 0.6902,
+      "repaired_tokens": 671,
+      "repaired_tool_calls": 2,
+      "risk_cluster": "not_targeted",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.6,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [
+          "endpoint_family_confidence",
+          "tool_call_increase"
+        ],
+        "reasons": [
+          "Repaired plan would increase tool calls from 1 to 2.",
+          "Endpoint family confidence 0.0000 is below 0.75."
+        ],
+        "safe": false,
+        "sql_validation": {
+          "ast_summaries": [
+            {
+              "closest_column_suggestions": {},
+              "closest_table_suggestions": {},
+              "destructive_sql_detected": false,
+              "normalized_sql": "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20",
+              "parsed_ok": true,
+              "selected_columns": [
+                "SP.PROPERTY",
+                "S.NAME",
+                "SP.SEGMENTID",
+                "S.SEGMENTID"
+              ],
+              "selected_tables": [
+                "hkg_br_segment_property",
+                "dim_segment"
+              ],
+              "unknown_columns": [],
+              "unknown_tables": []
+            }
+          ],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": -0.0125,
+      "shadow_runtime": 0.0116,
+      "token_delta": 0,
+      "tool_delta": 1,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "filter": "name==weRetail: Customer Actions",
+            "limit": "5"
+          },
+          "path": "/schemas"
+        }
+      ],
+      "current_plan_sql": [
+        "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\" AS updated_time, S.\"REQUIREDFIELDS\" AS required_fields, COUNT(DISTINCT SD.\"COLLECTIONID\") AS collection_count, COUNT(DISTINCT SA.\"PROPERTY\") AS property_count FROM \"dim_blueprint\" AS S LEFT JOIN \"hkg_br_blueprint_collection\" AS SD ON S.\"BLUEPRINTID\" = SD.\"BLUEPRINTID\" LEFT JOIN \"hkg_br_blueprint_property\" AS SA ON S.\"BLUEPRINTID\" = SA.\"BLUEPRINTID\" WHERE LOWER(S.\"NAME\") = LOWER('weRetail: Customer Actions') GROUP BY S.\"BLUEPRINTID\", S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\", S.\"REQUIREDFIELDS\" LIMIT 3"
+      ],
+      "current_runtime": 0.0134,
+      "current_strict_score": 0.7576,
+      "current_tokens": 1631,
+      "current_tool_calls": 2,
+      "decision": "safe_shadow_tie_recommend_canary",
+      "decision_hash": "5234aa37629bcd82",
+      "dry_run_only": true,
+      "evidence_available": true,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "Provide more details for the schema 'weRetail: Customer Actions'",
+      "query_id": "example_009",
+      "rejection_reason": "",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": true,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "filter": "name==weRetail: Customer Actions",
+            "limit": "5"
+          },
+          "path": "/schemas"
+        }
+      ],
+      "repaired_plan_sql": [
+        "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\" AS updated_time, S.\"REQUIREDFIELDS\" AS required_fields, COUNT(DISTINCT SD.\"COLLECTIONID\") AS collection_count, COUNT(DISTINCT SA.\"PROPERTY\") AS property_count FROM \"dim_blueprint\" AS S LEFT JOIN \"hkg_br_blueprint_collection\" AS SD ON S.\"BLUEPRINTID\" = SD.\"BLUEPRINTID\" LEFT JOIN \"hkg_br_blueprint_property\" AS SA ON S.\"BLUEPRINTID\" = SA.\"BLUEPRINTID\" WHERE LOWER(S.\"NAME\") = LOWER('weRetail: Customer Actions') GROUP BY S.\"BLUEPRINTID\", S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\", S.\"REQUIREDFIELDS\" LIMIT 3"
+      ],
+      "repaired_runtime": 0.0134,
+      "repaired_strict_score": 0.7576,
+      "repaired_tokens": 1631,
+      "repaired_tool_calls": 2,
+      "risk_cluster": "missing_gold_api_in_top_k",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.973,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [],
+        "reasons": [
+          "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+        ],
+        "safe": true,
+        "sql_validation": {
+          "ast_summaries": [
+            {
+              "closest_column_suggestions": {},
+              "closest_table_suggestions": {},
+              "destructive_sql_detected": false,
+              "normalized_sql": "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\" AS updated_time, S.\"REQUIREDFIELDS\" AS required_fields, COUNT(DISTINCT SD.\"COLLECTIONID\") AS collection_count, COUNT(DISTINCT SA.\"PROPERTY\") AS property_count FROM \"dim_blueprint\" AS S LEFT JOIN \"hkg_br_blueprint_collection\" AS SD ON S.\"BLUEPRINTID\" = SD.\"BLUEPRINTID\" LEFT JOIN \"hkg_br_blueprint_property\" AS SA ON S.\"BLUEPRINTID\" = SA.\"BLUEPRINTID\" WHERE LOWER(S.\"NAME\") = LOWER('weRetail: Customer Actions') GROUP BY S.\"BLUEPRINTID\", S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\", S.\"REQUIREDFIELDS\" LIMIT 3",
+              "parsed_ok": true,
+              "selected_columns": [
+                "S.NAME",
+                "S.CLASS",
+                "S.ISPROFILEENABLED",
+                "S.BLUEPRINTID",
+                "S.UPDATEDTIME",
+                "S.REQUIREDFIELDS",
+                "SD.BLUEPRINTID",
+                "SA.BLUEPRINTID",
+                "SD.COLLECTIONID",
+                "SA.PROPERTY"
+              ],
+              "selected_tables": [
+                "dim_blueprint",
+                "hkg_br_blueprint_collection",
+                "hkg_br_blueprint_property"
+              ],
+              "unknown_columns": [],
+              "unknown_tables": []
+            }
+          ],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0113,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "filter": "class==ExperienceEvent;isProfileEnabled==true",
+            "limit": "25"
+          },
+          "path": "/data/foundation/schemaregistry/tenant/schemas"
+        }
+      ],
+      "current_plan_sql": [
+        "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS num_experience_event_profile_enabled_blueprints FROM \"dim_blueprint\" AS B WHERE LOWER(B.\"CLASS\") LIKE LOWER('%download%') AND B.\"ISPROFILEENABLED\" = TRUE"
+      ],
+      "current_runtime": 0.0118,
+      "current_strict_score": 0.7898,
+      "current_tokens": 1056,
+      "current_tool_calls": 2,
+      "decision": "reject_unsafe_repair",
+      "decision_hash": "6608de8cd8267388",
+      "dry_run_only": true,
+      "evidence_available": true,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "Count the number of XDM Experience Event schemas that are enabled for profile.",
+      "query_id": "example_010",
+      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_decision": {
+        "changed": true,
+        "endpoint_id": "schemas_short",
+        "kind": "replace_first_api",
+        "reason": "candidate-derived endpoint family rerank"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "endpoint_family": "schema_list",
+          "endpoint_id": "schemas_short",
+          "method": "GET",
+          "params": {
+            "limit": 25
+          },
+          "path": "/schemas"
+        }
+      ],
+      "repaired_plan_sql": [
+        "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS num_experience_event_profile_enabled_blueprints FROM \"dim_blueprint\" AS B WHERE LOWER(B.\"CLASS\") LIKE LOWER('%download%') AND B.\"ISPROFILEENABLED\" = TRUE"
+      ],
+      "repaired_runtime": 0.0118,
+      "repaired_strict_score": 0.6496,
+      "repaired_tokens": 1056,
+      "repaired_tool_calls": 2,
+      "risk_cluster": "zero_score_margin",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.794,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [
+          "fusion_agreement"
+        ],
+        "reasons": [
+          "Weighted score fusion and reciprocal-rank/family diagnostics did not agree."
+        ],
+        "safe": false,
+        "sql_validation": {
+          "ast_summaries": [
+            {
+              "closest_column_suggestions": {},
+              "closest_table_suggestions": {},
+              "destructive_sql_detected": false,
+              "normalized_sql": "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS num_experience_event_profile_enabled_blueprints FROM \"dim_blueprint\" AS B WHERE LOWER(B.\"CLASS\") LIKE LOWER('%download%') AND B.\"ISPROFILEENABLED\" = TRUE",
+              "parsed_ok": true,
+              "selected_columns": [
+                "B.BLUEPRINTID",
+                "B.ISPROFILEENABLED",
+                "B.CLASS"
+              ],
+              "selected_tables": [
+                "dim_blueprint"
+              ],
+              "unknown_columns": [],
+              "unknown_tables": []
+            }
+          ],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": -0.1402,
+      "shadow_runtime": 0.0091,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "25"
+          },
+          "path": "/schemas"
+        }
+      ],
+      "current_plan_sql": [
+        "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B"
+      ],
+      "current_runtime": 0.0105,
+      "current_strict_score": 0.7455,
+      "current_tokens": 832,
+      "current_tool_calls": 2,
+      "decision": "reject_score_regression",
+      "decision_hash": "2a4ccc6ad56475bc",
+      "dry_run_only": true,
+      "evidence_available": true,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "How many schemas do I have?",
+      "query_id": "example_011",
+      "rejection_reason": "Repair passed conservative SQL/API, fusion, evidence, and cost checks.",
+      "repair_decision": {
+        "changed": true,
+        "endpoint_id": "schema_registry_schemas",
+        "kind": "replace_first_api",
+        "reason": "candidate-derived endpoint family rerank"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "endpoint_family": "schema_list",
+          "endpoint_id": "schema_registry_schemas",
+          "method": "GET",
+          "params": {
+            "limit": 25
+          },
+          "path": "/data/foundation/schemaregistry/tenant/schemas"
+        }
+      ],
+      "repaired_plan_sql": [
+        "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B"
+      ],
+      "repaired_runtime": 0.0105,
+      "repaired_strict_score": 0.6307,
+      "repaired_tokens": 832,
+      "repaired_tool_calls": 2,
+      "risk_cluster": "missing_gold_api_in_top_k",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.994,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [],
+        "reasons": [
+          "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+        ],
+        "safe": true,
+        "sql_validation": {
+          "ast_summaries": [
+            {
+              "closest_column_suggestions": {},
+              "closest_table_suggestions": {},
+              "destructive_sql_detected": false,
+              "normalized_sql": "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B",
+              "parsed_ok": true,
+              "selected_columns": [
+                "B.BLUEPRINTID"
+              ],
+              "selected_tables": [
+                "dim_blueprint"
+              ],
+              "unknown_columns": [],
+              "unknown_tables": []
+            }
+          ],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": -0.1148,
+      "shadow_runtime": 0.0092,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "3",
+            "property": "assetType==destination"
+          },
+          "path": "/data/foundation/audit/events"
+        }
+      ],
+      "current_plan_sql": [
+        "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAME\" AS target_name FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"CREATEDTIME\" >= DATEADD(MONTH, -3, CURRENT_DATE) LIMIT 3"
+      ],
+      "current_runtime": 0.0134,
+      "current_strict_score": 0.7287,
+      "current_tokens": 1200,
+      "current_tool_calls": 2,
+      "decision": "reject_unsafe_repair",
+      "decision_hash": "c336c0739a887c72",
+      "dry_run_only": true,
+      "evidence_available": true,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
+      "query_id": "example_012",
+      "rejection_reason": "Unknown columns: MONTH",
+      "repair_decision": {
+        "changed": true,
+        "endpoint_id": "ups_audiences",
+        "kind": "replace_first_api",
+        "reason": "candidate-derived endpoint family rerank"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "endpoint_family": "segment_definitions",
+          "endpoint_id": "ups_audiences",
+          "method": "GET",
+          "params": {
+            "limit": 50,
+            "start": 0
+          },
+          "path": "/data/core/ups/audiences"
+        }
+      ],
+      "repaired_plan_sql": [
+        "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAME\" AS target_name FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"CREATEDTIME\" >= DATEADD(MONTH, -3, CURRENT_DATE) LIMIT 3"
+      ],
+      "repaired_runtime": 0.0134,
+      "repaired_strict_score": 0.5629,
+      "repaired_tokens": 1200,
+      "repaired_tool_calls": 2,
+      "risk_cluster": "missing_gold_api_in_top_k",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.8,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [
+          "sql_validation"
+        ],
+        "reasons": [
+          "Unknown columns: MONTH"
+        ],
+        "safe": false,
+        "sql_validation": {
+          "ast_summaries": [
+            {
+              "closest_column_suggestions": {
+                "MONTH": [
+                  "CAMPAIGNACTIVITYCOUNT",
+                  "ISACCOUNTSEGMENT",
+                  "ISPEOPLESEGMENT",
+                  "LABELSDEPENDENTSEGMENT"
+                ]
+              },
+              "closest_table_suggestions": {},
+              "destructive_sql_detected": false,
+              "normalized_sql": "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAME\" AS target_name FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"CREATEDTIME\" >= DATEADD(MONTH, -3, CURRENT_DATE) LIMIT 3",
+              "parsed_ok": true,
+              "selected_columns": [
+                "A.SEGMENTID",
+                "A.NAME",
+                "D.TARGETID",
+                "D.NAME",
+                "AD.SEGMENTID",
+                "AD.TARGETID",
+                "D.CREATEDTIME",
+                "MONTH"
+              ],
+              "selected_tables": [
+                "dim_segment",
+                "hkg_br_segment_target",
+                "dim_target"
+              ],
+              "unknown_columns": [
+                "MONTH"
+              ],
+              "unknown_tables": []
+            }
+          ],
+          "errors": [
+            "Unknown columns: MONTH"
+          ],
+          "ok": false
+        }
+      },
+      "score_delta": -0.1658,
+      "shadow_runtime": 0.0098,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "50",
+            "orderBy": "-timestamp",
+            "property": "assetType==dataset"
+          },
+          "path": "/audit/events"
+        }
+      ],
+      "current_plan_sql": [
+        "SELECT DISTINCT D.\"COLLECTIONID\" AS collection_id, D.\"NAME\" AS collection_name, D.\"UPDATEDTIME\" AS updated_time FROM \"dim_collection\" AS D WHERE D.\"UPDATEDTIME\" >= DATEADD(DAY, -90, CURRENT_DATE) ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50"
+      ],
+      "current_runtime": 0.015,
+      "current_strict_score": 0.7149,
+      "current_tokens": 1307,
+      "current_tool_calls": 2,
+      "decision": "reject_unsafe_repair",
+      "decision_hash": "fe906648641ba78b",
+      "dry_run_only": true,
+      "evidence_available": true,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "Show recent changes in datasets.",
+      "query_id": "example_013",
+      "rejection_reason": "Unknown columns: DAY",
+      "repair_decision": {
+        "changed": true,
+        "endpoint_id": "catalog_datasets",
+        "kind": "replace_first_api",
+        "reason": "candidate-derived endpoint family rerank"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "endpoint_family": "dataset_list",
+          "endpoint_id": "catalog_datasets",
+          "method": "GET",
+          "params": {
+            "limit": 50
+          },
+          "path": "/data/foundation/catalog/dataSets"
+        }
+      ],
+      "repaired_plan_sql": [
+        "SELECT DISTINCT D.\"COLLECTIONID\" AS collection_id, D.\"NAME\" AS collection_name, D.\"UPDATEDTIME\" AS updated_time FROM \"dim_collection\" AS D WHERE D.\"UPDATEDTIME\" >= DATEADD(DAY, -90, CURRENT_DATE) ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50"
+      ],
+      "repaired_runtime": 0.015,
+      "repaired_strict_score": 0.5662,
+      "repaired_tokens": 1307,
+      "repaired_tool_calls": 2,
+      "risk_cluster": "missing_gold_api_in_top_k",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.8,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [
+          "sql_validation"
+        ],
+        "reasons": [
+          "Unknown columns: DAY"
+        ],
+        "safe": false,
+        "sql_validation": {
+          "ast_summaries": [
+            {
+              "closest_column_suggestions": {
+                "DAY": [
+                  "TTLINDAYS",
+                  "DATAFLOWID",
+                  "DATAFLOWNAME",
+                  "ALTDISPLAYDESC"
+                ]
+              },
+              "closest_table_suggestions": {},
+              "destructive_sql_detected": false,
+              "normalized_sql": "SELECT DISTINCT D.\"COLLECTIONID\" AS collection_id, D.\"NAME\" AS collection_name, D.\"UPDATEDTIME\" AS updated_time FROM \"dim_collection\" AS D WHERE D.\"UPDATEDTIME\" >= DATEADD(DAY, -90, CURRENT_DATE) ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50",
+              "parsed_ok": true,
+              "selected_columns": [
+                "D.COLLECTIONID",
+                "D.NAME",
+                "D.UPDATEDTIME",
+                "DAY"
+              ],
+              "selected_tables": [
+                "dim_collection"
+              ],
+              "unknown_columns": [
+                "DAY"
+              ],
+              "unknown_tables": []
+            }
+          ],
+          "errors": [
+            "Unknown columns: DAY"
+          ],
+          "ok": false
+        }
+      },
+      "score_delta": -0.1487,
+      "shadow_runtime": 0.0077,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "20",
+            "property": "action==create"
+          },
+          "path": "/data/foundation/audit/events"
+        }
+      ],
+      "current_plan_sql": [
+        "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS created_time FROM \"dim_collection\" AS C WHERE C.\"CREATEDBY\" ILIKE '%download%'"
+      ],
+      "current_runtime": 0.0108,
+      "current_strict_score": 0.7654,
+      "current_tokens": 868,
+      "current_tool_calls": 2,
+      "decision": "reject_unsafe_repair",
+      "decision_hash": "5ad03644b245545c",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "Show me all entities created by download",
+      "query_id": "example_014",
+      "rejection_reason": "Endpoint family confidence 0.7425 is below 0.75.",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "20",
+            "property": "action==create"
+          },
+          "path": "/data/foundation/audit/events"
+        }
+      ],
+      "repaired_plan_sql": [
+        "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS created_time FROM \"dim_collection\" AS C WHERE C.\"CREATEDBY\" ILIKE '%download%'"
+      ],
+      "repaired_runtime": 0.0108,
+      "repaired_strict_score": 0.7654,
+      "repaired_tokens": 868,
+      "repaired_tool_calls": 2,
+      "risk_cluster": "not_targeted",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.9485,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [
+          "endpoint_family_confidence"
+        ],
+        "reasons": [
+          "Endpoint family confidence 0.7425 is below 0.75."
+        ],
+        "safe": false,
+        "sql_validation": {
+          "ast_summaries": [
+            {
+              "closest_column_suggestions": {},
+              "closest_table_suggestions": {},
+              "destructive_sql_detected": false,
+              "normalized_sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS created_time FROM \"dim_collection\" AS C WHERE C.\"CREATEDBY\" ILIKE '%download%'",
+              "parsed_ok": true,
+              "selected_columns": [
+                "C.COLLECTIONID",
+                "C.NAME",
+                "C.CREATEDTIME",
+                "C.CREATEDBY"
+              ],
+              "selected_tables": [
+                "dim_collection"
+              ],
+              "unknown_columns": [],
+              "unknown_tables": []
+            }
+          ],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0088,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "20"
+          },
+          "path": "/unifiedtags/tags"
+        }
+      ],
+      "current_plan_sql": [],
+      "current_runtime": 0.0094,
+      "current_strict_score": 0.6672,
+      "current_tokens": 514,
+      "current_tool_calls": 1,
+      "decision": "safe_shadow_tie_recommend_canary",
+      "decision_hash": "b2f13b45e1e299a6",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "How many tags exist in this sandbox?",
+      "query_id": "example_015",
+      "rejection_reason": "",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": true,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "20"
+          },
+          "path": "/unifiedtags/tags"
+        }
+      ],
+      "repaired_plan_sql": [],
+      "repaired_runtime": 0.0094,
+      "repaired_strict_score": 0.6672,
+      "repaired_tokens": 514,
+      "repaired_tool_calls": 1,
+      "risk_cluster": "tag_api_confusion",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 1.0,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [],
+        "reasons": [
+          "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+        ],
+        "safe": true,
+        "sql_validation": {
+          "ast_summaries": [],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.003,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "25"
+          },
+          "path": "/unifiedtags/tags"
+        }
+      ],
+      "current_plan_sql": [],
+      "current_runtime": 0.0095,
+      "current_strict_score": 0.6621,
+      "current_tokens": 635,
+      "current_tool_calls": 1,
+      "decision": "safe_shadow_tie_recommend_canary",
+      "decision_hash": "2d68604c2c4efa64",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "List all tags in this sandbox.",
+      "query_id": "example_016",
+      "rejection_reason": "",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": true,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "25"
+          },
+          "path": "/unifiedtags/tags"
+        }
+      ],
+      "repaired_plan_sql": [],
+      "repaired_runtime": 0.0095,
+      "repaired_strict_score": 0.6621,
+      "repaired_tokens": 635,
+      "repaired_tool_calls": 1,
+      "risk_cluster": "tag_api_confusion",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 1.0,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [],
+        "reasons": [
+          "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+        ],
+        "safe": true,
+        "sql_validation": {
+          "ast_summaries": [],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0027,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "100"
+          },
+          "path": "/unifiedtags/tagCategory"
+        },
+        {
+          "method": "GET",
+          "params": {
+            "limit": "100",
+            "tagCategoryId": "Uncategorized-87891E4066602D250A495F91@AdobeOrg"
+          },
+          "path": "/unifiedtags/tags"
+        }
+      ],
+      "current_plan_sql": [],
+      "current_runtime": 0.0117,
+      "current_strict_score": 0.5292,
+      "current_tokens": 963,
+      "current_tool_calls": 2,
+      "decision": "reject_unsafe_repair",
+      "decision_hash": "a6049d74809b8702",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "Which tags belong to the category 'Uncategorized'?",
+      "query_id": "example_017",
+      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "100"
+          },
+          "path": "/unifiedtags/tagCategory"
+        },
+        {
+          "method": "GET",
+          "params": {
+            "limit": "100",
+            "tagCategoryId": "Uncategorized-87891E4066602D250A495F91@AdobeOrg"
+          },
+          "path": "/unifiedtags/tags"
+        }
+      ],
+      "repaired_plan_sql": [],
+      "repaired_runtime": 0.0117,
+      "repaired_strict_score": 0.5292,
+      "repaired_tokens": 963,
+      "repaired_tool_calls": 2,
+      "risk_cluster": "tag_api_confusion",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.778,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [
+          "fusion_agreement"
+        ],
+        "reasons": [
+          "Weighted score fusion and reciprocal-rank/family diagnostics did not agree."
+        ],
+        "safe": false,
+        "sql_validation": {
+          "ast_summaries": [],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.003,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {},
+          "path": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818"
+        }
+      ],
+      "current_plan_sql": [],
+      "current_runtime": 0.01,
+      "current_strict_score": 0.6654,
+      "current_tokens": 758,
+      "current_tool_calls": 1,
+      "decision": "reject_unsafe_repair",
+      "decision_hash": "21cd02996e624cf5",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "Show me the details of the tag named 'cool'.",
+      "query_id": "example_018",
+      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_decision": {
+        "changed": true,
+        "endpoint_id": "unified_tag_categories",
+        "kind": "replace_first_api",
+        "reason": "candidate-derived endpoint family rerank"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "endpoint_family": "tag_category",
+          "endpoint_id": "unified_tag_categories",
+          "method": "GET",
+          "params": {
+            "limit": 100
+          },
+          "path": "/unifiedtags/tagCategory"
+        }
+      ],
+      "repaired_plan_sql": [],
+      "repaired_runtime": 0.01,
+      "repaired_strict_score": 0.4741,
+      "repaired_tokens": 758,
+      "repaired_tool_calls": 1,
+      "risk_cluster": "zero_score_margin",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.784,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [
+          "fusion_agreement"
+        ],
+        "reasons": [
+          "Weighted score fusion and reciprocal-rank/family diagnostics did not agree."
+        ],
+        "safe": false,
+        "sql_validation": {
+          "ast_summaries": [],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": -0.1913,
+      "shadow_runtime": 0.003,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "10"
+          },
+          "path": "/data/core/ups/config/mergePolicies"
+        }
+      ],
+      "current_plan_sql": [],
+      "current_runtime": 0.0097,
+      "current_strict_score": 0.5344,
+      "current_tokens": 659,
+      "current_tool_calls": 1,
+      "decision": "safe_shadow_tie_recommend_canary",
+      "decision_hash": "281dfc9c1e3051df",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "List all merge policies in this sandbox.",
+      "query_id": "example_019",
+      "rejection_reason": "",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": true,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "10"
+          },
+          "path": "/data/core/ups/config/mergePolicies"
+        }
+      ],
+      "repaired_plan_sql": [],
+      "repaired_runtime": 0.0097,
+      "repaired_strict_score": 0.5344,
+      "repaired_tokens": 659,
+      "repaired_tool_calls": 1,
+      "risk_cluster": "missing_gold_api_in_top_k",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 1.0,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [],
+        "reasons": [
+          "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+        ],
+        "safe": true,
+        "sql_validation": {
+          "ast_summaries": [],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0027,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "10"
+          },
+          "path": "/data/core/ups/config/mergePolicies"
+        }
+      ],
+      "current_plan_sql": [],
+      "current_runtime": 0.0093,
+      "current_strict_score": 0.5369,
+      "current_tokens": 542,
+      "current_tool_calls": 1,
+      "decision": "safe_shadow_tie_recommend_canary",
+      "decision_hash": "9a423a097167426e",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "How many merge policies are configured in this sandbox?",
+      "query_id": "example_020",
+      "rejection_reason": "",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": true,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "10"
+          },
+          "path": "/data/core/ups/config/mergePolicies"
+        }
+      ],
+      "repaired_plan_sql": [],
+      "repaired_runtime": 0.0093,
+      "repaired_strict_score": 0.5369,
+      "repaired_tokens": 542,
+      "repaired_tool_calls": 1,
+      "risk_cluster": "broad_domain_api_confusion",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 1.0,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [],
+        "reasons": [
+          "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+        ],
+        "safe": true,
+        "sql_validation": {
+          "ast_summaries": [],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0028,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "5"
+          },
+          "path": "/data/core/ups/config/mergePolicies"
+        }
+      ],
+      "current_plan_sql": [],
+      "current_runtime": 0.0107,
+      "current_strict_score": 0.5394,
+      "current_tokens": 784,
+      "current_tool_calls": 1,
+      "decision": "safe_shadow_tie_recommend_canary",
+      "decision_hash": "2e8b1191137a0973",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "Show the default merge policy for schema class '_xdm.context.profile'.",
+      "query_id": "example_021",
+      "rejection_reason": "",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": true,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "5"
+          },
+          "path": "/data/core/ups/config/mergePolicies"
+        }
+      ],
+      "repaired_plan_sql": [],
+      "repaired_runtime": 0.0107,
+      "repaired_strict_score": 0.5394,
+      "repaired_tokens": 784,
+      "repaired_tool_calls": 1,
+      "risk_cluster": "missing_gold_api_in_top_k",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 1.0,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [],
+        "reasons": [
+          "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+        ],
+        "safe": true,
+        "sql_validation": {
+          "ast_summaries": [],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0028,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "100"
+          },
+          "path": "/data/core/ups/segment/definitions"
+        }
+      ],
+      "current_plan_sql": [],
+      "current_runtime": 0.0096,
+      "current_strict_score": 0.5406,
+      "current_tokens": 696,
+      "current_tool_calls": 1,
+      "decision": "reject_unsafe_repair",
+      "decision_hash": "e934818a91c237ee",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "How many segment definitions exist in this sandbox?",
+      "query_id": "example_022",
+      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "100"
+          },
+          "path": "/data/core/ups/segment/definitions"
+        }
+      ],
+      "repaired_plan_sql": [],
+      "repaired_runtime": 0.0096,
+      "repaired_strict_score": 0.5406,
+      "repaired_tokens": 696,
+      "repaired_tool_calls": 1,
+      "risk_cluster": "missing_gold_api_in_top_k",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.8,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [
+          "fusion_agreement"
+        ],
+        "reasons": [
+          "Weighted score fusion and reciprocal-rank/family diagnostics did not agree."
+        ],
+        "safe": false,
+        "sql_validation": {
+          "ast_summaries": [],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0032,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "10"
+          },
+          "path": "/data/core/ups/segment/definitions"
+        }
+      ],
+      "current_plan_sql": [],
+      "current_runtime": 0.0097,
+      "current_strict_score": 0.5401,
+      "current_tokens": 682,
+      "current_tool_calls": 1,
+      "decision": "reject_unsafe_repair",
+      "decision_hash": "209dc36ee96ee4bd",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "List all segment definitions.",
+      "query_id": "example_023",
+      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "10"
+          },
+          "path": "/data/core/ups/segment/definitions"
+        }
+      ],
+      "repaired_plan_sql": [],
+      "repaired_runtime": 0.0097,
+      "repaired_strict_score": 0.5401,
+      "repaired_tokens": 682,
+      "repaired_tool_calls": 1,
+      "risk_cluster": "missing_gold_api_in_top_k",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.8,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [
+          "fusion_agreement"
+        ],
+        "reasons": [
+          "Weighted score fusion and reciprocal-rank/family diagnostics did not agree."
+        ],
+        "safe": false,
+        "sql_validation": {
+          "ast_summaries": [],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0031,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "3",
+            "orderBy": "updateTime:desc"
+          },
+          "path": "/data/core/ups/segment/definitions"
+        }
+      ],
+      "current_plan_sql": [],
+      "current_runtime": 0.0097,
+      "current_strict_score": 0.5361,
+      "current_tokens": 712,
+      "current_tool_calls": 1,
+      "decision": "reject_unsafe_repair",
+      "decision_hash": "50ae44658bc6aa49",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "Which segment definitions were updated most recently?",
+      "query_id": "example_024",
+      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "3",
+            "orderBy": "updateTime:desc"
+          },
+          "path": "/data/core/ups/segment/definitions"
+        }
+      ],
+      "repaired_plan_sql": [],
+      "repaired_runtime": 0.0097,
+      "repaired_strict_score": 0.5361,
+      "repaired_tokens": 712,
+      "repaired_tool_calls": 1,
+      "risk_cluster": "missing_gold_api_in_top_k",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.8,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [
+          "fusion_agreement"
+        ],
+        "reasons": [
+          "Weighted score fusion and reciprocal-rank/family diagnostics did not agree."
+        ],
+        "safe": false,
+        "sql_validation": {
+          "ast_summaries": [],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.003,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "3"
+          },
+          "path": "/data/core/ups/segment/jobs"
+        }
+      ],
+      "current_plan_sql": [],
+      "current_runtime": 0.01,
+      "current_strict_score": 0.5355,
+      "current_tokens": 689,
+      "current_tool_calls": 1,
+      "decision": "reject_unsafe_repair",
+      "decision_hash": "cbcbdbf375a77ea8",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "List all segment evaluation jobs.",
+      "query_id": "example_025",
+      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "3"
+          },
+          "path": "/data/core/ups/segment/jobs"
+        }
+      ],
+      "repaired_plan_sql": [],
+      "repaired_runtime": 0.01,
+      "repaired_strict_score": 0.5355,
+      "repaired_tokens": 689,
+      "repaired_tool_calls": 1,
+      "risk_cluster": "missing_gold_api_in_top_k",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.7945,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [
+          "fusion_agreement"
+        ],
+        "reasons": [
+          "Weighted score fusion and reciprocal-rank/family diagnostics did not agree."
+        ],
+        "safe": false,
+        "sql_validation": {
+          "ast_summaries": [],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0029,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "20"
+          },
+          "path": "/data/core/ups/segment/jobs"
+        }
+      ],
+      "current_plan_sql": [],
+      "current_runtime": 0.0102,
+      "current_strict_score": 0.5407,
+      "current_tokens": 727,
+      "current_tool_calls": 1,
+      "decision": "reject_unsafe_repair",
+      "decision_hash": "d9165c7d998a609a",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "How many segment jobs are currently processing?",
+      "query_id": "example_026",
+      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "20"
+          },
+          "path": "/data/core/ups/segment/jobs"
+        }
+      ],
+      "repaired_plan_sql": [],
+      "repaired_runtime": 0.0102,
+      "repaired_strict_score": 0.5407,
+      "repaired_tokens": 727,
+      "repaired_tool_calls": 1,
+      "risk_cluster": "missing_gold_api_in_top_k",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.7945,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [
+          "fusion_agreement"
+        ],
+        "reasons": [
+          "Weighted score fusion and reciprocal-rank/family diagnostics did not agree."
+        ],
+        "safe": false,
+        "sql_validation": {
+          "ast_summaries": [],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0031,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "10"
+          },
+          "path": "/data/core/ups/segment/jobs"
+        }
+      ],
+      "current_plan_sql": [],
+      "current_runtime": 0.0112,
+      "current_strict_score": 0.6017,
+      "current_tokens": 776,
+      "current_tool_calls": 1,
+      "decision": "reject_unsafe_repair",
+      "decision_hash": "0d1813b83f4354e8",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "Show all segment jobs with status 'QUEUED'.",
+      "query_id": "example_027",
+      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "10"
+          },
+          "path": "/data/core/ups/segment/jobs"
+        }
+      ],
+      "repaired_plan_sql": [],
+      "repaired_runtime": 0.0112,
+      "repaired_strict_score": 0.6017,
+      "repaired_tokens": 776,
+      "repaired_tool_calls": 1,
+      "risk_cluster": "missing_gold_api_in_top_k",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.7945,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [
+          "fusion_agreement"
+        ],
+        "reasons": [
+          "Weighted score fusion and reciprocal-rank/family diagnostics did not agree."
+        ],
+        "safe": false,
+        "sql_validation": {
+          "ast_summaries": [],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0032,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "100",
+            "orderBy": "desc:created"
+          },
+          "path": "/data/foundation/catalog/batches"
+        }
+      ],
+      "current_plan_sql": [],
+      "current_runtime": 0.0111,
+      "current_strict_score": 0.5348,
+      "current_tokens": 694,
+      "current_tool_calls": 1,
+      "decision": "reject_unsafe_repair",
+      "decision_hash": "a57500e1a1ed5e20",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "List the most recently created batches.",
+      "query_id": "example_028",
+      "rejection_reason": "Endpoint family confidence 0.7400 is below 0.75.",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "100",
+            "orderBy": "desc:created"
+          },
+          "path": "/data/foundation/catalog/batches"
+        }
+      ],
+      "repaired_plan_sql": [],
+      "repaired_runtime": 0.0111,
+      "repaired_strict_score": 0.5348,
+      "repaired_tokens": 694,
+      "repaired_tool_calls": 1,
+      "risk_cluster": "missing_gold_api_in_top_k",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.948,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [
+          "endpoint_family_confidence"
+        ],
+        "reasons": [
+          "Endpoint family confidence 0.7400 is below 0.75."
+        ],
+        "safe": false,
+        "sql_validation": {
+          "ast_summaries": [],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0029,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "10",
+            "status": "success"
+          },
+          "path": "/data/foundation/catalog/batches"
+        }
+      ],
+      "current_plan_sql": [],
+      "current_runtime": 0.0112,
+      "current_strict_score": 0.5345,
+      "current_tokens": 640,
+      "current_tool_calls": 1,
+      "decision": "safe_shadow_tie_recommend_canary",
+      "decision_hash": "07d4e6c59959c206",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "How many batches have status 'success'?",
+      "query_id": "example_029",
+      "rejection_reason": "",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": true,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "10",
+            "status": "success"
+          },
+          "path": "/data/foundation/catalog/batches"
+        }
+      ],
+      "repaired_plan_sql": [],
+      "repaired_runtime": 0.0112,
+      "repaired_strict_score": 0.5345,
+      "repaired_tokens": 640,
+      "repaired_tool_calls": 1,
+      "risk_cluster": "missing_gold_api_in_top_k",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.9615,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [],
+        "reasons": [
+          "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+        ],
+        "safe": true,
+        "sql_validation": {
+          "ast_summaries": [],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0026,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {},
+          "path": "/data/foundation/catalog/batches/01KP69BPA5ZKFB7HCDYPE4GN6F"
+        }
+      ],
+      "current_plan_sql": [],
+      "current_runtime": 0.0102,
+      "current_strict_score": 0.5308,
+      "current_tokens": 734,
+      "current_tool_calls": 1,
+      "decision": "safe_shadow_tie_recommend_canary",
+      "decision_hash": "f225bf75d1b22b4b",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "Show the details of batch 01KP69BPA5ZKFB7HCDYPE4GN6F.",
+      "query_id": "example_030",
+      "rejection_reason": "",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": true,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {},
+          "path": "/data/foundation/catalog/batches/01KP69BPA5ZKFB7HCDYPE4GN6F"
+        }
+      ],
+      "repaired_plan_sql": [],
+      "repaired_runtime": 0.0102,
+      "repaired_strict_score": 0.5308,
+      "repaired_tokens": 734,
+      "repaired_tool_calls": 1,
+      "risk_cluster": "zero_score_margin",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.9615,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [],
+        "reasons": [
+          "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+        ],
+        "safe": true,
+        "sql_validation": {
+          "ast_summaries": [],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0023,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {},
+          "path": "/data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files"
+        }
+      ],
+      "current_plan_sql": [],
+      "current_runtime": 0.0108,
+      "current_strict_score": 0.5339,
+      "current_tokens": 758,
+      "current_tool_calls": 1,
+      "decision": "safe_shadow_tie_recommend_canary",
+      "decision_hash": "7c20bbc4f49528d9",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?",
+      "query_id": "example_031",
+      "rejection_reason": "",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": true,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {},
+          "path": "/data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files"
+        }
+      ],
+      "repaired_plan_sql": [],
+      "repaired_runtime": 0.0108,
+      "repaired_strict_score": 0.5339,
+      "repaired_tokens": 758,
+      "repaired_tool_calls": 1,
+      "risk_cluster": "batch_endpoint_confusion",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 1.0,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [],
+        "reasons": [
+          "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+        ],
+        "safe": true,
+        "sql_validation": {
+          "ast_summaries": [],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0034,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "GET",
+          "params": {},
+          "path": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
+        }
+      ],
+      "current_plan_sql": [],
+      "current_runtime": 0.0105,
+      "current_strict_score": 0.6711,
+      "current_tokens": 821,
+      "current_tool_calls": 1,
+      "decision": "reject_unsafe_repair",
+      "decision_hash": "213c7019cb2ae888",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
+      "query_id": "example_032",
+      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "method": "GET",
+          "params": {},
+          "path": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
+        }
+      ],
+      "repaired_plan_sql": [],
+      "repaired_runtime": 0.0105,
+      "repaired_strict_score": 0.6711,
+      "repaired_tokens": 821,
+      "repaired_tool_calls": 1,
+      "risk_cluster": "batch_endpoint_confusion",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.8,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [
+          "fusion_agreement"
+        ],
+        "reasons": [
+          "Weighted score fusion and reciprocal-rank/family diagnostics did not agree."
+        ],
+        "safe": false,
+        "sql_validation": {
+          "ast_summaries": [],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0026,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "POST",
+          "params": {
+            "end": "2026-03-31T23:59:59.000Z",
+            "granularity": "day",
+            "metrics": [
+              {
+                "aggregator": "sum",
+                "filters": [],
+                "name": "timeseries.ingestion.dataset.recordsuccess.count"
+              }
+            ],
+            "start": "2026-03-15T00:00:00.000Z"
+          },
+          "path": "/data/infrastructure/observability/insights/metrics"
+        }
+      ],
+      "current_plan_sql": [],
+      "current_runtime": 0.0208,
+      "current_strict_score": 0.672,
+      "current_tokens": 1124,
+      "current_tool_calls": 1,
+      "decision": "reject_unsafe_repair",
+      "decision_hash": "5135231709d59c23",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'?",
+      "query_id": "example_033",
+      "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_decision": {
+        "changed": false,
+        "reason": "top ranked endpoint already matches current API"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "method": "POST",
+          "params": {
+            "end": "2026-03-31T23:59:59.000Z",
+            "granularity": "day",
+            "metrics": [
+              {
+                "aggregator": "sum",
+                "filters": [],
+                "name": "timeseries.ingestion.dataset.recordsuccess.count"
+              }
+            ],
+            "start": "2026-03-15T00:00:00.000Z"
+          },
+          "path": "/data/infrastructure/observability/insights/metrics"
+        }
+      ],
+      "repaired_plan_sql": [],
+      "repaired_runtime": 0.0208,
+      "repaired_strict_score": 0.672,
+      "repaired_tokens": 1124,
+      "repaired_tool_calls": 1,
+      "risk_cluster": "not_targeted",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.8,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [
+          "fusion_agreement"
+        ],
+        "reasons": [
+          "Weighted score fusion and reciprocal-rank/family diagnostics did not agree."
+        ],
+        "safe": false,
+        "sql_validation": {
+          "ast_summaries": [],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": 0.0,
+      "shadow_runtime": 0.0028,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    },
+    {
+      "current_plan_api": [
+        {
+          "method": "POST",
+          "params": {
+            "end": "2026-04-01T23:59:59.000Z",
+            "granularity": "day",
+            "metrics": [
+              {
+                "aggregator": "sum",
+                "filters": [],
+                "name": "timeseries.ingestion.dataset.recordsuccess.count"
+              },
+              {
+                "aggregator": "sum",
+                "filters": [],
+                "name": "timeseries.ingestion.dataset.batchsuccess.count"
+              }
+            ],
+            "start": "2026-03-01T00:00:00.000Z"
+          },
+          "path": "/data/infrastructure/observability/insights/metrics"
+        }
+      ],
+      "current_plan_sql": [],
+      "current_runtime": 0.0114,
+      "current_strict_score": 0.6621,
+      "current_tokens": 913,
+      "current_tool_calls": 1,
+      "decision": "reject_unsafe_repair",
+      "decision_hash": "bc049c96aa1f1861",
+      "dry_run_only": true,
+      "evidence_available": false,
+      "execution_changed": false,
+      "live_api_evidence_available": false,
+      "query": "Show ingestion record counts and batch success counts for the last 90 days.",
+      "query_id": "example_034",
+      "rejection_reason": "Endpoint family confidence 0.0000 is below 0.75.; Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+      "repair_decision": {
+        "changed": true,
+        "endpoint_id": "ups_audiences",
+        "kind": "replace_first_api",
+        "reason": "candidate-derived endpoint family rerank"
+      },
+      "repair_safe_to_enable": false,
+      "repaired_plan_api": [
+        {
+          "endpoint_family": "segment_definitions",
+          "endpoint_id": "ups_audiences",
+          "method": "GET",
+          "params": {
+            "limit": 50,
+            "start": 0
+          },
+          "path": "/data/core/ups/audiences"
+        }
+      ],
+      "repaired_plan_sql": [],
+      "repaired_runtime": 0.0114,
+      "repaired_strict_score": 0.2371,
+      "repaired_tokens": 913,
+      "repaired_tool_calls": 1,
+      "risk_cluster": "zero_score_margin",
+      "runtime_delta": 0.0,
+      "safety_verdict": {
+        "api_validation": {
+          "errors": [],
+          "ok": true,
+          "repaired_aliases": []
+        },
+        "confidence": 0.6,
+        "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+        "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+        "failed_checks": [
+          "endpoint_family_confidence",
+          "fusion_agreement"
+        ],
+        "reasons": [
+          "Endpoint family confidence 0.0000 is below 0.75.",
+          "Weighted score fusion and reciprocal-rank/family diagnostics did not agree."
+        ],
+        "safe": false,
+        "sql_validation": {
+          "ast_summaries": [],
+          "errors": [],
+          "ok": true
+        }
+      },
+      "score_delta": -0.425,
+      "shadow_runtime": 0.0027,
+      "token_delta": 0,
+      "tool_delta": 0,
+      "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+    }
+  ]
+}

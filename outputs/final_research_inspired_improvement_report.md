@@ -9,7 +9,7 @@ Status: **no measured strict-score improvement**.
 | strict_final_score | 0.649 | 0.6486 | -0.0004 |
 | strict_correctness | 0.6743 | 0.6743 | 0.0 |
 | estimated_tokens | 851.7714 | 899.2286 | 47.4572 |
-| runtime | 0.0102 | 0.0117 | 0.0015 |
+| runtime | 0.0102 | 0.0115 | 0.0013 |
 | tool_calls | 1.4571 | 1.4571 | 0.0 |
 
 ## Gate Results
@@ -17,7 +17,7 @@ Status: **no measured strict-score improvement**.
 - Packaged preferred strategy: `SQL_FIRST_API_VERIFY`
 - Strict score regression gate OK: True
 - Estimated-token overhead: 5.57% (gate OK: True)
-- Runtime overhead: 14.71% (gate OK: True)
+- Runtime overhead: 12.75% (gate OK: True)
 - Tool-call delta: 0.0 (gate OK: True)
 - Value retrieval budget: 250 ms (budget OK: True)
 - Value retrieval cache key algorithm: `sha256` (reproducible: True)
@@ -25,6 +25,9 @@ Status: **no measured strict-score improvement**.
 - Retrieval cluster gate: retrieval-cluster improvement measured (passed: True)
 - Improved retrieval clusters: zero_score_margin, missing_gold_api_in_top_k, batch_endpoint_confusion, tag_api_confusion, schema_vs_dataset_confusion
 - Ranking-only no score claim: True
+- Shadow repair eval ran: True
+- Shadow repair execution enabled: False
+- Shadow repaired better/equal/worse/unsafe: 1/26/8/21
 - Secret scan OK: True
 - Visualization artifacts directory: `/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/visualizations`
 - Visualization artifacts inside final submission: 0
@@ -47,6 +50,11 @@ Status: **no measured strict-score improvement**.
 | `ENABLE_VALUE_TO_API_RANKING` | True |
 | `ENABLE_GATED_RISK_CLUSTER_REPAIR` | True |
 | `ENABLE_GATED_RISK_CLUSTER_REPAIR_EXECUTION` | False |
+| `ENABLE_REPAIR_FOR_BATCH_ENDPOINT_CONFUSION` | False |
+| `ENABLE_REPAIR_FOR_TAG_API_CONFUSION` | False |
+| `ENABLE_REPAIR_FOR_SCHEMA_DATASET_CONFUSION` | False |
+| `ENABLE_REPAIR_FOR_ZERO_SCORE_MARGIN` | False |
+| `ENABLE_REPAIR_FOR_MISSING_API_TOPK` | False |
 
 ## Technique Summary
 
@@ -77,6 +85,19 @@ Status: **no measured strict-score improvement**.
 | `tag_api_confusion` | 4 | 1 | -3 | True | True | False |
 | `zero_score_margin` | 32 | 6 | -26 | True | True | False |
 
+## Shadow Repair Canary Recommendations
+
+Execution repair remains disabled by default. These recommendations are offline what-if results only.
+
+| Cluster | Rows | Better | Equal | Worse | Avg score delta | Safe to enable? | Recommended flag | Decision |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| `batch_endpoint_confusion` | 2 | 0 | 2 | 0 | 0.0 | False | `ENABLE_REPAIR_FOR_BATCH_ENDPOINT_CONFUSION` | keep_disabled |
+| `broad_domain_api_confusion` | 1 | 0 | 1 | 0 | 0.0 | False | `None` | keep_disabled |
+| `missing_gold_api_in_top_k` | 15 | 0 | 12 | 3 | -0.0286 | False | `ENABLE_REPAIR_FOR_MISSING_API_TOPK` | keep_disabled |
+| `schema_vs_dataset_confusion` | 2 | 1 | 1 | 0 | 0.0574 | False | `ENABLE_REPAIR_FOR_SCHEMA_DATASET_CONFUSION` | keep_disabled |
+| `tag_api_confusion` | 3 | 0 | 3 | 0 | 0.0 | False | `ENABLE_REPAIR_FOR_TAG_API_CONFUSION` | keep_disabled |
+| `zero_score_margin` | 6 | 0 | 2 | 4 | -0.1537 | False | `ENABLE_REPAIR_FOR_ZERO_SCORE_MARGIN` | keep_disabled |
+
 ## Research Safety Audit
 
 - public_query_overlap: False
@@ -91,6 +112,8 @@ Status: **no measured strict-score improvement**.
 - Hybrid candidate ranking is report-only for SQL_FIRST_API_VERIFY; it does not change executed SQL/API plans.
 - Candidate risk clusters compare old retrieval ordering with ranking/report-only ordering.
 - If execution repair remains disabled, ranking changes are not claimed as accuracy improvements.
+- Offline shadow repair eval compares candidate-derived repaired plans without changing packaged execution.
+- Any repair canary enablement is a recommendation only; canary flags remain disabled by default.
 - SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.
 - No live API evidence is fabricated; Adobe API remains dry-run without credentials.
 - Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.

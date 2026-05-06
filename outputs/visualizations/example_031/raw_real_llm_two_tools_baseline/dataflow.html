@@ -194,6 +194,13 @@ No successful evidence was available from executed tools.
 | Value-to-API Ranking | False | {&quot;active&quot;: false, &quot;boost_applied&quot;: true, &quot;value_match_used_for_api_ranking&quot;: false} | uses only high-confidence retrieved values for endpoint family boosts | reuses existing value retrieval diagnostics |
 | Gated Risk Cluster Repair | True | {&quot;active&quot;: true, &quot;candidate_count&quot;: 2, &quot;cost_delta&quot;: 0, &quot;diagnostic_only&quot;: true, &quot;execution_repair_enabled&quot;: false, &quot;expected_correctness_gain&quot;: &quot;retrieval-only candidate separation; no accuracy claim without execution change&quot;, &quot;hard_case_triggered&quot;: true, &quot;rejected_candidate_reason&quot;: &quot;lower endpoint-family confidence or lower hybrid score&quot;, &quot;truncated_fields&quot;: 2} | compares a repaired candidate without executing losing plans | diagnostic-only; zero tool-call delta |
 
+## Shadow Repair / What-if Evaluation
+
+| Risk cluster | Current candidate | Repaired candidate | Safety verdict | Score delta | Tool/cost delta | Enable recommendation |
+| --- | --- | --- | --- | ---: | --- | --- |
+| batch_endpoint_confusion | {&quot;api&quot;: {&quot;items&quot;: [{&quot;method&quot;: &quot;GET&quot;, &quot;path&quot;: &quot;/data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files&quot;}], &quot;total_items&quot;: 1, &quot;truncated_items&quot;: false}, &quot;score&quot;: 0.5339} | {&quot;api&quot;: {&quot;items&quot;: [{&quot;method&quot;: &quot;GET&quot;, &quot;path&quot;: &quot;/data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files&quot;}], &quot;total_items&quot;: 1, &quot;truncated_items&quot;: false}, &quot;score&quot;: 0.5339} | safe | 0.0 | {&#x27;tool_delta&#x27;: 0, &#x27;token_delta&#x27;: 0, &#x27;runtime_delta&#x27;: 0.0} | safe_shadow_tie_recommend_canary |
+| execution changed? | False | reason | offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled | decision hash | 7c20bbc4f49528d9 | |
+
 ## Value Retrieval Cache
 
 | Field | Value |

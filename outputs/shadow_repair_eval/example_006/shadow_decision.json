@@ -1,0 +1,99 @@
+{
+  "current_plan_api": [
+    {
+      "method": "GET",
+      "params": {
+        "limit": "25",
+        "property": "schema.name"
+      },
+      "path": "/data/foundation/catalog/dataSets"
+    }
+  ],
+  "current_plan_sql": [
+    "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1"
+  ],
+  "current_runtime": 0.0122,
+  "current_strict_score": 0.7272,
+  "current_tokens": 1154,
+  "current_tool_calls": 2,
+  "decision": "safe_shadow_tie_recommend_canary",
+  "decision_hash": "e6033ce83757f84a",
+  "dry_run_only": true,
+  "evidence_available": true,
+  "execution_changed": false,
+  "live_api_evidence_available": false,
+  "query": "How many datasets have been ingested using the same schema in the prod sandbox?",
+  "query_id": "example_006",
+  "rejection_reason": "",
+  "repair_decision": {
+    "changed": false,
+    "reason": "top ranked endpoint already matches current API"
+  },
+  "repair_safe_to_enable": true,
+  "repaired_plan_api": [
+    {
+      "method": "GET",
+      "params": {
+        "limit": "25",
+        "property": "schema.name"
+      },
+      "path": "/data/foundation/catalog/dataSets"
+    }
+  ],
+  "repaired_plan_sql": [
+    "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1"
+  ],
+  "repaired_runtime": 0.0122,
+  "repaired_strict_score": 0.7272,
+  "repaired_tokens": 1154,
+  "repaired_tool_calls": 2,
+  "risk_cluster": "schema_vs_dataset_confusion",
+  "runtime_delta": 0.0,
+  "safety_verdict": {
+    "api_validation": {
+      "errors": [],
+      "ok": true,
+      "repaired_aliases": []
+    },
+    "confidence": 0.9765,
+    "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+    "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+    "failed_checks": [],
+    "reasons": [
+      "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+    ],
+    "safe": true,
+    "sql_validation": {
+      "ast_summaries": [
+        {
+          "closest_column_suggestions": {},
+          "closest_table_suggestions": {},
+          "destructive_sql_detected": false,
+          "normalized_sql": "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1",
+          "parsed_ok": true,
+          "selected_columns": [
+            "S.BLUEPRINTID",
+            "S.NAME",
+            "D.COLLECTIONID",
+            "DS.COLLECTIONID",
+            "DS.BLUEPRINTID"
+          ],
+          "selected_tables": [
+            "dim_collection",
+            "hkg_br_blueprint_collection",
+            "dim_blueprint"
+          ],
+          "unknown_columns": [],
+          "unknown_tables": []
+        }
+      ],
+      "errors": [],
+      "ok": true
+    }
+  },
+  "score_delta": 0.0,
+  "shadow_runtime": 0.0086,
+  "token_delta": 0,
+  "tool_delta": 0,
+  "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+}

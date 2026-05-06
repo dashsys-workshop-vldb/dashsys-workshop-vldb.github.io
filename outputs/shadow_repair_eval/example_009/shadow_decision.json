@@ -1,0 +1,104 @@
+{
+  "current_plan_api": [
+    {
+      "method": "GET",
+      "params": {
+        "filter": "name==weRetail: Customer Actions",
+        "limit": "5"
+      },
+      "path": "/schemas"
+    }
+  ],
+  "current_plan_sql": [
+    "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\" AS updated_time, S.\"REQUIREDFIELDS\" AS required_fields, COUNT(DISTINCT SD.\"COLLECTIONID\") AS collection_count, COUNT(DISTINCT SA.\"PROPERTY\") AS property_count FROM \"dim_blueprint\" AS S LEFT JOIN \"hkg_br_blueprint_collection\" AS SD ON S.\"BLUEPRINTID\" = SD.\"BLUEPRINTID\" LEFT JOIN \"hkg_br_blueprint_property\" AS SA ON S.\"BLUEPRINTID\" = SA.\"BLUEPRINTID\" WHERE LOWER(S.\"NAME\") = LOWER('weRetail: Customer Actions') GROUP BY S.\"BLUEPRINTID\", S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\", S.\"REQUIREDFIELDS\" LIMIT 3"
+  ],
+  "current_runtime": 0.0134,
+  "current_strict_score": 0.7576,
+  "current_tokens": 1631,
+  "current_tool_calls": 2,
+  "decision": "safe_shadow_tie_recommend_canary",
+  "decision_hash": "5234aa37629bcd82",
+  "dry_run_only": true,
+  "evidence_available": true,
+  "execution_changed": false,
+  "live_api_evidence_available": false,
+  "query": "Provide more details for the schema 'weRetail: Customer Actions'",
+  "query_id": "example_009",
+  "rejection_reason": "",
+  "repair_decision": {
+    "changed": false,
+    "reason": "top ranked endpoint already matches current API"
+  },
+  "repair_safe_to_enable": true,
+  "repaired_plan_api": [
+    {
+      "method": "GET",
+      "params": {
+        "filter": "name==weRetail: Customer Actions",
+        "limit": "5"
+      },
+      "path": "/schemas"
+    }
+  ],
+  "repaired_plan_sql": [
+    "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\" AS updated_time, S.\"REQUIREDFIELDS\" AS required_fields, COUNT(DISTINCT SD.\"COLLECTIONID\") AS collection_count, COUNT(DISTINCT SA.\"PROPERTY\") AS property_count FROM \"dim_blueprint\" AS S LEFT JOIN \"hkg_br_blueprint_collection\" AS SD ON S.\"BLUEPRINTID\" = SD.\"BLUEPRINTID\" LEFT JOIN \"hkg_br_blueprint_property\" AS SA ON S.\"BLUEPRINTID\" = SA.\"BLUEPRINTID\" WHERE LOWER(S.\"NAME\") = LOWER('weRetail: Customer Actions') GROUP BY S.\"BLUEPRINTID\", S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\", S.\"REQUIREDFIELDS\" LIMIT 3"
+  ],
+  "repaired_runtime": 0.0134,
+  "repaired_strict_score": 0.7576,
+  "repaired_tokens": 1631,
+  "repaired_tool_calls": 2,
+  "risk_cluster": "missing_gold_api_in_top_k",
+  "runtime_delta": 0.0,
+  "safety_verdict": {
+    "api_validation": {
+      "errors": [],
+      "ok": true,
+      "repaired_aliases": []
+    },
+    "confidence": 0.973,
+    "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+    "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+    "failed_checks": [],
+    "reasons": [
+      "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+    ],
+    "safe": true,
+    "sql_validation": {
+      "ast_summaries": [
+        {
+          "closest_column_suggestions": {},
+          "closest_table_suggestions": {},
+          "destructive_sql_detected": false,
+          "normalized_sql": "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\" AS updated_time, S.\"REQUIREDFIELDS\" AS required_fields, COUNT(DISTINCT SD.\"COLLECTIONID\") AS collection_count, COUNT(DISTINCT SA.\"PROPERTY\") AS property_count FROM \"dim_blueprint\" AS S LEFT JOIN \"hkg_br_blueprint_collection\" AS SD ON S.\"BLUEPRINTID\" = SD.\"BLUEPRINTID\" LEFT JOIN \"hkg_br_blueprint_property\" AS SA ON S.\"BLUEPRINTID\" = SA.\"BLUEPRINTID\" WHERE LOWER(S.\"NAME\") = LOWER('weRetail: Customer Actions') GROUP BY S.\"BLUEPRINTID\", S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\", S.\"REQUIREDFIELDS\" LIMIT 3",
+          "parsed_ok": true,
+          "selected_columns": [
+            "S.NAME",
+            "S.CLASS",
+            "S.ISPROFILEENABLED",
+            "S.BLUEPRINTID",
+            "S.UPDATEDTIME",
+            "S.REQUIREDFIELDS",
+            "SD.BLUEPRINTID",
+            "SA.BLUEPRINTID",
+            "SD.COLLECTIONID",
+            "SA.PROPERTY"
+          ],
+          "selected_tables": [
+            "dim_blueprint",
+            "hkg_br_blueprint_collection",
+            "hkg_br_blueprint_property"
+          ],
+          "unknown_columns": [],
+          "unknown_tables": []
+        }
+      ],
+      "errors": [],
+      "ok": true
+    }
+  },
+  "score_delta": 0.0,
+  "shadow_runtime": 0.0113,
+  "token_delta": 0,
+  "tool_delta": 0,
+  "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+}

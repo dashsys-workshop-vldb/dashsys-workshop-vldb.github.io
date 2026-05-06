@@ -1,0 +1,119 @@
+{
+  "current_plan_api": [
+    {
+      "method": "GET",
+      "params": {
+        "limit": "3",
+        "property": "assetType==destination"
+      },
+      "path": "/data/foundation/audit/events"
+    }
+  ],
+  "current_plan_sql": [
+    "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAME\" AS target_name FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"CREATEDTIME\" >= DATEADD(MONTH, -3, CURRENT_DATE) LIMIT 3"
+  ],
+  "current_runtime": 0.0134,
+  "current_strict_score": 0.7287,
+  "current_tokens": 1200,
+  "current_tool_calls": 2,
+  "decision": "reject_unsafe_repair",
+  "decision_hash": "c336c0739a887c72",
+  "dry_run_only": true,
+  "evidence_available": true,
+  "execution_changed": false,
+  "live_api_evidence_available": false,
+  "query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
+  "query_id": "example_012",
+  "rejection_reason": "Unknown columns: MONTH",
+  "repair_decision": {
+    "changed": true,
+    "endpoint_id": "ups_audiences",
+    "kind": "replace_first_api",
+    "reason": "candidate-derived endpoint family rerank"
+  },
+  "repair_safe_to_enable": false,
+  "repaired_plan_api": [
+    {
+      "endpoint_family": "segment_definitions",
+      "endpoint_id": "ups_audiences",
+      "method": "GET",
+      "params": {
+        "limit": 50,
+        "start": 0
+      },
+      "path": "/data/core/ups/audiences"
+    }
+  ],
+  "repaired_plan_sql": [
+    "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAME\" AS target_name FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"CREATEDTIME\" >= DATEADD(MONTH, -3, CURRENT_DATE) LIMIT 3"
+  ],
+  "repaired_runtime": 0.0134,
+  "repaired_strict_score": 0.5629,
+  "repaired_tokens": 1200,
+  "repaired_tool_calls": 2,
+  "risk_cluster": "missing_gold_api_in_top_k",
+  "runtime_delta": 0.0,
+  "safety_verdict": {
+    "api_validation": {
+      "errors": [],
+      "ok": true,
+      "repaired_aliases": []
+    },
+    "confidence": 0.8,
+    "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+    "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+    "failed_checks": [
+      "sql_validation"
+    ],
+    "reasons": [
+      "Unknown columns: MONTH"
+    ],
+    "safe": false,
+    "sql_validation": {
+      "ast_summaries": [
+        {
+          "closest_column_suggestions": {
+            "MONTH": [
+              "CAMPAIGNACTIVITYCOUNT",
+              "ISACCOUNTSEGMENT",
+              "ISPEOPLESEGMENT",
+              "LABELSDEPENDENTSEGMENT"
+            ]
+          },
+          "closest_table_suggestions": {},
+          "destructive_sql_detected": false,
+          "normalized_sql": "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAME\" AS target_name FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"CREATEDTIME\" >= DATEADD(MONTH, -3, CURRENT_DATE) LIMIT 3",
+          "parsed_ok": true,
+          "selected_columns": [
+            "A.SEGMENTID",
+            "A.NAME",
+            "D.TARGETID",
+            "D.NAME",
+            "AD.SEGMENTID",
+            "AD.TARGETID",
+            "D.CREATEDTIME",
+            "MONTH"
+          ],
+          "selected_tables": [
+            "dim_segment",
+            "hkg_br_segment_target",
+            "dim_target"
+          ],
+          "unknown_columns": [
+            "MONTH"
+          ],
+          "unknown_tables": []
+        }
+      ],
+      "errors": [
+        "Unknown columns: MONTH"
+      ],
+      "ok": false
+    }
+  },
+  "score_delta": -0.1658,
+  "shadow_runtime": 0.0098,
+  "token_delta": 0,
+  "tool_delta": 0,
+  "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+}

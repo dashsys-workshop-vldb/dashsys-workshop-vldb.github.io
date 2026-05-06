@@ -158,14 +158,14 @@
     "valid_tool_calls": 2
   },
   "metrics": {
-    "answer_time": 0.0005263329949229956,
+    "answer_time": 0.0005428330041468143,
     "checkpoint_count": 24,
     "estimated_tokens": 950,
-    "execution_time": 0.00039091601502150297,
-    "planning_time": 0.0015686249826103449,
-    "preprocessing_time": 0.0024561670143157244,
+    "execution_time": 0.00040666607674211264,
+    "planning_time": 0.001395000028423965,
+    "preprocessing_time": 0.0021510409424081445,
     "prompt_context_tokens": "n/a - prompt_context_tokens missing",
-    "runtime": 0.012068375013768673
+    "runtime": 0.013024582993239164
   },
   "normalization": {
     "matching_text": "when was the journey 'birthday message' published?",
@@ -301,6 +301,51 @@
     "confidence": 0.88,
     "mode": "SQL_PLUS_API",
     "risk": "medium"
+  },
+  "shadow_repair": {
+    "available": true,
+    "current_candidate": {
+      "api": [
+        {
+          "method": "GET",
+          "params": {
+            "filter": "name==Birthday Message"
+          },
+          "path": "/ajo/journey"
+        }
+      ],
+      "score": 0.6903,
+      "sql": [
+        "SELECT \"NAME\" AS campaign_name, \"LASTDEPLOYEDTIME\" AS published_time FROM \"dim_campaign\" LIMIT 50"
+      ]
+    },
+    "decision_hash": "8b91ef00205c19c0",
+    "enable_recommendation": "safe_shadow_tie_recommend_canary",
+    "execution_changed": false,
+    "repaired_candidate": {
+      "api": [
+        {
+          "method": "GET",
+          "params": {
+            "filter": "name==Birthday Message"
+          },
+          "path": "/ajo/journey"
+        }
+      ],
+      "score": 0.6903,
+      "sql": [
+        "SELECT \"NAME\" AS campaign_name, \"LASTDEPLOYEDTIME\" AS published_time FROM \"dim_campaign\" LIMIT 50"
+      ]
+    },
+    "risk_cluster": "not_targeted",
+    "safety_verdict": "safe",
+    "score_delta": 0.0,
+    "tool_cost_delta": {
+      "runtime_delta": 0.0,
+      "token_delta": 0,
+      "tool_delta": 0
+    },
+    "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
   },
   "sql": {
     "preview": "SELECT \"NAME\" AS campaign_name, \"LASTDEPLOYEDTIME\" AS published_time FROM \"dim_campaign\" LIMIT 50",

@@ -92,9 +92,9 @@ Strict `SQL_FIRST_API_VERIFY` metrics after rerun:
 | Metric | Value |
 | --- | ---: |
 | strict correctness | 0.6743 |
-| strict final score | 0.649 |
-| estimated tokens | 851.7714 |
-| average runtime | 0.0102 |
+| strict final score | 0.6486 |
+| estimated tokens | 899.2286 |
+| average runtime | 0.0115 |
 
 The packaged preferred strategy remains `SQL_FIRST_API_VERIFY`.
 
@@ -102,7 +102,7 @@ The packaged preferred strategy remains `SQL_FIRST_API_VERIFY`.
 
 | Check | Result |
 | --- | --- |
-| `python3 -m pytest` | 109 passed |
+| `python3 -m pytest` | 154 passed |
 | `python3 scripts/generate_baseline_comparison_report.py` | passed |
 | `python3 scripts/generate_dataflow_visualization.py outputs/eval/example_000/sql_first_api_verify/trajectory.json` | passed |
 | `python3 scripts/generate_all_dataflow_visualizations.py` | passed |
@@ -144,3 +144,26 @@ The packaged preferred strategy remains `SQL_FIRST_API_VERIFY`.
   - `schema_vs_dataset_confusion`: 4 → 0
 - No score claim is made from these ranking-only changes: strict final score remains `0.6486`, strict correctness remains `0.6743`, and the report labels this as retrieval/candidate diagnostics improvement.
 - `python3 -m pytest`: 145 passed. Strict eval, packaging, query output packaging, readiness, and `no_secret_scan.ok` all passed after this pass.
+
+## 13. Offline Shadow Repair Evaluation Addendum
+
+- Added `outputs/shadow_repair_eval.json`, `outputs/shadow_repair_eval.md`, and isolated per-query shadow decisions under `outputs/shadow_repair_eval/`.
+- Shadow repair remains offline only: packaged `SQL_FIRST_API_VERIFY` execution, final submission format, and query output packaging are unchanged.
+- Repeated shadow eval is deterministic: 35/35 `decision_hash` values matched across consecutive runs.
+- Paired shadow summary:
+  - repaired better: 1
+  - repaired equal: 26
+  - repaired worse: 8
+  - unsafe repairs: 21
+  - average score delta: -0.0357
+  - average tool delta: 0.0286
+  - average runtime delta: 0.0
+- Cluster canary recommendations remain disabled by default. The shadow report recommends keeping repair execution disabled for target clusters because at least one safety, score, or efficiency gate fails.
+- Dataflow visualizations now include a compact `Shadow Repair / What-if Evaluation` table when a shadow row is available, showing current candidate, repaired candidate, safety verdict, score/cost deltas, and enablement decision.
+- Latest validation after the shadow pass:
+  - `python3 -m pytest`: 154 passed
+  - strict `SQL_FIRST_API_VERIFY` final score: 0.6486
+  - strict correctness: 0.6743
+  - average tool calls: 1.4571
+  - preferred strategy: `SQL_FIRST_API_VERIFY`
+  - `no_secret_scan.ok`: true

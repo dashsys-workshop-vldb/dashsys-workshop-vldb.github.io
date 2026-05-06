@@ -1,0 +1,100 @@
+{
+  "current_plan_api": [
+    {
+      "method": "GET",
+      "params": {
+        "filter": "state eq 'failed'",
+        "limit": "50"
+      },
+      "path": "/data/foundation/flowservice/flows"
+    }
+  ],
+  "current_plan_sql": [
+    "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"
+  ],
+  "current_runtime": 0.0112,
+  "current_strict_score": 0.6744,
+  "current_tokens": 887,
+  "current_tool_calls": 2,
+  "decision": "safe_shadow_tie_recommend_canary",
+  "decision_hash": "2528515962e3455e",
+  "dry_run_only": true,
+  "evidence_available": false,
+  "execution_changed": false,
+  "live_api_evidence_available": false,
+  "query": "Show me the IDs of failed dataflow runs",
+  "query_id": "example_004",
+  "rejection_reason": "",
+  "repair_decision": {
+    "changed": true,
+    "endpoint_id": "flowservice_runs",
+    "kind": "replace_first_api",
+    "reason": "candidate-derived endpoint family rerank"
+  },
+  "repair_safe_to_enable": true,
+  "repaired_plan_api": [
+    {
+      "endpoint_family": "flow_runs",
+      "endpoint_id": "flowservice_runs",
+      "method": "GET",
+      "params": {
+        "limit": 50
+      },
+      "path": "/data/foundation/flowservice/runs"
+    }
+  ],
+  "repaired_plan_sql": [
+    "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"
+  ],
+  "repaired_runtime": 0.0112,
+  "repaired_strict_score": 0.6744,
+  "repaired_tokens": 887,
+  "repaired_tool_calls": 2,
+  "risk_cluster": "zero_score_margin",
+  "runtime_delta": 0.0,
+  "safety_verdict": {
+    "api_validation": {
+      "errors": [],
+      "ok": true,
+      "repaired_aliases": []
+    },
+    "confidence": 1.0,
+    "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+    "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+    "failed_checks": [],
+    "reasons": [
+      "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+    ],
+    "safe": true,
+    "sql_validation": {
+      "ast_summaries": [
+        {
+          "closest_column_suggestions": {},
+          "closest_table_suggestions": {},
+          "destructive_sql_detected": false,
+          "normalized_sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS TEXT)) LIKE LOWER('%failed%') LIMIT 50",
+          "parsed_ok": true,
+          "selected_columns": [
+            "DATAFLOWNAME",
+            "STATE",
+            "TARGETID",
+            "CONNECTIONSPECID",
+            "NAME"
+          ],
+          "selected_tables": [
+            "dim_target"
+          ],
+          "unknown_columns": [],
+          "unknown_tables": []
+        }
+      ],
+      "errors": [],
+      "ok": true
+    }
+  },
+  "score_delta": 0.0,
+  "shadow_runtime": 0.0091,
+  "token_delta": 0,
+  "tool_delta": 0,
+  "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+}

@@ -285,6 +285,54 @@
     "mode": "n/a - no prompt router decision",
     "risk": "n/a - no route risk recorded"
   },
+  "shadow_repair": {
+    "available": true,
+    "current_candidate": {
+      "api": [
+        {
+          "method": "GET",
+          "params": {
+            "filter": "state eq 'failed'",
+            "limit": "50"
+          },
+          "path": "/data/foundation/flowservice/flows"
+        }
+      ],
+      "score": 0.6744,
+      "sql": [
+        "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"
+      ]
+    },
+    "decision_hash": "2528515962e3455e",
+    "enable_recommendation": "safe_shadow_tie_recommend_canary",
+    "execution_changed": false,
+    "repaired_candidate": {
+      "api": [
+        {
+          "endpoint_family": "flow_runs",
+          "endpoint_id": "flowservice_runs",
+          "method": "GET",
+          "params": {
+            "limit": 50
+          },
+          "path": "/data/foundation/flowservice/runs"
+        }
+      ],
+      "score": 0.6744,
+      "sql": [
+        "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"
+      ]
+    },
+    "risk_cluster": "zero_score_margin",
+    "safety_verdict": "safe",
+    "score_delta": 0.0,
+    "tool_cost_delta": {
+      "runtime_delta": 0.0,
+      "token_delta": 0,
+      "tool_delta": 0
+    },
+    "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+  },
   "sql": {
     "preview": "SELECT DATAFLOWID FROM dim_connector WHERE STATE = 'failed'",
     "result_preview": "{\"total_items\": 0, \"truncated_items\": false}",

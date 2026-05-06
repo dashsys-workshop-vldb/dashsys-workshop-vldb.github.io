@@ -1,0 +1,113 @@
+{
+  "current_plan_api": [
+    {
+      "method": "GET",
+      "params": {
+        "limit": "50",
+        "orderBy": "-timestamp",
+        "property": "assetType==dataset"
+      },
+      "path": "/audit/events"
+    }
+  ],
+  "current_plan_sql": [
+    "SELECT DISTINCT D.\"COLLECTIONID\" AS collection_id, D.\"NAME\" AS collection_name, D.\"UPDATEDTIME\" AS updated_time FROM \"dim_collection\" AS D WHERE D.\"UPDATEDTIME\" >= DATEADD(DAY, -90, CURRENT_DATE) ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50"
+  ],
+  "current_runtime": 0.015,
+  "current_strict_score": 0.7149,
+  "current_tokens": 1307,
+  "current_tool_calls": 2,
+  "decision": "reject_unsafe_repair",
+  "decision_hash": "fe906648641ba78b",
+  "dry_run_only": true,
+  "evidence_available": true,
+  "execution_changed": false,
+  "live_api_evidence_available": false,
+  "query": "Show recent changes in datasets.",
+  "query_id": "example_013",
+  "rejection_reason": "Unknown columns: DAY",
+  "repair_decision": {
+    "changed": true,
+    "endpoint_id": "catalog_datasets",
+    "kind": "replace_first_api",
+    "reason": "candidate-derived endpoint family rerank"
+  },
+  "repair_safe_to_enable": false,
+  "repaired_plan_api": [
+    {
+      "endpoint_family": "dataset_list",
+      "endpoint_id": "catalog_datasets",
+      "method": "GET",
+      "params": {
+        "limit": 50
+      },
+      "path": "/data/foundation/catalog/dataSets"
+    }
+  ],
+  "repaired_plan_sql": [
+    "SELECT DISTINCT D.\"COLLECTIONID\" AS collection_id, D.\"NAME\" AS collection_name, D.\"UPDATEDTIME\" AS updated_time FROM \"dim_collection\" AS D WHERE D.\"UPDATEDTIME\" >= DATEADD(DAY, -90, CURRENT_DATE) ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50"
+  ],
+  "repaired_runtime": 0.015,
+  "repaired_strict_score": 0.5662,
+  "repaired_tokens": 1307,
+  "repaired_tool_calls": 2,
+  "risk_cluster": "missing_gold_api_in_top_k",
+  "runtime_delta": 0.0,
+  "safety_verdict": {
+    "api_validation": {
+      "errors": [],
+      "ok": true,
+      "repaired_aliases": []
+    },
+    "confidence": 0.8,
+    "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+    "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+    "failed_checks": [
+      "sql_validation"
+    ],
+    "reasons": [
+      "Unknown columns: DAY"
+    ],
+    "safe": false,
+    "sql_validation": {
+      "ast_summaries": [
+        {
+          "closest_column_suggestions": {
+            "DAY": [
+              "TTLINDAYS",
+              "DATAFLOWID",
+              "DATAFLOWNAME",
+              "ALTDISPLAYDESC"
+            ]
+          },
+          "closest_table_suggestions": {},
+          "destructive_sql_detected": false,
+          "normalized_sql": "SELECT DISTINCT D.\"COLLECTIONID\" AS collection_id, D.\"NAME\" AS collection_name, D.\"UPDATEDTIME\" AS updated_time FROM \"dim_collection\" AS D WHERE D.\"UPDATEDTIME\" >= DATEADD(DAY, -90, CURRENT_DATE) ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50",
+          "parsed_ok": true,
+          "selected_columns": [
+            "D.COLLECTIONID",
+            "D.NAME",
+            "D.UPDATEDTIME",
+            "DAY"
+          ],
+          "selected_tables": [
+            "dim_collection"
+          ],
+          "unknown_columns": [
+            "DAY"
+          ],
+          "unknown_tables": []
+        }
+      ],
+      "errors": [
+        "Unknown columns: DAY"
+      ],
+      "ok": false
+    }
+  },
+  "score_delta": -0.1487,
+  "shadow_runtime": 0.0077,
+  "token_delta": 0,
+  "tool_delta": 0,
+  "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+}

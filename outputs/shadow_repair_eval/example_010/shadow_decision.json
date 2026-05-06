@@ -1,0 +1,100 @@
+{
+  "current_plan_api": [
+    {
+      "method": "GET",
+      "params": {
+        "filter": "class==ExperienceEvent;isProfileEnabled==true",
+        "limit": "25"
+      },
+      "path": "/data/foundation/schemaregistry/tenant/schemas"
+    }
+  ],
+  "current_plan_sql": [
+    "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS num_experience_event_profile_enabled_blueprints FROM \"dim_blueprint\" AS B WHERE LOWER(B.\"CLASS\") LIKE LOWER('%download%') AND B.\"ISPROFILEENABLED\" = TRUE"
+  ],
+  "current_runtime": 0.0118,
+  "current_strict_score": 0.7898,
+  "current_tokens": 1056,
+  "current_tool_calls": 2,
+  "decision": "reject_unsafe_repair",
+  "decision_hash": "6608de8cd8267388",
+  "dry_run_only": true,
+  "evidence_available": true,
+  "execution_changed": false,
+  "live_api_evidence_available": false,
+  "query": "Count the number of XDM Experience Event schemas that are enabled for profile.",
+  "query_id": "example_010",
+  "rejection_reason": "Weighted score fusion and reciprocal-rank/family diagnostics did not agree.",
+  "repair_decision": {
+    "changed": true,
+    "endpoint_id": "schemas_short",
+    "kind": "replace_first_api",
+    "reason": "candidate-derived endpoint family rerank"
+  },
+  "repair_safe_to_enable": false,
+  "repaired_plan_api": [
+    {
+      "endpoint_family": "schema_list",
+      "endpoint_id": "schemas_short",
+      "method": "GET",
+      "params": {
+        "limit": 25
+      },
+      "path": "/schemas"
+    }
+  ],
+  "repaired_plan_sql": [
+    "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS num_experience_event_profile_enabled_blueprints FROM \"dim_blueprint\" AS B WHERE LOWER(B.\"CLASS\") LIKE LOWER('%download%') AND B.\"ISPROFILEENABLED\" = TRUE"
+  ],
+  "repaired_runtime": 0.0118,
+  "repaired_strict_score": 0.6496,
+  "repaired_tokens": 1056,
+  "repaired_tool_calls": 2,
+  "risk_cluster": "zero_score_margin",
+  "runtime_delta": 0.0,
+  "safety_verdict": {
+    "api_validation": {
+      "errors": [],
+      "ok": true,
+      "repaired_aliases": []
+    },
+    "confidence": 0.794,
+    "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+    "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+    "failed_checks": [
+      "fusion_agreement"
+    ],
+    "reasons": [
+      "Weighted score fusion and reciprocal-rank/family diagnostics did not agree."
+    ],
+    "safe": false,
+    "sql_validation": {
+      "ast_summaries": [
+        {
+          "closest_column_suggestions": {},
+          "closest_table_suggestions": {},
+          "destructive_sql_detected": false,
+          "normalized_sql": "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS num_experience_event_profile_enabled_blueprints FROM \"dim_blueprint\" AS B WHERE LOWER(B.\"CLASS\") LIKE LOWER('%download%') AND B.\"ISPROFILEENABLED\" = TRUE",
+          "parsed_ok": true,
+          "selected_columns": [
+            "B.BLUEPRINTID",
+            "B.ISPROFILEENABLED",
+            "B.CLASS"
+          ],
+          "selected_tables": [
+            "dim_blueprint"
+          ],
+          "unknown_columns": [],
+          "unknown_tables": []
+        }
+      ],
+      "errors": [],
+      "ok": true
+    }
+  },
+  "score_delta": -0.1402,
+  "shadow_runtime": 0.0091,
+  "token_delta": 0,
+  "tool_delta": 0,
+  "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+}
