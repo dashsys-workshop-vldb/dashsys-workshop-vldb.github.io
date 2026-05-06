@@ -267,6 +267,7 @@ def build_dataflow_summary(trajectory: dict[str, Any]) -> dict[str, Any]:
             "shadow_repair": _shadow_repair_summary(trajectory),
             "compact_context_shadow": _compact_context_shadow_summary(trajectory),
             "risk_efficiency_shadow": _risk_efficiency_shadow_summary(trajectory),
+            "official_token_reduction": _official_token_reduction_summary(trajectory),
         }
     )
 
@@ -562,6 +563,26 @@ def build_risk_efficiency_shadow_table(summary: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def build_official_token_reduction_table(summary: dict[str, Any]) -> str:
+    row = summary.get("official_token_reduction")
+    lines = ["| Field | Value |", "| --- | --- |"]
+    if not isinstance(row, dict):
+        lines.append(f"| status | {_md(row)} |")
+        return "\n".join(lines) + "\n"
+    for key in [
+        "official_token_reduction_available",
+        "official_token_reduction_active",
+        "estimated_tokens_before",
+        "estimated_tokens_after",
+        "token_savings",
+        "reduced_fields",
+        "correctness_impact_expected",
+        "packaged_execution_changed",
+    ]:
+        lines.append(f"| {key} | {_md(_brief(row.get(key), 700) or 'n/a')} |")
+    return "\n".join(lines) + "\n"
+
+
 def build_markdown_report(trajectory: dict[str, Any]) -> str:
     summary = build_dataflow_summary(trajectory)
     lines = [
@@ -646,6 +667,10 @@ def build_markdown_report(trajectory: dict[str, Any]) -> str:
         "## Risk-Efficiency Shadow Evaluation",
         "",
         build_risk_efficiency_shadow_table(summary).strip(),
+        "",
+        "## Official Token Reduction",
+        "",
+        build_official_token_reduction_table(summary).strip(),
         "",
         "## Value Retrieval Cache",
         "",
@@ -1012,6 +1037,37 @@ def _risk_efficiency_shadow_summary(trajectory: dict[str, Any]) -> Any:
     if isinstance(row, dict):
         return {"available": True, **row}
     return _value(None, "no risk-efficiency shadow eval row attached")
+
+
+def _official_token_reduction_summary(trajectory: dict[str, Any]) -> dict[str, Any]:
+    checkpoint = None
+    for item in trajectory.get("checkpoints", []) or []:
+        if item.get("checkpoint_id") == "checkpoint_official_token_reduction":
+            checkpoint = item
+            break
+    if not checkpoint:
+        return {
+            "official_token_reduction_available": True,
+            "official_token_reduction_active": False,
+            "estimated_tokens_before": None,
+            "estimated_tokens_after": trajectory.get("estimated_tokens"),
+            "token_savings": 0,
+            "reduced_fields": [],
+            "correctness_impact_expected": False,
+            "packaged_execution_changed": False,
+        }
+    before = checkpoint.get("estimated_tokens_before")
+    after = checkpoint.get("estimated_tokens_after")
+    return {
+        "official_token_reduction_available": True,
+        "official_token_reduction_active": bool(checkpoint.get("active")),
+        "estimated_tokens_before": before,
+        "estimated_tokens_after": after,
+        "token_savings": checkpoint.get("expected_savings"),
+        "reduced_fields": checkpoint.get("reduced_fields") or [],
+        "correctness_impact_expected": checkpoint.get("correctness_impact_expected", False),
+        "packaged_execution_changed": checkpoint.get("packaged_execution_changed", False),
+    }
 
 
 def _find_context_mode(

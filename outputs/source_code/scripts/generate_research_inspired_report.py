@@ -52,6 +52,14 @@ def generate_report(config: Config) -> dict[str, Any]:
     official_token_accounting_report = _load_json(config.outputs_dir / "official_token_accounting_report.json")
     official_token_reduction_report = _load_json(config.outputs_dir / "official_token_reduction_eval.json")
     official_token_reduction_canary_report = _load_json(config.outputs_dir / "official_token_reduction_canary.json")
+    official_token_reduction_trial_report = _load_json(config.outputs_dir / "official_token_reduction_packaged_trial.json")
+    hidden_style_report = _load_json(config.outputs_dir / "hidden_style_eval.json")
+    endpoint_failure_report = _load_json(config.outputs_dir / "endpoint_family_failure_report.json")
+    schema_dataset_positive_report = _load_json(config.outputs_dir / "schema_dataset_positive_repair_analysis.json")
+    sql_ast_candidate_report = _load_json(config.outputs_dir / "sql_ast_candidate_ranking_report.json")
+    retrieval_ablation_report = _load_json(config.outputs_dir / "retrieval_ablation_report.json")
+    repair_selector_v2_report = _load_json(config.outputs_dir / "repair_selector_v2_shadow_eval.json")
+    winner_readiness_report = _load_json(config.outputs_dir / "winner_readiness_report.json")
     risk_shadow_report = _load_json(config.outputs_dir / "risk_efficiency_shadow_eval.json")
     current = strict.get("summary", {}).get("by_strategy", {}).get("SQL_FIRST_API_VERIFY", {})
     final_score = current.get("avg_final_score", 0.0)
@@ -191,6 +199,20 @@ def generate_report(config: Config) -> dict[str, Any]:
             "official_token_reduction_canary_packaged_execution_changed": official_token_reduction_canary_report.get("summary", {}).get("packaged_execution_changed", False),
             "official_token_reduction_canary_feature_flag_default": official_token_reduction_canary_report.get("feature_flag_default", config.enable_official_token_reduction),
             "official_token_reduction_canary_official_efficiency_claimed": official_token_reduction_canary_report.get("summary", {}).get("official_packaged_efficiency_improvement_claimed", False),
+            "official_token_reduction_packaged_trial_ran": bool(official_token_reduction_trial_report.get("rows")),
+            "official_token_reduction_packaged_trial_safe_rows": official_token_reduction_trial_report.get("summary", {}).get("safe_rows", 0),
+            "official_token_reduction_packaged_trial_unsafe_rows": official_token_reduction_trial_report.get("summary", {}).get("unsafe_rows", 0),
+            "official_token_reduction_packaged_trial_avg_token_delta": official_token_reduction_trial_report.get("summary", {}).get("avg_token_delta"),
+            "official_token_reduction_packaged_trial_avg_runtime_delta": official_token_reduction_trial_report.get("summary", {}).get("avg_runtime_delta"),
+            "official_token_reduction_packaged_trial_recommendation": official_token_reduction_trial_report.get("summary", {}).get("recommendation", "not_run"),
+            "hidden_style_eval_passed_cases": hidden_style_report.get("summary", {}).get("passed_cases", 0),
+            "hidden_style_eval_total_cases": hidden_style_report.get("summary", {}).get("total_cases", 0),
+            "endpoint_family_failure_risky_rows": endpoint_failure_report.get("summary", {}).get("risky_rows", 0),
+            "schema_dataset_positive_repair_rows": schema_dataset_positive_report.get("summary", {}).get("positive_schema_dataset_rows", 0),
+            "sql_ast_candidate_ranking_candidates": sql_ast_candidate_report.get("summary", {}).get("candidate_count", 0),
+            "retrieval_ablation_best_mode": retrieval_ablation_report.get("summary", {}).get("best_final_score_mode"),
+            "repair_selector_v2_success": repair_selector_v2_report.get("summary", {}).get("success", False),
+            "winner_readiness_recommended_next_action": winner_readiness_report.get("recommended_next_action", []),
             "risk_efficiency_shadow_eval_ran": bool(risk_shadow_report.get("rows")),
             "risk_efficiency_shadow_row_count": risk_shadow_report.get("summary", {}).get("row_count", 0),
             "risk_efficiency_shadow_avg_token_delta": risk_shadow_report.get("summary", {}).get("avg_token_delta"),
@@ -253,6 +275,21 @@ def generate_report(config: Config) -> dict[str, Any]:
             "protected_output_hashes_unchanged": official_token_reduction_canary_report.get("protected_output_hashes_unchanged"),
             "notes": official_token_reduction_canary_report.get("notes", []),
         },
+        "official_token_reduction_packaged_trial": {
+            "summary": official_token_reduction_trial_report.get("summary", {}),
+            "artifact_isolation": official_token_reduction_trial_report.get("artifact_isolation", {}),
+            "notes": official_token_reduction_trial_report.get("notes", []),
+        },
+        "hidden_style_eval": {"summary": hidden_style_report.get("summary", {})},
+        "endpoint_family_failure_report": {"summary": endpoint_failure_report.get("summary", {})},
+        "schema_dataset_positive_repair_analysis": {"summary": schema_dataset_positive_report.get("summary", {})},
+        "sql_ast_candidate_ranking_report": {"summary": sql_ast_candidate_report.get("summary", {})},
+        "retrieval_ablation_report": {"summary": retrieval_ablation_report.get("summary", {})},
+        "repair_selector_v2_shadow_eval": {"summary": repair_selector_v2_report.get("summary", {})},
+        "winner_readiness_report": {
+            "packaged": winner_readiness_report.get("packaged", {}),
+            "recommended_next_action": winner_readiness_report.get("recommended_next_action", []),
+        },
         "risk_efficiency_shadow_eval": {
             "summary": risk_shadow_report.get("summary", {}),
             "artifact_isolation": risk_shadow_report.get("artifact_isolation", {}),
@@ -270,6 +307,8 @@ def generate_report(config: Config) -> dict[str, Any]:
             "Compact-context measured eval is experimental only and does not update official packaged scores or submission metrics.",
             "Official-token reduction eval is experimental only and does not update official packaged scores or submission metrics.",
             "Official-token reduction canary is isolated and does not update official packaged scores or submission metrics.",
+            "Official-token reduction packaged trial is isolated and still does not enable the default flag.",
+            "Repair selector v2, retrieval ablations, endpoint-family failures, and SQL AST candidate rankings are report-only.",
             "SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.",
             "No live API evidence is fabricated; Adobe API remains dry-run without credentials.",
             "Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.",
@@ -383,6 +422,21 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"{report['summary']['official_token_reduction_canary_feature_flag_default']}",
             f"- Official token reduction canary official efficiency claim: "
             f"{report['summary']['official_token_reduction_canary_official_efficiency_claimed']}",
+            f"- Official token reduction packaged trial ran: "
+            f"{report['summary']['official_token_reduction_packaged_trial_ran']} "
+            f"(safe rows: {report['summary']['official_token_reduction_packaged_trial_safe_rows']}; "
+            f"unsafe rows: {report['summary']['official_token_reduction_packaged_trial_unsafe_rows']}; "
+            f"avg token delta: {report['summary']['official_token_reduction_packaged_trial_avg_token_delta']}; "
+            f"avg runtime delta: {report['summary']['official_token_reduction_packaged_trial_avg_runtime_delta']}; "
+            f"recommendation: {report['summary']['official_token_reduction_packaged_trial_recommendation']})",
+            f"- Hidden-style eval passed/total: "
+            f"{report['summary']['hidden_style_eval_passed_cases']}/{report['summary']['hidden_style_eval_total_cases']}",
+            f"- Endpoint-family failure risky rows: {report['summary']['endpoint_family_failure_risky_rows']}",
+            f"- Schema/dataset positive repair rows: {report['summary']['schema_dataset_positive_repair_rows']}",
+            f"- SQL AST candidate ranking candidates: {report['summary']['sql_ast_candidate_ranking_candidates']}",
+            f"- Retrieval ablation best mode: {report['summary']['retrieval_ablation_best_mode']}",
+            f"- Repair selector v2 success: {report['summary']['repair_selector_v2_success']}",
+            f"- Winner readiness next actions: {report['summary']['winner_readiness_recommended_next_action']}",
             f"- Risk-efficiency shadow eval rows: {report['summary']['risk_efficiency_shadow_row_count']} "
             f"(avg token delta: {report['summary']['risk_efficiency_shadow_avg_token_delta']}; "
             f"avg runtime delta: {report['summary']['risk_efficiency_shadow_avg_runtime_delta']}; "

@@ -9,7 +9,7 @@ Status: **no measured strict-score improvement**.
 | strict_final_score | 0.649 | 0.6486 | -0.0004 |
 | strict_correctness | 0.6743 | 0.6743 | 0.0 |
 | estimated_tokens | 851.7714 | 899.2286 | 47.4572 |
-| runtime | 0.0102 | 0.0114 | 0.0012 |
+| runtime | 0.0102 | 0.0112 | 0.001 |
 | tool_calls | 1.4571 | 1.4571 | 0.0 |
 
 ## Gate Results
@@ -17,7 +17,7 @@ Status: **no measured strict-score improvement**.
 - Packaged preferred strategy: `SQL_FIRST_API_VERIFY`
 - Strict score regression gate OK: True
 - Estimated-token overhead: 5.57% (gate OK: True)
-- Runtime overhead: 11.76% (gate OK: True)
+- Runtime overhead: 9.80% (gate OK: True)
 - Tool-call delta: 0.0 (gate OK: True)
 - Value retrieval budget: 250 ms (budget OK: True)
 - Value retrieval cache key algorithm: `sha256` (reproducible: True)
@@ -56,6 +56,14 @@ Status: **no measured strict-score improvement**.
 - Official token reduction canary changed packaged execution: False
 - Official token reduction canary feature flag default: False
 - Official token reduction canary official efficiency claim: False
+- Official token reduction packaged trial ran: True (safe rows: 35; unsafe rows: 0; avg token delta: -67.7714; avg runtime delta: 0.0005; recommendation: safe_to_make_packaged_default_in_future)
+- Hidden-style eval passed/total: 15/15
+- Endpoint-family failure risky rows: 35
+- Schema/dataset positive repair rows: 1
+- SQL AST candidate ranking candidates: 15
+- Retrieval ablation best mode: full_current_retrieval_official_token_reduction
+- Repair selector v2 success: False
+- Winner readiness next actions: ['Promote official-token reduction in a later explicit packaged task if the packaged trial remains safe.', 'Keep repair execution disabled.', 'Keep compact context disabled.', 'Target endpoint/schema accuracy next.']
 - Risk-efficiency shadow eval rows: 7 (avg token delta: -264.0; avg runtime delta: -0.025; measured efficiency improvement claimed: False)
 - Secret scan OK: True
 - Visualization artifacts directory: `/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/visualizations`
@@ -152,6 +160,8 @@ Execution repair remains disabled by default. These recommendations are offline 
 - Compact-context measured eval is experimental only and does not update official packaged scores or submission metrics.
 - Official-token reduction eval is experimental only and does not update official packaged scores or submission metrics.
 - Official-token reduction canary is isolated and does not update official packaged scores or submission metrics.
+- Official-token reduction packaged trial is isolated and still does not enable the default flag.
+- Repair selector v2, retrieval ablations, endpoint-family failures, and SQL AST candidate rankings are report-only.
 - SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.
 - No live API evidence is fabricated; Adobe API remains dry-run without credentials.
 - Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.

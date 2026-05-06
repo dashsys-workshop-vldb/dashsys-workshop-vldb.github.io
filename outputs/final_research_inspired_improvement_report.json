@@ -311,17 +311,35 @@
   },
   "current": {
     "estimated_tokens": 899.2286,
-    "runtime": 0.0114,
+    "runtime": 0.0112,
     "strict_correctness": 0.6743,
     "strict_final_score": 0.6486,
     "tool_calls": 1.4571
   },
   "delta": {
     "estimated_tokens": 47.4572,
-    "runtime": 0.0012,
+    "runtime": 0.001,
     "strict_correctness": 0.0,
     "strict_final_score": -0.0004,
     "tool_calls": 0.0
+  },
+  "endpoint_family_failure_report": {
+    "summary": {
+      "failure_type_counts": {
+        "executed_endpoint_family_differs_from_ranked_family": 17,
+        "gold_api_missing_from_top_k": 7,
+        "low_confidence_or_broad_domain": 10,
+        "zero_candidate_score_margin": 1
+      },
+      "risk_cluster_counts": {
+        "broad_domain_api_confusion": 20,
+        "missing_gold_api_in_top_k": 4,
+        "schema_vs_dataset_confusion": 2,
+        "tag_api_confusion": 3,
+        "zero_score_margin": 6
+      },
+      "risky_rows": 35
+    }
   },
   "feature_flags": {
     "ENABLE_COMPACT_CONTEXT_WHEN_SCHEMA_VOTE_SAFE": false,
@@ -345,6 +363,16 @@
     "ENABLE_VALUE_RETRIEVAL": true,
     "ENABLE_VALUE_TO_API_RANKING": true
   },
+  "hidden_style_eval": {
+    "summary": {
+      "failed_cases": 0,
+      "family_stability_rate": 1.0,
+      "passed_cases": 15,
+      "schema_stability_rate": 1.0,
+      "top_failure_categories": [],
+      "total_cases": 15
+    }
+  },
   "notes": [
     "Value retrieval cache filenames use stable SHA-256 keys instead of Python process-salted hash().",
     "Hybrid candidate ranking is report-only for SQL_FIRST_API_VERIFY; it does not change executed SQL/API plans.",
@@ -357,6 +385,8 @@
     "Compact-context measured eval is experimental only and does not update official packaged scores or submission metrics.",
     "Official-token reduction eval is experimental only and does not update official packaged scores or submission metrics.",
     "Official-token reduction canary is isolated and does not update official packaged scores or submission metrics.",
+    "Official-token reduction packaged trial is isolated and still does not enable the default flag.",
+    "Repair selector v2, retrieval ablations, endpoint-family failures, and SQL AST candidate rankings are report-only.",
     "SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.",
     "No live API evidence is fabricated; Adobe API remains dry-run without credentials.",
     "Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.",
@@ -498,6 +528,64 @@
       "unsafe_rows": 0
     }
   },
+  "official_token_reduction_packaged_trial": {
+    "artifact_isolation": {
+      "allowed_outputs": [
+        "outputs/official_token_reduction_packaged_trial.json",
+        "outputs/official_token_reduction_packaged_trial.md",
+        "outputs/official_token_reduction_packaged_trial/"
+      ],
+      "trial_output_root": "outputs/official_token_reduction_packaged_trial/<query_id>/sql_first_api_verify/",
+      "writes_eval_outputs": false,
+      "writes_final_submission": false,
+      "writes_packaged_query_outputs": false
+    },
+    "notes": [
+      "This is a packaged flag trial only; ENABLE_OFFICIAL_TOKEN_REDUCTION remains default false.",
+      "Promotion to packaged outputs requires a later explicit task.",
+      "Strict scoring and estimated-token formula match the official eval helpers."
+    ],
+    "summary": {
+      "answer_changed_count": 0,
+      "api_changed_count": 0,
+      "avg_runtime_delta": 0.0005,
+      "avg_score_delta": 0.0006,
+      "avg_token_delta": -67.7714,
+      "avg_tool_delta": 0.0,
+      "dry_run_label_failure_count": 0,
+      "live_api_evidence_fabricated_count": 0,
+      "official_packaged_efficiency_improvement_claimed": false,
+      "packaged_execution_changed": false,
+      "protected_output_hashes_unchanged": true,
+      "recommendation": "safe_to_make_packaged_default_in_future",
+      "required_field_failure_count": 0,
+      "runtime_budget": {
+        "acceptable_noise_threshold_seconds": 0.005,
+        "avg_runtime_budget_ok": true,
+        "avg_runtime_delta": 0.0005,
+        "row_runtime_regression_over_20pct_count": 0,
+        "runtime_budget_ok": true,
+        "runtime_regression_query_ids": []
+      },
+      "safe_rows": 35,
+      "secret_scan_ok": true,
+      "sql_changed_count": 0,
+      "total_rows": 35,
+      "unsafe_rows": 0
+    }
+  },
+  "repair_selector_v2_shadow_eval": {
+    "summary": {
+      "avg_score_delta": -0.0357,
+      "avg_tool_delta": 0.0286,
+      "repair_execution_enabled": false,
+      "repaired_worse_count": 8,
+      "safe_repaired_worse_count": 0,
+      "strictly_better_selected_count": 0,
+      "success": false,
+      "total_rows": 35
+    }
+  },
   "research_safety_audit": {
     "endpoint_family_rule_source": {
       "audit_events": "domain vocabulary + endpoint catalog metadata",
@@ -599,6 +687,13 @@
       "tag_value_to_tag_endpoint": "domain vocabulary + value retrieval match"
     }
   },
+  "retrieval_ablation_report": {
+    "summary": {
+      "best_final_score_mode": "full_current_retrieval_official_token_reduction",
+      "lowest_token_mode": "full_current_retrieval_official_token_reduction",
+      "lowest_tool_call_mode": "schema_linking_only"
+    }
+  },
   "risk_efficiency_shadow_eval": {
     "artifact_isolation": {
       "allowed_outputs": [
@@ -631,6 +726,13 @@
         "medium": 5
       },
       "row_count": 7
+    }
+  },
+  "schema_dataset_positive_repair_analysis": {
+    "summary": {
+      "catalog_alias_gap_candidate_count": 1,
+      "positive_schema_dataset_rows": 1,
+      "repair_enabled": false
     }
   },
   "shadow_repair_eval": {
@@ -834,6 +936,15 @@
       "execution_changed": false
     }
   },
+  "sql_ast_candidate_ranking_report": {
+    "summary": {
+      "avg_ast_quality_score": 0.9538,
+      "candidate_count": 15,
+      "destructive_sql_count": 0,
+      "parsed_ok_count": 15,
+      "unknown_schema_count": 2
+    }
+  },
   "summary": {
     "behavior_changing_flags_enabled": false,
     "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
@@ -863,8 +974,11 @@
     "compact_context_shadow_measured_accuracy_improvement_claimed": false,
     "compact_context_shadow_measured_efficiency_improvement_claimed": false,
     "compact_context_shadow_row_count": 28,
+    "endpoint_family_failure_risky_rows": 35,
     "estimated_tokens_gate_ok": true,
     "final_submission_format_unchanged": true,
+    "hidden_style_eval_passed_cases": 15,
+    "hidden_style_eval_total_cases": 15,
     "measured_accuracy_improvement_claimed": false,
     "measured_efficiency_improvement_claimed": false,
     "no_secret_scan_ok": true,
@@ -892,6 +1006,12 @@
     "official_token_reduction_feature_flag_default": false,
     "official_token_reduction_official_efficiency_claimed": false,
     "official_token_reduction_packaged_execution_changed": false,
+    "official_token_reduction_packaged_trial_avg_runtime_delta": 0.0005,
+    "official_token_reduction_packaged_trial_avg_token_delta": -67.7714,
+    "official_token_reduction_packaged_trial_ran": true,
+    "official_token_reduction_packaged_trial_recommendation": "safe_to_make_packaged_default_in_future",
+    "official_token_reduction_packaged_trial_safe_rows": 35,
+    "official_token_reduction_packaged_trial_unsafe_rows": 0,
     "official_token_reduction_recommendation": "safe_for_future_canary",
     "official_token_reduction_safe_rows": 35,
     "official_token_top_contributors": [
@@ -931,6 +1051,8 @@
     "packaged_execution_changed": false,
     "packaged_preferred_strategy": "SQL_FIRST_API_VERIFY",
     "ranking_only_no_score_claim": true,
+    "repair_selector_v2_success": false,
+    "retrieval_ablation_best_mode": "full_current_retrieval_official_token_reduction",
     "retrieval_cluster_gate_passed": true,
     "retrieval_cluster_gate_status": "retrieval-cluster improvement measured",
     "retrieval_cluster_improved_clusters": [
@@ -955,7 +1077,8 @@
       "medium": 5
     },
     "runtime_gate_ok": true,
-    "runtime_overhead_pct": 0.1176,
+    "runtime_overhead_pct": 0.098,
+    "schema_dataset_positive_repair_rows": 1,
     "schema_vote_active_count": 28,
     "schema_vote_agreement_count": 28,
     "shadow_repair_better_count": 1,
@@ -964,6 +1087,7 @@
     "shadow_repair_execution_enabled": false,
     "shadow_repair_unsafe_count": 35,
     "shadow_repair_worse_count": 8,
+    "sql_ast_candidate_ranking_candidates": 15,
     "status": "no measured strict-score improvement",
     "strict_score_regression_ok": true,
     "token_overhead_pct": 0.0557,
@@ -974,7 +1098,13 @@
     "value_retrieval_cache_key_algorithm": "sha256",
     "value_retrieval_cache_reproducible": true,
     "visualization_artifacts_dir": "/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/visualizations",
-    "visualizations_in_final_submission": 0
+    "visualizations_in_final_submission": 0,
+    "winner_readiness_recommended_next_action": [
+      "Promote official-token reduction in a later explicit packaged task if the packaged trial remains safe.",
+      "Keep repair execution disabled.",
+      "Keep compact context disabled.",
+      "Target endpoint/schema accuracy next."
+    ]
   },
   "techniques": [
     {
@@ -1107,5 +1237,23 @@
       "technique": "Schema context voting",
       "visualization_checkpoint": "checkpoint_schema_context_voting/report metrics"
     }
-  ]
+  ],
+  "winner_readiness_report": {
+    "packaged": {
+      "estimated_tokens": 899.2286,
+      "final_submission_ready": true,
+      "no_secret_scan_ok": true,
+      "preferred_strategy": "SQL_FIRST_API_VERIFY",
+      "runtime": 0.0112,
+      "strict_correctness": 0.6743,
+      "strict_final_score": 0.6486,
+      "tool_calls": 1.4571
+    },
+    "recommended_next_action": [
+      "Promote official-token reduction in a later explicit packaged task if the packaged trial remains safe.",
+      "Keep repair execution disabled.",
+      "Keep compact context disabled.",
+      "Target endpoint/schema accuracy next."
+    ]
+  }
 }
