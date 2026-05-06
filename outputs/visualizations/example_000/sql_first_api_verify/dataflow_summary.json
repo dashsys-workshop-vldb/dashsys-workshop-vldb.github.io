@@ -22,7 +22,7 @@
     "result_preview": "n/a - no API result preview recorded",
     "validation": "ok"
   },
-  "checkpoint_count": 20,
+  "checkpoint_count": 24,
   "checkpoint_effect": {
     "checkpoint_id": "checkpoint_01_raw_query",
     "correctness_role": "keeps later normalization from changing the user-facing question",
@@ -75,14 +75,14 @@
     "valid_tool_calls": 2
   },
   "metrics": {
-    "answer_time": 0.0005600840086117387,
-    "checkpoint_count": 20,
-    "estimated_tokens": 759,
-    "execution_time": 0.00039845798164606094,
-    "planning_time": 0.0005183329340070486,
-    "preprocessing_time": 0.0019179589580744505,
+    "answer_time": 0.0005453750491142273,
+    "checkpoint_count": 24,
+    "estimated_tokens": 917,
+    "execution_time": 0.0003945410717278719,
+    "planning_time": 0.0014336250023916364,
+    "preprocessing_time": 0.002049999893642962,
     "prompt_context_tokens": "n/a - prompt_context_tokens missing",
-    "runtime": 0.010044333059340715
+    "runtime": 0.01223258301615715
   },
   "normalization": {
     "matching_text": "when was the journey 'birthday message' published?",
@@ -103,6 +103,71 @@
     "selected_strategy": "SQL_FIRST_API_VERIFY"
   },
   "query_id": "example_000",
+  "research_techniques": [
+    {
+      "active": true,
+      "correctness_impact": "detects schema/safety mismatches structurally",
+      "effect_on_dataflow": "AST SQL validation and table/column extraction",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "SQLGlot",
+      "technique": "SQLGlot AST validation",
+      "visualization_checkpoint": "checkpoint_sql_ast_validation"
+    },
+    {
+      "active": false,
+      "correctness_impact": "keeps relevant tables, columns, and bridges visible",
+      "effect_on_dataflow": "Bidirectional schema linking and bridge preservation",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "RSL-SQL",
+      "technique": "Robust schema linking",
+      "visualization_checkpoint": "checkpoint_schema_linking"
+    },
+    {
+      "active": true,
+      "correctness_impact": "grounds named entities and IDs before planning",
+      "effect_on_dataflow": "Entity-value grounding from local DB samples",
+      "efficiency_impact": "bounded cached retrieval budget",
+      "source_inspiration": "CHESS",
+      "technique": "Value/entity retrieval",
+      "visualization_checkpoint": "checkpoint_value_entity_retrieval"
+    },
+    {
+      "active": true,
+      "correctness_impact": "preserves complex constraints",
+      "effect_on_dataflow": "Complex-query decomposition into constraints",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "DIN-SQL",
+      "technique": "Query decomposition",
+      "visualization_checkpoint": "checkpoint_query_decomposition"
+    },
+    {
+      "active": true,
+      "correctness_impact": "prevents invalid hard-case SQL from being selected",
+      "effect_on_dataflow": "Hard-case candidate validation before one execution",
+      "efficiency_impact": "validates only; executes one selected plan",
+      "source_inspiration": "DIN-SQL / self-correction",
+      "technique": "Gated SQL candidates",
+      "visualization_checkpoint": "checkpoint_gated_sql_candidate_selection"
+    },
+    {
+      "active": false,
+      "correctness_impact": "makes technique visibility auditable",
+      "effect_on_dataflow": "Optional family hints for LLM SQL",
+      "efficiency_impact": "optional LLM-only token cost",
+      "source_inspiration": "DAIL-SQL",
+      "technique": "Query-family examples",
+      "visualization_checkpoint": "checkpoint_query_family_examples"
+    },
+    {
+      "active": true,
+      "correctness_impact": "makes technique visibility auditable",
+      "effect_on_dataflow": "Local span-style checkpoint export",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "OpenAI Agents SDK tracing",
+      "technique": "Span export",
+      "visualization_checkpoint": "spans.json"
+    }
+  ],
   "route": {
     "api_policy": "n/a - no API policy recorded",
     "confidence": 0.88,
@@ -114,6 +179,52 @@
     "result_preview": "{\"items\": {\"items\": [{\"campaign_name\": \"Birthday Message\"}, {\"campaign_name\": \"Gold Tier Welcome Email\"}], \"total_items\": 2, \"truncated_items\": false}, \"total_items\": 2, \"truncated_items\": false}",
     "row_count": 2,
     "validation": "ok"
+  },
+  "sql_ast": {
+    "destructive_sql_detected": false,
+    "parsed_ok": true,
+    "selected_columns": {
+      "items": [
+        "LASTDEPLOYEDTIME",
+        "NAME"
+      ],
+      "total_items": 2,
+      "truncated_items": false
+    },
+    "selected_tables": {
+      "items": [
+        "dim_campaign"
+      ],
+      "total_items": 1,
+      "truncated_items": false
+    },
+    "summaries": {
+      "items": [
+        {
+          "destructive_sql_detected": false,
+          "enabled": true,
+          "normalized_sql": "SELECT \"NAME\" AS campaign_name, \"LASTDEPLOYEDTIME\" AS published_time FROM \"dim_campaign\" LIMIT 50",
+          "parsed_ok": true,
+          "selected_columns": {
+            "items": [
+              "NAME",
+              "LASTDEPLOYEDTIME"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "selected_tables": {
+            "items": [
+              "dim_campaign"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      ],
+      "total_items": 1,
+      "truncated_items": false
+    }
   },
   "strategy": "SQL_FIRST_API_VERIFY",
   "tokens": {

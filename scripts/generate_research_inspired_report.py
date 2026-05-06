@@ -1,0 +1,222 @@
+#!/usr/bin/env python
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from dashagent.config import Config
+from dashagent.eval_harness import EvalHarness
+from dashagent.executor import AgentExecutor
+from dashagent.research_safety import build_research_safety_audit
+
+
+BASELINE_SQL_FIRST = {
+    "strict_final_score": 0.649,
+    "strict_correctness": 0.6743,
+    "estimated_tokens": 851.7714,
+    "runtime": 0.0102,
+    "tool_calls": 1.4571,
+}
+
+
+def main() -> int:
+    config = Config.from_env(ROOT)
+    report = generate_report(config)
+    config.outputs_dir.mkdir(parents=True, exist_ok=True)
+    json_path = config.outputs_dir / "final_research_inspired_improvement_report.json"
+    md_path = config.outputs_dir / "final_research_inspired_improvement_report.md"
+    audit_path = config.outputs_dir / "research_safety_audit.json"
+    json_path.write_text(json.dumps(report, indent=2, sort_keys=True, default=str), encoding="utf-8")
+    md_path.write_text(render_markdown(report), encoding="utf-8")
+    audit_path.write_text(json.dumps(report["research_safety_audit"], indent=2, sort_keys=True, default=str), encoding="utf-8")
+    print(json.dumps({"json": str(json_path), "markdown": str(md_path), "audit": str(audit_path)}, indent=2, sort_keys=True))
+    return 0
+
+
+def generate_report(config: Config) -> dict[str, Any]:
+    executor = AgentExecutor(config)
+    harness = EvalHarness(config, executor)
+    examples = [example.__dict__ for example in harness.load_examples()]
+    strict = _load_json(config.outputs_dir / "eval_results_strict.json")
+    manifest = _load_json(config.outputs_dir / "final_submission_manifest.json")
+    current = strict.get("summary", {}).get("by_strategy", {}).get("SQL_FIRST_API_VERIFY", {})
+    final_score = current.get("avg_final_score", 0.0)
+    correctness = current.get("avg_correctness_score", 0.0)
+    metrics = {
+        "strict_final_score": final_score,
+        "strict_correctness": correctness,
+        "estimated_tokens": current.get("avg_estimated_tokens"),
+        "runtime": current.get("avg_runtime"),
+        "tool_calls": current.get("avg_tool_call_count"),
+    }
+    deltas = {
+        key: round(float(metrics.get(key) or 0.0) - float(BASELINE_SQL_FIRST.get(key) or 0.0), 4)
+        for key in BASELINE_SQL_FIRST
+    }
+    token_overhead_pct = _pct_delta(metrics.get("estimated_tokens"), BASELINE_SQL_FIRST["estimated_tokens"])
+    runtime_overhead_pct = _pct_delta(metrics.get("runtime"), BASELINE_SQL_FIRST["runtime"])
+    visualizations_in_submission = _count_paths(config.outputs_dir / "final_submission", "visualizations")
+    flags = {
+        "ENABLE_SQL_AST_VALIDATION": config.enable_sql_ast_validation,
+        "ENABLE_SCHEMA_LINKING": config.enable_schema_linking,
+        "ENABLE_VALUE_RETRIEVAL": config.enable_value_retrieval,
+        "ENABLE_GATED_SQL_CANDIDATES": config.enable_gated_sql_candidates,
+        "ENABLE_QUERY_DECOMPOSITION": config.enable_query_decomposition,
+        "ENABLE_QUERY_FAMILY_EXAMPLES": config.enable_query_family_examples,
+        "ENABLE_RESEARCH_SPAN_EXPORT": config.enable_research_span_export,
+    }
+    techniques = [
+        ("SQLGlot AST validation", "SQLGlot", "dashagent/sql_ast_tools.py", config.enable_sql_ast_validation, "checkpoint_sql_ast_validation"),
+        ("Robust schema linking", "RSL-SQL", "dashagent/candidate_context_builder.py", config.enable_schema_linking, "checkpoint_schema_linking/report metrics"),
+        ("Value/entity retrieval", "CHESS", "dashagent/value_retrieval.py", config.enable_value_retrieval, "checkpoint_value_entity_retrieval"),
+        ("Query decomposition", "DIN-SQL", "dashagent/query_decomposer.py", config.enable_query_decomposition, "checkpoint_query_decomposition"),
+        ("Gated SQL candidates", "DIN-SQL/self-correction", "dashagent/gated_sql_candidates.py", config.enable_gated_sql_candidates, "checkpoint_gated_sql_candidate_selection"),
+        ("Query-family examples", "DAIL-SQL", "dashagent/query_family_examples.py", config.enable_query_family_examples, "checkpoint_query_family_examples"),
+        ("Span export", "OpenAI Agents SDK tracing", "dashagent/span_exporter.py", config.enable_research_span_export, "spans.json"),
+    ]
+    return {
+        "summary": {
+            "status": "no measured strict-score improvement" if deltas["strict_final_score"] <= 0 else "strict-score improvement measured",
+            "packaged_preferred_strategy": manifest.get("preferred_strategy", "SQL_FIRST_API_VERIFY"),
+            "strict_score_regression_ok": deltas["strict_final_score"] >= -0.005,
+            "token_overhead_pct": token_overhead_pct,
+            "runtime_overhead_pct": runtime_overhead_pct,
+            "tool_call_delta": deltas["tool_calls"],
+            "value_retrieval_budget_ms": config.value_retrieval_max_ms,
+            "value_retrieval_budget_ok": config.value_retrieval_max_ms <= 250,
+            "estimated_tokens_gate_ok": token_overhead_pct <= 0.10,
+            "runtime_gate_ok": runtime_overhead_pct <= 0.20,
+            "tool_call_gate_ok": deltas["tool_calls"] <= 0,
+            "no_secret_scan_ok": manifest.get("no_secret_scan", {}).get("ok", True),
+            "visualization_artifacts_dir": str(config.outputs_dir / "visualizations"),
+            "visualizations_in_final_submission": visualizations_in_submission,
+            "final_submission_format_unchanged": visualizations_in_submission == 0,
+        },
+        "baseline": BASELINE_SQL_FIRST,
+        "current": metrics,
+        "delta": deltas,
+        "feature_flags": flags,
+        "techniques": [
+            {
+                "technique": name,
+                "source_inspiration": source,
+                "implemented_module": module,
+                "active_in_sql_first": active,
+                "active_in_raw_guided": False,
+                "correctness_role": "diagnostic/grounding unless strict score improves",
+                "efficiency_role": "bounded or disabled by feature flag",
+                "visualization_checkpoint": checkpoint,
+            }
+            for name, source, module, active, checkpoint in techniques
+        ],
+        "research_safety_audit": build_research_safety_audit(executor.schema_index, examples),
+        "notes": [
+            "No live API evidence is fabricated; Adobe API remains dry-run without credentials.",
+            "Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.",
+            "Inactive techniques appear compactly in visualization status tables, not as empty checkpoints.",
+            "Behavior-changing modules are feature-flagged; strict score and efficiency gates decide whether they remain active.",
+        ],
+    }
+
+
+def render_markdown(report: dict[str, Any]) -> str:
+    lines = [
+        "# Final Research-Inspired Improvement Report",
+        "",
+        f"Status: **{report['summary']['status']}**.",
+        "",
+        "## Metrics",
+        "",
+        "| Metric | Baseline | Current | Delta |",
+        "| --- | ---: | ---: | ---: |",
+    ]
+    for key in ["strict_final_score", "strict_correctness", "estimated_tokens", "runtime", "tool_calls"]:
+        lines.append(f"| {key} | {report['baseline'].get(key)} | {report['current'].get(key)} | {report['delta'].get(key)} |")
+    lines.extend(
+        [
+            "",
+            "## Gate Results",
+            "",
+            f"- Packaged preferred strategy: `{report['summary']['packaged_preferred_strategy']}`",
+            f"- Strict score regression gate OK: {report['summary']['strict_score_regression_ok']}",
+            f"- Estimated-token overhead: {report['summary']['token_overhead_pct'] * 100:.2f}% "
+            f"(gate OK: {report['summary']['estimated_tokens_gate_ok']})",
+            f"- Runtime overhead: {report['summary']['runtime_overhead_pct'] * 100:.2f}% "
+            f"(gate OK: {report['summary']['runtime_gate_ok']})",
+            f"- Tool-call delta: {report['summary']['tool_call_delta']} "
+            f"(gate OK: {report['summary']['tool_call_gate_ok']})",
+            f"- Value retrieval budget: {report['summary']['value_retrieval_budget_ms']} ms "
+            f"(budget OK: {report['summary']['value_retrieval_budget_ok']})",
+            f"- Secret scan OK: {report['summary']['no_secret_scan_ok']}",
+            f"- Visualization artifacts directory: `{report['summary']['visualization_artifacts_dir']}`",
+            f"- Visualization artifacts inside final submission: {report['summary']['visualizations_in_final_submission']}",
+            f"- Final submission format unchanged: {report['summary']['final_submission_format_unchanged']}",
+            "",
+            "## Feature Flags",
+            "",
+            "| Flag | Active |",
+            "| --- | --- |",
+        ]
+    )
+    for key, value in report["feature_flags"].items():
+        lines.append(f"| `{key}` | {value} |")
+    lines.extend(
+        [
+            "",
+            "## Technique Summary",
+            "",
+            "| Technique | Source inspiration | Implemented module | Active in SQL_FIRST? | Active in Raw/GUIDED? | Visualization checkpoint |",
+            "| --- | --- | --- | --- | --- | --- |",
+        ]
+    )
+    for row in report["techniques"]:
+        lines.append(
+            f"| {row['technique']} | {row['source_inspiration']} | `{row['implemented_module']}` | "
+            f"{row['active_in_sql_first']} | {row['active_in_raw_guided']} | {row['visualization_checkpoint']} |"
+        )
+    audit = report["research_safety_audit"]
+    lines.extend(
+        [
+            "",
+            "## Research Safety Audit",
+            "",
+            f"- public_query_overlap: {audit['public_query_overlap']}",
+            f"- gold_sql_overlap: {audit['gold_sql_overlap']}",
+            f"- public_answer_overlap: {audit['public_answer_overlap']}",
+            f"- public_entity_overlap: {audit['public_entity_overlap']}",
+            f"- used_gold_patterns: {audit['used_gold_patterns']}",
+            "",
+            "## Notes",
+            "",
+        ]
+    )
+    lines.extend(f"- {note}" for note in report.get("notes", []))
+    return "\n".join(lines) + "\n"
+
+
+def _load_json(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _pct_delta(current: Any, baseline: Any) -> float:
+    if not baseline:
+        return 0.0
+    return round((float(current or 0.0) - float(baseline)) / float(baseline), 4)
+
+
+def _count_paths(root: Path, pattern: str) -> int:
+    if not root.exists():
+        return 0
+    return sum(1 for path in root.rglob("*") if pattern in path.parts or pattern in path.name)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

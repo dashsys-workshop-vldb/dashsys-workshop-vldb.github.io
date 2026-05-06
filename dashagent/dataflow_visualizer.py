@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from .span_exporter import checkpoints_to_spans, research_technique_status
 from .trajectory import compact_preview, redact_secrets
 
 
@@ -188,6 +189,8 @@ def build_dataflow_summary(trajectory: dict[str, Any]) -> dict[str, Any]:
             },
             "checkpoint_effect": checkpoint_effect,
             "checkpoint_count": len(trajectory.get("checkpoints", []) or []),
+            "research_techniques": research_technique_status(trajectory),
+            "sql_ast": _value(_checkpoint_output(checkpoints, "checkpoint_sql_ast_validation"), "SQL AST validation checkpoint inactive"),
         }
     )
 
@@ -283,6 +286,19 @@ def build_checkpoint_effect_table(trajectory: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def build_research_technique_table(summary: dict[str, Any]) -> str:
+    lines = [
+        "| Technique | Source inspiration | Active? | Effect on dataflow | Correctness impact | Efficiency impact | Visualization checkpoint |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for row in summary.get("research_techniques", []):
+        lines.append(
+            f"| {_md(row.get('technique'))} | {_md(row.get('source_inspiration'))} | {_md(row.get('active'))} | "
+            f"{_md(row.get('effect_on_dataflow'))} | {_md(row.get('correctness_impact'))} | {_md(row.get('efficiency_impact'))} | {_md(row.get('visualization_checkpoint'))} |"
+        )
+    return "\n".join(lines) + "\n"
+
+
 def build_markdown_report(trajectory: dict[str, Any]) -> str:
     summary = build_dataflow_summary(trajectory)
     lines = [
@@ -336,6 +352,14 @@ def build_markdown_report(trajectory: dict[str, Any]) -> str:
         f"| successful evidence count | {_md(summary['evidence']['successful_evidence_count'])} |",
         f"| zero-row uncertain | {_md(summary['evidence']['zero_row_uncertain'])} |",
         "",
+        "## Research Technique Status",
+        "",
+        build_research_technique_table(summary).strip(),
+        "",
+        "## SQL AST Validation",
+        "",
+        f"`{_md(summary['sql_ast'])}`",
+        "",
         "## Technique Impact Highlight",
         "",
         f"- Correctness: {_md(summary['checkpoint_effect']['correctness_role'])}",
@@ -384,6 +408,7 @@ def write_dataflow_artifacts(trajectory: dict[str, Any], out_dir: Path, *, overw
         "md": out_dir / "dataflow.md",
         "html": out_dir / "dataflow.html",
         "json": out_dir / "dataflow_summary.json",
+        "spans": out_dir / "spans.json",
     }
     if not overwrite and all(path.exists() for path in files.values()):
         return {key: str(path) for key, path in files.items()}
@@ -391,6 +416,7 @@ def write_dataflow_artifacts(trajectory: dict[str, Any], out_dir: Path, *, overw
     files["md"].write_text(build_markdown_report(trajectory), encoding="utf-8")
     files["html"].write_text(build_html_report(trajectory), encoding="utf-8")
     files["json"].write_text(json.dumps(build_dataflow_summary(trajectory), indent=2, sort_keys=True, default=str), encoding="utf-8")
+    files["spans"].write_text(json.dumps(checkpoints_to_spans(trajectory), indent=2, sort_keys=True, default=str), encoding="utf-8")
     return {key: str(path) for key, path in files.items()}
 
 

@@ -34,12 +34,15 @@ from .db import DuckDBDatabase
 from .endpoint_catalog import EndpointCatalog
 from .evidence_bus import EvidenceBus
 from .evidence_policy import API_SKIP
+from .gated_sql_candidates import hard_case_triggers, select_gated_sql_candidate
 from .metadata_selector import MetadataSelector
 from .plan_ensemble import select_plan_candidate
 from .planner import ALL_STRATEGIES, LLM_SQL_STRATEGIES, Plan, PlanStep, STRATEGIES, StrategyPlanner
 from .query_normalizer import normalize_query
 from .query_tokens import extract_query_tokens
 from .llm_sql_generator import generate_sql_with_llm, repair_sql_with_llm
+from .query_decomposer import decompose_query
+from .query_family_examples import examples_for_family, few_shot_public_overlap_check
 from .query_analysis import analyze_query
 from .router import QueryRouter
 from .schema_index import SchemaIndex
@@ -47,6 +50,7 @@ from .simple_prompt_gate import decide_simple_prompt
 from .prompt_router import LLM_DIRECT, route_prompt
 from .trajectory import TrajectoryLogger, estimate_tokens
 from .validators import APIValidator, SQLValidator, ValidationResult
+from .value_retrieval import build_value_index, extract_query_values, retrieve_value_matches, value_retrieval_summary
 
 
 class AgentExecutor:
@@ -74,7 +78,7 @@ class AgentExecutor:
         self.router = QueryRouter(self.db.list_tables(), self.endpoint_catalog)
         self.metadata_selector = MetadataSelector(self.schema_index, self.endpoint_catalog, self.config)
         self.planner = StrategyPlanner(self.schema_index)
-        self.sql_validator = SQLValidator(self.schema_index)
+        self.sql_validator = SQLValidator(self.schema_index, enable_ast_validation=self.config.enable_sql_ast_validation)
         self.api_validator = APIValidator(
             self.endpoint_catalog,
             allow_unknown=self.config.allow_unknown_api_endpoints,
@@ -233,6 +237,52 @@ class AgentExecutor:
             correctness_role="keeps high-signal tables and endpoints near the planner",
             efficiency_role="reduces metadata and prompt tokens when compact metadata is enabled",
         )
+        value_retrieval = None
+        if self.config.enable_value_retrieval:
+            query_values = extract_query_values(query, tokens)
+            if query_values:
+                candidate_tables_for_values = [item.name for item in analysis.relevance.tables[: self.config.value_retrieval_max_tables]]
+                value_index = build_value_index(
+                    self.db,
+                    self.schema_index,
+                    self.config.outputs_dir / "cache",
+                    candidate_tables=candidate_tables_for_values,
+                    max_tables=self.config.value_retrieval_max_tables,
+                    max_columns=self.config.value_retrieval_max_columns,
+                    max_rows_per_column=self.config.value_retrieval_max_rows_per_column,
+                    max_ms=self.config.value_retrieval_max_ms,
+                )
+                value_matches = retrieve_value_matches(query_values, value_index)
+                value_retrieval = value_retrieval_summary(query_values, value_index, value_matches)
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_value_entity_retrieval",
+                    stage="query understanding",
+                    technique="CHESS-style value/entity retrieval",
+                    input_summary={"query_values": [mention.to_dict() for mention in query_values]},
+                    output=value_retrieval,
+                    effect="grounds query entities against sampled local DB values before planning",
+                    correctness_role="helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
+                    efficiency_role="uses a cached bounded value index with per-query scan and wall-time budgets",
+                    metrics={
+                        "retrieval_ms": value_retrieval.get("retrieval_ms"),
+                        "budget_exceeded": value_retrieval.get("value_retrieval_budget_exceeded"),
+                        "match_count": value_retrieval.get("match_count"),
+                    },
+                )
+        decomposition = None
+        if self.config.enable_query_decomposition:
+            decomposition = decompose_query(query, tokens)
+            if decomposition.get("active"):
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_query_decomposition",
+                    stage="query understanding",
+                    technique="DIN-SQL-style deterministic query decomposition",
+                    input_summary={"query": query, "tokens": tokens.compact()},
+                    output=decomposition,
+                    effect="breaks complex prompts into entities, filters, joins, and answer-shape constraints",
+                    correctness_role="helps SQL/API planning preserve requested constraints",
+                    efficiency_role="skips simple queries and uses no LLM/tool calls",
+                )
         checkpoint_logger.add_checkpoint(
             "checkpoint_05_query_analysis",
             stage="routing",
@@ -388,6 +438,38 @@ class AgentExecutor:
             correctness_role="preserves required grounding steps",
             efficiency_role="prevents accidental extra SQL/API calls",
         )
+        if self.config.enable_gated_sql_candidates:
+            pre_validation_failed = any(
+                step.action == "sql" and step.sql and not self.sql_validator.validate(step.sql).ok
+                for step in plan.steps
+            )
+            trigger_reasons = hard_case_triggers(
+                validation_failed=pre_validation_failed,
+                decomposition=decomposition,
+                value_retrieval=value_retrieval,
+            )
+            gated_selection = select_gated_sql_candidate(
+                query=query,
+                plan=plan,
+                sql_validator=self.sql_validator,
+                expected_answer_shape=(decomposition or {}).get("expected_answer_shape", analysis.answer_family),
+                trigger_reasons=trigger_reasons,
+            )
+            if gated_selection.get("active"):
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_gated_sql_candidate_selection",
+                    stage="planning",
+                    technique="hard-case gated SQL candidate validation",
+                    input_summary={"trigger_reasons": trigger_reasons},
+                    output=gated_selection,
+                    effect="validates hard-case SQL candidates before execution without executing losing candidates",
+                    correctness_role="selects only validator- and AST-passing SQL candidates",
+                    efficiency_role="executes only one selected candidate in packaged SQL_FIRST_API_VERIFY mode",
+                    metrics={
+                        "candidate_count": gated_selection.get("candidate_count"),
+                        "cost_estimate": gated_selection.get("cost_estimate"),
+                    },
+                )
         planning_time = time.perf_counter() - planning_start
         trajectory = TrajectoryLogger(
             query_id=qid,
@@ -409,6 +491,18 @@ class AgentExecutor:
                 if key in {"tables", "apis", "lookup_paths"}
             },
         }
+        if value_retrieval:
+            nlp_step["value_retrieval"] = {
+                "match_count": value_retrieval.get("match_count"),
+                "matches": value_retrieval.get("matches", [])[:5],
+                "retrieval_ms": value_retrieval.get("retrieval_ms"),
+                "budget_exceeded": value_retrieval.get("value_retrieval_budget_exceeded"),
+            }
+        if decomposition and decomposition.get("active"):
+            nlp_step["decomposition"] = {
+                "sub_questions": decomposition.get("sub_questions", [])[:5],
+                "expected_answer_shape": decomposition.get("expected_answer_shape"),
+            }
         trajectory.add_step("nlp", {key: value for key, value in nlp_step.items() if value not in ([], {}, "", None)})
         trajectory.add_step(
             "metadata",
@@ -425,6 +519,7 @@ class AgentExecutor:
         tool_results: list[dict[str, Any]] = []
         evidence_bus = EvidenceBus()
         validation_summaries: list[dict[str, Any]] = []
+        sql_ast_summaries: list[dict[str, Any]] = []
         blocked_calls: list[dict[str, Any]] = []
         forwarding_actions_all: list[str] = []
         execution_start = time.perf_counter()
@@ -449,6 +544,8 @@ class AgentExecutor:
                     result = {"ok": False, "rows": [], "row_count": 0, "error": "; ".join(validation.errors)}
                     blocked_calls.append({"type": "sql", "errors": validation.errors, "step": step.to_dict()})
                 validation_summaries.append({"type": "sql", "ok": validation.ok, "warnings": validation.warnings, "errors": validation.errors})
+                if self.config.enable_sql_ast_validation:
+                    sql_ast_summaries.append(self.sql_validator.ast_summary(step.sql))
                 trajectory.add_sql_call(step.sql, validation, result)
                 tool_results.append({"type": "sql", "step": step.to_dict(), "validation": validation.to_dict(), "payload": result})
                 evidence_bus.observe_sql(step, result)
@@ -496,6 +593,25 @@ class AgentExecutor:
             correctness_role="blocks unsafe SQL and unknown/unresolved API calls",
             efficiency_role="prevents wasted execution on invalid calls",
         )
+        if self.config.enable_sql_ast_validation and sql_ast_summaries:
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_sql_ast_validation",
+                stage="validation",
+                technique="SQLGlot AST-based SQL validation and extraction",
+                input_summary={"sql_call_count": len(sql_ast_summaries)},
+                output={
+                    "summaries": sql_ast_summaries,
+                    "parsed_ok": all(item.get("parsed_ok") for item in sql_ast_summaries),
+                    "selected_tables": sorted({table for item in sql_ast_summaries for table in item.get("selected_tables", [])}),
+                    "selected_columns": sorted({column for item in sql_ast_summaries for column in item.get("selected_columns", [])}),
+                    "unknown_tables": sorted({table for item in sql_ast_summaries for table in item.get("unknown_tables", [])}),
+                    "unknown_columns": sorted({column for item in sql_ast_summaries for column in item.get("unknown_columns", [])}),
+                    "destructive_sql_detected": any(item.get("destructive_sql_detected") for item in sql_ast_summaries),
+                },
+                effect="adds AST-level table and column extraction after existing SQL validation",
+                correctness_role="detects unsafe SQL and schema mismatches with parser-backed structure",
+                efficiency_role="provides precise feedback without extra SQL tool calls",
+            )
         checkpoint_logger.add_checkpoint(
             "checkpoint_13_tool_execution",
             stage="execution",
@@ -629,6 +745,25 @@ class AgentExecutor:
             else candidate_context
         )
         mode = "full_schema" if prefer_full_schema else "candidate_guided"
+        if self.config.enable_query_family_examples:
+            examples = examples_for_family(analysis.answer_family)
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_query_family_examples",
+                stage="llm sql prompting",
+                technique="DAIL-SQL-style query-family examples",
+                input_summary={"answer_family": analysis.answer_family},
+                output={
+                    "query_family": analysis.answer_family,
+                    "example_count": len(examples),
+                    "token_cost": estimate_tokens(examples),
+                    "overlap_audit_result": few_shot_public_overlap_check(),
+                },
+                effect="adds short generic family hints to LLM SQL prompting only",
+                correctness_role="helps LLM SQL follow family-specific schema patterns without public-answer examples",
+                efficiency_role="disabled by default to avoid prompt-token overhead",
+            )
+            if isinstance(schema_context, dict):
+                schema_context = {**schema_context, "query_family_examples": examples}
         generation = generate_sql_with_llm(query, schema_context or {}, mode=mode)
         checkpoint_logger.add_checkpoint(
             "checkpoint_llm_sql_generation",

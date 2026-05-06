@@ -47,6 +47,17 @@ class Config:
     disable_context_cards: bool = False
     disable_api_fallback_templates: bool = False
     drop_one_join_hint: bool = False
+    enable_sql_ast_validation: bool = True
+    enable_schema_linking: bool = True
+    enable_value_retrieval: bool = True
+    enable_gated_sql_candidates: bool = True
+    enable_query_decomposition: bool = True
+    enable_query_family_examples: bool = False
+    enable_research_span_export: bool = True
+    value_retrieval_max_tables: int = 6
+    value_retrieval_max_columns: int = 18
+    value_retrieval_max_rows_per_column: int = 500
+    value_retrieval_max_ms: int = 250
 
     @classmethod
     def from_env(cls, root: Path | None = None) -> "Config":
@@ -77,6 +88,17 @@ class Config:
             disable_context_cards=os.getenv("DASHAGENT_DISABLE_CONTEXT_CARDS", "0") == "1",
             disable_api_fallback_templates=os.getenv("DASHAGENT_DISABLE_API_FALLBACK_TEMPLATES", "0") == "1",
             drop_one_join_hint=os.getenv("DASHAGENT_DROP_ONE_JOIN_HINT", "0") == "1",
+            enable_sql_ast_validation=os.getenv("ENABLE_SQL_AST_VALIDATION", "1") != "0",
+            enable_schema_linking=os.getenv("ENABLE_SCHEMA_LINKING", "1") != "0",
+            enable_value_retrieval=os.getenv("ENABLE_VALUE_RETRIEVAL", "1") != "0",
+            enable_gated_sql_candidates=os.getenv("ENABLE_GATED_SQL_CANDIDATES", "1") != "0",
+            enable_query_decomposition=os.getenv("ENABLE_QUERY_DECOMPOSITION", "1") != "0",
+            enable_query_family_examples=os.getenv("ENABLE_QUERY_FAMILY_EXAMPLES", "0") == "1",
+            enable_research_span_export=os.getenv("ENABLE_RESEARCH_SPAN_EXPORT", "1") != "0",
+            value_retrieval_max_tables=int(os.getenv("VALUE_RETRIEVAL_MAX_TABLES", "6")),
+            value_retrieval_max_columns=int(os.getenv("VALUE_RETRIEVAL_MAX_COLUMNS", "18")),
+            value_retrieval_max_rows_per_column=int(os.getenv("VALUE_RETRIEVAL_MAX_ROWS_PER_COLUMN", "500")),
+            value_retrieval_max_ms=int(os.getenv("VALUE_RETRIEVAL_MAX_MS", "250")),
         )
 
     def ensure_dirs(self) -> None:

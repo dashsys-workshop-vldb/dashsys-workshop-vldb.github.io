@@ -35,6 +35,7 @@ REQUIRED_PATHS = [
     "scripts/generate_dataflow_visualization.py",
     "scripts/generate_all_dataflow_visualizations.py",
     "scripts/generate_strategy_comparison_visualization.py",
+    "scripts/generate_research_inspired_report.py",
     "scripts/tune_thresholds.py",
     "scripts/run_robustness_eval.py",
     "scripts/export_trajectory_to_openai_trace.py",

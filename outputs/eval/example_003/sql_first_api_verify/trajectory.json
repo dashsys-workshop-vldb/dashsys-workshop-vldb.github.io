@@ -1,5 +1,5 @@
 {
-  "answer_time": 0.00048737507313489914,
+  "answer_time": 0.0005715829320251942,
   "api_call_count": 2,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-06T15:15:28.111056+00:00"
+      "timestamp": "2026-05-06T15:51:03.157055+00:00"
     },
     {
       "checkpoint_id": "checkpoint_00_prompt_router",
@@ -46,7 +46,7 @@
       },
       "stage": "prompt routing",
       "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-06T15:15:28.111098+00:00"
+      "timestamp": "2026-05-06T15:51:03.157099+00:00"
     },
     {
       "checkpoint_id": "checkpoint_simple_prompt_gate",
@@ -65,7 +65,7 @@
       },
       "stage": "input routing",
       "technique": "simple prompt gate",
-      "timestamp": "2026-05-06T15:15:28.111121+00:00"
+      "timestamp": "2026-05-06T15:51:03.157122+00:00"
     },
     {
       "checkpoint_id": "checkpoint_02_query_normalization",
@@ -90,7 +90,7 @@
       },
       "stage": "normalization",
       "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-06T15:15:28.111184+00:00"
+      "timestamp": "2026-05-06T15:51:03.157190+00:00"
     },
     {
       "checkpoint_id": "checkpoint_03_query_tokens",
@@ -121,7 +121,7 @@
       },
       "stage": "tokenization",
       "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-06T15:15:28.111259+00:00"
+      "timestamp": "2026-05-06T15:51:03.157263+00:00"
     },
     {
       "checkpoint_id": "checkpoint_04_relevance_scoring",
@@ -187,7 +187,122 @@
       },
       "stage": "context selection",
       "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-06T15:15:28.112279+00:00"
+      "timestamp": "2026-05-06T15:51:03.158347+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_value_entity_retrieval",
+      "correctness_role": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
+      "duration_ms": 0.0,
+      "effect": "grounds query entities against sampled local DB values before planning",
+      "efficiency_role": "uses a cached bounded value index with per-query scan and wall-time budgets",
+      "input_summary": {
+        "query_values": {
+          "items": [
+            {
+              "kind": "quoted_entity",
+              "text": "SMS Opt-In"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "budget_exceeded": true,
+        "match_count": 1,
+        "retrieval_ms": 10.227
+      },
+      "output": {
+        "active": true,
+        "cache_hit": true,
+        "cache_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/cache/value_index_3256821500035628638.json",
+        "match_count": 1,
+        "matches": {
+          "items": [
+            {
+              "confidence": 1.0,
+              "kind": "quoted_entity",
+              "match_type": "exact",
+              "matched_column": "NAME",
+              "matched_table": "dim_segment",
+              "matched_value": "SMS Opt-In",
+              "mention": "SMS Opt-In",
+              "retrieval_cost": {
+                "budget_exceeded": true,
+                "cache_hit": true,
+                "retrieval_ms": 10.227
+              },
+              "truncated_fields": 1
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "query_value_count": 1,
+        "scanned_columns": 18,
+        "scanned_tables": 4,
+        "truncated_fields": 3
+      },
+      "stage": "query understanding",
+      "technique": "CHESS-style value/entity retrieval",
+      "timestamp": "2026-05-06T15:51:03.158564+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_query_decomposition",
+      "correctness_role": "helps SQL/API planning preserve requested constraints",
+      "duration_ms": 0.0,
+      "effect": "breaks complex prompts into entities, filters, joins, and answer-shape constraints",
+      "efficiency_role": "skips simple queries and uses no LLM/tool calls",
+      "input_summary": {
+        "query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+        "tokens": {
+          "domains": {
+            "items": [
+              "audit",
+              "batch",
+              "destination_dataflow"
+            ],
+            "total_items": 4,
+            "truncated_items": true
+          },
+          "quoted_entities": {
+            "items": [
+              "SMS Opt-In"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      },
+      "output": {
+        "active": true,
+        "expected_answer_shape": "scalar_count",
+        "required_aggregations": {
+          "items": [
+            "count"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "required_entities": {
+          "items": [
+            "SMS Opt-In"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sub_questions": {
+          "items": [
+            "Ground named entities and identifiers.",
+            "Compute requested aggregation or time-range result."
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "stage": "query understanding",
+      "technique": "DIN-SQL-style deterministic query decomposition",
+      "timestamp": "2026-05-06T15:51:03.158585+00:00"
     },
     {
       "checkpoint_id": "checkpoint_05_query_analysis",
@@ -218,7 +333,7 @@
       },
       "stage": "routing",
       "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-06T15:15:28.112283+00:00"
+      "timestamp": "2026-05-06T15:51:03.158589+00:00"
     },
     {
       "checkpoint_id": "checkpoint_06_lookup_path",
@@ -270,7 +385,7 @@
       },
       "stage": "path prediction",
       "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-06T15:15:28.112285+00:00"
+      "timestamp": "2026-05-06T15:51:03.158592+00:00"
     },
     {
       "checkpoint_id": "checkpoint_07_context_card",
@@ -334,7 +449,7 @@
       },
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-06T15:15:28.114316+00:00"
+      "timestamp": "2026-05-06T15:51:03.160327+00:00"
     },
     {
       "checkpoint_id": "checkpoint_08_candidate_plans",
@@ -362,7 +477,7 @@
       },
       "stage": "planning",
       "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-06T15:15:28.114870+00:00"
+      "timestamp": "2026-05-06T15:51:03.160858+00:00"
     },
     {
       "checkpoint_id": "checkpoint_09_plan_optimization",
@@ -390,7 +505,7 @@
       },
       "stage": "optimization",
       "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-06T15:15:28.114879+00:00"
+      "timestamp": "2026-05-06T15:51:03.160866+00:00"
     },
     {
       "checkpoint_id": "checkpoint_10_evidence_policy",
@@ -417,7 +532,7 @@
       },
       "stage": "evidence policy",
       "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-06T15:15:28.114882+00:00"
+      "timestamp": "2026-05-06T15:51:03.160869+00:00"
     },
     {
       "checkpoint_id": "checkpoint_11_call_budget",
@@ -439,7 +554,35 @@
       },
       "stage": "efficiency control",
       "technique": "tool-call budgeting",
-      "timestamp": "2026-05-06T15:15:28.114901+00:00"
+      "timestamp": "2026-05-06T15:51:03.160888+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_gated_sql_candidate_selection",
+      "correctness_role": "selects only validator- and AST-passing SQL candidates",
+      "duration_ms": 0.0,
+      "effect": "validates hard-case SQL candidates before execution without executing losing candidates",
+      "efficiency_role": "executes only one selected candidate in packaged SQL_FIRST_API_VERIFY mode",
+      "input_summary": {
+        "trigger_reasons": {
+          "items": [
+            "complex_query_decomposition",
+            "value_match_not_used_by_sql"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "candidate_count": 1,
+        "cost_estimate": 1
+      },
+      "output": {
+        "preview": "{\"active\": true, \"hard_case_triggered\": true, \"trigger_reasons\": {\"items\": [\"complex_query_decomposition\", \"value_match_not_used_by_sql\"], \"total_items\": 2, \"truncated_items\": false}, \"candidate_count\": 1, \"candidate_sql_sources\": {\"items\": [\"segment_destination_relationship\"], \"total_items\": 1, \"truncated_items\": false}, \"validation_results\": {\"items\": [{\"name\": \"candidate_0\", \"sql\": \"SELECT A.\\\"SEGMENTID\\\" AS segment_id, A.\\\"NAME\\\" AS segment_name, A.\\\"TOTALMEMBERS\\\" AS total_profiles, A.\\\"CREATEDTIME\\\" AS created_time, A.\\\"UPDATEDTIME\\\" AS updated_time FROM \\\"dim_segment\\\" AS A JOIN \\\"hkg_br_segment_target\\\" AS AD ON A.\\\"SEGMENTID\\\" = AD.\\\"SEGMENTID\\\" JOIN \\\"dim_target\\\" AS D ON AD.\\\"TARGETID\\\" = D.\\\"TARGETID\\\" WHERE D.\\\"DATAFLOWNAME\\\" = 'SMS Opt-In' OR D.\\\"NAME\\\" = 'SMS Opt-In' ORDER BY A.\\\"NAME\\\"\", \"source\": \"segment_destination_relationship\", \"validation_ok\": true, \"ast_valid\": true, \"expected_answer_shape\": \"scalar_count\", \"cost_estimate\": 1}], \"total_items\": 1, \"truncated_items...",
+        "truncated": true
+      },
+      "stage": "planning",
+      "technique": "hard-case gated SQL candidate validation",
+      "timestamp": "2026-05-06T15:51:03.164457+00:00"
     },
     {
       "checkpoint_id": "checkpoint_12_validation",
@@ -491,7 +634,24 @@
       },
       "stage": "validation",
       "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-06T15:15:28.117453+00:00"
+      "timestamp": "2026-05-06T15:51:03.167419+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_sql_ast_validation",
+      "correctness_role": "detects unsafe SQL and schema mismatches with parser-backed structure",
+      "duration_ms": 0.0,
+      "effect": "adds AST-level table and column extraction after existing SQL validation",
+      "efficiency_role": "provides precise feedback without extra SQL tool calls",
+      "input_summary": {
+        "sql_call_count": 1
+      },
+      "output": {
+        "preview": "{\"summaries\": {\"items\": [{\"enabled\": true, \"parsed_ok\": true, \"selected_tables\": {\"items\": [\"dim_segment\", \"hkg_br_segment_target\", \"dim_target\"], \"total_items\": 3, \"truncated_items\": false}, \"selected_columns\": {\"items\": [\"A.SEGMENTID\", \"A.NAME\", \"A.TOTALMEMBERS\"], \"total_items\": 10, \"truncated_items\": true}, \"destructive_sql_detected\": false, \"normalized_sql\": \"SELECT A.\\\"SEGMENTID\\\" AS segment_id, A.\\\"NAME\\\" AS segment_name, A.\\\"TOTALMEMBERS\\\" AS total_profiles, A.\\\"CREATEDTIME\\\" AS created_time, A.\\\"UPDATEDTIME\\\" AS updated_time FROM \\\"dim_segment\\\" AS A JOIN \\\"hkg_br_segment_target\\\" AS AD ON A.\\\"SEGMENTID\\\" = AD.\\\"SEGMENTID\\\" JOIN \\\"dim_target\\\" AS D ON AD.\\\"TARGETID\\\" = D.\\\"TARGETID\\\" WHERE D.\\\"DATAFLOWNAME\\\" = 'SMS Opt-In' OR D.\\\"NAME\\\" = 'SMS Opt-In' ORDER BY A.\\\"NAME\\\"\"}], \"total_items\": 1, \"truncated_items\": false}, \"parsed_ok\": true, \"selected_tables\": {\"items\": [\"dim_segment\", \"dim_target\", \"hkg_br_segment_target\"], \"total_items\": 3, \"truncated_items\": false}, \"selected_co...",
+        "truncated": true
+      },
+      "stage": "validation",
+      "technique": "SQLGlot AST-based SQL validation and extraction",
+      "timestamp": "2026-05-06T15:51:03.167432+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -508,7 +668,7 @@
       },
       "stage": "execution",
       "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-06T15:15:28.117461+00:00"
+      "timestamp": "2026-05-06T15:51:03.167440+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -524,7 +684,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-06T15:15:28.117464+00:00"
+      "timestamp": "2026-05-06T15:51:03.167443+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -583,7 +743,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-06T15:15:28.117837+00:00"
+      "timestamp": "2026-05-06T15:51:03.167871+00:00"
     },
     {
       "checkpoint_id": "checkpoint_16_answer_verification",
@@ -616,7 +776,7 @@
       },
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-06T15:15:28.117842+00:00"
+      "timestamp": "2026-05-06T15:51:03.167876+00:00"
     },
     {
       "checkpoint_id": "checkpoint_17_answer_reranking",
@@ -634,7 +794,7 @@
       },
       "stage": "answer selection",
       "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-06T15:15:28.117844+00:00"
+      "timestamp": "2026-05-06T15:51:03.167879+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -652,20 +812,20 @@
       },
       "stage": "final response",
       "technique": "concise grounded final response",
-      "timestamp": "2026-05-06T15:15:28.117867+00:00"
+      "timestamp": "2026-05-06T15:51:03.167924+00:00"
     }
   ],
   "domain_type": "SEGMENT_AUDIENCE",
   "errors": [],
-  "estimated_tokens": 1446,
-  "execution_time": 0.0007935409666970372,
+  "estimated_tokens": 1608,
+  "execution_time": 0.0008931249612942338,
   "final_answer": "Based on the evidence provided, there is no data available to answer this question. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable, so audience and flow service evidence could not be checked.",
   "original_query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
-  "planning_time": 0.0005826660199090838,
-  "preprocessing_time": 0.003197750076651573,
+  "planning_time": 0.004137459094636142,
+  "preprocessing_time": 0.0032060000812634826,
   "query_id": "example_003",
   "route_type": "SQL_ONLY",
-  "runtime": 0.01169991702772677,
+  "runtime": 0.014425458037294447,
   "sql_call_count": 1,
   "steps": [
     {
@@ -708,6 +868,13 @@
       "route_type": "SQL_ONLY"
     },
     {
+      "decomposition": {
+        "expected_answer_shape": "scalar_count",
+        "sub_questions": [
+          "Ground named entities and identifiers.",
+          "Compute requested aggregation or time-range result."
+        ]
+      },
       "kind": "nlp",
       "relevance": {
         "apis": [
@@ -737,6 +904,28 @@
         "quoted_entities": [
           "SMS Opt-In"
         ]
+      },
+      "value_retrieval": {
+        "budget_exceeded": true,
+        "match_count": 1,
+        "matches": [
+          {
+            "confidence": 1.0,
+            "kind": "quoted_entity",
+            "match_type": "exact",
+            "matched_column": "NAME",
+            "matched_table": "dim_segment",
+            "matched_value": "SMS Opt-In",
+            "mention": "SMS Opt-In",
+            "retrieval_cost": {
+              "budget_exceeded": true,
+              "cache_hit": true,
+              "retrieval_ms": 10.227
+            },
+            "used_for": "sql_filter"
+          }
+        ],
+        "retrieval_ms": 10.227
       }
     },
     {
@@ -893,10 +1082,10 @@
   ],
   "strategy": "SQL_FIRST_API_VERIFY",
   "timings": {
-    "answer_time": 0.00048737507313489914,
-    "execution_time": 0.0007935409666970372,
-    "planning_time": 0.0005826660199090838,
-    "preprocessing_time": 0.003197750076651573
+    "answer_time": 0.0005715829320251942,
+    "execution_time": 0.0008931249612942338,
+    "planning_time": 0.004137459094636142,
+    "preprocessing_time": 0.0032060000812634826
   },
   "tool_call_count": 3
 }

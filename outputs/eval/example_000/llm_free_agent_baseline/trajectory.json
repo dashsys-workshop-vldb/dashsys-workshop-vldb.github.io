@@ -1,5 +1,5 @@
 {
-  "answer_time": 0.0004478750051930547,
+  "answer_time": 0.000509540899656713,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-06T15:15:27.649902+00:00"
+      "timestamp": "2026-05-06T15:51:02.598394+00:00"
     },
     {
       "checkpoint_id": "checkpoint_00_prompt_router",
@@ -45,7 +45,7 @@
       },
       "stage": "prompt routing",
       "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-06T15:15:27.649934+00:00"
+      "timestamp": "2026-05-06T15:51:02.598434+00:00"
     },
     {
       "checkpoint_id": "checkpoint_simple_prompt_gate",
@@ -64,7 +64,7 @@
       },
       "stage": "input routing",
       "technique": "simple prompt gate",
-      "timestamp": "2026-05-06T15:15:27.649950+00:00"
+      "timestamp": "2026-05-06T15:51:02.598450+00:00"
     },
     {
       "checkpoint_id": "checkpoint_02_query_normalization",
@@ -81,7 +81,7 @@
       },
       "stage": "normalization",
       "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-06T15:15:27.649992+00:00"
+      "timestamp": "2026-05-06T15:51:02.598492+00:00"
     },
     {
       "checkpoint_id": "checkpoint_03_query_tokens",
@@ -117,7 +117,7 @@
       },
       "stage": "tokenization",
       "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-06T15:15:27.650030+00:00"
+      "timestamp": "2026-05-06T15:51:02.598536+00:00"
     },
     {
       "checkpoint_id": "checkpoint_04_relevance_scoring",
@@ -185,7 +185,131 @@
       },
       "stage": "context selection",
       "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-06T15:15:27.650601+00:00"
+      "timestamp": "2026-05-06T15:51:02.599180+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_value_entity_retrieval",
+      "correctness_role": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
+      "duration_ms": 0.0,
+      "effect": "grounds query entities against sampled local DB values before planning",
+      "efficiency_role": "uses a cached bounded value index with per-query scan and wall-time budgets",
+      "input_summary": {
+        "query_values": {
+          "items": [
+            {
+              "kind": "quoted_entity",
+              "text": "Birthday Message"
+            },
+            {
+              "kind": "status",
+              "text": "published"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "budget_exceeded": false,
+        "match_count": 1,
+        "retrieval_ms": 6.994
+      },
+      "output": {
+        "active": true,
+        "cache_hit": true,
+        "cache_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/cache/value_index_2854787630896054615.json",
+        "match_count": 1,
+        "matches": {
+          "items": [
+            {
+              "confidence": 1.0,
+              "kind": "quoted_entity",
+              "match_type": "exact",
+              "matched_column": "NAME",
+              "matched_table": "dim_campaign",
+              "matched_value": "Birthday Message",
+              "mention": "Birthday Message",
+              "retrieval_cost": {
+                "budget_exceeded": false,
+                "cache_hit": true,
+                "retrieval_ms": 6.994
+              },
+              "truncated_fields": 1
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "query_value_count": 2,
+        "scanned_columns": 9,
+        "scanned_tables": 1,
+        "truncated_fields": 3
+      },
+      "stage": "query understanding",
+      "technique": "CHESS-style value/entity retrieval",
+      "timestamp": "2026-05-06T15:51:02.599445+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_query_decomposition",
+      "correctness_role": "helps SQL/API planning preserve requested constraints",
+      "duration_ms": 0.0,
+      "effect": "breaks complex prompts into entities, filters, joins, and answer-shape constraints",
+      "efficiency_role": "skips simple queries and uses no LLM/tool calls",
+      "input_summary": {
+        "query": "When was the journey 'Birthday Message' published?",
+        "tokens": {
+          "domains": {
+            "items": [
+              "journey_campaign"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "quoted_entities": {
+            "items": [
+              "Birthday Message"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "statuses": {
+            "items": [
+              "published"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      },
+      "output": {
+        "active": true,
+        "expected_answer_shape": "short_fact",
+        "required_entities": {
+          "items": [
+            "Birthday Message"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "required_filters": {
+          "items": [
+            "published"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sub_questions": {
+          "items": [
+            "Ground named entities and identifiers.",
+            "Apply status/date/entity filters."
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "stage": "query understanding",
+      "technique": "DIN-SQL-style deterministic query decomposition",
+      "timestamp": "2026-05-06T15:51:02.599461+00:00"
     },
     {
       "checkpoint_id": "checkpoint_05_query_analysis",
@@ -215,7 +339,7 @@
       },
       "stage": "routing",
       "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-06T15:15:27.650606+00:00"
+      "timestamp": "2026-05-06T15:51:02.599465+00:00"
     },
     {
       "checkpoint_id": "checkpoint_06_lookup_path",
@@ -257,7 +381,7 @@
       },
       "stage": "path prediction",
       "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-06T15:15:27.650610+00:00"
+      "timestamp": "2026-05-06T15:51:02.599470+00:00"
     },
     {
       "checkpoint_id": "checkpoint_07_context_card",
@@ -275,7 +399,7 @@
       },
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-06T15:15:27.657636+00:00"
+      "timestamp": "2026-05-06T15:51:02.606565+00:00"
     },
     {
       "checkpoint_id": "checkpoint_08_candidate_plans",
@@ -303,7 +427,7 @@
       },
       "stage": "planning",
       "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-06T15:15:27.657708+00:00"
+      "timestamp": "2026-05-06T15:51:02.606643+00:00"
     },
     {
       "checkpoint_id": "checkpoint_09_plan_optimization",
@@ -324,7 +448,7 @@
       },
       "stage": "optimization",
       "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-06T15:15:27.657715+00:00"
+      "timestamp": "2026-05-06T15:51:02.606650+00:00"
     },
     {
       "checkpoint_id": "checkpoint_10_evidence_policy",
@@ -350,7 +474,7 @@
       },
       "stage": "evidence policy",
       "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-06T15:15:27.657718+00:00"
+      "timestamp": "2026-05-06T15:51:02.606654+00:00"
     },
     {
       "checkpoint_id": "checkpoint_11_call_budget",
@@ -391,7 +515,35 @@
       },
       "stage": "efficiency control",
       "technique": "tool-call budgeting",
-      "timestamp": "2026-05-06T15:15:27.657741+00:00"
+      "timestamp": "2026-05-06T15:51:02.606677+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_gated_sql_candidate_selection",
+      "correctness_role": "selects only validator- and AST-passing SQL candidates",
+      "duration_ms": 0.0,
+      "effect": "validates hard-case SQL candidates before execution without executing losing candidates",
+      "efficiency_role": "executes only one selected candidate in packaged SQL_FIRST_API_VERIFY mode",
+      "input_summary": {
+        "trigger_reasons": {
+          "items": [
+            "complex_query_decomposition",
+            "value_match_not_used_by_sql"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "candidate_count": 1,
+        "cost_estimate": 1
+      },
+      "output": {
+        "preview": "{\"active\": true, \"hard_case_triggered\": true, \"trigger_reasons\": {\"items\": [\"complex_query_decomposition\", \"value_match_not_used_by_sql\"], \"total_items\": 2, \"truncated_items\": false}, \"candidate_count\": 1, \"candidate_sql_sources\": {\"items\": [\"deterministic/template SQL\"], \"total_items\": 1, \"truncated_items\": false}, \"validation_results\": {\"items\": [{\"name\": \"candidate_0\", \"sql\": \"SELECT \\\"IMSORGID\\\", \\\"LASTDEPLOYEDTIME\\\", \\\"STATE\\\", \\\"SANDBOXNAME\\\", \\\"NAME\\\", \\\"SANDBOXID\\\", \\\"STATUS\\\", \\\"CAMPAIGNID\\\" FROM \\\"dim_campaign\\\" WHERE LOWER(CAST(\\\"SANDBOXNAME\\\" AS VARCHAR)) LIKE LOWER('%Birthday Message%') AND LOWER(CAST(\\\"STATUS\\\" AS VARCHAR)) LIKE LOWER('%published%') LIMIT 50\", \"source\": \"deterministic/template SQL\", \"validation_ok\": true, \"ast_valid\": true, \"expected_answer_shape\": \"short_fact\", \"cost_estimate\": 1}], \"total_items\": 1, \"truncated_items\": false}, \"selected_candidate\": {\"name\": \"candidate_0\", \"sql\": \"SELECT \\\"IMSORGID\\\", \\\"LASTDEPLOYEDTIME\\\", \\\"STATE\\\", \\\"SANDBOXNAME\\\", \\\"NA...",
+        "truncated": true
+      },
+      "stage": "planning",
+      "technique": "hard-case gated SQL candidate validation",
+      "timestamp": "2026-05-06T15:51:02.611590+00:00"
     },
     {
       "checkpoint_id": "checkpoint_12_validation",
@@ -454,7 +606,68 @@
       },
       "stage": "validation",
       "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-06T15:15:27.664570+00:00"
+      "timestamp": "2026-05-06T15:51:02.618930+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_sql_ast_validation",
+      "correctness_role": "detects unsafe SQL and schema mismatches with parser-backed structure",
+      "duration_ms": 0.0,
+      "effect": "adds AST-level table and column extraction after existing SQL validation",
+      "efficiency_role": "provides precise feedback without extra SQL tool calls",
+      "input_summary": {
+        "sql_call_count": 1
+      },
+      "output": {
+        "destructive_sql_detected": false,
+        "parsed_ok": true,
+        "selected_columns": {
+          "items": [
+            "CAMPAIGNID",
+            "IMSORGID",
+            "LASTDEPLOYEDTIME"
+          ],
+          "total_items": 8,
+          "truncated_items": true
+        },
+        "selected_tables": {
+          "items": [
+            "dim_campaign"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "summaries": {
+          "items": [
+            {
+              "destructive_sql_detected": false,
+              "enabled": true,
+              "normalized_sql": "SELECT \"IMSORGID\", \"LASTDEPLOYEDTIME\", \"STATE\", \"SANDBOXNAME\", \"NAME\", \"SANDBOXID\", \"STATUS\", \"CAMPAIGNID\" FROM \"dim_campaign\" WHERE LOWER(CAST(\"SANDBOXNAME\" AS TEXT)) LIKE LOWER('%Birthday Message%') AND LOWER(CAST(\"STATUS\" AS TEXT)) LIKE LOWER('%published%') LIMIT 50",
+              "parsed_ok": true,
+              "selected_columns": {
+                "items": [
+                  "IMSORGID",
+                  "LASTDEPLOYEDTIME",
+                  "STATE"
+                ],
+                "total_items": 8,
+                "truncated_items": true
+              },
+              "selected_tables": {
+                "items": [
+                  "dim_campaign"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              }
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "validation",
+      "technique": "SQLGlot AST-based SQL validation and extraction",
+      "timestamp": "2026-05-06T15:51:02.618944+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -518,7 +731,7 @@
       },
       "stage": "execution",
       "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-06T15:15:27.664582+00:00"
+      "timestamp": "2026-05-06T15:51:02.618953+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -534,7 +747,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-06T15:15:27.664586+00:00"
+      "timestamp": "2026-05-06T15:51:02.618957+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -593,7 +806,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-06T15:15:27.664901+00:00"
+      "timestamp": "2026-05-06T15:51:02.619281+00:00"
     },
     {
       "checkpoint_id": "checkpoint_16_answer_verification",
@@ -626,7 +839,7 @@
       },
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-06T15:15:27.664907+00:00"
+      "timestamp": "2026-05-06T15:51:02.619287+00:00"
     },
     {
       "checkpoint_id": "checkpoint_17_answer_reranking",
@@ -644,7 +857,7 @@
       },
       "stage": "answer selection",
       "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-06T15:15:27.664910+00:00"
+      "timestamp": "2026-05-06T15:51:02.619289+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -662,20 +875,20 @@
       },
       "stage": "final response",
       "technique": "concise grounded final response",
-      "timestamp": "2026-05-06T15:15:27.664947+00:00"
+      "timestamp": "2026-05-06T15:51:02.619333+00:00"
     }
   ],
   "domain_type": "JOURNEY_CAMPAIGN",
   "errors": [],
-  "estimated_tokens": 764,
-  "execution_time": 0.0015015839599072933,
+  "estimated_tokens": 922,
+  "execution_time": 0.0014593340456485748,
   "final_answer": "The journey \"Birthday Message\" has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable.",
   "original_query": "When was the journey 'Birthday Message' published?",
-  "planning_time": 9.995803702622652e-05,
-  "preprocessing_time": 0.007685916963964701,
+  "planning_time": 0.0050246670143678784,
+  "preprocessing_time": 0.008120832964777946,
   "query_id": "example_000",
   "route_type": "SQL_THEN_API",
-  "runtime": 0.01655487495008856,
+  "runtime": 0.01884375000372529,
   "sql_call_count": 1,
   "steps": [
     {
@@ -697,6 +910,13 @@
       "route_type": "SQL_THEN_API"
     },
     {
+      "decomposition": {
+        "expected_answer_shape": "short_fact",
+        "sub_questions": [
+          "Ground named entities and identifiers.",
+          "Apply status/date/entity filters."
+        ]
+      },
       "kind": "nlp",
       "relevance": {
         "apis": [
@@ -720,6 +940,28 @@
         "statuses": [
           "published"
         ]
+      },
+      "value_retrieval": {
+        "budget_exceeded": false,
+        "match_count": 1,
+        "matches": [
+          {
+            "confidence": 1.0,
+            "kind": "quoted_entity",
+            "match_type": "exact",
+            "matched_column": "NAME",
+            "matched_table": "dim_campaign",
+            "matched_value": "Birthday Message",
+            "mention": "Birthday Message",
+            "retrieval_cost": {
+              "budget_exceeded": false,
+              "cache_hit": true,
+              "retrieval_ms": 6.994
+            },
+            "used_for": "sql_filter"
+          }
+        ],
+        "retrieval_ms": 6.994
       }
     },
     {
@@ -813,10 +1055,10 @@
   ],
   "strategy": "LLM_FREE_AGENT_BASELINE",
   "timings": {
-    "answer_time": 0.0004478750051930547,
-    "execution_time": 0.0015015839599072933,
-    "planning_time": 9.995803702622652e-05,
-    "preprocessing_time": 0.007685916963964701
+    "answer_time": 0.000509540899656713,
+    "execution_time": 0.0014593340456485748,
+    "planning_time": 0.0050246670143678784,
+    "preprocessing_time": 0.008120832964777946
   },
   "tool_call_count": 2
 }

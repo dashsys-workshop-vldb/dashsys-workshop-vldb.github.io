@@ -8,6 +8,7 @@ from typing import Any
 from .db import is_read_only_sql, strip_sql_comments
 from .endpoint_catalog import EndpointCatalog
 from .schema_index import SchemaIndex, normalize_name
+from .sql_ast_tools import sql_ast_summary
 
 
 @dataclass
@@ -22,8 +23,10 @@ class ValidationResult:
 
 
 class SQLValidator:
-    def __init__(self, schema_index: SchemaIndex) -> None:
+    def __init__(self, schema_index: SchemaIndex, *, enable_ast_validation: bool = True) -> None:
         self.schema_index = schema_index
+        self.enable_ast_validation = enable_ast_validation
+        self._ast_cache: dict[str, dict[str, Any]] = {}
 
     def validate(self, sql: str) -> ValidationResult:
         errors: list[str] = []
@@ -37,9 +40,19 @@ class SQLValidator:
         tables, aliases = extract_tables_and_aliases(cleaned)
         if not tables:
             warnings.append("No table references found.")
+        ast = self.ast_summary(sql) if self.enable_ast_validation else {"enabled": False}
+        table_suggestions = ast.get("closest_table_suggestions", {}) if isinstance(ast, dict) else {}
         for table in tables:
             if not self.schema_index.table_exists(table):
-                errors.append(f"Unknown table: {table}")
+                suggestions = table_suggestions.get(table, [])
+                suffix = f" Suggestions: {', '.join(suggestions)}" if suggestions else ""
+                errors.append(f"Unknown table: {table}.{suffix}")
+
+        if self.enable_ast_validation:
+            if ast.get("destructive_sql_detected"):
+                errors.append("SQL AST detected a blocked write or environment-changing command.")
+            if ast.get("parse_error"):
+                warnings.append(f"SQLGlot parse warning: {ast.get('parse_error')}")
 
         if errors:
             return ValidationResult(False, errors, warnings)
@@ -47,7 +60,7 @@ class SQLValidator:
         for alias, column in extract_qualified_columns(cleaned):
             table = aliases.get(alias, alias)
             if table in self.schema_index.tables and not self.schema_index.column_exists(table, column):
-                errors.append(f"Unknown column: {alias}.{column}")
+                errors.append(self._unknown_column_error(f"{alias}.{column}", ast))
 
         for column in extract_unqualified_columns(cleaned):
             if column.upper() in SQL_KEYWORDS or column.isdigit():
@@ -58,9 +71,23 @@ class SQLValidator:
                 table for table in tables if self.schema_index.column_exists(table, column)
             ]
             if not matching_tables:
-                errors.append(f"Unknown column: {column}")
+                errors.append(self._unknown_column_error(column, ast))
 
         return ValidationResult(not errors, sorted(set(errors)), warnings)
+
+    def ast_summary(self, sql: str) -> dict[str, Any]:
+        if not self.enable_ast_validation:
+            return {"enabled": False}
+        if sql not in self._ast_cache:
+            self._ast_cache[sql] = {"enabled": True, **sql_ast_summary(sql, self.schema_index)}
+        return self._ast_cache[sql]
+
+    def _unknown_column_error(self, column: str, ast: dict[str, Any]) -> str:
+        suggestions = ast.get("closest_column_suggestions", {}).get(column, []) if isinstance(ast, dict) else []
+        if not suggestions and "." in column and isinstance(ast, dict):
+            suggestions = ast.get("closest_column_suggestions", {}).get(column.split(".")[-1], [])
+        suffix = f" Suggestions: {', '.join(suggestions)}" if suggestions else ""
+        return f"Unknown column: {column}.{suffix}"
 
 
 class APIValidator:

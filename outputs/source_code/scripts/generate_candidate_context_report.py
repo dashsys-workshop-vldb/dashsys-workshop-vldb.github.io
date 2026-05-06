@@ -67,6 +67,14 @@ def generate_candidate_context_report(config: Config) -> dict[str, Any]:
             "context_mode": context_mode,
             "recommended_context_mode": context_mode,
             "used_gold_patterns": context.get("used_gold_patterns", False),
+            "schema_linking": context.get("schema_linking", {}),
+            "forward_link_count": context.get("schema_linking", {}).get("forward_link_count", 0),
+            "backward_link_count": context.get("schema_linking", {}).get("backward_link_count", 0),
+            "structural_join_preserved": context.get("schema_linking", {}).get("structural_join_preserved", False),
+            "schema_link_confidence": context.get("schema_linking", {}).get("schema_link_confidence"),
+            "schema_link_risk": context.get("schema_linking", {}).get("schema_link_risk"),
+            "missing_bridge_warning": context.get("schema_linking", {}).get("missing_bridge_warning", False),
+            "reason_for_context_mode": context.get("schema_linking", {}).get("reason_for_context_mode"),
             "candidate_context_tokens": context.get("estimated_tokens", 0),
             "full_schema_context_tokens": full_tokens,
             "gold_tables": sorted(gold_tables),
@@ -137,6 +145,10 @@ def generate_candidate_context_report(config: Config) -> dict[str, Any]:
             "percent_zero_margin": round(sum(1 for row in rows if (row.get("score_margin") or 0) == 0) / len(rows), 4) if rows else 0.0,
             "recommended_fallback_rate": round(sum(1 for row in rows if row.get("context_mode") in {"hybrid", "full_schema"}) / len(rows), 4) if rows else 0.0,
             "context_mode_distribution": dict(context_modes),
+            "avg_forward_link_count": avg([row.get("forward_link_count", 0) for row in rows]),
+            "avg_backward_link_count": avg([row.get("backward_link_count", 0) for row in rows]),
+            "structural_join_preserved_count": sum(1 for row in rows if row.get("structural_join_preserved")),
+            "schema_link_risk_distribution": dict(Counter(row.get("schema_link_risk") for row in rows)),
         },
         "candidate_miss_analysis": miss_analysis,
         "curated_join_hint_audit": curated_join_hint_audit(executor.schema_index),
@@ -256,6 +268,20 @@ def render_markdown(report: dict[str, Any]) -> str:
         tables = ", ".join(row.get("candidate_tables", [])[:5])
         apis = ", ".join(api.get("id", "") for api in row.get("candidate_apis", [])[:5])
         lines.append(f"| `{row.get('query_id')}` | {tables} | {apis} | {row.get('confidence')} | {row.get('context_mode')} | {row.get('used_gold_patterns')} |")
+    lines.extend(
+        [
+            "",
+            "## Robust Schema Linking Metrics",
+            "",
+            "| Query ID | Forward links | Backward links | Structural join preserved | Link confidence | Risk | Context reason |",
+            "| --- | ---: | ---: | --- | ---: | --- | --- |",
+        ]
+    )
+    for row in report.get("rows", [])[:50]:
+        lines.append(
+            f"| `{row.get('query_id')}` | {row.get('forward_link_count')} | {row.get('backward_link_count')} | "
+            f"{row.get('structural_join_preserved')} | {row.get('schema_link_confidence')} | {row.get('schema_link_risk')} | {row.get('reason_for_context_mode')} |"
+        )
     return "\n".join(lines) + "\n"
 
 

@@ -73,6 +73,8 @@ def test_dataflow_outputs_mermaid_markdown_html_and_redacts():
     assert count_mermaid_readability_issues(graph) == 0
     assert "checkpoint_00_prompt_router" in table
     assert "Checkpoint Effect Table" in md
+    assert "Research Technique Status" in md
+    assert "SQLGlot AST validation" in md
     assert "mermaid" in html
     assert "secret-token-123456789" not in md
 
@@ -84,6 +86,7 @@ def test_dataflow_artifacts_are_real_values_and_not_final_submission(tmp_path):
     for path in files.values():
         assert Path(path).exists()
         assert "final_submission" not in Path(path).parts
+    assert Path(files["spans"]).name == "spans.json"
     md = Path(files["md"]).read_text(encoding="utf-8")
     summary = build_dataflow_summary(trajectory)
     assert "Is the 'Birthday Message' journey published?" in md
@@ -104,6 +107,8 @@ def test_dataflow_artifacts_are_real_values_and_not_final_submission(tmp_path):
     assert "sql_evidence_available" in json_summary
     assert "live_api_evidence_available" in json_summary
     assert "overall_evidence_available" in json_summary
+    spans = Path(files["spans"]).read_text(encoding="utf-8")
+    assert "span_count" in spans
 
 
 def test_dataflow_mermaid_required_subgraphs_and_missing_fields():
