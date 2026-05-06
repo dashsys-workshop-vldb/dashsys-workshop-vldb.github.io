@@ -9,7 +9,7 @@ Status: **no measured strict-score improvement**.
 | strict_final_score | 0.649 | 0.6486 | -0.0004 |
 | strict_correctness | 0.6743 | 0.6743 | 0.0 |
 | estimated_tokens | 851.7714 | 899.2286 | 47.4572 |
-| runtime | 0.0102 | 0.0114 | 0.0012 |
+| runtime | 0.0102 | 0.0111 | 0.0009 |
 | tool_calls | 1.4571 | 1.4571 | 0.0 |
 
 ## Gate Results
@@ -17,7 +17,7 @@ Status: **no measured strict-score improvement**.
 - Packaged preferred strategy: `SQL_FIRST_API_VERIFY`
 - Strict score regression gate OK: True
 - Estimated-token overhead: 5.57% (gate OK: True)
-- Runtime overhead: 11.76% (gate OK: True)
+- Runtime overhead: 8.82% (gate OK: True)
 - Tool-call delta: 0.0 (gate OK: True)
 - Value retrieval budget: 250 ms (budget OK: True)
 - Value retrieval cache key algorithm: `sha256` (reproducible: True)
@@ -44,6 +44,13 @@ Status: **no measured strict-score improvement**.
 - Compact-context official measured efficiency improvement claimed: False
 - Compact-context measured eval changed packaged execution: False
 - Compact-context feature flag default: False
+- Official token accounting ran: True (expected savings estimate: 5258)
+- Official token top contributors: [{'name': 'checkpoint summaries', 'tokens': 185402}, {'name': 'other step/checkpoint payloads', 'tokens': 15071}, {'name': 'API call records', 'tokens': 3914}]
+- Official token biggest reducible fields: [{'name': 'other step/checkpoint payloads', 'tokens': 5258}]
+- Official token reduction eval ran: True (safe rows: 35; avg token delta: -67.7714; avg score delta: 0.0006; recommendation: safe_for_future_canary)
+- Official token reduction changed packaged execution: False
+- Official token reduction feature flag default: False
+- Official token reduction official efficiency claim: False
 - Risk-efficiency shadow eval rows: 7 (avg token delta: -264.0; avg runtime delta: -0.025; measured efficiency improvement claimed: False)
 - Secret scan OK: True
 - Visualization artifacts directory: `/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/visualizations`
@@ -73,6 +80,7 @@ Status: **no measured strict-score improvement**.
 | `ENABLE_REPAIR_FOR_ZERO_SCORE_MARGIN` | False |
 | `ENABLE_REPAIR_FOR_MISSING_API_TOPK` | False |
 | `ENABLE_COMPACT_CONTEXT_WHEN_SCHEMA_VOTE_SAFE` | False |
+| `ENABLE_OFFICIAL_TOKEN_REDUCTION` | False |
 
 ## Technique Summary
 
@@ -137,6 +145,7 @@ Execution repair remains disabled by default. These recommendations are offline 
 - Risk-based efficiency savings are labeled as estimates; no measured efficiency improvement is claimed because packaged execution did not skip modules.
 - Schema context voting compares compact and broader context for high-risk diagnostics only and does not change executed SQL/API plans.
 - Compact-context measured eval is experimental only and does not update official packaged scores or submission metrics.
+- Official-token reduction eval is experimental only and does not update official packaged scores or submission metrics.
 - SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.
 - No live API evidence is fabricated; Adobe API remains dry-run without credentials.
 - Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.

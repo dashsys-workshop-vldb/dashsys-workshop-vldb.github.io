@@ -49,6 +49,8 @@ def generate_report(config: Config) -> dict[str, Any]:
     shadow_report = _load_json(config.outputs_dir / "shadow_repair_eval.json")
     compact_shadow_report = _load_json(config.outputs_dir / "compact_context_shadow_eval.json")
     compact_measured_report = _load_json(config.outputs_dir / "compact_context_measured_eval.json")
+    official_token_accounting_report = _load_json(config.outputs_dir / "official_token_accounting_report.json")
+    official_token_reduction_report = _load_json(config.outputs_dir / "official_token_reduction_eval.json")
     risk_shadow_report = _load_json(config.outputs_dir / "risk_efficiency_shadow_eval.json")
     current = strict.get("summary", {}).get("by_strategy", {}).get("SQL_FIRST_API_VERIFY", {})
     final_score = current.get("avg_final_score", 0.0)
@@ -87,6 +89,7 @@ def generate_report(config: Config) -> dict[str, Any]:
         "ENABLE_REPAIR_FOR_ZERO_SCORE_MARGIN": config.enable_repair_for_zero_score_margin,
         "ENABLE_REPAIR_FOR_MISSING_API_TOPK": config.enable_repair_for_missing_api_topk,
         "ENABLE_COMPACT_CONTEXT_WHEN_SCHEMA_VOTE_SAFE": config.enable_compact_context_when_schema_vote_safe,
+        "ENABLE_OFFICIAL_TOKEN_REDUCTION": config.enable_official_token_reduction,
     }
     techniques = [
         ("SQLGlot AST validation", "SQLGlot", "dashagent/sql_ast_tools.py", config.enable_sql_ast_validation, "checkpoint_sql_ast_validation"),
@@ -165,6 +168,18 @@ def generate_report(config: Config) -> dict[str, Any]:
             "compact_context_measured_packaged_execution_changed": compact_measured_report.get("summary", {}).get("packaged_execution_changed", False),
             "compact_context_measured_recommendation": compact_measured_report.get("summary", {}).get("recommendation", "not_run"),
             "compact_context_feature_flag_default": compact_measured_report.get("feature_flag_default", config.enable_compact_context_when_schema_vote_safe),
+            "official_token_accounting_ran": bool(official_token_accounting_report.get("rows")),
+            "official_token_top_contributors": official_token_accounting_report.get("aggregate", {}).get("top_global_token_contributors", []),
+            "official_token_biggest_reducible_fields": official_token_accounting_report.get("aggregate", {}).get("biggest_reducible_fields", []),
+            "official_token_expected_savings_estimate": official_token_accounting_report.get("aggregate", {}).get("expected_token_savings_estimate"),
+            "official_token_reduction_eval_ran": bool(official_token_reduction_report.get("rows")),
+            "official_token_reduction_safe_rows": official_token_reduction_report.get("summary", {}).get("safe_rows", 0),
+            "official_token_reduction_avg_token_delta": official_token_reduction_report.get("summary", {}).get("avg_token_delta"),
+            "official_token_reduction_avg_score_delta": official_token_reduction_report.get("summary", {}).get("avg_score_delta"),
+            "official_token_reduction_recommendation": official_token_reduction_report.get("summary", {}).get("recommendation", "not_run"),
+            "official_token_reduction_packaged_execution_changed": official_token_reduction_report.get("summary", {}).get("packaged_execution_changed", False),
+            "official_token_reduction_feature_flag_default": official_token_reduction_report.get("feature_flag_default", config.enable_official_token_reduction),
+            "official_token_reduction_official_efficiency_claimed": official_token_reduction_report.get("summary", {}).get("official_measured_efficiency_improvement_claimed", False),
             "risk_efficiency_shadow_eval_ran": bool(risk_shadow_report.get("rows")),
             "risk_efficiency_shadow_row_count": risk_shadow_report.get("summary", {}).get("row_count", 0),
             "risk_efficiency_shadow_avg_token_delta": risk_shadow_report.get("summary", {}).get("avg_token_delta"),
@@ -212,6 +227,15 @@ def generate_report(config: Config) -> dict[str, Any]:
             "artifact_isolation": compact_measured_report.get("artifact_isolation", {}),
             "notes": compact_measured_report.get("notes", []),
         },
+        "official_token_accounting_report": {
+            "aggregate": official_token_accounting_report.get("aggregate", {}),
+            "notes": official_token_accounting_report.get("notes", []),
+        },
+        "official_token_reduction_eval": {
+            "summary": official_token_reduction_report.get("summary", {}),
+            "artifact_isolation": official_token_reduction_report.get("artifact_isolation", {}),
+            "notes": official_token_reduction_report.get("notes", []),
+        },
         "risk_efficiency_shadow_eval": {
             "summary": risk_shadow_report.get("summary", {}),
             "artifact_isolation": risk_shadow_report.get("artifact_isolation", {}),
@@ -227,6 +251,7 @@ def generate_report(config: Config) -> dict[str, Any]:
             "Risk-based efficiency savings are labeled as estimates; no measured efficiency improvement is claimed because packaged execution did not skip modules.",
             "Schema context voting compares compact and broader context for high-risk diagnostics only and does not change executed SQL/API plans.",
             "Compact-context measured eval is experimental only and does not update official packaged scores or submission metrics.",
+            "Official-token reduction eval is experimental only and does not update official packaged scores or submission metrics.",
             "SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.",
             "No live API evidence is fabricated; Adobe API remains dry-run without credentials.",
             "Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.",
@@ -311,6 +336,21 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"- Compact-context measured eval changed packaged execution: "
             f"{report['summary']['compact_context_measured_packaged_execution_changed']}",
             f"- Compact-context feature flag default: {report['summary']['compact_context_feature_flag_default']}",
+            f"- Official token accounting ran: {report['summary']['official_token_accounting_ran']} "
+            f"(expected savings estimate: {report['summary']['official_token_expected_savings_estimate']})",
+            f"- Official token top contributors: {report['summary']['official_token_top_contributors'][:3]}",
+            f"- Official token biggest reducible fields: {report['summary']['official_token_biggest_reducible_fields'][:3]}",
+            f"- Official token reduction eval ran: {report['summary']['official_token_reduction_eval_ran']} "
+            f"(safe rows: {report['summary']['official_token_reduction_safe_rows']}; "
+            f"avg token delta: {report['summary']['official_token_reduction_avg_token_delta']}; "
+            f"avg score delta: {report['summary']['official_token_reduction_avg_score_delta']}; "
+            f"recommendation: {report['summary']['official_token_reduction_recommendation']})",
+            f"- Official token reduction changed packaged execution: "
+            f"{report['summary']['official_token_reduction_packaged_execution_changed']}",
+            f"- Official token reduction feature flag default: "
+            f"{report['summary']['official_token_reduction_feature_flag_default']}",
+            f"- Official token reduction official efficiency claim: "
+            f"{report['summary']['official_token_reduction_official_efficiency_claimed']}",
             f"- Risk-efficiency shadow eval rows: {report['summary']['risk_efficiency_shadow_row_count']} "
             f"(avg token delta: {report['summary']['risk_efficiency_shadow_avg_token_delta']}; "
             f"avg runtime delta: {report['summary']['risk_efficiency_shadow_avg_runtime_delta']}; "

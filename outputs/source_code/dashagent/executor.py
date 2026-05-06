@@ -51,6 +51,7 @@ from .schema_index import SchemaIndex
 from .simple_prompt_gate import decide_simple_prompt
 from .prompt_router import LLM_DIRECT, route_prompt
 from .trajectory import TrajectoryLogger, estimate_tokens
+from .token_reduction_policy import apply_token_reduction_to_trajectory
 from .validators import APIValidator, SQLValidator, ValidationResult
 from .value_retrieval import build_value_index, extract_query_values, retrieve_value_matches, value_retrieval_summary
 
@@ -750,7 +751,12 @@ class AgentExecutor:
         trajectory.add_step("answer_diagnostics", answer_result.diagnostics)
         trajectory.set_timing("answer_time", time.perf_counter() - answer_start)
         trajectory.set_checkpoints(checkpoint_logger.to_list())
-        trajectory_payload = trajectory.save(out_dir / "trajectory.json", final_answer)
+        trajectory_payload = trajectory.finish(final_answer)
+        if self.config.enable_official_token_reduction and strategy == "SQL_FIRST_API_VERIFY":
+            trajectory_payload, _ = apply_token_reduction_to_trajectory(trajectory_payload)
+        trajectory_path = out_dir / "trajectory.json"
+        trajectory_path.parent.mkdir(parents=True, exist_ok=True)
+        trajectory_path.write_text(json.dumps(trajectory_payload, indent=2, sort_keys=True, default=str), encoding="utf-8")
         return {
             "query_id": qid,
             "query": query,

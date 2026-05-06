@@ -311,14 +311,14 @@
   },
   "current": {
     "estimated_tokens": 899.2286,
-    "runtime": 0.0114,
+    "runtime": 0.0111,
     "strict_correctness": 0.6743,
     "strict_final_score": 0.6486,
     "tool_calls": 1.4571
   },
   "delta": {
     "estimated_tokens": 47.4572,
-    "runtime": 0.0012,
+    "runtime": 0.0009,
     "strict_correctness": 0.0,
     "strict_final_score": -0.0004,
     "tool_calls": 0.0
@@ -330,6 +330,7 @@
     "ENABLE_GATED_RISK_CLUSTER_REPAIR_EXECUTION": false,
     "ENABLE_GATED_SQL_CANDIDATES": true,
     "ENABLE_HYBRID_CANDIDATE_SCORING": true,
+    "ENABLE_OFFICIAL_TOKEN_REDUCTION": false,
     "ENABLE_QUERY_DECOMPOSITION": true,
     "ENABLE_QUERY_FAMILY_EXAMPLES": false,
     "ENABLE_REPAIR_FOR_BATCH_ENDPOINT_CONFUSION": false,
@@ -354,6 +355,7 @@
     "Risk-based efficiency savings are labeled as estimates; no measured efficiency improvement is claimed because packaged execution did not skip modules.",
     "Schema context voting compares compact and broader context for high-risk diagnostics only and does not change executed SQL/API plans.",
     "Compact-context measured eval is experimental only and does not update official packaged scores or submission metrics.",
+    "Official-token reduction eval is experimental only and does not update official packaged scores or submission metrics.",
     "SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.",
     "No live API evidence is fabricated; Adobe API remains dry-run without credentials.",
     "Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.",
@@ -361,6 +363,98 @@
     "Behavior-changing repair execution is feature-flagged off by default; strict score and efficiency gates decide whether it can ever be enabled.",
     "No behavior-changing flags were enabled in this pass."
   ],
+  "official_token_accounting_report": {
+    "aggregate": {
+      "average_official_estimated_tokens": 899.2286,
+      "biggest_reducible_fields": [
+        {
+          "name": "other step/checkpoint payloads",
+          "tokens": 5258
+        }
+      ],
+      "expected_token_savings_estimate": 5258,
+      "packaged_execution_changed": false,
+      "recommended_safe_reductions": [
+        "compact SQL/API result preview payloads",
+        "shorten metadata artifact paths in trajectory steps",
+        "deduplicate repeated validation warnings",
+        "keep dry-run/live labels while avoiding repeated explanatory text"
+      ],
+      "row_count": 35,
+      "top_global_token_contributors": [
+        {
+          "name": "checkpoint summaries",
+          "tokens": 185402
+        },
+        {
+          "name": "other step/checkpoint payloads",
+          "tokens": 15071
+        },
+        {
+          "name": "API call records",
+          "tokens": 3914
+        },
+        {
+          "name": "API result previews",
+          "tokens": 3231
+        },
+        {
+          "name": "dry-run explanations",
+          "tokens": 3231
+        },
+        {
+          "name": "answer diagnostics",
+          "tokens": 3040
+        },
+        {
+          "name": "SQL text",
+          "tokens": 2322
+        },
+        {
+          "name": "metadata notes",
+          "tokens": 2175
+        }
+      ],
+      "total_estimated_component_tokens": 223944
+    },
+    "notes": []
+  },
+  "official_token_reduction_eval": {
+    "artifact_isolation": {
+      "allowed_outputs": [
+        "outputs/official_token_reduction_eval.json",
+        "outputs/official_token_reduction_eval.md",
+        "outputs/official_token_reduction_eval/"
+      ],
+      "experiment_output_root": "outputs/official_token_reduction_eval/<query_id>/reduced_sql_first/",
+      "writes_eval_outputs": false,
+      "writes_final_submission": false,
+      "writes_packaged_query_outputs": false
+    },
+    "notes": [
+      "Official token reduction is experimental only and does not change packaged SQL_FIRST_API_VERIFY outputs by default.",
+      "Baseline and reduced trajectories use the same official estimated_tokens formula.",
+      "No live API evidence is fabricated; dry-run labels must be preserved."
+    ],
+    "summary": {
+      "answer_changed_count": 0,
+      "api_changed_count": 0,
+      "avg_runtime_delta": 0.0009,
+      "avg_score_delta": 0.0006,
+      "avg_token_delta": -67.7714,
+      "avg_tool_delta": 0.0,
+      "baseline_formula_match_count": 14,
+      "formula_match_count": 35,
+      "official_measured_efficiency_improvement_claimed": false,
+      "packaged_execution_changed": false,
+      "recommendation": "safe_for_future_canary",
+      "reduced_formula_match_count": 35,
+      "safe_rows": 35,
+      "sql_changed_count": 0,
+      "total_rows": 35,
+      "unsafe_rows": 0
+    }
+  },
   "research_safety_audit": {
     "endpoint_family_rule_source": {
       "audit_events": "domain vocabulary + endpoint catalog metadata",
@@ -731,6 +825,56 @@
     "measured_accuracy_improvement_claimed": false,
     "measured_efficiency_improvement_claimed": false,
     "no_secret_scan_ok": true,
+    "official_token_accounting_ran": true,
+    "official_token_biggest_reducible_fields": [
+      {
+        "name": "other step/checkpoint payloads",
+        "tokens": 5258
+      }
+    ],
+    "official_token_expected_savings_estimate": 5258,
+    "official_token_reduction_avg_score_delta": 0.0006,
+    "official_token_reduction_avg_token_delta": -67.7714,
+    "official_token_reduction_eval_ran": true,
+    "official_token_reduction_feature_flag_default": false,
+    "official_token_reduction_official_efficiency_claimed": false,
+    "official_token_reduction_packaged_execution_changed": false,
+    "official_token_reduction_recommendation": "safe_for_future_canary",
+    "official_token_reduction_safe_rows": 35,
+    "official_token_top_contributors": [
+      {
+        "name": "checkpoint summaries",
+        "tokens": 185402
+      },
+      {
+        "name": "other step/checkpoint payloads",
+        "tokens": 15071
+      },
+      {
+        "name": "API call records",
+        "tokens": 3914
+      },
+      {
+        "name": "API result previews",
+        "tokens": 3231
+      },
+      {
+        "name": "dry-run explanations",
+        "tokens": 3231
+      },
+      {
+        "name": "answer diagnostics",
+        "tokens": 3040
+      },
+      {
+        "name": "SQL text",
+        "tokens": 2322
+      },
+      {
+        "name": "metadata notes",
+        "tokens": 2175
+      }
+    ],
     "packaged_execution_changed": false,
     "packaged_preferred_strategy": "SQL_FIRST_API_VERIFY",
     "ranking_only_no_score_claim": true,
@@ -758,7 +902,7 @@
       "medium": 5
     },
     "runtime_gate_ok": true,
-    "runtime_overhead_pct": 0.1176,
+    "runtime_overhead_pct": 0.0882,
     "schema_vote_active_count": 28,
     "schema_vote_agreement_count": 28,
     "shadow_repair_better_count": 1,

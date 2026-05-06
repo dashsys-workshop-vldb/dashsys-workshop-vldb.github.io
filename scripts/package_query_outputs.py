@@ -19,6 +19,7 @@ from dashagent.trajectory import redact_secrets
 REQUIRED_QUERY_FILES = ["metadata.json", "filled_system_prompt.txt", "trajectory.json"]
 NON_SUBMISSION_OUTPUT_DIRS = {
     "compact_context_measured_eval",
+    "official_token_reduction_eval",
     "shadow_repair_eval",
     "visualizations",
     "final_submission",
