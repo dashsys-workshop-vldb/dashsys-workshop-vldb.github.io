@@ -25,6 +25,11 @@ REQUIRED_REPORTS = {
     "sql_ast_candidate_ranking_report": "sql_ast_candidate_ranking_report.json",
     "retrieval_ablation_report": "retrieval_ablation_report.json",
     "repair_selector_v2_shadow_eval": "repair_selector_v2_shadow_eval.json",
+    "endpoint_schema_rule_canary": "endpoint_schema_rule_canary.json",
+    "endpoint_schema_rule_packaged_trial": "endpoint_schema_rule_packaged_trial.json",
+    "ast_guided_sql_candidate_canary": "ast_guided_sql_candidate_canary.json",
+    "repair_selector_v3_shadow_eval": "repair_selector_v3_shadow_eval.json",
+    "accuracy_promotion_decision_report": "accuracy_promotion_decision_report.json",
 }
 
 
@@ -78,6 +83,11 @@ def generate_winner_readiness_report(config: Config) -> dict[str, Any]:
         "sql_ast_candidate_ranking_report": reports["sql_ast_candidate_ranking_report"].get("summary", {}),
         "retrieval_ablation_report": reports["retrieval_ablation_report"].get("summary", {}),
         "repair_selector_v2_shadow_eval": reports["repair_selector_v2_shadow_eval"].get("summary", {}),
+        "endpoint_schema_rule_canary": reports["endpoint_schema_rule_canary"].get("summary", {}),
+        "endpoint_schema_rule_packaged_trial": reports["endpoint_schema_rule_packaged_trial"].get("summary", {}),
+        "ast_guided_sql_candidate_canary": reports["ast_guided_sql_candidate_canary"].get("summary", {}),
+        "repair_selector_v3_shadow_eval": reports["repair_selector_v3_shadow_eval"].get("summary", {}),
+        "accuracy_promotion_decision_report": reports["accuracy_promotion_decision_report"].get("summary", {}),
         "visualization_dataflow_completeness": {
             "official_token_reduction_visible": True,
             "research_technique_tables_present": True,
@@ -87,12 +97,14 @@ def generate_winner_readiness_report(config: Config) -> dict[str, Any]:
             readiness=readiness,
             promotion=reports["official_token_reduction_promotion_report"].get("summary", {}),
             hidden=reports["hidden_style_eval"].get("summary", {}),
+            accuracy=reports["accuracy_promotion_decision_report"].get("summary", {}),
         ),
         "recommended_next_action": [
             "Submit with official-token reduction if the promotion report remains kept.",
             "Keep repair execution disabled.",
             "Keep compact context disabled.",
             "Use endpoint/schema rule candidates only as future canary inputs.",
+            "Keep accuracy changes shadow-only unless the accuracy decision report explicitly recommends promotion.",
         ],
         "notes": [
             "This report does not change packaged behavior.",
@@ -116,6 +128,11 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- Hidden-style passed/total: {payload['hidden_style_eval'].get('passed_cases')}/{payload['hidden_style_eval'].get('total_cases')}",
         f"- Endpoint-family risky rows: {payload['endpoint_family_failure_report'].get('risky_rows')}",
         f"- Endpoint/schema rule candidates: {payload['endpoint_schema_rule_candidate_eval'].get('candidate_rules')}",
+        f"- Endpoint/schema canary recommendation: `{payload['endpoint_schema_rule_canary'].get('recommendation')}`",
+        f"- Endpoint/schema packaged trial recommendation: `{payload['endpoint_schema_rule_packaged_trial'].get('recommendation')}`",
+        f"- AST-guided SQL canary recommendation: `{payload['ast_guided_sql_candidate_canary'].get('recommendation')}`",
+        f"- Repair selector v3 success: {payload['repair_selector_v3_shadow_eval'].get('success')}",
+        f"- Accuracy decision: `{payload['accuracy_promotion_decision_report'].get('recommendation')}`",
         f"- Repair selector v2 success: {payload['repair_selector_v2_shadow_eval'].get('success')}",
         f"- Final recommendation: `{payload['final_recommendation']}`",
         "",
@@ -132,6 +149,7 @@ def _final_recommendation(
     readiness: dict[str, Any],
     promotion: dict[str, Any],
     hidden: dict[str, Any],
+    accuracy: dict[str, Any],
 ) -> str:
     if not readiness.get("ok"):
         return "do_not_submit_until_regression_fixed"
@@ -145,8 +163,10 @@ def _final_recommendation(
         return "do_not_submit_until_regression_fixed"
     total = int(hidden.get("total_cases") or 0)
     pass_rate = (float(hidden.get("passed_cases") or 0) / total) if total else 0.0
-    if total < 40 or pass_rate < 0.95:
+    if total < 48 or pass_rate < 0.98 or float(hidden.get("family_stability_rate") or 0.0) < 0.98 or float(hidden.get("schema_stability_rate") or 0.0) < 0.98:
         return "do_not_submit_until_regression_fixed"
+    if accuracy.get("recommendation") in {"promote_endpoint_schema_rules", "promote_ast_guided_sql"}:
+        return "ready_to_submit_with_official_token_reduction_plus_safe_accuracy_rules"
     return "ready_to_submit_with_official_token_reduction"
 
 

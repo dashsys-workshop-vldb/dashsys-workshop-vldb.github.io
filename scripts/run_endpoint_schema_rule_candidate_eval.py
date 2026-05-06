@@ -144,7 +144,7 @@ def _hidden_ok(hidden_report: dict[str, Any]) -> bool:
     total = int(summary.get("total_cases") or 0)
     passed = int(summary.get("passed_cases") or 0)
     pass_rate = passed / total if total else 0.0
-    return total >= 40 and pass_rate >= 0.95 and float(summary.get("family_stability_rate") or 0.0) >= 0.95 and float(summary.get("schema_stability_rate") or 0.0) >= 0.95
+    return total >= 48 and pass_rate >= 0.98 and float(summary.get("family_stability_rate") or 0.0) >= 0.98 and float(summary.get("schema_stability_rate") or 0.0) >= 0.98
 
 
 def render_markdown(payload: dict[str, Any]) -> str:

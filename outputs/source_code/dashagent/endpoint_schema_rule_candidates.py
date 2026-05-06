@@ -66,7 +66,19 @@ def candidate_rules() -> list[EndpointSchemaRuleCandidate]:
             "Schema plus dataset/collection relation language should keep schema and dataset families in top-k.",
             "schema_vs_dataset_confusion",
             "dataset_list",
-            ("schema", "dataset", "datasets", "collection", "collections"),
+            (
+                "schema",
+                "dataset",
+                "datasets",
+                "collection",
+                "collections",
+                "using schema",
+                "based on schema",
+                "associated with schema",
+                "schema used by",
+                "built from schema",
+                "connected with the profile schema",
+            ),
             "domain vocabulary + schema-dataset relation language",
         ),
         EndpointSchemaRuleCandidate(
@@ -120,6 +132,12 @@ def candidate_rules() -> list[EndpointSchemaRuleCandidate]:
     ]
 
 
+def leakage_safe_candidate_rules() -> list[EndpointSchemaRuleCandidate]:
+    """Rules that pass the local non-gold/non-public-source check."""
+
+    return [rule for rule in candidate_rules() if _leakage_check(rule.to_dict())]
+
+
 def rerank_api_ids_for_family(api_ids: list[str], endpoints: list[Endpoint], family: str) -> list[str]:
     if family == "unknown":
         return list(api_ids)
@@ -128,3 +146,9 @@ def rerank_api_ids_for_family(api_ids: list[str], endpoints: list[Endpoint], fam
     remaining = [api_id for api_id in api_ids if api_id not in matching]
     injected = [api_id for api_id in matching if api_id in known]
     return list(dict.fromkeys([*injected, *remaining]))
+
+
+def _leakage_check(rule: dict[str, Any]) -> bool:
+    forbidden = ["gold_sql", "gold_api", "public answer", "public query"]
+    text = str(rule).lower()
+    return not any(item in text for item in forbidden)

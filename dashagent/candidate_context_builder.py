@@ -25,6 +25,12 @@ SCHEMA_ALIASES = {
     "segment": {"tables": ["dim_segment"], "source": "schema naming convention"},
     "schema": {"tables": ["dim_blueprint"], "source": "domain vocabulary alias"},
     "schemas": {"tables": ["dim_blueprint"], "source": "domain vocabulary alias"},
+    "dataset": {"tables": ["dim_collection"], "source": "domain vocabulary alias"},
+    "datasets": {"tables": ["dim_collection"], "source": "domain vocabulary alias"},
+    "collection": {"tables": ["dim_collection"], "source": "domain vocabulary alias"},
+    "collections": {"tables": ["dim_collection"], "source": "domain vocabulary alias"},
+    "blueprint": {"tables": ["dim_blueprint"], "source": "schema registry vocabulary alias"},
+    "blueprints": {"tables": ["dim_blueprint"], "source": "schema registry vocabulary alias"},
 }
 
 
@@ -419,7 +425,24 @@ def preserve_structural_relations(query_tokens: Any, candidate_tables: list[str]
         },
         {
             "name": "schema_dataset",
-            "terms": {"schema", "schemas", "dataset", "datasets", "collection", "collections", "blueprint", "blueprints"},
+            "terms": {
+                "schema",
+                "schemas",
+                "dataset",
+                "datasets",
+                "collection",
+                "collections",
+                "blueprint",
+                "blueprints",
+                "using",
+                "based",
+                "associated",
+                "connected",
+                "linked",
+                "built",
+                "use",
+                "uses",
+            },
             "required_any": [{"schema", "schemas", "blueprint", "blueprints"}, {"dataset", "datasets", "collection", "collections"}],
             "domains": {"schema_dataset"},
             "tables": ["dim_blueprint", "dim_collection", "hkg_br_blueprint_collection"],
@@ -449,7 +472,11 @@ def preserve_structural_relations(query_tokens: Any, candidate_tables: list[str]
         if selected and not (selected & set(available)) and len(words & rule["terms"]) < 2:
             continue
         for table in available:
-            if table not in selected:
+            if rule["name"] == "schema_dataset":
+                # Schema/dataset routing needs the whole blueprint-collection
+                # relation preserved through the later hybrid rerank.
+                added.append(table)
+            elif table not in selected:
                 added.append(table)
         reasons.append(f"{rule['name']}: {rule['source']}")
         hints.extend(_join_hints_for_tables(schema_index, available))

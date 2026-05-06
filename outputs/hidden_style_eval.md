@@ -1,11 +1,11 @@
 # Hidden-Style Generalization Eval
 
 - Total cases: 48
-- Passed cases: 47
-- Failed cases: 1
+- Passed cases: 48
+- Failed cases: 0
 - Family-stability rate: 1.0
-- Schema-stability rate: 0.9792
-- Top failure categories: [('schema_family_missing', 1)]
+- Schema-stability rate: 1.0
+- Top failure categories: []
 
 | Case | Family | Top API | Family stable? | Schema stable? | Passed? | Failures |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -29,7 +29,7 @@
 | `schema_detail_a` | schema_list | schema_registry_schemas | True | True | True |  |
 | `schema_detail_b` | schema_list | schema_registry_schemas | True | True | True |  |
 | `schema_dataset_a` | schema_detail | schema_registry_schema | True | True | True |  |
-| `schema_dataset_b` | dataset_list | catalog_datasets | True | False | False | schema_family_missing |
+| `schema_dataset_b` | dataset_list | catalog_datasets | True | True | True |  |
 | `schema_dataset_c` | dataset_list | catalog_datasets | True | True | True |  |
 | `journey_status_a` | journey_list | journey_list | True | True | True |  |
 | `journey_status_b` | journey_list | journey_list | True | True | True |  |

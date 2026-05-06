@@ -57,10 +57,15 @@ def generate_report(config: Config) -> dict[str, Any]:
     hidden_style_report = _load_json(config.outputs_dir / "hidden_style_eval.json")
     endpoint_failure_report = _load_json(config.outputs_dir / "endpoint_family_failure_report.json")
     endpoint_schema_rule_candidate_report = _load_json(config.outputs_dir / "endpoint_schema_rule_candidate_eval.json")
+    endpoint_schema_rule_canary_report = _load_json(config.outputs_dir / "endpoint_schema_rule_canary.json")
+    endpoint_schema_rule_packaged_trial_report = _load_json(config.outputs_dir / "endpoint_schema_rule_packaged_trial.json")
     schema_dataset_positive_report = _load_json(config.outputs_dir / "schema_dataset_positive_repair_analysis.json")
     sql_ast_candidate_report = _load_json(config.outputs_dir / "sql_ast_candidate_ranking_report.json")
+    ast_guided_sql_canary_report = _load_json(config.outputs_dir / "ast_guided_sql_candidate_canary.json")
     retrieval_ablation_report = _load_json(config.outputs_dir / "retrieval_ablation_report.json")
     repair_selector_v2_report = _load_json(config.outputs_dir / "repair_selector_v2_shadow_eval.json")
+    repair_selector_v3_report = _load_json(config.outputs_dir / "repair_selector_v3_shadow_eval.json")
+    accuracy_decision_report = _load_json(config.outputs_dir / "accuracy_promotion_decision_report.json")
     winner_readiness_report = _load_json(config.outputs_dir / "winner_readiness_report.json")
     risk_shadow_report = _load_json(config.outputs_dir / "risk_efficiency_shadow_eval.json")
     current = strict.get("summary", {}).get("by_strategy", {}).get("SQL_FIRST_API_VERIFY", {})
@@ -101,6 +106,8 @@ def generate_report(config: Config) -> dict[str, Any]:
         "ENABLE_REPAIR_FOR_MISSING_API_TOPK": config.enable_repair_for_missing_api_topk,
         "ENABLE_COMPACT_CONTEXT_WHEN_SCHEMA_VOTE_SAFE": config.enable_compact_context_when_schema_vote_safe,
         "ENABLE_OFFICIAL_TOKEN_REDUCTION": config.enable_official_token_reduction,
+        "ENABLE_ENDPOINT_SCHEMA_RULE_CANDIDATES": config.enable_endpoint_schema_rule_candidates,
+        "ENABLE_AST_GUIDED_SQL_TIEBREAK": config.enable_ast_guided_sql_tiebreak,
     }
     techniques = [
         ("SQLGlot AST validation", "SQLGlot", "dashagent/sql_ast_tools.py", config.enable_sql_ast_validation, "checkpoint_sql_ast_validation"),
@@ -218,6 +225,13 @@ def generate_report(config: Config) -> dict[str, Any]:
             "endpoint_family_failure_risky_rows": endpoint_failure_report.get("summary", {}).get("risky_rows", 0),
             "endpoint_schema_rule_candidate_rules": endpoint_schema_rule_candidate_report.get("summary", {}).get("candidate_rules", 0),
             "endpoint_schema_rule_candidate_safe_rules": endpoint_schema_rule_candidate_report.get("summary", {}).get("safe_for_future_canary_rules", 0),
+            "endpoint_schema_rule_canary_recommendation": endpoint_schema_rule_canary_report.get("summary", {}).get("recommendation", "not_run"),
+            "endpoint_schema_rule_canary_api_top_k_hit_rate_delta": endpoint_schema_rule_canary_report.get("summary", {}).get("api_top_k_hit_rate_delta", 0.0),
+            "endpoint_schema_rule_packaged_trial_recommendation": endpoint_schema_rule_packaged_trial_report.get("summary", {}).get("recommendation", "not_run"),
+            "ast_guided_sql_canary_recommendation": ast_guided_sql_canary_report.get("summary", {}).get("recommendation", "not_run"),
+            "repair_selector_v3_success": repair_selector_v3_report.get("summary", {}).get("success", False),
+            "repair_selector_v3_strictly_better_selected_count": repair_selector_v3_report.get("summary", {}).get("strictly_better_selected_count", 0),
+            "accuracy_promotion_decision_recommendation": accuracy_decision_report.get("summary", {}).get("recommendation", "not_run"),
             "schema_dataset_positive_repair_rows": schema_dataset_positive_report.get("summary", {}).get("positive_schema_dataset_rows", 0),
             "sql_ast_candidate_ranking_candidates": sql_ast_candidate_report.get("summary", {}).get("candidate_count", 0),
             "retrieval_ablation_best_mode": retrieval_ablation_report.get("summary", {}).get("best_final_score_mode"),
@@ -298,10 +312,15 @@ def generate_report(config: Config) -> dict[str, Any]:
         "hidden_style_eval": {"summary": hidden_style_report.get("summary", {})},
         "endpoint_family_failure_report": {"summary": endpoint_failure_report.get("summary", {})},
         "endpoint_schema_rule_candidate_eval": {"summary": endpoint_schema_rule_candidate_report.get("summary", {})},
+        "endpoint_schema_rule_canary": {"summary": endpoint_schema_rule_canary_report.get("summary", {})},
+        "endpoint_schema_rule_packaged_trial": {"summary": endpoint_schema_rule_packaged_trial_report.get("summary", {})},
         "schema_dataset_positive_repair_analysis": {"summary": schema_dataset_positive_report.get("summary", {})},
         "sql_ast_candidate_ranking_report": {"summary": sql_ast_candidate_report.get("summary", {})},
+        "ast_guided_sql_candidate_canary": {"summary": ast_guided_sql_canary_report.get("summary", {})},
         "retrieval_ablation_report": {"summary": retrieval_ablation_report.get("summary", {})},
         "repair_selector_v2_shadow_eval": {"summary": repair_selector_v2_report.get("summary", {})},
+        "repair_selector_v3_shadow_eval": {"summary": repair_selector_v3_report.get("summary", {})},
+        "accuracy_promotion_decision_report": {"summary": accuracy_decision_report.get("summary", {})},
         "winner_readiness_report": {
             "packaged": winner_readiness_report.get("packaged", {}),
             "recommended_next_action": winner_readiness_report.get("recommended_next_action", []),
@@ -456,10 +475,19 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"- Endpoint-family failure risky rows: {report['summary']['endpoint_family_failure_risky_rows']}",
             f"- Endpoint/schema rule candidates: {report['summary']['endpoint_schema_rule_candidate_rules']} "
             f"(safe for future canary: {report['summary']['endpoint_schema_rule_candidate_safe_rules']})",
+            f"- Endpoint/schema rule canary recommendation: "
+            f"{report['summary']['endpoint_schema_rule_canary_recommendation']} "
+            f"(API top-k hit-rate delta: {report['summary']['endpoint_schema_rule_canary_api_top_k_hit_rate_delta']})",
+            f"- Endpoint/schema packaged trial recommendation: "
+            f"{report['summary']['endpoint_schema_rule_packaged_trial_recommendation']}",
             f"- Schema/dataset positive repair rows: {report['summary']['schema_dataset_positive_repair_rows']}",
             f"- SQL AST candidate ranking candidates: {report['summary']['sql_ast_candidate_ranking_candidates']}",
+            f"- AST-guided SQL canary recommendation: {report['summary']['ast_guided_sql_canary_recommendation']}",
             f"- Retrieval ablation best mode: {report['summary']['retrieval_ablation_best_mode']}",
             f"- Repair selector v2 success: {report['summary']['repair_selector_v2_success']}",
+            f"- Repair selector v3 success: {report['summary']['repair_selector_v3_success']} "
+            f"(strictly better selected: {report['summary']['repair_selector_v3_strictly_better_selected_count']})",
+            f"- Accuracy promotion decision: {report['summary']['accuracy_promotion_decision_recommendation']}",
             f"- Winner readiness next actions: {report['summary']['winner_readiness_recommended_next_action']}",
             f"- Risk-efficiency shadow eval rows: {report['summary']['risk_efficiency_shadow_row_count']} "
             f"(avg token delta: {report['summary']['risk_efficiency_shadow_avg_token_delta']}; "

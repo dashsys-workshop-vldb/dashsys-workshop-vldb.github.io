@@ -108,8 +108,9 @@ def test_hidden_style_eval_outputs_flags_and_cases(tiny_project):
     assert payload["summary"]["total_cases"] >= 10
     assert payload["summary"]["family_stability_rate"] > 0
     assert payload["summary"]["total_cases"] >= 40
-    assert payload["summary"]["family_stability_rate"] >= 0.95
-    assert payload["summary"]["schema_stability_rate"] >= 0.95
+    assert payload["summary"]["total_cases"] >= 48
+    assert payload["summary"]["family_stability_rate"] >= 0.98
+    assert payload["summary"]["schema_stability_rate"] >= 0.98
 
 
 def test_endpoint_and_ast_reports_are_report_only(tiny_project):
