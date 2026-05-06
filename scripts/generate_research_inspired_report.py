@@ -73,6 +73,9 @@ def generate_report(config: Config) -> dict[str, Any]:
     llm_candidate_search_report = _load_json(config.outputs_dir / "llm_candidate_search.json")
     targeted_accuracy_trial_report = _load_json(config.outputs_dir / "targeted_accuracy_packaged_trial.json")
     score_push_report = _load_json(config.outputs_dir / "score_0_7_push_report.json")
+    autonomous_trial_report = _load_json(config.outputs_dir / "autonomous_packaged_trial.json")
+    autonomous_score_push_report = _load_json(config.outputs_dir / "autonomous_score_push_report.json")
+    score075_integration_diff_report = _load_json(config.outputs_dir / "score075_integration_diff_report.json")
     redundant_file_audit = _load_json(config.outputs_dir / "redundant_file_audit.json")
     redundant_file_cleanup = _load_json(config.outputs_dir / "redundant_file_cleanup_report.json")
     risk_shadow_report = _load_json(config.outputs_dir / "risk_efficiency_shadow_eval.json")
@@ -258,6 +261,15 @@ def generate_report(config: Config) -> dict[str, Any]:
             "score_0_7_push_achieved": score_push_report.get("summary", {}).get("strict_score_achieved"),
             "score_0_7_push_target_reached": score_push_report.get("summary", {}).get("target_0_70_reached", False),
             "score_0_7_push_recommendation": score_push_report.get("summary", {}).get("final_recommendation", "not_run"),
+            "autonomous_packaged_trial_recommendation": autonomous_trial_report.get("summary", {}).get("recommendation", "not_run"),
+            "autonomous_packaged_trial_score": autonomous_trial_report.get("summary", {}).get("strict_final_score"),
+            "autonomous_packaged_trial_target_0_75_reached": autonomous_trial_report.get("summary", {}).get("target_0_75_reached", False),
+            "autonomous_score_push_best_score": autonomous_score_push_report.get("summary", {}).get("best_achieved_score"),
+            "autonomous_score_push_target_0_75_reached": autonomous_score_push_report.get("summary", {}).get("target_0_75_reached", False),
+            "autonomous_score_push_recommendation": autonomous_score_push_report.get("summary", {}).get("final_recommendation", "not_run"),
+            "score075_integration_merged_branches": len(score075_integration_diff_report.get("merged_branches", [])),
+            "score075_integration_rejected_branches": len(score075_integration_diff_report.get("rejected_branches", [])),
+            "score075_integration_pending_branches": len(score075_integration_diff_report.get("pending_branches", [])),
             "redundant_file_audit_ran": bool(redundant_file_audit.get("rows")),
             "redundant_file_cleanup_applied": redundant_file_cleanup.get("applied", False),
             "redundant_file_cleanup_deleted_count": redundant_file_cleanup.get("summary", {}).get("deleted_count", 0),
@@ -356,6 +368,15 @@ def generate_report(config: Config) -> dict[str, Any]:
         "llm_candidate_search": {"summary": llm_candidate_search_report.get("summary", {})},
         "targeted_accuracy_packaged_trial": {"summary": targeted_accuracy_trial_report.get("summary", {})},
         "score_0_7_push_report": {"summary": score_push_report.get("summary", {})},
+        "autonomous_packaged_trial": {"summary": autonomous_trial_report.get("summary", {})},
+        "autonomous_score_push_report": {"summary": autonomous_score_push_report.get("summary", {})},
+        "score075_integration_diff_report": {
+            "recommendation": score075_integration_diff_report.get("recommendation"),
+            "metrics": score075_integration_diff_report.get("metrics", {}),
+            "merged_branches": score075_integration_diff_report.get("merged_branches", []),
+            "rejected_branches": score075_integration_diff_report.get("rejected_branches", []),
+            "pending_branches": score075_integration_diff_report.get("pending_branches", []),
+        },
         "redundant_file_audit": {"summary": redundant_file_audit.get("summary", {})},
         "redundant_file_cleanup": {"summary": redundant_file_cleanup.get("summary", {})},
         "winner_readiness_report": {
@@ -388,6 +409,7 @@ def generate_report(config: Config) -> dict[str, Any]:
             "Behavior-changing repair execution is feature-flagged off by default; strict score and efficiency gates decide whether it can ever be enabled.",
             "Official-token reduction is the only behavior-changing default enabled in this pass; repair execution and compact context remain disabled.",
             "The 0.70 strict-score push is isolated; targeted accuracy rules remain default-off unless a later explicit promotion passes all gates.",
+            "The autonomous 0.75 score-push is not successful unless strict_final_score >= 0.7500 and every safety gate passes.",
             "Redundant-file cleanup is allowlist-based and refuses protected source/data/eval/final-submission paths.",
         ],
     }
@@ -544,6 +566,16 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"- 0.70 push report: achieved={report['summary']['score_0_7_push_achieved']}; "
             f"target reached={report['summary']['score_0_7_push_target_reached']}; "
             f"recommendation={report['summary']['score_0_7_push_recommendation']}",
+            f"- Autonomous packaged trial: score={report['summary']['autonomous_packaged_trial_score']}; "
+            f"0.75 reached={report['summary']['autonomous_packaged_trial_target_0_75_reached']}; "
+            f"recommendation={report['summary']['autonomous_packaged_trial_recommendation']}",
+            f"- Autonomous 0.75 push report: best={report['summary']['autonomous_score_push_best_score']}; "
+            f"0.75 reached={report['summary']['autonomous_score_push_target_0_75_reached']}; "
+            f"recommendation={report['summary']['autonomous_score_push_recommendation']}",
+            f"- score075 integration merged/rejected/pending branches: "
+            f"{report['summary']['score075_integration_merged_branches']} / "
+            f"{report['summary']['score075_integration_rejected_branches']} / "
+            f"{report['summary']['score075_integration_pending_branches']}",
             f"- Redundant file audit ran: {report['summary']['redundant_file_audit_ran']}; "
             f"cleanup applied={report['summary']['redundant_file_cleanup_applied']}; "
             f"deleted={report['summary']['redundant_file_cleanup_deleted_count']}; "

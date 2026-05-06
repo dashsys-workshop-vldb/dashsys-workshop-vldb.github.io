@@ -30,6 +30,7 @@ NON_SUBMISSION_OUTPUT_DIRS = {
     "execution_candidate_search",
     "llm_candidate_search",
     "targeted_accuracy_packaged_trial",
+    "autonomous_packaged_trial",
     "retrieval_ablation_report",
     "repair_selector_v2_shadow_eval",
     "repair_selector_v3_shadow_eval",
@@ -124,11 +125,16 @@ def discover_query_output_dirs(outputs_dir: Path) -> list[Path]:
         dirnames[:] = [
             name
             for name in dirnames
-            if name not in NON_SUBMISSION_OUTPUT_DIRS and not name.startswith("probe")
+            if name not in NON_SUBMISSION_OUTPUT_DIRS
+            and not name.startswith("probe")
+            and not name.startswith("score075_")
         ]
         if "trajectory.json" not in filenames:
             continue
-        if any(part in NON_SUBMISSION_OUTPUT_DIRS or part.startswith("probe") for part in directory.parts):
+        if any(
+            part in NON_SUBMISSION_OUTPUT_DIRS or part.startswith("probe") or part.startswith("score075_")
+            for part in directory.parts
+        ):
             continue
         if all((directory / filename).exists() for filename in REQUIRED_QUERY_FILES):
             candidates.append(directory)

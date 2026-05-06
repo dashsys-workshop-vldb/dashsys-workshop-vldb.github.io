@@ -57,6 +57,8 @@ REQUIRED_PATHS = [
     "scripts/run_llm_candidate_search.py",
     "scripts/run_targeted_accuracy_packaged_trial.py",
     "scripts/generate_0_7_score_push_report.py",
+    "scripts/run_autonomous_packaged_trial.py",
+    "scripts/generate_autonomous_score_push_report.py",
     "scripts/generate_accuracy_promotion_decision_report.py",
     "scripts/generate_winner_readiness_report.py",
     "scripts/run_shadow_repair_eval.py",

@@ -66,6 +66,9 @@ def generate_winner_readiness_report(config: Config) -> dict[str, Any]:
     packaged_trial = _load_json(config.outputs_dir / "official_token_reduction_packaged_trial.json")
     cleanup_audit = _load_json(config.outputs_dir / "redundant_file_audit.json")
     cleanup_report = _load_json(config.outputs_dir / "redundant_file_cleanup_report.json")
+    autonomous_trial = _load_json(config.outputs_dir / "autonomous_packaged_trial.json")
+    autonomous_score_push = _load_json(config.outputs_dir / "autonomous_score_push_report.json")
+    integration_diff = _load_json(config.outputs_dir / "score075_integration_diff_report.json")
     readiness = check_submission_ready(config)
     return {
         **report_metadata(config.outputs_dir),
@@ -101,6 +104,15 @@ def generate_winner_readiness_report(config: Config) -> dict[str, Any]:
         "llm_candidate_search": reports["llm_candidate_search"].get("summary", {}),
         "targeted_accuracy_packaged_trial": reports["targeted_accuracy_packaged_trial"].get("summary", {}),
         "score_0_7_push_report": reports["score_0_7_push_report"].get("summary", {}),
+        "autonomous_packaged_trial": autonomous_trial.get("summary", {}),
+        "autonomous_score_push_report": autonomous_score_push.get("summary", {}),
+        "score075_integration_diff_report": {
+            "recommendation": integration_diff.get("recommendation"),
+            "merged_branches": integration_diff.get("merged_branches", []),
+            "rejected_branches": integration_diff.get("rejected_branches", []),
+            "pending_branches": integration_diff.get("pending_branches", []),
+            "metrics": integration_diff.get("metrics", {}),
+        },
         "cleanup": {
             "audit_ran": bool(cleanup_audit.get("rows")),
             "cleanup_report_exists": bool(cleanup_report),
@@ -128,6 +140,7 @@ def generate_winner_readiness_report(config: Config) -> dict[str, Any]:
             "Use endpoint/schema rule candidates only as future canary inputs.",
             "Keep accuracy changes shadow-only unless the accuracy decision report explicitly recommends promotion.",
             "Use the 0.70 push report to decide whether any targeted accuracy change is worth a later explicit promotion.",
+            "Use the autonomous 0.75 score-push report only after integration has merged and validated worker branches.",
         ],
         "notes": [
             "This report does not change packaged behavior.",
@@ -161,6 +174,13 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- 0.70 push achieved score: {payload['score_0_7_push_report'].get('strict_score_achieved')}",
         f"- 0.70 reached safely: {payload['score_0_7_push_report'].get('target_0_70_reached')}",
         f"- 0.70 push recommendation: `{payload['score_0_7_push_report'].get('final_recommendation')}`",
+        f"- Autonomous packaged trial recommendation: `{payload['autonomous_packaged_trial'].get('recommendation')}`",
+        f"- Autonomous 0.75 best score/reached: {payload['autonomous_score_push_report'].get('best_achieved_score')} / "
+        f"{payload['autonomous_score_push_report'].get('target_0_75_reached')}",
+        f"- score075 integration merged/rejected/pending branches: "
+        f"{len(payload['score075_integration_diff_report'].get('merged_branches', []))} / "
+        f"{len(payload['score075_integration_diff_report'].get('rejected_branches', []))} / "
+        f"{len(payload['score075_integration_diff_report'].get('pending_branches', []))}",
         f"- Redundant file audit ran: {payload['cleanup'].get('audit_ran')}",
         f"- Cleanup applied/deleted/protected-ok: {payload['cleanup'].get('cleanup_applied')} / "
         f"{payload['cleanup'].get('deleted_count')} / {payload['cleanup'].get('no_protected_files_deleted')}",
