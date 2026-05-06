@@ -6,7 +6,7 @@ import json
 import re
 import sys
 import time
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -32,6 +32,8 @@ from dashagent.executor import AgentExecutor
 from dashagent.query_normalizer import normalize_query
 from dashagent.query_tokens import extract_query_tokens
 from dashagent.repair_safety_verifier import verify_repair_safety
+from dashagent.risk_efficiency_controller import classify_candidate_risk
+from dashagent.schema_context_voter import vote_schema_contexts
 
 
 TARGET_CLUSTERS = [
@@ -87,6 +89,8 @@ def run_shadow_repair_eval(config: Config) -> dict[str, Any]:
         rows.append(_evaluate_example(config, executor, example))
     paired_summary = build_paired_summary(rows)
     cluster_recommendations = build_cluster_canary_recommendations(rows)
+    risk_summary = build_risk_efficiency_summary(rows)
+    schema_vote_summary = build_schema_vote_summary(rows)
     return {
         "mode": "offline_shadow_repair_eval",
         "packaged_strategy_unchanged": True,
@@ -109,6 +113,8 @@ def run_shadow_repair_eval(config: Config) -> dict[str, Any]:
         },
         "paired_shadow_eval_summary": paired_summary,
         "cluster_canary_recommendations": cluster_recommendations,
+        "risk_efficiency_controller_summary": risk_summary,
+        "schema_context_voting_summary": schema_vote_summary,
         "rows": rows,
         "notes": [
             "Gold labels are used only by the offline strict scorer, never to generate repaired plans.",
@@ -136,6 +142,14 @@ def _evaluate_example(config: Config, executor: AgentExecutor, example: EvalExam
         enable_gated_risk_cluster_repair=config.enable_gated_risk_cluster_repair,
     )
     risk_cluster = infer_risk_cluster(example.query, context)
+    risk_policy = classify_candidate_risk(context, risk_cluster=risk_cluster)
+    schema_vote = vote_schema_contexts(
+        query=example.query,
+        compact_context=context,
+        schema_index=executor.schema_index,
+        endpoint_catalog=executor.endpoint_catalog,
+        risk_level=risk_policy["risk_level"],
+    )
     current_plan = _plan_payload(
         sql=current_sql,
         api_calls=current_api,
@@ -208,6 +222,17 @@ def _evaluate_example(config: Config, executor: AgentExecutor, example: EvalExam
         "shadow_runtime": round(elapsed, 4),
         "execution_changed": False,
         "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled",
+        "risk_efficiency_controller": risk_policy,
+        "risk_level": risk_policy.get("risk_level"),
+        "accuracy_risk": risk_policy.get("accuracy_risk"),
+        "module_skipped_by_risk": risk_policy.get("module_skipped_by_risk", []),
+        "token_saved_estimate": risk_policy.get("token_saved_estimate"),
+        "runtime_saved_estimate_ms": risk_policy.get("runtime_saved_estimate_ms"),
+        "savings_are_estimates": risk_policy.get("savings_are_estimates"),
+        "schema_context_vote": schema_vote,
+        "schema_vote_agreement": schema_vote.get("schema_vote_agreement"),
+        "compact_context_safe": schema_vote.get("compact_context_safe"),
+        "fallback_reason": schema_vote.get("fallback_reason") or schema_vote.get("reason"),
     }
     row["decision_hash"] = decision_hash(row)
     return row
@@ -471,6 +496,29 @@ def build_cluster_canary_recommendations(rows: list[dict[str, Any]]) -> dict[str
     return recommendations
 
 
+def build_risk_efficiency_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "risk_level_distribution": dict(Counter(row.get("risk_level") for row in rows)),
+        "estimated_token_savings_total": round(sum(float(row.get("token_saved_estimate") or 0.0) for row in rows), 2),
+        "estimated_runtime_savings_ms_total": round(sum(float(row.get("runtime_saved_estimate_ms") or 0.0) for row in rows), 2),
+        "estimated_only": True,
+        "measured_efficiency_improvement_claimed": False,
+        "execution_changed": False,
+        "note": "Savings are static estimates from diagnostic module policy; packaged execution did not skip modules.",
+    }
+
+
+def build_schema_vote_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    votes = [row.get("schema_context_vote") for row in rows if isinstance(row.get("schema_context_vote"), dict)]
+    return {
+        "active_count": sum(1 for vote in votes if vote.get("active")),
+        "agreement_count": sum(1 for vote in votes if vote.get("schema_vote_agreement") is True),
+        "compact_context_safe_count": sum(1 for vote in votes if vote.get("compact_context_safe") is True),
+        "diagnostic_only": True,
+        "execution_changed": False,
+    }
+
+
 def render_markdown(payload: dict[str, Any]) -> str:
     summary = payload.get("paired_shadow_eval_summary", {})
     lines = [
@@ -511,6 +559,51 @@ def render_markdown(payload: dict[str, Any]) -> str:
             f"{row.get('repaired_worse_count')} | {row.get('avg_score_delta')} | {row.get('avg_tool_call_delta')} | "
             f"{row.get('avg_token_delta')} | {row.get('avg_runtime_delta')} | {row.get('safe_to_enable_canary')} | "
             f"`{row.get('recommended_flag')}` | {row.get('recommendation')} |"
+        )
+    risk_summary = payload.get("risk_efficiency_controller_summary", {})
+    vote_summary = payload.get("schema_context_voting_summary", {})
+    lines.extend(
+        [
+            "",
+            "## Diagnostic Risk-Based Efficiency Controller",
+            "",
+            "Savings are estimates only. Packaged SQL_FIRST_API_VERIFY execution did not skip modules or change measured runtime/tokens in this pass.",
+            "",
+            f"- Risk level distribution: {risk_summary.get('risk_level_distribution')}",
+            f"- Estimated token savings total: {risk_summary.get('estimated_token_savings_total')}",
+            f"- Estimated runtime savings total ms: {risk_summary.get('estimated_runtime_savings_ms_total')}",
+            f"- Measured efficiency improvement claimed: {risk_summary.get('measured_efficiency_improvement_claimed')}",
+            "",
+            "| Query ID | Risk | Accuracy risk | Skipped modules | Token saved estimate | Runtime saved estimate ms |",
+            "| --- | --- | --- | --- | ---: | ---: |",
+        ]
+    )
+    for row in payload.get("rows", []):
+        lines.append(
+            f"| `{row.get('query_id')}` | {row.get('risk_level')} | {row.get('accuracy_risk')} | "
+            f"{', '.join(row.get('module_skipped_by_risk', [])) or 'none'} | "
+            f"{row.get('token_saved_estimate')} | {row.get('runtime_saved_estimate_ms')} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Schema Context Voting",
+            "",
+            "Schema voting is high-risk diagnostic guidance only and does not alter the executed SQL/API plan.",
+            "",
+            f"- Active votes: {vote_summary.get('active_count')}",
+            f"- Agreements: {vote_summary.get('agreement_count')}",
+            f"- Compact context safe count: {vote_summary.get('compact_context_safe_count')}",
+            "",
+            "| Query ID | Active | Agreement | Compact safe? | Fallback reason | Token delta |",
+            "| --- | --- | --- | --- | --- | ---: |",
+        ]
+    )
+    for row in payload.get("rows", []):
+        vote = row.get("schema_context_vote") or {}
+        lines.append(
+            f"| `{row.get('query_id')}` | {vote.get('active')} | {vote.get('schema_vote_agreement')} | "
+            f"{vote.get('compact_context_safe')} | {vote.get('fallback_reason') or vote.get('reason')} | {vote.get('token_delta')} |"
         )
     lines.extend(
         [

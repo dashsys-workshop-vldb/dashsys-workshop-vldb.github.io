@@ -24,6 +24,13 @@ Candidate context is schema/API retrieval only. It does not use public gold patt
 | structural_join_preserved_count | 35 |
 | schema_link_risk_distribution | {'low': 29, 'medium': 6} |
 | cluster_gate_status | retrieval-cluster improvement measured |
+| risk_level_distribution | {'low': 2, 'medium': 5, 'high': 28} |
+| estimated_token_savings_total | 1848.0 |
+| estimated_runtime_savings_ms_total | 175.0 |
+| estimated_savings_label | estimated only - packaged execution did not skip modules |
+| schema_vote_active_count | 28 |
+| schema_vote_agreement_count | 28 |
+| compact_context_safe_count | 28 |
 
 ## Candidate Miss Analysis
 
@@ -80,6 +87,90 @@ These clusters compare baseline retrieval ordering with the ranking/report-only 
 | `schema_vs_dataset_confusion` | 2 | 1 | 1 | 0 | False | `ENABLE_REPAIR_FOR_SCHEMA_DATASET_CONFUSION` |
 | `tag_api_confusion` | 3 | 0 | 3 | 0 | False | `ENABLE_REPAIR_FOR_TAG_API_CONFUSION` |
 | `zero_score_margin` | 6 | 0 | 2 | 4 | False | `ENABLE_REPAIR_FOR_ZERO_SCORE_MARGIN` |
+
+## Risk-Based Efficiency Controller
+
+This section is diagnostic only. Token/runtime savings are estimates from module policy and are not measured efficiency gains because packaged execution is unchanged.
+
+| Query ID | Risk level | Accuracy risk | Skipped modules | Token saved estimate | Runtime saved estimate ms | Estimated only? |
+| --- | --- | --- | --- | ---: | ---: | --- |
+| `example_000` | low | low - candidates are separated and schema/API signals are consistent | value_retrieval, shadow_repair, repair_safety_verifier, schema_context_voting | 264 | 25.0 | True |
+| `example_001` | medium | medium - candidate confidence or endpoint confidence is not strong enough for compact-only diagnostics | value_retrieval, shadow_repair, repair_safety_verifier, schema_context_voting | 264 | 25.0 | True |
+| `example_002` | low | low - candidates are separated and schema/API signals are consistent | value_retrieval, shadow_repair, repair_safety_verifier, schema_context_voting | 264 | 25.0 | True |
+| `example_003` | high | high - risk_cluster:missing_gold_api_in_top_k, missing_candidate_apis | none | 0 | 0 | True |
+| `example_004` | high | high - zero_score_margin, risk_cluster:zero_score_margin | none | 0 | 0 | True |
+| `example_005` | high | high - zero_score_margin, risk_cluster:zero_score_margin | none | 0 | 0 | True |
+| `example_006` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 | True |
+| `example_007` | high | high - risk_cluster:missing_gold_api_in_top_k, missing_candidate_tables | none | 0 | 0 | True |
+| `example_008` | medium | medium - candidate confidence or endpoint confidence is not strong enough for compact-only diagnostics | value_retrieval, shadow_repair, repair_safety_verifier, schema_context_voting | 264 | 25.0 | True |
+| `example_009` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 | True |
+| `example_010` | high | high - zero_score_margin, risk_cluster:zero_score_margin | none | 0 | 0 | True |
+| `example_011` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 | True |
+| `example_012` | high | high - risk_cluster:missing_gold_api_in_top_k, missing_candidate_tables, missing_candidate_apis | none | 0 | 0 | True |
+| `example_013` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 | True |
+| `example_014` | medium | medium - candidate confidence or endpoint confidence is not strong enough for compact-only diagnostics | value_retrieval, shadow_repair, repair_safety_verifier, schema_context_voting | 264 | 25.0 | True |
+| `example_015` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 | True |
+| `example_016` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 | True |
+| `example_017` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 | True |
+| `example_018` | high | high - zero_score_margin, risk_cluster:zero_score_margin, missing_candidate_apis | none | 0 | 0 | True |
+| `example_019` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 | True |
+| `example_020` | medium | medium - candidate confidence or endpoint confidence is not strong enough for compact-only diagnostics | value_retrieval, shadow_repair, repair_safety_verifier, schema_context_voting | 264 | 25.0 | True |
+| `example_021` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 | True |
+| `example_022` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 | True |
+| `example_023` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 | True |
+| `example_024` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 | True |
+| `example_025` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 | True |
+| `example_026` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 | True |
+| `example_027` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 | True |
+| `example_028` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 | True |
+| `example_029` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 | True |
+| `example_030` | high | high - low_confidence, zero_score_margin, risk_cluster:zero_score_margin, missing_candidate_apis | none | 0 | 0 | True |
+| `example_031` | high | high - risk_cluster:missing_gold_api_in_top_k, missing_candidate_apis | none | 0 | 0 | True |
+| `example_032` | high | high - risk_cluster:missing_gold_api_in_top_k, missing_candidate_apis | none | 0 | 0 | True |
+| `example_033` | medium | medium - candidate confidence or endpoint confidence is not strong enough for compact-only diagnostics | value_retrieval, shadow_repair, repair_safety_verifier, schema_context_voting | 264 | 25.0 | True |
+| `example_034` | high | high - low_confidence, zero_score_margin, risk_cluster:zero_score_margin, missing_candidate_apis | none | 0 | 0 | True |
+
+## Schema Context Voting
+
+Schema voting compares compact candidate context against broader hybrid/full context for high-risk diagnostics only; it does not change executed SQL/API plans.
+
+| Query ID | Active | Agreement | Compact safe? | Fallback reason | Token delta | Compact tables | Fallback tables |
+| --- | --- | --- | --- | --- | ---: | --- | --- |
+| `example_000` | False | None | None | schema voting is reserved for high-risk diagnostics | None |  |  |
+| `example_001` | False | None | None | schema voting is reserved for high-risk diagnostics | None |  |  |
+| `example_002` | False | None | None | schema voting is reserved for high-risk diagnostics | None |  |  |
+| `example_003` | True | True | True | compact and fallback top candidates agree | 1596 | dim_segment, dim_collection, dim_target, hkg_br_segment_target | dim_segment, dim_collection, dim_target, hkg_br_segment_target |
+| `example_004` | True | True | True | compact and fallback top candidates agree | 1060 | dim_connector, dim_target, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment | dim_connector, dim_target, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment |
+| `example_005` | True | True | True | compact and fallback top candidates agree | 1363 | dim_connector, dim_target, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment | hkg_br_base_segment_used_by_dependent_segment, dim_connector, dim_target, br_campaign_segment |
+| `example_006` | True | True | True | compact and fallback top candidates agree | 1281 | hkg_br_blueprint_collection, dim_blueprint, hkg_br_blueprint_property, dim_collection | hkg_br_blueprint_collection, dim_blueprint, hkg_br_blueprint_property, dim_collection |
+| `example_007` | True | True | True | compact and fallback top candidates agree | 1156 | dim_blueprint, dim_segment, br_campaign_segment, dim_collection | dim_blueprint, hkg_br_base_segment_used_by_dependent_segment, dim_segment, br_campaign_segment |
+| `example_008` | False | None | None | schema voting is reserved for high-risk diagnostics | None |  |  |
+| `example_009` | True | True | True | compact and fallback top candidates agree | 1095 | dim_blueprint, hkg_br_blueprint_collection, dim_collection, hkg_br_blueprint_property | dim_blueprint, hkg_br_blueprint_collection, dim_collection, hkg_br_blueprint_property |
+| `example_010` | True | True | True | compact and fallback top candidates agree | 1179 | dim_blueprint, dim_collection, dim_segment, br_campaign_segment | dim_blueprint, dim_collection, dim_segment, br_campaign_segment |
+| `example_011` | True | True | True | compact and fallback top candidates agree | 1316 | hkg_br_blueprint_collection, dim_blueprint, dim_collection, br_campaign_segment | hkg_br_blueprint_collection, dim_blueprint, dim_collection, br_campaign_segment |
+| `example_012` | True | True | True | compact and fallback top candidates agree | 1498 | dim_target, hkg_br_blueprint_collection, hkg_br_blueprint_property, dim_connector | dim_target, hkg_br_blueprint_collection, hkg_br_blueprint_property, dim_connector |
+| `example_013` | True | True | True | compact and fallback top candidates agree | 1346 | hkg_br_blueprint_collection, dim_blueprint, hkg_br_blueprint_property, dim_collection | hkg_br_blueprint_collection, dim_blueprint, hkg_br_blueprint_property, dim_collection |
+| `example_014` | False | None | None | schema voting is reserved for high-risk diagnostics | None |  |  |
+| `example_015` | True | True | True | compact and fallback top candidates agree | 1046 | hkg_br_blueprint_property, dim_blueprint, dim_campaign, dim_segment | hkg_br_blueprint_collection, hkg_br_blueprint_property, dim_blueprint, dim_campaign |
+| `example_016` | True | True | True | compact and fallback top candidates agree | 1217 | hkg_br_blueprint_property, dim_blueprint, dim_campaign, dim_segment | hkg_br_blueprint_collection, hkg_br_blueprint_property, dim_blueprint, dim_campaign |
+| `example_017` | True | True | True | compact and fallback top candidates agree | 987 | dim_connector, dim_blueprint, dim_collection, br_campaign_segment | dim_connector, dim_blueprint, dim_collection, br_campaign_segment |
+| `example_018` | True | True | True | compact and fallback top candidates agree | 1084 | br_campaign_segment, hkg_br_collection_segment, hkg_br_segment_property, hkg_br_segment_target | hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment, hkg_br_segment_property, hkg_br_segment_target |
+| `example_019` | True | True | True | compact and fallback top candidates agree | 1280 | hkg_br_blueprint_property, dim_blueprint, dim_campaign, dim_segment | hkg_br_blueprint_collection, hkg_br_blueprint_property, dim_blueprint, dim_campaign |
+| `example_020` | False | None | None | schema voting is reserved for high-risk diagnostics | None |  |  |
+| `example_021` | True | True | True | compact and fallback top candidates agree | 1108 | dim_blueprint, dim_segment, br_campaign_segment, hkg_br_blueprint_property | dim_blueprint, dim_segment, br_campaign_segment, hkg_br_base_segment_used_by_dependent_segment |
+| `example_022` | True | True | True | compact and fallback top candidates agree | 1187 | hkg_br_segment_target, dim_segment, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment | hkg_br_segment_target, dim_segment, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment |
+| `example_023` | True | True | True | compact and fallback top candidates agree | 1336 | hkg_br_segment_target, dim_segment, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment | hkg_br_segment_target, dim_segment, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment |
+| `example_024` | True | True | True | compact and fallback top candidates agree | 1274 | hkg_br_segment_target, dim_segment, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment | hkg_br_segment_target, dim_segment, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment |
+| `example_025` | True | True | True | compact and fallback top candidates agree | 1345 | hkg_br_segment_target, dim_segment, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment | hkg_br_segment_target, dim_segment, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment |
+| `example_026` | True | True | True | compact and fallback top candidates agree | 1176 | hkg_br_segment_target, dim_segment, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment | hkg_br_segment_target, dim_segment, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment |
+| `example_027` | True | True | True | compact and fallback top candidates agree | 1495 | hkg_br_segment_target, dim_segment, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment | hkg_br_segment_target, dim_segment, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment |
+| `example_028` | True | True | True | compact and fallback top candidates agree | 1350 | dim_collection, dim_segment, hkg_br_segment_target, dim_blueprint | dim_collection, dim_segment, hkg_br_segment_target, dim_blueprint |
+| `example_029` | True | True | True | compact and fallback top candidates agree | 1128 | dim_campaign, dim_segment, br_campaign_segment, hkg_br_blueprint_property | dim_campaign, dim_segment, br_campaign_segment, hkg_br_base_segment_used_by_dependent_segment |
+| `example_030` | True | True | True | compact and fallback top candidates agree | 839 | br_campaign_segment, hkg_br_blueprint_property, hkg_br_collection_property, hkg_br_collection_segment | br_campaign_segment, hkg_br_base_segment_used_by_dependent_segment, hkg_br_blueprint_collection, hkg_br_blueprint_property |
+| `example_031` | True | True | True | compact and fallback top candidates agree | 1312 | dim_segment, hkg_br_blueprint_collection, dim_collection, dim_blueprint | dim_segment, hkg_br_blueprint_collection, hkg_br_blueprint_property, dim_collection |
+| `example_032` | True | True | True | compact and fallback top candidates agree | 1034 | dim_campaign, dim_segment, br_campaign_segment, hkg_br_blueprint_property | dim_campaign, dim_segment, br_campaign_segment, hkg_br_base_segment_used_by_dependent_segment |
+| `example_033` | False | None | None | schema voting is reserved for high-risk diagnostics | None |  |  |
+| `example_034` | True | True | True | compact and fallback top candidates agree | 1094 | dim_campaign, dim_segment, br_campaign_segment, hkg_br_blueprint_property | dim_campaign, dim_segment, br_campaign_segment, hkg_br_base_segment_used_by_dependent_segment |
 
 ## Curated Join Hint Audit
 

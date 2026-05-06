@@ -35,14 +35,17 @@ def checkpoints_to_spans(trajectory: dict[str, Any]) -> dict[str, Any]:
         )
         previous_id = span_id
     candidate_row = trajectory.get("_candidate_context_report_row") or {}
+    shadow_row = trajectory.get("_shadow_repair_eval_row") or {}
     for technique, checkpoint_id, output_key in [
         ("Hybrid Candidate Scoring", "checkpoint_hybrid_candidate_scoring", "hybrid_candidate_scoring"),
         ("Endpoint Family Ranking", "checkpoint_endpoint_family_ranking", "endpoint_family_ranking"),
         ("Structural Schema Preservation", "checkpoint_structural_schema_preservation", "schema_linking"),
         ("Value-to-API Ranking", "checkpoint_value_to_api_ranking", "value_to_api_ranking"),
         ("Gated Risk Cluster Repair", "checkpoint_gated_risk_cluster_repair", "gated_risk_cluster_repair"),
+        ("Risk-Based Efficiency Controller", "checkpoint_risk_efficiency_controller", "risk_efficiency_controller"),
+        ("Schema Context Voting", "checkpoint_schema_context_voting", "schema_context_vote"),
     ]:
-        payload = candidate_row.get(output_key)
+        payload = candidate_row.get(output_key) or shadow_row.get(output_key)
         if not payload:
             continue
         span_id = f"span_{len(spans):03d}_{checkpoint_id}"
@@ -89,6 +92,8 @@ def research_technique_status(trajectory: dict[str, Any]) -> list[dict[str, Any]
         ("Structural schema preservation", "RSL-SQL", "checkpoint_structural_schema_preservation", "Report-only bridge/relationship preservation diagnostics"),
         ("Value-to-API ranking", "CHESS", "checkpoint_value_to_api_ranking", "High-confidence entity matches can boost API-family ranking in reports"),
         ("Gated risk-cluster repair", "CHASE-SQL-style repair", "checkpoint_gated_risk_cluster_repair", "Diagnostic repaired candidate comparison without execution change"),
+        ("Risk-based efficiency controller", "adaptive retrieval control", "checkpoint_risk_efficiency_controller", "Diagnostic policy that estimates skipped module cost by risk level"),
+        ("Schema context voting", "full-vs-compact context voting", "checkpoint_schema_context_voting", "High-risk diagnostic comparison of compact and broader context"),
     ]
     candidate_row = trajectory.get("_candidate_context_report_row") or {}
     candidate_active = {
@@ -97,7 +102,13 @@ def research_technique_status(trajectory: dict[str, Any]) -> list[dict[str, Any]
         "checkpoint_structural_schema_preservation": bool(candidate_row.get("schema_linking", {}).get("bridge_preserved")),
         "checkpoint_value_to_api_ranking": bool(candidate_row.get("value_to_api_ranking", {}).get("active")),
         "checkpoint_gated_risk_cluster_repair": bool(candidate_row.get("gated_risk_cluster_repair", {}).get("active")),
+        "checkpoint_risk_efficiency_controller": bool(candidate_row.get("risk_efficiency_controller", {}).get("active")),
+        "checkpoint_schema_context_voting": bool(candidate_row.get("schema_context_vote", {}).get("active")),
     }
+    shadow_row = trajectory.get("_shadow_repair_eval_row") or {}
+    if shadow_row:
+        candidate_active["checkpoint_risk_efficiency_controller"] = bool((shadow_row.get("risk_efficiency_controller") or {}).get("active"))
+        candidate_active["checkpoint_schema_context_voting"] = bool((shadow_row.get("schema_context_vote") or {}).get("active"))
     return [
         {
             "technique": name,

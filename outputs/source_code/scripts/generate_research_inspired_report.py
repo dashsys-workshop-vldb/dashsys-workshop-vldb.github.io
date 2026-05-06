@@ -96,6 +96,8 @@ def generate_report(config: Config) -> dict[str, Any]:
         ("Endpoint family ranking", "domain-aware retrieval", "dashagent/endpoint_family_ranker.py", config.enable_endpoint_family_ranking, "checkpoint_endpoint_family_ranking/report metrics"),
         ("Value-to-API ranking", "CHESS value grounding", "dashagent/endpoint_family_ranker.py", config.enable_value_to_api_ranking, "checkpoint_value_to_api_ranking/report metrics"),
         ("Gated risk-cluster repair", "CHASE-SQL-style candidate repair", "dashagent/candidate_context_builder.py", config.enable_gated_risk_cluster_repair, "checkpoint_gated_risk_cluster_repair/report metrics"),
+        ("Risk-based efficiency controller", "adaptive retrieval control", "dashagent/risk_efficiency_controller.py", True, "checkpoint_risk_efficiency_controller/report metrics"),
+        ("Schema context voting", "full-vs-compact context voting", "dashagent/schema_context_voter.py", True, "checkpoint_schema_context_voting/report metrics"),
     ]
     cluster_gate = candidate_report.get("cluster_gate", {})
     return {
@@ -128,6 +130,14 @@ def generate_report(config: Config) -> dict[str, Any]:
             "shadow_repair_equal_count": shadow_report.get("paired_shadow_eval_summary", {}).get("repaired_equal_count", 0),
             "shadow_repair_worse_count": shadow_report.get("paired_shadow_eval_summary", {}).get("repaired_worse_count", 0),
             "shadow_repair_unsafe_count": shadow_report.get("paired_shadow_eval_summary", {}).get("unsafe_repair_count", 0),
+            "risk_level_distribution": candidate_report.get("summary", {}).get("risk_level_distribution", {}),
+            "risk_controller_estimated_token_savings_total": candidate_report.get("summary", {}).get("estimated_token_savings_total", 0),
+            "risk_controller_estimated_runtime_savings_ms_total": candidate_report.get("summary", {}).get("estimated_runtime_savings_ms_total", 0),
+            "risk_controller_savings_are_estimates": True,
+            "measured_efficiency_improvement_claimed": False,
+            "schema_vote_active_count": candidate_report.get("summary", {}).get("schema_vote_active_count", 0),
+            "schema_vote_agreement_count": candidate_report.get("summary", {}).get("schema_vote_agreement_count", 0),
+            "compact_context_safe_count": candidate_report.get("summary", {}).get("compact_context_safe_count", 0),
         },
         "baseline": BASELINE_SQL_FIRST,
         "current": metrics,
@@ -153,6 +163,8 @@ def generate_report(config: Config) -> dict[str, Any]:
             "paired_shadow_eval_summary": shadow_report.get("paired_shadow_eval_summary", {}),
             "cluster_canary_recommendations": shadow_report.get("cluster_canary_recommendations", {}),
             "repair_execution_enabled": shadow_report.get("repair_execution_enabled", False),
+            "risk_efficiency_controller_summary": shadow_report.get("risk_efficiency_controller_summary", {}),
+            "schema_context_voting_summary": shadow_report.get("schema_context_voting_summary", {}),
             "notes": shadow_report.get("notes", []),
         },
         "notes": [
@@ -162,6 +174,8 @@ def generate_report(config: Config) -> dict[str, Any]:
             "If execution repair remains disabled, ranking changes are not claimed as accuracy improvements.",
             "Offline shadow repair eval compares candidate-derived repaired plans without changing packaged execution.",
             "Any repair canary enablement is a recommendation only; canary flags remain disabled by default.",
+            "Risk-based efficiency savings are labeled as estimates; no measured efficiency improvement is claimed because packaged execution did not skip modules.",
+            "Schema context voting compares compact and broader context for high-risk diagnostics only and does not change executed SQL/API plans.",
             "SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.",
             "No live API evidence is fabricated; Adobe API remains dry-run without credentials.",
             "Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.",
@@ -213,6 +227,13 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"{report['summary']['shadow_repair_equal_count']}/"
             f"{report['summary']['shadow_repair_worse_count']}/"
             f"{report['summary']['shadow_repair_unsafe_count']}",
+            f"- Risk level distribution: {report['summary']['risk_level_distribution']}",
+            f"- Risk-controller estimated token savings total: {report['summary']['risk_controller_estimated_token_savings_total']} "
+            f"(estimated only: {report['summary']['risk_controller_savings_are_estimates']})",
+            f"- Risk-controller estimated runtime savings total ms: {report['summary']['risk_controller_estimated_runtime_savings_ms_total']} "
+            f"(measured efficiency improvement claimed: {report['summary']['measured_efficiency_improvement_claimed']})",
+            f"- Schema vote active/agreement/compact-safe: {report['summary']['schema_vote_active_count']}/"
+            f"{report['summary']['schema_vote_agreement_count']}/{report['summary']['compact_context_safe_count']}",
             f"- Secret scan OK: {report['summary']['no_secret_scan_ok']}",
             f"- Visualization artifacts directory: `{report['summary']['visualization_artifacts_dir']}`",
             f"- Visualization artifacts inside final submission: {report['summary']['visualizations_in_final_submission']}",

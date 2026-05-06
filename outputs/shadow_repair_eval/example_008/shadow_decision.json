@@ -1,4 +1,6 @@
 {
+  "accuracy_risk": "medium - candidate confidence or endpoint confidence is not strong enough for compact-only diagnostics",
+  "compact_context_safe": null,
   "current_plan_api": [],
   "current_plan_sql": [
     "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20"
@@ -12,7 +14,14 @@
   "dry_run_only": true,
   "evidence_available": true,
   "execution_changed": false,
+  "fallback_reason": "schema voting is reserved for high-risk diagnostics",
   "live_api_evidence_available": false,
+  "module_skipped_by_risk": [
+    "value_retrieval",
+    "shadow_repair",
+    "repair_safety_verifier",
+    "schema_context_voting"
+  ],
   "query": "show me the field for Person: Birthday Today 001",
   "query_id": "example_008",
   "rejection_reason": "Repaired plan would increase tool calls from 1 to 2.; Endpoint family confidence 0.0000 is below 0.75.",
@@ -42,7 +51,43 @@
   "repaired_tokens": 671,
   "repaired_tool_calls": 2,
   "risk_cluster": "not_targeted",
+  "risk_efficiency_controller": {
+    "accuracy_risk": "medium - candidate confidence or endpoint confidence is not strong enough for compact-only diagnostics",
+    "active": true,
+    "behavior_changed": false,
+    "diagnostic_only": true,
+    "estimate_basis": "static diagnostic-module cost estimates; packaged execution did not skip modules",
+    "inputs": {
+      "confidence": 0.8187,
+      "endpoint_family_confidence": 0.0,
+      "missing_candidate_signals": {},
+      "risk_cluster": "not_targeted",
+      "schema_link_risk": "low",
+      "score_margin": 0.41
+    },
+    "measured_efficiency_improvement_claimed": false,
+    "module_policy": "medium risk: hybrid ranking + endpoint ranking diagnostics",
+    "module_skipped_by_risk": [
+      "value_retrieval",
+      "shadow_repair",
+      "repair_safety_verifier",
+      "schema_context_voting"
+    ],
+    "modules_run_by_policy": [
+      "hybrid_candidate_scoring",
+      "endpoint_family_ranking"
+    ],
+    "risk_level": "medium",
+    "risk_reasons": [
+      "medium_endpoint_family_confidence"
+    ],
+    "runtime_saved_estimate_ms": 25.0,
+    "savings_are_estimates": true,
+    "token_saved_estimate": 264
+  },
+  "risk_level": "medium",
   "runtime_delta": 0.0,
+  "runtime_saved_estimate_ms": 25.0,
   "safety_verdict": {
     "api_validation": {
       "errors": [],
@@ -87,9 +132,20 @@
       "ok": true
     }
   },
+  "savings_are_estimates": true,
+  "schema_context_vote": {
+    "active": false,
+    "behavior_changed": false,
+    "compact_context_safe": null,
+    "diagnostic_only": true,
+    "reason": "schema voting is reserved for high-risk diagnostics",
+    "schema_vote_agreement": null
+  },
+  "schema_vote_agreement": null,
   "score_delta": -0.0125,
-  "shadow_runtime": 0.0116,
+  "shadow_runtime": 0.012,
   "token_delta": 0,
+  "token_saved_estimate": 264,
   "tool_delta": 1,
   "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
 }

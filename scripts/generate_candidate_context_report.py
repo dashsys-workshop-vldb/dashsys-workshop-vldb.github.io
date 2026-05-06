@@ -17,6 +17,8 @@ from dashagent.config import Config
 from dashagent.endpoint_catalog import EndpointCatalog
 from dashagent.eval_harness import EvalHarness, extract_api_calls
 from dashagent.executor import AgentExecutor
+from dashagent.risk_efficiency_controller import classify_candidate_risk
+from dashagent.schema_context_voter import vote_schema_contexts
 from dashagent.trajectory import estimate_tokens
 
 
@@ -138,6 +140,37 @@ def generate_candidate_context_report(config: Config) -> dict[str, Any]:
         row["missing_gold_apis"] = missing_gold_apis
         row["missing_gold_tables_before"] = missing_gold_tables_before
         row["missing_gold_apis_before"] = missing_gold_apis_before
+        risk_policy = classify_candidate_risk(
+            context,
+            risk_cluster=(context.get("gated_risk_cluster_repair") or {}).get("risk_cluster"),
+            missing_candidate_signals={
+                "missing_tables": bool(missing_gold_tables),
+                "missing_apis": bool(missing_gold_apis),
+            },
+        )
+        schema_vote = vote_schema_contexts(
+            query=example.query,
+            compact_context=context,
+            schema_index=executor.schema_index,
+            endpoint_catalog=executor.endpoint_catalog,
+            risk_level=risk_policy["risk_level"],
+        )
+        row.update(
+            {
+                "risk_efficiency_controller": risk_policy,
+                "risk_level": risk_policy.get("risk_level"),
+                "accuracy_risk": risk_policy.get("accuracy_risk"),
+                "module_skipped_by_risk": risk_policy.get("module_skipped_by_risk", []),
+                "token_saved_estimate": risk_policy.get("token_saved_estimate"),
+                "runtime_saved_estimate_ms": risk_policy.get("runtime_saved_estimate_ms"),
+                "savings_are_estimates": risk_policy.get("savings_are_estimates"),
+                "measured_efficiency_improvement_claimed": risk_policy.get("measured_efficiency_improvement_claimed"),
+                "schema_context_vote": schema_vote,
+                "schema_vote_agreement": schema_vote.get("schema_vote_agreement"),
+                "compact_context_safe": schema_vote.get("compact_context_safe"),
+                "fallback_reason": schema_vote.get("fallback_reason") or schema_vote.get("reason"),
+            }
+        )
         risky = (
             row.get("table_recall_at_3", 1.0) < 1.0
             or row.get("table_recall_at_5", 1.0) < 1.0
@@ -162,6 +195,8 @@ def generate_candidate_context_report(config: Config) -> dict[str, Any]:
         rows.append(row)
     avg_candidate = avg(candidate_tokens)
     shadow_report = _load_shadow_repair_report(config.outputs_dir)
+    risk_distribution = Counter(row.get("risk_level") for row in rows)
+    schema_votes = [row.get("schema_context_vote") for row in rows if isinstance(row.get("schema_context_vote"), dict)]
     return {
         "examples": len(examples),
         "used_gold_patterns": False,
@@ -184,6 +219,13 @@ def generate_candidate_context_report(config: Config) -> dict[str, Any]:
             "structural_join_preserved_count": sum(1 for row in rows if row.get("structural_join_preserved")),
             "schema_link_risk_distribution": dict(Counter(row.get("schema_link_risk") for row in rows)),
             "cluster_gate_status": build_cluster_gate(build_candidate_risk_clusters(rows))["status"],
+            "risk_level_distribution": dict(risk_distribution),
+            "estimated_token_savings_total": round(sum(float(row.get("token_saved_estimate") or 0.0) for row in rows), 2),
+            "estimated_runtime_savings_ms_total": round(sum(float(row.get("runtime_saved_estimate_ms") or 0.0) for row in rows), 2),
+            "estimated_savings_label": "estimated only - packaged execution did not skip modules",
+            "schema_vote_active_count": sum(1 for vote in schema_votes if vote.get("active")),
+            "schema_vote_agreement_count": sum(1 for vote in schema_votes if vote.get("schema_vote_agreement") is True),
+            "compact_context_safe_count": sum(1 for vote in schema_votes if vote.get("compact_context_safe") is True),
         },
         "candidate_miss_analysis": miss_analysis,
         "candidate_risk_clusters": build_candidate_risk_clusters(rows),
@@ -430,6 +472,41 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"| `{name}` | {cluster.get('shadow_eval_rows')} | {cluster.get('repaired_better_count')} | "
             f"{cluster.get('repaired_equal_count')} | {cluster.get('repaired_worse_count')} | "
             f"{cluster.get('safe_to_enable_canary')} | `{cluster.get('recommended_flag')}` |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Risk-Based Efficiency Controller",
+            "",
+            "This section is diagnostic only. Token/runtime savings are estimates from module policy and are not measured efficiency gains because packaged execution is unchanged.",
+            "",
+            "| Query ID | Risk level | Accuracy risk | Skipped modules | Token saved estimate | Runtime saved estimate ms | Estimated only? |",
+            "| --- | --- | --- | --- | ---: | ---: | --- |",
+        ]
+    )
+    for row in report.get("rows", [])[:50]:
+        lines.append(
+            f"| `{row.get('query_id')}` | {row.get('risk_level')} | {row.get('accuracy_risk')} | "
+            f"{', '.join(row.get('module_skipped_by_risk', [])) or 'none'} | "
+            f"{row.get('token_saved_estimate')} | {row.get('runtime_saved_estimate_ms')} | {row.get('savings_are_estimates')} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Schema Context Voting",
+            "",
+            "Schema voting compares compact candidate context against broader hybrid/full context for high-risk diagnostics only; it does not change executed SQL/API plans.",
+            "",
+            "| Query ID | Active | Agreement | Compact safe? | Fallback reason | Token delta | Compact tables | Fallback tables |",
+            "| --- | --- | --- | --- | --- | ---: | --- | --- |",
+        ]
+    )
+    for row in report.get("rows", [])[:50]:
+        vote = row.get("schema_context_vote") or {}
+        lines.append(
+            f"| `{row.get('query_id')}` | {vote.get('active')} | {vote.get('schema_vote_agreement')} | "
+            f"{vote.get('compact_context_safe')} | {vote.get('fallback_reason') or vote.get('reason')} | {vote.get('token_delta')} | "
+            f"{', '.join(vote.get('compact_candidate_tables', [])[:4])} | {', '.join(vote.get('fallback_candidate_tables', [])[:4])} |"
         )
     lines.extend(
         [

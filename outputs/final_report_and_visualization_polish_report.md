@@ -167,3 +167,23 @@ The packaged preferred strategy remains `SQL_FIRST_API_VERIFY`.
   - average tool calls: 1.4571
   - preferred strategy: `SQL_FIRST_API_VERIFY`
   - `no_secret_scan.ok`: true
+
+## 14. Risk-Based Efficiency And Schema Voting Addendum
+
+- Extended the canonical `scripts/run_shadow_repair_eval.py` and `dashagent/repair_safety_verifier.py`; no duplicate shadow-repair or verifier modules were added.
+- Added a diagnostic risk-based efficiency controller. It labels rows as low/medium/high risk and reports intended module policy, skipped modules, `token_saved_estimate`, and `runtime_saved_estimate_ms`.
+- These savings are estimates only. No measured efficiency improvement is claimed because packaged `SQL_FIRST_API_VERIFY` execution did not skip modules or change selected plans.
+- Added high-risk schema context voting. It compares compact candidate context against broader hybrid/full context and reports `schema_vote_agreement`, `compact_context_safe`, and fallback reason without changing executed SQL/API.
+- Shadow repair output now includes risk policy and schema-vote fields per row, plus summary distributions. Current shadow summary reports deterministic decisions and repair execution remains disabled.
+- Candidate report and dataflow visualization now include `Risk-Based Efficiency Controller` and `Schema Context Voting` sections.
+- Packaged artifacts remain unchanged: shadow outputs stay under `outputs/shadow_repair_eval*`, visualizations stay under `outputs/visualizations/`, and no shadow/visualization files are written into `outputs/final_submission/`.
+- Latest validation after the risk-efficiency/schema-vote pass:
+  - `python3 -m pytest`: 162 passed
+  - strict `SQL_FIRST_API_VERIFY` final score: 0.6486
+  - strict correctness: 0.6743
+  - average tool calls: 1.4571
+  - estimated tokens: 899.2286
+  - average runtime: 0.0115
+  - preferred strategy: `SQL_FIRST_API_VERIFY`
+  - repair execution enabled: false
+  - `no_secret_scan.ok`: true

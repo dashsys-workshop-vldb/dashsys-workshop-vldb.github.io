@@ -23,6 +23,12 @@ def test_candidate_context_report_parseable(tiny_project):
     assert "hybrid_candidate_scoring" in report["rows"][0]
     assert "endpoint_family_ranking" in report["rows"][0]
     assert "ranking_diagnostics" in report["rows"][0]
+    assert "risk_efficiency_controller" in report["rows"][0]
+    assert "schema_context_vote" in report["rows"][0]
+    assert "risk_level_distribution" in report["summary"]
+    assert report["summary"]["estimated_savings_label"].startswith("estimated only")
+    assert report["rows"][0]["savings_are_estimates"] is True
+    assert report["rows"][0]["measured_efficiency_improvement_claimed"] is False
     assert report["curated_join_hint_audit"]["used_gold_patterns"] is False
 
 

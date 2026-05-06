@@ -251,6 +251,8 @@
     "If execution repair remains disabled, ranking changes are not claimed as accuracy improvements.",
     "Offline shadow repair eval compares candidate-derived repaired plans without changing packaged execution.",
     "Any repair canary enablement is a recommendation only; canary flags remain disabled by default.",
+    "Risk-based efficiency savings are labeled as estimates; no measured efficiency improvement is claimed because packaged execution did not skip modules.",
+    "Schema context voting compares compact and broader context for high-risk diagnostics only and does not change executed SQL/API plans.",
     "SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.",
     "No live API evidence is fabricated; Adobe API remains dry-run without credentials.",
     "Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.",
@@ -498,12 +500,34 @@
       "repaired_worse_count": 8,
       "unsafe_repair_count": 21
     },
-    "repair_execution_enabled": false
+    "repair_execution_enabled": false,
+    "risk_efficiency_controller_summary": {
+      "estimated_only": true,
+      "estimated_runtime_savings_ms_total": 150.0,
+      "estimated_token_savings_total": 1584.0,
+      "execution_changed": false,
+      "measured_efficiency_improvement_claimed": false,
+      "note": "Savings are static estimates from diagnostic module policy; packaged execution did not skip modules.",
+      "risk_level_distribution": {
+        "high": 29,
+        "low": 2,
+        "medium": 4
+      }
+    },
+    "schema_context_voting_summary": {
+      "active_count": 29,
+      "agreement_count": 29,
+      "compact_context_safe_count": 29,
+      "diagnostic_only": true,
+      "execution_changed": false
+    }
   },
   "summary": {
     "candidate_risk_cluster_count": 8,
+    "compact_context_safe_count": 28,
     "estimated_tokens_gate_ok": true,
     "final_submission_format_unchanged": true,
+    "measured_efficiency_improvement_claimed": false,
     "no_secret_scan_ok": true,
     "packaged_preferred_strategy": "SQL_FIRST_API_VERIFY",
     "ranking_only_no_score_claim": true,
@@ -516,8 +540,18 @@
       "tag_api_confusion",
       "schema_vs_dataset_confusion"
     ],
+    "risk_controller_estimated_runtime_savings_ms_total": 175.0,
+    "risk_controller_estimated_token_savings_total": 1848.0,
+    "risk_controller_savings_are_estimates": true,
+    "risk_level_distribution": {
+      "high": 28,
+      "low": 2,
+      "medium": 5
+    },
     "runtime_gate_ok": true,
     "runtime_overhead_pct": 0.1275,
+    "schema_vote_active_count": 28,
+    "schema_vote_agreement_count": 28,
     "shadow_repair_better_count": 1,
     "shadow_repair_equal_count": 26,
     "shadow_repair_eval_ran": true,
@@ -646,6 +680,26 @@
       "source_inspiration": "CHASE-SQL-style candidate repair",
       "technique": "Gated risk-cluster repair",
       "visualization_checkpoint": "checkpoint_gated_risk_cluster_repair/report metrics"
+    },
+    {
+      "active_in_raw_guided": false,
+      "active_in_sql_first": true,
+      "correctness_role": "diagnostic/grounding unless strict score improves",
+      "efficiency_role": "bounded or disabled by feature flag",
+      "implemented_module": "dashagent/risk_efficiency_controller.py",
+      "source_inspiration": "adaptive retrieval control",
+      "technique": "Risk-based efficiency controller",
+      "visualization_checkpoint": "checkpoint_risk_efficiency_controller/report metrics"
+    },
+    {
+      "active_in_raw_guided": false,
+      "active_in_sql_first": true,
+      "correctness_role": "diagnostic/grounding unless strict score improves",
+      "efficiency_role": "bounded or disabled by feature flag",
+      "implemented_module": "dashagent/schema_context_voter.py",
+      "source_inspiration": "full-vs-compact context voting",
+      "technique": "Schema context voting",
+      "visualization_checkpoint": "checkpoint_schema_context_voting/report metrics"
     }
   ]
 }

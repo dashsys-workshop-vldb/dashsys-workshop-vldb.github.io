@@ -229,6 +229,8 @@ def build_dataflow_summary(trajectory: dict[str, Any]) -> dict[str, Any]:
             "sql_ast": _value(_checkpoint_output(checkpoints, "checkpoint_sql_ast_validation"), "SQL AST validation checkpoint inactive"),
             "value_retrieval_cache": _value(_checkpoint_output(checkpoints, "checkpoint_value_entity_retrieval"), "value retrieval checkpoint inactive"),
             "candidate_ranking": _candidate_ranking_summary(trajectory),
+            "risk_efficiency_controller": _risk_efficiency_summary(trajectory),
+            "schema_context_vote": _schema_context_vote_summary(trajectory),
             "shadow_repair": _shadow_repair_summary(trajectory),
         }
     )
@@ -430,6 +432,55 @@ def build_shadow_repair_table(summary: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def build_risk_efficiency_table(summary: dict[str, Any]) -> str:
+    risk = summary.get("risk_efficiency_controller")
+    lines = [
+        "| Field | Value |",
+        "| --- | --- |",
+    ]
+    if not isinstance(risk, dict) or not risk.get("available", True):
+        lines.append(f"| status | {_md(risk)} |")
+        return "\n".join(lines) + "\n"
+    for key in [
+        "risk_level",
+        "accuracy_risk",
+        "module_policy",
+        "module_skipped_by_risk",
+        "token_saved_estimate",
+        "runtime_saved_estimate_ms",
+        "savings_are_estimates",
+        "measured_efficiency_improvement_claimed",
+        "behavior_changed",
+    ]:
+        lines.append(f"| {key} | {_md(_brief(risk.get(key), 700) or 'n/a')} |")
+    return "\n".join(lines) + "\n"
+
+
+def build_schema_context_vote_table(summary: dict[str, Any]) -> str:
+    vote = summary.get("schema_context_vote")
+    lines = [
+        "| Field | Value |",
+        "| --- | --- |",
+    ]
+    if not isinstance(vote, dict) or not vote.get("available", True):
+        lines.append(f"| status | {_md(vote)} |")
+        return "\n".join(lines) + "\n"
+    for key in [
+        "active",
+        "schema_vote_agreement",
+        "compact_context_safe",
+        "fallback_reason",
+        "compact_candidate_tables",
+        "fallback_candidate_tables",
+        "compact_candidate_apis",
+        "fallback_candidate_apis",
+        "token_delta",
+        "behavior_changed",
+    ]:
+        lines.append(f"| {key} | {_md(_brief(vote.get(key), 700) or 'n/a')} |")
+    return "\n".join(lines) + "\n"
+
+
 def build_markdown_report(trajectory: dict[str, Any]) -> str:
     summary = build_dataflow_summary(trajectory)
     lines = [
@@ -494,6 +545,18 @@ def build_markdown_report(trajectory: dict[str, Any]) -> str:
         "## Shadow Repair / What-if Evaluation",
         "",
         build_shadow_repair_table(summary).strip(),
+        "",
+        "## Risk-Based Efficiency Controller",
+        "",
+        "Token/runtime savings in this section are estimates only unless packaged execution explicitly changes and validation confirms measured savings.",
+        "",
+        build_risk_efficiency_table(summary).strip(),
+        "",
+        "## Schema Context Voting",
+        "",
+        "Schema context voting is diagnostic guidance for high-risk rows and does not change executed SQL/API plans.",
+        "",
+        build_schema_context_vote_table(summary).strip(),
         "",
         "## Value Retrieval Cache",
         "",
@@ -826,6 +889,26 @@ def _shadow_repair_summary(trajectory: dict[str, Any]) -> dict[str, Any]:
         "why_execution_not_changed": row.get("why_execution_not_changed"),
         "decision_hash": row.get("decision_hash"),
     }
+
+
+def _risk_efficiency_summary(trajectory: dict[str, Any]) -> Any:
+    row = trajectory.get("_shadow_repair_eval_row")
+    if isinstance(row, dict) and isinstance(row.get("risk_efficiency_controller"), dict):
+        return {"available": True, **row["risk_efficiency_controller"]}
+    candidate = trajectory.get("_candidate_context_report_row")
+    if isinstance(candidate, dict) and isinstance(candidate.get("risk_efficiency_controller"), dict):
+        return {"available": True, **candidate["risk_efficiency_controller"]}
+    return _value(None, "no risk-efficiency diagnostic row attached")
+
+
+def _schema_context_vote_summary(trajectory: dict[str, Any]) -> Any:
+    row = trajectory.get("_shadow_repair_eval_row")
+    if isinstance(row, dict) and isinstance(row.get("schema_context_vote"), dict):
+        return {"available": True, **row["schema_context_vote"]}
+    candidate = trajectory.get("_candidate_context_report_row")
+    if isinstance(candidate, dict) and isinstance(candidate.get("schema_context_vote"), dict):
+        return {"available": True, **candidate["schema_context_vote"]}
+    return _value(None, "no schema context voting diagnostic row attached")
 
 
 def _find_context_mode(

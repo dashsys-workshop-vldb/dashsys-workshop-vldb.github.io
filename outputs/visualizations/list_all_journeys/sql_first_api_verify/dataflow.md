@@ -117,6 +117,8 @@ SQL evidence is available. API tool was invoked and validated, but live API evid
 | Structural schema preservation | RSL-SQL | True | Report-only bridge/relationship preservation diagnostics | keeps relevant tables, columns, and bridges visible | diagnostic overhead only | checkpoint_structural_schema_preservation |
 | Value-to-API ranking | CHESS | False | High-confidence entity matches can boost API-family ranking in reports | grounds named entities and IDs before planning | bounded cached retrieval budget | checkpoint_value_to_api_ranking |
 | Gated risk-cluster repair | CHASE-SQL-style repair | False | Diagnostic repaired candidate comparison without execution change | makes technique visibility auditable | diagnostic overhead only | checkpoint_gated_risk_cluster_repair |
+| Risk-based efficiency controller | adaptive retrieval control | True | Diagnostic policy that estimates skipped module cost by risk level | makes technique visibility auditable | diagnostic overhead only | checkpoint_risk_efficiency_controller |
+| Schema context voting | full-vs-compact context voting | False | High-risk diagnostic comparison of compact and broader context | makes technique visibility auditable | diagnostic overhead only | checkpoint_schema_context_voting |
 
 ## Candidate Ranking Diagnostics
 
@@ -134,6 +136,39 @@ SQL evidence is available. API tool was invoked and validated, but live API evid
 | --- | --- | --- | --- | ---: | --- | --- |
 | not_targeted | {"api": {"items": [{"method": "GET", "params": {"pageSize": "10"}, "path": "/ajo/journey"}], "total_items": 1, "truncated_items": false}, "score": 0.761, "sql": {"items": ["SELECT CAMPAIGN.\"NAME\" AS CAMPAIGNNAME, CAMPAIGN.\"CAMPAIGNID\" AS CAMPAIGNID FROM \"dim_campaign\" AS CAMPAIGN"], "total_items": 1, "truncated_items": false}} | {"api": {"items": [{"method": "GET", "params": {"pageSize": "10"}, "path": "/ajo/journey"}], "total_items": 1, "truncated_items": false}, "score": 0.761, "sql": {"items": ["SELECT CAMPAIGN.\"NAME\" AS CAMPAIGNNAME, CAMPAIGN.\"CAMPAIGNID\" AS CAMPAIGNID FROM \"dim_campaign\" AS CAMPAIGN"], "total_items": 1, "truncated_items": false}} | safe | 0.0 | {'tool_delta': 0, 'token_delta': 0, 'runtime_delta': 0.0} | safe_shadow_tie_recommend_canary |
 | execution changed? | False | reason | offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled | decision hash | eebe841f2a2aed58 | |
+
+## Risk-Based Efficiency Controller
+
+Token/runtime savings in this section are estimates only unless packaged execution explicitly changes and validation confirms measured savings.
+
+| Field | Value |
+| --- | --- |
+| risk_level | low |
+| accuracy_risk | low - candidates are separated and schema/API signals are consistent |
+| module_policy | low risk: skip expensive diagnostics |
+| module_skipped_by_risk | {"items": ["value_retrieval", "shadow_repair", "repair_safety_verifier"], "total_items": 4, "truncated_items": true} |
+| token_saved_estimate | 264 |
+| runtime_saved_estimate_ms | 25.0 |
+| savings_are_estimates | True |
+| measured_efficiency_improvement_claimed | False |
+| behavior_changed | False |
+
+## Schema Context Voting
+
+Schema context voting is diagnostic guidance for high-risk rows and does not change executed SQL/API plans.
+
+| Field | Value |
+| --- | --- |
+| active | False |
+| schema_vote_agreement | n/a |
+| compact_context_safe | n/a |
+| fallback_reason | n/a |
+| compact_candidate_tables | n/a |
+| fallback_candidate_tables | n/a |
+| compact_candidate_apis | n/a |
+| fallback_candidate_apis | n/a |
+| token_delta | n/a |
+| behavior_changed | False |
 
 ## Value Retrieval Cache
 

@@ -28,6 +28,10 @@ Status: **no measured strict-score improvement**.
 - Shadow repair eval ran: True
 - Shadow repair execution enabled: False
 - Shadow repaired better/equal/worse/unsafe: 1/26/8/21
+- Risk level distribution: {'high': 28, 'low': 2, 'medium': 5}
+- Risk-controller estimated token savings total: 1848.0 (estimated only: True)
+- Risk-controller estimated runtime savings total ms: 175.0 (measured efficiency improvement claimed: False)
+- Schema vote active/agreement/compact-safe: 28/28/28
 - Secret scan OK: True
 - Visualization artifacts directory: `/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/visualizations`
 - Visualization artifacts inside final submission: 0
@@ -71,6 +75,8 @@ Status: **no measured strict-score improvement**.
 | Endpoint family ranking | domain-aware retrieval | `dashagent/endpoint_family_ranker.py` | True | False | checkpoint_endpoint_family_ranking/report metrics |
 | Value-to-API ranking | CHESS value grounding | `dashagent/endpoint_family_ranker.py` | True | False | checkpoint_value_to_api_ranking/report metrics |
 | Gated risk-cluster repair | CHASE-SQL-style candidate repair | `dashagent/candidate_context_builder.py` | True | False | checkpoint_gated_risk_cluster_repair/report metrics |
+| Risk-based efficiency controller | adaptive retrieval control | `dashagent/risk_efficiency_controller.py` | True | False | checkpoint_risk_efficiency_controller/report metrics |
+| Schema context voting | full-vs-compact context voting | `dashagent/schema_context_voter.py` | True | False | checkpoint_schema_context_voting/report metrics |
 
 ## Diagnostic Candidate Risk Clusters
 
@@ -114,6 +120,8 @@ Execution repair remains disabled by default. These recommendations are offline 
 - If execution repair remains disabled, ranking changes are not claimed as accuracy improvements.
 - Offline shadow repair eval compares candidate-derived repaired plans without changing packaged execution.
 - Any repair canary enablement is a recommendation only; canary flags remain disabled by default.
+- Risk-based efficiency savings are labeled as estimates; no measured efficiency improvement is claimed because packaged execution did not skip modules.
+- Schema context voting compares compact and broader context for high-risk diagnostics only and does not change executed SQL/API plans.
 - SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.
 - No live API evidence is fabricated; Adobe API remains dry-run without credentials.
 - Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.

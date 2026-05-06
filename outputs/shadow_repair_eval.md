@@ -61,6 +61,99 @@ Shadow repair execution is **disabled by default**. This report compares current
 | `schema_vs_dataset_confusion` | 2 | 1 | 1 | 0 | 0.0574 | 0.0 | 0.0 | 0.0 | False | `ENABLE_REPAIR_FOR_SCHEMA_DATASET_CONFUSION` | keep_disabled |
 | `broad_domain_api_confusion` | 1 | 0 | 1 | 0 | 0.0 | 0.0 | 0.0 | 0.0 | False | `None` | keep_disabled |
 
+## Diagnostic Risk-Based Efficiency Controller
+
+Savings are estimates only. Packaged SQL_FIRST_API_VERIFY execution did not skip modules or change measured runtime/tokens in this pass.
+
+- Risk level distribution: {'low': 2, 'medium': 4, 'high': 29}
+- Estimated token savings total: 1584.0
+- Estimated runtime savings total ms: 150.0
+- Measured efficiency improvement claimed: False
+
+| Query ID | Risk | Accuracy risk | Skipped modules | Token saved estimate | Runtime saved estimate ms |
+| --- | --- | --- | --- | ---: | ---: |
+| `example_000` | low | low - candidates are separated and schema/API signals are consistent | value_retrieval, shadow_repair, repair_safety_verifier, schema_context_voting | 264 | 25.0 |
+| `example_001` | medium | medium - candidate confidence or endpoint confidence is not strong enough for compact-only diagnostics | value_retrieval, shadow_repair, repair_safety_verifier, schema_context_voting | 264 | 25.0 |
+| `example_002` | low | low - candidates are separated and schema/API signals are consistent | value_retrieval, shadow_repair, repair_safety_verifier, schema_context_voting | 264 | 25.0 |
+| `example_003` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 |
+| `example_004` | high | high - zero_score_margin, risk_cluster:zero_score_margin | none | 0 | 0 |
+| `example_005` | high | high - zero_score_margin, risk_cluster:zero_score_margin | none | 0 | 0 |
+| `example_006` | high | high - risk_cluster:schema_vs_dataset_confusion | none | 0 | 0 |
+| `example_007` | high | high - risk_cluster:schema_vs_dataset_confusion | none | 0 | 0 |
+| `example_008` | medium | medium - candidate confidence or endpoint confidence is not strong enough for compact-only diagnostics | value_retrieval, shadow_repair, repair_safety_verifier, schema_context_voting | 264 | 25.0 |
+| `example_009` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 |
+| `example_010` | high | high - zero_score_margin, risk_cluster:zero_score_margin | none | 0 | 0 |
+| `example_011` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 |
+| `example_012` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 |
+| `example_013` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 |
+| `example_014` | medium | medium - candidate confidence or endpoint confidence is not strong enough for compact-only diagnostics | value_retrieval, shadow_repair, repair_safety_verifier, schema_context_voting | 264 | 25.0 |
+| `example_015` | high | high - risk_cluster:tag_api_confusion | none | 0 | 0 |
+| `example_016` | high | high - risk_cluster:tag_api_confusion | none | 0 | 0 |
+| `example_017` | high | high - risk_cluster:tag_api_confusion | none | 0 | 0 |
+| `example_018` | high | high - zero_score_margin, risk_cluster:zero_score_margin | none | 0 | 0 |
+| `example_019` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 |
+| `example_020` | high | high - risk_cluster:broad_domain_api_confusion | none | 0 | 0 |
+| `example_021` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 |
+| `example_022` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 |
+| `example_023` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 |
+| `example_024` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 |
+| `example_025` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 |
+| `example_026` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 |
+| `example_027` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 |
+| `example_028` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 |
+| `example_029` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 |
+| `example_030` | high | high - low_confidence, zero_score_margin, risk_cluster:zero_score_margin | none | 0 | 0 |
+| `example_031` | high | high - risk_cluster:batch_endpoint_confusion | none | 0 | 0 |
+| `example_032` | high | high - risk_cluster:batch_endpoint_confusion | none | 0 | 0 |
+| `example_033` | medium | medium - candidate confidence or endpoint confidence is not strong enough for compact-only diagnostics | value_retrieval, shadow_repair, repair_safety_verifier, schema_context_voting | 264 | 25.0 |
+| `example_034` | high | high - low_confidence, zero_score_margin, risk_cluster:zero_score_margin | none | 0 | 0 |
+
+## Schema Context Voting
+
+Schema voting is high-risk diagnostic guidance only and does not alter the executed SQL/API plan.
+
+- Active votes: 29
+- Agreements: 29
+- Compact context safe count: 29
+
+| Query ID | Active | Agreement | Compact safe? | Fallback reason | Token delta |
+| --- | --- | --- | --- | --- | ---: |
+| `example_000` | False | None | None | schema voting is reserved for high-risk diagnostics | None |
+| `example_001` | False | None | None | schema voting is reserved for high-risk diagnostics | None |
+| `example_002` | False | None | None | schema voting is reserved for high-risk diagnostics | None |
+| `example_003` | True | True | True | compact and fallback top candidates agree | 1596 |
+| `example_004` | True | True | True | compact and fallback top candidates agree | 1060 |
+| `example_005` | True | True | True | compact and fallback top candidates agree | 1363 |
+| `example_006` | True | True | True | compact and fallback top candidates agree | 1281 |
+| `example_007` | True | True | True | compact and fallback top candidates agree | 1156 |
+| `example_008` | False | None | None | schema voting is reserved for high-risk diagnostics | None |
+| `example_009` | True | True | True | compact and fallback top candidates agree | 1095 |
+| `example_010` | True | True | True | compact and fallback top candidates agree | 1179 |
+| `example_011` | True | True | True | compact and fallback top candidates agree | 1316 |
+| `example_012` | True | True | True | compact and fallback top candidates agree | 1498 |
+| `example_013` | True | True | True | compact and fallback top candidates agree | 1346 |
+| `example_014` | False | None | None | schema voting is reserved for high-risk diagnostics | None |
+| `example_015` | True | True | True | compact and fallback top candidates agree | 1046 |
+| `example_016` | True | True | True | compact and fallback top candidates agree | 1217 |
+| `example_017` | True | True | True | compact and fallback top candidates agree | 987 |
+| `example_018` | True | True | True | compact and fallback top candidates agree | 1084 |
+| `example_019` | True | True | True | compact and fallback top candidates agree | 1280 |
+| `example_020` | True | True | True | compact and fallback top candidates agree | 1068 |
+| `example_021` | True | True | True | compact and fallback top candidates agree | 1108 |
+| `example_022` | True | True | True | compact and fallback top candidates agree | 1187 |
+| `example_023` | True | True | True | compact and fallback top candidates agree | 1336 |
+| `example_024` | True | True | True | compact and fallback top candidates agree | 1274 |
+| `example_025` | True | True | True | compact and fallback top candidates agree | 1345 |
+| `example_026` | True | True | True | compact and fallback top candidates agree | 1176 |
+| `example_027` | True | True | True | compact and fallback top candidates agree | 1495 |
+| `example_028` | True | True | True | compact and fallback top candidates agree | 1350 |
+| `example_029` | True | True | True | compact and fallback top candidates agree | 1128 |
+| `example_030` | True | True | True | compact and fallback top candidates agree | 839 |
+| `example_031` | True | True | True | compact and fallback top candidates agree | 1312 |
+| `example_032` | True | True | True | compact and fallback top candidates agree | 1034 |
+| `example_033` | False | None | None | schema voting is reserved for high-risk diagnostics | None |
+| `example_034` | True | True | True | compact and fallback top candidates agree | 1094 |
+
 ## Safety Notes
 
 - Packaged strategy unchanged: True

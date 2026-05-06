@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import hashlib
 import subprocess
 import sys
 from pathlib import Path
@@ -16,8 +17,13 @@ def test_shadow_repair_eval_rows_have_paired_summary_and_stable_hash(tiny_projec
 
     assert "paired_shadow_eval_summary" in payload_one
     assert "cluster_canary_recommendations" in payload_one
+    assert "risk_efficiency_controller_summary" in payload_one
+    assert "schema_context_voting_summary" in payload_one
     assert payload_one["rows"]
     assert payload_one["rows"][0]["decision_hash"] == decision_hash(payload_one["rows"][0])
+    assert "risk_level" in payload_one["rows"][0]
+    assert "schema_context_vote" in payload_one["rows"][0]
+    assert payload_one["rows"][0]["savings_are_estimates"] is True
     assert [row["decision_hash"] for row in payload_one["rows"]] == [row["decision_hash"] for row in payload_two["rows"]]
 
 
@@ -68,6 +74,40 @@ def test_shadow_script_artifact_isolation_exact_paths(tiny_project):
     assert payload["artifact_isolation"]["writes_final_submission"] is False
 
 
+def test_shadow_eval_does_not_modify_packaged_output_folders(tiny_project):
+    protected_submission = tiny_project.outputs_dir / "final_submission" / "metadata.json"
+    protected_eval = tiny_project.outputs_dir / "eval" / "protected" / "sql_first_api_verify" / "trajectory.json"
+    protected_submission.parent.mkdir(parents=True, exist_ok=True)
+    protected_eval.parent.mkdir(parents=True, exist_ok=True)
+    protected_submission.write_text('{"preferred_strategy":"SQL_FIRST_API_VERIFY"}', encoding="utf-8")
+    protected_eval.write_text('{"strategy":"SQL_FIRST_API_VERIFY","tool_call_count":1}', encoding="utf-8")
+    before = {
+        "final_submission": _hash_tree(tiny_project.outputs_dir / "final_submission"),
+        "eval": _hash_tree(tiny_project.outputs_dir / "eval"),
+    }
+    _ = run_shadow_repair_eval(tiny_project)
+    after = {
+        "final_submission": _hash_tree(tiny_project.outputs_dir / "final_submission"),
+        "eval": _hash_tree(tiny_project.outputs_dir / "eval"),
+    }
+    assert before == after
+
+
+def test_no_duplicate_shadow_repair_modules_exist():
+    root = Path(__file__).resolve().parents[1]
+    assert (root / "scripts" / "run_shadow_repair_eval.py").exists()
+    assert (root / "dashagent" / "repair_safety_verifier.py").exists()
+    assert [path for path in (root / "scripts").glob("run_shadow_repair_eval.py")] == [root / "scripts" / "run_shadow_repair_eval.py"]
+    assert [path for path in (root / "dashagent").glob("repair_safety_verifier.py")] == [root / "dashagent" / "repair_safety_verifier.py"]
+    for forbidden in [
+        "shadow_repair_evaluator.py",
+        "repair_verifier_v2.py",
+        "risk_repair_eval.py",
+    ]:
+        assert not (root / "scripts" / forbidden).exists()
+        assert not (root / "dashagent" / forbidden).exists()
+
+
 def _executed_sql(trajectory: dict) -> list[str]:
     return [step.get("sql") for step in trajectory.get("steps", []) if step.get("kind") == "sql_call"]
 
@@ -78,3 +118,13 @@ def _executed_api(trajectory: dict) -> list[str]:
         for step in trajectory.get("steps", [])
         if step.get("kind") == "api_call"
     ]
+
+
+def _hash_tree(root: Path) -> dict[str, str]:
+    if not root.exists():
+        return {}
+    hashes = {}
+    for path in sorted(item for item in root.rglob("*") if item.is_file()):
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        hashes[str(path.relative_to(root))] = digest
+    return hashes

@@ -117,6 +117,8 @@ SQL evidence is available. API tool was invoked and validated, but live API evid
 | Structural schema preservation | RSL-SQL | True | Report-only bridge/relationship preservation diagnostics | keeps relevant tables, columns, and bridges visible | diagnostic overhead only | checkpoint_structural_schema_preservation |
 | Value-to-API ranking | CHESS | False | High-confidence entity matches can boost API-family ranking in reports | grounds named entities and IDs before planning | bounded cached retrieval budget | checkpoint_value_to_api_ranking |
 | Gated risk-cluster repair | CHASE-SQL-style repair | True | Diagnostic repaired candidate comparison without execution change | makes technique visibility auditable | diagnostic overhead only | checkpoint_gated_risk_cluster_repair |
+| Risk-based efficiency controller | adaptive retrieval control | True | Diagnostic policy that estimates skipped module cost by risk level | makes technique visibility auditable | diagnostic overhead only | checkpoint_risk_efficiency_controller |
+| Schema context voting | full-vs-compact context voting | True | High-risk diagnostic comparison of compact and broader context | makes technique visibility auditable | diagnostic overhead only | checkpoint_schema_context_voting |
 
 ## Candidate Ranking Diagnostics
 
@@ -134,6 +136,39 @@ SQL evidence is available. API tool was invoked and validated, but live API evid
 | --- | --- | --- | --- | ---: | --- | --- |
 | zero_score_margin | {"api": {"items": [{"method": "GET", "params": {"filter": "state eq 'failed'", "limit": "50"}, "path": "/data/foundation/flowservice/flows"}], "total_items": 1, "truncated_items": false}, "score": 0.6744, "sql": {"items": ["SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"], "total_items": 1, "truncated_items": false}} | {"api": {"items": [{"endpoint_family": "flow_runs", "endpoint_id": "flowservice_runs", "method": "GET", "params": {"limit": 50}, "path": "/data/foundation/flowservice/runs"}], "total_items": 1, "truncated_items": false}, "score": 0.6744, "sql": {"items": ["SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"], "total_items": 1, "truncated_items": false}} | safe | 0.0 | {'tool_delta': 0, 'token_delta': 0, 'runtime_delta': 0.0} | safe_shadow_tie_recommend_canary |
 | execution changed? | False | reason | offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled | decision hash | 2528515962e3455e | |
+
+## Risk-Based Efficiency Controller
+
+Token/runtime savings in this section are estimates only unless packaged execution explicitly changes and validation confirms measured savings.
+
+| Field | Value |
+| --- | --- |
+| risk_level | high |
+| accuracy_risk | high - zero_score_margin, risk_cluster:zero_score_margin |
+| module_policy | high risk: value retrieval + shadow repair + verifier diagnostics |
+| module_skipped_by_risk | n/a |
+| token_saved_estimate | 0 |
+| runtime_saved_estimate_ms | 0 |
+| savings_are_estimates | True |
+| measured_efficiency_improvement_claimed | False |
+| behavior_changed | False |
+
+## Schema Context Voting
+
+Schema context voting is diagnostic guidance for high-risk rows and does not change executed SQL/API plans.
+
+| Field | Value |
+| --- | --- |
+| active | True |
+| schema_vote_agreement | True |
+| compact_context_safe | True |
+| fallback_reason | compact and fallback top candidates agree |
+| compact_candidate_tables | {"items": ["dim_connector", "dim_target", "hkg_br_base_segment_used_by_dependent_segment"], "total_items": 8, "truncated_items": true} |
+| fallback_candidate_tables | {"items": ["dim_connector", "dim_target", "hkg_br_base_segment_used_by_dependent_segment"], "total_items": 8, "truncated_items": true} |
+| compact_candidate_apis | {"items": ["flowservice_runs", "flowservice_flows", "export_batch_failed"], "total_items": 5, "truncated_items": true} |
+| fallback_candidate_apis | {"items": ["flowservice_runs", "flowservice_flows", "export_batch_failed"], "total_items": 8, "truncated_items": true} |
+| token_delta | 1060 |
+| behavior_changed | False |
 
 ## Value Retrieval Cache
 

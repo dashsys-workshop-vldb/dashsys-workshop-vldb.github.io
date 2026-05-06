@@ -156,14 +156,14 @@
     "valid_tool_calls": 1
   },
   "metrics": {
-    "answer_time": 0.00037575000897049904,
+    "answer_time": 0.00034074997529387474,
     "checkpoint_count": 21,
     "estimated_tokens": 758,
-    "execution_time": 0.00027791596949100494,
-    "planning_time": 0.00017141702119261026,
-    "preprocessing_time": 0.0031238748924806714,
+    "execution_time": 0.00020929193124175072,
+    "planning_time": 0.00021062500309199095,
+    "preprocessing_time": 0.005244708969257772,
     "prompt_context_tokens": "n/a - prompt_context_tokens missing",
-    "runtime": 0.010752249974757433
+    "runtime": 0.010271625011228025
   },
   "normalization": {
     "matching_text": "which file are available for download in batch 69de8a0e0cc6102b5d11f01e?",
@@ -299,13 +299,115 @@
       "source_inspiration": "CHASE-SQL-style repair",
       "technique": "Gated risk-cluster repair",
       "visualization_checkpoint": "checkpoint_gated_risk_cluster_repair"
+    },
+    {
+      "active": true,
+      "correctness_impact": "makes technique visibility auditable",
+      "effect_on_dataflow": "Diagnostic policy that estimates skipped module cost by risk level",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "adaptive retrieval control",
+      "technique": "Risk-based efficiency controller",
+      "visualization_checkpoint": "checkpoint_risk_efficiency_controller"
+    },
+    {
+      "active": true,
+      "correctness_impact": "makes technique visibility auditable",
+      "effect_on_dataflow": "High-risk diagnostic comparison of compact and broader context",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "full-vs-compact context voting",
+      "technique": "Schema context voting",
+      "visualization_checkpoint": "checkpoint_schema_context_voting"
     }
   ],
+  "risk_efficiency_controller": {
+    "accuracy_risk": "high - risk_cluster:batch_endpoint_confusion",
+    "active": true,
+    "available": true,
+    "behavior_changed": false,
+    "diagnostic_only": true,
+    "estimate_basis": "static diagnostic-module cost estimates; packaged execution did not skip modules",
+    "inputs": {
+      "confidence": 0.758,
+      "endpoint_family_confidence": 1.0,
+      "missing_candidate_signals": {},
+      "risk_cluster": "batch_endpoint_confusion",
+      "schema_link_risk": "low",
+      "score_margin": 0.19
+    },
+    "measured_efficiency_improvement_claimed": false,
+    "module_policy": "high risk: value retrieval + shadow repair + verifier diagnostics",
+    "module_skipped_by_risk": [],
+    "modules_run_by_policy": [
+      "hybrid_candidate_scoring",
+      "endpoint_family_ranking",
+      "value_retrieval",
+      "shadow_repair",
+      "repair_safety_verifier",
+      "schema_context_voting"
+    ],
+    "risk_level": "high",
+    "risk_reasons": [
+      "risk_cluster:batch_endpoint_confusion"
+    ],
+    "runtime_saved_estimate_ms": 0,
+    "savings_are_estimates": true,
+    "token_saved_estimate": 0
+  },
   "route": {
     "api_policy": "n/a - no API policy recorded",
     "confidence": 0.9,
     "mode": "API_ONLY",
     "risk": "medium"
+  },
+  "schema_context_vote": {
+    "active": true,
+    "available": true,
+    "behavior_changed": false,
+    "compact_candidate_apis": [
+      "export_batch_files",
+      "audit_events",
+      "audit_events_short",
+      "export_batch_failed",
+      "catalog_batch_detail"
+    ],
+    "compact_candidate_tables": [
+      "dim_segment",
+      "hkg_br_blueprint_collection",
+      "dim_collection",
+      "dim_blueprint",
+      "hkg_br_blueprint_property",
+      "br_campaign_segment",
+      "hkg_br_segment_target",
+      "hkg_br_collection_property"
+    ],
+    "compact_context_safe": true,
+    "compact_context_tokens": 4751,
+    "diagnostic_only": true,
+    "fallback_candidate_apis": [
+      "export_batch_files",
+      "audit_events",
+      "audit_events_short",
+      "export_batch_failed",
+      "catalog_batch_detail",
+      "schemas_short",
+      "catalog_batches",
+      "catalog_datasets"
+    ],
+    "fallback_candidate_tables": [
+      "dim_segment",
+      "hkg_br_blueprint_collection",
+      "hkg_br_blueprint_property",
+      "dim_collection",
+      "dim_blueprint",
+      "hkg_br_segment_target",
+      "dim_campaign",
+      "dim_target"
+    ],
+    "fallback_context_tokens": 6063,
+    "fallback_reason": "compact and fallback top candidates agree",
+    "query": "Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?",
+    "schema_vote_agreement": true,
+    "token_delta": 1312
   },
   "shadow_repair": {
     "available": true,

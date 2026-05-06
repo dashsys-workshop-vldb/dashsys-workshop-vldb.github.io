@@ -106,6 +106,29 @@ def fake_trajectory():
             },
             "value_to_api_ranking": {"active": True, "value_match_used_for_api_ranking": False},
             "gated_risk_cluster_repair": {"active": True, "diagnostic_only": True, "risk_cluster": "zero_score_margin"},
+            "risk_efficiency_controller": {
+                "active": True,
+                "risk_level": "high",
+                "accuracy_risk": "high - zero_score_margin",
+                "module_skipped_by_risk": [],
+                "token_saved_estimate": 0,
+                "runtime_saved_estimate_ms": 0,
+                "savings_are_estimates": True,
+                "measured_efficiency_improvement_claimed": False,
+                "behavior_changed": False,
+            },
+            "schema_context_vote": {
+                "active": True,
+                "schema_vote_agreement": True,
+                "compact_context_safe": True,
+                "fallback_reason": "compact and fallback top candidates agree",
+                "compact_candidate_tables": ["dim_campaign"],
+                "fallback_candidate_tables": ["dim_campaign"],
+                "compact_candidate_apis": ["journey_list"],
+                "fallback_candidate_apis": ["journey_list"],
+                "token_delta": 42,
+                "behavior_changed": False,
+            },
         },
         "_shadow_repair_eval_row": {
             "risk_cluster": "zero_score_margin",
@@ -125,6 +148,29 @@ def fake_trajectory():
             "decision_hash": "abc123",
             "execution_changed": False,
             "why_execution_not_changed": "offline shadow evaluation only",
+            "risk_efficiency_controller": {
+                "active": True,
+                "risk_level": "high",
+                "accuracy_risk": "high - zero_score_margin",
+                "module_skipped_by_risk": [],
+                "token_saved_estimate": 0,
+                "runtime_saved_estimate_ms": 0,
+                "savings_are_estimates": True,
+                "measured_efficiency_improvement_claimed": False,
+                "behavior_changed": False,
+            },
+            "schema_context_vote": {
+                "active": True,
+                "schema_vote_agreement": True,
+                "compact_context_safe": True,
+                "fallback_reason": "compact and fallback top candidates agree",
+                "compact_candidate_tables": ["dim_campaign"],
+                "fallback_candidate_tables": ["dim_campaign"],
+                "compact_candidate_apis": ["journey_list"],
+                "fallback_candidate_apis": ["journey_list"],
+                "token_delta": 42,
+                "behavior_changed": False,
+            },
         },
     }
 
@@ -152,6 +198,10 @@ def test_dataflow_outputs_mermaid_markdown_html_and_redacts():
     assert "Shadow Repair / What-if Evaluation" in md
     assert "zero_score_margin" in md
     assert "abc123" in md
+    assert "Risk-Based Efficiency Controller" in md
+    assert "token/runtime savings in this section are estimates" in md.lower()
+    assert "Schema Context Voting" in md
+    assert "compact and fallback top candidates agree" in md
     assert "Hybrid Candidate Scoring" in md
     assert "Endpoint Family Ranker" in md
     assert "SQLGlot AST validation" in md
@@ -197,6 +247,8 @@ def test_dataflow_artifacts_are_real_values_and_not_final_submission(tmp_path):
     assert "span_count" in spans
     assert "sql_ast_validation_span" in spans
     assert "checkpoint_hybrid_candidate_scoring" in spans
+    assert "checkpoint_risk_efficiency_controller" in spans
+    assert "checkpoint_schema_context_voting" in spans
 
 
 def test_dataflow_mermaid_required_subgraphs_and_missing_fields():

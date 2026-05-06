@@ -158,14 +158,14 @@
     "valid_tool_calls": 2
   },
   "metrics": {
-    "answer_time": 0.0005428330041468143,
+    "answer_time": 0.0005662499461323023,
     "checkpoint_count": 24,
     "estimated_tokens": 950,
-    "execution_time": 0.00040666607674211264,
-    "planning_time": 0.001395000028423965,
-    "preprocessing_time": 0.0021510409424081445,
+    "execution_time": 0.0003949590027332306,
+    "planning_time": 0.001332291983999312,
+    "preprocessing_time": 0.0020700000459328294,
     "prompt_context_tokens": "n/a - prompt_context_tokens missing",
-    "runtime": 0.013024582993239164
+    "runtime": 0.012407125090248883
   },
   "normalization": {
     "matching_text": "when was the journey 'birthday message' published?",
@@ -294,13 +294,75 @@
       "source_inspiration": "CHASE-SQL-style repair",
       "technique": "Gated risk-cluster repair",
       "visualization_checkpoint": "checkpoint_gated_risk_cluster_repair"
+    },
+    {
+      "active": true,
+      "correctness_impact": "makes technique visibility auditable",
+      "effect_on_dataflow": "Diagnostic policy that estimates skipped module cost by risk level",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "adaptive retrieval control",
+      "technique": "Risk-based efficiency controller",
+      "visualization_checkpoint": "checkpoint_risk_efficiency_controller"
+    },
+    {
+      "active": false,
+      "correctness_impact": "makes technique visibility auditable",
+      "effect_on_dataflow": "High-risk diagnostic comparison of compact and broader context",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "full-vs-compact context voting",
+      "technique": "Schema context voting",
+      "visualization_checkpoint": "checkpoint_schema_context_voting"
     }
   ],
+  "risk_efficiency_controller": {
+    "accuracy_risk": "low - candidates are separated and schema/API signals are consistent",
+    "active": true,
+    "available": true,
+    "behavior_changed": false,
+    "diagnostic_only": true,
+    "estimate_basis": "static diagnostic-module cost estimates; packaged execution did not skip modules",
+    "inputs": {
+      "confidence": 0.92,
+      "endpoint_family_confidence": 1.0,
+      "missing_candidate_signals": {},
+      "risk_cluster": "not_targeted",
+      "schema_link_risk": "low",
+      "score_margin": 1.3
+    },
+    "measured_efficiency_improvement_claimed": false,
+    "module_policy": "low risk: skip expensive diagnostics",
+    "module_skipped_by_risk": [
+      "value_retrieval",
+      "shadow_repair",
+      "repair_safety_verifier",
+      "schema_context_voting"
+    ],
+    "modules_run_by_policy": [
+      "hybrid_candidate_scoring",
+      "endpoint_family_ranking"
+    ],
+    "risk_level": "low",
+    "risk_reasons": [
+      "strong_candidate_separation"
+    ],
+    "runtime_saved_estimate_ms": 25.0,
+    "savings_are_estimates": true,
+    "token_saved_estimate": 264
+  },
   "route": {
     "api_policy": "n/a - no API policy recorded",
     "confidence": 0.88,
     "mode": "SQL_PLUS_API",
     "risk": "medium"
+  },
+  "schema_context_vote": {
+    "active": false,
+    "available": true,
+    "behavior_changed": false,
+    "compact_context_safe": null,
+    "diagnostic_only": true,
+    "reason": "schema voting is reserved for high-risk diagnostics",
+    "schema_vote_agreement": null
   },
   "shadow_repair": {
     "available": true,
