@@ -17,6 +17,11 @@
 - AST-guided SQL canary recommendation: `keep_shadow_only`
 - Repair selector v3 success: False
 - Accuracy decision: `keep_all_accuracy_changes_shadow_only`
+- 0.70 push achieved score: 0.6491
+- 0.70 reached safely: False
+- 0.70 push recommendation: `submit_current_official_token_reduction_version`
+- Redundant file audit ran: True
+- Cleanup applied/deleted/protected-ok: True / 4 / True
 - Repair selector v2 success: False
 - Final recommendation: `ready_to_submit_with_official_token_reduction`
 
@@ -27,3 +32,4 @@
 - Keep compact context disabled.
 - Use endpoint/schema rule candidates only as future canary inputs.
 - Keep accuracy changes shadow-only unless the accuracy decision report explicitly recommends promotion.
+- Use the 0.70 push report to decide whether any targeted accuracy change is worth a later explicit promotion.

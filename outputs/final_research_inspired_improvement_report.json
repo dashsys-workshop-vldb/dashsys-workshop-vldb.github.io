@@ -12,7 +12,7 @@
       "hidden_style_total_cases": 48,
       "recommendation": "keep_all_accuracy_changes_shadow_only",
       "repair_selector_v3_success": false,
-      "runtime": 0.0115,
+      "runtime": 0.0114,
       "strict_correctness": 0.6743,
       "strict_final_score": 0.6491,
       "tool_calls": 1.4571
@@ -423,6 +423,20 @@
       "unsafe_rows": 0
     }
   },
+  "execution_candidate_search": {
+    "summary": {
+      "best_projected_strict_final_score": 0.6491,
+      "best_total_score_delta": 0,
+      "fallback_safe_improvement": false,
+      "packaged_execution_changed": false,
+      "recommendation": "keep_shadow_only",
+      "safe_rows": 0,
+      "selected_query_ids": [],
+      "target_0_70_reached": false,
+      "total_target_rows": 10,
+      "unsafe_rows": 10
+    }
+  },
   "feature_flags": {
     "ENABLE_AST_GUIDED_SQL_TIEBREAK": false,
     "ENABLE_COMPACT_CONTEXT_WHEN_SCHEMA_VOTE_SAFE": false,
@@ -444,6 +458,7 @@
     "ENABLE_SCHEMA_LINKING": true,
     "ENABLE_SQL_AST_VALIDATION": true,
     "ENABLE_STRUCTURAL_SCHEMA_PRESERVATION": true,
+    "ENABLE_TARGETED_ACCURACY_RULES": false,
     "ENABLE_VALUE_RETRIEVAL": true,
     "ENABLE_VALUE_TO_API_RANKING": true
   },
@@ -455,6 +470,60 @@
       "schema_stability_rate": 1.0,
       "top_failure_categories": [],
       "total_cases": 48
+    }
+  },
+  "llm_candidate_search": {
+    "summary": {
+      "recommendation": "keep_shadow_only",
+      "safe_rows": 0,
+      "status": "skipped_no_llm_key",
+      "unsafe_rows": 0
+    }
+  },
+  "low_score_failure_mining_report": {
+    "summary": {
+      "current_avg_final_score": 0.6491,
+      "estimated_minimum_rows_to_fix": 9,
+      "failure_type_counts": [
+        [
+          "wrong_endpoint_family",
+          26
+        ],
+        [
+          "missing_api_candidate",
+          7
+        ],
+        [
+          "no_candidate_diversity",
+          2
+        ]
+      ],
+      "packaged_execution_changed": false,
+      "safest_improvement_clusters": [
+        [
+          "wrong_endpoint_family",
+          18
+        ],
+        [
+          "missing_api_candidate",
+          5
+        ]
+      ],
+      "score_needed_to_reach_0_70_per_row": 0.0509,
+      "score_needed_to_reach_0_70_total": 1.7815,
+      "top_10_target_rows": [
+        "example_017",
+        "example_030",
+        "example_031",
+        "example_029",
+        "example_019",
+        "example_028",
+        "example_025",
+        "example_024",
+        "example_020",
+        "example_021"
+      ],
+      "total_rows": 35
     }
   },
   "notes": [
@@ -476,7 +545,9 @@
     "Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.",
     "Inactive techniques appear compactly in visualization status tables, not as empty checkpoints.",
     "Behavior-changing repair execution is feature-flagged off by default; strict score and efficiency gates decide whether it can ever be enabled.",
-    "Official-token reduction is the only behavior-changing default enabled in this pass; repair execution and compact context remain disabled."
+    "Official-token reduction is the only behavior-changing default enabled in this pass; repair execution and compact context remain disabled.",
+    "The 0.70 strict-score push is isolated; targeted accuracy rules remain default-off unless a later explicit promotion passes all gates.",
+    "Redundant-file cleanup is allowlist-based and refuses protected source/data/eval/final-submission paths."
   ],
   "official_token_accounting_report": {
     "aggregate": {
@@ -706,6 +777,33 @@
       "tool_delta": 0.0
     }
   },
+  "redundant_file_audit": {
+    "summary": {
+      "classification_counts": {
+        "required_reports": 59,
+        "required_runtime": 3,
+        "required_submission": 6,
+        "required_validation": 2,
+        "safe_to_gitignore_only": 1
+      },
+      "needs_manual_review_count": 0,
+      "required_count": 70,
+      "safe_to_delete_generated_count": 0,
+      "safe_to_gitignore_only_count": 1,
+      "total_rows": 71
+    }
+  },
+  "redundant_file_cleanup": {
+    "summary": {
+      "candidate_count": 4,
+      "deleted_count": 4,
+      "dry_run_delete_count": 0,
+      "missing_count": 0,
+      "no_protected_files_deleted": true,
+      "protected_deleted_count": 0,
+      "refused_count": 0
+    }
+  },
   "repair_selector_v2_shadow_eval": {
     "summary": {
       "avg_score_delta": -0.0357,
@@ -888,6 +986,15 @@
       "catalog_alias_gap_candidate_count": 1,
       "positive_schema_dataset_rows": 1,
       "repair_enabled": false
+    }
+  },
+  "score_0_7_push_report": {
+    "summary": {
+      "best_safe_score_delta": 0.0,
+      "fallback_safe_improvement": false,
+      "final_recommendation": "submit_current_official_token_reduction_version",
+      "strict_score_achieved": 0.6491,
+      "target_0_70_reached": false
     }
   },
   "shadow_repair_eval": {
@@ -1139,12 +1246,30 @@
     "endpoint_schema_rule_candidate_safe_rules": 9,
     "endpoint_schema_rule_packaged_trial_recommendation": "keep_shadow_only",
     "estimated_tokens_gate_ok": true,
+    "execution_candidate_search_best_projected_score": 0.6491,
+    "execution_candidate_search_recommendation": "keep_shadow_only",
+    "execution_candidate_search_safe_rows": 0,
     "final_submission_format_unchanged": true,
     "hidden_style_eval_failed_cases": 0,
     "hidden_style_eval_family_stability_rate": 1.0,
     "hidden_style_eval_passed_cases": 48,
     "hidden_style_eval_schema_stability_rate": 1.0,
     "hidden_style_eval_total_cases": 48,
+    "llm_candidate_search_recommendation": "keep_shadow_only",
+    "llm_candidate_search_status": "skipped_no_llm_key",
+    "low_score_mining_score_needed_total": 1.7815,
+    "low_score_mining_top_targets": [
+      "example_017",
+      "example_030",
+      "example_031",
+      "example_029",
+      "example_019",
+      "example_028",
+      "example_025",
+      "example_024",
+      "example_020",
+      "example_021"
+    ],
     "measured_accuracy_improvement_claimed": false,
     "measured_efficiency_improvement_claimed": true,
     "no_secret_scan_ok": true,
@@ -1223,6 +1348,10 @@
     "packaged_execution_changed": true,
     "packaged_preferred_strategy": "SQL_FIRST_API_VERIFY",
     "ranking_only_no_score_claim": true,
+    "redundant_file_audit_ran": true,
+    "redundant_file_cleanup_applied": true,
+    "redundant_file_cleanup_deleted_count": 4,
+    "redundant_file_cleanup_no_protected_deleted": true,
     "repair_selector_v2_success": false,
     "repair_selector_v3_strictly_better_selected_count": 0,
     "repair_selector_v3_success": false,
@@ -1255,6 +1384,9 @@
     "schema_dataset_positive_repair_rows": 1,
     "schema_vote_active_count": 28,
     "schema_vote_agreement_count": 28,
+    "score_0_7_push_achieved": 0.6491,
+    "score_0_7_push_recommendation": "submit_current_official_token_reduction_version",
+    "score_0_7_push_target_reached": false,
     "shadow_repair_better_count": 1,
     "shadow_repair_equal_count": 26,
     "shadow_repair_eval_ran": true,
@@ -1264,6 +1396,9 @@
     "sql_ast_candidate_ranking_candidates": 15,
     "status": "strict-score improvement measured",
     "strict_score_regression_ok": true,
+    "targeted_accuracy_trial_recommendation": "keep_shadow_only",
+    "targeted_accuracy_trial_strict_final_score": 0.6491,
+    "targeted_accuracy_trial_target_0_70_reached": false,
     "token_overhead_pct": -0.0238,
     "tool_call_delta": 0.0,
     "tool_call_gate_ok": true,
@@ -1278,8 +1413,29 @@
       "Keep repair execution disabled.",
       "Keep compact context disabled.",
       "Use endpoint/schema rule candidates only as future canary inputs.",
-      "Keep accuracy changes shadow-only unless the accuracy decision report explicitly recommends promotion."
+      "Keep accuracy changes shadow-only unless the accuracy decision report explicitly recommends promotion.",
+      "Use the 0.70 push report to decide whether any targeted accuracy change is worth a later explicit promotion."
     ]
+  },
+  "targeted_accuracy_packaged_trial": {
+    "summary": {
+      "correctness": 0.6743,
+      "estimated_tokens": 831.4571,
+      "fallback_safe_improvement": false,
+      "final_submission_ready": true,
+      "hidden_style_gate_passed": true,
+      "no_secret_scan_ok": true,
+      "protected_hashes_unchanged": true,
+      "recommendation": "keep_shadow_only",
+      "runtime": 0.0115,
+      "safe_rows": 0,
+      "strict_final_score": 0.6491,
+      "strict_score_delta": 0.0,
+      "target_0_70_reached": false,
+      "tool_calls": 1.4571,
+      "total_rows": 0,
+      "unsafe_rows": 0
+    }
   },
   "techniques": [
     {
@@ -1429,7 +1585,8 @@
       "Keep repair execution disabled.",
       "Keep compact context disabled.",
       "Use endpoint/schema rule candidates only as future canary inputs.",
-      "Keep accuracy changes shadow-only unless the accuracy decision report explicitly recommends promotion."
+      "Keep accuracy changes shadow-only unless the accuracy decision report explicitly recommends promotion.",
+      "Use the 0.70 push report to decide whether any targeted accuracy change is worth a later explicit promotion."
     ]
   }
 }

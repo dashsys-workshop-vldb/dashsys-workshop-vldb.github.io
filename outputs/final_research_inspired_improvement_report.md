@@ -73,7 +73,13 @@ Status: **strict-score improvement measured**.
 - Repair selector v2 success: False
 - Repair selector v3 success: False (strictly better selected: 0)
 - Accuracy promotion decision: keep_all_accuracy_changes_shadow_only
-- Winner readiness next actions: ['Submit with official-token reduction if the promotion report remains kept.', 'Keep repair execution disabled.', 'Keep compact context disabled.', 'Use endpoint/schema rule candidates only as future canary inputs.', 'Keep accuracy changes shadow-only unless the accuracy decision report explicitly recommends promotion.']
+- Low-score mining score needed for 0.70: 1.7815
+- Execution candidate search safe rows: 0 (best projected score: 0.6491; recommendation: keep_shadow_only)
+- LLM candidate search: skipped_no_llm_key (recommendation: keep_shadow_only)
+- Targeted accuracy trial recommendation: keep_shadow_only (score: 0.6491; 0.70 reached: False)
+- 0.70 push report: achieved=0.6491; target reached=False; recommendation=submit_current_official_token_reduction_version
+- Redundant file audit ran: True; cleanup applied=True; deleted=4; protected files deleted=False
+- Winner readiness next actions: ['Submit with official-token reduction if the promotion report remains kept.', 'Keep repair execution disabled.', 'Keep compact context disabled.', 'Use endpoint/schema rule candidates only as future canary inputs.', 'Keep accuracy changes shadow-only unless the accuracy decision report explicitly recommends promotion.', 'Use the 0.70 push report to decide whether any targeted accuracy change is worth a later explicit promotion.']
 - Risk-efficiency shadow eval rows: 7 (avg token delta: -264.0; avg runtime delta: -0.025; measured efficiency improvement claimed: False)
 - Secret scan OK: True
 - Visualization artifacts directory: `/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/visualizations`
@@ -106,6 +112,7 @@ Status: **strict-score improvement measured**.
 | `ENABLE_OFFICIAL_TOKEN_REDUCTION` | True |
 | `ENABLE_ENDPOINT_SCHEMA_RULE_CANDIDATES` | False |
 | `ENABLE_AST_GUIDED_SQL_TIEBREAK` | False |
+| `ENABLE_TARGETED_ACCURACY_RULES` | False |
 
 ## Technique Summary
 
@@ -180,3 +187,5 @@ Execution repair remains disabled by default. These recommendations are offline 
 - Inactive techniques appear compactly in visualization status tables, not as empty checkpoints.
 - Behavior-changing repair execution is feature-flagged off by default; strict score and efficiency gates decide whether it can ever be enabled.
 - Official-token reduction is the only behavior-changing default enabled in this pass; repair execution and compact context remain disabled.
+- The 0.70 strict-score push is isolated; targeted accuracy rules remain default-off unless a later explicit promotion passes all gates.
+- Redundant-file cleanup is allowlist-based and refuses protected source/data/eval/final-submission paths.

@@ -30,6 +30,11 @@ REQUIRED_REPORTS = {
     "ast_guided_sql_candidate_canary": "ast_guided_sql_candidate_canary.json",
     "repair_selector_v3_shadow_eval": "repair_selector_v3_shadow_eval.json",
     "accuracy_promotion_decision_report": "accuracy_promotion_decision_report.json",
+    "low_score_failure_mining_report": "low_score_failure_mining_report.json",
+    "execution_candidate_search": "execution_candidate_search.json",
+    "llm_candidate_search": "llm_candidate_search.json",
+    "targeted_accuracy_packaged_trial": "targeted_accuracy_packaged_trial.json",
+    "score_0_7_push_report": "score_0_7_push_report.json",
 }
 
 
@@ -59,6 +64,8 @@ def generate_winner_readiness_report(config: Config) -> dict[str, Any]:
     sql_first = strict.get("summary", {}).get("by_strategy", {}).get("SQL_FIRST_API_VERIFY", {})
     reports = {name: _load_json(config.outputs_dir / filename) for name, filename in REQUIRED_REPORTS.items()}
     packaged_trial = _load_json(config.outputs_dir / "official_token_reduction_packaged_trial.json")
+    cleanup_audit = _load_json(config.outputs_dir / "redundant_file_audit.json")
+    cleanup_report = _load_json(config.outputs_dir / "redundant_file_cleanup_report.json")
     readiness = check_submission_ready(config)
     return {
         **report_metadata(config.outputs_dir),
@@ -89,6 +96,20 @@ def generate_winner_readiness_report(config: Config) -> dict[str, Any]:
         "repair_selector_v3_shadow_eval": reports["repair_selector_v3_shadow_eval"].get("summary", {}),
         "accuracy_promotion_decision_report": reports["accuracy_promotion_decision_report"].get("summary", {}),
         "accuracy_promotion_decision_freshness": reports["accuracy_promotion_decision_report"].get("freshness", {}),
+        "low_score_failure_mining_report": reports["low_score_failure_mining_report"].get("summary", {}),
+        "execution_candidate_search": reports["execution_candidate_search"].get("summary", {}),
+        "llm_candidate_search": reports["llm_candidate_search"].get("summary", {}),
+        "targeted_accuracy_packaged_trial": reports["targeted_accuracy_packaged_trial"].get("summary", {}),
+        "score_0_7_push_report": reports["score_0_7_push_report"].get("summary", {}),
+        "cleanup": {
+            "audit_ran": bool(cleanup_audit.get("rows")),
+            "cleanup_report_exists": bool(cleanup_report),
+            "cleanup_applied": cleanup_report.get("applied", False),
+            "deleted_count": cleanup_report.get("summary", {}).get("deleted_count", 0),
+            "no_protected_files_deleted": cleanup_report.get("summary", {}).get("no_protected_files_deleted", True),
+            "final_validation_passed": readiness.get("ok"),
+            "final_submission_format_unchanged": readiness.get("ok"),
+        },
         "visualization_dataflow_completeness": {
             "official_token_reduction_visible": True,
             "research_technique_tables_present": True,
@@ -106,6 +127,7 @@ def generate_winner_readiness_report(config: Config) -> dict[str, Any]:
             "Keep compact context disabled.",
             "Use endpoint/schema rule candidates only as future canary inputs.",
             "Keep accuracy changes shadow-only unless the accuracy decision report explicitly recommends promotion.",
+            "Use the 0.70 push report to decide whether any targeted accuracy change is worth a later explicit promotion.",
         ],
         "notes": [
             "This report does not change packaged behavior.",
@@ -136,6 +158,12 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- AST-guided SQL canary recommendation: `{payload['ast_guided_sql_candidate_canary'].get('recommendation')}`",
         f"- Repair selector v3 success: {payload['repair_selector_v3_shadow_eval'].get('success')}",
         f"- Accuracy decision: `{payload['accuracy_promotion_decision_report'].get('recommendation')}`",
+        f"- 0.70 push achieved score: {payload['score_0_7_push_report'].get('strict_score_achieved')}",
+        f"- 0.70 reached safely: {payload['score_0_7_push_report'].get('target_0_70_reached')}",
+        f"- 0.70 push recommendation: `{payload['score_0_7_push_report'].get('final_recommendation')}`",
+        f"- Redundant file audit ran: {payload['cleanup'].get('audit_ran')}",
+        f"- Cleanup applied/deleted/protected-ok: {payload['cleanup'].get('cleanup_applied')} / "
+        f"{payload['cleanup'].get('deleted_count')} / {payload['cleanup'].get('no_protected_files_deleted')}",
         f"- Repair selector v2 success: {payload['repair_selector_v2_shadow_eval'].get('success')}",
         f"- Final recommendation: `{payload['final_recommendation']}`",
         "",

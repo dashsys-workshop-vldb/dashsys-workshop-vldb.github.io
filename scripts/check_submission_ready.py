@@ -57,7 +57,11 @@ def check_submission_ready(config: Config) -> dict[str, Any]:
         checks["default_strategy_is_sql_first_api_verify"] = manifest.get("preferred_strategy") == "SQL_FIRST_API_VERIFY"
 
     if final_dir.exists():
-        query_dirs = sorted(path for path in final_dir.iterdir() if path.is_dir() and path.name.startswith("query_"))
+        query_dirs = sorted(
+            path
+            for path in final_dir.iterdir()
+            if path.is_dir() and re.fullmatch(r"query_\d{3}", path.name)
+        )
         for query_dir in query_dirs:
             query_check = {"query_id": query_dir.name, "files": {}, "trajectory_json_valid": False}
             for filename in REQUIRED_QUERY_FILES:
@@ -148,7 +152,7 @@ def contains_unresolved(value: Any) -> bool:
 
 def scan_for_secrets(root: Path) -> dict[str, Any]:
     hits = []
-    for path in root.rglob("*"):
+    for path in iter_submission_scan_files(root):
         if not path.is_file() or path.suffix.lower() in {".zip", ".png", ".jpg", ".jpeg", ".parquet"}:
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
@@ -157,6 +161,21 @@ def scan_for_secrets(root: Path) -> dict[str, Any]:
                 hits.append({"file": str(path), "pattern": pattern.pattern})
                 break
     return {"ok": not hits, "hits": hits}
+
+
+def iter_submission_scan_files(root: Path) -> list[Path]:
+    """Scan only files that belong to the canonical final-submission shape."""
+    files: list[Path] = []
+    for name in ["system_prompt_template.txt", "source_code.zip"]:
+        path = root / name
+        if path.exists():
+            files.append(path)
+    for query_dir in sorted(path for path in root.iterdir() if path.is_dir() and re.fullmatch(r"query_\d{3}", path.name)):
+        for filename in REQUIRED_QUERY_FILES:
+            path = query_dir / filename
+            if path.exists():
+                files.append(path)
+    return files
 
 
 if __name__ == "__main__":

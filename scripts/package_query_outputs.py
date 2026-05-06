@@ -5,6 +5,7 @@ import json
 import os
 import shutil
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -26,12 +27,16 @@ NON_SUBMISSION_OUTPUT_DIRS = {
     "endpoint_schema_rule_canary",
     "endpoint_schema_rule_packaged_trial",
     "ast_guided_sql_candidate_canary",
+    "execution_candidate_search",
+    "llm_candidate_search",
+    "targeted_accuracy_packaged_trial",
     "retrieval_ablation_report",
     "repair_selector_v2_shadow_eval",
     "repair_selector_v3_shadow_eval",
     "shadow_repair_eval",
     "visualizations",
     "final_submission",
+    "tmp",
     "source_code",
 }
 
@@ -46,7 +51,7 @@ def main() -> int:
 def package_query_outputs(config: Config) -> dict[str, Any]:
     final_dir = config.outputs_dir / "final_submission"
     if final_dir.exists():
-        shutil.rmtree(final_dir)
+        _quarantine_existing_final_submission(config.outputs_dir, final_dir)
     final_dir.mkdir(parents=True)
 
     preferred_strategy = os.getenv("DASHAGENT_SUBMISSION_STRATEGY", "SQL_FIRST_API_VERIFY")
@@ -104,12 +109,27 @@ def package_query_outputs(config: Config) -> dict[str, Any]:
     return {"final_submission": str(final_dir), "manifest": str(manifest_path), **manifest}
 
 
+def _quarantine_existing_final_submission(outputs_dir: Path, final_dir: Path) -> Path:
+    tmp_dir = outputs_dir / "tmp"
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    target = tmp_dir / f"final_submission_stale_{time.monotonic_ns()}"
+    shutil.move(str(final_dir), str(target))
+    return target
+
+
 def discover_query_output_dirs(outputs_dir: Path) -> list[Path]:
     candidates = []
-    for path in outputs_dir.rglob("trajectory.json"):
-        if any(part in NON_SUBMISSION_OUTPUT_DIRS or part.startswith("probe") for part in path.parts):
+    for dirpath, dirnames, filenames in os.walk(outputs_dir):
+        directory = Path(dirpath)
+        dirnames[:] = [
+            name
+            for name in dirnames
+            if name not in NON_SUBMISSION_OUTPUT_DIRS and not name.startswith("probe")
+        ]
+        if "trajectory.json" not in filenames:
             continue
-        directory = path.parent
+        if any(part in NON_SUBMISSION_OUTPUT_DIRS or part.startswith("probe") for part in directory.parts):
+            continue
         if all((directory / filename).exists() for filename in REQUIRED_QUERY_FILES):
             candidates.append(directory)
     return sorted(candidates, key=lambda path: str(path))

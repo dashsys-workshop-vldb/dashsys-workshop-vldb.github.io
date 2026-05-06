@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -67,6 +68,13 @@ def generate_report(config: Config) -> dict[str, Any]:
     repair_selector_v3_report = _load_json(config.outputs_dir / "repair_selector_v3_shadow_eval.json")
     accuracy_decision_report = _load_json(config.outputs_dir / "accuracy_promotion_decision_report.json")
     winner_readiness_report = _load_json(config.outputs_dir / "winner_readiness_report.json")
+    low_score_failure_mining_report = _load_json(config.outputs_dir / "low_score_failure_mining_report.json")
+    execution_candidate_search_report = _load_json(config.outputs_dir / "execution_candidate_search.json")
+    llm_candidate_search_report = _load_json(config.outputs_dir / "llm_candidate_search.json")
+    targeted_accuracy_trial_report = _load_json(config.outputs_dir / "targeted_accuracy_packaged_trial.json")
+    score_push_report = _load_json(config.outputs_dir / "score_0_7_push_report.json")
+    redundant_file_audit = _load_json(config.outputs_dir / "redundant_file_audit.json")
+    redundant_file_cleanup = _load_json(config.outputs_dir / "redundant_file_cleanup_report.json")
     risk_shadow_report = _load_json(config.outputs_dir / "risk_efficiency_shadow_eval.json")
     current = strict.get("summary", {}).get("by_strategy", {}).get("SQL_FIRST_API_VERIFY", {})
     final_score = current.get("avg_final_score", 0.0)
@@ -108,6 +116,7 @@ def generate_report(config: Config) -> dict[str, Any]:
         "ENABLE_OFFICIAL_TOKEN_REDUCTION": config.enable_official_token_reduction,
         "ENABLE_ENDPOINT_SCHEMA_RULE_CANDIDATES": config.enable_endpoint_schema_rule_candidates,
         "ENABLE_AST_GUIDED_SQL_TIEBREAK": config.enable_ast_guided_sql_tiebreak,
+        "ENABLE_TARGETED_ACCURACY_RULES": config.enable_targeted_accuracy_rules,
     }
     techniques = [
         ("SQLGlot AST validation", "SQLGlot", "dashagent/sql_ast_tools.py", config.enable_sql_ast_validation, "checkpoint_sql_ast_validation"),
@@ -236,6 +245,23 @@ def generate_report(config: Config) -> dict[str, Any]:
             "repair_selector_v3_success": repair_selector_v3_report.get("summary", {}).get("success", False),
             "repair_selector_v3_strictly_better_selected_count": repair_selector_v3_report.get("summary", {}).get("strictly_better_selected_count", 0),
             "accuracy_promotion_decision_recommendation": accuracy_decision_report.get("summary", {}).get("recommendation", "not_run"),
+            "low_score_mining_score_needed_total": low_score_failure_mining_report.get("summary", {}).get("score_needed_to_reach_0_70_total"),
+            "low_score_mining_top_targets": low_score_failure_mining_report.get("summary", {}).get("top_10_target_rows", []),
+            "execution_candidate_search_safe_rows": execution_candidate_search_report.get("summary", {}).get("safe_rows", 0),
+            "execution_candidate_search_best_projected_score": execution_candidate_search_report.get("summary", {}).get("best_projected_strict_final_score"),
+            "execution_candidate_search_recommendation": execution_candidate_search_report.get("summary", {}).get("recommendation", "not_run"),
+            "llm_candidate_search_status": llm_candidate_search_report.get("summary", {}).get("status", "not_run"),
+            "llm_candidate_search_recommendation": llm_candidate_search_report.get("summary", {}).get("recommendation", "not_run"),
+            "targeted_accuracy_trial_recommendation": targeted_accuracy_trial_report.get("summary", {}).get("recommendation", "not_run"),
+            "targeted_accuracy_trial_strict_final_score": targeted_accuracy_trial_report.get("summary", {}).get("strict_final_score"),
+            "targeted_accuracy_trial_target_0_70_reached": targeted_accuracy_trial_report.get("summary", {}).get("target_0_70_reached", False),
+            "score_0_7_push_achieved": score_push_report.get("summary", {}).get("strict_score_achieved"),
+            "score_0_7_push_target_reached": score_push_report.get("summary", {}).get("target_0_70_reached", False),
+            "score_0_7_push_recommendation": score_push_report.get("summary", {}).get("final_recommendation", "not_run"),
+            "redundant_file_audit_ran": bool(redundant_file_audit.get("rows")),
+            "redundant_file_cleanup_applied": redundant_file_cleanup.get("applied", False),
+            "redundant_file_cleanup_deleted_count": redundant_file_cleanup.get("summary", {}).get("deleted_count", 0),
+            "redundant_file_cleanup_no_protected_deleted": redundant_file_cleanup.get("summary", {}).get("no_protected_files_deleted", True),
             "schema_dataset_positive_repair_rows": schema_dataset_positive_report.get("summary", {}).get("positive_schema_dataset_rows", 0),
             "sql_ast_candidate_ranking_candidates": sql_ast_candidate_report.get("summary", {}).get("candidate_count", 0),
             "retrieval_ablation_best_mode": retrieval_ablation_report.get("summary", {}).get("best_final_score_mode"),
@@ -325,6 +351,13 @@ def generate_report(config: Config) -> dict[str, Any]:
         "repair_selector_v2_shadow_eval": {"summary": repair_selector_v2_report.get("summary", {})},
         "repair_selector_v3_shadow_eval": {"summary": repair_selector_v3_report.get("summary", {})},
         "accuracy_promotion_decision_report": {"summary": accuracy_decision_report.get("summary", {})},
+        "low_score_failure_mining_report": {"summary": low_score_failure_mining_report.get("summary", {})},
+        "execution_candidate_search": {"summary": execution_candidate_search_report.get("summary", {})},
+        "llm_candidate_search": {"summary": llm_candidate_search_report.get("summary", {})},
+        "targeted_accuracy_packaged_trial": {"summary": targeted_accuracy_trial_report.get("summary", {})},
+        "score_0_7_push_report": {"summary": score_push_report.get("summary", {})},
+        "redundant_file_audit": {"summary": redundant_file_audit.get("summary", {})},
+        "redundant_file_cleanup": {"summary": redundant_file_cleanup.get("summary", {})},
         "winner_readiness_report": {
             "packaged": winner_readiness_report.get("packaged", {}),
             "recommended_next_action": winner_readiness_report.get("recommended_next_action", []),
@@ -354,6 +387,8 @@ def generate_report(config: Config) -> dict[str, Any]:
             "Inactive techniques appear compactly in visualization status tables, not as empty checkpoints.",
             "Behavior-changing repair execution is feature-flagged off by default; strict score and efficiency gates decide whether it can ever be enabled.",
             "Official-token reduction is the only behavior-changing default enabled in this pass; repair execution and compact context remain disabled.",
+            "The 0.70 strict-score push is isolated; targeted accuracy rules remain default-off unless a later explicit promotion passes all gates.",
+            "Redundant-file cleanup is allowlist-based and refuses protected source/data/eval/final-submission paths.",
         ],
     }
 
@@ -497,6 +532,22 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"- Repair selector v3 success: {report['summary']['repair_selector_v3_success']} "
             f"(strictly better selected: {report['summary']['repair_selector_v3_strictly_better_selected_count']})",
             f"- Accuracy promotion decision: {report['summary']['accuracy_promotion_decision_recommendation']}",
+            f"- Low-score mining score needed for 0.70: {report['summary']['low_score_mining_score_needed_total']}",
+            f"- Execution candidate search safe rows: {report['summary']['execution_candidate_search_safe_rows']} "
+            f"(best projected score: {report['summary']['execution_candidate_search_best_projected_score']}; "
+            f"recommendation: {report['summary']['execution_candidate_search_recommendation']})",
+            f"- LLM candidate search: {report['summary']['llm_candidate_search_status']} "
+            f"(recommendation: {report['summary']['llm_candidate_search_recommendation']})",
+            f"- Targeted accuracy trial recommendation: {report['summary']['targeted_accuracy_trial_recommendation']} "
+            f"(score: {report['summary']['targeted_accuracy_trial_strict_final_score']}; "
+            f"0.70 reached: {report['summary']['targeted_accuracy_trial_target_0_70_reached']})",
+            f"- 0.70 push report: achieved={report['summary']['score_0_7_push_achieved']}; "
+            f"target reached={report['summary']['score_0_7_push_target_reached']}; "
+            f"recommendation={report['summary']['score_0_7_push_recommendation']}",
+            f"- Redundant file audit ran: {report['summary']['redundant_file_audit_ran']}; "
+            f"cleanup applied={report['summary']['redundant_file_cleanup_applied']}; "
+            f"deleted={report['summary']['redundant_file_cleanup_deleted_count']}; "
+            f"protected files deleted={not report['summary']['redundant_file_cleanup_no_protected_deleted']}",
             f"- Winner readiness next actions: {report['summary']['winner_readiness_recommended_next_action']}",
             f"- Risk-efficiency shadow eval rows: {report['summary']['risk_efficiency_shadow_row_count']} "
             f"(avg token delta: {report['summary']['risk_efficiency_shadow_avg_token_delta']}; "
@@ -596,6 +647,14 @@ def _pct_delta(current: Any, baseline: Any) -> float:
 def _count_paths(root: Path, pattern: str) -> int:
     if not root.exists():
         return 0
+    if root.name == "final_submission":
+        candidates = []
+        for path in root.iterdir():
+            if path.is_file():
+                candidates.append(path)
+            elif path.is_dir() and re.fullmatch(r"query_\d{3}", path.name):
+                candidates.extend(path.rglob("*"))
+        return sum(1 for path in candidates if pattern in path.parts or pattern in path.name)
     return sum(1 for path in root.rglob("*") if pattern in path.parts or pattern in path.name)
 
 
