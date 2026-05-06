@@ -1,0 +1,252 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>DASHSys Dataflow</title>
+  <script type="module">import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; mermaid.initialize({startOnLoad:true});</script>
+  <style>body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;margin:32px;line-height:1.45} pre{background:#f6f8fa;padding:12px;overflow:auto;white-space:pre-wrap} table{border-collapse:collapse;width:100%;margin:12px 0} td,th{border:1px solid #d0d7de;padding:6px;vertical-align:top} code{background:#f6f8fa;padding:1px 4px;border-radius:3px}</style>
+</head>
+<body>
+  <h1>DASHSys Prompt-To-Answer Dataflow</h1>
+  <div class="mermaid">flowchart TD
+  subgraph Input
+    input_prompt[&quot;User Prompt&lt;br/&gt;When was the journey &amp;#x27;Birthday Message&amp;#x27; published?&quot;]
+  end
+  subgraph Routing
+    router[&quot;Prompt Router&lt;br/&gt;mode=n/a - no prompt router decision&lt;br/&gt;api=n/a - no API policy recorded&quot;]
+    input_prompt --&gt;|route_prompt| router
+  end
+  subgraph QueryUnderstanding[&quot;Query Understanding&quot;]
+    normalizer[&quot;Query Normalizer&lt;br/&gt;status=not_recorded&quot;]
+    tokens[&quot;Query Tokens&lt;br/&gt;domains=none&amp;lt;br/&amp;gt;entities=none&quot;]
+    router --&gt;|clean + extract| normalizer --&gt; tokens
+  end
+  subgraph ContextSelection[&quot;Context Selection&quot;]
+    context[&quot;Context Mode&lt;br/&gt;metadata_context_estimate_inferred&quot;]
+    candidates[&quot;Context&lt;br/&gt;tables=none&amp;lt;br/&amp;gt;apis=none&quot;]
+    tokens --&gt;|score relevance| context --&gt; candidates
+  end
+  subgraph Planning
+    planner[&quot;Planner&lt;br/&gt;GUIDED_REAL_LLM_TWO_TOOLS_BASELINE&quot;]
+    optimizer[&quot;Plan Optimizer&lt;br/&gt;selected=n/a - no optimizer selection recorded&quot;]
+    candidates --&gt;|metadata + policy| planner --&gt; optimizer
+  end
+  subgraph SQLPath[&quot;SQL Path&quot;]
+    sqlgen[&quot;SQL Generator&lt;br/&gt;tables=dim_campaign&amp;lt;br/&amp;gt;rows=1&quot;]
+    sqlval[&quot;SQL Validator&lt;br/&gt;ok&quot;]
+    optimizer --&gt;|SQL step if needed| sqlgen --&gt; sqlval
+  end
+  subgraph APIPath[&quot;API Path&quot;]
+    apisel[&quot;API Selector&lt;br/&gt;endpoint=/ajo/journey&quot;]
+    apival[&quot;API Validator&lt;br/&gt;ok&lt;br/&gt;dry_run=True&quot;]
+    optimizer --&gt;|API policy| apisel --&gt; apival
+  end
+  subgraph ToolExecution[&quot;Tool Execution&quot;]
+    tools[&quot;Tool Calls&lt;br/&gt;sql=1 api=1&lt;br/&gt;invalid=0&quot;]
+    sqlval --&gt;|execute_sql| tools
+    apival --&gt;|call_api / dry-run| tools
+  end
+  subgraph EvidenceBus
+    evidence[&quot;EvidenceBus&lt;br/&gt;SQL evidence: yes&amp;lt;br/&amp;gt;Live API evidence: no&amp;lt;br/&amp;gt;Dry-run API: yes&quot;]
+    tools --&gt;|extract facts| evidence
+  end
+  subgraph AnswerVerification[&quot;Answer Verification&quot;]
+    verifier[&quot;Verifier&lt;br/&gt;status=not_recorded&quot;]
+    evidence --&gt;|answer slots + claims| verifier
+  end
+  subgraph FinalAnswer[&quot;Final Answer&quot;]
+    answer[&quot;Final Answer&lt;br/&gt;The journey &amp;quot;Birthday Message&amp;quot; was published on **March 31, 2026**. However, I was una&quot;]
+    verifier --&gt;|safe answer| answer
+  end
+  subgraph Metrics
+    metrics[&quot;Metrics&lt;br/&gt;tools=2&lt;br/&gt;tokens=n/a - estimated_tokens missing&lt;br/&gt;runtime=3.7744&quot;]
+    answer --&gt;|record trajectory| metrics
+  end
+</div>
+  <h2>Markdown Report</h2>
+  <pre># DASHSys Prompt-To-Answer Dataflow
+
+## Quality Gate Facts
+
+| Field | Value |
+| --- | --- |
+| Query ID | `example_000` |
+| User query | When was the journey &#x27;Birthday Message&#x27; published? |
+| Strategy | `GUIDED_REAL_LLM_TWO_TOOLS_BASELINE` |
+| Variant | Guided |
+| Final answer preview | The journey &quot;Birthday Message&quot; was published on **March 31, 2026**. However, I was unable to verify its current status via the API due to unavailable credentials. |
+| Tool call count | 2 |
+| Runtime | 3.7744 |
+| Estimated tokens | n/a - estimated_tokens missing |
+| Checkpoint count | 0 |
+| Candidate context mode | metadata_context_estimate_inferred |
+| Context mode note | display-only inferred from context token estimate |
+
+```mermaid
+flowchart TD
+  subgraph Input
+    input_prompt[&quot;User Prompt&lt;br/&gt;When was the journey &amp;#x27;Birthday Message&amp;#x27; published?&quot;]
+  end
+  subgraph Routing
+    router[&quot;Prompt Router&lt;br/&gt;mode=n/a - no prompt router decision&lt;br/&gt;api=n/a - no API policy recorded&quot;]
+    input_prompt --&gt;|route_prompt| router
+  end
+  subgraph QueryUnderstanding[&quot;Query Understanding&quot;]
+    normalizer[&quot;Query Normalizer&lt;br/&gt;status=not_recorded&quot;]
+    tokens[&quot;Query Tokens&lt;br/&gt;domains=none&amp;lt;br/&amp;gt;entities=none&quot;]
+    router --&gt;|clean + extract| normalizer --&gt; tokens
+  end
+  subgraph ContextSelection[&quot;Context Selection&quot;]
+    context[&quot;Context Mode&lt;br/&gt;metadata_context_estimate_inferred&quot;]
+    candidates[&quot;Context&lt;br/&gt;tables=none&amp;lt;br/&amp;gt;apis=none&quot;]
+    tokens --&gt;|score relevance| context --&gt; candidates
+  end
+  subgraph Planning
+    planner[&quot;Planner&lt;br/&gt;GUIDED_REAL_LLM_TWO_TOOLS_BASELINE&quot;]
+    optimizer[&quot;Plan Optimizer&lt;br/&gt;selected=n/a - no optimizer selection recorded&quot;]
+    candidates --&gt;|metadata + policy| planner --&gt; optimizer
+  end
+  subgraph SQLPath[&quot;SQL Path&quot;]
+    sqlgen[&quot;SQL Generator&lt;br/&gt;tables=dim_campaign&amp;lt;br/&amp;gt;rows=1&quot;]
+    sqlval[&quot;SQL Validator&lt;br/&gt;ok&quot;]
+    optimizer --&gt;|SQL step if needed| sqlgen --&gt; sqlval
+  end
+  subgraph APIPath[&quot;API Path&quot;]
+    apisel[&quot;API Selector&lt;br/&gt;endpoint=/ajo/journey&quot;]
+    apival[&quot;API Validator&lt;br/&gt;ok&lt;br/&gt;dry_run=True&quot;]
+    optimizer --&gt;|API policy| apisel --&gt; apival
+  end
+  subgraph ToolExecution[&quot;Tool Execution&quot;]
+    tools[&quot;Tool Calls&lt;br/&gt;sql=1 api=1&lt;br/&gt;invalid=0&quot;]
+    sqlval --&gt;|execute_sql| tools
+    apival --&gt;|call_api / dry-run| tools
+  end
+  subgraph EvidenceBus
+    evidence[&quot;EvidenceBus&lt;br/&gt;SQL evidence: yes&amp;lt;br/&amp;gt;Live API evidence: no&amp;lt;br/&amp;gt;Dry-run API: yes&quot;]
+    tools --&gt;|extract facts| evidence
+  end
+  subgraph AnswerVerification[&quot;Answer Verification&quot;]
+    verifier[&quot;Verifier&lt;br/&gt;status=not_recorded&quot;]
+    evidence --&gt;|answer slots + claims| verifier
+  end
+  subgraph FinalAnswer[&quot;Final Answer&quot;]
+    answer[&quot;Final Answer&lt;br/&gt;The journey &amp;quot;Birthday Message&amp;quot; was published on **March 31, 2026**. However, I was una&quot;]
+    verifier --&gt;|safe answer| answer
+  end
+  subgraph Metrics
+    metrics[&quot;Metrics&lt;br/&gt;tools=2&lt;br/&gt;tokens=n/a - estimated_tokens missing&lt;br/&gt;runtime=3.7744&quot;]
+    answer --&gt;|record trajectory| metrics
+  end
+```
+
+## SQL And API Preview
+
+| Path | Preview | Validation | Result / Status |
+| --- | --- | --- | --- |
+| SQL | SELECT UPDATEDTIME FROM dim_campaign WHERE NAME = &#x27;Birthday Message&#x27; | ok | row_count=1; rows={&quot;items&quot;: {&quot;items&quot;: [{&quot;UPDATEDTIME&quot;: &quot;2026-03-31T06:07:32.838462639Z&quot;}], &quot;total_items&quot;: 1, &quot;truncated_items&quot;: false}, &quot;total_items&quot;: 1, &quot;truncated_items&quot;: false} |
+| API | GET /ajo/journey | ok | dry_run=True; live_api_evidence=False; overall_evidence=True; preview=n/a - no API result preview recorded |
+
+Context mode labels ending in `_inferred` are display-only summaries for the visualization; they are not recorded planner decisions.
+
+## Tool Execution vs Evidence Availability
+
+SQL evidence is available. API tool was invoked and validated, but live API evidence was unavailable because Adobe credentials were missing.
+
+| Metric | Value |
+| --- | --- |
+| execute_sql calls | 1 |
+| call_api calls | 1 |
+| valid tool calls | 2 |
+| invalid tool calls | 0 |
+| endpoint repairs | 1 |
+| schema hint injections | 0 |
+| SQL evidence available | True |
+| live API evidence available | False |
+| overall evidence available | True |
+| dry-run only | True |
+| successful evidence count | 1 |
+| zero-row uncertain | False |
+
+## Technique Impact Highlight
+
+- Correctness: n/a - no checkpoint correctness role recorded
+- Efficiency: n/a - no checkpoint efficiency role recorded
+- Dataflow effect: n/a - no checkpoint effect recorded
+
+## Prompt To SQL/API Mapping
+
+```json
+{
+  &quot;api&quot;: {
+    &quot;dry_run&quot;: true,
+    &quot;endpoint&quot;: &quot;GET /ajo/journey&quot;,
+    &quot;endpoint_repair&quot;: {
+      &quot;items&quot;: [
+        {
+          &quot;confidence&quot;: 0.8,
+          &quot;endpoint_id&quot;: &quot;journey_list&quot;,
+          &quot;method&quot;: &quot;GET&quot;,
+          &quot;original_url&quot;: &quot;/ajo/journey&quot;,
+          &quot;reason&quot;: &quot;journey/campaign alias repaired to AJO journey endpoint&quot;,
+          &quot;repaired&quot;: true,
+          &quot;repaired_url&quot;: &quot;/ajo/journey&quot;,
+          &quot;url&quot;: &quot;/ajo/journey&quot;
+        }
+      ],
+      &quot;total_items&quot;: 1,
+      &quot;truncated_items&quot;: false
+    },
+    &quot;live_evidence_available&quot;: false,
+    &quot;result_preview&quot;: &quot;n/a - no API result preview recorded&quot;,
+    &quot;validation&quot;: &quot;ok&quot;
+  },
+  &quot;context&quot;: {
+    &quot;candidate_apis&quot;: &quot;n/a - no candidate APIs recorded&quot;,
+    &quot;candidate_tables&quot;: &quot;n/a - no candidate tables recorded&quot;,
+    &quot;confidence&quot;: 0.8,
+    &quot;context_mode&quot;: &quot;metadata_context_estimate_inferred&quot;,
+    &quot;context_mode_note&quot;: &quot;display-only inferred from context token estimate&quot;,
+    &quot;estimated_context_tokens&quot;: 2053,
+    &quot;score_margin&quot;: &quot;n/a - no candidate score margin recorded&quot;
+  },
+  &quot;evidence&quot;: {
+    &quot;dry_run_only&quot;: true,
+    &quot;evidence_available&quot;: true,
+    &quot;explanation&quot;: &quot;SQL evidence is available. API tool was invoked and validated, but live API evidence was unavailable because Adobe credentials were missing.&quot;,
+    &quot;live_api_evidence_available&quot;: false,
+    &quot;overall_evidence_available&quot;: true,
+    &quot;sql_evidence_available&quot;: true,
+    &quot;successful_evidence_count&quot;: 1,
+    &quot;zero_row_uncertain&quot;: false
+  },
+  &quot;normalization&quot;: {
+    &quot;normalized_query&quot;: &quot;n/a - no normalization checkpoint recorded&quot;
+  },
+  &quot;prompt&quot;: &quot;When was the journey &#x27;Birthday Message&#x27; published?&quot;,
+  &quot;route&quot;: {
+    &quot;api_policy&quot;: &quot;n/a - no API policy recorded&quot;,
+    &quot;confidence&quot;: &quot;n/a - no route confidence recorded&quot;,
+    &quot;mode&quot;: &quot;n/a - no prompt router decision&quot;,
+    &quot;risk&quot;: &quot;n/a - no route risk recorded&quot;
+  },
+  &quot;sql&quot;: {
+    &quot;preview&quot;: &quot;SELECT UPDATEDTIME FROM dim_campaign WHERE NAME = &#x27;Birthday Message&#x27;&quot;,
+    &quot;result_preview&quot;: &quot;{\&quot;items\&quot;: {\&quot;items\&quot;: [{\&quot;UPDATEDTIME\&quot;: \&quot;2026-03-31T06:07:32.838462639Z\&quot;}], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}&quot;,
+    &quot;row_count&quot;: 1,
+    &quot;validation&quot;: &quot;ok&quot;
+  },
+  &quot;tokens&quot;: {
+    &quot;tokens&quot;: &quot;n/a - no tokens recorded&quot;
+  },
+  &quot;truncated_fields&quot;: 1
+}
+```
+
+## Checkpoint Effect Table
+
+| Checkpoint | Stage | Technique | Input | Output | Effect on data flow | Correctness role | Efficiency role |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `n/a` | n/a | n/a | n/a | n/a | n/a - no checkpoints recorded | n/a | n/a |
+</pre>
+</body>
+</html>

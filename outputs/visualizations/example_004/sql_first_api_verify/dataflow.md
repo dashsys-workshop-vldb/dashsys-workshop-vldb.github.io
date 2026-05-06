@@ -13,7 +13,8 @@
 | Runtime | 0.009926999919116497 |
 | Estimated tokens | 852 |
 | Checkpoint count | 20 |
-| Candidate context mode | n/a - no candidate context mode recorded |
+| Candidate context mode | metadata_context_card |
+| Context mode note | display-only inferred from checkpoint_07_context_card |
 
 ```mermaid
 flowchart TD
@@ -25,27 +26,27 @@ flowchart TD
     input_prompt -->|route_prompt| router
   end
   subgraph QueryUnderstanding["Query Understanding"]
-    normalizer["Query Normalizer<br/>Show me the IDs of failed dataflow runs"]
-    tokens["Query Tokens<br/>{&quot;preview&quot;: &quot;{\&quot;domains\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;destination_dataflow\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated"]
+    normalizer["Query Normalizer<br/>normalized query"]
+    tokens["Query Tokens<br/>domains=destination_dataflow&lt;br/&gt;entities=none&lt;br/&gt;status=failed"]
     router -->|clean + extract| normalizer --> tokens
   end
   subgraph ContextSelection["Context Selection"]
-    context["Context Mode<br/>n/a - no candidate context mode recorded"]
-    candidates["Tables/APIs<br/>{&quot;preview&quot;: &quot;{\&quot;tables\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;dim_connector\&quot;, \&quot;dim_target\&quot;], \&quot;total_items\&quot;: 2"]
+    context["Context Mode<br/>metadata_context_card"]
+    candidates["Context<br/>tables=dim_connector,dim_target&lt;br/&gt;apis=flowservice_runs,audit_events+1"]
     tokens -->|score relevance| context --> candidates
   end
   subgraph Planning
     planner["Planner<br/>SQL_FIRST_API_VERIFY"]
-    optimizer["Plan Optimizer<br/>{&quot;candidate_scores&quot;: {&quot;generic_sql_first&quot;: 14.2735}, &quot;candidate_tool_calls&quot;: {&quot;generic_sql_first&quot;: 2}, &quot;selected&quot;: &quot;generic_s"]
+    optimizer["Plan Optimizer<br/>selected=generic_sql_first"]
     candidates -->|metadata + policy| planner --> optimizer
   end
   subgraph SQLPath["SQL Path"]
-    sqlgen["SQL Generator<br/>SELECT &quot;DATAFLOWNAME&quot;, &quot;STATE&quot;, &quot;TARGETID&quot;, &quot;CONNECTIONSPECID&quot;, &quot;NAME&quot; FROM &quot;dim_target&quot; W..."]
+    sqlgen["SQL Generator<br/>tables=dim_target&lt;br/&gt;rows=0"]
     sqlval["SQL Validator<br/>ok"]
     optimizer -->|SQL step if needed| sqlgen --> sqlval
   end
   subgraph APIPath["API Path"]
-    apisel["API Selector<br/>GET /data/foundation/flowservice/flows"]
+    apisel["API Selector<br/>endpoint=/data/foundation/flowservice/flows"]
     apival["API Validator<br/>ok<br/>dry_run=True"]
     optimizer -->|API policy| apisel --> apival
   end
@@ -55,15 +56,15 @@ flowchart TD
     apival -->|call_api / dry-run| tools
   end
   subgraph EvidenceBus
-    evidence["Evidence Quality<br/>overall=False<br/>api_dry_run=True"]
+    evidence["EvidenceBus<br/>SQL evidence: no&lt;br/&gt;Live API evidence: no&lt;br/&gt;Dry-run API: yes"]
     tools -->|extract facts| evidence
   end
   subgraph AnswerVerification["Answer Verification"]
-    verifier["Verifier<br/>{&quot;errors&quot;: {&quot;total_items&quot;: 0, &quot;truncated_items&quot;: false}, &quot;rewrite_applied&quot;: false, &quot;supported_claims_count&quot;: 2, &quot;unsupported_"]
+    verifier["Verifier<br/>passed=yes&lt;br/&gt;unsupported=0"]
     evidence -->|answer slots + claims| verifier
   end
   subgraph FinalAnswer["Final Answer"]
-    answer["Final Answer<br/>Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials "]
+    answer["Final Answer<br/>Based on the evidence provided, there are no failed dataflow runs to report. The SQL query retur"]
     verifier -->|safe answer| answer
   end
   subgraph Metrics
@@ -79,6 +80,8 @@ flowchart TD
 | SQL | SELECT "DATAFLOWNAME", "STATE", "TARGETID", "CONNECTIONSPECID", "NAME" FROM "dim_target" WHERE LOWER(CAST("STATE" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50 | ok | row_count=0; rows=n/a - no SQL rows preview recorded |
 | API | GET /data/foundation/flowservice/flows | ok | dry_run=True; live_api_evidence=False; overall_evidence=False; preview=n/a - no API result preview recorded |
 
+Context mode labels ending in `_inferred` are display-only summaries for the visualization; they are not recorded planner decisions.
+
 ## Tool Execution vs Evidence Availability
 
 API tool was invoked and validated, but live evidence was unavailable because Adobe credentials were missing.
@@ -91,6 +94,9 @@ API tool was invoked and validated, but live evidence was unavailable because Ad
 | invalid tool calls | n/a - no invalid-call metric recorded |
 | endpoint repairs | n/a - no endpoint-repair metric recorded |
 | schema hint injections | n/a - no schema-hint metric recorded |
+| SQL evidence available | False |
+| live API evidence available | False |
+| overall evidence available | False |
 | dry-run only | True |
 | successful evidence count | 0 |
 | zero-row uncertain | True |
@@ -140,7 +146,8 @@ API tool was invoked and validated, but live evidence was unavailable because Ad
       "truncated_items": false
     },
     "confidence": 0.88,
-    "context_mode": "n/a - no candidate context mode recorded",
+    "context_mode": "metadata_context_card",
+    "context_mode_note": "display-only inferred from checkpoint_07_context_card",
     "estimated_context_tokens": 565,
     "score_margin": "n/a - no candidate score margin recorded"
   },
@@ -148,6 +155,9 @@ API tool was invoked and validated, but live evidence was unavailable because Ad
     "dry_run_only": true,
     "evidence_available": false,
     "explanation": "API tool was invoked and validated, but live evidence was unavailable because Adobe credentials were missing.",
+    "live_api_evidence_available": false,
+    "overall_evidence_available": false,
+    "sql_evidence_available": false,
     "successful_evidence_count": 0,
     "zero_row_uncertain": true
   },

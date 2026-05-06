@@ -168,6 +168,17 @@ def test_baseline_markdown_has_diagnostic_cells_and_variant_columns(tiny_project
                         "repaired_endpoint_count": 0,
                     },
                     {
+                        "query_id": "example_001",
+                        "system": "RAW_REAL_LLM_TWO_TOOLS_BASELINE",
+                        "baseline_variant": "raw",
+                        "real_llm_called": True,
+                        "tool_calls_executed": False,
+                        "valid_agent_run": False,
+                        "skipped_or_failed": True,
+                        "failure_reason": "llm_request_failed",
+                        "tool_call_count": 0,
+                    },
+                    {
                         "query_id": "example_000",
                         "system": "GUIDED_REAL_LLM_TWO_TOOLS_BASELINE",
                         "baseline_variant": "guided",
@@ -183,6 +194,17 @@ def test_baseline_markdown_has_diagnostic_cells_and_variant_columns(tiny_project
                         "invalid_tool_call_count": 0,
                         "repaired_endpoint_count": 1,
                     },
+                    {
+                        "query_id": "example_001",
+                        "system": "GUIDED_REAL_LLM_TWO_TOOLS_BASELINE",
+                        "baseline_variant": "guided",
+                        "real_llm_called": True,
+                        "tool_calls_executed": False,
+                        "valid_agent_run": False,
+                        "skipped_or_failed": True,
+                        "failure_reason": "llm_request_failed",
+                        "tool_call_count": 0,
+                    },
                 ],
             }
         ),
@@ -194,3 +216,9 @@ def test_baseline_markdown_has_diagnostic_cells_and_variant_columns(tiny_project
     assert "| Raw | `example_000` | 2 | True | True | 1 | False | 1 | 0 |" in markdown
     assert "| Guided | `example_000` | 1 | True | True | 2 | True | 0 | 1 |" in markdown
     assert "Dry-run API calls are not counted as successful live evidence" in markdown
+    assert "## Provider Reliability Note" in markdown
+    assert "| Raw | 1 |" in markdown
+    assert "| Guided | 1 |" in markdown
+    report = generate_report(tiny_project)
+    assert report["provider_reliability"]["raw_llm_request_failed_count"] == 1
+    assert report["provider_reliability"]["guided_llm_request_failed_count"] == 1

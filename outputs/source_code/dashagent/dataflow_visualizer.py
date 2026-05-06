@@ -9,6 +9,9 @@ from typing import Any
 from .trajectory import compact_preview, redact_secrets
 
 
+READABILITY_PATTERNS = ("{&quot;", "truncated_items", "preview")
+
+
 def load_trajectory(path: str | Path) -> dict[str, Any]:
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
@@ -84,9 +87,20 @@ def build_dataflow_summary(trajectory: dict[str, Any]) -> dict[str, Any]:
     route = extract_prompt_router_decision(trajectory)
     first_sql = sql_calls[0] if sql_calls else {}
     first_api = api_calls[0] if api_calls else {}
-    candidate_mode = _find_context_mode(trajectory, checkpoints)
+    candidate_tables = _candidate_tables(checkpoints, nlp_step)
+    candidate_apis = _candidate_apis(checkpoints, nlp_step)
+    estimated_context_tokens = _estimated_context_tokens(trajectory)
+    candidate_mode, context_mode_note = _find_context_mode(
+        trajectory,
+        checkpoints,
+        candidate_tables,
+        candidate_apis,
+        estimated_context_tokens,
+    )
     dry_run = _api_dry_run(api_calls)
-    evidence_available = _evidence_available(trajectory, sql_calls, api_calls)
+    sql_evidence_available = _sql_evidence_available(sql_calls)
+    live_api_evidence_available = _api_live_evidence(api_calls)
+    evidence_available = _overall_evidence_available(trajectory, sql_calls, api_calls, sql_evidence_available, live_api_evidence_available)
     checkpoint_effect = _first_checkpoint_effect(trajectory)
     query_id = _value(trajectory.get("query_id") or trajectory.get("query"), "missing query_id")
     strategy = _value(trajectory.get("strategy") or trajectory.get("system"), "missing strategy")
@@ -107,16 +121,18 @@ def build_dataflow_summary(trajectory: dict[str, Any]) -> dict[str, Any]:
             "tokens": _tokens_summary(checkpoints, nlp_step),
             "context": {
                 "context_mode": candidate_mode,
-                "candidate_tables": _value(_candidate_tables(checkpoints, nlp_step), "no candidate tables recorded"),
-                "candidate_apis": _value(_candidate_apis(checkpoints, nlp_step), "no candidate APIs recorded"),
+                "context_mode_note": context_mode_note,
+                "candidate_tables": _value(candidate_tables, "no candidate tables recorded"),
+                "candidate_apis": _value(candidate_apis, "no candidate APIs recorded"),
                 "confidence": _value(_find_nested(trajectory, "confidence"), "no candidate confidence recorded"),
                 "score_margin": _value(_find_nested(trajectory, "score_margin"), "no candidate score margin recorded"),
-                "estimated_context_tokens": _value(_estimated_context_tokens(trajectory), "no context token estimate recorded"),
+                "estimated_context_tokens": _value(estimated_context_tokens, "no context token estimate recorded"),
             },
             "planning": {
                 "selected_strategy": strategy,
                 "rationale": _value(plan_step.get("rationale"), "no plan rationale recorded"),
                 "optimizer_decision": _value(_brief(optimizer_step.get("plan_ensemble") or plan_step.get("optimizer_actions")), "no optimizer decision recorded"),
+                "optimizer_selected": _value(_optimizer_selected(optimizer_step, plan_step), "no optimizer selection recorded"),
                 "call_budget": _value(_checkpoint_output(checkpoints, "checkpoint_11_call_budget"), "no call budget checkpoint recorded"),
             },
             "sql": {
@@ -137,6 +153,8 @@ def build_dataflow_summary(trajectory: dict[str, Any]) -> dict[str, Any]:
                 "execute_sql_calls": len(sql_calls),
                 "call_api_calls": len(api_calls),
                 "tool_call_count": _value(trajectory.get("tool_call_count"), "tool_call_count missing"),
+                "valid_agent_run": _value(trajectory.get("valid_agent_run"), "valid_agent_run not recorded"),
+                "tool_calls_executed": _value(trajectory.get("tool_calls_executed"), "tool_calls_executed not recorded"),
                 "valid_tool_calls": _valid_tool_calls(trajectory, sql_calls, api_calls),
                 "invalid_tool_calls": _value(trajectory.get("invalid_tool_call_count"), "no invalid-call metric recorded"),
                 "duplicate_invalid_calls": _value(trajectory.get("duplicate_invalid_call_count"), "no duplicate-invalid metric recorded"),
@@ -144,11 +162,14 @@ def build_dataflow_summary(trajectory: dict[str, Any]) -> dict[str, Any]:
                 "schema_hint_injections": _value(trajectory.get("schema_hint_injected"), "no schema-hint metric recorded"),
             },
             "evidence": {
+                "sql_evidence_available": sql_evidence_available,
+                "live_api_evidence_available": live_api_evidence_available,
+                "overall_evidence_available": evidence_available,
                 "evidence_available": evidence_available,
                 "dry_run_only": dry_run,
                 "zero_row_uncertain": _zero_row_uncertain(sql_calls),
                 "successful_evidence_count": _successful_evidence_count(trajectory, sql_calls, api_calls),
-                "explanation": _evidence_explanation(dry_run, evidence_available),
+                "explanation": _evidence_explanation(dry_run, sql_evidence_available, live_api_evidence_available, evidence_available),
             },
             "answer": {
                 "final_answer_preview": _value(_preview(trajectory.get("final_answer")), "missing final answer"),
@@ -189,27 +210,27 @@ def build_mermaid_graph(trajectory: dict[str, Any]) -> str:
         "    input_prompt -->|route_prompt| router",
         "  end",
         "  subgraph QueryUnderstanding[\"Query Understanding\"]",
-        f"    normalizer[\"Query Normalizer<br/>{_m(summary['normalization'].get('normalized_query', 'n/a'))}\"]",
-        f"    tokens[\"Query Tokens<br/>{_m(_brief(summary['tokens']))}\"]",
+        f"    normalizer[\"Query Normalizer<br/>{_m(_normalizer_label(summary['normalization']))}\"]",
+        f"    tokens[\"Query Tokens<br/>{_m(_tokens_label(summary['tokens']))}\"]",
         "    router -->|clean + extract| normalizer --> tokens",
         "  end",
         "  subgraph ContextSelection[\"Context Selection\"]",
         f"    context[\"Context Mode<br/>{_m(context['context_mode'])}\"]",
-        f"    candidates[\"Tables/APIs<br/>{_m(_brief({'tables': context['candidate_tables'], 'apis': context['candidate_apis']}))}\"]",
+        f"    candidates[\"Context<br/>{_m(_context_label(context))}\"]",
         "    tokens -->|score relevance| context --> candidates",
         "  end",
         "  subgraph Planning",
         f"    planner[\"Planner<br/>{_m(summary['planning']['selected_strategy'])}\"]",
-        f"    optimizer[\"Plan Optimizer<br/>{_m(summary['planning']['optimizer_decision'])}\"]",
+        f"    optimizer[\"Plan Optimizer<br/>selected={_m(summary['planning']['optimizer_selected'])}\"]",
         "    candidates -->|metadata + policy| planner --> optimizer",
         "  end",
         "  subgraph SQLPath[\"SQL Path\"]",
-        f"    sqlgen[\"SQL Generator<br/>{_m(_preview(sql['preview'], 90))}\"]",
+        f"    sqlgen[\"SQL Generator<br/>{_m(_sql_label(sql))}\"]",
         f"    sqlval[\"SQL Validator<br/>{_m(sql['validation'])}\"]",
         "    optimizer -->|SQL step if needed| sqlgen --> sqlval",
         "  end",
         "  subgraph APIPath[\"API Path\"]",
-        f"    apisel[\"API Selector<br/>{_m(api['endpoint'])}\"]",
+        f"    apisel[\"API Selector<br/>{_m(_api_label(api))}\"]",
         f"    apival[\"API Validator<br/>{_m(api['validation'])}<br/>dry_run={_m(str(api['dry_run']))}\"]",
         "    optimizer -->|API policy| apisel --> apival",
         "  end",
@@ -219,11 +240,11 @@ def build_mermaid_graph(trajectory: dict[str, Any]) -> str:
         "    apival -->|call_api / dry-run| tools",
         "  end",
         "  subgraph EvidenceBus",
-        f"    evidence[\"Evidence Quality<br/>overall={_m(str(evidence['evidence_available']))}<br/>api_dry_run={_m(str(evidence['dry_run_only']))}\"]",
+        f"    evidence[\"EvidenceBus<br/>{_m(_evidence_label(evidence))}\"]",
         "    tools -->|extract facts| evidence",
         "  end",
         "  subgraph AnswerVerification[\"Answer Verification\"]",
-        f"    verifier[\"Verifier<br/>{_m(_brief(summary['answer']['answer_verification']))}\"]",
+        f"    verifier[\"Verifier<br/>{_m(_verifier_label(summary['answer']['answer_verification']))}\"]",
         "    evidence -->|answer slots + claims| verifier",
         "  end",
         "  subgraph FinalAnswer[\"Final Answer\"]",
@@ -281,6 +302,7 @@ def build_markdown_report(trajectory: dict[str, Any]) -> str:
         f"| Estimated tokens | {_md(summary['metrics']['estimated_tokens'])} |",
         f"| Checkpoint count | {_md(summary['checkpoint_count'])} |",
         f"| Candidate context mode | {_md(summary['context']['context_mode'])} |",
+        f"| Context mode note | {_md(summary['context']['context_mode_note'])} |",
         "",
         "```mermaid",
         build_mermaid_graph(trajectory).strip(),
@@ -292,6 +314,8 @@ def build_markdown_report(trajectory: dict[str, Any]) -> str:
         "| --- | --- | --- | --- |",
         f"| SQL | {_md(summary['sql']['preview'])} | {_md(summary['sql']['validation'])} | row_count={_md(summary['sql']['row_count'])}; rows={_md(summary['sql']['result_preview'])} |",
         f"| API | {_md(summary['api']['endpoint'])} | {_md(summary['api']['validation'])} | dry_run={_md(summary['api']['dry_run'])}; live_api_evidence={_md(summary['api']['live_evidence_available'])}; overall_evidence={_md(summary['evidence']['evidence_available'])}; preview={_md(summary['api']['result_preview'])} |",
+        "",
+        "Context mode labels ending in `_inferred` are display-only summaries for the visualization; they are not recorded planner decisions.",
         "",
         "## Tool Execution vs Evidence Availability",
         "",
@@ -305,6 +329,9 @@ def build_markdown_report(trajectory: dict[str, Any]) -> str:
         f"| invalid tool calls | {_md(summary['execution']['invalid_tool_calls'])} |",
         f"| endpoint repairs | {_md(summary['execution']['endpoint_repairs'])} |",
         f"| schema hint injections | {_md(summary['execution']['schema_hint_injections'])} |",
+        f"| SQL evidence available | {_md(summary['evidence']['sql_evidence_available'])} |",
+        f"| live API evidence available | {_md(summary['evidence']['live_api_evidence_available'])} |",
+        f"| overall evidence available | {_md(summary['evidence']['overall_evidence_available'])} |",
         f"| dry-run only | {_md(summary['evidence']['dry_run_only'])} |",
         f"| successful evidence count | {_md(summary['evidence']['successful_evidence_count'])} |",
         f"| zero-row uncertain | {_md(summary['evidence']['zero_row_uncertain'])} |",
@@ -389,6 +416,9 @@ def trajectory_from_llm_row(row: dict[str, Any]) -> dict[str, Any]:
         "repaired_endpoint_count": row.get("repaired_endpoint_count"),
         "schema_hint_injected": row.get("schema_hint_injected"),
         "successful_evidence_count": row.get("successful_evidence_count"),
+        "valid_agent_run": row.get("valid_agent_run"),
+        "tool_calls_executed": row.get("tool_calls_executed"),
+        "dry_run_only_api_count": row.get("dry_run_only_api_count"),
         "llm_tool_calls": row.get("llm_tool_calls", []),
         "steps": [],
         "checkpoints": [],
@@ -398,19 +428,25 @@ def trajectory_from_llm_row(row: dict[str, Any]) -> dict[str, Any]:
 def _llm_tool_call_to_step(call: dict[str, Any]) -> dict[str, Any]:
     args = call.get("arguments") or {}
     if call.get("tool_name") == "execute_sql" or call.get("tool") == "execute_sql":
+        result = call.get("result_preview") or {}
         return {
             "kind": "sql_call",
             "sql": args.get("sql"),
             "validation": call.get("validation"),
-            "result": call.get("result_preview"),
+            "result": {
+                "row_count": result.get("row_count"),
+                "rows": result.get("rows") or result.get("rows_preview"),
+                "ok": result.get("ok"),
+            },
         }
+    result = call.get("result_preview") or {}
     return {
         "kind": "api_call",
         "method": args.get("method"),
         "url": args.get("url"),
         "params": args.get("params"),
         "validation": call.get("validation"),
-        "result": call.get("result_preview"),
+        "result": result,
         "endpoint_repair": call.get("endpoint_repair"),
     }
 
@@ -438,6 +474,82 @@ def _tokens_summary(checkpoints: dict[str, dict[str, Any]], nlp_step: dict[str, 
     return {"tokens": _value(None, "no tokens recorded")}
 
 
+def _normalizer_label(normalization: dict[str, Any]) -> str:
+    query = normalization.get("normalized_query") or normalization.get("matching_text")
+    if isinstance(query, str) and query.startswith("n/a -"):
+        return "status=not_recorded"
+    return "normalized query" if query else "status=not_recorded"
+
+
+def _tokens_label(tokens: Any) -> str:
+    domains = _short_list(_extract_named_values(tokens, ("domains", "domain_tokens")), empty="none")
+    entities = _short_list(
+        _extract_named_values(tokens, ("quoted_entities", "entities", "entity_names", "ids")),
+        empty="none",
+    )
+    statuses = _short_list(_extract_named_values(tokens, ("statuses", "status_tokens", "status_terms")), empty="none")
+    parts = [f"domains={domains}", f"entities={entities}"]
+    if statuses != "none":
+        parts.append(f"status={statuses}")
+    return "<br/>".join(parts)
+
+
+def _context_label(context: dict[str, Any]) -> str:
+    tables = _short_list(_extract_item_names(context.get("candidate_tables")), empty="none")
+    apis = _short_list(_extract_item_names(context.get("candidate_apis")), empty="none")
+    return f"tables={tables}<br/>apis={apis}"
+
+
+def _sql_label(sql: dict[str, Any]) -> str:
+    preview = str(sql.get("preview") or "")
+    if preview.startswith("n/a -"):
+        return "source=none"
+    tables = _short_list(_extract_sql_tables(preview), empty="unknown")
+    return f"tables={tables}<br/>rows={sql.get('row_count')}"
+
+
+def _api_label(api: dict[str, Any]) -> str:
+    endpoint = str(api.get("endpoint") or "")
+    if endpoint.startswith("n/a -"):
+        return "endpoint=none"
+    endpoint = endpoint.replace("GET ", "").replace("POST ", "")
+    return f"endpoint={_preview(endpoint, 54)}"
+
+
+def _evidence_label(evidence: dict[str, Any]) -> str:
+    return (
+        f"SQL evidence: {_yes_no(evidence.get('sql_evidence_available'))}<br/>"
+        f"Live API evidence: {_yes_no(evidence.get('live_api_evidence_available'))}<br/>"
+        f"Dry-run API: {_yes_no(evidence.get('dry_run_only'))}"
+    )
+
+
+def _verifier_label(answer_verification: Any) -> str:
+    if isinstance(answer_verification, dict):
+        passed = answer_verification.get("verifier_passed")
+        if passed is None:
+            passed = answer_verification.get("passed")
+        unsupported = answer_verification.get("unsupported_claims_count")
+        return f"passed={_yes_no(passed)}<br/>unsupported={unsupported if unsupported is not None else 'n/a'}"
+    text = str(answer_verification or "")
+    if text.startswith("n/a -"):
+        return "status=not_recorded"
+    return "status=recorded"
+
+
+def _optimizer_selected(optimizer_step: dict[str, Any], plan_step: dict[str, Any]) -> Any:
+    selected = _nested(optimizer_step, ["plan_ensemble", "selected"])
+    if selected:
+        return selected
+    actions = plan_step.get("optimizer_actions") or []
+    if actions:
+        match = re.search(r"selected\s+([A-Za-z0-9_/-]+)", " ".join(map(str, actions)))
+        if match:
+            return match.group(1)
+        return _preview(", ".join(map(str, actions)), 70)
+    return None
+
+
 def _candidate_tables(checkpoints: dict[str, dict[str, Any]], nlp_step: dict[str, Any]) -> Any:
     output = _checkpoint_output(checkpoints, "checkpoint_04_relevance_scoring")
     if isinstance(output, dict):
@@ -458,16 +570,28 @@ def _candidate_apis(checkpoints: dict[str, dict[str, Any]], nlp_step: dict[str, 
     return (nlp_step.get("relevance") or {}).get("apis")
 
 
-def _find_context_mode(trajectory: dict[str, Any], checkpoints: dict[str, dict[str, Any]]) -> str:
+def _find_context_mode(
+    trajectory: dict[str, Any],
+    checkpoints: dict[str, dict[str, Any]],
+    candidate_tables: Any,
+    candidate_apis: Any,
+    estimated_context_tokens: Any,
+) -> tuple[str, str]:
     for checkpoint in checkpoints.values():
         for key in ("output", "input_summary", "metrics"):
             found = _find_nested(checkpoint.get(key), "context_mode")
             if found not in (None, "", [], {}):
-                return str(found)
+                return str(found), "recorded in checkpoint/trajectory"
     found = _find_nested(trajectory, "context_mode")
     if found not in (None, "", [], {}):
-        return str(found)
-    return _value(None, "no candidate context mode recorded")
+        return str(found), "recorded in checkpoint/trajectory"
+    if _checkpoint_output(checkpoints, "checkpoint_07_context_card") not in (None, "", [], {}):
+        return "metadata_context_card", "display-only inferred from checkpoint_07_context_card"
+    if _has_context_items(candidate_tables) or _has_context_items(candidate_apis):
+        return "candidate_like_context_inferred", "display-only inferred from candidate tables/APIs"
+    if estimated_context_tokens not in (None, "", [], {}):
+        return "metadata_context_estimate_inferred", "display-only inferred from context token estimate"
+    return "not_recorded", "no useful context-mode information recorded"
 
 
 def _estimated_context_tokens(trajectory: dict[str, Any]) -> Any:
@@ -509,6 +633,12 @@ def _api_live_evidence(api_calls: list[dict[str, Any]]) -> Any:
     return any(bool(_nested(call, ["result", "ok"]) and not _nested(call, ["result", "dry_run"])) for call in api_calls)
 
 
+def _sql_evidence_available(sql_calls: list[dict[str, Any]]) -> Any:
+    if not sql_calls:
+        return _value(None, "no SQL call in trajectory")
+    return any((_nested(call, ["result", "row_count"]) or 0) > 0 for call in sql_calls)
+
+
 def _endpoint_repair(api_calls: list[dict[str, Any]]) -> Any:
     repairs = []
     for call in api_calls:
@@ -518,16 +648,17 @@ def _endpoint_repair(api_calls: list[dict[str, Any]]) -> Any:
     return repairs
 
 
-def _evidence_available(trajectory: dict[str, Any], sql_calls: list[dict[str, Any]], api_calls: list[dict[str, Any]]) -> Any:
+def _overall_evidence_available(
+    trajectory: dict[str, Any],
+    sql_calls: list[dict[str, Any]],
+    api_calls: list[dict[str, Any]],
+    sql_evidence_available: Any,
+    live_api_evidence_available: Any,
+) -> Any:
     if trajectory.get("successful_evidence_count") is not None:
         return trajectory.get("successful_evidence_count", 0) > 0
-    for call in sql_calls:
-        if (_nested(call, ["result", "row_count"]) or 0) > 0:
-            return True
-    for call in api_calls:
-        result = call.get("result") or {}
-        if result.get("ok") and not result.get("dry_run"):
-            return True
+    if sql_evidence_available is True or live_api_evidence_available is True:
+        return True
     if not sql_calls and not api_calls:
         return _value(None, "no tool calls in trajectory")
     return False
@@ -561,14 +692,21 @@ def _empty_result_uncertainty(trajectory: dict[str, Any]) -> Any:
     return None
 
 
-def _evidence_explanation(dry_run: Any, evidence_available: Any) -> str:
+def _evidence_explanation(
+    dry_run: Any,
+    sql_evidence_available: Any,
+    live_api_evidence_available: Any,
+    overall_evidence_available: Any,
+) -> str:
     if dry_run is True:
+        if sql_evidence_available is True:
+            return "SQL evidence is available. API tool was invoked and validated, but live API evidence was unavailable because Adobe credentials were missing."
         return "API tool was invoked and validated, but live evidence was unavailable because Adobe credentials were missing."
-    if evidence_available is True:
+    if overall_evidence_available is True:
         return "At least one SQL/API result provided evidence for answer construction."
-    if evidence_available is False:
+    if overall_evidence_available is False:
         return "No successful evidence was available from executed tools."
-    return str(evidence_available)
+    return str(overall_evidence_available)
 
 
 def _first_checkpoint_effect(trajectory: dict[str, Any]) -> dict[str, str]:
@@ -655,8 +793,101 @@ def _variant_label(trajectory: dict[str, Any]) -> str:
     return _value(variant, "not a baseline variant")
 
 
+def count_mermaid_readability_issues(text: str) -> int:
+    return sum(1 for line in text.splitlines() if any(pattern in line for pattern in READABILITY_PATTERNS))
+
+
+def _extract_named_values(value: Any, names: tuple[str, ...]) -> list[str]:
+    found: list[str] = []
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key in names:
+                found.extend(_extract_item_names(item))
+            elif key not in {"total_items", "truncated_items", "truncated"}:
+                found.extend(_extract_named_values(item, names))
+    elif isinstance(value, list):
+        for item in value:
+            found.extend(_extract_named_values(item, names))
+    return _dedupe(found)
+
+
+def _extract_item_names(value: Any) -> list[str]:
+    if value in (None, "", {}, []):
+        return []
+    if isinstance(value, str):
+        if value.startswith("n/a -"):
+            return []
+        return [value]
+    if isinstance(value, (int, float, bool)):
+        return [str(value)]
+    if isinstance(value, list):
+        items: list[str] = []
+        for item in value:
+            items.extend(_extract_item_names(item))
+        return _dedupe(items)
+    if isinstance(value, dict):
+        if "items" in value:
+            return _extract_item_names(value.get("items"))
+        for key in ("path", "endpoint", "endpoint_id", "name", "table", "id"):
+            item = value.get(key)
+            if isinstance(item, str) and item:
+                return [item]
+        items: list[str] = []
+        for key, item in value.items():
+            if key in {"total_items", "truncated_items", "truncated", "preview"}:
+                continue
+            items.extend(_extract_item_names(item))
+        return _dedupe(items)
+    return [str(value)]
+
+
+def _short_list(items: list[str], *, empty: str = "n/a", max_items: int = 2, max_chars: int = 56) -> str:
+    clean = [item for item in _dedupe(items) if item and not item.startswith("n/a -")]
+    if not clean:
+        return empty
+    text = ",".join(_preview(item, 28) for item in clean[:max_items])
+    if len(clean) > max_items:
+        text += f"+{len(clean) - max_items}"
+    return _preview(text, max_chars)
+
+
+def _extract_sql_tables(sql: str) -> list[str]:
+    identifier = r"(?:\"[^\"]+\"|`[^`]+`|[A-Za-z_][\w$]*)(?:\s*\.\s*(?:\"[^\"]+\"|`[^`]+`|[A-Za-z_][\w$]*))*"
+    matches = re.findall(rf"\b(?:FROM|JOIN)\s+({identifier})", sql, flags=re.IGNORECASE)
+    tables = []
+    for match in matches:
+        part = re.split(r"\s*\.\s*", match)[-1].strip().strip('"').strip("`")
+        tables.append(part)
+    return _dedupe(tables)
+
+
+def _has_context_items(value: Any) -> bool:
+    return bool(_extract_item_names(value))
+
+
+def _yes_no(value: Any) -> str:
+    if value is True:
+        return "yes"
+    if value is False:
+        return "no"
+    if isinstance(value, str) and value.startswith("n/a -"):
+        return "n/a"
+    return str(value)
+
+
+def _dedupe(items: list[str]) -> list[str]:
+    seen = set()
+    output: list[str] = []
+    for item in items:
+        text = str(item)
+        if text not in seen:
+            seen.add(text)
+            output.append(text)
+    return output
+
+
 def _m(text: str) -> str:
-    return html.escape(str(text).replace("\n", " "))[:180]
+    return html.escape(str(text).replace("\n", " "))[:96]
 
 
 def _md(value: Any) -> str:

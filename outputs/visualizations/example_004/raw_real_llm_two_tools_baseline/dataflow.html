@@ -1,0 +1,237 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>DASHSys Dataflow</title>
+  <script type="module">import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; mermaid.initialize({startOnLoad:true});</script>
+  <style>body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;margin:32px;line-height:1.45} pre{background:#f6f8fa;padding:12px;overflow:auto;white-space:pre-wrap} table{border-collapse:collapse;width:100%;margin:12px 0} td,th{border:1px solid #d0d7de;padding:6px;vertical-align:top} code{background:#f6f8fa;padding:1px 4px;border-radius:3px}</style>
+</head>
+<body>
+  <h1>DASHSys Prompt-To-Answer Dataflow</h1>
+  <div class="mermaid">flowchart TD
+  subgraph Input
+    input_prompt[&quot;User Prompt&lt;br/&gt;Show me the IDs of failed dataflow runs&quot;]
+  end
+  subgraph Routing
+    router[&quot;Prompt Router&lt;br/&gt;mode=n/a - no prompt router decision&lt;br/&gt;api=n/a - no API policy recorded&quot;]
+    input_prompt --&gt;|route_prompt| router
+  end
+  subgraph QueryUnderstanding[&quot;Query Understanding&quot;]
+    normalizer[&quot;Query Normalizer&lt;br/&gt;status=not_recorded&quot;]
+    tokens[&quot;Query Tokens&lt;br/&gt;domains=none&amp;lt;br/&amp;gt;entities=none&quot;]
+    router --&gt;|clean + extract| normalizer --&gt; tokens
+  end
+  subgraph ContextSelection[&quot;Context Selection&quot;]
+    context[&quot;Context Mode&lt;br/&gt;metadata_context_estimate_inferred&quot;]
+    candidates[&quot;Context&lt;br/&gt;tables=none&amp;lt;br/&amp;gt;apis=none&quot;]
+    tokens --&gt;|score relevance| context --&gt; candidates
+  end
+  subgraph Planning
+    planner[&quot;Planner&lt;br/&gt;RAW_REAL_LLM_TWO_TOOLS_BASELINE&quot;]
+    optimizer[&quot;Plan Optimizer&lt;br/&gt;selected=n/a - no optimizer selection recorded&quot;]
+    candidates --&gt;|metadata + policy| planner --&gt; optimizer
+  end
+  subgraph SQLPath[&quot;SQL Path&quot;]
+    sqlgen[&quot;SQL Generator&lt;br/&gt;tables=dataflow_runs&amp;lt;br/&amp;gt;rows=0&quot;]
+    sqlval[&quot;SQL Validator&lt;br/&gt;failed: Unknown table: dataflow_runs&quot;]
+    optimizer --&gt;|SQL step if needed| sqlgen --&gt; sqlval
+  end
+  subgraph APIPath[&quot;API Path&quot;]
+    apisel[&quot;API Selector&lt;br/&gt;endpoint=/data/core/ups/segment/definitions&quot;]
+    apival[&quot;API Validator&lt;br/&gt;ok&lt;br/&gt;dry_run=True&quot;]
+    optimizer --&gt;|API policy| apisel --&gt; apival
+  end
+  subgraph ToolExecution[&quot;Tool Execution&quot;]
+    tools[&quot;Tool Calls&lt;br/&gt;sql=2 api=1&lt;br/&gt;invalid=1&quot;]
+    sqlval --&gt;|execute_sql| tools
+    apival --&gt;|call_api / dry-run| tools
+  end
+  subgraph EvidenceBus
+    evidence[&quot;EvidenceBus&lt;br/&gt;SQL evidence: yes&amp;lt;br/&amp;gt;Live API evidence: no&amp;lt;br/&amp;gt;Dry-run API: yes&quot;]
+    tools --&gt;|extract facts| evidence
+  end
+  subgraph AnswerVerification[&quot;Answer Verification&quot;]
+    verifier[&quot;Verifier&lt;br/&gt;status=not_recorded&quot;]
+    evidence --&gt;|answer slots + claims| verifier
+  end
+  subgraph FinalAnswer[&quot;Final Answer&quot;]
+    answer[&quot;Final Answer&lt;br/&gt;I was unable to retrieve the IDs of failed dataflow runs. The local database does not contain a &quot;]
+    verifier --&gt;|safe answer| answer
+  end
+  subgraph Metrics
+    metrics[&quot;Metrics&lt;br/&gt;tools=3&lt;br/&gt;tokens=n/a - estimated_tokens missing&lt;br/&gt;runtime=6.4608&quot;]
+    answer --&gt;|record trajectory| metrics
+  end
+</div>
+  <h2>Markdown Report</h2>
+  <pre># DASHSys Prompt-To-Answer Dataflow
+
+## Quality Gate Facts
+
+| Field | Value |
+| --- | --- |
+| Query ID | `example_004` |
+| User query | Show me the IDs of failed dataflow runs |
+| Strategy | `RAW_REAL_LLM_TWO_TOOLS_BASELINE` |
+| Variant | Raw |
+| Final answer preview | I was unable to retrieve the IDs of failed dataflow runs. The local database does not contain a table named `dataflow_runs`, and the API call could not be executed due to unavailable credentials. Therefore, I cannot prov... |
+| Tool call count | 3 |
+| Runtime | 6.4608 |
+| Estimated tokens | n/a - estimated_tokens missing |
+| Checkpoint count | 0 |
+| Candidate context mode | metadata_context_estimate_inferred |
+| Context mode note | display-only inferred from context token estimate |
+
+```mermaid
+flowchart TD
+  subgraph Input
+    input_prompt[&quot;User Prompt&lt;br/&gt;Show me the IDs of failed dataflow runs&quot;]
+  end
+  subgraph Routing
+    router[&quot;Prompt Router&lt;br/&gt;mode=n/a - no prompt router decision&lt;br/&gt;api=n/a - no API policy recorded&quot;]
+    input_prompt --&gt;|route_prompt| router
+  end
+  subgraph QueryUnderstanding[&quot;Query Understanding&quot;]
+    normalizer[&quot;Query Normalizer&lt;br/&gt;status=not_recorded&quot;]
+    tokens[&quot;Query Tokens&lt;br/&gt;domains=none&amp;lt;br/&amp;gt;entities=none&quot;]
+    router --&gt;|clean + extract| normalizer --&gt; tokens
+  end
+  subgraph ContextSelection[&quot;Context Selection&quot;]
+    context[&quot;Context Mode&lt;br/&gt;metadata_context_estimate_inferred&quot;]
+    candidates[&quot;Context&lt;br/&gt;tables=none&amp;lt;br/&amp;gt;apis=none&quot;]
+    tokens --&gt;|score relevance| context --&gt; candidates
+  end
+  subgraph Planning
+    planner[&quot;Planner&lt;br/&gt;RAW_REAL_LLM_TWO_TOOLS_BASELINE&quot;]
+    optimizer[&quot;Plan Optimizer&lt;br/&gt;selected=n/a - no optimizer selection recorded&quot;]
+    candidates --&gt;|metadata + policy| planner --&gt; optimizer
+  end
+  subgraph SQLPath[&quot;SQL Path&quot;]
+    sqlgen[&quot;SQL Generator&lt;br/&gt;tables=dataflow_runs&amp;lt;br/&amp;gt;rows=0&quot;]
+    sqlval[&quot;SQL Validator&lt;br/&gt;failed: Unknown table: dataflow_runs&quot;]
+    optimizer --&gt;|SQL step if needed| sqlgen --&gt; sqlval
+  end
+  subgraph APIPath[&quot;API Path&quot;]
+    apisel[&quot;API Selector&lt;br/&gt;endpoint=/data/core/ups/segment/definitions&quot;]
+    apival[&quot;API Validator&lt;br/&gt;ok&lt;br/&gt;dry_run=True&quot;]
+    optimizer --&gt;|API policy| apisel --&gt; apival
+  end
+  subgraph ToolExecution[&quot;Tool Execution&quot;]
+    tools[&quot;Tool Calls&lt;br/&gt;sql=2 api=1&lt;br/&gt;invalid=1&quot;]
+    sqlval --&gt;|execute_sql| tools
+    apival --&gt;|call_api / dry-run| tools
+  end
+  subgraph EvidenceBus
+    evidence[&quot;EvidenceBus&lt;br/&gt;SQL evidence: yes&amp;lt;br/&amp;gt;Live API evidence: no&amp;lt;br/&amp;gt;Dry-run API: yes&quot;]
+    tools --&gt;|extract facts| evidence
+  end
+  subgraph AnswerVerification[&quot;Answer Verification&quot;]
+    verifier[&quot;Verifier&lt;br/&gt;status=not_recorded&quot;]
+    evidence --&gt;|answer slots + claims| verifier
+  end
+  subgraph FinalAnswer[&quot;Final Answer&quot;]
+    answer[&quot;Final Answer&lt;br/&gt;I was unable to retrieve the IDs of failed dataflow runs. The local database does not contain a &quot;]
+    verifier --&gt;|safe answer| answer
+  end
+  subgraph Metrics
+    metrics[&quot;Metrics&lt;br/&gt;tools=3&lt;br/&gt;tokens=n/a - estimated_tokens missing&lt;br/&gt;runtime=6.4608&quot;]
+    answer --&gt;|record trajectory| metrics
+  end
+```
+
+## SQL And API Preview
+
+| Path | Preview | Validation | Result / Status |
+| --- | --- | --- | --- |
+| SQL | SELECT ID FROM dataflow_runs WHERE status = &#x27;failed&#x27; | failed: Unknown table: dataflow_runs | row_count=0; rows={&quot;total_items&quot;: 0, &quot;truncated_items&quot;: false} |
+| API | GET /data/core/ups/segment/definitions | ok | dry_run=True; live_api_evidence=False; overall_evidence=True; preview=n/a - no API result preview recorded |
+
+Context mode labels ending in `_inferred` are display-only summaries for the visualization; they are not recorded planner decisions.
+
+## Tool Execution vs Evidence Availability
+
+SQL evidence is available. API tool was invoked and validated, but live API evidence was unavailable because Adobe credentials were missing.
+
+| Metric | Value |
+| --- | --- |
+| execute_sql calls | 2 |
+| call_api calls | 1 |
+| valid tool calls | 2 |
+| invalid tool calls | 1 |
+| endpoint repairs | 0 |
+| schema hint injections | 0 |
+| SQL evidence available | True |
+| live API evidence available | False |
+| overall evidence available | True |
+| dry-run only | True |
+| successful evidence count | 1 |
+| zero-row uncertain | True |
+
+## Technique Impact Highlight
+
+- Correctness: n/a - no checkpoint correctness role recorded
+- Efficiency: n/a - no checkpoint efficiency role recorded
+- Dataflow effect: n/a - no checkpoint effect recorded
+
+## Prompt To SQL/API Mapping
+
+```json
+{
+  &quot;api&quot;: {
+    &quot;dry_run&quot;: true,
+    &quot;endpoint&quot;: &quot;GET /data/core/ups/segment/definitions&quot;,
+    &quot;endpoint_repair&quot;: &quot;n/a - no endpoint repair recorded&quot;,
+    &quot;live_evidence_available&quot;: false,
+    &quot;result_preview&quot;: &quot;n/a - no API result preview recorded&quot;,
+    &quot;validation&quot;: &quot;ok&quot;
+  },
+  &quot;context&quot;: {
+    &quot;candidate_apis&quot;: &quot;n/a - no candidate APIs recorded&quot;,
+    &quot;candidate_tables&quot;: &quot;n/a - no candidate tables recorded&quot;,
+    &quot;confidence&quot;: &quot;n/a - no candidate confidence recorded&quot;,
+    &quot;context_mode&quot;: &quot;metadata_context_estimate_inferred&quot;,
+    &quot;context_mode_note&quot;: &quot;display-only inferred from context token estimate&quot;,
+    &quot;estimated_context_tokens&quot;: 1314,
+    &quot;score_margin&quot;: &quot;n/a - no candidate score margin recorded&quot;
+  },
+  &quot;evidence&quot;: {
+    &quot;dry_run_only&quot;: true,
+    &quot;evidence_available&quot;: true,
+    &quot;explanation&quot;: &quot;SQL evidence is available. API tool was invoked and validated, but live API evidence was unavailable because Adobe credentials were missing.&quot;,
+    &quot;live_api_evidence_available&quot;: false,
+    &quot;overall_evidence_available&quot;: true,
+    &quot;sql_evidence_available&quot;: true,
+    &quot;successful_evidence_count&quot;: 1,
+    &quot;zero_row_uncertain&quot;: true
+  },
+  &quot;normalization&quot;: {
+    &quot;normalized_query&quot;: &quot;n/a - no normalization checkpoint recorded&quot;
+  },
+  &quot;prompt&quot;: &quot;Show me the IDs of failed dataflow runs&quot;,
+  &quot;route&quot;: {
+    &quot;api_policy&quot;: &quot;n/a - no API policy recorded&quot;,
+    &quot;confidence&quot;: &quot;n/a - no route confidence recorded&quot;,
+    &quot;mode&quot;: &quot;n/a - no prompt router decision&quot;,
+    &quot;risk&quot;: &quot;n/a - no route risk recorded&quot;
+  },
+  &quot;sql&quot;: {
+    &quot;preview&quot;: &quot;SELECT ID FROM dataflow_runs WHERE status = &#x27;failed&#x27;&quot;,
+    &quot;result_preview&quot;: &quot;{\&quot;total_items\&quot;: 0, \&quot;truncated_items\&quot;: false}&quot;,
+    &quot;row_count&quot;: 0,
+    &quot;validation&quot;: &quot;failed: Unknown table: dataflow_runs&quot;
+  },
+  &quot;tokens&quot;: {
+    &quot;tokens&quot;: &quot;n/a - no tokens recorded&quot;
+  },
+  &quot;truncated_fields&quot;: 1
+}
+```
+
+## Checkpoint Effect Table
+
+| Checkpoint | Stage | Technique | Input | Output | Effect on data flow | Correctness role | Efficiency role |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `n/a` | n/a | n/a | n/a | n/a | n/a - no checkpoints recorded | n/a | n/a |
+</pre>
+</body>
+</html>

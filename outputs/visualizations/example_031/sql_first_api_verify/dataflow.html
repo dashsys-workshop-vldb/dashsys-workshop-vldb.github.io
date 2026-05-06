@@ -17,27 +17,27 @@
     input_prompt --&gt;|route_prompt| router
   end
   subgraph QueryUnderstanding[&quot;Query Understanding&quot;]
-    normalizer[&quot;Query Normalizer&lt;br/&gt;Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?&quot;]
-    tokens[&quot;Query Tokens&lt;br/&gt;{&amp;quot;domains&amp;quot;: {&amp;quot;items&amp;quot;: {&amp;quot;items&amp;quot;: [&amp;quot;audit&amp;quot;, &amp;quot;batch&amp;quot;], &amp;quot;total_items&amp;quot;: 2, &amp;quot;truncated_items&amp;quot;: false}, &amp;quot;total_i&quot;]
+    normalizer[&quot;Query Normalizer&lt;br/&gt;normalized query&quot;]
+    tokens[&quot;Query Tokens&lt;br/&gt;domains=audit,batch&amp;lt;br/&amp;gt;entities=1&quot;]
     router --&gt;|clean + extract| normalizer --&gt; tokens
   end
   subgraph ContextSelection[&quot;Context Selection&quot;]
-    context[&quot;Context Mode&lt;br/&gt;n/a - no candidate context mode recorded&quot;]
-    candidates[&quot;Tables/APIs&lt;br/&gt;{&amp;quot;apis&amp;quot;: {&amp;quot;items&amp;quot;: {&amp;quot;items&amp;quot;: [&amp;quot;export_batch_files&amp;quot;, &amp;quot;export_batch_failed&amp;quot;, &amp;quot;audit_events&amp;quot;], &amp;quot;total_items&amp;quot;: 3, &quot;]
+    context[&quot;Context Mode&lt;br/&gt;metadata_context_card&quot;]
+    candidates[&quot;Context&lt;br/&gt;tables=none&amp;lt;br/&amp;gt;apis=export_batch_files,export_batch_failed+1&quot;]
     tokens --&gt;|score relevance| context --&gt; candidates
   end
   subgraph Planning
     planner[&quot;Planner&lt;br/&gt;SQL_FIRST_API_VERIFY&quot;]
-    optimizer[&quot;Plan Optimizer&lt;br/&gt;{&amp;quot;candidate_scores&amp;quot;: {&amp;quot;generic_sql_first&amp;quot;: 12.3847}, &amp;quot;candidate_tool_calls&amp;quot;: {&amp;quot;generic_sql_first&amp;quot;: 1}, &amp;quot;selected&amp;quot;: &amp;quot;generic_s&quot;]
+    optimizer[&quot;Plan Optimizer&lt;br/&gt;selected=generic_sql_first&quot;]
     candidates --&gt;|metadata + policy| planner --&gt; optimizer
   end
   subgraph SQLPath[&quot;SQL Path&quot;]
-    sqlgen[&quot;SQL Generator&lt;br/&gt;n/a - no SQL call in trajectory&quot;]
+    sqlgen[&quot;SQL Generator&lt;br/&gt;source=none&quot;]
     sqlval[&quot;SQL Validator&lt;br/&gt;n/a - no validation step recorded&quot;]
     optimizer --&gt;|SQL step if needed| sqlgen --&gt; sqlval
   end
   subgraph APIPath[&quot;API Path&quot;]
-    apisel[&quot;API Selector&lt;br/&gt;GET /data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files&quot;]
+    apisel[&quot;API Selector&lt;br/&gt;endpoint=/data/foundation/export/batches/69de8a0e0cc6102b5d11f0...&quot;]
     apival[&quot;API Validator&lt;br/&gt;ok&lt;br/&gt;dry_run=True&quot;]
     optimizer --&gt;|API policy| apisel --&gt; apival
   end
@@ -47,15 +47,15 @@
     apival --&gt;|call_api / dry-run| tools
   end
   subgraph EvidenceBus
-    evidence[&quot;Evidence Quality&lt;br/&gt;overall=False&lt;br/&gt;api_dry_run=True&quot;]
+    evidence[&quot;EvidenceBus&lt;br/&gt;SQL evidence: n/a&amp;lt;br/&amp;gt;Live API evidence: no&amp;lt;br/&amp;gt;Dry-run API: yes&quot;]
     tools --&gt;|extract facts| evidence
   end
   subgraph AnswerVerification[&quot;Answer Verification&quot;]
-    verifier[&quot;Verifier&lt;br/&gt;{&amp;quot;errors&amp;quot;: {&amp;quot;total_items&amp;quot;: 0, &amp;quot;truncated_items&amp;quot;: false}, &amp;quot;rewrite_applied&amp;quot;: false, &amp;quot;supported_claims_count&amp;quot;: 0, &amp;quot;unsupported_&quot;]
+    verifier[&quot;Verifier&lt;br/&gt;passed=yes&amp;lt;br/&amp;gt;unsupported=0&quot;]
     evidence --&gt;|answer slots + claims| verifier
   end
   subgraph FinalAnswer[&quot;Final Answer&quot;]
-    answer[&quot;Final Answer&lt;br/&gt;Batch file details require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.&quot;]
+    answer[&quot;Final Answer&lt;br/&gt;Batch file details require live API evidence. Live API verification was not executed because Ado&quot;]
     verifier --&gt;|safe answer| answer
   end
   subgraph Metrics
@@ -79,7 +79,8 @@
 | Runtime | 0.009698958019725978 |
 | Estimated tokens | 723 |
 | Checkpoint count | 20 |
-| Candidate context mode | n/a - no candidate context mode recorded |
+| Candidate context mode | metadata_context_card |
+| Context mode note | display-only inferred from checkpoint_07_context_card |
 
 ```mermaid
 flowchart TD
@@ -91,27 +92,27 @@ flowchart TD
     input_prompt --&gt;|route_prompt| router
   end
   subgraph QueryUnderstanding[&quot;Query Understanding&quot;]
-    normalizer[&quot;Query Normalizer&lt;br/&gt;Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?&quot;]
-    tokens[&quot;Query Tokens&lt;br/&gt;{&amp;quot;domains&amp;quot;: {&amp;quot;items&amp;quot;: {&amp;quot;items&amp;quot;: [&amp;quot;audit&amp;quot;, &amp;quot;batch&amp;quot;], &amp;quot;total_items&amp;quot;: 2, &amp;quot;truncated_items&amp;quot;: false}, &amp;quot;total_i&quot;]
+    normalizer[&quot;Query Normalizer&lt;br/&gt;normalized query&quot;]
+    tokens[&quot;Query Tokens&lt;br/&gt;domains=audit,batch&amp;lt;br/&amp;gt;entities=1&quot;]
     router --&gt;|clean + extract| normalizer --&gt; tokens
   end
   subgraph ContextSelection[&quot;Context Selection&quot;]
-    context[&quot;Context Mode&lt;br/&gt;n/a - no candidate context mode recorded&quot;]
-    candidates[&quot;Tables/APIs&lt;br/&gt;{&amp;quot;apis&amp;quot;: {&amp;quot;items&amp;quot;: {&amp;quot;items&amp;quot;: [&amp;quot;export_batch_files&amp;quot;, &amp;quot;export_batch_failed&amp;quot;, &amp;quot;audit_events&amp;quot;], &amp;quot;total_items&amp;quot;: 3, &quot;]
+    context[&quot;Context Mode&lt;br/&gt;metadata_context_card&quot;]
+    candidates[&quot;Context&lt;br/&gt;tables=none&amp;lt;br/&amp;gt;apis=export_batch_files,export_batch_failed+1&quot;]
     tokens --&gt;|score relevance| context --&gt; candidates
   end
   subgraph Planning
     planner[&quot;Planner&lt;br/&gt;SQL_FIRST_API_VERIFY&quot;]
-    optimizer[&quot;Plan Optimizer&lt;br/&gt;{&amp;quot;candidate_scores&amp;quot;: {&amp;quot;generic_sql_first&amp;quot;: 12.3847}, &amp;quot;candidate_tool_calls&amp;quot;: {&amp;quot;generic_sql_first&amp;quot;: 1}, &amp;quot;selected&amp;quot;: &amp;quot;generic_s&quot;]
+    optimizer[&quot;Plan Optimizer&lt;br/&gt;selected=generic_sql_first&quot;]
     candidates --&gt;|metadata + policy| planner --&gt; optimizer
   end
   subgraph SQLPath[&quot;SQL Path&quot;]
-    sqlgen[&quot;SQL Generator&lt;br/&gt;n/a - no SQL call in trajectory&quot;]
+    sqlgen[&quot;SQL Generator&lt;br/&gt;source=none&quot;]
     sqlval[&quot;SQL Validator&lt;br/&gt;n/a - no validation step recorded&quot;]
     optimizer --&gt;|SQL step if needed| sqlgen --&gt; sqlval
   end
   subgraph APIPath[&quot;API Path&quot;]
-    apisel[&quot;API Selector&lt;br/&gt;GET /data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files&quot;]
+    apisel[&quot;API Selector&lt;br/&gt;endpoint=/data/foundation/export/batches/69de8a0e0cc6102b5d11f0...&quot;]
     apival[&quot;API Validator&lt;br/&gt;ok&lt;br/&gt;dry_run=True&quot;]
     optimizer --&gt;|API policy| apisel --&gt; apival
   end
@@ -121,15 +122,15 @@ flowchart TD
     apival --&gt;|call_api / dry-run| tools
   end
   subgraph EvidenceBus
-    evidence[&quot;Evidence Quality&lt;br/&gt;overall=False&lt;br/&gt;api_dry_run=True&quot;]
+    evidence[&quot;EvidenceBus&lt;br/&gt;SQL evidence: n/a&amp;lt;br/&amp;gt;Live API evidence: no&amp;lt;br/&amp;gt;Dry-run API: yes&quot;]
     tools --&gt;|extract facts| evidence
   end
   subgraph AnswerVerification[&quot;Answer Verification&quot;]
-    verifier[&quot;Verifier&lt;br/&gt;{&amp;quot;errors&amp;quot;: {&amp;quot;total_items&amp;quot;: 0, &amp;quot;truncated_items&amp;quot;: false}, &amp;quot;rewrite_applied&amp;quot;: false, &amp;quot;supported_claims_count&amp;quot;: 0, &amp;quot;unsupported_&quot;]
+    verifier[&quot;Verifier&lt;br/&gt;passed=yes&amp;lt;br/&amp;gt;unsupported=0&quot;]
     evidence --&gt;|answer slots + claims| verifier
   end
   subgraph FinalAnswer[&quot;Final Answer&quot;]
-    answer[&quot;Final Answer&lt;br/&gt;Batch file details require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.&quot;]
+    answer[&quot;Final Answer&lt;br/&gt;Batch file details require live API evidence. Live API verification was not executed because Ado&quot;]
     verifier --&gt;|safe answer| answer
   end
   subgraph Metrics
@@ -145,6 +146,8 @@ flowchart TD
 | SQL | n/a - no SQL call in trajectory | n/a - no validation step recorded | row_count=n/a - no SQL row count recorded; rows=n/a - no SQL rows preview recorded |
 | API | GET /data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files | ok | dry_run=True; live_api_evidence=False; overall_evidence=False; preview=n/a - no API result preview recorded |
 
+Context mode labels ending in `_inferred` are display-only summaries for the visualization; they are not recorded planner decisions.
+
 ## Tool Execution vs Evidence Availability
 
 API tool was invoked and validated, but live evidence was unavailable because Adobe credentials were missing.
@@ -157,6 +160,9 @@ API tool was invoked and validated, but live evidence was unavailable because Ad
 | invalid tool calls | n/a - no invalid-call metric recorded |
 | endpoint repairs | n/a - no endpoint-repair metric recorded |
 | schema hint injections | n/a - no schema-hint metric recorded |
+| SQL evidence available | n/a - no SQL call in trajectory |
+| live API evidence available | False |
+| overall evidence available | False |
 | dry-run only | True |
 | successful evidence count | 0 |
 | zero-row uncertain | n/a - no SQL call in trajectory |
@@ -195,7 +201,8 @@ API tool was invoked and validated, but live evidence was unavailable because Ad
     },
     &quot;candidate_tables&quot;: &quot;n/a - no candidate tables recorded&quot;,
     &quot;confidence&quot;: 0.9,
-    &quot;context_mode&quot;: &quot;n/a - no candidate context mode recorded&quot;,
+    &quot;context_mode&quot;: &quot;metadata_context_card&quot;,
+    &quot;context_mode_note&quot;: &quot;display-only inferred from checkpoint_07_context_card&quot;,
     &quot;estimated_context_tokens&quot;: 1000,
     &quot;score_margin&quot;: &quot;n/a - no candidate score margin recorded&quot;
   },
@@ -203,6 +210,9 @@ API tool was invoked and validated, but live evidence was unavailable because Ad
     &quot;dry_run_only&quot;: true,
     &quot;evidence_available&quot;: false,
     &quot;explanation&quot;: &quot;API tool was invoked and validated, but live evidence was unavailable because Adobe credentials were missing.&quot;,
+    &quot;live_api_evidence_available&quot;: false,
+    &quot;overall_evidence_available&quot;: false,
+    &quot;sql_evidence_available&quot;: &quot;n/a - no SQL call in trajectory&quot;,
     &quot;successful_evidence_count&quot;: 0,
     &quot;zero_row_uncertain&quot;: &quot;n/a - no SQL call in trajectory&quot;
   },

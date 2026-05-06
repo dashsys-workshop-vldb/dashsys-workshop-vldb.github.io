@@ -13,7 +13,8 @@
 | Runtime | 0.011884917039424181 |
 | Estimated tokens | 814 |
 | Checkpoint count | 20 |
-| Candidate context mode | n/a - no candidate context mode recorded |
+| Candidate context mode | metadata_context_card |
+| Context mode note | display-only inferred from checkpoint_07_context_card |
 
 ```mermaid
 flowchart TD
@@ -25,27 +26,27 @@ flowchart TD
     input_prompt -->|route_prompt| router
   end
   subgraph QueryUnderstanding["Query Understanding"]
-    normalizer["Query Normalizer<br/>List all journeys"]
-    tokens["Query Tokens<br/>{&quot;domains&quot;: {&quot;items&quot;: {&quot;items&quot;: [&quot;journey_campaign&quot;], &quot;total_items&quot;: 1, &quot;truncated_items&quot;: false}, &quot;total_items&quo"]
+    normalizer["Query Normalizer<br/>normalized query"]
+    tokens["Query Tokens<br/>domains=journey_campaign&lt;br/&gt;entities=none"]
     router -->|clean + extract| normalizer --> tokens
   end
   subgraph ContextSelection["Context Selection"]
-    context["Context Mode<br/>n/a - no candidate context mode recorded"]
-    candidates["Tables/APIs<br/>{&quot;preview&quot;: &quot;{\&quot;tables\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;dim_campaign\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&q"]
+    context["Context Mode<br/>metadata_context_card"]
+    candidates["Context<br/>tables=dim_campaign&lt;br/&gt;apis=journey_list,catalog_batches+1"]
     tokens -->|score relevance| context --> candidates
   end
   subgraph Planning
     planner["Planner<br/>SQL_FIRST_API_VERIFY"]
-    optimizer["Plan Optimizer<br/>{&quot;candidate_scores&quot;: {&quot;generic_sql_first&quot;: 14.2814}, &quot;candidate_tool_calls&quot;: {&quot;generic_sql_first&quot;: 2}, &quot;selected&quot;: &quot;generic_s"]
+    optimizer["Plan Optimizer<br/>selected=generic_sql_first"]
     candidates -->|metadata + policy| planner --> optimizer
   end
   subgraph SQLPath["SQL Path"]
-    sqlgen["SQL Generator<br/>SELECT CAMPAIGN.&quot;NAME&quot; AS CAMPAIGNNAME, CAMPAIGN.&quot;CAMPAIGNID&quot; AS CAMPAIGNID FROM &quot;dim_camp..."]
+    sqlgen["SQL Generator<br/>tables=dim_campaign&lt;br/&gt;rows=2"]
     sqlval["SQL Validator<br/>ok"]
     optimizer -->|SQL step if needed| sqlgen --> sqlval
   end
   subgraph APIPath["API Path"]
-    apisel["API Selector<br/>GET /ajo/journey"]
+    apisel["API Selector<br/>endpoint=/ajo/journey"]
     apival["API Validator<br/>ok<br/>dry_run=True"]
     optimizer -->|API policy| apisel --> apival
   end
@@ -55,15 +56,15 @@ flowchart TD
     apival -->|call_api / dry-run| tools
   end
   subgraph EvidenceBus
-    evidence["Evidence Quality<br/>overall=True<br/>api_dry_run=True"]
+    evidence["EvidenceBus<br/>SQL evidence: yes&lt;br/&gt;Live API evidence: no&lt;br/&gt;Dry-run API: yes"]
     tools -->|extract facts| evidence
   end
   subgraph AnswerVerification["Answer Verification"]
-    verifier["Verifier<br/>{&quot;errors&quot;: {&quot;total_items&quot;: 0, &quot;truncated_items&quot;: false}, &quot;rewrite_applied&quot;: false, &quot;supported_claims_count&quot;: 1, &quot;unsupported_"]
+    verifier["Verifier<br/>passed=yes&lt;br/&gt;unsupported=0"]
     evidence -->|answer slots + claims| verifier
   end
   subgraph FinalAnswer["Final Answer"]
-    answer["Final Answer<br/>Based on the available evidence, there are 2 journeys found in the database: Birthday Message and Gold Tier Welcome Email. Live API verification was not executed because Adobe cred"]
+    answer["Final Answer<br/>Based on the available evidence, there are 2 journeys found in the database: Birthday Message an"]
     verifier -->|safe answer| answer
   end
   subgraph Metrics
@@ -79,9 +80,11 @@ flowchart TD
 | SQL | SELECT CAMPAIGN."NAME" AS CAMPAIGNNAME, CAMPAIGN."CAMPAIGNID" AS CAMPAIGNID FROM "dim_campaign" AS CAMPAIGN | ok | row_count=2; rows={"preview": "{\"items\": {\"items\": [{\"CAMPAIGNID\": \"9f4ebca4-2fdd-4873-95f5-8d66bab358c6\", \"CAMPAIGNNAME\": \"Birthday Message\"}, {\"CAMPAIGNID\": \"3f277603-ac4d-4022-a993-8cbd3afc0d62\", \"CAMPAIGNNAME\": \"Gold Tier Welcome Email\"}], \"total_items\": 2, \"truncated_items\": false}, \"t...", "truncated": true} |
 | API | GET /ajo/journey | ok | dry_run=True; live_api_evidence=False; overall_evidence=True; preview=n/a - no API result preview recorded |
 
+Context mode labels ending in `_inferred` are display-only summaries for the visualization; they are not recorded planner decisions.
+
 ## Tool Execution vs Evidence Availability
 
-API tool was invoked and validated, but live evidence was unavailable because Adobe credentials were missing.
+SQL evidence is available. API tool was invoked and validated, but live API evidence was unavailable because Adobe credentials were missing.
 
 | Metric | Value |
 | --- | --- |
@@ -91,6 +94,9 @@ API tool was invoked and validated, but live evidence was unavailable because Ad
 | invalid tool calls | n/a - no invalid-call metric recorded |
 | endpoint repairs | n/a - no endpoint-repair metric recorded |
 | schema hint injections | n/a - no schema-hint metric recorded |
+| SQL evidence available | True |
+| live API evidence available | False |
+| overall evidence available | True |
 | dry-run only | True |
 | successful evidence count | 1 |
 | zero-row uncertain | False |
@@ -139,14 +145,18 @@ API tool was invoked and validated, but live evidence was unavailable because Ad
       "truncated_items": false
     },
     "confidence": 0.84,
-    "context_mode": "n/a - no candidate context mode recorded",
+    "context_mode": "metadata_context_card",
+    "context_mode_note": "display-only inferred from checkpoint_07_context_card",
     "estimated_context_tokens": 383,
     "score_margin": "n/a - no candidate score margin recorded"
   },
   "evidence": {
     "dry_run_only": true,
     "evidence_available": true,
-    "explanation": "API tool was invoked and validated, but live evidence was unavailable because Adobe credentials were missing.",
+    "explanation": "SQL evidence is available. API tool was invoked and validated, but live API evidence was unavailable because Adobe credentials were missing.",
+    "live_api_evidence_available": false,
+    "overall_evidence_available": true,
+    "sql_evidence_available": true,
     "successful_evidence_count": 1,
     "zero_row_uncertain": false
   },

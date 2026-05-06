@@ -7,9 +7,9 @@
 | RAW_REAL_LLM_TWO_TOOLS_BASELINE | Raw real LLM with execute_sql/call_api only | n/a - tool-loop diagnostic baseline | n/a - tool-loop diagnostic baseline | n/a - tool-loop diagnostic baseline | 1.2571 | 1318.3429 | 4.8366 | mixed_valid_and_failed_tool_agent_runs |
 | GUIDED_REAL_LLM_TWO_TOOLS_BASELINE | Guided real LLM with execute_sql/call_api plus schema/API affordances | n/a - tool-loop diagnostic baseline | n/a - tool-loop diagnostic baseline | n/a - tool-loop diagnostic baseline | 1.2 | 2057.3429 | 3.625 | mixed_valid_and_failed_tool_agent_runs |
 | REAL_LLM_TWO_TOOLS_BASELINE | Backward-compatible alias for the raw real LLM baseline | n/a - tool-loop diagnostic baseline | n/a - tool-loop diagnostic baseline | n/a - tool-loop diagnostic baseline | n/a | n/a | n/a | not_run |
-| LLM_FREE_AGENT_BASELINE | Deterministic approximation of a broad LLM agent | 0.6707 | 0.4879 | 0.4533 | 2.1143 | 975.9429 | 0.0177 | n/a |
-| SQL_ONLY_BASELINE | Local DB only | 0.5763 | 0.2983 | 0.2799 | 1.0 | 708.4571 | 0.0111 | n/a |
-| SQL_FIRST_API_VERIFY | Current deterministic optimized backend | 0.8407 | 0.6743 | 0.649 | 1.4571 | 851.7714 | 0.0103 | n/a |
+| LLM_FREE_AGENT_BASELINE | Deterministic approximation of a broad LLM agent | 0.6707 | 0.4879 | 0.4533 | 2.1143 | 975.9429 | 0.018 | n/a |
+| SQL_ONLY_BASELINE | Local DB only | 0.5763 | 0.2983 | 0.2799 | 1.0 | 708.4571 | 0.0112 | n/a |
+| SQL_FIRST_API_VERIFY | Current deterministic optimized backend | 0.8407 | 0.6743 | 0.649 | 1.4571 | 851.7714 | 0.0105 | n/a |
 | CANDIDATE_GUIDED_LLM_SQL | Optional candidate-context LLM SQL with fallback | n/a | n/a | n/a | n/a | n/a | n/a | n/a |
 | FULL_SCHEMA_LLM_SQL | Optional full-schema LLM SQL with fallback | n/a | n/a | n/a | n/a | n/a | n/a | n/a |
 | LLM_SQL_FIRST_API_VERIFY | Optional LLM SQL plus deterministic API verification | n/a | n/a | n/a | n/a | n/a | n/a | n/a |
@@ -32,6 +32,15 @@ A dry-run API call means the tool was invoked and validated, but live evidence w
 | --- | ---: | ---: | ---: |
 | Raw | 15 | 0.3714 | 0.3143 |
 | Guided | 24 | 0.2857 | 0.0286 |
+
+## Provider Reliability Note
+
+Some OpenRouter/OpenAI-backed baseline rows may fail at request level. These rows are separated under failed real LLM tool loops, are not counted as successful tool-loop runs, and do not affect the packaged `SQL_FIRST_API_VERIFY` submission.
+
+| Variant | `llm_request_failed` count |
+| --- | ---: |
+| Raw | 8 |
+| Guided | 9 |
 
 ## Tool Failure Categories
 
@@ -116,7 +125,7 @@ These rows are not treated as successful real tool-using baseline runs.
 | final score | 0.4533 | 0.649 | 0.1957 | 0.4317 |
 | tool calls | 2.1143 | 1.4571 | -0.6572 | -0.3108 |
 | tokens | 975.9429 | 851.7714 | -124.1715 | -0.1272 |
-| runtime | 0.0177 | 0.0103 | -0.0074 | -0.4181 |
+| runtime | 0.018 | 0.0105 | -0.0075 | -0.4167 |
 
 ## Technique Contribution
 

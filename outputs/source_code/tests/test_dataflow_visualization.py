@@ -8,6 +8,7 @@ from dashagent.dataflow_visualizer import (
     build_html_report,
     build_markdown_report,
     build_mermaid_graph,
+    count_mermaid_readability_issues,
     write_dataflow_artifacts,
 )
 
@@ -62,6 +63,14 @@ def test_dataflow_outputs_mermaid_markdown_html_and_redacts():
     table = build_checkpoint_effect_table(trajectory)
     assert "flowchart" in graph
     assert "Prompt Router" in graph
+    assert "Query Tokens<br/>" in graph
+    assert "entities=Birthday Message" in graph
+    assert "SQL evidence: yes" in graph
+    assert "Live API evidence: no" in graph
+    assert "Dry-run API: yes" in graph
+    assert "{&quot;" not in graph
+    assert "truncated_items" not in graph
+    assert count_mermaid_readability_issues(graph) == 0
     assert "checkpoint_00_prompt_router" in table
     assert "Checkpoint Effect Table" in md
     assert "mermaid" in html
@@ -83,11 +92,18 @@ def test_dataflow_artifacts_are_real_values_and_not_final_submission(tmp_path):
     assert "| Tool call count | 1 |" in md
     assert "SELECT * FROM dim_campaign" in md
     assert "GET /ajo/journey" in md
-    assert "API tool was invoked and validated, but live evidence was unavailable because Adobe credentials were missing." in md
+    assert "API tool was invoked and validated" in md
+    assert "live API evidence was unavailable because Adobe credentials were missing" in md
     assert "/journey" in md
     assert "Checkpoint count" in md
     assert "prevents unsupported direct answers" in md
-    assert summary["context"]["context_mode"].startswith("n/a -")
+    assert summary["evidence"]["sql_evidence_available"] is True
+    assert summary["evidence"]["live_api_evidence_available"] is False
+    assert summary["evidence"]["overall_evidence_available"] is True
+    json_summary = Path(files["json"]).read_text(encoding="utf-8")
+    assert "sql_evidence_available" in json_summary
+    assert "live_api_evidence_available" in json_summary
+    assert "overall_evidence_available" in json_summary
 
 
 def test_dataflow_mermaid_required_subgraphs_and_missing_fields():
@@ -110,4 +126,26 @@ def test_dataflow_mermaid_required_subgraphs_and_missing_fields():
     ]:
         assert label in graph
     assert "n/a - no API call in trajectory" in md
-    assert "n/a - no candidate context mode recorded" in md
+    assert "not_recorded" in md
+
+
+def test_context_mode_is_inferred_when_candidates_exist():
+    trajectory = {
+        "query_id": "ctx",
+        "original_query": "List journeys",
+        "strategy": "SQL_FIRST_API_VERIFY",
+        "steps": [
+            {
+                "kind": "nlp",
+                "tokens": {"domains": ["journey_campaign"]},
+                "relevance": {"tables": ["dim_campaign"], "apis": ["journey_list"]},
+            },
+            {"kind": "metadata", "estimated_tokens": 300},
+        ],
+        "checkpoints": [],
+    }
+    summary = build_dataflow_summary(trajectory)
+    assert summary["context"]["context_mode"] == "candidate_like_context_inferred"
+    assert "display-only inferred" in summary["context"]["context_mode_note"]
+    graph = build_mermaid_graph(trajectory)
+    assert "candidate_like_context_inferred" in graph

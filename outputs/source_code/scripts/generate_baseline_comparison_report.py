@@ -126,6 +126,10 @@ def generate_report(config: Config) -> dict[str, Any]:
             "raw": efficiency_summary(raw_rows),
             "guided": efficiency_summary(guided_rows),
         },
+        "provider_reliability": {
+            "raw_llm_request_failed_count": count_failure_reason(raw_rows, "llm_request_failed"),
+            "guided_llm_request_failed_count": count_failure_reason(guided_rows, "llm_request_failed"),
+        },
         "deterministic_approximation_baselines": deterministic,
         "optimized_systems": optimized_systems,
         "real_llm_tool_loop_warning": bool(failed_real and not successful_real),
@@ -251,6 +255,10 @@ def efficiency_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "avg_runtime": avg([row.get("runtime", 0) for row in rows]),
         "avg_tool_calls": avg([row.get("tool_call_count", 0) for row in rows]),
     }
+
+
+def count_failure_reason(rows: list[dict[str, Any]], reason: str) -> int:
+    return sum(1 for row in rows if row.get("failure_reason") == reason)
 
 
 def avg(values: list[float | int]) -> float:
@@ -446,6 +454,20 @@ def render_markdown(report: dict[str, Any]) -> str:
         lines.append(
             f"| {label} | {failures.get('dry_run_only_api_count', 0)} | {item.get('avg_successful_evidence_count', 0)} | {item.get('avg_invalid_tool_calls', 0)} |"
         )
+    reliability = report.get("provider_reliability", {})
+    lines.extend(
+        [
+            "",
+            "## Provider Reliability Note",
+            "",
+            "Some OpenRouter/OpenAI-backed baseline rows may fail at request level. These rows are separated under failed real LLM tool loops, are not counted as successful tool-loop runs, and do not affect the packaged `SQL_FIRST_API_VERIFY` submission.",
+            "",
+            "| Variant | `llm_request_failed` count |",
+            "| --- | ---: |",
+            f"| Raw | {reliability.get('raw_llm_request_failed_count', 0)} |",
+            f"| Guided | {reliability.get('guided_llm_request_failed_count', 0)} |",
+        ]
+    )
     lines.extend(
         [
             "",

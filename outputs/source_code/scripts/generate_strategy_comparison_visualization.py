@@ -93,14 +93,14 @@ def build_strategy_markdown(query_id: str, summaries: list[dict[str, Any]], mmd:
         mmd.strip(),
         "```",
         "",
-        "| Variant | Strategy | Route | Context mode | SQL preview | API endpoint | Tool calls | Invalid calls | Endpoint repairs | Evidence available | Dry-run only | Runtime | Tokens | Final answer preview |",
-        "| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | --- | --- | ---: | ---: | --- |",
+        "| Variant | Strategy | Route | Context mode | SQL preview | API endpoint | Tool calls | Invalid calls | Endpoint repairs | SQL evidence | Live API evidence | Overall evidence | Dry-run only | Runtime | Tokens | Final answer preview |",
+        "| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | --- | --- | --- | --- | ---: | ---: | --- |",
     ]
     if not summaries:
-        lines.append("| n/a | n/a | n/a | n/a | n/a | n/a | 0 | 0 | 0 | n/a | n/a | 0 | 0 | n/a |")
+        lines.append("| n/a | n/a | n/a | n/a | n/a | n/a | 0 | 0 | 0 | n/a | n/a | n/a | n/a | 0 | 0 | n/a |")
     for summary in summaries:
         lines.append(
-            "| {} | `{}` | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |".format(
+            "| {} | `{}` | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |".format(
                 _md(_display_variant(summary)),
                 _md(summary.get("strategy")),
                 _md(summary.get("route", {}).get("mode")),
@@ -110,7 +110,9 @@ def build_strategy_markdown(query_id: str, summaries: list[dict[str, Any]], mmd:
                 _md(summary.get("execution", {}).get("tool_call_count")),
                 _md(summary.get("execution", {}).get("invalid_tool_calls")),
                 _md(summary.get("execution", {}).get("endpoint_repairs")),
-                _md(summary.get("evidence", {}).get("evidence_available")),
+                _md(summary.get("evidence", {}).get("sql_evidence_available")),
+                _md(summary.get("evidence", {}).get("live_api_evidence_available")),
+                _md(summary.get("evidence", {}).get("overall_evidence_available")),
                 _md(summary.get("evidence", {}).get("dry_run_only")),
                 _md(summary.get("metrics", {}).get("runtime")),
                 _md(summary.get("metrics", {}).get("estimated_tokens") or summary.get("metrics", {}).get("prompt_context_tokens")),
@@ -129,7 +131,7 @@ def build_strategy_mermaid(query_id: str, summaries: list[dict[str, Any]]) -> st
             [
                 f"  prompt --> {node_prefix}_route[\"{_m(name)}<br/>route={_m(summary.get('route', {}).get('mode'))}\"]",
                 f"  {node_prefix}_route --> {node_prefix}_tools[\"tools={_m(summary.get('execution', {}).get('tool_call_count'))}<br/>invalid={_m(summary.get('execution', {}).get('invalid_tool_calls'))}\"]",
-                f"  {node_prefix}_tools --> {node_prefix}_evidence[\"evidence={_m(summary.get('evidence', {}).get('evidence_available'))}<br/>dry_run={_m(summary.get('evidence', {}).get('dry_run_only'))}\"]",
+                f"  {node_prefix}_tools --> {node_prefix}_evidence[\"sql={_m(_yn(summary.get('evidence', {}).get('sql_evidence_available')))}<br/>live_api={_m(_yn(summary.get('evidence', {}).get('live_api_evidence_available')))}<br/>dry_run={_m(_yn(summary.get('evidence', {}).get('dry_run_only')))}\"]",
                 f"  {node_prefix}_evidence --> {node_prefix}_answer[\"answer<br/>{_m(summary.get('answer', {}).get('final_answer_preview'))}\"]",
             ]
         )
@@ -167,6 +169,16 @@ def _md(value: Any) -> str:
 def _m(value: Any) -> str:
     text = "n/a" if value in (None, "") else str(value)
     return html.escape(re.sub(r"\s+", " ", text))[:100]
+
+
+def _yn(value: Any) -> str:
+    if value is True:
+        return "yes"
+    if value is False:
+        return "no"
+    if isinstance(value, str) and value.startswith("n/a -"):
+        return "n/a"
+    return str(value)
 
 
 if __name__ == "__main__":

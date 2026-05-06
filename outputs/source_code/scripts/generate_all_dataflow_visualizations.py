@@ -22,6 +22,11 @@ from dashagent.dataflow_visualizer import (
 )
 
 DEFAULT_QUERY_IDS = ["example_000", "example_004", "example_031", "list_all_journeys"]
+DEFAULT_STRATEGIES = {
+    "sql_first_api_verify",
+    "raw_real_llm_two_tools_baseline",
+    "guided_real_llm_two_tools_baseline",
+}
 
 
 def main() -> int:
@@ -34,8 +39,11 @@ def main() -> int:
 
     config = Config.from_env(ROOT)
     query_ids = args.query_id or DEFAULT_QUERY_IDS
-    strategies = {_slug(item) for item in args.strategy} if args.strategy else {"sql_first_api_verify"}
-    entries = generate_all(config, query_ids=query_ids, strategies=strategies, limit=args.limit, overwrite=args.overwrite)
+    strategies = {_slug(item) for item in args.strategy} if args.strategy else set(DEFAULT_STRATEGIES)
+    # The default set is intentionally bounded, so refresh it on each run to avoid
+    # stale visualization files after readability/reporting changes.  The
+    # --overwrite flag remains accepted for compatibility with earlier commands.
+    entries = generate_all(config, query_ids=query_ids, strategies=strategies, limit=args.limit, overwrite=True)
     index_files = write_index(config.outputs_dir, entries)
     print(json.dumps({"generated": len(entries), "index": index_files, "entries": entries}, indent=2, sort_keys=True))
     return 0
@@ -116,6 +124,9 @@ def entry_from_summary(summary: dict[str, Any], files: dict[str, str]) -> dict[s
         "query": summary.get("user_query"),
         "strategy": summary.get("strategy"),
         "variant": summary.get("variant"),
+        "tool_call_count": summary.get("execution", {}).get("tool_call_count"),
+        "valid_run": summary.get("execution", {}).get("valid_agent_run"),
+        "evidence_status": evidence_status(summary),
         "valid_trajectory": True,
         "dry_run_api": summary.get("evidence", {}).get("dry_run_only"),
         "endpoint_repaired": summary.get("api", {}).get("endpoint_repair") not in (None, "", [], {}, "n/a - no endpoint repair recorded"),
@@ -136,8 +147,8 @@ def write_index(outputs_dir: Path, entries: list[dict[str, Any]]) -> dict[str, s
     lines = [
         "# DASHSys Dataflow Visualization Index",
         "",
-        "| Query ID | Query | Strategy | Variant | Status badges | Links |",
-        "| --- | --- | --- | --- | --- | --- |",
+        "| Query ID | Query | Strategy | Variant | Tool calls | Valid run | Evidence status | Status badges | Links |",
+        "| --- | --- | --- | --- | ---: | --- | --- | --- | --- |",
     ]
     for entry in entries:
         badges = ", ".join(
@@ -160,7 +171,7 @@ def write_index(outputs_dir: Path, entries: list[dict[str, Any]]) -> dict[str, s
         if comparison_link:
             links += f" / [strategy_comparison.md]({comparison_link})"
         lines.append(
-            f"| `{entry.get('query_id')}` | {entry.get('query')} | `{entry.get('strategy')}` | {entry.get('variant')} | {badges} | {links} |"
+            f"| `{entry.get('query_id')}` | {entry.get('query')} | `{entry.get('strategy')}` | {entry.get('variant')} | {entry.get('tool_call_count')} | {entry.get('valid_run')} | {entry.get('evidence_status')} | {badges} | {links} |"
         )
     index_md.write_text("\n".join(lines) + "\n", encoding="utf-8")
     index_html.write_text(
@@ -175,6 +186,25 @@ def _has_positive(value: Any) -> bool:
         return float(value) > 0
     except Exception:
         return False
+
+
+def evidence_status(summary: dict[str, Any]) -> str:
+    evidence = summary.get("evidence", {})
+    sql = evidence.get("sql_evidence_available")
+    live_api = evidence.get("live_api_evidence_available")
+    overall = evidence.get("overall_evidence_available")
+    dry_run = evidence.get("dry_run_only")
+    return f"sql={_yn(sql)}, live_api={_yn(live_api)}, overall={_yn(overall)}, dry_run={_yn(dry_run)}"
+
+
+def _yn(value: Any) -> str:
+    if value is True:
+        return "yes"
+    if value is False:
+        return "no"
+    if isinstance(value, str) and value.startswith("n/a -"):
+        return "n/a"
+    return str(value)
 
 
 def _rel(base: Path, value: Any) -> str:
