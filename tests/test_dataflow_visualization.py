@@ -38,6 +38,37 @@ def fake_trajectory():
                 "output": {"normalized_query": "is birthday message journey published"},
             },
             {"checkpoint_id": "checkpoint_03_query_tokens", "technique": "tokens", "output": {"quoted_entities": ["Birthday Message"]}},
+            {
+                "checkpoint_id": "checkpoint_value_entity_retrieval",
+                "stage": "query understanding",
+                "technique": "CHESS-style value/entity retrieval",
+                "output": {
+                    "cache_hit": False,
+                    "cache_key_algorithm": "sha256",
+                    "cache_reproducible": True,
+                    "retrieval_ms": 1.23,
+                    "cold_cache_build_ms": 1.23,
+                    "warm_cache_lookup_ms": None,
+                    "value_retrieval_budget_exceeded": False,
+                    "match_count": 1,
+                },
+            },
+            {
+                "checkpoint_id": "checkpoint_sql_ast_validation",
+                "stage": "validation",
+                "technique": "SQLGlot AST-based SQL validation and extraction",
+                "output": {
+                    "parsed_ok": True,
+                    "parse_errors": [],
+                    "selected_tables": ["dim_campaign"],
+                    "selected_columns": ["name"],
+                    "unknown_tables": [],
+                    "unknown_columns": [],
+                    "destructive_sql_detected": False,
+                    "closest_table_suggestions": {},
+                    "closest_column_suggestions": {},
+                },
+            },
             {"checkpoint_id": "checkpoint_16_answer_verification", "technique": "verification", "output": {"verifier_passed": True}},
         ],
         "steps": [
@@ -75,6 +106,12 @@ def test_dataflow_outputs_mermaid_markdown_html_and_redacts():
     assert "Checkpoint Effect Table" in md
     assert "Research Technique Status" in md
     assert "SQLGlot AST validation" in md
+    assert "Value Retrieval Cache" in md
+    assert "cache_key_algorithm" in md
+    assert "sha256" in md
+    assert "SQL AST Validation" in md
+    assert "selected_tables" in md
+    assert "dim_campaign" in md
     assert "mermaid" in html
     assert "secret-token-123456789" not in md
 
@@ -109,6 +146,7 @@ def test_dataflow_artifacts_are_real_values_and_not_final_submission(tmp_path):
     assert "overall_evidence_available" in json_summary
     spans = Path(files["spans"]).read_text(encoding="utf-8")
     assert "span_count" in spans
+    assert "sql_ast_validation_span" in spans
 
 
 def test_dataflow_mermaid_required_subgraphs_and_missing_fields():

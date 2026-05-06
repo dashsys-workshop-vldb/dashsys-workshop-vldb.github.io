@@ -151,6 +151,7 @@ def generate_candidate_context_report(config: Config) -> dict[str, Any]:
             "schema_link_risk_distribution": dict(Counter(row.get("schema_link_risk") for row in rows)),
         },
         "candidate_miss_analysis": miss_analysis,
+        "candidate_risk_clusters": build_candidate_risk_clusters(rows),
         "curated_join_hint_audit": curated_join_hint_audit(executor.schema_index),
         "rows": rows,
     }
@@ -213,6 +214,59 @@ def curated_join_hint_audit(schema_index: Any) -> dict[str, Any]:
     }
 
 
+def build_candidate_risk_clusters(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    definitions = {
+        "zero_score_margin": {
+            "predicate": lambda row: (row.get("score_margin") or 0) == 0,
+            "likely_safe_improvement": "Improve tie-break diagnostics or fall back to hybrid/full schema context; do not force a table choice from a tied score.",
+        },
+        "low_confidence": {
+            "predicate": lambda row: (row.get("confidence") or 0) < 0.4,
+            "likely_safe_improvement": "Use broader context and surface the uncertainty to LLM/controller paths instead of narrowing aggressively.",
+        },
+        "missing_gold_table_in_top_k": {
+            "predicate": lambda row: bool(row.get("missing_gold_tables")),
+            "likely_safe_improvement": "Audit schema aliases and structural bridge coverage using schema-level signals only.",
+        },
+        "missing_gold_api_in_top_k": {
+            "predicate": lambda row: bool(row.get("missing_gold_apis")),
+            "likely_safe_improvement": "Improve endpoint catalog descriptions and API-family aliases without using public answer patterns.",
+        },
+        "broad_domain_api_confusion": {
+            "predicate": lambda row: _query_has(row, ("sandbox", "platform", "current", "live", "status", "observability")),
+            "likely_safe_improvement": "Add endpoint-family labels and confidence diagnostics for broad platform/API intents.",
+        },
+        "schema_vs_dataset_confusion": {
+            "predicate": lambda row: _query_has(row, ("schema", "schemas", "dataset", "datasets")),
+            "likely_safe_improvement": "Clarify schema-vs-dataset table/API affordances in retrieval-only metadata.",
+        },
+        "tag_api_confusion": {
+            "predicate": lambda row: _query_has(row, ("tag", "tags", "category")),
+            "likely_safe_improvement": "Strengthen tag endpoint summaries and keep dry-run API evidence labeled separately.",
+        },
+        "batch_endpoint_confusion": {
+            "predicate": lambda row: _query_has(row, ("batch", "batches", "file", "files", "download")),
+            "likely_safe_improvement": "Audit batch endpoint family labels and alias repair diagnostics.",
+        },
+    }
+    clusters: dict[str, dict[str, Any]] = {}
+    for name, spec in definitions.items():
+        matched = [row for row in rows if spec["predicate"](row)]
+        clusters[name] = {
+            "count": len(matched),
+            "example_query_ids": [row.get("query_id") for row in matched[:8]],
+            "likely_safe_improvement": spec["likely_safe_improvement"],
+            "diagnostic_only": True,
+            "behavior_changing": False,
+        }
+    return clusters
+
+
+def _query_has(row: dict[str, Any], terms: tuple[str, ...]) -> bool:
+    text = str(row.get("query") or "").lower()
+    return any(term in text for term in terms)
+
+
 def render_markdown(report: dict[str, Any]) -> str:
     lines = [
         "# Candidate Context Report",
@@ -239,6 +293,22 @@ def render_markdown(report: dict[str, Any]) -> str:
         lines.append(
             f"| `{row.get('query_id')}` | {', '.join(row.get('missing_gold_tables', []))} | "
             f"{', '.join(row.get('missing_gold_apis', []))} | {row.get('confidence')} | {row.get('score_margin')} | {row.get('recommended_context_mode')} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Candidate Risk Clusters",
+            "",
+            "These clusters are diagnostic-only and do not change candidate ranking, SQL generation, or answer behavior.",
+            "",
+            "| Cluster | Count | Example query IDs | Diagnostic only | Behavior changing? | Likely safe improvement |",
+            "| --- | ---: | --- | --- | --- | --- |",
+        ]
+    )
+    for name, cluster in report.get("candidate_risk_clusters", {}).items():
+        lines.append(
+            f"| `{name}` | {cluster.get('count')} | {', '.join(map(str, cluster.get('example_query_ids', [])))} | "
+            f"{cluster.get('diagnostic_only')} | {cluster.get('behavior_changing')} | {cluster.get('likely_safe_improvement')} |"
         )
     lines.extend(
         [

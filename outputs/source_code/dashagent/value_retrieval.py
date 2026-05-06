@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import time
@@ -79,14 +80,18 @@ def build_value_index(
     cache_dir.mkdir(parents=True, exist_ok=True)
     table_key = ",".join(candidate_tables or sorted(schema_index.tables)[:max_tables])
     key = f"{table_key}|{max_tables}|{max_columns}|{max_rows_per_column}|{max_ms}"
+    cache_key = stable_cache_key(key)
+    disk_path = cache_dir / f"value_index_{cache_key}.json"
+    lookup_started = time.perf_counter()
     if key in _VALUE_INDEX_L1:
         cached = dict(_VALUE_INDEX_L1[key])
         cached["cache_hit"] = True
+        cached["warm_cache_lookup_ms"] = round((time.perf_counter() - lookup_started) * 1000, 3)
         return cached
-    disk_path = cache_dir / ("value_index_" + str(abs(hash(key))) + ".json")
     if disk_path.exists():
         payload = json.loads(disk_path.read_text(encoding="utf-8"))
         payload["cache_hit"] = True
+        payload["warm_cache_lookup_ms"] = round((time.perf_counter() - lookup_started) * 1000, 3)
         _VALUE_INDEX_L1[key] = payload
         return payload
 
@@ -126,10 +131,15 @@ def build_value_index(
     payload = {
         "values": values,
         "cache_hit": False,
+        "cache_key": cache_key,
+        "cache_key_algorithm": "sha256",
+        "cache_reproducible": True,
         "cache_path": str(disk_path),
         "scanned_tables": scanned_tables,
         "scanned_columns": scanned_columns,
         "retrieval_ms": elapsed_ms,
+        "cold_cache_build_ms": elapsed_ms,
+        "warm_cache_lookup_ms": None,
         "value_retrieval_budget_exceeded": budget_exceeded or elapsed_ms > max_ms,
         "budget": {
             "max_tables": max_tables,
@@ -151,6 +161,9 @@ def retrieve_value_matches(query_values: list[EntityMention], value_index: dict[
     matches: list[ValueMatch] = []
     cost = {
         "cache_hit": value_index.get("cache_hit", False),
+        "cache_key": value_index.get("cache_key"),
+        "cache_key_algorithm": value_index.get("cache_key_algorithm"),
+        "cache_reproducible": value_index.get("cache_reproducible"),
         "retrieval_ms": value_index.get("retrieval_ms", 0.0),
         "budget_exceeded": value_index.get("value_retrieval_budget_exceeded", False),
     }
@@ -199,14 +212,23 @@ def value_retrieval_summary(query_values: list[EntityMention], value_index: dict
             "matches": [match.to_dict() for match in matches[:12]],
             "match_count": len(matches),
             "cache_hit": value_index.get("cache_hit", False),
+            "cache_key": value_index.get("cache_key"),
+            "cache_key_algorithm": value_index.get("cache_key_algorithm", "sha256"),
+            "cache_reproducible": value_index.get("cache_reproducible", True),
             "cache_path": value_index.get("cache_path"),
             "scanned_tables": value_index.get("scanned_tables", 0),
             "scanned_columns": value_index.get("scanned_columns", 0),
             "retrieval_ms": value_index.get("retrieval_ms", 0.0),
+            "cold_cache_build_ms": value_index.get("cold_cache_build_ms"),
+            "warm_cache_lookup_ms": value_index.get("warm_cache_lookup_ms"),
             "value_retrieval_budget_exceeded": value_index.get("value_retrieval_budget_exceeded", False),
             "budget": value_index.get("budget", {}),
         }
     )
+
+
+def stable_cache_key(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
 def _is_high_signal_column(column: str) -> bool:

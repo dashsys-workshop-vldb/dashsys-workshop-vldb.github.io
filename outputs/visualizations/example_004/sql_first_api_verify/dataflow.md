@@ -10,7 +10,7 @@
 | Variant | n/a - not a baseline variant |
 | Final answer preview | Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable. |
 | Tool call count | 2 |
-| Runtime | 0.011361249955371022 |
+| Runtime | 0.010860207956284285 |
 | Estimated tokens | 887 |
 | Checkpoint count | 22 |
 | Candidate context mode | metadata_context_card |
@@ -68,7 +68,7 @@ flowchart TD
     verifier -->|safe answer| answer
   end
   subgraph Metrics
-    metrics["Metrics<br/>tools=2<br/>tokens=887<br/>runtime=0.011361249955371022"]
+    metrics["Metrics<br/>tools=2<br/>tokens=887<br/>runtime=0.010860207956284285"]
     answer -->|record trajectory| metrics
   end
 ```
@@ -113,9 +113,32 @@ API tool was invoked and validated, but live evidence was unavailable because Ad
 | Query-family examples | DAIL-SQL | False | Optional family hints for LLM SQL | makes technique visibility auditable | optional LLM-only token cost | checkpoint_query_family_examples |
 | Span export | OpenAI Agents SDK tracing | True | Local span-style checkpoint export | makes technique visibility auditable | diagnostic overhead only | spans.json |
 
+## Value Retrieval Cache
+
+| Field | Value |
+| --- | --- |
+| cache_hit | True |
+| cache_key_algorithm | sha256 |
+| cache_reproducible | True |
+| retrieval_ms | n/a |
+| cold_cache_build_ms | n/a |
+| warm_cache_lookup_ms | n/a |
+| value_retrieval_budget_exceeded | n/a |
+| match_count | 0 |
+
 ## SQL AST Validation
 
-`{'destructive_sql_detected': False, 'parsed_ok': True, 'selected_columns': {'items': ['CONNECTIONSPECID', 'DATAFLOWNAME', 'NAME'], 'total_items': 5, 'truncated_items': True}, 'selected_tables': {'items': ['dim_target'], 'total_items': 1, 'truncated_items': False}, 'summaries': {'items': [{'destructive_sql_detected': False, 'enabled': True, 'normalized_sql': 'SELECT "DATAFLOWNAME", "STATE", "TARGETID", "CONNECTIONSPECID", "NAME" FROM "dim_target" WHERE LOWER(CAST("STATE" AS TEXT)) LIKE LOWER(\'%failed%\') LIMIT 50', 'parsed_ok': True, 'selected_columns': {'items': ['DATAFLOWNAME', 'STATE', 'TARGETID'], 'total_items': 5, 'truncated_items': True}, 'selected_tables': {'items': ['dim_target'], 'total_items': 1, 'truncated_items': False}}], 'total_items': 1, 'truncated_items': False}}`
+| Field | Value |
+| --- | --- |
+| parsed_ok | True |
+| parse_errors | n/a |
+| selected_tables | {"items": {"items": ["dim_target"], "total_items": 1, "truncated_items": false}, "total_items": 1, "truncated_items": false} |
+| selected_columns | {"items": {"items": ["CONNECTIONSPECID", "DATAFLOWNAME", "NAME"], "total_items": 3, "truncated_items": false}, "total_items": 5, "truncated_items": true} |
+| unknown_tables | n/a |
+| unknown_columns | n/a |
+| destructive_sql_detected | False |
+| closest_table_suggestions | n/a |
+| closest_column_suggestions | n/a |
 
 ## Technique Impact Highlight
 
@@ -232,7 +255,7 @@ API tool was invoked and validated, but live evidence was unavailable because Ad
 | `checkpoint_02_query_normalization` | normalization | data cleaning / query normalization | {"query": "Show me the IDs of failed dataflow runs"} | {"matching_text": "show me the ids of failed dataflow runs", "normalized_query": "Show me the IDs of failed dataflow runs"} | creates matching-friendly text while preserving the original query | improves template and route matching across wording variants | reduces repeated fuzzy matching work downstream |
 | `checkpoint_03_query_tokens` | tokenization | domain-aware tokenization/entity extraction | {"normalized_query": "Show me the IDs of failed dataflow runs"} | {"preview": "{\"domains\": {\"items\": {\"items\": [\"destination_dataflow\"], \"total_items\": 1, \"truncated_items\": false}, \"total_items\": 1, \"truncated_items\": false}, \"statuses\": {\"items\": {\"items\": [\"failed\"], \"total_items\": 1, \"truncated_items\": false}, \"total_items\": 1, \"trun...", "truncated": true} | extracts reusable query fields for routing, planning, and answers | grounds names, IDs, dates, metrics, and statuses before planning | avoids reparsing the query in later modules |
 | `checkpoint_04_relevance_scoring` | context selection | attention-style relevance scoring | {"preview": "{\"tokens\": {\"domains\": {\"items\": {\"items\": [\"destination_dataflow\"], \"total_items\": 1, \"truncated_items\": false}, \"total_items\": 1, \"truncated_items\": false}, \"statuses\": {\"items\": {\"items\": [\"failed\"], \"total_items\": 1, \"truncated_items\": false}, \"total_items...", "truncated": true} | {"preview": "{\"top_answer_families\": {\"items\": {\"items\": [\"failed_dataflow_runs\"], \"total_items\": 1, \"truncated_items\": false}, \"total_items\": 1, \"truncated_items\": false}, \"top_apis\": {\"items\": {\"items\": [\"flowservice_runs\", \"audit_events\", \"export_batch_failed\"], \"total_...", "truncated": true} | selects a smaller, more relevant schema/API context | keeps high-signal tables and endpoints near the planner | reduces metadata and prompt tokens when compact metadata is enabled |
-| `checkpoint_value_entity_retrieval` | query understanding | CHESS-style value/entity retrieval | {"query_values": {"items": {"items": [{"kind": "status", "text": "failed"}], "total_items": 1, "truncated_items": false}, "total_items": 1, "truncated_items": false}} | {"preview": "{\"active\": true, \"cache_hit\": true, \"cache_path\": \"[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/cache/value_index_2157610975707261.json\", \"match_count\": 0, \"query_value_count\": 1, \"retrieval_ms\": 8.664, \"scanned_columns\": 15, \"scanned_tables\": 2, \"truncate...", "truncated": true} | grounds query entities against sampled local DB values before planning | helps identify exact names, IDs, statuses, and metrics for SQL/API grounding | uses a cached bounded value index with per-query scan and wall-time budgets |
+| `checkpoint_value_entity_retrieval` | query understanding | CHESS-style value/entity retrieval | {"query_values": {"items": {"items": [{"kind": "status", "text": "failed"}], "total_items": 1, "truncated_items": false}, "total_items": 1, "truncated_items": false}} | {"preview": "{\"active\": true, \"cache_hit\": true, \"cache_key\": \"213f3d553413a550\", \"cache_key_algorithm\": \"sha256\", \"cache_path\": \"[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/cache/value_index_213f3d553413a550.json\", \"cache_reproducible\": true, \"match_count\": 0, \"query...", "truncated": true} | grounds query entities against sampled local DB values before planning | helps identify exact names, IDs, statuses, and metrics for SQL/API grounding | uses a cached bounded value index with per-query scan and wall-time budgets |
 | `checkpoint_05_query_analysis` | routing | branch prediction / QueryAnalysis | {"domain_type": "DESTINATION_DATAFLOW", "route_type": "SQL_THEN_API"} | {"preview": "{\"answer_family\": \"failed_dataflow_runs\", \"api_templates\": {\"items\": {\"items\": [\"failed_dataflow_flows\"], \"total_items\": 1, \"truncated_items\": false}, \"total_items\": 1, \"truncated_items\": false}, \"confidence\": 0.75, \"domain_type\": \"DESTINATION_DATAFLOW\", \"fast...", "truncated": true} | computes shared query understanding once | aligns routing, metadata, planning, and reporting decisions | avoids repeated template and routing analysis |
 | `checkpoint_06_lookup_path` | path prediction | TLB-style lookup path prediction | {"answer_family": "failed_dataflow_runs", "domain_type": "DESTINATION_DATAFLOW"} | {"preview": "{\"api_families\": {\"items\": {\"items\": [\"destination_flows\", \"recent_destination_flows\", \"failed_dataflow_flows\"], \"total_items\": 3, \"truncated_items\": false}, \"total_items\": 3, \"truncated_items\": false}, \"api_mode\": \"optional\", \"family\": \"destination_dataflow\",...", "truncated": true} | predicts the relevant table/join/API path | guides relationship-heavy SQL/API selection | filters unrelated schema and endpoint candidates |
 | `checkpoint_07_context_card` | metadata packing | huge-page-style compact context card | {"broad_context": false, "lookup_path": "destination_dataflow"} | {"preview": "{\"estimated_metadata_tokens\": 565, \"prompt_tokens\": 1164, \"selected_apis\": {\"items\": {\"items\": [\"flowservice_flows\"], \"total_items\": 1, \"truncated_items\": false}, \"total_items\": 1, \"truncated_items\": false}, \"selected_card_name\": \"destination_dataflow\", \"selec...", "truncated": true} | packs family-relevant context into metadata.json and the filled prompt | keeps required tables, columns, joins, and API candidates visible | limits context size for non-baseline strategies |

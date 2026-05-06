@@ -113,9 +113,17 @@ No successful evidence was available from executed tools.
 | Query-family examples | DAIL-SQL | False | Optional family hints for LLM SQL | makes technique visibility auditable | optional LLM-only token cost | checkpoint_query_family_examples |
 | Span export | OpenAI Agents SDK tracing | True | Local span-style checkpoint export | makes technique visibility auditable | diagnostic overhead only | spans.json |
 
+## Value Retrieval Cache
+
+| Field | Value |
+| --- | --- |
+| status | n/a - value retrieval checkpoint inactive |
+
 ## SQL AST Validation
 
-`n/a - SQL AST validation checkpoint inactive`
+| Field | Value |
+| --- | --- |
+| status | n/a - SQL AST validation checkpoint inactive |
 
 ## Technique Impact Highlight
 

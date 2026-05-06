@@ -191,6 +191,7 @@ def build_dataflow_summary(trajectory: dict[str, Any]) -> dict[str, Any]:
             "checkpoint_count": len(trajectory.get("checkpoints", []) or []),
             "research_techniques": research_technique_status(trajectory),
             "sql_ast": _value(_checkpoint_output(checkpoints, "checkpoint_sql_ast_validation"), "SQL AST validation checkpoint inactive"),
+            "value_retrieval_cache": _value(_checkpoint_output(checkpoints, "checkpoint_value_entity_retrieval"), "value retrieval checkpoint inactive"),
         }
     )
 
@@ -299,6 +300,53 @@ def build_research_technique_table(summary: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def build_value_retrieval_cache_table(summary: dict[str, Any]) -> str:
+    value_cache = summary.get("value_retrieval_cache")
+    lines = [
+        "| Field | Value |",
+        "| --- | --- |",
+    ]
+    if not isinstance(value_cache, dict):
+        lines.append(f"| status | {_md(value_cache)} |")
+        return "\n".join(lines) + "\n"
+    for key in [
+        "cache_hit",
+        "cache_key_algorithm",
+        "cache_reproducible",
+        "retrieval_ms",
+        "cold_cache_build_ms",
+        "warm_cache_lookup_ms",
+        "value_retrieval_budget_exceeded",
+        "match_count",
+    ]:
+        lines.append(f"| {key} | {_md(value_cache.get(key, 'n/a'))} |")
+    return "\n".join(lines) + "\n"
+
+
+def build_sql_ast_summary_table(summary: dict[str, Any]) -> str:
+    sql_ast = summary.get("sql_ast")
+    lines = [
+        "| Field | Value |",
+        "| --- | --- |",
+    ]
+    if not isinstance(sql_ast, dict):
+        lines.append(f"| status | {_md(sql_ast)} |")
+        return "\n".join(lines) + "\n"
+    for key in [
+        "parsed_ok",
+        "parse_errors",
+        "selected_tables",
+        "selected_columns",
+        "unknown_tables",
+        "unknown_columns",
+        "destructive_sql_detected",
+        "closest_table_suggestions",
+        "closest_column_suggestions",
+    ]:
+        lines.append(f"| {key} | {_md(_brief(sql_ast.get(key), 800) or 'n/a')} |")
+    return "\n".join(lines) + "\n"
+
+
 def build_markdown_report(trajectory: dict[str, Any]) -> str:
     summary = build_dataflow_summary(trajectory)
     lines = [
@@ -356,9 +404,13 @@ def build_markdown_report(trajectory: dict[str, Any]) -> str:
         "",
         build_research_technique_table(summary).strip(),
         "",
+        "## Value Retrieval Cache",
+        "",
+        build_value_retrieval_cache_table(summary).strip(),
+        "",
         "## SQL AST Validation",
         "",
-        f"`{_md(summary['sql_ast'])}`",
+        build_sql_ast_summary_table(summary).strip(),
         "",
         "## Technique Impact Highlight",
         "",

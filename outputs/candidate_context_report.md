@@ -61,6 +61,21 @@ Candidate context is schema/API retrieval only. It does not use public gold patt
 | `example_033` |  |  | 0.0833 | 0.0 | hybrid |
 | `example_034` |  | /data/infrastructure/observability/insights/metrics | 0.0833 | 0.0 | hybrid |
 
+## Candidate Risk Clusters
+
+These clusters are diagnostic-only and do not change candidate ranking, SQL generation, or answer behavior.
+
+| Cluster | Count | Example query IDs | Diagnostic only | Behavior changing? | Likely safe improvement |
+| --- | ---: | --- | --- | --- | --- |
+| `zero_score_margin` | 32 | example_003, example_004, example_005, example_006, example_007, example_008, example_009, example_010 | True | False | Improve tie-break diagnostics or fall back to hybrid/full schema context; do not force a table choice from a tied score. |
+| `low_confidence` | 14 | example_007, example_010, example_015, example_016, example_017, example_018, example_019, example_020 | True | False | Use broader context and surface the uncertainty to LLM/controller paths instead of narrowing aggressively. |
+| `missing_gold_table_in_top_k` | 2 | example_007, example_010 | True | False | Audit schema aliases and structural bridge coverage using schema-level signals only. |
+| `missing_gold_api_in_top_k` | 15 | example_003, example_006, example_007, example_010, example_011, example_012, example_015, example_016 | True | False | Improve endpoint catalog descriptions and API-family aliases without using public answer patterns. |
+| `broad_domain_api_confusion` | 11 | example_005, example_006, example_012, example_015, example_016, example_019, example_020, example_022 | True | False | Add endpoint-family labels and confidence diagnostics for broad platform/API intents. |
+| `schema_vs_dataset_confusion` | 8 | example_006, example_007, example_009, example_010, example_011, example_013, example_021, example_033 | True | False | Clarify schema-vs-dataset table/API affordances in retrieval-only metadata. |
+| `tag_api_confusion` | 4 | example_015, example_016, example_017, example_018 | True | False | Strengthen tag endpoint summaries and keep dry-run API evidence labeled separately. |
+| `batch_endpoint_confusion` | 11 | example_003, example_007, example_010, example_014, example_021, example_028, example_029, example_030 | True | False | Audit batch endpoint family labels and alias repair diagnostics. |
+
 ## Curated Join Hint Audit
 
 Used gold patterns: False

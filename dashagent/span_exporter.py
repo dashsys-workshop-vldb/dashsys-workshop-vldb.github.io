@@ -22,6 +22,7 @@ def checkpoints_to_spans(trajectory: dict[str, Any]) -> dict[str, Any]:
                     "stage": checkpoint.get("stage"),
                     "technique": checkpoint.get("technique"),
                     "checkpoint_id": checkpoint.get("checkpoint_id"),
+                    "span_kind": _span_kind(checkpoint),
                     "started_at": timestamp,
                     "ended_at": ended_at,
                     "input_summary": compact_preview(checkpoint.get("input_summary"), 500),
@@ -80,6 +81,13 @@ def _label(checkpoint: dict[str, Any]) -> str:
     stage = checkpoint.get("stage") or "checkpoint"
     technique = checkpoint.get("technique") or checkpoint.get("checkpoint_id") or ""
     return f"{stage}: {technique}"[:120]
+
+
+def _span_kind(checkpoint: dict[str, Any]) -> str:
+    if checkpoint.get("checkpoint_id") == "checkpoint_sql_ast_validation":
+        return "sql_ast_validation_span"
+    checkpoint_id = str(checkpoint.get("checkpoint_id") or "checkpoint")
+    return checkpoint_id.removeprefix("checkpoint_") + "_span"
 
 
 def _correctness_impact(name: str) -> str:

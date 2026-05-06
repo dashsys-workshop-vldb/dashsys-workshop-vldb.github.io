@@ -59,7 +59,7 @@
     verifier --&gt;|safe answer| answer
   end
   subgraph Metrics
-    metrics[&quot;Metrics&lt;br/&gt;tools=1&lt;br/&gt;tokens=758&lt;br/&gt;runtime=0.009850375005044043&quot;]
+    metrics[&quot;Metrics&lt;br/&gt;tools=1&lt;br/&gt;tokens=758&lt;br/&gt;runtime=0.009985625045374036&quot;]
     answer --&gt;|record trajectory| metrics
   end
 </div>
@@ -76,7 +76,7 @@
 | Variant | n/a - not a baseline variant |
 | Final answer preview | Batch file details require live API evidence. Live API verification was not executed because Adobe credentials are unavailable. |
 | Tool call count | 1 |
-| Runtime | 0.009850375005044043 |
+| Runtime | 0.009985625045374036 |
 | Estimated tokens | 758 |
 | Checkpoint count | 21 |
 | Candidate context mode | metadata_context_card |
@@ -134,7 +134,7 @@ flowchart TD
     verifier --&gt;|safe answer| answer
   end
   subgraph Metrics
-    metrics[&quot;Metrics&lt;br/&gt;tools=1&lt;br/&gt;tokens=758&lt;br/&gt;runtime=0.009850375005044043&quot;]
+    metrics[&quot;Metrics&lt;br/&gt;tools=1&lt;br/&gt;tokens=758&lt;br/&gt;runtime=0.009985625045374036&quot;]
     answer --&gt;|record trajectory| metrics
   end
 ```
@@ -179,9 +179,24 @@ API tool was invoked and validated, but live evidence was unavailable because Ad
 | Query-family examples | DAIL-SQL | False | Optional family hints for LLM SQL | makes technique visibility auditable | optional LLM-only token cost | checkpoint_query_family_examples |
 | Span export | OpenAI Agents SDK tracing | True | Local span-style checkpoint export | makes technique visibility auditable | diagnostic overhead only | spans.json |
 
+## Value Retrieval Cache
+
+| Field | Value |
+| --- | --- |
+| cache_hit | True |
+| cache_key_algorithm | sha256 |
+| cache_reproducible | True |
+| retrieval_ms | n/a |
+| cold_cache_build_ms | n/a |
+| warm_cache_lookup_ms | n/a |
+| value_retrieval_budget_exceeded | n/a |
+| match_count | 0 |
+
 ## SQL AST Validation
 
-`n/a - SQL AST validation checkpoint inactive`
+| Field | Value |
+| --- | --- |
+| status | n/a - SQL AST validation checkpoint inactive |
 
 ## Technique Impact Highlight
 
@@ -289,7 +304,7 @@ API tool was invoked and validated, but live evidence was unavailable because Ad
 | `checkpoint_02_query_normalization` | normalization | data cleaning / query normalization | {&quot;query&quot;: &quot;Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?&quot;} | {&quot;preview&quot;: &quot;{\&quot;matching_text\&quot;: \&quot;which file are available for download in batch 69de8a0e0cc6102b5d11f01e?\&quot;, \&quot;normalized_query\&quot;: \&quot;Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?\&quot;, \&quot;rewrites\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;important_plurals-&gt;singular\&quot;], \&quot;tot...&quot;, &quot;truncated&quot;: true} | creates matching-friendly text while preserving the original query | improves template and route matching across wording variants | reduces repeated fuzzy matching work downstream |
 | `checkpoint_03_query_tokens` | tokenization | domain-aware tokenization/entity extraction | {&quot;normalized_query&quot;: &quot;Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?&quot;} | {&quot;domains&quot;: {&quot;items&quot;: {&quot;items&quot;: [&quot;audit&quot;, &quot;batch&quot;], &quot;total_items&quot;: 2, &quot;truncated_items&quot;: false}, &quot;total_items&quot;: 2, &quot;truncated_items&quot;: false}, &quot;ids&quot;: 1} | extracts reusable query fields for routing, planning, and answers | grounds names, IDs, dates, metrics, and statuses before planning | avoids reparsing the query in later modules |
 | `checkpoint_04_relevance_scoring` | context selection | attention-style relevance scoring | {&quot;tokens&quot;: {&quot;domains&quot;: {&quot;items&quot;: {&quot;items&quot;: [&quot;audit&quot;, &quot;batch&quot;], &quot;total_items&quot;: 2, &quot;truncated_items&quot;: false}, &quot;total_items&quot;: 2, &quot;truncated_items&quot;: false}, &quot;ids&quot;: 1}} | {&quot;preview&quot;: &quot;{\&quot;top_answer_families\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;batch\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;top_apis\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;export_batch_files\&quot;, \&quot;export_batch_failed\&quot;, \&quot;audit_events\&quot;], \&quot;total_items\&quot;: 3, \&quot;t...&quot;, &quot;truncated&quot;: true} | selects a smaller, more relevant schema/API context | keeps high-signal tables and endpoints near the planner | reduces metadata and prompt tokens when compact metadata is enabled |
-| `checkpoint_value_entity_retrieval` | query understanding | CHESS-style value/entity retrieval | {&quot;query_values&quot;: {&quot;items&quot;: {&quot;items&quot;: [{&quot;kind&quot;: &quot;batch_id&quot;, &quot;text&quot;: &quot;69de8a0e0cc6102b5d11f01e&quot;}, {&quot;kind&quot;: &quot;id&quot;, &quot;text&quot;: &quot;69de8a0e0cc6102b5d11f01e&quot;}], &quot;total_items&quot;: 2, &quot;truncated_items&quot;: false}, &quot;total_items&quot;: 2, &quot;truncated_items&quot;: false}} | {&quot;preview&quot;: &quot;{\&quot;active\&quot;: true, \&quot;cache_hit\&quot;: true, \&quot;cache_path\&quot;: \&quot;[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/cache/value_index_2512512604900919887.json\&quot;, \&quot;match_count\&quot;: 0, \&quot;query_value_count\&quot;: 2, \&quot;retrieval_ms\&quot;: 11.784, \&quot;scanned_columns\&quot;: 18, \&quot;scanned_tables\&quot;: 3, \&quot;trun...&quot;, &quot;truncated&quot;: true} | grounds query entities against sampled local DB values before planning | helps identify exact names, IDs, statuses, and metrics for SQL/API grounding | uses a cached bounded value index with per-query scan and wall-time budgets |
+| `checkpoint_value_entity_retrieval` | query understanding | CHESS-style value/entity retrieval | {&quot;query_values&quot;: {&quot;items&quot;: {&quot;items&quot;: [{&quot;kind&quot;: &quot;batch_id&quot;, &quot;text&quot;: &quot;69de8a0e0cc6102b5d11f01e&quot;}, {&quot;kind&quot;: &quot;id&quot;, &quot;text&quot;: &quot;69de8a0e0cc6102b5d11f01e&quot;}], &quot;total_items&quot;: 2, &quot;truncated_items&quot;: false}, &quot;total_items&quot;: 2, &quot;truncated_items&quot;: false}} | {&quot;preview&quot;: &quot;{\&quot;active\&quot;: true, \&quot;cache_hit\&quot;: true, \&quot;cache_key\&quot;: \&quot;a2f6025ad4340fb6\&quot;, \&quot;cache_key_algorithm\&quot;: \&quot;sha256\&quot;, \&quot;cache_path\&quot;: \&quot;[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/cache/value_index_a2f6025ad4340fb6.json\&quot;, \&quot;cache_reproducible\&quot;: true, \&quot;match_count\&quot;: 0, \&quot;query...&quot;, &quot;truncated&quot;: true} | grounds query entities against sampled local DB values before planning | helps identify exact names, IDs, statuses, and metrics for SQL/API grounding | uses a cached bounded value index with per-query scan and wall-time budgets |
 | `checkpoint_05_query_analysis` | routing | branch prediction / QueryAnalysis | {&quot;domain_type&quot;: &quot;UNKNOWN&quot;, &quot;route_type&quot;: &quot;API_ONLY&quot;} | {&quot;preview&quot;: &quot;{\&quot;answer_family\&quot;: \&quot;batch\&quot;, \&quot;api_templates\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;batch_export_files\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;confidence\&quot;: 0.3, \&quot;domain_type\&quot;: \&quot;UNKNOWN\&quot;, \&quot;fast_path\&quot;: \&quot;batch_export_files\&quot;, \&quot;r...&quot;, &quot;truncated&quot;: true} | computes shared query understanding once | aligns routing, metadata, planning, and reporting decisions | avoids repeated template and routing analysis |
 | `checkpoint_06_lookup_path` | path prediction | TLB-style lookup path prediction | {&quot;answer_family&quot;: &quot;batch&quot;, &quot;domain_type&quot;: &quot;UNKNOWN&quot;} | {&quot;preview&quot;: &quot;{\&quot;api_families\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;batch_list\&quot;, \&quot;recent_batches\&quot;, \&quot;batch_details\&quot;], \&quot;total_items\&quot;: 3, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 5, \&quot;truncated_items\&quot;: true}, \&quot;api_mode\&quot;: \&quot;required\&quot;, \&quot;family\&quot;: \&quot;batch\&quot;, \&quot;required_ids\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;ba...&quot;, &quot;truncated&quot;: true} | predicts the relevant table/join/API path | guides relationship-heavy SQL/API selection | filters unrelated schema and endpoint candidates |
 | `checkpoint_07_context_card` | metadata packing | huge-page-style compact context card | {&quot;broad_context&quot;: false, &quot;lookup_path&quot;: &quot;batch&quot;} | {&quot;preview&quot;: &quot;{\&quot;estimated_metadata_tokens\&quot;: 1000, \&quot;prompt_tokens\&quot;: 1673, \&quot;selected_apis\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;export_batch_files\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;selected_card_name\&quot;: \&quot;batch\&quot;, \&quot;selected_columns\&quot;:...&quot;, &quot;truncated&quot;: true} | packs family-relevant context into metadata.json and the filled prompt | keeps required tables, columns, joins, and API candidates visible | limits context size for non-baseline strategies |

@@ -57,7 +57,11 @@ def test_research_inspired_report_contains_flags_and_techniques(tiny_project):
     assert "ENABLE_SQL_AST_VALIDATION" in report["feature_flags"]
     assert any(row["source_inspiration"] == "SQLGlot" for row in report["techniques"])
     assert report["summary"]["value_retrieval_budget_ms"] == tiny_project.value_retrieval_max_ms
+    assert report["summary"]["value_retrieval_cache_key_algorithm"] == "sha256"
+    assert report["summary"]["value_retrieval_cache_reproducible"] is True
     assert report["summary"]["final_submission_format_unchanged"] is True
     assert "no measured strict-score improvement" in md
     assert "Value retrieval budget" in md
+    assert "Value retrieval cache key algorithm" in md
+    assert "Diagnostic Candidate Risk Clusters" in md
     assert "Visualization artifacts directory" in md

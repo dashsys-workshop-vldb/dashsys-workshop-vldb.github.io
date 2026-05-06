@@ -6,16 +6,136 @@
     "strict_final_score": 0.649,
     "tool_calls": 1.4571
   },
+  "candidate_risk_clusters": {
+    "batch_endpoint_confusion": {
+      "behavior_changing": false,
+      "count": 11,
+      "diagnostic_only": true,
+      "example_query_ids": [
+        "example_003",
+        "example_007",
+        "example_010",
+        "example_014",
+        "example_021",
+        "example_028",
+        "example_029",
+        "example_030"
+      ],
+      "likely_safe_improvement": "Audit batch endpoint family labels and alias repair diagnostics."
+    },
+    "broad_domain_api_confusion": {
+      "behavior_changing": false,
+      "count": 11,
+      "diagnostic_only": true,
+      "example_query_ids": [
+        "example_005",
+        "example_006",
+        "example_012",
+        "example_015",
+        "example_016",
+        "example_019",
+        "example_020",
+        "example_022"
+      ],
+      "likely_safe_improvement": "Add endpoint-family labels and confidence diagnostics for broad platform/API intents."
+    },
+    "low_confidence": {
+      "behavior_changing": false,
+      "count": 14,
+      "diagnostic_only": true,
+      "example_query_ids": [
+        "example_007",
+        "example_010",
+        "example_015",
+        "example_016",
+        "example_017",
+        "example_018",
+        "example_019",
+        "example_020"
+      ],
+      "likely_safe_improvement": "Use broader context and surface the uncertainty to LLM/controller paths instead of narrowing aggressively."
+    },
+    "missing_gold_api_in_top_k": {
+      "behavior_changing": false,
+      "count": 15,
+      "diagnostic_only": true,
+      "example_query_ids": [
+        "example_003",
+        "example_006",
+        "example_007",
+        "example_010",
+        "example_011",
+        "example_012",
+        "example_015",
+        "example_016"
+      ],
+      "likely_safe_improvement": "Improve endpoint catalog descriptions and API-family aliases without using public answer patterns."
+    },
+    "missing_gold_table_in_top_k": {
+      "behavior_changing": false,
+      "count": 2,
+      "diagnostic_only": true,
+      "example_query_ids": [
+        "example_007",
+        "example_010"
+      ],
+      "likely_safe_improvement": "Audit schema aliases and structural bridge coverage using schema-level signals only."
+    },
+    "schema_vs_dataset_confusion": {
+      "behavior_changing": false,
+      "count": 8,
+      "diagnostic_only": true,
+      "example_query_ids": [
+        "example_006",
+        "example_007",
+        "example_009",
+        "example_010",
+        "example_011",
+        "example_013",
+        "example_021",
+        "example_033"
+      ],
+      "likely_safe_improvement": "Clarify schema-vs-dataset table/API affordances in retrieval-only metadata."
+    },
+    "tag_api_confusion": {
+      "behavior_changing": false,
+      "count": 4,
+      "diagnostic_only": true,
+      "example_query_ids": [
+        "example_015",
+        "example_016",
+        "example_017",
+        "example_018"
+      ],
+      "likely_safe_improvement": "Strengthen tag endpoint summaries and keep dry-run API evidence labeled separately."
+    },
+    "zero_score_margin": {
+      "behavior_changing": false,
+      "count": 32,
+      "diagnostic_only": true,
+      "example_query_ids": [
+        "example_003",
+        "example_004",
+        "example_005",
+        "example_006",
+        "example_007",
+        "example_008",
+        "example_009",
+        "example_010"
+      ],
+      "likely_safe_improvement": "Improve tie-break diagnostics or fall back to hybrid/full schema context; do not force a table choice from a tied score."
+    }
+  },
   "current": {
-    "estimated_tokens": 894.4286,
-    "runtime": 0.0112,
+    "estimated_tokens": 899.2286,
+    "runtime": 0.0115,
     "strict_correctness": 0.6743,
     "strict_final_score": 0.6486,
     "tool_calls": 1.4571
   },
   "delta": {
-    "estimated_tokens": 42.6572,
-    "runtime": 0.001,
+    "estimated_tokens": 47.4572,
+    "runtime": 0.0013,
     "strict_correctness": 0.0,
     "strict_final_score": -0.0004,
     "tool_calls": 0.0
@@ -30,6 +150,9 @@
     "ENABLE_VALUE_RETRIEVAL": true
   },
   "notes": [
+    "Value retrieval cache filenames use stable SHA-256 keys instead of Python process-salted hash().",
+    "Candidate risk clusters are diagnostic-only and do not change candidate ranking or SQL/API generation.",
+    "SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.",
     "No live API evidence is fabricated; Adobe API remains dry-run without credentials.",
     "Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.",
     "Inactive techniques appear compactly in visualization status tables, not as empty checkpoints.",
@@ -103,19 +226,22 @@
     "used_gold_patterns": false
   },
   "summary": {
+    "candidate_risk_cluster_count": 8,
     "estimated_tokens_gate_ok": true,
     "final_submission_format_unchanged": true,
     "no_secret_scan_ok": true,
     "packaged_preferred_strategy": "SQL_FIRST_API_VERIFY",
     "runtime_gate_ok": true,
-    "runtime_overhead_pct": 0.098,
+    "runtime_overhead_pct": 0.1275,
     "status": "no measured strict-score improvement",
     "strict_score_regression_ok": true,
-    "token_overhead_pct": 0.0501,
+    "token_overhead_pct": 0.0557,
     "tool_call_delta": 0.0,
     "tool_call_gate_ok": true,
     "value_retrieval_budget_ms": 250,
     "value_retrieval_budget_ok": true,
+    "value_retrieval_cache_key_algorithm": "sha256",
+    "value_retrieval_cache_reproducible": true,
     "visualization_artifacts_dir": "/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/visualizations",
     "visualizations_in_final_submission": 0
   },

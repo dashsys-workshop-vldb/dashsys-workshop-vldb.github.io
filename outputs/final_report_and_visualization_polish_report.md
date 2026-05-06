@@ -121,3 +121,11 @@ The packaged preferred strategy remains `SQL_FIRST_API_VERIFY`.
 - Real LLM baseline rows remain provider/model-dependent; request-level failures are separated and reported.
 - Candidate/context mode labels are clearer, but inferred labels are display-only and should not be read as planner choices.
 - Guided baseline visualizations are useful for diagnosis, but `SQL_FIRST_API_VERIFY` remains the stable packaged strategy.
+
+## 11. Targeted Stabilization Addendum
+
+- Value retrieval cache filenames now use reproducible SHA-256 cache keys instead of Python process-salted `hash()` values.
+- Value retrieval cache status is visible in dataflow reports when the retrieval checkpoint is active: `cache_hit`, `cache_key_algorithm`, `cache_reproducible`, `retrieval_ms`, and budget status.
+- SQLGlot AST validation reporting now exposes parse errors, selected tables/columns, unknown tables/columns, destructive-command detection, and closest suggestions without changing `SQL_FIRST_API_VERIFY` execution behavior.
+- Candidate context reports now include diagnostic-only `candidate_risk_clusters`; these clusters do not change candidate ranking, SQL/API generation, or answer behavior.
+- Latest strict gate result remains stable: `SQL_FIRST_API_VERIFY` final score `0.6486`, correctness `0.6743`, tool calls `1.4571`, estimated-token overhead `5.57%`, runtime overhead `12.75%`.

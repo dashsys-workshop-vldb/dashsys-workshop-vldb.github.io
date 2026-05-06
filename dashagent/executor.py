@@ -607,6 +607,17 @@ class AgentExecutor:
                     "unknown_tables": sorted({table for item in sql_ast_summaries for table in item.get("unknown_tables", [])}),
                     "unknown_columns": sorted({column for item in sql_ast_summaries for column in item.get("unknown_columns", [])}),
                     "destructive_sql_detected": any(item.get("destructive_sql_detected") for item in sql_ast_summaries),
+                    "parse_errors": [item.get("parse_error") for item in sql_ast_summaries if item.get("parse_error")],
+                    "closest_table_suggestions": {
+                        key: value
+                        for item in sql_ast_summaries
+                        for key, value in (item.get("closest_table_suggestions") or {}).items()
+                    },
+                    "closest_column_suggestions": {
+                        key: value
+                        for item in sql_ast_summaries
+                        for key, value in (item.get("closest_column_suggestions") or {}).items()
+                    },
                 },
                 effect="adds AST-level table and column extraction after existing SQL validation",
                 correctness_role="detects unsafe SQL and schema mismatches with parser-backed structure",

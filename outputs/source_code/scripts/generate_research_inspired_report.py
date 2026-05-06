@@ -45,6 +45,7 @@ def generate_report(config: Config) -> dict[str, Any]:
     examples = [example.__dict__ for example in harness.load_examples()]
     strict = _load_json(config.outputs_dir / "eval_results_strict.json")
     manifest = _load_json(config.outputs_dir / "final_submission_manifest.json")
+    candidate_report = _load_json(config.outputs_dir / "candidate_context_report.json")
     current = strict.get("summary", {}).get("by_strategy", {}).get("SQL_FIRST_API_VERIFY", {})
     final_score = current.get("avg_final_score", 0.0)
     correctness = current.get("avg_correctness_score", 0.0)
@@ -97,6 +98,9 @@ def generate_report(config: Config) -> dict[str, Any]:
             "visualization_artifacts_dir": str(config.outputs_dir / "visualizations"),
             "visualizations_in_final_submission": visualizations_in_submission,
             "final_submission_format_unchanged": visualizations_in_submission == 0,
+            "value_retrieval_cache_key_algorithm": "sha256",
+            "value_retrieval_cache_reproducible": True,
+            "candidate_risk_cluster_count": len(candidate_report.get("candidate_risk_clusters", {})),
         },
         "baseline": BASELINE_SQL_FIRST,
         "current": metrics,
@@ -116,7 +120,11 @@ def generate_report(config: Config) -> dict[str, Any]:
             for name, source, module, active, checkpoint in techniques
         ],
         "research_safety_audit": build_research_safety_audit(executor.schema_index, examples),
+        "candidate_risk_clusters": candidate_report.get("candidate_risk_clusters", {}),
         "notes": [
+            "Value retrieval cache filenames use stable SHA-256 keys instead of Python process-salted hash().",
+            "Candidate risk clusters are diagnostic-only and do not change candidate ranking or SQL/API generation.",
+            "SQLGlot AST diagnostics are reported safely; ParseError values are captured as diagnostics rather than crashing the pipeline.",
             "No live API evidence is fabricated; Adobe API remains dry-run without credentials.",
             "Gated SQL candidates validate multiple candidates but execute one selected SQL in packaged SQL_FIRST mode.",
             "Inactive techniques appear compactly in visualization status tables, not as empty checkpoints.",
@@ -153,6 +161,9 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"(gate OK: {report['summary']['tool_call_gate_ok']})",
             f"- Value retrieval budget: {report['summary']['value_retrieval_budget_ms']} ms "
             f"(budget OK: {report['summary']['value_retrieval_budget_ok']})",
+            f"- Value retrieval cache key algorithm: `{report['summary']['value_retrieval_cache_key_algorithm']}` "
+            f"(reproducible: {report['summary']['value_retrieval_cache_reproducible']})",
+            f"- Candidate risk clusters reported: {report['summary']['candidate_risk_cluster_count']}",
             f"- Secret scan OK: {report['summary']['no_secret_scan_ok']}",
             f"- Visualization artifacts directory: `{report['summary']['visualization_artifacts_dir']}`",
             f"- Visualization artifacts inside final submission: {report['summary']['visualizations_in_final_submission']}",
@@ -181,6 +192,19 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"{row['active_in_sql_first']} | {row['active_in_raw_guided']} | {row['visualization_checkpoint']} |"
         )
     audit = report["research_safety_audit"]
+    lines.extend(
+        [
+            "",
+            "## Diagnostic Candidate Risk Clusters",
+            "",
+            "| Cluster | Count | Diagnostic only | Behavior changing? |",
+            "| --- | ---: | --- | --- |",
+        ]
+    )
+    for name, cluster in report.get("candidate_risk_clusters", {}).items():
+        lines.append(
+            f"| `{name}` | {cluster.get('count')} | {cluster.get('diagnostic_only')} | {cluster.get('behavior_changing')} |"
+        )
     lines.extend(
         [
             "",

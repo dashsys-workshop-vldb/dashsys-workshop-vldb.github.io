@@ -10,8 +10,8 @@
 | Variant | n/a - not a baseline variant |
 | Final answer preview | The journey "Birthday Message" has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable. |
 | Tool call count | 2 |
-| Runtime | 0.01223258301615715 |
-| Estimated tokens | 917 |
+| Runtime | 0.012236207956448197 |
+| Estimated tokens | 950 |
 | Checkpoint count | 24 |
 | Candidate context mode | metadata_context_card |
 | Context mode note | display-only inferred from checkpoint_07_context_card |
@@ -68,7 +68,7 @@ flowchart TD
     verifier -->|safe answer| answer
   end
   subgraph Metrics
-    metrics["Metrics<br/>tools=2<br/>tokens=917<br/>runtime=0.01223258301615715"]
+    metrics["Metrics<br/>tools=2<br/>tokens=950<br/>runtime=0.012236207956448197"]
     answer -->|record trajectory| metrics
   end
 ```
@@ -113,9 +113,32 @@ SQL evidence is available. API tool was invoked and validated, but live API evid
 | Query-family examples | DAIL-SQL | False | Optional family hints for LLM SQL | makes technique visibility auditable | optional LLM-only token cost | checkpoint_query_family_examples |
 | Span export | OpenAI Agents SDK tracing | True | Local span-style checkpoint export | makes technique visibility auditable | diagnostic overhead only | spans.json |
 
+## Value Retrieval Cache
+
+| Field | Value |
+| --- | --- |
+| cache_hit | True |
+| cache_key_algorithm | sha256 |
+| cache_reproducible | True |
+| retrieval_ms | n/a |
+| cold_cache_build_ms | n/a |
+| warm_cache_lookup_ms | n/a |
+| value_retrieval_budget_exceeded | n/a |
+| match_count | 1 |
+
 ## SQL AST Validation
 
-`{'destructive_sql_detected': False, 'parsed_ok': True, 'selected_columns': {'items': ['LASTDEPLOYEDTIME', 'NAME'], 'total_items': 2, 'truncated_items': False}, 'selected_tables': {'items': ['dim_campaign'], 'total_items': 1, 'truncated_items': False}, 'summaries': {'items': [{'destructive_sql_detected': False, 'enabled': True, 'normalized_sql': 'SELECT "NAME" AS campaign_name, "LASTDEPLOYEDTIME" AS published_time FROM "dim_campaign" LIMIT 50', 'parsed_ok': True, 'selected_columns': {'items': ['NAME', 'LASTDEPLOYEDTIME'], 'total_items': 2, 'truncated_items': False}, 'selected_tables': {'items': ['dim_campaign'], 'total_items': 1, 'truncated_items': False}}], 'total_items': 1, 'truncated_items': False}}`
+| Field | Value |
+| --- | --- |
+| parsed_ok | True |
+| parse_errors | n/a |
+| selected_tables | {"items": {"items": ["dim_campaign"], "total_items": 1, "truncated_items": false}, "total_items": 1, "truncated_items": false} |
+| selected_columns | {"items": {"items": ["LASTDEPLOYEDTIME", "NAME"], "total_items": 2, "truncated_items": false}, "total_items": 2, "truncated_items": false} |
+| unknown_tables | n/a |
+| unknown_columns | n/a |
+| destructive_sql_detected | False |
+| closest_table_suggestions | n/a |
+| closest_column_suggestions | n/a |
 
 ## Technique Impact Highlight
 
@@ -242,7 +265,7 @@ SQL evidence is available. API tool was invoked and validated, but live API evid
 | `checkpoint_02_query_normalization` | normalization | data cleaning / query normalization | {"query": "When was the journey 'Birthday Message' published?"} | {"matching_text": "when was the journey 'birthday message' published?", "normalized_query": "When was the journey 'Birthday Message' published?"} | creates matching-friendly text while preserving the original query | improves template and route matching across wording variants | reduces repeated fuzzy matching work downstream |
 | `checkpoint_03_query_tokens` | tokenization | domain-aware tokenization/entity extraction | {"normalized_query": "When was the journey 'Birthday Message' published?"} | {"preview": "{\"domains\": {\"items\": {\"items\": [\"journey_campaign\"], \"total_items\": 1, \"truncated_items\": false}, \"total_items\": 1, \"truncated_items\": false}, \"quoted_entities\": {\"items\": {\"items\": [\"Birthday Message\"], \"total_items\": 1, \"truncated_items\": false}, \"total_ite...", "truncated": true} | extracts reusable query fields for routing, planning, and answers | grounds names, IDs, dates, metrics, and statuses before planning | avoids reparsing the query in later modules |
 | `checkpoint_04_relevance_scoring` | context selection | attention-style relevance scoring | {"preview": "{\"tokens\": {\"domains\": {\"items\": {\"items\": [\"journey_campaign\"], \"total_items\": 1, \"truncated_items\": false}, \"total_items\": 1, \"truncated_items\": false}, \"quoted_entities\": {\"items\": {\"items\": [\"Birthday Message\"], \"total_items\": 1, \"truncated_items\": false},...", "truncated": true} | {"preview": "{\"top_answer_families\": {\"items\": {\"items\": [\"journey_published\", \"inactive_journeys\"], \"total_items\": 2, \"truncated_items\": false}, \"total_items\": 2, \"truncated_items\": false}, \"top_apis\": {\"items\": {\"items\": [\"journey_list\", \"schema_registry_schema\", \"unifie...", "truncated": true} | selects a smaller, more relevant schema/API context | keeps high-signal tables and endpoints near the planner | reduces metadata and prompt tokens when compact metadata is enabled |
-| `checkpoint_value_entity_retrieval` | query understanding | CHESS-style value/entity retrieval | {"query_values": {"items": {"items": [{"kind": "quoted_entity", "text": "Birthday Message"}, {"kind": "status", "text": "published"}], "total_items": 2, "truncated_items": false}, "total_items": 2, "truncated_items": false}} | {"preview": "{\"active\": true, \"cache_hit\": true, \"cache_path\": \"[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/cache/value_index_2854787630896054615.json\", \"match_count\": 1, \"matches\": {\"items\": {\"items\": [{\"confidence\": 1.0, \"kind\": \"quoted_entity\", \"match_type\": \"exact...", "truncated": true} | grounds query entities against sampled local DB values before planning | helps identify exact names, IDs, statuses, and metrics for SQL/API grounding | uses a cached bounded value index with per-query scan and wall-time budgets |
+| `checkpoint_value_entity_retrieval` | query understanding | CHESS-style value/entity retrieval | {"query_values": {"items": {"items": [{"kind": "quoted_entity", "text": "Birthday Message"}, {"kind": "status", "text": "published"}], "total_items": 2, "truncated_items": false}, "total_items": 2, "truncated_items": false}} | {"preview": "{\"active\": true, \"cache_hit\": true, \"cache_key\": \"fa917ba84b79c5a3\", \"cache_key_algorithm\": \"sha256\", \"cache_reproducible\": true, \"match_count\": 1, \"matches\": {\"items\": {\"items\": [{\"confidence\": 1.0, \"kind\": \"quoted_entity\", \"match_type\": \"exact\", \"matched_col...", "truncated": true} | grounds query entities against sampled local DB values before planning | helps identify exact names, IDs, statuses, and metrics for SQL/API grounding | uses a cached bounded value index with per-query scan and wall-time budgets |
 | `checkpoint_query_decomposition` | query understanding | DIN-SQL-style deterministic query decomposition | {"preview": "{\"query\": \"When was the journey 'Birthday Message' published?\", \"tokens\": {\"domains\": {\"items\": {\"items\": [\"journey_campaign\"], \"total_items\": 1, \"truncated_items\": false}, \"total_items\": 1, \"truncated_items\": false}, \"quoted_entities\": {\"items\": {\"items\": [\"B...", "truncated": true} | {"preview": "{\"active\": true, \"expected_answer_shape\": \"short_fact\", \"required_entities\": {\"items\": {\"items\": [\"Birthday Message\"], \"total_items\": 1, \"truncated_items\": false}, \"total_items\": 1, \"truncated_items\": false}, \"required_filters\": {\"items\": {\"items\": [\"published...", "truncated": true} | breaks complex prompts into entities, filters, joins, and answer-shape constraints | helps SQL/API planning preserve requested constraints | skips simple queries and uses no LLM/tool calls |
 | `checkpoint_05_query_analysis` | routing | branch prediction / QueryAnalysis | {"domain_type": "JOURNEY_CAMPAIGN", "route_type": "SQL_THEN_API"} | {"preview": "{\"answer_family\": \"journey_published\", \"api_templates\": {\"items\": {\"items\": [\"journey_by_name\"], \"total_items\": 1, \"truncated_items\": false}, \"total_items\": 1, \"truncated_items\": false}, \"confidence\": 0.8, \"domain_type\": \"JOURNEY_CAMPAIGN\", \"fast_path\": \"journ...", "truncated": true} | computes shared query understanding once | aligns routing, metadata, planning, and reporting decisions | avoids repeated template and routing analysis |
 | `checkpoint_06_lookup_path` | path prediction | TLB-style lookup path prediction | {"answer_family": "journey_published", "domain_type": "JOURNEY_CAMPAIGN"} | {"preview": "{\"api_families\": {\"items\": {\"items\": [\"journey_by_name\", \"journey_inactive\", \"journey_list\"], \"total_items\": 3, \"truncated_items\": false}, \"total_items\": 3, \"truncated_items\": false}, \"api_mode\": \"optional\", \"family\": \"journey_campaign\", \"required_ids\": {\"item...", "truncated": true} | predicts the relevant table/join/API path | guides relationship-heavy SQL/API selection | filters unrelated schema and endpoint candidates |
