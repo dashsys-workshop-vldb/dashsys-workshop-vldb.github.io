@@ -203,6 +203,7 @@ def test_score075_selector_and_holdout_gates_reject_regressions_and_leakage():
         "final_answer_unsafe_drift": False,
         "sql_unsafe_drift": False,
         "api_unsafe_drift": False,
+        "dry_run_labels_preserved": True,
         "evidence_label_loss": False,
         "live_api_evidence_fabricated": False,
         "required_fields_preserved": True,
@@ -211,6 +212,13 @@ def test_score075_selector_and_holdout_gates_reject_regressions_and_leakage():
         "api_validation_ok": True,
         "leakage_check_passed": True,
         "holdout_regression_passed": True,
+        "candidate": {
+            "rule_source": "general_schema_vocabulary",
+            "trigger_features": ["schema_context", "query_vocabulary"],
+            "generalizable_family": "schema_dataset_relation",
+            "source_signals": ["schema_metadata"],
+            "leakage_reasons": [],
+        },
     }
     assert evaluate_candidate_safety(safe_row)[0] is True
 
