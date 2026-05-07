@@ -9,7 +9,7 @@ Status: **strict-score improvement measured**.
 | strict_final_score | 0.649 | 0.6491 | 0.0001 |
 | strict_correctness | 0.6743 | 0.6743 | 0.0 |
 | estimated_tokens | 851.7714 | 831.4571 | -20.3143 |
-| runtime | 0.0102 | 0.0109 | 0.0007 |
+| runtime | 0.0102 | 0.0114 | 0.0012 |
 | tool_calls | 1.4571 | 1.4571 | 0.0 |
 
 ## Gate Results
@@ -17,7 +17,7 @@ Status: **strict-score improvement measured**.
 - Packaged preferred strategy: `SQL_FIRST_API_VERIFY`
 - Strict score regression gate OK: True
 - Estimated-token overhead: -2.38% (gate OK: True)
-- Runtime overhead: 6.86% (gate OK: True)
+- Runtime overhead: 11.76% (gate OK: True)
 - Tool-call delta: 0.0 (gate OK: True)
 - Value retrieval budget: 250 ms (budget OK: True)
 - Value retrieval cache key algorithm: `sha256` (reproducible: True)
@@ -76,8 +76,8 @@ Status: **strict-score improvement measured**.
 - Low-score mining score needed for 0.70: 1.7815
 - Score-component report ran: True (API-correct answer-weak rows: 16)
 - Evidence-answer candidate eval: safe rows=1; projected score=0.6494
-- Unsafe answer analysis: rows=24; positive supportable=10
-- Supportable answer rewrite eval: safe rows=5; projected score=0.655
+- Unsafe answer analysis: rows=103; positive supportable=18
+- Supportable answer rewrite eval: safe rows=4; projected score=0.6552
 - LLM answer rewrite search: skipped_no_llm_key (recommendation: keep_shadow_only)
 - Local-index fact coverage: requested rows=34; used rows=24
 - Execution candidate search safe rows: 5 (best projected score: 0.6556; recommendation: safe_for_targeted_packaged_trial)

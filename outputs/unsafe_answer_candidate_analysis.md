@@ -1,31 +1,32 @@
 # Unsafe Answer Candidate Analysis
 
-- Rows: 24
-- Positive supportable rows: 10
-- Top supportable rows: ['example_031', 'example_030', 'example_021', 'example_025', 'example_024', 'example_029', 'example_028', 'example_031', 'example_030', 'example_019']
+- Rows: 103
+- Positive supportable rows: 18
+- Top supportable rows: ['example_031', 'example_031', 'example_031', 'example_031', 'example_031', 'example_030', 'example_030', 'example_030', 'example_030', 'example_030']
 - Packaged execution changed: False
 
 ## Category Counts
 
-- `answer_drift`: 8
+- `answer_drift`: 77
 - `dry_run_label_loss`: 2
-- `runtime_or_tool_gate`: 24
-- `token_gate_failed`: 9
+- `no_accuracy_relevant_candidate_change`: 9
+- `no_score_or_correctness_improvement`: 78
+- `token_gate_failed`: 28
 
 ## Top Rows
 
-- `example_031` `answer_only` supportable_delta=0.1994 categories=['runtime_or_tool_gate', 'token_gate_failed'] reason=token_gate_failed
-- `example_030` `answer_only` supportable_delta=0.1413 categories=['runtime_or_tool_gate', 'token_gate_failed'] reason=token_gate_failed
-- `example_021` `answer_shape_list` supportable_delta=0.0016 categories=['runtime_or_tool_gate'] reason=no_accuracy_relevant_candidate_change
-- `example_025` `answer_shape_list` supportable_delta=0.001 categories=['runtime_or_tool_gate'] reason=no_accuracy_relevant_candidate_change
-- `example_024` `answer_shape_date` supportable_delta=0.0009 categories=['runtime_or_tool_gate'] reason=no_accuracy_relevant_candidate_change
-- `example_029` `answer_shape_count` supportable_delta=0.0008 categories=['runtime_or_tool_gate'] reason=no_accuracy_relevant_candidate_change
-- `example_028` `answer_shape_date` supportable_delta=0.0008 categories=['runtime_or_tool_gate'] reason=no_accuracy_relevant_candidate_change
-- `example_031` `answer_shape_list` supportable_delta=0.0007 categories=['runtime_or_tool_gate'] reason=no_accuracy_relevant_candidate_change
-- `example_030` `answer_shape_list` supportable_delta=0.0006 categories=['runtime_or_tool_gate'] reason=no_accuracy_relevant_candidate_change
-- `example_019` `answer_shape_list` supportable_delta=0.0006 categories=['runtime_or_tool_gate'] reason=no_accuracy_relevant_candidate_change
-- `example_029` `answer_only` supportable_delta=-0.0036 categories=['runtime_or_tool_gate', 'token_gate_failed'] reason=token_gate_failed
-- `example_020` `answer_shape_count` supportable_delta=-0.007 categories=['runtime_or_tool_gate'] reason=no_accuracy_relevant_candidate_change; no_score_or_correctness_improvement
-- `example_020` `answer_only` supportable_delta=-0.0168 categories=['runtime_or_tool_gate', 'token_gate_failed'] reason=token_gate_failed
-- `example_019` `answer_only` supportable_delta=-0.0194 categories=['runtime_or_tool_gate', 'token_gate_failed'] reason=token_gate_failed
-- `example_024` `dry_run_evidence_answer` supportable_delta=-0.0509 categories=['answer_drift', 'runtime_or_tool_gate'] reason=final_answer_unsafe_drift; no_score_or_correctness_improvement
+- `example_031` `compact_endpoint_unavailable` supportable_delta=0.2171 categories=['token_gate_failed'] reason=global_token_gate_failed
+- `example_031` `minimal_endpoint_fact` supportable_delta=0.2171 categories=['token_gate_failed'] reason=claim_validation_failed; answer_token_budget_failed; global_token_gate_failed
+- `example_031` `query_entity_plus_endpoint` supportable_delta=0.2149 categories=['token_gate_failed'] reason=claim_validation_failed; answer_token_budget_failed; global_token_gate_failed
+- `example_031` `endpoint_params_plus_unavailable` supportable_delta=0.2145 categories=['token_gate_failed'] reason=claim_validation_failed; answer_token_budget_failed; global_token_gate_failed
+- `example_031` `answer_only` supportable_delta=0.1994 categories=['token_gate_failed'] reason=token_gate_failed
+- `example_030` `compact_endpoint_unavailable` supportable_delta=0.1471 categories=['token_gate_failed'] reason=global_token_gate_failed
+- `example_030` `query_entity_plus_endpoint` supportable_delta=0.1427 categories=['token_gate_failed'] reason=claim_validation_failed; answer_token_budget_failed; global_token_gate_failed
+- `example_030` `answer_only` supportable_delta=0.1413 categories=['token_gate_failed'] reason=token_gate_failed
+- `example_030` `minimal_endpoint_fact` supportable_delta=0.1395 categories=['token_gate_failed'] reason=claim_validation_failed; answer_token_budget_failed; global_token_gate_failed
+- `example_030` `endpoint_params_plus_unavailable` supportable_delta=0.139 categories=['token_gate_failed'] reason=claim_validation_failed; answer_token_budget_failed; global_token_gate_failed
+- `example_021` `answer_shape_list` supportable_delta=0.0016 categories=['no_accuracy_relevant_candidate_change'] reason=no_accuracy_relevant_candidate_change
+- `example_025` `answer_shape_list` supportable_delta=0.001 categories=['no_accuracy_relevant_candidate_change'] reason=no_accuracy_relevant_candidate_change
+- `example_024` `answer_shape_date` supportable_delta=0.0009 categories=['no_accuracy_relevant_candidate_change'] reason=no_accuracy_relevant_candidate_change
+- `example_029` `answer_shape_count` supportable_delta=0.0008 categories=['no_accuracy_relevant_candidate_change'] reason=no_accuracy_relevant_candidate_change
+- `example_028` `answer_shape_date` supportable_delta=0.0008 categories=['no_accuracy_relevant_candidate_change'] reason=no_accuracy_relevant_candidate_change

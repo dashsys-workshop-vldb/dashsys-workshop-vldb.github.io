@@ -19,6 +19,7 @@ ALLOWED_EVIDENCE_SOURCES = {
     "parquet_evidence",
     "dry_run_label",
 }
+CANONICAL_UNAVAILABLE_CLAIM = "The requested live value is unavailable in dry-run mode."
 SECRET_LIKE_RE = re.compile(r"(bearer\s+[a-z0-9._-]+|sk-[a-z0-9_-]+|client_secret|access_token|api[_-]?key)", re.I)
 
 
@@ -167,7 +168,7 @@ def generate_supportable_rewrites(
                 "family_endpoint_unavailable",
                 [
                     _supported_claim(f"GET {endpoint_label} endpoint.", endpoint_id),
-                    _unsupported_claim(f"Live {noun} {intent} unavailable in dry-run mode.", dry_id),
+                    _unsupported_claim(dry_id),
                 ],
             )
         )
@@ -176,7 +177,7 @@ def generate_supportable_rewrites(
                 "compact_endpoint_unavailable",
                 [
                     _supported_claim(f"{compact_endpoint}.", endpoint_id),
-                    _unsupported_claim(f"Live {noun} {intent} unavailable in dry-run mode.", dry_id),
+                    _unsupported_claim(dry_id),
                 ],
             )
         )
@@ -185,7 +186,16 @@ def generate_supportable_rewrites(
                 "minimal_endpoint_fact",
                 [
                     _supported_claim(f"Selected endpoint: {registry[endpoint_id]['text']}.", endpoint_id),
-                    _unsupported_claim(f"The requested live {noun} {intent} is unavailable in dry-run mode.", dry_id),
+                    _unsupported_claim(dry_id),
+                ],
+            )
+        )
+        candidates.append(
+            (
+                "endpoint_params_plus_unavailable",
+                [
+                    _supported_claim(f"Endpoint parameters: {registry[endpoint_id]['text']}.", endpoint_id),
+                    _unsupported_claim(dry_id),
                 ],
             )
         )
@@ -197,34 +207,43 @@ def generate_supportable_rewrites(
                 [
                     first_claim,
                     _supported_claim(f"Endpoint: {registry[endpoint_id]['text']}.", endpoint_id),
-                    _unsupported_claim(f"The requested live {intent} is unavailable in dry-run mode.", dry_id),
+                    _unsupported_claim(dry_id),
                 ],
             )
         )
     if dry_id:
+        candidates.append(
+            (
+                "dry_run_honest_summary",
+                [
+                    _supported_claim("Dry-run mode was used.", dry_id),
+                    _unsupported_claim(dry_id),
+                ],
+            )
+        )
         if query_id:
             candidates.append(
                 (
                     "query_subject_unavailable",
                     [
                         _supported_claim(f"{noun.title()}: {subject}.", query_id),
-                        _unsupported_claim(f"Live {intent} unavailable in dry-run mode.", dry_id),
+                        _unsupported_claim(dry_id),
                     ],
                 )
             )
         candidates.append(
             (
-                "unavailable_requested_fact_only",
-                [_unsupported_claim(f"The requested live {noun} {intent} is unavailable in dry-run mode.", dry_id)],
+                "requested_fact_unavailable",
+                [_unsupported_claim(dry_id)],
             )
         )
     if parquet_id and dry_id:
         candidates.append(
             (
-                "parquet_hint_plus_unavailable",
+                "local_evidence_plus_unavailable",
                 [
                     _supported_claim(f"Parquet evidence: {registry[parquet_id]['text']}.", parquet_id),
-                    _unsupported_claim(f"The requested live {noun} {intent} is unavailable in dry-run mode.", dry_id),
+                    _unsupported_claim(dry_id),
                 ],
             )
         )
@@ -290,6 +309,25 @@ def validate_supportable_claims(
     }
 
 
+def summarize_answer_rewrite(
+    baseline_answer: str,
+    candidate_answer: str,
+    claims: list[dict[str, Any]],
+) -> dict[str, Any]:
+    baseline_sentences = _sentence_set(baseline_answer)
+    candidate_sentences = _sentence_set(candidate_answer)
+    claims_added = [str(claim.get("claim_text") or "") for claim in claims if str(claim.get("claim_text") or "").strip()]
+    unsupported_claims = [claim for claim in claims if claim.get("supported") is False]
+    return {
+        "baseline_answer": baseline_answer,
+        "candidate_answer": candidate_answer,
+        "answer_diff_summary": _answer_diff_summary(baseline_sentences, candidate_sentences),
+        "claims_added": claims_added,
+        "claims_removed": sorted(baseline_sentences - candidate_sentences),
+        "unsupported_claims_replaced": len(unsupported_claims),
+    }
+
+
 def parse_llm_rewrite_payload(content: str) -> tuple[list[dict[str, Any]], str | None]:
     text = (content or "").strip()
     if not text:
@@ -339,24 +377,36 @@ def _validate_claim_schema(claim: dict[str, Any], registry: dict[str, dict[str, 
             failures.append("unsupported_claim_without_dry_run_label")
         if unsupported_action != "mark_unavailable":
             failures.append("unsupported_claim_missing_mark_unavailable")
+        if text != CANONICAL_UNAVAILABLE_CLAIM:
+            failures.append("unsupported_claim_not_canonical")
     else:
         failures.append("supported_not_boolean")
     return failures
 
 
 def _supported_claim(text: str, evidence_id: str | None) -> dict[str, Any]:
+    evidence_source = "sql_row"
+    if evidence_id:
+        if evidence_id.startswith("query_text:"):
+            evidence_source = "query_text"
+        elif evidence_id.startswith("endpoint_params:"):
+            evidence_source = "endpoint_params"
+        elif evidence_id.startswith("dry_run_label:"):
+            evidence_source = "dry_run_label"
+        elif not evidence_id.startswith("sql_row:"):
+            evidence_source = "parquet_evidence"
     return {
         "claim_text": text,
         "evidence_id": evidence_id or "",
-        "evidence_source": "query_text" if evidence_id and evidence_id.startswith("query_text:") else "endpoint_params" if evidence_id and evidence_id.startswith("endpoint_params:") else "parquet_evidence" if evidence_id and not evidence_id.startswith(("dry_run_label:", "sql_row:")) else "sql_row",
+        "evidence_source": evidence_source,
         "supported": True,
         "unsupported_action": None,
     }
 
 
-def _unsupported_claim(text: str, evidence_id: str) -> dict[str, Any]:
+def _unsupported_claim(evidence_id: str) -> dict[str, Any]:
     return {
-        "claim_text": text,
+        "claim_text": CANONICAL_UNAVAILABLE_CLAIM,
         "evidence_id": evidence_id,
         "evidence_source": "dry_run_label",
         "supported": False,
@@ -518,6 +568,19 @@ def _endpoint_label(path: str, noun: str, intent: str) -> str:
 def _shorten_answer(answer: str, *, max_chars: int) -> str:
     answer = " ".join(answer.split())
     return answer if len(answer) <= max_chars else answer[: max_chars - 14].rstrip() + " [truncated]"
+
+
+def _sentence_set(answer: str) -> set[str]:
+    parts = re.split(r"(?<=[.!?])\s+", " ".join(str(answer or "").split()))
+    return {part.strip() for part in parts if part.strip()}
+
+
+def _answer_diff_summary(baseline_sentences: set[str], candidate_sentences: set[str]) -> str:
+    added = len(candidate_sentences - baseline_sentences)
+    removed = len(baseline_sentences - candidate_sentences)
+    if added == 0 and removed == 0:
+        return "answer_unchanged"
+    return f"added_{added}_removed_{removed}"
 
 
 def _sha256_json(payload: Any) -> str:

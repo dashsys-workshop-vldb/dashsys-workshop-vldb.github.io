@@ -5,7 +5,7 @@
 - Strict score delta: 0.0065
 - 0.75 reached: False
 - Hidden-style result: 48/48
-- Supportable answer safe rows/projected score: 5 / 0.655
+- Supportable answer safe rows/projected score: 4 / 0.6552
 - LLM answer rewrite status: skipped_no_llm_key
 - Trial recommendation: `continue_iteration_target_not_reached`
 - Final recommendation: `continue_iteration_target_not_reached`

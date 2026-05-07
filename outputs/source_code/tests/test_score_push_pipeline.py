@@ -7,6 +7,7 @@ from dashagent.evidence_aware_answer_composer import compose_evidence_aware_answ
 from dashagent.local_knowledge_index import requested_fact_coverage
 from dashagent.report_run import report_metadata, start_report_run
 from dashagent.supportable_answer_rewriter import (
+    CANONICAL_UNAVAILABLE_CLAIM,
     compare_plan_hashes,
     generate_supportable_rewrites,
     parse_llm_rewrite_payload,
@@ -20,6 +21,7 @@ from scripts.generate_low_score_failure_mining_report import generate_low_score_
 from scripts.package_query_outputs import NON_SUBMISSION_OUTPUT_DIRS, discover_query_output_dirs
 from scripts.run_evidence_answer_candidate_eval import run_evidence_answer_candidate_eval
 from scripts.run_execution_candidate_search import run_execution_candidate_search
+from scripts.run_llm_answer_rewrite_search import _prompt as llm_answer_rewrite_prompt
 from scripts.run_llm_answer_rewrite_search import run_llm_answer_rewrite_search
 from scripts.run_local_index_fact_coverage_report import run_local_index_fact_coverage_report
 from scripts.run_llm_candidate_search import run_llm_candidate_search
@@ -363,7 +365,13 @@ def test_supportable_claim_schema_and_hash_validation():
 
     assert rewrites
     assert all("FORGED_STATUS" not in rewrite.answer for rewrite in rewrites)
-    assert any(claim["supported"] is False and claim["unsupported_action"] == "mark_unavailable" for rewrite in rewrites for claim in rewrite.claims)
+    assert any(
+        claim["supported"] is False
+        and claim["unsupported_action"] == "mark_unavailable"
+        and claim["claim_text"] == CANONICAL_UNAVAILABLE_CLAIM
+        for rewrite in rewrites
+        for claim in rewrite.claims
+    )
     candidate = dict(trajectory)
     candidate["final_answer"] = rewrites[0].answer
     hashes = compare_plan_hashes(trajectory, candidate)
@@ -420,6 +428,12 @@ def test_supportable_answer_rewrite_eval_isolated(tiny_project):
 
     assert payload["packaged_execution_changed"] is False
     assert payload["rows"][0]["candidates"]
+    assert all("baseline_answer" in candidate for candidate in payload["rows"][0]["candidates"])
+    assert all("candidate_answer" in candidate for candidate in payload["rows"][0]["candidates"])
+    assert all("answer_diff_summary" in candidate for candidate in payload["rows"][0]["candidates"])
+    assert all("claims_added" in candidate for candidate in payload["rows"][0]["candidates"])
+    assert all("claims_removed" in candidate for candidate in payload["rows"][0]["candidates"])
+    assert all("unsupported_claims_replaced" in candidate for candidate in payload["rows"][0]["candidates"])
     assert "supportable_answer_rewrite_eval" in NON_SUBMISSION_OUTPUT_DIRS
 
 
@@ -433,6 +447,28 @@ def test_llm_answer_rewrite_search_skips_without_keys(monkeypatch, tiny_project)
     assert payload["summary"]["recommendation"] == "keep_shadow_only"
 
 
+def test_llm_answer_rewrite_search_categorizes_provider_errors(monkeypatch, tiny_project):
+    _write_score_push_inputs(tiny_project)
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-test")
+
+    class FakeClient:
+        def available(self):
+            return True
+
+        def model_name(self):
+            return "fake/model"
+
+        def generate_messages(self, messages):
+            return {"ok": False, "error": "Authorization: Bearer sk-test provider unavailable"}
+
+    monkeypatch.setattr("scripts.run_llm_answer_rewrite_search.get_llm_client", lambda provider=None: FakeClient())
+    payload = run_llm_answer_rewrite_search(tiny_project)
+
+    assert payload["summary"]["status"] == "completed"
+    assert payload["summary"]["failure_category_counts"]["provider_error"] == 1
+    assert "sk-test" not in json.dumps(payload)
+
+
 def test_parse_llm_rewrite_payload_requires_rewrites_list():
     parsed, error = parse_llm_rewrite_payload('{"rewrites":[{"candidate_id":"a","claims":[]}]}')
     assert error is None
@@ -441,6 +477,23 @@ def test_parse_llm_rewrite_payload_requires_rewrites_list():
     parsed, error = parse_llm_rewrite_payload('{"not_rewrites":[]}')
     assert parsed == []
     assert error == "invalid_json:rewrites_not_list"
+
+
+def test_llm_answer_rewrite_prompt_prefers_unavailable_over_guessing():
+    prompt = llm_answer_rewrite_prompt(
+        "Show the details of batch 01ABCDEFABCDEFABCDEFABCDEF.",
+        {"final_answer": "Batch details require live API evidence."},
+        {
+            "dry_run_label:0": {
+                "evidence_id": "dry_run_label:0",
+                "evidence_source": "dry_run_label",
+                "text": "dry_run",
+            }
+        },
+    )
+
+    assert "Prefer saying unavailable over guessing" in prompt
+    assert "unsupported facts is invalid" in prompt
 
 
 def test_score_push_report_prefers_current_when_no_safe_improvement(tiny_project):

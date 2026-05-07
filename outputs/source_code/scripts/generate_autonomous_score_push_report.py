@@ -146,18 +146,23 @@ def main() -> int:
     config = Config.from_env(ROOT)
     score_payload = generate_autonomous_score_push_report(config)
     diff_payload = generate_integration_diff_report(config, score_payload)
+    status_payload = generate_parallel_status_report(config, score_payload, diff_payload)
     config.outputs_dir.mkdir(parents=True, exist_ok=True)
 
     score_json = config.outputs_dir / "autonomous_score_push_report.json"
     score_md = config.outputs_dir / "autonomous_score_push_report.md"
     diff_json = config.outputs_dir / "score075_integration_diff_report.json"
     diff_md = config.outputs_dir / "score075_integration_diff_report.md"
+    status_json = config.outputs_dir / "score075_parallel_status.json"
+    status_md = config.outputs_dir / "score075_parallel_status.md"
     blocker_json = config.outputs_dir / "score075_blocker_analysis.json"
     blocker_md = config.outputs_dir / "score075_blocker_analysis.md"
     score_json.write_text(json.dumps(score_payload, indent=2, sort_keys=True, default=str), encoding="utf-8")
     score_md.write_text(render_score_markdown(score_payload), encoding="utf-8")
     diff_json.write_text(json.dumps(diff_payload, indent=2, sort_keys=True, default=str), encoding="utf-8")
     diff_md.write_text(render_diff_markdown(diff_payload), encoding="utf-8")
+    status_json.write_text(json.dumps(status_payload, indent=2, sort_keys=True, default=str), encoding="utf-8")
+    status_md.write_text(render_status_markdown(status_payload), encoding="utf-8")
     if not score_payload["summary"].get("target_0_75_reached"):
         blocker = generate_score075_blocker_analysis(config, score_payload)
         blocker_json.write_text(json.dumps(blocker, indent=2, sort_keys=True, default=str), encoding="utf-8")
@@ -169,6 +174,8 @@ def main() -> int:
                 "markdown": str(score_md),
                 "integration_diff_json": str(diff_json),
                 "integration_diff_markdown": str(diff_md),
+                "parallel_status_json": str(status_json),
+                "parallel_status_markdown": str(status_md),
                 "recommendation": score_payload["summary"]["final_recommendation"],
             },
             indent=2,
@@ -369,6 +376,95 @@ def generate_integration_diff_report(config: Config, score_payload: dict[str, An
     }
 
 
+def generate_parallel_status_report(
+    config: Config,
+    score_payload: dict[str, Any],
+    diff_payload: dict[str, Any],
+) -> dict[str, Any]:
+    hidden_summary = score_payload.get("hidden_style_eval", {})
+    hidden_result = f"{hidden_summary.get('passed_cases')}/{hidden_summary.get('total_cases')}"
+    supportable = score_payload.get("supportable_answer_rewrite_eval", {})
+    llm_answer = score_payload.get("llm_answer_rewrite_search", {})
+    trial = score_payload.get("autonomous_packaged_trial", {})
+    baseline = score_payload.get("baseline", {})
+    summary = score_payload.get("summary", {})
+    workers = []
+    for row in diff_payload.get("branch_decisions", []):
+        workers.append(
+            {
+                "branch": row.get("branch"),
+                "owner": row.get("owner"),
+                "scope": row.get("scope"),
+                "allowed_files": row.get("allowed_files", []),
+                "declared_dependencies": row.get("dependencies", []),
+                "status": row.get("status"),
+                "latest_commit": row.get("latest_commit"),
+                "tests_run": row.get("tests_run", []),
+                "score_delta": row.get("strict_score_delta", 0.0),
+                "hidden_style_result": hidden_result,
+                "merge_recommendation": row.get("merge_recommendation"),
+                "blockers": [row.get("rejection_reason")] if row.get("rejection_reason") else [],
+            }
+        )
+    workers.append(
+        {
+            "branch": "main",
+            "owner": "evidence-cited short answer rewrite",
+            "scope": "recomputed unsafe answer reasons and isolated supportable answer-only rewrite bundle",
+            "allowed_files": [
+                "dashagent/supportable_answer_rewriter.py",
+                "scripts/analyze_unsafe_answer_candidates.py",
+                "scripts/run_supportable_answer_rewrite_eval.py",
+                "scripts/run_llm_answer_rewrite_search.py",
+                "scripts/run_autonomous_packaged_trial.py",
+                "scripts/generate_autonomous_score_push_report.py",
+                "tests/test_score_push_pipeline.py",
+            ],
+            "declared_dependencies": ["current SQL_FIRST_API_VERIFY strict trajectories"],
+            "status": "completed_isolated_progress_not_promoted",
+            "latest_commit": _git(["rev-parse", "--short", "HEAD"]),
+            "tests_run": [
+                "python3 -m pytest -q",
+                "python3 scripts/analyze_unsafe_answer_candidates.py",
+                "python3 scripts/run_supportable_answer_rewrite_eval.py",
+                "python3 scripts/run_llm_answer_rewrite_search.py",
+                "python3 scripts/run_autonomous_packaged_trial.py",
+                "python3 scripts/generate_autonomous_score_push_report.py",
+                "python3 scripts/run_hidden_style_eval.py",
+                "python3 scripts/run_dev_eval.py --strict",
+                "python3 scripts/package_submission.py",
+                "python3 scripts/package_query_outputs.py",
+                "python3 scripts/check_submission_ready.py",
+            ],
+            "score_delta": summary.get("score_delta"),
+            "hidden_style_result": hidden_result,
+            "merge_recommendation": "keep_isolated_bundle_continue_iteration_target_not_reached",
+            "blockers": [
+                "hard target strict_final_score >= 0.7500 not reached",
+                "LLM answer rewrite search skipped because no API key was visible to this process",
+            ],
+        }
+    )
+    return {
+        **report_metadata(config.outputs_dir),
+        "mode": "score075_parallel_status",
+        "baseline_commit": BASELINE_COMMIT,
+        "summary": {
+            "baseline": baseline,
+            "best_achieved_score": summary.get("best_achieved_score"),
+            "strict_score_delta": summary.get("score_delta"),
+            "target_0_75_reached": summary.get("target_0_75_reached"),
+            "hidden_style_result": hidden_result,
+            "supportable_answer_safe_rows": supportable.get("safe_rows"),
+            "supportable_answer_projected_score": supportable.get("best_projected_strict_final_score"),
+            "llm_answer_rewrite_status": llm_answer.get("status"),
+            "autonomous_packaged_trial_recommendation": trial.get("recommendation"),
+            "final_recommendation": summary.get("final_recommendation"),
+        },
+        "workers": workers,
+    }
+
+
 def _baseline(strict: dict[str, Any]) -> dict[str, float]:
     sql_first = (strict.get("summary") or {}).get("by_strategy", {}).get("SQL_FIRST_API_VERIFY", {})
     return {
@@ -487,6 +583,34 @@ def render_diff_markdown(payload: dict[str, Any]) -> str:
         lines.append(
             f"| `{row['branch']}` | {row['status']} | {deps or '-'} | {row['merge_recommendation']} | "
             f"{row['strict_score_delta']} | {row['hidden_style_delta']} |"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def render_status_markdown(payload: dict[str, Any]) -> str:
+    summary = payload["summary"]
+    lines = [
+        "# Score 0.75 Parallel Status",
+        "",
+        f"- Baseline commit: `{payload['baseline_commit']}`",
+        f"- Best achieved strict score: {summary.get('best_achieved_score')}",
+        f"- Strict score delta: {summary.get('strict_score_delta')}",
+        f"- 0.75 reached: {summary.get('target_0_75_reached')}",
+        f"- Hidden-style result: {summary.get('hidden_style_result')}",
+        f"- Supportable answer safe rows/projected score: {summary.get('supportable_answer_safe_rows')} / {summary.get('supportable_answer_projected_score')}",
+        f"- LLM answer rewrite status: {summary.get('llm_answer_rewrite_status')}",
+        f"- Trial recommendation: `{summary.get('autonomous_packaged_trial_recommendation')}`",
+        f"- Final recommendation: `{summary.get('final_recommendation')}`",
+        "",
+        "| Branch | Owner | Status | Score delta | Hidden-style | Merge recommendation | Blockers |",
+        "|---|---|---|---:|---|---|---|",
+    ]
+    for row in payload.get("workers", []):
+        blockers = "; ".join(row.get("blockers") or [])
+        lines.append(
+            f"| `{row.get('branch')}` | {row.get('owner')} | {row.get('status')} | "
+            f"{row.get('score_delta')} | {row.get('hidden_style_result')} | "
+            f"{row.get('merge_recommendation')} | {blockers or '-'} |"
         )
     return "\n".join(lines) + "\n"
 

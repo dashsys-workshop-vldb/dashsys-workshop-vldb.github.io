@@ -57,7 +57,14 @@ def run_autonomous_packaged_trial(config: Config) -> dict[str, Any]:
     llm_answer = _load_json(config.outputs_dir / "llm_answer_rewrite_search.json")
     readiness = check_submission_ready(config)
 
-    safe_rows = _dedupe_safe_rows([*_safe_execution_rows(execution), *_safe_evidence_answer_rows(evidence_answer), *_safe_supportable_answer_rows(supportable_answer)])
+    safe_rows = _dedupe_safe_rows(
+        [
+            *_safe_execution_rows(execution),
+            *_safe_evidence_answer_rows(evidence_answer),
+            *_safe_supportable_answer_rows(supportable_answer),
+            *_safe_llm_answer_rows(llm_answer),
+        ]
+    )
     rows = []
     for row in safe_rows:
         best = row.get("best_candidate") or {}
@@ -161,6 +168,23 @@ def _safe_supportable_answer_rows(report: dict[str, Any]) -> list[dict[str, Any]
             continue
         best = dict(row.get("best_candidate") or {})
         best.setdefault("candidate_id", row.get("selected_candidate_id") or "supportable_answer_rewrite")
+        rows.append(
+            {
+                "query_id": row.get("query_id"),
+                "selected_candidate_id": best.get("candidate_id"),
+                "best_candidate": best,
+            }
+        )
+    return rows
+
+
+def _safe_llm_answer_rows(report: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = []
+    for row in report.get("rows", []):
+        if not row.get("safe_for_packaged_trial") or not row.get("best_candidate"):
+            continue
+        best = dict(row.get("best_candidate") or {})
+        best.setdefault("candidate_id", row.get("selected_candidate_id") or "llm_answer_rewrite")
         rows.append(
             {
                 "query_id": row.get("query_id"),
