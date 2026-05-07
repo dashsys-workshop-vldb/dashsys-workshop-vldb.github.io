@@ -1,14 +1,44 @@
-# DASHSys Dataflow Visualization Index
+# DASHSys Visualization Index
 
-| Query ID | Query | Strategy | Variant | Tool calls | Valid run | Evidence status | Status badges | Links |
-| --- | --- | --- | --- | ---: | --- | --- | --- | --- |
-| `example_000` | When was the journey 'Birthday Message' published? | `SQL_FIRST_API_VERIFY` | n/a - not a baseline variant | 2 | n/a - valid_agent_run not recorded | sql=yes, live_api=no, overall=yes, dry_run=yes | valid trajectory, dry-run API, successful evidence | [dataflow.md](example_000/sql_first_api_verify/dataflow.md) / [dataflow.html](example_000/sql_first_api_verify/dataflow.html) / [strategy_comparison.md](example_000/strategy_comparison.md) |
-| `example_004` | Show me the IDs of failed dataflow runs | `SQL_FIRST_API_VERIFY` | n/a - not a baseline variant | 2 | n/a - valid_agent_run not recorded | sql=no, live_api=no, overall=no, dry_run=yes | valid trajectory, dry-run API, zero-row uncertainty | [dataflow.md](example_004/sql_first_api_verify/dataflow.md) / [dataflow.html](example_004/sql_first_api_verify/dataflow.html) / [strategy_comparison.md](example_004/strategy_comparison.md) |
-| `example_031` | Which files are available for download in batch 69de8a0e0cc6102b5d11f01e? | `SQL_FIRST_API_VERIFY` | n/a - not a baseline variant | 1 | n/a - valid_agent_run not recorded | sql=n/a, live_api=no, overall=no, dry_run=yes | valid trajectory, dry-run API | [dataflow.md](example_031/sql_first_api_verify/dataflow.md) / [dataflow.html](example_031/sql_first_api_verify/dataflow.html) / [strategy_comparison.md](example_031/strategy_comparison.md) |
-| `list_all_journeys` | List all journeys | `SQL_FIRST_API_VERIFY` | n/a - not a baseline variant | 2 | n/a - valid_agent_run not recorded | sql=yes, live_api=no, overall=yes, dry_run=yes | valid trajectory, dry-run API, successful evidence | [dataflow.md](list_all_journeys/sql_first_api_verify/dataflow.md) / [dataflow.html](list_all_journeys/sql_first_api_verify/dataflow.html) |
-| `example_000` | When was the journey 'Birthday Message' published? | `RAW_REAL_LLM_TWO_TOOLS_BASELINE` | Raw | 2 | True | sql=no, live_api=no, overall=no, dry_run=yes | valid trajectory, dry-run API, zero-row uncertainty | [dataflow.md](example_000/raw_real_llm_two_tools_baseline/dataflow.md) / [dataflow.html](example_000/raw_real_llm_two_tools_baseline/dataflow.html) / [strategy_comparison.md](example_000/strategy_comparison.md) |
-| `example_000` | When was the journey 'Birthday Message' published? | `GUIDED_REAL_LLM_TWO_TOOLS_BASELINE` | Guided | 2 | True | sql=yes, live_api=no, overall=yes, dry_run=yes | valid trajectory, dry-run API, endpoint repaired, successful evidence | [dataflow.md](example_000/guided_real_llm_two_tools_baseline/dataflow.md) / [dataflow.html](example_000/guided_real_llm_two_tools_baseline/dataflow.html) / [strategy_comparison.md](example_000/strategy_comparison.md) |
-| `example_004` | Show me the IDs of failed dataflow runs | `RAW_REAL_LLM_TWO_TOOLS_BASELINE` | Raw | 3 | True | sql=yes, live_api=no, overall=yes, dry_run=yes | valid trajectory, dry-run API, zero-row uncertainty, invalid tool calls, successful evidence | [dataflow.md](example_004/raw_real_llm_two_tools_baseline/dataflow.md) / [dataflow.html](example_004/raw_real_llm_two_tools_baseline/dataflow.html) / [strategy_comparison.md](example_004/strategy_comparison.md) |
-| `example_004` | Show me the IDs of failed dataflow runs | `GUIDED_REAL_LLM_TWO_TOOLS_BASELINE` | Guided | 2 | True | sql=no, live_api=no, overall=no, dry_run=yes | valid trajectory, dry-run API, endpoint repaired, zero-row uncertainty | [dataflow.md](example_004/guided_real_llm_two_tools_baseline/dataflow.md) / [dataflow.html](example_004/guided_real_llm_two_tools_baseline/dataflow.html) / [strategy_comparison.md](example_004/strategy_comparison.md) |
-| `example_031` | Which files are available for download in batch 69de8a0e0cc6102b5d11f01e? | `RAW_REAL_LLM_TWO_TOOLS_BASELINE` | Raw | 0 | False | sql=n/a, live_api=n/a, overall=no, dry_run=n/a | valid trajectory | [dataflow.md](example_031/raw_real_llm_two_tools_baseline/dataflow.md) / [dataflow.html](example_031/raw_real_llm_two_tools_baseline/dataflow.html) / [strategy_comparison.md](example_031/strategy_comparison.md) |
-| `example_031` | Which files are available for download in batch 69de8a0e0cc6102b5d11f01e? | `GUIDED_REAL_LLM_TWO_TOOLS_BASELINE` | Guided | 0 | False | sql=n/a, live_api=n/a, overall=no, dry_run=n/a | valid trajectory | [dataflow.md](example_031/guided_real_llm_two_tools_baseline/dataflow.md) / [dataflow.html](example_031/guided_real_llm_two_tools_baseline/dataflow.html) / [strategy_comparison.md](example_031/strategy_comparison.md) |
+This index links the supervisor-facing visualization suite. Every artifact is generated under `outputs/visualizations/` and is based on current repo reports/trajectories.
+
+## At a Glance
+
+| Field | Value |
+| --- | --- |
+| Required files | 26/26 |
+| Technique count | 45 |
+| Packaged strict final score | 0.6491 |
+| Best isolated score | 0.6558 |
+| Final recommendation | ready_to_submit_with_official_token_reduction |
+
+## Core Views
+
+| Artifact | Kind | Exists |
+| --- | --- | --- |
+| [index.md](index.md) | markdown | True |
+| index.json | json | True |
+| [technique_catalog.md](technique_catalog.md) | markdown | True |
+| technique_catalog.json | json | True |
+| [system_end_to_end.md](system_end_to_end.md) | markdown | True |
+| system_end_to_end.json | json | True |
+| [technique_impact_matrix.md](technique_impact_matrix.md) | markdown | True |
+| technique_impact_matrix.json | json | True |
+| [score_improvement_timeline.md](score_improvement_timeline.md) | markdown | True |
+| score_improvement_timeline.json | json | True |
+| [current_system_state.md](current_system_state.md) | markdown | True |
+| current_system_state.json | json | True |
+| [technique_dataflow_views.md](technique_dataflow_views.md) | markdown | True |
+| technique_dataflow_views.json | json | True |
+| [query_example_000_dataflow.md](query_example_000_dataflow.md) | markdown | True |
+| query_example_000_dataflow.json | json | True |
+| [query_example_003_dataflow.md](query_example_003_dataflow.md) | markdown | True |
+| query_example_003_dataflow.json | json | True |
+| [query_example_011_dataflow.md](query_example_011_dataflow.md) | markdown | True |
+| query_example_011_dataflow.json | json | True |
+| [query_example_021_dataflow.md](query_example_021_dataflow.md) | markdown | True |
+| query_example_021_dataflow.json | json | True |
+| [query_example_031_dataflow.md](query_example_031_dataflow.md) | markdown | True |
+| query_example_031_dataflow.json | json | True |
+| [query_example_033_dataflow.md](query_example_033_dataflow.md) | markdown | True |
+| query_example_033_dataflow.json | json | True |

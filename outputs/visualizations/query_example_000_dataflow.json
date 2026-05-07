@@ -1,0 +1,384 @@
+{
+  "checkpoint_timeline": [
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "checkpoint_order": 1,
+      "short_input_summary": "unavailable",
+      "short_output_summary": "query=When was the journey 'Birthday Message' published?; query_id=example_000; strategy=SQL_FIRST_API_VERIFY",
+      "stage": "input",
+      "technique": "raw user query capture",
+      "what_changed": "preserves the original query for reproducibility"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_00_prompt_router",
+      "checkpoint_order": 2,
+      "short_input_summary": "query=When was the journey 'Birthday Message' published?",
+      "short_output_summary": "confidence=0.88; reason=Live/status keyword(s) require SQL grounding plus API ver...",
+      "stage": "prompt routing",
+      "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
+      "what_changed": "chooses whether the prompt can be answered directly or needs SQL/API evidence"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_simple_prompt_gate",
+      "checkpoint_order": 3,
+      "short_input_summary": "query=When was the journey 'Birthday Message' published?",
+      "short_output_summary": "confidence=0.88; is_simple=False; suggested_action=USE_DATA_PIPELINE; reason=Live/status keyword(s) require SQL grounding plus API ver...",
+      "stage": "input routing",
+      "technique": "simple prompt gate",
+      "what_changed": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_02_query_normalization",
+      "checkpoint_order": 4,
+      "short_input_summary": "query=When was the journey 'Birthday Message' published?",
+      "short_output_summary": "matching_text=when was the journey 'birthday message' published?; normalized_query=When was the journey 'Birthday Message' published?",
+      "stage": "normalization",
+      "technique": "data cleaning / query normalization",
+      "what_changed": "creates matching-friendly text while preserving the original query"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_03_query_tokens",
+      "checkpoint_order": 5,
+      "short_input_summary": "normalized_query=When was the journey 'Birthday Message' published?",
+      "short_output_summary": "domains=1 item(s); quoted_entities=1 item(s); statuses=1 item(s)",
+      "stage": "tokenization",
+      "technique": "domain-aware tokenization/entity extraction",
+      "what_changed": "extracts reusable query fields for routing, planning, and answers"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_04_relevance_scoring",
+      "checkpoint_order": 6,
+      "short_input_summary": "tokens=3 field(s)",
+      "short_output_summary": "top_answer_families=2 item(s); top_apis=3 item(s); top_join_hints=1 item(s); top_tables=1 item(s)",
+      "stage": "context selection",
+      "technique": "attention-style relevance scoring",
+      "what_changed": "selects a smaller, more relevant schema/API context"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_value_entity_retrieval",
+      "checkpoint_order": 7,
+      "short_input_summary": "query_values=2 item(s)",
+      "short_output_summary": "active=True; cache_hit=True; cache_key=fa917ba84b79c5a3; cache_key_algorithm=sha256",
+      "stage": "query understanding",
+      "technique": "CHESS-style value/entity retrieval",
+      "what_changed": "grounds query entities against sampled local DB values before planning"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_query_decomposition",
+      "checkpoint_order": 8,
+      "short_input_summary": "query=When was the journey 'Birthday Message' published?",
+      "short_output_summary": "active=True; expected_answer_shape=short_fact; required_entities=1 item(s); required_filters=1 item(s)",
+      "stage": "query understanding",
+      "technique": "DIN-SQL-style deterministic query decomposition",
+      "what_changed": "breaks complex prompts into entities, filters, joins, and answer-shape constraints"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_05_query_analysis",
+      "checkpoint_order": 9,
+      "short_input_summary": "route_type=SQL_THEN_API; domain_type=JOURNEY_CAMPAIGN",
+      "short_output_summary": "strategy=SQL_FIRST_API_VERIFY; route_type=SQL_THEN_API; domain_type=JOURNEY_CAMPAIGN; answer_family=journey_published",
+      "stage": "routing",
+      "technique": "branch prediction / QueryAnalysis",
+      "what_changed": "computes shared query understanding once"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_06_lookup_path",
+      "checkpoint_order": 10,
+      "short_input_summary": "domain_type=JOURNEY_CAMPAIGN; answer_family=journey_published",
+      "short_output_summary": "api_families=3 item(s); api_mode=optional; family=journey_campaign; required_ids=2 item(s)",
+      "stage": "path prediction",
+      "technique": "TLB-style lookup path prediction",
+      "what_changed": "predicts the relevant table/join/API path"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_07_context_card",
+      "checkpoint_order": 11,
+      "short_input_summary": "lookup_path=journey_campaign",
+      "short_output_summary": "estimated_metadata_tokens=374; prompt_tokens=937; selected_apis=1 item(s); selected_card_name=journey_campaign",
+      "stage": "metadata packing",
+      "technique": "huge-page-style compact context card",
+      "what_changed": "packs family-relevant context into metadata.json and the filled prompt"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_08_candidate_plans",
+      "checkpoint_order": 12,
+      "short_input_summary": "strategy=SQL_FIRST_API_VERIFY; base_step_count=2",
+      "short_output_summary": "candidate_plan_names=1 item(s); reason_selected=highest pre-execution validation/relevance/cost score; scores=1 field(s); selected_plan=generic_sql_first",
+      "stage": "planning",
+      "technique": "pre-execution plan ensemble",
+      "what_changed": "selects one plan before execution"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_09_plan_optimization",
+      "checkpoint_order": 13,
+      "short_input_summary": "original_step_count=2",
+      "short_output_summary": "optimized_step_count=2",
+      "stage": "optimization",
+      "technique": "compiler-style plan optimization",
+      "what_changed": "removes duplicate, skippable, or unsafe calls before validation"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_10_evidence_policy",
+      "checkpoint_order": 14,
+      "short_input_summary": "route_type=SQL_THEN_API; answer_family=journey_published",
+      "short_output_summary": "reason=Live/platform verification may improve the answer.",
+      "stage": "evidence policy",
+      "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
+      "what_changed": "decides when API evidence is required, optional, or unnecessary"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_11_call_budget",
+      "checkpoint_order": 15,
+      "short_input_summary": "planned_steps=2 item(s)",
+      "short_output_summary": "planned_sql_calls=1; planned_api_calls=1; final_planned_calls=2; max_total_tool_calls=2",
+      "stage": "efficiency control",
+      "technique": "tool-call budgeting",
+      "what_changed": "keeps tool calls within per-family limits"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "yes",
+      "checkpoint_id": "checkpoint_gated_sql_candidate_selection",
+      "checkpoint_order": 16,
+      "short_input_summary": "trigger_reasons=2 item(s)",
+      "short_output_summary": "preview={\"active\": true, \"hard_case_triggered\": true, \"trigger_re...; truncated=True",
+      "stage": "planning",
+      "technique": "hard-case gated SQL candidate validation",
+      "what_changed": "validates hard-case SQL candidates before execution without executing losing candidates"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "yes",
+      "checkpoint_id": "checkpoint_12_validation",
+      "checkpoint_order": 17,
+      "short_input_summary": "optimized_steps=2 item(s)",
+      "short_output_summary": "api_validation_status=1 item(s); sql_validation_status=1 item(s)",
+      "stage": "validation",
+      "technique": "SQL/API safety validation",
+      "what_changed": "records whether planned SQL/API calls were safe to execute"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "yes",
+      "checkpoint_id": "checkpoint_sql_ast_validation",
+      "checkpoint_order": 18,
+      "short_input_summary": "sql_call_count=1",
+      "short_output_summary": "destructive_sql_detected=False; parsed_ok=True; selected_columns=2 item(s); selected_tables=1 item(s)",
+      "stage": "validation",
+      "technique": "SQLGlot AST-based SQL validation and extraction",
+      "what_changed": "adds AST-level table and column extraction after existing SQL validation"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_13_tool_execution",
+      "checkpoint_order": 19,
+      "short_input_summary": "validated_step_count=2",
+      "short_output_summary": "sql_calls_executed=1; api_calls_executed=1",
+      "stage": "execution",
+      "technique": "SQL/API tool execution",
+      "what_changed": "captures the actual SQL/API evidence gathered by the backend"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_14_evidence_bus",
+      "checkpoint_order": 20,
+      "short_input_summary": "tool_result_count=2",
+      "short_output_summary": "evidence=1 field(s)",
+      "stage": "evidence forwarding",
+      "technique": "operand forwarding / EvidenceBus",
+      "what_changed": "forwards structured facts to API params and answer slots"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_15_answer_slots",
+      "checkpoint_order": 21,
+      "short_input_summary": "tool_result_count=2",
+      "short_output_summary": "answer_intent=WHEN; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); missing_slots=1 item(s)",
+      "stage": "answer synthesis",
+      "technique": "structured answer slot extraction",
+      "what_changed": "turns raw tool results into typed evidence fields"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_16_answer_verification",
+      "checkpoint_order": 22,
+      "short_input_summary": "claim_count=2; slots_present=5 item(s)",
+      "short_output_summary": "verifier_passed=True; rewrite_applied=False",
+      "stage": "answer verification",
+      "technique": "claim verification / groundedness checking",
+      "what_changed": "checks final-answer claims against SQL/API evidence"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_17_answer_reranking",
+      "checkpoint_order": 23,
+      "short_input_summary": "answer_family=journey_published",
+      "short_output_summary": "candidate_count=0; selected_candidate_type=base",
+      "stage": "answer selection",
+      "technique": "deterministic answer reranking",
+      "what_changed": "selects the safest answer from same-evidence candidates"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "checkpoint_order": 24,
+      "short_input_summary": "verifier_passed=True",
+      "short_output_summary": "answer_length=199; final_answer=The journey \"Birthday Message\" has not been published. Th...",
+      "stage": "final response",
+      "technique": "concise grounded final response",
+      "what_changed": "returns the final concise answer to the agent harness"
+    },
+    {
+      "affects_accuracy": "no",
+      "affects_efficiency": "no",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_official_token_reduction",
+      "checkpoint_order": 25,
+      "short_input_summary": "unavailable",
+      "short_output_summary": "unavailable",
+      "stage": "query understanding",
+      "technique": "unavailable",
+      "what_changed": "Checkpoint recorded query understanding progress."
+    }
+  ],
+  "decision_table": [
+    {
+      "decision": "Why SQL was used",
+      "promotion_status": "promoted_default",
+      "reason": "SQL_PLUS_API",
+      "selected_value": "SQL calls=1"
+    },
+    {
+      "decision": "Why API was used or skipped",
+      "promotion_status": "promoted_default",
+      "reason": "n/a - no API policy recorded",
+      "selected_value": "API calls=1; dry_run=True"
+    },
+    {
+      "decision": "Answer template / rewriter",
+      "promotion_status": "promoted_default + shadow_only diagnostics",
+      "reason": "No default-on answer rewrite promoted.",
+      "selected_value": "packaged answer synthesizer"
+    },
+    {
+      "decision": "Endpoint family changed?",
+      "promotion_status": "shadow_only",
+      "reason": "no_family_divergence",
+      "selected_value": "unavailable"
+    },
+    {
+      "decision": "Candidate promoted?",
+      "promotion_status": "shadow_only / isolated_trial",
+      "reason": "No promoted candidate for packaged path.",
+      "selected_value": "unavailable"
+    }
+  ],
+  "evidence_table": [
+    {
+      "evidence_type": "SQL evidence",
+      "preview": "{\"items\": {\"items\": [{\"campaign_name\": \"Birthday Message\"}], \"total_items\": 1, \"truncated_items\": false}, \"total_items\": 2, \"truncated_items\": true}",
+      "source": "SELECT \"NAME\" AS campaign_name, \"LASTDEPLOYEDTIME\" AS published_time FROM \"dim_campaign\" LIMIT 50",
+      "used_or_status": "yes"
+    },
+    {
+      "evidence_type": "API evidence",
+      "preview": "n/a - no API result preview recorded",
+      "source": "GET /ajo/journey",
+      "used_or_status": "dry-run"
+    },
+    {
+      "evidence_type": "Local Parquet evidence",
+      "preview": "query=When was the journey 'Birthday Message' published?; query_id=example_000",
+      "source": "unavailable",
+      "used_or_status": "yes"
+    },
+    {
+      "evidence_type": "Dry-run label",
+      "preview": "SQL evidence is available. API tool was invoked and validated, but live API evidence was unavailable because Adobe credentials were missing.",
+      "source": "API dry-run result label",
+      "used_or_status": "yes"
+    },
+    {
+      "evidence_type": "Unsupported claims replaced",
+      "preview": "unavailable",
+      "source": "supportable_answer_rewrite_eval",
+      "used_or_status": "no"
+    }
+  ],
+  "mermaid_dataflow_graph": "\nflowchart LR\n  Q[\"Raw query: When was the journey 'Birthday Message' p...\"] --> N[\"Normalize + tokens\"]\n  N --> R[\"Route: SQL_PLUS_API\"]\n  R --> C[\"Context tables: 'items': ['dim_campaign'], 'total_items...\"]\n  C --> P[\"Plan SQL/API\"]\n  P --> S[\"SQL rows\"]\n  P --> A[\"API candidates: 'items': ['journey_list'], 'total_items...\"]\n  A --> E[\"Dry-run API\"]\n  S --> V[\"Evidence bus\"]\n  E --> V\n  V --> H[\"Answer synthesis\"]\n  H --> F[\"Final: The journey 'Birthday Message' has not...\"]\n",
+  "query_summary": {
+    "answer_score": 0.4875,
+    "api_score": null,
+    "correctness_score": 0.7232,
+    "current_packaged_strategy_used": "SQL_FIRST_API_VERIFY",
+    "final_answer": "The journey \"Birthday Message\" has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable.",
+    "query": "When was the journey 'Birthday Message' published?",
+    "query_id": "example_000",
+    "runtime": 0.012937915977090597,
+    "sql_score": 0.9,
+    "strict_score": 0.6905,
+    "tokens": 915,
+    "tool_calls": 2
+  },
+  "source_trajectory": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_000/sql_first_api_verify/trajectory.json"
+}
