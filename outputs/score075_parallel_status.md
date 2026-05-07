@@ -1,17 +1,25 @@
 # Score 0.75 Parallel Status
 
-- Generated at: `2026-05-07T00:13:51.969645+00:00`
 - Baseline commit: `b583624c1977d7bf7a4403ba3a77779f602d2f79`
-- Final recommendation: `submit_current_official_token_reduction_version`
+- Best achieved strict score: 0.6556
+- Strict score delta: 0.0065
+- 0.75 reached: False
+- Hidden-style result: 48/48
+- Supportable answer safe rows/projected score: 5 / 0.655
+- LLM answer rewrite status: skipped_no_llm_key
+- Trial recommendation: `continue_iteration_target_not_reached`
+- Final recommendation: `continue_iteration_target_not_reached`
 
-| Branch | Owner | Status | Latest Commit | Score Delta | Hidden | Recommendation | Blockers |
-|---|---|---|---|---:|---|---|---|
-| `codex/score075-coordinator-baseline` | coordinator/baseline | `rejected` | `b8d5892f` | 0.0 | 48/48 | `do_not_promote` | not merged after inspection |
-| `codex/score075-robustness-leakage` | robustness/leakage | `merged` | `8447a040` | 0.0 | 48/48 | `keep_on_integration_branch` | - |
-| `codex/score075-local-index` | local Parquet knowledge index | `merged` | `38c5cbe0` | 0.0 | 48/48 | `keep_on_integration_branch` | - |
-| `codex/score075-dryrun-answer` | evidence-aware dry-run answers | `rejected` | `667e1515` | 0.0 | 48/48 | `do_not_promote` | strict_final_score remained 0.6491; no safe improvement |
-| `codex/score075-answer-shape` | answer-shape optimization | `merged` | `4ba04c76` | 0.0 | 48/48 | `keep_on_integration_branch` | - |
-| `codex/score075-endpoint-routing` | endpoint/schema routing | `merged` | `9cae9dea` | 0.0 | 48/48 | `keep_on_integration_branch` | - |
-| `codex/score075-candidate-generation` | candidate generation | `merged` | `7228e0cb` | 0.0 | 48/48 | `keep_on_integration_branch` | - |
-| `codex/score075-execution-selector` | execution-based selector | `merged` | `0c161570` | 0.0 | 48/48 | `keep_on_integration_branch` | - |
-| `codex/score075-llm-search` | LLM-assisted candidate search | `rejected` | `4c39f478` | 0.0 | 48/48 | `do_not_promote` | candidate_rows=0; safe_rows=0; recommendation=keep_shadow_only |
+| Branch | Owner | Status | Score delta | Hidden-style | Merge recommendation | Blockers |
+|---|---|---|---:|---|---|---|
+| `codex/score075-coordinator-baseline` | coordinator/baseline | reported_complete_not_merged | 0.0 | 48/48 | pending_integration_validation | not_merged_by_integration_worker |
+| `codex/score075-dryrun-answer` | evidence-aware dry-run answers | reported_complete_not_merged | 0.0 | 48/48 | pending_dependency_validation | not_merged_by_integration_worker |
+| `codex/score075-local-index` | local Parquet knowledge index | reported_complete_not_merged | 0.0 | 48/48 | pending_dependency_validation | not_merged_by_integration_worker |
+| `codex/score075-endpoint-routing` | endpoint/schema routing | reported_complete_not_merged | 0.0 | 48/48 | pending_dependency_validation | not_merged_by_integration_worker |
+| `codex/score075-candidate-generation` | candidate generation | reported_complete_not_merged | 0.0 | 48/48 | pending_dependency_validation | not_merged_by_integration_worker |
+| `codex/score075-execution-selector` | execution-based selector | reported_complete_not_merged | 0.0 | 48/48 | keep_shadow_only_until_dependencies_merged | not_merged_by_integration_worker |
+| `codex/score075-llm-search` | LLM-assisted candidate search | not_reported_to_integration | 0.0 | 48/48 | blocked_missing_worker_result | not_merged_by_integration_worker |
+| `codex/score075-answer-shape` | answer-shape optimization | not_reported_to_integration | 0.0 | 48/48 | blocked_missing_worker_result | not_merged_by_integration_worker |
+| `codex/score075-robustness-leakage` | robustness/leakage tests | not_reported_to_integration | 0.0 | 48/48 | blocked_missing_worker_result | not_merged_by_integration_worker |
+| `codex/score075-integration` | integration/validation | in_progress | 0.0 | 48/48 | not_applicable_current_branch | not_merged_by_integration_worker |
+| `main` | evidence-cited short answer rewrite | completed_isolated_progress_not_promoted | 0.0065 | 48/48 | keep_isolated_bundle_continue_iteration_target_not_reached | hard target strict_final_score >= 0.7500 not reached; LLM answer rewrite search skipped because no API key was visible to this process |

@@ -3,7 +3,7 @@
 - Freshness run ID: `20260506T205804480909Z-885373750216791`
 - Preferred strategy: `SQL_FIRST_API_VERIFY`
 - Strict final score: 0.6491
-- Estimated tokens/runtime/tools: 831.4571 / 0.0113 / 1.4571
+- Estimated tokens/runtime/tools: 831.4571 / 0.0109 / 1.4571
 - Final submission ready: True
 - Official-token packaged trial recommendation: `safe_to_make_packaged_default_in_future`
 - Official-token promotion recommendation: `promoted_keep_enabled`
@@ -22,9 +22,12 @@
 - 0.70 push recommendation: `submit_current_official_token_reduction_version`
 - Score-component API-correct answer-weak rows: 16
 - Evidence-answer safe rows/projected score: 1 / 0.6494
+- Unsafe answer analysis rows/positive supportable: 24 / 10
+- Supportable answer rewrite safe rows/projected score: 5 / 0.655
+- LLM answer rewrite search: skipped_no_llm_key (recommendation: `keep_shadow_only`)
 - Local fact coverage available/used/covered: 34 / 24 / 34
 - Autonomous packaged trial recommendation: `continue_iteration_target_not_reached`
-- Autonomous 0.75 best score/reached: 0.6558 / False
+- Autonomous 0.75 best score/reached: 0.6556 / False
 - score075 integration merged/rejected/pending branches: 0 / 0 / 10
 - Redundant file audit ran: True
 - Cleanup applied/deleted/protected-ok: True / 4 / True

@@ -2,8 +2,8 @@
 
 - Baseline commit: `b583624c1977d7bf7a4403ba3a77779f602d2f79`
 - Starting strict score: 0.6491
-- Best achieved strict score: 0.6558
-- Score delta: 0.0067
+- Best achieved strict score: 0.6556
+- Score delta: 0.0065
 - 0.70 reached: False
 - 0.75 reached: False
 - 0.80 reached: False
