@@ -4,6 +4,23 @@ from dataclasses import dataclass
 from typing import Any
 
 
+BLOCKED_TRIGGER_FEATURES = {
+    "query_id",
+    "exact_full_query_string",
+    "exact_query_string",
+    "exact_public_query",
+    "manual_expected_answer",
+    "memorized_expected_answer",
+    "manual_memorized_expected_answer",
+    "manual_gold_sql",
+    "manual_gold_api",
+    "memorized_gold_sql",
+    "memorized_gold_api",
+    "gold_sql_path",
+    "gold_api_path",
+}
+
+
 @dataclass(frozen=True)
 class CandidateGateThresholds:
     token_delta_pct_max: float = 0.02
@@ -16,6 +33,15 @@ def evaluate_candidate_safety(
     *,
     thresholds: CandidateGateThresholds | None = None,
 ) -> tuple[bool, str]:
+    failures = collect_candidate_gate_failures(row, thresholds=thresholds)
+    return not failures, "; ".join(failures)
+
+
+def collect_candidate_gate_failures(
+    row: dict[str, Any],
+    *,
+    thresholds: CandidateGateThresholds | None = None,
+) -> list[str]:
     thresholds = thresholds or CandidateGateThresholds()
     failures: list[str] = []
     score_delta = float(row.get("score_delta") or 0.0)
@@ -36,6 +62,26 @@ def evaluate_candidate_safety(
         failures.append("runtime_gate_failed")
     if tool_delta > 0 and score_delta < thresholds.substantial_score_gain_for_tool_increase:
         failures.append("tool_increase_without_substantial_score_gain")
+    if row.get("dry_run_labels_preserved") is not True:
+        failures.append("dry_run_labels_not_preserved")
+    for list_key, failure in [
+        ("unknown_tables", "unknown_tables_detected"),
+        ("unknown_columns", "unknown_columns_detected"),
+        ("unresolved_api_placeholders", "unresolved_api_placeholders"),
+    ]:
+        value = row.get(list_key)
+        if value:
+            failures.append(failure)
+    for bool_key, failure in [
+        ("destructive_sql_detected", "destructive_sql_detected"),
+        ("invalid_sql_detected", "invalid_sql_detected"),
+        ("invalid_api_detected", "invalid_api_detected"),
+    ]:
+        if row.get(bool_key):
+            failures.append(failure)
+    if row.get("api_catalog_valid") is False:
+        failures.append("api_catalog_invalid")
+    failures.extend(_candidate_trigger_failures(row))
     for key, failure in [
         ("final_answer_unsafe_drift", "final_answer_unsafe_drift"),
         ("sql_unsafe_drift", "sql_unsafe_drift"),
@@ -55,7 +101,57 @@ def evaluate_candidate_safety(
                 failures.append(failure)
         elif value:
             failures.append(failure)
-    return not failures, "; ".join(sorted(set(failures)))
+    return sorted(set(failures))
+
+
+def _candidate_trigger_failures(row: dict[str, Any]) -> list[str]:
+    candidate = row.get("candidate") if isinstance(row.get("candidate"), dict) else {}
+    query = str(row.get("query") or "")
+    query_id = str(row.get("query_id") or "")
+    features = _as_text_list(candidate.get("trigger_features")) + _as_text_list(row.get("trigger_features"))
+    signals = _as_text_list(candidate.get("source_signals")) + _as_text_list(row.get("source_signals"))
+    leakage_reasons = _as_text_list(candidate.get("leakage_reasons")) + _as_text_list(row.get("leakage_reasons"))
+    failures: list[str] = []
+    normalized_query = _normalize_text(query)
+
+    for feature in features:
+        normalized = _normalize_text(feature)
+        if normalized in BLOCKED_TRIGGER_FEATURES:
+            failures.append(f"blocked_trigger:{normalized}")
+        if query_id and normalized == _normalize_text(query_id):
+            failures.append("query_id_trigger")
+        if normalized_query and normalized == normalized_query:
+            failures.append("exact_full_query_string_trigger")
+        if normalized == "exact_public_entity" and "general_value_match" not in {_normalize_text(item) for item in features}:
+            failures.append("exact_public_entity_without_general_value_match")
+
+    if any("gold" in _normalize_text(signal) for signal in signals):
+        failures.append("gold_signal_used_for_generation")
+    if any("memorized" in _normalize_text(signal) or "expected_answer" in _normalize_text(signal) for signal in signals):
+        failures.append("memorized_answer_signal_used_for_generation")
+    if leakage_reasons:
+        failures.append("candidate_leakage_reasons_present")
+    if not candidate.get("rule_source"):
+        failures.append("missing_rule_source")
+    if not candidate.get("generalizable_family"):
+        failures.append("missing_generalizable_family")
+    return failures
+
+
+def _as_text_list(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(item) for item in value]
+    if isinstance(value, tuple):
+        return [str(item) for item in value]
+    if isinstance(value, set):
+        return [str(item) for item in sorted(value)]
+    return [str(value)]
+
+
+def _normalize_text(value: str) -> str:
+    return " ".join(value.strip().lower().split())
 
 
 def select_best_candidate(rows: list[dict[str, Any]]) -> dict[str, Any] | None:
