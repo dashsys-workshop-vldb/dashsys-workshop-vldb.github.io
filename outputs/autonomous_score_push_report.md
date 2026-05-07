@@ -1,18 +1,16 @@
 # Autonomous 0.75 Score-Push Report
 
-- Baseline commit: `b583624c1977d7bf7a4403ba3a77779f602d2f79`
-- Starting strict score: 0.6491
-- Best achieved strict score: 0.6491
+- Starting score: 0.6491
+- Best achieved score: 0.6491
 - Score delta: 0.0
-- 0.70 reached: False
-- 0.75 reached: False
-- 0.80 reached: False
-- Hard target success: False
+- 0.70 reached: `False`
+- 0.75 reached: `False`
+- Hard target success: `False`
 - Final recommendation: `submit_current_official_token_reduction_version`
 
-## Blockers
+## Notes
 
-- strict_final_score_0_75_not_reached
-- no_safe_score_improvement_over_baseline
-- execution_candidate_search_found_no_safe_rows
-- autonomous_packaged_trial_has_no_promotable_bundle
+- No branch achieved a strict score improvement over 0.6491.
+- No success is claimed because strict_final_score is below 0.7500.
+- Behavior-changing dry-run answer and optional LLM-search branches were rejected/reverted.
+- Accepted branches are retained only on the integration branch as shadow/default-off infrastructure; current main submit-ready version is preserved.
