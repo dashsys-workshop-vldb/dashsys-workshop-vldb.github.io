@@ -59,6 +59,12 @@ class EvidenceObject:
         payload = asdict(self)
         payload["is_final_answer"] = False
         payload["answer_cache"] = False
+        payload["source_table"] = self.table
+        payload["source_column"] = self.columns[0] if self.columns else None
+        payload["source_file"] = self.source_path
+        payload["row_hash"] = self.evidence_id
+        payload["matched_value"] = next(iter(self.values.values()), None) if self.values else None
+        payload["reusable_lookup_type"] = self.evidence_type
         return redact_secrets(payload)
 
 
@@ -219,6 +225,43 @@ def ensure_not_final_answer_payload(payload: dict[str, Any]) -> None:
         raise ValueError(f"Local knowledge index evidence cannot contain final/gold answer keys: {sorted(found)}")
 
 
+def requested_fact_coverage(query: str, hits: list[dict[str, Any]]) -> dict[str, Any]:
+    """Classify whether Parquet evidence appears to cover facts requested by the query."""
+
+    query_tokens = extract_query_tokens(query)
+    query_words = set(query_tokens.words)
+    intent = _requested_fact_type(query)
+    covered_hits: list[dict[str, Any]] = []
+    for hit in hits:
+        evidence_words = _hit_words(hit)
+        columns = " ".join(str(column) for column in hit.get("columns", [])).lower()
+        evidence_type = str(hit.get("evidence_type") or hit.get("reusable_lookup_type") or "")
+        if not evidence_words and not columns:
+            continue
+        overlap = sorted(word for word in evidence_words & query_words if len(word) > 2)
+        column_match = _intent_matches_columns(intent, columns, evidence_type)
+        source_match = bool(overlap or column_match)
+        if source_match:
+            covered_hits.append(
+                {
+                    "evidence_id": hit.get("evidence_id"),
+                    "source_table": hit.get("source_table") or hit.get("table"),
+                    "source_column": hit.get("source_column"),
+                    "matched_value": hit.get("matched_value"),
+                    "coverage_signals": {
+                        "query_value_overlap": overlap[:8],
+                        "intent_column_match": column_match,
+                    },
+                }
+            )
+    return {
+        "requested_fact_type": intent,
+        "requested_fact_covered": bool(covered_hits),
+        "covered_hit_count": len(covered_hits),
+        "covered_hits": covered_hits[:8],
+    }
+
+
 def _value_evidence_for_table(
     frame: pd.DataFrame,
     *,
@@ -364,6 +407,52 @@ def _score_evidence(evidence: EvidenceObject, query_text: str, query_words: set[
     if score <= 0:
         return 0.0, "no_match", []
     return round(min(1.0, score), 4), "parquet_evidence_match", signals
+
+
+def _requested_fact_type(query: str) -> str:
+    lowered = query.lower()
+    if any(term in lowered for term in ["how many", "count", "number of", "total"]):
+        return "count"
+    if any(term in lowered for term in ["status", "state", "failed", "success", "queued", "processing"]):
+        return "status"
+    if any(term in lowered for term in ["when", "date", "recent", "updated", "created", "published"]):
+        return "date"
+    if any(term in lowered for term in ["file", "download"]):
+        return "file_list"
+    if any(term in lowered for term in ["schema", "dataset", "collection"]):
+        return "schema_dataset_relation"
+    if any(term in lowered for term in ["list", "which", "show"]):
+        return "list"
+    return "detail"
+
+
+def _intent_matches_columns(intent: str, columns: str, evidence_type: str) -> bool:
+    if intent == "count":
+        return any(term in columns for term in ["count", "total", "num"]) or evidence_type.endswith("lookup")
+    if intent == "status":
+        return any(term in columns for term in ["status", "state", "processing"])
+    if intent == "date":
+        return any(term in columns for term in ["date", "time", "created", "updated", "published"])
+    if intent == "file_list":
+        return "file" in columns
+    if intent == "schema_dataset_relation":
+        return any(term in columns for term in ["schema", "blueprint", "dataset", "collection"])
+    if intent == "list":
+        return any(term in columns for term in ["name", "title", "id"])
+    return True
+
+
+def _hit_words(hit: dict[str, Any]) -> set[str]:
+    parts: list[str] = []
+    for key in ["matched_value", "query_visible_text", "source_table", "source_column", "table"]:
+        value = hit.get(key)
+        if value not in (None, "", [], {}):
+            parts.append(str(value))
+    for container_key in ["values", "row_excerpt"]:
+        container = hit.get(container_key)
+        if isinstance(container, dict):
+            parts.extend(str(value) for value in container.values() if value not in (None, "", [], {}))
+    return set(re.findall(r"[a-z0-9_]+", " ".join(parts).lower()))
 
 
 def _dedupe_evidence(objects: list[EvidenceObject]) -> list[EvidenceObject]:

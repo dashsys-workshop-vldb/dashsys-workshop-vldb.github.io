@@ -31,6 +31,9 @@ REQUIRED_REPORTS = {
     "repair_selector_v3_shadow_eval": "repair_selector_v3_shadow_eval.json",
     "accuracy_promotion_decision_report": "accuracy_promotion_decision_report.json",
     "low_score_failure_mining_report": "low_score_failure_mining_report.json",
+    "score_component_error_report": "score_component_error_report.json",
+    "evidence_answer_candidate_eval": "evidence_answer_candidate_eval.json",
+    "local_index_fact_coverage_report": "local_index_fact_coverage_report.json",
     "execution_candidate_search": "execution_candidate_search.json",
     "llm_candidate_search": "llm_candidate_search.json",
     "targeted_accuracy_packaged_trial": "targeted_accuracy_packaged_trial.json",
@@ -100,6 +103,9 @@ def generate_winner_readiness_report(config: Config) -> dict[str, Any]:
         "accuracy_promotion_decision_report": reports["accuracy_promotion_decision_report"].get("summary", {}),
         "accuracy_promotion_decision_freshness": reports["accuracy_promotion_decision_report"].get("freshness", {}),
         "low_score_failure_mining_report": reports["low_score_failure_mining_report"].get("summary", {}),
+        "score_component_error_report": reports["score_component_error_report"].get("summary", {}),
+        "evidence_answer_candidate_eval": reports["evidence_answer_candidate_eval"].get("summary", {}),
+        "local_index_fact_coverage_report": reports["local_index_fact_coverage_report"].get("summary", {}),
         "execution_candidate_search": reports["execution_candidate_search"].get("summary", {}),
         "llm_candidate_search": reports["llm_candidate_search"].get("summary", {}),
         "targeted_accuracy_packaged_trial": reports["targeted_accuracy_packaged_trial"].get("summary", {}),
@@ -174,6 +180,12 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- 0.70 push achieved score: {payload['score_0_7_push_report'].get('strict_score_achieved')}",
         f"- 0.70 reached safely: {payload['score_0_7_push_report'].get('target_0_70_reached')}",
         f"- 0.70 push recommendation: `{payload['score_0_7_push_report'].get('final_recommendation')}`",
+        f"- Score-component API-correct answer-weak rows: {payload['score_component_error_report'].get('api_correct_answer_weak_rows')}",
+        f"- Evidence-answer safe rows/projected score: {payload['evidence_answer_candidate_eval'].get('safe_rows')} / "
+        f"{payload['evidence_answer_candidate_eval'].get('best_projected_strict_final_score')}",
+        f"- Local fact coverage available/used/covered: {payload['local_index_fact_coverage_report'].get('local_evidence_available_rows')} / "
+        f"{payload['local_index_fact_coverage_report'].get('local_evidence_used_in_final_answer_rows')} / "
+        f"{payload['local_index_fact_coverage_report'].get('requested_fact_covered_rows')}",
         f"- Autonomous packaged trial recommendation: `{payload['autonomous_packaged_trial'].get('recommendation')}`",
         f"- Autonomous 0.75 best score/reached: {payload['autonomous_score_push_report'].get('best_achieved_score')} / "
         f"{payload['autonomous_score_push_report'].get('target_0_75_reached')}",

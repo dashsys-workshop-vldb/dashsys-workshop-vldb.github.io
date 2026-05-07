@@ -9,7 +9,7 @@ Status: **strict-score improvement measured**.
 | strict_final_score | 0.649 | 0.6491 | 0.0001 |
 | strict_correctness | 0.6743 | 0.6743 | 0.0 |
 | estimated_tokens | 851.7714 | 831.4571 | -20.3143 |
-| runtime | 0.0102 | 0.0115 | 0.0013 |
+| runtime | 0.0102 | 0.0113 | 0.0011 |
 | tool_calls | 1.4571 | 1.4571 | 0.0 |
 
 ## Gate Results
@@ -17,7 +17,7 @@ Status: **strict-score improvement measured**.
 - Packaged preferred strategy: `SQL_FIRST_API_VERIFY`
 - Strict score regression gate OK: True
 - Estimated-token overhead: -2.38% (gate OK: True)
-- Runtime overhead: 12.75% (gate OK: True)
+- Runtime overhead: 10.78% (gate OK: True)
 - Tool-call delta: 0.0 (gate OK: True)
 - Value retrieval budget: 250 ms (budget OK: True)
 - Value retrieval cache key algorithm: `sha256` (reproducible: True)
@@ -74,12 +74,18 @@ Status: **strict-score improvement measured**.
 - Repair selector v3 success: False (strictly better selected: 0)
 - Accuracy promotion decision: keep_all_accuracy_changes_shadow_only
 - Low-score mining score needed for 0.70: 1.7815
-- Execution candidate search safe rows: 0 (best projected score: 0.6491; recommendation: keep_shadow_only)
+- Score-component report ran: True (API-correct answer-weak rows: 16)
+- Evidence-answer candidate eval: safe rows=1; projected score=0.6494
+- Local-index fact coverage: requested rows=34; used rows=24
+- Execution candidate search safe rows: 5 (best projected score: 0.6556; recommendation: safe_for_targeted_packaged_trial)
 - LLM candidate search: skipped_no_llm_key (recommendation: keep_shadow_only)
 - Targeted accuracy trial recommendation: keep_shadow_only (score: 0.6491; 0.70 reached: False)
 - 0.70 push report: achieved=0.6491; target reached=False; recommendation=submit_current_official_token_reduction_version
+- Autonomous packaged trial: score=0.6558; 0.75 reached=False; recommendation=continue_iteration_target_not_reached
+- Autonomous 0.75 push report: best=0.6558; 0.75 reached=False; recommendation=continue_iteration_target_not_reached
+- score075 integration merged/rejected/pending branches: 0 / 0 / 10
 - Redundant file audit ran: True; cleanup applied=True; deleted=4; protected files deleted=False
-- Winner readiness next actions: ['Submit with official-token reduction if the promotion report remains kept.', 'Keep repair execution disabled.', 'Keep compact context disabled.', 'Use endpoint/schema rule candidates only as future canary inputs.', 'Keep accuracy changes shadow-only unless the accuracy decision report explicitly recommends promotion.', 'Use the 0.70 push report to decide whether any targeted accuracy change is worth a later explicit promotion.']
+- Winner readiness next actions: ['Submit with official-token reduction if the promotion report remains kept.', 'Keep repair execution disabled.', 'Keep compact context disabled.', 'Use endpoint/schema rule candidates only as future canary inputs.', 'Keep accuracy changes shadow-only unless the accuracy decision report explicitly recommends promotion.', 'Use the 0.70 push report to decide whether any targeted accuracy change is worth a later explicit promotion.', 'Use the autonomous 0.75 score-push report only after integration has merged and validated worker branches.']
 - Risk-efficiency shadow eval rows: 7 (avg token delta: -264.0; avg runtime delta: -0.025; measured efficiency improvement claimed: False)
 - Secret scan OK: True
 - Visualization artifacts directory: `/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/visualizations`
@@ -188,4 +194,5 @@ Execution repair remains disabled by default. These recommendations are offline 
 - Behavior-changing repair execution is feature-flagged off by default; strict score and efficiency gates decide whether it can ever be enabled.
 - Official-token reduction is the only behavior-changing default enabled in this pass; repair execution and compact context remain disabled.
 - The 0.70 strict-score push is isolated; targeted accuracy rules remain default-off unless a later explicit promotion passes all gates.
+- The autonomous 0.75 score-push is not successful unless strict_final_score >= 0.7500 and every safety gate passes.
 - Redundant-file cleanup is allowlist-based and refuses protected source/data/eval/final-submission paths.

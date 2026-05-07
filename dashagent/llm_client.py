@@ -144,6 +144,7 @@ class OpenAILLMClient(LLMClient):
             "model": self.model,
             "messages": messages,
             "temperature": 0,
+            "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "2048")),
         }
         if tools:
             payload["tools"] = tools
@@ -212,10 +213,10 @@ class OpenRouterLLMClient(OpenAILLMClient):
         base_url: str | None = None,
         timeout_seconds: int = 60,
     ) -> None:
-        self.api_key = api_key if api_key is not None else os.getenv("OPENROUTER_API_KEY")
+        self.api_key = api_key if api_key is not None else os.getenv("OPENROUTER_API_KEY") or os.getenv("OPENAI_API_KEY")
         self.model = model or os.getenv("OPENROUTER_MODEL", DEFAULT_OPENROUTER_MODEL)
         self.timeout_seconds = timeout_seconds
-        root = (base_url or os.getenv("OPENROUTER_BASE_URL", DEFAULT_OPENROUTER_BASE_URL)).rstrip("/")
+        root = (base_url or os.getenv("OPENROUTER_BASE_URL") or os.getenv("OPENAI_BASE_URL") or DEFAULT_OPENROUTER_BASE_URL).rstrip("/")
         self.endpoint = f"{root}/chat/completions"
         self.provider = "openrouter"
         self.missing_key_reason = "OPENROUTER_API_KEY is not set"
@@ -259,7 +260,12 @@ def _normalize_openai_tool_calls(message: dict[str, Any]) -> list[dict[str, Any]
 
 
 def get_llm_client(provider: str | None = None) -> LLMClient:
-    selected = (provider or os.getenv("LLM_PROVIDER", "openai")).strip().lower()
+    selected = (provider or os.getenv("LLM_PROVIDER") or "").strip().lower()
+    if not selected:
+        if os.getenv("OPENROUTER_API_KEY") or "openrouter.ai" in os.getenv("OPENAI_BASE_URL", ""):
+            selected = "openrouter"
+        else:
+            selected = "openai"
     if selected == "openrouter":
         client: OpenAILLMClient = OpenRouterLLMClient()
     elif selected == "openai":

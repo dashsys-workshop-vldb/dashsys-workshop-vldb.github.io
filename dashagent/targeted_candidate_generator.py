@@ -240,6 +240,23 @@ def generate_targeted_candidates(
             )
         )
 
+    if _has_dry_run_api(baseline_trajectory) or (failure_row or {}).get("likely_failure_type") == "answer_format_issue":
+        candidates.append(
+            _candidate(
+                "dry_run_evidence_answer",
+                "answer_evidence",
+                "Dry-run evidence-aware answer composition candidate with unchanged SQL/API plan.",
+                baseline_sql,
+                baseline_api[0] if baseline_api else None,
+                family,
+                ["answer_only_ablation", "dry_run_evidence_composition"],
+                ["recorded_evidence_only", "selected_endpoint_params", "query_visible_text"],
+                expected_answer_shape=_answer_shape_for_query(query, answer_shape_hints),
+                local_index_hits=_safe_local_index_hits(local_index_evidence),
+                dependency_requirements=[DEPENDENCY_NAMES["answer_shape"]],
+            )
+        )
+
     answer_shape = _answer_shape_for_query(query, answer_shape_hints)
     if answer_shape != "list_or_detail":
         candidates.append(
@@ -269,6 +286,13 @@ def generate_targeted_candidates(
         if len(deduped) >= max_candidates:
             break
     return [candidate.to_dict() for candidate in deduped]
+
+
+def _has_dry_run_api(trajectory: dict[str, Any]) -> bool:
+    return any(
+        step.get("kind") == "api_call" and (step.get("result") or {}).get("dry_run")
+        for step in trajectory.get("steps", [])
+    )
 
 
 def apply_leakage_checks(candidate: TargetedCandidate, *, query: str = "") -> TargetedCandidate:
@@ -455,15 +479,18 @@ def _safe_local_index_hits(hits: list[dict[str, Any]]) -> list[dict[str, Any]]:
         classification = str(hit.get("classification") or "")
         if "gold" in source.lower() or "gold" in classification.lower():
             continue
-        safe_hits.append(
-            {
-                "classification": classification or "reusable_value_grounding",
-                "source": source or "local_parquet_index",
-                "table": hit.get("table"),
-                "column": hit.get("column"),
-                "value_preview": str(hit.get("value") or hit.get("matched_value") or "")[:80],
-            }
-        )
+        payload = {
+            "classification": classification or "reusable_value_grounding",
+            "source": source or "local_parquet_index",
+            "table": hit.get("table") or hit.get("source_table"),
+            "column": hit.get("column") or hit.get("source_column"),
+            "value_preview": str(hit.get("value") or hit.get("matched_value") or "")[:80],
+        }
+        for key in ["evidence_id", "source_table", "source_column", "matched_value", "values", "columns"]:
+            value = hit.get(key)
+            if value not in (None, "", [], {}):
+                payload[key] = value
+        safe_hits.append(payload)
     return safe_hits
 
 

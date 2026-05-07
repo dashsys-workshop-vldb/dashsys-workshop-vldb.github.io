@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import json
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
@@ -18,10 +19,12 @@ class LLMCandidateSearchStatus:
 
 
 def llm_candidate_search_status() -> LLMCandidateSearchStatus:
-    if os.getenv("OPENAI_API_KEY"):
-        return LLMCandidateSearchStatus(True, "openai", "OPENAI_API_KEY present")
     if os.getenv("OPENROUTER_API_KEY"):
         return LLMCandidateSearchStatus(True, "openrouter", "OPENROUTER_API_KEY present")
+    if os.getenv("OPENAI_API_KEY"):
+        if "openrouter.ai" in os.getenv("OPENAI_BASE_URL", ""):
+            return LLMCandidateSearchStatus(True, "openrouter", "OPENAI_API_KEY present with OpenRouter base URL")
+        return LLMCandidateSearchStatus(True, "openai", "OPENAI_API_KEY present")
     return LLMCandidateSearchStatus(False, None, "No OPENAI_API_KEY or OPENROUTER_API_KEY present")
 
 
@@ -70,3 +73,29 @@ def normalize_llm_candidate(raw: dict[str, Any], *, generalizable_family: str = 
         generalizable_family=generalizable_family,
     )
     return apply_leakage_checks(candidate).to_dict()
+
+
+def parse_llm_candidates(content: str) -> tuple[list[dict[str, Any]], str | None]:
+    text = (content or "").strip()
+    if not text:
+        return [], "empty_content"
+    if text.startswith("```"):
+        text = text.strip("`")
+        text = text.removeprefix("json").strip()
+    try:
+        payload = json.loads(text)
+    except Exception:
+        start = text.find("{")
+        end = text.rfind("}")
+        if start >= 0 and end > start:
+            try:
+                payload = json.loads(text[start : end + 1])
+            except Exception as exc:
+                return [], f"invalid_json:{str(exc)[:120]}"
+        else:
+            return [], "invalid_json:no_json_object"
+    raw = payload.get("candidates") if isinstance(payload, dict) else payload
+    if not isinstance(raw, list):
+        return [], "invalid_json:candidates_not_list"
+    normalized = [item for item in raw if isinstance(item, dict)]
+    return normalized[:5], None

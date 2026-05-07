@@ -69,6 +69,9 @@ def generate_report(config: Config) -> dict[str, Any]:
     accuracy_decision_report = _load_json(config.outputs_dir / "accuracy_promotion_decision_report.json")
     winner_readiness_report = _load_json(config.outputs_dir / "winner_readiness_report.json")
     low_score_failure_mining_report = _load_json(config.outputs_dir / "low_score_failure_mining_report.json")
+    score_component_error_report = _load_json(config.outputs_dir / "score_component_error_report.json")
+    evidence_answer_candidate_report = _load_json(config.outputs_dir / "evidence_answer_candidate_eval.json")
+    local_index_fact_coverage_report = _load_json(config.outputs_dir / "local_index_fact_coverage_report.json")
     execution_candidate_search_report = _load_json(config.outputs_dir / "execution_candidate_search.json")
     llm_candidate_search_report = _load_json(config.outputs_dir / "llm_candidate_search.json")
     targeted_accuracy_trial_report = _load_json(config.outputs_dir / "targeted_accuracy_packaged_trial.json")
@@ -250,6 +253,15 @@ def generate_report(config: Config) -> dict[str, Any]:
             "accuracy_promotion_decision_recommendation": accuracy_decision_report.get("summary", {}).get("recommendation", "not_run"),
             "low_score_mining_score_needed_total": low_score_failure_mining_report.get("summary", {}).get("score_needed_to_reach_0_70_total"),
             "low_score_mining_top_targets": low_score_failure_mining_report.get("summary", {}).get("top_10_target_rows", []),
+            "score_component_error_report_ran": bool(score_component_error_report.get("rows")),
+            "score_component_api_correct_answer_weak_rows": score_component_error_report.get("summary", {}).get("api_correct_answer_weak_rows", 0),
+            "score_component_top_answer_targets": score_component_error_report.get("summary", {}).get("top_api_correct_answer_weak_rows", []),
+            "evidence_answer_candidate_eval_ran": bool(evidence_answer_candidate_report.get("rows")),
+            "evidence_answer_candidate_safe_rows": evidence_answer_candidate_report.get("summary", {}).get("safe_rows", 0),
+            "evidence_answer_candidate_projected_score": evidence_answer_candidate_report.get("summary", {}).get("best_projected_strict_final_score"),
+            "local_index_fact_coverage_ran": bool(local_index_fact_coverage_report.get("rows")),
+            "local_index_fact_coverage_requested_rows": local_index_fact_coverage_report.get("summary", {}).get("requested_fact_covered_rows", 0),
+            "local_index_fact_coverage_used_rows": local_index_fact_coverage_report.get("summary", {}).get("local_evidence_used_in_final_answer_rows", 0),
             "execution_candidate_search_safe_rows": execution_candidate_search_report.get("summary", {}).get("safe_rows", 0),
             "execution_candidate_search_best_projected_score": execution_candidate_search_report.get("summary", {}).get("best_projected_strict_final_score"),
             "execution_candidate_search_recommendation": execution_candidate_search_report.get("summary", {}).get("recommendation", "not_run"),
@@ -555,6 +567,12 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"(strictly better selected: {report['summary']['repair_selector_v3_strictly_better_selected_count']})",
             f"- Accuracy promotion decision: {report['summary']['accuracy_promotion_decision_recommendation']}",
             f"- Low-score mining score needed for 0.70: {report['summary']['low_score_mining_score_needed_total']}",
+            f"- Score-component report ran: {report['summary']['score_component_error_report_ran']} "
+            f"(API-correct answer-weak rows: {report['summary']['score_component_api_correct_answer_weak_rows']})",
+            f"- Evidence-answer candidate eval: safe rows={report['summary']['evidence_answer_candidate_safe_rows']}; "
+            f"projected score={report['summary']['evidence_answer_candidate_projected_score']}",
+            f"- Local-index fact coverage: requested rows={report['summary']['local_index_fact_coverage_requested_rows']}; "
+            f"used rows={report['summary']['local_index_fact_coverage_used_rows']}",
             f"- Execution candidate search safe rows: {report['summary']['execution_candidate_search_safe_rows']} "
             f"(best projected score: {report['summary']['execution_candidate_search_best_projected_score']}; "
             f"recommendation: {report['summary']['execution_candidate_search_recommendation']})",

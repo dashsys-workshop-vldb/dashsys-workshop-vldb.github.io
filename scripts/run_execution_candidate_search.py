@@ -16,6 +16,8 @@ from dashagent.config import Config
 from dashagent.eval_harness import EvalHarness, first_generated_sql, generated_api_calls, normalize_sql
 from dashagent.execution_based_candidate_selector import collect_candidate_gate_failures, holdout_regression_gate, select_best_candidate
 from dashagent.executor import AgentExecutor
+from dashagent.evidence_aware_answer_composer import compose_evidence_aware_answer
+from dashagent.local_knowledge_index import build_local_knowledge_index
 from dashagent.report_run import report_metadata
 from dashagent.targeted_candidate_generator import generate_targeted_candidates
 from dashagent.token_reduction_policy import apply_token_reduction_to_trajectory
@@ -63,6 +65,7 @@ def run_execution_candidate_search(config: Config) -> dict[str, Any]:
     output_root.mkdir(parents=True)
 
     executor = AgentExecutor(config)
+    local_index = build_local_knowledge_index(config)
     examples = {example.query_id: example for example in EvalHarness(config).load_examples()}
     strict_rows = {
         str(row.get("query_id")): row
@@ -85,7 +88,7 @@ def run_execution_candidate_search(config: Config) -> dict[str, Any]:
         if not strict_row or not example:
             rows.append(_skipped_row(str(query_id), "missing_strict_row_or_example"))
             continue
-        rows.append(_search_row(config, executor, output_root, strict_row, example, mining_rows.get(str(query_id), {}), holdout))
+        rows.append(_search_row(config, executor, output_root, strict_row, example, mining_rows.get(str(query_id), {}), holdout, local_index))
 
     selected = [row for row in rows if row.get("safe_for_packaged_trial")]
     summary = _summary(rows, selected, strict)
@@ -124,6 +127,7 @@ def _search_row(
     example: Any,
     failure_row: dict[str, Any],
     holdout: dict[str, Any],
+    local_index: Any,
 ) -> dict[str, Any]:
     query_id = str(strict_row.get("query_id"))
     baseline_trajectory = _load_trajectory(strict_row.get("output_dir"))
@@ -134,6 +138,8 @@ def _search_row(
         schema_index=executor.schema_index,
         endpoint_catalog=executor.endpoint_catalog,
         failure_row=failure_row,
+        local_index_evidence=local_index.lookup(str(strict_row.get("query") or example.query), max_results=8),
+        max_candidates=10,
     )
     candidate_rows = []
     for candidate in candidates:
@@ -156,6 +162,11 @@ def _search_row(
         "baseline_score": strict_row.get("final_score"),
         "baseline_correctness": strict_row.get("correctness_score"),
         "candidate_count": len(candidate_rows),
+        "candidate_diversity_requirement": {
+            "minimum_when_safe": 3,
+            "met": len(candidate_rows) >= 3,
+            "reason_if_fewer": "" if len(candidate_rows) >= 3 else "generator found fewer than 3 distinct valid reusable variants",
+        },
         "candidates": candidate_rows,
         "selected_candidate_id": best.get("candidate_id") if best else None,
         "score_delta": best.get("score_delta") if best else 0.0,
@@ -331,9 +342,24 @@ def _run_candidate_plan(
             tool_results.append({"type": "api", "payload": result})
         else:
             logger.add_error("Candidate API validation failed; API was not called.")
-    answer = synthesize_answer_with_diagnostics(query, tool_results)
-    logger.add_step("answer_diagnostics", answer.diagnostics)
-    trajectory = logger.finish(answer.answer)
+    if candidate.get("candidate_family") == "answer_evidence":
+        interim = logger.finish("placeholder")
+        evidence_answer = compose_evidence_aware_answer(query, interim, local_evidence=candidate.get("local_index_hits") or [])
+        trajectory = logger.finish(evidence_answer.answer)
+        trajectory.setdefault("steps", []).append(
+            {
+                "kind": "answer_diagnostics",
+                "candidate_family": "answer_evidence",
+                "evidence_path": evidence_answer.evidence_path,
+                "unavailable_fields": evidence_answer.unavailable_fields,
+                "local_evidence_used_in_final_answer": evidence_answer.local_evidence_used_in_final_answer,
+                "requested_fact_covered": evidence_answer.requested_fact_covered,
+            }
+        )
+    else:
+        answer = synthesize_answer_with_diagnostics(query, tool_results)
+        logger.add_step("answer_diagnostics", answer.diagnostics)
+        trajectory = logger.finish(answer.answer)
     if config.enable_official_token_reduction:
         trajectory, _ = apply_token_reduction_to_trajectory(trajectory)
     (output_dir / "trajectory.json").write_text(json.dumps(trajectory, indent=2, sort_keys=True, default=str), encoding="utf-8")

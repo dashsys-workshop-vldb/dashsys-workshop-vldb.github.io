@@ -204,6 +204,9 @@ def _score_result(
     estimated_tokens = int(trajectory.get("estimated_tokens", 0))
     efficiency_penalty = min(1.0, (tool_calls / 8) + (runtime / 30) + (estimated_tokens / 12000))
     return {
+        "sql_score": round(sql_score, 4) if sql_score is not None else None,
+        "api_score": round(api_score, 4) if api_score is not None else None,
+        "answer_score": round(answer_score, 4) if answer_score is not None else None,
         "correctness_score": round(correctness_score, 4),
         "final_score": round(correctness_score - 0.1 * efficiency_penalty, 4),
         "unscored_dimension_count": unscored_dimension_count,

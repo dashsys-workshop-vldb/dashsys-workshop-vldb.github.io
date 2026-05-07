@@ -152,10 +152,16 @@ def main() -> int:
     score_md = config.outputs_dir / "autonomous_score_push_report.md"
     diff_json = config.outputs_dir / "score075_integration_diff_report.json"
     diff_md = config.outputs_dir / "score075_integration_diff_report.md"
+    blocker_json = config.outputs_dir / "score075_blocker_analysis.json"
+    blocker_md = config.outputs_dir / "score075_blocker_analysis.md"
     score_json.write_text(json.dumps(score_payload, indent=2, sort_keys=True, default=str), encoding="utf-8")
     score_md.write_text(render_score_markdown(score_payload), encoding="utf-8")
     diff_json.write_text(json.dumps(diff_payload, indent=2, sort_keys=True, default=str), encoding="utf-8")
     diff_md.write_text(render_diff_markdown(diff_payload), encoding="utf-8")
+    if not score_payload["summary"].get("target_0_75_reached"):
+        blocker = generate_score075_blocker_analysis(config, score_payload)
+        blocker_json.write_text(json.dumps(blocker, indent=2, sort_keys=True, default=str), encoding="utf-8")
+        blocker_md.write_text(render_blocker_markdown(blocker), encoding="utf-8")
     print(
         json.dumps(
             {
@@ -178,6 +184,9 @@ def generate_autonomous_score_push_report(config: Config) -> dict[str, Any]:
     backlog = _load_json(config.outputs_dir / "improvement_backlog.json")
     local_index = _load_json(config.outputs_dir / "local_index_candidate_eval.json")
     execution = _load_json(config.outputs_dir / "execution_candidate_search.json")
+    evidence_answer = _load_json(config.outputs_dir / "evidence_answer_candidate_eval.json")
+    score_components = _load_json(config.outputs_dir / "score_component_error_report.json")
+    local_fact_coverage = _load_json(config.outputs_dir / "local_index_fact_coverage_report.json")
     llm = _load_json(config.outputs_dir / "llm_candidate_search.json")
     trial = _load_json(config.outputs_dir / "autonomous_packaged_trial.json")
     research = _load_json(config.outputs_dir / "autonomous_research_notes.json")
@@ -204,6 +213,9 @@ def generate_autonomous_score_push_report(config: Config) -> dict[str, Any]:
         "research_notes": research.get("summary", {}),
         "improvement_backlog": backlog.get("summary", {}),
         "local_index_candidate_eval": local_index.get("summary", {}),
+        "local_index_fact_coverage_report": local_fact_coverage.get("summary", {}),
+        "score_component_error_report": score_components.get("summary", {}),
+        "evidence_answer_candidate_eval": evidence_answer.get("summary", {}),
         "execution_candidate_search": execution.get("summary", {}),
         "llm_candidate_search": llm.get("summary", {}),
         "autonomous_packaged_trial": trial_summary,
@@ -225,6 +237,48 @@ def generate_autonomous_score_push_report(config: Config) -> dict[str, Any]:
             "No worker branch is promoted by this report.",
             "If 0.75 is not reached, preserve the current submit-ready official-token-reduction version.",
         ],
+    }
+
+
+def generate_score075_blocker_analysis(config: Config, score_payload: dict[str, Any]) -> dict[str, Any]:
+    strict = _load_json(config.outputs_dir / "eval_results_strict.json")
+    score_components = _load_json(config.outputs_dir / "score_component_error_report.json")
+    evidence_answer = _load_json(config.outputs_dir / "evidence_answer_candidate_eval.json")
+    local_fact = _load_json(config.outputs_dir / "local_index_fact_coverage_report.json")
+    execution = _load_json(config.outputs_dir / "execution_candidate_search.json")
+    llm = _load_json(config.outputs_dir / "llm_candidate_search.json")
+    trial = _load_json(config.outputs_dir / "autonomous_packaged_trial.json")
+    baseline = score_payload.get("baseline", {})
+    best = score_payload.get("summary", {}).get("best_achieved_score", baseline.get("strict_final_score", 0.6491))
+    low_rows = [
+        {
+            "query_id": row.get("query_id"),
+            "query": row.get("query"),
+            "final_score": row.get("final_score"),
+            "answer_score": row.get("answer_score"),
+            "sql_score": row.get("sql_score"),
+            "api_score": row.get("api_score"),
+        }
+        for row in strict.get("rows", [])
+        if row.get("strategy") == "SQL_FIRST_API_VERIFY" and float(row.get("final_score") or 0.0) < 0.75
+    ]
+    return {
+        **report_metadata(config.outputs_dir),
+        "mode": "score075_blocker_analysis",
+        "best_achieved_score": best,
+        "score_gap_remaining": round(max(0.0, TARGET_SCORE - float(best or 0.0)), 4),
+        "low_score_rows": low_rows,
+        "tried_strategies": {
+            "score_component_error_report": score_components.get("summary", {}),
+            "evidence_answer_candidate_eval": evidence_answer.get("summary", {}),
+            "local_index_fact_coverage_report": local_fact.get("summary", {}),
+            "execution_candidate_search": execution.get("summary", {}),
+            "llm_candidate_search": llm.get("summary", {}),
+            "autonomous_packaged_trial": trial.get("summary", {}),
+        },
+        "why_not_reached": score_payload.get("blockers", []),
+        "current_version_should_remain_submit_ready": True,
+        "recommendation": "submit_current_official_token_reduction_version",
     }
 
 
@@ -394,6 +448,27 @@ def render_diff_markdown(payload: dict[str, Any]) -> str:
             f"| `{row['branch']}` | {row['status']} | {deps or '-'} | {row['merge_recommendation']} | "
             f"{row['strict_score_delta']} | {row['hidden_style_delta']} |"
         )
+    return "\n".join(lines) + "\n"
+
+
+def render_blocker_markdown(payload: dict[str, Any]) -> str:
+    lines = [
+        "# Score 0.75 Blocker Analysis",
+        "",
+        f"- Best achieved score: {payload.get('best_achieved_score')}",
+        f"- Score gap remaining: {payload.get('score_gap_remaining')}",
+        f"- Recommendation: `{payload.get('recommendation')}`",
+        f"- Current version should remain submit-ready: {payload.get('current_version_should_remain_submit_ready')}",
+        "",
+        "## Why 0.75 Was Not Reached",
+        "",
+    ]
+    blockers = payload.get("why_not_reached") or []
+    lines.extend(f"- {item}" for item in blockers) if blockers else lines.append("- No blocker details were available.")
+    lines.extend(["", "## Tried Strategies", ""])
+    for name, summary in (payload.get("tried_strategies") or {}).items():
+        if summary:
+            lines.append(f"- `{name}`: {summary}")
     return "\n".join(lines) + "\n"
 
 

@@ -28,6 +28,7 @@ NON_SUBMISSION_OUTPUT_DIRS = {
     "endpoint_schema_rule_packaged_trial",
     "ast_guided_sql_candidate_canary",
     "execution_candidate_search",
+    "evidence_answer_candidate_eval",
     "llm_candidate_search",
     "targeted_accuracy_packaged_trial",
     "autonomous_packaged_trial",

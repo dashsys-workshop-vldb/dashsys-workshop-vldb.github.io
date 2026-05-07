@@ -1,0 +1,140 @@
+{
+  "answer_time": 0.0,
+  "api_call_count": 1,
+  "checkpoints": [
+    {
+      "active": true,
+      "checkpoint_id": "checkpoint_official_token_reduction",
+      "correctness_impact_expected": false,
+      "estimated_tokens_after": 539,
+      "estimated_tokens_before": 539,
+      "expected_savings": 0,
+      "packaged_execution_changed": false,
+      "reduced_fields": []
+    }
+  ],
+  "domain_type": "batch_list",
+  "errors": [],
+  "estimated_tokens": 539,
+  "execution_time": 0.0,
+  "final_answer": "The batch count requires live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "How many batches have status 'success'?",
+  "planning_time": 0.0,
+  "preprocessing_time": 0.0,
+  "query_id": "example_029",
+  "route_type": "TARGETED_CANDIDATE_SEARCH",
+  "runtime": 0.001417082967236638,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "candidate_search": {
+        "candidate_id": "local_index_grounded_plan",
+        "diagnostic_only": true,
+        "generation_reason": "Local Parquet-index evidence grounding candidate."
+      },
+      "kind": "metadata",
+      "query": "How many batches have status 'success'?",
+      "query_id": "example_029",
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "candidate": {
+        "api_call": {
+          "method": "GET",
+          "params": {
+            "limit": "10",
+            "status": "success"
+          },
+          "path": "/data/foundation/catalog/batches"
+        },
+        "candidate_family": "local_index_grounded",
+        "candidate_id": "local_index_grounded_plan",
+        "dependency_requirements": [
+          "codex/score075-local-index"
+        ],
+        "endpoint_family": "batch_list",
+        "estimated_tool_calls": 1,
+        "expected_answer_shape": "list_or_detail",
+        "generalizable_family": "batch_list",
+        "generation_reason": "Local Parquet-index evidence grounding candidate.",
+        "leakage_check_passed": true,
+        "leakage_reasons": [],
+        "local_index_hits": [],
+        "risk_flags": [
+          "local_index_evidence_grounding"
+        ],
+        "rule_source": "reusable_domain_schema_endpoint_rule",
+        "schema_family": "batch_list",
+        "source_signals": [
+          "local_parquet_index",
+          "reusable_entity_lookup",
+          "general_value_match"
+        ],
+        "sql": null,
+        "trigger_features": [
+          "local_parquet_index",
+          "reusable_entity_lookup",
+          "general_value_match"
+        ]
+      },
+      "candidate_id": "local_index_grounded_plan",
+      "kind": "plan"
+    },
+    {
+      "kind": "validation",
+      "result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "target": "api"
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "10",
+        "status": "success"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/catalog/batches",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "10",
+          "status": "success"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/foundation/catalog/batches"
+      },
+      "url": "/data/foundation/catalog/batches",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "answer_family": "batch",
+      "answer_intent": "COUNT",
+      "completeness_missing_fields": [],
+      "kind": "answer_diagnostics",
+      "rewrite_applied": false,
+      "selected_candidate_type": "base",
+      "slots_present": [
+        "entity_names",
+        "dry_run"
+      ],
+      "unsupported_claims_count": 0,
+      "verifier_passed": true
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {},
+  "tool_call_count": 1
+}

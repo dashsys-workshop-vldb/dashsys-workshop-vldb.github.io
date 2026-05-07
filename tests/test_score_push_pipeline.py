@@ -3,12 +3,17 @@ from __future__ import annotations
 import json
 
 from dashagent.config import Config
+from dashagent.evidence_aware_answer_composer import compose_evidence_aware_answer
+from dashagent.local_knowledge_index import requested_fact_coverage
 from dashagent.report_run import report_metadata, start_report_run
 from dashagent.targeted_candidate_generator import TargetedCandidate, apply_leakage_checks, generate_targeted_candidates
+from scripts.generate_score_component_error_report import generate_score_component_error_report
 from scripts.generate_0_7_score_push_report import generate_score_push_report
 from scripts.generate_low_score_failure_mining_report import generate_low_score_failure_mining_report
 from scripts.package_query_outputs import NON_SUBMISSION_OUTPUT_DIRS, discover_query_output_dirs
+from scripts.run_evidence_answer_candidate_eval import run_evidence_answer_candidate_eval
 from scripts.run_execution_candidate_search import run_execution_candidate_search
+from scripts.run_local_index_fact_coverage_report import run_local_index_fact_coverage_report
 from scripts.run_llm_candidate_search import run_llm_candidate_search
 from scripts.run_targeted_accuracy_packaged_trial import run_targeted_accuracy_packaged_trial
 
@@ -161,6 +166,90 @@ def test_low_score_failure_mining_report_fields_and_gap(tiny_project):
     assert payload["packaged_execution_changed"] is False
 
 
+def test_score_component_error_report_prioritizes_api_correct_answer_weak(tiny_project):
+    _write_score_push_inputs(tiny_project)
+    strict = json.loads((tiny_project.outputs_dir / "eval_results_strict.json").read_text())
+    strict["rows"][0]["api_score"] = 1.0
+    strict["rows"][0]["answer_score"] = 0.1
+    (tiny_project.outputs_dir / "eval_results_strict.json").write_text(json.dumps(strict), encoding="utf-8")
+
+    payload = generate_score_component_error_report(tiny_project)
+
+    assert payload["rows"][0]["likely_bottleneck"] == "api_correct_answer_weak"
+    assert payload["summary"]["api_correct_answer_weak_rows"] == 1
+    assert payload["packaged_execution_changed"] is False
+
+
+def test_evidence_aware_answer_does_not_fabricate_dry_run_payload_values():
+    trajectory = {
+        "steps": [
+            {
+                "kind": "api_call",
+                "method": "GET",
+                "url": "/data/foundation/catalog/batches/01ABCDEFABCDEFABCDEFABCDEF",
+                "params": {},
+                "result": {
+                    "dry_run": True,
+                    "result_preview": {"status": "FORGED_STATUS", "count": 999},
+                },
+            }
+        ]
+    }
+
+    candidate = compose_evidence_aware_answer("Show the details of batch 01ABCDEFABCDEFABCDEFABCDEF.", trajectory)
+
+    assert "FORGED_STATUS" not in candidate.answer
+    assert "999" not in candidate.answer
+    assert "unavailable in dry-run mode" in candidate.answer
+    assert candidate.no_fabrication_checks["dry_run_payload_values_used"] is False
+
+
+def test_evidence_answer_eval_preserves_sql_and_api(tiny_project):
+    _write_score_push_inputs(tiny_project)
+    strict = json.loads((tiny_project.outputs_dir / "eval_results_strict.json").read_text())
+    strict["rows"][0]["api_score"] = 1.0
+    strict["rows"][0]["answer_score"] = 0.1
+    strict["rows"][0]["query"] = "How many campaigns are there?"
+    (tiny_project.outputs_dir / "eval_results_strict.json").write_text(json.dumps(strict), encoding="utf-8")
+
+    payload = run_evidence_answer_candidate_eval(tiny_project)
+
+    assert payload["packaged_execution_changed"] is False
+    assert payload["rows"][0]["selected_sql_unchanged"] is True
+    assert payload["rows"][0]["selected_api_unchanged"] is True
+    assert (tiny_project.outputs_dir / "evidence_answer_candidate_eval" / "tiny_001" / "answer_only").exists()
+
+
+def test_local_fact_coverage_reports_requested_fact_and_used_fields(tiny_project):
+    _write_score_push_inputs(tiny_project)
+
+    payload = run_local_index_fact_coverage_report(tiny_project)
+    row = payload["rows"][0]
+
+    assert "local_evidence_available" in row
+    assert "local_evidence_used_in_final_answer" in row
+    assert "requested_fact_covered" in row
+    assert "score_delta_from_local_evidence" in row
+    assert payload["summary"]["data_json_used_for_runtime"] is False
+
+
+def test_requested_fact_coverage_matches_status_column():
+    hits = [
+        {
+            "evidence_id": "e1",
+            "source_table": "dim_campaign",
+            "source_column": "status",
+            "columns": ["status"],
+            "matched_value": "published",
+            "values": {"status": "published"},
+        }
+    ]
+    coverage = requested_fact_coverage("What is the status of Welcome Journey?", hits)
+
+    assert coverage["requested_fact_type"] == "status"
+    assert coverage["requested_fact_covered"] is True
+
+
 def test_execution_candidate_search_isolated_and_shadow_only(tiny_project):
     _write_score_push_inputs(tiny_project)
 
@@ -197,6 +286,28 @@ def test_llm_candidate_search_skips_without_keys(monkeypatch, tiny_project):
 
     assert payload["summary"]["status"] == "skipped_no_llm_key"
     assert payload["summary"]["recommendation"] == "keep_shadow_only"
+
+
+def test_llm_candidate_search_categorizes_provider_errors(monkeypatch, tiny_project):
+    _write_score_push_inputs(tiny_project)
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-test")
+    monkeypatch.setenv("LLM_PROVIDER", "openrouter")
+
+    class FakeClient:
+        def available(self):
+            return True
+
+        def model_name(self):
+            return "fake/model"
+
+        def generate_messages(self, messages):
+            return {"ok": False, "error": "model unavailable"}
+
+    monkeypatch.setattr("scripts.run_llm_candidate_search.get_llm_client", lambda provider=None: FakeClient())
+    payload = run_llm_candidate_search(tiny_project)
+
+    assert payload["summary"]["status"] == "completed"
+    assert payload["summary"]["failure_category_counts"]["provider_error"] == 1
 
 
 def test_score_push_report_prefers_current_when_no_safe_improvement(tiny_project):
