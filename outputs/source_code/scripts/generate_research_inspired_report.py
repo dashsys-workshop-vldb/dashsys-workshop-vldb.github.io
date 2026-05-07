@@ -71,12 +71,15 @@ def generate_report(config: Config) -> dict[str, Any]:
     low_score_failure_mining_report = _load_json(config.outputs_dir / "low_score_failure_mining_report.json")
     score_component_error_report = _load_json(config.outputs_dir / "score_component_error_report.json")
     evidence_answer_candidate_report = _load_json(config.outputs_dir / "evidence_answer_candidate_eval.json")
+    answer_shape_v2_report = _load_json(config.outputs_dir / "answer_shape_v2_ab_eval.json")
     unsafe_answer_candidate_report = _load_json(config.outputs_dir / "unsafe_answer_candidate_analysis.json")
     supportable_answer_rewrite_report = _load_json(config.outputs_dir / "supportable_answer_rewrite_eval.json")
     local_index_fact_coverage_report = _load_json(config.outputs_dir / "local_index_fact_coverage_report.json")
     execution_candidate_search_report = _load_json(config.outputs_dir / "execution_candidate_search.json")
     llm_candidate_search_report = _load_json(config.outputs_dir / "llm_candidate_search.json")
     llm_answer_rewrite_report = _load_json(config.outputs_dir / "llm_answer_rewrite_search.json")
+    endpoint_family_tiebreak_v2_report = _load_json(config.outputs_dir / "endpoint_family_tiebreak_v2_shadow.json")
+    live_mode_readiness_report = _load_json(config.outputs_dir / "live_mode_readiness_report.json")
     targeted_accuracy_trial_report = _load_json(config.outputs_dir / "targeted_accuracy_packaged_trial.json")
     score_push_report = _load_json(config.outputs_dir / "score_0_7_push_report.json")
     autonomous_trial_report = _load_json(config.outputs_dir / "autonomous_packaged_trial.json")
@@ -126,6 +129,9 @@ def generate_report(config: Config) -> dict[str, Any]:
         "ENABLE_ENDPOINT_SCHEMA_RULE_CANDIDATES": config.enable_endpoint_schema_rule_candidates,
         "ENABLE_AST_GUIDED_SQL_TIEBREAK": config.enable_ast_guided_sql_tiebreak,
         "ENABLE_TARGETED_ACCURACY_RULES": config.enable_targeted_accuracy_rules,
+        "ENABLE_ANSWER_SHAPE_V2": config.enable_answer_shape_v2,
+        "ENABLE_SQL_ONLY_API_SKIP_GUARD": config.enable_sql_only_api_skip_guard,
+        "ENABLE_ENDPOINT_FAMILY_TIEBREAK_V2": config.enable_endpoint_family_tiebreak_v2,
     }
     techniques = [
         ("SQLGlot AST validation", "SQLGlot", "dashagent/sql_ast_tools.py", config.enable_sql_ast_validation, "checkpoint_sql_ast_validation"),
@@ -141,6 +147,9 @@ def generate_report(config: Config) -> dict[str, Any]:
         ("Gated risk-cluster repair", "CHASE-SQL-style candidate repair", "dashagent/candidate_context_builder.py", config.enable_gated_risk_cluster_repair, "checkpoint_gated_risk_cluster_repair/report metrics"),
         ("Risk-based efficiency controller", "adaptive retrieval control", "dashagent/risk_efficiency_controller.py", True, "checkpoint_risk_efficiency_controller/report metrics"),
         ("Schema context voting", "full-vs-compact context voting", "dashagent/schema_context_voter.py", True, "checkpoint_schema_context_voting/report metrics"),
+        ("Answer-shape v2 A/B eval", "evidence-aware answer shaping", "dashagent/answer_shape.py", config.enable_answer_shape_v2, "outputs/answer_shape_v2_ab_eval"),
+        ("Conservative SQL-only API skip guard", "compiler-style no-op elimination", "dashagent/sql_only_api_skip_guard.py", config.enable_sql_only_api_skip_guard, "api_skip_guard"),
+        ("Endpoint-family tie-break v2 shadow", "retrieval-to-planner diagnostics", "scripts/run_endpoint_family_tiebreak_v2_shadow.py", config.enable_endpoint_family_tiebreak_v2, "outputs/endpoint_family_tiebreak_v2_shadow"),
     ]
     cluster_gate = candidate_report.get("cluster_gate", {})
     return {
@@ -262,6 +271,11 @@ def generate_report(config: Config) -> dict[str, Any]:
             "evidence_answer_candidate_eval_ran": bool(evidence_answer_candidate_report.get("rows")),
             "evidence_answer_candidate_safe_rows": evidence_answer_candidate_report.get("summary", {}).get("safe_rows", 0),
             "evidence_answer_candidate_projected_score": evidence_answer_candidate_report.get("summary", {}).get("best_projected_strict_final_score"),
+            "answer_shape_v2_ab_eval_ran": bool(answer_shape_v2_report.get("rows")),
+            "answer_shape_v2_changed_rows": answer_shape_v2_report.get("summary", {}).get("changed_rows", 0),
+            "answer_shape_v2_safe_rows": answer_shape_v2_report.get("summary", {}).get("safe_rows", 0),
+            "answer_shape_v2_projected_score": answer_shape_v2_report.get("summary", {}).get("projected_strict_final_score"),
+            "answer_shape_v2_recommendation": answer_shape_v2_report.get("summary", {}).get("recommendation", "not_run"),
             "unsafe_answer_candidate_analysis_rows": unsafe_answer_candidate_report.get("summary", {}).get("total_rows", 0),
             "unsafe_answer_candidate_positive_supportable_rows": unsafe_answer_candidate_report.get("summary", {}).get("positive_supportable_rows", 0),
             "supportable_answer_rewrite_safe_rows": supportable_answer_rewrite_report.get("summary", {}).get("safe_rows", 0),
@@ -276,6 +290,10 @@ def generate_report(config: Config) -> dict[str, Any]:
             "llm_answer_rewrite_accepted_candidate_count": int(
                 llm_answer_rewrite_report.get("summary", {}).get("safe_rows") or 0
             ),
+            "endpoint_family_tiebreak_v2_shadow_recommendation": endpoint_family_tiebreak_v2_report.get("summary", {}).get("recommendation", "not_run"),
+            "endpoint_family_tiebreak_v2_trial_eligible_rows": endpoint_family_tiebreak_v2_report.get("summary", {}).get("trial_eligible_rows", 0),
+            "live_mode_readiness_diagnostic_only": live_mode_readiness_report.get("summary", {}).get("diagnostic_only", True),
+            "live_mode_readiness_dry_run_dependent_rows": live_mode_readiness_report.get("summary", {}).get("dry_run_dependent_rows", 0),
             "local_index_fact_coverage_ran": bool(local_index_fact_coverage_report.get("rows")),
             "local_index_fact_coverage_requested_rows": local_index_fact_coverage_report.get("summary", {}).get("requested_fact_covered_rows", 0),
             "local_index_fact_coverage_used_rows": local_index_fact_coverage_report.get("summary", {}).get("local_evidence_used_in_final_answer_rows", 0),
@@ -394,7 +412,10 @@ def generate_report(config: Config) -> dict[str, Any]:
         "accuracy_promotion_decision_report": {"summary": accuracy_decision_report.get("summary", {})},
         "low_score_failure_mining_report": {"summary": low_score_failure_mining_report.get("summary", {})},
         "execution_candidate_search": {"summary": execution_candidate_search_report.get("summary", {})},
+        "answer_shape_v2_ab_eval": {"summary": answer_shape_v2_report.get("summary", {})},
         "llm_candidate_search": {"summary": llm_candidate_search_report.get("summary", {})},
+        "endpoint_family_tiebreak_v2_shadow": {"summary": endpoint_family_tiebreak_v2_report.get("summary", {})},
+        "live_mode_readiness_report": {"summary": live_mode_readiness_report.get("summary", {})},
         "targeted_accuracy_packaged_trial": {"summary": targeted_accuracy_trial_report.get("summary", {})},
         "score_0_7_push_report": {"summary": score_push_report.get("summary", {})},
         "autonomous_packaged_trial": {"summary": autonomous_trial_report.get("summary", {})},
@@ -588,6 +609,11 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"(API-correct answer-weak rows: {report['summary']['score_component_api_correct_answer_weak_rows']})",
             f"- Evidence-answer candidate eval: safe rows={report['summary']['evidence_answer_candidate_safe_rows']}; "
             f"projected score={report['summary']['evidence_answer_candidate_projected_score']}",
+            f"- Answer-shape v2 A/B eval: ran={report['summary']['answer_shape_v2_ab_eval_ran']}; "
+            f"changed rows={report['summary']['answer_shape_v2_changed_rows']}; "
+            f"safe rows={report['summary']['answer_shape_v2_safe_rows']}; "
+            f"projected score={report['summary']['answer_shape_v2_projected_score']}; "
+            f"recommendation={report['summary']['answer_shape_v2_recommendation']}",
             f"- Unsafe answer analysis: rows={report['summary']['unsafe_answer_candidate_analysis_rows']}; "
             f"positive supportable={report['summary']['unsafe_answer_candidate_positive_supportable_rows']}",
             f"- Supportable answer rewrite eval: safe rows={report['summary']['supportable_answer_rewrite_safe_rows']}; "
@@ -597,6 +623,11 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"model: {report['summary'].get('llm_answer_rewrite_model')}; "
             f"accepted: {report['summary'].get('llm_answer_rewrite_accepted_candidate_count')}/"
             f"{report['summary'].get('llm_answer_rewrite_candidate_count')})",
+            f"- Endpoint-family tie-break v2 shadow: recommendation="
+            f"{report['summary']['endpoint_family_tiebreak_v2_shadow_recommendation']}; "
+            f"trial eligible rows={report['summary']['endpoint_family_tiebreak_v2_trial_eligible_rows']}",
+            f"- Live-mode readiness: diagnostic_only={report['summary']['live_mode_readiness_diagnostic_only']}; "
+            f"dry-run dependent rows={report['summary']['live_mode_readiness_dry_run_dependent_rows']}",
             f"- Local-index fact coverage: requested rows={report['summary']['local_index_fact_coverage_requested_rows']}; "
             f"used rows={report['summary']['local_index_fact_coverage_used_rows']}",
             f"- Execution candidate search safe rows: {report['summary']['execution_candidate_search_safe_rows']} "

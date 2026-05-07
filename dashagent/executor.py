@@ -9,7 +9,8 @@ from typing import Any
 from .answer_claims import extract_claims
 from .answer_intent import classify_answer_intent
 from .answer_slots import extract_answer_slots
-from .answer_synthesizer import synthesize_answer_with_diagnostics
+from .answer_shape import propose_answer_shape_candidate
+from .answer_synthesizer import AnswerResult, synthesize_answer_with_diagnostics
 from .answer_verifier import verify_answer
 from .api_client import AdobeAPIClient
 from .cache import (
@@ -49,6 +50,7 @@ from .router import QueryRouter
 from .schema_context_voter import vote_schema_contexts
 from .schema_index import SchemaIndex
 from .simple_prompt_gate import decide_simple_prompt
+from .sql_only_api_skip_guard import should_skip_api_with_sql_evidence
 from .prompt_router import LLM_DIRECT, route_prompt
 from .trajectory import TrajectoryLogger, estimate_tokens
 from .token_reduction_policy import apply_token_reduction_to_trajectory
@@ -583,6 +585,33 @@ class AgentExecutor:
                 tool_results.append({"type": "sql", "step": step.to_dict(), "validation": validation.to_dict(), "payload": result})
                 evidence_bus.observe_sql(step, result)
             elif step.action == "api" and step.method and step.url:
+                if self.config.enable_sql_only_api_skip_guard:
+                    skip_decision = should_skip_api_with_sql_evidence(
+                        query=query,
+                        prompt_route=prompt_route,
+                        routing=routing,
+                        analysis=analysis,
+                        api_step=step,
+                        tool_results=tool_results,
+                    )
+                    trajectory.add_step(
+                        "api_skip_guard",
+                        {
+                            "checkpoint": "sql_only_api_skip_guard",
+                            **skip_decision.to_dict(),
+                            "feature_flag": "ENABLE_SQL_ONLY_API_SKIP_GUARD",
+                        },
+                    )
+                    if skip_decision.skip:
+                        validation_summaries.append(
+                            {
+                                "type": "api",
+                                "ok": True,
+                                "warnings": [skip_decision.reason],
+                                "errors": [],
+                            }
+                        )
+                        continue
                 forwarding_actions = evidence_bus.forward_to_step(step)
                 if forwarding_actions:
                     forwarding_actions_all.extend(forwarding_actions)
@@ -682,6 +711,18 @@ class AgentExecutor:
 
         answer_start = time.perf_counter()
         answer_result = synthesize_answer_with_diagnostics(query, tool_results)
+        if self.config.enable_answer_shape_v2:
+            shape_candidate = propose_answer_shape_candidate(query, tool_results)
+            if shape_candidate.text and shape_candidate.text != answer_result.answer:
+                answer_result = AnswerResult(
+                    answer=shape_candidate.text,
+                    diagnostics={
+                        **answer_result.diagnostics,
+                        "answer_shape_v2": shape_candidate.as_dict(),
+                        "selected_candidate_type": "answer_shape_v2",
+                        "selection_reason": "ENABLE_ANSWER_SHAPE_V2 selected a same-evidence answer-shape candidate.",
+                    },
+                )
         final_answer = answer_result.answer
         slots = extract_answer_slots(query, tool_results)
         intent = classify_answer_intent(query, slots)

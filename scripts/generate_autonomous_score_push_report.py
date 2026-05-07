@@ -192,6 +192,7 @@ def generate_autonomous_score_push_report(config: Config) -> dict[str, Any]:
     local_index = _load_json(config.outputs_dir / "local_index_candidate_eval.json")
     execution = _load_json(config.outputs_dir / "execution_candidate_search.json")
     evidence_answer = _load_json(config.outputs_dir / "evidence_answer_candidate_eval.json")
+    answer_shape_v2 = _load_json(config.outputs_dir / "answer_shape_v2_ab_eval.json")
     unsafe_answer = _load_json(config.outputs_dir / "unsafe_answer_candidate_analysis.json")
     supportable_answer = _load_json(config.outputs_dir / "supportable_answer_rewrite_eval.json")
     score_components = _load_json(config.outputs_dir / "score_component_error_report.json")
@@ -226,6 +227,7 @@ def generate_autonomous_score_push_report(config: Config) -> dict[str, Any]:
         "local_index_fact_coverage_report": local_fact_coverage.get("summary", {}),
         "score_component_error_report": score_components.get("summary", {}),
         "evidence_answer_candidate_eval": evidence_answer.get("summary", {}),
+        "answer_shape_v2_ab_eval": answer_shape_v2.get("summary", {}),
         "unsafe_answer_candidate_analysis": unsafe_answer.get("summary", {}),
         "supportable_answer_rewrite_eval": supportable_answer.get("summary", {}),
         "execution_candidate_search": execution.get("summary", {}),
@@ -257,6 +259,7 @@ def generate_score075_blocker_analysis(config: Config, score_payload: dict[str, 
     strict = _load_json(config.outputs_dir / "eval_results_strict.json")
     score_components = _load_json(config.outputs_dir / "score_component_error_report.json")
     evidence_answer = _load_json(config.outputs_dir / "evidence_answer_candidate_eval.json")
+    answer_shape_v2 = _load_json(config.outputs_dir / "answer_shape_v2_ab_eval.json")
     unsafe_answer = _load_json(config.outputs_dir / "unsafe_answer_candidate_analysis.json")
     supportable_answer = _load_json(config.outputs_dir / "supportable_answer_rewrite_eval.json")
     local_fact = _load_json(config.outputs_dir / "local_index_fact_coverage_report.json")
@@ -287,6 +290,7 @@ def generate_score075_blocker_analysis(config: Config, score_payload: dict[str, 
         "tried_strategies": {
             "score_component_error_report": score_components.get("summary", {}),
             "evidence_answer_candidate_eval": evidence_answer.get("summary", {}),
+            "answer_shape_v2_ab_eval": answer_shape_v2.get("summary", {}),
             "unsafe_answer_candidate_analysis": unsafe_answer.get("summary", {}),
             "supportable_answer_rewrite_eval": supportable_answer.get("summary", {}),
             "local_index_fact_coverage_report": local_fact.get("summary", {}),
@@ -384,6 +388,7 @@ def generate_parallel_status_report(
     hidden_summary = score_payload.get("hidden_style_eval", {})
     hidden_result = f"{hidden_summary.get('passed_cases')}/{hidden_summary.get('total_cases')}"
     supportable = score_payload.get("supportable_answer_rewrite_eval", {})
+    answer_shape_v2 = score_payload.get("answer_shape_v2_ab_eval", {})
     llm_answer = score_payload.get("llm_answer_rewrite_search", {})
     trial = score_payload.get("autonomous_packaged_trial", {})
     baseline = score_payload.get("baseline", {})
@@ -416,6 +421,7 @@ def generate_parallel_status_report(
                 "scripts/analyze_unsafe_answer_candidates.py",
                 "scripts/run_supportable_answer_rewrite_eval.py",
                 "scripts/run_llm_answer_rewrite_search.py",
+                "scripts/run_answer_shape_v2_ab_eval.py",
                 "scripts/run_autonomous_packaged_trial.py",
                 "scripts/generate_autonomous_score_push_report.py",
                 "tests/test_score_push_pipeline.py",
@@ -428,6 +434,7 @@ def generate_parallel_status_report(
                 "python3 scripts/analyze_unsafe_answer_candidates.py",
                 "python3 scripts/run_supportable_answer_rewrite_eval.py",
                 "python3 scripts/run_llm_answer_rewrite_search.py",
+                "python3 scripts/run_answer_shape_v2_ab_eval.py",
                 "python3 scripts/run_autonomous_packaged_trial.py",
                 "python3 scripts/generate_autonomous_score_push_report.py",
                 "python3 scripts/run_hidden_style_eval.py",
@@ -457,6 +464,8 @@ def generate_parallel_status_report(
             "hidden_style_result": hidden_result,
             "supportable_answer_safe_rows": supportable.get("safe_rows"),
             "supportable_answer_projected_score": supportable.get("best_projected_strict_final_score"),
+            "answer_shape_v2_safe_rows": answer_shape_v2.get("safe_rows"),
+            "answer_shape_v2_projected_score": answer_shape_v2.get("projected_strict_final_score"),
             "llm_answer_rewrite_status": llm_answer.get("status"),
             "llm_answer_rewrite_provider": llm_answer.get("provider"),
             "llm_answer_rewrite_model": llm_answer.get("model"),
@@ -618,6 +627,7 @@ def render_status_markdown(payload: dict[str, Any]) -> str:
         f"- 0.75 reached: {summary.get('target_0_75_reached')}",
         f"- Hidden-style result: {summary.get('hidden_style_result')}",
         f"- Supportable answer safe rows/projected score: {summary.get('supportable_answer_safe_rows')} / {summary.get('supportable_answer_projected_score')}",
+        f"- Answer-shape v2 safe rows/projected score: {summary.get('answer_shape_v2_safe_rows')} / {summary.get('answer_shape_v2_projected_score')}",
         f"- LLM answer rewrite status/model/accepted: {summary.get('llm_answer_rewrite_status')} / "
         f"{summary.get('llm_answer_rewrite_model')} / {summary.get('llm_answer_rewrite_accepted_candidate_count')}/"
         f"{summary.get('llm_answer_rewrite_candidate_count')}",

@@ -76,16 +76,19 @@ Status: **strict-score improvement measured**.
 - Low-score mining score needed for 0.70: 1.7815
 - Score-component report ran: True (API-correct answer-weak rows: 16)
 - Evidence-answer candidate eval: safe rows=1; projected score=0.6494
+- Answer-shape v2 A/B eval: ran=True; changed rows=35; safe rows=7; projected score=0.6497; recommendation=safe_for_answer_shape_v2_trial
 - Unsafe answer analysis: rows=103; positive supportable=18
 - Supportable answer rewrite eval: safe rows=4; projected score=0.6552
 - LLM answer rewrite search: completed (recommendation: keep_shadow_only; model: openrouter/free; accepted: 0/6)
+- Endpoint-family tie-break v2 shadow: recommendation=keep_shadow_only; trial eligible rows=0
+- Live-mode readiness: diagnostic_only=True; dry-run dependent rows=34
 - Local-index fact coverage: requested rows=34; used rows=24
 - Execution candidate search safe rows: 5 (best projected score: 0.6556; recommendation: safe_for_targeted_packaged_trial)
 - LLM candidate search: skipped_no_llm_key (recommendation: keep_shadow_only)
 - Targeted accuracy trial recommendation: keep_shadow_only (score: 0.6491; 0.70 reached: False)
 - 0.70 push report: achieved=0.6491; target reached=False; recommendation=submit_current_official_token_reduction_version
-- Autonomous packaged trial: score=0.6556; 0.75 reached=False; recommendation=continue_iteration_target_not_reached
-- Autonomous 0.75 push report: best=0.6556; 0.75 reached=False; recommendation=continue_iteration_target_not_reached
+- Autonomous packaged trial: score=0.6558; 0.75 reached=False; recommendation=continue_iteration_target_not_reached
+- Autonomous 0.75 push report: best=0.6558; 0.75 reached=False; recommendation=continue_iteration_target_not_reached
 - score075 integration merged/rejected/pending branches: 0 / 0 / 10
 - Redundant file audit ran: True; cleanup applied=True; deleted=4; protected files deleted=False
 - Winner readiness next actions: ['Submit with official-token reduction if the promotion report remains kept.', 'Keep repair execution disabled.', 'Keep compact context disabled.', 'Use endpoint/schema rule candidates only as future canary inputs.', 'Keep accuracy changes shadow-only unless the accuracy decision report explicitly recommends promotion.', 'Use the 0.70 push report to decide whether any targeted accuracy change is worth a later explicit promotion.', 'Use the autonomous 0.75 score-push report only after integration has merged and validated worker branches.']
@@ -122,6 +125,9 @@ Status: **strict-score improvement measured**.
 | `ENABLE_ENDPOINT_SCHEMA_RULE_CANDIDATES` | False |
 | `ENABLE_AST_GUIDED_SQL_TIEBREAK` | False |
 | `ENABLE_TARGETED_ACCURACY_RULES` | False |
+| `ENABLE_ANSWER_SHAPE_V2` | False |
+| `ENABLE_SQL_ONLY_API_SKIP_GUARD` | False |
+| `ENABLE_ENDPOINT_FAMILY_TIEBREAK_V2` | False |
 
 ## Technique Summary
 
@@ -140,6 +146,9 @@ Status: **strict-score improvement measured**.
 | Gated risk-cluster repair | CHASE-SQL-style candidate repair | `dashagent/candidate_context_builder.py` | True | False | checkpoint_gated_risk_cluster_repair/report metrics |
 | Risk-based efficiency controller | adaptive retrieval control | `dashagent/risk_efficiency_controller.py` | True | False | checkpoint_risk_efficiency_controller/report metrics |
 | Schema context voting | full-vs-compact context voting | `dashagent/schema_context_voter.py` | True | False | checkpoint_schema_context_voting/report metrics |
+| Answer-shape v2 A/B eval | evidence-aware answer shaping | `dashagent/answer_shape.py` | False | False | outputs/answer_shape_v2_ab_eval |
+| Conservative SQL-only API skip guard | compiler-style no-op elimination | `dashagent/sql_only_api_skip_guard.py` | False | False | api_skip_guard |
+| Endpoint-family tie-break v2 shadow | retrieval-to-planner diagnostics | `scripts/run_endpoint_family_tiebreak_v2_shadow.py` | False | False | outputs/endpoint_family_tiebreak_v2_shadow |
 
 ## Diagnostic Candidate Risk Clusters
 

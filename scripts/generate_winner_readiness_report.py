@@ -33,12 +33,15 @@ REQUIRED_REPORTS = {
     "low_score_failure_mining_report": "low_score_failure_mining_report.json",
     "score_component_error_report": "score_component_error_report.json",
     "evidence_answer_candidate_eval": "evidence_answer_candidate_eval.json",
+    "answer_shape_v2_ab_eval": "answer_shape_v2_ab_eval.json",
     "unsafe_answer_candidate_analysis": "unsafe_answer_candidate_analysis.json",
     "supportable_answer_rewrite_eval": "supportable_answer_rewrite_eval.json",
     "local_index_fact_coverage_report": "local_index_fact_coverage_report.json",
     "execution_candidate_search": "execution_candidate_search.json",
     "llm_candidate_search": "llm_candidate_search.json",
     "llm_answer_rewrite_search": "llm_answer_rewrite_search.json",
+    "endpoint_family_tiebreak_v2_shadow": "endpoint_family_tiebreak_v2_shadow.json",
+    "live_mode_readiness_report": "live_mode_readiness_report.json",
     "targeted_accuracy_packaged_trial": "targeted_accuracy_packaged_trial.json",
     "score_0_7_push_report": "score_0_7_push_report.json",
 }
@@ -108,12 +111,15 @@ def generate_winner_readiness_report(config: Config) -> dict[str, Any]:
         "low_score_failure_mining_report": reports["low_score_failure_mining_report"].get("summary", {}),
         "score_component_error_report": reports["score_component_error_report"].get("summary", {}),
         "evidence_answer_candidate_eval": reports["evidence_answer_candidate_eval"].get("summary", {}),
+        "answer_shape_v2_ab_eval": reports["answer_shape_v2_ab_eval"].get("summary", {}),
         "unsafe_answer_candidate_analysis": reports["unsafe_answer_candidate_analysis"].get("summary", {}),
         "supportable_answer_rewrite_eval": reports["supportable_answer_rewrite_eval"].get("summary", {}),
         "local_index_fact_coverage_report": reports["local_index_fact_coverage_report"].get("summary", {}),
         "execution_candidate_search": reports["execution_candidate_search"].get("summary", {}),
         "llm_candidate_search": reports["llm_candidate_search"].get("summary", {}),
         "llm_answer_rewrite_search": _llm_answer_summary(reports["llm_answer_rewrite_search"]),
+        "endpoint_family_tiebreak_v2_shadow": reports["endpoint_family_tiebreak_v2_shadow"].get("summary", {}),
+        "live_mode_readiness_report": reports["live_mode_readiness_report"].get("summary", {}),
         "targeted_accuracy_packaged_trial": reports["targeted_accuracy_packaged_trial"].get("summary", {}),
         "score_0_7_push_report": reports["score_0_7_push_report"].get("summary", {}),
         "autonomous_packaged_trial": autonomous_trial.get("summary", {}),
@@ -189,6 +195,8 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- Score-component API-correct answer-weak rows: {payload['score_component_error_report'].get('api_correct_answer_weak_rows')}",
         f"- Evidence-answer safe rows/projected score: {payload['evidence_answer_candidate_eval'].get('safe_rows')} / "
         f"{payload['evidence_answer_candidate_eval'].get('best_projected_strict_final_score')}",
+        f"- Answer-shape v2 changed/safe/projected score: {payload['answer_shape_v2_ab_eval'].get('changed_rows')} / "
+        f"{payload['answer_shape_v2_ab_eval'].get('safe_rows')} / {payload['answer_shape_v2_ab_eval'].get('projected_strict_final_score')}",
         f"- Unsafe answer analysis rows/positive supportable: {payload['unsafe_answer_candidate_analysis'].get('total_rows')} / "
         f"{payload['unsafe_answer_candidate_analysis'].get('positive_supportable_rows')}",
         f"- Supportable answer rewrite safe rows/projected score: {payload['supportable_answer_rewrite_eval'].get('safe_rows')} / "
@@ -201,6 +209,10 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- Local fact coverage available/used/covered: {payload['local_index_fact_coverage_report'].get('local_evidence_available_rows')} / "
         f"{payload['local_index_fact_coverage_report'].get('local_evidence_used_in_final_answer_rows')} / "
         f"{payload['local_index_fact_coverage_report'].get('requested_fact_covered_rows')}",
+        f"- Endpoint-family tie-break v2 shadow recommendation: `{payload['endpoint_family_tiebreak_v2_shadow'].get('recommendation')}` "
+        f"(trial eligible rows: {payload['endpoint_family_tiebreak_v2_shadow'].get('trial_eligible_rows')})",
+        f"- Live-mode readiness diagnostic-only: {payload['live_mode_readiness_report'].get('diagnostic_only')} "
+        f"(dry-run dependent rows: {payload['live_mode_readiness_report'].get('dry_run_dependent_rows')})",
         f"- Autonomous packaged trial recommendation: `{payload['autonomous_packaged_trial'].get('recommendation')}`",
         f"- Autonomous 0.75 best score/reached: {payload['autonomous_score_push_report'].get('best_achieved_score')} / "
         f"{payload['autonomous_score_push_report'].get('target_0_75_reached')}",

@@ -70,6 +70,9 @@ class Config:
     enable_endpoint_schema_rule_candidates: bool = False
     enable_ast_guided_sql_tiebreak: bool = False
     enable_targeted_accuracy_rules: bool = False
+    enable_answer_shape_v2: bool = False
+    enable_sql_only_api_skip_guard: bool = False
+    enable_endpoint_family_tiebreak_v2: bool = False
     value_retrieval_max_tables: int = 6
     value_retrieval_max_columns: int = 18
     value_retrieval_max_rows_per_column: int = 500
@@ -127,6 +130,9 @@ class Config:
             enable_endpoint_schema_rule_candidates=os.getenv("ENABLE_ENDPOINT_SCHEMA_RULE_CANDIDATES", "0") == "1",
             enable_ast_guided_sql_tiebreak=os.getenv("ENABLE_AST_GUIDED_SQL_TIEBREAK", "0") == "1",
             enable_targeted_accuracy_rules=os.getenv("ENABLE_TARGETED_ACCURACY_RULES", "0") == "1",
+            enable_answer_shape_v2=os.getenv("ENABLE_ANSWER_SHAPE_V2", "0") == "1",
+            enable_sql_only_api_skip_guard=os.getenv("ENABLE_SQL_ONLY_API_SKIP_GUARD", "0") == "1",
+            enable_endpoint_family_tiebreak_v2=os.getenv("ENABLE_ENDPOINT_FAMILY_TIEBREAK_V2", "0") == "1",
             value_retrieval_max_tables=int(os.getenv("VALUE_RETRIEVAL_MAX_TABLES", "6")),
             value_retrieval_max_columns=int(os.getenv("VALUE_RETRIEVAL_MAX_COLUMNS", "18")),
             value_retrieval_max_rows_per_column=int(os.getenv("VALUE_RETRIEVAL_MAX_ROWS_PER_COLUMN", "500")),

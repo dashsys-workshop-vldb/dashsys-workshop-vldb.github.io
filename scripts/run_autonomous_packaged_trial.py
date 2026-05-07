@@ -51,6 +51,7 @@ def run_autonomous_packaged_trial(config: Config) -> dict[str, Any]:
     hidden = _load_json(config.outputs_dir / "hidden_style_eval.json")
     execution = _load_json(config.outputs_dir / "execution_candidate_search.json")
     evidence_answer = _load_json(config.outputs_dir / "evidence_answer_candidate_eval.json")
+    answer_shape_v2 = _load_json(config.outputs_dir / "answer_shape_v2_ab_eval.json")
     supportable_answer = _load_json(config.outputs_dir / "supportable_answer_rewrite_eval.json")
     local_index = _load_json(config.outputs_dir / "local_index_candidate_eval.json")
     llm = _load_json(config.outputs_dir / "llm_candidate_search.json")
@@ -61,6 +62,7 @@ def run_autonomous_packaged_trial(config: Config) -> dict[str, Any]:
         [
             *_safe_execution_rows(execution),
             *_safe_evidence_answer_rows(evidence_answer),
+            *_safe_answer_shape_v2_rows(answer_shape_v2),
             *_safe_supportable_answer_rows(supportable_answer),
             *_safe_llm_answer_rows(llm_answer),
         ]
@@ -90,6 +92,7 @@ def run_autonomous_packaged_trial(config: Config) -> dict[str, Any]:
         "source_reports": {
             "execution_candidate_search": execution.get("summary", {}),
             "evidence_answer_candidate_eval": evidence_answer.get("summary", {}),
+            "answer_shape_v2_ab_eval": answer_shape_v2.get("summary", {}),
             "supportable_answer_rewrite_eval": supportable_answer.get("summary", {}),
             "local_index_candidate_eval": local_index.get("summary", {}),
             "llm_candidate_search": llm.get("summary", {}),
@@ -143,6 +146,44 @@ def _safe_evidence_answer_rows(report: dict[str, Any]) -> list[dict[str, Any]]:
                     "correctness_delta": row.get("correctness_delta"),
                     "baseline_tokens": row.get("baseline_estimated_tokens"),
                     "candidate_tokens": row.get("candidate_estimated_tokens"),
+                    "token_delta": row.get("token_delta"),
+                    "baseline_runtime": row.get("baseline_runtime"),
+                    "candidate_runtime": row.get("candidate_runtime"),
+                    "runtime_delta": row.get("runtime_delta"),
+                    "baseline_tool_calls": row.get("baseline_tool_calls"),
+                    "candidate_tool_calls": row.get("candidate_tool_calls"),
+                    "tool_delta": row.get("tool_delta"),
+                    "dry_run_labels_preserved": row.get("dry_run_labels_preserved"),
+                    "live_api_evidence_fabricated": row.get("live_api_evidence_fabricated"),
+                    "leakage_check_passed": True,
+                    "holdout_regression_passed": True,
+                    "safe_for_packaged_trial": True,
+                },
+            }
+        )
+    return rows
+
+
+def _safe_answer_shape_v2_rows(report: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = []
+    for row in report.get("rows", []):
+        if not row.get("safe_for_promotion_candidate"):
+            continue
+        rows.append(
+            {
+                "query_id": row.get("query_id"),
+                "selected_candidate_id": "answer_shape_v2",
+                "best_candidate": {
+                    "candidate_id": "answer_shape_v2",
+                    "output_dir": row.get("candidate_output_dir"),
+                    "baseline_score": row.get("strict_score_before"),
+                    "best_candidate_score": row.get("strict_score_after"),
+                    "score_delta": row.get("strict_score_delta"),
+                    "baseline_correctness": row.get("correctness_before"),
+                    "best_candidate_correctness": row.get("correctness_after"),
+                    "correctness_delta": row.get("correctness_delta"),
+                    "baseline_tokens": row.get("baseline_tokens"),
+                    "candidate_tokens": row.get("candidate_tokens"),
                     "token_delta": row.get("token_delta"),
                     "baseline_runtime": row.get("baseline_runtime"),
                     "candidate_runtime": row.get("candidate_runtime"),

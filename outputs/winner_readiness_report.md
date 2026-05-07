@@ -22,12 +22,15 @@
 - 0.70 push recommendation: `submit_current_official_token_reduction_version`
 - Score-component API-correct answer-weak rows: 16
 - Evidence-answer safe rows/projected score: 1 / 0.6494
+- Answer-shape v2 changed/safe/projected score: 35 / 7 / 0.6497
 - Unsafe answer analysis rows/positive supportable: 103 / 18
 - Supportable answer rewrite safe rows/projected score: 4 / 0.6552
 - LLM answer rewrite search: completed (recommendation: `keep_shadow_only`, model: openrouter/free, accepted: 0/6)
 - Local fact coverage available/used/covered: 34 / 24 / 34
+- Endpoint-family tie-break v2 shadow recommendation: `keep_shadow_only` (trial eligible rows: 0)
+- Live-mode readiness diagnostic-only: True (dry-run dependent rows: 34)
 - Autonomous packaged trial recommendation: `continue_iteration_target_not_reached`
-- Autonomous 0.75 best score/reached: 0.6556 / False
+- Autonomous 0.75 best score/reached: 0.6558 / False
 - score075 integration merged/rejected/pending branches: 0 / 0 / 10
 - Redundant file audit ran: True
 - Cleanup applied/deleted/protected-ok: True / 4 / True
