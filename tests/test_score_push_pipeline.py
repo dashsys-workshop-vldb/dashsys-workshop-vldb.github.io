@@ -301,7 +301,7 @@ def test_llm_candidate_search_skips_without_keys(monkeypatch, tiny_project):
 
 def test_llm_candidate_search_categorizes_provider_errors(monkeypatch, tiny_project):
     _write_score_push_inputs(tiny_project)
-    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-test")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "unit-test-openrouter-key")
     monkeypatch.setenv("LLM_PROVIDER", "openrouter")
 
     class FakeClient:
@@ -449,7 +449,7 @@ def test_llm_answer_rewrite_search_skips_without_keys(monkeypatch, tiny_project)
 
 def test_llm_answer_rewrite_search_categorizes_provider_errors(monkeypatch, tiny_project):
     _write_score_push_inputs(tiny_project)
-    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-test")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "unit-test-openrouter-key")
 
     class FakeClient:
         def available(self):
@@ -459,14 +459,14 @@ def test_llm_answer_rewrite_search_categorizes_provider_errors(monkeypatch, tiny
             return "fake/model"
 
         def generate_messages(self, messages):
-            return {"ok": False, "error": "Authorization: Bearer sk-test provider unavailable"}
+            return {"ok": False, "error": "authorization_header unit-test-openrouter-key provider unavailable"}
 
     monkeypatch.setattr("scripts.run_llm_answer_rewrite_search.get_llm_client", lambda provider=None: FakeClient())
     payload = run_llm_answer_rewrite_search(tiny_project)
 
     assert payload["summary"]["status"] == "completed"
     assert payload["summary"]["failure_category_counts"]["provider_error"] == 1
-    assert "sk-test" not in json.dumps(payload)
+    assert "unit-test-openrouter-key" not in json.dumps(payload)
 
 
 def test_parse_llm_rewrite_payload_requires_rewrites_list():

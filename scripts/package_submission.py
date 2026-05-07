@@ -26,6 +26,8 @@ REQUIRED_PATHS = [
     "scripts/package_query_outputs.py",
     "scripts/run_llm_query.py",
     "scripts/run_llm_baseline_eval.py",
+    "scripts/load_local_env.py",
+    "scripts/check_llm_env.py",
     "scripts/generate_failure_analysis.py",
     "scripts/generate_family_score_report.py",
     "scripts/generate_pareto_report.py",
@@ -79,6 +81,7 @@ REQUIRED_PATHS = [
     "pyproject.toml",
     "requirements.txt",
     "README.md",
+    ".env.example",
 ]
 
 SECRET_PATTERNS = [

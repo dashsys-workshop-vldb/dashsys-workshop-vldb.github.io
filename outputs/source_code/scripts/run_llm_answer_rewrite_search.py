@@ -29,6 +29,7 @@ from dashagent.supportable_answer_rewriter import (
 )
 from dashagent.token_reduction_policy import official_estimated_tokens
 from dashagent.trajectory import estimate_tokens, redact_secrets
+from scripts.load_local_env import load_local_env
 from scripts.package_query_outputs import required_trajectory_fields_present
 from scripts.run_official_token_reduction_eval import _dry_run_labels, _live_api_evidence_available, _load_json, _load_trajectory, _score_result
 from scripts.run_supportable_answer_rewrite_eval import _safe as _supportable_safe_gate
@@ -53,6 +54,7 @@ def main() -> int:
 
 
 def run_llm_answer_rewrite_search(config: Config) -> dict[str, Any]:
+    load_local_env(config.project_root)
     status = _answer_rewrite_llm_status()
     if not status.available:
         return _skipped(config, status, "skipped_no_llm_key", status.reason)
@@ -383,7 +385,7 @@ def _prompt(query: str, trajectory: dict[str, Any], registry: dict[str, dict[str
 
 def _redacted_error(value: Any) -> str:
     text = str(redact_secrets(value or "")).replace("\n", " ")
-    text = re.sub(r"(?i)authorization\s*:\s*bearer\s+\S+", "Authorization: Bearer [REDACTED]", text)
+    text = re.sub(r"(?i)authorization\s*:\s*bearer\s+\S+", "authorization_header=[REDACTED]", text)
     text = re.sub(r"(?i)(api[_-]?key|access_token|client_secret)\s*[=:]\s*\S+", r"\1=[REDACTED]", text)
     return text[:400]
 

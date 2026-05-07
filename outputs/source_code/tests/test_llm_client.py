@@ -82,7 +82,7 @@ def test_openai_generate_messages_normalizes_native_tool_calls(monkeypatch):
         return FakeResponse()
 
     monkeypatch.setattr("dashagent.llm_client.requests.post", fake_post)
-    client = OpenAILLMClient(api_key="sk-test")
+    client = OpenAILLMClient(api_key="unit-test-openai-key")
     result = client.generate_messages(
         [{"role": "user", "content": "How many?"}],
         tools=[{"type": "function", "function": {"name": "execute_sql", "parameters": {"type": "object"}}}],
@@ -121,9 +121,9 @@ def test_openrouter_generate_messages_uses_openrouter_endpoint(monkeypatch):
         return FakeResponse()
 
     monkeypatch.setattr("dashagent.llm_client.requests.post", fake_post)
-    client = OpenRouterLLMClient(api_key="sk-or-test", model="openai/gpt-4o-mini")
+    client = OpenRouterLLMClient(api_key="unit-test-openrouter-key", model="openai/gpt-4o-mini")
     result = client.generate_messages([{"role": "user", "content": "hello"}])
     assert result["ok"] is True
     assert result["provider"] == "openrouter"
     assert captured["url"] == "https://openrouter.ai/api/v1/chat/completions"
-    assert "sk-or-test" not in str(result)
+    assert "unit-test-openrouter-key" not in str(result)

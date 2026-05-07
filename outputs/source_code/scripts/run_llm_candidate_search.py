@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -22,6 +23,7 @@ from dashagent.llm_candidate_generator import (
 )
 from dashagent.llm_client import get_llm_client
 from dashagent.report_run import report_metadata
+from scripts.load_local_env import load_local_env
 from scripts.run_official_token_reduction_eval import _load_json, _load_trajectory
 
 
@@ -43,6 +45,7 @@ def main() -> int:
 
 
 def run_llm_candidate_search(config: Config) -> dict[str, Any]:
+    load_local_env(config.project_root)
     status = llm_candidate_search_status()
     mining = _load_json(config.outputs_dir / "score_component_error_report.json") or _load_json(config.outputs_dir / "low_score_failure_mining_report.json")
     if not status.available:
@@ -258,9 +261,10 @@ def _trajectory_summary(trajectory: dict[str, Any]) -> dict[str, Any]:
 
 
 def _redacted_error(value: Any) -> str:
-    text = str(value or "")
-    text = text.replace("\n", " ")[:400]
-    return text
+    text = str(value or "").replace("\n", " ")
+    text = re.sub(r"(?i)authorization\s*:\s*bearer\s+\S+", "authorization_header=[REDACTED]", text)
+    text = re.sub(r"(?i)(api[_-]?key|access_token|client_secret)\s*[=:]\s*\S+", r"\1=[REDACTED]", text)
+    return text[:400]
 
 
 def render_markdown(payload: dict[str, Any]) -> str:
