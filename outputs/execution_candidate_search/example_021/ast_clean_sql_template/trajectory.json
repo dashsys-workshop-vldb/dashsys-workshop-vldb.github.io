@@ -1,0 +1,119 @@
+{
+  "answer_time": 0.0,
+  "api_call_count": 0,
+  "checkpoints": [
+    {
+      "active": true,
+      "checkpoint_id": "checkpoint_official_token_reduction",
+      "correctness_impact_expected": false,
+      "estimated_tokens_after": 588,
+      "estimated_tokens_before": 588,
+      "expected_savings": 0,
+      "packaged_execution_changed": false,
+      "reduced_fields": []
+    }
+  ],
+  "domain_type": "merge_policies",
+  "errors": [],
+  "estimated_tokens": 588,
+  "execution_time": 0.0,
+  "final_answer": "The default merge policy requires live Adobe API evidence. API evidence was not requested.",
+  "original_query": "Show the default merge policy for schema class '_xdm.context.profile'.",
+  "planning_time": 0.0,
+  "preprocessing_time": 0.0,
+  "query_id": "example_021",
+  "route_type": "TARGETED_CANDIDATE_SEARCH",
+  "runtime": 0.0024522499879822135,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_search": {
+        "candidate_id": "ast_clean_sql_template",
+        "diagnostic_only": true,
+        "generation_reason": "AST-clean SQL template for blueprint_collection_list."
+      },
+      "kind": "metadata",
+      "query": "Show the default merge policy for schema class '_xdm.context.profile'.",
+      "query_id": "example_021",
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "candidate": {
+        "api_call": null,
+        "candidate_family": "ast_clean",
+        "candidate_id": "ast_clean_sql_template",
+        "dependency_requirements": [],
+        "endpoint_family": "merge_policies",
+        "estimated_tool_calls": 1,
+        "expected_answer_shape": "list_or_detail",
+        "generalizable_family": "merge_policies",
+        "generation_reason": "AST-clean SQL template for blueprint_collection_list.",
+        "leakage_check_passed": true,
+        "leakage_reasons": [],
+        "local_index_hits": [],
+        "risk_flags": [
+          "ast_clean_sql",
+          "blueprint_collection_list"
+        ],
+        "rule_source": "reusable_domain_schema_endpoint_rule",
+        "schema_family": "merge_policies",
+        "source_signals": [
+          "schema_metadata",
+          "sql_ast_validation",
+          "sql_template"
+        ],
+        "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_collection\" AS BC JOIN \"dim_collection\" AS C ON BC.\"COLLECTIONID\" = C.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS B ON BC.\"BLUEPRINTID\" = B.\"BLUEPRINTID\" WHERE B.\"NAME\" = '_xdm.context.profile' LIMIT 50",
+        "trigger_features": [
+          "schema_metadata",
+          "sql_ast_validation",
+          "sql_template"
+        ]
+      },
+      "candidate_id": "ast_clean_sql_template",
+      "kind": "plan"
+    },
+    {
+      "kind": "validation",
+      "result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "target": "sql"
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "row_count": 0
+      },
+      "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_collection\" AS BC JOIN \"dim_collection\" AS C ON BC.\"COLLECTIONID\" = C.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS B ON BC.\"BLUEPRINTID\" = B.\"BLUEPRINTID\" WHERE B.\"NAME\" = '_xdm.context.profile' LIMIT 50",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "answer_family": "merge_policy",
+      "answer_intent": "NO_RESULT",
+      "completeness_missing_fields": [],
+      "kind": "answer_diagnostics",
+      "rewrite_applied": false,
+      "selected_candidate_type": "base",
+      "slots_present": [
+        "entity_names",
+        "counts"
+      ],
+      "unsupported_claims_count": 0,
+      "verifier_passed": true
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {},
+  "tool_call_count": 1
+}
