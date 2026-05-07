@@ -139,8 +139,8 @@ def _evaluate_row(
     for rule in rules:
         after_ids = rerank_api_ids_for_family(after_ids, catalog.endpoints, str(rule.get("endpoint_family_after") or "unknown"))
     gold_api = failure_row.get("gold_api")
-    before_hit = _gold_in_top_k(gold_api, before_ids)
-    after_hit = _gold_in_top_k(gold_api, after_ids)
+    before_hit = _gold_in_top_k(gold_api, before_ids, catalog.endpoints)
+    after_hit = _gold_in_top_k(gold_api, after_ids, catalog.endpoints)
     selected_api = generated_api_calls(trajectory)
     selected_sql = first_generated_sql(trajectory)
     final_answer = str(trajectory.get("final_answer") or "")
