@@ -62,7 +62,7 @@ def test_score075_leakage_rejects_query_id_exact_query_gold_and_memorized_trigge
     assert "blocked_trigger:memorized_gold_sql" in checked.leakage_reasons
     assert "exact_full_query_string_trigger" in checked.leakage_reasons
     assert "exact_public_entity_without_general_value_match" in checked.leakage_reasons
-    assert "gold_signal_used_for_generation" in checked.leakage_reasons
+    assert "blocked_runtime_signal:gold" in checked.leakage_reasons
 
 
 def test_score075_public_entity_trigger_requires_general_value_match():
