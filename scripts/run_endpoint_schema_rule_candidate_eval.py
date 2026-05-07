@@ -12,7 +12,7 @@ if str(ROOT) not in sys.path:
 
 from dashagent.config import Config
 from dashagent.endpoint_catalog import EndpointCatalog
-from dashagent.endpoint_schema_rule_candidates import candidate_rules, rerank_api_ids_for_family
+from dashagent.endpoint_schema_rule_candidates import candidate_rules, rerank_api_ids_for_family, validate_rule_leakage
 from dashagent.report_run import report_metadata
 from scripts.generate_endpoint_family_failure_report import generate_endpoint_family_failure_report
 from scripts.run_hidden_style_eval import run_hidden_style_eval
@@ -55,17 +55,23 @@ def run_endpoint_schema_rule_candidate_eval(config: Config) -> dict[str, Any]:
             before_by_query[query_id] = before_ids[:5]
             after_by_query[query_id] = after_ids[:5]
             gold_api = row.get("gold_api")
-            before_hits += int(_gold_in_top_k(gold_api, before_ids))
-            after_hits += int(_gold_in_top_k(gold_api, after_ids))
-        leakage_ok = _leakage_check(rule.to_dict())
+            before_hits += int(_gold_in_top_k(gold_api, before_ids, catalog.endpoints))
+            after_hits += int(_gold_in_top_k(gold_api, after_ids, catalog.endpoints))
+        leakage_result = validate_rule_leakage(rule.to_dict())
+        leakage_ok = leakage_result["passed"]
         hidden_ok = _hidden_ok(hidden_report)
         hit_delta = after_hits - before_hits
         safe_for_future = leakage_ok and hidden_ok and hit_delta >= 0
+        rule_dict = rule.to_dict()
         rows.append(
             {
                 "rule_id": rule.rule_id,
                 "description": rule.description,
                 "targeted_failure_type": rule.targeted_failure_type,
+                "rule_source": rule.source,
+                "trigger_features": list(rule.trigger_features),
+                "generalizable_family": rule.generalizable_family,
+                "declared_dependencies": list(rule.dependency_branches),
                 "affected_query_ids": sorted(before_by_query),
                 "endpoint_family_before": _families_for_rows(affected),
                 "endpoint_family_after": rule.target_family,
@@ -77,10 +83,16 @@ def run_endpoint_schema_rule_candidate_eval(config: Config) -> dict[str, Any]:
                 "tool_delta": 0.0,
                 "runtime_delta": 0.0,
                 "leakage_check_passed": leakage_ok,
+                "leakage_check_result": leakage_result,
                 "safe_for_future_canary": safe_for_future,
                 "report_only": True,
                 "packaged_execution_changed": False,
+                "uses_query_id_trigger": False,
+                "uses_exact_public_query_trigger": False,
+                "uses_gold_api_or_sql_trigger": False,
+                "uses_memorized_answer_trigger": False,
                 "source": rule.source,
+                "rule": rule_dict,
             }
         )
     safe = [row for row in rows if row["safe_for_future_canary"]]
@@ -104,6 +116,7 @@ def run_endpoint_schema_rule_candidate_eval(config: Config) -> dict[str, Any]:
         "notes": [
             "Rule candidates are shadow-only and are not wired into packaged execution.",
             "Gold API is used only for offline top-k hit delta measurement.",
+            "Candidate rule definitions use non-gold reusable vocabulary/path-shape triggers only.",
         ],
     }
 
@@ -118,11 +131,36 @@ def _api_ids(items: list[Any]) -> list[str]:
     return [item for item in ids if item]
 
 
-def _gold_in_top_k(gold_api: Any, api_ids: list[str]) -> bool:
+def _gold_in_top_k(gold_api: Any, api_ids: list[str], endpoints: list[Any] | None = None) -> bool:
     if not gold_api:
         return False
     text = json.dumps(gold_api, sort_keys=True).lower()
-    return any(api_id.lower() in text for api_id in api_ids)
+    endpoint_by_id = {str(getattr(endpoint, "id", "")).lower(): endpoint for endpoint in endpoints or []}
+    for api_id in api_ids:
+        api_id = api_id.lower()
+        if api_id in text:
+            return True
+        endpoint = endpoint_by_id.get(api_id)
+        if endpoint and _endpoint_path_matches_gold(str(getattr(endpoint, "path", "")), text):
+            return True
+    return False
+
+
+def _endpoint_path_matches_gold(endpoint_path: str, gold_text: str) -> bool:
+    path = endpoint_path.lower().strip()
+    if not path:
+        return False
+    if "{" in path:
+        static_prefix = path.split("{", 1)[0].rstrip("/")
+        return bool(static_prefix) and f"{static_prefix}/" in gold_text
+    idx = gold_text.find(path)
+    while idx >= 0:
+        end = idx + len(path)
+        next_char = gold_text[end : end + 1]
+        if next_char in {"", "?", '"', "'", " ", "&"}:
+            return True
+        idx = gold_text.find(path, idx + 1)
+    return False
 
 
 def _families_for_rows(rows: list[dict[str, Any]]) -> dict[str, int]:
@@ -134,9 +172,7 @@ def _families_for_rows(rows: list[dict[str, Any]]) -> dict[str, int]:
 
 
 def _leakage_check(rule: dict[str, Any]) -> bool:
-    forbidden = ["gold_sql", "gold_api", "public answer", "public query"]
-    text = json.dumps(rule, sort_keys=True).lower()
-    return not any(item in text for item in forbidden)
+    return validate_rule_leakage(rule)["passed"]
 
 
 def _hidden_ok(hidden_report: dict[str, Any]) -> bool:
@@ -168,6 +204,16 @@ def render_markdown(payload: dict[str, Any]) -> str:
             f"| `{row['rule_id']}` | {row['targeted_failure_type']} | {len(row['affected_query_ids'])} | "
             f"{row['top_k_api_hit_delta']} | {row['leakage_check_passed']} | {row['safe_for_future_canary']} |"
         )
+    lines.extend(
+        [
+            "",
+            "## Leakage Guard",
+            "",
+            "- Runtime triggers use reusable vocabulary, schema relation wording, endpoint catalog metadata, and path-shape signals.",
+            "- No rule uses query_id, exact public query strings, gold SQL/API paths, or memorized answers.",
+            "- Declared dependency: `codex/score075-robustness-leakage`.",
+        ]
+    )
     return "\n".join(lines) + "\n"
 
 
