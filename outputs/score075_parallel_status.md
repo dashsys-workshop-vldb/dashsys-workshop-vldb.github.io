@@ -6,7 +6,7 @@
 - 0.75 reached: False
 - Hidden-style result: 48/48
 - Supportable answer safe rows/projected score: 4 / 0.6552
-- LLM answer rewrite status: skipped_no_llm_key
+- LLM answer rewrite status/model/accepted: completed / openrouter/free / 0/6
 - Trial recommendation: `continue_iteration_target_not_reached`
 - Final recommendation: `continue_iteration_target_not_reached`
 
@@ -22,4 +22,4 @@
 | `codex/score075-answer-shape` | answer-shape optimization | not_reported_to_integration | 0.0 | 48/48 | blocked_missing_worker_result | not_merged_by_integration_worker |
 | `codex/score075-robustness-leakage` | robustness/leakage tests | not_reported_to_integration | 0.0 | 48/48 | blocked_missing_worker_result | not_merged_by_integration_worker |
 | `codex/score075-integration` | integration/validation | in_progress | 0.0 | 48/48 | not_applicable_current_branch | not_merged_by_integration_worker |
-| `main` | evidence-cited short answer rewrite | completed_isolated_progress_not_promoted | 0.0065 | 48/48 | keep_isolated_bundle_continue_iteration_target_not_reached | hard target strict_final_score >= 0.7500 not reached; LLM answer rewrite search skipped because no API key was visible to this process |
+| `main` | evidence-cited short answer rewrite | completed_isolated_progress_not_promoted | 0.0065 | 48/48 | keep_isolated_bundle_continue_iteration_target_not_reached | hard target strict_final_score >= 0.7500 not reached; LLM answer rewrite search status=completed safe_rows=0 |

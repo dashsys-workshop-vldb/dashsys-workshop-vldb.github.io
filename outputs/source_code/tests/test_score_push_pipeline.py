@@ -465,7 +465,7 @@ def test_llm_answer_rewrite_search_categorizes_provider_errors(monkeypatch, tiny
     payload = run_llm_answer_rewrite_search(tiny_project)
 
     assert payload["summary"]["status"] == "completed"
-    assert payload["summary"]["failure_category_counts"]["provider_error"] == 1
+    assert payload["summary"]["failure_category_counts"]["provider_unavailable"] == 1
     assert "unit-test-openrouter-key" not in json.dumps(payload)
 
 

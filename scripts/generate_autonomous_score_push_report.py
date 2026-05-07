@@ -230,7 +230,7 @@ def generate_autonomous_score_push_report(config: Config) -> dict[str, Any]:
         "supportable_answer_rewrite_eval": supportable_answer.get("summary", {}),
         "execution_candidate_search": execution.get("summary", {}),
         "llm_candidate_search": llm.get("summary", {}),
-        "llm_answer_rewrite_search": llm_answer.get("summary", {}),
+        "llm_answer_rewrite_search": _llm_answer_summary(llm_answer),
         "autonomous_packaged_trial": trial_summary,
         "hidden_style_eval": hidden.get("summary", {}),
         "readiness": {"ok": readiness.get("ok"), "no_secret_scan_ok": readiness.get("secret_scan", {}).get("ok")},
@@ -292,7 +292,7 @@ def generate_score075_blocker_analysis(config: Config, score_payload: dict[str, 
             "local_index_fact_coverage_report": local_fact.get("summary", {}),
             "execution_candidate_search": execution.get("summary", {}),
             "llm_candidate_search": llm.get("summary", {}),
-            "llm_answer_rewrite_search": llm_answer.get("summary", {}),
+            "llm_answer_rewrite_search": _llm_answer_summary(llm_answer),
             "autonomous_packaged_trial": trial.get("summary", {}),
         },
         "remaining_high_potential_rows": _remaining_high_potential_rows(score_components, unsafe_answer, supportable_answer),
@@ -441,7 +441,7 @@ def generate_parallel_status_report(
             "merge_recommendation": "keep_isolated_bundle_continue_iteration_target_not_reached",
             "blockers": [
                 "hard target strict_final_score >= 0.7500 not reached",
-                "LLM answer rewrite search skipped because no API key was visible to this process",
+                f"LLM answer rewrite search status={llm_answer.get('status')} safe_rows={llm_answer.get('safe_rows')}",
             ],
         }
     )
@@ -458,11 +458,31 @@ def generate_parallel_status_report(
             "supportable_answer_safe_rows": supportable.get("safe_rows"),
             "supportable_answer_projected_score": supportable.get("best_projected_strict_final_score"),
             "llm_answer_rewrite_status": llm_answer.get("status"),
+            "llm_answer_rewrite_provider": llm_answer.get("provider"),
+            "llm_answer_rewrite_model": llm_answer.get("model"),
+            "llm_answer_rewrite_candidate_count": llm_answer.get("candidate_count"),
+            "llm_answer_rewrite_accepted_candidate_count": llm_answer.get("accepted_candidate_count"),
             "autonomous_packaged_trial_recommendation": trial.get("recommendation"),
             "final_recommendation": summary.get("final_recommendation"),
         },
         "workers": workers,
     }
+
+
+def _llm_answer_summary(report: dict[str, Any]) -> dict[str, Any]:
+    summary = dict(report.get("summary") or {})
+    if report:
+        summary.update(
+            {
+                "provider": report.get("provider"),
+                "model": report.get("model"),
+                "candidate_count": sum(int(row.get("rewrite_count") or 0) for row in report.get("rows", [])),
+                "accepted_candidate_count": int(summary.get("safe_rows") or 0),
+                "budget": report.get("budget", {}),
+                "key_visible": bool(report.get("provider") or not report.get("skipped")),
+            }
+        )
+    return summary
 
 
 def _baseline(strict: dict[str, Any]) -> dict[str, float]:
@@ -598,7 +618,9 @@ def render_status_markdown(payload: dict[str, Any]) -> str:
         f"- 0.75 reached: {summary.get('target_0_75_reached')}",
         f"- Hidden-style result: {summary.get('hidden_style_result')}",
         f"- Supportable answer safe rows/projected score: {summary.get('supportable_answer_safe_rows')} / {summary.get('supportable_answer_projected_score')}",
-        f"- LLM answer rewrite status: {summary.get('llm_answer_rewrite_status')}",
+        f"- LLM answer rewrite status/model/accepted: {summary.get('llm_answer_rewrite_status')} / "
+        f"{summary.get('llm_answer_rewrite_model')} / {summary.get('llm_answer_rewrite_accepted_candidate_count')}/"
+        f"{summary.get('llm_answer_rewrite_candidate_count')}",
         f"- Trial recommendation: `{summary.get('autonomous_packaged_trial_recommendation')}`",
         f"- Final recommendation: `{summary.get('final_recommendation')}`",
         "",

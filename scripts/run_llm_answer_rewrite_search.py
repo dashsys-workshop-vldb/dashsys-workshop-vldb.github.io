@@ -36,8 +36,10 @@ from scripts.run_supportable_answer_rewrite_eval import _safe as _supportable_sa
 
 
 MAX_TARGET_ROWS = 10
-MAX_REWRITES_PER_ROW = 5
-MAX_RETRIES_PER_ROW = 2
+DEFAULT_MAX_REWRITES_PER_ROW = 5
+DEFAULT_MAX_RETRIES_PER_ROW = 2
+FREE_MODEL_MAX_REWRITES_PER_ROW = 3
+FREE_MODEL_MAX_RETRIES_PER_ROW = 1
 OUTPUT_NAME = "llm_answer_rewrite_search"
 
 
@@ -61,6 +63,7 @@ def run_llm_answer_rewrite_search(config: Config) -> dict[str, Any]:
     client = get_llm_client(status.provider)
     if not client.available():
         return _skipped(config, status, "skipped_no_llm_key", "configured client is unavailable")
+    budget = _budget_for_model(client.model_name())
     output_root = config.outputs_dir / OUTPUT_NAME
     _assert_isolated(config.outputs_dir, output_root)
     if output_root.exists():
@@ -83,18 +86,14 @@ def run_llm_answer_rewrite_search(config: Config) -> dict[str, Any]:
         if not strict_row or not example:
             rows.append({"query_id": query_id, "failure_category": "provider_error", "rejection_reason": "missing_strict_row"})
             continue
-        rows.append(_run_row(config, output_root, executor, client, strict_row, example))
+        rows.append(_run_row(config, output_root, executor, client, strict_row, example, budget))
     return {
         **report_metadata(config.outputs_dir),
         "mode": OUTPUT_NAME,
         "skipped": False,
         "provider": status.provider,
         "model": client.model_name(),
-        "budget": {
-            "max_target_rows": MAX_TARGET_ROWS,
-            "max_rewrites_per_row": MAX_REWRITES_PER_ROW,
-            "max_retries_per_row": MAX_RETRIES_PER_ROW,
-        },
+        "budget": budget,
         "packaged_execution_changed": False,
         "writes_eval_outputs": False,
         "writes_final_submission": False,
@@ -120,7 +119,32 @@ def _answer_rewrite_llm_status() -> Any:
     return SimpleNamespace(available=False, provider=None, reason="No OPENAI_API_KEY or OPENROUTER_API_KEY present")
 
 
-def _run_row(config: Config, output_root: Path, executor: AgentExecutor, client: Any, strict_row: dict[str, Any], example: Any) -> dict[str, Any]:
+def _budget_for_model(model: str | None) -> dict[str, Any]:
+    normalized = (model or "").strip().lower()
+    if normalized == "openrouter/free":
+        return {
+            "max_target_rows": MAX_TARGET_ROWS,
+            "max_rewrites_per_row": FREE_MODEL_MAX_REWRITES_PER_ROW,
+            "max_retries_per_row": FREE_MODEL_MAX_RETRIES_PER_ROW,
+            "budget_reason": "reduced_for_openrouter_free",
+        }
+    return {
+        "max_target_rows": MAX_TARGET_ROWS,
+        "max_rewrites_per_row": DEFAULT_MAX_REWRITES_PER_ROW,
+        "max_retries_per_row": DEFAULT_MAX_RETRIES_PER_ROW,
+        "budget_reason": "default",
+    }
+
+
+def _run_row(
+    config: Config,
+    output_root: Path,
+    executor: AgentExecutor,
+    client: Any,
+    strict_row: dict[str, Any],
+    example: Any,
+    budget: dict[str, Any],
+) -> dict[str, Any]:
     query_id = str(strict_row.get("query_id"))
     query = str(strict_row.get("query") or example.query)
     baseline = _load_trajectory(strict_row.get("output_dir"))
@@ -129,7 +153,9 @@ def _run_row(config: Config, output_root: Path, executor: AgentExecutor, client:
     attempts: list[dict[str, Any]] = []
     raw_rewrites: list[dict[str, Any]] = []
     failure_category = "no_score_improvement"
-    for attempt in range(1, MAX_RETRIES_PER_ROW + 1):
+    max_retries = int(budget.get("max_retries_per_row") or DEFAULT_MAX_RETRIES_PER_ROW)
+    max_rewrites = int(budget.get("max_rewrites_per_row") or DEFAULT_MAX_REWRITES_PER_ROW)
+    for attempt in range(1, max_retries + 1):
         result = client.generate_messages(
             [
                 {"role": "system", "content": "Return strict JSON only. Rewrite dry-run answers with cited evidence claims. Do not use gold labels or final answers."},
@@ -137,15 +163,15 @@ def _run_row(config: Config, output_root: Path, executor: AgentExecutor, client:
             ]
         )
         if not result.get("ok"):
-            failure_category = "provider_error"
+            failure_category = _provider_failure_category(result.get("error") or result.get("reason"))
             attempts.append({"attempt": attempt, "ok": False, "failure_category": failure_category, "error": _redacted_error(result.get("error") or result.get("reason"))})
             continue
         parsed, error = parse_llm_rewrite_payload(str(result.get("content") or ""))
         if error:
-            failure_category = "invalid_json"
+            failure_category = _invalid_json_failure_category(client.model_name(), error)
             attempts.append({"attempt": attempt, "ok": False, "failure_category": failure_category, "error": error})
             continue
-        raw_rewrites = parsed[:MAX_REWRITES_PER_ROW]
+        raw_rewrites = parsed[:max_rewrites]
         attempts.append({"attempt": attempt, "ok": True, "rewrite_count": len(raw_rewrites), "usage": result.get("usage", {})})
         break
     candidates = [
@@ -288,6 +314,22 @@ def _failure_categories(row: dict[str, Any]) -> list[str]:
     return sorted(set(failures or ["failed_strict_score_gate"]))
 
 
+def _provider_failure_category(value: Any) -> str:
+    text = str(value or "").lower()
+    if "rate limit" in text or "rate_limit" in text or "429" in text or "too many requests" in text:
+        return "rate_limit"
+    if "provider unavailable" in text or "model unavailable" in text or "unavailable" in text or "temporarily unavailable" in text:
+        return "provider_unavailable"
+    return "provider_error"
+
+
+def _invalid_json_failure_category(model: str | None, error: str | None) -> str:
+    text = f"{model or ''} {error or ''}".lower()
+    if "openrouter/free" in text:
+        return "weak_model_invalid_json"
+    return "invalid_json"
+
+
 def _failure_categories_from_reason(reason: str) -> list[str]:
     text = reason.lower()
     categories: list[str] = []
@@ -307,7 +349,10 @@ def _failure_categories_from_reason(reason: str) -> list[str]:
 def _row_failure_category(candidates: list[dict[str, Any]]) -> str:
     priority = [
         "provider_error",
+        "provider_unavailable",
+        "rate_limit",
         "invalid_json",
+        "weak_model_invalid_json",
         "failed_leakage_check",
         "missing_citation",
         "nonexistent_evidence",

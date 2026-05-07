@@ -9,7 +9,7 @@ Status: **strict-score improvement measured**.
 | strict_final_score | 0.649 | 0.6491 | 0.0001 |
 | strict_correctness | 0.6743 | 0.6743 | 0.0 |
 | estimated_tokens | 851.7714 | 831.4571 | -20.3143 |
-| runtime | 0.0102 | 0.0114 | 0.0012 |
+| runtime | 0.0102 | 0.0113 | 0.0011 |
 | tool_calls | 1.4571 | 1.4571 | 0.0 |
 
 ## Gate Results
@@ -17,7 +17,7 @@ Status: **strict-score improvement measured**.
 - Packaged preferred strategy: `SQL_FIRST_API_VERIFY`
 - Strict score regression gate OK: True
 - Estimated-token overhead: -2.38% (gate OK: True)
-- Runtime overhead: 11.76% (gate OK: True)
+- Runtime overhead: 10.78% (gate OK: True)
 - Tool-call delta: 0.0 (gate OK: True)
 - Value retrieval budget: 250 ms (budget OK: True)
 - Value retrieval cache key algorithm: `sha256` (reproducible: True)
@@ -78,7 +78,7 @@ Status: **strict-score improvement measured**.
 - Evidence-answer candidate eval: safe rows=1; projected score=0.6494
 - Unsafe answer analysis: rows=103; positive supportable=18
 - Supportable answer rewrite eval: safe rows=4; projected score=0.6552
-- LLM answer rewrite search: skipped_no_llm_key (recommendation: keep_shadow_only)
+- LLM answer rewrite search: completed (recommendation: keep_shadow_only; model: openrouter/free; accepted: 0/6)
 - Local-index fact coverage: requested rows=34; used rows=24
 - Execution candidate search safe rows: 5 (best projected score: 0.6556; recommendation: safe_for_targeted_packaged_trial)
 - LLM candidate search: skipped_no_llm_key (recommendation: keep_shadow_only)

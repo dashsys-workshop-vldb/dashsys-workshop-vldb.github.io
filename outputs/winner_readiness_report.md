@@ -3,7 +3,7 @@
 - Freshness run ID: `20260506T205804480909Z-885373750216791`
 - Preferred strategy: `SQL_FIRST_API_VERIFY`
 - Strict final score: 0.6491
-- Estimated tokens/runtime/tools: 831.4571 / 0.0114 / 1.4571
+- Estimated tokens/runtime/tools: 831.4571 / 0.0113 / 1.4571
 - Final submission ready: True
 - Official-token packaged trial recommendation: `safe_to_make_packaged_default_in_future`
 - Official-token promotion recommendation: `promoted_keep_enabled`
@@ -24,7 +24,7 @@
 - Evidence-answer safe rows/projected score: 1 / 0.6494
 - Unsafe answer analysis rows/positive supportable: 103 / 18
 - Supportable answer rewrite safe rows/projected score: 4 / 0.6552
-- LLM answer rewrite search: skipped_no_llm_key (recommendation: `keep_shadow_only`)
+- LLM answer rewrite search: completed (recommendation: `keep_shadow_only`, model: openrouter/free, accepted: 0/6)
 - Local fact coverage available/used/covered: 34 / 24 / 34
 - Autonomous packaged trial recommendation: `continue_iteration_target_not_reached`
 - Autonomous 0.75 best score/reached: 0.6556 / False

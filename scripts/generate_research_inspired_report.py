@@ -268,6 +268,14 @@ def generate_report(config: Config) -> dict[str, Any]:
             "supportable_answer_rewrite_projected_score": supportable_answer_rewrite_report.get("summary", {}).get("best_projected_strict_final_score"),
             "llm_answer_rewrite_status": llm_answer_rewrite_report.get("summary", {}).get("status", "not_run"),
             "llm_answer_rewrite_recommendation": llm_answer_rewrite_report.get("summary", {}).get("recommendation", "not_run"),
+            "llm_answer_rewrite_provider": llm_answer_rewrite_report.get("provider"),
+            "llm_answer_rewrite_model": llm_answer_rewrite_report.get("model"),
+            "llm_answer_rewrite_candidate_count": sum(
+                int(row.get("rewrite_count") or 0) for row in llm_answer_rewrite_report.get("rows", [])
+            ),
+            "llm_answer_rewrite_accepted_candidate_count": int(
+                llm_answer_rewrite_report.get("summary", {}).get("safe_rows") or 0
+            ),
             "local_index_fact_coverage_ran": bool(local_index_fact_coverage_report.get("rows")),
             "local_index_fact_coverage_requested_rows": local_index_fact_coverage_report.get("summary", {}).get("requested_fact_covered_rows", 0),
             "local_index_fact_coverage_used_rows": local_index_fact_coverage_report.get("summary", {}).get("local_evidence_used_in_final_answer_rows", 0),
@@ -585,7 +593,10 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"- Supportable answer rewrite eval: safe rows={report['summary']['supportable_answer_rewrite_safe_rows']}; "
             f"projected score={report['summary']['supportable_answer_rewrite_projected_score']}",
             f"- LLM answer rewrite search: {report['summary']['llm_answer_rewrite_status']} "
-            f"(recommendation: {report['summary']['llm_answer_rewrite_recommendation']})",
+            f"(recommendation: {report['summary']['llm_answer_rewrite_recommendation']}; "
+            f"model: {report['summary'].get('llm_answer_rewrite_model')}; "
+            f"accepted: {report['summary'].get('llm_answer_rewrite_accepted_candidate_count')}/"
+            f"{report['summary'].get('llm_answer_rewrite_candidate_count')})",
             f"- Local-index fact coverage: requested rows={report['summary']['local_index_fact_coverage_requested_rows']}; "
             f"used rows={report['summary']['local_index_fact_coverage_used_rows']}",
             f"- Execution candidate search safe rows: {report['summary']['execution_candidate_search_safe_rows']} "

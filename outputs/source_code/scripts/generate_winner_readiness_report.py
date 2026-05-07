@@ -113,7 +113,7 @@ def generate_winner_readiness_report(config: Config) -> dict[str, Any]:
         "local_index_fact_coverage_report": reports["local_index_fact_coverage_report"].get("summary", {}),
         "execution_candidate_search": reports["execution_candidate_search"].get("summary", {}),
         "llm_candidate_search": reports["llm_candidate_search"].get("summary", {}),
-        "llm_answer_rewrite_search": reports["llm_answer_rewrite_search"].get("summary", {}),
+        "llm_answer_rewrite_search": _llm_answer_summary(reports["llm_answer_rewrite_search"]),
         "targeted_accuracy_packaged_trial": reports["targeted_accuracy_packaged_trial"].get("summary", {}),
         "score_0_7_push_report": reports["score_0_7_push_report"].get("summary", {}),
         "autonomous_packaged_trial": autonomous_trial.get("summary", {}),
@@ -194,7 +194,10 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- Supportable answer rewrite safe rows/projected score: {payload['supportable_answer_rewrite_eval'].get('safe_rows')} / "
         f"{payload['supportable_answer_rewrite_eval'].get('best_projected_strict_final_score')}",
         f"- LLM answer rewrite search: {payload['llm_answer_rewrite_search'].get('status')} "
-        f"(recommendation: `{payload['llm_answer_rewrite_search'].get('recommendation')}`)",
+        f"(recommendation: `{payload['llm_answer_rewrite_search'].get('recommendation')}`, "
+        f"model: {payload['llm_answer_rewrite_search'].get('model')}, "
+        f"accepted: {payload['llm_answer_rewrite_search'].get('accepted_candidate_count')}/"
+        f"{payload['llm_answer_rewrite_search'].get('candidate_count')})",
         f"- Local fact coverage available/used/covered: {payload['local_index_fact_coverage_report'].get('local_evidence_available_rows')} / "
         f"{payload['local_index_fact_coverage_report'].get('local_evidence_used_in_final_answer_rows')} / "
         f"{payload['local_index_fact_coverage_report'].get('requested_fact_covered_rows')}",
@@ -245,6 +248,22 @@ def _final_recommendation(
     if accuracy.get("recommendation") in {"promote_endpoint_schema_rules", "promote_ast_guided_sql"}:
         return "ready_to_submit_with_official_token_reduction_plus_safe_accuracy_rules"
     return "ready_to_submit_with_official_token_reduction"
+
+
+def _llm_answer_summary(report: dict[str, Any]) -> dict[str, Any]:
+    summary = dict(report.get("summary") or {})
+    if report:
+        summary.update(
+            {
+                "provider": report.get("provider"),
+                "model": report.get("model"),
+                "candidate_count": sum(int(row.get("rewrite_count") or 0) for row in report.get("rows", [])),
+                "accepted_candidate_count": int(summary.get("safe_rows") or 0),
+                "budget": report.get("budget", {}),
+                "key_visible": bool(report.get("provider") or not report.get("skipped")),
+            }
+        )
+    return summary
 
 
 if __name__ == "__main__":
