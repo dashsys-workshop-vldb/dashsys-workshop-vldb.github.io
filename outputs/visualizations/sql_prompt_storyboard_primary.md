@@ -34,18 +34,18 @@ flowchart TD
 
   subgraph C["4. Context + Planning"]
     C0["Selected plan<br/>SQL_FIRST_API_VERIFY<br/>generic_sql_first"]:::plan
-    C1["Plan split<br/>main path: SQL count<br/>side path: API verification"]:::plan
+    C1["Plan split<br/>main answer path: SQL count<br/>side check: dry-run API verification"]:::plan
     C2["Main answer path<br/>SQL count → evidence → final answer"]:::evidence
   end
 
   subgraph S["5. SQL Derivation"]
     S0["SQL template selected<br/>schema_count"]:::plan
-    S1["Generated SQL<br/>SELECT COUNT(DISTINCT B.&quot;BLUEPRINTID&quot;) AS blueprint_count<br/>FROM &quot;dim_blueprint&quot; AS B"]:::sql
+    S1["Generated SQL<br/>SELECT COUNT(DISTINCT<br/>B.&quot;BLUEPRINTID&quot;)<br/>AS blueprint_count<br/>FROM &quot;dim_blueprint&quot; AS B"]:::sql
     S2["SQL validation<br/>read-only ✓<br/>known table ✓<br/>known column ✓"]:::sql
     S3["SQLGlot AST check<br/>parsed_ok = true<br/>destructive_sql = false"]:::sql
   end
 
-  subgraph E["6. Execution + Evidence"]
+  subgraph E["6. SQL Execution + Evidence"]
     E0["DuckDB execution<br/>execute validated SQL"]:::sql
     E1["SQL result<br/>blueprint_count = 74"]:::sql
     E2["Grounded fact<br/>The SQL result means:<br/>user has 74 schemas"]:::evidence
@@ -58,7 +58,7 @@ flowchart TD
     A0["Answer intent<br/>COUNT"]:::answer
     A1["Answer synthesis<br/>use SQL count + dry-run note"]:::answer
     A2["Answer verification<br/>&quot;74 schemas&quot; supported by SQL result"]:::answer
-    A3["Final answer<br/>You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable."]:::answer
+    A3["Final answer<br/>You have 74 schemas.<br/>Dry-run note: live API verification unavailable."]:::answer
   end
 
   subgraph O["8. Output + Trace"]
@@ -74,7 +74,7 @@ flowchart TD
   M0 -->|"noun maps to local table"| M1
   M1 -->|"schema records live here"| M2
   M2 -->|"count unique schema IDs"| M3
-  M3 -->|"planning context"| C0
+  M3 -->|"table + column + count operation"| C0
   C0 -->|"selected strategy"| C1
   C1 -->|"main answer path"| C2
   C2 -->|"fill SQL template"| S0

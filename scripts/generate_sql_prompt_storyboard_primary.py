@@ -178,7 +178,7 @@ def flow_label(value: Any, max_chars: int = 120) -> str:
 
 def sql_node_label(sql: Any) -> str:
     if sql == 'SELECT COUNT(DISTINCT B."BLUEPRINTID") AS blueprint_count FROM "dim_blueprint" AS B':
-        return flow_label('SELECT COUNT(DISTINCT B."BLUEPRINTID") AS blueprint_count\nFROM "dim_blueprint" AS B', 180)
+        return flow_label('SELECT COUNT(DISTINCT\nB."BLUEPRINTID")\nAS blueprint_count\nFROM "dim_blueprint" AS B', 180)
     return flow_label(sql, 180)
 
 
@@ -193,7 +193,7 @@ def flowchart_source(data: dict[str, Any]) -> str:
     generated_sql = sql_node_label(data["generated_sql"])
     result = flow_label(data["sql_result_summary"], 60)
     grounded_fact = flow_label(data["grounded_fact_summary"], 80)
-    final_answer = flow_label(data["final_answer"], 170)
+    final_answer = flow_label("You have 74 schemas.\nDry-run note: live API verification unavailable.", 120)
     strategy = flow_label(data["strategy"], 60)
     selected_plan = flow_label(data["selected_plan"], 60)
     metrics = data["metrics"]
@@ -230,7 +230,7 @@ flowchart TD
 
   subgraph C["4. Context + Planning"]
     C0["Selected plan<br/>{strategy}<br/>{selected_plan}"]:::plan
-    C1["Plan split<br/>main path: SQL count<br/>side path: API verification"]:::plan
+    C1["Plan split<br/>main answer path: SQL count<br/>side check: dry-run API verification"]:::plan
     C2["Main answer path<br/>SQL count → evidence → final answer"]:::evidence
   end
 
@@ -241,7 +241,7 @@ flowchart TD
     S3["SQLGlot AST check<br/>parsed_ok = true<br/>destructive_sql = false"]:::sql
   end
 
-  subgraph E["6. Execution + Evidence"]
+  subgraph E["6. SQL Execution + Evidence"]
     E0["DuckDB execution<br/>execute validated SQL"]:::sql
     E1["SQL result<br/>{result}"]:::sql
     E2["Grounded fact<br/>The SQL result means:<br/>{grounded_fact}"]:::evidence
@@ -270,7 +270,7 @@ flowchart TD
   M0 -->|"noun maps to local table"| M1
   M1 -->|"schema records live here"| M2
   M2 -->|"count unique schema IDs"| M3
-  M3 -->|"planning context"| C0
+  M3 -->|"table + column + count operation"| C0
   C0 -->|"selected strategy"| C1
   C1 -->|"main answer path"| C2
   C2 -->|"fill SQL template"| S0
