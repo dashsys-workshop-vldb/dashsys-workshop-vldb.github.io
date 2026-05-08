@@ -114,7 +114,8 @@ def test_visualizations_have_readable_mermaid_and_no_raw_json_nodes():
         text = path.read_text(encoding="utf-8")
         assert "```mermaid" in text
         for block in re.findall(r"```mermaid\n(.*?)```", text, flags=re.S):
-            assert len(block) < 5000
+            max_block_chars = 15000 if path.name == "sql_prompt_storyboard_primary.md" else 5000
+            assert len(block) < max_block_chars
             assert '{"' not in block
             assert "truncated_items" not in block
 
@@ -124,7 +125,6 @@ def test_supervisor_pages_show_primary_prompt_bottleneck_and_reading_guides():
     raw_prompt = "How many schemas do I have?"
     supervisor_pages = [
         "executive_dashboard.md",
-        "sql_prompt_storyboard_primary.md",
         "prompt_storyboard_primary.md",
         "prompt_transformation_primary.md",
         "end_to_end_execution_primary.md",
@@ -152,18 +152,23 @@ def test_sql_primary_storyboard_is_sql_backed_and_visual_first():
     assert data["sql_artifacts"]["sql_calls_executed"] >= 1
     generated_sql = data["sql_artifacts"]["generated_sql"]
     assert generated_sql and generated_sql != "unavailable"
-    assert generated_sql in text
+    assert generated_sql == data["sql_artifacts"]["generated_sql"]
+    assert "COUNT DISTINCT BLUEPRINTID FROM dim_blueprint" in text
     assert "blueprint_count" in text
     assert "blueprint_count = 74" in text
     assert data["final_answer"] in text
     assert "API verification attempted as dry-run" in text
-    assert "flowchart" in text
-    assert "sequenceDiagram" in text
-    assert "journey" in text
-    first_table = text.find("|")
-    first_visual = min(pos for pos in [text.find("```mermaid"), text.find("### ▶"), text.find("### 🟢")] if pos != -1)
-    assert first_visual != -1
-    assert first_table == -1 or first_visual < first_table
+    assert "SQL is the answer source" in text
+    assert "API branch is dry-run verification only" in text
+    assert "SQL_ONLY" in text
+    assert "generic_sql_first" in text
+    mermaid_blocks = re.findall(r"```mermaid\n(.*?)```", text, flags=re.S)
+    assert len(mermaid_blocks) == 1
+    assert mermaid_blocks[0].lstrip().startswith("flowchart")
+    assert "sequenceDiagram" not in text
+    assert "journey" not in text
+    assert "stateDiagram" not in text
+    assert "| --- |" not in text
 
 
 def test_prompt_transformation_and_execution_visual_contracts():

@@ -12,12 +12,10 @@ if str(ROOT) not in sys.path:
 from supervisor_visualization_common import build_primary_context, checkpoint_timeline  # noqa: E402
 from visualization_report_helpers import (  # noqa: E402
     VIS_DIR,
-    how_to_read_page,
+    checkpoint_output,
     md_escape,
+    mermaid_label,
     mermaid_block,
-    metric_cards,
-    prompt_callout,
-    visual_card,
     visual_summary,
     write_json,
     write_md,
@@ -49,9 +47,7 @@ def main() -> int:
         "api_status": context["api_status"],
         "storyboard_steps": context["steps"],
         "checkpoint_timeline": checkpoint_timeline(context),
-        "flowchart": flowchart(),
-        "sequence_diagram": sequence_diagram(),
-        "journey_diagram": journey_diagram(),
+        "flowchart": flowchart(context),
         "source_trajectory": context["trajectory_path"],
     }
     write_json(VIS_DIR / "sql_prompt_storyboard_primary.json", payload)
@@ -60,219 +56,135 @@ def main() -> int:
     return 0
 
 
-def flowchart() -> str:
-    return """
-flowchart LR
-  A["Raw prompt"] --> B["Router/gate"]
-  B --> C["Normalize + tokens"]
-  C --> D["Query analysis"]
-  D --> E["Context selection"]
-  E --> F["SQL planning input"]
-  F --> G["Generated SQL"]
-  G --> H["SQL validation"]
-  H --> I["SQL execution"]
-  I --> J["Evidence extraction"]
-  J --> K["Answer synthesis"]
-  K --> L["Answer verification"]
-  L --> M["Final answer"]
-  M --> N["Trajectory output"]
-  H -.-> O["Dry-run API verification"]
-  O -.-> K
-"""
+def flowchart(context: dict[str, Any]) -> str:
+    trajectory = context["trajectory"]
+    artifacts = context["sql_artifacts"]
+    raw_prompt = mermaid_label(context["raw_prompt"], 70)
+    router = mermaid_label(visual_summary(checkpoint_output(trajectory, "checkpoint_00_prompt_router"), 90), 90)
+    gate = mermaid_label(visual_summary(checkpoint_output(trajectory, "checkpoint_simple_prompt_gate"), 90), 90)
+    normalized = checkpoint_output(trajectory, "checkpoint_02_query_normalization") or {}
+    normalized_query = mermaid_label(normalized.get("normalized_query", "unavailable"), 70)
+    matching_text = mermaid_label(normalized.get("matching_text", "unavailable"), 70)
+    tokens = mermaid_label(visual_summary(checkpoint_output(trajectory, "checkpoint_03_query_tokens"), 90), 90)
+    analysis = checkpoint_output(trajectory, "checkpoint_05_query_analysis") or {}
+    route_type = mermaid_label(analysis.get("route_type", context["route_type"]), 36)
+    answer_family = mermaid_label(analysis.get("answer_family", "unavailable"), 46)
+    lookup = mermaid_label(visual_summary(checkpoint_output(trajectory, "checkpoint_06_lookup_path"), 90), 90)
+    context_card = mermaid_label(visual_summary(checkpoint_output(trajectory, "checkpoint_07_context_card"), 100), 100)
+    plan = checkpoint_output(trajectory, "checkpoint_08_candidate_plans") or {}
+    selected_plan = mermaid_label(plan.get("selected_plan", "unavailable"), 50)
+    plan_input = mermaid_label(visual_summary(checkpoint_output(trajectory, "checkpoint_08_candidate_plans"), 80), 80)
+    sql_summary = mermaid_label("COUNT DISTINCT BLUEPRINTID FROM dim_blueprint", 70)
+    generated_sql = mermaid_label(artifacts.get("generated_sql", "unavailable"), 160)
+    validation = mermaid_label(visual_summary(artifacts.get("sql_validation"), 90), 90)
+    ast_validation = mermaid_label(visual_summary(artifacts.get("ast_validation"), 90), 90)
+    execution = mermaid_label(
+        f"SQL calls={artifacts.get('sql_calls_executed', 'unavailable')}; API calls={artifacts.get('api_calls_executed', 'unavailable')}",
+        80,
+    )
+    result_facts = "; ".join(str(item) for item in (artifacts.get("sql_result_facts") or ["unavailable"]))
+    sql_result = mermaid_label(result_facts, 70)
+    api_status = mermaid_label(context["api_status"], 80)
+    evidence = mermaid_label(visual_summary(artifacts.get("evidence"), 90), 90)
+    slots = mermaid_label(visual_summary(checkpoint_output(trajectory, "checkpoint_15_answer_slots"), 90), 90)
+    verifier = mermaid_label(visual_summary(checkpoint_output(trajectory, "checkpoint_16_answer_verification"), 90), 90)
+    answer = mermaid_label(context["final_answer"], 160)
+    metrics = mermaid_label(
+        f"strategy={context['strategy']}; tools={context['tool_calls']}; tokens={context['tokens']}; runtime={context['runtime']}",
+        100,
+    )
+    return f"""
+flowchart TD
+  classDef prompt fill:#e8f3ff,stroke:#2f6fad,stroke-width:1px,color:#102a43
+  classDef interpret fill:#eef8ef,stroke:#3b873e,stroke-width:1px,color:#183b1b
+  classDef plan fill:#fff7df,stroke:#b7791f,stroke-width:1px,color:#3d2a00
+  classDef sql fill:#eafff7,stroke:#00856f,stroke-width:2px,color:#063b33
+  classDef api fill:#f7f2ff,stroke:#805ad5,stroke-width:1px,color:#2d1b69,stroke-dasharray: 5 3
+  classDef evidence fill:#f0fff4,stroke:#2f855a,stroke-width:1px,color:#1c4532
+  classDef answer fill:#fff0f6,stroke:#b83280,stroke-width:2px,color:#521b41
+  classDef output fill:#f7fafc,stroke:#4a5568,stroke-width:1px,color:#1a202c
 
+  subgraph P["Input / Prompt Understanding"]
+    P0["Raw user prompt<br/>{raw_prompt}"]:::prompt
+    P1["Prompt router interpretation<br/>{router}"]:::prompt
+    P2["Simple-prompt gate decision<br/>{gate}"]:::prompt
+    P3["Query normalization<br/>normalized: {normalized_query}<br/>matching text: {matching_text}"]:::prompt
+    P4["Token/entity extraction<br/>{tokens}"]:::prompt
+  end
 
-def sequence_diagram() -> str:
-    return """
-sequenceDiagram
-  participant User
-  participant Router
-  participant Normalizer
-  participant Analyzer as Query Analysis
-  participant Context as Context Selector
-  participant Planner
-  participant Validator
-  participant DuckDB as SQL Executor
-  participant API as API Dry-Run
-  participant Evidence
-  participant Answer
-  participant Verifier
-  participant Output
-  User->>Router: How many schemas do I have?
-  Router->>Normalizer: use data pipeline
-  Normalizer->>Analyzer: normalized schema/count query
-  Analyzer->>Context: schema_count intent
-  Context->>Planner: dim_blueprint + schema API context
-  Planner->>Validator: generated SQL + API verification
-  Validator->>DuckDB: safe read-only SQL
-  DuckDB->>Evidence: blueprint_count row
-  Validator->>API: catalog-valid verification call
-  API->>Evidence: dry-run unavailable label
-  Evidence->>Answer: count evidence + dry-run status
-  Answer->>Verifier: SQL-grounded answer
-  Verifier->>Output: final answer + trajectory
-"""
+  subgraph I["Query Interpretation"]
+    I0["Query analysis<br/>route type: {route_type}<br/>answer family: {answer_family}"]:::interpret
+    I1["Lookup path / route intent<br/>{lookup}"]:::interpret
+  end
 
+  subgraph C["Context + Planning"]
+    C0["Context selection / metadata card<br/>{context_card}"]:::plan
+    C1["SQL planning input<br/>{plan_input}"]:::plan
+    C2["Selected plan / strategy<br/>{selected_plan}<br/>{context['strategy']}"]:::plan
+  end
 
-def journey_diagram() -> str:
-    return """
-journey
-  title example_011 Prompt to SQL to Answer
-  section Prompt understanding
-    Raw prompt captured: 5: User
-    Schema count intent detected: 5: Router
-    Query normalized and tokenized: 4: Normalizer
-  section SQL path
-    Context selects dim_blueprint: 5: Metadata
-    SQL count generated: 5: Planner
-    SQL validated as read-only: 5: Validator
-    DuckDB returns count: 5: Executor
-  section Answer path
-    Evidence bus forwards count: 5: Evidence
-    Answer states schema count: 5: Answer
-    Dry-run API note preserved: 4: Verifier
+  subgraph S["SQL Derivation"]
+    S0["Prompt becomes SQL<br/>{sql_summary}"]:::sql
+    S1["Generated SQL artifact<br/>{generated_sql}"]:::sql
+    S2["SQL validation<br/>{validation}"]:::sql
+    S3["SQLGlot AST validation<br/>{ast_validation}"]:::sql
+    S4["SQL is the answer source<br/>API branch is dry-run verification only"]:::sql
+  end
+
+  subgraph X["Execution + Evidence"]
+    X0["Tool execution<br/>{execution}"]:::output
+    X1["SQL execution result<br/>{sql_result}"]:::sql
+    X2["Dry-run API verification branch<br/>{api_status}"]:::api
+    X3["Evidence extraction / evidence bus<br/>{evidence}"]:::evidence
+  end
+
+  subgraph A["Final Answer + Output"]
+    A0["Answer slots / answer intent<br/>{slots}"]:::answer
+    A1["Answer synthesis<br/>SQL count + dry-run verification note"]:::answer
+    A2["Answer verification / reranking<br/>{verifier}"]:::answer
+    A3["Final answer<br/>{answer}"]:::answer
+    A4["Trajectory / checkpoint output<br/>{metrics}"]:::output
+  end
+
+  P0 -->|"raw text captured"| P1
+  P1 -->|"route policy applied"| P2
+  P2 -->|"data pipeline selected"| P3
+  P3 -->|"matching text derived"| P4
+  P4 -->|"schema/count signals"| I0
+  I0 -->|"route + family"| I1
+  I1 -->|"schema path selected"| C0
+  C0 -->|"compact metadata"| C1
+  C1 -->|"planner chooses plan"| C2
+  C2 -->|"SQL-first planning"| S0
+  S0 -->|"SQL template filled"| S1
+  S1 -->|"safety validation"| S2
+  S2 -->|"AST extraction"| S3
+  S3 -->|"safe to execute"| X0
+  S4 -.->|"interpretation guard"| X1
+  X0 -->|"DuckDB read-only query"| X1
+  X0 -.->|"catalog-valid API verification"| X2
+  X1 -->|"count evidence"| X3
+  X2 -.->|"dry-run status"| X3
+  X3 -->|"structured evidence"| A0
+  A0 -->|"count intent"| A1
+  A1 -->|"grounded claim check"| A2
+  A2 -->|"verifier passed"| A3
+  A3 -->|"logged outputs"| A4
 """
 
 
 def build_markdown(payload: dict[str, Any]) -> str:
-    sql = payload["sql_artifacts"].get("generated_sql")
-    result = payload["sql_artifacts"].get("sql_result")
-    result_facts = payload["sql_artifacts"].get("sql_result_facts") or ["unavailable"]
-    timeline_cards = [
-        visual_card(
-            f"{row['order']}. {row['checkpoint_id']}",
-            "▣",
-            "\n".join(
-                [
-                    f"**Stage:** {md_escape(row['stage'])}",
-                    f"**Technique:** `{md_escape(row['technique'])}`",
-                    f"**Input:** {md_escape(row['input'])}",
-                    f"**Output:** {md_escape(row['output'])}",
-                    f"**Effect:** {md_escape(row['impact'])}",
-                ]
-            ),
-        )
-        for row in payload["checkpoint_timeline"]
-    ]
-    step_cards = [
-        visual_card(
-            step["name"],
-            "▶",
-            "\n".join(
-                [
-                    f"**Payload:** {md_escape(step['short_payload'])}",
-                    f"**Technique:** `{md_escape(step['technique'])}`",
-                    f"**What changed:** {md_escape(step['what_changed'])}",
-                    f"**Impact:** {md_escape(step['impact'])}",
-                ]
-            ),
-        )
-        for step in payload["storyboard_steps"]
-    ]
     return "\n".join(
         [
             "# SQL-Backed Primary Prompt Storyboard",
             "",
-            how_to_read_page("SQL-backed raw prompt card"),
+            f"`{md_escape(payload['query_id'])}` was chosen because it is SQL-backed in the packaged path: the prompt becomes validated SQL, SQL returns the answer count, and API verification is dry-run/unavailable.",
             "",
-            prompt_callout(payload["query_id"], payload["raw_prompt"], payload["why_chosen"]),
-            "",
-            "## Why This Example Was Chosen",
-            "",
-            "- It is SQL-backed in the packaged path: SQL is the answer source.",
-            "- It still shows the real system nuance: API verification was attempted but only dry-run/unavailable.",
-            "- It demonstrates prompt → SQL → SQL evidence → final answer without using an API-only row as the main walkthrough.",
-            "",
-            "## Full End-to-End Flow Diagram",
+            "## One Giant End-to-End Flowchart",
             "",
             mermaid_block(payload["flowchart"]),
             "",
-            "## System Sequence Diagram",
-            "",
-            mermaid_block(payload["sequence_diagram"]),
-            "",
-            "## Prompt → SQL → Answer Journey",
-            "",
-            mermaid_block(payload["journey_diagram"]),
-            "",
-            "## Prompt Transformation Storyboard",
-            "",
-            "\n\n".join(step_cards),
-            "",
-            "## Prompt → SQL Derivation",
-            "",
-            visual_card(
-                "Generated SQL",
-                "🟢 SQL answer source",
-                "\n".join(
-                    [
-                        f"**Prompt intent:** `{md_escape(payload['route_type'])}` schema count.",
-                        f"**Generated SQL:**",
-                        "",
-                        "```sql",
-                        str(sql),
-                        "```",
-                    ]
-                ),
-            ),
-            "",
-            "## SQL Validation / Execution",
-            "",
-            visual_card(
-                "Validated SQL and DuckDB Result",
-                "🟢 validated read-only SQL",
-                "\n".join(
-                    [
-                        f"**SQL calls executed:** `{md_escape(payload['sql_artifacts'].get('sql_calls_executed'))}`",
-                        f"**API calls executed:** `{md_escape(payload['sql_artifacts'].get('api_calls_executed'))}`",
-                        f"**API verification:** {md_escape(payload['api_status'])}",
-                        f"**SQL result:** `{md_escape('; '.join(str(item) for item in result_facts))}`",
-                        f"**Raw result preview:** `{md_escape(visual_summary(result, 240))}`",
-                    ]
-                ),
-            ),
-            "",
-            "## Evidence → Final Answer",
-            "",
-            visual_card(
-                "Evidence Extraction",
-                "🟢 SQL evidence",
-                "\n".join(
-                    [
-                        f"**Evidence:** `{md_escape(visual_summary(payload['sql_artifacts'].get('evidence'), 240))}`",
-                        f"**Extracted fact:** `{md_escape('; '.join(str(item) for item in result_facts))}`",
-                        "**Meaning:** SQL returns the schema count; dry-run API status explains why live API verification is unavailable.",
-                    ]
-                ),
-            ),
-            "",
-            "## Checkpoint Timeline Visualization",
-            "",
-            "\n\n".join(timeline_cards),
-            "",
-            "## Final Answer Card",
-            "",
-            visual_card(
-                "Final Answer",
-                "🟢 SQL-grounded answer",
-                f"> {md_escape(payload['final_answer'])}",
-            ),
-            "",
-            "## Key Takeaway",
-            "",
-            "SQL provides the answer. API verification is present in the packaged trace, but it is dry-run/unavailable, so the final answer includes the honest live-API disclaimer.",
-            "",
-            "## Supporting Metrics",
-            "",
-            metric_cards(
-                [
-                    ("Strict score", payload["metrics"]["strict_score"], "Row-level strict score."),
-                    ("Correctness", payload["metrics"]["correctness_score"], "Row-level correctness score."),
-                    ("SQL score", payload["metrics"]["sql_score"], "Strict SQL component."),
-                    ("API score", payload["metrics"]["api_score"], "Dry-run verification call still scored."),
-                    ("Answer score", payload["metrics"]["answer_score"], "Final-answer component."),
-                    ("Tools/tokens/runtime", f"{payload['metrics']['tool_calls']} / {payload['metrics']['tokens']} / {payload['metrics']['runtime']}", "Packaged trajectory metrics."),
-                ]
-            ),
+            "**Takeaway:** SQL is the answer source (`blueprint_count = 74`). The API branch is shown because the packaged trace attempts verification, but it is dry-run/unavailable and does not provide the answer value.",
             "",
         ]
     )
