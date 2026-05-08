@@ -1,5 +1,5 @@
 {
-  "answer_time": 0.0009919169824570417,
+  "answer_time": 0.0009155410807579756,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-05T20:40:23.682011+00:00"
+      "timestamp": "2026-05-08T00:25:30.269164+00:00"
     },
     {
       "checkpoint_id": "checkpoint_00_prompt_router",
@@ -45,7 +45,7 @@
       },
       "stage": "prompt routing",
       "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-05T20:40:23.682044+00:00"
+      "timestamp": "2026-05-08T00:25:30.269195+00:00"
     },
     {
       "checkpoint_id": "checkpoint_simple_prompt_gate",
@@ -64,7 +64,7 @@
       },
       "stage": "input routing",
       "technique": "simple prompt gate",
-      "timestamp": "2026-05-05T20:40:23.682059+00:00"
+      "timestamp": "2026-05-08T00:25:30.269211+00:00"
     },
     {
       "checkpoint_id": "checkpoint_02_query_normalization",
@@ -81,7 +81,7 @@
       },
       "stage": "normalization",
       "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-05T20:40:23.682102+00:00"
+      "timestamp": "2026-05-08T00:25:30.269251+00:00"
     },
     {
       "checkpoint_id": "checkpoint_03_query_tokens",
@@ -110,7 +110,7 @@
       },
       "stage": "tokenization",
       "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-05T20:40:23.682148+00:00"
+      "timestamp": "2026-05-08T00:25:30.269291+00:00"
     },
     {
       "checkpoint_id": "checkpoint_04_relevance_scoring",
@@ -174,7 +174,38 @@
       },
       "stage": "context selection",
       "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-05T20:40:23.682936+00:00"
+      "timestamp": "2026-05-08T00:25:30.270143+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_value_entity_retrieval",
+      "correctness_role": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
+      "duration_ms": 0.0,
+      "effect": "grounds query entities against sampled local DB values before planning",
+      "efficiency_role": "uses a cached bounded value index with per-query scan and wall-time budgets",
+      "input_summary": {
+        "query_values": {
+          "items": [
+            {
+              "kind": "quoted_entity",
+              "text": "weRetail: Customer Actions"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "budget_exceeded": false,
+        "match_count": 2,
+        "retrieval_ms": 11.349
+      },
+      "output": {
+        "preview": "{\"active\": true, \"query_value_count\": 1, \"matches\": {\"items\": [{\"mention\": \"weRetail: Customer Actions\", \"kind\": \"quoted_entity\", \"matched_table\": \"dim_blueprint\", \"matched_column\": \"NAME\", \"matched_value\": \"weRetail: Customer Actions\", \"confidence\": 1.0, \"match_type\": \"exact\", \"retrieval_cost\": {\"cache_hit\": true, \"cache_key\": \"9c6f3a8deea3757e\", \"cache_key_algorithm\": \"sha256\", \"cache_reproducible\": true, \"retrieval_ms\": 11.349, \"budget_exceeded\": false}, \"truncated_fields\": 1}, {\"mention\": \"weRetail: Customer Actions\", \"kind\": \"quoted_entity\", \"matched_table\": \"dim_collection\", \"matched_column\": \"NAME\", \"matched_value\": \"weRetail: Customer Actions\", \"confidence\": 1.0, \"match_type\": \"exact\", \"retrieval_cost\": {\"cache_hit\": true, \"cache_key\": \"9c6f3a8deea3757e\", \"cache_key_algorithm\": \"sha256\", \"cache_reproducible\": true, \"retrieval_ms\": 11.349, \"budget_exceeded\": false}, \"truncated_fields\": 1}], \"total_items\": 2, \"truncated_items\": false}, \"match_count\": 2, \"cache_hit\": true, \"cache_...",
+        "truncated": true
+      },
+      "stage": "query understanding",
+      "technique": "CHESS-style value/entity retrieval",
+      "timestamp": "2026-05-08T00:25:30.270666+00:00"
     },
     {
       "checkpoint_id": "checkpoint_05_query_analysis",
@@ -204,7 +235,7 @@
       },
       "stage": "routing",
       "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-05T20:40:23.682941+00:00"
+      "timestamp": "2026-05-08T00:25:30.270672+00:00"
     },
     {
       "checkpoint_id": "checkpoint_06_lookup_path",
@@ -257,7 +288,7 @@
       },
       "stage": "path prediction",
       "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-05T20:40:23.682943+00:00"
+      "timestamp": "2026-05-08T00:25:30.270675+00:00"
     },
     {
       "checkpoint_id": "checkpoint_07_context_card",
@@ -328,7 +359,7 @@
       },
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-05T20:40:23.684942+00:00"
+      "timestamp": "2026-05-08T00:25:30.272551+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_sql_generation",
@@ -337,21 +368,23 @@
       "effect": "uses a real LLM for NL-to-SQL when credentials are available",
       "efficiency_role": "uses candidate context first when confidence is sufficient",
       "input_summary": {
-        "candidate_confidence": 0.6667,
-        "candidate_score_margin": 0.0,
+        "candidate_confidence": 0.8438,
+        "candidate_score_margin": 0.7,
+        "context_mode": "candidate",
         "strategy": "LLM_SQL_FIRST_API_VERIFY"
       },
       "output": {
+        "context_mode": "candidate",
         "error": "OPENAI_API_KEY is not set",
-        "mode": "full_schema",
+        "mode": "candidate_guided",
         "model": "gpt-4o-mini",
         "ok": false,
         "provider": "none",
         "skipped": true
       },
       "stage": "llm nl-to-sql",
-      "technique": "full_schema LLM SQL generation",
-      "timestamp": "2026-05-05T20:40:23.686131+00:00"
+      "technique": "candidate_guided LLM SQL generation",
+      "timestamp": "2026-05-08T00:25:30.274928+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_sql_validation",
@@ -372,7 +405,7 @@
       },
       "stage": "llm sql validation",
       "technique": "SQL safety and schema validation for LLM SQL",
-      "timestamp": "2026-05-05T20:40:23.686138+00:00"
+      "timestamp": "2026-05-08T00:25:30.274936+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_sql_fallback",
@@ -400,7 +433,7 @@
       },
       "stage": "llm sql fallback",
       "technique": "LLM SQL to deterministic backend fallback",
-      "timestamp": "2026-05-05T20:40:23.686142+00:00"
+      "timestamp": "2026-05-08T00:25:30.274941+00:00"
     },
     {
       "checkpoint_id": "checkpoint_08_candidate_plans",
@@ -428,7 +461,7 @@
       },
       "stage": "planning",
       "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-05T20:40:23.686152+00:00"
+      "timestamp": "2026-05-08T00:25:30.274950+00:00"
     },
     {
       "checkpoint_id": "checkpoint_09_plan_optimization",
@@ -449,7 +482,7 @@
       },
       "stage": "optimization",
       "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-05T20:40:23.686156+00:00"
+      "timestamp": "2026-05-08T00:25:30.274954+00:00"
     },
     {
       "checkpoint_id": "checkpoint_10_evidence_policy",
@@ -475,7 +508,7 @@
       },
       "stage": "evidence policy",
       "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-05T20:40:23.686159+00:00"
+      "timestamp": "2026-05-08T00:25:30.274957+00:00"
     },
     {
       "checkpoint_id": "checkpoint_11_call_budget",
@@ -497,7 +530,34 @@
       },
       "stage": "efficiency control",
       "technique": "tool-call budgeting",
-      "timestamp": "2026-05-05T20:40:23.686174+00:00"
+      "timestamp": "2026-05-08T00:25:30.274972+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_gated_sql_candidate_selection",
+      "correctness_role": "selects only validator- and AST-passing SQL candidates",
+      "duration_ms": 0.0,
+      "effect": "validates hard-case SQL candidates before execution without executing losing candidates",
+      "efficiency_role": "executes only one selected candidate in packaged SQL_FIRST_API_VERIFY mode",
+      "input_summary": {
+        "trigger_reasons": {
+          "items": [
+            "value_match_not_used_by_sql"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "candidate_count": 1,
+        "cost_estimate": 1
+      },
+      "output": {
+        "preview": "{\"active\": true, \"hard_case_triggered\": true, \"trigger_reasons\": {\"items\": [\"value_match_not_used_by_sql\"], \"total_items\": 1, \"truncated_items\": false}, \"candidate_count\": 1, \"candidate_sql_sources\": {\"items\": [\"schema_detail_counts\"], \"total_items\": 1, \"truncated_items\": false}, \"validation_results\": {\"items\": [{\"name\": \"candidate_0\", \"sql\": \"SELECT S.\\\"BLUEPRINTID\\\" AS blueprint_id, S.\\\"NAME\\\", S.\\\"CLASS\\\", S.\\\"ISPROFILEENABLED\\\", S.\\\"UPDATEDTIME\\\" AS updated_time, S.\\\"REQUIREDFIELDS\\\" AS required_fields, COUNT(DISTINCT SD.\\\"COLLECTIONID\\\") AS collection_count, COUNT(DISTINCT SA.\\\"PROPERTY\\\") AS property_count FROM \\\"dim_blueprint\\\" AS S LEFT JOIN \\\"hkg_br_blueprint_collection\\\" AS SD ON S.\\\"BLUEPRINTID\\\" = SD.\\\"BLUEPRINTID\\\" LEFT JOIN \\\"hkg_br_blueprint_property\\\" AS SA ON S.\\\"BLUEPRINTID\\\" = SA.\\\"BLUEPRINTID\\\" WHERE LOWER(S.\\\"NAME\\\") = LOWER('weRetail: Customer Actions') GROUP BY S.\\\"BLUEPRINTID\\\", S.\\\"NAME\\\", S.\\\"CLASS\\\", S.\\\"ISPROFILEENABLED\\\", S.\\\"UPDATEDTIME\\\", S.\\\"REQUIREDFIEL...",
+        "truncated": true
+      },
+      "stage": "planning",
+      "technique": "hard-case gated SQL candidate validation",
+      "timestamp": "2026-05-08T00:25:30.282922+00:00"
     },
     {
       "checkpoint_id": "checkpoint_12_validation",
@@ -541,7 +601,24 @@
       },
       "stage": "validation",
       "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-05T20:40:23.691206+00:00"
+      "timestamp": "2026-05-08T00:25:30.287374+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_sql_ast_validation",
+      "correctness_role": "detects unsafe SQL and schema mismatches with parser-backed structure",
+      "duration_ms": 0.0,
+      "effect": "adds AST-level table and column extraction after existing SQL validation",
+      "efficiency_role": "provides precise feedback without extra SQL tool calls",
+      "input_summary": {
+        "sql_call_count": 1
+      },
+      "output": {
+        "preview": "{\"summaries\": {\"items\": [{\"enabled\": true, \"parsed_ok\": true, \"selected_tables\": {\"items\": [\"dim_blueprint\", \"hkg_br_blueprint_collection\", \"hkg_br_blueprint_property\"], \"total_items\": 3, \"truncated_items\": false}, \"selected_columns\": {\"items\": [\"S.NAME\", \"S.CLASS\", \"S.ISPROFILEENABLED\"], \"total_items\": 10, \"truncated_items\": true}, \"destructive_sql_detected\": false, \"normalized_sql\": \"SELECT S.\\\"BLUEPRINTID\\\" AS blueprint_id, S.\\\"NAME\\\", S.\\\"CLASS\\\", S.\\\"ISPROFILEENABLED\\\", S.\\\"UPDATEDTIME\\\" AS updated_time, S.\\\"REQUIREDFIELDS\\\" AS required_fields, COUNT(DISTINCT SD.\\\"COLLECTIONID\\\") AS collection_count, COUNT(DISTINCT SA.\\\"PROPERTY\\\") AS property_count FROM \\\"dim_blueprint\\\" AS S LEFT JOIN \\\"hkg_br_blueprint_collection\\\" AS SD ON S.\\\"BLUEPRINTID\\\" = SD.\\\"BLUEPRINTID\\\" LEFT JOIN \\\"hkg_br_blueprint_property\\\" AS SA ON S.\\\"BLUEPRINTID\\\" = SA.\\\"BLUEPRINTID\\\" WHERE LOWER(S.\\\"NAME\\\") = LOWER('weRetail: Customer Actions') GROUP BY S.\\\"BLUEPRINTID\\\", S.\\\"NAME\\\", S.\\\"CLASS\\\", S.\\\"ISPROFILEENA...",
+        "truncated": true
+      },
+      "stage": "validation",
+      "technique": "SQLGlot AST-based SQL validation and extraction",
+      "timestamp": "2026-05-08T00:25:30.287382+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -558,7 +635,7 @@
       },
       "stage": "execution",
       "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-05T20:40:23.691219+00:00"
+      "timestamp": "2026-05-08T00:25:30.287387+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -600,7 +677,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-05T20:40:23.691223+00:00"
+      "timestamp": "2026-05-08T00:25:30.287390+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -654,7 +731,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-05T20:40:23.692023+00:00"
+      "timestamp": "2026-05-08T00:25:30.288146+00:00"
     },
     {
       "checkpoint_id": "checkpoint_16_answer_verification",
@@ -687,7 +764,7 @@
       },
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-05T20:40:23.692029+00:00"
+      "timestamp": "2026-05-08T00:25:30.288152+00:00"
     },
     {
       "checkpoint_id": "checkpoint_17_answer_reranking",
@@ -705,7 +782,7 @@
       },
       "stage": "answer selection",
       "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-05T20:40:23.692031+00:00"
+      "timestamp": "2026-05-08T00:25:30.288154+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -723,20 +800,20 @@
       },
       "stage": "final response",
       "technique": "concise grounded final response",
-      "timestamp": "2026-05-05T20:40:23.692098+00:00"
+      "timestamp": "2026-05-08T00:25:30.288197+00:00"
     }
   ],
   "domain_type": "SEGMENT_AUDIENCE",
   "errors": [],
-  "estimated_tokens": 1294,
-  "execution_time": 0.003558457945473492,
+  "estimated_tokens": 1591,
+  "execution_time": 0.0029214159585535526,
   "final_answer": "The 'weRetail: Customer Actions' schema has class https://ns.adobe.com/xdm/context/experienceevent, has 6 properties, across 1 collection(s), and was last updated on 2026-03-29. Live API verification was not executed because Adobe credentials are unavailable.",
   "original_query": "Provide more details for the schema 'weRetail: Customer Actions'",
-  "planning_time": 0.0012310829479247332,
-  "preprocessing_time": 0.002883541979826987,
+  "planning_time": 0.010371375014074147,
+  "preprocessing_time": 0.0033411249751225114,
   "query_id": "example_009",
   "route_type": "SQL_ONLY",
-  "runtime": 0.015165125019848347,
+  "runtime": 0.014100832981057465,
   "sql_call_count": 1,
   "steps": [
     {
@@ -801,6 +878,49 @@
         "quoted_entities": [
           "weRetail: Customer Actions"
         ]
+      },
+      "value_retrieval": {
+        "budget_exceeded": false,
+        "match_count": 2,
+        "matches": [
+          {
+            "confidence": 1.0,
+            "kind": "quoted_entity",
+            "match_type": "exact",
+            "matched_column": "NAME",
+            "matched_table": "dim_blueprint",
+            "matched_value": "weRetail: Customer Actions",
+            "mention": "weRetail: Customer Actions",
+            "retrieval_cost": {
+              "budget_exceeded": false,
+              "cache_hit": true,
+              "cache_key": "9c6f3a8deea3757e",
+              "cache_key_algorithm": "sha256",
+              "cache_reproducible": true,
+              "retrieval_ms": 11.349
+            },
+            "used_for": "sql_filter"
+          },
+          {
+            "confidence": 1.0,
+            "kind": "quoted_entity",
+            "match_type": "exact",
+            "matched_column": "NAME",
+            "matched_table": "dim_collection",
+            "matched_value": "weRetail: Customer Actions",
+            "mention": "weRetail: Customer Actions",
+            "retrieval_cost": {
+              "budget_exceeded": false,
+              "cache_hit": true,
+              "cache_key": "9c6f3a8deea3757e",
+              "cache_key_algorithm": "sha256",
+              "cache_reproducible": true,
+              "retrieval_ms": 11.349
+            },
+            "used_for": "sql_filter"
+          }
+        ],
+        "retrieval_ms": 11.349
       }
     },
     {
@@ -915,10 +1035,10 @@
   ],
   "strategy": "LLM_SQL_FIRST_API_VERIFY",
   "timings": {
-    "answer_time": 0.0009919169824570417,
-    "execution_time": 0.003558457945473492,
-    "planning_time": 0.0012310829479247332,
-    "preprocessing_time": 0.002883541979826987
+    "answer_time": 0.0009155410807579756,
+    "execution_time": 0.0029214159585535526,
+    "planning_time": 0.010371375014074147,
+    "preprocessing_time": 0.0033411249751225114
   },
   "tool_call_count": 2
 }

@@ -99,23 +99,23 @@
         "/data/foundation/audit/events"
       ],
       "candidate_tables": [
-        "hkg_br_blueprint_collection",
         "dim_blueprint",
-        "hkg_br_blueprint_property",
         "dim_collection",
+        "hkg_br_blueprint_collection",
+        "hkg_br_blueprint_property",
         "dim_campaign",
         "br_campaign_segment",
         "hkg_br_collection_property",
         "hkg_br_collection_segment",
         "hkg_br_source_collection"
       ],
-      "confidence": 0.9246,
+      "confidence": 0.8726,
       "missing_gold_apis": [],
       "missing_gold_tables": [],
       "query": "How many datasets have been ingested using the same schema in the prod sandbox?",
       "query_id": "example_006",
-      "recommended_context_mode": "candidate",
-      "score_margin": 0.41
+      "recommended_context_mode": "hybrid",
+      "score_margin": 0.0
     },
     {
       "candidate_apis": [
@@ -127,26 +127,25 @@
       ],
       "candidate_tables": [
         "dim_blueprint",
+        "dim_collection",
         "dim_segment",
         "br_campaign_segment",
-        "dim_collection",
-        "hkg_br_blueprint_property",
+        "hkg_br_blueprint_collection",
         "hkg_br_segment_target",
         "hkg_br_collection_segment",
         "hkg_br_segment_property",
         "hkg_br_target_property",
         "hkg_br_collection_property",
-        "hkg_br_source_collection"
+        "hkg_br_source_collection",
+        "hkg_br_blueprint_property"
       ],
-      "confidence": 0.8635,
+      "confidence": 0.6795,
       "missing_gold_apis": [],
-      "missing_gold_tables": [
-        "hkg_br_blueprint_collection"
-      ],
+      "missing_gold_tables": [],
       "query": "List all datasets that use the schema 'hkg_adls_profile_count_history'.",
       "query_id": "example_007",
-      "recommended_context_mode": "candidate",
-      "score_margin": 0.92
+      "recommended_context_mode": "hybrid",
+      "score_margin": 0.0
     },
     {
       "candidate_apis": [
@@ -247,8 +246,8 @@
       "candidate_tables": [
         "hkg_br_blueprint_collection",
         "dim_blueprint",
-        "hkg_br_blueprint_property",
         "dim_collection",
+        "hkg_br_blueprint_property",
         "dim_segment",
         "br_campaign_segment",
         "hkg_br_collection_property",
@@ -515,7 +514,7 @@
       "likely_safe_improvement": "Improve endpoint catalog descriptions and API-family aliases without using public answer patterns."
     },
     "missing_gold_table_in_top_k": {
-      "after_count": 2,
+      "after_count": 1,
       "before_count": 4,
       "before_example_query_ids": [
         "example_007",
@@ -524,11 +523,10 @@
         "example_012"
       ],
       "behavior_changing": false,
-      "count": 2,
-      "delta": -2,
+      "count": 1,
+      "delta": -3,
       "diagnostic_only": true,
       "example_query_ids": [
-        "example_007",
         "example_012"
       ],
       "improved": true,
@@ -571,7 +569,7 @@
       "likely_safe_improvement": "Strengthen tag endpoint summaries and keep dry-run API evidence labeled separately."
     },
     "zero_score_margin": {
-      "after_count": 6,
+      "after_count": 8,
       "before_count": 32,
       "before_example_query_ids": [
         "example_003",
@@ -584,12 +582,14 @@
         "example_010"
       ],
       "behavior_changing": false,
-      "count": 6,
-      "delta": -26,
+      "count": 8,
+      "delta": -24,
       "diagnostic_only": true,
       "example_query_ids": [
         "example_004",
         "example_005",
+        "example_006",
+        "example_007",
         "example_010",
         "example_018",
         "example_030",
@@ -4953,7 +4953,7 @@
       }
     },
     {
-      "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k",
+      "accuracy_risk": "high - zero_score_margin, risk_cluster:zero_score_margin",
       "api_recall_at_3": 1.0,
       "api_recall_at_5": 1.0,
       "backward_link_count": 0,
@@ -5049,7 +5049,7 @@
           "use_when": "Audit events for destination/dataset/entity changes."
         }
       ],
-      "candidate_context_tokens": 4744,
+      "candidate_context_tokens": 4761,
       "candidate_join_hints": [
         {
           "path": "dim_blueprint.BLUEPRINTID->hkg_br_blueprint_collection.BLUEPRINTID",
@@ -5093,10 +5093,10 @@
         }
       ],
       "candidate_tables": [
-        "hkg_br_blueprint_collection",
         "dim_blueprint",
-        "hkg_br_blueprint_property",
         "dim_collection",
+        "hkg_br_blueprint_collection",
+        "hkg_br_blueprint_property",
         "dim_campaign",
         "br_campaign_segment",
         "hkg_br_collection_property",
@@ -5104,8 +5104,8 @@
         "hkg_br_source_collection"
       ],
       "compact_context_safe": true,
-      "confidence": 0.9246,
-      "context_mode": "candidate",
+      "confidence": 0.8726,
+      "context_mode": "hybrid",
       "endpoint_family_ranking": {
         "active": true,
         "boost_applied": true,
@@ -5179,7 +5179,7 @@
         "value_match_used_for_api_ranking": false
       },
       "fallback_reason": "compact and fallback top candidates agree",
-      "forward_link_count": 25,
+      "forward_link_count": 26,
       "full_schema_context_tokens": 4682,
       "gated_risk_cluster_repair": {
         "active": true,
@@ -5190,7 +5190,7 @@
         "expected_correctness_gain": "retrieval-only candidate separation; no accuracy claim without execution change",
         "hard_case_triggered": true,
         "rejected_candidate_reason": "lower endpoint-family confidence or lower hybrid score",
-        "risk_cluster": null,
+        "risk_cluster": "zero_score_margin",
         "selected_candidate": "catalog_datasets"
       },
       "gold_api_paths": [
@@ -5206,10 +5206,10 @@
         "active": true,
         "fusion_mode": "weighted_score_fusion",
         "rank_after": [
-          "hkg_br_blueprint_collection",
           "dim_blueprint",
-          "hkg_br_blueprint_property",
           "dim_collection",
+          "hkg_br_blueprint_collection",
+          "hkg_br_blueprint_property",
           "dim_campaign",
           "dim_segment",
           "br_campaign_segment",
@@ -5227,24 +5227,24 @@
         ],
         "ranking_changed": true,
         "reciprocal_rank_fusion_scores": {
-          "dim_blueprint": 0.032787,
+          "dim_blueprint": 0.048916,
           "dim_campaign": 0.016129,
-          "dim_collection": 0.031281,
-          "hkg_br_blueprint_collection": 0.047627,
-          "hkg_br_blueprint_property": 0.031258
+          "dim_collection": 0.047875,
+          "hkg_br_blueprint_collection": 0.046883,
+          "hkg_br_blueprint_property": 0.030536
         },
-        "score_margin": 0.41,
-        "top_candidate_score": 2.21,
+        "score_margin": 0.0,
+        "top_candidate_score": 2.3,
         "top_components": {
-          "alias_score": 1.11,
+          "alias_score": 1.2,
           "endpoint_family_score": 0.0,
           "lexical_score": 0.0,
-          "name": "hkg_br_blueprint_collection",
-          "reciprocal_rank_fusion": 0.047627,
-          "score_explanation": "base=2.000; lexical=0.000; alias=1.110; value=0.000; structural=0.500; endpoint_family=0.000",
+          "name": "dim_blueprint",
+          "reciprocal_rank_fusion": 0.048916,
+          "score_explanation": "base=2.000; lexical=0.000; alias=1.200; value=0.000; structural=0.500; endpoint_family=0.000",
           "structural_score": 0.5,
           "value_match_score": 0.0,
-          "weighted_score_fusion": 2.21
+          "weighted_score_fusion": 2.3
         }
       },
       "measured_efficiency_improvement_claimed": false,
@@ -5354,10 +5354,10 @@
           }
         ],
         "reranked_candidate_tables": [
-          "hkg_br_blueprint_collection",
           "dim_blueprint",
-          "hkg_br_blueprint_property",
           "dim_collection",
+          "hkg_br_blueprint_collection",
+          "hkg_br_blueprint_property",
           "dim_campaign",
           "br_campaign_segment",
           "hkg_br_collection_property",
@@ -5365,24 +5365,24 @@
           "hkg_br_source_collection"
         ]
       },
-      "reason_for_context_mode": "strong bidirectional links; structural bridge preserved",
-      "recommended_context_mode": "candidate",
+      "reason_for_context_mode": "weak schema links or small score margin; structural bridge preserved",
+      "recommended_context_mode": "hybrid",
       "risk_efficiency_controller": {
-        "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k",
+        "accuracy_risk": "high - zero_score_margin, risk_cluster:zero_score_margin",
         "active": true,
         "behavior_changed": false,
         "diagnostic_only": true,
         "estimate_basis": "static diagnostic-module cost estimates; packaged execution did not skip modules",
         "inputs": {
-          "confidence": 0.9246,
+          "confidence": 0.8726,
           "endpoint_family_confidence": 0.8825,
           "missing_candidate_signals": {
             "missing_apis": false,
             "missing_tables": false
           },
-          "risk_cluster": "missing_gold_api_in_top_k",
-          "schema_link_risk": "low",
-          "score_margin": 0.41
+          "risk_cluster": "zero_score_margin",
+          "schema_link_risk": "medium",
+          "score_margin": 0.0
         },
         "measured_efficiency_improvement_claimed": false,
         "module_policy": "high risk: value retrieval + shadow repair + verifier diagnostics",
@@ -5397,7 +5397,8 @@
         ],
         "risk_level": "high",
         "risk_reasons": [
-          "risk_cluster:missing_gold_api_in_top_k"
+          "zero_score_margin",
+          "risk_cluster:zero_score_margin"
         ],
         "runtime_saved_estimate_ms": 0,
         "savings_are_estimates": true,
@@ -5417,17 +5418,17 @@
           "audit_events"
         ],
         "compact_candidate_tables": [
-          "hkg_br_blueprint_collection",
           "dim_blueprint",
-          "hkg_br_blueprint_property",
           "dim_collection",
+          "hkg_br_blueprint_collection",
+          "hkg_br_blueprint_property",
           "dim_campaign",
           "br_campaign_segment",
           "hkg_br_collection_property",
           "hkg_br_collection_segment"
         ],
         "compact_context_safe": true,
-        "compact_context_tokens": 4744,
+        "compact_context_tokens": 4761,
         "diagnostic_only": true,
         "fallback_candidate_apis": [
           "catalog_datasets",
@@ -5440,29 +5441,35 @@
           "catalog_batches"
         ],
         "fallback_candidate_tables": [
-          "hkg_br_blueprint_collection",
           "dim_blueprint",
-          "hkg_br_blueprint_property",
           "dim_collection",
+          "hkg_br_blueprint_collection",
+          "hkg_br_blueprint_property",
           "dim_campaign",
           "dim_segment",
           "br_campaign_segment",
           "hkg_br_base_segment_used_by_dependent_segment"
         ],
-        "fallback_context_tokens": 6025,
+        "fallback_context_tokens": 6042,
         "fallback_reason": "compact and fallback top candidates agree",
         "query": "How many datasets have been ingested using the same schema in the prod sandbox?",
         "schema_vote_agreement": true,
         "token_delta": 1281
       },
       "schema_link_confidence": 1.0,
-      "schema_link_risk": "low",
+      "schema_link_risk": "medium",
       "schema_linking": {
         "backward_link_count": 0,
         "backward_links": [],
         "bridge_preserved": true,
-        "forward_link_count": 25,
+        "forward_link_count": 26,
         "forward_links": [
+          {
+            "query_term": "dataset",
+            "score": 1.0,
+            "source": "domain vocabulary alias",
+            "table": "dim_collection"
+          },
           {
             "query_term": "in",
             "score": 0.75,
@@ -5538,19 +5545,12 @@
             "score": 0.55,
             "source": "column lexical overlap",
             "table": "dim_segment"
-          },
-          {
-            "column": "TTLINDAYS",
-            "query_term": "in",
-            "score": 0.55,
-            "source": "column lexical overlap",
-            "table": "dim_segment"
           }
         ],
         "missing_bridge_warning": false,
-        "reason_for_context_mode": "strong bidirectional links; structural bridge preserved",
+        "reason_for_context_mode": "weak schema links or small score margin; structural bridge preserved",
         "schema_link_confidence": 1.0,
-        "schema_link_risk": "low",
+        "schema_link_risk": "medium",
         "structural_confidence_delta": 0.1,
         "structural_join_preserved": true,
         "structural_joins": [
@@ -5674,12 +5674,14 @@
           "hkg_br_blueprint_property",
           "hkg_br_collection_property",
           "hkg_br_collection_segment",
-          "hkg_br_source_collection"
+          "hkg_br_source_collection",
+          "dim_blueprint",
+          "dim_collection"
         ],
         "used_robust_schema_linking": true
       },
       "schema_vote_agreement": true,
-      "score_margin": 0.41,
+      "score_margin": 0.0,
       "structural_confidence_delta": 0.1,
       "structural_join_preserved": true,
       "structural_reason": "schema_dataset: schema-level blueprint-collection bridge rule",
@@ -5689,9 +5691,11 @@
         "hkg_br_blueprint_property",
         "hkg_br_collection_property",
         "hkg_br_collection_segment",
-        "hkg_br_source_collection"
+        "hkg_br_source_collection",
+        "dim_blueprint",
+        "dim_collection"
       ],
-      "table_recall_at_3": 0.6667,
+      "table_recall_at_3": 1.0,
       "table_recall_at_5": 1.0,
       "token_saved_estimate": 0,
       "used_gold_patterns": false,
@@ -5704,7 +5708,7 @@
       }
     },
     {
-      "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k, missing_candidate_tables",
+      "accuracy_risk": "high - zero_score_margin, risk_cluster:zero_score_margin",
       "api_recall_at_3": 1.0,
       "api_recall_at_5": 1.0,
       "backward_link_count": 1,
@@ -5802,24 +5806,25 @@
           "use_when": "List/count catalog batches."
         }
       ],
-      "candidate_context_tokens": 4000,
+      "candidate_context_tokens": 4090,
       "candidate_join_hints": [],
       "candidate_tables": [
         "dim_blueprint",
+        "dim_collection",
         "dim_segment",
         "br_campaign_segment",
-        "dim_collection",
-        "hkg_br_blueprint_property",
+        "hkg_br_blueprint_collection",
         "hkg_br_segment_target",
         "hkg_br_collection_segment",
         "hkg_br_segment_property",
         "hkg_br_target_property",
         "hkg_br_collection_property",
-        "hkg_br_source_collection"
+        "hkg_br_source_collection",
+        "hkg_br_blueprint_property"
       ],
       "compact_context_safe": true,
-      "confidence": 0.8635,
-      "context_mode": "candidate",
+      "confidence": 0.6795,
+      "context_mode": "hybrid",
       "endpoint_family_ranking": {
         "active": true,
         "boost_applied": true,
@@ -5894,7 +5899,7 @@
         "value_match_used_for_api_ranking": false
       },
       "fallback_reason": "compact and fallback top candidates agree",
-      "forward_link_count": 3,
+      "forward_link_count": 4,
       "full_schema_context_tokens": 4682,
       "gated_risk_cluster_repair": {
         "active": true,
@@ -5905,7 +5910,7 @@
         "expected_correctness_gain": "retrieval-only candidate separation; no accuracy claim without execution change",
         "hard_case_triggered": true,
         "rejected_candidate_reason": "lower endpoint-family confidence or lower hybrid score",
-        "risk_cluster": null,
+        "risk_cluster": "zero_score_margin",
         "selected_candidate": "schema_registry_schema"
       },
       "gold_api_paths": [
@@ -5921,13 +5926,13 @@
         "fusion_mode": "weighted_score_fusion",
         "rank_after": [
           "dim_blueprint",
+          "dim_collection",
           "dim_segment",
           "br_campaign_segment",
-          "dim_collection",
+          "hkg_br_blueprint_collection",
           "hkg_br_blueprint_property",
           "hkg_br_collection_property",
-          "hkg_br_collection_segment",
-          "hkg_br_segment_property"
+          "hkg_br_collection_segment"
         ],
         "rank_before": [
           "br_campaign_segment",
@@ -5943,11 +5948,11 @@
         "reciprocal_rank_fusion_scores": {
           "br_campaign_segment": 0.016393,
           "dim_blueprint": 0.032522,
-          "dim_collection": 0.015873,
-          "dim_segment": 0.016129,
-          "hkg_br_blueprint_property": 0.015625
+          "dim_collection": 0.032002,
+          "dim_segment": 0.015873,
+          "hkg_br_blueprint_collection": 0.015625
         },
-        "score_margin": 0.92,
+        "score_margin": 0.0,
         "top_candidate_score": 1.7,
         "top_components": {
           "alias_score": 1.2,
@@ -5967,9 +5972,7 @@
       "missing_gold_apis_before": [
         "/data/foundation/schemaregistry/tenant/schemas/{schema_id}"
       ],
-      "missing_gold_tables": [
-        "hkg_br_blueprint_collection"
-      ],
+      "missing_gold_tables": [],
       "missing_gold_tables_before": [
         "dim_blueprint",
         "dim_collection"
@@ -6075,36 +6078,37 @@
         ],
         "reranked_candidate_tables": [
           "dim_blueprint",
+          "dim_collection",
           "dim_segment",
           "br_campaign_segment",
-          "dim_collection",
-          "hkg_br_blueprint_property",
+          "hkg_br_blueprint_collection",
           "hkg_br_segment_target",
           "hkg_br_collection_segment",
           "hkg_br_segment_property",
           "hkg_br_target_property",
           "hkg_br_collection_property",
-          "hkg_br_source_collection"
+          "hkg_br_source_collection",
+          "hkg_br_blueprint_property"
         ]
       },
-      "reason_for_context_mode": "strong bidirectional links; structural bridge preserved",
-      "recommended_context_mode": "candidate",
+      "reason_for_context_mode": "weak schema links or small score margin; structural bridge preserved",
+      "recommended_context_mode": "hybrid",
       "risk_efficiency_controller": {
-        "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k, missing_candidate_tables",
+        "accuracy_risk": "high - zero_score_margin, risk_cluster:zero_score_margin",
         "active": true,
         "behavior_changed": false,
         "diagnostic_only": true,
         "estimate_basis": "static diagnostic-module cost estimates; packaged execution did not skip modules",
         "inputs": {
-          "confidence": 0.8635,
+          "confidence": 0.6795,
           "endpoint_family_confidence": 0.94,
           "missing_candidate_signals": {
             "missing_apis": false,
-            "missing_tables": true
+            "missing_tables": false
           },
-          "risk_cluster": "missing_gold_api_in_top_k",
-          "schema_link_risk": "low",
-          "score_margin": 0.92
+          "risk_cluster": "zero_score_margin",
+          "schema_link_risk": "medium",
+          "score_margin": 0.0
         },
         "measured_efficiency_improvement_claimed": false,
         "module_policy": "high risk: value retrieval + shadow repair + verifier diagnostics",
@@ -6119,8 +6123,8 @@
         ],
         "risk_level": "high",
         "risk_reasons": [
-          "risk_cluster:missing_gold_api_in_top_k",
-          "missing_candidate_tables"
+          "zero_score_margin",
+          "risk_cluster:zero_score_margin"
         ],
         "runtime_saved_estimate_ms": 0,
         "savings_are_estimates": true,
@@ -6141,16 +6145,16 @@
         ],
         "compact_candidate_tables": [
           "dim_blueprint",
+          "dim_collection",
           "dim_segment",
           "br_campaign_segment",
-          "dim_collection",
-          "hkg_br_blueprint_property",
+          "hkg_br_blueprint_collection",
           "hkg_br_segment_target",
           "hkg_br_collection_segment",
           "hkg_br_segment_property"
         ],
         "compact_context_safe": true,
-        "compact_context_tokens": 4000,
+        "compact_context_tokens": 4090,
         "diagnostic_only": true,
         "fallback_candidate_apis": [
           "schema_registry_schema",
@@ -6164,22 +6168,22 @@
         ],
         "fallback_candidate_tables": [
           "dim_blueprint",
+          "dim_collection",
           "hkg_br_base_segment_used_by_dependent_segment",
           "dim_segment",
           "br_campaign_segment",
-          "dim_collection",
           "hkg_br_blueprint_collection",
           "hkg_br_blueprint_property",
           "hkg_br_collection_property"
         ],
-        "fallback_context_tokens": 5156,
+        "fallback_context_tokens": 5240,
         "fallback_reason": "compact and fallback top candidates agree",
         "query": "List all datasets that use the schema 'hkg_adls_profile_count_history'.",
         "schema_vote_agreement": true,
-        "token_delta": 1156
+        "token_delta": 1150
       },
-      "schema_link_confidence": 1.0,
-      "schema_link_risk": "low",
+      "schema_link_confidence": 0.9545,
+      "schema_link_risk": "medium",
       "schema_linking": {
         "backward_link_count": 1,
         "backward_links": [
@@ -6191,7 +6195,7 @@
           }
         ],
         "bridge_preserved": true,
-        "forward_link_count": 3,
+        "forward_link_count": 4,
         "forward_links": [
           {
             "column": "ISBATCH",
@@ -6199,6 +6203,12 @@
             "score": 0.55,
             "source": "column lexical overlap",
             "table": "dim_segment"
+          },
+          {
+            "query_term": "dataset",
+            "score": 1.0,
+            "source": "domain vocabulary alias",
+            "table": "dim_collection"
           },
           {
             "query_term": "schema",
@@ -6214,9 +6224,9 @@
           }
         ],
         "missing_bridge_warning": false,
-        "reason_for_context_mode": "strong bidirectional links; structural bridge preserved",
-        "schema_link_confidence": 1.0,
-        "schema_link_risk": "low",
+        "reason_for_context_mode": "weak schema links or small score margin; structural bridge preserved",
+        "schema_link_confidence": 0.9545,
+        "schema_link_risk": "medium",
         "structural_confidence_delta": 0.1,
         "structural_join_preserved": true,
         "structural_joins": [
@@ -6344,12 +6354,13 @@
           "hkg_br_source_collection",
           "hkg_br_blueprint_property",
           "dim_blueprint",
-          "dim_collection"
+          "dim_collection",
+          "hkg_br_blueprint_collection"
         ],
         "used_robust_schema_linking": true
       },
       "schema_vote_agreement": true,
-      "score_margin": 0.92,
+      "score_margin": 0.0,
       "structural_confidence_delta": 0.1,
       "structural_join_preserved": true,
       "structural_reason": "schema_dataset: schema-level blueprint-collection bridge rule",
@@ -6363,10 +6374,11 @@
         "hkg_br_source_collection",
         "hkg_br_blueprint_property",
         "dim_blueprint",
-        "dim_collection"
+        "dim_collection",
+        "hkg_br_blueprint_collection"
       ],
-      "table_recall_at_3": 0.3333,
-      "table_recall_at_5": 0.6667,
+      "table_recall_at_3": 0.6667,
+      "table_recall_at_5": 1.0,
       "token_saved_estimate": 0,
       "used_gold_patterns": false,
       "value_to_api_ranking": {
@@ -10015,7 +10027,7 @@
           "use_when": "Fetch batch details by ID."
         }
       ],
-      "candidate_context_tokens": 4489,
+      "candidate_context_tokens": 4480,
       "candidate_join_hints": [
         {
           "path": "dim_blueprint.BLUEPRINTID->hkg_br_blueprint_collection.BLUEPRINTID",
@@ -10061,8 +10073,8 @@
       "candidate_tables": [
         "hkg_br_blueprint_collection",
         "dim_blueprint",
-        "hkg_br_blueprint_property",
         "dim_collection",
+        "hkg_br_blueprint_property",
         "dim_segment",
         "br_campaign_segment",
         "hkg_br_collection_property",
@@ -10141,7 +10153,7 @@
         "value_match_used_for_api_ranking": false
       },
       "fallback_reason": "compact and fallback top candidates agree",
-      "forward_link_count": 22,
+      "forward_link_count": 23,
       "full_schema_context_tokens": 4682,
       "gated_risk_cluster_repair": {
         "active": true,
@@ -10167,8 +10179,8 @@
         "rank_after": [
           "hkg_br_blueprint_collection",
           "dim_blueprint",
-          "hkg_br_blueprint_property",
           "dim_collection",
+          "hkg_br_blueprint_property",
           "dim_segment",
           "dim_campaign",
           "br_campaign_segment",
@@ -10187,10 +10199,10 @@
         "ranking_changed": true,
         "reciprocal_rank_fusion_scores": {
           "dim_blueprint": 0.032787,
-          "dim_collection": 0.031281,
-          "dim_segment": 0.016129,
-          "hkg_br_blueprint_collection": 0.047875,
-          "hkg_br_blueprint_property": 0.031498
+          "dim_collection": 0.032258,
+          "dim_segment": 0.015873,
+          "hkg_br_blueprint_collection": 0.047627,
+          "hkg_br_blueprint_property": 0.031258
         },
         "score_margin": 0.41,
         "top_candidate_score": 2.21,
@@ -10199,7 +10211,7 @@
           "endpoint_family_score": 0.0,
           "lexical_score": 0.0,
           "name": "hkg_br_blueprint_collection",
-          "reciprocal_rank_fusion": 0.047875,
+          "reciprocal_rank_fusion": 0.047627,
           "score_explanation": "base=2.000; lexical=0.000; alias=1.110; value=0.000; structural=0.500; endpoint_family=0.000",
           "structural_score": 0.5,
           "value_match_score": 0.0,
@@ -10312,8 +10324,8 @@
         "reranked_candidate_tables": [
           "hkg_br_blueprint_collection",
           "dim_blueprint",
-          "hkg_br_blueprint_property",
           "dim_collection",
+          "hkg_br_blueprint_property",
           "dim_segment",
           "br_campaign_segment",
           "hkg_br_collection_property",
@@ -10375,15 +10387,15 @@
         "compact_candidate_tables": [
           "hkg_br_blueprint_collection",
           "dim_blueprint",
-          "hkg_br_blueprint_property",
           "dim_collection",
+          "hkg_br_blueprint_property",
           "dim_segment",
           "br_campaign_segment",
           "hkg_br_collection_property",
           "hkg_br_collection_segment"
         ],
         "compact_context_safe": true,
-        "compact_context_tokens": 4489,
+        "compact_context_tokens": 4480,
         "diagnostic_only": true,
         "fallback_candidate_apis": [
           "catalog_datasets",
@@ -10398,14 +10410,14 @@
         "fallback_candidate_tables": [
           "hkg_br_blueprint_collection",
           "dim_blueprint",
-          "hkg_br_blueprint_property",
           "dim_collection",
+          "hkg_br_blueprint_property",
           "dim_segment",
           "dim_campaign",
           "br_campaign_segment",
           "hkg_br_base_segment_used_by_dependent_segment"
         ],
-        "fallback_context_tokens": 5835,
+        "fallback_context_tokens": 5826,
         "fallback_reason": "compact and fallback top candidates agree",
         "query": "Show recent changes in datasets.",
         "schema_vote_agreement": true,
@@ -10417,8 +10429,14 @@
         "backward_link_count": 0,
         "backward_links": [],
         "bridge_preserved": true,
-        "forward_link_count": 22,
+        "forward_link_count": 23,
         "forward_links": [
+          {
+            "query_term": "dataset",
+            "score": 1.0,
+            "source": "domain vocabulary alias",
+            "table": "dim_collection"
+          },
           {
             "query_term": "in",
             "score": 0.75,
@@ -10490,13 +10508,6 @@
           },
           {
             "column": "DEFINITION",
-            "query_term": "in",
-            "score": 0.55,
-            "source": "column lexical overlap",
-            "table": "dim_segment"
-          },
-          {
-            "column": "TTLINDAYS",
             "query_term": "in",
             "score": 0.55,
             "source": "column lexical overlap",
@@ -10631,7 +10642,7 @@
         "hkg_br_collection_segment",
         "hkg_br_source_collection"
       ],
-      "table_recall_at_3": 0.0,
+      "table_recall_at_3": 1.0,
       "table_recall_at_5": 1.0,
       "token_saved_estimate": 0,
       "used_gold_patterns": false,
@@ -23943,21 +23954,22 @@
           "use_when": "Gold-example shorthand for audit events."
         }
       ],
-      "candidate_context_tokens": 3998,
+      "candidate_context_tokens": 4069,
       "candidate_join_hints": [],
       "candidate_tables": [
+        "dim_collection",
         "dim_campaign",
         "br_campaign_segment",
         "hkg_br_blueprint_property",
         "hkg_br_collection_property",
-        "hkg_br_collection_segment",
         "hkg_br_segment_target",
+        "hkg_br_collection_segment",
         "hkg_br_segment_property",
         "hkg_br_target_property",
         "hkg_br_source_collection"
       ],
       "compact_context_safe": null,
-      "confidence": 0.548,
+      "confidence": 0.562,
       "context_mode": "expanded_candidate",
       "endpoint_family_ranking": {
         "active": true,
@@ -24030,7 +24042,7 @@
         "value_match_used_for_api_ranking": false
       },
       "fallback_reason": "schema voting is reserved for high-risk diagnostics",
-      "forward_link_count": 8,
+      "forward_link_count": 9,
       "full_schema_context_tokens": 4682,
       "gated_risk_cluster_repair": {
         "active": false,
@@ -24052,14 +24064,14 @@
         "active": true,
         "fusion_mode": "weighted_score_fusion",
         "rank_after": [
+          "dim_collection",
           "dim_campaign",
           "br_campaign_segment",
           "hkg_br_blueprint_property",
           "hkg_br_collection_property",
           "hkg_br_collection_segment",
           "hkg_br_segment_property",
-          "hkg_br_segment_target",
-          "hkg_br_source_collection"
+          "hkg_br_segment_target"
         ],
         "rank_before": [
           "br_campaign_segment",
@@ -24074,23 +24086,23 @@
         "ranking_changed": true,
         "reciprocal_rank_fusion_scores": {
           "br_campaign_segment": 0.016393,
-          "dim_campaign": 0.016393,
+          "dim_campaign": 0.016129,
+          "dim_collection": 0.016393,
           "hkg_br_blueprint_property": 0.016129,
-          "hkg_br_collection_property": 0.015873,
-          "hkg_br_collection_segment": 0.015625
+          "hkg_br_collection_property": 0.015873
         },
-        "score_margin": 0.49,
-        "top_candidate_score": 0.99,
+        "score_margin": 0.21,
+        "top_candidate_score": 1.2,
         "top_components": {
-          "alias_score": 0.99,
+          "alias_score": 1.2,
           "endpoint_family_score": 0.0,
           "lexical_score": 0.0,
-          "name": "dim_campaign",
+          "name": "dim_collection",
           "reciprocal_rank_fusion": 0.016393,
-          "score_explanation": "base=0.000; lexical=0.000; alias=0.990; value=0.000; structural=0.000; endpoint_family=0.000",
+          "score_explanation": "base=0.000; lexical=0.000; alias=1.200; value=0.000; structural=0.000; endpoint_family=0.000",
           "structural_score": 0.0,
           "value_match_score": 0.0,
-          "weighted_score_fusion": 0.99
+          "weighted_score_fusion": 1.2
         }
       },
       "measured_efficiency_improvement_claimed": false,
@@ -24204,12 +24216,13 @@
           }
         ],
         "reranked_candidate_tables": [
+          "dim_collection",
           "dim_campaign",
           "br_campaign_segment",
           "hkg_br_blueprint_property",
           "hkg_br_collection_property",
-          "hkg_br_collection_segment",
           "hkg_br_segment_target",
+          "hkg_br_collection_segment",
           "hkg_br_segment_property",
           "hkg_br_target_property",
           "hkg_br_source_collection"
@@ -24224,7 +24237,7 @@
         "diagnostic_only": true,
         "estimate_basis": "static diagnostic-module cost estimates; packaged execution did not skip modules",
         "inputs": {
-          "confidence": 0.548,
+          "confidence": 0.562,
           "endpoint_family_confidence": 1.0,
           "missing_candidate_signals": {
             "missing_apis": false,
@@ -24232,7 +24245,7 @@
           },
           "risk_cluster": "not_targeted",
           "schema_link_risk": "low",
-          "score_margin": 0.49
+          "score_margin": 0.21
         },
         "measured_efficiency_improvement_claimed": false,
         "module_policy": "medium risk: hybrid ranking + endpoint ranking diagnostics",
@@ -24265,13 +24278,13 @@
         "reason": "schema voting is reserved for high-risk diagnostics",
         "schema_vote_agreement": null
       },
-      "schema_link_confidence": 0.928,
+      "schema_link_confidence": 0.942,
       "schema_link_risk": "low",
       "schema_linking": {
         "backward_link_count": 0,
         "backward_links": [],
         "bridge_preserved": true,
-        "forward_link_count": 8,
+        "forward_link_count": 9,
         "forward_links": [
           {
             "column": "SANDBOXNAME",
@@ -24323,6 +24336,12 @@
             "table": "dim_segment"
           },
           {
+            "query_term": "dataset",
+            "score": 1.0,
+            "source": "domain vocabulary alias",
+            "table": "dim_collection"
+          },
+          {
             "column": "ISBEHAVIORTIMESERIESTYPE",
             "query_term": "timeseries",
             "score": 0.55,
@@ -24332,7 +24351,7 @@
         ],
         "missing_bridge_warning": false,
         "reason_for_context_mode": "strong bidirectional links; structural bridge preserved",
-        "schema_link_confidence": 0.928,
+        "schema_link_confidence": 0.942,
         "schema_link_risk": "low",
         "structural_confidence_delta": 0.1,
         "structural_join_preserved": true,
@@ -24448,7 +24467,7 @@
         "used_robust_schema_linking": true
       },
       "schema_vote_agreement": null,
-      "score_margin": 0.49,
+      "score_margin": 0.21,
       "structural_confidence_delta": 0.1,
       "structural_join_preserved": true,
       "structural_reason": "bridge-table heuristic",
@@ -25140,84 +25159,108 @@
         "avg_score_delta": 0.0,
         "avg_token_delta": 0.0,
         "avg_tool_call_delta": 0.0,
+        "behavior_changing_flags_disabled": true,
         "recommendation": "keep_disabled",
         "recommended_flag": "ENABLE_REPAIR_FOR_BATCH_ENDPOINT_CONFUSION",
-        "rejection_reason": "One or more rows failed the repair safety verifier.",
+        "rejection_reason": "No repaired row is strictly better; ties are kept disabled.",
         "repaired_better_count": 0,
         "repaired_equal_count": 2,
         "repaired_worse_count": 0,
+        "safe_avg_score_delta": 0.0,
+        "safe_repaired_worse_count": 0,
         "safe_to_enable_canary": false,
-        "shadow_eval_rows": 2
+        "shadow_eval_rows": 2,
+        "strictly_better_row_count": 0
       },
       "broad_domain_api_confusion": {
         "avg_runtime_delta": 0.0,
         "avg_score_delta": 0.0,
         "avg_token_delta": 0.0,
         "avg_tool_call_delta": 0.0,
+        "behavior_changing_flags_disabled": true,
         "recommendation": "keep_disabled",
         "recommended_flag": null,
         "rejection_reason": "No canary flag is defined for this broad diagnostic cluster.",
         "repaired_better_count": 0,
         "repaired_equal_count": 1,
         "repaired_worse_count": 0,
+        "safe_avg_score_delta": 0.0,
+        "safe_repaired_worse_count": 0,
         "safe_to_enable_canary": false,
-        "shadow_eval_rows": 1
+        "shadow_eval_rows": 1,
+        "strictly_better_row_count": 0
       },
       "missing_gold_api_in_top_k": {
         "avg_runtime_delta": 0.0,
         "avg_score_delta": -0.0286,
         "avg_token_delta": 0.0,
         "avg_tool_call_delta": 0.0,
+        "behavior_changing_flags_disabled": true,
         "recommendation": "keep_disabled",
         "recommended_flag": "ENABLE_REPAIR_FOR_MISSING_API_TOPK",
-        "rejection_reason": "At least one repaired row scored worse.",
+        "rejection_reason": "No repaired row is strictly better; ties are kept disabled.",
         "repaired_better_count": 0,
         "repaired_equal_count": 12,
         "repaired_worse_count": 3,
+        "safe_avg_score_delta": 0.0,
+        "safe_repaired_worse_count": 0,
         "safe_to_enable_canary": false,
-        "shadow_eval_rows": 15
+        "shadow_eval_rows": 15,
+        "strictly_better_row_count": 0
       },
       "schema_vs_dataset_confusion": {
         "avg_runtime_delta": 0.0,
         "avg_score_delta": 0.0574,
         "avg_token_delta": 0.0,
         "avg_tool_call_delta": 0.0,
+        "behavior_changing_flags_disabled": true,
         "recommendation": "keep_disabled",
         "recommended_flag": "ENABLE_REPAIR_FOR_SCHEMA_DATASET_CONFUSION",
         "rejection_reason": "One or more rows failed the repair safety verifier.",
         "repaired_better_count": 1,
         "repaired_equal_count": 1,
         "repaired_worse_count": 0,
+        "safe_avg_score_delta": 0.0,
+        "safe_repaired_worse_count": 0,
         "safe_to_enable_canary": false,
-        "shadow_eval_rows": 2
+        "shadow_eval_rows": 2,
+        "strictly_better_row_count": 1
       },
       "tag_api_confusion": {
         "avg_runtime_delta": 0.0,
         "avg_score_delta": 0.0,
         "avg_token_delta": 0.0,
         "avg_tool_call_delta": 0.0,
+        "behavior_changing_flags_disabled": true,
         "recommendation": "keep_disabled",
         "recommended_flag": "ENABLE_REPAIR_FOR_TAG_API_CONFUSION",
-        "rejection_reason": "One or more rows failed the repair safety verifier.",
+        "rejection_reason": "No repaired row is strictly better; ties are kept disabled.",
         "repaired_better_count": 0,
         "repaired_equal_count": 3,
         "repaired_worse_count": 0,
+        "safe_avg_score_delta": 0.0,
+        "safe_repaired_worse_count": 0,
         "safe_to_enable_canary": false,
-        "shadow_eval_rows": 3
+        "shadow_eval_rows": 3,
+        "strictly_better_row_count": 0
       },
       "zero_score_margin": {
         "avg_runtime_delta": 0.0,
         "avg_score_delta": -0.1537,
         "avg_token_delta": 0.0,
         "avg_tool_call_delta": 0.0,
+        "behavior_changing_flags_disabled": true,
         "recommendation": "keep_disabled",
         "recommended_flag": "ENABLE_REPAIR_FOR_ZERO_SCORE_MARGIN",
-        "rejection_reason": "At least one repaired row scored worse.",
+        "rejection_reason": "No repaired row is strictly better; ties are kept disabled.",
         "repaired_better_count": 0,
         "repaired_equal_count": 2,
         "repaired_worse_count": 4,
+        "safe_avg_score_delta": 0.0,
+        "safe_repaired_worse_count": 0,
         "safe_to_enable_canary": false,
-        "shadow_eval_rows": 6
+        "shadow_eval_rows": 6,
+        "strictly_better_row_count": 0
       }
     },
     "paired_shadow_eval_summary": {
@@ -25237,7 +25280,7 @@
         "d56d712659788f46",
         "5234aa37629bcd82",
         "6608de8cd8267388",
-        "2a4ccc6ad56475bc",
+        "fc4f34dd667d83dd",
         "c336c0739a887c72",
         "fe906648641ba78b",
         "5ad03644b245545c",
@@ -25265,20 +25308,21 @@
       "repaired_better_count": 1,
       "repaired_equal_count": 26,
       "repaired_worse_count": 8,
-      "safe_avg_score_delta": -0.0077,
+      "safe_avg_score_delta": 0.0,
       "safe_avg_tool_delta": 0.0,
       "safe_repaired_better_count": 0,
       "safe_repaired_equal_count": 14,
-      "safe_repaired_worse_count": 1,
-      "unsafe_avg_score_delta": -0.0567,
+      "safe_repaired_worse_count": 0,
+      "unsafe_avg_score_delta": -0.0595,
       "unsafe_failure_reason_counts": {
         "api_validation": 2,
         "endpoint_family_confidence": 5,
         "fusion_agreement": 14,
+        "score_regression": 8,
         "sql_validation": 2,
         "tool_call_increase": 1
       },
-      "unsafe_repair_count": 34
+      "unsafe_repair_count": 35
     },
     "repair_execution_enabled": false
   },
@@ -25286,39 +25330,39 @@
     "api_recall_at_3": 0.7581,
     "api_recall_at_5": 0.7903,
     "avg_backward_link_count": 1.2,
-    "avg_candidate_context_tokens": 4301.4,
-    "avg_forward_link_count": 34.0286,
+    "avg_candidate_context_tokens": 4306.2286,
+    "avg_forward_link_count": 34.1429,
     "avg_full_schema_context_tokens": 4682,
     "candidate_low_confidence_count": 2,
-    "candidate_zero_margin_count": 6,
+    "candidate_zero_margin_count": 8,
     "cluster_gate_status": "retrieval-cluster improvement measured",
     "compact_context_safe_count": 28,
-    "compression_ratio": 0.9187,
+    "compression_ratio": 0.9197,
     "context_mode_distribution": {
-      "candidate": 18,
+      "candidate": 16,
       "expanded_candidate": 11,
-      "hybrid": 6
+      "hybrid": 8
     },
     "estimated_runtime_savings_ms_total": 175.0,
     "estimated_savings_label": "estimated only - packaged execution did not skip modules",
     "estimated_token_savings_total": 1848.0,
     "percent_low_confidence": 0.0571,
-    "percent_zero_margin": 0.1714,
-    "recommended_fallback_rate": 0.1714,
+    "percent_zero_margin": 0.2286,
+    "recommended_fallback_rate": 0.2286,
     "risk_level_distribution": {
       "high": 28,
       "low": 2,
       "medium": 5
     },
     "schema_link_risk_distribution": {
-      "low": 29,
-      "medium": 6
+      "low": 27,
+      "medium": 8
     },
     "schema_vote_active_count": 28,
     "schema_vote_agreement_count": 28,
     "structural_join_preserved_count": 35,
-    "table_recall_at_3": 0.7778,
-    "table_recall_at_5": 0.9333
+    "table_recall_at_3": 0.8889,
+    "table_recall_at_5": 0.9556
   },
   "used_gold_patterns": false
 }

@@ -1,5 +1,5 @@
 {
-  "answer_time": 0.00034529203549027443,
+  "answer_time": 0.0002862500259652734,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-05T20:40:24.140866+00:00"
+      "timestamp": "2026-05-08T00:25:30.741547+00:00"
     },
     {
       "checkpoint_id": "checkpoint_00_prompt_router",
@@ -45,7 +45,7 @@
       },
       "stage": "prompt routing",
       "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-05T20:40:24.140898+00:00"
+      "timestamp": "2026-05-08T00:25:30.741570+00:00"
     },
     {
       "checkpoint_id": "checkpoint_simple_prompt_gate",
@@ -64,7 +64,7 @@
       },
       "stage": "input routing",
       "technique": "simple prompt gate",
-      "timestamp": "2026-05-05T20:40:24.140912+00:00"
+      "timestamp": "2026-05-08T00:25:30.741583+00:00"
     },
     {
       "checkpoint_id": "checkpoint_02_query_normalization",
@@ -88,7 +88,7 @@
       },
       "stage": "normalization",
       "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-05T20:40:24.140947+00:00"
+      "timestamp": "2026-05-08T00:25:30.741612+00:00"
     },
     {
       "checkpoint_id": "checkpoint_03_query_tokens",
@@ -117,7 +117,7 @@
       },
       "stage": "tokenization",
       "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-05T20:40:24.140983+00:00"
+      "timestamp": "2026-05-08T00:25:30.741640+00:00"
     },
     {
       "checkpoint_id": "checkpoint_04_relevance_scoring",
@@ -181,7 +181,45 @@
       },
       "stage": "context selection",
       "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-05T20:40:24.141661+00:00"
+      "timestamp": "2026-05-08T00:25:30.742260+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_value_entity_retrieval",
+      "correctness_role": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
+      "duration_ms": 0.0,
+      "effect": "grounds query entities against sampled local DB values before planning",
+      "efficiency_role": "uses a cached bounded value index with per-query scan and wall-time budgets",
+      "input_summary": {
+        "query_values": {
+          "items": [
+            {
+              "kind": "status",
+              "text": "processing"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "budget_exceeded": true,
+        "match_count": 0,
+        "retrieval_ms": 11.566
+      },
+      "output": {
+        "active": true,
+        "cache_hit": true,
+        "cache_key": "ff8c5b63cad79a6d",
+        "cache_key_algorithm": "sha256",
+        "cache_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/cache/value_index_ff8c5b63cad79a6d.json",
+        "cache_reproducible": true,
+        "match_count": 0,
+        "query_value_count": 1,
+        "truncated_fields": 8
+      },
+      "stage": "query understanding",
+      "technique": "CHESS-style value/entity retrieval",
+      "timestamp": "2026-05-08T00:25:30.742540+00:00"
     },
     {
       "checkpoint_id": "checkpoint_05_query_analysis",
@@ -210,7 +248,7 @@
       },
       "stage": "routing",
       "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-05T20:40:24.141665+00:00"
+      "timestamp": "2026-05-08T00:25:30.742546+00:00"
     },
     {
       "checkpoint_id": "checkpoint_06_lookup_path",
@@ -262,7 +300,7 @@
       },
       "stage": "path prediction",
       "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-05T20:40:24.141668+00:00"
+      "timestamp": "2026-05-08T00:25:30.742549+00:00"
     },
     {
       "checkpoint_id": "checkpoint_07_context_card",
@@ -326,7 +364,7 @@
       },
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-05T20:40:24.143515+00:00"
+      "timestamp": "2026-05-08T00:25:30.744029+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_sql_generation",
@@ -335,21 +373,23 @@
       "effect": "uses a real LLM for NL-to-SQL when credentials are available",
       "efficiency_role": "uses candidate context first when confidence is sufficient",
       "input_summary": {
-        "candidate_confidence": 0.85,
-        "candidate_score_margin": 0.0,
+        "candidate_confidence": 1.0,
+        "candidate_score_margin": 0.41,
+        "context_mode": "candidate",
         "strategy": "LLM_SQL_FIRST_API_VERIFY"
       },
       "output": {
+        "context_mode": "candidate",
         "error": "OPENAI_API_KEY is not set",
-        "mode": "full_schema",
+        "mode": "candidate_guided",
         "model": "gpt-4o-mini",
         "ok": false,
         "provider": "none",
         "skipped": true
       },
       "stage": "llm nl-to-sql",
-      "technique": "full_schema LLM SQL generation",
-      "timestamp": "2026-05-05T20:40:24.144687+00:00"
+      "technique": "candidate_guided LLM SQL generation",
+      "timestamp": "2026-05-08T00:25:30.746472+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_sql_validation",
@@ -370,7 +410,7 @@
       },
       "stage": "llm sql validation",
       "technique": "SQL safety and schema validation for LLM SQL",
-      "timestamp": "2026-05-05T20:40:24.144694+00:00"
+      "timestamp": "2026-05-08T00:25:30.746480+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_sql_fallback",
@@ -398,7 +438,7 @@
       },
       "stage": "llm sql fallback",
       "technique": "LLM SQL to deterministic backend fallback",
-      "timestamp": "2026-05-05T20:40:24.144699+00:00"
+      "timestamp": "2026-05-08T00:25:30.746484+00:00"
     },
     {
       "checkpoint_id": "checkpoint_08_candidate_plans",
@@ -426,7 +466,7 @@
       },
       "stage": "planning",
       "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-05T20:40:24.144709+00:00"
+      "timestamp": "2026-05-08T00:25:30.746493+00:00"
     },
     {
       "checkpoint_id": "checkpoint_09_plan_optimization",
@@ -447,7 +487,7 @@
       },
       "stage": "optimization",
       "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-05T20:40:24.144714+00:00"
+      "timestamp": "2026-05-08T00:25:30.746497+00:00"
     },
     {
       "checkpoint_id": "checkpoint_10_evidence_policy",
@@ -473,7 +513,7 @@
       },
       "stage": "evidence policy",
       "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-05T20:40:24.144716+00:00"
+      "timestamp": "2026-05-08T00:25:30.746500+00:00"
     },
     {
       "checkpoint_id": "checkpoint_11_call_budget",
@@ -509,7 +549,7 @@
       },
       "stage": "efficiency control",
       "technique": "tool-call budgeting",
-      "timestamp": "2026-05-05T20:40:24.144728+00:00"
+      "timestamp": "2026-05-08T00:25:30.746512+00:00"
     },
     {
       "checkpoint_id": "checkpoint_12_validation",
@@ -553,7 +593,7 @@
       },
       "stage": "validation",
       "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-05T20:40:24.146424+00:00"
+      "timestamp": "2026-05-08T00:25:30.747963+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -595,7 +635,7 @@
       },
       "stage": "execution",
       "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-05T20:40:24.146430+00:00"
+      "timestamp": "2026-05-08T00:25:30.747968+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -611,7 +651,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-05T20:40:24.146433+00:00"
+      "timestamp": "2026-05-08T00:25:30.747970+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -646,7 +686,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-05T20:40:24.146701+00:00"
+      "timestamp": "2026-05-08T00:25:30.748195+00:00"
     },
     {
       "checkpoint_id": "checkpoint_16_answer_verification",
@@ -677,7 +717,7 @@
       },
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-05T20:40:24.146706+00:00"
+      "timestamp": "2026-05-08T00:25:30.748199+00:00"
     },
     {
       "checkpoint_id": "checkpoint_17_answer_reranking",
@@ -695,7 +735,7 @@
       },
       "stage": "answer selection",
       "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-05T20:40:24.146708+00:00"
+      "timestamp": "2026-05-08T00:25:30.748201+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -713,20 +753,20 @@
       },
       "stage": "final response",
       "technique": "concise grounded final response",
-      "timestamp": "2026-05-05T20:40:24.146725+00:00"
+      "timestamp": "2026-05-08T00:25:30.748214+00:00"
     }
   ],
   "domain_type": "SEGMENT_AUDIENCE",
   "errors": [],
-  "estimated_tokens": 652,
-  "execution_time": 0.0002557908883318305,
+  "estimated_tokens": 687,
+  "execution_time": 0.00020583299919962883,
   "final_answer": "The segment evaluation job count requires live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
   "original_query": "How many segment jobs are currently processing?",
-  "planning_time": 0.0012116249417886138,
-  "preprocessing_time": 0.002604082925245166,
+  "planning_time": 0.002485458040609956,
+  "preprocessing_time": 0.002446833997964859,
   "query_id": "example_026",
   "route_type": "API_ONLY",
-  "runtime": 0.01084558293223381,
+  "runtime": 0.009118499932810664,
   "sql_call_count": 0,
   "steps": [
     {
@@ -792,6 +832,12 @@
         "statuses": [
           "processing"
         ]
+      },
+      "value_retrieval": {
+        "budget_exceeded": true,
+        "match_count": 0,
+        "matches": [],
+        "retrieval_ms": 11.566
       }
     },
     {
@@ -860,10 +906,10 @@
   ],
   "strategy": "LLM_SQL_FIRST_API_VERIFY",
   "timings": {
-    "answer_time": 0.00034529203549027443,
-    "execution_time": 0.0002557908883318305,
-    "planning_time": 0.0012116249417886138,
-    "preprocessing_time": 0.002604082925245166
+    "answer_time": 0.0002862500259652734,
+    "execution_time": 0.00020583299919962883,
+    "planning_time": 0.002485458040609956,
+    "preprocessing_time": 0.002446833997964859
   },
   "tool_call_count": 1
 }

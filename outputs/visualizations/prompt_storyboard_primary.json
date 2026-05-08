@@ -1,0 +1,114 @@
+{
+  "bottleneck": {
+    "answer_score": 0.1055,
+    "api_score": 1.0,
+    "correctness_score": 0.5528,
+    "dry_run_status": "dry-run API evidence; live payload unavailable",
+    "main_bottleneck": "Dry-run API evidence lacks live payload, so files cannot be listed safely.",
+    "query_id": "example_031",
+    "strict_score": 0.5346
+  },
+  "page": "prompt_storyboard_primary",
+  "primary_example": {
+    "answer_score": 0.1055,
+    "api_score": 1.0,
+    "correctness_score": 0.5528,
+    "dry_run_status": "dry-run API evidence; live payload unavailable",
+    "final_answer": "Batch file details require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+    "main_bottleneck": "Dry-run API evidence lacks live payload, so files cannot be listed safely.",
+    "query_id": "example_031",
+    "raw_prompt": "Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?",
+    "route_type": "API_ONLY",
+    "runtime": 0.00831733294762671,
+    "strategy": "SQL_FIRST_API_VERIFY",
+    "strict_score": 0.5346,
+    "tokens": 677,
+    "tool_calls": 1
+  },
+  "storyboard_steps": [
+    {
+      "impact": "observability",
+      "name": "Raw prompt",
+      "short_payload": "Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?",
+      "technique": "raw user query capture",
+      "what_changed": "Original test prompt enters the packaged SQL_FIRST_API_VERIFY path."
+    },
+    {
+      "impact": "accuracy",
+      "name": "Prompt router view",
+      "short_payload": "confidence=0.9; reason=API/platform family keyword(s): batch, file, files.",
+      "technique": "prompt_router",
+      "what_changed": "Detects an API/platform batch-file request."
+    },
+    {
+      "impact": "safety",
+      "name": "Simple-prompt gate",
+      "short_payload": "confidence=0.9; is_simple=False; suggested_action=USE_DATA_PIPELINE; reason=API/platform family keyword(s): batch, file, files.",
+      "technique": "simple_prompt_gate",
+      "what_changed": "Sends the prompt into the evidence pipeline rather than a direct answer."
+    },
+    {
+      "impact": "accuracy",
+      "name": "Normalized query",
+      "short_payload": "normalized_query=Which files are available for download in batch 69de8a0e0...; matching_text=which file are available for download in batch 69de8a0e0c...",
+      "technique": "query_normalizer",
+      "what_changed": "Creates matching-friendly text while preserving original wording."
+    },
+    {
+      "impact": "accuracy",
+      "name": "Tokens/entities/domains",
+      "short_payload": "ids=1; domains=2 item(s)",
+      "technique": "query_tokens",
+      "what_changed": "Extracts batch/file intent and the batch id."
+    },
+    {
+      "impact": "accuracy",
+      "name": "Query analysis",
+      "short_payload": "strategy=SQL_FIRST_API_VERIFY; route_type=API_ONLY; domain_type=UNKNOWN; answer_family=batch",
+      "technique": "query_analysis",
+      "what_changed": "Classifies the route as API_ONLY and answer family as batch."
+    },
+    {
+      "impact": "accuracy",
+      "name": "Lookup path / route intent",
+      "short_payload": "api_mode=required",
+      "technique": "lookup_path",
+      "what_changed": "Narrows to batch API families and required id grounding."
+    },
+    {
+      "impact": "efficiency",
+      "name": "Context card",
+      "short_payload": "estimated_metadata_tokens=1000; prompt_tokens=1673; selected_apis=1 item(s); selected_card_name=batch",
+      "technique": "metadata_selector + context_cards",
+      "what_changed": "Packs the endpoint catalog/context into metadata and prompt budget."
+    },
+    {
+      "impact": "efficiency",
+      "name": "Selected plan",
+      "short_payload": "selected_plan=generic_sql_first",
+      "technique": "planner + plan_ensemble",
+      "what_changed": "Selects a one-call API plan before execution."
+    },
+    {
+      "impact": "safety",
+      "name": "Evidence objects",
+      "short_payload": "sql_calls_executed=0; api_calls_executed=1",
+      "technique": "executor + evidence_bus",
+      "what_changed": "Executes the catalog-valid API call in dry-run mode because credentials are unavailable."
+    },
+    {
+      "impact": "accuracy",
+      "name": "Answer slots / intent",
+      "short_payload": "answer_intent=LIST",
+      "technique": "answer_slots",
+      "what_changed": "Maps dry-run evidence into a LIST answer intent with missing payload slots."
+    },
+    {
+      "impact": "safety",
+      "name": "Verified final answer",
+      "short_payload": "verifier_passed=True",
+      "technique": "answer_verifier + answer_reranker",
+      "what_changed": "Keeps the honest dry-run answer instead of fabricating file names."
+    }
+  ]
+}

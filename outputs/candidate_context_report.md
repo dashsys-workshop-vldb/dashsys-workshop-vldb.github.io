@@ -6,23 +6,23 @@ Candidate context is schema/API retrieval only. It does not use public gold patt
 
 | Metric | Value |
 | --- | ---: |
-| avg_candidate_context_tokens | 4301.4 |
+| avg_candidate_context_tokens | 4306.2286 |
 | avg_full_schema_context_tokens | 4682 |
-| compression_ratio | 0.9187 |
-| table_recall_at_3 | 0.7778 |
-| table_recall_at_5 | 0.9333 |
+| compression_ratio | 0.9197 |
+| table_recall_at_3 | 0.8889 |
+| table_recall_at_5 | 0.9556 |
 | api_recall_at_3 | 0.7581 |
 | api_recall_at_5 | 0.7903 |
 | candidate_low_confidence_count | 2 |
-| candidate_zero_margin_count | 6 |
+| candidate_zero_margin_count | 8 |
 | percent_low_confidence | 0.0571 |
-| percent_zero_margin | 0.1714 |
-| recommended_fallback_rate | 0.1714 |
-| context_mode_distribution | {'candidate': 18, 'expanded_candidate': 11, 'hybrid': 6} |
-| avg_forward_link_count | 34.0286 |
+| percent_zero_margin | 0.2286 |
+| recommended_fallback_rate | 0.2286 |
+| context_mode_distribution | {'candidate': 16, 'expanded_candidate': 11, 'hybrid': 8} |
+| avg_forward_link_count | 34.1429 |
 | avg_backward_link_count | 1.2 |
 | structural_join_preserved_count | 35 |
-| schema_link_risk_distribution | {'low': 29, 'medium': 6} |
+| schema_link_risk_distribution | {'low': 27, 'medium': 8} |
 | cluster_gate_status | retrieval-cluster improvement measured |
 | risk_level_distribution | {'low': 2, 'medium': 5, 'high': 28} |
 | estimated_token_savings_total | 1848.0 |
@@ -39,8 +39,8 @@ Candidate context is schema/API retrieval only. It does not use public gold patt
 | `example_003` |  | /data/foundation/flowservice/flows | 1.0 | 0.165 | candidate |
 | `example_004` |  |  | 0.72 | 0.0 | hybrid |
 | `example_005` |  |  | 0.6 | 0.0 | hybrid |
-| `example_006` |  |  | 0.9246 | 0.41 | candidate |
-| `example_007` | hkg_br_blueprint_collection |  | 0.8635 | 0.92 | candidate |
+| `example_006` |  |  | 0.8726 | 0.0 | hybrid |
+| `example_007` |  |  | 0.6795 | 0.0 | hybrid |
 | `example_009` |  |  | 0.8438 | 0.7 | candidate |
 | `example_010` |  |  | 0.5164 | 0.0 | hybrid |
 | `example_012` | dim_segment | /data/foundation/audit/events | 0.758 | 0.19 | candidate |
@@ -57,9 +57,9 @@ These clusters compare baseline retrieval ordering with the ranking/report-only 
 
 | Cluster | Before | After | Delta | Improved? | Example query IDs | Diagnostic only | Behavior changing? | Likely safe improvement |
 | --- | ---: | ---: | ---: | --- | --- | --- | --- | --- |
-| `zero_score_margin` | 32 | 6 | -26 | True | example_004, example_005, example_010, example_018, example_030, example_034 | True | False | Improve tie-break diagnostics or fall back to hybrid/full schema context; do not force a table choice from a tied score. |
+| `zero_score_margin` | 32 | 8 | -24 | True | example_004, example_005, example_006, example_007, example_010, example_018, example_030, example_034 | True | False | Improve tie-break diagnostics or fall back to hybrid/full schema context; do not force a table choice from a tied score. |
 | `low_confidence` | 14 | 2 | -12 | True | example_030, example_034 | True | False | Use broader context and surface the uncertainty to LLM/controller paths instead of narrowing aggressively. |
-| `missing_gold_table_in_top_k` | 4 | 2 | -2 | True | example_007, example_012 | True | False | Audit schema aliases and structural bridge coverage using schema-level signals only. |
+| `missing_gold_table_in_top_k` | 4 | 1 | -3 | True | example_012 | True | False | Audit schema aliases and structural bridge coverage using schema-level signals only. |
 | `missing_gold_api_in_top_k` | 15 | 7 | -8 | True | example_003, example_012, example_018, example_030, example_031, example_032, example_034 | True | False | Improve endpoint catalog descriptions and API-family aliases without using public answer patterns. |
 | `broad_domain_api_confusion` | 4 | 1 | -3 | True | example_012 | True | False | Add endpoint-family labels and confidence diagnostics for broad platform/API intents. |
 | `schema_vs_dataset_confusion` | 4 | 0 | -4 | True |  | True | False | Clarify schema-vs-dataset table/API affordances in retrieval-only metadata. |
@@ -109,8 +109,8 @@ This section is diagnostic only. Token/runtime savings are estimates from module
 | `example_003` | high | high - risk_cluster:missing_gold_api_in_top_k, missing_candidate_apis | none | 0 | 0 | True |
 | `example_004` | high | high - zero_score_margin, risk_cluster:zero_score_margin | none | 0 | 0 | True |
 | `example_005` | high | high - zero_score_margin, risk_cluster:zero_score_margin | none | 0 | 0 | True |
-| `example_006` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 | True |
-| `example_007` | high | high - risk_cluster:missing_gold_api_in_top_k, missing_candidate_tables | none | 0 | 0 | True |
+| `example_006` | high | high - zero_score_margin, risk_cluster:zero_score_margin | none | 0 | 0 | True |
+| `example_007` | high | high - zero_score_margin, risk_cluster:zero_score_margin | none | 0 | 0 | True |
 | `example_008` | medium | medium - candidate confidence or endpoint confidence is not strong enough for compact-only diagnostics | value_retrieval, shadow_repair, repair_safety_verifier, schema_context_voting | 264 | 25.0 | True |
 | `example_009` | high | high - risk_cluster:missing_gold_api_in_top_k | none | 0 | 0 | True |
 | `example_010` | high | high - zero_score_margin, risk_cluster:zero_score_margin | none | 0 | 0 | True |
@@ -151,14 +151,14 @@ Schema voting compares compact candidate context against broader hybrid/full con
 | `example_003` | True | True | True | compact and fallback top candidates agree | 1596 | dim_segment, dim_collection, dim_target, hkg_br_segment_target | dim_segment, dim_collection, dim_target, hkg_br_segment_target |
 | `example_004` | True | True | True | compact and fallback top candidates agree | 1060 | dim_connector, dim_target, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment | dim_connector, dim_target, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment |
 | `example_005` | True | True | True | compact and fallback top candidates agree | 1363 | dim_connector, dim_target, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment | hkg_br_base_segment_used_by_dependent_segment, dim_connector, dim_target, br_campaign_segment |
-| `example_006` | True | True | True | compact and fallback top candidates agree | 1281 | hkg_br_blueprint_collection, dim_blueprint, hkg_br_blueprint_property, dim_collection | hkg_br_blueprint_collection, dim_blueprint, hkg_br_blueprint_property, dim_collection |
-| `example_007` | True | True | True | compact and fallback top candidates agree | 1156 | dim_blueprint, dim_segment, br_campaign_segment, dim_collection | dim_blueprint, hkg_br_base_segment_used_by_dependent_segment, dim_segment, br_campaign_segment |
+| `example_006` | True | True | True | compact and fallback top candidates agree | 1281 | dim_blueprint, dim_collection, hkg_br_blueprint_collection, hkg_br_blueprint_property | dim_blueprint, dim_collection, hkg_br_blueprint_collection, hkg_br_blueprint_property |
+| `example_007` | True | True | True | compact and fallback top candidates agree | 1150 | dim_blueprint, dim_collection, dim_segment, br_campaign_segment | dim_blueprint, dim_collection, hkg_br_base_segment_used_by_dependent_segment, dim_segment |
 | `example_008` | False | None | None | schema voting is reserved for high-risk diagnostics | None |  |  |
 | `example_009` | True | True | True | compact and fallback top candidates agree | 1095 | dim_blueprint, hkg_br_blueprint_collection, dim_collection, hkg_br_blueprint_property | dim_blueprint, hkg_br_blueprint_collection, dim_collection, hkg_br_blueprint_property |
 | `example_010` | True | True | True | compact and fallback top candidates agree | 1179 | dim_blueprint, dim_collection, dim_segment, br_campaign_segment | dim_blueprint, dim_collection, dim_segment, br_campaign_segment |
 | `example_011` | True | True | True | compact and fallback top candidates agree | 1316 | hkg_br_blueprint_collection, dim_blueprint, dim_collection, br_campaign_segment | hkg_br_blueprint_collection, dim_blueprint, dim_collection, br_campaign_segment |
 | `example_012` | True | True | True | compact and fallback top candidates agree | 1498 | dim_target, hkg_br_blueprint_collection, hkg_br_blueprint_property, dim_connector | dim_target, hkg_br_blueprint_collection, hkg_br_blueprint_property, dim_connector |
-| `example_013` | True | True | True | compact and fallback top candidates agree | 1346 | hkg_br_blueprint_collection, dim_blueprint, hkg_br_blueprint_property, dim_collection | hkg_br_blueprint_collection, dim_blueprint, hkg_br_blueprint_property, dim_collection |
+| `example_013` | True | True | True | compact and fallback top candidates agree | 1346 | hkg_br_blueprint_collection, dim_blueprint, dim_collection, hkg_br_blueprint_property | hkg_br_blueprint_collection, dim_blueprint, dim_collection, hkg_br_blueprint_property |
 | `example_014` | False | None | None | schema voting is reserved for high-risk diagnostics | None |  |  |
 | `example_015` | True | True | True | compact and fallback top candidates agree | 1046 | hkg_br_blueprint_property, dim_blueprint, dim_campaign, dim_segment | hkg_br_blueprint_collection, hkg_br_blueprint_property, dim_blueprint, dim_campaign |
 | `example_016` | True | True | True | compact and fallback top candidates agree | 1217 | hkg_br_blueprint_property, dim_blueprint, dim_campaign, dim_segment | hkg_br_blueprint_collection, hkg_br_blueprint_property, dim_blueprint, dim_campaign |
@@ -233,14 +233,14 @@ Used gold patterns: False
 | `example_003` | dim_segment, dim_collection, dim_target, hkg_br_segment_target, hkg_br_base_segment_used_by_dependent_segment | ups_audiences, segment_definitions, audit_events, audit_events_short, segment_jobs | 1.0 | candidate | False |
 | `example_004` | dim_connector, dim_target, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment, hkg_br_collection_segment | flowservice_runs, flowservice_flows, export_batch_failed, audit_events, audit_events_short | 0.72 | hybrid | False |
 | `example_005` | dim_connector, dim_target, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment, hkg_br_blueprint_collection | export_batch_files, export_batch_failed, flowservice_flows, audit_events, catalog_datasets | 0.6 | hybrid | False |
-| `example_006` | hkg_br_blueprint_collection, dim_blueprint, hkg_br_blueprint_property, dim_collection, dim_campaign | catalog_datasets, export_batch_files, schema_registry_schema, schema_registry_schemas, audit_events | 0.9246 | candidate | False |
-| `example_007` | dim_blueprint, dim_segment, br_campaign_segment, dim_collection, hkg_br_blueprint_property | schema_registry_schema, schema_registry_schemas, catalog_datasets, schemas_short, catalog_batches | 0.8635 | candidate | False |
+| `example_006` | dim_blueprint, dim_collection, hkg_br_blueprint_collection, hkg_br_blueprint_property, dim_campaign | catalog_datasets, export_batch_files, schema_registry_schema, schema_registry_schemas, audit_events | 0.8726 | hybrid | False |
+| `example_007` | dim_blueprint, dim_collection, dim_segment, br_campaign_segment, hkg_br_blueprint_collection | schema_registry_schema, schema_registry_schemas, catalog_datasets, schemas_short, catalog_batches | 0.6795 | hybrid | False |
 | `example_008` | hkg_br_segment_property, dim_collection, dim_segment, hkg_br_base_segment_used_by_dependent_segment, br_campaign_segment | audit_events, audit_events_short, export_batch_failed, export_batch_files, schema_registry_schema | 0.8187 | candidate | False |
 | `example_009` | dim_blueprint, hkg_br_blueprint_collection, dim_collection, hkg_br_blueprint_property, hkg_br_collection_property | schemas_short, schema_registry_schemas, schema_registry_schema, audit_events, audit_events_short | 0.8438 | candidate | False |
 | `example_010` | dim_blueprint, dim_collection, dim_segment, br_campaign_segment, hkg_br_blueprint_property | schemas_short, schema_registry_schemas, audit_events, audit_events_short, catalog_batches | 0.5164 | hybrid | False |
 | `example_011` | hkg_br_blueprint_collection, dim_blueprint, dim_collection, br_campaign_segment, hkg_br_collection_segment | schema_registry_schemas, schemas_short, schema_registry_schema, audit_events, audit_events_short | 0.9831 | candidate | False |
 | `example_012` | dim_target, hkg_br_blueprint_collection, hkg_br_blueprint_property, dim_connector, dim_blueprint | ups_audiences, segment_definitions, export_batch_files, flowservice_flows, merge_policies | 0.758 | candidate | False |
-| `example_013` | hkg_br_blueprint_collection, dim_blueprint, hkg_br_blueprint_property, dim_collection, dim_segment | catalog_datasets, audit_events, export_batch_files, audit_events_short, catalog_batch_detail | 0.9387 | candidate | False |
+| `example_013` | hkg_br_blueprint_collection, dim_blueprint, dim_collection, hkg_br_blueprint_property, dim_segment | catalog_datasets, audit_events, export_batch_files, audit_events_short, catalog_batch_detail | 0.9387 | candidate | False |
 | `example_014` | hkg_br_base_segment_used_by_dependent_segment, hkg_br_segment_target, dim_collection, dim_segment, dim_target | audit_events, audit_events_short, catalog_batch_detail, export_batch_files, catalog_batches | 0.8284 | candidate | False |
 | `example_015` | hkg_br_blueprint_property, dim_blueprint, dim_campaign, dim_segment, hkg_br_blueprint_collection | unified_tags, unified_tag_categories, unified_tag_detail, export_batch_files, audit_events | 0.7387 | expanded_candidate | False |
 | `example_016` | hkg_br_blueprint_property, dim_blueprint, dim_campaign, dim_segment, hkg_br_blueprint_collection | unified_tags, unified_tag_categories, export_batch_files, journey_list, unified_tag_detail | 0.7387 | expanded_candidate | False |
@@ -260,7 +260,7 @@ Used gold patterns: False
 | `example_030` | br_campaign_segment, hkg_br_blueprint_property, hkg_br_collection_property, hkg_br_collection_segment, hkg_br_segment_property | catalog_batch_detail, export_batch_failed, export_batch_files, schema_registry_schema, unified_tag_detail | 0.2636 | hybrid | False |
 | `example_031` | dim_segment, hkg_br_blueprint_collection, dim_collection, dim_blueprint, hkg_br_blueprint_property | export_batch_files, audit_events, audit_events_short, export_batch_failed, catalog_batch_detail | 0.758 | candidate | False |
 | `example_032` | dim_campaign, dim_segment, br_campaign_segment, hkg_br_blueprint_property, hkg_br_collection_property | export_batch_failed, export_batch_files, catalog_batch_detail, audit_events, audit_events_short | 0.47 | expanded_candidate | False |
-| `example_033` | dim_campaign, br_campaign_segment, hkg_br_blueprint_property, hkg_br_collection_property, hkg_br_collection_segment | observability_metrics, catalog_batches, catalog_datasets, audit_events, audit_events_short | 0.548 | expanded_candidate | False |
+| `example_033` | dim_collection, dim_campaign, br_campaign_segment, hkg_br_blueprint_property, hkg_br_collection_property | observability_metrics, catalog_batches, catalog_datasets, audit_events, audit_events_short | 0.562 | expanded_candidate | False |
 | `example_034` | dim_campaign, dim_segment, br_campaign_segment, hkg_br_blueprint_property, hkg_br_collection_property | ups_audiences, audit_events, audit_events_short, catalog_datasets, export_batch_failed | 0.33 | hybrid | False |
 
 ## Robust Schema Linking Metrics
@@ -273,14 +273,14 @@ Used gold patterns: False
 | `example_003` | 88 | 21 | True | 1.0 | low | strong bidirectional links; structural bridge preserved |
 | `example_004` | 72 | 0 | True | 1.0 | medium | weak schema links or small score margin; structural bridge preserved |
 | `example_005` | 150 | 0 | True | 0.98 | medium | weak schema links or small score margin; structural bridge preserved |
-| `example_006` | 25 | 0 | True | 1.0 | low | strong bidirectional links; structural bridge preserved |
-| `example_007` | 3 | 1 | True | 1.0 | low | strong bidirectional links; structural bridge preserved |
+| `example_006` | 26 | 0 | True | 1.0 | medium | weak schema links or small score margin; structural bridge preserved |
+| `example_007` | 4 | 1 | True | 0.9545 | medium | weak schema links or small score margin; structural bridge preserved |
 | `example_008` | 61 | 1 | True | 1.0 | low | strong bidirectional links; structural bridge preserved |
 | `example_009` | 1 | 0 | True | 0.9788 | low | strong bidirectional links; structural bridge preserved |
 | `example_010` | 14 | 1 | True | 0.8964 | medium | weak schema links or small score margin; structural bridge preserved |
 | `example_011` | 113 | 0 | True | 1.0 | low | strong bidirectional links; structural bridge preserved |
 | `example_012` | 32 | 1 | True | 1.0 | low | strong bidirectional links; structural bridge preserved |
-| `example_013` | 22 | 0 | True | 1.0 | low | strong bidirectional links; structural bridge preserved |
+| `example_013` | 23 | 0 | True | 1.0 | low | strong bidirectional links; structural bridge preserved |
 | `example_014` | 79 | 0 | True | 1.0 | low | strong bidirectional links; structural bridge preserved |
 | `example_015` | 27 | 0 | True | 1.0 | low | strong bidirectional links; structural bridge preserved |
 | `example_016` | 27 | 0 | True | 1.0 | low | strong bidirectional links; structural bridge preserved |
@@ -300,7 +300,7 @@ Used gold patterns: False
 | `example_030` | 3 | 0 | True | 0.4686 | medium | weak schema links or small score margin; structural bridge preserved |
 | `example_031` | 26 | 0 | True | 1.0 | low | strong bidirectional links; structural bridge preserved |
 | `example_032` | 8 | 0 | True | 0.85 | low | strong bidirectional links; structural bridge preserved |
-| `example_033` | 8 | 0 | True | 0.928 | low | strong bidirectional links; structural bridge preserved |
+| `example_033` | 9 | 0 | True | 0.942 | low | strong bidirectional links; structural bridge preserved |
 | `example_034` | 7 | 0 | True | 0.675 | medium | weak schema links or small score margin; structural bridge preserved |
 
 ## Hybrid Ranking Diagnostics
@@ -313,8 +313,8 @@ Used gold patterns: False
 | `example_003` | True | 2.965 | 0.165 | segment_definitions | 1.0 | True |
 | `example_004` | True | 1.8 | 0.0 | flow_runs | 1.0 | True |
 | `example_005` | True | 1.8 | 0.0 | None | 0.0 | True |
-| `example_006` | True | 2.21 | 0.41 | dataset_list | 0.8825 | True |
-| `example_007` | True | 1.7 | 0.92 | schema_detail | 0.94 | True |
+| `example_006` | True | 2.3 | 0.0 | dataset_list | 0.8825 | True |
+| `example_007` | True | 1.7 | 0.0 | schema_detail | 0.94 | True |
 | `example_008` | True | 2.21 | 0.41 | None | 0.0 | False |
 | `example_009` | True | 1.8 | 0.7 | schema_list | 0.865 | True |
 | `example_010` | True | 1.2 | 0.0 | schema_list | 0.97 | True |
@@ -340,5 +340,5 @@ Used gold patterns: False
 | `example_030` | True | 0.5 | 0.0 | batch_details | 0.8075 | False |
 | `example_031` | True | 1.8 | 0.19 | batch_files | 1.0 | True |
 | `example_032` | True | 0.96 | 0.15 | batch_failed_files | 1.0 | True |
-| `example_033` | True | 0.99 | 0.49 | observability_metrics | 1.0 | False |
+| `example_033` | True | 1.2 | 0.21 | observability_metrics | 1.0 | False |
 | `example_034` | True | 0.99 | 0.0 | None | 0.0 | False |

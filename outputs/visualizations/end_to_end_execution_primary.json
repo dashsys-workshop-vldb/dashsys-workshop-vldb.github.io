@@ -1,0 +1,280 @@
+{
+  "checkpoint_timeline": [
+    {
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "impact": "keeps later normalization from changing the user-facing question",
+      "input": "unavailable",
+      "order": 1,
+      "output": "query=Which files are available for download in batch 69de8a0e0...; query_id=example_031; strategy=SQL_FIRST_API_VERIFY",
+      "stage": "input",
+      "technique": "raw user query capture",
+      "what_changed": "preserves the original query for reproducibility"
+    },
+    {
+      "checkpoint_id": "checkpoint_00_prompt_router",
+      "impact": "routes data questions to evidence tools instead of unsupported direct answers",
+      "input": "query=Which files are available for download in batch 69de8a0e0...",
+      "order": 2,
+      "output": "confidence=0.9; reason=API/platform family keyword(s): batch, file, files.",
+      "stage": "prompt routing",
+      "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
+      "what_changed": "chooses whether the prompt can be answered directly or needs SQL/API evidence"
+    },
+    {
+      "checkpoint_id": "checkpoint_simple_prompt_gate",
+      "impact": "prevents direct answers for data questions that need SQL/API evidence",
+      "input": "query=Which files are available for download in batch 69de8a0e0...",
+      "order": 3,
+      "output": "confidence=0.9; is_simple=False; suggested_action=USE_DATA_PIPELINE; reason=API/platform family keyword(s): batch, file, files.",
+      "stage": "input routing",
+      "technique": "simple prompt gate",
+      "what_changed": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend"
+    },
+    {
+      "checkpoint_id": "checkpoint_02_query_normalization",
+      "impact": "improves template and route matching across wording variants",
+      "input": "query=Which files are available for download in batch 69de8a0e0...",
+      "order": 4,
+      "output": "normalized_query=Which files are available for download in batch 69de8a0e0...; matching_text=which file are available for downl...",
+      "stage": "normalization",
+      "technique": "data cleaning / query normalization",
+      "what_changed": "creates matching-friendly text while preserving the original query"
+    },
+    {
+      "checkpoint_id": "checkpoint_03_query_tokens",
+      "impact": "grounds names, IDs, dates, metrics, and statuses before planning",
+      "input": "normalized_query=Which files are available for download in batch 69de8a0e0...",
+      "order": 5,
+      "output": "ids=1; domains=2 item(s)",
+      "stage": "tokenization",
+      "technique": "domain-aware tokenization/entity extraction",
+      "what_changed": "extracts reusable query fields for routing, planning, and answers"
+    },
+    {
+      "checkpoint_id": "checkpoint_04_relevance_scoring",
+      "impact": "keeps high-signal tables and endpoints near the planner",
+      "input": "tokens=2 field(s)",
+      "order": 6,
+      "output": "top_answer_families=1 item(s); top_apis=3 item(s)",
+      "stage": "context selection",
+      "technique": "attention-style relevance scoring",
+      "what_changed": "selects a smaller, more relevant schema/API context"
+    },
+    {
+      "checkpoint_id": "checkpoint_value_entity_retrieval",
+      "impact": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
+      "input": "query_values=2 item(s)",
+      "order": 7,
+      "output": "active=True; cache_hit=True; cache_key=a2f6025ad4340fb6; cache_key_algorithm=sha256",
+      "stage": "query understanding",
+      "technique": "CHESS-style value/entity retrieval",
+      "what_changed": "grounds query entities against sampled local DB values before planning"
+    },
+    {
+      "checkpoint_id": "checkpoint_05_query_analysis",
+      "impact": "aligns routing, metadata, planning, and reporting decisions",
+      "input": "route_type=API_ONLY; domain_type=UNKNOWN",
+      "order": 8,
+      "output": "strategy=SQL_FIRST_API_VERIFY; route_type=API_ONLY; domain_type=UNKNOWN; answer_family=batch",
+      "stage": "routing",
+      "technique": "branch prediction / QueryAnalysis",
+      "what_changed": "computes shared query understanding once"
+    },
+    {
+      "checkpoint_id": "checkpoint_06_lookup_path",
+      "impact": "guides relationship-heavy SQL/API selection",
+      "input": "domain_type=UNKNOWN; answer_family=batch",
+      "order": 9,
+      "output": "api_mode=required",
+      "stage": "path prediction",
+      "technique": "TLB-style lookup path prediction",
+      "what_changed": "predicts the relevant table/join/API path"
+    },
+    {
+      "checkpoint_id": "checkpoint_07_context_card",
+      "impact": "keeps required tables, columns, joins, and API candidates visible",
+      "input": "lookup_path=batch",
+      "order": 10,
+      "output": "estimated_metadata_tokens=1000; prompt_tokens=1673; selected_apis=1 item(s); selected_card_name=batch",
+      "stage": "metadata packing",
+      "technique": "huge-page-style compact context card",
+      "what_changed": "packs family-relevant context into metadata.json and the filled prompt"
+    },
+    {
+      "checkpoint_id": "checkpoint_08_candidate_plans",
+      "impact": "prefers validated, family-matched plans",
+      "input": "strategy=SQL_FIRST_API_VERIFY",
+      "order": 11,
+      "output": "selected_plan=generic_sql_first",
+      "stage": "planning",
+      "technique": "pre-execution plan ensemble",
+      "what_changed": "selects one plan before execution"
+    },
+    {
+      "checkpoint_id": "checkpoint_09_plan_optimization",
+      "impact": "drops unresolved placeholder calls unless explicitly warned",
+      "input": "original_step_count=1",
+      "order": 12,
+      "output": "call_budget_applied=False; optimized_step_count=1; optimizer_actions=1 item(s); original_step_count=1",
+      "stage": "optimization",
+      "technique": "compiler-style plan optimization",
+      "what_changed": "removes duplicate, skippable, or unsafe calls before validation"
+    },
+    {
+      "checkpoint_id": "checkpoint_10_evidence_policy",
+      "impact": "keeps API calls for API-only/live families",
+      "input": "route_type=API_ONLY; answer_family=batch",
+      "order": 13,
+      "output": "reason=Route is API-only.",
+      "stage": "evidence policy",
+      "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
+      "what_changed": "decides when API evidence is required, optional, or unnecessary"
+    },
+    {
+      "checkpoint_id": "checkpoint_11_call_budget",
+      "impact": "preserves required grounding steps",
+      "input": "planned_steps=1 item(s)",
+      "order": 14,
+      "output": "planned_sql_calls=0; planned_api_calls=1",
+      "stage": "efficiency control",
+      "technique": "tool-call budgeting",
+      "what_changed": "keeps tool calls within per-family limits"
+    },
+    {
+      "checkpoint_id": "checkpoint_12_validation",
+      "impact": "blocks unsafe SQL and unknown/unresolved API calls",
+      "input": "optimized_steps=1 item(s)",
+      "order": 15,
+      "output": "api_validation_status=1 item(s)",
+      "stage": "validation",
+      "technique": "SQL/API safety validation",
+      "what_changed": "records whether planned SQL/API calls were safe to execute"
+    },
+    {
+      "checkpoint_id": "checkpoint_13_tool_execution",
+      "impact": "records row counts, dry-run state, and API status for final answer grounding",
+      "input": "validated_step_count=1",
+      "order": 16,
+      "output": "sql_calls_executed=0; api_calls_executed=1",
+      "stage": "execution",
+      "technique": "SQL/API tool execution",
+      "what_changed": "captures the actual SQL/API evidence gathered by the backend"
+    },
+    {
+      "checkpoint_id": "checkpoint_14_evidence_bus",
+      "impact": "passes exact IDs, names, counts, timestamps, and statuses without text guessing",
+      "input": "tool_result_count=1",
+      "order": 17,
+      "output": "{}",
+      "stage": "evidence forwarding",
+      "technique": "operand forwarding / EvidenceBus",
+      "what_changed": "forwards structured facts to API params and answer slots"
+    },
+    {
+      "checkpoint_id": "checkpoint_15_answer_slots",
+      "impact": "makes final response generation evidence-grounded",
+      "input": "tool_result_count=1",
+      "order": 18,
+      "output": "answer_intent=LIST",
+      "stage": "answer synthesis",
+      "technique": "structured answer slot extraction",
+      "what_changed": "turns raw tool results into typed evidence fields"
+    },
+    {
+      "checkpoint_id": "checkpoint_16_answer_verification",
+      "impact": "blocks unsupported numbers, entities, timestamps, statuses, and dry-run API confirmation",
+      "input": "claim_count=0; slots_present=1 item(s)",
+      "order": 19,
+      "output": "verifier_passed=True",
+      "stage": "answer verification",
+      "technique": "claim verification / groundedness checking",
+      "what_changed": "checks final-answer claims against SQL/API evidence"
+    },
+    {
+      "checkpoint_id": "checkpoint_17_answer_reranking",
+      "impact": "prefers verifier-passing and intent-matched answers",
+      "input": "answer_family=batch",
+      "order": 20,
+      "output": "candidate_count=0; selected_candidate_type=base; selection_reason=best verifier-passing answer",
+      "stage": "answer selection",
+      "technique": "deterministic answer reranking",
+      "what_changed": "selects the safest answer from same-evidence candidates"
+    },
+    {
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "impact": "final answer remains tied to evidence and caveats",
+      "input": "verifier_passed=True",
+      "order": 21,
+      "output": "answer_length=127; final_answer=Batch file details require live API evidence. Live API ve...",
+      "stage": "final response",
+      "technique": "concise grounded final response",
+      "what_changed": "returns the final concise answer to the agent harness"
+    },
+    {
+      "checkpoint_id": "checkpoint_official_token_reduction",
+      "impact": "observability",
+      "input": "unavailable",
+      "order": 22,
+      "output": "unavailable",
+      "stage": "query understanding",
+      "technique": "unavailable",
+      "what_changed": "Recorded the stage output in trajectory."
+    }
+  ],
+  "decision_flow": [
+    {
+      "decision": "Route selected",
+      "reason": "Batch/file prompt classified as API_ONLY batch family.",
+      "value": "API_ONLY"
+    },
+    {
+      "decision": "SQL used?",
+      "reason": "No local SQL call in the packaged trajectory.",
+      "value": "no"
+    },
+    {
+      "decision": "API used?",
+      "reason": "Endpoint catalog validates the batch files API call.",
+      "value": "yes"
+    },
+    {
+      "decision": "Dry-run happened?",
+      "reason": "Adobe credentials unavailable, so live payload was not executed.",
+      "value": "yes"
+    },
+    {
+      "decision": "Answer rewrite promoted?",
+      "reason": "Supportable/LLM rewrites remain shadow or isolated; packaged answer stays honest.",
+      "value": "no"
+    }
+  ],
+  "evidence_flow": [
+    {
+      "detail": "API_ONLY route; sql_call_count=0",
+      "name": "SQL evidence",
+      "status": "not used"
+    },
+    {
+      "detail": "sql_calls_executed=0; api_calls_executed=1",
+      "name": "API evidence",
+      "status": "dry-run"
+    },
+    {
+      "detail": "No promoted local-evidence answer path for this row.",
+      "name": "Local evidence",
+      "status": "not in packaged final answer"
+    },
+    {
+      "detail": "answer_intent=LIST",
+      "name": "Unsupported claims",
+      "status": "not fabricated"
+    }
+  ],
+  "flowchart": "\nflowchart LR\n  A[\"Raw prompt\"] --> B[\"Routing\"]\n  B --> C[\"Normalize + tokens\"]\n  C --> D[\"Query analysis\"]\n  D --> E[\"Metadata/context\"]\n  E --> F[\"Planning\"]\n  F --> G[\"Validation + budget\"]\n  G --> H[\"Execution\"]\n  H --> I[\"Evidence bus\"]\n  I --> J[\"Answer synthesis\"]\n  J --> K[\"Verifier/reranker\"]\n  K --> L[\"Final answer\"]\n  L --> M[\"Trajectory + reports\"]\n",
+  "page": "end_to_end_execution_primary",
+  "query_id": "example_031",
+  "raw_prompt": "Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?",
+  "route_type": "API_ONLY",
+  "sequence_diagram": "\nsequenceDiagram\n  participant User\n  participant Router\n  participant Normalizer\n  participant Analysis as Query Analysis\n  participant Metadata as Metadata Selector\n  participant Planner\n  participant SQL as SQL Template\n  participant API as API Template\n  participant Validator\n  participant Executor\n  participant Evidence as Evidence Bus\n  participant Answer as Answer Synthesizer\n  participant Verify as Verifier/Reranker\n  participant Output as Final Output\n  User->>Router: raw prompt\n  Router->>Normalizer: use data pipeline\n  Normalizer->>Analysis: normalized text + tokens\n  Analysis->>Metadata: route intent + answer family\n  Metadata->>Planner: compact context\n  Planner->>API: batch files endpoint plan\n  Planner->>SQL: no SQL call for API-only route\n  API->>Validator: method/path/params\n  Validator->>Executor: safe API call\n  Executor->>Evidence: dry-run API label\n  Evidence->>Answer: evidence objects + missing payload\n  Answer->>Verify: grounded final answer\n  Verify->>Output: honest dry-run response\n",
+  "strategy": "SQL_FIRST_API_VERIFY"
+}

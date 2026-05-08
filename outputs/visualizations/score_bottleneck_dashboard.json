@@ -1,0 +1,105 @@
+{
+  "blockers": [
+    {
+      "blocker": "Answer-score bottleneck",
+      "evidence": "example_031 API score=1.0, answer score=0.1055",
+      "meaning": "Dry-run API evidence lacks live payload, so files cannot be listed safely."
+    },
+    {
+      "blocker": "Dry-run dependency",
+      "evidence": "live credentials visible=False; dry-run rows=34",
+      "meaning": "The packaged path must not fabricate live API payload values."
+    },
+    {
+      "blocker": "No accepted LLM candidates",
+      "evidence": "accepted=0; candidates=6",
+      "meaning": "LLM rewrite search remains shadow-only and did not add a promoted candidate."
+    },
+    {
+      "blocker": "Endpoint tie-break not promotable",
+      "evidence": "trial eligible rows=0",
+      "meaning": "Tie-break v2 did not produce a safe positive trial set."
+    },
+    {
+      "blocker": "Answer-shape v2 not promotable",
+      "evidence": "recommendation=safe_for_answer_shape_v2_trial; projected=0.6497",
+      "meaning": "Answer-shape v2 remains default-off because gates did not justify promotion."
+    },
+    {
+      "blocker": "Live credentials missing",
+      "evidence": "credentials visible=False",
+      "meaning": "Live-readiness is diagnostic only and cannot change dry-run answers by itself."
+    }
+  ],
+  "page": "score_bottleneck_dashboard",
+  "primary_example": {
+    "answer_score": 0.1055,
+    "api_score": 1.0,
+    "main_bottleneck": "Dry-run API evidence lacks live payload, so files cannot be listed safely.",
+    "query_id": "example_031",
+    "raw_prompt": "Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?",
+    "strict_score": 0.5346
+  },
+  "score_graph": "\nflowchart LR\n  A[\"Packaged 0.6491\"] --> B[\"Best isolated 0.6558\"]\n  B --> C[\"Target 0.75\"]\n  A --> D[\"Submit-ready\"]\n  C --> E[\"Not winner-ready yet\"]\n  F[\"Main blockers\"] --> G[\"Answer weakness\"]\n  F --> H[\"Dry-run payload missing\"]\n  F --> I[\"No accepted LLM candidates\"]\n  F --> J[\"Shadow/default-off not promotable\"]\n",
+  "state": {
+    "answer_shape_v2": {
+      "projected_score": 0.6497,
+      "recommendation": "safe_for_answer_shape_v2_trial",
+      "safe_rows": 7,
+      "state": "default_off"
+    },
+    "best_isolated_score": 0.6558,
+    "compact_context": {
+      "enabled": false,
+      "state": "default_off"
+    },
+    "correctness": 0.6743,
+    "endpoint_tiebreak": {
+      "recommendation": "keep_shadow_only",
+      "state": "shadow_only",
+      "trial_eligible_rows": 0
+    },
+    "final_recommendation": "ready_to_submit_with_official_token_reduction",
+    "final_submission_ready": true,
+    "hidden_style": "48/48",
+    "hidden_style_detail": {
+      "failed_cases": 0,
+      "family_stability_rate": 1.0,
+      "passed_cases": 48,
+      "schema_stability_rate": 1.0,
+      "top_failure_categories": [],
+      "total_cases": 48
+    },
+    "live": {
+      "credentials_visible": false,
+      "dry_run_dependent_rows": 34,
+      "state": "diagnostic_only"
+    },
+    "llm": {
+      "accepted": 0,
+      "candidate_count": 6,
+      "model": "openrouter/free",
+      "provider": "openrouter",
+      "state": "shadow_only"
+    },
+    "no_secret_scan_ok": true,
+    "official_token_reduction": {
+      "enabled": true,
+      "state": "promoted_default"
+    },
+    "packaged_strict_score": 0.6491,
+    "preferred_strategy": "SQL_FIRST_API_VERIFY",
+    "repair": {
+      "enabled": false,
+      "state": "default_off"
+    },
+    "runtime": 0.0113,
+    "sql_only_api_skip": {
+      "rows": 0,
+      "state": "default_off"
+    },
+    "target_score": 0.75,
+    "tokens": 831.4571,
+    "tool_calls": 1.4571
+  }
+}

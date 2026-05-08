@@ -11,6 +11,7 @@ if str(ROOT) not in sys.path:
 
 from visualization_report_helpers import (  # noqa: E402
     VIS_DIR,
+    how_to_read_page,
     load_json,
     required_visualization_files,
     table,
@@ -60,15 +61,32 @@ def build_entries() -> list[dict[str, Any]]:
 
 def build_markdown(payload: dict[str, Any]) -> str:
     summary = payload["summary"]
-    rows = []
+    supervisor_files = {
+        "executive_dashboard.md",
+        "prompt_storyboard_primary.md",
+        "prompt_transformation_primary.md",
+        "end_to_end_execution_primary.md",
+        "technique_pipeline_map.md",
+        "technique_visual_cards.md",
+        "system_status_dashboard.md",
+        "score_bottleneck_dashboard.md",
+    }
+    supervisor_rows = []
+    detail_rows = []
     for entry in payload["entries"]:
         link = f"[{entry['file']}]({entry['link']})" if entry.get("link") else entry["file"]
-        rows.append([link, entry["kind"], entry["exists"]])
+        row = [link, entry["kind"], entry["exists"]]
+        if entry["file"] in supervisor_files:
+            supervisor_rows.append(row)
+        else:
+            detail_rows.append(row)
     return "\n".join(
         [
             "# DASHSys Visualization Index",
             "",
             "This index links the supervisor-facing visualization suite. Every artifact is generated under `outputs/visualizations/` and is based on current repo reports/trajectories.",
+            "",
+            how_to_read_page("Supervisor-Facing Pages list"),
             "",
             "## At a Glance",
             "",
@@ -81,11 +99,17 @@ def build_markdown(payload: dict[str, Any]) -> str:
                     ["Best isolated score", summary.get("best_isolated_score")],
                     ["Final recommendation", summary.get("final_recommendation")],
                 ],
-            ),
+                ),
             "",
-            "## Core Views",
+            "## Supervisor-Facing Pages",
             "",
-            table(["Artifact", "Kind", "Exists"], rows),
+            "Start here. These pages are diagram/card-first and designed for a quick walkthrough with a supervisor.",
+            "",
+            table(["Artifact", "Kind", "Exists"], supervisor_rows),
+            "",
+            "## Detailed Reference Views",
+            "",
+            table(["Artifact", "Kind", "Exists"], detail_rows),
             "",
         ]
     )

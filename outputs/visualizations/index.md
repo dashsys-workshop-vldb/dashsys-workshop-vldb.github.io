@@ -2,22 +2,51 @@
 
 This index links the supervisor-facing visualization suite. Every artifact is generated under `outputs/visualizations/` and is based on current repo reports/trajectories.
 
+## How To Read This Page
+
+1. Start from the Supervisor-Facing Pages list.
+2. Follow the arrows/cards to see how DASHSys transforms prompt, data, and evidence.
+3. Use badges to distinguish packaged, shadow, default-off, diagnostic, and blocked techniques.
+
 ## At a Glance
 
 | Field | Value |
 | --- | --- |
-| Required files | 26/26 |
+| Required files | 42/42 |
 | Technique count | 45 |
 | Packaged strict final score | 0.6491 |
 | Best isolated score | 0.6558 |
 | Final recommendation | ready_to_submit_with_official_token_reduction |
 
-## Core Views
+## Supervisor-Facing Pages
+
+Start here. These pages are diagram/card-first and designed for a quick walkthrough with a supervisor.
+
+| Artifact | Kind | Exists |
+| --- | --- | --- |
+| [executive_dashboard.md](executive_dashboard.md) | markdown | True |
+| [prompt_storyboard_primary.md](prompt_storyboard_primary.md) | markdown | True |
+| [prompt_transformation_primary.md](prompt_transformation_primary.md) | markdown | True |
+| [end_to_end_execution_primary.md](end_to_end_execution_primary.md) | markdown | True |
+| [technique_pipeline_map.md](technique_pipeline_map.md) | markdown | True |
+| [technique_visual_cards.md](technique_visual_cards.md) | markdown | True |
+| [system_status_dashboard.md](system_status_dashboard.md) | markdown | True |
+| [score_bottleneck_dashboard.md](score_bottleneck_dashboard.md) | markdown | True |
+
+## Detailed Reference Views
 
 | Artifact | Kind | Exists |
 | --- | --- | --- |
 | [index.md](index.md) | markdown | True |
 | index.json | json | True |
+| executive_dashboard.json | json | True |
+| prompt_storyboard_primary.json | json | True |
+| prompt_transformation_primary.json | json | True |
+| end_to_end_execution_primary.json | json | True |
+| technique_pipeline_map.json | json | True |
+| technique_visual_cards.json | json | True |
+| system_status_dashboard.json | json | True |
+| score_bottleneck_dashboard.json | json | True |
 | [technique_catalog.md](technique_catalog.md) | markdown | True |
 | technique_catalog.json | json | True |
 | [system_end_to_end.md](system_end_to_end.md) | markdown | True |
