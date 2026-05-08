@@ -85,14 +85,15 @@ sequenceDiagram
   Normalizer->>Analysis: normalized text + tokens
   Analysis->>Metadata: route intent + answer family
   Metadata->>Planner: compact context
-  Planner->>API: batch files endpoint plan
-  Planner->>SQL: no SQL call for API-only route
+  Planner->>SQL: schema count SQL
+  Planner->>API: schema verification call
+  SQL->>Validator: read-only count query
   API->>Validator: method/path/params
-  Validator->>Executor: safe API call
-  Executor->>Evidence: dry-run API label
-  Evidence->>Answer: evidence objects + missing payload
-  Answer->>Verify: grounded final answer
-  Verify->>Output: honest dry-run response
+  Validator->>Executor: safe SQL + API verification
+  Executor->>Evidence: SQL count + dry-run API label
+  Evidence->>Answer: count evidence + dry-run status
+  Answer->>Verify: SQL-grounded answer
+  Verify->>Output: final answer + trajectory
 """
 
 
@@ -100,21 +101,22 @@ def evidence_flow(context: dict) -> list[dict]:
     trajectory = context["trajectory"]
     execution = checkpoint_output(trajectory, "checkpoint_13_tool_execution")
     slots = checkpoint_output(trajectory, "checkpoint_15_answer_slots")
+    sql_artifacts = context.get("sql_artifacts", {})
     return [
-        {"name": "SQL evidence", "status": "not used", "detail": "API_ONLY route; sql_call_count=0"},
-        {"name": "API evidence", "status": "dry-run", "detail": visual_summary(execution, 180)},
+        {"name": "SQL evidence", "status": "answer source", "detail": visual_summary(sql_artifacts.get("sql_result"), 180)},
+        {"name": "API evidence", "status": "dry-run verification", "detail": visual_summary(execution, 180)},
         {"name": "Local evidence", "status": "not in packaged final answer", "detail": "No promoted local-evidence answer path for this row."},
-        {"name": "Unsupported claims", "status": "not fabricated", "detail": visual_summary(slots, 180)},
+        {"name": "Answer slots", "status": "SQL count grounded", "detail": visual_summary(slots, 180)},
     ]
 
 
 def decision_flow(context: dict) -> list[dict]:
     return [
-        {"decision": "Route selected", "value": context["route_type"], "reason": "Batch/file prompt classified as API_ONLY batch family."},
-        {"decision": "SQL used?", "value": "no", "reason": "No local SQL call in the packaged trajectory."},
-        {"decision": "API used?", "value": "yes", "reason": "Endpoint catalog validates the batch files API call."},
-        {"decision": "Dry-run happened?", "value": "yes", "reason": "Adobe credentials unavailable, so live payload was not executed."},
-        {"decision": "Answer rewrite promoted?", "value": "no", "reason": "Supportable/LLM rewrites remain shadow or isolated; packaged answer stays honest."},
+        {"decision": "Route selected", "value": context["route_type"], "reason": "Schema count prompt classified as SQL-backed schema_dataset family."},
+        {"decision": "SQL used?", "value": "yes", "reason": "SQL provides the schema count answer source."},
+        {"decision": "API used?", "value": "yes, dry-run", "reason": "Packaged SQL_FIRST_API_VERIFY attempts API verification but credentials are unavailable."},
+        {"decision": "Dry-run happened?", "value": "yes", "reason": "Adobe credentials unavailable, so live verification payload was not executed."},
+        {"decision": "Answer rewrite promoted?", "value": "no", "reason": "Packaged answer already states SQL count and dry-run honesty."},
     ]
 
 
@@ -136,7 +138,7 @@ def build_markdown(payload: dict, context: dict) -> str:
     decision_rows = [[row["decision"], row["value"], row["reason"]] for row in payload["decision_flow"]]
     return "\n".join(
         [
-            "# End-to-End Execution Movie: example_031",
+            "# End-to-End Execution Movie: example_011",
             "",
             how_to_read_page("raw prompt card"),
             "",

@@ -1,4 +1,5 @@
 {
+  "api_status": "API verification attempted as dry-run; live API payload unavailable.",
   "checkpoint_timeline": [
     {
       "checkpoint_id": "checkpoint_01_raw_query",
@@ -221,60 +222,215 @@
       "what_changed": "Recorded the stage output in trajectory."
     }
   ],
-  "decision_flow": [
-    {
-      "decision": "Route selected",
-      "reason": "Schema count prompt classified as SQL-backed schema_dataset family.",
-      "value": "SQL_ONLY"
-    },
-    {
-      "decision": "SQL used?",
-      "reason": "SQL provides the schema count answer source.",
-      "value": "yes"
-    },
-    {
-      "decision": "API used?",
-      "reason": "Packaged SQL_FIRST_API_VERIFY attempts API verification but credentials are unavailable.",
-      "value": "yes, dry-run"
-    },
-    {
-      "decision": "Dry-run happened?",
-      "reason": "Adobe credentials unavailable, so live verification payload was not executed.",
-      "value": "yes"
-    },
-    {
-      "decision": "Answer rewrite promoted?",
-      "reason": "Packaged answer already states SQL count and dry-run honesty.",
-      "value": "no"
-    }
-  ],
-  "evidence_flow": [
-    {
-      "detail": "items=1 item(s); total_items=1; truncated_items=False",
-      "name": "SQL evidence",
-      "status": "answer source"
-    },
-    {
-      "detail": "sql_calls_executed=1; api_calls_executed=1",
-      "name": "API evidence",
-      "status": "dry-run verification"
-    },
-    {
-      "detail": "No promoted local-evidence answer path for this row.",
-      "name": "Local evidence",
-      "status": "not in packaged final answer"
-    },
-    {
-      "detail": "answer_intent=COUNT",
-      "name": "Answer slots",
-      "status": "SQL count grounded"
-    }
-  ],
-  "flowchart": "\nflowchart LR\n  A[\"Raw prompt\"] --> B[\"Routing\"]\n  B --> C[\"Normalize + tokens\"]\n  C --> D[\"Query analysis\"]\n  D --> E[\"Metadata/context\"]\n  E --> F[\"Planning\"]\n  F --> G[\"Validation + budget\"]\n  G --> H[\"Execution\"]\n  H --> I[\"Evidence bus\"]\n  I --> J[\"Answer synthesis\"]\n  J --> K[\"Verifier/reranker\"]\n  K --> L[\"Final answer\"]\n  L --> M[\"Trajectory + reports\"]\n",
-  "page": "end_to_end_execution_primary",
+  "final_answer": "You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable.",
+  "flowchart": "\nflowchart LR\n  A[\"Raw prompt\"] --> B[\"Router/gate\"]\n  B --> C[\"Normalize + tokens\"]\n  C --> D[\"Query analysis\"]\n  D --> E[\"Context selection\"]\n  E --> F[\"SQL planning input\"]\n  F --> G[\"Generated SQL\"]\n  G --> H[\"SQL validation\"]\n  H --> I[\"SQL execution\"]\n  I --> J[\"Evidence extraction\"]\n  J --> K[\"Answer synthesis\"]\n  K --> L[\"Answer verification\"]\n  L --> M[\"Final answer\"]\n  M --> N[\"Trajectory output\"]\n  H -.-> O[\"Dry-run API verification\"]\n  O -.-> K\n",
+  "journey_diagram": "\njourney\n  title example_011 Prompt to SQL to Answer\n  section Prompt understanding\n    Raw prompt captured: 5: User\n    Schema count intent detected: 5: Router\n    Query normalized and tokenized: 4: Normalizer\n  section SQL path\n    Context selects dim_blueprint: 5: Metadata\n    SQL count generated: 5: Planner\n    SQL validated as read-only: 5: Validator\n    DuckDB returns count: 5: Executor\n  section Answer path\n    Evidence bus forwards count: 5: Evidence\n    Answer states schema count: 5: Answer\n    Dry-run API note preserved: 4: Verifier\n",
+  "metrics": {
+    "answer_score": 0.3915,
+    "api_score": 1.0,
+    "correctness_score": 0.7774,
+    "runtime": 0.008387499954551458,
+    "sql_score": 0.9,
+    "strict_score": 0.7462,
+    "tokens": 751,
+    "tool_calls": 2
+  },
+  "page": "sql_prompt_storyboard_primary",
   "query_id": "example_011",
   "raw_prompt": "How many schemas do I have?",
   "route_type": "SQL_ONLY",
-  "sequence_diagram": "\nsequenceDiagram\n  participant User\n  participant Router\n  participant Normalizer\n  participant Analysis as Query Analysis\n  participant Metadata as Metadata Selector\n  participant Planner\n  participant SQL as SQL Template\n  participant API as API Template\n  participant Validator\n  participant Executor\n  participant Evidence as Evidence Bus\n  participant Answer as Answer Synthesizer\n  participant Verify as Verifier/Reranker\n  participant Output as Final Output\n  User->>Router: raw prompt\n  Router->>Normalizer: use data pipeline\n  Normalizer->>Analysis: normalized text + tokens\n  Analysis->>Metadata: route intent + answer family\n  Metadata->>Planner: compact context\n  Planner->>SQL: schema count SQL\n  Planner->>API: schema verification call\n  SQL->>Validator: read-only count query\n  API->>Validator: method/path/params\n  Validator->>Executor: safe SQL + API verification\n  Executor->>Evidence: SQL count + dry-run API label\n  Evidence->>Answer: count evidence + dry-run status\n  Answer->>Verify: SQL-grounded answer\n  Verify->>Output: final answer + trajectory\n",
-  "strategy": "SQL_FIRST_API_VERIFY"
+  "sequence_diagram": "\nsequenceDiagram\n  participant User\n  participant Router\n  participant Normalizer\n  participant Analyzer as Query Analysis\n  participant Context as Context Selector\n  participant Planner\n  participant Validator\n  participant DuckDB as SQL Executor\n  participant API as API Dry-Run\n  participant Evidence\n  participant Answer\n  participant Verifier\n  participant Output\n  User->>Router: How many schemas do I have?\n  Router->>Normalizer: use data pipeline\n  Normalizer->>Analyzer: normalized schema/count query\n  Analyzer->>Context: schema_count intent\n  Context->>Planner: dim_blueprint + schema API context\n  Planner->>Validator: generated SQL + API verification\n  Validator->>DuckDB: safe read-only SQL\n  DuckDB->>Evidence: blueprint_count row\n  Validator->>API: catalog-valid verification call\n  API->>Evidence: dry-run unavailable label\n  Evidence->>Answer: count evidence + dry-run status\n  Answer->>Verifier: SQL-grounded answer\n  Verifier->>Output: final answer + trajectory\n",
+  "source_trajectory": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_011/sql_first_api_verify/trajectory.json",
+  "sql_artifacts": {
+    "api_calls_executed": 1,
+    "ast_validation": {
+      "destructive_sql_detected": false,
+      "parsed_ok": true,
+      "selected_columns": {
+        "items": [
+          "B.BLUEPRINTID"
+        ],
+        "total_items": 1,
+        "truncated_items": false
+      },
+      "selected_tables": {
+        "items": [
+          "dim_blueprint"
+        ],
+        "total_items": 1,
+        "truncated_items": false
+      },
+      "summaries": {
+        "items": [
+          {
+            "destructive_sql_detected": false,
+            "enabled": true,
+            "normalized_sql": "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B",
+            "parsed_ok": true,
+            "selected_columns": {
+              "items": [
+                "B.BLUEPRINTID"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "selected_tables": {
+              "items": [
+                "dim_blueprint"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          }
+        ],
+        "total_items": 1,
+        "truncated_items": false
+      }
+    },
+    "dry_run_status": true,
+    "evidence": {
+      "evidence": {
+        "counts": {
+          "items": [
+            74
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      }
+    },
+    "generated_sql": "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B",
+    "sql_calls_executed": 1,
+    "sql_result": {
+      "items": [
+        {
+          "blueprint_count": 74
+        }
+      ],
+      "total_items": 1,
+      "truncated_items": false
+    },
+    "sql_result_facts": [
+      "blueprint_count = 74"
+    ],
+    "sql_validation": {
+      "api_validation_status": {
+        "items": [
+          {
+            "errors": {
+              "items": [],
+              "total_items": 0,
+              "truncated_items": false
+            },
+            "ok": true
+          }
+        ],
+        "total_items": 1,
+        "truncated_items": false
+      },
+      "sql_validation_status": {
+        "items": [
+          {
+            "errors": {
+              "items": [],
+              "total_items": 0,
+              "truncated_items": false
+            },
+            "ok": true
+          }
+        ],
+        "total_items": 1,
+        "truncated_items": false
+      }
+    },
+    "validated_sql": "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B"
+  },
+  "storyboard_steps": [
+    {
+      "impact": "observability",
+      "name": "Raw prompt",
+      "short_payload": "How many schemas do I have?",
+      "technique": "raw user query capture",
+      "what_changed": "Original test prompt enters the packaged SQL_FIRST_API_VERIFY path."
+    },
+    {
+      "impact": "accuracy",
+      "name": "Prompt router view",
+      "short_payload": "confidence=0.84; reason=Local snapshot keyword(s) can be answered from DuckDB/par...",
+      "technique": "prompt_router",
+      "what_changed": "Recognizes the prompt as a schema count/data question."
+    },
+    {
+      "impact": "safety",
+      "name": "Simple-prompt gate",
+      "short_payload": "confidence=0.84; is_simple=False; suggested_action=USE_DATA_PIPELINE; reason=Local snapshot keyword(s) can be answered from DuckDB/par...",
+      "technique": "simple_prompt_gate",
+      "what_changed": "Sends the prompt into the evidence pipeline rather than a direct answer."
+    },
+    {
+      "impact": "accuracy",
+      "name": "Normalized query",
+      "short_payload": "normalized_query=How many schemas do I have?; matching_text=how many schema do i have?",
+      "technique": "query_normalizer",
+      "what_changed": "Creates matching-friendly text while preserving original wording."
+    },
+    {
+      "impact": "accuracy",
+      "name": "Tokens/entities/domains",
+      "short_payload": "domains=1 item(s)",
+      "technique": "query_tokens",
+      "what_changed": "Extracts schema/count intent for routing and SQL generation."
+    },
+    {
+      "impact": "accuracy",
+      "name": "Query analysis",
+      "short_payload": "strategy=SQL_FIRST_API_VERIFY; route_type=SQL_ONLY; domain_type=DATASET_SCHEMA; answer_family=schema_dataset",
+      "technique": "query_analysis",
+      "what_changed": "Classifies the route and answer family for schema counting."
+    },
+    {
+      "impact": "accuracy",
+      "name": "Lookup path / route intent",
+      "short_payload": "api_mode=required",
+      "technique": "lookup_path",
+      "what_changed": "Narrows to schema tables and schema API verification options."
+    },
+    {
+      "impact": "efficiency",
+      "name": "Context card",
+      "short_payload": "estimated_metadata_tokens=451; prompt_tokens=1032; selected_apis=1 item(s); selected_card_name=schema_dataset",
+      "technique": "metadata_selector + context_cards",
+      "what_changed": "Packs the endpoint catalog/context into metadata and prompt budget."
+    },
+    {
+      "impact": "efficiency",
+      "name": "Selected plan",
+      "short_payload": "selected_plan=generic_sql_first",
+      "technique": "planner + plan_ensemble",
+      "what_changed": "Selects a SQL-first plan with dry-run API verification."
+    },
+    {
+      "impact": "safety",
+      "name": "Evidence objects",
+      "short_payload": "sql_calls_executed=1; api_calls_executed=1",
+      "technique": "executor + evidence_bus",
+      "what_changed": "Executes SQL for the answer count and records dry-run API verification."
+    },
+    {
+      "impact": "accuracy",
+      "name": "Answer slots / intent",
+      "short_payload": "answer_intent=COUNT",
+      "technique": "answer_slots",
+      "what_changed": "Maps SQL count evidence into COUNT answer intent."
+    },
+    {
+      "impact": "safety",
+      "name": "Verified final answer",
+      "short_payload": "verifier_passed=True",
+      "technique": "answer_verifier + answer_reranker",
+      "what_changed": "Verifies the SQL-grounded count and preserves dry-run honesty."
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "why_chosen": "Primary SQL-backed packaged walkthrough: the prompt becomes validated SQL, SQL returns the answer count, and API verification remains dry-run/unavailable."
 }

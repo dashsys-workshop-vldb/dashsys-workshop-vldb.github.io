@@ -1,4 +1,4 @@
-# Prompt Transformation: example_031
+# Prompt Transformation: example_011
 
 ## How To Read This Page
 
@@ -8,11 +8,11 @@
 
 ## Primary Testing Prompt
 
-> **example_031**
+> **example_011**
 >
-> # Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?
+> # How many schemas do I have?
 >
-> Representative API-correct but answer-weak dry-run row: endpoint selection is correct, but live payload is unavailable.
+> Primary SQL-backed packaged walkthrough: the prompt becomes validated SQL, SQL returns the answer count, and API verification remains dry-run/unavailable.
 
 ## Transformation Lineage
 
@@ -49,40 +49,40 @@ flowchart LR
 
 | Before | After | Technique | Impact |
 | --- | --- | --- | --- |
-| Which files are available for download in batch 69de8a0e0cc6102b5d11f01e? | normalized_query=Which files are available for download in batch 69de8a0e0...; matching_text=which file are available for download in batch 69de8a0e0c... | query_normalizer | accuracy + observability |
+| How many schemas do I have? | normalized_query=How many schemas do I have?; matching_text=how many schema do i have? | query_normalizer | accuracy + observability |
 
 ### Normalized → tokens/entities
 
 | Before | After | Technique | Impact |
 | --- | --- | --- | --- |
-| normalized_query=Which files are available for download in batch 69de8a0e0...; matching_text=which file are available for download in batch 69de8a0e0c... | ids=1; domains=2 item(s) | query_tokens | accuracy |
+| normalized_query=How many schemas do I have?; matching_text=how many schema do i have? | domains=1 item(s) | query_tokens | accuracy |
 
 ### Tokens/entities → query analysis
 
 | Before | After | Technique | Impact |
 | --- | --- | --- | --- |
-| ids=1; domains=2 item(s) | strategy=SQL_FIRST_API_VERIFY; route_type=API_ONLY; domain_type=UNKNOWN; answer_family=batch | query_analysis | accuracy |
+| domains=1 item(s) | strategy=SQL_FIRST_API_VERIFY; route_type=SQL_ONLY; domain_type=DATASET_SCHEMA; answer_family=schema_dataset | query_analysis | accuracy |
 
 ### Analysis → context card
 
 | Before | After | Technique | Impact |
 | --- | --- | --- | --- |
-| analysis=strategy=SQL_FIRST_API_VERIFY; route_type=API_ONLY; domai...; lookup=api_mode=required | estimated_metadata_tokens=1000; prompt_tokens=1673; selected_apis=1 item(s); selected_card_name=batch | metadata_selector + context cards | accuracy + efficiency |
+| analysis=strategy=SQL_FIRST_API_VERIFY; route_type=SQL_ONLY; domai...; lookup=api_mode=required | estimated_metadata_tokens=451; prompt_tokens=1032; selected_apis=1 item(s); selected_card_name=schema_dataset | metadata_selector + context cards | accuracy + efficiency |
 
 ### Context → selected plan
 
 | Before | After | Technique | Impact |
 | --- | --- | --- | --- |
-| estimated_metadata_tokens=1000; prompt_tokens=1673; selected_apis=1 item(s); selected_card_name=batch | selected_plan=generic_sql_first | planner + plan_ensemble | efficiency + safety |
+| estimated_metadata_tokens=451; prompt_tokens=1032; selected_apis=1 item(s); selected_card_name=schema_dataset | selected_plan=generic_sql_first | planner + plan_ensemble | efficiency + safety |
 
 ### Plan → evidence
 
 | Before | After | Technique | Impact |
 | --- | --- | --- | --- |
-| selected_plan=generic_sql_first | sql_calls_executed=0; api_calls_executed=1 | executor + API validator | safety |
+| selected_plan=generic_sql_first | sql_calls_executed=1; api_calls_executed=1 | executor + API validator | safety |
 
 ### Evidence → final answer
 
 | Before | After | Technique | Impact |
 | --- | --- | --- | --- |
-| evidence=sql_calls_executed=0; api_calls_executed=1; slots=answer_intent=LIST | answer_length=127; final_answer=Batch file details require live API evidence. Live API ve... | answer slots + verifier | accuracy + safety |
+| evidence=sql_calls_executed=1; api_calls_executed=1; slots=answer_intent=COUNT | answer_length=102; final_answer=You have 74 schemas. Live API verification was not execut... | answer slots + verifier | accuracy + safety |

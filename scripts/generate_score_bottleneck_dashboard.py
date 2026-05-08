@@ -9,13 +9,15 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from supervisor_visualization_common import bottleneck_summary, build_primary_context, current_state  # noqa: E402
-from visualization_report_helpers import VIS_DIR, how_to_read_page, mermaid_block, metric_cards, prompt_callout, write_json, write_md  # noqa: E402
+from visualization_report_helpers import API_BOTTLENECK_QUERY_ID, VIS_DIR, how_to_read_page, mermaid_block, metric_cards, primary_example_context, prompt_callout, write_json, write_md  # noqa: E402
 
 
 def main() -> int:
     context = build_primary_context()
+    api_context = primary_example_context(API_BOTTLENECK_QUERY_ID)
     state = current_state()
     bottleneck = bottleneck_summary(context)
+    api_bottleneck = bottleneck_summary(api_context)
     payload = {
         "page": "score_bottleneck_dashboard",
         "state": state,
@@ -27,7 +29,15 @@ def main() -> int:
             "strict_score": context["strict_score"],
             "main_bottleneck": context["main_bottleneck"],
         },
-        "blockers": blockers(state, bottleneck),
+        "secondary_api_bottleneck_example": {
+            "query_id": api_context["query_id"],
+            "raw_prompt": api_context["raw_prompt"],
+            "api_score": api_context["api_score"],
+            "answer_score": api_context["answer_score"],
+            "strict_score": api_context["strict_score"],
+            "main_bottleneck": "Dry-run API evidence lacks live payload, so files cannot be listed safely.",
+        },
+        "blockers": blockers(state, api_bottleneck),
         "score_graph": score_graph(state),
     }
     write_json(VIS_DIR / "score_bottleneck_dashboard.json", payload)
@@ -55,7 +65,7 @@ def blockers(state: dict, bottleneck: dict) -> list[dict]:
         {
             "blocker": "Answer-score bottleneck",
             "evidence": f"example_031 API score={bottleneck['api_score']}, answer score={bottleneck['answer_score']}",
-            "meaning": bottleneck["main_bottleneck"],
+            "meaning": "Dry-run API evidence lacks live payload, so files cannot be listed safely.",
         },
         {
             "blocker": "Dry-run dependency",
@@ -88,6 +98,7 @@ def blockers(state: dict, bottleneck: dict) -> list[dict]:
 def build_markdown(payload: dict, context: dict) -> str:
     state = payload["state"]
     example = payload["primary_example"]
+    secondary = payload["secondary_api_bottleneck_example"]
     blocker_rows = [(row["blocker"], row["evidence"], row["meaning"]) for row in payload["blockers"]]
     return "\n".join(
         [
@@ -108,9 +119,11 @@ def build_markdown(payload: dict, context: dict) -> str:
                     ("Packaged strict score", state["packaged_strict_score"], "Current submit-ready package."),
                     ("Best isolated score", state["best_isolated_score"], "Safe progress, below target."),
                     ("Target", state["target_score"], "Winner-readiness target in this score-push thread."),
-                    ("example_031 API score", example["api_score"], "Endpoint selection is correct."),
-                    ("Answer score", example["answer_score"], "example_031 final answer is weak."),
-                    ("Main bottleneck", example["main_bottleneck"], "Dry-run API evidence lacks live payload, so files cannot be listed safely."),
+                    ("Primary walkthrough", example["query_id"], "SQL-backed example used by the main visualization pages."),
+                    ("Primary SQL/API distinction", example["main_bottleneck"], "SQL provides the answer; API verification is dry-run/unavailable."),
+                    ("Secondary API bottleneck", secondary["query_id"], "Reference-only API/dry-run bottleneck example."),
+                    ("Secondary API score", secondary["api_score"], "Endpoint selection is correct for the API bottleneck row."),
+                    ("Secondary answer score", secondary["answer_score"], "Final answer is weak because live payload is unavailable."),
                 ]
             ),
             "",

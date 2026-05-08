@@ -69,8 +69,8 @@ flowchart LR
   C --> D["Submit-ready: {state['final_submission_ready']}"]
   C --> E["Target 0.75"]
   F["Best isolated"] --> G["{state['best_isolated_score']}"]
-  H["Main blocker"] --> I["Answer score {bottleneck['answer_score']}"]
-  I --> J["Dry-run lacks live payload"]
+  H["Primary walkthrough"] --> I["SQL-backed example_011"]
+  I --> J["SQL count -> final answer"]
 """
     promotion_graph = """
 flowchart LR
@@ -107,16 +107,19 @@ flowchart LR
             "",
             mermaid_block(step_mermaid(journey)),
             "",
+            "➡️ Open the flagship walkthrough: [sql_prompt_storyboard_primary.md](sql_prompt_storyboard_primary.md)",
+            "",
             "## Bottleneck Card",
             "",
-            f"### 🔴 API-correct, answer-weak dry-run row",
+            f"### 🟢 SQL-backed primary walkthrough",
             "",
             metric_cards(
                 [
-                    ("API score", bottleneck["api_score"], "Endpoint/method/params are correct."),
-                    ("Answer score", bottleneck["answer_score"], "Final wording cannot list files without live payload."),
+                    ("SQL score", bottleneck["sql_score"], "Generated SQL is validated and scored."),
+                    ("API score", bottleneck["api_score"], "API verification is attempted as dry-run/unavailable."),
+                    ("Answer score", bottleneck["answer_score"], "Final answer is grounded by SQL count plus dry-run note."),
                     ("Strict score", bottleneck["strict_score"], "Row-level strict score for the packaged path."),
-                    ("Main bottleneck", bottleneck["main_bottleneck"], "The system stays honest instead of fabricating file names."),
+                    ("Main distinction", bottleneck["main_bottleneck"], "SQL is the answer source; API verification is not live."),
                 ]
             ),
             "",
@@ -139,7 +142,7 @@ flowchart LR
             "",
             "- Submit-ready because packaging, hidden-style, readiness, and secret checks pass.",
             "- Not winner-ready because packaged strict score remains below `0.75` and the best safe isolated score is still below target.",
-            "- The clearest visible blocker is answer quality on dry-run API rows where live payload values are unavailable.",
+            "- Secondary API-only bottleneck pages remain reference material; the main walkthrough is now SQL-backed.",
             "",
         ]
     )

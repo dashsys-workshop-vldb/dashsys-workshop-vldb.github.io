@@ -15,6 +15,7 @@ GENERATOR_SCRIPTS = [
     "scripts/generate_query_dataflow_visualizations.py",
     "scripts/generate_technique_impact_visualizations.py",
     "scripts/generate_current_system_state_visualization.py",
+    "scripts/generate_sql_prompt_storyboard_primary.py",
     "scripts/generate_executive_dashboard.py",
     "scripts/generate_prompt_storyboard_visualization.py",
     "scripts/generate_prompt_transformation_visualization.py",
@@ -31,6 +32,8 @@ REQUIRED_FILES = [
     "index.json",
     "executive_dashboard.md",
     "executive_dashboard.json",
+    "sql_prompt_storyboard_primary.md",
+    "sql_prompt_storyboard_primary.json",
     "prompt_storyboard_primary.md",
     "prompt_storyboard_primary.json",
     "prompt_transformation_primary.md",
@@ -97,6 +100,7 @@ def test_visualizations_have_readable_mermaid_and_no_raw_json_nodes():
     run_generators()
     markdown_files = [
         VIS_DIR / "executive_dashboard.md",
+        VIS_DIR / "sql_prompt_storyboard_primary.md",
         VIS_DIR / "prompt_storyboard_primary.md",
         VIS_DIR / "prompt_transformation_primary.md",
         VIS_DIR / "end_to_end_execution_primary.md",
@@ -117,9 +121,10 @@ def test_visualizations_have_readable_mermaid_and_no_raw_json_nodes():
 
 def test_supervisor_pages_show_primary_prompt_bottleneck_and_reading_guides():
     run_generators()
-    raw_prompt = "Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?"
+    raw_prompt = "How many schemas do I have?"
     supervisor_pages = [
         "executive_dashboard.md",
+        "sql_prompt_storyboard_primary.md",
         "prompt_storyboard_primary.md",
         "prompt_transformation_primary.md",
         "end_to_end_execution_primary.md",
@@ -132,19 +137,40 @@ def test_supervisor_pages_show_primary_prompt_bottleneck_and_reading_guides():
         text = (VIS_DIR / filename).read_text(encoding="utf-8")
         assert "## How To Read This Page" in text
 
-    for filename in ["executive_dashboard.md", "prompt_storyboard_primary.md", "score_bottleneck_dashboard.md"]:
+    for filename in ["executive_dashboard.md", "sql_prompt_storyboard_primary.md", "prompt_transformation_primary.md", "end_to_end_execution_primary.md"]:
         text = (VIS_DIR / filename).read_text(encoding="utf-8")
         assert raw_prompt in text
-        assert "API score" in text
-        assert "1.0" in text
-        assert "Answer score" in text
-        assert "0.1055" in text
-        assert "Dry-run API evidence lacks live payload" in text
+        assert "example_031" not in text
+
+
+def test_sql_primary_storyboard_is_sql_backed_and_visual_first():
+    run_generators()
+    data = json.loads((VIS_DIR / "sql_prompt_storyboard_primary.json").read_text(encoding="utf-8"))
+    text = (VIS_DIR / "sql_prompt_storyboard_primary.md").read_text(encoding="utf-8")
+    assert data["query_id"] == "example_011"
+    assert data["raw_prompt"] == "How many schemas do I have?"
+    assert data["sql_artifacts"]["sql_calls_executed"] >= 1
+    generated_sql = data["sql_artifacts"]["generated_sql"]
+    assert generated_sql and generated_sql != "unavailable"
+    assert generated_sql in text
+    assert "blueprint_count" in text
+    assert "blueprint_count = 74" in text
+    assert data["final_answer"] in text
+    assert "API verification attempted as dry-run" in text
+    assert "flowchart" in text
+    assert "sequenceDiagram" in text
+    assert "journey" in text
+    first_table = text.find("|")
+    first_visual = min(pos for pos in [text.find("```mermaid"), text.find("### ▶"), text.find("### 🟢")] if pos != -1)
+    assert first_visual != -1
+    assert first_table == -1 or first_visual < first_table
 
 
 def test_prompt_transformation_and_execution_visual_contracts():
     run_generators()
     transformation = json.loads((VIS_DIR / "prompt_transformation_primary.json").read_text(encoding="utf-8"))
+    assert transformation["query_id"] == "example_011"
+    assert "How many schemas do I have?" in (VIS_DIR / "prompt_transformation_primary.md").read_text(encoding="utf-8")
     panel_titles = {panel["title"] for panel in transformation["panels"]}
     assert "Raw → normalized" in panel_titles
     assert "Normalized → tokens/entities" in panel_titles
@@ -155,8 +181,27 @@ def test_prompt_transformation_and_execution_visual_contracts():
     assert "Evidence → final answer" in panel_titles
 
     execution_md = (VIS_DIR / "end_to_end_execution_primary.md").read_text(encoding="utf-8")
+    execution = json.loads((VIS_DIR / "end_to_end_execution_primary.json").read_text(encoding="utf-8"))
+    assert execution["query_id"] == "example_011"
+    assert "How many schemas do I have?" in execution_md
     assert "flowchart" in execution_md
     assert "sequenceDiagram" in execution_md
+
+
+def test_visualization_index_first_links_match_sql_primary_order():
+    run_generators()
+    index_md = (VIS_DIR / "index.md").read_text(encoding="utf-8")
+    links = re.findall(r"\[([^\]]+\.md)\]\(([^)]+)\)", index_md)
+    first_links = [link for _, link in links[:7]]
+    assert first_links == [
+        "executive_dashboard.md",
+        "sql_prompt_storyboard_primary.md",
+        "prompt_transformation_primary.md",
+        "end_to_end_execution_primary.md",
+        "technique_pipeline_map.md",
+        "system_status_dashboard.md",
+        "score_bottleneck_dashboard.md",
+    ]
 
 
 def test_technique_visual_cards_cover_required_names_status_and_runtime_path():

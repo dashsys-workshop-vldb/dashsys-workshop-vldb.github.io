@@ -79,11 +79,13 @@ def bottleneck_summary(context: dict[str, Any]) -> dict[str, Any]:
     return {
         "query_id": context["query_id"],
         "api_score": context["api_score"],
+        "sql_score": context.get("sql_score"),
         "answer_score": context["answer_score"],
         "strict_score": context["strict_score"],
         "correctness_score": context["correctness_score"],
         "main_bottleneck": context["main_bottleneck"],
         "dry_run_status": context["api_status"],
+        "sql_artifacts": context.get("sql_artifacts", {}),
     }
 
 

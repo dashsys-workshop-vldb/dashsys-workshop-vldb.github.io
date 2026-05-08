@@ -63,6 +63,7 @@ def build_markdown(payload: dict[str, Any]) -> str:
     summary = payload["summary"]
     supervisor_files = {
         "executive_dashboard.md",
+        "sql_prompt_storyboard_primary.md",
         "prompt_storyboard_primary.md",
         "prompt_transformation_primary.md",
         "end_to_end_execution_primary.md",
@@ -71,15 +72,31 @@ def build_markdown(payload: dict[str, Any]) -> str:
         "system_status_dashboard.md",
         "score_bottleneck_dashboard.md",
     }
+    supervisor_order = [
+        "executive_dashboard.md",
+        "sql_prompt_storyboard_primary.md",
+        "prompt_transformation_primary.md",
+        "end_to_end_execution_primary.md",
+        "technique_pipeline_map.md",
+        "system_status_dashboard.md",
+        "score_bottleneck_dashboard.md",
+    ]
     supervisor_rows = []
     detail_rows = []
+    supervisor_row_by_file = {}
     for entry in payload["entries"]:
         link = f"[{entry['file']}]({entry['link']})" if entry.get("link") else entry["file"]
         row = [link, entry["kind"], entry["exists"]]
         if entry["file"] in supervisor_files:
-            supervisor_rows.append(row)
+            supervisor_row_by_file[entry["file"]] = row
         else:
             detail_rows.append(row)
+    supervisor_rows = [supervisor_row_by_file[name] for name in supervisor_order if name in supervisor_row_by_file]
+    supervisor_rows.extend(
+        row
+        for filename, row in supervisor_row_by_file.items()
+        if filename not in set(supervisor_order)
+    )
     return "\n".join(
         [
             "# DASHSys Visualization Index",

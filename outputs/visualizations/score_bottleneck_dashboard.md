@@ -8,11 +8,11 @@
 
 ## Primary Testing Prompt
 
-> **example_031**
+> **example_011**
 >
-> # Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?
+> # How many schemas do I have?
 >
-> Representative API-correct but answer-weak dry-run row: endpoint selection is correct, but live payload is unavailable.
+> Primary SQL-backed packaged walkthrough: the prompt becomes validated SQL, SQL returns the answer count, and API verification remains dry-run/unavailable.
 
 ## Score Gap Visual
 
@@ -35,9 +35,11 @@ flowchart LR
 | **Packaged strict score** | `0.6491` | Current submit-ready package. |
 | **Best isolated score** | `0.6558` | Safe progress, below target. |
 | **Target** | `0.75` | Winner-readiness target in this score-push thread. |
-| **example_031 API score** | `1.0` | Endpoint selection is correct. |
-| **Answer score** | `0.1055` | example_031 final answer is weak. |
-| **Main bottleneck** | `Dry-run API evidence lacks live payload, so files cannot be listed safely.` | Dry-run API evidence lacks live payload, so files cannot be listed safely. |
+| **Primary walkthrough** | `example_011` | SQL-backed example used by the main visualization pages. |
+| **Primary SQL/API distinction** | `SQL provides the answer source; API verification is dry-run/unavailable in the packaged trace.` | SQL provides the answer; API verification is dry-run/unavailable. |
+| **Secondary API bottleneck** | `example_031` | Reference-only API/dry-run bottleneck example. |
+| **Secondary API score** | `1.0` | Endpoint selection is correct for the API bottleneck row. |
+| **Secondary answer score** | `0.1055` | Final answer is weak because live payload is unavailable. |
 
 ## Blocker Cards
 

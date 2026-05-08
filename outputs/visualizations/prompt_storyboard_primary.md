@@ -8,9 +8,9 @@
 
 ## Primary Testing Prompt
 
-> **example_031**
+> **example_011**
 >
-> # Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?
+> # How many schemas do I have?
 >
 > Chosen because it shows the real submit-ready/not-winner-ready gap: API selection is correct, but dry-run answer evidence is incomplete.
 
@@ -19,9 +19,9 @@
 | Metric | Value | Note |
 | --- | --- | --- |
 | **API score** | `1.0` | The selected API call is scored as correct. |
-| **Answer score** | `0.1055` | The final answer is weak because live file payload is unavailable. |
-| **Main bottleneck** | `Dry-run API evidence lacks live payload, so files cannot be listed safely.` | No file list can be safely stated from dry-run evidence. |
-| **Dry-run status** | `dry-run API evidence; live payload unavailable` | Credentials were not available for live API payloads. |
+| **Answer score** | `0.3915` | The final answer is weak because live file payload is unavailable. |
+| **Main bottleneck** | `SQL provides the answer source; API verification is dry-run/unavailable in the packaged trace.` | No file list can be safely stated from dry-run evidence. |
+| **Dry-run status** | `API verification attempted as dry-run; live API payload unavailable.` | Credentials were not available for live API payloads. |
 
 ## Storyboard Flow
 
@@ -56,56 +56,56 @@ flowchart LR
 
 ### ▣ 1. Raw prompt
 
-**Payload:** Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?
+**Payload:** How many schemas do I have?
 **Technique:** `raw user query capture`
 **What changed:** Original test prompt enters the packaged SQL_FIRST_API_VERIFY path.
 **Primary impact:** observability
 
 ### ▣ 2. Prompt router view
 
-**Payload:** confidence=0.9; reason=API/platform family keyword(s): batch, file, files.
+**Payload:** confidence=0.84; reason=Local snapshot keyword(s) can be answered from DuckDB/par...
 **Technique:** `prompt_router`
-**What changed:** Detects an API/platform batch-file request.
+**What changed:** Recognizes the prompt as a schema count/data question.
 **Primary impact:** accuracy
 
 ### ▣ 3. Simple-prompt gate
 
-**Payload:** confidence=0.9; is_simple=False; suggested_action=USE_DATA_PIPELINE; reason=API/platform family keyword(s): batch, file, files.
+**Payload:** confidence=0.84; is_simple=False; suggested_action=USE_DATA_PIPELINE; reason=Local snapshot keyword(s) can be answered from DuckDB/par...
 **Technique:** `simple_prompt_gate`
 **What changed:** Sends the prompt into the evidence pipeline rather than a direct answer.
 **Primary impact:** safety
 
 ### ▣ 4. Normalized query
 
-**Payload:** normalized_query=Which files are available for download in batch 69de8a0e0...; matching_text=which file are available for download in batch 69de8a0e0c...
+**Payload:** normalized_query=How many schemas do I have?; matching_text=how many schema do i have?
 **Technique:** `query_normalizer`
 **What changed:** Creates matching-friendly text while preserving original wording.
 **Primary impact:** accuracy
 
 ### ▣ 5. Tokens/entities/domains
 
-**Payload:** ids=1; domains=2 item(s)
+**Payload:** domains=1 item(s)
 **Technique:** `query_tokens`
-**What changed:** Extracts batch/file intent and the batch id.
+**What changed:** Extracts schema/count intent for routing and SQL generation.
 **Primary impact:** accuracy
 
 ### ▣ 6. Query analysis
 
-**Payload:** strategy=SQL_FIRST_API_VERIFY; route_type=API_ONLY; domain_type=UNKNOWN; answer_family=batch
+**Payload:** strategy=SQL_FIRST_API_VERIFY; route_type=SQL_ONLY; domain_type=DATASET_SCHEMA; answer_family=schema_dataset
 **Technique:** `query_analysis`
-**What changed:** Classifies the route as API_ONLY and answer family as batch.
+**What changed:** Classifies the route and answer family for schema counting.
 **Primary impact:** accuracy
 
 ### ▣ 7. Lookup path / route intent
 
 **Payload:** api_mode=required
 **Technique:** `lookup_path`
-**What changed:** Narrows to batch API families and required id grounding.
+**What changed:** Narrows to schema tables and schema API verification options.
 **Primary impact:** accuracy
 
 ### ▣ 8. Context card
 
-**Payload:** estimated_metadata_tokens=1000; prompt_tokens=1673; selected_apis=1 item(s); selected_card_name=batch
+**Payload:** estimated_metadata_tokens=451; prompt_tokens=1032; selected_apis=1 item(s); selected_card_name=schema_dataset
 **Technique:** `metadata_selector + context_cards`
 **What changed:** Packs the endpoint catalog/context into metadata and prompt budget.
 **Primary impact:** efficiency
@@ -114,30 +114,30 @@ flowchart LR
 
 **Payload:** selected_plan=generic_sql_first
 **Technique:** `planner + plan_ensemble`
-**What changed:** Selects a one-call API plan before execution.
+**What changed:** Selects a SQL-first plan with dry-run API verification.
 **Primary impact:** efficiency
 
 ### ▣ 10. Evidence objects
 
-**Payload:** sql_calls_executed=0; api_calls_executed=1
+**Payload:** sql_calls_executed=1; api_calls_executed=1
 **Technique:** `executor + evidence_bus`
-**What changed:** Executes the catalog-valid API call in dry-run mode because credentials are unavailable.
+**What changed:** Executes SQL for the answer count and records dry-run API verification.
 **Primary impact:** safety
 
 ### ▣ 11. Answer slots / intent
 
-**Payload:** answer_intent=LIST
+**Payload:** answer_intent=COUNT
 **Technique:** `answer_slots`
-**What changed:** Maps dry-run evidence into a LIST answer intent with missing payload slots.
+**What changed:** Maps SQL count evidence into COUNT answer intent.
 **Primary impact:** accuracy
 
 ### ▣ 12. Verified final answer
 
 **Payload:** verifier_passed=True
 **Technique:** `answer_verifier + answer_reranker`
-**What changed:** Keeps the honest dry-run answer instead of fabricating file names.
+**What changed:** Verifies the SQL-grounded count and preserves dry-run honesty.
 **Primary impact:** safety
 
 ## Final Answer
 
-> Batch file details require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.
+> You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable.

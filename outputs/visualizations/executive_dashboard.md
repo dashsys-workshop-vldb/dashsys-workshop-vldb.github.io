@@ -8,11 +8,11 @@
 
 ## Primary Testing Prompt
 
-> **example_031**
+> **example_011**
 >
-> # Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?
+> # How many schemas do I have?
 >
-> Representative API-correct but answer-weak dry-run row: endpoint selection is correct, but live payload is unavailable.
+> Primary SQL-backed packaged walkthrough: the prompt becomes validated SQL, SQL returns the answer count, and API verification remains dry-run/unavailable.
 
 ## System At A Glance
 
@@ -23,8 +23,8 @@ flowchart LR
   C --> D["Submit-ready: True"]
   C --> E["Target 0.75"]
   F["Best isolated"] --> G["0.6558"]
-  H["Main blocker"] --> I["Answer score 0.1055"]
-  I --> J["Dry-run lacks live payload"]
+  H["Primary walkthrough"] --> I["SQL-backed example_011"]
+  I --> J["SQL count -> final answer"]
 ```
 
 | Metric | Value | Note |
@@ -65,16 +65,19 @@ flowchart LR
   S10 --> S11
 ```
 
+➡️ Open the flagship walkthrough: [sql_prompt_storyboard_primary.md](sql_prompt_storyboard_primary.md)
+
 ## Bottleneck Card
 
-### 🔴 API-correct, answer-weak dry-run row
+### 🟢 SQL-backed primary walkthrough
 
 | Metric | Value | Note |
 | --- | --- | --- |
-| **API score** | `1.0` | Endpoint/method/params are correct. |
-| **Answer score** | `0.1055` | Final wording cannot list files without live payload. |
-| **Strict score** | `0.5346` | Row-level strict score for the packaged path. |
-| **Main bottleneck** | `Dry-run API evidence lacks live payload, so files cannot be listed safely.` | The system stays honest instead of fabricating file names. |
+| **SQL score** | `0.9` | Generated SQL is validated and scored. |
+| **API score** | `1.0` | API verification is attempted as dry-run/unavailable. |
+| **Answer score** | `0.3915` | Final answer is grounded by SQL count plus dry-run note. |
+| **Strict score** | `0.7462` | Row-level strict score for the packaged path. |
+| **Main distinction** | `SQL provides the answer source; API verification is dry-run/unavailable in the packaged trace.` | SQL is the answer source; API verification is not live. |
 
 ## Technique State Legend
 
@@ -100,4 +103,4 @@ flowchart LR
 
 - Submit-ready because packaging, hidden-style, readiness, and secret checks pass.
 - Not winner-ready because packaged strict score remains below `0.75` and the best safe isolated score is still below target.
-- The clearest visible blocker is answer quality on dry-run API rows where live payload values are unavailable.
+- Secondary API-only bottleneck pages remain reference material; the main walkthrough is now SQL-backed.

@@ -12,7 +12,8 @@ ROOT = Path(__file__).resolve().parents[1]
 OUTPUTS_DIR = ROOT / "outputs"
 VIS_DIR = OUTPUTS_DIR / "visualizations"
 UNAVAILABLE = "unavailable"
-PRIMARY_QUERY_ID = "example_031"
+PRIMARY_QUERY_ID = "example_011"
+API_BOTTLENECK_QUERY_ID = "example_031"
 
 _OPENROUTER_KEY_PREFIX = "sk" + "-or-"
 _OPENAI_KEY_PREFIX = "sk" + "-"
@@ -198,6 +199,8 @@ def required_visualization_files() -> list[str]:
         "index.json",
         "executive_dashboard.md",
         "executive_dashboard.json",
+        "sql_prompt_storyboard_primary.md",
+        "sql_prompt_storyboard_primary.json",
         "prompt_storyboard_primary.md",
         "prompt_storyboard_primary.json",
         "prompt_transformation_primary.md",
@@ -443,7 +446,7 @@ def primary_example_context(query_id: str = PRIMARY_QUERY_ID) -> dict[str, Any]:
         "trajectory_path": str(trajectory_path),
         "strict_row": strict_row,
         "raw_prompt": trajectory.get("original_query"),
-        "why_chosen": "Representative API-correct but answer-weak dry-run row: endpoint selection is correct, but live payload is unavailable.",
+        "why_chosen": "Primary SQL-backed packaged walkthrough: the prompt becomes validated SQL, SQL returns the answer count, and API verification remains dry-run/unavailable.",
         "strategy": trajectory.get("strategy"),
         "route_type": trajectory.get("route_type") or get_path(checkpoint_output(trajectory, "checkpoint_05_query_analysis"), "route_type"),
         "final_answer": trajectory.get("final_answer"),
@@ -455,8 +458,9 @@ def primary_example_context(query_id: str = PRIMARY_QUERY_ID) -> dict[str, Any]:
         "answer_score": strict_row.get("answer_score", UNAVAILABLE),
         "sql_score": strict_row.get("sql_score", UNAVAILABLE),
         "api_score": strict_row.get("api_score", UNAVAILABLE),
-        "api_status": "dry-run API evidence; live payload unavailable",
-        "main_bottleneck": "Dry-run API evidence lacks live payload, so files cannot be listed safely.",
+        "api_status": api_status_for_trajectory(trajectory),
+        "main_bottleneck": "SQL provides the answer source; API verification is dry-run/unavailable in the packaged trace.",
+        "sql_artifacts": sql_artifacts(trajectory),
         "packaged": packaged,
         "hidden_style": hidden,
         "best_isolated": auto_trial,
@@ -480,17 +484,17 @@ def primary_prompt_steps(context: dict[str, Any]) -> list[dict[str, Any]]:
     final_answer = checkpoint_output(trajectory, "checkpoint_18_final_answer")
     return [
         step("Raw prompt", "raw user query capture", raw, "Original test prompt enters the packaged SQL_FIRST_API_VERIFY path.", "observability"),
-        step("Prompt router view", "prompt_router", router, "Detects an API/platform batch-file request.", "accuracy"),
+        step("Prompt router view", "prompt_router", router, "Recognizes the prompt as a schema count/data question.", "accuracy"),
         step("Simple-prompt gate", "simple_prompt_gate", gate, "Sends the prompt into the evidence pipeline rather than a direct answer.", "safety"),
         step("Normalized query", "query_normalizer", normalized, "Creates matching-friendly text while preserving original wording.", "accuracy"),
-        step("Tokens/entities/domains", "query_tokens", tokens, "Extracts batch/file intent and the batch id.", "accuracy"),
-        step("Query analysis", "query_analysis", analysis, "Classifies the route as API_ONLY and answer family as batch.", "accuracy"),
-        step("Lookup path / route intent", "lookup_path", lookup, "Narrows to batch API families and required id grounding.", "accuracy"),
+        step("Tokens/entities/domains", "query_tokens", tokens, "Extracts schema/count intent for routing and SQL generation.", "accuracy"),
+        step("Query analysis", "query_analysis", analysis, "Classifies the route and answer family for schema counting.", "accuracy"),
+        step("Lookup path / route intent", "lookup_path", lookup, "Narrows to schema tables and schema API verification options.", "accuracy"),
         step("Context card", "metadata_selector + context_cards", context_card, "Packs the endpoint catalog/context into metadata and prompt budget.", "efficiency"),
-        step("Selected plan", "planner + plan_ensemble", plan, "Selects a one-call API plan before execution.", "efficiency"),
-        step("Evidence objects", "executor + evidence_bus", execution, "Executes the catalog-valid API call in dry-run mode because credentials are unavailable.", "safety"),
-        step("Answer slots / intent", "answer_slots", slots, "Maps dry-run evidence into a LIST answer intent with missing payload slots.", "accuracy"),
-        step("Verified final answer", "answer_verifier + answer_reranker", verification or final_answer, "Keeps the honest dry-run answer instead of fabricating file names.", "safety"),
+        step("Selected plan", "planner + plan_ensemble", plan, "Selects a SQL-first plan with dry-run API verification.", "efficiency"),
+        step("Evidence objects", "executor + evidence_bus", execution, "Executes SQL for the answer count and records dry-run API verification.", "safety"),
+        step("Answer slots / intent", "answer_slots", slots, "Maps SQL count evidence into COUNT answer intent.", "accuracy"),
+        step("Verified final answer", "answer_verifier + answer_reranker", verification or final_answer, "Verifies the SQL-grounded count and preserves dry-run honesty.", "safety"),
     ]
 
 
@@ -502,3 +506,61 @@ def step(name: str, technique: str, payload: Any, changed: str, impact: str) -> 
         "what_changed": changed,
         "impact": impact,
     }
+
+
+def api_status_for_trajectory(trajectory: dict[str, Any]) -> str:
+    execution = checkpoint_output(trajectory, "checkpoint_13_tool_execution") or {}
+    if execution.get("dry_run_status") is True:
+        return "API verification attempted as dry-run; live API payload unavailable."
+    if execution.get("api_calls_executed", 0):
+        return "Live/API evidence available."
+    return "API not executed in this trajectory."
+
+
+def sql_artifacts(trajectory: dict[str, Any]) -> dict[str, Any]:
+    validation = checkpoint_input(trajectory, "checkpoint_12_validation") or {}
+    execution = checkpoint_output(trajectory, "checkpoint_13_tool_execution") or {}
+    ast_validation = checkpoint_output(trajectory, "checkpoint_sql_ast_validation") or {}
+    evidence_bus = checkpoint_output(trajectory, "checkpoint_14_evidence_bus") or {}
+    sql = first_sql(validation)
+    result_preview = first_sql_result(execution)
+    result_facts = sql_result_facts(result_preview)
+    return {
+        "generated_sql": sql,
+        "validated_sql": sql,
+        "sql_validation": checkpoint_output(trajectory, "checkpoint_12_validation"),
+        "ast_validation": ast_validation,
+        "sql_result": result_preview,
+        "sql_result_facts": result_facts,
+        "evidence": evidence_bus,
+        "sql_calls_executed": execution.get("sql_calls_executed", UNAVAILABLE),
+        "api_calls_executed": execution.get("api_calls_executed", UNAVAILABLE),
+        "dry_run_status": execution.get("dry_run_status", UNAVAILABLE),
+    }
+
+
+def first_sql(validation_input: Any) -> Any:
+    steps = get_path(validation_input, "optimized_steps", "items", default=[])
+    if isinstance(steps, list):
+        for step_item in steps:
+            if isinstance(step_item, dict) and step_item.get("action") == "sql":
+                return step_item.get("sql", UNAVAILABLE)
+    return UNAVAILABLE
+
+
+def first_sql_result(execution_output: Any) -> Any:
+    items = get_path(execution_output, "sql_results", "items", default=[])
+    if isinstance(items, list) and items:
+        return items[0].get("result_preview", UNAVAILABLE) if isinstance(items[0], dict) else items[0]
+    return UNAVAILABLE
+
+
+def sql_result_facts(result_preview: Any) -> list[str]:
+    rows = get_path(result_preview, "items", default=[])
+    facts: list[str] = []
+    if isinstance(rows, list):
+        for row in rows:
+            if isinstance(row, dict):
+                for key, value in row.items():
+                    facts.append(f"{key} = {value}")
+    return facts
