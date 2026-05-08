@@ -158,14 +158,25 @@ def test_sql_primary_storyboard_is_sql_backed_and_visual_first():
     assert "Prompt-to-SQL mapping" in text
     assert "&quot;schemas&quot; → dim_blueprint" in text
     assert "&quot;how many&quot; → COUNT DISTINCT" in text
-    assert 'COUNT DISTINCT B.&quot;BLUEPRINTID&quot;' in text
+    assert 'SELECT COUNT(DISTINCT B.&quot;BLUEPRINTID&quot;) AS blueprint_count' in text
     assert 'FROM &quot;dim_blueprint&quot;' in text
+    assert 'B."BLUEPRINTID"' not in text
+    assert '"dim_blueprint"' not in text
     assert "B.'BLUEPRINTID'" not in text
     assert "'dim_blueprint'" not in text
-    assert "SELECT COUNT(DISTINCT" not in text
+    assert "System interpretation" in text
+    assert "&quot;schemas&quot; = records in dim_blueprint" in text
+    assert "Plan split" in text
+    assert "main path: SQL count" in text
+    assert "side path: API verification" in text
+    assert "Main answer path" in text
+    assert "SQL count → evidence → final answer" in text
     assert "blueprint_count" in text
     assert "blueprint_count = 74" in text
     assert data["sql_result_summary"] == "blueprint_count = 74"
+    assert data["grounded_fact_summary"] == "user has 74 schemas"
+    assert "Grounded fact" in text
+    assert "user has 74 schemas" in text
     assert data["final_answer"] in text
     assert data["api_branch_summary"] == "dry-run verification only; not answer source"
     assert "dry-run verification only" in text
@@ -177,6 +188,9 @@ def test_sql_primary_storyboard_is_sql_backed_and_visual_first():
     mermaid_blocks = re.findall(r"```mermaid\n(.*?)```", text, flags=re.S)
     assert len(mermaid_blocks) == 1
     assert mermaid_blocks[0].lstrip().startswith("flowchart")
+    node_labels = re.findall(r'\w+\["([^"]*)"\]', mermaid_blocks[0])
+    assert node_labels
+    assert all('"' not in label for label in node_labels)
     assert "sequenceDiagram" not in text
     assert "journey" not in text
     assert "stateDiagram" not in text
@@ -184,6 +198,7 @@ def test_sql_primary_storyboard_is_sql_backed_and_visual_first():
     assert "```sql" not in text
     assert "confidence=" not in text
     assert "evidence=1 field(s)" not in text
+    assert data["source_trajectory_path"] == "outputs/eval/example_011/sql_first_api_verify/trajectory.json"
 
 
 def test_prompt_transformation_and_execution_visual_contracts():

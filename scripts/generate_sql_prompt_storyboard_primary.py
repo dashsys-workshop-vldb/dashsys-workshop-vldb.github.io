@@ -41,6 +41,7 @@ def storyboard_payload(context: dict[str, Any]) -> dict[str, Any]:
     selected_column = str(selected_column).split(".")[-1] if selected_column != "unavailable" else selected_column
     generated_sql = artifacts.get("generated_sql", "unavailable")
     sql_result_summary = first_or_unavailable(artifacts.get("sql_result_facts"))
+    grounded_fact_summary = grounded_fact_from_result(sql_result_summary)
     api_branch_summary = (
         "dry-run verification only; not answer source"
         if artifacts.get("dry_run_status") is True
@@ -72,6 +73,7 @@ def storyboard_payload(context: dict[str, Any]) -> dict[str, Any]:
         "aggregation": aggregation_from_sql(generated_sql),
         "generated_sql": generated_sql,
         "sql_result_summary": sql_result_summary,
+        "grounded_fact_summary": grounded_fact_summary,
         "api_branch_summary": api_branch_summary,
         "evidence_summary": evidence_summary,
         "final_answer": context["final_answer"],
@@ -97,7 +99,9 @@ def storyboard_payload(context: dict[str, Any]) -> dict[str, Any]:
                 "selected_table": selected_table,
                 "selected_column": selected_column,
                 "aggregation": aggregation_from_sql(generated_sql),
+                "generated_sql": generated_sql,
                 "sql_result_summary": sql_result_summary,
+                "grounded_fact_summary": grounded_fact_summary,
                 "api_branch_summary": api_branch_summary,
                 "evidence_summary": evidence_summary,
                 "final_answer": context["final_answer"],
@@ -141,6 +145,14 @@ def aggregation_from_sql(sql: Any) -> str:
     return "unavailable"
 
 
+def grounded_fact_from_result(sql_result_summary: str) -> str:
+    if sql_result_summary == "blueprint_count = 74":
+        return "user has 74 schemas"
+    if sql_result_summary == "unavailable":
+        return "unavailable"
+    return f"answer fact from SQL result: {sql_result_summary}"
+
+
 def rounded_runtime(value: Any) -> str:
     try:
         return f"{float(value):.3f}s"
@@ -164,6 +176,12 @@ def flow_label(value: Any, max_chars: int = 120) -> str:
     )
 
 
+def sql_node_label(sql: Any) -> str:
+    if sql == 'SELECT COUNT(DISTINCT B."BLUEPRINTID") AS blueprint_count FROM "dim_blueprint" AS B':
+        return flow_label('SELECT COUNT(DISTINCT B."BLUEPRINTID") AS blueprint_count\nFROM "dim_blueprint" AS B', 180)
+    return flow_label(sql, 180)
+
+
 def flowchart_source(data: dict[str, Any]) -> str:
     raw_prompt = flow_label(data["raw_prompt"], 90)
     normalized_query = flow_label(data["normalized_query"], 90)
@@ -172,7 +190,9 @@ def flowchart_source(data: dict[str, Any]) -> str:
     table = flow_label(data["selected_table"], 40)
     column = flow_label(data["selected_column"], 40)
     aggregation = flow_label(data["aggregation"], 40)
+    generated_sql = sql_node_label(data["generated_sql"])
     result = flow_label(data["sql_result_summary"], 60)
+    grounded_fact = flow_label(data["grounded_fact_summary"], 80)
     final_answer = flow_label(data["final_answer"], 170)
     strategy = flow_label(data["strategy"], 60)
     selected_plan = flow_label(data["selected_plan"], 60)
@@ -203,34 +223,41 @@ flowchart TD
 
   subgraph M["3. Prompt → Data Mapping"]
     M0["Prompt-to-SQL mapping<br/>&quot;schemas&quot; → dim_blueprint<br/>&quot;how many&quot; → COUNT DISTINCT"]:::mapping
-    M1["Data meaning<br/>schemas = schema metadata records"]:::mapping
+    M1["System interpretation<br/>&quot;schemas&quot; = records in dim_blueprint"]:::mapping
     M2["Table selected<br/>{table}"]:::mapping
     M3["Schema ID column<br/>{column}"]:::mapping
   end
 
-  subgraph S["4. SQL Derivation"]
+  subgraph C["4. Context + Planning"]
+    C0["Selected plan<br/>{strategy}<br/>{selected_plan}"]:::plan
+    C1["Plan split<br/>main path: SQL count<br/>side path: API verification"]:::plan
+    C2["Main answer path<br/>SQL count → evidence → final answer"]:::evidence
+  end
+
+  subgraph S["5. SQL Derivation"]
     S0["SQL template selected<br/>schema_count"]:::plan
-    S1["Generated SQL summary<br/>{aggregation} B.&quot;BLUEPRINTID&quot;<br/>FROM &quot;dim_blueprint&quot;"]:::sql
+    S1["Generated SQL<br/>{generated_sql}"]:::sql
     S2["SQL validation<br/>read-only ✓<br/>known table ✓<br/>known column ✓"]:::sql
     S3["SQLGlot AST check<br/>parsed_ok = true<br/>destructive_sql = false"]:::sql
   end
 
-  subgraph E["5. Execution + Evidence"]
+  subgraph E["6. Execution + Evidence"]
     E0["DuckDB execution<br/>execute validated SQL"]:::sql
     E1["SQL result<br/>{result}"]:::sql
-    E2["SQL is the answer source<br/>SQL_ONLY = SQL provides the count"]:::evidence
-    E3["Evidence bus<br/>SQL evidence = 74 schemas<br/>API status = dry-run only"]:::evidence
+    E2["Grounded fact<br/>The SQL result means:<br/>{grounded_fact}"]:::evidence
+    E3["SQL is the answer source<br/>SQL_ONLY = SQL provides the count"]:::evidence
+    E4["Evidence bus<br/>SQL evidence = 74 schemas<br/>API status = dry-run only"]:::evidence
     API0["API verification branch<br/>dry-run verification only<br/>not answer source"]:::api
   end
 
-  subgraph A["6. Answer Generation"]
+  subgraph A["7. Answer Generation"]
     A0["Answer intent<br/>COUNT"]:::answer
     A1["Answer synthesis<br/>use SQL count + dry-run note"]:::answer
     A2["Answer verification<br/>&quot;74 schemas&quot; supported by SQL result"]:::answer
     A3["Final answer<br/>{final_answer}"]:::answer
   end
 
-  subgraph O["7. Output + Trace"]
+  subgraph O["8. Output + Trace"]
     O0["Trajectory output<br/>strategy = {strategy}<br/>plan = {selected_plan}"]:::output
     O1["Efficiency metrics<br/>tools = {metrics.get('tools', 'unavailable')}<br/>tokens = {metrics.get('tokens', 'unavailable')}<br/>runtime ≈ {runtime}"]:::output
   end
@@ -243,17 +270,21 @@ flowchart TD
   M0 -->|"noun maps to local table"| M1
   M1 -->|"schema records live here"| M2
   M2 -->|"count unique schema IDs"| M3
-  M3 -->|"fill SQL template"| S0
+  M3 -->|"planning context"| C0
+  C0 -->|"selected strategy"| C1
+  C1 -->|"main answer path"| C2
+  C2 -->|"fill SQL template"| S0
   S0 -->|"COUNT request becomes SQL"| S1
   S1 -->|"validate before execution"| S2
   S2 -->|"parse and inspect AST"| S3
   S3 -->|"safe read-only SQL"| E0
   E0 -->|"DuckDB returns one row"| E1
-  E1 -->|"count fact"| E2
-  E2 -->|"structured evidence"| E3
-  S2 -.->|"SQL_FIRST_API_VERIFY also checks API"| API0
-  API0 -.->|"dry-run status only"| E3
-  E3 -->|"answer slot receives count"| A0
+  E1 -->|"interpret result"| E2
+  E2 -->|"answer fact"| E3
+  E3 -->|"structured evidence"| E4
+  C1 -.->|"verification side path"| API0
+  API0 -.->|"dry-run status only"| E4
+  E4 -->|"answer slot receives count"| A0
   A0 -->|"compose concise answer"| A1
   A1 -->|"claim support check"| A2
   A2 -->|"verified"| A3

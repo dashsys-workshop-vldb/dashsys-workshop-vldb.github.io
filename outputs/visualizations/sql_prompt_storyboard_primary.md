@@ -27,34 +27,41 @@ flowchart TD
 
   subgraph M["3. Prompt → Data Mapping"]
     M0["Prompt-to-SQL mapping<br/>&quot;schemas&quot; → dim_blueprint<br/>&quot;how many&quot; → COUNT DISTINCT"]:::mapping
-    M1["Data meaning<br/>schemas = schema metadata records"]:::mapping
+    M1["System interpretation<br/>&quot;schemas&quot; = records in dim_blueprint"]:::mapping
     M2["Table selected<br/>dim_blueprint"]:::mapping
     M3["Schema ID column<br/>BLUEPRINTID"]:::mapping
   end
 
-  subgraph S["4. SQL Derivation"]
+  subgraph C["4. Context + Planning"]
+    C0["Selected plan<br/>SQL_FIRST_API_VERIFY<br/>generic_sql_first"]:::plan
+    C1["Plan split<br/>main path: SQL count<br/>side path: API verification"]:::plan
+    C2["Main answer path<br/>SQL count → evidence → final answer"]:::evidence
+  end
+
+  subgraph S["5. SQL Derivation"]
     S0["SQL template selected<br/>schema_count"]:::plan
-    S1["Generated SQL summary<br/>COUNT DISTINCT B.&quot;BLUEPRINTID&quot;<br/>FROM &quot;dim_blueprint&quot;"]:::sql
+    S1["Generated SQL<br/>SELECT COUNT(DISTINCT B.&quot;BLUEPRINTID&quot;) AS blueprint_count<br/>FROM &quot;dim_blueprint&quot; AS B"]:::sql
     S2["SQL validation<br/>read-only ✓<br/>known table ✓<br/>known column ✓"]:::sql
     S3["SQLGlot AST check<br/>parsed_ok = true<br/>destructive_sql = false"]:::sql
   end
 
-  subgraph E["5. Execution + Evidence"]
+  subgraph E["6. Execution + Evidence"]
     E0["DuckDB execution<br/>execute validated SQL"]:::sql
     E1["SQL result<br/>blueprint_count = 74"]:::sql
-    E2["SQL is the answer source<br/>SQL_ONLY = SQL provides the count"]:::evidence
-    E3["Evidence bus<br/>SQL evidence = 74 schemas<br/>API status = dry-run only"]:::evidence
+    E2["Grounded fact<br/>The SQL result means:<br/>user has 74 schemas"]:::evidence
+    E3["SQL is the answer source<br/>SQL_ONLY = SQL provides the count"]:::evidence
+    E4["Evidence bus<br/>SQL evidence = 74 schemas<br/>API status = dry-run only"]:::evidence
     API0["API verification branch<br/>dry-run verification only<br/>not answer source"]:::api
   end
 
-  subgraph A["6. Answer Generation"]
+  subgraph A["7. Answer Generation"]
     A0["Answer intent<br/>COUNT"]:::answer
     A1["Answer synthesis<br/>use SQL count + dry-run note"]:::answer
     A2["Answer verification<br/>&quot;74 schemas&quot; supported by SQL result"]:::answer
     A3["Final answer<br/>You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable."]:::answer
   end
 
-  subgraph O["7. Output + Trace"]
+  subgraph O["8. Output + Trace"]
     O0["Trajectory output<br/>strategy = SQL_FIRST_API_VERIFY<br/>plan = generic_sql_first"]:::output
     O1["Efficiency metrics<br/>tools = 2<br/>tokens = 751<br/>runtime ≈ 0.008s"]:::output
   end
@@ -67,17 +74,21 @@ flowchart TD
   M0 -->|"noun maps to local table"| M1
   M1 -->|"schema records live here"| M2
   M2 -->|"count unique schema IDs"| M3
-  M3 -->|"fill SQL template"| S0
+  M3 -->|"planning context"| C0
+  C0 -->|"selected strategy"| C1
+  C1 -->|"main answer path"| C2
+  C2 -->|"fill SQL template"| S0
   S0 -->|"COUNT request becomes SQL"| S1
   S1 -->|"validate before execution"| S2
   S2 -->|"parse and inspect AST"| S3
   S3 -->|"safe read-only SQL"| E0
   E0 -->|"DuckDB returns one row"| E1
-  E1 -->|"count fact"| E2
-  E2 -->|"structured evidence"| E3
-  S2 -.->|"SQL_FIRST_API_VERIFY also checks API"| API0
-  API0 -.->|"dry-run status only"| E3
-  E3 -->|"answer slot receives count"| A0
+  E1 -->|"interpret result"| E2
+  E2 -->|"answer fact"| E3
+  E3 -->|"structured evidence"| E4
+  C1 -.->|"verification side path"| API0
+  API0 -.->|"dry-run status only"| E4
+  E4 -->|"answer slot receives count"| A0
   A0 -->|"compose concise answer"| A1
   A1 -->|"claim support check"| A2
   A2 -->|"verified"| A3
