@@ -149,17 +149,29 @@ def test_sql_primary_storyboard_is_sql_backed_and_visual_first():
     text = (VIS_DIR / "sql_prompt_storyboard_primary.md").read_text(encoding="utf-8")
     assert data["query_id"] == "example_011"
     assert data["raw_prompt"] == "How many schemas do I have?"
-    assert data["sql_artifacts"]["sql_calls_executed"] >= 1
-    generated_sql = data["sql_artifacts"]["generated_sql"]
+    assert data["selected_table"] == "dim_blueprint"
+    assert data["selected_column"] == "BLUEPRINTID"
+    assert data["aggregation"] == "COUNT DISTINCT"
+    generated_sql = data["generated_sql"]
     assert generated_sql and generated_sql != "unavailable"
-    assert generated_sql == data["sql_artifacts"]["generated_sql"]
-    assert "COUNT DISTINCT BLUEPRINTID FROM dim_blueprint" in text
+    assert generated_sql == 'SELECT COUNT(DISTINCT B."BLUEPRINTID") AS blueprint_count FROM "dim_blueprint" AS B'
+    assert "Prompt-to-SQL mapping" in text
+    assert "&quot;schemas&quot; → dim_blueprint" in text
+    assert "&quot;how many&quot; → COUNT DISTINCT" in text
+    assert 'COUNT DISTINCT B.&quot;BLUEPRINTID&quot;' in text
+    assert 'FROM &quot;dim_blueprint&quot;' in text
+    assert "B.'BLUEPRINTID'" not in text
+    assert "'dim_blueprint'" not in text
+    assert "SELECT COUNT(DISTINCT" not in text
     assert "blueprint_count" in text
     assert "blueprint_count = 74" in text
+    assert data["sql_result_summary"] == "blueprint_count = 74"
     assert data["final_answer"] in text
-    assert "API verification attempted as dry-run" in text
+    assert data["api_branch_summary"] == "dry-run verification only; not answer source"
+    assert "dry-run verification only" in text
+    assert "not answer source" in text
     assert "SQL is the answer source" in text
-    assert "API branch is dry-run verification only" in text
+    assert "SQL evidence = 74 schemas" in text
     assert "SQL_ONLY" in text
     assert "generic_sql_first" in text
     mermaid_blocks = re.findall(r"```mermaid\n(.*?)```", text, flags=re.S)
@@ -169,6 +181,9 @@ def test_sql_primary_storyboard_is_sql_backed_and_visual_first():
     assert "journey" not in text
     assert "stateDiagram" not in text
     assert "| --- |" not in text
+    assert "```sql" not in text
+    assert "confidence=" not in text
+    assert "evidence=1 field(s)" not in text
 
 
 def test_prompt_transformation_and_execution_visual_contracts():

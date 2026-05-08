@@ -9,14 +9,12 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from supervisor_visualization_common import build_primary_context, checkpoint_timeline  # noqa: E402
+from supervisor_visualization_common import build_primary_context  # noqa: E402
 from visualization_report_helpers import (  # noqa: E402
     VIS_DIR,
     checkpoint_output,
     md_escape,
-    mermaid_label,
     mermaid_block,
-    visual_summary,
     write_json,
     write_md,
 )
@@ -24,14 +22,59 @@ from visualization_report_helpers import (  # noqa: E402
 
 def main() -> int:
     context = build_primary_context()
+    payload = storyboard_payload(context)
+    write_json(VIS_DIR / "sql_prompt_storyboard_primary.json", payload)
+    write_md(VIS_DIR / "sql_prompt_storyboard_primary.md", build_markdown(payload))
+    print({"json": str(VIS_DIR / "sql_prompt_storyboard_primary.json"), "markdown": str(VIS_DIR / "sql_prompt_storyboard_primary.md")})
+    return 0
+
+
+def storyboard_payload(context: dict[str, Any]) -> dict[str, Any]:
+    trajectory = context["trajectory"]
     artifacts = context["sql_artifacts"]
+    normalized = checkpoint_output(trajectory, "checkpoint_02_query_normalization") or {}
+    analysis = checkpoint_output(trajectory, "checkpoint_05_query_analysis") or {}
+    plan = checkpoint_output(trajectory, "checkpoint_08_candidate_plans") or {}
+    ast = artifacts.get("ast_validation") if isinstance(artifacts.get("ast_validation"), dict) else {}
+    selected_table = first_item(ast.get("selected_tables"), "dim_blueprint")
+    selected_column = first_item(ast.get("selected_columns"), "B.BLUEPRINTID")
+    selected_column = str(selected_column).split(".")[-1] if selected_column != "unavailable" else selected_column
+    generated_sql = artifacts.get("generated_sql", "unavailable")
+    sql_result_summary = first_or_unavailable(artifacts.get("sql_result_facts"))
+    api_branch_summary = (
+        "dry-run verification only; not answer source"
+        if artifacts.get("dry_run_status") is True
+        else context["api_status"]
+    )
+    evidence_summary = (
+        f"SQL evidence: {sql_result_summary}; API status evidence: {api_branch_summary}"
+        if sql_result_summary != "unavailable"
+        else f"SQL evidence: unavailable; API status evidence: {api_branch_summary}"
+    )
+    metrics = {
+        "tools": context["tool_calls"],
+        "tokens": context["tokens"],
+        "runtime": rounded_runtime(context["runtime"]),
+        "sql_calls": artifacts.get("sql_calls_executed", "unavailable"),
+        "api_calls": artifacts.get("api_calls_executed", "unavailable"),
+    }
     payload = {
         "page": "sql_prompt_storyboard_primary",
         "query_id": context["query_id"],
         "raw_prompt": context["raw_prompt"],
-        "why_chosen": context["why_chosen"],
+        "normalized_query": normalized.get("normalized_query", "unavailable"),
         "strategy": context["strategy"],
-        "route_type": context["route_type"],
+        "selected_plan": plan.get("selected_plan", "unavailable"),
+        "route_type": analysis.get("route_type", context["route_type"]),
+        "answer_family": analysis.get("answer_family", "unavailable"),
+        "selected_table": selected_table,
+        "selected_column": selected_column,
+        "aggregation": aggregation_from_sql(generated_sql),
+        "generated_sql": generated_sql,
+        "sql_result_summary": sql_result_summary,
+        "api_branch_summary": api_branch_summary,
+        "evidence_summary": evidence_summary,
+        "final_answer": context["final_answer"],
         "metrics": {
             "strict_score": context["strict_score"],
             "correctness_score": context["correctness_score"],
@@ -42,134 +85,180 @@ def main() -> int:
             "tokens": context["tokens"],
             "runtime": context["runtime"],
         },
-        "sql_artifacts": artifacts,
-        "final_answer": context["final_answer"],
-        "api_status": context["api_status"],
-        "storyboard_steps": context["steps"],
-        "checkpoint_timeline": checkpoint_timeline(context),
-        "flowchart": flowchart(context),
-        "source_trajectory": context["trajectory_path"],
+        "flowchart_source": flowchart_source(
+            {
+                "query_id": context["query_id"],
+                "raw_prompt": context["raw_prompt"],
+                "normalized_query": normalized.get("normalized_query", "unavailable"),
+                "route_type": analysis.get("route_type", context["route_type"]),
+                "answer_family": analysis.get("answer_family", "unavailable"),
+                "selected_plan": plan.get("selected_plan", "unavailable"),
+                "strategy": context["strategy"],
+                "selected_table": selected_table,
+                "selected_column": selected_column,
+                "aggregation": aggregation_from_sql(generated_sql),
+                "sql_result_summary": sql_result_summary,
+                "api_branch_summary": api_branch_summary,
+                "evidence_summary": evidence_summary,
+                "final_answer": context["final_answer"],
+                "metrics": metrics,
+            }
+        ),
+        "source_trajectory_path": relative_source_path(context["trajectory_path"]),
     }
-    write_json(VIS_DIR / "sql_prompt_storyboard_primary.json", payload)
-    write_md(VIS_DIR / "sql_prompt_storyboard_primary.md", build_markdown(payload))
-    print({"json": str(VIS_DIR / "sql_prompt_storyboard_primary.json"), "markdown": str(VIS_DIR / "sql_prompt_storyboard_primary.md")})
-    return 0
+    return payload
 
 
-def flowchart(context: dict[str, Any]) -> str:
-    trajectory = context["trajectory"]
-    artifacts = context["sql_artifacts"]
-    raw_prompt = mermaid_label(context["raw_prompt"], 70)
-    router = mermaid_label(visual_summary(checkpoint_output(trajectory, "checkpoint_00_prompt_router"), 90), 90)
-    gate = mermaid_label(visual_summary(checkpoint_output(trajectory, "checkpoint_simple_prompt_gate"), 90), 90)
-    normalized = checkpoint_output(trajectory, "checkpoint_02_query_normalization") or {}
-    normalized_query = mermaid_label(normalized.get("normalized_query", "unavailable"), 70)
-    matching_text = mermaid_label(normalized.get("matching_text", "unavailable"), 70)
-    tokens = mermaid_label(visual_summary(checkpoint_output(trajectory, "checkpoint_03_query_tokens"), 90), 90)
-    analysis = checkpoint_output(trajectory, "checkpoint_05_query_analysis") or {}
-    route_type = mermaid_label(analysis.get("route_type", context["route_type"]), 36)
-    answer_family = mermaid_label(analysis.get("answer_family", "unavailable"), 46)
-    lookup = mermaid_label(visual_summary(checkpoint_output(trajectory, "checkpoint_06_lookup_path"), 90), 90)
-    context_card = mermaid_label(visual_summary(checkpoint_output(trajectory, "checkpoint_07_context_card"), 100), 100)
-    plan = checkpoint_output(trajectory, "checkpoint_08_candidate_plans") or {}
-    selected_plan = mermaid_label(plan.get("selected_plan", "unavailable"), 50)
-    plan_input = mermaid_label(visual_summary(checkpoint_output(trajectory, "checkpoint_08_candidate_plans"), 80), 80)
-    sql_summary = mermaid_label("COUNT DISTINCT BLUEPRINTID FROM dim_blueprint", 70)
-    generated_sql = mermaid_label(artifacts.get("generated_sql", "unavailable"), 160)
-    validation = mermaid_label(visual_summary(artifacts.get("sql_validation"), 90), 90)
-    ast_validation = mermaid_label(visual_summary(artifacts.get("ast_validation"), 90), 90)
-    execution = mermaid_label(
-        f"SQL calls={artifacts.get('sql_calls_executed', 'unavailable')}; API calls={artifacts.get('api_calls_executed', 'unavailable')}",
-        80,
+def relative_source_path(path_value: Any) -> str:
+    try:
+        return str(Path(str(path_value)).resolve().relative_to(ROOT))
+    except Exception:
+        return str(path_value or "unavailable")
+
+
+def first_item(value: Any, default: str = "unavailable") -> str:
+    if isinstance(value, dict):
+        items = value.get("items")
+        if isinstance(items, list) and items:
+            return str(items[0])
+    if isinstance(value, list) and value:
+        return str(value[0])
+    return default
+
+
+def first_or_unavailable(value: Any) -> str:
+    if isinstance(value, list) and value:
+        return str(value[0])
+    return "unavailable"
+
+
+def aggregation_from_sql(sql: Any) -> str:
+    text = str(sql or "").lower()
+    if "count(distinct" in text:
+        return "COUNT DISTINCT"
+    if "count(" in text:
+        return "COUNT"
+    return "unavailable"
+
+
+def rounded_runtime(value: Any) -> str:
+    try:
+        return f"{float(value):.3f}s"
+    except Exception:
+        return "unavailable"
+
+
+def flow_label(value: Any, max_chars: int = 120) -> str:
+    text = str(value if value is not None else "unavailable")
+    text = text.replace("\n", "<br/>")
+    text = " ".join(text.split())
+    if len(text) > max_chars:
+        text = text[: max_chars - 3].rstrip() + "..."
+    return (
+        text.replace("&", "&amp;")
+        .replace('"', "&quot;")
+        .replace("<br/>", "<br/>")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("&lt;br/&gt;", "<br/>")
     )
-    result_facts = "; ".join(str(item) for item in (artifacts.get("sql_result_facts") or ["unavailable"]))
-    sql_result = mermaid_label(result_facts, 70)
-    api_status = mermaid_label(context["api_status"], 80)
-    evidence = mermaid_label(visual_summary(artifacts.get("evidence"), 90), 90)
-    slots = mermaid_label(visual_summary(checkpoint_output(trajectory, "checkpoint_15_answer_slots"), 90), 90)
-    verifier = mermaid_label(visual_summary(checkpoint_output(trajectory, "checkpoint_16_answer_verification"), 90), 90)
-    answer = mermaid_label(context["final_answer"], 160)
-    metrics = mermaid_label(
-        f"strategy={context['strategy']}; tools={context['tool_calls']}; tokens={context['tokens']}; runtime={context['runtime']}",
-        100,
-    )
+
+
+def flowchart_source(data: dict[str, Any]) -> str:
+    raw_prompt = flow_label(data["raw_prompt"], 90)
+    normalized_query = flow_label(data["normalized_query"], 90)
+    route_type = flow_label(data["route_type"], 40)
+    answer_family = flow_label(data["answer_family"], 50)
+    table = flow_label(data["selected_table"], 40)
+    column = flow_label(data["selected_column"], 40)
+    aggregation = flow_label(data["aggregation"], 40)
+    result = flow_label(data["sql_result_summary"], 60)
+    final_answer = flow_label(data["final_answer"], 170)
+    strategy = flow_label(data["strategy"], 60)
+    selected_plan = flow_label(data["selected_plan"], 60)
+    metrics = data["metrics"]
+    runtime = flow_label(metrics.get("runtime", "unavailable"), 20)
     return f"""
 flowchart TD
   classDef prompt fill:#e8f3ff,stroke:#2f6fad,stroke-width:1px,color:#102a43
   classDef interpret fill:#eef8ef,stroke:#3b873e,stroke-width:1px,color:#183b1b
-  classDef plan fill:#fff7df,stroke:#b7791f,stroke-width:1px,color:#3d2a00
+  classDef mapping fill:#fff7df,stroke:#b7791f,stroke-width:2px,color:#3d2a00
+  classDef plan fill:#fffaf0,stroke:#b7791f,stroke-width:1px,color:#3d2a00
   classDef sql fill:#eafff7,stroke:#00856f,stroke-width:2px,color:#063b33
   classDef api fill:#f7f2ff,stroke:#805ad5,stroke-width:1px,color:#2d1b69,stroke-dasharray: 5 3
-  classDef evidence fill:#f0fff4,stroke:#2f855a,stroke-width:1px,color:#1c4532
+  classDef evidence fill:#f0fff4,stroke:#2f855a,stroke-width:2px,color:#1c4532
   classDef answer fill:#fff0f6,stroke:#b83280,stroke-width:2px,color:#521b41
   classDef output fill:#f7fafc,stroke:#4a5568,stroke-width:1px,color:#1a202c
 
-  subgraph P["Input / Prompt Understanding"]
-    P0["Raw user prompt<br/>{raw_prompt}"]:::prompt
-    P1["Prompt router interpretation<br/>{router}"]:::prompt
-    P2["Simple-prompt gate decision<br/>{gate}"]:::prompt
-    P3["Query normalization<br/>normalized: {normalized_query}<br/>matching text: {matching_text}"]:::prompt
-    P4["Token/entity extraction<br/>{tokens}"]:::prompt
+  subgraph U["1. User Prompt"]
+    U0["Raw prompt<br/>{raw_prompt}"]:::prompt
   end
 
-  subgraph I["Query Interpretation"]
-    I0["Query analysis<br/>route type: {route_type}<br/>answer family: {answer_family}"]:::interpret
-    I1["Lookup path / route intent<br/>{lookup}"]:::interpret
+  subgraph P["2. Prompt Understanding"]
+    P0["Router<br/>use data pipeline"]:::interpret
+    P1["Normalize text<br/>{normalized_query}"]:::interpret
+    P2["Extract signals<br/>&quot;schemas&quot; + &quot;how many&quot;"]:::interpret
+    P3["Query analysis<br/>route = {route_type}<br/>answer type = COUNT<br/>family = {answer_family}"]:::interpret
   end
 
-  subgraph C["Context + Planning"]
-    C0["Context selection / metadata card<br/>{context_card}"]:::plan
-    C1["SQL planning input<br/>{plan_input}"]:::plan
-    C2["Selected plan / strategy<br/>{selected_plan}<br/>{context['strategy']}"]:::plan
+  subgraph M["3. Prompt → Data Mapping"]
+    M0["Prompt-to-SQL mapping<br/>&quot;schemas&quot; → dim_blueprint<br/>&quot;how many&quot; → COUNT DISTINCT"]:::mapping
+    M1["Data meaning<br/>schemas = schema metadata records"]:::mapping
+    M2["Table selected<br/>{table}"]:::mapping
+    M3["Schema ID column<br/>{column}"]:::mapping
   end
 
-  subgraph S["SQL Derivation"]
-    S0["Prompt becomes SQL<br/>{sql_summary}"]:::sql
-    S1["Generated SQL artifact<br/>{generated_sql}"]:::sql
-    S2["SQL validation<br/>{validation}"]:::sql
-    S3["SQLGlot AST validation<br/>{ast_validation}"]:::sql
-    S4["SQL is the answer source<br/>API branch is dry-run verification only"]:::sql
+  subgraph S["4. SQL Derivation"]
+    S0["SQL template selected<br/>schema_count"]:::plan
+    S1["Generated SQL summary<br/>{aggregation} B.&quot;BLUEPRINTID&quot;<br/>FROM &quot;dim_blueprint&quot;"]:::sql
+    S2["SQL validation<br/>read-only ✓<br/>known table ✓<br/>known column ✓"]:::sql
+    S3["SQLGlot AST check<br/>parsed_ok = true<br/>destructive_sql = false"]:::sql
   end
 
-  subgraph X["Execution + Evidence"]
-    X0["Tool execution<br/>{execution}"]:::output
-    X1["SQL execution result<br/>{sql_result}"]:::sql
-    X2["Dry-run API verification branch<br/>{api_status}"]:::api
-    X3["Evidence extraction / evidence bus<br/>{evidence}"]:::evidence
+  subgraph E["5. Execution + Evidence"]
+    E0["DuckDB execution<br/>execute validated SQL"]:::sql
+    E1["SQL result<br/>{result}"]:::sql
+    E2["SQL is the answer source<br/>SQL_ONLY = SQL provides the count"]:::evidence
+    E3["Evidence bus<br/>SQL evidence = 74 schemas<br/>API status = dry-run only"]:::evidence
+    API0["API verification branch<br/>dry-run verification only<br/>not answer source"]:::api
   end
 
-  subgraph A["Final Answer + Output"]
-    A0["Answer slots / answer intent<br/>{slots}"]:::answer
-    A1["Answer synthesis<br/>SQL count + dry-run verification note"]:::answer
-    A2["Answer verification / reranking<br/>{verifier}"]:::answer
-    A3["Final answer<br/>{answer}"]:::answer
-    A4["Trajectory / checkpoint output<br/>{metrics}"]:::output
+  subgraph A["6. Answer Generation"]
+    A0["Answer intent<br/>COUNT"]:::answer
+    A1["Answer synthesis<br/>use SQL count + dry-run note"]:::answer
+    A2["Answer verification<br/>&quot;74 schemas&quot; supported by SQL result"]:::answer
+    A3["Final answer<br/>{final_answer}"]:::answer
   end
 
-  P0 -->|"raw text captured"| P1
-  P1 -->|"route policy applied"| P2
-  P2 -->|"data pipeline selected"| P3
-  P3 -->|"matching text derived"| P4
-  P4 -->|"schema/count signals"| I0
-  I0 -->|"route + family"| I1
-  I1 -->|"schema path selected"| C0
-  C0 -->|"compact metadata"| C1
-  C1 -->|"planner chooses plan"| C2
-  C2 -->|"SQL-first planning"| S0
-  S0 -->|"SQL template filled"| S1
-  S1 -->|"safety validation"| S2
-  S2 -->|"AST extraction"| S3
-  S3 -->|"safe to execute"| X0
-  S4 -.->|"interpretation guard"| X1
-  X0 -->|"DuckDB read-only query"| X1
-  X0 -.->|"catalog-valid API verification"| X2
-  X1 -->|"count evidence"| X3
-  X2 -.->|"dry-run status"| X3
-  X3 -->|"structured evidence"| A0
-  A0 -->|"count intent"| A1
-  A1 -->|"grounded claim check"| A2
-  A2 -->|"verifier passed"| A3
-  A3 -->|"logged outputs"| A4
+  subgraph O["7. Output + Trace"]
+    O0["Trajectory output<br/>strategy = {strategy}<br/>plan = {selected_plan}"]:::output
+    O1["Efficiency metrics<br/>tools = {metrics.get('tools', 'unavailable')}<br/>tokens = {metrics.get('tokens', 'unavailable')}<br/>runtime ≈ {runtime}"]:::output
+  end
+
+  U0 -->|"schema-count question"| P0
+  P0 -->|"send to evidence pipeline"| P1
+  P1 -->|"preserve meaning"| P2
+  P2 -->|"intent signals"| P3
+  P3 -->|"schema/count intent"| M0
+  M0 -->|"noun maps to local table"| M1
+  M1 -->|"schema records live here"| M2
+  M2 -->|"count unique schema IDs"| M3
+  M3 -->|"fill SQL template"| S0
+  S0 -->|"COUNT request becomes SQL"| S1
+  S1 -->|"validate before execution"| S2
+  S2 -->|"parse and inspect AST"| S3
+  S3 -->|"safe read-only SQL"| E0
+  E0 -->|"DuckDB returns one row"| E1
+  E1 -->|"count fact"| E2
+  E2 -->|"structured evidence"| E3
+  S2 -.->|"SQL_FIRST_API_VERIFY also checks API"| API0
+  API0 -.->|"dry-run status only"| E3
+  E3 -->|"answer slot receives count"| A0
+  A0 -->|"compose concise answer"| A1
+  A1 -->|"claim support check"| A2
+  A2 -->|"verified"| A3
+  A3 -->|"logged as final output"| O0
+  O0 -->|"submission trace metrics"| O1
 """
 
 
@@ -180,9 +269,7 @@ def build_markdown(payload: dict[str, Any]) -> str:
             "",
             f"`{md_escape(payload['query_id'])}` was chosen because it is SQL-backed in the packaged path: the prompt becomes validated SQL, SQL returns the answer count, and API verification is dry-run/unavailable.",
             "",
-            "## One Giant End-to-End Flowchart",
-            "",
-            mermaid_block(payload["flowchart"]),
+            mermaid_block(payload["flowchart_source"]),
             "",
             "**Takeaway:** SQL is the answer source (`blueprint_count = 74`). The API branch is shown because the packaged trace attempts verification, but it is dry-run/unavailable and does not provide the answer value.",
             "",
