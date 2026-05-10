@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dashagent.llm_client import NoOpLLMClient, OpenAILLMClient, OpenRouterLLMClient, get_llm_client
+import inspect
+
+import dashagent.llm_client as llm_client
+from dashagent.llm_client import AnthropicLLMClient, NoOpLLMClient, OpenAILLMClient, OpenRouterLLMClient, get_llm_client
 
 
 def test_noop_llm_client_skips_without_key(monkeypatch):
@@ -64,13 +67,21 @@ def test_provider_selection_prefers_explicit_openai_compatible_base(monkeypatch)
     assert client.model_name() == "qwen2.5-32b-instruct"
 
 
+def test_provider_selection_anthropic(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "anthropic")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "unit-test-anthropic-key")
+    monkeypatch.setenv("ANTHROPIC_MODEL", "claude-test")
+
+    client = get_llm_client()
+
+    assert client.available()
+    assert client.provider_name() == "anthropic"
+    assert client.model_name() == "claude-test"
+
+
 def test_openai_generate_messages_normalizes_native_tool_calls(monkeypatch):
-    monkeypatch.setenv("OPENAI_USE_REQUESTS_FALLBACK", "1")
-
-    class FakeResponse:
-        ok = True
-
-        def json(self):
+    class FakeCompletion:
+        def model_dump(self):
             return {
                 "choices": [
                     {
@@ -94,10 +105,15 @@ def test_openai_generate_messages_normalizes_native_tool_calls(monkeypatch):
                 "usage": {"total_tokens": 10},
             }
 
-    def fake_post(*args, **kwargs):
-        return FakeResponse()
+    class FakeCompletions:
+        def create(self, **payload):
+            return FakeCompletion()
 
-    monkeypatch.setattr("dashagent.llm_client.requests.post", fake_post)
+    class FakeOpenAI:
+        def __init__(self, **kwargs):
+            self.chat = type("Chat", (), {"completions": FakeCompletions()})()
+
+    monkeypatch.setattr("dashagent.llm_client.OpenAI", FakeOpenAI)
     client = OpenAILLMClient(api_key="unit-test-openai-key")
     result = client.generate_messages(
         [{"role": "user", "content": "How many?"}],
@@ -116,6 +132,7 @@ def test_openai_generate_messages_normalizes_native_tool_calls(monkeypatch):
             "raw_arguments": '{"sql":"SELECT 1"}',
         }
     ]
+    assert result["transport"] == "openai_sdk"
 
 
 def test_openai_client_uses_sdk_base_url_and_model(monkeypatch):
@@ -144,7 +161,6 @@ def test_openai_client_uses_sdk_base_url_and_model(monkeypatch):
             self.chat = FakeChat()
 
     monkeypatch.setattr("dashagent.llm_client.OpenAI", FakeOpenAI)
-    monkeypatch.delenv("OPENAI_USE_REQUESTS_FALLBACK", raising=False)
     monkeypatch.setenv("OPENAI_BASE_URL", "https://photos-hewlett-safely-friends.trycloudflare.com/v1")
     monkeypatch.setenv("OPENAI_MODEL", "qwen2.5-32b-instruct")
 
@@ -194,7 +210,6 @@ def test_openai_client_normalizes_qwen_hermes_tool_calls_from_sdk(monkeypatch):
             self.chat = type("Chat", (), {"completions": FakeCompletions()})()
 
     monkeypatch.setattr("dashagent.llm_client.OpenAI", FakeOpenAI)
-    monkeypatch.delenv("OPENAI_USE_REQUESTS_FALLBACK", raising=False)
     client = OpenAILLMClient(api_key="unit-test-openai-key", model="qwen2.5-32b-instruct")
 
     result = client.generate_messages(
@@ -209,28 +224,84 @@ def test_openai_client_normalizes_qwen_hermes_tool_calls_from_sdk(monkeypatch):
 
 
 def test_openrouter_generate_messages_uses_openrouter_endpoint(monkeypatch):
-    monkeypatch.setenv("OPENAI_USE_REQUESTS_FALLBACK", "1")
     captured = {}
 
-    class FakeResponse:
-        ok = True
-
-        def json(self):
+    class FakeCompletion:
+        def model_dump(self):
             return {
                 "choices": [{"finish_reason": "stop", "message": {"role": "assistant", "content": "ok"}}],
                 "usage": {"total_tokens": 3},
             }
 
-    def fake_post(url, headers=None, data=None, timeout=None):
-        captured["url"] = url
-        captured["headers"] = headers or {}
-        captured["data"] = data
-        return FakeResponse()
+    class FakeCompletions:
+        def create(self, **payload):
+            captured["payload"] = payload
+            return FakeCompletion()
 
-    monkeypatch.setattr("dashagent.llm_client.requests.post", fake_post)
+    class FakeOpenAI:
+        def __init__(self, *, api_key=None, base_url=None, timeout=None):
+            captured["api_key"] = api_key
+            captured["base_url"] = base_url
+            captured["timeout"] = timeout
+            self.chat = type("Chat", (), {"completions": FakeCompletions()})()
+
+    monkeypatch.setattr("dashagent.llm_client.OpenAI", FakeOpenAI)
     client = OpenRouterLLMClient(api_key="unit-test-openrouter-key", model="openai/gpt-4o-mini")
     result = client.generate_messages([{"role": "user", "content": "hello"}])
     assert result["ok"] is True
     assert result["provider"] == "openrouter"
-    assert captured["url"] == "https://openrouter.ai/api/v1/chat/completions"
+    assert captured["base_url"] == "https://openrouter.ai/api/v1"
+    assert captured["payload"]["model"] == "openai/gpt-4o-mini"
     assert "unit-test-openrouter-key" not in str(result)
+
+
+def test_anthropic_client_normalizes_tool_use(monkeypatch):
+    captured = {}
+
+    class FakeMessage:
+        def model_dump(self):
+            return {
+                "stop_reason": "tool_use",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": "toolu_1",
+                        "name": "execute_sql",
+                        "input": {"sql": "SELECT 1"},
+                    }
+                ],
+                "usage": {"input_tokens": 7, "output_tokens": 5},
+            }
+
+    class FakeMessages:
+        def create(self, **payload):
+            captured["payload"] = payload
+            return FakeMessage()
+
+    class FakeAnthropic:
+        def __init__(self, **kwargs):
+            captured["init"] = kwargs
+            self.messages = FakeMessages()
+
+    monkeypatch.setattr("dashagent.llm_client.Anthropic", FakeAnthropic)
+    client = AnthropicLLMClient(api_key="unit-test-anthropic-key", model="claude-test")
+
+    result = client.generate_messages(
+        [{"role": "user", "content": "count schemas"}],
+        tools=[{"type": "function", "function": {"name": "execute_sql", "parameters": {"type": "object"}}}],
+        tool_choice="auto",
+    )
+
+    assert result["ok"] is True
+    assert result["transport"] == "anthropic_sdk"
+    assert result["finish_reason"] == "tool_calls"
+    assert result["tool_calls"][0]["name"] == "execute_sql"
+    assert result["tool_calls"][0]["arguments"] == {"sql": "SELECT 1"}
+    assert result["usage"]["total_tokens"] == 12
+    assert captured["payload"]["tools"][0]["name"] == "execute_sql"
+
+
+def test_llm_client_has_no_requests_chat_completion_runtime():
+    source = inspect.getsource(llm_client)
+    assert "requests.post" not in source
+    assert "deprecated_requests_fallback" not in source

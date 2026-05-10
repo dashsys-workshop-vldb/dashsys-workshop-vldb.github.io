@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 import time
+import hashlib
 from collections import Counter
 from difflib import get_close_matches
 from typing import Any
@@ -111,6 +112,8 @@ def run_real_llm_two_tools_baseline(
                 "response_ok": response.get("ok"),
                 "finish_reason": response.get("finish_reason"),
                 "error": response.get("error") or response.get("reason") or "",
+                "usage": response.get("usage", {}),
+                "usage_total_tokens": _usage_total_tokens(response.get("usage")),
                 "native_tool_call_count": len(response.get("tool_calls") or []),
                 "json_tool_call_count": len(parsed.get("tool_calls") or []) if isinstance(parsed.get("tool_calls"), list) else 0,
                 "final_answer_present": bool(parsed.get("final_answer")),
@@ -263,6 +266,8 @@ def run_real_llm_two_tools_baseline(
                     "response_ok": response.get("ok"),
                     "finish_reason": response.get("finish_reason"),
                     "error": response.get("error") or response.get("reason") or "",
+                    "usage": response.get("usage", {}),
+                    "usage_total_tokens": _usage_total_tokens(response.get("usage")),
                     "native_tool_call_count": len(response.get("tool_calls") or []),
                     "json_tool_call_count": len(parsed.get("tool_calls") or []) if isinstance(parsed.get("tool_calls"), list) else 0,
                     "final_answer_present": bool(final_answer),
@@ -283,6 +288,12 @@ def run_real_llm_two_tools_baseline(
     dry_run_only_api_count = sum(1 for call in tool_calls if call.get("dry_run_only"))
     unsupported_negative_answer_count = int(_uncertain_zero_row_with_hard_negative(final_answer, tool_calls))
     failure_categories = _failure_categories(tool_calls, final_answer, max_turns, len(llm_turns))
+    prompt_context_tokens = estimate_tokens(user_payload)
+    estimated_tokens = estimate_tokens({"query": query, "turns": transcript, "answer": final_answer})
+    token_accounting = _llm_token_accounting(
+        llm_turns,
+        fallback_payload={"query": query, "messages": messages, "turns": transcript, "answer": final_answer},
+    )
     if tool_calls and not tool_calls_executed:
         failure_reason = "no_valid_tool_calls_executed"
     if not final_answer and not failure_reason:
@@ -297,6 +308,7 @@ def run_real_llm_two_tools_baseline(
         "original_query": query,
         "strategy": mode_name,
         "baseline_variant": "guided" if guided else "raw",
+        "backend_type": _client_backend_type(client),
         "prompt_route": route.to_dict(),
         "data_driven_prompt": data_driven_prompt,
         "llm_turns": llm_turns,
@@ -325,8 +337,10 @@ def run_real_llm_two_tools_baseline(
         "failure_categories": failure_categories,
         "runtime": time.perf_counter() - start,
         "tool_call_count": len(tool_calls),
-        "prompt_context_tokens": estimate_tokens(user_payload),
-        "estimated_tokens": estimate_tokens({"query": query, "turns": transcript, "answer": final_answer}),
+        "prompt_context_tokens": prompt_context_tokens,
+        "estimated_tokens": estimated_tokens,
+        "llm_total_tokens": token_accounting["llm_total_tokens"],
+        "token_source": token_accounting["token_source"],
         "errors": [],
     }
     return redact_secrets(
@@ -335,6 +349,7 @@ def run_real_llm_two_tools_baseline(
             "baseline_variant": "guided" if guided else "raw",
             "llm_provider": client.provider_name(),
             "llm_model": client.model_name(),
+            "backend_type": _client_backend_type(client),
             "backend_used": False,
             "real_llm_used": True,
             "real_llm_called": real_llm_called,
@@ -358,7 +373,10 @@ def run_real_llm_two_tools_baseline(
             "dry_run_only_api_count": dry_run_only_api_count,
             "unsupported_negative_answer_count": unsupported_negative_answer_count,
             "failure_categories": failure_categories,
-            "prompt_context_tokens": estimate_tokens(user_payload),
+            "prompt_context_tokens": prompt_context_tokens,
+            "estimated_tokens": estimated_tokens,
+            "llm_total_tokens": token_accounting["llm_total_tokens"],
+            "token_source": token_accounting["token_source"],
         }
     )
 
@@ -396,6 +414,10 @@ def run_optimized_llm_controller_agent(
             query,
         )
         final_answer = response.get("content", "").strip()
+        token_accounting = _llm_token_accounting(
+            [{"usage": response.get("usage", {}), "usage_total_tokens": _usage_total_tokens(response.get("usage"))}],
+            fallback_payload={"query": query, "answer": final_answer},
+        )
         checkpoints.add_checkpoint(
             "checkpoint_llm_final_response",
             stage="final response",
@@ -406,14 +428,28 @@ def run_optimized_llm_controller_agent(
             "mode": LLM_CONTROLLER_OPTIMIZED_AGENT,
             "llm_provider": client.provider_name(),
             "llm_model": client.model_name(),
+            "backend_type": _client_backend_type(client),
             "backend_used": False,
             "real_llm_used": True,
             "final_answer": final_answer,
             "evidence_summary": {},
-            "trajectory": {"checkpoints": checkpoints.to_list(), "final_answer": final_answer, "tool_call_count": 0},
+            "llm_total_tokens": token_accounting["llm_total_tokens"],
+            "token_source": token_accounting["token_source"],
+            "estimated_tokens": estimate_tokens({"query": query, "answer": final_answer}),
+            "trajectory": {
+                "checkpoints": checkpoints.to_list(),
+                "final_answer": final_answer,
+                "tool_call_count": 0,
+                "llm_total_tokens": token_accounting["llm_total_tokens"],
+                "token_source": token_accounting["token_source"],
+                "estimated_tokens": estimate_tokens({"query": query, "answer": final_answer}),
+            },
         }
 
-    backend = run_data_answer_tool(query, config=config)
+    cfg = config or Config.from_env()
+    backend_query_id = "llm_controller_" + hashlib.sha256(query.encode("utf-8")).hexdigest()[:12]
+    backend_output_dir = cfg.outputs_dir / "llm_controller_baseline_backend" / backend_query_id
+    backend = run_data_answer_tool(query, config=cfg, query_id=backend_query_id, output_dir=backend_output_dir)
     checkpoints.add_checkpoint(
         "checkpoint_llm_tool_call",
         stage="llm tool call",
@@ -461,16 +497,26 @@ def run_optimized_llm_controller_agent(
         },
     )
     trajectory = dict(backend.get("trajectory", {}))
+    token_accounting = _llm_token_accounting(
+        [{"usage": response.get("usage", {}), "usage_total_tokens": _usage_total_tokens(response.get("usage"))}],
+        fallback_payload={"query": query, "controller_prompt": prompt, "answer": final_answer},
+    )
     trajectory["llm_controller_checkpoints"] = checkpoints.to_list()
     trajectory["final_answer"] = final_answer
+    trajectory["llm_total_tokens"] = token_accounting["llm_total_tokens"]
+    trajectory["token_source"] = token_accounting["token_source"]
     return {
         "mode": LLM_CONTROLLER_OPTIMIZED_AGENT,
         "llm_provider": client.provider_name(),
         "llm_model": client.model_name(),
+        "backend_type": _client_backend_type(client),
         "backend_used": True,
         "real_llm_used": True,
         "final_answer": final_answer,
         "evidence_summary": backend.get("tool_results_summary", {}),
+        "llm_total_tokens": token_accounting["llm_total_tokens"],
+        "token_source": token_accounting["token_source"],
+        "estimated_tokens": trajectory.get("estimated_tokens", estimate_tokens({"query": query, "answer": final_answer})),
         "trajectory": trajectory,
     }
 
@@ -497,6 +543,7 @@ def _controller_fallback(
         "mode": LLM_CONTROLLER_OPTIMIZED_AGENT,
         "llm_provider": client.provider_name(),
         "llm_model": client.model_name(),
+        "backend_type": _client_backend_type(client),
         "backend_used": bool(backend),
         "real_llm_used": False,
         "skipped": True,
@@ -513,6 +560,7 @@ def _skipped_result(query: str, mode: str, client: LLMClient, reason: str) -> di
         "mode": mode,
         "llm_provider": client.provider_name(),
         "llm_model": client.model_name(),
+        "backend_type": _client_backend_type(client),
         "backend_used": False,
         "real_llm_used": False,
         "real_llm_called": False,
@@ -530,6 +578,9 @@ def _skipped_result(query: str, mode: str, client: LLMClient, reason: str) -> di
         "unsupported_negative_answer_count": 0,
         "failure_categories": {},
         "prompt_context_tokens": 0,
+        "estimated_tokens": 0,
+        "llm_total_tokens": None,
+        "token_source": "unavailable",
         "llm_turns": [],
         "llm_tool_calls": [],
         "validation_results": [],
@@ -563,6 +614,9 @@ def _skipped_result(query: str, mode: str, client: LLMClient, reason: str) -> di
             "unsupported_negative_answer_count": 0,
             "failure_categories": {},
             "prompt_context_tokens": 0,
+            "estimated_tokens": 0,
+            "llm_total_tokens": None,
+            "token_source": "unavailable",
         },
         "tool_call_count": 0,
     }
@@ -684,6 +738,43 @@ def _call_llm_messages(
     system_prompt = messages[0].get("content", "") if messages and messages[0].get("role") == "system" else ""
     user_prompt = "\n\n".join(str(message.get("content", "")) for message in messages if message.get("role") != "system")
     return client.generate(system_prompt, user_prompt, tools=tools)
+
+
+def _usage_total_tokens(usage: Any) -> int | None:
+    if not isinstance(usage, dict):
+        return None
+    total = usage.get("total_tokens")
+    if isinstance(total, (int, float)):
+        return int(total)
+    prompt = usage.get("prompt_tokens")
+    completion = usage.get("completion_tokens")
+    if isinstance(prompt, (int, float)) and isinstance(completion, (int, float)):
+        return int(prompt + completion)
+    return None
+
+
+def _client_backend_type(client: LLMClient) -> str:
+    provider = client.provider_name()
+    if provider == "anthropic":
+        return "anthropic_sdk"
+    if provider in {"openai", "openrouter"}:
+        return "openai_sdk"
+    return "none"
+
+
+def _llm_token_accounting(turns: list[dict[str, Any]], *, fallback_payload: Any) -> dict[str, Any]:
+    measured_values = [
+        turn.get("usage_total_tokens")
+        for turn in turns
+        if isinstance(turn.get("usage_total_tokens"), (int, float))
+    ]
+    if measured_values:
+        return {"llm_total_tokens": int(sum(measured_values)), "token_source": "measured_usage"}
+    try:
+        estimated = estimate_tokens(fallback_payload)
+    except Exception:
+        return {"llm_total_tokens": None, "token_source": "unavailable"}
+    return {"llm_total_tokens": int(estimated), "token_source": "estimated"}
 
 
 def _forced_tool_choice(route_mode: str) -> str | dict[str, Any]:

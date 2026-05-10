@@ -179,8 +179,14 @@ def plan_data_answer_tool(query: str, *, config: Config | None = None) -> dict[s
     }
 
 
-def run_data_answer_tool(query: str, *, config: Config | None = None, query_id: str | None = None) -> dict[str, Any]:
-    result = AgentExecutor(config).run(query, strategy=DEFAULT_AGENT_STRATEGY, query_id=query_id)
+def run_data_answer_tool(
+    query: str,
+    *,
+    config: Config | None = None,
+    query_id: str | None = None,
+    output_dir: Any | None = None,
+) -> dict[str, Any]:
+    result = AgentExecutor(config).run(query, strategy=DEFAULT_AGENT_STRATEGY, query_id=query_id, output_dir=output_dir)
     return {
         "final_answer": result["final_answer"],
         "trajectory": result["trajectory"],

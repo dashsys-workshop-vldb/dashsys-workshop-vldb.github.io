@@ -20,6 +20,7 @@ flowchart LR
   I --> K["Endpoint tie-break v2"]
   L["Diagnostic"] --> M["Live readiness"]
   L --> N["Secret/readiness"]
+  S["Shadow LLM"] --> T["SDK LLM baseline"]
   O["Disabled"] --> P["Compact context"]
   O --> Q["Repair"]
 ```
@@ -32,10 +33,11 @@ flowchart LR
 | **Packaged strict score** | `0.6491` | Submit-ready packaged score. |
 | **Best isolated score** | `0.6558` | Best safe trial score; below winner target. |
 | **Correctness** | `0.6743` | Current strict correctness. |
-| **Tokens/runtime/tools** | `831.4571 / 0.0113 / 1.4571` | Efficiency metrics. |
+| **Tokens/runtime/tools** | `831.4571 / 0.0092 / 1.4571` | Efficiency metrics. |
 | **Hidden-style** | `48/48` | Current hidden-style pass result. |
 | **Readiness** | `True` | Final submission package status. |
 | **Secret scan** | `True` | Readiness secret scan status. |
+| **LLM baseline framework** | `qwen2.5-32b-instruct` | Backend type=openai_sdk; recommendation=keep_shadow_only. |
 
 ## Technique Status Cards
 
@@ -43,6 +45,7 @@ flowchart LR
 | --- | --- | --- |
 | **Official-token reduction** | `🟢 promoted_default` | Promoted in the packaged path. |
 | **LLM rewrite search** | `🟡 shadow_only` | Candidates=6; accepted=0. |
+| **LLM baseline framework** | `🟡 shadow_only` | Current backend=qwen2.5-32b-instruct; strict=available; tools=True. |
 | **Live-mode readiness** | `🔵 diagnostic_only` | Credentials visible=False; dry-run rows=34. |
 | **Answer-shape v2** | `⚪ default_off` | Recommendation=safe_for_answer_shape_v2_trial. |
 | **SQL-only API-skip** | `⚪ default_off` | Rows=0. |

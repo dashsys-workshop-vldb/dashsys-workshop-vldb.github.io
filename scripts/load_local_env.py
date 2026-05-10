@@ -6,7 +6,12 @@ import re
 from pathlib import Path
 from typing import Any
 
-from dashagent.llm_client import DEFAULT_OPENAI_MODEL, DEFAULT_OPENROUTER_BASE_URL, DEFAULT_OPENROUTER_MODEL
+from dashagent.llm_client import (
+    DEFAULT_ANTHROPIC_MODEL,
+    DEFAULT_OPENAI_MODEL,
+    DEFAULT_OPENROUTER_BASE_URL,
+    DEFAULT_OPENROUTER_MODEL,
+)
 
 
 DEFAULT_ENV_FILENAME = ".env.local"
@@ -108,20 +113,29 @@ def _expand_vars(value: str, parsed_values: dict[str, str]) -> str:
 
 
 def _visible_key_name() -> str | None:
+    if os.environ.get("LLM_PROVIDER", "").lower() == "anthropic" and os.environ.get("ANTHROPIC_API_KEY"):
+        return "ANTHROPIC_API_KEY"
     if os.environ.get("OPENROUTER_API_KEY"):
         return "OPENROUTER_API_KEY"
     if os.environ.get("OPENAI_API_KEY"):
         return "OPENAI_API_KEY"
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        return "ANTHROPIC_API_KEY"
     return None
 
 
 def _provider() -> str:
+    configured = os.environ.get("LLM_PROVIDER", "").strip().lower()
+    if configured in {"openai", "openai_compatible", "openrouter", "anthropic"}:
+        return configured
     if os.environ.get("OPENROUTER_API_KEY"):
         return "openrouter"
     if os.environ.get("OPENAI_API_KEY"):
         if "openrouter.ai" in os.environ.get("OPENAI_BASE_URL", ""):
             return "openrouter"
         return "openai"
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        return "anthropic"
     return "none"
 
 
@@ -130,6 +144,10 @@ def _base_url(provider: str) -> str:
         return os.environ.get("OPENAI_BASE_URL") or os.environ.get("OPENROUTER_BASE_URL") or DEFAULT_OPENROUTER_BASE_URL
     if provider == "openai":
         return os.environ.get("OPENAI_BASE_URL") or "https://api.openai.com/v1"
+    if provider == "openai_compatible":
+        return os.environ.get("OPENAI_BASE_URL") or "https://api.openai.com/v1"
+    if provider == "anthropic":
+        return os.environ.get("ANTHROPIC_BASE_URL") or ""
     return os.environ.get("OPENAI_BASE_URL") or ""
 
 
@@ -138,7 +156,11 @@ def _model(provider: str) -> str:
         return os.environ.get("OPENROUTER_MODEL") or DEFAULT_OPENROUTER_MODEL
     if provider == "openai":
         return os.environ.get("OPENAI_MODEL") or DEFAULT_OPENAI_MODEL
-    return os.environ.get("OPENROUTER_MODEL") or os.environ.get("OPENAI_MODEL") or DEFAULT_OPENROUTER_MODEL
+    if provider == "openai_compatible":
+        return os.environ.get("OPENAI_MODEL") or DEFAULT_OPENAI_MODEL
+    if provider == "anthropic":
+        return os.environ.get("ANTHROPIC_MODEL") or DEFAULT_ANTHROPIC_MODEL
+    return os.environ.get("OPENROUTER_MODEL") or os.environ.get("OPENAI_MODEL") or os.environ.get("ANTHROPIC_MODEL") or DEFAULT_OPENROUTER_MODEL
 
 
 __all__ = ["load_local_env", "llm_env_status", "project_root_from_script"]

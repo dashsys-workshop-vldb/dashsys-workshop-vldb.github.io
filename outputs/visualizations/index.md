@@ -17,6 +17,9 @@ This index links the supervisor-facing visualization suite. Every artifact is ge
 | Packaged strict final score | 0.6491 |
 | Best isolated score | 0.6558 |
 | Final recommendation | ready_to_submit_with_official_token_reduction |
+| LLM baseline framework | generic_sdk_llm_baseline |
+| Current LLM backend | qwen2.5-32b-instruct |
+| LLM baseline recommendation | keep_shadow_only |
 
 ## Supervisor-Facing Pages
 

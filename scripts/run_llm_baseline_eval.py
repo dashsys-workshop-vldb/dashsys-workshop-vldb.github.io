@@ -48,7 +48,7 @@ def main() -> int:
             "systems": systems,
         }
         write_outputs(config, payload)
-        write_qwen_report(config, payload)
+        write_llm_baseline_report(config, payload)
         print(json.dumps({"skipped": True, "reason": payload["reason"], "json": str(config.outputs_dir / "llm_baseline_eval.json")}, indent=2, sort_keys=True))
         return 0
     rows = []
@@ -82,6 +82,7 @@ def main() -> int:
                     "real_llm_called": result.get("real_llm_called", bool(result.get("real_llm_used"))),
                     "provider": result.get("llm_provider"),
                     "model": result.get("llm_model"),
+                    "backend_type": result.get("backend_type", result.get("trajectory", {}).get("backend_type")),
                     "tool_calls_executed": result.get("tool_calls_executed", result.get("tool_call_count", 0) > 0),
                     "valid_agent_run": valid_agent_run,
                     "skipped_or_failed": result.get("skipped_or_failed", result.get("skipped", False) or not valid_agent_run),
@@ -99,12 +100,16 @@ def main() -> int:
                     "unsupported_negative_answer_count": result.get("unsupported_negative_answer_count", 0),
                     "failure_categories": result.get("failure_categories", {}),
                     "prompt_context_tokens": result.get("prompt_context_tokens", result.get("trajectory", {}).get("prompt_context_tokens", 0)),
+                    "estimated_tokens": result.get("estimated_tokens", result.get("trajectory", {}).get("estimated_tokens", 0)),
+                    "llm_total_tokens": result.get("llm_total_tokens", result.get("trajectory", {}).get("llm_total_tokens")),
+                    "token_source": result.get("token_source", result.get("trajectory", {}).get("token_source", "unavailable")),
                     "final_answer": result.get("final_answer", ""),
+                    "trajectory": result.get("trajectory", {}),
                 }
             )
     payload = {"skipped": False, "rows": rows, "systems": systems}
     write_outputs(config, payload)
-    write_qwen_report(config, payload)
+    write_llm_baseline_report(config, payload)
     print(json.dumps({"skipped": False, "rows": len(rows), "json": str(config.outputs_dir / "llm_baseline_eval.json")}, indent=2, sort_keys=True))
     return 0
 
@@ -149,23 +154,25 @@ def write_outputs(config: Config, payload: dict) -> None:
     md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def write_qwen_report(config: Config, payload: dict) -> None:
-    report = build_qwen_report(config, payload)
-    json_path = config.outputs_dir / "qwen_llm_baseline_eval_report.json"
-    md_path = config.outputs_dir / "qwen_llm_baseline_eval_report.md"
+def write_llm_baseline_report(config: Config, payload: dict) -> None:
+    report = build_llm_baseline_report(config, payload)
+    json_path = config.outputs_dir / "llm_baseline_eval_report.json"
+    md_path = config.outputs_dir / "llm_baseline_eval_report.md"
     json_path.write_text(json.dumps(report, indent=2, sort_keys=True, default=str), encoding="utf-8")
-    md_path.write_text(render_qwen_markdown(report), encoding="utf-8")
+    md_path.write_text(render_llm_baseline_markdown(report), encoding="utf-8")
 
 
-def build_qwen_report(config: Config, payload: dict) -> dict:
+def build_llm_baseline_report(config: Config, payload: dict) -> dict:
     rows = payload.get("rows") or []
-    smoke = _load_json(config.outputs_dir / "openai_compatible_llm_check.json")
+    smoke = _load_json(config.outputs_dir / "llm_sdk_backend_check.json") or _load_json(config.outputs_dir / "openai_compatible_llm_check.json")
+    strict = _load_json(config.outputs_dir / "llm_strict_baseline_eval.json")
     deterministic = _deterministic_sql_first_summary(config)
     strategies = []
     for system in payload.get("systems", []):
         system_rows = [row for row in rows if row.get("system") == system]
         valid_rows = [row for row in system_rows if row.get("valid_agent_run")]
         scored_rows = [row for row in valid_rows if isinstance(row.get("answer_score"), (int, float))]
+        strict_summary = _strict_strategy_summary(strict, system)
         strategies.append(
             {
                 "system": system,
@@ -173,9 +180,12 @@ def build_qwen_report(config: Config, payload: dict) -> dict:
                 "valid_runs": len(valid_rows),
                 "failed_runs": sum(1 for row in system_rows if row.get("skipped_or_failed") and not row.get("valid_agent_run")),
                 "avg_answer_score": _avg(scored_rows, "answer_score"),
-                "strict_score": "unavailable",
+                "strict_score": strict_summary.get("strict_final_score", "unavailable"),
+                "strict_correctness": strict_summary.get("strict_correctness", "unavailable"),
+                "strict_scoring_status": strict_summary.get("strict_scoring_status", "unavailable"),
                 "avg_tool_calls": _avg(valid_rows, "tool_call_count"),
-                "avg_tokens": _avg(valid_rows, "prompt_context_tokens"),
+                "avg_tokens": _avg_token_rows(valid_rows),
+                "token_source_counts": _token_source_counts(valid_rows),
                 "avg_runtime": _avg(valid_rows, "runtime"),
                 "failure_categories": _aggregate_failures(system_rows),
             }
@@ -183,13 +193,22 @@ def build_qwen_report(config: Config, payload: dict) -> dict:
     skipped = []
     if payload.get("skipped"):
         skipped = [{"system": system, "reason": payload.get("reason", "LLM baseline skipped")} for system in payload.get("systems", [])]
-    recommendation = _qwen_recommendation(payload, strategies, smoke)
+    recommendation = _llm_baseline_recommendation(payload, strategies, smoke, strict)
+    model = smoke.get("backend_name") or os.getenv("OPENAI_MODEL") or os.getenv("ANTHROPIC_MODEL", "")
+    base_url = smoke.get("base_url") or os.getenv("OPENAI_BASE_URL") or os.getenv("ANTHROPIC_BASE_URL", "")
     report = {
-        "provider": "openai_compatible_qwen",
-        "base_url": os.getenv("OPENAI_BASE_URL", ""),
-        "model": os.getenv("OPENAI_MODEL", ""),
+        "framework": "generic_sdk_llm_baseline",
+        "framework_note": "The LLM baseline framework is generic; the configured model/provider is backend metadata.",
+        "provider_type": smoke.get("provider_type", "openai_compatible"),
+        "provider": smoke.get("provider", "openai_compatible"),
+        "backend_type": smoke.get("backend_type", "openai_sdk"),
+        "sdk_client": "SDK-based LLM client",
+        "base_url": base_url,
+        "model": model,
+        "backend_name": model or "unavailable",
         "smoke_test_passed": smoke.get("ok", "unavailable"),
         "tool_calling_supported": smoke.get("tool_calling_supported", "unavailable"),
+        "strict_scoring_status": strict.get("summary", {}).get("strict_scoring_status", "unavailable") if strict else "unavailable",
         "baseline_strategies_run": [row["system"] for row in strategies if row["rows"] > 0],
         "skipped_strategies": skipped,
         "per_strategy": strategies,
@@ -199,7 +218,8 @@ def build_qwen_report(config: Config, payload: dict) -> dict:
         "recommendation": recommendation,
         "promotion_status": "shadow_only",
         "safety_notes": [
-            "Qwen LLM baseline results are comparison-only.",
+            "Generic SDK LLM baseline results are comparison-only.",
+            "The current model/backend is metadata; switch models by changing .env.local.",
             "Packaged SQL_FIRST_API_VERIFY behavior is unchanged.",
             "No LLM result is promoted automatically.",
         ],
@@ -207,32 +227,41 @@ def build_qwen_report(config: Config, payload: dict) -> dict:
     safe_report = redact_secrets(report)
     safe_report["base_url"] = report.get("base_url")
     safe_report["model"] = report.get("model")
+    safe_report["backend_name"] = report.get("backend_name")
     safe_report["provider"] = report.get("provider")
+    safe_report["provider_type"] = report.get("provider_type")
+    safe_report["backend_type"] = report.get("backend_type")
     return safe_report
 
 
-def render_qwen_markdown(report: dict) -> str:
+def render_llm_baseline_markdown(report: dict) -> str:
     lines = [
-        "# Qwen LLM Baseline Evaluation Report",
+        "# SDK LLM Baseline Evaluation Report",
         "",
-        f"- Provider: `{report.get('provider')}`",
+        f"- Framework: `{report.get('framework')}`",
+        f"- Provider type: `{report.get('provider_type')}`",
+        f"- Backend type: `{report.get('backend_type')}`",
+        f"- SDK client: `{report.get('sdk_client')}`",
         f"- Base URL: `{report.get('base_url') or 'unavailable'}`",
-        f"- Model: `{report.get('model') or 'unavailable'}`",
+        f"- Current LLM backend: `{report.get('backend_name') or 'unavailable'}`",
         f"- Smoke test passed: `{report.get('smoke_test_passed')}`",
         f"- Tool calling supported: `{report.get('tool_calling_supported')}`",
+        f"- Strict scoring status: `{report.get('strict_scoring_status')}`",
         f"- Recommendation: `{report.get('recommendation')}`",
         f"- Promotion status: `{report.get('promotion_status')}`",
         "",
+        report.get("framework_note", "The LLM baseline framework is generic; the configured model is backend metadata."),
+        "",
         "## Strategy Summary",
         "",
-        "| Strategy | Rows | Valid runs | Failed runs | Avg answer score | Strict score | Avg tools | Avg tokens | Avg runtime |",
-        "| --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: |",
+        "| Strategy | Rows | Valid runs | Failed runs | Avg answer score | Strict score | Strict status | Avg tools | Avg tokens | Token source | Avg runtime |",
+        "| --- | ---: | ---: | ---: | ---: | --- | --- | ---: | ---: | --- | ---: |",
     ]
     for row in report.get("per_strategy", []):
         lines.append(
             f"| `{row.get('system')}` | {row.get('rows')} | {row.get('valid_runs')} | {row.get('failed_runs')} | "
-            f"{_fmt(row.get('avg_answer_score'))} | {row.get('strict_score')} | {_fmt(row.get('avg_tool_calls'))} | "
-            f"{_fmt(row.get('avg_tokens'))} | {_fmt(row.get('avg_runtime'))} |"
+            f"{_fmt(row.get('avg_answer_score'))} | {row.get('strict_score')} | {row.get('strict_scoring_status')} | "
+            f"{_fmt(row.get('avg_tool_calls'))} | {_fmt(row.get('avg_tokens'))} | {row.get('token_source_counts')} | {_fmt(row.get('avg_runtime'))} |"
         )
     lines.extend(
         [
@@ -242,7 +271,7 @@ def render_qwen_markdown(report: dict) -> str:
             f"- SQL_FIRST_API_VERIFY strict score: `{report.get('deterministic_sql_first_api_verify', {}).get('avg_final_score', 'unavailable')}`",
             f"- Comparison: `{report.get('comparison_against_deterministic')}`",
             "",
-            "Qwen remains shadow-only unless a later explicit promotion passes strict scoring, safety, hidden-style, and packaging gates.",
+            "The SDK LLM baseline remains shadow-only unless a later explicit promotion passes strict scoring, safety, hidden-style, and packaging gates.",
         ]
     )
     return "\n".join(lines) + "\n"
@@ -278,6 +307,40 @@ def _avg(rows: list[dict], key: str) -> float | str:
     return round(sum(values) / len(values), 4)
 
 
+def _avg_token_rows(rows: list[dict]) -> float | str:
+    values = []
+    for row in rows:
+        token_value = row.get("llm_total_tokens")
+        if not isinstance(token_value, (int, float)):
+            token_value = row.get("estimated_tokens")
+        if not isinstance(token_value, (int, float)):
+            token_value = row.get("prompt_context_tokens")
+        if isinstance(token_value, (int, float)):
+            values.append(token_value)
+    if not values:
+        return "unavailable"
+    return round(sum(values) / len(values), 4)
+
+
+def _token_source_counts(rows: list[dict]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in rows:
+        source = str(row.get("token_source") or "unavailable")
+        if source == "unavailable" and isinstance(row.get("estimated_tokens"), (int, float)) and row.get("estimated_tokens"):
+            source = "estimated"
+        counts[source] = counts.get(source, 0) + 1
+    return counts
+
+
+def _strict_strategy_summary(strict: dict, system: str) -> dict:
+    if not isinstance(strict, dict):
+        return {}
+    for row in strict.get("per_strategy", []):
+        if row.get("system") == system:
+            return row
+    return {}
+
+
 def _aggregate_failures(rows: list[dict]) -> dict:
     counts: dict[str, int] = {}
     for row in rows:
@@ -295,17 +358,36 @@ def _compare_to_deterministic(strategies: list[dict], deterministic: dict) -> st
     det_score = deterministic.get("avg_final_score")
     if not isinstance(det_score, (int, float)):
         return "deterministic_strict_score_unavailable"
-    return "qwen_strict_score_unavailable; deterministic SQL_FIRST_API_VERIFY remains preferred"
+    scored = [
+        row
+        for row in strategies
+        if isinstance(row.get("strict_score"), (int, float))
+    ]
+    if not scored:
+        return "llm_strict_score_unavailable; deterministic SQL_FIRST_API_VERIFY remains preferred"
+    best = max(scored, key=lambda row: float(row.get("strict_score", 0.0)))
+    delta = round(float(best["strict_score"]) - float(det_score), 4)
+    if delta > 0:
+        return f"best_llm_strategy={best.get('system')} strict_delta={delta}; keep shadow-only until safety gates pass"
+    if delta == 0:
+        return f"best_llm_strategy={best.get('system')} ties deterministic strict score; keep SQL_FIRST_API_VERIFY preferred"
+    return f"best_llm_strategy={best.get('system')} strict_delta={delta}; deterministic SQL_FIRST_API_VERIFY remains preferred"
 
 
-def _qwen_recommendation(payload: dict, strategies: list[dict], smoke: dict) -> str:
+def _llm_baseline_recommendation(payload: dict, strategies: list[dict], smoke: dict, strict: dict) -> str:
     if payload.get("skipped"):
         return "comparison_only"
     if smoke and smoke.get("tool_calling_supported") is False:
         return "keep_shadow_only"
-    if any(row.get("valid_runs", 0) for row in strategies):
+    if not strict or strict.get("summary", {}).get("strict_scoring_status") != "available":
         return "keep_shadow_only"
-    return "comparison_only"
+    if (
+        strict.get("summary", {}).get("best_delta_vs_deterministic", 0) > 0
+        and strict.get("summary", {}).get("all_gates_clean") is True
+        and not strict.get("summary", {}).get("safety_flags")
+    ):
+        return "candidate_for_future_trial"
+    return "keep_shadow_only"
 
 
 def _fmt(value: object) -> str:

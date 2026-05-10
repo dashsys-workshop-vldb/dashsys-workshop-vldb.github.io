@@ -3,8 +3,8 @@
 | System | Rows | Valid runs | Failed runs | Avg answer score on valid runs | Avg tool calls on valid runs |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | RAW_REAL_LLM_TWO_TOOLS_BASELINE | 35 | 32 | 3 | 0.4180 | 1.38 |
-| GUIDED_REAL_LLM_TWO_TOOLS_BASELINE | 35 | 35 | 0 | 0.4071 | 1.46 |
-| LLM_CONTROLLER_OPTIMIZED_AGENT | 35 | 35 | 0 | 0.4526 | 1.46 |
+| GUIDED_REAL_LLM_TWO_TOOLS_BASELINE | 35 | 35 | 0 | 0.4063 | 1.46 |
+| LLM_CONTROLLER_OPTIMIZED_AGENT | 35 | 35 | 0 | 0.4484 | 1.46 |
 
 ## Failed Real LLM Tool Loops
 

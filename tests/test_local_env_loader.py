@@ -15,6 +15,9 @@ def _clear_llm_env(monkeypatch):
         "OPENROUTER_BASE_URL",
         "OPENROUTER_MODEL",
         "OPENAI_MODEL",
+        "ANTHROPIC_API_KEY",
+        "ANTHROPIC_MODEL",
+        "ANTHROPIC_BASE_URL",
         "LLM_PROVIDER",
     ]:
         monkeypatch.delenv(key, raising=False)
@@ -31,6 +34,7 @@ def test_env_example_contains_placeholders_only():
     assert "OPENAI_API_KEY=put_your_key_here" in text
     assert "OPENAI_BASE_URL=https://photos-hewlett-safely-friends.trycloudflare.com/v1" in text
     assert "OPENAI_MODEL=qwen2.5-32b-instruct" in text
+    assert "ANTHROPIC_API_KEY=put_your_anthropic_key_here" in text
     assert "sk-" not in text
     assert "sk_or" not in text
 

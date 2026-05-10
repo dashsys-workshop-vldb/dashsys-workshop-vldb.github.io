@@ -24,6 +24,7 @@ def main() -> int:
     entries = build_entries()
     state = load_json("outputs/visualizations/current_system_state.json", {})
     catalog = load_json("outputs/visualizations/technique_catalog.json", {})
+    llm_baseline = load_json("outputs/llm_baseline_eval_report.json", {})
     payload = {
         "summary": {
             "visualization_root": str(VIS_DIR),
@@ -33,6 +34,9 @@ def main() -> int:
             "packaged_strict_final_score": state.get("packaged_strict_final_score"),
             "best_isolated_score": state.get("best_isolated_score"),
             "final_recommendation": state.get("final_recommendation"),
+            "llm_baseline_framework": llm_baseline.get("framework", "generic_sdk_llm_baseline"),
+            "llm_baseline_backend": llm_baseline.get("backend_name", "unavailable"),
+            "llm_baseline_recommendation": llm_baseline.get("recommendation", "unavailable"),
         },
         "entries": entries,
     }
@@ -115,6 +119,9 @@ def build_markdown(payload: dict[str, Any]) -> str:
                     ["Packaged strict final score", summary.get("packaged_strict_final_score")],
                     ["Best isolated score", summary.get("best_isolated_score")],
                     ["Final recommendation", summary.get("final_recommendation")],
+                    ["LLM baseline framework", summary.get("llm_baseline_framework")],
+                    ["Current LLM backend", summary.get("llm_baseline_backend")],
+                    ["LLM baseline recommendation", summary.get("llm_baseline_recommendation")],
                 ],
                 ),
             "",

@@ -34,6 +34,7 @@ flowchart LR
   I --> K["Endpoint tie-break v2"]
   L["Diagnostic"] --> M["Live readiness"]
   L --> N["Secret/readiness"]
+  S["Shadow LLM"] --> T["SDK LLM baseline"]
   O["Disabled"] --> P["Compact context"]
   O --> Q["Repair"]
 """
@@ -63,6 +64,7 @@ def build_markdown(payload: dict) -> str:
                     ("Hidden-style", state["hidden_style"], "Current hidden-style pass result."),
                     ("Readiness", state["final_submission_ready"], "Final submission package status."),
                     ("Secret scan", state["no_secret_scan_ok"], "Readiness secret scan status."),
+                    ("LLM baseline framework", state["llm_baseline_framework"]["backend_name"], f"Backend type={state['llm_baseline_framework']['backend_type']}; recommendation={state['llm_baseline_framework']['recommendation']}."),
                 ]
             ),
             "",
@@ -72,6 +74,7 @@ def build_markdown(payload: dict) -> str:
                 [
                     ("Official-token reduction", status_badge(state["official_token_reduction"]["state"]), "Promoted in the packaged path."),
                     ("LLM rewrite search", status_badge(state["llm"]["state"]), f"Candidates={state['llm']['candidate_count']}; accepted={state['llm']['accepted']}."),
+                    ("LLM baseline framework", status_badge(state["llm_baseline_framework"]["state"]), f"Current backend={state['llm_baseline_framework']['backend_name']}; strict={state['llm_baseline_framework']['strict_scoring_status']}; tools={state['llm_baseline_framework']['tool_calling_supported']}."),
                     ("Live-mode readiness", status_badge(state["live"]["state"]), f"Credentials visible={state['live']['credentials_visible']}; dry-run rows={state['live']['dry_run_dependent_rows']}."),
                     ("Answer-shape v2", status_badge(state["answer_shape_v2"]["state"]), f"Recommendation={state['answer_shape_v2']['recommendation']}."),
                     ("SQL-only API-skip", status_badge(state["sql_only_api_skip"]["state"]), f"Rows={state['sql_only_api_skip']['rows']}."),

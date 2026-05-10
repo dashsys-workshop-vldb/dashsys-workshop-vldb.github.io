@@ -36,6 +36,8 @@ def build_state() -> dict[str, Any]:
     hidden = winner.get("hidden_style_eval", {})
     auto_trial = winner.get("autonomous_packaged_trial", {})
     llm = winner.get("llm_answer_rewrite_search", load_json("outputs/llm_answer_rewrite_search.json", {}).get("summary", {}))
+    llm_baseline = winner.get("llm_baseline_framework", load_json("outputs/llm_baseline_eval_report.json", {}))
+    llm_strict = load_json("outputs/llm_strict_baseline_eval.json", {})
     live = winner.get("live_mode_readiness_report", load_json("outputs/live_mode_readiness_report.json", {}).get("summary", {}))
     answer_shape = winner.get("answer_shape_v2_ab_eval", load_json("outputs/answer_shape_v2_ab_eval.json", {}).get("summary", {}))
     endpoint_tie = winner.get("endpoint_family_tiebreak_v2_shadow", load_json("outputs/endpoint_family_tiebreak_v2_shadow.json", {}).get("summary", {}))
@@ -64,6 +66,15 @@ def build_state() -> dict[str, Any]:
             "candidate_count": llm.get("candidate_count", llm.get("candidate_rows")),
             "accepted_candidate_count": llm.get("accepted_candidate_count", llm.get("safe_rows")),
             "recommendation": llm.get("recommendation"),
+        },
+        "llm_baseline_framework_status": {
+            "framework": llm_baseline.get("framework", "generic_sdk_llm_baseline"),
+            "backend_name": llm_baseline.get("backend_name"),
+            "backend_type": llm_baseline.get("backend_type"),
+            "tool_calling_supported": llm_baseline.get("tool_calling_supported"),
+            "strict_scoring_status": llm_strict.get("summary", {}).get("strict_scoring_status", llm_baseline.get("strict_scoring_status")),
+            "recommendation": llm_strict.get("summary", {}).get("recommendation", llm_baseline.get("recommendation", "keep_shadow_only")),
+            "state": "shadow_only",
         },
         "live_mode_readiness_status": {
             "diagnostic_only": live.get("diagnostic_only"),
@@ -115,6 +126,7 @@ def build_state() -> dict[str, Any]:
             "endpoint-family tie-break v2",
             "AST-guided SQL candidate canary",
             "OpenRouter LLM answer rewrite search",
+            "SDK LLM baseline framework",
             "autonomous packaged trials",
         ],
         "diagnostic_only_techniques": [
@@ -163,6 +175,7 @@ def build_markdown(state: dict[str, Any]) -> str:
         ["no secret scan ok", state["no_secret_scan_ok"]],
         ["final recommendation", state["final_recommendation"]],
         ["LLM status", state["llm_status"]],
+        ["LLM baseline framework", state["llm_baseline_framework_status"]],
         ["live-mode readiness", state["live_mode_readiness_status"]],
         ["answer-shape v2", state["answer_shape_v2_status"]],
         ["endpoint-family tie-break v2", state["endpoint_family_tiebreak_v2_status"]],
@@ -213,6 +226,7 @@ def build_technique_dataflow_views() -> list[dict[str, Any]]:
         view("hidden-style eval", "paraphrase/hidden-style cases", "family/schema stability report", "promotion gate", True, False, True, True, state="diagnostic_only"),
         view("live-mode readiness", "credential visibility + dry-run rows", "live-readiness report", "human review", False, False, True, True, state="diagnostic_only"),
         view("LLM answer rewrite search", "evidence registry + baseline answer", "validated/rejected LLM rewrite candidates", "supportable rewrite gates", True, False, True, True, state="shadow_only"),
+        view("SDK LLM baseline framework", "configured SDK backend + dev prompts", "shadow baseline and strict diagnostic reports", "human comparison only", True, False, True, True, state="shadow_only"),
     ]
     return entries
 

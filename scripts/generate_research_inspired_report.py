@@ -78,6 +78,10 @@ def generate_report(config: Config) -> dict[str, Any]:
     execution_candidate_search_report = _load_json(config.outputs_dir / "execution_candidate_search.json")
     llm_candidate_search_report = _load_json(config.outputs_dir / "llm_candidate_search.json")
     llm_answer_rewrite_report = _load_json(config.outputs_dir / "llm_answer_rewrite_search.json")
+    llm_baseline_report = _load_json(config.outputs_dir / "llm_baseline_eval_report.json")
+    llm_strict_baseline_report = _load_json(config.outputs_dir / "llm_strict_baseline_eval.json")
+    llm_hidden_style_diagnostic = _load_json(config.outputs_dir / "llm_hidden_style_diagnostic.json")
+    llm_sdk_backend_check = _load_json(config.outputs_dir / "llm_sdk_backend_check.json")
     endpoint_family_tiebreak_v2_report = _load_json(config.outputs_dir / "endpoint_family_tiebreak_v2_shadow.json")
     live_mode_readiness_report = _load_json(config.outputs_dir / "live_mode_readiness_report.json")
     targeted_accuracy_trial_report = _load_json(config.outputs_dir / "targeted_accuracy_packaged_trial.json")
@@ -290,6 +294,13 @@ def generate_report(config: Config) -> dict[str, Any]:
             "llm_answer_rewrite_accepted_candidate_count": int(
                 llm_answer_rewrite_report.get("summary", {}).get("safe_rows") or 0
             ),
+            "llm_baseline_framework": llm_baseline_report.get("framework", "generic_sdk_llm_baseline"),
+            "llm_baseline_backend": llm_baseline_report.get("backend_name", llm_sdk_backend_check.get("backend_name")),
+            "llm_baseline_backend_type": llm_baseline_report.get("backend_type", llm_sdk_backend_check.get("backend_type")),
+            "llm_baseline_tool_calling_supported": llm_baseline_report.get("tool_calling_supported", llm_sdk_backend_check.get("tool_calling_supported")),
+            "llm_baseline_strict_status": llm_strict_baseline_report.get("summary", {}).get("strict_scoring_status", llm_baseline_report.get("strict_scoring_status", "unavailable")),
+            "llm_baseline_recommendation": llm_strict_baseline_report.get("summary", {}).get("recommendation", llm_baseline_report.get("recommendation", "keep_shadow_only")),
+            "llm_hidden_style_diagnostic_status": llm_hidden_style_diagnostic.get("status", "unavailable"),
             "endpoint_family_tiebreak_v2_shadow_recommendation": endpoint_family_tiebreak_v2_report.get("summary", {}).get("recommendation", "not_run"),
             "endpoint_family_tiebreak_v2_trial_eligible_rows": endpoint_family_tiebreak_v2_report.get("summary", {}).get("trial_eligible_rows", 0),
             "live_mode_readiness_diagnostic_only": live_mode_readiness_report.get("summary", {}).get("diagnostic_only", True),
@@ -414,6 +425,16 @@ def generate_report(config: Config) -> dict[str, Any]:
         "execution_candidate_search": {"summary": execution_candidate_search_report.get("summary", {})},
         "answer_shape_v2_ab_eval": {"summary": answer_shape_v2_report.get("summary", {})},
         "llm_candidate_search": {"summary": llm_candidate_search_report.get("summary", {})},
+        "llm_baseline_framework": {
+            "baseline_report": {
+                "framework": llm_baseline_report.get("framework", "generic_sdk_llm_baseline"),
+                "backend_name": llm_baseline_report.get("backend_name", llm_sdk_backend_check.get("backend_name")),
+                "backend_type": llm_baseline_report.get("backend_type", llm_sdk_backend_check.get("backend_type")),
+                "recommendation": llm_baseline_report.get("recommendation", "keep_shadow_only"),
+            },
+            "strict_report": {"summary": llm_strict_baseline_report.get("summary", {})},
+            "hidden_style_diagnostic": {"summary": llm_hidden_style_diagnostic.get("summary", {}), "status": llm_hidden_style_diagnostic.get("status")},
+        },
         "endpoint_family_tiebreak_v2_shadow": {"summary": endpoint_family_tiebreak_v2_report.get("summary", {})},
         "live_mode_readiness_report": {"summary": live_mode_readiness_report.get("summary", {})},
         "targeted_accuracy_packaged_trial": {"summary": targeted_accuracy_trial_report.get("summary", {})},
@@ -623,6 +644,12 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"model: {report['summary'].get('llm_answer_rewrite_model')}; "
             f"accepted: {report['summary'].get('llm_answer_rewrite_accepted_candidate_count')}/"
             f"{report['summary'].get('llm_answer_rewrite_candidate_count')})",
+            f"- LLM baseline framework: {report['summary']['llm_baseline_framework']} "
+            f"(backend: {report['summary']['llm_baseline_backend']}; "
+            f"backend_type: {report['summary']['llm_baseline_backend_type']}; "
+            f"tool calling: {report['summary']['llm_baseline_tool_calling_supported']}; "
+            f"strict: {report['summary']['llm_baseline_strict_status']}; "
+            f"recommendation: {report['summary']['llm_baseline_recommendation']})",
             f"- Endpoint-family tie-break v2 shadow: recommendation="
             f"{report['summary']['endpoint_family_tiebreak_v2_shadow_recommendation']}; "
             f"trial eligible rows={report['summary']['endpoint_family_tiebreak_v2_trial_eligible_rows']}",

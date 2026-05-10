@@ -63,6 +63,7 @@ TECHNIQUE_GROUPS = {
         "secret scan",
         "package readiness checks",
         "OpenRouter LLM rewrite search",
+        "SDK LLM baseline framework",
         "supportable dry-run rewrite validation",
         "autonomous packaged trials",
     ],
@@ -95,6 +96,9 @@ def current_state() -> dict[str, Any]:
     hidden = winner.get("hidden_style_eval", {})
     auto_trial = winner.get("autonomous_packaged_trial", {})
     llm = winner.get("llm_answer_rewrite_search", load_json("outputs/llm_answer_rewrite_search.json", {}).get("summary", {}))
+    llm_baseline = load_json("outputs/llm_baseline_eval_report.json", {})
+    llm_strict = load_json("outputs/llm_strict_baseline_eval.json", {})
+    llm_sdk = load_json("outputs/llm_sdk_backend_check.json", {})
     live = winner.get("live_mode_readiness_report", load_json("outputs/live_mode_readiness_report.json", {}).get("summary", {}))
     answer_shape = winner.get("answer_shape_v2_ab_eval", load_json("outputs/answer_shape_v2_ab_eval.json", {}).get("summary", {}))
     endpoint_tie = winner.get("endpoint_family_tiebreak_v2_shadow", load_json("outputs/endpoint_family_tiebreak_v2_shadow.json", {}).get("summary", {}))
@@ -123,6 +127,17 @@ def current_state() -> dict[str, Any]:
             "model": llm.get("model", UNAVAILABLE),
             "accepted": llm.get("accepted_candidate_count", llm.get("safe_rows", UNAVAILABLE)),
             "candidate_count": llm.get("candidate_count", llm.get("candidate_rows", UNAVAILABLE)),
+        },
+        "llm_baseline_framework": {
+            "state": "shadow_only",
+            "framework": llm_baseline.get("framework", "generic_sdk_llm_baseline"),
+            "provider": llm_baseline.get("provider", llm_sdk.get("provider", UNAVAILABLE)),
+            "provider_type": llm_baseline.get("provider_type", llm_sdk.get("provider_type", UNAVAILABLE)),
+            "backend_type": llm_baseline.get("backend_type", llm_sdk.get("backend_type", UNAVAILABLE)),
+            "backend_name": llm_baseline.get("backend_name", llm_sdk.get("backend_name", UNAVAILABLE)),
+            "tool_calling_supported": llm_baseline.get("tool_calling_supported", llm_sdk.get("tool_calling_supported", UNAVAILABLE)),
+            "strict_scoring_status": llm_strict.get("summary", {}).get("strict_scoring_status", llm_baseline.get("strict_scoring_status", UNAVAILABLE)),
+            "recommendation": llm_strict.get("summary", {}).get("recommendation", llm_baseline.get("recommendation", UNAVAILABLE)),
         },
         "live": {
             "state": "diagnostic_only",
@@ -176,6 +191,40 @@ def technique_cards() -> list[dict[str, Any]]:
                 "hidden_style_impact": "Covered through current hidden-style pass state.",
                 "why_promoted_or_not": "Part of the packaged prompt routing path.",
                 "source_reports": [{"path": f"outputs/eval/{PRIMARY_QUERY_ID}/sql_first_api_verify/trajectory.json"}],
+            }
+        )
+    if "SDK LLM baseline framework" not in names:
+        llm_baseline = load_json("outputs/llm_baseline_eval_report.json", {})
+        llm_strict = load_json("outputs/llm_strict_baseline_eval.json", {})
+        techniques.append(
+            {
+                "technique_name": "SDK LLM baseline framework",
+                "category": "Safety / evaluation",
+                "purpose": "Provider-agnostic SDK baseline for OpenAI-compatible and Anthropic LLM comparisons.",
+                "stage_in_pipeline": "shadow LLM baseline evaluation",
+                "input_data": "dev prompts plus configured SDK backend metadata",
+                "output_data": "shadow baseline trajectories and strict comparison reports",
+                "decision_boundary": "Comparison/shadow-only; never promoted without explicit strict, safety, hidden-style, package, and no-secret gates.",
+                "files_modules_involved": [
+                    "dashagent/llm_client.py",
+                    "dashagent/llm_tool_agent.py",
+                    "scripts/run_llm_baseline_eval.py",
+                    "scripts/run_llm_strict_baseline_eval.py",
+                    "scripts/run_llm_hidden_style_diagnostic.py",
+                ],
+                "checkpoint_names_involved": ["llm_sdk_backend_check", "llm_strict_eval"],
+                "default_state": "shadow_only",
+                "measured_effect": {
+                    "strict_score": llm_strict.get("summary", {}).get("best_delta_vs_deterministic", UNAVAILABLE),
+                    "recommendation": llm_strict.get("summary", {}).get("recommendation", llm_baseline.get("recommendation", UNAVAILABLE)),
+                },
+                "hidden_style_impact": "Diagnostic-only unless the generic hidden-style diagnostic has run.",
+                "why_promoted_or_not": "Current SDK LLM baseline is a comparison framework; deterministic SQL_FIRST_API_VERIFY remains packaged.",
+                "source_reports": [
+                    {"path": "outputs/llm_baseline_eval_report.json"},
+                    {"path": "outputs/llm_strict_baseline_eval.json"},
+                    {"path": "outputs/llm_hidden_style_diagnostic.json"},
+                ],
             }
         )
 

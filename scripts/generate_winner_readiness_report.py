@@ -78,6 +78,10 @@ def generate_winner_readiness_report(config: Config) -> dict[str, Any]:
     autonomous_trial = _load_json(config.outputs_dir / "autonomous_packaged_trial.json")
     autonomous_score_push = _load_json(config.outputs_dir / "autonomous_score_push_report.json")
     integration_diff = _load_json(config.outputs_dir / "score075_integration_diff_report.json")
+    llm_baseline_report = _load_json(config.outputs_dir / "llm_baseline_eval_report.json")
+    llm_strict_report = _load_json(config.outputs_dir / "llm_strict_baseline_eval.json")
+    llm_hidden_report = _load_json(config.outputs_dir / "llm_hidden_style_diagnostic.json")
+    llm_sdk_report = _load_json(config.outputs_dir / "llm_sdk_backend_check.json")
     readiness = check_submission_ready(config)
     return {
         **report_metadata(config.outputs_dir),
@@ -118,6 +122,7 @@ def generate_winner_readiness_report(config: Config) -> dict[str, Any]:
         "execution_candidate_search": reports["execution_candidate_search"].get("summary", {}),
         "llm_candidate_search": reports["llm_candidate_search"].get("summary", {}),
         "llm_answer_rewrite_search": _llm_answer_summary(reports["llm_answer_rewrite_search"]),
+        "llm_baseline_framework": _llm_baseline_summary(llm_baseline_report, llm_strict_report, llm_hidden_report, llm_sdk_report),
         "endpoint_family_tiebreak_v2_shadow": reports["endpoint_family_tiebreak_v2_shadow"].get("summary", {}),
         "live_mode_readiness_report": reports["live_mode_readiness_report"].get("summary", {}),
         "targeted_accuracy_packaged_trial": reports["targeted_accuracy_packaged_trial"].get("summary", {}),
@@ -206,6 +211,10 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"model: {payload['llm_answer_rewrite_search'].get('model')}, "
         f"accepted: {payload['llm_answer_rewrite_search'].get('accepted_candidate_count')}/"
         f"{payload['llm_answer_rewrite_search'].get('candidate_count')})",
+        f"- LLM baseline framework: backend={payload['llm_baseline_framework'].get('backend_name')}; "
+        f"backend_type={payload['llm_baseline_framework'].get('backend_type')}; "
+        f"strict={payload['llm_baseline_framework'].get('strict_scoring_status')}; "
+        f"recommendation=`{payload['llm_baseline_framework'].get('recommendation')}`",
         f"- Local fact coverage available/used/covered: {payload['local_index_fact_coverage_report'].get('local_evidence_available_rows')} / "
         f"{payload['local_index_fact_coverage_report'].get('local_evidence_used_in_final_answer_rows')} / "
         f"{payload['local_index_fact_coverage_report'].get('requested_fact_covered_rows')}",
@@ -276,6 +285,27 @@ def _llm_answer_summary(report: dict[str, Any]) -> dict[str, Any]:
             }
         )
     return summary
+
+
+def _llm_baseline_summary(
+    baseline: dict[str, Any],
+    strict: dict[str, Any],
+    hidden: dict[str, Any],
+    sdk: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "framework": baseline.get("framework", "generic_sdk_llm_baseline"),
+        "provider": baseline.get("provider", sdk.get("provider")),
+        "provider_type": baseline.get("provider_type", sdk.get("provider_type")),
+        "backend_type": baseline.get("backend_type", sdk.get("backend_type")),
+        "backend_name": baseline.get("backend_name", sdk.get("backend_name")),
+        "tool_calling_supported": baseline.get("tool_calling_supported", sdk.get("tool_calling_supported")),
+        "smoke_test_passed": baseline.get("smoke_test_passed", sdk.get("ok")),
+        "strict_scoring_status": strict.get("summary", {}).get("strict_scoring_status", baseline.get("strict_scoring_status", "unavailable")),
+        "hidden_style_diagnostic_status": hidden.get("status", "unavailable"),
+        "recommendation": strict.get("summary", {}).get("recommendation", baseline.get("recommendation", "keep_shadow_only")),
+        "promotion_status": baseline.get("promotion_status", "shadow_only"),
+    }
 
 
 if __name__ == "__main__":

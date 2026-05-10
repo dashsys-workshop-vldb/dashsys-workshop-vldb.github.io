@@ -481,6 +481,18 @@ flowchart LR
 
 **Affects:** accuracy, safety, observability
 
+### 🟡 shadow_only `SDK LLM baseline framework`
+
+**Runtime path:** 🟡 shadow_report
+
+**Input → output:** dev prompts plus configured SDK backend metadata → shadow baseline trajectories and strict comparison reports
+
+**Changed artifact:** shadow LLM baseline evaluation
+
+**Downstream effect:** Provider-agnostic SDK baseline for OpenAI-compatible and Anthropic LLM comparisons.
+
+**Affects:** safety, observability
+
 ### 🟢 promoted_default `answer reranker`
 
 **Runtime path:** 🟢 packaged

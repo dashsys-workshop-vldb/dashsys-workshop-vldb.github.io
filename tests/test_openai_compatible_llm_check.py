@@ -2,12 +2,23 @@ from __future__ import annotations
 
 import json
 
+from scripts import check_llm_sdk_backend
 from scripts import check_openai_compatible_llm as check
-from scripts.run_llm_baseline_eval import build_qwen_report
+from scripts.run_llm_baseline_eval import build_llm_baseline_report
 
 
 def _clear_openai_env(monkeypatch):
-    for key in ["OPENAI_API_KEY", "OPENAI_BASE_URL", "OPENAI_MODEL", "OPENAI_USE_REQUESTS_FALLBACK"]:
+    for key in [
+        "OPENAI_API_KEY",
+        "OPENAI_BASE_URL",
+        "OPENAI_MODEL",
+        "OPENROUTER_API_KEY",
+        "OPENROUTER_MODEL",
+        "OPENROUTER_BASE_URL",
+        "ANTHROPIC_API_KEY",
+        "ANTHROPIC_MODEL",
+        "LLM_PROVIDER",
+    ]:
         monkeypatch.delenv(key, raising=False)
 
 
@@ -53,13 +64,13 @@ def test_openai_compatible_check_reports_endpoint_unavailable_without_leaking_ke
     assert "Authorization" + ": " + "Bearer unit-test" not in text
 
 
-def test_qwen_report_marks_results_shadow_only(monkeypatch, tiny_project):
+def test_llm_baseline_report_marks_results_shadow_only(monkeypatch, tiny_project):
     _clear_openai_env(monkeypatch)
     monkeypatch.setenv("OPENAI_BASE_URL", "https://photos-hewlett-safely-friends.trycloudflare.com/v1")
     monkeypatch.setenv("OPENAI_MODEL", "qwen2.5-32b-instruct")
     tiny_project.outputs_dir.mkdir(parents=True, exist_ok=True)
-    (tiny_project.outputs_dir / "openai_compatible_llm_check.json").write_text(
-        json.dumps({"ok": True, "tool_calling_supported": True}),
+    (tiny_project.outputs_dir / "llm_sdk_backend_check.json").write_text(
+        json.dumps({"ok": True, "provider": "openai", "provider_type": "openai_compatible", "backend_type": "openai_sdk", "tool_calling_supported": True}),
         encoding="utf-8",
     )
     (tiny_project.outputs_dir / "eval_results_strict.json").write_text(
@@ -95,10 +106,26 @@ def test_qwen_report_marks_results_shadow_only(monkeypatch, tiny_project):
         ],
     }
 
-    report = build_qwen_report(tiny_project, payload)
+    report = build_llm_baseline_report(tiny_project, payload)
 
-    assert report["provider"] == "openai_compatible_qwen"
+    assert report["framework"] == "generic_sdk_llm_baseline"
+    assert report["provider_type"] == "openai_compatible"
+    assert report["backend_type"] == "openai_sdk"
+    assert report["model"] == "qwen2.5-32b-instruct"
     assert report["tool_calling_supported"] is True
     assert report["promotion_status"] == "shadow_only"
     assert report["recommendation"] == "keep_shadow_only"
     assert report["deterministic_sql_first_api_verify"]["avg_final_score"] == 0.6491
+    assert "Qwen LLM Baseline" not in json.dumps(report)
+
+
+def test_generic_sdk_backend_check_handles_missing_key(monkeypatch, tiny_project):
+    _clear_openai_env(monkeypatch)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    report = check_llm_sdk_backend.run_llm_sdk_backend_check(tiny_project)
+
+    assert report["ok"] is False
+    assert report["framework"] == "generic_sdk_llm_baseline"
+    assert "missing_openai_api_key" in report["failure_categories"]
+    assert "Authorization" + ": " + "Bearer" not in json.dumps(report)

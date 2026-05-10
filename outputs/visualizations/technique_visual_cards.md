@@ -651,3 +651,17 @@ Each card separates **status** from **runtime path** so experimental work is not
 | **Measured impact** | `unavailable` | Unavailable means no source report measured a delta. |
 
 **Why this status:** Part of the packaged prompt routing path.
+
+## 🟡 shadow_only SDK LLM baseline framework
+
+| Metric | Value | Note |
+| --- | --- | --- |
+| **Runtime path** | `🟡 shadow_report` | Where this technique actually runs today. |
+| **Input** | `dev prompts plus configured SDK backend metadata` | Data consumed by the technique. |
+| **Changed artifact** | `shadow LLM baseline evaluation` | Intermediate representation it changes. |
+| **Output** | `shadow baseline trajectories and strict comparison reports` | Data emitted downstream. |
+| **Downstream effect** | `Provider-agnostic SDK baseline for OpenAI-compatible and Anthropic LLM comparisons.` | Why the technique exists. |
+| **Affects** | `safety, observability` | Accuracy, efficiency, safety, or observability. |
+| **Measured impact** | `strict_score=-0.0153, recommendation=keep_shadow_only` | Unavailable means no source report measured a delta. |
+
+**Why this status:** Current SDK LLM baseline is a comparison framework; deterministic SQL_FIRST_API_VERIFY remains packaged.

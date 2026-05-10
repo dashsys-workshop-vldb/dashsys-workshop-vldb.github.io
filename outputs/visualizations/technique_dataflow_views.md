@@ -281,3 +281,23 @@ flowchart LR
 | Accuracy / efficiency / safety / observability | True / False / True / True |
 | Before | Pipeline has evidence registry + baseline answer. |
 | After | Pipeline has validated/rejected LLM rewrite candidates; downstream stage is supportable rewrite gates. |
+
+## SDK LLM baseline framework
+
+```mermaid
+flowchart LR
+  A["Before: configured SDK backend + dev prompts"] --> B["SDK LLM baseline framework"]
+  B --> C["After: shadow baseline and strict diagnostic reports"]
+  C --> D["Downstream: human comparison only"]
+```
+
+| Field | Value |
+| --- | --- |
+| State | shadow_only |
+| Input consumed | configured SDK backend + dev prompts |
+| Representation changed | shadow baseline and strict diagnostic reports |
+| Output produced | shadow baseline and strict diagnostic reports |
+| Downstream affected | human comparison only |
+| Accuracy / efficiency / safety / observability | True / False / True / True |
+| Before | Pipeline has configured SDK backend + dev prompts. |
+| After | Pipeline has shadow baseline and strict diagnostic reports; downstream stage is human comparison only. |
