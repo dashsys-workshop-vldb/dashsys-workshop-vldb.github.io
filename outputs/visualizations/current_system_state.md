@@ -25,7 +25,7 @@ flowchart LR
 | packaged strict final score | 0.6491 |
 | best isolated score | 0.6558 |
 | correctness | 0.6743 |
-| tokens / runtime / tool calls | 831.4571 / 0.0114 / 1.4571 |
+| tokens / runtime / tool calls | 831.4571 / 0.0113 / 1.4571 |
 | hidden-style pass rate | 48/48 |
 | family/schema stability | 1.0 / 1.0 |
 | final submission ready | True |

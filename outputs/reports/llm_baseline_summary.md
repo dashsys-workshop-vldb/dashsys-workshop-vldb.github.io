@@ -6,7 +6,7 @@
 - Anthropic SDK support: available_in_client; configure LLM_PROVIDER=anthropic with ANTHROPIC_API_KEY
 - Tool calling supported: `True`
 - Best LLM baseline: `LLM_CONTROLLER_OPTIMIZED_AGENT`
-- Best LLM baseline score: `0.6342`
+- Best LLM baseline score: `0.6341`
 - SQL_FIRST_API_VERIFY score: `0.6491`
 - Recommendation: `keep_shadow_only`
 - Reason: Deterministic SQL_FIRST_API_VERIFY remains higher under strict scoring.

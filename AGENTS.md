@@ -126,6 +126,46 @@ python3 scripts/package_query_outputs.py
 python3 scripts/check_submission_ready.py
 ```
 
+Mandatory post-change validation after every code, report, cleanup, visualization, or documentation change:
+
+```bash
+python3 -m pytest -q
+python3 scripts/run_dev_eval.py --strict
+python3 scripts/run_hidden_style_eval.py
+python3 scripts/check_llm_sdk_backend.py
+python3 scripts/run_llm_baseline_eval.py
+python3 scripts/run_llm_strict_baseline_eval.py
+python3 scripts/run_llm_hidden_style_diagnostic.py
+python3 scripts/generate_winner_readiness_report.py
+python3 scripts/generate_research_inspired_report.py
+python3 scripts/generate_system_status_dashboard.py
+python3 scripts/generate_technique_visual_cards.py
+python3 scripts/generate_visualization_index.py
+python3 scripts/package_submission.py
+python3 scripts/package_query_outputs.py
+python3 scripts/check_submission_ready.py
+```
+
+After validation, regenerate the consolidated report surfaces:
+
+```bash
+python3 scripts/generate_consolidated_reports.py
+python3 scripts/audit_redundant_files.py
+python3 scripts/cleanup_redundant_files.py --dry-run --write-report
+```
+
+If any command is skipped, record the command, reason, substitute validation, and residual risk in `outputs/reports/cleanup_final_report.md/json`. Run the secret scan before handoff and report the result:
+
+```bash
+OPENAI_KEY_PATTERN='OPENAI_API_KEY=.*s''k'
+ANTHROPIC_KEY_PATTERN='ANTHROPIC_API_KEY=.*s''k'
+AUTH_HEADER_PATTERN='Authorization:''\\s*''Bearer'
+SECRET_SCAN_PATTERN="sk-[A-Za-z0-9_-]{12,}|${OPENAI_KEY_PATTERN}|${ANTHROPIC_KEY_PATTERN}|${AUTH_HEADER_PATTERN}"
+rg -n "$SECRET_SCAN_PATTERN" . --glob '!.git/**' --glob '!.env.local' --glob '!*.zip' || true
+```
+
+Update `README.md`, this file, report indices, and visualization indices when script names, canonical report paths, setup commands, validation commands, LLM provider behavior, or cleanup-linked paths change. Final responses must include files changed, reports generated, files deleted, validation commands/results, skipped commands and reasons, `check_submission_ready` status, secret scan status, and confirmations that packaged `SQL_FIRST_API_VERIFY` behavior and final submission format are unchanged.
+
 ## Evaluation Expectations
 
 Every correctness or efficiency improvement must be backed by `scripts/run_dev_eval.py`.

@@ -1,243 +1,189 @@
 # Redundant File Cleanup Report
 
-- Dry run: False
-- Applied: True
-- Candidate rows: 1
-- Deleted: 1
-- Deleted files total: 2338
-- Would delete: 0
+- Dry run: True
+- Applied: False
+- Candidate rows: 6
+- Deleted: 0
+- Deleted files total: 89
+- Would delete: 6
 - Refused: 0
 - No protected files deleted: True
-- Files before cleanup: 16081
-- Files after cleanup: 16077
+- Files before cleanup: 17788
+- Files after cleanup: 17788
 - Reports consolidated: 0
 - Final submission format unchanged: True
 - check_submission_ready passed: True
 - Secret scan passed: True
+- Validation commands recorded: 19
+- Required validation commands missing: 0
 
 ## Actions
 
-- `.pytest_cache`: deleted (safe_to_delete_generated)
+- `.pytest_cache`: would_delete (dry_run)
+- `outputs/cache`: would_delete (dry_run)
+- `outputs/llm_controller_baseline_backend`: would_delete (dry_run)
+- `outputs/llm_strict_eval`: would_delete (dry_run)
+- `outputs/source_code`: would_delete (dry_run)
+- `outputs/tmp`: would_delete (dry_run)
 
 ## Validation Commands
 
-- `post-targeted-tests cleanup`: passed
-- `python3 -m pytest -q`: passed (317 passed)
-- `python3 -m pytest tests/test_redundant_file_cleanup.py tests/test_consolidated_reports.py -q`: passed
-- `python3 scripts/run_dev_eval.py --strict`: passed (SQL_FIRST_API_VERIFY 0.6491)
-- `python3 scripts/run_hidden_style_eval.py`: passed (48 cases)
+- `python3 -m pytest -q`: passed
+- `python3 scripts/run_dev_eval.py --strict`: passed
+- `python3 scripts/run_hidden_style_eval.py`: passed
+- `python3 scripts/check_llm_sdk_backend.py`: passed
+- `python3 scripts/run_llm_baseline_eval.py`: passed
+- `python3 scripts/run_llm_strict_baseline_eval.py`: passed
+- `python3 scripts/run_llm_hidden_style_diagnostic.py`: passed
 - `python3 scripts/generate_winner_readiness_report.py`: passed
 - `python3 scripts/generate_research_inspired_report.py`: passed
+- `python3 scripts/generate_system_status_dashboard.py`: passed
+- `python3 scripts/generate_technique_visual_cards.py`: passed
 - `python3 scripts/generate_visualization_index.py`: passed
 - `python3 scripts/package_submission.py`: passed
-- `python3 scripts/package_query_outputs.py`: passed; protected final submission restored to unchanged tracked state
+- `python3 scripts/package_query_outputs.py`: passed
 - `python3 scripts/check_submission_ready.py`: passed
-- `python3 scripts/check_llm_sdk_backend.py`: passed
-- `python3 scripts/run_llm_baseline_eval.py`: passed (105 rows)
-- `python3 scripts/run_llm_strict_baseline_eval.py`: passed (strict scoring available)
-- `rg -n`: passed
-- `final cleanup pass`: passed
-- `README/report/visualization broken-link check`: passed
+- `python3 scripts/generate_consolidated_reports.py`: passed
+- `python3 scripts/audit_redundant_files.py`: passed
+- `python3 scripts/cleanup_redundant_files.py --dry-run --write-report`: passed
+- `rg -n secret scan`: passed
+
+## Skipped Validation Commands
+
+- None recorded.
+
+## Missing Required Validation Commands
+
+- None.
+
+## Generated Reports
+
+- `outputs/reports/report_index.md`: present
+- `outputs/reports/report_index.json`: present
+- `outputs/reports/system_summary.md`: present
+- `outputs/reports/system_summary.json`: present
+- `outputs/reports/llm_baseline_summary.md`: present
+- `outputs/reports/llm_baseline_summary.json`: present
+- `outputs/reports/accuracy_and_bottleneck_summary.md`: present
+- `outputs/reports/accuracy_and_bottleneck_summary.json`: present
+- `outputs/reports/visualization_summary.md`: present
+- `outputs/reports/visualization_summary.json`: present
+- `outputs/reports/cleanup_audit.md`: present
+- `outputs/reports/cleanup_audit.json`: present
+- `outputs/reports/cleanup_final_report.md`: present
+- `outputs/reports/cleanup_final_report.json`: present
+- `outputs/winner_readiness_report.md`: present
+- `outputs/winner_readiness_report.json`: present
+- `outputs/final_research_inspired_improvement_report.md`: present
+- `outputs/final_research_inspired_improvement_report.json`: present
+- `outputs/visualizations/index.md`: present
+- `outputs/visualizations/index.json`: present
+- `outputs/visualizations/system_status_dashboard.md`: present
+- `outputs/visualizations/system_status_dashboard.json`: present
+- `outputs/visualizations/technique_visual_cards.md`: present
+- `outputs/visualizations/technique_visual_cards.json`: present
 
 ## Deleted Files
 
-- `.pytest_cache`
-- `outputs/ast_guided_sql_candidate_canary/example_000 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_001 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/ast_guided_sql_candidate_canary/example_001 3/sql_first_api_verify/metadata 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_001 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_002 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/ast_guided_sql_candidate_canary/example_002 3/sql_first_api_verify/metadata 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_002 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_003 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/ast_guided_sql_candidate_canary/example_003 3/sql_first_api_verify/metadata 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_003 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_004 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/ast_guided_sql_candidate_canary/example_004 3/sql_first_api_verify/metadata 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_004 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_005 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/ast_guided_sql_candidate_canary/example_005 3/sql_first_api_verify/metadata 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_005 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_006 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/ast_guided_sql_candidate_canary/example_006 3/sql_first_api_verify/metadata 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_006 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_007 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/ast_guided_sql_candidate_canary/example_007 3/sql_first_api_verify/metadata 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_007 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_008 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/ast_guided_sql_candidate_canary/example_008 3/sql_first_api_verify/metadata 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_008 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_009 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/ast_guided_sql_candidate_canary/example_009 3/sql_first_api_verify/metadata 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_009 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_010 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/ast_guided_sql_candidate_canary/example_010 3/sql_first_api_verify/metadata 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_010 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_011 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/ast_guided_sql_candidate_canary/example_011 3/sql_first_api_verify/metadata 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_011 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_012 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/ast_guided_sql_candidate_canary/example_012 3/sql_first_api_verify/metadata 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_012 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_013 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/ast_guided_sql_candidate_canary/example_013 3/sql_first_api_verify/metadata 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_013 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_014 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/ast_guided_sql_candidate_canary/example_014 3/sql_first_api_verify/metadata 2.json`
-- `outputs/ast_guided_sql_candidate_canary/example_014 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/baseline_before_architecture_optimization.md`
-- `outputs/baseline_before_efficiency_pass.md`
-- `outputs/baseline_before_final_polish.md`
-- `outputs/baseline_before_nlp_optimization.md`
-- `outputs/debug_example_005/sql_first_api_verify/filled_system_prompt.txt`
-- `outputs/debug_example_005/sql_first_api_verify/metadata.json`
-- `outputs/debug_example_005/sql_first_api_verify/trajectory.json`
-- `outputs/debug_example_005b/sql_first_api_verify/filled_system_prompt.txt`
-- `outputs/debug_example_005b/sql_first_api_verify/metadata.json`
-- `outputs/debug_example_005b/sql_first_api_verify/trajectory.json`
-- `outputs/endpoint_schema_rule_canary/example_000 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_000 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_000 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/endpoint_schema_rule_canary/example_001 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_001 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_001 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/endpoint_schema_rule_canary/example_002 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_002 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_002 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/endpoint_schema_rule_canary/example_004 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_004 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_004 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/endpoint_schema_rule_canary/example_005 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_005 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_005 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/endpoint_schema_rule_canary/example_006 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_006 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_006 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/endpoint_schema_rule_canary/example_007 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_007 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_007 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/endpoint_schema_rule_canary/example_010 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_010 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_010 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/endpoint_schema_rule_canary/example_015 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_015 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_015 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/endpoint_schema_rule_canary/example_016 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_016 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_016 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/endpoint_schema_rule_canary/example_017 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_017 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_017 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/endpoint_schema_rule_canary/example_018 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_018 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_018 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/endpoint_schema_rule_canary/example_019 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_019 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_019 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/endpoint_schema_rule_canary/example_020 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_020 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_020 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/endpoint_schema_rule_canary/example_021 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_021 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_021 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/endpoint_schema_rule_canary/example_025 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_025 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_025 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/endpoint_schema_rule_canary/example_026 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_026 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_026 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/endpoint_schema_rule_canary/example_027 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_027 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_027 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/endpoint_schema_rule_canary/example_030 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_030 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_030 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/endpoint_schema_rule_canary/example_033 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_033 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_033 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/endpoint_schema_rule_canary/example_034 3/sql_first_api_verify/filled_system_prompt 2.txt`
-- `outputs/endpoint_schema_rule_canary/example_034 3/sql_first_api_verify/metadata 2.json`
-- `outputs/endpoint_schema_rule_canary/example_034 3/sql_first_api_verify/trajectory 2.json`
-- `outputs/final_answer_correctness_report.md`
-- `outputs/final_architecture_optimization_report.md`
-- `outputs/final_checkpointed_agent_report.md`
-- `outputs/final_efficiency_accuracy_improvement_report.md`
-- `outputs/final_improvement_report.md`
-- `outputs/final_llm_nl2sql_strict_candidate_report.md`
-- `outputs/final_nlp_optimization_report.md`
-- `outputs/final_polish_report.md`
-- `outputs/final_real_llm_tool_baseline_fix_report.md`
-- `outputs/final_report_and_visualization_polish_report.md`
-- `outputs/llm_controller_baseline_backend/llm_controller_00ceb121d02c/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_00ceb121d02c/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_00ceb121d02c/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_039e1aa6a1f5/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_039e1aa6a1f5/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_039e1aa6a1f5/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_19ab47b0f229/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_19ab47b0f229/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_19ab47b0f229/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_1a573f739bc3/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_1a573f739bc3/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_1a573f739bc3/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_1f0307b510e3/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_1f0307b510e3/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_1f0307b510e3/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_2f0dbe12ff88/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_2f0dbe12ff88/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_2f0dbe12ff88/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_31d155d55f82/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_31d155d55f82/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_31d155d55f82/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_3295d111090e/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_3295d111090e/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_3295d111090e/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_397cfc55b784/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_397cfc55b784/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_397cfc55b784/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_3f1fed85ffc5/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_3f1fed85ffc5/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_3f1fed85ffc5/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_41f6611e0ff9/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_41f6611e0ff9/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_41f6611e0ff9/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_44459b7b525e/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_44459b7b525e/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_44459b7b525e/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_46910341b00c/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_46910341b00c/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_46910341b00c/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_525139e43116/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_525139e43116/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_525139e43116/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_56d7a7bed716/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_56d7a7bed716/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_56d7a7bed716/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_584fa499809b/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_584fa499809b/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_584fa499809b/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_591f1b5f2e0f/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_591f1b5f2e0f/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_591f1b5f2e0f/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_5b8210e6e2ed/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_5b8210e6e2ed/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_5b8210e6e2ed/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_60eb931a0978/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_60eb931a0978/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_60eb931a0978/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_6b36c615eec7/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_6b36c615eec7/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_6b36c615eec7/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_78d585fc2849/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_78d585fc2849/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_78d585fc2849/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_9682c2dbc4d4/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_9682c2dbc4d4/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_9682c2dbc4d4/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_b0cdb92748ba/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_b0cdb92748ba/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_b0cdb92748ba/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_b1154382c67e/filled_system_prompt.txt`
-- `outputs/llm_controller_baseline_backend/llm_controller_b1154382c67e/metadata.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_b1154382c67e/trajectory.json`
-- `outputs/llm_controller_baseline_backend/llm_controller_b38c1b687611/filled_system_prompt.txt`
+- `outputs/final_submission/query_009/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_009/metadata 2.json`
+- `outputs/final_submission/query_009/trajectory 2.json`
+- `outputs/final_submission/query_014/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_014/metadata 2.json`
+- `outputs/final_submission/query_014/trajectory 2.json`
+- `outputs/final_submission/query_015/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_015/metadata 2.json`
+- `outputs/final_submission/query_015/trajectory 2.json`
+- `outputs/final_submission/query_017/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_017/metadata 2.json`
+- `outputs/final_submission/query_017/trajectory 2.json`
+- `outputs/final_submission/query_018/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_018/metadata 2.json`
+- `outputs/final_submission/query_018/trajectory 2.json`
+- `outputs/final_submission/query_019/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_019/metadata 2.json`
+- `outputs/final_submission/query_019/trajectory 2.json`
+- `outputs/final_submission/query_020/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_020/metadata 2.json`
+- `outputs/final_submission/query_020/trajectory 2.json`
+- `outputs/final_submission/query_021/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_021/metadata 2.json`
+- `outputs/final_submission/query_021/trajectory 2.json`
+- `outputs/final_submission/query_023/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_023/metadata 2.json`
+- `outputs/final_submission/query_023/trajectory 2.json`
+- `outputs/final_submission/query_026/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_026/metadata 2.json`
+- `outputs/final_submission/query_026/trajectory 2.json`
+- `outputs/final_submission/query_028/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_028/metadata 2.json`
+- `outputs/final_submission/query_028/trajectory 2.json`
+- `outputs/final_submission/query_029/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_029/metadata 2.json`
+- `outputs/final_submission/query_029/trajectory 2.json`
+- `outputs/final_submission/query_031/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_031/metadata 2.json`
+- `outputs/final_submission/query_031/trajectory 2.json`
+- `outputs/final_submission/query_033/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_033/metadata 2.json`
+- `outputs/final_submission/query_033/trajectory 2.json`
+- `outputs/final_submission/query_036/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_036/metadata 2.json`
+- `outputs/final_submission/query_036/trajectory 2.json`
+- `outputs/final_submission/query_037/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_037/metadata 2.json`
+- `outputs/final_submission/query_037/trajectory 2.json`
+- `outputs/final_submission/query_040/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_040/metadata 2.json`
+- `outputs/final_submission/query_040/trajectory 2.json`
+- `outputs/final_submission/query_047/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_047/metadata 2.json`
+- `outputs/final_submission/query_047/trajectory 2.json`
+- `outputs/final_submission/query_048/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_048/metadata 2.json`
+- `outputs/final_submission/query_048/trajectory 2.json`
+- `outputs/final_submission/query_049/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_049/metadata 2.json`
+- `outputs/final_submission/query_049/trajectory 2.json`
+- `outputs/final_submission/query_050/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_050/metadata 2.json`
+- `outputs/final_submission/query_050/trajectory 2.json`
+- `outputs/final_submission/query_052/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_052/metadata 2.json`
+- `outputs/final_submission/query_052/trajectory 2.json`
+- `outputs/final_submission/query_054/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_054/metadata 2.json`
+- `outputs/final_submission/query_054/trajectory 2.json`
+- `outputs/final_submission/query_056/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_056/metadata 2.json`
+- `outputs/final_submission/query_056/trajectory 2.json`
+- `outputs/final_submission/query_065/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_065/metadata 2.json`
+- `outputs/final_submission/query_065/trajectory 2.json`
+- `outputs/final_submission/query_067/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_067/metadata 2.json`
+- `outputs/final_submission/query_067/trajectory 2.json`
+- `outputs/final_submission/query_068/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_068/metadata 2.json`
+- `outputs/final_submission/query_068/trajectory 2.json`
+- `outputs/final_submission/query_071/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_071/metadata 2.json`
+- `outputs/final_submission/query_071/trajectory 2.json`
+- `outputs/final_submission/query_072/filled_system_prompt 2.txt`
+- `outputs/final_submission/query_072/metadata 2.json`
+- `outputs/final_submission/query_072/trajectory 2.json`
+- `outputs/final_submission/source_code 2.zip`
+- `outputs/final_submission/system_prompt_template 2.txt`
+
+## Final Response Checklist
+
+- files changed
+- reports generated
+- files deleted, if any
+- validation commands run
+- validation results
+- skipped commands and reasons, if any
+- check_submission_ready status
+- secret scan status
+- SQL_FIRST_API_VERIFY unchanged confirmation
+- final submission format unchanged confirmation

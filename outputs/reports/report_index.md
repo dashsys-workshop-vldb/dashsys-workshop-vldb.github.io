@@ -30,6 +30,41 @@ Start here. Most older generated reports were consolidated or removed.
 - `outputs/reports/cleanup_audit.md`
 - `outputs/reports/cleanup_final_report.md`
 
+## Post-Change Validation Contract
+
+Skipped commands must record command, reason, substitute validation, and residual risk.
+
+Required commands:
+- `python3 -m pytest -q`
+- `python3 scripts/run_dev_eval.py --strict`
+- `python3 scripts/run_hidden_style_eval.py`
+- `python3 scripts/check_llm_sdk_backend.py`
+- `python3 scripts/run_llm_baseline_eval.py`
+- `python3 scripts/run_llm_strict_baseline_eval.py`
+- `python3 scripts/run_llm_hidden_style_diagnostic.py`
+- `python3 scripts/generate_winner_readiness_report.py`
+- `python3 scripts/generate_research_inspired_report.py`
+- `python3 scripts/generate_system_status_dashboard.py`
+- `python3 scripts/generate_technique_visual_cards.py`
+- `python3 scripts/generate_visualization_index.py`
+- `python3 scripts/package_submission.py`
+- `python3 scripts/package_query_outputs.py`
+- `python3 scripts/check_submission_ready.py`
+
+Regenerated report surfaces:
+- `outputs/reports/report_index.md/json`
+- `outputs/reports/system_summary.md/json`
+- `outputs/reports/llm_baseline_summary.md/json`
+- `outputs/reports/accuracy_and_bottleneck_summary.md/json`
+- `outputs/reports/visualization_summary.md/json`
+- `outputs/reports/cleanup_audit.md/json`
+- `outputs/reports/cleanup_final_report.md/json`
+- `outputs/winner_readiness_report.md/json`
+- `outputs/final_research_inspired_improvement_report.md/json`
+- `outputs/visualizations/index.md/json`
+- `outputs/visualizations/system_status_dashboard.md/json`
+- `outputs/visualizations/technique_visual_cards.md/json`
+
 ## Current Status
 
 - preferred_strategy: `SQL_FIRST_API_VERIFY`
