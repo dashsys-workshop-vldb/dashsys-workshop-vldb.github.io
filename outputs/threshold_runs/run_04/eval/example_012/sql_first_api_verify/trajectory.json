@@ -1,0 +1,193 @@
+{
+  "answer_time": 3.404100425541401e-05,
+  "api_call_count": 1,
+  "domain_type": "SEGMENT_AUDIENCE",
+  "errors": [],
+  "estimated_tokens": 1176,
+  "execution_time": 0.0006820840062573552,
+  "final_answer": "Based on the SQL evidence, 1 audience(s) match: Gender: Male (ID f6b93428-c021-4058-a1a2-77c277aab564) mapped to amazon-s3. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
+  "planning_time": 0.0004497500485740602,
+  "preprocessing_time": 0.0008160420111380517,
+  "query_id": "example_012",
+  "route_type": "SQL_THEN_API",
+  "runtime": 0.0020929999882355332,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences"
+        },
+        {
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions"
+        },
+        {
+          "id": "merge_policies",
+          "method": "GET",
+          "path": "/data/core/ups/config/mergePolicies"
+        },
+        {
+          "id": "segment_jobs",
+          "method": "GET",
+          "path": "/data/core/ups/segment/jobs"
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_connector",
+        "dim_segment",
+        "dim_target",
+        "hkg_br_base_segment_used_by_dependent_segment",
+        "hkg_br_collection_segment",
+        "hkg_br_segment_property",
+        "hkg_br_segment_target"
+      ],
+      "confidence": 0.6499999999999999,
+      "domain_type": "SEGMENT_AUDIENCE",
+      "kind": "route",
+      "reason": "Keyword routing using SEGMENT_AUDIENCE:1, DESTINATION_DATAFLOW:1.",
+      "route_type": "SQL_THEN_API"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "audit_events",
+          "audit_events_short"
+        ],
+        "lookup_paths": [
+          "audit",
+          "segment_destination"
+        ],
+        "tables": [
+          "dim_collection",
+          "dim_segment"
+        ]
+      },
+      "rewrites": [
+        "important_plurals->singular"
+      ],
+      "tokens": {
+        "domains": [
+          "destination_dataflow",
+          "segment_audience"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 700,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/threshold_runs/run_04/eval/example_012/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 998
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Query family requires Adobe API evidence. Fast path: segment_new_destination_mapping+destination_audit_events.",
+      "steps": [
+        {
+          "action": "sql",
+          "family": "segment_new_destination_mapping",
+          "purpose": "Fast-path SQL grounding.",
+          "sql": "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAME\" AS target_name FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"CREATEDTIME\" >= DATEADD(MONTH, -3, CURRENT_DATE) LIMIT 3"
+        },
+        {
+          "action": "api",
+          "family": "destination_audit_events",
+          "method": "GET",
+          "params": {
+            "limit": "3",
+            "property": "assetType==destination"
+          },
+          "purpose": "API parameter template: destination_audit_events.",
+          "url": "/data/foundation/audit/events"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 14.247
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 2
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "row_count": 1,
+        "rows": {
+          "items": [
+            {
+              "segment_id": "f6b93428-c021-4058-a1a2-77c277aab564",
+              "segment_name": "Gender: Male",
+              "target_id": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+              "target_name": "amazon-s3"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "sql": "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAME\" AS target_name FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"CREATEDTIME\" >= DATEADD(MONTH, -3, CURRENT_DATE) LIMIT 3",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "3",
+        "property": "assetType==destination"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/audit/events",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "3",
+          "property": "assetType==destination"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/foundation/audit/events"
+      },
+      "url": "/data/foundation/audit/events",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 3.404100425541401e-05,
+    "execution_time": 0.0006820840062573552,
+    "planning_time": 0.0004497500485740602,
+    "preprocessing_time": 0.0008160420111380517
+  },
+  "tool_call_count": 2
+}

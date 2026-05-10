@@ -1,5 +1,5 @@
 {
-  "answer_time": 0.0006472499808296561,
+  "answer_time": 0.0006414998788386583,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -9,13 +9,13 @@
       "effect": "preserves the original query for reproducibility",
       "efficiency_role": "starts one trace without extra tool calls",
       "output": {
-        "query": "Show the default merge policy for schema class '_xdm.context.profile'.",
-        "query_id": "show_the_default_merge_policy_for_schema_class_x",
+        "query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
+        "query_id": "llm_controller_44459b7b525e",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-06T14:50:52.357157+00:00"
+      "timestamp": "2026-05-10T05:56:01.391367+00:00"
     },
     {
       "checkpoint_id": "checkpoint_00_prompt_router",
@@ -24,19 +24,19 @@
       "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
       "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
       "input_summary": {
-        "query": "Show the default merge policy for schema class '_xdm.context.profile'."
+        "query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE."
       },
       "output": {
         "confidence": 0.9,
         "matched_rules": {
           "items": [
-            "api_only:file"
+            "api_only:batch"
           ],
-          "total_items": 2,
+          "total_items": 3,
           "truncated_items": false
         },
         "mode": "API_ONLY",
-        "reason": "API/platform family keyword(s): file, merge policy.",
+        "reason": "API/platform family keyword(s): batch, file, files.",
         "recommended_strategy": "SQL_FIRST_API_VERIFY",
         "requires_api": true,
         "requires_database": false,
@@ -45,7 +45,7 @@
       },
       "stage": "prompt routing",
       "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-06T14:50:52.357198+00:00"
+      "timestamp": "2026-05-10T05:56:01.391418+00:00"
     },
     {
       "checkpoint_id": "checkpoint_simple_prompt_gate",
@@ -54,17 +54,17 @@
       "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
       "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
       "input_summary": {
-        "query": "Show the default merge policy for schema class '_xdm.context.profile'."
+        "query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE."
       },
       "output": {
         "confidence": 0.9,
         "is_simple": false,
-        "reason": "API/platform family keyword(s): file, merge policy.",
+        "reason": "API/platform family keyword(s): batch, file, files.",
         "suggested_action": "USE_DATA_PIPELINE"
       },
       "stage": "input routing",
       "technique": "simple prompt gate",
-      "timestamp": "2026-05-06T14:50:52.357217+00:00"
+      "timestamp": "2026-05-10T05:56:01.391440+00:00"
     },
     {
       "checkpoint_id": "checkpoint_02_query_normalization",
@@ -73,15 +73,22 @@
       "effect": "creates matching-friendly text while preserving the original query",
       "efficiency_role": "reduces repeated fuzzy matching work downstream",
       "input_summary": {
-        "query": "Show the default merge policy for schema class '_xdm.context.profile'."
+        "query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE."
       },
       "output": {
-        "matching_text": "show the default merge policy for schema class '_xdm.context.profile'.",
-        "normalized_query": "Show the default merge policy for schema class '_xdm.context.profile'."
+        "matching_text": "show failed file for batch 01kp6mnq3x71rp6mnh6fhwghve.",
+        "normalized_query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
+        "rewrites": {
+          "items": [
+            "important_plurals->singular"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
       },
       "stage": "normalization",
       "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-06T14:50:52.357266+00:00"
+      "timestamp": "2026-05-10T05:56:01.391492+00:00"
     },
     {
       "checkpoint_id": "checkpoint_03_query_tokens",
@@ -90,26 +97,20 @@
       "effect": "extracts reusable query fields for routing, planning, and answers",
       "efficiency_role": "avoids reparsing the query in later modules",
       "input_summary": {
-        "normalized_query": "Show the default merge policy for schema class '_xdm.context.profile'."
+        "normalized_query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE."
       },
       "output": {
         "domains": {
           "items": [
             "batch"
           ],
-          "total_items": 4,
-          "truncated_items": true
-        },
-        "field_paths": {
-          "items": [
-            "_xdm.context.profile"
-          ],
           "total_items": 1,
           "truncated_items": false
         },
-        "quoted_entities": {
+        "ids": 1,
+        "statuses": {
           "items": [
-            "_xdm.context.profile"
+            "failed"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -117,7 +118,7 @@
       },
       "stage": "tokenization",
       "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-06T14:50:52.357319+00:00"
+      "timestamp": "2026-05-10T05:56:01.391541+00:00"
     },
     {
       "checkpoint_id": "checkpoint_04_relevance_scoring",
@@ -131,19 +132,13 @@
             "items": [
               "batch"
             ],
-            "total_items": 4,
-            "truncated_items": true
-          },
-          "field_paths": {
-            "items": [
-              "_xdm.context.profile"
-            ],
             "total_items": 1,
             "truncated_items": false
           },
-          "quoted_entities": {
+          "ids": 1,
+          "statuses": {
             "items": [
-              "_xdm.context.profile"
+              "failed"
             ],
             "total_items": 1,
             "truncated_items": false
@@ -153,22 +148,129 @@
       "output": {
         "top_answer_families": {
           "items": [
-            "merge_policy"
+            "batch"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "top_apis": {
           "items": [
-            "merge_policies"
+            "export_batch_failed"
           ],
           "total_items": 3,
+          "truncated_items": false
+        },
+        "top_join_hints": {
+          "items": [
+            "dim_connector.SOURCEID->hkg_br_source_collection.SOURCEID"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_tables": {
+          "items": [
+            "dim_connector"
+          ],
+          "total_items": 2,
           "truncated_items": false
         }
       },
       "stage": "context selection",
       "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-06T14:50:52.357970+00:00"
+      "timestamp": "2026-05-10T05:56:01.392302+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_value_entity_retrieval",
+      "correctness_role": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
+      "duration_ms": 0.0,
+      "effect": "grounds query entities against sampled local DB values before planning",
+      "efficiency_role": "uses a cached bounded value index with per-query scan and wall-time budgets",
+      "input_summary": {
+        "query_values": {
+          "items": [
+            {
+              "kind": "batch_id",
+              "text": "01KP6MNQ3X71RP6MNH6FHWGHVE"
+            }
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "budget_exceeded": false,
+        "match_count": 0,
+        "retrieval_ms": 9.493
+      },
+      "output": {
+        "active": true,
+        "cache_hit": true,
+        "cache_key": "213f3d553413a550",
+        "cache_key_algorithm": "sha256",
+        "cache_path": "[REDACTED]/outputs/cache/value_index_213f3d553413a550.json",
+        "cache_reproducible": true,
+        "match_count": 0,
+        "query_value_count": 3,
+        "truncated_fields": 8
+      },
+      "stage": "query understanding",
+      "technique": "CHESS-style value/entity retrieval",
+      "timestamp": "2026-05-10T05:56:01.392954+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_query_decomposition",
+      "correctness_role": "helps SQL/API planning preserve requested constraints",
+      "duration_ms": 0.0,
+      "effect": "breaks complex prompts into entities, filters, joins, and answer-shape constraints",
+      "efficiency_role": "skips simple queries and uses no LLM/tool calls",
+      "input_summary": {
+        "query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
+        "tokens": {
+          "domains": {
+            "items": [
+              "batch"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "ids": 1,
+          "statuses": {
+            "items": [
+              "failed"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      },
+      "output": {
+        "active": true,
+        "expected_answer_shape": "table_or_list",
+        "required_entities": {
+          "items": [
+            "01KP6MNQ3X71RP6MNH6FHWGHVE"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "required_filters": {
+          "items": [
+            "failed"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sub_questions": {
+          "items": [
+            "Ground named entities and identifiers."
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "stage": "query understanding",
+      "technique": "DIN-SQL-style deterministic query decomposition",
+      "timestamp": "2026-05-10T05:56:01.392970+00:00"
     },
     {
       "checkpoint_id": "checkpoint_05_query_analysis",
@@ -177,28 +279,27 @@
       "effect": "computes shared query understanding once",
       "efficiency_role": "avoids repeated template and routing analysis",
       "input_summary": {
-        "domain_type": "SEGMENT_AUDIENCE",
+        "domain_type": "STATUS_MONITORING",
         "route_type": "API_ONLY"
       },
       "output": {
-        "answer_family": "merge_policy",
+        "answer_family": "failed_dataflow_runs",
         "api_templates": {
           "items": [
-            "schema_by_name"
+            "batch_export_files"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
-        "confidence": 0.8,
-        "domain_type": "SEGMENT_AUDIENCE",
-        "fast_path": "blueprint_collection_list+schema_by_name+merge_policies",
+        "confidence": 0.6,
+        "domain_type": "STATUS_MONITORING",
+        "fast_path": "batch_export_files",
         "route_type": "API_ONLY",
-        "sql_template": "blueprint_collection_list",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "routing",
       "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-06T14:50:52.357975+00:00"
+      "timestamp": "2026-05-10T05:56:01.392975+00:00"
     },
     {
       "checkpoint_id": "checkpoint_06_lookup_path",
@@ -207,30 +308,37 @@
       "effect": "predicts the relevant table/join/API path",
       "efficiency_role": "filters unrelated schema and endpoint candidates",
       "input_summary": {
-        "answer_family": "merge_policy",
-        "domain_type": "SEGMENT_AUDIENCE"
+        "answer_family": "failed_dataflow_runs",
+        "domain_type": "STATUS_MONITORING"
       },
       "output": {
         "api_families": {
           "items": [
-            "merge_policies"
+            "destination_flows"
           ],
-          "total_items": 1,
+          "total_items": 3,
           "truncated_items": false
         },
-        "api_mode": "required",
-        "family": "merge_policy",
+        "api_mode": "optional",
+        "family": "destination_dataflow",
         "required_ids": {
           "items": [
-            "merge_policy_id"
+            "target_id"
           ],
-          "total_items": 1,
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "tables": {
+          "items": [
+            "dim_target"
+          ],
+          "total_items": 2,
           "truncated_items": false
         }
       },
       "stage": "path prediction",
       "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-06T14:50:52.357978+00:00"
+      "timestamp": "2026-05-10T05:56:01.392978+00:00"
     },
     {
       "checkpoint_id": "checkpoint_07_context_card",
@@ -240,53 +348,46 @@
       "efficiency_role": "limits context size for non-baseline strategies",
       "input_summary": {
         "broad_context": false,
-        "lookup_path": "merge_policy"
+        "lookup_path": "destination_dataflow"
       },
       "output": {
-        "estimated_metadata_tokens": 852,
-        "prompt_tokens": 1504,
+        "estimated_metadata_tokens": 550,
+        "prompt_tokens": 1140,
         "selected_apis": {
           "items": [
-            "schemas_short"
+            "export_batch_failed"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
-        "selected_card_name": "merge_policy",
+        "selected_card_name": "destination_dataflow",
         "selected_columns": {
-          "dim_blueprint": {
+          "dim_connector": {
             "items": [
-              "BLUEPRINTID"
+              "CONNECTIONSPECNAME"
             ],
-            "total_items": 5,
+            "total_items": 8,
             "truncated_items": true
           },
-          "dim_collection": {
+          "dim_target": {
             "items": [
-              "COLLECTIONID"
+              "CONNECTIONSPECID"
             ],
-            "total_items": 4,
+            "total_items": 7,
             "truncated_items": true
-          },
-          "hkg_br_blueprint_collection": {
-            "items": [
-              "BLUEPRINTID"
-            ],
-            "total_items": 2,
-            "truncated_items": false
           }
         },
         "selected_tables": {
           "items": [
-            "dim_blueprint"
+            "dim_target"
           ],
-          "total_items": 3,
+          "total_items": 2,
           "truncated_items": false
         }
       },
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-06T14:50:52.361125+00:00"
+      "timestamp": "2026-05-10T05:56:01.395426+00:00"
     },
     {
       "checkpoint_id": "checkpoint_08_candidate_plans",
@@ -308,13 +409,13 @@
         },
         "reason_selected": "highest pre-execution validation/relevance/cost score",
         "scores": {
-          "generic_sql_first": 12.38
+          "generic_sql_first": 11.8844
         },
         "selected_plan": "generic_sql_first"
       },
       "stage": "planning",
       "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-06T14:50:52.361373+00:00"
+      "timestamp": "2026-05-10T05:56:01.395655+00:00"
     },
     {
       "checkpoint_id": "checkpoint_09_plan_optimization",
@@ -342,7 +443,7 @@
       },
       "stage": "optimization",
       "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-06T14:50:52.361384+00:00"
+      "timestamp": "2026-05-10T05:56:01.395664+00:00"
     },
     {
       "checkpoint_id": "checkpoint_10_evidence_policy",
@@ -351,24 +452,24 @@
       "effect": "decides when API evidence is required, optional, or unnecessary",
       "efficiency_role": "skips or caps API calls when SQL evidence is enough",
       "input_summary": {
-        "answer_family": "merge_policy",
+        "answer_family": "failed_dataflow_runs",
         "route_type": "API_ONLY"
       },
       "output": {
         "allowed_api_families": {
           "items": [
-            "merge_policies"
+            "batch_export_files"
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "max_api_calls": 1,
         "mode": "API_REQUIRED",
-        "reason": "Merge policies are Adobe API objects."
+        "reason": "Route is API-only."
       },
       "stage": "evidence policy",
       "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-06T14:50:52.361388+00:00"
+      "timestamp": "2026-05-10T05:56:01.395668+00:00"
     },
     {
       "checkpoint_id": "checkpoint_11_call_budget",
@@ -381,13 +482,10 @@
           "items": [
             {
               "action": "api",
-              "family": "merge_policies",
+              "family": "batch_export_files",
               "method": "GET",
-              "params": {
-                "limit": "5"
-              },
-              "purpose": "API parameter template: merge_policies.",
-              "url": "/data/core/ups/config/mergePolicies"
+              "purpose": "API parameter template: batch_export_files.",
+              "url": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
             }
           ],
           "total_items": 1,
@@ -404,7 +502,7 @@
       },
       "stage": "efficiency control",
       "technique": "tool-call budgeting",
-      "timestamp": "2026-05-06T14:50:52.361402+00:00"
+      "timestamp": "2026-05-10T05:56:01.395682+00:00"
     },
     {
       "checkpoint_id": "checkpoint_12_validation",
@@ -417,13 +515,10 @@
           "items": [
             {
               "action": "api",
-              "family": "merge_policies",
+              "family": "batch_export_files",
               "method": "GET",
-              "params": {
-                "limit": "5"
-              },
-              "purpose": "API parameter template: merge_policies.",
-              "url": "/data/core/ups/config/mergePolicies"
+              "purpose": "API parameter template: batch_export_files.",
+              "url": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
             }
           ],
           "total_items": 1,
@@ -448,7 +543,7 @@
       },
       "stage": "validation",
       "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-06T14:50:52.364240+00:00"
+      "timestamp": "2026-05-10T05:56:01.398014+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -469,17 +564,14 @@
               "ok": false,
               "result_preview": {
                 "dry_run": true,
-                "endpoint": "/data/core/ups/config/mergePolicies",
+                "endpoint": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed",
                 "error": "Adobe credentials unavailable; API call not executed.",
                 "method": "GET",
                 "ok": false,
-                "params": {
-                  "limit": "5"
-                },
                 "result_preview": null,
-                "url": "https://platform.adobe.io/data/core/ups/config/mergePolicies"
+                "url": "https://platform.adobe.io/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
               },
-              "url": "/data/core/ups/config/mergePolicies"
+              "url": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
             }
           ],
           "total_items": 1,
@@ -490,7 +582,7 @@
       },
       "stage": "execution",
       "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-06T14:50:52.364251+00:00"
+      "timestamp": "2026-05-10T05:56:01.398022+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -506,7 +598,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-06T14:50:52.364256+00:00"
+      "timestamp": "2026-05-10T05:56:01.398026+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -518,28 +610,35 @@
         "tool_result_count": 1
       },
       "output": {
-        "answer_intent": "DETAIL",
+        "answer_intent": "STATUS",
         "discrepancy_flags": {
           "sql_api_discrepancy": false
         },
         "dry_run_flags": {
           "dry_run": true
         },
+        "missing_slots": {
+          "items": [
+            "status"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
         "slots": {
-          "answer_family": "merge_policy",
+          "answer_family": "failed_dataflow_runs",
           "api_error": false,
           "discrepancy": false,
           "dry_run": true,
-          "entity_names": {
+          "entity_ids": {
             "items": [
-              "_xdm.context.profile"
+              "01KP6MNQ3X71RP6MNH6FHWGHVE"
             ],
             "total_items": 1,
             "truncated_items": false
           },
           "slots_present": {
             "items": [
-              "entity_names"
+              "entity_ids"
             ],
             "total_items": 2,
             "truncated_items": false
@@ -548,7 +647,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-06T14:50:52.364577+00:00"
+      "timestamp": "2026-05-10T05:56:01.398513+00:00"
     },
     {
       "checkpoint_id": "checkpoint_16_answer_verification",
@@ -557,10 +656,10 @@
       "effect": "checks final-answer claims against SQL/API evidence",
       "efficiency_role": "rewrites safely without extra tool calls",
       "input_summary": {
-        "claim_count": 0,
+        "claim_count": 2,
         "slots_present": {
           "items": [
-            "entity_names"
+            "entity_ids"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -573,13 +672,20 @@
           "truncated_items": false
         },
         "rewrite_applied": false,
-        "supported_claims_count": 0,
+        "supported_claims_count": 2,
         "unsupported_claims_count": 0,
-        "verifier_passed": true
+        "verifier_passed": true,
+        "warnings": {
+          "items": [
+            "answer_contains_only_query_supported_facts"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
       },
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-06T14:50:52.364638+00:00"
+      "timestamp": "2026-05-10T05:56:01.398520+00:00"
     },
     {
       "checkpoint_id": "checkpoint_17_answer_reranking",
@@ -588,7 +694,7 @@
       "effect": "selects the safest answer from same-evidence candidates",
       "efficiency_role": "uses no additional SQL/API/LLM calls",
       "input_summary": {
-        "answer_family": "merge_policy"
+        "answer_family": "failed_dataflow_runs"
       },
       "output": {
         "candidate_count": 0,
@@ -597,7 +703,7 @@
       },
       "stage": "answer selection",
       "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-06T14:50:52.364729+00:00"
+      "timestamp": "2026-05-10T05:56:01.398523+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -609,122 +715,133 @@
         "verifier_passed": true
       },
       "output": {
-        "answer_length": 140,
-        "final_answer": "The default merge policy requires live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
-        "final_token_estimate": 22
+        "answer_length": 196,
+        "final_answer": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
+        "final_token_estimate": 36
       },
       "stage": "final response",
       "technique": "concise grounded final response",
-      "timestamp": "2026-05-06T14:50:52.364758+00:00"
+      "timestamp": "2026-05-10T05:56:01.398555+00:00"
     },
     {
       "active": true,
       "checkpoint_id": "checkpoint_official_token_reduction",
       "correctness_impact_expected": false,
-      "estimated_tokens_after": 650,
-      "estimated_tokens_before": 726,
-      "expected_savings": 76,
+      "estimated_tokens_after": 748,
+      "estimated_tokens_before": 829,
+      "expected_savings": 81,
       "packaged_execution_changed": false,
       "reduced_fields": [
         "steps[0].candidate_apis",
-        "steps[0].candidate_tables",
         "steps[2].metadata_path"
       ]
     }
   ],
-  "domain_type": "SEGMENT_AUDIENCE",
+  "domain_type": "STATUS_MONITORING",
   "errors": [],
-  "estimated_tokens": 650,
-  "execution_time": 0.0004107080167159438,
-  "final_answer": "The default merge policy requires live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
-  "original_query": "Show the default merge policy for schema class '_xdm.context.profile'.",
-  "planning_time": 0.00027249997947365046,
-  "preprocessing_time": 0.003911499981768429,
-  "query_id": "show_the_default_merge_policy_for_schema_class_x",
+  "estimated_tokens": 748,
+  "execution_time": 0.0003197081387042999,
+  "final_answer": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
+  "planning_time": 0.0002577919512987137,
+  "preprocessing_time": 0.003986250143498182,
+  "query_id": "llm_controller_44459b7b525e",
   "route_type": "API_ONLY",
-  "runtime": 0.013746375101618469,
+  "runtime": 0.01517595793120563,
   "sql_call_count": 0,
   "steps": [
     {
       "candidate_apis": [
         {
-          "id": "ups_audiences",
+          "id": "journey_list",
           "method": "GET",
-          "path": "/data/core/ups/audiences"
+          "path": "/ajo/journey"
         },
         {
-          "id": "segment_definitions",
+          "id": "flowservice_runs",
           "method": "GET",
-          "path": "/data/core/ups/segment/definitions"
+          "path": "/data/foundation/flowservice/runs"
         },
         {
-          "id": "merge_policies",
+          "id": "audit_events",
           "method": "GET",
-          "path": "/data/core/ups/config/mergePolicies"
+          "path": "/data/foundation/audit/events"
         }
       ],
       "candidate_tables": [
         "br_campaign_segment",
         "dim_blueprint",
+        "dim_campaign",
         "dim_collection",
-        "dim_segment",
-        "hkg_br_base_segment_used_by_dependent_segment"
+        "dim_connector"
       ],
-      "confidence": 0.6499999999999999,
-      "domain_type": "SEGMENT_AUDIENCE",
+      "confidence": 0.5,
+      "domain_type": "STATUS_MONITORING",
       "kind": "route",
-      "reason": "Keyword routing using SEGMENT_AUDIENCE:1, DATASET_SCHEMA:1.",
+      "reason": "Keyword routing using STATUS_MONITORING:1.",
       "route_type": "API_ONLY"
     },
     {
+      "decomposition": {
+        "expected_answer_shape": "table_or_list",
+        "sub_questions": [
+          "Ground named entities and identifiers.",
+          "Apply status/date/entity filters."
+        ]
+      },
       "kind": "nlp",
       "relevance": {
         "apis": [
-          "merge_policies",
-          "audit_events"
+          "export_batch_failed",
+          "export_batch_files"
         ],
         "lookup_paths": [
-          "merge_policy",
-          "schema_dataset"
+          "destination_dataflow",
+          "batch"
+        ],
+        "tables": [
+          "dim_connector",
+          "dim_target"
         ]
       },
+      "rewrites": [
+        "important_plurals->singular"
+      ],
       "tokens": {
         "domains": [
-          "batch",
-          "merge_policy",
-          "schema_dataset",
-          "segment_audience"
+          "batch"
         ],
-        "field_paths": [
-          "_xdm.context.profile"
-        ],
-        "quoted_entities": [
-          "_xdm.context.profile"
+        "ids": 1,
+        "statuses": [
+          "failed"
         ]
+      },
+      "value_retrieval": {
+        "budget_exceeded": false,
+        "match_count": 0,
+        "matches": [],
+        "retrieval_ms": 9.493
       }
     },
     {
-      "estimated_tokens": 852,
+      "estimated_tokens": 550,
       "kind": "metadata",
       "metadata_path": "metadata.json",
-      "prompt_tokens": 1504
+      "prompt_tokens": 1140
     },
     {
       "kind": "plan",
       "optimizer_actions": [
         "ensemble selected generic_sql_first"
       ],
-      "rationale": "SQL-first evidence policy: API_REQUIRED. Merge policies are Adobe API objects. Fast path: blueprint_collection_list+schema_by_name+merge_policies.",
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: batch_export_files.",
       "steps": [
         {
           "action": "api",
-          "family": "merge_policies",
+          "family": "batch_export_files",
           "method": "GET",
-          "params": {
-            "limit": "5"
-          },
-          "purpose": "API parameter template: merge_policies.",
-          "url": "/data/core/ups/config/mergePolicies"
+          "purpose": "API parameter template: batch_export_files.",
+          "url": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
         }
       ],
       "strategy": "SQL_FIRST_API_VERIFY"
@@ -733,7 +850,7 @@
       "kind": "optimizer",
       "plan_ensemble": {
         "candidate_scores": {
-          "generic_sql_first": 12.38
+          "generic_sql_first": 11.8844
         },
         "candidate_tool_calls": {
           "generic_sql_first": 1
@@ -745,22 +862,17 @@
       "headers": {},
       "kind": "api_call",
       "method": "GET",
-      "params": {
-        "limit": "5"
-      },
+      "params": {},
       "result": {
         "dry_run": true,
-        "endpoint": "/data/core/ups/config/mergePolicies",
+        "endpoint": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed",
         "error": "Adobe credentials unavailable; API call not executed.",
         "method": "GET",
         "ok": false,
-        "params": {
-          "limit": "5"
-        },
         "result_preview": null,
-        "url": "https://platform.adobe.io/data/core/ups/config/mergePolicies"
+        "url": "https://platform.adobe.io/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
       },
-      "url": "/data/core/ups/config/mergePolicies",
+      "url": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed",
       "validation": {
         "errors": [],
         "ok": true,
@@ -769,14 +881,16 @@
       }
     },
     {
-      "answer_family": "merge_policy",
-      "answer_intent": "DETAIL",
-      "completeness_missing_fields": [],
+      "answer_family": "failed_dataflow_runs",
+      "answer_intent": "STATUS",
+      "completeness_missing_fields": [
+        "status"
+      ],
       "kind": "answer_diagnostics",
       "rewrite_applied": false,
       "selected_candidate_type": "base",
       "slots_present": [
-        "entity_names",
+        "entity_ids",
         "dry_run"
       ],
       "unsupported_claims_count": 0,
@@ -785,10 +899,10 @@
   ],
   "strategy": "SQL_FIRST_API_VERIFY",
   "timings": {
-    "answer_time": 0.0006472499808296561,
-    "execution_time": 0.0004107080167159438,
-    "planning_time": 0.00027249997947365046,
-    "preprocessing_time": 0.003911499981768429
+    "answer_time": 0.0006414998788386583,
+    "execution_time": 0.0003197081387042999,
+    "planning_time": 0.0002577919512987137,
+    "preprocessing_time": 0.003986250143498182
   },
   "tool_call_count": 1
 }

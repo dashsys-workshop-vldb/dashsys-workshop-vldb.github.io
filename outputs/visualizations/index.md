@@ -14,7 +14,7 @@ This index links the supervisor-facing visualization suite. Every artifact is ge
 | --- | --- |
 | Required files | 44/44 |
 | Technique count | 45 |
-| Packaged strict final score | 0.6491 |
+| Packaged strict final score | 0.6553 |
 | Best isolated score | 0.6558 |
 | Final recommendation | ready_to_submit_with_official_token_reduction |
 | LLM baseline framework | generic_sdk_llm_baseline |

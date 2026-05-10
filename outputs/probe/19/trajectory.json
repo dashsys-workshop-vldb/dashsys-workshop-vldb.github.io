@@ -1,0 +1,211 @@
+{
+  "api_call_count": 1,
+  "domain_type": "UNKNOWN",
+  "errors": [],
+  "estimated_tokens": 1009,
+  "final_answer": "Merge policy information requires Adobe API evidence. Live api verification was not executed because adobe credentials are unavailable.",
+  "original_query": "List all merge policies in this sandbox.",
+  "query_id": "probe_19",
+  "route_type": "API_ONLY",
+  "runtime": 0.0020973749924451113,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "common_params": {
+            "limit": 50,
+            "start": 0
+          },
+          "domains": [
+            "JOURNEY_CAMPAIGN",
+            "STATUS_MONITORING"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "published journeys"
+            }
+          ],
+          "id": "journey_list",
+          "method": "GET",
+          "path": "/ajo/journey",
+          "path_params": [],
+          "risk_notes": [
+            "Journey status names can differ between database snapshots and live API state."
+          ],
+          "use_when": "List or inspect Journey Optimizer journeys/campaigns, statuses, published/live/inactive/draft state."
+        },
+        {
+          "common_params": {
+            "limit": 50,
+            "start": 0
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "audiences with profile counts"
+            }
+          ],
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences",
+          "path_params": [],
+          "risk_notes": [
+            "Audience APIs can be paginated; avoid assuming first page is exhaustive."
+          ],
+          "use_when": "List or look up Real-Time CDP audiences and audience metadata/counts."
+        },
+        {
+          "common_params": {
+            "limit": 50,
+            "start": 0
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "segment definition by name"
+            }
+          ],
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions",
+          "path_params": [],
+          "risk_notes": [
+            "Definition IDs and audience IDs are related but not always identical."
+          ],
+          "use_when": "Look up segment definitions, names, statuses, and segment metadata."
+        },
+        {
+          "common_params": {
+            "limit": 50
+          },
+          "domains": [
+            "DESTINATION_DATAFLOW"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "destination flows"
+            }
+          ],
+          "id": "flowservice_flows",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/flows",
+          "path_params": [],
+          "risk_notes": [
+            "Flow lists are paginated and may need property filters for production use."
+          ],
+          "use_when": "List destination/dataflow/activation flows and flow metadata."
+        },
+        {
+          "common_params": {
+            "limit": 50
+          },
+          "domains": [
+            "DESTINATION_DATAFLOW",
+            "STATUS_MONITORING"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "failed flow runs"
+            }
+          ],
+          "id": "flowservice_runs",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/runs",
+          "path_params": [],
+          "risk_notes": [
+            "Run windows and sorting must be explicit for time-sensitive questions."
+          ],
+          "use_when": "Inspect dataflow run status, failed/succeeded runs, and recent execution state."
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "confidence": 0.2,
+      "domain_type": "UNKNOWN",
+      "kind": "route",
+      "reason": "Keyword routing found no domain keyword.",
+      "route_type": "API_ONLY"
+    },
+    {
+      "estimated_tokens": 2798,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/probe/19/metadata.json"
+    },
+    {
+      "kind": "plan",
+      "rationale": "Use SQL first for entity grounding, then API only for live/platform state or status verification.",
+      "steps": [
+        {
+          "action": "api",
+          "allow_full_result": false,
+          "headers": {},
+          "method": "GET",
+          "params": {
+            "limit": "10"
+          },
+          "purpose": "API parameter template: merge_policies.",
+          "sql": null,
+          "url": "/data/core/ups/config/mergePolicies",
+          "warnings": []
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "10"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/core/ups/config/mergePolicies",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "headers": {},
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "10"
+        },
+        "result_preview": null,
+        "status_code": null,
+        "url": "https://platform.adobe.io/data/core/ups/config/mergePolicies"
+      },
+      "url": "/data/core/ups/config/mergePolicies",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "tool_call_count": 1
+}

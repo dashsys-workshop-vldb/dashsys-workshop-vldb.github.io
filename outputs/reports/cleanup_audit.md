@@ -1,7 +1,7 @@
 # Redundant File Audit
 
-- Total rows: 119
-- Required rows: 112
+- Total rows: 125
+- Required rows: 118
 - Delete obsolete rows: 6
 - Consolidate then delete rows: 0
 - Unsure / kept rows: 1

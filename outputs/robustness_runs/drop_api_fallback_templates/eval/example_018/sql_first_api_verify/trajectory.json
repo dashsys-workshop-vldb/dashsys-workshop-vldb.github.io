@@ -1,0 +1,145 @@
+{
+  "answer_time": 9.25001222640276e-06,
+  "api_call_count": 1,
+  "domain_type": "UNKNOWN",
+  "errors": [],
+  "estimated_tokens": 734,
+  "execution_time": 0.00018166599329560995,
+  "final_answer": "Details for the tag named 'cool' require live API evidence, including the tag ID, name, category, and Adobe organization. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Show me the details of the tag named 'cool'.",
+  "planning_time": 0.0001326660276390612,
+  "preprocessing_time": 0.0009418330155313015,
+  "query_id": "example_018",
+  "route_type": "API_ONLY",
+  "runtime": 0.0016022499767132103,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "journey_list",
+          "method": "GET",
+          "path": "/ajo/journey"
+        },
+        {
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences"
+        },
+        {
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions"
+        },
+        {
+          "id": "flowservice_flows",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/flows"
+        },
+        {
+          "id": "flowservice_runs",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/runs"
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "confidence": 0.2,
+      "domain_type": "UNKNOWN",
+      "kind": "route",
+      "reason": "Keyword routing found no domain keyword.",
+      "route_type": "API_ONLY"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "unified_tag_categories",
+          "unified_tag_detail"
+        ],
+        "lookup_paths": [
+          "tags",
+          "batch"
+        ]
+      },
+      "tokens": {
+        "domains": [
+          "tags"
+        ],
+        "quoted_entities": [
+          "cool"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 983,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/robustness_runs/drop_api_fallback_templates/eval/example_018/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 1333
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: tag_details_by_id.",
+      "steps": [
+        {
+          "action": "api",
+          "family": "tag_details_by_id",
+          "method": "GET",
+          "purpose": "API parameter template: tag_details_by_id.",
+          "url": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 12.3858
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 1
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {},
+      "result": {
+        "dry_run": true,
+        "endpoint": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "result_preview": null,
+        "url": "https://platform.adobe.io/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818"
+      },
+      "url": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 9.25001222640276e-06,
+    "execution_time": 0.00018166599329560995,
+    "planning_time": 0.0001326660276390612,
+    "preprocessing_time": 0.0009418330155313015
+  },
+  "tool_call_count": 1
+}

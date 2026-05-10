@@ -139,6 +139,7 @@ def extract_answer_slots(query: str, tool_results: list[dict[str, Any]]) -> Answ
             if not payload.get("ok") and not payload.get("dry_run"):
                 slots.api_error = True
             step = result.get("step", {})
+            collect_api_request_evidence(slots, step, payload)
             family = str(step.get("family") or slots.answer_family)
             evidence = normalize_api_evidence(family, payload)
             if not payload.get("dry_run") and payload.get("ok"):
@@ -221,6 +222,24 @@ def collect_mapping(slots: AnswerSlots, mapping: dict[str, Any]) -> None:
         if key_norm in {normalize_key(key) for key in COUNT_KEYS} and re.search(r"\d", text):
             slots.counts.append(value)
             slots.evidence_numbers.add(re.sub(r"[^\d.]", "", text) or text)
+
+
+def collect_api_request_evidence(slots: AnswerSlots, step: dict[str, Any], payload: dict[str, Any]) -> None:
+    path = str(step.get("url") or payload.get("endpoint") or "")
+    if path:
+        slots.evidence_strings.add(normalize_text(path))
+        collect_mapping(slots, {"endpoint": path})
+    params = step.get("params") or payload.get("params") or {}
+    if isinstance(params, dict):
+        safe_params = {}
+        for key, value in params.items():
+            key_norm = normalize_key(str(key))
+            if any(part in key_norm for part in ["token", "secret", "password", "authorization", "clientid", "clientsecret", "apikey", "key"]):
+                continue
+            if isinstance(value, (dict, list)) or value in (None, ""):
+                continue
+            safe_params[str(key)] = value
+        collect_mapping(slots, safe_params)
 
 
 def coerce_rows(value: Any) -> list[dict[str, Any]]:

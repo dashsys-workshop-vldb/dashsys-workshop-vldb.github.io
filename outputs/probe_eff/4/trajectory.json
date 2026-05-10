@@ -1,0 +1,205 @@
+{
+  "answer_time": 8.583010639995337e-06,
+  "api_call_count": 1,
+  "domain_type": "DESTINATION_DATAFLOW",
+  "errors": [],
+  "estimated_tokens": 1168,
+  "execution_time": 0.0013335420517250896,
+  "final_answer": "There are no failed dataflow runs to report based on the available evidence. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Show me the IDs of failed dataflow runs",
+  "planning_time": 0.0002635840210132301,
+  "preprocessing_time": 0.0009609580156393349,
+  "query_id": "probe_eff_4",
+  "route_type": "SQL_THEN_API",
+  "runtime": 0.0034342079889029264,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "common_params": {
+            "limit": 50
+          },
+          "domains": [
+            "DESTINATION_DATAFLOW"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "destination flows"
+            }
+          ],
+          "id": "flowservice_flows",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/flows",
+          "path_params": [],
+          "risk_notes": [
+            "Flow lists are paginated and may need property filters for production use."
+          ],
+          "use_when": "List destination/dataflow/activation flows and flow metadata."
+        },
+        {
+          "common_params": {
+            "limit": 50
+          },
+          "domains": [
+            "DESTINATION_DATAFLOW",
+            "STATUS_MONITORING"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "failed flow runs"
+            }
+          ],
+          "id": "flowservice_runs",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/runs",
+          "path_params": [],
+          "risk_notes": [
+            "Run windows and sorting must be explicit for time-sensitive questions."
+          ],
+          "use_when": "Inspect dataflow run status, failed/succeeded runs, and recent execution state."
+        },
+        {
+          "common_params": {
+            "limit": 20
+          },
+          "domains": [
+            "DESTINATION_DATAFLOW",
+            "DATASET_SCHEMA",
+            "STATUS_MONITORING"
+          ],
+          "examples": [
+            {
+              "query": "new destinations in last 3 months"
+            }
+          ],
+          "id": "audit_events",
+          "method": "GET",
+          "path": "/data/foundation/audit/events",
+          "path_params": [],
+          "risk_notes": [],
+          "use_when": "Audit events for destination/dataset/entity changes."
+        }
+      ],
+      "candidate_tables": [
+        "dim_connector",
+        "dim_target",
+        "hkg_br_segment_target",
+        "hkg_br_target_property"
+      ],
+      "confidence": 0.6499999999999999,
+      "domain_type": "DESTINATION_DATAFLOW",
+      "kind": "route",
+      "reason": "Keyword routing using DESTINATION_DATAFLOW:2, STATUS_MONITORING:1.",
+      "route_type": "SQL_THEN_API"
+    },
+    {
+      "estimated_tokens": 1324,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/probe_eff/4/metadata.json",
+      "prompt_tokens": 1815
+    },
+    {
+      "kind": "plan",
+      "rationale": "Use SQL first for entity grounding, then apply evidence policy before API verification. API decision: API_OPTIONAL (Live/platform verification may improve the answer.). Fast path: failed_dataflow_flows.",
+      "steps": [
+        {
+          "action": "sql",
+          "allow_full_result": false,
+          "family": null,
+          "headers": {},
+          "method": null,
+          "params": {},
+          "purpose": "Fast-path SQL grounding.",
+          "sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50",
+          "url": null,
+          "warnings": []
+        },
+        {
+          "action": "api",
+          "allow_full_result": false,
+          "family": "failed_dataflow_flows",
+          "headers": {},
+          "method": "GET",
+          "params": {
+            "filter": "state eq 'failed'",
+            "limit": "50"
+          },
+          "purpose": "API parameter template: failed_dataflow_flows.",
+          "sql": null,
+          "url": "/data/foundation/flowservice/flows",
+          "warnings": []
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "original_sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50",
+        "row_count": 0,
+        "rows": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"
+      },
+      "sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "filter": "state eq 'failed'",
+        "limit": "50"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/flowservice/flows",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "headers": {},
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "filter": "state eq 'failed'",
+          "limit": "50"
+        },
+        "result_preview": null,
+        "status_code": null,
+        "url": "https://platform.adobe.io/data/foundation/flowservice/flows"
+      },
+      "url": "/data/foundation/flowservice/flows",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 8.583010639995337e-06,
+    "execution_time": 0.0013335420517250896,
+    "planning_time": 0.0002635840210132301,
+    "preprocessing_time": 0.0009609580156393349
+  },
+  "tool_call_count": 2
+}

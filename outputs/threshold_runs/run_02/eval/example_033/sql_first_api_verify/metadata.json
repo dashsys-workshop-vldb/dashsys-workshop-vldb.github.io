@@ -1,0 +1,100 @@
+{
+  "answer_policy": [
+    "Answer from evidence only.",
+    "Say not found/dry-run when evidence is empty."
+  ],
+  "constraints": [
+    "Use validated SQL/API only.",
+    "Prefer fewer tool calls when evidence is sufficient."
+  ],
+  "context_card": {
+    "answer_policy": "Observability metrics require live API values; render returned date/value points only.",
+    "api_families": [
+      "observability_metrics"
+    ],
+    "api_mode": "required",
+    "family": "observability",
+    "join_path": [],
+    "required_ids": [],
+    "tables": []
+  },
+  "domain_type": "DATASET_SCHEMA",
+  "known_example_patterns": [],
+  "nlp_diagnostics": {
+    "relevance": {
+      "lookup_paths": [
+        "observability",
+        "audit"
+      ]
+    }
+  },
+  "query": "What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'?",
+  "query_id": "example_033",
+  "route_type": "API_ONLY",
+  "selected_apis": [
+    {
+      "id": "observability_metrics",
+      "method": "POST",
+      "path": "/data/infrastructure/observability/insights/metrics"
+    }
+  ],
+  "selected_columns": {
+    "dim_blueprint": [
+      "BLUEPRINTID",
+      "NAME",
+      "CLASS",
+      "ISPROFILEENABLED",
+      "UPDATEDTIME"
+    ],
+    "dim_collection": [
+      "COLLECTIONID",
+      "NAME",
+      "ROWCOUNT",
+      "UPDATEDTIME"
+    ],
+    "hkg_br_blueprint_collection": [
+      "BLUEPRINTID",
+      "COLLECTIONID"
+    ]
+  },
+  "selected_join_hints": [
+    {
+      "confidence": 0.9,
+      "left_column": "BLUEPRINTID",
+      "left_table": "dim_blueprint",
+      "reason": "Matching ID-like column name.",
+      "right_column": "BLUEPRINTID",
+      "right_table": "hkg_br_blueprint_collection"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "BLUEPRINTID",
+      "left_table": "dim_blueprint",
+      "reason": "Matching ID-like column name.",
+      "right_column": "BLUEPRINTID",
+      "right_table": "hkg_br_blueprint_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_blueprint_collection"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_property"
+    }
+  ],
+  "selected_tables": [
+    "dim_blueprint",
+    "hkg_br_blueprint_collection",
+    "dim_collection"
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY"
+}

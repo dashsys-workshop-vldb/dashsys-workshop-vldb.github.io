@@ -1,5 +1,5 @@
 {
-  "answer_time": 0.0003298750380054116,
+  "answer_time": 0.0004278330598026514,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -9,13 +9,13 @@
       "effect": "preserves the original query for reproducibility",
       "efficiency_role": "starts one trace without extra tool calls",
       "output": {
-        "query": "Which segment definitions were updated most recently?",
-        "query_id": "example_024",
+        "query": "How many segment jobs are currently processing?",
+        "query_id": "example_026",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-08T00:27:23.380765+00:00"
+      "timestamp": "2026-05-10T05:53:30.764402+00:00"
     },
     {
       "checkpoint_id": "checkpoint_00_prompt_router",
@@ -24,28 +24,28 @@
       "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
       "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
       "input_summary": {
-        "query": "Which segment definitions were updated most recently?"
+        "query": "How many segment jobs are currently processing?"
       },
       "output": {
-        "confidence": 0.84,
+        "confidence": 0.88,
         "matched_rules": {
           "items": [
-            "local_db:segment"
+            "sql_plus_api:current"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "mode": "LOCAL_DB_ONLY",
-        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: segment.",
+        "mode": "SQL_PLUS_API",
+        "reason": "Live/status keyword(s) require SQL grounding plus API verification: current.",
         "recommended_strategy": "SQL_FIRST_API_VERIFY",
-        "requires_api": false,
+        "requires_api": true,
         "requires_database": true,
-        "risk": "low",
+        "risk": "medium",
         "truncated_fields": 1
       },
       "stage": "prompt routing",
       "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-08T00:27:23.380784+00:00"
+      "timestamp": "2026-05-10T05:53:30.764433+00:00"
     },
     {
       "checkpoint_id": "checkpoint_simple_prompt_gate",
@@ -54,17 +54,17 @@
       "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
       "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
       "input_summary": {
-        "query": "Which segment definitions were updated most recently?"
+        "query": "How many segment jobs are currently processing?"
       },
       "output": {
-        "confidence": 0.84,
+        "confidence": 0.88,
         "is_simple": false,
-        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: segment.",
+        "reason": "Live/status keyword(s) require SQL grounding plus API verification: current.",
         "suggested_action": "USE_DATA_PIPELINE"
       },
       "stage": "input routing",
       "technique": "simple prompt gate",
-      "timestamp": "2026-05-08T00:27:23.380796+00:00"
+      "timestamp": "2026-05-10T05:53:30.764446+00:00"
     },
     {
       "checkpoint_id": "checkpoint_02_query_normalization",
@@ -73,11 +73,11 @@
       "effect": "creates matching-friendly text while preserving the original query",
       "efficiency_role": "reduces repeated fuzzy matching work downstream",
       "input_summary": {
-        "query": "Which segment definitions were updated most recently?"
+        "query": "How many segment jobs are currently processing?"
       },
       "output": {
-        "matching_text": "which segment definition were updated most recently?",
-        "normalized_query": "Which segment definitions were updated most recently?",
+        "matching_text": "how many segment job are currently processing?",
+        "normalized_query": "How many segment jobs are currently processing?",
         "rewrites": {
           "items": [
             "important_plurals->singular"
@@ -88,7 +88,7 @@
       },
       "stage": "normalization",
       "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-08T00:27:23.380824+00:00"
+      "timestamp": "2026-05-10T05:53:30.764480+00:00"
     },
     {
       "checkpoint_id": "checkpoint_03_query_tokens",
@@ -97,7 +97,7 @@
       "effect": "extracts reusable query fields for routing, planning, and answers",
       "efficiency_role": "avoids reparsing the query in later modules",
       "input_summary": {
-        "normalized_query": "Which segment definitions were updated most recently?"
+        "normalized_query": "How many segment jobs are currently processing?"
       },
       "output": {
         "domains": {
@@ -106,11 +106,18 @@
           ],
           "total_items": 1,
           "truncated_items": false
+        },
+        "statuses": {
+          "items": [
+            "processing"
+          ],
+          "total_items": 1,
+          "truncated_items": false
         }
       },
       "stage": "tokenization",
       "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-08T00:27:23.380852+00:00"
+      "timestamp": "2026-05-10T05:53:30.764513+00:00"
     },
     {
       "checkpoint_id": "checkpoint_04_relevance_scoring",
@@ -123,6 +130,13 @@
           "domains": {
             "items": [
               "segment_audience"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "statuses": {
+            "items": [
+              "processing"
             ],
             "total_items": 1,
             "truncated_items": false
@@ -139,7 +153,7 @@
         },
         "top_apis": {
           "items": [
-            "segment_definitions"
+            "segment_jobs"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -161,7 +175,45 @@
       },
       "stage": "context selection",
       "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-08T00:27:23.381449+00:00"
+      "timestamp": "2026-05-10T05:53:30.765143+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_value_entity_retrieval",
+      "correctness_role": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
+      "duration_ms": 0.0,
+      "effect": "grounds query entities against sampled local DB values before planning",
+      "efficiency_role": "uses a cached bounded value index with per-query scan and wall-time budgets",
+      "input_summary": {
+        "query_values": {
+          "items": [
+            {
+              "kind": "status",
+              "text": "processing"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "budget_exceeded": true,
+        "match_count": 0,
+        "retrieval_ms": 10.737
+      },
+      "output": {
+        "active": true,
+        "cache_hit": true,
+        "cache_key": "ff8c5b63cad79a6d",
+        "cache_key_algorithm": "sha256",
+        "cache_path": "[REDACTED]/outputs/cache/value_index_ff8c5b63cad79a6d.json",
+        "cache_reproducible": true,
+        "match_count": 0,
+        "query_value_count": 1,
+        "truncated_fields": 8
+      },
+      "stage": "query understanding",
+      "technique": "CHESS-style value/entity retrieval",
+      "timestamp": "2026-05-10T05:53:30.765389+00:00"
     },
     {
       "checkpoint_id": "checkpoint_05_query_analysis",
@@ -174,23 +226,23 @@
         "route_type": "API_ONLY"
       },
       "output": {
-        "answer_family": "segment_definitions",
+        "answer_family": "segment_jobs",
         "api_templates": {
           "items": [
-            "recent_segment_definitions"
+            "segment_jobs"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "confidence": 0.6,
+        "confidence": 0.75,
         "domain_type": "SEGMENT_AUDIENCE",
-        "fast_path": "recent_segment_definitions",
+        "fast_path": "segment_jobs",
         "route_type": "API_ONLY",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "routing",
       "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-08T00:27:23.381456+00:00"
+      "timestamp": "2026-05-10T05:53:30.765398+00:00"
     },
     {
       "checkpoint_id": "checkpoint_06_lookup_path",
@@ -199,7 +251,7 @@
       "effect": "predicts the relevant table/join/API path",
       "efficiency_role": "filters unrelated schema and endpoint candidates",
       "input_summary": {
-        "answer_family": "segment_definitions",
+        "answer_family": "segment_jobs",
         "domain_type": "SEGMENT_AUDIENCE"
       },
       "output": {
@@ -236,7 +288,7 @@
       },
       "stage": "path prediction",
       "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-08T00:27:23.381459+00:00"
+      "timestamp": "2026-05-10T05:53:30.765400+00:00"
     },
     {
       "checkpoint_id": "checkpoint_07_context_card",
@@ -249,11 +301,11 @@
         "lookup_path": "segment_destination"
       },
       "output": {
-        "estimated_metadata_tokens": 953,
-        "prompt_tokens": 1619,
+        "estimated_metadata_tokens": 940,
+        "prompt_tokens": 1604,
         "selected_apis": {
           "items": [
-            "segment_definitions"
+            "segment_jobs"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -262,14 +314,14 @@
         "selected_columns": {
           "dim_segment": {
             "items": [
-              "DEFINITION"
+              "SEGMENTID"
             ],
             "total_items": 8,
             "truncated_items": true
           },
           "dim_target": {
             "items": [
-              "UPDATEDTIME"
+              "CONNECTIONSPECID"
             ],
             "total_items": 7,
             "truncated_items": true
@@ -292,7 +344,7 @@
       },
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-08T00:27:23.383021+00:00"
+      "timestamp": "2026-05-10T05:53:30.767400+00:00"
     },
     {
       "checkpoint_id": "checkpoint_08_candidate_plans",
@@ -314,13 +366,13 @@
         },
         "reason_selected": "highest pre-execution validation/relevance/cost score",
         "scores": {
-          "generic_sql_first": 11.8795
+          "generic_sql_first": 11.8873
         },
         "selected_plan": "generic_sql_first"
       },
       "stage": "planning",
       "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-08T00:27:23.383147+00:00"
+      "timestamp": "2026-05-10T05:53:30.767650+00:00"
     },
     {
       "checkpoint_id": "checkpoint_09_plan_optimization",
@@ -348,7 +400,7 @@
       },
       "stage": "optimization",
       "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-08T00:27:23.383153+00:00"
+      "timestamp": "2026-05-10T05:53:30.767658+00:00"
     },
     {
       "checkpoint_id": "checkpoint_10_evidence_policy",
@@ -357,13 +409,13 @@
       "effect": "decides when API evidence is required, optional, or unnecessary",
       "efficiency_role": "skips or caps API calls when SQL evidence is enough",
       "input_summary": {
-        "answer_family": "segment_definitions",
+        "answer_family": "segment_jobs",
         "route_type": "API_ONLY"
       },
       "output": {
         "allowed_api_families": {
           "items": [
-            "recent_segment_definitions"
+            "segment_jobs"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -374,7 +426,7 @@
       },
       "stage": "evidence policy",
       "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-08T00:27:23.383156+00:00"
+      "timestamp": "2026-05-10T05:53:30.767666+00:00"
     },
     {
       "checkpoint_id": "checkpoint_11_call_budget",
@@ -387,14 +439,13 @@
           "items": [
             {
               "action": "api",
-              "family": "recent_segment_definitions",
+              "family": "segment_jobs",
               "method": "GET",
               "params": {
-                "limit": "3",
-                "orderBy": "updateTime:desc"
+                "limit": "20"
               },
-              "purpose": "API parameter template: recent_segment_definitions.",
-              "url": "/data/core/ups/segment/definitions"
+              "purpose": "API parameter template: segment_jobs.",
+              "url": "/data/core/ups/segment/jobs"
             }
           ],
           "total_items": 1,
@@ -411,7 +462,7 @@
       },
       "stage": "efficiency control",
       "technique": "tool-call budgeting",
-      "timestamp": "2026-05-08T00:27:23.383166+00:00"
+      "timestamp": "2026-05-10T05:53:30.767676+00:00"
     },
     {
       "checkpoint_id": "checkpoint_12_validation",
@@ -424,14 +475,13 @@
           "items": [
             {
               "action": "api",
-              "family": "recent_segment_definitions",
+              "family": "segment_jobs",
               "method": "GET",
               "params": {
-                "limit": "3",
-                "orderBy": "updateTime:desc"
+                "limit": "20"
               },
-              "purpose": "API parameter template: recent_segment_definitions.",
-              "url": "/data/core/ups/segment/definitions"
+              "purpose": "API parameter template: segment_jobs.",
+              "url": "/data/core/ups/segment/jobs"
             }
           ],
           "total_items": 1,
@@ -456,7 +506,7 @@
       },
       "stage": "validation",
       "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-08T00:27:23.384657+00:00"
+      "timestamp": "2026-05-10T05:53:30.769261+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -477,18 +527,17 @@
               "ok": false,
               "result_preview": {
                 "dry_run": true,
-                "endpoint": "/data/core/ups/segment/definitions",
+                "endpoint": "/data/core/ups/segment/jobs",
                 "error": "Adobe credentials unavailable; API call not executed.",
                 "method": "GET",
                 "ok": false,
                 "params": {
-                  "limit": "3",
-                  "orderBy": "updateTime:desc"
+                  "limit": "20"
                 },
                 "result_preview": null,
-                "url": "https://platform.adobe.io/data/core/ups/segment/definitions"
+                "url": "https://platform.adobe.io/data/core/ups/segment/jobs"
               },
-              "url": "/data/core/ups/segment/definitions"
+              "url": "/data/core/ups/segment/jobs"
             }
           ],
           "total_items": 1,
@@ -499,7 +548,7 @@
       },
       "stage": "execution",
       "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-08T00:27:23.384662+00:00"
+      "timestamp": "2026-05-10T05:53:30.769266+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -515,7 +564,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-08T00:27:23.384664+00:00"
+      "timestamp": "2026-05-10T05:53:30.769269+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -527,22 +576,15 @@
         "tool_result_count": 1
       },
       "output": {
-        "answer_intent": "WHEN",
+        "answer_intent": "COUNT",
         "discrepancy_flags": {
           "sql_api_discrepancy": false
         },
         "dry_run_flags": {
           "dry_run": true
         },
-        "missing_slots": {
-          "items": [
-            "timestamp"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
         "slots": {
-          "answer_family": "segment_definitions",
+          "answer_family": "segment_jobs",
           "api_error": false,
           "discrepancy": false,
           "dry_run": true,
@@ -557,7 +599,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-08T00:27:23.384920+00:00"
+      "timestamp": "2026-05-10T05:53:30.769623+00:00"
     },
     {
       "checkpoint_id": "checkpoint_16_answer_verification",
@@ -588,7 +630,7 @@
       },
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-08T00:27:23.384925+00:00"
+      "timestamp": "2026-05-10T05:53:30.769628+00:00"
     },
     {
       "checkpoint_id": "checkpoint_17_answer_reranking",
@@ -597,7 +639,7 @@
       "effect": "selects the safest answer from same-evidence candidates",
       "efficiency_role": "uses no additional SQL/API/LLM calls",
       "input_summary": {
-        "answer_family": "segment_definitions"
+        "answer_family": "segment_jobs"
       },
       "output": {
         "candidate_count": 0,
@@ -606,7 +648,7 @@
       },
       "stage": "answer selection",
       "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-08T00:27:23.384927+00:00"
+      "timestamp": "2026-05-10T05:53:30.769630+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -618,20 +660,20 @@
         "verifier_passed": true
       },
       "output": {
-        "answer_length": 194,
-        "final_answer": "The most recently updated segment definitions require live Adobe API evidence with names, IDs, and update times. Live API verification was not executed because Adobe credentials are unavailable.",
-        "final_token_estimate": 32
+        "answer_length": 148,
+        "final_answer": "The segment evaluation job count requires live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "final_token_estimate": 23
       },
       "stage": "final response",
       "technique": "concise grounded final response",
-      "timestamp": "2026-05-08T00:27:23.384943+00:00"
+      "timestamp": "2026-05-10T05:53:30.769644+00:00"
     },
     {
       "active": true,
       "checkpoint_id": "checkpoint_official_token_reduction",
       "correctness_impact_expected": false,
-      "estimated_tokens_after": 654,
-      "estimated_tokens_before": 712,
+      "estimated_tokens_after": 669,
+      "estimated_tokens_before": 727,
       "expected_savings": 58,
       "packaged_execution_changed": false,
       "reduced_fields": [
@@ -643,15 +685,15 @@
   ],
   "domain_type": "SEGMENT_AUDIENCE",
   "errors": [],
-  "estimated_tokens": 654,
-  "execution_time": 0.0001954999752342701,
-  "final_answer": "The most recently updated segment definitions require live Adobe API evidence with names, IDs, and update times. Live API verification was not executed because Adobe credentials are unavailable.",
-  "original_query": "Which segment definitions were updated most recently?",
-  "planning_time": 0.00014620902948081493,
-  "preprocessing_time": 0.002225541975349188,
-  "query_id": "example_024",
+  "estimated_tokens": 669,
+  "execution_time": 0.00022466597147285938,
+  "final_answer": "The segment evaluation job count requires live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "How many segment jobs are currently processing?",
+  "planning_time": 0.00027595902793109417,
+  "preprocessing_time": 0.002958166878670454,
+  "query_id": "example_026",
   "route_type": "API_ONLY",
-  "runtime": 0.008212749962694943,
+  "runtime": 0.01051383395679295,
   "sql_call_count": 0,
   "steps": [
     {
@@ -679,17 +721,17 @@
         "hkg_br_collection_segment",
         "hkg_br_segment_property"
       ],
-      "confidence": 0.5,
+      "confidence": 0.6499999999999999,
       "domain_type": "SEGMENT_AUDIENCE",
       "kind": "route",
-      "reason": "Keyword routing using SEGMENT_AUDIENCE:1.",
+      "reason": "Keyword routing using SEGMENT_AUDIENCE:1, COUNT_AGGREGATION:1.",
       "route_type": "API_ONLY"
     },
     {
       "kind": "nlp",
       "relevance": {
         "apis": [
-          "segment_definitions",
+          "segment_jobs",
           "merge_policies"
         ],
         "lookup_paths": [
@@ -707,32 +749,40 @@
       "tokens": {
         "domains": [
           "segment_audience"
+        ],
+        "statuses": [
+          "processing"
         ]
+      },
+      "value_retrieval": {
+        "budget_exceeded": true,
+        "match_count": 0,
+        "matches": [],
+        "retrieval_ms": 10.737
       }
     },
     {
-      "estimated_tokens": 953,
+      "estimated_tokens": 940,
       "kind": "metadata",
       "metadata_path": "metadata.json",
-      "prompt_tokens": 1619
+      "prompt_tokens": 1604
     },
     {
       "kind": "plan",
       "optimizer_actions": [
         "ensemble selected generic_sql_first"
       ],
-      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: recent_segment_definitions.",
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: segment_jobs.",
       "steps": [
         {
           "action": "api",
-          "family": "recent_segment_definitions",
+          "family": "segment_jobs",
           "method": "GET",
           "params": {
-            "limit": "3",
-            "orderBy": "updateTime:desc"
+            "limit": "20"
           },
-          "purpose": "API parameter template: recent_segment_definitions.",
-          "url": "/data/core/ups/segment/definitions"
+          "purpose": "API parameter template: segment_jobs.",
+          "url": "/data/core/ups/segment/jobs"
         }
       ],
       "strategy": "SQL_FIRST_API_VERIFY"
@@ -741,7 +791,7 @@
       "kind": "optimizer",
       "plan_ensemble": {
         "candidate_scores": {
-          "generic_sql_first": 11.8795
+          "generic_sql_first": 11.8873
         },
         "candidate_tool_calls": {
           "generic_sql_first": 1
@@ -754,23 +804,21 @@
       "kind": "api_call",
       "method": "GET",
       "params": {
-        "limit": "3",
-        "orderBy": "updateTime:desc"
+        "limit": "20"
       },
       "result": {
         "dry_run": true,
-        "endpoint": "/data/core/ups/segment/definitions",
+        "endpoint": "/data/core/ups/segment/jobs",
         "error": "Adobe credentials unavailable; API call not executed.",
         "method": "GET",
         "ok": false,
         "params": {
-          "limit": "3",
-          "orderBy": "updateTime:desc"
+          "limit": "20"
         },
         "result_preview": null,
-        "url": "https://platform.adobe.io/data/core/ups/segment/definitions"
+        "url": "https://platform.adobe.io/data/core/ups/segment/jobs"
       },
-      "url": "/data/core/ups/segment/definitions",
+      "url": "/data/core/ups/segment/jobs",
       "validation": {
         "errors": [],
         "ok": true,
@@ -779,11 +827,9 @@
       }
     },
     {
-      "answer_family": "segment_definitions",
-      "answer_intent": "WHEN",
-      "completeness_missing_fields": [
-        "timestamp"
-      ],
+      "answer_family": "segment_jobs",
+      "answer_intent": "COUNT",
+      "completeness_missing_fields": [],
       "kind": "answer_diagnostics",
       "rewrite_applied": false,
       "selected_candidate_type": "base",
@@ -796,10 +842,10 @@
   ],
   "strategy": "SQL_FIRST_API_VERIFY",
   "timings": {
-    "answer_time": 0.0003298750380054116,
-    "execution_time": 0.0001954999752342701,
-    "planning_time": 0.00014620902948081493,
-    "preprocessing_time": 0.002225541975349188
+    "answer_time": 0.0004278330598026514,
+    "execution_time": 0.00022466597147285938,
+    "planning_time": 0.00027595902793109417,
+    "preprocessing_time": 0.002958166878670454
   },
   "tool_call_count": 1
 }

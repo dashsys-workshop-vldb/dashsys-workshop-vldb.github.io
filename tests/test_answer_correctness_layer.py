@@ -111,6 +111,28 @@ def test_weak_family_answers_are_intent_matched_and_dry_run_safe():
     assert merge.startswith("The merge policy count")
 
 
+def test_endpoint_aware_dry_run_answers_are_feature_flagged(monkeypatch):
+    query = "How many batches have status 'success'?"
+    tool_results = [
+        {
+            "type": "api",
+            "step": {"method": "GET", "url": "/data/foundation/catalog/batches", "params": {"limit": "10", "status": "success"}},
+            "payload": {"ok": False, "dry_run": True},
+        }
+    ]
+
+    monkeypatch.setenv("ENABLE_DRY_RUN_ENDPOINT_ANSWERS", "0")
+    assert "Endpoint:" not in synthesize_answer(query, tool_results)
+
+    monkeypatch.setenv("ENABLE_DRY_RUN_ENDPOINT_ANSWERS", "1")
+    answer = synthesize_answer(query, tool_results)
+    assert answer == (
+        "success batch count is unavailable in dry-run mode. "
+        "Endpoint: GET /data/foundation/catalog/batches params limit=10, status=success. "
+        "Live API unavailable."
+    )
+
+
 def test_live_like_family_answers_use_payload_evidence_only():
     tag_answer = synthesize_answer(
         "Show me the details of the tag named 'cool'.",

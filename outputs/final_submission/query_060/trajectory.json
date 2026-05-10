@@ -1,5 +1,5 @@
 {
-  "answer_time": 0.0005678749876096845,
+  "answer_time": 0.000678124837577343,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -9,13 +9,13 @@
       "effect": "preserves the original query for reproducibility",
       "efficiency_role": "starts one trace without extra tool calls",
       "output": {
-        "query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
-        "query_id": "show_failed_files_for_batch_01kp6mnq3x71rp6mnh6f",
+        "query": "How many schemas do I have?",
+        "query_id": "llm_controller_1f0307b510e3",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-06T14:52:09.396278+00:00"
+      "timestamp": "2026-05-10T05:54:35.368564+00:00"
     },
     {
       "checkpoint_id": "checkpoint_00_prompt_router",
@@ -24,28 +24,28 @@
       "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
       "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
       "input_summary": {
-        "query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE."
+        "query": "How many schemas do I have?"
       },
       "output": {
-        "confidence": 0.9,
+        "confidence": 0.84,
         "matched_rules": {
           "items": [
-            "api_only:batch"
+            "local_db:how many"
           ],
-          "total_items": 3,
+          "total_items": 2,
           "truncated_items": false
         },
-        "mode": "API_ONLY",
-        "reason": "API/platform family keyword(s): batch, file, files.",
+        "mode": "LOCAL_DB_ONLY",
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: how many, schema.",
         "recommended_strategy": "SQL_FIRST_API_VERIFY",
-        "requires_api": true,
-        "requires_database": false,
-        "risk": "medium",
+        "requires_api": false,
+        "requires_database": true,
+        "risk": "low",
         "truncated_fields": 1
       },
       "stage": "prompt routing",
       "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-06T14:52:09.396323+00:00"
+      "timestamp": "2026-05-10T05:54:35.368612+00:00"
     },
     {
       "checkpoint_id": "checkpoint_simple_prompt_gate",
@@ -54,17 +54,17 @@
       "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
       "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
       "input_summary": {
-        "query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE."
+        "query": "How many schemas do I have?"
       },
       "output": {
-        "confidence": 0.9,
+        "confidence": 0.84,
         "is_simple": false,
-        "reason": "API/platform family keyword(s): batch, file, files.",
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: how many, schema.",
         "suggested_action": "USE_DATA_PIPELINE"
       },
       "stage": "input routing",
       "technique": "simple prompt gate",
-      "timestamp": "2026-05-06T14:52:09.396345+00:00"
+      "timestamp": "2026-05-10T05:54:35.368632+00:00"
     },
     {
       "checkpoint_id": "checkpoint_02_query_normalization",
@@ -73,11 +73,11 @@
       "effect": "creates matching-friendly text while preserving the original query",
       "efficiency_role": "reduces repeated fuzzy matching work downstream",
       "input_summary": {
-        "query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE."
+        "query": "How many schemas do I have?"
       },
       "output": {
-        "matching_text": "show failed file for batch 01kp6mnq3x71rp6mnh6fhwghve.",
-        "normalized_query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
+        "matching_text": "how many schema do i have?",
+        "normalized_query": "How many schemas do I have?",
         "rewrites": {
           "items": [
             "important_plurals->singular"
@@ -88,7 +88,7 @@
       },
       "stage": "normalization",
       "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-06T14:52:09.396397+00:00"
+      "timestamp": "2026-05-10T05:54:35.368683+00:00"
     },
     {
       "checkpoint_id": "checkpoint_03_query_tokens",
@@ -97,20 +97,12 @@
       "effect": "extracts reusable query fields for routing, planning, and answers",
       "efficiency_role": "avoids reparsing the query in later modules",
       "input_summary": {
-        "normalized_query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE."
+        "normalized_query": "How many schemas do I have?"
       },
       "output": {
         "domains": {
           "items": [
-            "batch"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "ids": 1,
-        "statuses": {
-          "items": [
-            "failed"
+            "schema_dataset"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -118,7 +110,7 @@
       },
       "stage": "tokenization",
       "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-06T14:52:09.396455+00:00"
+      "timestamp": "2026-05-10T05:54:35.368730+00:00"
     },
     {
       "checkpoint_id": "checkpoint_04_relevance_scoring",
@@ -130,15 +122,7 @@
         "tokens": {
           "domains": {
             "items": [
-              "batch"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "ids": 1,
-          "statuses": {
-            "items": [
-              "failed"
+              "schema_dataset"
             ],
             "total_items": 1,
             "truncated_items": false
@@ -148,36 +132,36 @@
       "output": {
         "top_answer_families": {
           "items": [
-            "batch"
+            "schema_dataset"
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "top_apis": {
           "items": [
-            "export_batch_failed"
+            "audit_events"
           ],
           "total_items": 3,
           "truncated_items": false
         },
         "top_join_hints": {
           "items": [
-            "dim_connector.SOURCEID->hkg_br_source_collection.SOURCEID"
+            "dim_blueprint.BLUEPRINTID->hkg_br_blueprint_collection.BLUEPRINTID"
           ],
           "total_items": 3,
           "truncated_items": false
         },
         "top_tables": {
           "items": [
-            "dim_connector"
+            "dim_blueprint"
           ],
-          "total_items": 2,
+          "total_items": 3,
           "truncated_items": false
         }
       },
       "stage": "context selection",
       "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-06T14:52:09.397220+00:00"
+      "timestamp": "2026-05-10T05:54:35.369701+00:00"
     },
     {
       "checkpoint_id": "checkpoint_05_query_analysis",
@@ -186,27 +170,28 @@
       "effect": "computes shared query understanding once",
       "efficiency_role": "avoids repeated template and routing analysis",
       "input_summary": {
-        "domain_type": "STATUS_MONITORING",
-        "route_type": "API_ONLY"
+        "domain_type": "DATASET_SCHEMA",
+        "route_type": "SQL_ONLY"
       },
       "output": {
-        "answer_family": "failed_dataflow_runs",
+        "answer_family": "schema_dataset",
         "api_templates": {
           "items": [
-            "batch_export_files"
+            "schema_list"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "confidence": 0.6,
-        "domain_type": "STATUS_MONITORING",
-        "fast_path": "batch_export_files",
-        "route_type": "API_ONLY",
+        "confidence": 0.8,
+        "domain_type": "DATASET_SCHEMA",
+        "fast_path": "schema_count+schema_list",
+        "route_type": "SQL_ONLY",
+        "sql_template": "schema_count",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "routing",
       "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-06T14:52:09.397226+00:00"
+      "timestamp": "2026-05-10T05:54:35.369714+00:00"
     },
     {
       "checkpoint_id": "checkpoint_06_lookup_path",
@@ -215,37 +200,44 @@
       "effect": "predicts the relevant table/join/API path",
       "efficiency_role": "filters unrelated schema and endpoint candidates",
       "input_summary": {
-        "answer_family": "failed_dataflow_runs",
-        "domain_type": "STATUS_MONITORING"
+        "answer_family": "schema_dataset",
+        "domain_type": "DATASET_SCHEMA"
       },
       "output": {
         "api_families": {
           "items": [
-            "destination_flows"
+            "datasets_by_schema"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "api_mode": "required",
+        "family": "schema_dataset",
+        "join_path": {
+          "items": [
+            "dim_blueprint.blueprintid = hkg_br_blueprint_collection.blueprintid"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "required_ids": {
+          "items": [
+            "schema_id"
           ],
           "total_items": 3,
           "truncated_items": false
         },
-        "api_mode": "optional",
-        "family": "destination_dataflow",
-        "required_ids": {
-          "items": [
-            "target_id"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
         "tables": {
           "items": [
-            "dim_target"
+            "dim_blueprint"
           ],
-          "total_items": 2,
+          "total_items": 3,
           "truncated_items": false
         }
       },
       "stage": "path prediction",
       "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-06T14:52:09.397229+00:00"
+      "timestamp": "2026-05-10T05:54:35.369718+00:00"
     },
     {
       "checkpoint_id": "checkpoint_07_context_card",
@@ -255,46 +247,39 @@
       "efficiency_role": "limits context size for non-baseline strategies",
       "input_summary": {
         "broad_context": false,
-        "lookup_path": "destination_dataflow"
+        "lookup_path": "schema_dataset"
       },
       "output": {
-        "estimated_metadata_tokens": 559,
-        "prompt_tokens": 1149,
+        "estimated_metadata_tokens": 460,
+        "prompt_tokens": 1041,
         "selected_apis": {
           "items": [
-            "export_batch_failed"
+            "schemas_short"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "selected_card_name": "destination_dataflow",
+        "selected_card_name": "schema_dataset",
         "selected_columns": {
-          "dim_connector": {
+          "dim_blueprint": {
             "items": [
-              "CONNECTIONSPECNAME"
+              "BLUEPRINTID"
             ],
-            "total_items": 8,
-            "truncated_items": true
-          },
-          "dim_target": {
-            "items": [
-              "CONNECTIONSPECID"
-            ],
-            "total_items": 7,
-            "truncated_items": true
+            "total_items": 1,
+            "truncated_items": false
           }
         },
         "selected_tables": {
           "items": [
-            "dim_target"
+            "dim_blueprint"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         }
       },
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-06T14:52:09.399492+00:00"
+      "timestamp": "2026-05-10T05:54:35.371476+00:00"
     },
     {
       "checkpoint_id": "checkpoint_08_candidate_plans",
@@ -303,7 +288,7 @@
       "effect": "selects one plan before execution",
       "efficiency_role": "does not execute losing candidate plans",
       "input_summary": {
-        "base_step_count": 1,
+        "base_step_count": 2,
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "output": {
@@ -316,13 +301,13 @@
         },
         "reason_selected": "highest pre-execution validation/relevance/cost score",
         "scores": {
-          "generic_sql_first": 11.8844
+          "generic_sql_first": 14.2877
         },
         "selected_plan": "generic_sql_first"
       },
       "stage": "planning",
       "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-06T14:52:09.399723+00:00"
+      "timestamp": "2026-05-10T05:54:35.373311+00:00"
     },
     {
       "checkpoint_id": "checkpoint_09_plan_optimization",
@@ -331,11 +316,11 @@
       "effect": "removes duplicate, skippable, or unsafe calls before validation",
       "efficiency_role": "enforces a bounded plan before execution",
       "input_summary": {
-        "original_step_count": 1
+        "original_step_count": 2
       },
       "output": {
         "call_budget_applied": false,
-        "optimized_step_count": 1,
+        "optimized_step_count": 2,
         "optimizer_actions": {
           "items": [
             "ensemble selected generic_sql_first"
@@ -343,14 +328,14 @@
           "total_items": 1,
           "truncated_items": false
         },
-        "original_step_count": 1,
+        "original_step_count": 2,
         "removed_api_skip_calls": 0,
         "removed_duplicate_calls": 0,
         "unresolved_placeholders_removed": 0
       },
       "stage": "optimization",
       "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-06T14:52:09.399733+00:00"
+      "timestamp": "2026-05-10T05:54:35.373329+00:00"
     },
     {
       "checkpoint_id": "checkpoint_10_evidence_policy",
@@ -359,24 +344,24 @@
       "effect": "decides when API evidence is required, optional, or unnecessary",
       "efficiency_role": "skips or caps API calls when SQL evidence is enough",
       "input_summary": {
-        "answer_family": "failed_dataflow_runs",
-        "route_type": "API_ONLY"
+        "answer_family": "schema_dataset",
+        "route_type": "SQL_ONLY"
       },
       "output": {
         "allowed_api_families": {
           "items": [
-            "batch_export_files"
+            "schema_list"
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "max_api_calls": 1,
         "mode": "API_REQUIRED",
-        "reason": "Route is API-only."
+        "reason": "Query family requires Adobe API evidence."
       },
       "stage": "evidence policy",
       "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-06T14:52:09.399737+00:00"
+      "timestamp": "2026-05-10T05:54:35.373334+00:00"
     },
     {
       "checkpoint_id": "checkpoint_11_call_budget",
@@ -388,28 +373,27 @@
         "planned_steps": {
           "items": [
             {
-              "action": "api",
-              "family": "batch_export_files",
-              "method": "GET",
-              "purpose": "API parameter template: batch_export_files.",
-              "url": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
+              "action": "sql",
+              "family": "schema_count",
+              "purpose": "Fast-path SQL grounding.",
+              "sql": "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B"
             }
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         }
       },
       "output": {
-        "final_planned_calls": 1,
+        "final_planned_calls": 2,
         "max_api_calls": 1,
         "max_sql_calls": 1,
         "max_total_tool_calls": 2,
         "planned_api_calls": 1,
-        "planned_sql_calls": 0
+        "planned_sql_calls": 1
       },
       "stage": "efficiency control",
       "technique": "tool-call budgeting",
-      "timestamp": "2026-05-06T14:52:09.399751+00:00"
+      "timestamp": "2026-05-10T05:54:35.373359+00:00"
     },
     {
       "checkpoint_id": "checkpoint_12_validation",
@@ -421,14 +405,13 @@
         "optimized_steps": {
           "items": [
             {
-              "action": "api",
-              "family": "batch_export_files",
-              "method": "GET",
-              "purpose": "API parameter template: batch_export_files.",
-              "url": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
+              "action": "sql",
+              "family": "schema_count",
+              "purpose": "Fast-path SQL grounding.",
+              "sql": "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B"
             }
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         }
       },
@@ -446,11 +429,82 @@
           ],
           "total_items": 1,
           "truncated_items": false
+        },
+        "sql_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
         }
       },
       "stage": "validation",
       "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-06T14:52:09.401802+00:00"
+      "timestamp": "2026-05-10T05:54:35.377593+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_sql_ast_validation",
+      "correctness_role": "detects unsafe SQL and schema mismatches with parser-backed structure",
+      "duration_ms": 0.0,
+      "effect": "adds AST-level table and column extraction after existing SQL validation",
+      "efficiency_role": "provides precise feedback without extra SQL tool calls",
+      "input_summary": {
+        "sql_call_count": 1
+      },
+      "output": {
+        "destructive_sql_detected": false,
+        "parsed_ok": true,
+        "selected_columns": {
+          "items": [
+            "B.BLUEPRINTID"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "selected_tables": {
+          "items": [
+            "dim_blueprint"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "summaries": {
+          "items": [
+            {
+              "destructive_sql_detected": false,
+              "enabled": true,
+              "normalized_sql": "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B",
+              "parsed_ok": true,
+              "selected_columns": {
+                "items": [
+                  "B.BLUEPRINTID"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              },
+              "selected_tables": {
+                "items": [
+                  "dim_blueprint"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              }
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "validation",
+      "technique": "SQLGlot AST-based SQL validation and extraction",
+      "timestamp": "2026-05-10T05:54:35.377607+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -459,7 +513,7 @@
       "effect": "captures the actual SQL/API evidence gathered by the backend",
       "efficiency_role": "makes tool-call count and result previews explicit",
       "input_summary": {
-        "validated_step_count": 1
+        "validated_step_count": 2
       },
       "output": {
         "api_calls_executed": 1,
@@ -471,25 +525,54 @@
               "ok": false,
               "result_preview": {
                 "dry_run": true,
-                "endpoint": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed",
+                "endpoint": "/schemas",
                 "error": "Adobe credentials unavailable; API call not executed.",
                 "method": "GET",
                 "ok": false,
+                "params": {
+                  "limit": "25"
+                },
                 "result_preview": null,
-                "url": "https://platform.adobe.io/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
+                "url": "https://platform.adobe.io/schemas"
               },
-              "url": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
+              "url": "/schemas"
             }
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "dry_run_status": true,
-        "sql_calls_executed": 0
+        "row_counts": {
+          "items": [
+            1
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_calls_executed": 1,
+        "sql_results": {
+          "items": [
+            {
+              "ok": true,
+              "result_preview": {
+                "items": [
+                  {
+                    "blueprint_count": 74
+                  }
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              },
+              "row_count": 1
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
       },
       "stage": "execution",
       "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-06T14:52:09.401810+00:00"
+      "timestamp": "2026-05-10T05:54:35.377616+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -498,14 +581,22 @@
       "effect": "forwards structured facts to API params and answer slots",
       "efficiency_role": "avoids repeated lookup or reparsing work",
       "input_summary": {
-        "tool_result_count": 1
+        "tool_result_count": 2
       },
       "output": {
-        "evidence": {}
+        "evidence": {
+          "counts": {
+            "items": [
+              74
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
       },
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-06T14:52:09.401814+00:00"
+      "timestamp": "2026-05-10T05:54:35.377620+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -514,10 +605,10 @@
       "effect": "turns raw tool results into typed evidence fields",
       "efficiency_role": "keeps answer context compact",
       "input_summary": {
-        "tool_result_count": 1
+        "tool_result_count": 2
       },
       "output": {
-        "answer_intent": "STATUS",
+        "answer_intent": "COUNT",
         "discrepancy_flags": {
           "sql_api_discrepancy": false
         },
@@ -526,35 +617,36 @@
         },
         "missing_slots": {
           "items": [
-            "status"
+            "count_shape"
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "slots": {
-          "answer_family": "failed_dataflow_runs",
+          "answer_family": "schema_dataset",
           "api_error": false,
-          "discrepancy": false,
-          "dry_run": true,
-          "entity_ids": {
+          "counts": {
             "items": [
-              "01KP6MNQ3X71RP6MNH6FHWGHVE"
+              "1"
             ],
             "total_items": 1,
             "truncated_items": false
           },
+          "discrepancy": false,
+          "dry_run": true,
           "slots_present": {
             "items": [
-              "entity_ids"
+              "counts"
             ],
-            "total_items": 2,
-            "truncated_items": false
-          }
+            "total_items": 4,
+            "truncated_items": true
+          },
+          "sql_row_count": 1
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-06T14:52:09.402224+00:00"
+      "timestamp": "2026-05-10T05:54:35.378117+00:00"
     },
     {
       "checkpoint_id": "checkpoint_16_answer_verification",
@@ -563,13 +655,13 @@
       "effect": "checks final-answer claims against SQL/API evidence",
       "efficiency_role": "rewrites safely without extra tool calls",
       "input_summary": {
-        "claim_count": 2,
+        "claim_count": 1,
         "slots_present": {
           "items": [
-            "entity_ids"
+            "counts"
           ],
-          "total_items": 2,
-          "truncated_items": false
+          "total_items": 4,
+          "truncated_items": true
         }
       },
       "output": {
@@ -579,20 +671,13 @@
           "truncated_items": false
         },
         "rewrite_applied": false,
-        "supported_claims_count": 2,
+        "supported_claims_count": 1,
         "unsupported_claims_count": 0,
-        "verifier_passed": true,
-        "warnings": {
-          "items": [
-            "answer_contains_only_query_supported_facts"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        }
+        "verifier_passed": true
       },
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-06T14:52:09.402231+00:00"
+      "timestamp": "2026-05-10T05:54:35.378124+00:00"
     },
     {
       "checkpoint_id": "checkpoint_17_answer_reranking",
@@ -601,7 +686,7 @@
       "effect": "selects the safest answer from same-evidence candidates",
       "efficiency_role": "uses no additional SQL/API/LLM calls",
       "input_summary": {
-        "answer_family": "failed_dataflow_runs"
+        "answer_family": "schema_dataset"
       },
       "output": {
         "candidate_count": 0,
@@ -610,7 +695,7 @@
       },
       "stage": "answer selection",
       "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-06T14:52:09.402235+00:00"
+      "timestamp": "2026-05-10T05:54:35.378127+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -622,86 +707,86 @@
         "verifier_passed": true
       },
       "output": {
-        "answer_length": 196,
-        "final_answer": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
-        "final_token_estimate": 36
+        "answer_length": 102,
+        "final_answer": "You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable.",
+        "final_token_estimate": 18
       },
       "stage": "final response",
       "technique": "concise grounded final response",
-      "timestamp": "2026-05-06T14:52:09.402264+00:00"
+      "timestamp": "2026-05-10T05:54:35.378155+00:00"
     },
     {
       "active": true,
       "checkpoint_id": "checkpoint_official_token_reduction",
       "correctness_impact_expected": false,
-      "estimated_tokens_after": 680,
-      "estimated_tokens_before": 767,
-      "expected_savings": 87,
+      "estimated_tokens_after": 751,
+      "estimated_tokens_before": 843,
+      "expected_savings": 92,
       "packaged_execution_changed": false,
       "reduced_fields": [
         "steps[0].candidate_apis",
+        "steps[0].candidate_tables",
         "steps[2].metadata_path"
       ]
     }
   ],
-  "domain_type": "STATUS_MONITORING",
+  "domain_type": "DATASET_SCHEMA",
   "errors": [],
-  "estimated_tokens": 680,
-  "execution_time": 0.00032625009771436453,
-  "final_answer": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
-  "original_query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
-  "planning_time": 0.0002565839095041156,
-  "preprocessing_time": 0.003148042014800012,
-  "query_id": "show_failed_files_for_batch_01kp6mnq3x71rp6mnh6f",
-  "route_type": "API_ONLY",
-  "runtime": 0.013126834062859416,
-  "sql_call_count": 0,
+  "estimated_tokens": 751,
+  "execution_time": 0.00210770801641047,
+  "final_answer": "You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "How many schemas do I have?",
+  "planning_time": 0.0019446669612079859,
+  "preprocessing_time": 0.0028447499498724937,
+  "query_id": "llm_controller_1f0307b510e3",
+  "route_type": "SQL_ONLY",
+  "runtime": 0.016684750095009804,
+  "sql_call_count": 1,
   "steps": [
     {
       "candidate_apis": [
         {
-          "id": "journey_list",
+          "id": "catalog_datasets",
           "method": "GET",
-          "path": "/ajo/journey"
+          "path": "/data/foundation/catalog/dataSets"
         },
         {
-          "id": "flowservice_runs",
+          "id": "schema_registry_schema",
           "method": "GET",
-          "path": "/data/foundation/flowservice/runs"
+          "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}"
         },
         {
-          "id": "audit_events",
+          "id": "schema_registry_schemas",
           "method": "GET",
-          "path": "/data/foundation/audit/events"
+          "path": "/data/foundation/schemaregistry/tenant/schemas"
         }
       ],
       "candidate_tables": [
-        "br_campaign_segment",
         "dim_blueprint",
-        "dim_campaign",
         "dim_collection",
-        "dim_connector"
+        "hkg_br_blueprint_collection",
+        "hkg_br_blueprint_property",
+        "hkg_br_collection_property"
       ],
-      "confidence": 0.5,
-      "domain_type": "STATUS_MONITORING",
+      "confidence": 0.6499999999999999,
+      "domain_type": "DATASET_SCHEMA",
       "kind": "route",
-      "reason": "Keyword routing using STATUS_MONITORING:1.",
-      "route_type": "API_ONLY"
+      "reason": "Keyword routing using DATASET_SCHEMA:1, COUNT_AGGREGATION:1.",
+      "route_type": "SQL_ONLY"
     },
     {
       "kind": "nlp",
       "relevance": {
         "apis": [
-          "export_batch_failed",
-          "export_batch_files"
+          "audit_events",
+          "audit_events_short"
         ],
         "lookup_paths": [
-          "destination_dataflow",
-          "batch"
+          "schema_dataset"
         ],
         "tables": [
-          "dim_connector",
-          "dim_target"
+          "dim_blueprint",
+          "dim_collection"
         ]
       },
       "rewrites": [
@@ -709,33 +794,38 @@
       ],
       "tokens": {
         "domains": [
-          "batch"
-        ],
-        "ids": 1,
-        "statuses": [
-          "failed"
+          "schema_dataset"
         ]
       }
     },
     {
-      "estimated_tokens": 559,
+      "estimated_tokens": 460,
       "kind": "metadata",
       "metadata_path": "metadata.json",
-      "prompt_tokens": 1149
+      "prompt_tokens": 1041
     },
     {
       "kind": "plan",
       "optimizer_actions": [
         "ensemble selected generic_sql_first"
       ],
-      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: batch_export_files.",
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Query family requires Adobe API evidence. Fast path: schema_count+schema_list.",
       "steps": [
         {
+          "action": "sql",
+          "family": "schema_count",
+          "purpose": "Fast-path SQL grounding.",
+          "sql": "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B"
+        },
+        {
           "action": "api",
-          "family": "batch_export_files",
+          "family": "schema_list",
           "method": "GET",
-          "purpose": "API parameter template: batch_export_files.",
-          "url": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
+          "params": {
+            "limit": "25"
+          },
+          "purpose": "API parameter template: schema_list.",
+          "url": "/schemas"
         }
       ],
       "strategy": "SQL_FIRST_API_VERIFY"
@@ -744,29 +834,32 @@
       "kind": "optimizer",
       "plan_ensemble": {
         "candidate_scores": {
-          "generic_sql_first": 11.8844
+          "generic_sql_first": 14.2877
         },
         "candidate_tool_calls": {
-          "generic_sql_first": 1
+          "generic_sql_first": 2
         },
         "selected": "generic_sql_first"
       }
     },
     {
-      "headers": {},
-      "kind": "api_call",
-      "method": "GET",
-      "params": {},
+      "kind": "sql_call",
       "result": {
-        "dry_run": true,
-        "endpoint": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed",
-        "error": "Adobe credentials unavailable; API call not executed.",
-        "method": "GET",
-        "ok": false,
-        "result_preview": null,
-        "url": "https://platform.adobe.io/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
+        "error": null,
+        "limited": true,
+        "ok": true,
+        "row_count": 1,
+        "rows": {
+          "items": [
+            {
+              "blueprint_count": 74
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
       },
-      "url": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed",
+      "sql": "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B",
       "validation": {
         "errors": [],
         "ok": true,
@@ -775,17 +868,46 @@
       }
     },
     {
-      "answer_family": "failed_dataflow_runs",
-      "answer_intent": "STATUS",
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "25"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/schemas",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "25"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/schemas"
+      },
+      "url": "/schemas",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "answer_family": "schema_dataset",
+      "answer_intent": "COUNT",
       "completeness_missing_fields": [
-        "status"
+        "count_shape"
       ],
       "kind": "answer_diagnostics",
       "rewrite_applied": false,
       "selected_candidate_type": "base",
       "slots_present": [
-        "entity_ids",
-        "dry_run"
+        "counts",
+        "sql_row_count",
+        "dry_run",
+        "first_rows"
       ],
       "unsupported_claims_count": 0,
       "verifier_passed": true
@@ -793,10 +915,10 @@
   ],
   "strategy": "SQL_FIRST_API_VERIFY",
   "timings": {
-    "answer_time": 0.0005678749876096845,
-    "execution_time": 0.00032625009771436453,
-    "planning_time": 0.0002565839095041156,
-    "preprocessing_time": 0.003148042014800012
+    "answer_time": 0.000678124837577343,
+    "execution_time": 0.00210770801641047,
+    "planning_time": 0.0019446669612079859,
+    "preprocessing_time": 0.0028447499498724937
   },
-  "tool_call_count": 1
+  "tool_call_count": 2
 }

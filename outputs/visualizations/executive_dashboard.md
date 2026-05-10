@@ -19,7 +19,7 @@
 ```mermaid
 flowchart LR
   A["Packaged system"] --> B["SQL_FIRST_API_VERIFY"]
-  B --> C["Strict 0.6491"]
+  B --> C["Strict 0.6553"]
   C --> D["Submit-ready: True"]
   C --> E["Target 0.75"]
   F["Best isolated"] --> G["0.6558"]
@@ -29,9 +29,9 @@ flowchart LR
 
 | Metric | Value | Note |
 | --- | --- | --- |
-| **Packaged strict score** | `0.6491` | Current submit-ready score. |
+| **Packaged strict score** | `0.6553` | Current submit-ready score. |
 | **Best isolated score** | `0.6558` | Safe trial progress, not promoted as winner-ready. |
-| **Correctness** | `0.6743` | Must not regress. |
+| **Correctness** | `0.6805` | Must not regress. |
 | **Hidden-style** | `48/48` | Current robustness gate. |
 | **Final readiness** | `True` | Submission package still valid. |
 | **Secret scan** | `True` | Readiness secret scan result. |

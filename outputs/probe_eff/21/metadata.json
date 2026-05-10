@@ -1,0 +1,269 @@
+{
+  "answer_policy": [
+    "Answer from tool evidence only.",
+    "Say not found when evidence is empty.",
+    "Explicitly mention SQL/API disagreement when both are used.",
+    "Do not invent IDs, counts, timestamps, states, or names."
+  ],
+  "constraints": [
+    "Use only known table names and columns.",
+    "Use only endpoint catalog entries unless fallback mode is explicitly enabled.",
+    "Validate SQL and API calls before execution.",
+    "Prefer fewer tool calls when evidence is sufficient."
+  ],
+  "domain_type": "SEGMENT_AUDIENCE",
+  "known_example_patterns": [
+    {
+      "count": 3,
+      "examples": [
+        {
+          "params": {
+            "limit": "20"
+          },
+          "question": "How many tags exist in this sandbox?"
+        },
+        {
+          "params": {
+            "limit": "25"
+          },
+          "question": "List all tags in this sandbox."
+        },
+        {
+          "params": {
+            "limit": "100",
+            "tagCategoryId": "Uncategorized-87891E4066602D250A495F91@AdobeOrg"
+          },
+          "question": "Which tags belong to the category 'Uncategorized'?"
+        }
+      ],
+      "method": "GET",
+      "param_values": {
+        "limit": [
+          {
+            "count": 1,
+            "value": "20"
+          },
+          {
+            "count": 1,
+            "value": "25"
+          },
+          {
+            "count": 1,
+            "value": "100"
+          }
+        ],
+        "tagCategoryId": [
+          {
+            "count": 1,
+            "value": "Uncategorized-87891E4066602D250A495F91@AdobeOrg"
+          }
+        ]
+      },
+      "params": {
+        "limit": "20",
+        "tagCategoryId": "Uncategorized-87891E4066602D250A495F91@AdobeOrg"
+      },
+      "path": "/unifiedtags/tags",
+      "query_keywords": [
+        "tags",
+        "sandbox",
+        "how",
+        "many",
+        "exist",
+        "which",
+        "belong",
+        "category",
+        "uncategorized"
+      ]
+    },
+    {
+      "count": 3,
+      "examples": [
+        {
+          "params": {
+            "limit": "10"
+          },
+          "question": "List all merge policies in this sandbox."
+        },
+        {
+          "params": {
+            "limit": "10"
+          },
+          "question": "How many merge policies are configured in this sandbox?"
+        },
+        {
+          "params": {
+            "limit": "5"
+          },
+          "question": "Show the default merge policy for schema class '_xdm.context.profile'."
+        }
+      ],
+      "method": "GET",
+      "param_values": {
+        "limit": [
+          {
+            "count": 2,
+            "value": "10"
+          },
+          {
+            "count": 1,
+            "value": "5"
+          }
+        ]
+      },
+      "params": {
+        "limit": "10"
+      },
+      "path": "/data/core/ups/config/mergePolicies",
+      "query_keywords": [
+        "merge",
+        "policies",
+        "sandbox",
+        "how",
+        "many",
+        "are",
+        "configured",
+        "default",
+        "policy",
+        "schema",
+        "class",
+        "_xdm",
+        "context",
+        "profile"
+      ]
+    }
+  ],
+  "query": "Show the default merge policy for schema class '_xdm.context.profile'.",
+  "query_id": "probe_eff_21",
+  "route_type": "API_ONLY",
+  "selected_apis": [
+    {
+      "common_params": {
+        "limit": 25
+      },
+      "domains": [
+        "DATASET_SCHEMA"
+      ],
+      "examples": [
+        {
+          "query": "schema named weRetail: Customer Actions"
+        }
+      ],
+      "id": "schemas_short",
+      "method": "GET",
+      "path": "/schemas",
+      "path_params": [],
+      "risk_notes": [
+        "Shorthand path is retained for benchmark compatibility."
+      ],
+      "use_when": "Gold-example shorthand for schema list/name lookup."
+    },
+    {
+      "common_params": {
+        "limit": 10
+      },
+      "domains": [
+        "SEGMENT_AUDIENCE",
+        "UNKNOWN"
+      ],
+      "examples": [],
+      "id": "merge_policies",
+      "method": "GET",
+      "path": "/data/core/ups/config/mergePolicies",
+      "path_params": [],
+      "risk_notes": [],
+      "use_when": "List/count Real-Time Customer Profile merge policies."
+    }
+  ],
+  "selected_columns": {
+    "dim_blueprint": [
+      "BLUEPRINTID",
+      "NAME",
+      "CLASS",
+      "ISPROFILEENABLED",
+      "UPDATEDTIME"
+    ],
+    "dim_collection": [
+      "COLLECTIONID",
+      "NAME",
+      "ROWCOUNT",
+      "UPDATEDTIME"
+    ],
+    "hkg_br_blueprint_collection": [
+      "BLUEPRINTID",
+      "COLLECTIONID"
+    ]
+  },
+  "selected_join_hints": [
+    {
+      "confidence": 0.9,
+      "left_column": "BLUEPRINTID",
+      "left_table": "dim_blueprint",
+      "reason": "Matching ID-like column name.",
+      "right_column": "BLUEPRINTID",
+      "right_table": "hkg_br_blueprint_collection"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "BLUEPRINTID",
+      "left_table": "dim_blueprint",
+      "reason": "Matching ID-like column name.",
+      "right_column": "BLUEPRINTID",
+      "right_table": "hkg_br_blueprint_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_blueprint_collection"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_source_collection"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "hkg_br_blueprint_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "hkg_br_blueprint_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_segment"
+    }
+  ],
+  "selected_tables": [
+    "dim_blueprint",
+    "hkg_br_blueprint_collection",
+    "dim_collection"
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY"
+}

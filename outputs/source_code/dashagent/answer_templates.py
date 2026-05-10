@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 from typing import Any
 
@@ -219,6 +220,14 @@ def render_answer_template(
                 pieces.append(f"dataset {dataset}")
             detail = f" with {', '.join(pieces)}" if pieces else ""
             return f"The API evidence reports batch {batch_id or 'details'}{detail}."
+        endpoint_answer = dry_run_endpoint_unavailable_answer(
+            query,
+            "batch",
+            "count" if asks_count(lowered) else "list" if "file" in lowered else "detail",
+            api_results,
+        )
+        if endpoint_answer:
+            return endpoint_answer
         if asks_count(lowered):
             return f"The batch count requires live API evidence. {sentence_case(api_phrase)}."
         if "file" in lowered:
@@ -369,6 +378,78 @@ def schema_dataset_answer(query: str, rows: list[dict[str, Any]] | None, api_phr
     if names:
         return f"Based on the evidence provided, matching datasets are: {join_human(names[:10])}. {sentence_case(api_phrase)}."
     return None
+
+
+def dry_run_endpoint_unavailable_answer(
+    query: str,
+    noun: str,
+    intent: str,
+    api_results: list[dict[str, Any]],
+) -> str | None:
+    if not dry_run_endpoint_answers_enabled():
+        return None
+    endpoint = dry_run_endpoint_phrase(api_results)
+    if not endpoint:
+        return None
+    subject = dry_run_subject(query, noun)
+    subject_prefix = f"{subject} " if subject else "The requested "
+    return f"{subject_prefix}{noun} {intent} is unavailable in dry-run mode. Endpoint: {endpoint}. Live API unavailable."
+
+
+def dry_run_endpoint_answers_enabled() -> bool:
+    return os.getenv("ENABLE_DRY_RUN_ENDPOINT_ANSWERS", "1") != "0"
+
+
+def dry_run_endpoint_phrase(api_results: list[dict[str, Any]]) -> str | None:
+    for result in api_results:
+        payload = result.get("payload", {})
+        if not payload.get("dry_run"):
+            continue
+        step = result.get("step", {})
+        method = str(step.get("method") or payload.get("method") or "GET").upper()
+        path = str(step.get("url") or payload.get("endpoint") or payload.get("url") or "").strip()
+        if path.startswith("https://platform.adobe.io"):
+            path = path.removeprefix("https://platform.adobe.io")
+        if not path:
+            continue
+        params = safe_endpoint_params(step.get("params") or payload.get("params") or {})
+        phrase = f"{method} {path}"
+        if params:
+            phrase += " params " + ", ".join(f"{key}={value}" for key, value in list(params.items())[:5])
+        return phrase
+    return None
+
+
+def safe_endpoint_params(params: Any) -> dict[str, str]:
+    safe: dict[str, str] = {}
+    if not isinstance(params, dict):
+        return safe
+    for key, value in params.items():
+        key_norm = re.sub(r"[^a-z0-9]", "", str(key).lower())
+        if any(part in key_norm for part in ["token", "secret", "password", "authorization", "clientid", "clientsecret", "apikey", "key"]):
+            continue
+        if isinstance(value, (dict, list)) or value in (None, ""):
+            continue
+        safe[str(key)] = str(value)
+    return safe
+
+
+def dry_run_subject(query: str, noun: str) -> str:
+    quoted = quoted_text(query)
+    if quoted:
+        return quoted
+    batch = re.search(r"\b01[A-Z0-9]{20,}\b", query)
+    if batch:
+        return batch.group(0)
+    hex_id = re.search(r"\b[0-9a-f]{12,}(?:-[0-9a-f]{4,})*\b", query, flags=re.I)
+    if hex_id:
+        return hex_id.group(0)
+    lowered = query.lower()
+    if noun == "batch":
+        for status in ["success", "failed", "queued", "processing"]:
+            if re.search(rf"\b{status}\b", lowered):
+                return status
+    return ""
 
 
 def first_ok_rows(sql_results: list[dict[str, Any]]) -> list[dict[str, Any]] | None:

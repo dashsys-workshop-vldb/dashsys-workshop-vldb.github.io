@@ -270,6 +270,7 @@ def build_report_index(
             "outputs/reports/llm_baseline_summary.md",
             "outputs/reports/accuracy_and_bottleneck_summary.md",
             "outputs/reports/visualization_summary.md",
+            "outputs/reports/overnight_autonomous_improvement_report.md",
             "outputs/reports/report_index.md",
         ],
         "key_source_of_truth_reports": [

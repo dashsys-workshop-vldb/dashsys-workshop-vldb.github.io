@@ -1,0 +1,211 @@
+{
+  "api_call_count": 1,
+  "domain_type": "SEGMENT_AUDIENCE",
+  "errors": [],
+  "estimated_tokens": 1548,
+  "final_answer": "Based on the evidence, 1 audience(s) match: Gender: Male mapped to amazon-s3. Live api verification was not executed because adobe credentials are unavailable.",
+  "original_query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
+  "query_id": "probe_12d",
+  "route_type": "SQL_THEN_API",
+  "runtime": 0.08198787498986349,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "common_params": {
+            "limit": 50,
+            "start": 0
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "audiences with profile counts"
+            }
+          ],
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences",
+          "path_params": [],
+          "risk_notes": [
+            "Audience APIs can be paginated; avoid assuming first page is exhaustive."
+          ],
+          "use_when": "List or look up Real-Time CDP audiences and audience metadata/counts."
+        },
+        {
+          "common_params": {
+            "limit": 50,
+            "start": 0
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "segment definition by name"
+            }
+          ],
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions",
+          "path_params": [],
+          "risk_notes": [
+            "Definition IDs and audience IDs are related but not always identical."
+          ],
+          "use_when": "Look up segment definitions, names, statuses, and segment metadata."
+        },
+        {
+          "common_params": {
+            "limit": 10
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE",
+            "UNKNOWN"
+          ],
+          "examples": [],
+          "id": "merge_policies",
+          "method": "GET",
+          "path": "/data/core/ups/config/mergePolicies",
+          "path_params": [],
+          "risk_notes": [],
+          "use_when": "List/count Real-Time Customer Profile merge policies."
+        },
+        {
+          "common_params": {
+            "limit": 10
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE",
+            "STATUS_MONITORING"
+          ],
+          "examples": [],
+          "id": "segment_jobs",
+          "method": "GET",
+          "path": "/data/core/ups/segment/jobs",
+          "path_params": [],
+          "risk_notes": [],
+          "use_when": "List segment evaluation jobs and statuses."
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_connector",
+        "dim_segment",
+        "dim_target",
+        "hkg_br_base_segment_used_by_dependent_segment",
+        "hkg_br_collection_segment",
+        "hkg_br_segment_property",
+        "hkg_br_segment_target"
+      ],
+      "confidence": 0.6499999999999999,
+      "domain_type": "SEGMENT_AUDIENCE",
+      "kind": "route",
+      "reason": "Keyword routing using SEGMENT_AUDIENCE:1, DESTINATION_DATAFLOW:1.",
+      "route_type": "SQL_THEN_API"
+    },
+    {
+      "estimated_tokens": 3350,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/probe/12d/metadata.json"
+    },
+    {
+      "kind": "plan",
+      "rationale": "Use SQL first for entity grounding, then API only for live/platform state or status verification.",
+      "steps": [
+        {
+          "action": "sql",
+          "allow_full_result": true,
+          "headers": {},
+          "method": null,
+          "params": {},
+          "purpose": "Ground names/IDs in local snapshot before API verification.",
+          "sql": "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAME\" AS target_name FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"CREATEDTIME\" >= DATEADD(MONTH, -3, CURRENT_DATE) LIMIT 3",
+          "url": null,
+          "warnings": []
+        },
+        {
+          "action": "api",
+          "allow_full_result": false,
+          "headers": {},
+          "method": "GET",
+          "params": {
+            "limit": "3",
+            "property": "assetType==destination"
+          },
+          "purpose": "API parameter template: destination_audit_events.",
+          "sql": null,
+          "url": "/data/foundation/audit/events",
+          "warnings": []
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "original_sql": "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAME\" AS target_name FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"CREATEDTIME\" >= DATEADD(MONTH, -3, CURRENT_DATE) LIMIT 3",
+        "row_count": 1,
+        "rows": [
+          {
+            "segment_id": "f6b93428-c021-4058-a1a2-77c277aab564",
+            "segment_name": "Gender: Male",
+            "target_id": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+            "target_name": "amazon-s3"
+          }
+        ],
+        "sql": "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAME\" AS target_name FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE TRY_CAST(D.\"CREATEDTIME\" AS TIMESTAMP) >= (CURRENT_DATE + (-3) * INTERVAL '1 month') LIMIT 3"
+      },
+      "sql": "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAME\" AS target_name FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"CREATEDTIME\" >= DATEADD(MONTH, -3, CURRENT_DATE) LIMIT 3",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "3",
+        "property": "assetType==destination"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/audit/events",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "headers": {},
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "3",
+          "property": "assetType==destination"
+        },
+        "result_preview": null,
+        "status_code": null,
+        "url": "https://platform.adobe.io/data/foundation/audit/events"
+      },
+      "url": "/data/foundation/audit/events",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "tool_call_count": 2
+}

@@ -8,8 +8,8 @@
 - Previously deleted duplicates: 0
 - Refused: 0
 - No protected files deleted: True
-- Files before cleanup: 18098
-- Files after cleanup: 18098
+- Files before cleanup: 17898
+- Files after cleanup: 17898
 - Reports consolidated: 0
 - Final submission format unchanged: True
 - check_submission_ready passed: True
@@ -40,12 +40,12 @@
 - `python3 scripts/generate_system_status_dashboard.py`: passed
 - `python3 scripts/generate_technique_visual_cards.py`: passed
 - `python3 scripts/generate_visualization_index.py`: passed
-- `python3 scripts/package_submission.py`: passed
-- `python3 scripts/package_query_outputs.py`: passed
-- `python3 scripts/check_submission_ready.py`: passed
 - `python3 scripts/generate_consolidated_reports.py`: passed
 - `python3 scripts/audit_redundant_files.py`: passed
 - `python3 scripts/cleanup_redundant_files.py --dry-run --write-report`: passed
+- `python3 scripts/package_submission.py`: passed
+- `python3 scripts/package_query_outputs.py`: passed
+- `python3 scripts/check_submission_ready.py`: passed
 - `rg -n secret scan`: passed
 
 ## Skipped Validation Commands

@@ -141,7 +141,14 @@ def completeness_missing_fields(intent: AnswerIntent, slots: AnswerSlots, answer
         missing.append("timestamp")
     if intent == AnswerIntent.STATUS and not (slots.statuses or "status" in lowered or "state" in lowered or "requires live api" in lowered):
         missing.append("status")
-    if slots.dry_run and "live api verification was not executed" not in lowered:
+    if slots.dry_run and not any(
+        phrase in lowered
+        for phrase in [
+            "live api verification was not executed",
+            "live api unavailable",
+            "dry-run mode",
+        ]
+    ):
         missing.append("dry_run_caveat")
     if slots.discrepancy and not any(token in lowered for token in ["disagree", "discrepancy", "does not match"]):
         missing.append("discrepancy")

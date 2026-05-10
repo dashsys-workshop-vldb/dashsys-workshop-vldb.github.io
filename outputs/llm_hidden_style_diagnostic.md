@@ -14,8 +14,8 @@ The LLM baseline framework is generic; the configured model/provider is backend 
 
 - Hidden-style sample count: `8`
 - Malformed tool calls: `0`
-- Unsupported answers: `0`
-- Missing evidence: `8`
+- Unsupported answers: `8`
+- Missing evidence: `0`
 - Dry-run hallucination risk: `0`
 
 This diagnostic does not claim official hidden-style robustness.

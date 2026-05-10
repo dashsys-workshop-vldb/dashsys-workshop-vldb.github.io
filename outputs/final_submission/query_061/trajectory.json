@@ -1,5 +1,5 @@
 {
-  "answer_time": 0.0005202090833336115,
+  "answer_time": 0.0006723329424858093,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -9,13 +9,13 @@
       "effect": "preserves the original query for reproducibility",
       "efficiency_role": "starts one trace without extra tool calls",
       "output": {
-        "query": "Show ingestion record counts and batch success counts for the last 90 days.",
-        "query_id": "show_ingestion_record_counts_and_batch_success_c",
+        "query": "How many merge policies are configured in this sandbox?",
+        "query_id": "llm_controller_2f0dbe12ff88",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-06T14:52:10.570611+00:00"
+      "timestamp": "2026-05-10T05:55:12.069205+00:00"
     },
     {
       "checkpoint_id": "checkpoint_00_prompt_router",
@@ -24,19 +24,19 @@
       "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
       "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
       "input_summary": {
-        "query": "Show ingestion record counts and batch success counts for the last 90 days."
+        "query": "How many merge policies are configured in this sandbox?"
       },
       "output": {
         "confidence": 0.9,
         "matched_rules": {
           "items": [
-            "api_only:batch"
+            "api_only:merge policies"
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         },
         "mode": "API_ONLY",
-        "reason": "API/platform family keyword(s): batch.",
+        "reason": "API/platform family keyword(s): merge policies, sandbox.",
         "recommended_strategy": "SQL_FIRST_API_VERIFY",
         "requires_api": true,
         "requires_database": false,
@@ -45,7 +45,7 @@
       },
       "stage": "prompt routing",
       "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-06T14:52:10.570653+00:00"
+      "timestamp": "2026-05-10T05:55:12.069254+00:00"
     },
     {
       "checkpoint_id": "checkpoint_simple_prompt_gate",
@@ -54,17 +54,17 @@
       "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
       "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
       "input_summary": {
-        "query": "Show ingestion record counts and batch success counts for the last 90 days."
+        "query": "How many merge policies are configured in this sandbox?"
       },
       "output": {
         "confidence": 0.9,
         "is_simple": false,
-        "reason": "API/platform family keyword(s): batch.",
+        "reason": "API/platform family keyword(s): merge policies, sandbox.",
         "suggested_action": "USE_DATA_PIPELINE"
       },
       "stage": "input routing",
       "technique": "simple prompt gate",
-      "timestamp": "2026-05-06T14:52:10.570673+00:00"
+      "timestamp": "2026-05-10T05:55:12.069276+00:00"
     },
     {
       "checkpoint_id": "checkpoint_02_query_normalization",
@@ -73,14 +73,14 @@
       "effect": "creates matching-friendly text while preserving the original query",
       "efficiency_role": "reduces repeated fuzzy matching work downstream",
       "input_summary": {
-        "query": "Show ingestion record counts and batch success counts for the last 90 days."
+        "query": "How many merge policies are configured in this sandbox?"
       },
       "output": {
-        "matching_text": "show ingestion record counts and batchsuccess counts for the last 90 days.",
-        "normalized_query": "Show ingestion record counts and batchsuccess counts for the last 90 days.",
+        "matching_text": "how many merge policy are configured in this sandbox?",
+        "normalized_query": "How many merge policies are configured in this sandbox?",
         "rewrites": {
           "items": [
-            "\\bbatch\\s+success\\b->batchsuccess"
+            "important_plurals->singular"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -88,7 +88,7 @@
       },
       "stage": "normalization",
       "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-06T14:52:10.570726+00:00"
+      "timestamp": "2026-05-10T05:55:12.069330+00:00"
     },
     {
       "checkpoint_id": "checkpoint_03_query_tokens",
@@ -97,20 +97,20 @@
       "effect": "extracts reusable query fields for routing, planning, and answers",
       "efficiency_role": "avoids reparsing the query in later modules",
       "input_summary": {
-        "normalized_query": "Show ingestion record counts and batchsuccess counts for the last 90 days."
+        "normalized_query": "How many merge policies are configured in this sandbox?"
       },
       "output": {
         "domains": {
           "items": [
-            "batch"
+            "merge_policy"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         }
       },
       "stage": "tokenization",
       "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-06T14:52:10.570781+00:00"
+      "timestamp": "2026-05-10T05:55:12.069385+00:00"
     },
     {
       "checkpoint_id": "checkpoint_04_relevance_scoring",
@@ -122,9 +122,9 @@
         "tokens": {
           "domains": {
             "items": [
-              "batch"
+              "merge_policy"
             ],
-            "total_items": 2,
+            "total_items": 1,
             "truncated_items": false
           }
         }
@@ -132,22 +132,22 @@
       "output": {
         "top_answer_families": {
           "items": [
-            "batch"
+            "merge_policy"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "top_apis": {
           "items": [
-            "observability_metrics"
+            "merge_policies"
           ],
-          "total_items": 3,
+          "total_items": 2,
           "truncated_items": false
         }
       },
       "stage": "context selection",
       "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-06T14:52:10.571362+00:00"
+      "timestamp": "2026-05-10T05:55:12.070006+00:00"
     },
     {
       "checkpoint_id": "checkpoint_05_query_analysis",
@@ -160,23 +160,23 @@
         "route_type": "API_ONLY"
       },
       "output": {
-        "answer_family": "observability_metrics",
+        "answer_family": "merge_policy",
         "api_templates": {
           "items": [
-            "observability_metrics"
+            "merge_policies"
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "confidence": 0.6,
         "domain_type": "COUNT_AGGREGATION",
-        "fast_path": "observability_metrics",
+        "fast_path": "merge_policies",
         "route_type": "API_ONLY",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "routing",
       "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-06T14:52:10.571367+00:00"
+      "timestamp": "2026-05-10T05:55:12.070020+00:00"
     },
     {
       "checkpoint_id": "checkpoint_06_lookup_path",
@@ -185,23 +185,30 @@
       "effect": "predicts the relevant table/join/API path",
       "efficiency_role": "filters unrelated schema and endpoint candidates",
       "input_summary": {
-        "answer_family": "observability_metrics",
+        "answer_family": "merge_policy",
         "domain_type": "COUNT_AGGREGATION"
       },
       "output": {
         "api_families": {
           "items": [
-            "observability_metrics"
+            "merge_policies"
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "api_mode": "required",
-        "family": "observability"
+        "family": "merge_policy",
+        "required_ids": {
+          "items": [
+            "merge_policy_id"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
       },
       "stage": "path prediction",
       "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-06T14:52:10.571370+00:00"
+      "timestamp": "2026-05-10T05:55:12.070024+00:00"
     },
     {
       "checkpoint_id": "checkpoint_07_context_card",
@@ -211,19 +218,19 @@
       "efficiency_role": "limits context size for non-baseline strategies",
       "input_summary": {
         "broad_context": false,
-        "lookup_path": "observability"
+        "lookup_path": "merge_policy"
       },
       "output": {
-        "estimated_metadata_tokens": 1095,
-        "prompt_tokens": 1776,
+        "estimated_metadata_tokens": 1010,
+        "prompt_tokens": 1692,
         "selected_apis": {
           "items": [
-            "observability_metrics"
+            "merge_policies"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "selected_card_name": "observability",
+        "selected_card_name": "merge_policy",
         "selected_columns": {
           "br_campaign_segment": {
             "items": [
@@ -271,7 +278,7 @@
       },
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-06T14:52:10.574095+00:00"
+      "timestamp": "2026-05-10T05:55:12.072908+00:00"
     },
     {
       "checkpoint_id": "checkpoint_08_candidate_plans",
@@ -293,13 +300,13 @@
         },
         "reason_selected": "highest pre-execution validation/relevance/cost score",
         "scores": {
-          "generic_sql_first": 12.3534
+          "generic_sql_first": 12.384
         },
         "selected_plan": "generic_sql_first"
       },
       "stage": "planning",
       "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-06T14:52:10.574346+00:00"
+      "timestamp": "2026-05-10T05:55:12.073156+00:00"
     },
     {
       "checkpoint_id": "checkpoint_09_plan_optimization",
@@ -327,7 +334,7 @@
       },
       "stage": "optimization",
       "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-06T14:52:10.574356+00:00"
+      "timestamp": "2026-05-10T05:55:12.073168+00:00"
     },
     {
       "checkpoint_id": "checkpoint_10_evidence_policy",
@@ -336,24 +343,24 @@
       "effect": "decides when API evidence is required, optional, or unnecessary",
       "efficiency_role": "skips or caps API calls when SQL evidence is enough",
       "input_summary": {
-        "answer_family": "observability_metrics",
+        "answer_family": "merge_policy",
         "route_type": "API_ONLY"
       },
       "output": {
         "allowed_api_families": {
           "items": [
-            "observability_metrics"
+            "merge_policies"
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "max_api_calls": 1,
         "mode": "API_REQUIRED",
-        "reason": "Route is API-only."
+        "reason": "Merge policies are Adobe API objects."
       },
       "stage": "evidence policy",
       "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-06T14:52:10.574360+00:00"
+      "timestamp": "2026-05-10T05:55:12.073172+00:00"
     },
     {
       "checkpoint_id": "checkpoint_11_call_budget",
@@ -366,29 +373,13 @@
           "items": [
             {
               "action": "api",
-              "family": "observability_metrics",
-              "method": "POST",
+              "family": "merge_policies",
+              "method": "GET",
               "params": {
-                "end": "2026-04-01T23:59:59.000Z",
-                "granularity": "day",
-                "metrics": {
-                  "items": [
-                    {
-                      "aggregator": "sum",
-                      "name": "timeseries.ingestion.dataset.recordsuccess.count"
-                    },
-                    {
-                      "aggregator": "sum",
-                      "name": "timeseries.ingestion.dataset.batchsuccess.count"
-                    }
-                  ],
-                  "total_items": 2,
-                  "truncated_items": false
-                },
-                "start": "2026-03-01T00:00:00.000Z"
+                "limit": "10"
               },
-              "purpose": "API parameter template: observability_metrics.",
-              "url": "/data/infrastructure/observability/insights/metrics"
+              "purpose": "API parameter template: merge_policies.",
+              "url": "/data/core/ups/config/mergePolicies"
             }
           ],
           "total_items": 1,
@@ -405,7 +396,7 @@
       },
       "stage": "efficiency control",
       "technique": "tool-call budgeting",
-      "timestamp": "2026-05-06T14:52:10.574378+00:00"
+      "timestamp": "2026-05-10T05:55:12.073188+00:00"
     },
     {
       "checkpoint_id": "checkpoint_12_validation",
@@ -418,29 +409,13 @@
           "items": [
             {
               "action": "api",
-              "family": "observability_metrics",
-              "method": "POST",
+              "family": "merge_policies",
+              "method": "GET",
               "params": {
-                "end": "2026-04-01T23:59:59.000Z",
-                "granularity": "day",
-                "metrics": {
-                  "items": [
-                    {
-                      "aggregator": "sum",
-                      "name": "timeseries.ingestion.dataset.recordsuccess.count"
-                    },
-                    {
-                      "aggregator": "sum",
-                      "name": "timeseries.ingestion.dataset.batchsuccess.count"
-                    }
-                  ],
-                  "total_items": 2,
-                  "truncated_items": false
-                },
-                "start": "2026-03-01T00:00:00.000Z"
+                "limit": "10"
               },
-              "purpose": "API parameter template: observability_metrics.",
-              "url": "/data/infrastructure/observability/insights/metrics"
+              "purpose": "API parameter template: merge_policies.",
+              "url": "/data/core/ups/config/mergePolicies"
             }
           ],
           "total_items": 1,
@@ -465,7 +440,7 @@
       },
       "stage": "validation",
       "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-06T14:52:10.576778+00:00"
+      "timestamp": "2026-05-10T05:55:12.075309+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -482,37 +457,21 @@
           "items": [
             {
               "dry_run": true,
-              "method": "POST",
+              "method": "GET",
               "ok": false,
               "result_preview": {
                 "dry_run": true,
-                "endpoint": "/data/infrastructure/observability/insights/metrics",
+                "endpoint": "/data/core/ups/config/mergePolicies",
                 "error": "Adobe credentials unavailable; API call not executed.",
-                "method": "POST",
+                "method": "GET",
                 "ok": false,
                 "params": {
-                  "end": "2026-04-01T23:59:59.000Z",
-                  "granularity": "day",
-                  "metrics": {
-                    "items": [
-                      {
-                        "aggregator": "sum",
-                        "name": "timeseries.ingestion.dataset.recordsuccess.count"
-                      },
-                      {
-                        "aggregator": "sum",
-                        "name": "timeseries.ingestion.dataset.batchsuccess.count"
-                      }
-                    ],
-                    "total_items": 2,
-                    "truncated_items": false
-                  },
-                  "start": "2026-03-01T00:00:00.000Z"
+                  "limit": "10"
                 },
                 "result_preview": null,
-                "url": "https://platform.adobe.io/data/infrastructure/observability/insights/metrics"
+                "url": "https://platform.adobe.io/data/core/ups/config/mergePolicies"
               },
-              "url": "/data/infrastructure/observability/insights/metrics"
+              "url": "/data/core/ups/config/mergePolicies"
             }
           ],
           "total_items": 1,
@@ -523,7 +482,7 @@
       },
       "stage": "execution",
       "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-06T14:52:10.576786+00:00"
+      "timestamp": "2026-05-10T05:55:12.075318+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -539,7 +498,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-06T14:52:10.576789+00:00"
+      "timestamp": "2026-05-10T05:55:12.075322+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -559,29 +518,22 @@
           "dry_run": true
         },
         "slots": {
-          "answer_family": "observability_metrics",
+          "answer_family": "merge_policy",
           "api_error": false,
           "discrepancy": false,
           "dry_run": true,
-          "metrics": {
-            "items": [
-              "timeseries.ingestion.dataset.recordsuccess.count"
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          },
           "slots_present": {
             "items": [
-              "metrics"
+              "dry_run"
             ],
-            "total_items": 2,
+            "total_items": 1,
             "truncated_items": false
           }
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-06T14:52:10.577186+00:00"
+      "timestamp": "2026-05-10T05:55:12.075840+00:00"
     },
     {
       "checkpoint_id": "checkpoint_16_answer_verification",
@@ -593,9 +545,9 @@
         "claim_count": 0,
         "slots_present": {
           "items": [
-            "metrics"
+            "dry_run"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         }
       },
@@ -612,7 +564,7 @@
       },
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-06T14:52:10.577192+00:00"
+      "timestamp": "2026-05-10T05:55:12.075850+00:00"
     },
     {
       "checkpoint_id": "checkpoint_17_answer_reranking",
@@ -621,7 +573,7 @@
       "effect": "selects the safest answer from same-evidence candidates",
       "efficiency_role": "uses no additional SQL/API/LLM calls",
       "input_summary": {
-        "answer_family": "observability_metrics"
+        "answer_family": "merge_policy"
       },
       "output": {
         "candidate_count": 0,
@@ -630,7 +582,7 @@
       },
       "stage": "answer selection",
       "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-06T14:52:10.577194+00:00"
+      "timestamp": "2026-05-10T05:55:12.075853+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -642,21 +594,21 @@
         "verifier_passed": true
       },
       "output": {
-        "answer_length": 250,
-        "final_answer": "Values for timeseries.ingestion.dataset.recordsuccess.count and timeseries.ingestion.dataset.batchsuccess.count for the requested time window require live API evidence. Live API verification was not executed because Adobe cr [truncated]",
-        "final_token_estimate": 43
+        "answer_length": 154,
+        "final_answer": "The merge policy count cannot be determined from the available evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "final_token_estimate": 24
       },
       "stage": "final response",
       "technique": "concise grounded final response",
-      "timestamp": "2026-05-06T14:52:10.577224+00:00"
+      "timestamp": "2026-05-10T05:55:12.075898+00:00"
     },
     {
       "active": true,
       "checkpoint_id": "checkpoint_official_token_reduction",
       "correctness_impact_expected": false,
-      "estimated_tokens_after": 858,
-      "estimated_tokens_before": 887,
-      "expected_savings": 29,
+      "estimated_tokens_after": 516,
+      "estimated_tokens_before": 550,
+      "expected_savings": 34,
       "packaged_execution_changed": false,
       "reduced_fields": [
         "steps[2].metadata_path"
@@ -665,15 +617,15 @@
   ],
   "domain_type": "COUNT_AGGREGATION",
   "errors": [],
-  "estimated_tokens": 858,
-  "execution_time": 0.0006050000665709376,
-  "final_answer": "Values for timeseries.ingestion.dataset.recordsuccess.count and timeseries.ingestion.dataset.batchsuccess.count for the requested time window require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
-  "original_query": "Show ingestion record counts and batch success counts for the last 90 days.",
-  "planning_time": 0.0002806249540299177,
-  "preprocessing_time": 0.0034227920696139336,
-  "query_id": "show_ingestion_record_counts_and_batch_success_c",
+  "estimated_tokens": 516,
+  "execution_time": 0.0003419171553105116,
+  "final_answer": "The merge policy count cannot be determined from the available evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "How many merge policies are configured in this sandbox?",
+  "planning_time": 0.0002781669609248638,
+  "preprocessing_time": 0.0036366658750921488,
+  "query_id": "llm_controller_2f0dbe12ff88",
   "route_type": "API_ONLY",
-  "runtime": 0.013749584089964628,
+  "runtime": 0.01400099997408688,
   "sql_call_count": 0,
   "steps": [
     {
@@ -695,60 +647,44 @@
       "kind": "nlp",
       "relevance": {
         "apis": [
-          "observability_metrics",
-          "ups_audiences"
+          "merge_policies",
+          "export_batch_files"
         ],
         "lookup_paths": [
-          "observability",
-          "batch"
+          "merge_policy"
         ]
       },
       "rewrites": [
-        "\\bbatch\\s+success\\b->batchsuccess"
+        "important_plurals->singular"
       ],
       "tokens": {
         "domains": [
-          "batch",
-          "observability"
+          "merge_policy"
         ]
       }
     },
     {
-      "estimated_tokens": 1095,
+      "estimated_tokens": 1010,
       "kind": "metadata",
       "metadata_path": "metadata.json",
-      "prompt_tokens": 1776
+      "prompt_tokens": 1692
     },
     {
       "kind": "plan",
       "optimizer_actions": [
         "ensemble selected generic_sql_first"
       ],
-      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: observability_metrics.",
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Merge policies are Adobe API objects. Fast path: merge_policies.",
       "steps": [
         {
           "action": "api",
-          "family": "observability_metrics",
-          "method": "POST",
+          "family": "merge_policies",
+          "method": "GET",
           "params": {
-            "end": "2026-04-01T23:59:59.000Z",
-            "granularity": "day",
-            "metrics": [
-              {
-                "aggregator": "sum",
-                "filters": [],
-                "name": "timeseries.ingestion.dataset.recordsuccess.count"
-              },
-              {
-                "aggregator": "sum",
-                "filters": [],
-                "name": "timeseries.ingestion.dataset.batchsuccess.count"
-              }
-            ],
-            "start": "2026-03-01T00:00:00.000Z"
+            "limit": "10"
           },
-          "purpose": "API parameter template: observability_metrics.",
-          "url": "/data/infrastructure/observability/insights/metrics"
+          "purpose": "API parameter template: merge_policies.",
+          "url": "/data/core/ups/config/mergePolicies"
         }
       ],
       "strategy": "SQL_FIRST_API_VERIFY"
@@ -757,7 +693,7 @@
       "kind": "optimizer",
       "plan_ensemble": {
         "candidate_scores": {
-          "generic_sql_first": 12.3534
+          "generic_sql_first": 12.384
         },
         "candidate_tool_calls": {
           "generic_sql_first": 1
@@ -768,53 +704,23 @@
     {
       "headers": {},
       "kind": "api_call",
-      "method": "POST",
+      "method": "GET",
       "params": {
-        "end": "2026-04-01T23:59:59.000Z",
-        "granularity": "day",
-        "metrics": [
-          {
-            "aggregator": "sum",
-            "filters": [],
-            "name": "timeseries.ingestion.dataset.recordsuccess.count"
-          },
-          {
-            "aggregator": "sum",
-            "filters": [],
-            "name": "timeseries.ingestion.dataset.batchsuccess.count"
-          }
-        ],
-        "start": "2026-03-01T00:00:00.000Z"
+        "limit": "10"
       },
       "result": {
         "dry_run": true,
-        "endpoint": "/data/infrastructure/observability/insights/metrics",
+        "endpoint": "/data/core/ups/config/mergePolicies",
         "error": "Adobe credentials unavailable; API call not executed.",
-        "method": "POST",
+        "method": "GET",
         "ok": false,
         "params": {
-          "end": "2026-04-01T23:59:59.000Z",
-          "granularity": "day",
-          "metrics": {
-            "items": [
-              {
-                "aggregator": "sum",
-                "name": "timeseries.ingestion.dataset.recordsuccess.count"
-              },
-              {
-                "aggregator": "sum",
-                "name": "timeseries.ingestion.dataset.batchsuccess.count"
-              }
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          },
-          "start": "2026-03-01T00:00:00.000Z"
+          "limit": "10"
         },
         "result_preview": null,
-        "url": "https://platform.adobe.io/data/infrastructure/observability/insights/metrics"
+        "url": "https://platform.adobe.io/data/core/ups/config/mergePolicies"
       },
-      "url": "/data/infrastructure/observability/insights/metrics",
+      "url": "/data/core/ups/config/mergePolicies",
       "validation": {
         "errors": [],
         "ok": true,
@@ -823,14 +729,13 @@
       }
     },
     {
-      "answer_family": "observability_metrics",
+      "answer_family": "merge_policy",
       "answer_intent": "COUNT",
       "completeness_missing_fields": [],
       "kind": "answer_diagnostics",
       "rewrite_applied": false,
       "selected_candidate_type": "base",
       "slots_present": [
-        "metrics",
         "dry_run"
       ],
       "unsupported_claims_count": 0,
@@ -839,10 +744,10 @@
   ],
   "strategy": "SQL_FIRST_API_VERIFY",
   "timings": {
-    "answer_time": 0.0005202090833336115,
-    "execution_time": 0.0006050000665709376,
-    "planning_time": 0.0002806249540299177,
-    "preprocessing_time": 0.0034227920696139336
+    "answer_time": 0.0006723329424858093,
+    "execution_time": 0.0003419171553105116,
+    "planning_time": 0.0002781669609248638,
+    "preprocessing_time": 0.0036366658750921488
   },
   "tool_call_count": 1
 }

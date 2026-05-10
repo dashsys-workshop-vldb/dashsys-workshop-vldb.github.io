@@ -1,0 +1,156 @@
+{
+  "answer_time": 6.458954885601997e-06,
+  "api_call_count": 1,
+  "domain_type": "SEGMENT_AUDIENCE",
+  "errors": [],
+  "estimated_tokens": 721,
+  "execution_time": 0.00023320800391957164,
+  "final_answer": "The most recently updated segment definitions require live Adobe API evidence with names, IDs, and update times. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Which segment definitions were updated most recently?",
+  "planning_time": 0.00011095800437033176,
+  "preprocessing_time": 0.0008177909767255187,
+  "query_id": "example_024",
+  "route_type": "API_ONLY",
+  "runtime": 0.0014802920049987733,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences"
+        },
+        {
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions"
+        },
+        {
+          "id": "merge_policies",
+          "method": "GET",
+          "path": "/data/core/ups/config/mergePolicies"
+        },
+        {
+          "id": "segment_jobs",
+          "method": "GET",
+          "path": "/data/core/ups/segment/jobs"
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_segment",
+        "hkg_br_base_segment_used_by_dependent_segment",
+        "hkg_br_collection_segment",
+        "hkg_br_segment_property",
+        "hkg_br_segment_target"
+      ],
+      "confidence": 0.5,
+      "domain_type": "SEGMENT_AUDIENCE",
+      "kind": "route",
+      "reason": "Keyword routing using SEGMENT_AUDIENCE:1.",
+      "route_type": "API_ONLY"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "segment_definitions",
+          "merge_policies"
+        ],
+        "lookup_paths": [
+          "segment_destination",
+          "audit"
+        ],
+        "tables": [
+          "dim_segment",
+          "hkg_br_segment_target"
+        ]
+      },
+      "rewrites": [
+        "important_plurals->singular"
+      ],
+      "tokens": {
+        "domains": [
+          "segment_audience"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 928,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/robustness_runs/drop_context_cards/eval/example_024/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 1261
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: recent_segment_definitions.",
+      "steps": [
+        {
+          "action": "api",
+          "family": "recent_segment_definitions",
+          "method": "GET",
+          "params": {
+            "limit": "3",
+            "orderBy": "updateTime:desc"
+          },
+          "purpose": "API parameter template: recent_segment_definitions.",
+          "url": "/data/core/ups/segment/definitions"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 11.8795
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 1
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "3",
+        "orderBy": "updateTime:desc"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/core/ups/segment/definitions",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "3",
+          "orderBy": "updateTime:desc"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/core/ups/segment/definitions"
+      },
+      "url": "/data/core/ups/segment/definitions",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 6.458954885601997e-06,
+    "execution_time": 0.00023320800391957164,
+    "planning_time": 0.00011095800437033176,
+    "preprocessing_time": 0.0008177909767255187
+  },
+  "tool_call_count": 1
+}

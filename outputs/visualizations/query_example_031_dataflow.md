@@ -6,11 +6,11 @@
 | --- | --- |
 | Query | Which files are available for download in batch 69de8a0e0cc6102b5d11f01e? |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
-| Final answer | Batch file details require live API evidence. Live API verification was not executed because Adobe credentials are unavailable. |
-| Strict score | 0.5346 |
-| Correctness score | 0.5528 |
-| Answer / SQL / API score | 0.1055 / None / 1.0 |
-| Tools / tokens / runtime | 1 / 677 / 0.010614791885018349 |
+| Final answer | 69de8a0e0cc6102b5d11f01e batch list is unavailable in dry-run mode. Endpoint: GET /data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files. Live API unavailable. |
+| Strict score | 0.6539 |
+| Correctness score | 0.6724 |
+| Answer / SQL / API score | 0.3449 / None / 1.0 |
+| Tools / tokens / runtime | 1 / 717 / 0.010813083034008741 |
 
 ## Dataflow Graph
 
@@ -26,7 +26,7 @@ flowchart LR
   S --> V["Evidence bus"]
   E --> V
   V --> H["Answer synthesis"]
-  H --> F["Final: Batch file details require live API evi..."]
+  H --> F["Final: 69de8a0e0cc6102b5d11f01e batch list is..."]
 ```
 
 ## Checkpoint Timeline
@@ -53,7 +53,7 @@ flowchart LR
 | 18 | checkpoint_15_answer_slots | answer synthesis | structured answer slot extraction | tool_result_count=1 | answer_intent=LIST; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); missing_slots=1 item(s) | turns raw tool results into typed evidence fields | yes | yes | no |
 | 19 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=0; slots_present=1 item(s) | verifier_passed=True; rewrite_applied=False | checks final-answer claims against SQL/API evidence | yes | yes | no |
 | 20 | checkpoint_17_answer_reranking | answer selection | deterministic answer reranking | answer_family=batch | candidate_count=0; selected_candidate_type=base | selects the safest answer from same-evidence candidates | yes | yes | no |
-| 21 | checkpoint_18_final_answer | final response | concise grounded final response | verifier_passed=True | answer_length=127; final_answer=Batch file details require live API evidence. Live API ve... | returns the final concise answer to the agent harness | yes | yes | no |
+| 21 | checkpoint_18_final_answer | final response | concise grounded final response | verifier_passed=True | answer_length=167; final_answer=69de8a0e0cc6102b5d11f01e batch list is unavailable in dry... | returns the final concise answer to the agent harness | yes | yes | no |
 | 22 | checkpoint_official_token_reduction | query understanding | unavailable | unavailable | unavailable | Checkpoint recorded query understanding progress. | no | no | no |
 
 ## Evidence Table

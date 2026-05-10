@@ -1,5 +1,5 @@
 {
-  "answer_time": 0.0003819590201601386,
+  "answer_time": 0.00035812496207654476,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -9,13 +9,13 @@
       "effect": "preserves the original query for reproducibility",
       "efficiency_role": "starts one trace without extra tool calls",
       "output": {
-        "query": "Show me the details of the tag named 'cool'.",
-        "query_id": "example_018",
+        "query": "How many merge policies are configured in this sandbox?",
+        "query_id": "example_020",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-08T00:27:22.681934+00:00"
+      "timestamp": "2026-05-10T05:53:29.871773+00:00"
     },
     {
       "checkpoint_id": "checkpoint_00_prompt_router",
@@ -24,19 +24,19 @@
       "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
       "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
       "input_summary": {
-        "query": "Show me the details of the tag named 'cool'."
+        "query": "How many merge policies are configured in this sandbox?"
       },
       "output": {
         "confidence": 0.9,
         "matched_rules": {
           "items": [
-            "api_only:tag"
+            "api_only:merge policies"
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         },
         "mode": "API_ONLY",
-        "reason": "API/platform family keyword(s): tag.",
+        "reason": "API/platform family keyword(s): merge policies, sandbox.",
         "recommended_strategy": "SQL_FIRST_API_VERIFY",
         "requires_api": true,
         "requires_database": false,
@@ -45,7 +45,7 @@
       },
       "stage": "prompt routing",
       "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-08T00:27:22.681958+00:00"
+      "timestamp": "2026-05-10T05:53:29.871793+00:00"
     },
     {
       "checkpoint_id": "checkpoint_simple_prompt_gate",
@@ -54,17 +54,17 @@
       "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
       "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
       "input_summary": {
-        "query": "Show me the details of the tag named 'cool'."
+        "query": "How many merge policies are configured in this sandbox?"
       },
       "output": {
         "confidence": 0.9,
         "is_simple": false,
-        "reason": "API/platform family keyword(s): tag.",
+        "reason": "API/platform family keyword(s): merge policies, sandbox.",
         "suggested_action": "USE_DATA_PIPELINE"
       },
       "stage": "input routing",
       "technique": "simple prompt gate",
-      "timestamp": "2026-05-08T00:27:22.681974+00:00"
+      "timestamp": "2026-05-10T05:53:29.871804+00:00"
     },
     {
       "checkpoint_id": "checkpoint_02_query_normalization",
@@ -73,15 +73,22 @@
       "effect": "creates matching-friendly text while preserving the original query",
       "efficiency_role": "reduces repeated fuzzy matching work downstream",
       "input_summary": {
-        "query": "Show me the details of the tag named 'cool'."
+        "query": "How many merge policies are configured in this sandbox?"
       },
       "output": {
-        "matching_text": "show me the details of the tag named 'cool'.",
-        "normalized_query": "Show me the details of the tag named 'cool'."
+        "matching_text": "how many merge policy are configured in this sandbox?",
+        "normalized_query": "How many merge policies are configured in this sandbox?",
+        "rewrites": {
+          "items": [
+            "important_plurals->singular"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
       },
       "stage": "normalization",
       "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-08T00:27:22.682010+00:00"
+      "timestamp": "2026-05-10T05:53:29.871835+00:00"
     },
     {
       "checkpoint_id": "checkpoint_03_query_tokens",
@@ -90,19 +97,12 @@
       "effect": "extracts reusable query fields for routing, planning, and answers",
       "efficiency_role": "avoids reparsing the query in later modules",
       "input_summary": {
-        "normalized_query": "Show me the details of the tag named 'cool'."
+        "normalized_query": "How many merge policies are configured in this sandbox?"
       },
       "output": {
         "domains": {
           "items": [
-            "tags"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "quoted_entities": {
-          "items": [
-            "cool"
+            "merge_policy"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -110,7 +110,7 @@
       },
       "stage": "tokenization",
       "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-08T00:27:22.682050+00:00"
+      "timestamp": "2026-05-10T05:53:29.871865+00:00"
     },
     {
       "checkpoint_id": "checkpoint_04_relevance_scoring",
@@ -122,14 +122,7 @@
         "tokens": {
           "domains": {
             "items": [
-              "tags"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "quoted_entities": {
-            "items": [
-              "cool"
+              "merge_policy"
             ],
             "total_items": 1,
             "truncated_items": false
@@ -139,60 +132,22 @@
       "output": {
         "top_answer_families": {
           "items": [
-            "tags"
+            "merge_policy"
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "top_apis": {
           "items": [
-            "unified_tag_categories"
+            "merge_policies"
           ],
-          "total_items": 3,
+          "total_items": 2,
           "truncated_items": false
         }
       },
       "stage": "context selection",
       "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-08T00:27:22.682553+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_value_entity_retrieval",
-      "correctness_role": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
-      "duration_ms": 0.0,
-      "effect": "grounds query entities against sampled local DB values before planning",
-      "efficiency_role": "uses a cached bounded value index with per-query scan and wall-time budgets",
-      "input_summary": {
-        "query_values": {
-          "items": [
-            {
-              "kind": "quoted_entity",
-              "text": "cool"
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        }
-      },
-      "metrics": {
-        "budget_exceeded": true,
-        "match_count": 0,
-        "retrieval_ms": 11.664
-      },
-      "output": {
-        "active": true,
-        "cache_hit": true,
-        "cache_key": "a2f6025ad4340fb6",
-        "cache_key_algorithm": "sha256",
-        "cache_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/cache/value_index_a2f6025ad4340fb6.json",
-        "cache_reproducible": true,
-        "match_count": 0,
-        "query_value_count": 1,
-        "truncated_fields": 8
-      },
-      "stage": "query understanding",
-      "technique": "CHESS-style value/entity retrieval",
-      "timestamp": "2026-05-08T00:27:22.683252+00:00"
+      "timestamp": "2026-05-10T05:53:29.872344+00:00"
     },
     {
       "checkpoint_id": "checkpoint_05_query_analysis",
@@ -201,27 +156,27 @@
       "effect": "computes shared query understanding once",
       "efficiency_role": "avoids repeated template and routing analysis",
       "input_summary": {
-        "domain_type": "UNKNOWN",
+        "domain_type": "COUNT_AGGREGATION",
         "route_type": "API_ONLY"
       },
       "output": {
-        "answer_family": "tags",
+        "answer_family": "merge_policy",
         "api_templates": {
           "items": [
-            "tag_details_by_id"
+            "merge_policies"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "confidence": 0.3,
-        "domain_type": "UNKNOWN",
-        "fast_path": "tag_details_by_id",
+        "confidence": 0.6,
+        "domain_type": "COUNT_AGGREGATION",
+        "fast_path": "merge_policies",
         "route_type": "API_ONLY",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "routing",
       "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-08T00:27:22.683258+00:00"
+      "timestamp": "2026-05-10T05:53:29.872361+00:00"
     },
     {
       "checkpoint_id": "checkpoint_06_lookup_path",
@@ -230,30 +185,30 @@
       "effect": "predicts the relevant table/join/API path",
       "efficiency_role": "filters unrelated schema and endpoint candidates",
       "input_summary": {
-        "answer_family": "tags",
-        "domain_type": "UNKNOWN"
+        "answer_family": "merge_policy",
+        "domain_type": "COUNT_AGGREGATION"
       },
       "output": {
         "api_families": {
           "items": [
-            "tag_count"
+            "merge_policies"
           ],
-          "total_items": 5,
-          "truncated_items": true
+          "total_items": 1,
+          "truncated_items": false
         },
         "api_mode": "required",
-        "family": "tags",
+        "family": "merge_policy",
         "required_ids": {
           "items": [
-            "tag_id"
+            "merge_policy_id"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         }
       },
       "stage": "path prediction",
       "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-08T00:27:22.683260+00:00"
+      "timestamp": "2026-05-10T05:53:29.872364+00:00"
     },
     {
       "checkpoint_id": "checkpoint_07_context_card",
@@ -263,19 +218,19 @@
       "efficiency_role": "limits context size for non-baseline strategies",
       "input_summary": {
         "broad_context": false,
-        "lookup_path": "tags"
+        "lookup_path": "merge_policy"
       },
       "output": {
-        "estimated_metadata_tokens": 983,
-        "prompt_tokens": 1652,
+        "estimated_metadata_tokens": 1002,
+        "prompt_tokens": 1684,
         "selected_apis": {
           "items": [
-            "unified_tag_detail"
+            "merge_policies"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "selected_card_name": "tags",
+        "selected_card_name": "merge_policy",
         "selected_columns": {
           "br_campaign_segment": {
             "items": [
@@ -323,7 +278,7 @@
       },
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-08T00:27:22.685112+00:00"
+      "timestamp": "2026-05-10T05:53:29.874506+00:00"
     },
     {
       "checkpoint_id": "checkpoint_08_candidate_plans",
@@ -345,13 +300,13 @@
         },
         "reason_selected": "highest pre-execution validation/relevance/cost score",
         "scores": {
-          "generic_sql_first": 12.3858
+          "generic_sql_first": 12.384
         },
         "selected_plan": "generic_sql_first"
       },
       "stage": "planning",
       "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-08T00:27:22.685296+00:00"
+      "timestamp": "2026-05-10T05:53:29.874684+00:00"
     },
     {
       "checkpoint_id": "checkpoint_09_plan_optimization",
@@ -379,7 +334,7 @@
       },
       "stage": "optimization",
       "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-08T00:27:22.685303+00:00"
+      "timestamp": "2026-05-10T05:53:29.874691+00:00"
     },
     {
       "checkpoint_id": "checkpoint_10_evidence_policy",
@@ -388,24 +343,24 @@
       "effect": "decides when API evidence is required, optional, or unnecessary",
       "efficiency_role": "skips or caps API calls when SQL evidence is enough",
       "input_summary": {
-        "answer_family": "tags",
+        "answer_family": "merge_policy",
         "route_type": "API_ONLY"
       },
       "output": {
         "allowed_api_families": {
           "items": [
-            "tag_details_by_id"
+            "merge_policies"
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "max_api_calls": 1,
         "mode": "API_REQUIRED",
-        "reason": "Route is API-only."
+        "reason": "Merge policies are Adobe API objects."
       },
       "stage": "evidence policy",
       "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-08T00:27:22.685311+00:00"
+      "timestamp": "2026-05-10T05:53:29.874693+00:00"
     },
     {
       "checkpoint_id": "checkpoint_11_call_budget",
@@ -418,10 +373,13 @@
           "items": [
             {
               "action": "api",
-              "family": "tag_details_by_id",
+              "family": "merge_policies",
               "method": "GET",
-              "purpose": "API parameter template: tag_details_by_id.",
-              "url": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818"
+              "params": {
+                "limit": "10"
+              },
+              "purpose": "API parameter template: merge_policies.",
+              "url": "/data/core/ups/config/mergePolicies"
             }
           ],
           "total_items": 1,
@@ -438,7 +396,7 @@
       },
       "stage": "efficiency control",
       "technique": "tool-call budgeting",
-      "timestamp": "2026-05-08T00:27:22.685320+00:00"
+      "timestamp": "2026-05-10T05:53:29.874703+00:00"
     },
     {
       "checkpoint_id": "checkpoint_12_validation",
@@ -451,10 +409,13 @@
           "items": [
             {
               "action": "api",
-              "family": "tag_details_by_id",
+              "family": "merge_policies",
               "method": "GET",
-              "purpose": "API parameter template: tag_details_by_id.",
-              "url": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818"
+              "params": {
+                "limit": "10"
+              },
+              "purpose": "API parameter template: merge_policies.",
+              "url": "/data/core/ups/config/mergePolicies"
             }
           ],
           "total_items": 1,
@@ -479,7 +440,7 @@
       },
       "stage": "validation",
       "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-08T00:27:22.686752+00:00"
+      "timestamp": "2026-05-10T05:53:29.876219+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -500,14 +461,17 @@
               "ok": false,
               "result_preview": {
                 "dry_run": true,
-                "endpoint": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818",
+                "endpoint": "/data/core/ups/config/mergePolicies",
                 "error": "Adobe credentials unavailable; API call not executed.",
                 "method": "GET",
                 "ok": false,
+                "params": {
+                  "limit": "10"
+                },
                 "result_preview": null,
-                "url": "https://platform.adobe.io/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818"
+                "url": "https://platform.adobe.io/data/core/ups/config/mergePolicies"
               },
-              "url": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818"
+              "url": "/data/core/ups/config/mergePolicies"
             }
           ],
           "total_items": 1,
@@ -518,7 +482,7 @@
       },
       "stage": "execution",
       "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-08T00:27:22.686761+00:00"
+      "timestamp": "2026-05-10T05:53:29.876223+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -534,7 +498,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-08T00:27:22.686764+00:00"
+      "timestamp": "2026-05-10T05:53:29.876226+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -546,7 +510,7 @@
         "tool_result_count": 1
       },
       "output": {
-        "answer_intent": "DETAIL",
+        "answer_intent": "COUNT",
         "discrepancy_flags": {
           "sql_api_discrepancy": false
         },
@@ -554,29 +518,22 @@
           "dry_run": true
         },
         "slots": {
-          "answer_family": "tags",
+          "answer_family": "merge_policy",
           "api_error": false,
           "discrepancy": false,
           "dry_run": true,
-          "entity_names": {
-            "items": [
-              "cool"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
           "slots_present": {
             "items": [
-              "entity_names"
+              "dry_run"
             ],
-            "total_items": 2,
+            "total_items": 1,
             "truncated_items": false
           }
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-08T00:27:22.687075+00:00"
+      "timestamp": "2026-05-10T05:53:29.876511+00:00"
     },
     {
       "checkpoint_id": "checkpoint_16_answer_verification",
@@ -585,12 +542,12 @@
       "effect": "checks final-answer claims against SQL/API evidence",
       "efficiency_role": "rewrites safely without extra tool calls",
       "input_summary": {
-        "claim_count": 1,
+        "claim_count": 0,
         "slots_present": {
           "items": [
-            "entity_names"
+            "dry_run"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         }
       },
@@ -601,20 +558,13 @@
           "truncated_items": false
         },
         "rewrite_applied": false,
-        "supported_claims_count": 1,
+        "supported_claims_count": 0,
         "unsupported_claims_count": 0,
-        "verifier_passed": true,
-        "warnings": {
-          "items": [
-            "answer_contains_only_query_supported_facts"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        }
+        "verifier_passed": true
       },
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-08T00:27:22.687079+00:00"
+      "timestamp": "2026-05-10T05:53:29.876515+00:00"
     },
     {
       "checkpoint_id": "checkpoint_17_answer_reranking",
@@ -623,7 +573,7 @@
       "effect": "selects the safest answer from same-evidence candidates",
       "efficiency_role": "uses no additional SQL/API/LLM calls",
       "input_summary": {
-        "answer_family": "tags"
+        "answer_family": "merge_policy"
       },
       "output": {
         "candidate_count": 0,
@@ -632,7 +582,7 @@
       },
       "stage": "answer selection",
       "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-08T00:27:22.687081+00:00"
+      "timestamp": "2026-05-10T05:53:29.876518+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -644,59 +594,42 @@
         "verifier_passed": true
       },
       "output": {
-        "answer_length": 203,
-        "final_answer": "Details for the tag named 'cool' require live API evidence, including the tag ID, name, category, and Adobe organization. Live API verification was not executed because Adobe credentials are unavailable.",
-        "final_token_estimate": 38
+        "answer_length": 154,
+        "final_answer": "The merge policy count cannot be determined from the available evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "final_token_estimate": 24
       },
       "stage": "final response",
       "technique": "concise grounded final response",
-      "timestamp": "2026-05-08T00:27:22.687098+00:00"
+      "timestamp": "2026-05-10T05:53:29.876531+00:00"
     },
     {
       "active": true,
       "checkpoint_id": "checkpoint_official_token_reduction",
       "correctness_impact_expected": false,
-      "estimated_tokens_after": 678,
-      "estimated_tokens_before": 758,
-      "expected_savings": 80,
+      "estimated_tokens_after": 516,
+      "estimated_tokens_before": 541,
+      "expected_savings": 25,
       "packaged_execution_changed": false,
       "reduced_fields": [
-        "steps[0].candidate_apis",
         "steps[2].metadata_path"
       ]
     }
   ],
-  "domain_type": "UNKNOWN",
+  "domain_type": "COUNT_AGGREGATION",
   "errors": [],
-  "estimated_tokens": 678,
-  "execution_time": 0.00016070902347564697,
-  "final_answer": "Details for the tag named 'cool' require live API evidence, including the tag ID, name, category, and Adobe organization. Live API verification was not executed because Adobe credentials are unavailable.",
-  "original_query": "Show me the details of the tag named 'cool'.",
-  "planning_time": 0.000213916995562613,
-  "preprocessing_time": 0.0031389580108225346,
-  "query_id": "example_018",
+  "estimated_tokens": 516,
+  "execution_time": 0.00021937512792646885,
+  "final_answer": "The merge policy count cannot be determined from the available evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "How many merge policies are configured in this sandbox?",
+  "planning_time": 0.00019212509505450726,
+  "preprocessing_time": 0.002709250198677182,
+  "query_id": "example_020",
   "route_type": "API_ONLY",
-  "runtime": 0.008221499971114099,
+  "runtime": 0.009517124854028225,
   "sql_call_count": 0,
   "steps": [
     {
-      "candidate_apis": [
-        {
-          "id": "journey_list",
-          "method": "GET",
-          "path": "/ajo/journey"
-        },
-        {
-          "id": "ups_audiences",
-          "method": "GET",
-          "path": "/data/core/ups/audiences"
-        },
-        {
-          "id": "segment_definitions",
-          "method": "GET",
-          "path": "/data/core/ups/segment/definitions"
-        }
-      ],
+      "candidate_apis": [],
       "candidate_tables": [
         "br_campaign_segment",
         "dim_blueprint",
@@ -704,58 +637,54 @@
         "dim_collection",
         "dim_connector"
       ],
-      "confidence": 0.2,
-      "domain_type": "UNKNOWN",
+      "confidence": 0.5,
+      "domain_type": "COUNT_AGGREGATION",
       "kind": "route",
-      "reason": "Keyword routing found no domain keyword.",
+      "reason": "Keyword routing using COUNT_AGGREGATION:1.",
       "route_type": "API_ONLY"
     },
     {
       "kind": "nlp",
       "relevance": {
         "apis": [
-          "unified_tag_categories",
-          "unified_tag_detail"
+          "merge_policies",
+          "export_batch_files"
         ],
         "lookup_paths": [
-          "tags",
-          "batch"
+          "merge_policy"
         ]
       },
+      "rewrites": [
+        "important_plurals->singular"
+      ],
       "tokens": {
         "domains": [
-          "tags"
-        ],
-        "quoted_entities": [
-          "cool"
+          "merge_policy"
         ]
-      },
-      "value_retrieval": {
-        "budget_exceeded": true,
-        "match_count": 0,
-        "matches": [],
-        "retrieval_ms": 11.664
       }
     },
     {
-      "estimated_tokens": 983,
+      "estimated_tokens": 1002,
       "kind": "metadata",
       "metadata_path": "metadata.json",
-      "prompt_tokens": 1652
+      "prompt_tokens": 1684
     },
     {
       "kind": "plan",
       "optimizer_actions": [
         "ensemble selected generic_sql_first"
       ],
-      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: tag_details_by_id.",
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Merge policies are Adobe API objects. Fast path: merge_policies.",
       "steps": [
         {
           "action": "api",
-          "family": "tag_details_by_id",
+          "family": "merge_policies",
           "method": "GET",
-          "purpose": "API parameter template: tag_details_by_id.",
-          "url": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818"
+          "params": {
+            "limit": "10"
+          },
+          "purpose": "API parameter template: merge_policies.",
+          "url": "/data/core/ups/config/mergePolicies"
         }
       ],
       "strategy": "SQL_FIRST_API_VERIFY"
@@ -764,7 +693,7 @@
       "kind": "optimizer",
       "plan_ensemble": {
         "candidate_scores": {
-          "generic_sql_first": 12.3858
+          "generic_sql_first": 12.384
         },
         "candidate_tool_calls": {
           "generic_sql_first": 1
@@ -776,17 +705,22 @@
       "headers": {},
       "kind": "api_call",
       "method": "GET",
-      "params": {},
+      "params": {
+        "limit": "10"
+      },
       "result": {
         "dry_run": true,
-        "endpoint": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818",
+        "endpoint": "/data/core/ups/config/mergePolicies",
         "error": "Adobe credentials unavailable; API call not executed.",
         "method": "GET",
         "ok": false,
+        "params": {
+          "limit": "10"
+        },
         "result_preview": null,
-        "url": "https://platform.adobe.io/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818"
+        "url": "https://platform.adobe.io/data/core/ups/config/mergePolicies"
       },
-      "url": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818",
+      "url": "/data/core/ups/config/mergePolicies",
       "validation": {
         "errors": [],
         "ok": true,
@@ -795,14 +729,13 @@
       }
     },
     {
-      "answer_family": "tags",
-      "answer_intent": "DETAIL",
+      "answer_family": "merge_policy",
+      "answer_intent": "COUNT",
       "completeness_missing_fields": [],
       "kind": "answer_diagnostics",
       "rewrite_applied": false,
       "selected_candidate_type": "base",
       "slots_present": [
-        "entity_names",
         "dry_run"
       ],
       "unsupported_claims_count": 0,
@@ -811,10 +744,10 @@
   ],
   "strategy": "SQL_FIRST_API_VERIFY",
   "timings": {
-    "answer_time": 0.0003819590201601386,
-    "execution_time": 0.00016070902347564697,
-    "planning_time": 0.000213916995562613,
-    "preprocessing_time": 0.0031389580108225346
+    "answer_time": 0.00035812496207654476,
+    "execution_time": 0.00021937512792646885,
+    "planning_time": 0.00019212509505450726,
+    "preprocessing_time": 0.002709250198677182
   },
   "tool_call_count": 1
 }

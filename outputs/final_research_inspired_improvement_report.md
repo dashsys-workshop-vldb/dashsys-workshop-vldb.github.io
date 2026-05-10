@@ -6,18 +6,18 @@ Status: **strict-score improvement measured**.
 
 | Metric | Baseline | Current | Delta |
 | --- | ---: | ---: | ---: |
-| strict_final_score | 0.649 | 0.6491 | 0.0001 |
-| strict_correctness | 0.6743 | 0.6743 | 0.0 |
-| estimated_tokens | 851.7714 | 831.4571 | -20.3143 |
-| runtime | 0.0102 | 0.0111 | 0.0009 |
+| strict_final_score | 0.649 | 0.6553 | 0.0063 |
+| strict_correctness | 0.6743 | 0.6805 | 0.0062 |
+| estimated_tokens | 851.7714 | 834.6 | -17.1714 |
+| runtime | 0.0102 | 0.012 | 0.0018 |
 | tool_calls | 1.4571 | 1.4571 | 0.0 |
 
 ## Gate Results
 
 - Packaged preferred strategy: `SQL_FIRST_API_VERIFY`
 - Strict score regression gate OK: True
-- Estimated-token overhead: -2.38% (gate OK: True)
-- Runtime overhead: 8.82% (gate OK: True)
+- Estimated-token overhead: -2.02% (gate OK: True)
+- Runtime overhead: 17.65% (gate OK: True)
 - Tool-call delta: 0.0 (gate OK: True)
 - Value retrieval budget: 250 ms (budget OK: True)
 - Value retrieval cache key algorithm: `sha256` (reproducible: True)
@@ -80,7 +80,7 @@ Status: **strict-score improvement measured**.
 - Unsafe answer analysis: rows=103; positive supportable=18
 - Supportable answer rewrite eval: safe rows=4; projected score=0.6552
 - LLM answer rewrite search: completed (recommendation: keep_shadow_only; model: openrouter/free; accepted: 0/6)
-- LLM baseline framework: generic_sdk_llm_baseline (backend: qwen2.5-32b-instruct; backend_type: openai_sdk; tool calling: True; strict: available; recommendation: keep_shadow_only)
+- LLM baseline framework: generic_sdk_llm_baseline (backend: qwen2.5-32b-instruct; backend_type: openai_sdk; tool calling: False; strict: available; recommendation: keep_shadow_only)
 - Endpoint-family tie-break v2 shadow: recommendation=keep_shadow_only; trial eligible rows=0
 - Live-mode readiness: diagnostic_only=True; dry-run dependent rows=34
 - Local-index fact coverage: requested rows=34; used rows=24

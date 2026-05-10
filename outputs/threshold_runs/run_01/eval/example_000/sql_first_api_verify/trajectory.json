@@ -1,0 +1,169 @@
+{
+  "answer_time": 1.7207989003509283e-05,
+  "api_call_count": 1,
+  "domain_type": "JOURNEY_CAMPAIGN",
+  "errors": [],
+  "estimated_tokens": 765,
+  "execution_time": 0.0017397499759681523,
+  "final_answer": "The journey \"Birthday Message\" has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "When was the journey 'Birthday Message' published?",
+  "planning_time": 0.0010110419825650752,
+  "preprocessing_time": 0.010550334001891315,
+  "query_id": "example_000",
+  "route_type": "SQL_THEN_API",
+  "runtime": 0.07634854200296104,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "journey_list",
+          "method": "GET",
+          "path": "/ajo/journey"
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_campaign"
+      ],
+      "confidence": 0.6499999999999999,
+      "domain_type": "JOURNEY_CAMPAIGN",
+      "kind": "route",
+      "reason": "Keyword routing using JOURNEY_CAMPAIGN:2, STATUS_MONITORING:1.",
+      "route_type": "SQL_THEN_API"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "journey_list",
+          "schema_registry_schema"
+        ],
+        "lookup_paths": [
+          "journey_campaign"
+        ],
+        "tables": [
+          "dim_campaign"
+        ]
+      },
+      "tokens": {
+        "domains": [
+          "journey_campaign"
+        ],
+        "quoted_entities": [
+          "Birthday Message"
+        ],
+        "statuses": [
+          "published"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 343,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/threshold_runs/run_01/eval/example_000/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 573
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve the answer. Fast path: journey_campaign_published+journey_by_name.",
+      "steps": [
+        {
+          "action": "sql",
+          "family": "journey_campaign_published",
+          "purpose": "Fast-path SQL grounding.",
+          "sql": "SELECT \"NAME\" AS campaign_name, \"LASTDEPLOYEDTIME\" AS published_time FROM \"dim_campaign\" LIMIT 50"
+        },
+        {
+          "action": "api",
+          "family": "journey_by_name",
+          "method": "GET",
+          "params": {
+            "filter": "name==Birthday Message"
+          },
+          "purpose": "API parameter template: journey_by_name.",
+          "url": "/ajo/journey"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 14.2787
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 2
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "row_count": 2,
+        "rows": {
+          "items": [
+            {
+              "campaign_name": "Birthday Message"
+            },
+            {
+              "campaign_name": "Gold Tier Welcome Email"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "sql": "SELECT \"NAME\" AS campaign_name, \"LASTDEPLOYEDTIME\" AS published_time FROM \"dim_campaign\" LIMIT 50",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "filter": "name==Birthday Message"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/ajo/journey",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "filter": "name==Birthday Message"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/ajo/journey"
+      },
+      "url": "/ajo/journey",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 1.7207989003509283e-05,
+    "execution_time": 0.0017397499759681523,
+    "planning_time": 0.0010110419825650752,
+    "preprocessing_time": 0.010550334001891315
+  },
+  "tool_call_count": 2
+}

@@ -1,0 +1,169 @@
+{
+  "answer_time": 1.2082979083061218e-05,
+  "api_call_count": 1,
+  "domain_type": "JOURNEY_CAMPAIGN",
+  "errors": [],
+  "estimated_tokens": 823,
+  "execution_time": 0.00043741700937971473,
+  "final_answer": "Based on the available evidence, there are 2 journeys found in the database: Birthday Message and Gold Tier Welcome Email. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "List all journeys",
+  "planning_time": 0.0002838340005837381,
+  "preprocessing_time": 0.000567584007512778,
+  "query_id": "example_002",
+  "route_type": "SQL_ONLY",
+  "runtime": 0.0012888329802080989,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "journey_list",
+          "method": "GET",
+          "path": "/ajo/journey"
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_campaign"
+      ],
+      "confidence": 0.5,
+      "domain_type": "JOURNEY_CAMPAIGN",
+      "kind": "route",
+      "reason": "Keyword routing using JOURNEY_CAMPAIGN:1.",
+      "route_type": "SQL_ONLY"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "journey_list",
+          "catalog_batches"
+        ],
+        "lookup_paths": [
+          "journey_campaign",
+          "batch"
+        ],
+        "tables": [
+          "dim_campaign"
+        ]
+      },
+      "rewrites": [
+        "important_plurals->singular"
+      ],
+      "tokens": {
+        "domains": [
+          "journey_campaign"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 350,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/robustness_runs/drop_gold_patterns/eval/example_002/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 586
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve the answer. Fast path: journey_campaign_list+journey_list.",
+      "steps": [
+        {
+          "action": "sql",
+          "family": "journey_campaign_list",
+          "purpose": "Fast-path SQL grounding.",
+          "sql": "SELECT CAMPAIGN.\"NAME\" AS CAMPAIGNNAME, CAMPAIGN.\"CAMPAIGNID\" AS CAMPAIGNID FROM \"dim_campaign\" AS CAMPAIGN"
+        },
+        {
+          "action": "api",
+          "family": "journey_list",
+          "method": "GET",
+          "params": {
+            "pageSize": "10"
+          },
+          "purpose": "API parameter template: journey_list.",
+          "url": "/ajo/journey"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 14.2814
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 2
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": true,
+        "ok": true,
+        "row_count": 2,
+        "rows": {
+          "items": [
+            {
+              "CAMPAIGNID": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+              "CAMPAIGNNAME": "Birthday Message"
+            },
+            {
+              "CAMPAIGNID": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+              "CAMPAIGNNAME": "Gold Tier Welcome Email"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "sql": "SELECT CAMPAIGN.\"NAME\" AS CAMPAIGNNAME, CAMPAIGN.\"CAMPAIGNID\" AS CAMPAIGNID FROM \"dim_campaign\" AS CAMPAIGN",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "pageSize": "10"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/ajo/journey",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "pageSize": "10"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/ajo/journey"
+      },
+      "url": "/ajo/journey",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 1.2082979083061218e-05,
+    "execution_time": 0.00043741700937971473,
+    "planning_time": 0.0002838340005837381,
+    "preprocessing_time": 0.000567584007512778
+  },
+  "tool_call_count": 2
+}

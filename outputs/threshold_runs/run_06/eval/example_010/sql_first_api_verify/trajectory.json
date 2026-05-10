@@ -1,0 +1,193 @@
+{
+  "answer_time": 1.0167015716433525e-05,
+  "api_call_count": 1,
+  "domain_type": "SEGMENT_AUDIENCE",
+  "errors": [],
+  "estimated_tokens": 1033,
+  "execution_time": 0.00042154197581112385,
+  "final_answer": "Based on the SQL query result, there are 0 XDM Experience Event schemas enabled for profile in your environment.",
+  "original_query": "Count the number of XDM Experience Event schemas that are enabled for profile.",
+  "planning_time": 0.00048270804109051824,
+  "preprocessing_time": 0.0005176249542273581,
+  "query_id": "example_010",
+  "route_type": "SQL_ONLY",
+  "runtime": 0.0015312500181607902,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences"
+        },
+        {
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions"
+        },
+        {
+          "id": "merge_policies",
+          "method": "GET",
+          "path": "/data/core/ups/config/mergePolicies"
+        },
+        {
+          "id": "segment_jobs",
+          "method": "GET",
+          "path": "/data/core/ups/segment/jobs"
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_collection",
+        "dim_segment",
+        "hkg_br_base_segment_used_by_dependent_segment",
+        "hkg_br_blueprint_collection",
+        "hkg_br_blueprint_property",
+        "hkg_br_collection_property"
+      ],
+      "confidence": 0.7999999999999999,
+      "domain_type": "SEGMENT_AUDIENCE",
+      "kind": "route",
+      "reason": "Keyword routing using SEGMENT_AUDIENCE:1, DATASET_SCHEMA:1, COUNT_AGGREGATION:2.",
+      "route_type": "SQL_ONLY"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "audit_events",
+          "audit_events_short"
+        ],
+        "lookup_paths": [
+          "schema_dataset",
+          "batch"
+        ],
+        "tables": [
+          "dim_blueprint",
+          "dim_collection"
+        ]
+      },
+      "rewrites": [
+        "important_plurals->singular"
+      ],
+      "tokens": {
+        "domains": [
+          "batch",
+          "schema_dataset",
+          "segment_audience"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 464,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/threshold_runs/run_06/eval/example_010/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 716
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Query family requires Adobe API evidence. Fast path: profile_enabled_experience_event_schema_count+profile_enabled_experience_event_schemas.",
+      "steps": [
+        {
+          "action": "sql",
+          "family": "profile_enabled_experience_event_schema_count",
+          "purpose": "Fast-path SQL grounding.",
+          "sql": "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS num_experience_event_profile_enabled_blueprints FROM \"dim_blueprint\" AS B WHERE LOWER(B.\"CLASS\") LIKE LOWER('%download%') AND B.\"ISPROFILEENABLED\" = TRUE"
+        },
+        {
+          "action": "api",
+          "family": "profile_enabled_experience_event_schemas",
+          "method": "GET",
+          "params": {
+            "filter": "class==ExperienceEvent;isProfileEnabled==true",
+            "limit": "25"
+          },
+          "purpose": "API parameter template: profile_enabled_experience_event_schemas.",
+          "url": "/data/foundation/schemaregistry/tenant/schemas"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 14.2511,
+          "lookup_path": 12.3624
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 2,
+          "lookup_path": 1
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": true,
+        "ok": true,
+        "row_count": 1,
+        "rows": {
+          "items": [
+            {
+              "num_experience_event_profile_enabled_blueprints": 0
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "sql": "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS num_experience_event_profile_enabled_blueprints FROM \"dim_blueprint\" AS B WHERE LOWER(B.\"CLASS\") LIKE LOWER('%download%') AND B.\"ISPROFILEENABLED\" = TRUE",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "filter": "class==ExperienceEvent;isProfileEnabled==true",
+        "limit": "25"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/schemaregistry/tenant/schemas",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "filter": "class==ExperienceEvent;isProfileEnabled==true",
+          "limit": "25"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/foundation/schemaregistry/tenant/schemas"
+      },
+      "url": "/data/foundation/schemaregistry/tenant/schemas",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 1.0167015716433525e-05,
+    "execution_time": 0.00042154197581112385,
+    "planning_time": 0.00048270804109051824,
+    "preprocessing_time": 0.0005176249542273581
+  },
+  "tool_call_count": 2
+}

@@ -8,6 +8,7 @@ Start here. Most older generated reports were consolidated or removed.
 - [llm_baseline_summary.md](llm_baseline_summary.md)
 - [accuracy_and_bottleneck_summary.md](accuracy_and_bottleneck_summary.md)
 - [visualization_summary.md](visualization_summary.md)
+- [overnight_autonomous_improvement_report.md](overnight_autonomous_improvement_report.md)
 - [report_index.md](report_index.md)
 
 ## Key Source-Of-Truth Reports
@@ -68,7 +69,7 @@ Regenerated report surfaces:
 ## Current Status
 
 - preferred_strategy: `SQL_FIRST_API_VERIFY`
-- packaged_strict_score: `0.6491`
+- packaged_strict_score: `0.6553`
 - best_isolated_score: `0.6558`
 - hidden_style: `48/48`
 - final_submission_ready: `True`

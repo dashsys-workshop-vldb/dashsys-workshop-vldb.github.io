@@ -116,7 +116,7 @@ Each card separates **status** from **runtime path** so experimental work is not
 | **Output** | `SQL/API execution plan` | Data emitted downstream. |
 | **Downstream effect** | `Grounds with local SQL first, then verifies with API where needed.` | Why the technique exists. |
 | **Affects** | `accuracy` | Accuracy, efficiency, safety, or observability. |
-| **Measured impact** | `answer_score_delta=0.3076, api_score_delta=0.9791, correctness_delta=0.0, runtime_delta=0.0112, sql_score_delta=0.9333, strict_score_delta=0.0, token_delta=831.4571, tool_call_d...` | Unavailable means no source report measured a delta. |
+| **Measured impact** | `answer_score_delta=0.3199, api_score_delta=0.9791, correctness_delta=0.0, runtime_delta=0.0119, sql_score_delta=0.9333, strict_score_delta=0.0, token_delta=834.6, tool_call_delt...` | Unavailable means no source report measured a delta. |
 
 **Why this status:** Best current strict score and correctness among packaged strategies.
 
@@ -270,7 +270,7 @@ Each card separates **status** from **runtime path** so experimental work is not
 | **Output** | `supportable answer candidates` | Data emitted downstream. |
 | **Downstream effect** | `Creates evidence-cited dry-run-safe answer rewrites.` | Why the technique exists. |
 | **Affects** | `accuracy, safety` | Accuracy, efficiency, safety, or observability. |
-| **Measured impact** | `strict_score_delta=0.0061` | Unavailable means no source report measured a delta. |
+| **Measured impact** | `strict_score_delta=-0.0001` | Unavailable means no source report measured a delta. |
 
 **Why this status:** Safe rows feed isolated trials; not final promoted behavior.
 
@@ -620,7 +620,7 @@ Each card separates **status** from **runtime path** so experimental work is not
 | **Output** | `safe/unsafe rewrite labels` | Data emitted downstream. |
 | **Downstream effect** | `Validates claim citations, dry-run unavailable wording, and SQL/API hash invariance.` | Why the technique exists. |
 | **Affects** | `accuracy, safety, observability` | Accuracy, efficiency, safety, or observability. |
-| **Measured impact** | `strict_score_delta=0.0003` | Unavailable means no source report measured a delta. |
+| **Measured impact** | `strict_score_delta=-0.0059` | Unavailable means no source report measured a delta. |
 
 **Why this status:** Safe rows feed isolated trials only.
 
@@ -662,6 +662,6 @@ Each card separates **status** from **runtime path** so experimental work is not
 | **Output** | `shadow baseline trajectories and strict comparison reports` | Data emitted downstream. |
 | **Downstream effect** | `Provider-agnostic SDK baseline for OpenAI-compatible and Anthropic LLM comparisons.` | Why the technique exists. |
 | **Affects** | `safety, observability` | Accuracy, efficiency, safety, or observability. |
-| **Measured impact** | `strict_score=-0.0151, recommendation=keep_shadow_only` | Unavailable means no source report measured a delta. |
+| **Measured impact** | `strict_score=-0.0216, recommendation=keep_shadow_only` | Unavailable means no source report measured a delta. |
 
 **Why this status:** Current SDK LLM baseline is a comparison framework; deterministic SQL_FIRST_API_VERIFY remains packaged.

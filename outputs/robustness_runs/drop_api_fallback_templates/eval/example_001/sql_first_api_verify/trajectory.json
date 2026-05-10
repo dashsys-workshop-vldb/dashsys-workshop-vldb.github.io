@@ -1,0 +1,174 @@
+{
+  "answer_time": 1.8208986148238182e-05,
+  "api_call_count": 1,
+  "domain_type": "JOURNEY_CAMPAIGN",
+  "errors": [],
+  "estimated_tokens": 972,
+  "execution_time": 0.0006316250073723495,
+  "final_answer": "There are 2 inactive campaigns: Birthday Message (last updated 2026-03-31) and Gold Tier Welcome Email (last updated 2026-03-31). Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Give me inactive journeys",
+  "planning_time": 0.00035266700433567166,
+  "preprocessing_time": 0.0005002079997211695,
+  "query_id": "example_001",
+  "route_type": "SQL_THEN_API",
+  "runtime": 0.0014530420303344727,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "journey_list",
+          "method": "GET",
+          "path": "/ajo/journey"
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_campaign"
+      ],
+      "confidence": 0.6499999999999999,
+      "domain_type": "JOURNEY_CAMPAIGN",
+      "kind": "route",
+      "reason": "Keyword routing using JOURNEY_CAMPAIGN:2, STATUS_MONITORING:1.",
+      "route_type": "SQL_THEN_API"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "journey_list"
+        ],
+        "lookup_paths": [
+          "journey_campaign"
+        ],
+        "tables": [
+          "dim_campaign"
+        ]
+      },
+      "rewrites": [
+        "important_plurals->singular"
+      ],
+      "tokens": {
+        "domains": [
+          "journey_campaign"
+        ],
+        "statuses": [
+          "inactive"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 350,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/robustness_runs/drop_api_fallback_templates/eval/example_001/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 585
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve the answer. Fast path: journey_campaign_inactive+journey_inactive.",
+      "steps": [
+        {
+          "action": "sql",
+          "family": "journey_campaign_inactive",
+          "purpose": "Fast-path SQL grounding.",
+          "sql": "SELECT J.\"CAMPAIGNID\" AS campaign_id, J.\"NAME\" AS campaign_name, J.\"STATE\" AS campaign_state, J.\"UPDATEDTIME\" AS updated_time FROM \"dim_campaign\" AS J WHERE LOWER(CAST(J.\"STATE\" AS VARCHAR)) NOT IN ('deployed', 'redeployed') LIMIT 50"
+        },
+        {
+          "action": "api",
+          "family": "journey_inactive",
+          "method": "GET",
+          "params": {
+            "filter": "status!=live"
+          },
+          "purpose": "API parameter template: journey_inactive.",
+          "url": "/ajo/journey"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 14.2654
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 2
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "row_count": 2,
+        "rows": {
+          "items": [
+            {
+              "campaign_id": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+              "campaign_name": "Birthday Message",
+              "campaign_state": "updated",
+              "updated_time": "2026-03-31T06:07:32.838462639Z"
+            },
+            {
+              "campaign_id": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+              "campaign_name": "Gold Tier Welcome Email",
+              "campaign_state": "created",
+              "updated_time": "2026-03-31T15:35:12.042188843Z"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "sql": "SELECT J.\"CAMPAIGNID\" AS campaign_id, J.\"NAME\" AS campaign_name, J.\"STATE\" AS campaign_state, J.\"UPDATEDTIME\" AS updated_time FROM \"dim_campaign\" AS J WHERE LOWER(CAST(J.\"STATE\" AS VARCHAR)) NOT IN ('deployed', 'redeployed') LIMIT 50",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "filter": "status!=live"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/ajo/journey",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "filter": "status!=live"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/ajo/journey"
+      },
+      "url": "/ajo/journey",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 1.8208986148238182e-05,
+    "execution_time": 0.0006316250073723495,
+    "planning_time": 0.00035266700433567166,
+    "preprocessing_time": 0.0005002079997211695
+  },
+  "tool_call_count": 2
+}

@@ -1,0 +1,239 @@
+{
+  "api_call_count": 1,
+  "domain_type": "DATASET_SCHEMA",
+  "errors": [],
+  "estimated_tokens": 1648,
+  "final_answer": "Based on the evidence provided, 2 datasets have been ingested using the same schema. These datasets use \"Journey Inbound External Segment Profile Schema\". Live api verification was not executed because adobe credentials are unavailable.",
+  "original_query": "How many datasets have been ingested using the same schema in the prod sandbox?",
+  "query_id": "probe_6",
+  "route_type": "SQL_THEN_API",
+  "runtime": 0.08263449999503791,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "common_params": {
+            "limit": 50
+          },
+          "domains": [
+            "DATASET_SCHEMA"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "dataset metadata"
+            }
+          ],
+          "id": "catalog_datasets",
+          "method": "GET",
+          "path": "/data/foundation/catalog/dataSets",
+          "path_params": [],
+          "risk_notes": [
+            "Catalog responses can be large; request only needed fields when supported."
+          ],
+          "use_when": "List datasets and dataset metadata."
+        },
+        {
+          "common_params": {},
+          "domains": [
+            "DATASET_SCHEMA",
+            "PROPERTY_FIELD"
+          ],
+          "examples": [
+            {
+              "path_params": {
+                "schema_id": "..."
+              },
+              "query": "schema by id"
+            }
+          ],
+          "id": "schema_registry_schema",
+          "method": "GET",
+          "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}",
+          "path_params": [
+            "schema_id"
+          ],
+          "risk_notes": [
+            "Requires a schema ID; do not call with an unresolved placeholder."
+          ],
+          "use_when": "Fetch schema details when a concrete schema ID is known."
+        },
+        {
+          "common_params": {
+            "limit": 25
+          },
+          "domains": [
+            "DATASET_SCHEMA"
+          ],
+          "examples": [
+            {
+              "query": "profile-enabled ExperienceEvent schemas"
+            }
+          ],
+          "id": "schema_registry_schemas",
+          "method": "GET",
+          "path": "/data/foundation/schemaregistry/tenant/schemas",
+          "path_params": [],
+          "risk_notes": [
+            "Schema-registry filters vary by endpoint version."
+          ],
+          "use_when": "List tenant schemas or filter schema registry metadata."
+        },
+        {
+          "common_params": {
+            "limit": 25
+          },
+          "domains": [
+            "DATASET_SCHEMA"
+          ],
+          "examples": [
+            {
+              "query": "schema named weRetail: Customer Actions"
+            }
+          ],
+          "id": "schemas_short",
+          "method": "GET",
+          "path": "/schemas",
+          "path_params": [],
+          "risk_notes": [
+            "Shorthand path is retained for benchmark compatibility."
+          ],
+          "use_when": "Gold-example shorthand for schema list/name lookup."
+        },
+        {
+          "common_params": {
+            "limit": 20
+          },
+          "domains": [
+            "DESTINATION_DATAFLOW",
+            "DATASET_SCHEMA",
+            "STATUS_MONITORING"
+          ],
+          "examples": [
+            {
+              "query": "new destinations in last 3 months"
+            }
+          ],
+          "id": "audit_events",
+          "method": "GET",
+          "path": "/data/foundation/audit/events",
+          "path_params": [],
+          "risk_notes": [],
+          "use_when": "Audit events for destination/dataset/entity changes."
+        }
+      ],
+      "candidate_tables": [
+        "dim_blueprint",
+        "dim_collection",
+        "hkg_br_blueprint_collection",
+        "hkg_br_blueprint_property",
+        "hkg_br_collection_property",
+        "hkg_br_collection_segment",
+        "hkg_br_source_collection"
+      ],
+      "confidence": 0.6499999999999999,
+      "domain_type": "DATASET_SCHEMA",
+      "kind": "route",
+      "reason": "Keyword routing using DATASET_SCHEMA:2, COUNT_AGGREGATION:1.",
+      "route_type": "SQL_THEN_API"
+    },
+    {
+      "estimated_tokens": 3205,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/probe/6/metadata.json"
+    },
+    {
+      "kind": "plan",
+      "rationale": "Use SQL first for entity grounding, then API only for live/platform state or status verification.",
+      "steps": [
+        {
+          "action": "sql",
+          "allow_full_result": false,
+          "headers": {},
+          "method": null,
+          "params": {},
+          "purpose": "Ground names/IDs in local snapshot before API verification.",
+          "sql": "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1",
+          "url": null,
+          "warnings": []
+        },
+        {
+          "action": "api",
+          "allow_full_result": false,
+          "headers": {},
+          "method": "GET",
+          "params": {
+            "limit": "25",
+            "property": "schema.name"
+          },
+          "purpose": "API parameter template: datasets_by_schema.",
+          "sql": null,
+          "url": "/data/foundation/catalog/dataSets",
+          "warnings": []
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": true,
+        "ok": true,
+        "original_sql": "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1",
+        "row_count": 1,
+        "rows": [
+          {
+            "blueprint_id": "b591e935cfb3d52d3dc0c9e551e927d067b35d4b4b8af8bf",
+            "blueprint_name": "Journey Inbound External Segment Profile Schema",
+            "collection_count": 2
+          }
+        ],
+        "sql": "SELECT * FROM (SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1) AS _dashagent_limited_result LIMIT 200"
+      },
+      "sql": "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "25",
+        "property": "schema.name"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/catalog/dataSets",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "headers": {},
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "25",
+          "property": "schema.name"
+        },
+        "result_preview": null,
+        "status_code": null,
+        "url": "https://platform.adobe.io/data/foundation/catalog/dataSets"
+      },
+      "url": "/data/foundation/catalog/dataSets",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "tool_call_count": 2
+}

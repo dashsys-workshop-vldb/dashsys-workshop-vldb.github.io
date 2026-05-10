@@ -1,0 +1,190 @@
+{
+  "answer_time": 9.499955922365189e-06,
+  "api_call_count": 1,
+  "domain_type": "DATASET_SCHEMA",
+  "errors": [],
+  "estimated_tokens": 1084,
+  "execution_time": 0.0004324170295149088,
+  "final_answer": "Based on the evidence provided, no datasets use the schema 'hkg_adls_profile_count_history'. The SQL query returned zero results, and live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "List all datasets that use the schema 'hkg_adls_profile_count_history'.",
+  "planning_time": 0.00032462499802932143,
+  "preprocessing_time": 0.0006802080315537751,
+  "query_id": "example_007",
+  "route_type": "SQL_ONLY",
+  "runtime": 0.0017778330366127193,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "catalog_datasets",
+          "method": "GET",
+          "path": "/data/foundation/catalog/dataSets"
+        },
+        {
+          "id": "schema_registry_schema",
+          "method": "GET",
+          "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}"
+        },
+        {
+          "id": "schema_registry_schemas",
+          "method": "GET",
+          "path": "/data/foundation/schemaregistry/tenant/schemas"
+        },
+        {
+          "id": "schemas_short",
+          "method": "GET",
+          "path": "/schemas"
+        },
+        {
+          "id": "audit_events",
+          "method": "GET",
+          "path": "/data/foundation/audit/events"
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_collection",
+        "dim_segment",
+        "hkg_br_base_segment_used_by_dependent_segment",
+        "hkg_br_blueprint_collection",
+        "hkg_br_blueprint_property",
+        "hkg_br_collection_property"
+      ],
+      "confidence": 0.7999999999999999,
+      "domain_type": "DATASET_SCHEMA",
+      "kind": "route",
+      "reason": "Keyword routing using SEGMENT_AUDIENCE:1, DATASET_SCHEMA:2, COUNT_AGGREGATION:1.",
+      "route_type": "SQL_ONLY"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "catalog_batches",
+          "catalog_datasets"
+        ],
+        "lookup_paths": [
+          "schema_dataset",
+          "audit"
+        ],
+        "tables": [
+          "dim_blueprint",
+          "dim_collection"
+        ]
+      },
+      "rewrites": [
+        "important_plurals->singular"
+      ],
+      "tokens": {
+        "domains": [
+          "batch",
+          "schema_dataset",
+          "segment_audience"
+        ],
+        "quoted_entities": [
+          "hkg_adls_profile_count_history"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 854,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/threshold_runs/run_05/eval/example_007/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 1178
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Query family requires Adobe API evidence. Fast path: blueprint_collection_list+datasets_by_schema.",
+      "steps": [
+        {
+          "action": "sql",
+          "family": "blueprint_collection_list",
+          "purpose": "Fast-path SQL grounding.",
+          "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_collection\" AS BC JOIN \"dim_collection\" AS C ON BC.\"COLLECTIONID\" = C.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS B ON BC.\"BLUEPRINTID\" = B.\"BLUEPRINTID\" WHERE B.\"NAME\" = 'hkg_adls_profile_count_history'"
+        },
+        {
+          "action": "api",
+          "family": "datasets_by_schema",
+          "method": "GET",
+          "params": {
+            "filter": "schemaName==\"hkg_adls_profile_count_history\"",
+            "limit": "3"
+          },
+          "purpose": "API parameter template: datasets_by_schema.",
+          "url": "/data/foundation/catalog/dataSets"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 14.2513
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 2
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": true,
+        "ok": true,
+        "row_count": 0
+      },
+      "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_collection\" AS BC JOIN \"dim_collection\" AS C ON BC.\"COLLECTIONID\" = C.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS B ON BC.\"BLUEPRINTID\" = B.\"BLUEPRINTID\" WHERE B.\"NAME\" = 'hkg_adls_profile_count_history'",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "filter": "schemaName==\"hkg_adls_profile_count_history\"",
+        "limit": "3"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/catalog/dataSets",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "filter": "schemaName==\"hkg_adls_profile_count_history\"",
+          "limit": "3"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/foundation/catalog/dataSets"
+      },
+      "url": "/data/foundation/catalog/dataSets",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 9.499955922365189e-06,
+    "execution_time": 0.0004324170295149088,
+    "planning_time": 0.00032462499802932143,
+    "preprocessing_time": 0.0006802080315537751
+  },
+  "tool_call_count": 2
+}
