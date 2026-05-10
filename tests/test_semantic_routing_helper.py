@@ -22,7 +22,7 @@ from dashagent.semantic_routing_helper import (
     run_semantic_routing_helper,
     validate_semantic_routing_hint,
 )
-from scripts.run_llm_semantic_router_shadow_eval import _build_report, run_llm_semantic_router_shadow_eval
+from scripts.run_llm_semantic_router_shadow_eval import _build_report, _row_from_trajectory, run_llm_semantic_router_shadow_eval
 from scripts.package_query_outputs import NON_SUBMISSION_OUTPUT_DIRS
 
 
@@ -420,6 +420,44 @@ def test_semantic_shadow_report_includes_normalization_metrics(tiny_project: Con
     assert len(report["valid_hint_examples"]) == 1
     assert len(report["rejected_hint_examples"]) == 1
     assert report["recommendation"] == "keep_shadow_only"
+
+
+def test_shadow_report_row_prefers_full_nlp_helper_over_truncated_checkpoint(tmp_path: Path):
+    trajectory = {
+        "query_id": "example_003",
+        "original_query": "List journeys",
+        "runtime": 0.01,
+        "checkpoints": [
+            {
+                "checkpoint_id": "checkpoint_llm_semantic_routing_helper",
+                "output": {
+                    "helper_called": True,
+                    "helper_valid": True,
+                    "helper_likely_domain": None,
+                    "helper_route_suggestion": None,
+                    "helper_answer_intent": None,
+                    "truncated_fields": 16,
+                },
+            }
+        ],
+        "steps": [
+            {
+                "kind": "nlp",
+                "llm_semantic_routing_helper": {
+                    "helper_called": True,
+                    "helper_valid": True,
+                    "helper_likely_domain": "journey_campaign",
+                    "helper_route_suggestion": "SQL_ONLY",
+                    "helper_answer_intent": "LIST",
+                    "normalization_actions": [],
+                },
+            }
+        ],
+    }
+    row = _row_from_trajectory({"prompt_id": "example_003", "prompt": "List journeys"}, trajectory, 0.01, tmp_path)
+    assert row["helper_likely_domain"] == "journey_campaign"
+    assert row["helper_route_suggestion"] == "SQL_ONLY"
+    assert row["helper_answer_intent"] == "LIST"
 
 
 def _checkpoint(trajectory: dict, checkpoint_id: str) -> dict:

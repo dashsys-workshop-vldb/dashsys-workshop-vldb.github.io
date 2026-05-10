@@ -346,10 +346,25 @@ def _render_markdown(report: dict[str, Any]) -> str:
 
 
 def _semantic_checkpoint(trajectory: dict[str, Any]) -> dict[str, Any]:
+    step_payload = _semantic_step_payload(trajectory)
+    checkpoint_payload: dict[str, Any] = {}
     for checkpoint in trajectory.get("checkpoints") or []:
         if isinstance(checkpoint, dict) and checkpoint.get("checkpoint_id") == "checkpoint_llm_semantic_routing_helper":
             output = checkpoint.get("output")
-            return output if isinstance(output, dict) else {}
+            checkpoint_payload = output if isinstance(output, dict) else {}
+            break
+    if step_payload:
+        return {**checkpoint_payload, **step_payload}
+    return checkpoint_payload
+
+
+def _semantic_step_payload(trajectory: dict[str, Any]) -> dict[str, Any]:
+    for step in trajectory.get("steps") or []:
+        if not isinstance(step, dict) or step.get("kind") != "nlp":
+            continue
+        helper = step.get("llm_semantic_routing_helper")
+        if isinstance(helper, dict):
+            return helper
     return {}
 
 
