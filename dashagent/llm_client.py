@@ -99,6 +99,7 @@ class NoOpLLMClient(LLMClient):
             "provider": self.provider_name(),
             "model": self.model_name(),
             "backend_type": "none",
+            "sdk_path_used": False,
             "content": "",
             "tool_calls": [],
             "message": {},
@@ -120,7 +121,6 @@ class OpenAILLMClient(LLMClient):
         self.model = model or os.getenv("OPENAI_MODEL", DEFAULT_OPENAI_MODEL)
         self.timeout_seconds = timeout_seconds
         self.base_url = (base_url or os.getenv("OPENAI_BASE_URL") or DEFAULT_OPENAI_BASE_URL).rstrip("/")
-        self.endpoint = os.getenv("OPENAI_CHAT_COMPLETIONS_URL") or f"{self.base_url}/chat/completions"
         self.provider = "openai"
         self.missing_key_reason = "OPENAI_API_KEY is not set"
         self._sdk_client: Any | None = None
@@ -183,6 +183,7 @@ class OpenAILLMClient(LLMClient):
                 "provider": self.provider_name(),
                 "model": self.model_name(),
                 "backend_type": "openai_sdk",
+                "sdk_path_used": True,
                 "content": "",
                 "tool_calls": [],
                 "message": {},
@@ -212,6 +213,7 @@ class OpenAILLMClient(LLMClient):
                 "base_url": self.base_url,
                 "transport": transport,
                 "backend_type": "openai_sdk",
+                "sdk_path_used": True,
                 "content": content,
                 "tool_calls": tool_calls,
                 "message": compact_preview(message, 2000),
@@ -258,7 +260,6 @@ class OpenRouterLLMClient(OpenAILLMClient):
         self.timeout_seconds = timeout_seconds
         root = (base_url or os.getenv("OPENROUTER_BASE_URL") or os.getenv("OPENAI_BASE_URL") or DEFAULT_OPENROUTER_BASE_URL).rstrip("/")
         self.base_url = root
-        self.endpoint = f"{root}/chat/completions"
         self.provider = "openrouter"
         self.missing_key_reason = "OPENROUTER_API_KEY is not set"
         self._sdk_client = None
@@ -337,6 +338,7 @@ class AnthropicLLMClient(LLMClient):
                 "base_url": self.base_url,
                 "transport": "anthropic_sdk",
                 "backend_type": "anthropic_sdk",
+                "sdk_path_used": True,
                 "content": "",
                 "tool_calls": [],
                 "message": {},
@@ -358,6 +360,7 @@ class AnthropicLLMClient(LLMClient):
                 "base_url": self.base_url,
                 "transport": "anthropic_sdk",
                 "backend_type": "anthropic_sdk",
+                "sdk_path_used": True,
                 "content": content,
                 "tool_calls": tool_calls,
                 "message": compact_preview(body, 2000),

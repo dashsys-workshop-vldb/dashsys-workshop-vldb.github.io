@@ -1,5 +1,5 @@
 {
-  "answer_time": 0.0006182920187711716,
+  "answer_time": 0.0004649159964174032,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -9,13 +9,13 @@
       "effect": "preserves the original query for reproducibility",
       "efficiency_role": "starts one trace without extra tool calls",
       "output": {
-        "query": "How many batches have status 'success'?",
-        "query_id": "llm_controller_3295d111090e",
+        "query": "Show me the details of the tag named 'cool'.",
+        "query_id": "show_me_the_details_of_the_tag_named_cool",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-10T05:55:48.943808+00:00"
+      "timestamp": "2026-05-10T01:16:48.719464+00:00"
     },
     {
       "checkpoint_id": "checkpoint_00_prompt_router",
@@ -24,19 +24,19 @@
       "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
       "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
       "input_summary": {
-        "query": "How many batches have status 'success'?"
+        "query": "Show me the details of the tag named 'cool'."
       },
       "output": {
         "confidence": 0.9,
         "matched_rules": {
           "items": [
-            "api_only:batch"
+            "api_only:tag"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "mode": "API_ONLY",
-        "reason": "API/platform family keyword(s): batch, batches.",
+        "reason": "API/platform family keyword(s): tag.",
         "recommended_strategy": "SQL_FIRST_API_VERIFY",
         "requires_api": true,
         "requires_database": false,
@@ -45,7 +45,7 @@
       },
       "stage": "prompt routing",
       "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-10T05:55:48.943844+00:00"
+      "timestamp": "2026-05-10T01:16:48.719495+00:00"
     },
     {
       "checkpoint_id": "checkpoint_simple_prompt_gate",
@@ -54,17 +54,17 @@
       "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
       "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
       "input_summary": {
-        "query": "How many batches have status 'success'?"
+        "query": "Show me the details of the tag named 'cool'."
       },
       "output": {
         "confidence": 0.9,
         "is_simple": false,
-        "reason": "API/platform family keyword(s): batch, batches.",
+        "reason": "API/platform family keyword(s): tag.",
         "suggested_action": "USE_DATA_PIPELINE"
       },
       "stage": "input routing",
       "technique": "simple prompt gate",
-      "timestamp": "2026-05-10T05:55:48.943860+00:00"
+      "timestamp": "2026-05-10T01:16:48.719509+00:00"
     },
     {
       "checkpoint_id": "checkpoint_02_query_normalization",
@@ -73,22 +73,15 @@
       "effect": "creates matching-friendly text while preserving the original query",
       "efficiency_role": "reduces repeated fuzzy matching work downstream",
       "input_summary": {
-        "query": "How many batches have status 'success'?"
+        "query": "Show me the details of the tag named 'cool'."
       },
       "output": {
-        "matching_text": "how many batch have status 'success'?",
-        "normalized_query": "How many batches have status 'success'?",
-        "rewrites": {
-          "items": [
-            "important_plurals->singular"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        }
+        "matching_text": "show me the details of the tag named 'cool'.",
+        "normalized_query": "Show me the details of the tag named 'cool'."
       },
       "stage": "normalization",
       "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-10T05:55:48.943907+00:00"
+      "timestamp": "2026-05-10T01:16:48.719549+00:00"
     },
     {
       "checkpoint_id": "checkpoint_03_query_tokens",
@@ -97,26 +90,19 @@
       "effect": "extracts reusable query fields for routing, planning, and answers",
       "efficiency_role": "avoids reparsing the query in later modules",
       "input_summary": {
-        "normalized_query": "How many batches have status 'success'?"
+        "normalized_query": "Show me the details of the tag named 'cool'."
       },
       "output": {
         "domains": {
           "items": [
-            "batch"
+            "tags"
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "quoted_entities": {
           "items": [
-            "success"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "statuses": {
-          "items": [
-            "success"
+            "cool"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -124,7 +110,7 @@
       },
       "stage": "tokenization",
       "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-10T05:55:48.943948+00:00"
+      "timestamp": "2026-05-10T01:16:48.719591+00:00"
     },
     {
       "checkpoint_id": "checkpoint_04_relevance_scoring",
@@ -136,21 +122,14 @@
         "tokens": {
           "domains": {
             "items": [
-              "batch"
+              "tags"
             ],
             "total_items": 1,
             "truncated_items": false
           },
           "quoted_entities": {
             "items": [
-              "success"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "statuses": {
-            "items": [
-              "success"
+              "cool"
             ],
             "total_items": 1,
             "truncated_items": false
@@ -160,14 +139,14 @@
       "output": {
         "top_answer_families": {
           "items": [
-            "batch"
+            "tags"
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "top_apis": {
           "items": [
-            "export_batch_failed"
+            "unified_tag_categories"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -175,7 +154,7 @@
       },
       "stage": "context selection",
       "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-10T05:55:48.944406+00:00"
+      "timestamp": "2026-05-10T01:16:48.720137+00:00"
     },
     {
       "checkpoint_id": "checkpoint_value_entity_retrieval",
@@ -188,100 +167,32 @@
           "items": [
             {
               "kind": "quoted_entity",
-              "text": "success"
+              "text": "cool"
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         }
       },
       "metrics": {
         "budget_exceeded": true,
         "match_count": 0,
-        "retrieval_ms": 12.68
+        "retrieval_ms": 11.664
       },
       "output": {
         "active": true,
         "cache_hit": true,
         "cache_key": "a2f6025ad4340fb6",
         "cache_key_algorithm": "sha256",
-        "cache_path": "[REDACTED]/outputs/cache/value_index_a2f6025ad4340fb6.json",
+        "cache_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/cache/value_index_a2f6025ad4340fb6.json",
         "cache_reproducible": true,
         "match_count": 0,
-        "query_value_count": 2,
+        "query_value_count": 1,
         "truncated_fields": 8
       },
       "stage": "query understanding",
       "technique": "CHESS-style value/entity retrieval",
-      "timestamp": "2026-05-10T05:55:48.945397+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_query_decomposition",
-      "correctness_role": "helps SQL/API planning preserve requested constraints",
-      "duration_ms": 0.0,
-      "effect": "breaks complex prompts into entities, filters, joins, and answer-shape constraints",
-      "efficiency_role": "skips simple queries and uses no LLM/tool calls",
-      "input_summary": {
-        "query": "How many batches have status 'success'?",
-        "tokens": {
-          "domains": {
-            "items": [
-              "batch"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "quoted_entities": {
-            "items": [
-              "success"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "statuses": {
-            "items": [
-              "success"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          }
-        }
-      },
-      "output": {
-        "active": true,
-        "expected_answer_shape": "scalar_count",
-        "required_aggregations": {
-          "items": [
-            "count"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "required_entities": {
-          "items": [
-            "success"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "required_filters": {
-          "items": [
-            "success"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "sub_questions": {
-          "items": [
-            "Ground named entities and identifiers."
-          ],
-          "total_items": 3,
-          "truncated_items": false
-        }
-      },
-      "stage": "query understanding",
-      "technique": "DIN-SQL-style deterministic query decomposition",
-      "timestamp": "2026-05-10T05:55:48.945409+00:00"
+      "timestamp": "2026-05-10T01:16:48.722492+00:00"
     },
     {
       "checkpoint_id": "checkpoint_05_query_analysis",
@@ -290,27 +201,27 @@
       "effect": "computes shared query understanding once",
       "efficiency_role": "avoids repeated template and routing analysis",
       "input_summary": {
-        "domain_type": "COUNT_AGGREGATION",
+        "domain_type": "UNKNOWN",
         "route_type": "API_ONLY"
       },
       "output": {
-        "answer_family": "batch",
+        "answer_family": "tags",
         "api_templates": {
           "items": [
-            "successful_batch_count"
+            "tag_details_by_id"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "confidence": 0.75,
-        "domain_type": "COUNT_AGGREGATION",
-        "fast_path": "successful_batch_count",
+        "confidence": 0.3,
+        "domain_type": "UNKNOWN",
+        "fast_path": "tag_details_by_id",
         "route_type": "API_ONLY",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "routing",
       "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-10T05:55:48.945414+00:00"
+      "timestamp": "2026-05-10T01:16:48.722508+00:00"
     },
     {
       "checkpoint_id": "checkpoint_06_lookup_path",
@@ -319,30 +230,30 @@
       "effect": "predicts the relevant table/join/API path",
       "efficiency_role": "filters unrelated schema and endpoint candidates",
       "input_summary": {
-        "answer_family": "batch",
-        "domain_type": "COUNT_AGGREGATION"
+        "answer_family": "tags",
+        "domain_type": "UNKNOWN"
       },
       "output": {
         "api_families": {
           "items": [
-            "batch_list"
+            "tag_count"
           ],
           "total_items": 5,
           "truncated_items": true
         },
         "api_mode": "required",
-        "family": "batch",
+        "family": "tags",
         "required_ids": {
           "items": [
-            "batch_id"
+            "tag_id"
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         }
       },
       "stage": "path prediction",
       "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-10T05:55:48.945417+00:00"
+      "timestamp": "2026-05-10T01:16:48.722512+00:00"
     },
     {
       "checkpoint_id": "checkpoint_07_context_card",
@@ -352,19 +263,19 @@
       "efficiency_role": "limits context size for non-baseline strategies",
       "input_summary": {
         "broad_context": false,
-        "lookup_path": "batch"
+        "lookup_path": "tags"
       },
       "output": {
-        "estimated_metadata_tokens": 1027,
-        "prompt_tokens": 1715,
+        "estimated_metadata_tokens": 990,
+        "prompt_tokens": 1659,
         "selected_apis": {
           "items": [
-            "catalog_batches"
+            "unified_tag_detail"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "selected_card_name": "batch",
+        "selected_card_name": "tags",
         "selected_columns": {
           "br_campaign_segment": {
             "items": [
@@ -412,7 +323,7 @@
       },
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-10T05:55:48.947501+00:00"
+      "timestamp": "2026-05-10T01:16:48.725562+00:00"
     },
     {
       "checkpoint_id": "checkpoint_08_candidate_plans",
@@ -434,13 +345,13 @@
         },
         "reason_selected": "highest pre-execution validation/relevance/cost score",
         "scores": {
-          "generic_sql_first": 12.3817
+          "generic_sql_first": 12.3858
         },
         "selected_plan": "generic_sql_first"
       },
       "stage": "planning",
       "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-10T05:55:48.947681+00:00"
+      "timestamp": "2026-05-10T01:16:48.725765+00:00"
     },
     {
       "checkpoint_id": "checkpoint_09_plan_optimization",
@@ -468,7 +379,7 @@
       },
       "stage": "optimization",
       "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-10T05:55:48.947692+00:00"
+      "timestamp": "2026-05-10T01:16:48.725774+00:00"
     },
     {
       "checkpoint_id": "checkpoint_10_evidence_policy",
@@ -477,13 +388,13 @@
       "effect": "decides when API evidence is required, optional, or unnecessary",
       "efficiency_role": "skips or caps API calls when SQL evidence is enough",
       "input_summary": {
-        "answer_family": "batch",
+        "answer_family": "tags",
         "route_type": "API_ONLY"
       },
       "output": {
         "allowed_api_families": {
           "items": [
-            "successful_batch_count"
+            "tag_details_by_id"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -494,7 +405,7 @@
       },
       "stage": "evidence policy",
       "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-10T05:55:48.947695+00:00"
+      "timestamp": "2026-05-10T01:16:48.725778+00:00"
     },
     {
       "checkpoint_id": "checkpoint_11_call_budget",
@@ -507,14 +418,10 @@
           "items": [
             {
               "action": "api",
-              "family": "successful_batch_count",
+              "family": "tag_details_by_id",
               "method": "GET",
-              "params": {
-                "limit": "10",
-                "status": "success"
-              },
-              "purpose": "API parameter template: successful_batch_count.",
-              "url": "/data/foundation/catalog/batches"
+              "purpose": "API parameter template: tag_details_by_id.",
+              "url": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818"
             }
           ],
           "total_items": 1,
@@ -531,7 +438,7 @@
       },
       "stage": "efficiency control",
       "technique": "tool-call budgeting",
-      "timestamp": "2026-05-10T05:55:48.947712+00:00"
+      "timestamp": "2026-05-10T01:16:48.725789+00:00"
     },
     {
       "checkpoint_id": "checkpoint_12_validation",
@@ -544,14 +451,10 @@
           "items": [
             {
               "action": "api",
-              "family": "successful_batch_count",
+              "family": "tag_details_by_id",
               "method": "GET",
-              "params": {
-                "limit": "10",
-                "status": "success"
-              },
-              "purpose": "API parameter template: successful_batch_count.",
-              "url": "/data/foundation/catalog/batches"
+              "purpose": "API parameter template: tag_details_by_id.",
+              "url": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818"
             }
           ],
           "total_items": 1,
@@ -576,7 +479,7 @@
       },
       "stage": "validation",
       "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-10T05:55:48.949833+00:00"
+      "timestamp": "2026-05-10T01:16:48.727687+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -597,18 +500,14 @@
               "ok": false,
               "result_preview": {
                 "dry_run": true,
-                "endpoint": "/data/foundation/catalog/batches",
+                "endpoint": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818",
                 "error": "Adobe credentials unavailable; API call not executed.",
                 "method": "GET",
                 "ok": false,
-                "params": {
-                  "limit": "10",
-                  "status": "success"
-                },
                 "result_preview": null,
-                "url": "https://platform.adobe.io/data/foundation/catalog/batches"
+                "url": "https://platform.adobe.io/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818"
               },
-              "url": "/data/foundation/catalog/batches"
+              "url": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818"
             }
           ],
           "total_items": 1,
@@ -619,7 +518,7 @@
       },
       "stage": "execution",
       "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-10T05:55:48.949849+00:00"
+      "timestamp": "2026-05-10T01:16:48.727698+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -635,7 +534,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-10T05:55:48.949853+00:00"
+      "timestamp": "2026-05-10T01:16:48.727702+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -647,7 +546,7 @@
         "tool_result_count": 1
       },
       "output": {
-        "answer_intent": "COUNT",
+        "answer_intent": "DETAIL",
         "discrepancy_flags": {
           "sql_api_discrepancy": false
         },
@@ -655,13 +554,13 @@
           "dry_run": true
         },
         "slots": {
-          "answer_family": "batch",
+          "answer_family": "tags",
           "api_error": false,
           "discrepancy": false,
           "dry_run": true,
           "entity_names": {
             "items": [
-              "success"
+              "cool"
             ],
             "total_items": 1,
             "truncated_items": false
@@ -670,21 +569,14 @@
             "items": [
               "entity_names"
             ],
-            "total_items": 3,
-            "truncated_items": false
-          },
-          "statuses": {
-            "items": [
-              "success"
-            ],
-            "total_items": 1,
+            "total_items": 2,
             "truncated_items": false
           }
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-10T05:55:48.950342+00:00"
+      "timestamp": "2026-05-10T01:16:48.728042+00:00"
     },
     {
       "checkpoint_id": "checkpoint_16_answer_verification",
@@ -693,12 +585,12 @@
       "effect": "checks final-answer claims against SQL/API evidence",
       "efficiency_role": "rewrites safely without extra tool calls",
       "input_summary": {
-        "claim_count": 3,
+        "claim_count": 1,
         "slots_present": {
           "items": [
             "entity_names"
           ],
-          "total_items": 3,
+          "total_items": 2,
           "truncated_items": false
         }
       },
@@ -709,7 +601,7 @@
           "truncated_items": false
         },
         "rewrite_applied": false,
-        "supported_claims_count": 3,
+        "supported_claims_count": 1,
         "unsupported_claims_count": 0,
         "verifier_passed": true,
         "warnings": {
@@ -722,7 +614,7 @@
       },
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-10T05:55:48.950348+00:00"
+      "timestamp": "2026-05-10T01:16:48.728048+00:00"
     },
     {
       "checkpoint_id": "checkpoint_17_answer_reranking",
@@ -731,7 +623,7 @@
       "effect": "selects the safest answer from same-evidence candidates",
       "efficiency_role": "uses no additional SQL/API/LLM calls",
       "input_summary": {
-        "answer_family": "batch"
+        "answer_family": "tags"
       },
       "output": {
         "candidate_count": 0,
@@ -740,7 +632,7 @@
       },
       "stage": "answer selection",
       "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-10T05:55:48.950350+00:00"
+      "timestamp": "2026-05-10T01:16:48.728051+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -752,42 +644,59 @@
         "verifier_passed": true
       },
       "output": {
-        "answer_length": 153,
-        "final_answer": "success batch count is unavailable in dry-run mode. Endpoint: GET /data/foundation/catalog/batches params limit=10, status=success. Live API unavailable.",
-        "final_token_estimate": 33
+        "answer_length": 203,
+        "final_answer": "Details for the tag named 'cool' require live API evidence, including the tag ID, name, category, and Adobe organization. Live API verification was not executed because Adobe credentials are unavailable.",
+        "final_token_estimate": 38
       },
       "stage": "final response",
       "technique": "concise grounded final response",
-      "timestamp": "2026-05-10T05:55:48.950384+00:00"
+      "timestamp": "2026-05-10T01:16:48.728084+00:00"
     },
     {
       "active": true,
       "checkpoint_id": "checkpoint_official_token_reduction",
       "correctness_impact_expected": false,
-      "estimated_tokens_after": 626,
-      "estimated_tokens_before": 659,
-      "expected_savings": 33,
+      "estimated_tokens_after": 678,
+      "estimated_tokens_before": 763,
+      "expected_savings": 85,
       "packaged_execution_changed": false,
       "reduced_fields": [
+        "steps[0].candidate_apis",
         "steps[2].metadata_path"
       ]
     }
   ],
-  "domain_type": "COUNT_AGGREGATION",
+  "domain_type": "UNKNOWN",
   "errors": [],
-  "estimated_tokens": 626,
-  "execution_time": 0.00035799993202090263,
-  "final_answer": "success batch count is unavailable in dry-run mode. Endpoint: GET /data/foundation/catalog/batches params limit=10, status=success. Live API unavailable.",
-  "original_query": "How many batches have status 'success'?",
-  "planning_time": 0.00021541700698435307,
-  "preprocessing_time": 0.003638374852016568,
-  "query_id": "llm_controller_3295d111090e",
+  "estimated_tokens": 678,
+  "execution_time": 0.0002572920639067888,
+  "final_answer": "Details for the tag named 'cool' require live API evidence, including the tag ID, name, category, and Adobe organization. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Show me the details of the tag named 'cool'.",
+  "planning_time": 0.00022624991834163666,
+  "preprocessing_time": 0.006055958103388548,
+  "query_id": "show_me_the_details_of_the_tag_named_cool",
   "route_type": "API_ONLY",
-  "runtime": 0.01448999997228384,
+  "runtime": 0.012500040931627154,
   "sql_call_count": 0,
   "steps": [
     {
-      "candidate_apis": [],
+      "candidate_apis": [
+        {
+          "id": "journey_list",
+          "method": "GET",
+          "path": "/ajo/journey"
+        },
+        {
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences"
+        },
+        {
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions"
+        }
+      ],
       "candidate_tables": [
         "br_campaign_segment",
         "dim_blueprint",
@@ -795,75 +704,58 @@
         "dim_collection",
         "dim_connector"
       ],
-      "confidence": 0.6499999999999999,
-      "domain_type": "COUNT_AGGREGATION",
+      "confidence": 0.2,
+      "domain_type": "UNKNOWN",
       "kind": "route",
-      "reason": "Keyword routing using COUNT_AGGREGATION:1, STATUS_MONITORING:1.",
+      "reason": "Keyword routing found no domain keyword.",
       "route_type": "API_ONLY"
     },
     {
-      "decomposition": {
-        "expected_answer_shape": "scalar_count",
-        "sub_questions": [
-          "Ground named entities and identifiers.",
-          "Apply status/date/entity filters.",
-          "Compute requested aggregation or time-range result."
-        ]
-      },
       "kind": "nlp",
       "relevance": {
         "apis": [
-          "export_batch_failed",
-          "audit_events"
+          "unified_tag_categories",
+          "unified_tag_detail"
         ],
         "lookup_paths": [
+          "tags",
           "batch"
         ]
       },
-      "rewrites": [
-        "important_plurals->singular"
-      ],
       "tokens": {
         "domains": [
-          "batch"
+          "tags"
         ],
         "quoted_entities": [
-          "success"
-        ],
-        "statuses": [
-          "success"
+          "cool"
         ]
       },
       "value_retrieval": {
         "budget_exceeded": true,
         "match_count": 0,
         "matches": [],
-        "retrieval_ms": 12.68
+        "retrieval_ms": 11.664
       }
     },
     {
-      "estimated_tokens": 1027,
+      "estimated_tokens": 990,
       "kind": "metadata",
       "metadata_path": "metadata.json",
-      "prompt_tokens": 1715
+      "prompt_tokens": 1659
     },
     {
       "kind": "plan",
       "optimizer_actions": [
         "ensemble selected generic_sql_first"
       ],
-      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: successful_batch_count.",
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: tag_details_by_id.",
       "steps": [
         {
           "action": "api",
-          "family": "successful_batch_count",
+          "family": "tag_details_by_id",
           "method": "GET",
-          "params": {
-            "limit": "10",
-            "status": "success"
-          },
-          "purpose": "API parameter template: successful_batch_count.",
-          "url": "/data/foundation/catalog/batches"
+          "purpose": "API parameter template: tag_details_by_id.",
+          "url": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818"
         }
       ],
       "strategy": "SQL_FIRST_API_VERIFY"
@@ -872,7 +764,7 @@
       "kind": "optimizer",
       "plan_ensemble": {
         "candidate_scores": {
-          "generic_sql_first": 12.3817
+          "generic_sql_first": 12.3858
         },
         "candidate_tool_calls": {
           "generic_sql_first": 1
@@ -884,24 +776,17 @@
       "headers": {},
       "kind": "api_call",
       "method": "GET",
-      "params": {
-        "limit": "10",
-        "status": "success"
-      },
+      "params": {},
       "result": {
         "dry_run": true,
-        "endpoint": "/data/foundation/catalog/batches",
+        "endpoint": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818",
         "error": "Adobe credentials unavailable; API call not executed.",
         "method": "GET",
         "ok": false,
-        "params": {
-          "limit": "10",
-          "status": "success"
-        },
         "result_preview": null,
-        "url": "https://platform.adobe.io/data/foundation/catalog/batches"
+        "url": "https://platform.adobe.io/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818"
       },
-      "url": "/data/foundation/catalog/batches",
+      "url": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818",
       "validation": {
         "errors": [],
         "ok": true,
@@ -910,15 +795,14 @@
       }
     },
     {
-      "answer_family": "batch",
-      "answer_intent": "COUNT",
+      "answer_family": "tags",
+      "answer_intent": "DETAIL",
       "completeness_missing_fields": [],
       "kind": "answer_diagnostics",
       "rewrite_applied": false,
       "selected_candidate_type": "base",
       "slots_present": [
         "entity_names",
-        "statuses",
         "dry_run"
       ],
       "unsupported_claims_count": 0,
@@ -927,10 +811,10 @@
   ],
   "strategy": "SQL_FIRST_API_VERIFY",
   "timings": {
-    "answer_time": 0.0006182920187711716,
-    "execution_time": 0.00035799993202090263,
-    "planning_time": 0.00021541700698435307,
-    "preprocessing_time": 0.003638374852016568
+    "answer_time": 0.0004649159964174032,
+    "execution_time": 0.0002572920639067888,
+    "planning_time": 0.00022624991834163666,
+    "preprocessing_time": 0.006055958103388548
   },
   "tool_call_count": 1
 }

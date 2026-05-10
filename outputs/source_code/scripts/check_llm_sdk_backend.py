@@ -63,6 +63,7 @@ def run_llm_sdk_backend_check(config: Config | None = None) -> dict[str, Any]:
         "provider_type": _provider_type(provider),
         "backend_type": backend_type,
         "transport": backend_type,
+        "sdk_path_used": backend_type in {"openai_sdk", "anthropic_sdk"},
         "base_url": getattr(client, "base_url", None),
         "model": model,
         "backend_name": model,
@@ -167,7 +168,7 @@ def _response_summary(response: dict[str, Any], *, attempted: bool) -> dict[str,
 def _provider_type(provider: str) -> str:
     if provider == "anthropic":
         return "anthropic"
-    if provider in {"openai", "openrouter"}:
+    if provider in {"openai", "openai_compatible", "openrouter"}:
         return "openai_compatible"
     return "none"
 
@@ -175,7 +176,7 @@ def _provider_type(provider: str) -> str:
 def _backend_type(provider: str) -> str:
     if provider == "anthropic":
         return "anthropic_sdk"
-    if provider in {"openai", "openrouter"}:
+    if provider in {"openai", "openai_compatible", "openrouter"}:
         return "openai_sdk"
     return "none"
 
@@ -183,7 +184,7 @@ def _backend_type(provider: str) -> str:
 def _sdk_available(provider: str) -> bool:
     if provider == "anthropic":
         return Anthropic is not None
-    if provider in {"openai", "openrouter"}:
+    if provider in {"openai", "openai_compatible", "openrouter"}:
         return OpenAI is not None
     return False
 
@@ -193,7 +194,7 @@ def _key_visible(provider: str) -> bool:
         return bool(os.getenv("ANTHROPIC_API_KEY"))
     if provider == "openrouter":
         return bool(os.getenv("OPENROUTER_API_KEY") or os.getenv("OPENAI_API_KEY"))
-    if provider == "openai":
+    if provider in {"openai", "openai_compatible"}:
         return bool(os.getenv("OPENAI_API_KEY"))
     return bool(os.getenv("OPENAI_API_KEY") or os.getenv("ANTHROPIC_API_KEY") or os.getenv("OPENROUTER_API_KEY"))
 
@@ -245,6 +246,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Provider: `{report.get('provider')}`",
         f"- Provider type: `{report.get('provider_type')}`",
         f"- Backend type: `{report.get('backend_type')}`",
+        f"- SDK path used: `{report.get('sdk_path_used')}`",
         f"- Base URL: `{report.get('base_url') or 'unavailable'}`",
         f"- Current LLM backend: `{report.get('backend_name')}`",
         f"- Key visible: `{report.get('key_visible')}`",

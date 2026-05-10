@@ -83,6 +83,22 @@ Adobe credentials must come only from environment variables:
 
 Never print, log, commit, or package secrets. Missing credentials are expected; dry-run API mode is valid and must be reported honestly in answers and trajectories.
 
+## System-Wide SDK-Based LLM Rule
+
+All LLM/model calls must go through `dashagent.llm_client.get_llm_client()` or the shared `LLMClient` abstraction. OpenAI-compatible providers must use the OpenAI SDK, Anthropic providers must use the Anthropic SDK, and model/provider switching must be controlled by `.env.local` or environment variables rather than code changes.
+
+Do not use raw `requests`, `curl`, direct `/chat/completions`, hand-built provider HTTP calls, or provider-specific direct HTTP wrappers for LLM runtime testing, baselines, diagnostics, prompt-suite runs, answer rewrite search, candidate search, NL-to-SQL strategies, controller agents, or report generation. This SDK rule applies only to LLM/model provider calls; Adobe REST API execution remains on the existing Adobe API client/tool path.
+
+Run `python3 scripts/generate_sdk_usage_audit.py` after LLM-related changes. The report at `outputs/reports/sdk_usage_audit.md/json` must show `runtime_llm_direct_http_hits = 0`.
+
+## Diagnostic Prompt Suite
+
+`scripts/generate_diagnostic_prompt_suite.py` creates `data/generated_prompt_suite.json/md` from `data/data.json` for broad coverage testing. Stable source IDs are assigned by order as `example_001`, `example_002`, and so on when source rows lack IDs.
+
+`scripts/run_diagnostic_prompt_suite.py` runs generated prompts through `SQL_FIRST_API_VERIFY` as diagnostic coverage only. The default runner limit is 50 prompts; use `--full` to run all prompts and `--clean` to remove only `outputs/diagnostic_prompt_suite/`.
+
+Generated prompts are diagnostic-only, `should_be_scored=false`, not official benchmark data, not runtime hints, and not packaged into final submission.
+
 ## Development Workflow
 
 Before major changes, record the current baseline if the user asks for an optimization pass:

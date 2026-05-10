@@ -111,6 +111,8 @@ def run_llm_strict_baseline_eval(config: Config | None = None) -> dict[str, Any]
         "framework": "generic_sdk_llm_baseline",
         "provider_type": smoke.get("provider_type", "openai_compatible"),
         "backend_type": smoke.get("backend_type", "openai_sdk"),
+        "transport": smoke.get("transport", smoke.get("backend_type", "openai_sdk")),
+        "sdk_path_used": smoke.get("sdk_path_used", smoke.get("backend_type", "openai_sdk") in {"openai_sdk", "anthropic_sdk"}),
         "sdk_client": "SDK-based LLM client",
         "base_url": base_url,
         "model": backend_name,
@@ -320,6 +322,8 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- Framework: `{payload.get('framework')}`",
         f"- Provider type: `{payload.get('provider_type')}`",
         f"- Backend type: `{payload.get('backend_type')}`",
+        f"- Transport: `{payload.get('transport')}`",
+        f"- SDK path used: `{payload.get('sdk_path_used')}`",
         f"- Current LLM backend: `{payload.get('backend_name')}`",
         f"- Smoke test passed: `{payload.get('smoke_test_passed')}`",
         f"- Tool calling supported: `{payload.get('tool_calling_supported')}`",
@@ -360,6 +364,8 @@ def _unavailable_payload(config: Config, reason: str, *, smoke: dict[str, Any]) 
         "framework": "generic_sdk_llm_baseline",
         "provider_type": smoke.get("provider_type", "openai_compatible"),
         "backend_type": smoke.get("backend_type", "openai_sdk"),
+        "transport": smoke.get("transport", smoke.get("backend_type", "openai_sdk")),
+        "sdk_path_used": smoke.get("sdk_path_used", smoke.get("backend_type", "openai_sdk") in {"openai_sdk", "anthropic_sdk"}),
         "sdk_client": "SDK-based LLM client",
         "base_url": smoke.get("base_url") or os.getenv("OPENAI_BASE_URL") or os.getenv("ANTHROPIC_BASE_URL", ""),
         "model": backend_name,
@@ -389,7 +395,7 @@ def _unavailable_payload(config: Config, reason: str, *, smoke: dict[str, Any]) 
 
 def _safe_report_payload(payload: dict[str, Any]) -> dict[str, Any]:
     safe = redact_secrets(payload)
-    for key in ["framework", "provider_type", "backend_type", "sdk_client", "base_url", "model", "backend_name", "promotion_status"]:
+    for key in ["framework", "provider_type", "backend_type", "transport", "sdk_path_used", "sdk_client", "base_url", "model", "backend_name", "promotion_status"]:
         if key in payload:
             safe[key] = payload.get(key)
     return safe

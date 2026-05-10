@@ -16,151 +16,72 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
     "Prefer fewer tool calls when evidence is sufficient."
   ],
   "context_card": {
-    "answer_policy": "Use blueprint/collection joins for local schema-dataset evidence; API may validate catalog/schema registry.",
+    "answer_policy": "Report publish/status evidence from dim_campaign; dry-run API is not confirmation.",
     "api_families": [
-      "datasets_by_schema",
-      "schema_registry_by_id",
-      "schema_by_name",
-      "schema_list"
+      "journey_by_name",
+      "journey_inactive",
+      "journey_list"
     ],
-    "api_mode": "required",
-    "family": "schema_dataset",
-    "join_path": [
-      "dim_blueprint.blueprintid = hkg_br_blueprint_collection.blueprintid",
-      "hkg_br_blueprint_collection.collectionid = dim_collection.collectionid"
-    ],
+    "api_mode": "optional",
+    "family": "journey_campaign",
+    "join_path": [],
     "required_ids": [
-      "schema_id",
-      "blueprint_id",
-      "collection_id"
+      "campaign_id",
+      "journey_name"
     ],
     "tables": [
-      "dim_blueprint",
-      "hkg_br_blueprint_collection",
-      "dim_collection"
+      "dim_campaign"
     ]
   },
-  "domain_type": "DATASET_SCHEMA",
+  "domain_type": "JOURNEY_CAMPAIGN",
   "known_example_patterns": [
     {
       "method": "GET",
       "params": {
-        "limit": "25",
-        "property": "schema.name"
+        "filter": "status!=live",
+        "pageSize": "10"
       },
-      "path": "/data/foundation/catalog/dataSets"
+      "path": "/ajo/journey"
     }
   ],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
-        "schema_dataset",
-        "audit"
+        "journey_campaign"
       ]
-    },
-    "rewrites": [
-      "important_plurals->singular"
-    ]
+    }
   },
-  "query": "List all datasets that use the schema 'hkg_adls_profile_count_history'.",
-  "query_id": "list_all_datasets_that_use_the_schema_hkg_adls_p",
-  "route_type": "SQL_ONLY",
+  "query": "Is the 'Birthday Message' journey published?",
+  "query_id": "is_the_birthday_message_journey_published",
+  "route_type": "SQL_THEN_API",
   "selected_apis": [
     {
-      "id": "catalog_datasets",
+      "id": "journey_list",
       "method": "GET",
-      "path": "/data/foundation/catalog/dataSets"
+      "path": "/ajo/journey"
     }
   ],
   "selected_columns": {
-    "dim_blueprint": [
-      "BLUEPRINTID",
+    "dim_campaign": [
+      "CAMPAIGNID",
       "NAME",
-      "CLASS",
-      "ISPROFILEENABLED",
-      "UPDATEDTIME"
-    ],
-    "dim_collection": [
-      "COLLECTIONID",
-      "NAME",
-      "ROWCOUNT",
-      "UPDATEDTIME"
-    ],
-    "hkg_br_blueprint_collection": [
-      "BLUEPRINTID",
-      "COLLECTIONID"
+      "STATE",
+      "UPDATEDTIME",
+      "LASTDEPLOYEDTIME"
     ]
   },
   "selected_join_hints": [
     {
-      "confidence": 0.9,
-      "left_column": "BLUEPRINTID",
-      "left_table": "dim_blueprint",
-      "reason": "Matching ID-like column name.",
-      "right_column": "BLUEPRINTID",
-      "right_table": "hkg_br_blueprint_collection"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "dim_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_blueprint_collection"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "BLUEPRINTID",
-      "left_table": "dim_blueprint",
-      "reason": "Matching ID-like column name.",
-      "right_column": "BLUEPRINTID",
-      "right_table": "hkg_br_blueprint_property"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "dim_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_collection_property"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "dim_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_collection_segment"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "dim_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_source_collection"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "hkg_br_blueprint_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_collection_property"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "hkg_br_blueprint_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_collection_segment"
+      "confidence": 0.98,
+      "left_column": "CAMPAIGNID",
+      "left_table": "dim_campaign",
+      "reason": "Curated: Campaign to segment bridge.",
+      "right_column": "CAMPAIGNID",
+      "right_table": "br_campaign_segment"
     }
   ],
   "selected_tables": [
-    "dim_blueprint",
-    "hkg_br_blueprint_collection",
-    "dim_collection"
+    "dim_campaign"
   ],
   "strategy": "SQL_FIRST_API_VERIFY"
 }

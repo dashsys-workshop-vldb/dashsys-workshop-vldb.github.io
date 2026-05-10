@@ -1,5 +1,5 @@
 {
-  "answer_time": 0.0006213749293237925,
+  "answer_time": 0.00042529194615781307,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -9,13 +9,13 @@
       "effect": "preserves the original query for reproducibility",
       "efficiency_role": "starts one trace without extra tool calls",
       "output": {
-        "query": "Show ingestion record counts and batch success counts for the last 90 days.",
-        "query_id": "example_034",
+        "query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
+        "query_id": "example_032",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-10T05:53:32.047755+00:00"
+      "timestamp": "2026-05-10T19:12:12.680903+00:00"
     },
     {
       "checkpoint_id": "checkpoint_00_prompt_router",
@@ -24,7 +24,7 @@
       "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
       "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
       "input_summary": {
-        "query": "Show ingestion record counts and batch success counts for the last 90 days."
+        "query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE."
       },
       "output": {
         "confidence": 0.9,
@@ -32,11 +32,11 @@
           "items": [
             "api_only:batch"
           ],
-          "total_items": 1,
+          "total_items": 3,
           "truncated_items": false
         },
         "mode": "API_ONLY",
-        "reason": "API/platform family keyword(s): batch.",
+        "reason": "API/platform family keyword(s): batch, file, files.",
         "recommended_strategy": "SQL_FIRST_API_VERIFY",
         "requires_api": true,
         "requires_database": false,
@@ -45,7 +45,7 @@
       },
       "stage": "prompt routing",
       "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-10T05:53:32.047785+00:00"
+      "timestamp": "2026-05-10T19:12:12.680924+00:00"
     },
     {
       "checkpoint_id": "checkpoint_simple_prompt_gate",
@@ -54,17 +54,17 @@
       "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
       "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
       "input_summary": {
-        "query": "Show ingestion record counts and batch success counts for the last 90 days."
+        "query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE."
       },
       "output": {
         "confidence": 0.9,
         "is_simple": false,
-        "reason": "API/platform family keyword(s): batch.",
+        "reason": "API/platform family keyword(s): batch, file, files.",
         "suggested_action": "USE_DATA_PIPELINE"
       },
       "stage": "input routing",
       "technique": "simple prompt gate",
-      "timestamp": "2026-05-10T05:53:32.047799+00:00"
+      "timestamp": "2026-05-10T19:12:12.680937+00:00"
     },
     {
       "checkpoint_id": "checkpoint_02_query_normalization",
@@ -73,14 +73,14 @@
       "effect": "creates matching-friendly text while preserving the original query",
       "efficiency_role": "reduces repeated fuzzy matching work downstream",
       "input_summary": {
-        "query": "Show ingestion record counts and batch success counts for the last 90 days."
+        "query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE."
       },
       "output": {
-        "matching_text": "show ingestion record counts and batchsuccess counts for the last 90 days.",
-        "normalized_query": "Show ingestion record counts and batchsuccess counts for the last 90 days.",
+        "matching_text": "show failed file for batch 01kp6mnq3x71rp6mnh6fhwghve.",
+        "normalized_query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
         "rewrites": {
           "items": [
-            "\\bbatch\\s+success\\b->batchsuccess"
+            "important_plurals->singular"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -88,7 +88,7 @@
       },
       "stage": "normalization",
       "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-10T05:53:32.047836+00:00"
+      "timestamp": "2026-05-10T19:12:12.680966+00:00"
     },
     {
       "checkpoint_id": "checkpoint_03_query_tokens",
@@ -97,20 +97,28 @@
       "effect": "extracts reusable query fields for routing, planning, and answers",
       "efficiency_role": "avoids reparsing the query in later modules",
       "input_summary": {
-        "normalized_query": "Show ingestion record counts and batchsuccess counts for the last 90 days."
+        "normalized_query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE."
       },
       "output": {
         "domains": {
           "items": [
             "batch"
           ],
-          "total_items": 2,
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "ids": 1,
+        "statuses": {
+          "items": [
+            "failed"
+          ],
+          "total_items": 1,
           "truncated_items": false
         }
       },
       "stage": "tokenization",
       "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-10T05:53:32.047873+00:00"
+      "timestamp": "2026-05-10T19:12:12.680995+00:00"
     },
     {
       "checkpoint_id": "checkpoint_04_relevance_scoring",
@@ -124,7 +132,15 @@
             "items": [
               "batch"
             ],
-            "total_items": 2,
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "ids": 1,
+          "statuses": {
+            "items": [
+              "failed"
+            ],
+            "total_items": 1,
             "truncated_items": false
           }
         }
@@ -134,20 +150,72 @@
           "items": [
             "batch"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "top_apis": {
           "items": [
-            "observability_metrics"
+            "export_batch_failed"
           ],
           "total_items": 3,
+          "truncated_items": false
+        },
+        "top_join_hints": {
+          "items": [
+            "dim_connector.SOURCEID->hkg_br_source_collection.SOURCEID"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_tables": {
+          "items": [
+            "dim_connector"
+          ],
+          "total_items": 2,
           "truncated_items": false
         }
       },
       "stage": "context selection",
       "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-10T05:53:32.048283+00:00"
+      "timestamp": "2026-05-10T19:12:12.681498+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_value_entity_retrieval",
+      "correctness_role": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
+      "duration_ms": 0.0,
+      "effect": "grounds query entities against sampled local DB values before planning",
+      "efficiency_role": "uses a cached bounded value index with per-query scan and wall-time budgets",
+      "input_summary": {
+        "query_values": {
+          "items": [
+            {
+              "kind": "batch_id",
+              "text": "01KP6MNQ3X71RP6MNH6FHWGHVE"
+            }
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "budget_exceeded": false,
+        "match_count": 0,
+        "retrieval_ms": 9.493
+      },
+      "output": {
+        "active": true,
+        "cache_hit": true,
+        "cache_key": "213f3d553413a550",
+        "cache_key_algorithm": "sha256",
+        "cache_path": "[REDACTED]/outputs/cache/value_index_213f3d553413a550.json",
+        "cache_reproducible": true,
+        "match_count": 0,
+        "query_value_count": 3,
+        "truncated_fields": 8
+      },
+      "stage": "query understanding",
+      "technique": "CHESS-style value/entity retrieval",
+      "timestamp": "2026-05-10T19:12:12.681879+00:00"
     },
     {
       "checkpoint_id": "checkpoint_query_decomposition",
@@ -156,38 +224,53 @@
       "effect": "breaks complex prompts into entities, filters, joins, and answer-shape constraints",
       "efficiency_role": "skips simple queries and uses no LLM/tool calls",
       "input_summary": {
-        "query": "Show ingestion record counts and batch success counts for the last 90 days.",
+        "query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
         "tokens": {
           "domains": {
             "items": [
               "batch"
             ],
-            "total_items": 2,
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "ids": 1,
+          "statuses": {
+            "items": [
+              "failed"
+            ],
+            "total_items": 1,
             "truncated_items": false
           }
         }
       },
       "output": {
         "active": true,
-        "expected_answer_shape": "scalar_count",
-        "required_aggregations": {
+        "expected_answer_shape": "table_or_list",
+        "required_entities": {
           "items": [
-            "count"
+            "01KP6MNQ3X71RP6MNH6FHWGHVE"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "required_filters": {
+          "items": [
+            "failed"
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "sub_questions": {
           "items": [
-            "Compute requested aggregation or time-range result."
+            "Ground named entities and identifiers."
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         }
       },
       "stage": "query understanding",
       "technique": "DIN-SQL-style deterministic query decomposition",
-      "timestamp": "2026-05-10T05:53:32.048297+00:00"
+      "timestamp": "2026-05-10T19:12:12.681890+00:00"
     },
     {
       "checkpoint_id": "checkpoint_05_query_analysis",
@@ -196,27 +279,27 @@
       "effect": "computes shared query understanding once",
       "efficiency_role": "avoids repeated template and routing analysis",
       "input_summary": {
-        "domain_type": "COUNT_AGGREGATION",
+        "domain_type": "STATUS_MONITORING",
         "route_type": "API_ONLY"
       },
       "output": {
-        "answer_family": "observability_metrics",
+        "answer_family": "failed_dataflow_runs",
         "api_templates": {
           "items": [
-            "observability_metrics"
+            "batch_export_files"
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "confidence": 0.6,
-        "domain_type": "COUNT_AGGREGATION",
-        "fast_path": "observability_metrics",
+        "domain_type": "STATUS_MONITORING",
+        "fast_path": "batch_export_files",
         "route_type": "API_ONLY",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "routing",
       "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-10T05:53:32.048300+00:00"
+      "timestamp": "2026-05-10T19:12:12.681893+00:00"
     },
     {
       "checkpoint_id": "checkpoint_06_lookup_path",
@@ -225,23 +308,37 @@
       "effect": "predicts the relevant table/join/API path",
       "efficiency_role": "filters unrelated schema and endpoint candidates",
       "input_summary": {
-        "answer_family": "observability_metrics",
-        "domain_type": "COUNT_AGGREGATION"
+        "answer_family": "failed_dataflow_runs",
+        "domain_type": "STATUS_MONITORING"
       },
       "output": {
         "api_families": {
           "items": [
-            "observability_metrics"
+            "destination_flows"
           ],
-          "total_items": 1,
+          "total_items": 3,
           "truncated_items": false
         },
-        "api_mode": "required",
-        "family": "observability"
+        "api_mode": "optional",
+        "family": "destination_dataflow",
+        "required_ids": {
+          "items": [
+            "target_id"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "tables": {
+          "items": [
+            "dim_target"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
       },
       "stage": "path prediction",
       "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-10T05:53:32.048305+00:00"
+      "timestamp": "2026-05-10T19:12:12.681895+00:00"
     },
     {
       "checkpoint_id": "checkpoint_07_context_card",
@@ -251,67 +348,46 @@
       "efficiency_role": "limits context size for non-baseline strategies",
       "input_summary": {
         "broad_context": false,
-        "lookup_path": "observability"
+        "lookup_path": "destination_dataflow"
       },
       "output": {
-        "estimated_metadata_tokens": 1089,
-        "prompt_tokens": 1770,
+        "estimated_metadata_tokens": 542,
+        "prompt_tokens": 1132,
         "selected_apis": {
           "items": [
-            "observability_metrics"
+            "export_batch_failed"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "selected_card_name": "observability",
+        "selected_card_name": "destination_dataflow",
         "selected_columns": {
-          "br_campaign_segment": {
-            "items": [
-              "SEGMENTID"
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          },
-          "dim_blueprint": {
-            "items": [
-              "BLUEPRINTTYPE"
-            ],
-            "total_items": 8,
-            "truncated_items": true
-          },
-          "dim_campaign": {
-            "items": [
-              "UPDATEDTIME"
-            ],
-            "total_items": 8,
-            "truncated_items": true
-          },
-          "dim_collection": {
-            "items": [
-              "ISIDENTITYENABLED"
-            ],
-            "total_items": 8,
-            "truncated_items": true
-          },
           "dim_connector": {
             "items": [
-              "DATAFLOWNAME"
+              "CONNECTIONSPECNAME"
             ],
             "total_items": 8,
+            "truncated_items": true
+          },
+          "dim_target": {
+            "items": [
+              "CONNECTIONSPECID"
+            ],
+            "total_items": 7,
             "truncated_items": true
           }
         },
         "selected_tables": {
           "items": [
-            "br_campaign_segment"
+            "dim_target"
           ],
-          "total_items": 5,
-          "truncated_items": true
+          "total_items": 2,
+          "truncated_items": false
         }
       },
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-10T05:53:32.050405+00:00"
+      "timestamp": "2026-05-10T19:12:12.683649+00:00"
     },
     {
       "checkpoint_id": "checkpoint_08_candidate_plans",
@@ -333,13 +409,13 @@
         },
         "reason_selected": "highest pre-execution validation/relevance/cost score",
         "scores": {
-          "generic_sql_first": 12.3534
+          "generic_sql_first": 11.8844
         },
         "selected_plan": "generic_sql_first"
       },
       "stage": "planning",
       "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-10T05:53:32.050618+00:00"
+      "timestamp": "2026-05-10T19:12:12.683928+00:00"
     },
     {
       "checkpoint_id": "checkpoint_09_plan_optimization",
@@ -367,7 +443,7 @@
       },
       "stage": "optimization",
       "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-10T05:53:32.050627+00:00"
+      "timestamp": "2026-05-10T19:12:12.683936+00:00"
     },
     {
       "checkpoint_id": "checkpoint_10_evidence_policy",
@@ -376,13 +452,13 @@
       "effect": "decides when API evidence is required, optional, or unnecessary",
       "efficiency_role": "skips or caps API calls when SQL evidence is enough",
       "input_summary": {
-        "answer_family": "observability_metrics",
+        "answer_family": "failed_dataflow_runs",
         "route_type": "API_ONLY"
       },
       "output": {
         "allowed_api_families": {
           "items": [
-            "observability_metrics"
+            "batch_export_files"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -393,7 +469,7 @@
       },
       "stage": "evidence policy",
       "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-10T05:53:32.050629+00:00"
+      "timestamp": "2026-05-10T19:12:12.683938+00:00"
     },
     {
       "checkpoint_id": "checkpoint_11_call_budget",
@@ -406,29 +482,10 @@
           "items": [
             {
               "action": "api",
-              "family": "observability_metrics",
-              "method": "POST",
-              "params": {
-                "end": "2026-04-01T23:59:59.000Z",
-                "granularity": "day",
-                "metrics": {
-                  "items": [
-                    {
-                      "aggregator": "sum",
-                      "name": "timeseries.ingestion.dataset.recordsuccess.count"
-                    },
-                    {
-                      "aggregator": "sum",
-                      "name": "timeseries.ingestion.dataset.batchsuccess.count"
-                    }
-                  ],
-                  "total_items": 2,
-                  "truncated_items": false
-                },
-                "start": "2026-03-01T00:00:00.000Z"
-              },
-              "purpose": "API parameter template: observability_metrics.",
-              "url": "/data/infrastructure/observability/insights/metrics"
+              "family": "batch_export_files",
+              "method": "GET",
+              "purpose": "API parameter template: batch_export_files.",
+              "url": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
             }
           ],
           "total_items": 1,
@@ -445,7 +502,7 @@
       },
       "stage": "efficiency control",
       "technique": "tool-call budgeting",
-      "timestamp": "2026-05-10T05:53:32.050644+00:00"
+      "timestamp": "2026-05-10T19:12:12.683949+00:00"
     },
     {
       "checkpoint_id": "checkpoint_12_validation",
@@ -458,29 +515,10 @@
           "items": [
             {
               "action": "api",
-              "family": "observability_metrics",
-              "method": "POST",
-              "params": {
-                "end": "2026-04-01T23:59:59.000Z",
-                "granularity": "day",
-                "metrics": {
-                  "items": [
-                    {
-                      "aggregator": "sum",
-                      "name": "timeseries.ingestion.dataset.recordsuccess.count"
-                    },
-                    {
-                      "aggregator": "sum",
-                      "name": "timeseries.ingestion.dataset.batchsuccess.count"
-                    }
-                  ],
-                  "total_items": 2,
-                  "truncated_items": false
-                },
-                "start": "2026-03-01T00:00:00.000Z"
-              },
-              "purpose": "API parameter template: observability_metrics.",
-              "url": "/data/infrastructure/observability/insights/metrics"
+              "family": "batch_export_files",
+              "method": "GET",
+              "purpose": "API parameter template: batch_export_files.",
+              "url": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
             }
           ],
           "total_items": 1,
@@ -505,7 +543,7 @@
       },
       "stage": "validation",
       "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-10T05:53:32.052666+00:00"
+      "timestamp": "2026-05-10T19:12:12.685333+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -522,37 +560,18 @@
           "items": [
             {
               "dry_run": true,
-              "method": "POST",
+              "method": "GET",
               "ok": false,
               "result_preview": {
                 "dry_run": true,
-                "endpoint": "/data/infrastructure/observability/insights/metrics",
+                "endpoint": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed",
                 "error": "Adobe credentials unavailable; API call not executed.",
-                "method": "POST",
+                "method": "GET",
                 "ok": false,
-                "params": {
-                  "end": "2026-04-01T23:59:59.000Z",
-                  "granularity": "day",
-                  "metrics": {
-                    "items": [
-                      {
-                        "aggregator": "sum",
-                        "name": "timeseries.ingestion.dataset.recordsuccess.count"
-                      },
-                      {
-                        "aggregator": "sum",
-                        "name": "timeseries.ingestion.dataset.batchsuccess.count"
-                      }
-                    ],
-                    "total_items": 2,
-                    "truncated_items": false
-                  },
-                  "start": "2026-03-01T00:00:00.000Z"
-                },
                 "result_preview": null,
-                "url": "https://platform.adobe.io/data/infrastructure/observability/insights/metrics"
+                "url": "https://platform.adobe.io/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
               },
-              "url": "/data/infrastructure/observability/insights/metrics"
+              "url": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
             }
           ],
           "total_items": 1,
@@ -563,7 +582,7 @@
       },
       "stage": "execution",
       "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-10T05:53:32.052673+00:00"
+      "timestamp": "2026-05-10T19:12:12.685338+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -579,7 +598,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-10T05:53:32.052675+00:00"
+      "timestamp": "2026-05-10T19:12:12.685340+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -591,35 +610,35 @@
         "tool_result_count": 1
       },
       "output": {
-        "answer_intent": "COUNT",
+        "answer_intent": "STATUS",
         "discrepancy_flags": {
           "sql_api_discrepancy": false
         },
         "dry_run_flags": {
           "dry_run": true
         },
+        "missing_slots": {
+          "items": [
+            "status"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
         "slots": {
-          "answer_family": "observability_metrics",
+          "answer_family": "failed_dataflow_runs",
           "api_error": false,
           "discrepancy": false,
           "dry_run": true,
-          "metrics": {
+          "entity_ids": {
             "items": [
-              "timeseries.ingestion.dataset.recordsuccess.count"
+              "01KP6MNQ3X71RP6MNH6FHWGHVE"
             ],
-            "total_items": 2,
+            "total_items": 1,
             "truncated_items": false
           },
           "slots_present": {
             "items": [
-              "timestamps"
-            ],
-            "total_items": 3,
-            "truncated_items": false
-          },
-          "timestamps": {
-            "items": [
-              "2026-03-01T00:00:00.000Z"
+              "entity_ids"
             ],
             "total_items": 2,
             "truncated_items": false
@@ -628,7 +647,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-10T05:53:32.053188+00:00"
+      "timestamp": "2026-05-10T19:12:12.685666+00:00"
     },
     {
       "checkpoint_id": "checkpoint_16_answer_verification",
@@ -637,12 +656,12 @@
       "effect": "checks final-answer claims against SQL/API evidence",
       "efficiency_role": "rewrites safely without extra tool calls",
       "input_summary": {
-        "claim_count": 0,
+        "claim_count": 2,
         "slots_present": {
           "items": [
-            "timestamps"
+            "entity_ids"
           ],
-          "total_items": 3,
+          "total_items": 2,
           "truncated_items": false
         }
       },
@@ -653,13 +672,20 @@
           "truncated_items": false
         },
         "rewrite_applied": false,
-        "supported_claims_count": 0,
+        "supported_claims_count": 2,
         "unsupported_claims_count": 0,
-        "verifier_passed": true
+        "verifier_passed": true,
+        "warnings": {
+          "items": [
+            "answer_contains_only_query_supported_facts"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
       },
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-10T05:53:32.053192+00:00"
+      "timestamp": "2026-05-10T19:12:12.685673+00:00"
     },
     {
       "checkpoint_id": "checkpoint_17_answer_reranking",
@@ -668,7 +694,7 @@
       "effect": "selects the safest answer from same-evidence candidates",
       "efficiency_role": "uses no additional SQL/API/LLM calls",
       "input_summary": {
-        "answer_family": "observability_metrics"
+        "answer_family": "failed_dataflow_runs"
       },
       "output": {
         "candidate_count": 0,
@@ -677,7 +703,7 @@
       },
       "stage": "answer selection",
       "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-10T05:53:32.053194+00:00"
+      "timestamp": "2026-05-10T19:12:12.685676+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -689,42 +715,59 @@
         "verifier_passed": true
       },
       "output": {
-        "answer_length": 250,
-        "final_answer": "Values for timeseries.ingestion.dataset.recordsuccess.count and timeseries.ingestion.dataset.batchsuccess.count for the requested time window require live API evidence. Live API verification was not executed because Adobe cr [truncated]",
-        "final_token_estimate": 43
+        "answer_length": 196,
+        "final_answer": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
+        "final_token_estimate": 36
       },
       "stage": "final response",
       "technique": "concise grounded final response",
-      "timestamp": "2026-05-10T05:53:32.053218+00:00"
+      "timestamp": "2026-05-10T19:12:12.685692+00:00"
     },
     {
       "active": true,
       "checkpoint_id": "checkpoint_official_token_reduction",
       "correctness_impact_expected": false,
-      "estimated_tokens_after": 885,
-      "estimated_tokens_before": 910,
-      "expected_savings": 25,
+      "estimated_tokens_after": 748,
+      "estimated_tokens_before": 820,
+      "expected_savings": 72,
       "packaged_execution_changed": false,
       "reduced_fields": [
+        "steps[0].candidate_apis",
         "steps[2].metadata_path"
       ]
     }
   ],
-  "domain_type": "COUNT_AGGREGATION",
+  "domain_type": "STATUS_MONITORING",
   "errors": [],
-  "estimated_tokens": 885,
-  "execution_time": 0.0006140838377177715,
-  "final_answer": "Values for timeseries.ingestion.dataset.recordsuccess.count and timeseries.ingestion.dataset.batchsuccess.count for the requested time window require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
-  "original_query": "Show ingestion record counts and batch success counts for the last 90 days.",
-  "planning_time": 0.00023808283731341362,
-  "preprocessing_time": 0.0026098331436514854,
-  "query_id": "example_034",
+  "estimated_tokens": 748,
+  "execution_time": 0.00019345805048942566,
+  "final_answer": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
+  "planning_time": 0.000292167067527771,
+  "preprocessing_time": 0.0027231669519096613,
+  "query_id": "example_032",
   "route_type": "API_ONLY",
-  "runtime": 0.012221958953887224,
+  "runtime": 0.010692874900996685,
   "sql_call_count": 0,
   "steps": [
     {
-      "candidate_apis": [],
+      "candidate_apis": [
+        {
+          "id": "journey_list",
+          "method": "GET",
+          "path": "/ajo/journey"
+        },
+        {
+          "id": "flowservice_runs",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/runs"
+        },
+        {
+          "id": "audit_events",
+          "method": "GET",
+          "path": "/data/foundation/audit/events"
+        }
+      ],
       "candidate_tables": [
         "br_campaign_segment",
         "dim_blueprint",
@@ -733,75 +776,72 @@
         "dim_connector"
       ],
       "confidence": 0.5,
-      "domain_type": "COUNT_AGGREGATION",
+      "domain_type": "STATUS_MONITORING",
       "kind": "route",
-      "reason": "Keyword routing using COUNT_AGGREGATION:1.",
+      "reason": "Keyword routing using STATUS_MONITORING:1.",
       "route_type": "API_ONLY"
     },
     {
       "decomposition": {
-        "expected_answer_shape": "scalar_count",
+        "expected_answer_shape": "table_or_list",
         "sub_questions": [
-          "Compute requested aggregation or time-range result."
+          "Ground named entities and identifiers.",
+          "Apply status/date/entity filters."
         ]
       },
       "kind": "nlp",
       "relevance": {
         "apis": [
-          "observability_metrics",
-          "ups_audiences"
+          "export_batch_failed",
+          "export_batch_files"
         ],
         "lookup_paths": [
-          "observability",
+          "destination_dataflow",
           "batch"
+        ],
+        "tables": [
+          "dim_connector",
+          "dim_target"
         ]
       },
       "rewrites": [
-        "\\bbatch\\s+success\\b->batchsuccess"
+        "important_plurals->singular"
       ],
       "tokens": {
         "domains": [
-          "batch",
-          "observability"
+          "batch"
+        ],
+        "ids": 1,
+        "statuses": [
+          "failed"
         ]
+      },
+      "value_retrieval": {
+        "budget_exceeded": false,
+        "match_count": 0,
+        "matches": [],
+        "retrieval_ms": 9.493
       }
     },
     {
-      "estimated_tokens": 1089,
+      "estimated_tokens": 542,
       "kind": "metadata",
       "metadata_path": "metadata.json",
-      "prompt_tokens": 1770
+      "prompt_tokens": 1132
     },
     {
       "kind": "plan",
       "optimizer_actions": [
         "ensemble selected generic_sql_first"
       ],
-      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: observability_metrics.",
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: batch_export_files.",
       "steps": [
         {
           "action": "api",
-          "family": "observability_metrics",
-          "method": "POST",
-          "params": {
-            "end": "2026-04-01T23:59:59.000Z",
-            "granularity": "day",
-            "metrics": [
-              {
-                "aggregator": "sum",
-                "filters": [],
-                "name": "timeseries.ingestion.dataset.recordsuccess.count"
-              },
-              {
-                "aggregator": "sum",
-                "filters": [],
-                "name": "timeseries.ingestion.dataset.batchsuccess.count"
-              }
-            ],
-            "start": "2026-03-01T00:00:00.000Z"
-          },
-          "purpose": "API parameter template: observability_metrics.",
-          "url": "/data/infrastructure/observability/insights/metrics"
+          "family": "batch_export_files",
+          "method": "GET",
+          "purpose": "API parameter template: batch_export_files.",
+          "url": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
         }
       ],
       "strategy": "SQL_FIRST_API_VERIFY"
@@ -810,7 +850,7 @@
       "kind": "optimizer",
       "plan_ensemble": {
         "candidate_scores": {
-          "generic_sql_first": 12.3534
+          "generic_sql_first": 11.8844
         },
         "candidate_tool_calls": {
           "generic_sql_first": 1
@@ -821,53 +861,18 @@
     {
       "headers": {},
       "kind": "api_call",
-      "method": "POST",
-      "params": {
-        "end": "2026-04-01T23:59:59.000Z",
-        "granularity": "day",
-        "metrics": [
-          {
-            "aggregator": "sum",
-            "filters": [],
-            "name": "timeseries.ingestion.dataset.recordsuccess.count"
-          },
-          {
-            "aggregator": "sum",
-            "filters": [],
-            "name": "timeseries.ingestion.dataset.batchsuccess.count"
-          }
-        ],
-        "start": "2026-03-01T00:00:00.000Z"
-      },
+      "method": "GET",
+      "params": {},
       "result": {
         "dry_run": true,
-        "endpoint": "/data/infrastructure/observability/insights/metrics",
+        "endpoint": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed",
         "error": "Adobe credentials unavailable; API call not executed.",
-        "method": "POST",
+        "method": "GET",
         "ok": false,
-        "params": {
-          "end": "2026-04-01T23:59:59.000Z",
-          "granularity": "day",
-          "metrics": {
-            "items": [
-              {
-                "aggregator": "sum",
-                "name": "timeseries.ingestion.dataset.recordsuccess.count"
-              },
-              {
-                "aggregator": "sum",
-                "name": "timeseries.ingestion.dataset.batchsuccess.count"
-              }
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          },
-          "start": "2026-03-01T00:00:00.000Z"
-        },
         "result_preview": null,
-        "url": "https://platform.adobe.io/data/infrastructure/observability/insights/metrics"
+        "url": "https://platform.adobe.io/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
       },
-      "url": "/data/infrastructure/observability/insights/metrics",
+      "url": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed",
       "validation": {
         "errors": [],
         "ok": true,
@@ -876,15 +881,16 @@
       }
     },
     {
-      "answer_family": "observability_metrics",
-      "answer_intent": "COUNT",
-      "completeness_missing_fields": [],
+      "answer_family": "failed_dataflow_runs",
+      "answer_intent": "STATUS",
+      "completeness_missing_fields": [
+        "status"
+      ],
       "kind": "answer_diagnostics",
       "rewrite_applied": false,
       "selected_candidate_type": "base",
       "slots_present": [
-        "timestamps",
-        "metrics",
+        "entity_ids",
         "dry_run"
       ],
       "unsupported_claims_count": 0,
@@ -893,10 +899,10 @@
   ],
   "strategy": "SQL_FIRST_API_VERIFY",
   "timings": {
-    "answer_time": 0.0006213749293237925,
-    "execution_time": 0.0006140838377177715,
-    "planning_time": 0.00023808283731341362,
-    "preprocessing_time": 0.0026098331436514854
+    "answer_time": 0.00042529194615781307,
+    "execution_time": 0.00019345805048942566,
+    "planning_time": 0.000292167067527771,
+    "preprocessing_time": 0.0027231669519096613
   },
   "tool_call_count": 1
 }

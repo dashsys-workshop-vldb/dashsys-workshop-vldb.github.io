@@ -1,5 +1,5 @@
 {
-  "answer_time": 0.0006917079444974661,
+  "answer_time": 0.0004983330145478249,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -9,13 +9,13 @@
       "effect": "preserves the original query for reproducibility",
       "efficiency_role": "starts one trace without extra tool calls",
       "output": {
-        "query": "Show all segment jobs with status 'QUEUED'.",
-        "query_id": "llm_controller_31d155d55f82",
+        "query": "Show me all entities created by download",
+        "query_id": "show_me_all_entities_created_by_download",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-10T05:55:40.669626+00:00"
+      "timestamp": "2026-05-10T01:16:24.668209+00:00"
     },
     {
       "checkpoint_id": "checkpoint_00_prompt_router",
@@ -24,28 +24,28 @@
       "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
       "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
       "input_summary": {
-        "query": "Show all segment jobs with status 'QUEUED'."
+        "query": "Show me all entities created by download"
       },
       "output": {
-        "confidence": 0.88,
+        "confidence": 0.84,
         "matched_rules": {
           "items": [
-            "sql_plus_api:status"
+            "local_db:show"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "mode": "SQL_PLUS_API",
-        "reason": "Live/status keyword(s) require SQL grounding plus API verification: status.",
+        "mode": "LOCAL_DB_ONLY",
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: show.",
         "recommended_strategy": "SQL_FIRST_API_VERIFY",
-        "requires_api": true,
+        "requires_api": false,
         "requires_database": true,
-        "risk": "medium",
+        "risk": "low",
         "truncated_fields": 1
       },
       "stage": "prompt routing",
       "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-10T05:55:40.669669+00:00"
+      "timestamp": "2026-05-10T01:16:24.668252+00:00"
     },
     {
       "checkpoint_id": "checkpoint_simple_prompt_gate",
@@ -54,17 +54,17 @@
       "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
       "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
       "input_summary": {
-        "query": "Show all segment jobs with status 'QUEUED'."
+        "query": "Show me all entities created by download"
       },
       "output": {
-        "confidence": 0.88,
+        "confidence": 0.84,
         "is_simple": false,
-        "reason": "Live/status keyword(s) require SQL grounding plus API verification: status.",
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: show.",
         "suggested_action": "USE_DATA_PIPELINE"
       },
       "stage": "input routing",
       "technique": "simple prompt gate",
-      "timestamp": "2026-05-10T05:55:40.669685+00:00"
+      "timestamp": "2026-05-10T01:16:24.668275+00:00"
     },
     {
       "checkpoint_id": "checkpoint_02_query_normalization",
@@ -73,22 +73,15 @@
       "effect": "creates matching-friendly text while preserving the original query",
       "efficiency_role": "reduces repeated fuzzy matching work downstream",
       "input_summary": {
-        "query": "Show all segment jobs with status 'QUEUED'."
+        "query": "Show me all entities created by download"
       },
       "output": {
-        "matching_text": "show all segment job with status 'queued'.",
-        "normalized_query": "Show all segment jobs with status 'QUEUED'.",
-        "rewrites": {
-          "items": [
-            "important_plurals->singular"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        }
+        "matching_text": "show me all entities created by download",
+        "normalized_query": "Show me all entities created by download"
       },
       "stage": "normalization",
       "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-10T05:55:40.669733+00:00"
+      "timestamp": "2026-05-10T01:16:24.668322+00:00"
     },
     {
       "checkpoint_id": "checkpoint_03_query_tokens",
@@ -97,34 +90,20 @@
       "effect": "extracts reusable query fields for routing, planning, and answers",
       "efficiency_role": "avoids reparsing the query in later modules",
       "input_summary": {
-        "normalized_query": "Show all segment jobs with status 'QUEUED'."
+        "normalized_query": "Show me all entities created by download"
       },
       "output": {
         "domains": {
           "items": [
-            "segment_audience"
+            "audit"
           ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "quoted_entities": {
-          "items": [
-            "QUEUED"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "statuses": {
-          "items": [
-            "queued"
-          ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         }
       },
       "stage": "tokenization",
       "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-10T05:55:40.669774+00:00"
+      "timestamp": "2026-05-10T01:16:24.668372+00:00"
     },
     {
       "checkpoint_id": "checkpoint_04_relevance_scoring",
@@ -136,23 +115,9 @@
         "tokens": {
           "domains": {
             "items": [
-              "segment_audience"
+              "audit"
             ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "quoted_entities": {
-            "items": [
-              "QUEUED"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "statuses": {
-            "items": [
-              "queued"
-            ],
-            "total_items": 1,
+            "total_items": 2,
             "truncated_items": false
           }
         }
@@ -160,28 +125,28 @@
       "output": {
         "top_answer_families": {
           "items": [
-            "segment_destination"
+            "audit_entity_created"
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "top_apis": {
           "items": [
-            "segment_jobs"
+            "audit_events"
           ],
           "total_items": 3,
           "truncated_items": false
         },
         "top_join_hints": {
           "items": [
-            "br_campaign_segment.SEGMENTID->dim_segment.SEGMENTID"
+            "dim_segment.SEGMENTID->hkg_br_base_segment_used_by_dependent_segment.DEPENDENTSEGMENTID"
           ],
           "total_items": 3,
           "truncated_items": false
         },
         "top_tables": {
           "items": [
-            "dim_segment"
+            "dim_collection"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -189,106 +154,7 @@
       },
       "stage": "context selection",
       "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-10T05:55:40.670472+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_value_entity_retrieval",
-      "correctness_role": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
-      "duration_ms": 0.0,
-      "effect": "grounds query entities against sampled local DB values before planning",
-      "efficiency_role": "uses a cached bounded value index with per-query scan and wall-time budgets",
-      "input_summary": {
-        "query_values": {
-          "items": [
-            {
-              "kind": "quoted_entity",
-              "text": "QUEUED"
-            }
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        }
-      },
-      "metrics": {
-        "budget_exceeded": true,
-        "match_count": 0,
-        "retrieval_ms": 10.737
-      },
-      "output": {
-        "active": true,
-        "cache_hit": true,
-        "cache_key": "ff8c5b63cad79a6d",
-        "cache_key_algorithm": "sha256",
-        "cache_path": "[REDACTED]/outputs/cache/value_index_ff8c5b63cad79a6d.json",
-        "cache_reproducible": true,
-        "match_count": 0,
-        "query_value_count": 2,
-        "truncated_fields": 8
-      },
-      "stage": "query understanding",
-      "technique": "CHESS-style value/entity retrieval",
-      "timestamp": "2026-05-10T05:55:40.670820+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_query_decomposition",
-      "correctness_role": "helps SQL/API planning preserve requested constraints",
-      "duration_ms": 0.0,
-      "effect": "breaks complex prompts into entities, filters, joins, and answer-shape constraints",
-      "efficiency_role": "skips simple queries and uses no LLM/tool calls",
-      "input_summary": {
-        "query": "Show all segment jobs with status 'QUEUED'.",
-        "tokens": {
-          "domains": {
-            "items": [
-              "segment_audience"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "quoted_entities": {
-            "items": [
-              "QUEUED"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "statuses": {
-            "items": [
-              "queued"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          }
-        }
-      },
-      "output": {
-        "active": true,
-        "expected_answer_shape": "table_or_list",
-        "required_entities": {
-          "items": [
-            "QUEUED"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "required_filters": {
-          "items": [
-            "queued"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "sub_questions": {
-          "items": [
-            "Ground named entities and identifiers."
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        }
-      },
-      "stage": "query understanding",
-      "technique": "DIN-SQL-style deterministic query decomposition",
-      "timestamp": "2026-05-10T05:55:40.670836+00:00"
+      "timestamp": "2026-05-10T01:16:24.670712+00:00"
     },
     {
       "checkpoint_id": "checkpoint_05_query_analysis",
@@ -297,27 +163,27 @@
       "effect": "computes shared query understanding once",
       "efficiency_role": "avoids repeated template and routing analysis",
       "input_summary": {
-        "domain_type": "SEGMENT_AUDIENCE",
-        "route_type": "API_ONLY"
+        "domain_type": "UNKNOWN",
+        "route_type": "SQL_ONLY"
       },
       "output": {
-        "answer_family": "segment_jobs",
+        "answer_family": "audit_entity_created",
         "api_templates": {
           "items": [
-            "segment_jobs"
+            "audit_create_events"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "confidence": 0.75,
-        "domain_type": "SEGMENT_AUDIENCE",
-        "fast_path": "segment_jobs",
-        "route_type": "API_ONLY",
+        "confidence": 0.25,
+        "domain_type": "UNKNOWN",
+        "route_type": "SQL_ONLY",
+        "sql_template": "collection_created_by",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "routing",
       "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-10T05:55:40.670839+00:00"
+      "timestamp": "2026-05-10T01:16:24.670727+00:00"
     },
     {
       "checkpoint_id": "checkpoint_06_lookup_path",
@@ -326,44 +192,37 @@
       "effect": "predicts the relevant table/join/API path",
       "efficiency_role": "filters unrelated schema and endpoint candidates",
       "input_summary": {
-        "answer_family": "segment_jobs",
-        "domain_type": "SEGMENT_AUDIENCE"
+        "answer_family": "audit_entity_created",
+        "domain_type": "UNKNOWN"
       },
       "output": {
         "api_families": {
           "items": [
-            "audience_by_destination_id"
+            "audit_create_events"
           ],
-          "total_items": 2,
-          "truncated_items": false
+          "total_items": 4,
+          "truncated_items": true
         },
-        "api_mode": "optional",
-        "family": "segment_destination",
-        "join_path": {
-          "items": [
-            "dim_segment.segmentid = hkg_br_segment_target.segmentid"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
+        "api_mode": "required",
+        "family": "audit",
         "required_ids": {
           "items": [
-            "segment_id"
+            "collection_id"
           ],
           "total_items": 3,
           "truncated_items": false
         },
         "tables": {
           "items": [
-            "dim_segment"
+            "dim_collection"
           ],
-          "total_items": 3,
-          "truncated_items": false
+          "total_items": 4,
+          "truncated_items": true
         }
       },
       "stage": "path prediction",
       "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-10T05:55:40.670842+00:00"
+      "timestamp": "2026-05-10T01:16:24.670731+00:00"
     },
     {
       "checkpoint_id": "checkpoint_07_context_card",
@@ -373,53 +232,39 @@
       "efficiency_role": "limits context size for non-baseline strategies",
       "input_summary": {
         "broad_context": false,
-        "lookup_path": "segment_destination"
+        "lookup_path": "audit"
       },
       "output": {
-        "estimated_metadata_tokens": 951,
-        "prompt_tokens": 1615,
+        "estimated_metadata_tokens": 556,
+        "prompt_tokens": 1151,
         "selected_apis": {
           "items": [
-            "segment_jobs"
+            "audit_events"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "selected_card_name": "segment_destination",
+        "selected_card_name": "audit",
         "selected_columns": {
-          "dim_segment": {
+          "dim_collection": {
             "items": [
-              "LIFECYCLESTATUS"
+              "COLLECTIONID"
             ],
-            "total_items": 8,
+            "total_items": 4,
             "truncated_items": true
-          },
-          "dim_target": {
-            "items": [
-              "CONNECTIONSPECID"
-            ],
-            "total_items": 7,
-            "truncated_items": true
-          },
-          "hkg_br_segment_target": {
-            "items": [
-              "SEGMENTID"
-            ],
-            "total_items": 3,
-            "truncated_items": false
           }
         },
         "selected_tables": {
           "items": [
-            "dim_segment"
+            "dim_collection"
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         }
       },
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-10T05:55:40.673339+00:00"
+      "timestamp": "2026-05-10T01:16:24.674499+00:00"
     },
     {
       "checkpoint_id": "checkpoint_08_candidate_plans",
@@ -428,7 +273,7 @@
       "effect": "selects one plan before execution",
       "efficiency_role": "does not execute losing candidate plans",
       "input_summary": {
-        "base_step_count": 1,
+        "base_step_count": 2,
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "output": {
@@ -441,13 +286,13 @@
         },
         "reason_selected": "highest pre-execution validation/relevance/cost score",
         "scores": {
-          "generic_sql_first": 11.8873
+          "generic_sql_first": 14.2703
         },
         "selected_plan": "generic_sql_first"
       },
       "stage": "planning",
       "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-10T05:55:40.673614+00:00"
+      "timestamp": "2026-05-10T01:16:24.677075+00:00"
     },
     {
       "checkpoint_id": "checkpoint_09_plan_optimization",
@@ -456,11 +301,11 @@
       "effect": "removes duplicate, skippable, or unsafe calls before validation",
       "efficiency_role": "enforces a bounded plan before execution",
       "input_summary": {
-        "original_step_count": 1
+        "original_step_count": 2
       },
       "output": {
         "call_budget_applied": false,
-        "optimized_step_count": 1,
+        "optimized_step_count": 2,
         "optimizer_actions": {
           "items": [
             "ensemble selected generic_sql_first"
@@ -468,14 +313,14 @@
           "total_items": 1,
           "truncated_items": false
         },
-        "original_step_count": 1,
+        "original_step_count": 2,
         "removed_api_skip_calls": 0,
         "removed_duplicate_calls": 0,
         "unresolved_placeholders_removed": 0
       },
       "stage": "optimization",
       "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-10T05:55:40.673627+00:00"
+      "timestamp": "2026-05-10T01:16:24.677090+00:00"
     },
     {
       "checkpoint_id": "checkpoint_10_evidence_policy",
@@ -484,24 +329,24 @@
       "effect": "decides when API evidence is required, optional, or unnecessary",
       "efficiency_role": "skips or caps API calls when SQL evidence is enough",
       "input_summary": {
-        "answer_family": "segment_jobs",
-        "route_type": "API_ONLY"
+        "answer_family": "audit_entity_created",
+        "route_type": "SQL_ONLY"
       },
       "output": {
         "allowed_api_families": {
           "items": [
-            "segment_jobs"
+            "audit_create_events"
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "max_api_calls": 1,
         "mode": "API_REQUIRED",
-        "reason": "Route is API-only."
+        "reason": "Query family requires Adobe API evidence."
       },
       "stage": "evidence policy",
       "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-10T05:55:40.673631+00:00"
+      "timestamp": "2026-05-10T01:16:24.677094+00:00"
     },
     {
       "checkpoint_id": "checkpoint_11_call_budget",
@@ -513,31 +358,27 @@
         "planned_steps": {
           "items": [
             {
-              "action": "api",
-              "family": "segment_jobs",
-              "method": "GET",
-              "params": {
-                "limit": "10"
-              },
-              "purpose": "API parameter template: segment_jobs.",
-              "url": "/data/core/ups/segment/jobs"
+              "action": "sql",
+              "family": "collection_created_by",
+              "purpose": "Ground names/IDs in local snapshot before API verification.",
+              "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS creat [truncated]"
             }
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         }
       },
       "output": {
-        "final_planned_calls": 1,
+        "final_planned_calls": 2,
         "max_api_calls": 1,
         "max_sql_calls": 1,
         "max_total_tool_calls": 2,
         "planned_api_calls": 1,
-        "planned_sql_calls": 0
+        "planned_sql_calls": 1
       },
       "stage": "efficiency control",
       "technique": "tool-call budgeting",
-      "timestamp": "2026-05-10T05:55:40.673649+00:00"
+      "timestamp": "2026-05-10T01:16:24.677116+00:00"
     },
     {
       "checkpoint_id": "checkpoint_12_validation",
@@ -549,17 +390,13 @@
         "optimized_steps": {
           "items": [
             {
-              "action": "api",
-              "family": "segment_jobs",
-              "method": "GET",
-              "params": {
-                "limit": "10"
-              },
-              "purpose": "API parameter template: segment_jobs.",
-              "url": "/data/core/ups/segment/jobs"
+              "action": "sql",
+              "family": "collection_created_by",
+              "purpose": "Ground names/IDs in local snapshot before API verification.",
+              "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS creat [truncated]"
             }
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         }
       },
@@ -577,11 +414,84 @@
           ],
           "total_items": 1,
           "truncated_items": false
+        },
+        "sql_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
         }
       },
       "stage": "validation",
       "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-10T05:55:40.676280+00:00"
+      "timestamp": "2026-05-10T01:16:24.680693+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_sql_ast_validation",
+      "correctness_role": "detects unsafe SQL and schema mismatches with parser-backed structure",
+      "duration_ms": 0.0,
+      "effect": "adds AST-level table and column extraction after existing SQL validation",
+      "efficiency_role": "provides precise feedback without extra SQL tool calls",
+      "input_summary": {
+        "sql_call_count": 1
+      },
+      "output": {
+        "destructive_sql_detected": false,
+        "parsed_ok": true,
+        "selected_columns": {
+          "items": [
+            "C.COLLECTIONID"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "selected_tables": {
+          "items": [
+            "dim_collection"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "summaries": {
+          "items": [
+            {
+              "destructive_sql_detected": false,
+              "enabled": true,
+              "normalized_sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS creat [truncated]",
+              "parsed_ok": true,
+              "selected_columns": {
+                "items": [
+                  "C.COLLECTIONID",
+                  "C.NAME",
+                  "C.CREATEDTIME"
+                ],
+                "total_items": 4,
+                "truncated_items": true
+              },
+              "selected_tables": {
+                "items": [
+                  "dim_collection"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              }
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "validation",
+      "technique": "SQLGlot AST-based SQL validation and extraction",
+      "timestamp": "2026-05-10T01:16:24.680707+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -590,7 +500,7 @@
       "effect": "captures the actual SQL/API evidence gathered by the backend",
       "efficiency_role": "makes tool-call count and result previews explicit",
       "input_summary": {
-        "validated_step_count": 1
+        "validated_step_count": 2
       },
       "output": {
         "api_calls_executed": 1,
@@ -602,28 +512,51 @@
               "ok": false,
               "result_preview": {
                 "dry_run": true,
-                "endpoint": "/data/core/ups/segment/jobs",
+                "endpoint": "/data/foundation/audit/events",
                 "error": "Adobe credentials unavailable; API call not executed.",
                 "method": "GET",
                 "ok": false,
                 "params": {
-                  "limit": "10"
+                  "limit": "20",
+                  "property": "action==create"
                 },
                 "result_preview": null,
-                "url": "https://platform.adobe.io/data/core/ups/segment/jobs"
+                "url": "https://platform.adobe.io/data/foundation/audit/events"
               },
-              "url": "/data/core/ups/segment/jobs"
+              "url": "/data/foundation/audit/events"
             }
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "dry_run_status": true,
-        "sql_calls_executed": 0
+        "row_counts": {
+          "items": [
+            0
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_calls_executed": 1,
+        "sql_results": {
+          "items": [
+            {
+              "ok": true,
+              "result_preview": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "row_count": 0
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
       },
       "stage": "execution",
       "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-10T05:55:40.676289+00:00"
+      "timestamp": "2026-05-10T01:16:24.680715+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -632,14 +565,14 @@
       "effect": "forwards structured facts to API params and answer slots",
       "efficiency_role": "avoids repeated lookup or reparsing work",
       "input_summary": {
-        "tool_result_count": 1
+        "tool_result_count": 2
       },
       "output": {
         "evidence": {}
       },
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-10T05:55:40.676293+00:00"
+      "timestamp": "2026-05-10T01:16:24.680719+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -648,10 +581,10 @@
       "effect": "turns raw tool results into typed evidence fields",
       "efficiency_role": "keeps answer context compact",
       "input_summary": {
-        "tool_result_count": 1
+        "tool_result_count": 2
       },
       "output": {
-        "answer_intent": "LIST",
+        "answer_intent": "DETAIL",
         "discrepancy_flags": {
           "sql_api_discrepancy": false
         },
@@ -659,29 +592,30 @@
           "dry_run": true
         },
         "slots": {
-          "answer_family": "segment_jobs",
+          "answer_family": "audit_entity_created",
           "api_error": false,
-          "discrepancy": false,
-          "dry_run": true,
-          "entity_names": {
+          "counts": {
             "items": [
-              "QUEUED"
+              "0"
             ],
             "total_items": 1,
             "truncated_items": false
           },
+          "discrepancy": false,
+          "dry_run": true,
           "slots_present": {
             "items": [
-              "entity_names"
+              "counts"
             ],
             "total_items": 2,
             "truncated_items": false
-          }
+          },
+          "sql_row_count": 0
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-10T05:55:40.676852+00:00"
+      "timestamp": "2026-05-10T01:16:24.681076+00:00"
     },
     {
       "checkpoint_id": "checkpoint_16_answer_verification",
@@ -690,10 +624,10 @@
       "effect": "checks final-answer claims against SQL/API evidence",
       "efficiency_role": "rewrites safely without extra tool calls",
       "input_summary": {
-        "claim_count": 0,
+        "claim_count": 1,
         "slots_present": {
           "items": [
-            "entity_names"
+            "counts"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -706,13 +640,13 @@
           "truncated_items": false
         },
         "rewrite_applied": false,
-        "supported_claims_count": 0,
+        "supported_claims_count": 1,
         "unsupported_claims_count": 0,
         "verifier_passed": true
       },
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-10T05:55:40.676858+00:00"
+      "timestamp": "2026-05-10T01:16:24.681083+00:00"
     },
     {
       "checkpoint_id": "checkpoint_17_answer_reranking",
@@ -721,7 +655,7 @@
       "effect": "selects the safest answer from same-evidence candidates",
       "efficiency_role": "uses no additional SQL/API/LLM calls",
       "input_summary": {
-        "answer_family": "segment_jobs"
+        "answer_family": "audit_entity_created"
       },
       "output": {
         "candidate_count": 0,
@@ -730,7 +664,7 @@
       },
       "stage": "answer selection",
       "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-10T05:55:40.676861+00:00"
+      "timestamp": "2026-05-10T01:16:24.681085+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -742,44 +676,48 @@
         "verifier_passed": true
       },
       "output": {
-        "answer_length": 180,
-        "final_answer": "Segment evaluation job IDs, statuses, sandbox, and segment counts require live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
-        "final_token_estimate": 30
+        "answer_length": 189,
+        "final_answer": "Based on the evidence provided, no entities were created by download. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
+        "final_token_estimate": 33
       },
       "stage": "final response",
       "technique": "concise grounded final response",
-      "timestamp": "2026-05-10T05:55:40.676885+00:00"
+      "timestamp": "2026-05-10T01:16:24.681131+00:00"
     },
     {
       "active": true,
       "checkpoint_id": "checkpoint_official_token_reduction",
       "correctness_impact_expected": false,
-      "estimated_tokens_after": 717,
-      "estimated_tokens_before": 784,
-      "expected_savings": 67,
+      "estimated_tokens_after": 789,
+      "estimated_tokens_before": 871,
+      "expected_savings": 82,
       "packaged_execution_changed": false,
       "reduced_fields": [
         "steps[0].candidate_apis",
-        "steps[0].candidate_tables",
         "steps[2].metadata_path"
       ]
     }
   ],
-  "domain_type": "SEGMENT_AUDIENCE",
+  "domain_type": "UNKNOWN",
   "errors": [],
-  "estimated_tokens": 717,
-  "execution_time": 0.00036912504583597183,
-  "final_answer": "Segment evaluation job IDs, statuses, sandbox, and segment counts require live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
-  "original_query": "Show all segment jobs with status 'QUEUED'.",
-  "planning_time": 0.00030874996446073055,
-  "preprocessing_time": 0.0036595419514924288,
-  "query_id": "llm_controller_31d155d55f82",
-  "route_type": "API_ONLY",
-  "runtime": 0.01624495815485716,
-  "sql_call_count": 0,
+  "estimated_tokens": 789,
+  "execution_time": 0.0016975828912109137,
+  "final_answer": "Based on the evidence provided, no entities were created by download. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Show me all entities created by download",
+  "planning_time": 0.002741459058597684,
+  "preprocessing_time": 0.0062314169481396675,
+  "query_id": "show_me_all_entities_created_by_download",
+  "route_type": "SQL_ONLY",
+  "runtime": 0.015230832854285836,
+  "sql_call_count": 1,
   "steps": [
     {
       "candidate_apis": [
+        {
+          "id": "journey_list",
+          "method": "GET",
+          "path": "/ajo/journey"
+        },
         {
           "id": "ups_audiences",
           "method": "GET",
@@ -789,92 +727,73 @@
           "id": "segment_definitions",
           "method": "GET",
           "path": "/data/core/ups/segment/definitions"
-        },
-        {
-          "id": "merge_policies",
-          "method": "GET",
-          "path": "/data/core/ups/config/mergePolicies"
         }
       ],
       "candidate_tables": [
         "br_campaign_segment",
-        "dim_segment",
-        "hkg_br_base_segment_used_by_dependent_segment",
-        "hkg_br_collection_segment",
-        "hkg_br_segment_property"
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
       ],
-      "confidence": 0.6499999999999999,
-      "domain_type": "SEGMENT_AUDIENCE",
+      "confidence": 0.2,
+      "domain_type": "UNKNOWN",
       "kind": "route",
-      "reason": "Keyword routing using SEGMENT_AUDIENCE:1, STATUS_MONITORING:1.",
-      "route_type": "API_ONLY"
+      "reason": "Keyword routing found no domain keyword.",
+      "route_type": "SQL_ONLY"
     },
     {
-      "decomposition": {
-        "expected_answer_shape": "table_or_list",
-        "sub_questions": [
-          "Ground named entities and identifiers.",
-          "Apply status/date/entity filters."
-        ]
-      },
       "kind": "nlp",
       "relevance": {
         "apis": [
-          "segment_jobs",
-          "audit_events"
+          "audit_events",
+          "audit_events_short"
         ],
         "lookup_paths": [
-          "segment_destination",
-          "audit"
+          "audit",
+          "journey_campaign"
         ],
         "tables": [
-          "dim_segment",
-          "hkg_br_segment_target"
+          "dim_collection",
+          "dim_segment"
         ]
       },
-      "rewrites": [
-        "important_plurals->singular"
-      ],
       "tokens": {
         "domains": [
-          "segment_audience"
-        ],
-        "quoted_entities": [
-          "QUEUED"
-        ],
-        "statuses": [
-          "queued"
+          "audit",
+          "batch"
         ]
-      },
-      "value_retrieval": {
-        "budget_exceeded": true,
-        "match_count": 0,
-        "matches": [],
-        "retrieval_ms": 10.737
       }
     },
     {
-      "estimated_tokens": 951,
+      "estimated_tokens": 556,
       "kind": "metadata",
       "metadata_path": "metadata.json",
-      "prompt_tokens": 1615
+      "prompt_tokens": 1151
     },
     {
       "kind": "plan",
       "optimizer_actions": [
         "ensemble selected generic_sql_first"
       ],
-      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: segment_jobs.",
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Query family requires Adobe API evidence.",
       "steps": [
         {
+          "action": "sql",
+          "family": "collection_created_by",
+          "purpose": "Ground names/IDs in local snapshot before API verification.",
+          "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS created_time FROM \"dim_collection\" AS C WHERE C.\"CREATEDBY\" ILIKE '%download%'"
+        },
+        {
           "action": "api",
-          "family": "segment_jobs",
+          "family": "audit_create_events",
           "method": "GET",
           "params": {
-            "limit": "10"
+            "limit": "20",
+            "property": "action==create"
           },
-          "purpose": "API parameter template: segment_jobs.",
-          "url": "/data/core/ups/segment/jobs"
+          "purpose": "API parameter template: audit_create_events.",
+          "url": "/data/foundation/audit/events"
         }
       ],
       "strategy": "SQL_FIRST_API_VERIFY"
@@ -883,34 +802,23 @@
       "kind": "optimizer",
       "plan_ensemble": {
         "candidate_scores": {
-          "generic_sql_first": 11.8873
+          "generic_sql_first": 14.2703
         },
         "candidate_tool_calls": {
-          "generic_sql_first": 1
+          "generic_sql_first": 2
         },
         "selected": "generic_sql_first"
       }
     },
     {
-      "headers": {},
-      "kind": "api_call",
-      "method": "GET",
-      "params": {
-        "limit": "10"
-      },
+      "kind": "sql_call",
       "result": {
-        "dry_run": true,
-        "endpoint": "/data/core/ups/segment/jobs",
-        "error": "Adobe credentials unavailable; API call not executed.",
-        "method": "GET",
-        "ok": false,
-        "params": {
-          "limit": "10"
-        },
-        "result_preview": null,
-        "url": "https://platform.adobe.io/data/core/ups/segment/jobs"
+        "error": null,
+        "limited": true,
+        "ok": true,
+        "row_count": 0
       },
-      "url": "/data/core/ups/segment/jobs",
+      "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS created_time FROM \"dim_collection\" AS C WHERE C.\"CREATEDBY\" ILIKE '%download%'",
       "validation": {
         "errors": [],
         "ok": true,
@@ -919,14 +827,43 @@
       }
     },
     {
-      "answer_family": "segment_jobs",
-      "answer_intent": "LIST",
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "20",
+        "property": "action==create"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/audit/events",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "20",
+          "property": "action==create"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/foundation/audit/events"
+      },
+      "url": "/data/foundation/audit/events",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "answer_family": "audit_entity_created",
+      "answer_intent": "DETAIL",
       "completeness_missing_fields": [],
       "kind": "answer_diagnostics",
       "rewrite_applied": false,
       "selected_candidate_type": "base",
       "slots_present": [
-        "entity_names",
+        "counts",
         "dry_run"
       ],
       "unsupported_claims_count": 0,
@@ -935,10 +872,10 @@
   ],
   "strategy": "SQL_FIRST_API_VERIFY",
   "timings": {
-    "answer_time": 0.0006917079444974661,
-    "execution_time": 0.00036912504583597183,
-    "planning_time": 0.00030874996446073055,
-    "preprocessing_time": 0.0036595419514924288
+    "answer_time": 0.0004983330145478249,
+    "execution_time": 0.0016975828912109137,
+    "planning_time": 0.002741459058597684,
+    "preprocessing_time": 0.0062314169481396675
   },
-  "tool_call_count": 1
+  "tool_call_count": 2
 }

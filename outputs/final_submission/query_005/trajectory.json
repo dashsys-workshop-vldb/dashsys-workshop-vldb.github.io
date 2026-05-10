@@ -1,6 +1,6 @@
 {
-  "answer_time": 0.0009689999278634787,
-  "api_call_count": 2,
+  "answer_time": 0.001055083004757762,
+  "api_call_count": 1,
   "checkpoints": [
     {
       "checkpoint_id": "checkpoint_01_raw_query",
@@ -9,13 +9,13 @@
       "effect": "preserves the original query for reproducibility",
       "efficiency_role": "starts one trace without extra tool calls",
       "output": {
-        "query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
-        "query_id": "example_003",
+        "query": "Give me inactive journeys",
+        "query_id": "example_001",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-10T05:53:27.148624+00:00"
+      "timestamp": "2026-05-10T19:12:07.767261+00:00"
     },
     {
       "checkpoint_id": "checkpoint_00_prompt_router",
@@ -24,28 +24,28 @@
       "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
       "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
       "input_summary": {
-        "query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results."
+        "query": "Give me inactive journeys"
       },
       "output": {
-        "confidence": 0.9,
+        "confidence": 0.84,
         "matched_rules": {
           "items": [
-            "api_only:file"
+            "local_db:journey"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
-        "mode": "API_ONLY",
-        "reason": "API/platform family keyword(s): file, files.",
+        "mode": "LOCAL_DB_ONLY",
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: journey.",
         "recommended_strategy": "SQL_FIRST_API_VERIFY",
-        "requires_api": true,
-        "requires_database": false,
-        "risk": "medium",
+        "requires_api": false,
+        "requires_database": true,
+        "risk": "low",
         "truncated_fields": 1
       },
       "stage": "prompt routing",
       "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-10T05:53:27.148681+00:00"
+      "timestamp": "2026-05-10T19:12:07.767298+00:00"
     },
     {
       "checkpoint_id": "checkpoint_simple_prompt_gate",
@@ -54,17 +54,17 @@
       "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
       "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
       "input_summary": {
-        "query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results."
+        "query": "Give me inactive journeys"
       },
       "output": {
-        "confidence": 0.9,
+        "confidence": 0.84,
         "is_simple": false,
-        "reason": "API/platform family keyword(s): file, files.",
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: journey.",
         "suggested_action": "USE_DATA_PIPELINE"
       },
       "stage": "input routing",
       "technique": "simple prompt gate",
-      "timestamp": "2026-05-10T05:53:27.148712+00:00"
+      "timestamp": "2026-05-10T19:12:07.767313+00:00"
     },
     {
       "checkpoint_id": "checkpoint_02_query_normalization",
@@ -73,22 +73,22 @@
       "effect": "creates matching-friendly text while preserving the original query",
       "efficiency_role": "reduces repeated fuzzy matching work downstream",
       "input_summary": {
-        "query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results."
+        "query": "Give me inactive journeys"
       },
       "output": {
-        "matching_text": "list all segment connected to the destination named 'sms opt-in', showing audienceid, name, totalprofiles, createdtime, updatedtime, and used in other audience count for each audience. remove any row limit from the results.",
-        "normalized_query": "List all segments connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+        "matching_text": "give me inactive journey",
+        "normalized_query": "Give me inactive journeys",
         "rewrites": {
           "items": [
-            "\\bsegment\\s+audiences?\\b->segments"
+            "important_plurals->singular"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         }
       },
       "stage": "normalization",
       "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-10T05:53:27.148799+00:00"
+      "timestamp": "2026-05-10T19:12:07.767347+00:00"
     },
     {
       "checkpoint_id": "checkpoint_03_query_tokens",
@@ -97,19 +97,19 @@
       "effect": "extracts reusable query fields for routing, planning, and answers",
       "efficiency_role": "avoids reparsing the query in later modules",
       "input_summary": {
-        "normalized_query": "List all segments connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results."
+        "normalized_query": "Give me inactive journeys"
       },
       "output": {
         "domains": {
           "items": [
-            "audit"
+            "journey_campaign"
           ],
-          "total_items": 4,
-          "truncated_items": true
+          "total_items": 1,
+          "truncated_items": false
         },
-        "quoted_entities": {
+        "statuses": {
           "items": [
-            "SMS Opt-In"
+            "inactive"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -117,7 +117,7 @@
       },
       "stage": "tokenization",
       "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-10T05:53:27.148896+00:00"
+      "timestamp": "2026-05-10T19:12:07.767384+00:00"
     },
     {
       "checkpoint_id": "checkpoint_04_relevance_scoring",
@@ -129,14 +129,14 @@
         "tokens": {
           "domains": {
             "items": [
-              "audit"
+              "journey_campaign"
             ],
-            "total_items": 4,
-            "truncated_items": true
+            "total_items": 1,
+            "truncated_items": false
           },
-          "quoted_entities": {
+          "statuses": {
             "items": [
-              "SMS Opt-In"
+              "inactive"
             ],
             "total_items": 1,
             "truncated_items": false
@@ -146,36 +146,36 @@
       "output": {
         "top_answer_families": {
           "items": [
-            "segment_destination"
+            "inactive_journeys"
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         },
         "top_apis": {
           "items": [
-            "merge_policies"
+            "journey_list"
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         },
         "top_join_hints": {
           "items": [
-            "br_campaign_segment.SEGMENTID->hkg_br_base_segment_used_by_dependent_segment.SEGMENTID"
+            "dim_campaign.CAMPAIGNID->br_campaign_segment.CAMPAIGNID"
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         },
         "top_tables": {
           "items": [
-            "dim_segment"
+            "dim_campaign"
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         }
       },
       "stage": "context selection",
       "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-10T05:53:27.150176+00:00"
+      "timestamp": "2026-05-10T19:12:07.767934+00:00"
     },
     {
       "checkpoint_id": "checkpoint_value_entity_retrieval",
@@ -187,8 +187,8 @@
         "query_values": {
           "items": [
             {
-              "kind": "quoted_entity",
-              "text": "SMS Opt-In"
+              "kind": "status",
+              "text": "inactive"
             }
           ],
           "total_items": 1,
@@ -196,101 +196,24 @@
         }
       },
       "metrics": {
-        "budget_exceeded": true,
-        "match_count": 1,
-        "retrieval_ms": 11.232
+        "budget_exceeded": false,
+        "match_count": 0,
+        "retrieval_ms": 6.726
       },
       "output": {
         "active": true,
         "cache_hit": true,
-        "cache_key": "573ae10238226eac",
+        "cache_key": "fa917ba84b79c5a3",
         "cache_key_algorithm": "sha256",
+        "cache_path": "[REDACTED]/outputs/cache/value_index_fa917ba84b79c5a3.json",
         "cache_reproducible": true,
-        "match_count": 1,
-        "matches": {
-          "items": [
-            {
-              "confidence": 1.0,
-              "kind": "quoted_entity",
-              "match_type": "exact",
-              "matched_column": "NAME",
-              "matched_table": "dim_segment",
-              "matched_value": "SMS Opt-In",
-              "mention": "SMS Opt-In",
-              "retrieval_cost": {
-                "budget_exceeded": true,
-                "cache_hit": true,
-                "cache_key": "573ae10238226eac",
-                "cache_key_algorithm": "sha256",
-                "cache_reproducible": true,
-                "retrieval_ms": 11.232
-              },
-              "truncated_fields": 1
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
+        "match_count": 0,
         "query_value_count": 1,
         "truncated_fields": 8
       },
       "stage": "query understanding",
       "technique": "CHESS-style value/entity retrieval",
-      "timestamp": "2026-05-10T05:53:27.150468+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_query_decomposition",
-      "correctness_role": "helps SQL/API planning preserve requested constraints",
-      "duration_ms": 0.0,
-      "effect": "breaks complex prompts into entities, filters, joins, and answer-shape constraints",
-      "efficiency_role": "skips simple queries and uses no LLM/tool calls",
-      "input_summary": {
-        "query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
-        "tokens": {
-          "domains": {
-            "items": [
-              "audit"
-            ],
-            "total_items": 4,
-            "truncated_items": true
-          },
-          "quoted_entities": {
-            "items": [
-              "SMS Opt-In"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          }
-        }
-      },
-      "output": {
-        "active": true,
-        "expected_answer_shape": "scalar_count",
-        "required_aggregations": {
-          "items": [
-            "count"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "required_entities": {
-          "items": [
-            "SMS Opt-In"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "sub_questions": {
-          "items": [
-            "Ground named entities and identifiers."
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        }
-      },
-      "stage": "query understanding",
-      "technique": "DIN-SQL-style deterministic query decomposition",
-      "timestamp": "2026-05-10T05:53:27.150493+00:00"
+      "timestamp": "2026-05-10T19:12:07.768091+00:00"
     },
     {
       "checkpoint_id": "checkpoint_05_query_analysis",
@@ -299,28 +222,28 @@
       "effect": "computes shared query understanding once",
       "efficiency_role": "avoids repeated template and routing analysis",
       "input_summary": {
-        "domain_type": "SEGMENT_AUDIENCE",
-        "route_type": "SQL_ONLY"
+        "domain_type": "JOURNEY_CAMPAIGN",
+        "route_type": "SQL_THEN_API"
       },
       "output": {
-        "answer_family": "segment_destination",
+        "answer_family": "inactive_journeys",
         "api_templates": {
           "items": [
-            "audience_by_destination_id"
+            "journey_inactive"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
-        "confidence": 1.0,
-        "domain_type": "SEGMENT_AUDIENCE",
-        "fast_path": "segment_destination_relationship+audience_by_destination_id+destination_flows",
-        "route_type": "SQL_ONLY",
-        "sql_template": "segment_destination_relationship",
+        "confidence": 0.8,
+        "domain_type": "JOURNEY_CAMPAIGN",
+        "fast_path": "journey_campaign_inactive+journey_inactive",
+        "route_type": "SQL_THEN_API",
+        "sql_template": "journey_campaign_inactive",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "routing",
       "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-10T05:53:27.150496+00:00"
+      "timestamp": "2026-05-10T19:12:07.768099+00:00"
     },
     {
       "checkpoint_id": "checkpoint_06_lookup_path",
@@ -329,44 +252,37 @@
       "effect": "predicts the relevant table/join/API path",
       "efficiency_role": "filters unrelated schema and endpoint candidates",
       "input_summary": {
-        "answer_family": "segment_destination",
-        "domain_type": "SEGMENT_AUDIENCE"
+        "answer_family": "inactive_journeys",
+        "domain_type": "JOURNEY_CAMPAIGN"
       },
       "output": {
         "api_families": {
           "items": [
-            "audience_by_destination_id"
+            "journey_by_name"
           ],
-          "total_items": 2,
+          "total_items": 3,
           "truncated_items": false
         },
         "api_mode": "optional",
-        "family": "segment_destination",
-        "join_path": {
-          "items": [
-            "dim_segment.segmentid = hkg_br_segment_target.segmentid"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
+        "family": "journey_campaign",
         "required_ids": {
           "items": [
-            "segment_id"
+            "campaign_id"
           ],
-          "total_items": 3,
+          "total_items": 2,
           "truncated_items": false
         },
         "tables": {
           "items": [
-            "dim_segment"
+            "dim_campaign"
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         }
       },
       "stage": "path prediction",
       "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-10T05:53:27.150499+00:00"
+      "timestamp": "2026-05-10T19:12:07.768101+00:00"
     },
     {
       "checkpoint_id": "checkpoint_07_context_card",
@@ -376,53 +292,39 @@
       "efficiency_role": "limits context size for non-baseline strategies",
       "input_summary": {
         "broad_context": false,
-        "lookup_path": "segment_destination"
+        "lookup_path": "journey_campaign"
       },
       "output": {
-        "estimated_metadata_tokens": 1022,
-        "prompt_tokens": 1694,
+        "estimated_metadata_tokens": 381,
+        "prompt_tokens": 949,
         "selected_apis": {
           "items": [
-            "ups_audiences"
+            "journey_list"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
-        "selected_card_name": "segment_destination",
+        "selected_card_name": "journey_campaign",
         "selected_columns": {
-          "dim_segment": {
+          "dim_campaign": {
             "items": [
-              "SEGMENTID"
+              "CAMPAIGNID"
             ],
             "total_items": 5,
             "truncated_items": true
-          },
-          "dim_target": {
-            "items": [
-              "TARGETID"
-            ],
-            "total_items": 3,
-            "truncated_items": false
-          },
-          "hkg_br_segment_target": {
-            "items": [
-              "SEGMENTID"
-            ],
-            "total_items": 2,
-            "truncated_items": false
           }
         },
         "selected_tables": {
           "items": [
-            "dim_segment"
+            "dim_campaign"
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         }
       },
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-10T05:53:27.152091+00:00"
+      "timestamp": "2026-05-10T19:12:07.769339+00:00"
     },
     {
       "checkpoint_id": "checkpoint_08_candidate_plans",
@@ -431,7 +333,7 @@
       "effect": "selects one plan before execution",
       "efficiency_role": "does not execute losing candidate plans",
       "input_summary": {
-        "base_step_count": 3,
+        "base_step_count": 2,
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "output": {
@@ -444,13 +346,13 @@
         },
         "reason_selected": "highest pre-execution validation/relevance/cost score",
         "scores": {
-          "generic_sql_first": 16.4234
+          "generic_sql_first": 14.2654
         },
         "selected_plan": "generic_sql_first"
       },
       "stage": "planning",
       "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-10T05:53:27.152716+00:00"
+      "timestamp": "2026-05-10T19:12:07.769706+00:00"
     },
     {
       "checkpoint_id": "checkpoint_09_plan_optimization",
@@ -459,11 +361,11 @@
       "effect": "removes duplicate, skippable, or unsafe calls before validation",
       "efficiency_role": "enforces a bounded plan before execution",
       "input_summary": {
-        "original_step_count": 3
+        "original_step_count": 2
       },
       "output": {
         "call_budget_applied": false,
-        "optimized_step_count": 3,
+        "optimized_step_count": 2,
         "optimizer_actions": {
           "items": [
             "ensemble selected generic_sql_first"
@@ -471,14 +373,14 @@
           "total_items": 1,
           "truncated_items": false
         },
-        "original_step_count": 3,
+        "original_step_count": 2,
         "removed_api_skip_calls": 0,
         "removed_duplicate_calls": 0,
         "unresolved_placeholders_removed": 0
       },
       "stage": "optimization",
       "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-10T05:53:27.152731+00:00"
+      "timestamp": "2026-05-10T19:12:07.769713+00:00"
     },
     {
       "checkpoint_id": "checkpoint_10_evidence_policy",
@@ -487,24 +389,24 @@
       "effect": "decides when API evidence is required, optional, or unnecessary",
       "efficiency_role": "skips or caps API calls when SQL evidence is enough",
       "input_summary": {
-        "answer_family": "segment_destination",
-        "route_type": "SQL_ONLY"
+        "answer_family": "inactive_journeys",
+        "route_type": "SQL_THEN_API"
       },
       "output": {
         "allowed_api_families": {
           "items": [
-            "audience_by_destination_id"
+            "journey_inactive"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
-        "max_api_calls": 2,
+        "max_api_calls": 1,
         "mode": "API_OPTIONAL",
-        "reason": "Known multi-call verification family."
+        "reason": "Live/platform verification may improve the answer."
       },
       "stage": "evidence policy",
       "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-10T05:53:27.152734+00:00"
+      "timestamp": "2026-05-10T19:12:07.769716+00:00"
     },
     {
       "checkpoint_id": "checkpoint_11_call_budget",
@@ -513,47 +415,30 @@
       "effect": "keeps tool calls within per-family limits",
       "efficiency_role": "prevents accidental extra SQL/API calls",
       "input_summary": {
-        "preview": "{\"planned_steps\": {\"items\": [{\"action\": \"sql\", \"purpose\": \"Fast-path SQL grounding.\", \"sql\": \"SELECT A.\\\"SEGMENTID\\\" AS segment_id, A.\\\"NAME\\\" AS segment_name, A.\\\"TOTALMEMBERS\\\" AS total_profiles, A.\\\"CREATEDTIME\\\" AS creat [truncated]",
-        "truncated": true
-      },
-      "output": {
-        "final_planned_calls": 3,
-        "max_api_calls": 2,
-        "max_sql_calls": 1,
-        "max_total_tool_calls": 3,
-        "planned_api_calls": 2,
-        "planned_sql_calls": 1
-      },
-      "stage": "efficiency control",
-      "technique": "tool-call budgeting",
-      "timestamp": "2026-05-10T05:53:27.152762+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_gated_sql_candidate_selection",
-      "correctness_role": "selects only validator- and AST-passing SQL candidates",
-      "duration_ms": 0.0,
-      "effect": "validates hard-case SQL candidates before execution without executing losing candidates",
-      "efficiency_role": "executes only one selected candidate in packaged SQL_FIRST_API_VERIFY mode",
-      "input_summary": {
-        "trigger_reasons": {
+        "planned_steps": {
           "items": [
-            "complex_query_decomposition"
+            {
+              "action": "sql",
+              "family": "journey_campaign_inactive",
+              "purpose": "Fast-path SQL grounding.",
+              "sql": "SELECT J.\"CAMPAIGNID\" AS campaign_id, J.\"NAME\" AS campaign_name, J.\"STATE\" AS campaign_state, J.\"UPDATED [truncated]"
+            }
           ],
           "total_items": 2,
           "truncated_items": false
         }
       },
-      "metrics": {
-        "candidate_count": 1,
-        "cost_estimate": 1
-      },
       "output": {
-        "preview": "{\"active\": true, \"hard_case_triggered\": true, \"trigger_reasons\": {\"items\": [\"complex_query_decomposition\", \"value_match_not_used_by_sql\"], \"total_items\": 2, \"truncated_items\": false}, \"candidate_count\": 1, \"candidate_sql_sou [truncated]",
-        "truncated": true
+        "final_planned_calls": 2,
+        "max_api_calls": 1,
+        "max_sql_calls": 1,
+        "max_total_tool_calls": 2,
+        "planned_api_calls": 1,
+        "planned_sql_calls": 1
       },
-      "stage": "planning",
-      "technique": "hard-case gated SQL candidate validation",
-      "timestamp": "2026-05-10T05:53:27.155958+00:00"
+      "stage": "efficiency control",
+      "technique": "tool-call budgeting",
+      "timestamp": "2026-05-10T19:12:07.769731+00:00"
     },
     {
       "checkpoint_id": "checkpoint_12_validation",
@@ -562,8 +447,18 @@
       "effect": "records whether planned SQL/API calls were safe to execute",
       "efficiency_role": "prevents wasted execution on invalid calls",
       "input_summary": {
-        "preview": "{\"optimized_steps\": {\"items\": [{\"action\": \"sql\", \"purpose\": \"Fast-path SQL grounding.\", \"sql\": \"SELECT A.\\\"SEGMENTID\\\" AS segment_id, A.\\\"NAME\\\" AS segment_name, A.\\\"TOTALMEMBERS\\\" AS total_profiles, A.\\\"CREATEDTIME\\\" AS cre [truncated]",
-        "truncated": true
+        "optimized_steps": {
+          "items": [
+            {
+              "action": "sql",
+              "family": "journey_campaign_inactive",
+              "purpose": "Fast-path SQL grounding.",
+              "sql": "SELECT J.\"CAMPAIGNID\" AS campaign_id, J.\"NAME\" AS campaign_name, J.\"STATE\" AS campaign_state, J.\"UPDATED [truncated]"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
       },
       "output": {
         "api_validation_status": {
@@ -577,7 +472,7 @@
               "ok": true
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "sql_validation_status": {
@@ -597,7 +492,7 @@
       },
       "stage": "validation",
       "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-10T05:53:27.159253+00:00"
+      "timestamp": "2026-05-10T19:12:07.771377+00:00"
     },
     {
       "checkpoint_id": "checkpoint_sql_ast_validation",
@@ -609,12 +504,54 @@
         "sql_call_count": 1
       },
       "output": {
-        "preview": "{\"summaries\": {\"items\": [{\"enabled\": true, \"parsed_ok\": true, \"selected_tables\": {\"items\": [\"dim_segment\", \"hkg_br_segment_target\", \"dim_target\"], \"total_items\": 3, \"truncated_items\": false}, \"selected_columns\": {\"items\": [\" [truncated]",
-        "truncated": true
+        "destructive_sql_detected": false,
+        "parsed_ok": true,
+        "selected_columns": {
+          "items": [
+            "J.CAMPAIGNID"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "selected_tables": {
+          "items": [
+            "dim_campaign"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "summaries": {
+          "items": [
+            {
+              "destructive_sql_detected": false,
+              "enabled": true,
+              "normalized_sql": "SELECT J.\"CAMPAIGNID\" AS campaign_id, J.\"NAME\" AS campaign_name, J.\"STATE\" AS campaign_state, J.\"UPDATED [truncated]",
+              "parsed_ok": true,
+              "selected_columns": {
+                "items": [
+                  "J.CAMPAIGNID",
+                  "J.NAME",
+                  "J.STATE"
+                ],
+                "total_items": 4,
+                "truncated_items": true
+              },
+              "selected_tables": {
+                "items": [
+                  "dim_campaign"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              }
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
       },
       "stage": "validation",
       "technique": "SQLGlot AST-based SQL validation and extraction",
-      "timestamp": "2026-05-10T05:53:27.159274+00:00"
+      "timestamp": "2026-05-10T19:12:07.771384+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -623,15 +560,15 @@
       "effect": "captures the actual SQL/API evidence gathered by the backend",
       "efficiency_role": "makes tool-call count and result previews explicit",
       "input_summary": {
-        "validated_step_count": 3
+        "validated_step_count": 2
       },
       "output": {
-        "preview": "{\"sql_calls_executed\": 1, \"api_calls_executed\": 2, \"dry_run_status\": true, \"row_counts\": {\"items\": [0], \"total_items\": 1, \"truncated_items\": false}, \"sql_results\": {\"items\": [{\"result_preview\": {\"items\": [], \"total_items\": 0 [truncated]",
+        "preview": "{\"sql_calls_executed\": 1, \"api_calls_executed\": 1, \"dry_run_status\": true, \"row_counts\": {\"items\": [2], \"total_items\": 1, \"truncated_items\": false}, \"sql_results\": {\"items\": [{\"result_preview\": {\"items\": [{\"campaign_id\": \"9f [truncated]",
         "truncated": true
       },
       "stage": "execution",
       "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-10T05:53:27.159287+00:00"
+      "timestamp": "2026-05-10T19:12:07.771390+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -640,14 +577,32 @@
       "effect": "forwards structured facts to API params and answer slots",
       "efficiency_role": "avoids repeated lookup or reparsing work",
       "input_summary": {
-        "tool_result_count": 3
+        "tool_result_count": 2
       },
       "output": {
-        "evidence": {}
+        "evidence": {
+          "ids": {
+            "campaign_id": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
+          },
+          "names": {
+            "items": [
+              "Birthday Message"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "timestamps": {
+            "items": [
+              "2026-03-31T06:07:32.838462639Z"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          }
+        }
       },
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-10T05:53:27.159291+00:00"
+      "timestamp": "2026-05-10T19:12:07.771393+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -656,55 +611,49 @@
       "effect": "turns raw tool results into typed evidence fields",
       "efficiency_role": "keeps answer context compact",
       "input_summary": {
-        "tool_result_count": 3
+        "tool_result_count": 2
       },
       "output": {
-        "answer_intent": "WHEN",
+        "answer_intent": "STATUS",
         "discrepancy_flags": {
           "sql_api_discrepancy": false
         },
         "dry_run_flags": {
           "dry_run": true
         },
-        "missing_slots": {
-          "items": [
-            "timestamp"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
         "slots": {
-          "answer_family": "segment_destination",
+          "answer_family": "inactive_journeys",
           "api_error": false,
-          "counts": {
-            "items": [
-              "0"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
           "discrepancy": false,
           "dry_run": true,
+          "entity_ids": {
+            "items": [
+              "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
           "entity_names": {
             "items": [
-              "SMS Opt-In"
+              "Birthday Message"
             ],
-            "total_items": 1,
+            "total_items": 2,
             "truncated_items": false
           },
           "slots_present": {
             "items": [
               "entity_names"
             ],
-            "total_items": 3,
-            "truncated_items": false
+            "total_items": 8,
+            "truncated_items": true
           },
-          "sql_row_count": 0
+          "sql_row_count": 2,
+          "truncated_fields": 5
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-10T05:53:27.160106+00:00"
+      "timestamp": "2026-05-10T19:12:07.772275+00:00"
     },
     {
       "checkpoint_id": "checkpoint_16_answer_verification",
@@ -713,13 +662,13 @@
       "effect": "checks final-answer claims against SQL/API evidence",
       "efficiency_role": "rewrites safely without extra tool calls",
       "input_summary": {
-        "claim_count": 2,
+        "claim_count": 4,
         "slots_present": {
           "items": [
             "entity_names"
           ],
-          "total_items": 3,
-          "truncated_items": false
+          "total_items": 8,
+          "truncated_items": true
         }
       },
       "output": {
@@ -729,13 +678,13 @@
           "truncated_items": false
         },
         "rewrite_applied": false,
-        "supported_claims_count": 2,
+        "supported_claims_count": 4,
         "unsupported_claims_count": 0,
         "verifier_passed": true
       },
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-10T05:53:27.160111+00:00"
+      "timestamp": "2026-05-10T19:12:07.772280+00:00"
     },
     {
       "checkpoint_id": "checkpoint_17_answer_reranking",
@@ -744,7 +693,7 @@
       "effect": "selects the safest answer from same-evidence candidates",
       "efficiency_role": "uses no additional SQL/API/LLM calls",
       "input_summary": {
-        "answer_family": "segment_destination"
+        "answer_family": "inactive_journeys"
       },
       "output": {
         "candidate_count": 0,
@@ -753,7 +702,7 @@
       },
       "stage": "answer selection",
       "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-10T05:53:27.160114+00:00"
+      "timestamp": "2026-05-10T19:12:07.772283+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -765,181 +714,118 @@
         "verifier_passed": true
       },
       "output": {
-        "answer_length": 263,
-        "final_answer": "Based on the evidence provided, there is no data available to answer this question. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable, so audience and flow [truncated]",
-        "final_token_estimate": 47
+        "answer_length": 211,
+        "final_answer": "There are 2 inactive campaigns: Birthday Message (last updated 2026-03-31) and Gold Tier Welcome Email (last updated 2026-03-31). Live API verification was not executed because Adobe credentials are unavailable.",
+        "final_token_estimate": 48
       },
       "stage": "final response",
       "technique": "concise grounded final response",
-      "timestamp": "2026-05-10T05:53:27.160164+00:00"
+      "timestamp": "2026-05-10T19:12:07.772315+00:00"
     },
     {
       "active": true,
       "checkpoint_id": "checkpoint_official_token_reduction",
       "correctness_impact_expected": false,
-      "estimated_tokens_after": 1571,
-      "estimated_tokens_before": 1643,
-      "expected_savings": 72,
+      "estimated_tokens_after": 906,
+      "estimated_tokens_before": 997,
+      "expected_savings": 91,
       "packaged_execution_changed": false,
       "reduced_fields": [
-        "steps[0].candidate_apis",
-        "steps[0].candidate_tables",
-        "steps[2].metadata_path"
+        "steps[2].metadata_path",
+        "steps[5].result.rows"
       ]
     }
   ],
-  "domain_type": "SEGMENT_AUDIENCE",
+  "domain_type": "JOURNEY_CAMPAIGN",
   "errors": [],
-  "estimated_tokens": 1571,
-  "execution_time": 0.0009112909901887178,
-  "final_answer": "Based on the evidence provided, there is no data available to answer this question. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable, so audience and flow service evidence could not be checked.",
-  "original_query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
-  "planning_time": 0.003868625033646822,
-  "preprocessing_time": 0.0033788750879466534,
-  "query_id": "example_003",
-  "route_type": "SQL_ONLY",
-  "runtime": 0.016079708002507687,
+  "estimated_tokens": 906,
+  "execution_time": 0.0006249169819056988,
+  "final_answer": "There are 2 inactive campaigns: Birthday Message (last updated 2026-03-31) and Gold Tier Welcome Email (last updated 2026-03-31). Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Give me inactive journeys",
+  "planning_time": 0.0005220840685069561,
+  "preprocessing_time": 0.002026416826993227,
+  "query_id": "example_001",
+  "route_type": "SQL_THEN_API",
+  "runtime": 0.012087041977792978,
   "sql_call_count": 1,
   "steps": [
     {
       "candidate_apis": [
         {
-          "id": "ups_audiences",
+          "id": "journey_list",
           "method": "GET",
-          "path": "/data/core/ups/audiences"
-        },
-        {
-          "id": "segment_definitions",
-          "method": "GET",
-          "path": "/data/core/ups/segment/definitions"
-        },
-        {
-          "id": "merge_policies",
-          "method": "GET",
-          "path": "/data/core/ups/config/mergePolicies"
+          "path": "/ajo/journey"
         }
       ],
       "candidate_tables": [
         "br_campaign_segment",
-        "dim_connector",
-        "dim_segment",
-        "dim_target",
-        "hkg_br_base_segment_used_by_dependent_segment"
+        "dim_campaign"
       ],
-      "confidence": 0.95,
-      "domain_type": "SEGMENT_AUDIENCE",
+      "confidence": 0.6499999999999999,
+      "domain_type": "JOURNEY_CAMPAIGN",
       "kind": "route",
-      "reason": "Keyword routing using SEGMENT_AUDIENCE:3, DESTINATION_DATAFLOW:1, RELATIONSHIP_TRAVERSAL:1, COUNT_AGGREGATION:2.",
-      "route_type": "SQL_ONLY"
+      "reason": "Keyword routing using JOURNEY_CAMPAIGN:2, STATUS_MONITORING:1.",
+      "route_type": "SQL_THEN_API"
     },
     {
-      "decomposition": {
-        "expected_answer_shape": "scalar_count",
-        "sub_questions": [
-          "Ground named entities and identifiers.",
-          "Compute requested aggregation or time-range result."
-        ]
-      },
       "kind": "nlp",
       "relevance": {
         "apis": [
-          "merge_policies",
-          "segment_jobs"
+          "journey_list"
         ],
         "lookup_paths": [
-          "segment_destination",
-          "audit"
+          "journey_campaign"
         ],
         "tables": [
-          "dim_segment",
-          "hkg_br_segment_target"
+          "dim_campaign"
         ]
       },
       "rewrites": [
-        "\\bsegment\\s+audiences?\\b->segments",
         "important_plurals->singular"
       ],
       "tokens": {
         "domains": [
-          "audit",
-          "batch",
-          "destination_dataflow",
-          "segment_audience"
+          "journey_campaign"
         ],
-        "quoted_entities": [
-          "SMS Opt-In"
+        "statuses": [
+          "inactive"
         ]
       },
       "value_retrieval": {
-        "budget_exceeded": true,
-        "match_count": 1,
-        "matches": [
-          {
-            "confidence": 1.0,
-            "kind": "quoted_entity",
-            "match_type": "exact",
-            "matched_column": "NAME",
-            "matched_table": "dim_segment",
-            "matched_value": "SMS Opt-In",
-            "mention": "SMS Opt-In",
-            "retrieval_cost": {
-              "budget_exceeded": true,
-              "cache_hit": true,
-              "cache_key": "573ae10238226eac",
-              "cache_key_algorithm": "sha256",
-              "cache_reproducible": true,
-              "retrieval_ms": 11.232
-            },
-            "used_for": "sql_filter"
-          }
-        ],
-        "retrieval_ms": 11.232
+        "budget_exceeded": false,
+        "match_count": 0,
+        "matches": [],
+        "retrieval_ms": 6.726
       }
     },
     {
-      "estimated_tokens": 1022,
+      "estimated_tokens": 381,
       "kind": "metadata",
       "metadata_path": "metadata.json",
-      "prompt_tokens": 1694
+      "prompt_tokens": 949
     },
     {
       "kind": "plan",
       "optimizer_actions": [
         "ensemble selected generic_sql_first"
       ],
-      "rationale": "SQL-first evidence policy: API_OPTIONAL. Known multi-call verification family. Fast path: segment_destination_relationship+audience_by_destination_id+destination_flows.",
+      "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve the answer. Fast path: journey_campaign_inactive+journey_inactive.",
       "steps": [
         {
           "action": "sql",
-          "allow_full_result": true,
-          "family": "segment_destination_relationship",
+          "family": "journey_campaign_inactive",
           "purpose": "Fast-path SQL grounding.",
-          "sql": "SELECT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, A.\"TOTALMEMBERS\" AS total_profiles, A.\"CREATEDTIME\" AS created_time, A.\"UPDATEDTIME\" AS updated_time FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"DATAFLOWNAME\" = 'SMS Opt-In' OR D.\"NAME\" = 'SMS Opt-In' ORDER BY A.\"NAME\""
+          "sql": "SELECT J.\"CAMPAIGNID\" AS campaign_id, J.\"NAME\" AS campaign_name, J.\"STATE\" AS campaign_state, J.\"UPDATEDTIME\" AS updated_time FROM \"dim_campaign\" AS J WHERE LOWER(CAST(J.\"STATE\" AS VARCHAR)) NOT IN ('deployed', 'redeployed') LIMIT 50"
         },
         {
           "action": "api",
-          "family": "audience_by_destination_id",
+          "family": "journey_inactive",
           "method": "GET",
           "params": {
-            "limit": "5",
-            "property": "destinationId==<destination_id>"
+            "filter": "status!=live"
           },
-          "purpose": "API parameter template: audience_by_destination_id.",
-          "url": "/data/core/ups/audiences",
-          "warnings": [
-            "unresolved_parameter: destination_id"
-          ]
-        },
-        {
-          "action": "api",
-          "family": "destination_flows",
-          "method": "GET",
-          "params": {
-            "limit": "5",
-            "property": "inheritedAttributes.properties.isDestinationFlow==true"
-          },
-          "purpose": "API parameter template: destination_flows.",
-          "url": "/data/foundation/flowservice/flows"
+          "purpose": "API parameter template: journey_inactive.",
+          "url": "/ajo/journey"
         }
       ],
       "strategy": "SQL_FIRST_API_VERIFY"
@@ -948,10 +834,10 @@
       "kind": "optimizer",
       "plan_ensemble": {
         "candidate_scores": {
-          "generic_sql_first": 16.4234
+          "generic_sql_first": 14.2654
         },
         "candidate_tool_calls": {
-          "generic_sql_first": 3
+          "generic_sql_first": 2
         },
         "selected": "generic_sql_first"
       }
@@ -962,9 +848,21 @@
         "error": null,
         "limited": false,
         "ok": true,
-        "row_count": 0
+        "row_count": 2,
+        "rows": {
+          "items": [
+            {
+              "campaign_id": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+              "campaign_name": "Birthday Message",
+              "campaign_state": "updated",
+              "updated_time": "2026-03-31T06:07:32.838462639Z"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": true
+        }
       },
-      "sql": "SELECT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, A.\"TOTALMEMBERS\" AS total_profiles, A.\"CREATEDTIME\" AS created_time, A.\"UPDATEDTIME\" AS updated_time FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"DATAFLOWNAME\" = 'SMS Opt-In' OR D.\"NAME\" = 'SMS Opt-In' ORDER BY A.\"NAME\"",
+      "sql": "SELECT J.\"CAMPAIGNID\" AS campaign_id, J.\"NAME\" AS campaign_name, J.\"STATE\" AS campaign_state, J.\"UPDATEDTIME\" AS updated_time FROM \"dim_campaign\" AS J WHERE LOWER(CAST(J.\"STATE\" AS VARCHAR)) NOT IN ('deployed', 'redeployed') LIMIT 50",
       "validation": {
         "errors": [],
         "ok": true,
@@ -977,23 +875,21 @@
       "kind": "api_call",
       "method": "GET",
       "params": {
-        "limit": "5",
-        "property": "destinationId==<destination_id>"
+        "filter": "status!=live"
       },
       "result": {
         "dry_run": true,
-        "endpoint": "/data/core/ups/audiences",
+        "endpoint": "/ajo/journey",
         "error": "Adobe credentials unavailable; API call not executed.",
         "method": "GET",
         "ok": false,
         "params": {
-          "limit": "5",
-          "property": "destinationId==<destination_id>"
+          "filter": "status!=live"
         },
         "result_preview": null,
-        "url": "https://platform.adobe.io/data/core/ups/audiences"
+        "url": "https://platform.adobe.io/ajo/journey"
       },
-      "url": "/data/core/ups/audiences",
+      "url": "/ajo/journey",
       "validation": {
         "errors": [],
         "ok": true,
@@ -1002,47 +898,21 @@
       }
     },
     {
-      "headers": {},
-      "kind": "api_call",
-      "method": "GET",
-      "params": {
-        "limit": "5",
-        "property": "inheritedAttributes.properties.isDestinationFlow==true"
-      },
-      "result": {
-        "dry_run": true,
-        "endpoint": "/data/foundation/flowservice/flows",
-        "error": "Adobe credentials unavailable; API call not executed.",
-        "method": "GET",
-        "ok": false,
-        "params": {
-          "limit": "5",
-          "property": "inheritedAttributes.properties.isDestinationFlow==true"
-        },
-        "result_preview": null,
-        "url": "https://platform.adobe.io/data/foundation/flowservice/flows"
-      },
-      "url": "/data/foundation/flowservice/flows",
-      "validation": {
-        "errors": [],
-        "ok": true,
-        "repaired": false,
-        "warnings": []
-      }
-    },
-    {
-      "answer_family": "segment_destination",
-      "answer_intent": "WHEN",
-      "completeness_missing_fields": [
-        "timestamp"
-      ],
+      "answer_family": "inactive_journeys",
+      "answer_intent": "STATUS",
+      "completeness_missing_fields": [],
       "kind": "answer_diagnostics",
       "rewrite_applied": false,
       "selected_candidate_type": "base",
       "slots_present": [
         "entity_names",
+        "entity_ids",
         "counts",
-        "dry_run"
+        "statuses",
+        "timestamps",
+        "sql_row_count",
+        "dry_run",
+        "first_rows"
       ],
       "unsupported_claims_count": 0,
       "verifier_passed": true
@@ -1050,10 +920,10 @@
   ],
   "strategy": "SQL_FIRST_API_VERIFY",
   "timings": {
-    "answer_time": 0.0009689999278634787,
-    "execution_time": 0.0009112909901887178,
-    "planning_time": 0.003868625033646822,
-    "preprocessing_time": 0.0033788750879466534
+    "answer_time": 0.001055083004757762,
+    "execution_time": 0.0006249169819056988,
+    "planning_time": 0.0005220840685069561,
+    "preprocessing_time": 0.002026416826993227
   },
-  "tool_call_count": 3
+  "tool_call_count": 2
 }

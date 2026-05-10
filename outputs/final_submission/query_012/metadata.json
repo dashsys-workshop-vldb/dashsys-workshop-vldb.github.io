@@ -8,89 +8,157 @@
     "Prefer fewer tool calls when evidence is sufficient."
   ],
   "context_card": {
-    "answer_policy": "Use blueprint/collection joins for local schema-dataset evidence; API may validate catalog/schema registry.",
-    "api_families": [
-      "datasets_by_schema",
-      "schema_registry_by_id",
-      "schema_by_name",
-      "schema_list"
-    ],
-    "api_mode": "required",
-    "family": "schema_dataset",
+    "answer_policy": "Answer from property bridge rows only; do not invent field descriptions.",
+    "api_families": [],
+    "api_mode": "skip",
+    "family": "property_field",
     "join_path": [
-      "dim_blueprint.blueprintid = hkg_br_blueprint_collection.blueprintid",
-      "hkg_br_blueprint_collection.collectionid = dim_collection.collectionid"
+      "dim_segment.segmentid = hkg_br_segment_property.segmentid",
+      "dim_collection.collectionid = hkg_br_collection_property.collectionid"
     ],
     "required_ids": [
-      "schema_id",
-      "blueprint_id",
-      "collection_id"
+      "segment_id",
+      "collection_id",
+      "property"
     ],
     "tables": [
-      "dim_blueprint",
-      "hkg_br_blueprint_collection",
-      "dim_collection"
+      "dim_segment",
+      "hkg_br_segment_property",
+      "dim_collection",
+      "hkg_br_collection_property"
     ]
   },
-  "domain_type": "SEGMENT_AUDIENCE",
+  "domain_type": "PROPERTY_FIELD",
   "known_example_patterns": [
     {
       "method": "GET",
       "params": {
-        "filter": "class==ExperienceEvent;isProfileEnabled==true",
-        "limit": "25"
+        "limit": "3",
+        "property": "assetType==destination"
       },
-      "path": "/data/foundation/schemaregistry/tenant/schemas"
+      "path": "/data/foundation/audit/events"
+    },
+    {
+      "method": "GET",
+      "params": {
+        "limit": "50",
+        "orderBy": "-timestamp",
+        "property": "assetType==dataset"
+      },
+      "path": "/audit/events"
     }
   ],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
-        "schema_dataset",
-        "batch"
+        "property_field"
       ]
-    },
-    "rewrites": [
-      "important_plurals->singular"
-    ]
+    }
   },
-  "query": "Count the number of XDM Experience Event schemas that are enabled for profile.",
-  "query_id": "example_010",
+  "query": "show me the field for Person: Birthday Today 001",
+  "query_id": "example_008",
   "route_type": "SQL_ONLY",
   "selected_apis": [
     {
-      "id": "schema_registry_schemas",
+      "id": "audit_events",
       "method": "GET",
-      "path": "/data/foundation/schemaregistry/tenant/schemas"
+      "path": "/data/foundation/audit/events"
+    },
+    {
+      "id": "audit_events_short",
+      "method": "GET",
+      "path": "/audit/events"
+    },
+    {
+      "id": "export_batch_failed",
+      "method": "GET",
+      "path": "/data/foundation/export/batches/{batch_id}/failed"
+    },
+    {
+      "id": "export_batch_files",
+      "method": "GET",
+      "path": "/data/foundation/export/batches/{batch_id}/files"
     }
   ],
   "selected_columns": {
-    "dim_blueprint": [
-      "BLUEPRINTID",
-      "CLASS",
-      "ISPROFILEENABLED"
+    "dim_segment": [
+      "SEGMENTID",
+      "NAME"
+    ],
+    "hkg_br_segment_property": [
+      "SEGMENTID",
+      "PROPERTY"
     ]
   },
   "selected_join_hints": [
     {
       "confidence": 0.9,
-      "left_column": "BLUEPRINTID",
-      "left_table": "dim_blueprint",
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
       "reason": "Matching ID-like column name.",
-      "right_column": "BLUEPRINTID",
-      "right_table": "hkg_br_blueprint_collection"
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_property"
     },
     {
       "confidence": 0.9,
-      "left_column": "BLUEPRINTID",
-      "left_table": "dim_blueprint",
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
       "reason": "Matching ID-like column name.",
-      "right_column": "BLUEPRINTID",
-      "right_table": "hkg_br_blueprint_property"
+      "right_column": "SEGMENTID",
+      "right_table": "dim_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_property"
+    },
+    {
+      "confidence": 0.98,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Curated: Campaign to segment bridge.",
+      "right_column": "SEGMENTID",
+      "right_table": "br_campaign_segment"
+    },
+    {
+      "confidence": 0.75,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Foreign-key-looking column references table root.",
+      "right_column": "DEPENDENTSEGMENTID",
+      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_collection_segment"
+    },
+    {
+      "confidence": 0.98,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Curated: Segment to target bridge.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_target"
     }
   ],
   "selected_tables": [
-    "dim_blueprint"
+    "hkg_br_segment_property",
+    "dim_segment"
   ],
   "strategy": "SQL_FIRST_API_VERIFY"
 }

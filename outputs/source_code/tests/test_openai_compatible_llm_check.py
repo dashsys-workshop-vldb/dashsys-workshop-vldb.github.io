@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from scripts import check_llm_sdk_backend
 from scripts import check_openai_compatible_llm as check
@@ -41,25 +42,38 @@ def test_openai_compatible_check_reports_endpoint_unavailable_without_leaking_ke
     monkeypatch.setenv("OPENAI_MODEL", "qwen2.5-32b-instruct")
 
     class FakeClient:
-        def __init__(self, **kwargs):
-            pass
+        base_url = "https://photos-hewlett-safely-friends.trycloudflare.com/v1"
+
+        def provider_name(self):
+            return "openai"
+
+        def model_name(self):
+            return "qwen2.5-32b-instruct"
+
+        def available(self):
+            return True
 
         def generate_messages(self, *args, **kwargs):
             return {
                 "ok": False,
                 "transport": "openai_sdk",
+                "backend_type": "openai_sdk",
+                "sdk_path_used": True,
                 "error": "Authorization" + ": " + "Bearer unit-test-qwen-secret endpoint unavailable",
                 "tool_calls": [],
             }
 
-    monkeypatch.setattr(check, "OpenAILLMClient", FakeClient)
-    monkeypatch.setattr(check, "OpenAI", None)
+    monkeypatch.setattr(check_llm_sdk_backend, "get_llm_client", lambda: FakeClient())
+    monkeypatch.setattr(check_llm_sdk_backend, "OpenAI", object())
 
     report = check.run_openai_compatible_llm_check(tiny_project)
     text = json.dumps(report)
 
     assert report["ok"] is False
     assert "endpoint_unavailable" in report["failure_categories"]
+    assert report["deprecated_wrapper"] is True
+    assert report["delegates_to"] == "scripts/check_llm_sdk_backend.py"
+    assert report["sdk_path_used"] is True
     assert "unit-test-qwen-secret" not in text
     assert "Authorization" + ": " + "Bearer unit-test" not in text
 
@@ -111,6 +125,7 @@ def test_llm_baseline_report_marks_results_shadow_only(monkeypatch, tiny_project
     assert report["framework"] == "generic_sdk_llm_baseline"
     assert report["provider_type"] == "openai_compatible"
     assert report["backend_type"] == "openai_sdk"
+    assert report["sdk_path_used"] is True
     assert report["model"] == "qwen2.5-32b-instruct"
     assert report["tool_calling_supported"] is True
     assert report["promotion_status"] == "shadow_only"
@@ -129,3 +144,10 @@ def test_generic_sdk_backend_check_handles_missing_key(monkeypatch, tiny_project
     assert report["framework"] == "generic_sdk_llm_baseline"
     assert "missing_openai_api_key" in report["failure_categories"]
     assert "Authorization" + ": " + "Bearer" not in json.dumps(report)
+
+
+def test_openai_compatible_check_is_deprecated_sdk_wrapper():
+    source = Path(check.__file__).read_text(encoding="utf-8")
+    assert "run_llm_sdk_backend_check" in source
+    assert "OpenAI(" not in source
+    assert "/chat/completions" not in source

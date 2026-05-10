@@ -8,91 +8,136 @@
     "Prefer fewer tool calls when evidence is sufficient."
   ],
   "context_card": {
-    "answer_policy": "Use dim_target/dim_connector evidence first; live API validates platform state.",
+    "answer_policy": "Observability metrics require live API values; render returned date/value points only.",
     "api_families": [
-      "destination_flows",
-      "recent_destination_flows",
-      "failed_dataflow_flows"
+      "observability_metrics"
     ],
-    "api_mode": "optional",
-    "family": "destination_dataflow",
+    "api_mode": "required",
+    "family": "observability",
     "join_path": [],
-    "required_ids": [
-      "target_id",
-      "dataflow_id"
-    ],
-    "tables": [
-      "dim_target",
-      "dim_connector"
-    ]
+    "required_ids": [],
+    "tables": []
   },
-  "domain_type": "DESTINATION_DATAFLOW",
+  "domain_type": "DATASET_SCHEMA",
   "known_example_patterns": [
     {
-      "method": "GET",
+      "method": "POST",
       "params": {
-        "limit": "5",
-        "property": "inheritedAttributes.properties.isDestinationFlow==true",
-        "sort": "updatedTime:desc"
+        "end": "2026-03-31T23:59:59.000Z",
+        "granularity": "day",
+        "metrics": "[{'name': 'timeseries.ingestion.dataset.recordsuccess.count', 'filters': [], 'aggregator': 'sum'}]",
+        "start": "2026-03-15T00:00:00.000Z"
       },
-      "path": "/data/foundation/flowservice/flows"
+      "path": "/data/infrastructure/observability/insights/metrics"
     }
   ],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
-        "destination_dataflow",
-        "batch"
+        "observability",
+        "audit"
       ]
-    },
-    "rewrites": [
-      "important_plurals->singular"
-    ]
+    }
   },
-  "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
-  "query_id": "export_a_list_of_all_destinations_in_the_b2b_pro",
-  "route_type": "SQL_THEN_API",
+  "query": "What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'?",
+  "query_id": "example_033",
+  "route_type": "API_ONLY",
   "selected_apis": [
     {
-      "id": "flowservice_flows",
-      "method": "GET",
-      "path": "/data/foundation/flowservice/flows"
+      "id": "observability_metrics",
+      "method": "POST",
+      "path": "/data/infrastructure/observability/insights/metrics"
     }
   ],
   "selected_columns": {
-    "dim_target": [
-      "TARGETID",
-      "DATAFLOWNAME",
+    "dim_blueprint": [
+      "BLUEPRINTID",
       "NAME",
-      "DESCRIPTION",
-      "STATE",
-      "CONNECTIONSPECID",
-      "CREATEDTIME",
-      "UPDATEDTIME",
-      "INTERVAL",
-      "FREQUENCY"
+      "CLASS",
+      "ISPROFILEENABLED",
+      "UPDATEDTIME"
+    ],
+    "dim_collection": [
+      "COLLECTIONID",
+      "NAME",
+      "ROWCOUNT",
+      "UPDATEDTIME"
+    ],
+    "hkg_br_blueprint_collection": [
+      "BLUEPRINTID",
+      "COLLECTIONID"
     ]
   },
   "selected_join_hints": [
     {
       "confidence": 0.9,
-      "left_column": "TARGETID",
-      "left_table": "dim_target",
+      "left_column": "BLUEPRINTID",
+      "left_table": "dim_blueprint",
       "reason": "Matching ID-like column name.",
-      "right_column": "TARGETID",
-      "right_table": "hkg_br_target_property"
+      "right_column": "BLUEPRINTID",
+      "right_table": "hkg_br_blueprint_collection"
     },
     {
-      "confidence": 0.98,
-      "left_column": "TARGETID",
-      "left_table": "dim_target",
-      "reason": "Curated: Segment to target bridge.",
-      "right_column": "TARGETID",
-      "right_table": "hkg_br_segment_target"
+      "confidence": 0.9,
+      "left_column": "BLUEPRINTID",
+      "left_table": "dim_blueprint",
+      "reason": "Matching ID-like column name.",
+      "right_column": "BLUEPRINTID",
+      "right_table": "hkg_br_blueprint_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_blueprint_collection"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_source_collection"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "hkg_br_blueprint_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "hkg_br_blueprint_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_segment"
     }
   ],
   "selected_tables": [
-    "dim_target"
+    "dim_blueprint",
+    "hkg_br_blueprint_collection",
+    "dim_collection"
   ],
   "strategy": "SQL_FIRST_API_VERIFY"
 }

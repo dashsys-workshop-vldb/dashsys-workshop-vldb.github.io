@@ -77,7 +77,7 @@ export OPENAI_API_KEY=...
 export OPENAI_MODEL=gpt-4o-mini
 ```
 
-OpenRouter is also supported through its OpenAI-compatible chat completions API:
+OpenRouter and self-hosted vLLM endpoints are supported through the OpenAI SDK-compatible client path:
 
 ```bash
 export LLM_PROVIDER=openrouter
@@ -89,6 +89,39 @@ export OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 OpenRouter support is optional. Not all OpenRouter models support native tool/function calling; for the real two-tool baselines, use a model with reliable tool calling.
 
 No credentials are required for tests. Secrets are redacted from trajectories and reports.
+
+## 3.1 System-Wide SDK-Based LLM Rule
+
+All LLM/model calls must go through `dashagent.llm_client.get_llm_client()` or the shared `LLMClient` abstraction. OpenAI-compatible providers use `from openai import OpenAI`; Anthropic providers use `from anthropic import Anthropic`. Do not add raw `requests`, `curl`, direct `/chat/completions`, or hand-built provider HTTP calls for LLM runtime testing, baselines, diagnostics, report generation, or future model-assisted scripts.
+
+The LLM baseline framework is the generic SDK-based LLM baseline framework. Qwen, GPT, Claude, Llama, OpenRouter models, or local vLLM models are backend metadata selected through `.env.local` and environment variables, not separate framework names. Run the SDK audit with:
+
+```bash
+python3 scripts/generate_sdk_usage_audit.py
+```
+
+The audit report is written to `outputs/reports/sdk_usage_audit.md/json` and must show `runtime_llm_direct_http_hits = 0`.
+
+## 3.2 Diagnostic Prompt Suite
+
+The generated diagnostic prompt suite broadens coverage testing from `data/data.json` without changing official scoring or packaged behavior.
+
+```bash
+python3 scripts/generate_diagnostic_prompt_suite.py
+python3 scripts/run_diagnostic_prompt_suite.py
+python3 scripts/run_diagnostic_prompt_suite.py --full
+python3 scripts/run_diagnostic_prompt_suite.py --limit 50
+python3 scripts/run_diagnostic_prompt_suite.py --clean
+```
+
+Outputs:
+
+- `data/generated_prompt_suite.json`
+- `data/generated_prompt_suite.md`
+- `outputs/reports/generated_prompt_suite_summary.md/json`
+- `outputs/reports/diagnostic_prompt_suite_run.md/json`
+
+Generated prompts are diagnostic-only, `should_be_scored=false`, not used as official benchmark data, and excluded from final submission packaging.
 
 ## 4. Prompt Routing Policy
 

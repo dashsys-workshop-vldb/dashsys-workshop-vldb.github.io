@@ -78,6 +78,7 @@ def run_llm_candidate_search(config: Config) -> dict[str, Any]:
         "skipped": False,
         "provider": status.provider,
         "model": client.model_name(),
+        **_sdk_metadata(client, provider=status.provider),
         "budget": {
             "max_target_rows": MAX_TARGET_ROWS,
             "max_candidates_per_row": MAX_CANDIDATES_PER_ROW,
@@ -222,6 +223,7 @@ def _skipped(config: Config, status: Any, summary_status: str, reason: str) -> d
         "skipped": True,
         "skip_reason": reason,
         "provider": status.provider,
+        **_sdk_metadata(None, provider=status.provider),
         "packaged_execution_changed": False,
         "writes_eval_outputs": False,
         "writes_final_submission": False,
@@ -265,6 +267,16 @@ def _redacted_error(value: Any) -> str:
     text = re.sub(r"(?i)authorization\s*:\s*bearer\s+\S+", "authorization_header=[REDACTED]", text)
     text = re.sub(r"(?i)(api[_-]?key|access_token|client_secret)\s*[=:]\s*\S+", r"\1=[REDACTED]", text)
     return text[:400]
+
+
+def _sdk_metadata(client: Any | None, *, provider: str | None) -> dict[str, Any]:
+    actual_provider = provider or (client.provider_name() if client and hasattr(client, "provider_name") else None)
+    backend_type = "anthropic_sdk" if actual_provider == "anthropic" else ("openai_sdk" if actual_provider in {"openai", "openai_compatible", "openrouter"} else "none")
+    return {
+        "backend_type": backend_type,
+        "transport": backend_type,
+        "sdk_path_used": backend_type in {"openai_sdk", "anthropic_sdk"},
+    }
 
 
 def render_markdown(payload: dict[str, Any]) -> str:

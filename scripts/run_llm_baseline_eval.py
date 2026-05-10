@@ -83,6 +83,7 @@ def main() -> int:
                     "provider": result.get("llm_provider"),
                     "model": result.get("llm_model"),
                     "backend_type": result.get("backend_type", result.get("trajectory", {}).get("backend_type")),
+                    "sdk_path_used": result.get("sdk_path_used", result.get("trajectory", {}).get("sdk_path_used")),
                     "tool_calls_executed": result.get("tool_calls_executed", result.get("tool_call_count", 0) > 0),
                     "valid_agent_run": valid_agent_run,
                     "skipped_or_failed": result.get("skipped_or_failed", result.get("skipped", False) or not valid_agent_run),
@@ -202,6 +203,8 @@ def build_llm_baseline_report(config: Config, payload: dict) -> dict:
         "provider_type": smoke.get("provider_type", "openai_compatible"),
         "provider": smoke.get("provider", "openai_compatible"),
         "backend_type": smoke.get("backend_type", "openai_sdk"),
+        "transport": smoke.get("transport", smoke.get("backend_type", "openai_sdk")),
+        "sdk_path_used": smoke.get("sdk_path_used", smoke.get("backend_type", "openai_sdk") in {"openai_sdk", "anthropic_sdk"}),
         "sdk_client": "SDK-based LLM client",
         "base_url": base_url,
         "model": model,
@@ -231,6 +234,8 @@ def build_llm_baseline_report(config: Config, payload: dict) -> dict:
     safe_report["provider"] = report.get("provider")
     safe_report["provider_type"] = report.get("provider_type")
     safe_report["backend_type"] = report.get("backend_type")
+    safe_report["transport"] = report.get("transport")
+    safe_report["sdk_path_used"] = report.get("sdk_path_used")
     return safe_report
 
 
@@ -241,6 +246,8 @@ def render_llm_baseline_markdown(report: dict) -> str:
         f"- Framework: `{report.get('framework')}`",
         f"- Provider type: `{report.get('provider_type')}`",
         f"- Backend type: `{report.get('backend_type')}`",
+        f"- Transport: `{report.get('transport')}`",
+        f"- SDK path used: `{report.get('sdk_path_used')}`",
         f"- SDK client: `{report.get('sdk_client')}`",
         f"- Base URL: `{report.get('base_url') or 'unavailable'}`",
         f"- Current LLM backend: `{report.get('backend_name') or 'unavailable'}`",

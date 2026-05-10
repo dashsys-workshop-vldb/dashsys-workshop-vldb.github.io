@@ -8,37 +8,40 @@
     "Prefer fewer tool calls when evidence is sufficient."
   ],
   "context_card": {
-    "answer_policy": "Batch details/files are API evidence; keep dry-run answers explicit.",
+    "answer_policy": "Use dim_target/dim_connector evidence first; live API validates platform state.",
     "api_families": [
-      "batch_list",
-      "recent_batches",
-      "batch_details",
-      "batch_export_files",
-      "successful_batch_count"
+      "destination_flows",
+      "recent_destination_flows",
+      "failed_dataflow_flows"
     ],
-    "api_mode": "required",
-    "family": "batch",
+    "api_mode": "optional",
+    "family": "destination_dataflow",
     "join_path": [],
     "required_ids": [
-      "batch_id"
+      "target_id",
+      "dataflow_id"
     ],
-    "tables": []
+    "tables": [
+      "dim_target",
+      "dim_connector"
+    ]
   },
-  "domain_type": "COUNT_AGGREGATION",
+  "domain_type": "DESTINATION_DATAFLOW",
   "known_example_patterns": [
     {
       "method": "GET",
       "params": {
-        "limit": "100",
-        "orderBy": "desc:created",
-        "status": "success"
+        "limit": "5",
+        "property": "inheritedAttributes.properties.isDestinationFlow==true",
+        "sort": "updatedTime:desc"
       },
-      "path": "/data/foundation/catalog/batches"
+      "path": "/data/foundation/flowservice/flows"
     }
   ],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
+        "destination_dataflow",
         "batch"
       ]
     },
@@ -46,144 +49,50 @@
       "important_plurals->singular"
     ]
   },
-  "query": "How many batches have status 'success'?",
-  "query_id": "how_many_batches_have_status_success",
-  "route_type": "API_ONLY",
+  "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
+  "query_id": "export_a_list_of_all_destinations_in_the_b2b_pro",
+  "route_type": "SQL_THEN_API",
   "selected_apis": [
     {
-      "id": "catalog_batches",
+      "id": "flowservice_flows",
       "method": "GET",
-      "path": "/data/foundation/catalog/batches"
+      "path": "/data/foundation/flowservice/flows"
     }
   ],
   "selected_columns": {
-    "br_campaign_segment": [
-      "SEGMENTID",
-      "CAMPAIGNID"
-    ],
-    "dim_blueprint": [
-      "BLUEPRINTTYPE",
-      "UPDATEDCLIENTID",
-      "UPDATEDTIME",
-      "BLUEPRINTID",
-      "NAME",
-      "ISBEHAVIORTIMESERIESTYPE",
-      "ISBEHAVIORRECORDTYPE",
-      "CREATEDTIME",
-      "UPDATEDBY",
-      "CREATEDCLIENTID"
-    ],
-    "dim_campaign": [
-      "UPDATEDTIME",
-      "STARTDATE",
-      "IMSORGID",
-      "LASTDEPLOYEDTIME",
-      "STATE",
-      "CAMPAIGNTYPE",
-      "STOPPEDTIME",
-      "FINISHEDTIME",
-      "SANDBOXNAME",
-      "NAME",
-      "SANDBOXID",
-      "STATUS",
-      "CAMPAIGNID",
-      "CAMPAIGNACTIVITYCOUNT",
-      "CREATEDTIME"
-    ],
-    "dim_collection": [
-      "ISIDENTITYENABLED",
-      "ROWCOUNT",
-      "UPDATEDTIME",
-      "NAME",
-      "COLLECTIONID",
-      "CREATEDTIME",
-      "UPDATEDBY",
-      "CREATEDCLIENTID"
-    ],
-    "dim_connector": [
+    "dim_target": [
+      "TARGETID",
       "DATAFLOWNAME",
-      "UPDATEDTIME",
-      "CONNECTIONSPECNAME",
-      "STATE",
-      "SOURCEID",
       "NAME",
-      "DATAFLOWID",
-      "SOURCEACCOUNTNAME",
-      "CREATEDTIME"
+      "DESCRIPTION",
+      "STATE",
+      "CONNECTIONSPECID",
+      "CREATEDTIME",
+      "UPDATEDTIME",
+      "INTERVAL",
+      "FREQUENCY"
     ]
   },
   "selected_join_hints": [
     {
+      "confidence": 0.9,
+      "left_column": "TARGETID",
+      "left_table": "dim_target",
+      "reason": "Matching ID-like column name.",
+      "right_column": "TARGETID",
+      "right_table": "hkg_br_target_property"
+    },
+    {
       "confidence": 0.98,
-      "left_column": "CAMPAIGNID",
-      "left_table": "dim_campaign",
-      "reason": "Curated: Campaign to segment bridge.",
-      "right_column": "CAMPAIGNID",
-      "right_table": "br_campaign_segment"
-    },
-    {
-      "confidence": 0.98,
-      "left_column": "SEGMENTID",
-      "left_table": "dim_segment",
-      "reason": "Curated: Campaign to segment bridge.",
-      "right_column": "SEGMENTID",
-      "right_table": "br_campaign_segment"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "br_campaign_segment",
-      "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "dim_segment"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "br_campaign_segment",
-      "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "br_campaign_segment",
-      "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "hkg_br_collection_segment"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "br_campaign_segment",
-      "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "hkg_br_segment_property"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "br_campaign_segment",
-      "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
+      "left_column": "TARGETID",
+      "left_table": "dim_target",
+      "reason": "Curated: Segment to target bridge.",
+      "right_column": "TARGETID",
       "right_table": "hkg_br_segment_target"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "BLUEPRINTID",
-      "left_table": "dim_blueprint",
-      "reason": "Matching ID-like column name.",
-      "right_column": "BLUEPRINTID",
-      "right_table": "hkg_br_blueprint_collection"
     }
   ],
   "selected_tables": [
-    "br_campaign_segment",
-    "dim_blueprint",
-    "dim_campaign",
-    "dim_collection",
-    "dim_connector"
+    "dim_target"
   ],
   "strategy": "SQL_FIRST_API_VERIFY"
 }

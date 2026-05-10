@@ -20,7 +20,7 @@
     ],
     "tables": []
   },
-  "domain_type": "SEGMENT_AUDIENCE",
+  "domain_type": "UNKNOWN",
   "known_example_patterns": [
     {
       "method": "GET",
@@ -28,32 +28,23 @@
         "limit": "10"
       },
       "path": "/data/core/ups/config/mergePolicies"
-    },
-    {
-      "method": "GET",
-      "params": {
-        "limit": "25"
-      },
-      "path": "/schemas"
     }
   ],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
         "merge_policy",
-        "schema_dataset"
+        "batch"
       ]
-    }
+    },
+    "rewrites": [
+      "important_plurals->singular"
+    ]
   },
-  "query": "Show the default merge policy for schema class '_xdm.context.profile'.",
-  "query_id": "example_021",
+  "query": "List all merge policies in this sandbox.",
+  "query_id": "example_019",
   "route_type": "API_ONLY",
   "selected_apis": [
-    {
-      "id": "schemas_short",
-      "method": "GET",
-      "path": "/schemas"
-    },
     {
       "id": "merge_policies",
       "method": "GET",
@@ -61,94 +52,133 @@
     }
   ],
   "selected_columns": {
+    "br_campaign_segment": [
+      "SEGMENTID",
+      "CAMPAIGNID"
+    ],
     "dim_blueprint": [
+      "BLUEPRINTTYPE",
+      "UPDATEDCLIENTID",
+      "UPDATEDTIME",
       "BLUEPRINTID",
       "NAME",
-      "CLASS",
-      "ISPROFILEENABLED",
-      "UPDATEDTIME"
+      "ISBEHAVIORTIMESERIESTYPE",
+      "ISBEHAVIORRECORDTYPE",
+      "CREATEDTIME",
+      "UPDATEDBY",
+      "CREATEDCLIENTID"
+    ],
+    "dim_campaign": [
+      "UPDATEDTIME",
+      "STARTDATE",
+      "IMSORGID",
+      "LASTDEPLOYEDTIME",
+      "STATE",
+      "CAMPAIGNTYPE",
+      "STOPPEDTIME",
+      "FINISHEDTIME",
+      "SANDBOXNAME",
+      "NAME",
+      "SANDBOXID",
+      "STATUS",
+      "CAMPAIGNID",
+      "CAMPAIGNACTIVITYCOUNT",
+      "CREATEDTIME"
     ],
     "dim_collection": [
-      "COLLECTIONID",
-      "NAME",
+      "ISIDENTITYENABLED",
       "ROWCOUNT",
-      "UPDATEDTIME"
+      "UPDATEDTIME",
+      "NAME",
+      "COLLECTIONID",
+      "CREATEDTIME",
+      "UPDATEDBY",
+      "CREATEDCLIENTID"
     ],
-    "hkg_br_blueprint_collection": [
-      "BLUEPRINTID",
-      "COLLECTIONID"
+    "dim_connector": [
+      "DATAFLOWNAME",
+      "UPDATEDTIME",
+      "CONNECTIONSPECNAME",
+      "STATE",
+      "SOURCEID",
+      "NAME",
+      "DATAFLOWID",
+      "SOURCEACCOUNTNAME",
+      "CREATEDTIME"
     ]
   },
   "selected_join_hints": [
     {
+      "confidence": 0.98,
+      "left_column": "CAMPAIGNID",
+      "left_table": "dim_campaign",
+      "reason": "Curated: Campaign to segment bridge.",
+      "right_column": "CAMPAIGNID",
+      "right_table": "br_campaign_segment"
+    },
+    {
+      "confidence": 0.98,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Curated: Campaign to segment bridge.",
+      "right_column": "SEGMENTID",
+      "right_table": "br_campaign_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "dim_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_collection_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_target"
+    },
+    {
       "confidence": 0.9,
       "left_column": "BLUEPRINTID",
       "left_table": "dim_blueprint",
       "reason": "Matching ID-like column name.",
       "right_column": "BLUEPRINTID",
       "right_table": "hkg_br_blueprint_collection"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "BLUEPRINTID",
-      "left_table": "dim_blueprint",
-      "reason": "Matching ID-like column name.",
-      "right_column": "BLUEPRINTID",
-      "right_table": "hkg_br_blueprint_property"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "dim_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_blueprint_collection"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "dim_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_collection_property"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "dim_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_collection_segment"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "dim_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_source_collection"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "hkg_br_blueprint_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_collection_property"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "hkg_br_blueprint_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_collection_segment"
     }
   ],
   "selected_tables": [
+    "br_campaign_segment",
     "dim_blueprint",
-    "hkg_br_blueprint_collection",
-    "dim_collection"
+    "dim_campaign",
+    "dim_collection",
+    "dim_connector"
   ],
   "strategy": "SQL_FIRST_API_VERIFY"
 }

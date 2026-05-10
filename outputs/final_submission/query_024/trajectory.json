@@ -1,5 +1,5 @@
 {
-  "answer_time": 0.00048604095354676247,
+  "answer_time": 0.00045575015246868134,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -9,13 +9,13 @@
       "effect": "preserves the original query for reproducibility",
       "efficiency_role": "starts one trace without extra tool calls",
       "output": {
-        "query": "How many segment definitions exist in this sandbox?",
-        "query_id": "example_022",
+        "query": "How many merge policies are configured in this sandbox?",
+        "query_id": "example_020",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-10T05:53:30.165677+00:00"
+      "timestamp": "2026-05-10T19:12:10.903672+00:00"
     },
     {
       "checkpoint_id": "checkpoint_00_prompt_router",
@@ -24,19 +24,19 @@
       "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
       "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
       "input_summary": {
-        "query": "How many segment definitions exist in this sandbox?"
+        "query": "How many merge policies are configured in this sandbox?"
       },
       "output": {
         "confidence": 0.9,
         "matched_rules": {
           "items": [
-            "api_only:sandbox"
+            "api_only:merge policies"
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         },
         "mode": "API_ONLY",
-        "reason": "API/platform family keyword(s): sandbox.",
+        "reason": "API/platform family keyword(s): merge policies, sandbox.",
         "recommended_strategy": "SQL_FIRST_API_VERIFY",
         "requires_api": true,
         "requires_database": false,
@@ -45,7 +45,7 @@
       },
       "stage": "prompt routing",
       "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-10T05:53:30.165694+00:00"
+      "timestamp": "2026-05-10T19:12:10.903692+00:00"
     },
     {
       "checkpoint_id": "checkpoint_simple_prompt_gate",
@@ -54,17 +54,17 @@
       "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
       "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
       "input_summary": {
-        "query": "How many segment definitions exist in this sandbox?"
+        "query": "How many merge policies are configured in this sandbox?"
       },
       "output": {
         "confidence": 0.9,
         "is_simple": false,
-        "reason": "API/platform family keyword(s): sandbox.",
+        "reason": "API/platform family keyword(s): merge policies, sandbox.",
         "suggested_action": "USE_DATA_PIPELINE"
       },
       "stage": "input routing",
       "technique": "simple prompt gate",
-      "timestamp": "2026-05-10T05:53:30.165704+00:00"
+      "timestamp": "2026-05-10T19:12:10.903703+00:00"
     },
     {
       "checkpoint_id": "checkpoint_02_query_normalization",
@@ -73,11 +73,11 @@
       "effect": "creates matching-friendly text while preserving the original query",
       "efficiency_role": "reduces repeated fuzzy matching work downstream",
       "input_summary": {
-        "query": "How many segment definitions exist in this sandbox?"
+        "query": "How many merge policies are configured in this sandbox?"
       },
       "output": {
-        "matching_text": "how many segment definition exist in this sandbox?",
-        "normalized_query": "How many segment definitions exist in this sandbox?",
+        "matching_text": "how many merge policy are configured in this sandbox?",
+        "normalized_query": "How many merge policies are configured in this sandbox?",
         "rewrites": {
           "items": [
             "important_plurals->singular"
@@ -88,7 +88,7 @@
       },
       "stage": "normalization",
       "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-10T05:53:30.165732+00:00"
+      "timestamp": "2026-05-10T19:12:10.903733+00:00"
     },
     {
       "checkpoint_id": "checkpoint_03_query_tokens",
@@ -97,12 +97,12 @@
       "effect": "extracts reusable query fields for routing, planning, and answers",
       "efficiency_role": "avoids reparsing the query in later modules",
       "input_summary": {
-        "normalized_query": "How many segment definitions exist in this sandbox?"
+        "normalized_query": "How many merge policies are configured in this sandbox?"
       },
       "output": {
         "domains": {
           "items": [
-            "segment_audience"
+            "merge_policy"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -110,7 +110,7 @@
       },
       "stage": "tokenization",
       "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-10T05:53:30.165759+00:00"
+      "timestamp": "2026-05-10T19:12:10.903762+00:00"
     },
     {
       "checkpoint_id": "checkpoint_04_relevance_scoring",
@@ -122,7 +122,7 @@
         "tokens": {
           "domains": {
             "items": [
-              "segment_audience"
+              "merge_policy"
             ],
             "total_items": 1,
             "truncated_items": false
@@ -132,36 +132,22 @@
       "output": {
         "top_answer_families": {
           "items": [
-            "segment_destination"
+            "merge_policy"
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "top_apis": {
           "items": [
-            "segment_definitions"
+            "merge_policies"
           ],
-          "total_items": 3,
-          "truncated_items": false
-        },
-        "top_join_hints": {
-          "items": [
-            "br_campaign_segment.SEGMENTID->dim_segment.SEGMENTID"
-          ],
-          "total_items": 3,
-          "truncated_items": false
-        },
-        "top_tables": {
-          "items": [
-            "dim_segment"
-          ],
-          "total_items": 3,
+          "total_items": 2,
           "truncated_items": false
         }
       },
       "stage": "context selection",
       "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-10T05:53:30.166345+00:00"
+      "timestamp": "2026-05-10T19:12:10.904125+00:00"
     },
     {
       "checkpoint_id": "checkpoint_05_query_analysis",
@@ -170,27 +156,27 @@
       "effect": "computes shared query understanding once",
       "efficiency_role": "avoids repeated template and routing analysis",
       "input_summary": {
-        "domain_type": "SEGMENT_AUDIENCE",
+        "domain_type": "COUNT_AGGREGATION",
         "route_type": "API_ONLY"
       },
       "output": {
-        "answer_family": "segment_definitions",
+        "answer_family": "merge_policy",
         "api_templates": {
           "items": [
-            "segment_definition_count"
+            "merge_policies"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "confidence": 0.75,
-        "domain_type": "SEGMENT_AUDIENCE",
-        "fast_path": "segment_definition_count",
+        "confidence": 0.6,
+        "domain_type": "COUNT_AGGREGATION",
+        "fast_path": "merge_policies",
         "route_type": "API_ONLY",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "routing",
       "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-10T05:53:30.166352+00:00"
+      "timestamp": "2026-05-10T19:12:10.904133+00:00"
     },
     {
       "checkpoint_id": "checkpoint_06_lookup_path",
@@ -199,44 +185,30 @@
       "effect": "predicts the relevant table/join/API path",
       "efficiency_role": "filters unrelated schema and endpoint candidates",
       "input_summary": {
-        "answer_family": "segment_definitions",
-        "domain_type": "SEGMENT_AUDIENCE"
+        "answer_family": "merge_policy",
+        "domain_type": "COUNT_AGGREGATION"
       },
       "output": {
         "api_families": {
           "items": [
-            "audience_by_destination_id"
+            "merge_policies"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
-        "api_mode": "optional",
-        "family": "segment_destination",
-        "join_path": {
-          "items": [
-            "dim_segment.segmentid = hkg_br_segment_target.segmentid"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
+        "api_mode": "required",
+        "family": "merge_policy",
         "required_ids": {
           "items": [
-            "segment_id"
+            "merge_policy_id"
           ],
-          "total_items": 3,
-          "truncated_items": false
-        },
-        "tables": {
-          "items": [
-            "dim_segment"
-          ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         }
       },
       "stage": "path prediction",
       "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-10T05:53:30.166354+00:00"
+      "timestamp": "2026-05-10T19:12:10.904135+00:00"
     },
     {
       "checkpoint_id": "checkpoint_07_context_card",
@@ -246,53 +218,67 @@
       "efficiency_role": "limits context size for non-baseline strategies",
       "input_summary": {
         "broad_context": false,
-        "lookup_path": "segment_destination"
+        "lookup_path": "merge_policy"
       },
       "output": {
-        "estimated_metadata_tokens": 957,
-        "prompt_tokens": 1624,
+        "estimated_metadata_tokens": 1002,
+        "prompt_tokens": 1684,
         "selected_apis": {
           "items": [
-            "segment_definitions"
+            "merge_policies"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "selected_card_name": "segment_destination",
+        "selected_card_name": "merge_policy",
         "selected_columns": {
-          "dim_segment": {
-            "items": [
-              "DEFINITION"
-            ],
-            "total_items": 8,
-            "truncated_items": true
-          },
-          "dim_target": {
-            "items": [
-              "CONNECTIONSPECID"
-            ],
-            "total_items": 8,
-            "truncated_items": true
-          },
-          "hkg_br_segment_target": {
+          "br_campaign_segment": {
             "items": [
               "SEGMENTID"
             ],
-            "total_items": 3,
+            "total_items": 2,
             "truncated_items": false
+          },
+          "dim_blueprint": {
+            "items": [
+              "BLUEPRINTTYPE"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "dim_campaign": {
+            "items": [
+              "UPDATEDTIME"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "dim_collection": {
+            "items": [
+              "ISIDENTITYENABLED"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "dim_connector": {
+            "items": [
+              "DATAFLOWNAME"
+            ],
+            "total_items": 8,
+            "truncated_items": true
           }
         },
         "selected_tables": {
           "items": [
-            "dim_segment"
+            "br_campaign_segment"
           ],
-          "total_items": 3,
-          "truncated_items": false
+          "total_items": 5,
+          "truncated_items": true
         }
       },
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-10T05:53:30.167715+00:00"
+      "timestamp": "2026-05-10T19:12:10.905893+00:00"
     },
     {
       "checkpoint_id": "checkpoint_08_candidate_plans",
@@ -314,13 +300,13 @@
         },
         "reason_selected": "highest pre-execution validation/relevance/cost score",
         "scores": {
-          "generic_sql_first": 11.8829
+          "generic_sql_first": 12.384
         },
         "selected_plan": "generic_sql_first"
       },
       "stage": "planning",
       "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-10T05:53:30.167840+00:00"
+      "timestamp": "2026-05-10T19:12:10.906167+00:00"
     },
     {
       "checkpoint_id": "checkpoint_09_plan_optimization",
@@ -348,7 +334,7 @@
       },
       "stage": "optimization",
       "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-10T05:53:30.167846+00:00"
+      "timestamp": "2026-05-10T19:12:10.906181+00:00"
     },
     {
       "checkpoint_id": "checkpoint_10_evidence_policy",
@@ -357,24 +343,24 @@
       "effect": "decides when API evidence is required, optional, or unnecessary",
       "efficiency_role": "skips or caps API calls when SQL evidence is enough",
       "input_summary": {
-        "answer_family": "segment_definitions",
+        "answer_family": "merge_policy",
         "route_type": "API_ONLY"
       },
       "output": {
         "allowed_api_families": {
           "items": [
-            "segment_definition_count"
+            "merge_policies"
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "max_api_calls": 1,
         "mode": "API_REQUIRED",
-        "reason": "Route is API-only."
+        "reason": "Merge policies are Adobe API objects."
       },
       "stage": "evidence policy",
       "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-10T05:53:30.167848+00:00"
+      "timestamp": "2026-05-10T19:12:10.906185+00:00"
     },
     {
       "checkpoint_id": "checkpoint_11_call_budget",
@@ -387,13 +373,13 @@
           "items": [
             {
               "action": "api",
-              "family": "segment_definition_count",
+              "family": "merge_policies",
               "method": "GET",
               "params": {
-                "limit": "100"
+                "limit": "10"
               },
-              "purpose": "API parameter template: segment_definition_count.",
-              "url": "/data/core/ups/segment/definitions"
+              "purpose": "API parameter template: merge_policies.",
+              "url": "/data/core/ups/config/mergePolicies"
             }
           ],
           "total_items": 1,
@@ -410,7 +396,7 @@
       },
       "stage": "efficiency control",
       "technique": "tool-call budgeting",
-      "timestamp": "2026-05-10T05:53:30.167858+00:00"
+      "timestamp": "2026-05-10T19:12:10.906201+00:00"
     },
     {
       "checkpoint_id": "checkpoint_12_validation",
@@ -423,13 +409,13 @@
           "items": [
             {
               "action": "api",
-              "family": "segment_definition_count",
+              "family": "merge_policies",
               "method": "GET",
               "params": {
-                "limit": "100"
+                "limit": "10"
               },
-              "purpose": "API parameter template: segment_definition_count.",
-              "url": "/data/core/ups/segment/definitions"
+              "purpose": "API parameter template: merge_policies.",
+              "url": "/data/core/ups/config/mergePolicies"
             }
           ],
           "total_items": 1,
@@ -454,7 +440,7 @@
       },
       "stage": "validation",
       "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-10T05:53:30.169415+00:00"
+      "timestamp": "2026-05-10T19:12:10.907768+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -475,17 +461,17 @@
               "ok": false,
               "result_preview": {
                 "dry_run": true,
-                "endpoint": "/data/core/ups/segment/definitions",
+                "endpoint": "/data/core/ups/config/mergePolicies",
                 "error": "Adobe credentials unavailable; API call not executed.",
                 "method": "GET",
                 "ok": false,
                 "params": {
-                  "limit": "100"
+                  "limit": "10"
                 },
                 "result_preview": null,
-                "url": "https://platform.adobe.io/data/core/ups/segment/definitions"
+                "url": "https://platform.adobe.io/data/core/ups/config/mergePolicies"
               },
-              "url": "/data/core/ups/segment/definitions"
+              "url": "/data/core/ups/config/mergePolicies"
             }
           ],
           "total_items": 1,
@@ -496,7 +482,7 @@
       },
       "stage": "execution",
       "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-10T05:53:30.169419+00:00"
+      "timestamp": "2026-05-10T19:12:10.907779+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -512,7 +498,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-10T05:53:30.169422+00:00"
+      "timestamp": "2026-05-10T19:12:10.907782+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -532,7 +518,7 @@
           "dry_run": true
         },
         "slots": {
-          "answer_family": "segment_definitions",
+          "answer_family": "merge_policy",
           "api_error": false,
           "discrepancy": false,
           "dry_run": true,
@@ -547,7 +533,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-10T05:53:30.169768+00:00"
+      "timestamp": "2026-05-10T19:12:10.908154+00:00"
     },
     {
       "checkpoint_id": "checkpoint_16_answer_verification",
@@ -578,7 +564,7 @@
       },
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-10T05:53:30.169773+00:00"
+      "timestamp": "2026-05-10T19:12:10.908159+00:00"
     },
     {
       "checkpoint_id": "checkpoint_17_answer_reranking",
@@ -587,7 +573,7 @@
       "effect": "selects the safest answer from same-evidence candidates",
       "efficiency_role": "uses no additional SQL/API/LLM calls",
       "input_summary": {
-        "answer_family": "segment_definitions"
+        "answer_family": "merge_policy"
       },
       "output": {
         "candidate_count": 0,
@@ -596,7 +582,7 @@
       },
       "stage": "answer selection",
       "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-10T05:53:30.169775+00:00"
+      "timestamp": "2026-05-10T19:12:10.908161+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -608,87 +594,64 @@
         "verifier_passed": true
       },
       "output": {
-        "answer_length": 180,
-        "final_answer": "Segment definition details require live Adobe API evidence with definition names, IDs, and counts. Live API verification was not executed because Adobe credentials are unavailable.",
-        "final_token_estimate": 29
+        "answer_length": 154,
+        "final_answer": "The merge policy count cannot be determined from the available evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "final_token_estimate": 24
       },
       "stage": "final response",
       "technique": "concise grounded final response",
-      "timestamp": "2026-05-10T05:53:30.169830+00:00"
+      "timestamp": "2026-05-10T19:12:10.908183+00:00"
     },
     {
       "active": true,
       "checkpoint_id": "checkpoint_official_token_reduction",
       "correctness_impact_expected": false,
-      "estimated_tokens_after": 638,
-      "estimated_tokens_before": 696,
-      "expected_savings": 58,
+      "estimated_tokens_after": 516,
+      "estimated_tokens_before": 541,
+      "expected_savings": 25,
       "packaged_execution_changed": false,
       "reduced_fields": [
-        "steps[0].candidate_apis",
-        "steps[0].candidate_tables",
         "steps[2].metadata_path"
       ]
     }
   ],
-  "domain_type": "SEGMENT_AUDIENCE",
+  "domain_type": "COUNT_AGGREGATION",
   "errors": [],
-  "estimated_tokens": 638,
-  "execution_time": 0.00020416616462171078,
-  "final_answer": "Segment definition details require live Adobe API evidence with definition names, IDs, and counts. Live API verification was not executed because Adobe credentials are unavailable.",
-  "original_query": "How many segment definitions exist in this sandbox?",
-  "planning_time": 0.0001441671047359705,
-  "preprocessing_time": 0.0020120420958846807,
-  "query_id": "example_022",
+  "estimated_tokens": 516,
+  "execution_time": 0.00025174999609589577,
+  "final_answer": "The merge policy count cannot be determined from the available evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "How many merge policies are configured in this sandbox?",
+  "planning_time": 0.000298250000923872,
+  "preprocessing_time": 0.0022032498382031918,
+  "query_id": "example_020",
   "route_type": "API_ONLY",
-  "runtime": 0.010448875138536096,
+  "runtime": 0.009562124963849783,
   "sql_call_count": 0,
   "steps": [
     {
-      "candidate_apis": [
-        {
-          "id": "ups_audiences",
-          "method": "GET",
-          "path": "/data/core/ups/audiences"
-        },
-        {
-          "id": "segment_definitions",
-          "method": "GET",
-          "path": "/data/core/ups/segment/definitions"
-        },
-        {
-          "id": "merge_policies",
-          "method": "GET",
-          "path": "/data/core/ups/config/mergePolicies"
-        }
-      ],
+      "candidate_apis": [],
       "candidate_tables": [
         "br_campaign_segment",
-        "dim_segment",
-        "hkg_br_base_segment_used_by_dependent_segment",
-        "hkg_br_collection_segment",
-        "hkg_br_segment_property"
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
       ],
-      "confidence": 0.6499999999999999,
-      "domain_type": "SEGMENT_AUDIENCE",
+      "confidence": 0.5,
+      "domain_type": "COUNT_AGGREGATION",
       "kind": "route",
-      "reason": "Keyword routing using SEGMENT_AUDIENCE:1, COUNT_AGGREGATION:1.",
+      "reason": "Keyword routing using COUNT_AGGREGATION:1.",
       "route_type": "API_ONLY"
     },
     {
       "kind": "nlp",
       "relevance": {
         "apis": [
-          "segment_definitions",
+          "merge_policies",
           "export_batch_files"
         ],
         "lookup_paths": [
-          "segment_destination",
-          "audit"
-        ],
-        "tables": [
-          "dim_segment",
-          "hkg_br_segment_target"
+          "merge_policy"
         ]
       },
       "rewrites": [
@@ -696,32 +659,32 @@
       ],
       "tokens": {
         "domains": [
-          "segment_audience"
+          "merge_policy"
         ]
       }
     },
     {
-      "estimated_tokens": 957,
+      "estimated_tokens": 1002,
       "kind": "metadata",
       "metadata_path": "metadata.json",
-      "prompt_tokens": 1624
+      "prompt_tokens": 1684
     },
     {
       "kind": "plan",
       "optimizer_actions": [
         "ensemble selected generic_sql_first"
       ],
-      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: segment_definition_count.",
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Merge policies are Adobe API objects. Fast path: merge_policies.",
       "steps": [
         {
           "action": "api",
-          "family": "segment_definition_count",
+          "family": "merge_policies",
           "method": "GET",
           "params": {
-            "limit": "100"
+            "limit": "10"
           },
-          "purpose": "API parameter template: segment_definition_count.",
-          "url": "/data/core/ups/segment/definitions"
+          "purpose": "API parameter template: merge_policies.",
+          "url": "/data/core/ups/config/mergePolicies"
         }
       ],
       "strategy": "SQL_FIRST_API_VERIFY"
@@ -730,7 +693,7 @@
       "kind": "optimizer",
       "plan_ensemble": {
         "candidate_scores": {
-          "generic_sql_first": 11.8829
+          "generic_sql_first": 12.384
         },
         "candidate_tool_calls": {
           "generic_sql_first": 1
@@ -743,21 +706,21 @@
       "kind": "api_call",
       "method": "GET",
       "params": {
-        "limit": "100"
+        "limit": "10"
       },
       "result": {
         "dry_run": true,
-        "endpoint": "/data/core/ups/segment/definitions",
+        "endpoint": "/data/core/ups/config/mergePolicies",
         "error": "Adobe credentials unavailable; API call not executed.",
         "method": "GET",
         "ok": false,
         "params": {
-          "limit": "100"
+          "limit": "10"
         },
         "result_preview": null,
-        "url": "https://platform.adobe.io/data/core/ups/segment/definitions"
+        "url": "https://platform.adobe.io/data/core/ups/config/mergePolicies"
       },
-      "url": "/data/core/ups/segment/definitions",
+      "url": "/data/core/ups/config/mergePolicies",
       "validation": {
         "errors": [],
         "ok": true,
@@ -766,7 +729,7 @@
       }
     },
     {
-      "answer_family": "segment_definitions",
+      "answer_family": "merge_policy",
       "answer_intent": "COUNT",
       "completeness_missing_fields": [],
       "kind": "answer_diagnostics",
@@ -781,10 +744,10 @@
   ],
   "strategy": "SQL_FIRST_API_VERIFY",
   "timings": {
-    "answer_time": 0.00048604095354676247,
-    "execution_time": 0.00020416616462171078,
-    "planning_time": 0.0001441671047359705,
-    "preprocessing_time": 0.0020120420958846807
+    "answer_time": 0.00045575015246868134,
+    "execution_time": 0.00025174999609589577,
+    "planning_time": 0.000298250000923872,
+    "preprocessing_time": 0.0022032498382031918
   },
   "tool_call_count": 1
 }

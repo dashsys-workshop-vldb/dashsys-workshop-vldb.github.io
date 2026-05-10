@@ -304,4 +304,6 @@ def test_anthropic_client_normalizes_tool_use(monkeypatch):
 def test_llm_client_has_no_requests_chat_completion_runtime():
     source = inspect.getsource(llm_client)
     assert "requests.post" not in source
+    assert "requests.request" not in source
+    assert "/chat/completions" not in source
     assert "deprecated_requests_fallback" not in source

@@ -16,61 +16,98 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
     "Prefer fewer tool calls when evidence is sufficient."
   ],
   "context_card": {
-    "answer_policy": "Report publish/status evidence from dim_campaign; dry-run API is not confirmation.",
+    "answer_policy": "Batch details/files are API evidence; keep dry-run answers explicit.",
     "api_families": [
-      "journey_by_name",
-      "journey_inactive",
-      "journey_list"
+      "batch_list",
+      "recent_batches",
+      "batch_details",
+      "batch_export_files",
+      "successful_batch_count"
     ],
-    "api_mode": "optional",
-    "family": "journey_campaign",
+    "api_mode": "required",
+    "family": "batch",
     "join_path": [],
     "required_ids": [
-      "campaign_id",
-      "journey_name"
+      "batch_id"
     ],
-    "tables": [
-      "dim_campaign"
-    ]
+    "tables": []
   },
-  "domain_type": "JOURNEY_CAMPAIGN",
-  "known_example_patterns": [
-    {
-      "method": "GET",
-      "params": {
-        "filter": "status!=live",
-        "pageSize": "10"
-      },
-      "path": "/ajo/journey"
-    }
-  ],
+  "domain_type": "UNKNOWN",
+  "known_example_patterns": [],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
-        "journey_campaign"
+        "batch"
       ]
     },
     "rewrites": [
       "important_plurals->singular"
     ]
   },
-  "query": "Give me inactive journeys",
-  "query_id": "llm_controller_584fa499809b",
-  "route_type": "SQL_THEN_API",
+  "query": "Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?",
+  "query_id": "which_files_are_available_for_download_in_batch",
+  "route_type": "API_ONLY",
   "selected_apis": [
     {
-      "id": "journey_list",
+      "id": "export_batch_files",
       "method": "GET",
-      "path": "/ajo/journey"
+      "path": "/data/foundation/export/batches/{batch_id}/files"
     }
   ],
   "selected_columns": {
-    "dim_campaign": [
-      "CAMPAIGNID",
-      "NAME",
-      "STATE",
+    "br_campaign_segment": [
+      "SEGMENTID",
+      "CAMPAIGNID"
+    ],
+    "dim_blueprint": [
+      "BLUEPRINTTYPE",
+      "UPDATEDCLIENTID",
       "UPDATEDTIME",
-      "LASTDEPLOYEDTIME"
+      "BLUEPRINTID",
+      "NAME",
+      "ISBEHAVIORTIMESERIESTYPE",
+      "ISBEHAVIORRECORDTYPE",
+      "CREATEDTIME",
+      "UPDATEDBY",
+      "CREATEDCLIENTID"
+    ],
+    "dim_campaign": [
+      "UPDATEDTIME",
+      "STARTDATE",
+      "IMSORGID",
+      "LASTDEPLOYEDTIME",
+      "STATE",
+      "CAMPAIGNTYPE",
+      "STOPPEDTIME",
+      "FINISHEDTIME",
+      "SANDBOXNAME",
+      "NAME",
+      "SANDBOXID",
+      "STATUS",
+      "CAMPAIGNID",
+      "CAMPAIGNACTIVITYCOUNT",
+      "CREATEDTIME"
+    ],
+    "dim_collection": [
+      "ISIDENTITYENABLED",
+      "ROWCOUNT",
+      "UPDATEDTIME",
+      "NAME",
+      "COLLECTIONID",
+      "CREATEDTIME",
+      "UPDATEDBY",
+      "CREATEDCLIENTID"
+    ],
+    "dim_connector": [
+      "DATAFLOWNAME",
+      "UPDATEDTIME",
+      "CONNECTIONSPECNAME",
+      "STATE",
+      "SOURCEID",
+      "NAME",
+      "DATAFLOWID",
+      "SOURCEACCOUNTNAME",
+      "CREATEDTIME"
     ]
   },
   "selected_join_hints": [
@@ -81,10 +118,70 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "reason": "Curated: Campaign to segment bridge.",
       "right_column": "CAMPAIGNID",
       "right_table": "br_campaign_segment"
+    },
+    {
+      "confidence": 0.98,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Curated: Campaign to segment bridge.",
+      "right_column": "SEGMENTID",
+      "right_table": "br_campaign_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "dim_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_collection_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_target"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "BLUEPRINTID",
+      "left_table": "dim_blueprint",
+      "reason": "Matching ID-like column name.",
+      "right_column": "BLUEPRINTID",
+      "right_table": "hkg_br_blueprint_collection"
     }
   ],
   "selected_tables": [
-    "dim_campaign"
+    "br_campaign_segment",
+    "dim_blueprint",
+    "dim_campaign",
+    "dim_collection",
+    "dim_connector"
   ],
   "strategy": "SQL_FIRST_API_VERIFY"
 }

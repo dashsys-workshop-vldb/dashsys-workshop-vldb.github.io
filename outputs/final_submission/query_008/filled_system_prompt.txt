@@ -16,151 +16,104 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
     "Prefer fewer tool calls when evidence is sufficient."
   ],
   "context_card": {
-    "answer_policy": "Use blueprint/collection joins for local schema-dataset evidence; API may validate catalog/schema registry.",
+    "answer_policy": "Use dim_target/dim_connector evidence first; live API validates platform state.",
     "api_families": [
-      "datasets_by_schema",
-      "schema_registry_by_id",
-      "schema_by_name",
-      "schema_list"
+      "destination_flows",
+      "recent_destination_flows",
+      "failed_dataflow_flows"
     ],
-    "api_mode": "required",
-    "family": "schema_dataset",
-    "join_path": [
-      "dim_blueprint.blueprintid = hkg_br_blueprint_collection.blueprintid",
-      "hkg_br_blueprint_collection.collectionid = dim_collection.collectionid"
-    ],
+    "api_mode": "optional",
+    "family": "destination_dataflow",
+    "join_path": [],
     "required_ids": [
-      "schema_id",
-      "blueprint_id",
-      "collection_id"
+      "target_id",
+      "dataflow_id"
     ],
     "tables": [
-      "dim_blueprint",
-      "hkg_br_blueprint_collection",
-      "dim_collection"
+      "dim_target",
+      "dim_connector"
     ]
   },
-  "domain_type": "DATASET_SCHEMA",
+  "domain_type": "DESTINATION_DATAFLOW",
   "known_example_patterns": [
     {
       "method": "GET",
       "params": {
-        "limit": "25",
-        "property": "schema.name"
+        "limit": "5",
+        "property": "inheritedAttributes.properties.isDestinationFlow==true",
+        "sort": "updatedTime:desc"
       },
-      "path": "/data/foundation/catalog/dataSets"
+      "path": "/data/foundation/flowservice/flows"
     }
   ],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
-        "schema_dataset",
-        "audit"
+        "destination_dataflow"
       ]
-    },
-    "rewrites": [
-      "important_plurals->singular"
-    ]
+    }
   },
-  "query": "How many datasets have been ingested using the same schema in the prod sandbox?",
-  "query_id": "example_006",
+  "query": "Show me the IDs of failed dataflow runs",
+  "query_id": "example_004",
   "route_type": "SQL_THEN_API",
   "selected_apis": [
     {
-      "id": "catalog_datasets",
+      "id": "flowservice_flows",
       "method": "GET",
-      "path": "/data/foundation/catalog/dataSets"
+      "path": "/data/foundation/flowservice/flows"
     }
   ],
   "selected_columns": {
-    "dim_blueprint": [
-      "BLUEPRINTID",
+    "dim_connector": [
+      "CONNECTIONSPECNAME",
+      "CREATEDTIME",
+      "DATAFLOWID",
+      "DATAFLOWNAME",
       "NAME",
-      "CLASS",
-      "ISPROFILEENABLED",
-      "UPDATEDTIME"
+      "SOURCEACCOUNTNAME",
+      "UPDATEDTIME",
+      "SOURCEID",
+      "STATE"
     ],
-    "dim_collection": [
-      "COLLECTIONID",
+    "dim_target": [
+      "CREATEDTIME",
+      "DATAFLOWNAME",
       "NAME",
-      "ROWCOUNT",
-      "UPDATEDTIME"
-    ],
-    "hkg_br_blueprint_collection": [
-      "BLUEPRINTID",
-      "COLLECTIONID"
+      "UPDATEDTIME",
+      "CONNECTIONSPECID",
+      "STATE",
+      "TARGETID"
     ]
   },
   "selected_join_hints": [
     {
       "confidence": 0.9,
-      "left_column": "BLUEPRINTID",
-      "left_table": "dim_blueprint",
+      "left_column": "SOURCEID",
+      "left_table": "dim_connector",
       "reason": "Matching ID-like column name.",
-      "right_column": "BLUEPRINTID",
-      "right_table": "hkg_br_blueprint_collection"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "dim_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_blueprint_collection"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "BLUEPRINTID",
-      "left_table": "dim_blueprint",
-      "reason": "Matching ID-like column name.",
-      "right_column": "BLUEPRINTID",
-      "right_table": "hkg_br_blueprint_property"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "dim_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_collection_property"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "dim_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_collection_segment"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "dim_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
+      "right_column": "SOURCEID",
       "right_table": "hkg_br_source_collection"
     },
     {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "hkg_br_blueprint_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_collection_property"
+      "confidence": 0.98,
+      "left_column": "TARGETID",
+      "left_table": "dim_target",
+      "reason": "Curated: Segment to target bridge.",
+      "right_column": "TARGETID",
+      "right_table": "hkg_br_segment_target"
     },
     {
       "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "hkg_br_blueprint_collection",
+      "left_column": "TARGETID",
+      "left_table": "dim_target",
       "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_collection_segment"
+      "right_column": "TARGETID",
+      "right_table": "hkg_br_target_property"
     }
   ],
   "selected_tables": [
-    "dim_blueprint",
-    "hkg_br_blueprint_collection",
-    "dim_collection"
+    "dim_target",
+    "dim_connector"
   ],
   "strategy": "SQL_FIRST_API_VERIFY"
 }

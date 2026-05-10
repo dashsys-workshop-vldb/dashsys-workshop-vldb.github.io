@@ -8,26 +8,28 @@
     "Prefer fewer tool calls when evidence is sufficient."
   ],
   "context_card": {
-    "answer_policy": "Name audience/destination rows from SQL; only use API to verify live audience/flow evidence.",
+    "answer_policy": "Use blueprint/collection joins for local schema-dataset evidence; API may validate catalog/schema registry.",
     "api_families": [
-      "audience_by_destination_id",
-      "destination_flows"
+      "datasets_by_schema",
+      "schema_registry_by_id",
+      "schema_by_name",
+      "schema_list"
     ],
-    "api_mode": "optional",
-    "family": "segment_destination",
+    "api_mode": "required",
+    "family": "schema_dataset",
     "join_path": [
-      "dim_segment.segmentid = hkg_br_segment_target.segmentid",
-      "hkg_br_segment_target.targetid = dim_target.targetid"
+      "dim_blueprint.blueprintid = hkg_br_blueprint_collection.blueprintid",
+      "hkg_br_blueprint_collection.collectionid = dim_collection.collectionid"
     ],
     "required_ids": [
-      "segment_id",
-      "destination_id",
-      "target_id"
+      "schema_id",
+      "blueprint_id",
+      "collection_id"
     ],
     "tables": [
-      "dim_segment",
-      "hkg_br_segment_target",
-      "dim_target"
+      "dim_blueprint",
+      "hkg_br_blueprint_collection",
+      "dim_collection"
     ]
   },
   "domain_type": "SEGMENT_AUDIENCE",
@@ -35,133 +37,123 @@
     {
       "method": "GET",
       "params": {
-        "limit": "100",
-        "orderBy": "updateTime:desc"
+        "limit": "25"
       },
-      "path": "/data/core/ups/segment/definitions"
+      "path": "/schemas"
     }
   ],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
-        "segment_destination",
-        "audit"
+        "schema_dataset",
+        "batch"
       ]
-    },
-    "rewrites": [
-      "important_plurals->singular"
-    ]
+    }
   },
-  "query": "Which segment definitions were updated most recently?",
-  "query_id": "llm_controller_19ab47b0f229",
-  "route_type": "API_ONLY",
+  "query": "Provide more details for the schema 'weRetail: Customer Actions'",
+  "query_id": "provide_more_details_for_the_schema_weretail_cus",
+  "route_type": "SQL_ONLY",
   "selected_apis": [
     {
-      "id": "segment_definitions",
+      "id": "schemas_short",
       "method": "GET",
-      "path": "/data/core/ups/segment/definitions"
+      "path": "/schemas"
     }
   ],
   "selected_columns": {
-    "dim_segment": [
-      "DEFINITION",
-      "SEGMENTID",
-      "UPDATEDTIME",
-      "CREATEDTIME",
-      "EVALUATIONCOMPLETEDTIME",
-      "LIFECYCLESTATUS",
-      "MERGEPOLICYID",
+    "dim_blueprint": [
+      "BLUEPRINTID",
       "NAME",
-      "DEFINITIONHASH",
-      "ISACCOUNTSEGMENT",
-      "ISPEOPLESEGMENT",
-      "LABELSSEGMENT"
+      "CLASS",
+      "ISPROFILEENABLED",
+      "UPDATEDTIME"
     ],
-    "dim_target": [
-      "UPDATEDTIME",
-      "CONNECTIONSPECID",
-      "CREATEDTIME",
-      "DATAFLOWNAME",
+    "dim_collection": [
+      "COLLECTIONID",
       "NAME",
-      "STATE",
-      "TARGETID"
+      "ROWCOUNT",
+      "UPDATEDTIME"
     ],
-    "hkg_br_segment_target": [
-      "SEGMENTID",
-      "TARGETID",
-      "LABELSSEGMENT"
+    "hkg_br_blueprint_collection": [
+      "BLUEPRINTID",
+      "COLLECTIONID"
+    ],
+    "hkg_br_blueprint_property": [
+      "BLUEPRINTID",
+      "PROPERTY"
     ]
   },
   "selected_join_hints": [
     {
       "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "br_campaign_segment",
+      "left_column": "BLUEPRINTID",
+      "left_table": "dim_blueprint",
       "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "dim_segment"
+      "right_column": "BLUEPRINTID",
+      "right_table": "hkg_br_blueprint_collection"
     },
     {
       "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "br_campaign_segment",
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
       "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "hkg_br_segment_target"
-    },
-    {
-      "confidence": 0.98,
-      "left_column": "SEGMENTID",
-      "left_table": "dim_segment",
-      "reason": "Curated: Campaign to segment bridge.",
-      "right_column": "SEGMENTID",
-      "right_table": "br_campaign_segment"
-    },
-    {
-      "confidence": 0.75,
-      "left_column": "SEGMENTID",
-      "left_table": "dim_segment",
-      "reason": "Foreign-key-looking column references table root.",
-      "right_column": "DEPENDENTSEGMENTID",
-      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_blueprint_collection"
     },
     {
       "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "dim_segment",
+      "left_column": "BLUEPRINTID",
+      "left_table": "dim_blueprint",
       "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
+      "right_column": "BLUEPRINTID",
+      "right_table": "hkg_br_blueprint_property"
     },
     {
       "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "dim_segment",
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
       "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
       "right_table": "hkg_br_collection_segment"
     },
     {
       "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "dim_segment",
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
       "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "hkg_br_segment_property"
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_source_collection"
     },
     {
-      "confidence": 0.98,
-      "left_column": "SEGMENTID",
-      "left_table": "dim_segment",
-      "reason": "Curated: Segment to target bridge.",
-      "right_column": "SEGMENTID",
-      "right_table": "hkg_br_segment_target"
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "hkg_br_blueprint_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "hkg_br_blueprint_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_segment"
     }
   ],
   "selected_tables": [
-    "dim_segment",
-    "hkg_br_segment_target",
-    "dim_target"
+    "dim_blueprint",
+    "hkg_br_blueprint_collection",
+    "dim_collection",
+    "hkg_br_blueprint_property"
   ],
   "strategy": "SQL_FIRST_API_VERIFY"
 }

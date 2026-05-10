@@ -8,146 +8,136 @@
     "Prefer fewer tool calls when evidence is sufficient."
   ],
   "context_card": {
-    "answer_policy": "Tags are API evidence; report dry-run limits when credentials are unavailable.",
+    "answer_policy": "Observability metrics require live API values; render returned date/value points only.",
     "api_families": [
-      "tag_count",
-      "tag_list",
-      "tag_details_by_id",
-      "tag_categories",
-      "tags_by_uncategorized_category"
+      "observability_metrics"
     ],
     "api_mode": "required",
-    "family": "tags",
+    "family": "observability",
     "join_path": [],
-    "required_ids": [
-      "tag_id",
-      "tag_category_id"
-    ],
+    "required_ids": [],
     "tables": []
   },
-  "domain_type": "UNKNOWN",
+  "domain_type": "DATASET_SCHEMA",
   "known_example_patterns": [
     {
-      "method": "GET",
+      "method": "POST",
       "params": {
-        "limit": "20",
-        "tagCategoryId": "Uncategorized-87891E4066602D250A495F91@AdobeOrg"
+        "end": "2026-03-31T23:59:59.000Z",
+        "granularity": "day",
+        "metrics": "[{'name': 'timeseries.ingestion.dataset.recordsuccess.count', 'filters': [], 'aggregator': 'sum'}]",
+        "start": "2026-03-15T00:00:00.000Z"
       },
-      "path": "/unifiedtags/tags"
-    },
-    {
-      "method": "GET",
-      "params": {
-        "limit": "100"
-      },
-      "path": "/unifiedtags/tagCategory"
+      "path": "/data/infrastructure/observability/insights/metrics"
     }
   ],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
-        "tags"
+        "observability",
+        "audit"
       ]
-    },
-    "rewrites": [
-      "important_plurals->singular"
-    ]
+    }
   },
-  "query": "Which tags belong to the category 'Uncategorized'?",
-  "query_id": "llm_controller_525139e43116",
+  "query": "What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'?",
+  "query_id": "what_are_the_daily_timeseries_ingestion_dataset",
   "route_type": "API_ONLY",
   "selected_apis": [
     {
-      "id": "unified_tag_categories",
-      "method": "GET",
-      "path": "/unifiedtags/tagCategory"
-    },
-    {
-      "id": "unified_tags",
-      "method": "GET",
-      "path": "/unifiedtags/tags"
+      "id": "observability_metrics",
+      "method": "POST",
+      "path": "/data/infrastructure/observability/insights/metrics"
     }
   ],
   "selected_columns": {
-    "br_campaign_segment": [
-      "SEGMENTID",
-      "CAMPAIGNID"
-    ],
     "dim_blueprint": [
-      "BLUEPRINTTYPE",
-      "UPDATEDCLIENTID",
-      "UPDATEDTIME",
       "BLUEPRINTID",
       "NAME",
-      "ISBEHAVIORTIMESERIESTYPE",
-      "ISBEHAVIORRECORDTYPE",
-      "CREATEDTIME",
-      "UPDATEDBY",
-      "CREATEDCLIENTID"
-    ],
-    "dim_campaign": [
-      "UPDATEDTIME",
-      "STARTDATE",
-      "IMSORGID",
-      "LASTDEPLOYEDTIME",
-      "STATE",
-      "CAMPAIGNTYPE",
-      "STOPPEDTIME",
-      "FINISHEDTIME",
-      "SANDBOXNAME",
-      "NAME",
-      "SANDBOXID",
-      "STATUS",
-      "CAMPAIGNID",
-      "CAMPAIGNACTIVITYCOUNT",
-      "CREATEDTIME"
+      "CLASS",
+      "ISPROFILEENABLED",
+      "UPDATEDTIME"
     ],
     "dim_collection": [
-      "ISIDENTITYENABLED",
-      "ROWCOUNT",
-      "UPDATEDTIME",
-      "NAME",
       "COLLECTIONID",
-      "CREATEDTIME",
-      "UPDATEDBY",
-      "CREATEDCLIENTID"
-    ],
-    "dim_connector": [
-      "DATAFLOWNAME",
-      "UPDATEDTIME",
-      "CONNECTIONSPECNAME",
-      "STATE",
-      "SOURCEID",
       "NAME",
-      "DATAFLOWID",
-      "SOURCEACCOUNTNAME",
-      "CREATEDTIME"
+      "ROWCOUNT",
+      "UPDATEDTIME"
+    ],
+    "hkg_br_blueprint_collection": [
+      "BLUEPRINTID",
+      "COLLECTIONID"
     ]
   },
   "selected_join_hints": [
     {
-      "confidence": 0.98,
-      "left_column": "CAMPAIGNID",
-      "left_table": "dim_campaign",
-      "reason": "Curated: Campaign to segment bridge.",
-      "right_column": "CAMPAIGNID",
-      "right_table": "br_campaign_segment"
+      "confidence": 0.9,
+      "left_column": "BLUEPRINTID",
+      "left_table": "dim_blueprint",
+      "reason": "Matching ID-like column name.",
+      "right_column": "BLUEPRINTID",
+      "right_table": "hkg_br_blueprint_collection"
     },
     {
-      "confidence": 0.98,
-      "left_column": "SEGMENTID",
-      "left_table": "dim_segment",
-      "reason": "Curated: Campaign to segment bridge.",
-      "right_column": "SEGMENTID",
-      "right_table": "br_campaign_segment"
+      "confidence": 0.9,
+      "left_column": "BLUEPRINTID",
+      "left_table": "dim_blueprint",
+      "reason": "Matching ID-like column name.",
+      "right_column": "BLUEPRINTID",
+      "right_table": "hkg_br_blueprint_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_blueprint_collection"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_source_collection"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "hkg_br_blueprint_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "hkg_br_blueprint_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_segment"
     }
   ],
   "selected_tables": [
-    "br_campaign_segment",
     "dim_blueprint",
-    "dim_campaign",
-    "dim_collection",
-    "dim_connector"
+    "hkg_br_blueprint_collection",
+    "dim_collection"
   ],
   "strategy": "SQL_FIRST_API_VERIFY"
 }

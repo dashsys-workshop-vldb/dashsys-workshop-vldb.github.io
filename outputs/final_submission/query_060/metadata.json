@@ -8,85 +8,98 @@
     "Prefer fewer tool calls when evidence is sufficient."
   ],
   "context_card": {
-    "answer_policy": "Use blueprint/collection joins for local schema-dataset evidence; API may validate catalog/schema registry.",
+    "answer_policy": "Use dim_target/dim_connector evidence first; live API validates platform state.",
     "api_families": [
-      "datasets_by_schema",
-      "schema_registry_by_id",
-      "schema_by_name",
-      "schema_list"
+      "destination_flows",
+      "recent_destination_flows",
+      "failed_dataflow_flows"
     ],
-    "api_mode": "required",
-    "family": "schema_dataset",
-    "join_path": [
-      "dim_blueprint.blueprintid = hkg_br_blueprint_collection.blueprintid",
-      "hkg_br_blueprint_collection.collectionid = dim_collection.collectionid"
-    ],
+    "api_mode": "optional",
+    "family": "destination_dataflow",
+    "join_path": [],
     "required_ids": [
-      "schema_id",
-      "blueprint_id",
-      "collection_id"
+      "target_id",
+      "dataflow_id"
     ],
     "tables": [
-      "dim_blueprint",
-      "hkg_br_blueprint_collection",
-      "dim_collection"
+      "dim_target",
+      "dim_connector"
     ]
   },
-  "domain_type": "DATASET_SCHEMA",
-  "known_example_patterns": [
-    {
-      "method": "GET",
-      "params": {
-        "limit": "25"
-      },
-      "path": "/schemas"
-    }
-  ],
+  "domain_type": "STATUS_MONITORING",
+  "known_example_patterns": [],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
-        "schema_dataset"
+        "destination_dataflow",
+        "batch"
       ]
     },
     "rewrites": [
       "important_plurals->singular"
     ]
   },
-  "query": "How many schemas do I have?",
-  "query_id": "llm_controller_1f0307b510e3",
-  "route_type": "SQL_ONLY",
+  "query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
+  "query_id": "show_failed_files_for_batch_01kp6mnq3x71rp6mnh6f",
+  "route_type": "API_ONLY",
   "selected_apis": [
     {
-      "id": "schemas_short",
+      "id": "export_batch_failed",
       "method": "GET",
-      "path": "/schemas"
+      "path": "/data/foundation/export/batches/{batch_id}/failed"
     }
   ],
   "selected_columns": {
-    "dim_blueprint": [
-      "BLUEPRINTID"
+    "dim_connector": [
+      "CONNECTIONSPECNAME",
+      "CREATEDTIME",
+      "DATAFLOWID",
+      "DATAFLOWNAME",
+      "NAME",
+      "SOURCEACCOUNTNAME",
+      "SOURCEID",
+      "STATE",
+      "UPDATEDTIME"
+    ],
+    "dim_target": [
+      "CONNECTIONSPECID",
+      "CREATEDTIME",
+      "DATAFLOWNAME",
+      "NAME",
+      "STATE",
+      "TARGETID",
+      "UPDATEDTIME"
     ]
   },
   "selected_join_hints": [
     {
       "confidence": 0.9,
-      "left_column": "BLUEPRINTID",
-      "left_table": "dim_blueprint",
+      "left_column": "SOURCEID",
+      "left_table": "dim_connector",
       "reason": "Matching ID-like column name.",
-      "right_column": "BLUEPRINTID",
-      "right_table": "hkg_br_blueprint_collection"
+      "right_column": "SOURCEID",
+      "right_table": "hkg_br_source_collection"
+    },
+    {
+      "confidence": 0.98,
+      "left_column": "TARGETID",
+      "left_table": "dim_target",
+      "reason": "Curated: Segment to target bridge.",
+      "right_column": "TARGETID",
+      "right_table": "hkg_br_segment_target"
     },
     {
       "confidence": 0.9,
-      "left_column": "BLUEPRINTID",
-      "left_table": "dim_blueprint",
+      "left_column": "TARGETID",
+      "left_table": "dim_target",
       "reason": "Matching ID-like column name.",
-      "right_column": "BLUEPRINTID",
-      "right_table": "hkg_br_blueprint_property"
+      "right_column": "TARGETID",
+      "right_table": "hkg_br_target_property"
     }
   ],
   "selected_tables": [
-    "dim_blueprint"
+    "dim_target",
+    "dim_connector"
   ],
   "strategy": "SQL_FIRST_API_VERIFY"
 }

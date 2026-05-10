@@ -39,6 +39,7 @@ NON_SUBMISSION_OUTPUT_DIRS = {
     "repair_selector_v2_shadow_eval",
     "repair_selector_v3_shadow_eval",
     "shadow_repair_eval",
+    "diagnostic_prompt_suite",
     "visualizations",
     "live_mode_readiness_report",
     "endpoint_family_tiebreak_v2_shadow",

@@ -26,6 +26,16 @@ Start here. Most older generated reports were consolidated or removed.
 - `outputs/visualizations/system_status_dashboard.md`
 - `outputs/visualizations/score_bottleneck_dashboard.md`
 
+## Diagnostic Prompt Coverage
+
+- `outputs/reports/generated_prompt_suite_summary.md` - Diagnostic prompt coverage only; not official strict score.
+- `outputs/reports/diagnostic_prompt_suite_run.md` - Diagnostic prompt runtime coverage only; not official strict score.
+
+## System-Wide SDK LLM Audit
+
+- `outputs/reports/sdk_usage_audit.md`
+- Runtime LLM direct HTTP hits: `0`
+
 ## Cleanup Reports
 
 - `outputs/reports/cleanup_audit.md`

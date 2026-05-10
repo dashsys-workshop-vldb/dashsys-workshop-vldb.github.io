@@ -46,12 +46,15 @@ def run_llm_hidden_style_diagnostic(config: Config | None = None) -> dict[str, A
     client = get_llm_client()
     provider_type = "anthropic" if client.provider_name() == "anthropic" else "openai_compatible"
     backend_type = "anthropic_sdk" if client.provider_name() == "anthropic" else "openai_sdk"
+    sdk_path_used = backend_type in {"openai_sdk", "anthropic_sdk"}
     if not client.available():
         probe = client.generate_messages([])
         payload = {
             "framework": "generic_sdk_llm_baseline",
             "provider_type": provider_type,
             "backend_type": backend_type,
+            "transport": backend_type,
+            "sdk_path_used": sdk_path_used,
             "backend_name": client.model_name(),
             "status": "skipped",
             "skipped_reason": probe.get("reason", "LLM provider API key is not set"),
@@ -108,6 +111,8 @@ def run_llm_hidden_style_diagnostic(config: Config | None = None) -> dict[str, A
         "framework": "generic_sdk_llm_baseline",
         "provider_type": provider_type,
         "backend_type": backend_type,
+        "transport": backend_type,
+        "sdk_path_used": sdk_path_used,
         "sdk_client": "SDK-based LLM client",
         "backend_name": client.model_name(),
         "model": client.model_name(),
@@ -177,6 +182,8 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- Framework: `{payload.get('framework')}`",
         f"- Provider type: `{payload.get('provider_type')}`",
         f"- Backend type: `{payload.get('backend_type')}`",
+        f"- Transport: `{payload.get('transport')}`",
+        f"- SDK path used: `{payload.get('sdk_path_used')}`",
         f"- Current LLM backend: `{payload.get('backend_name')}`",
         f"- Status: `{payload.get('status')}`",
         f"- Diagnostic only: `{payload.get('diagnostic_only', True)}`",
@@ -200,7 +207,7 @@ def render_markdown(payload: dict[str, Any]) -> str:
 
 def _safe_report_payload(payload: dict[str, Any]) -> dict[str, Any]:
     safe = redact_secrets(payload)
-    for key in ["framework", "provider_type", "backend_type", "sdk_client", "backend_name", "model", "status", "diagnostic_only", "recommendation"]:
+    for key in ["framework", "provider_type", "backend_type", "transport", "sdk_path_used", "sdk_client", "backend_name", "model", "status", "diagnostic_only", "recommendation"]:
         if key in payload:
             safe[key] = payload.get(key)
     return safe

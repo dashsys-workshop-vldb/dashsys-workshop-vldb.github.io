@@ -30,7 +30,7 @@
       "dim_target"
     ]
   },
-  "domain_type": "UNKNOWN",
+  "domain_type": "SEGMENT_AUDIENCE",
   "known_example_patterns": [
     {
       "method": "GET",
@@ -45,13 +45,16 @@
     "relevance": {
       "lookup_paths": [
         "audit",
-        "journey_campaign"
+        "segment_destination"
       ]
-    }
+    },
+    "rewrites": [
+      "important_plurals->singular"
+    ]
   },
-  "query": "Show me all entities created by download",
-  "query_id": "example_014",
-  "route_type": "SQL_ONLY",
+  "query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
+  "query_id": "example_012",
+  "route_type": "SQL_THEN_API",
   "selected_apis": [
     {
       "id": "audit_events",
@@ -60,49 +63,90 @@
     }
   ],
   "selected_columns": {
-    "dim_collection": [
-      "COLLECTIONID",
+    "dim_segment": [
+      "SEGMENTID",
+      "NAME"
+    ],
+    "dim_target": [
+      "TARGETID",
       "NAME",
-      "CREATEDTIME",
-      "CREATEDBY"
+      "CREATEDTIME"
+    ],
+    "hkg_br_segment_target": [
+      "SEGMENTID",
+      "TARGETID"
     ]
   },
   "selected_join_hints": [
     {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "dim_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_blueprint_collection"
+      "confidence": 0.98,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Curated: Segment to target bridge.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_target"
+    },
+    {
+      "confidence": 0.98,
+      "left_column": "TARGETID",
+      "left_table": "dim_target",
+      "reason": "Curated: Segment to target bridge.",
+      "right_column": "TARGETID",
+      "right_table": "hkg_br_segment_target"
+    },
+    {
+      "confidence": 0.98,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Curated: Campaign to segment bridge.",
+      "right_column": "SEGMENTID",
+      "right_table": "br_campaign_segment"
     },
     {
       "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "dim_collection",
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
       "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_collection_property"
+      "right_column": "SEGMENTID",
+      "right_table": "dim_segment"
     },
     {
       "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "dim_collection",
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
       "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_target"
+    },
+    {
+      "confidence": 0.75,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Foreign-key-looking column references table root.",
+      "right_column": "DEPENDENTSEGMENTID",
+      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
       "right_table": "hkg_br_collection_segment"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "dim_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_source_collection"
     }
   ],
   "selected_tables": [
-    "dim_collection"
+    "dim_segment",
+    "hkg_br_segment_target",
+    "dim_target"
   ],
   "strategy": "SQL_FIRST_API_VERIFY"
 }

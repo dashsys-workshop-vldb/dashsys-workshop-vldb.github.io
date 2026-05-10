@@ -8,46 +8,48 @@
     "Prefer fewer tool calls when evidence is sufficient."
   ],
   "context_card": {
-    "answer_policy": "Merge policies are API evidence; do not infer defaults from absent API payloads.",
+    "answer_policy": "Observability metrics require live API values; render returned date/value points only.",
     "api_families": [
-      "merge_policies"
+      "observability_metrics"
     ],
     "api_mode": "required",
-    "family": "merge_policy",
+    "family": "observability",
     "join_path": [],
-    "required_ids": [
-      "merge_policy_id"
-    ],
+    "required_ids": [],
     "tables": []
   },
   "domain_type": "COUNT_AGGREGATION",
   "known_example_patterns": [
     {
-      "method": "GET",
+      "method": "POST",
       "params": {
-        "limit": "10"
+        "end": "2026-03-31T23:59:59.000Z",
+        "granularity": "day",
+        "metrics": "[{'name': 'timeseries.ingestion.dataset.recordsuccess.count', 'filters': [], 'aggregator': 'sum'}]",
+        "start": "2026-03-15T00:00:00.000Z"
       },
-      "path": "/data/core/ups/config/mergePolicies"
+      "path": "/data/infrastructure/observability/insights/metrics"
     }
   ],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
-        "merge_policy"
+        "observability",
+        "batch"
       ]
     },
     "rewrites": [
-      "important_plurals->singular"
+      "\\bbatch\\s+success\\b->batchsuccess"
     ]
   },
-  "query": "How many merge policies are configured in this sandbox?",
-  "query_id": "llm_controller_2f0dbe12ff88",
+  "query": "Show ingestion record counts and batch success counts for the last 90 days.",
+  "query_id": "show_ingestion_record_counts_and_batch_success_c",
   "route_type": "API_ONLY",
   "selected_apis": [
     {
-      "id": "merge_policies",
-      "method": "GET",
-      "path": "/data/core/ups/config/mergePolicies"
+      "id": "observability_metrics",
+      "method": "POST",
+      "path": "/data/infrastructure/observability/insights/metrics"
     }
   ],
   "selected_columns": {

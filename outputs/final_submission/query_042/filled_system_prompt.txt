@@ -45,34 +45,50 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
     {
       "method": "GET",
       "params": {
-        "limit": "25"
+        "limit": "25",
+        "property": "schema.name"
       },
-      "path": "/schemas"
+      "path": "/data/foundation/catalog/dataSets"
     }
   ],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
-        "schema_dataset"
+        "schema_dataset",
+        "audit"
       ]
     },
     "rewrites": [
       "important_plurals->singular"
     ]
   },
-  "query": "How many schemas do I have?",
-  "query_id": "how_many_schemas_do_i_have",
-  "route_type": "SQL_ONLY",
+  "query": "How many datasets have been ingested using the same schema in the prod sandbox?",
+  "query_id": "how_many_datasets_have_been_ingested_using_the_s",
+  "route_type": "SQL_THEN_API",
   "selected_apis": [
     {
-      "id": "schemas_short",
+      "id": "catalog_datasets",
       "method": "GET",
-      "path": "/schemas"
+      "path": "/data/foundation/catalog/dataSets"
     }
   ],
   "selected_columns": {
     "dim_blueprint": [
-      "BLUEPRINTID"
+      "BLUEPRINTID",
+      "NAME",
+      "CLASS",
+      "ISPROFILEENABLED",
+      "UPDATEDTIME"
+    ],
+    "dim_collection": [
+      "COLLECTIONID",
+      "NAME",
+      "ROWCOUNT",
+      "UPDATEDTIME"
+    ],
+    "hkg_br_blueprint_collection": [
+      "BLUEPRINTID",
+      "COLLECTIONID"
     ]
   },
   "selected_join_hints": [
@@ -86,15 +102,65 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
     },
     {
       "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_blueprint_collection"
+    },
+    {
+      "confidence": 0.9,
       "left_column": "BLUEPRINTID",
       "left_table": "dim_blueprint",
       "reason": "Matching ID-like column name.",
       "right_column": "BLUEPRINTID",
       "right_table": "hkg_br_blueprint_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_source_collection"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "hkg_br_blueprint_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "hkg_br_blueprint_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_segment"
     }
   ],
   "selected_tables": [
-    "dim_blueprint"
+    "dim_blueprint",
+    "hkg_br_blueprint_collection",
+    "dim_collection"
   ],
   "strategy": "SQL_FIRST_API_VERIFY"
 }

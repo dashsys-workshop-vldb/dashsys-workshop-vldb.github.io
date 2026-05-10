@@ -1,5 +1,5 @@
 {
-  "answer_time": 0.0009665421675890684,
+  "answer_time": 0.0008608328644186258,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -9,13 +9,13 @@
       "effect": "preserves the original query for reproducibility",
       "efficiency_role": "starts one trace without extra tool calls",
       "output": {
-        "query": "List all journeys",
-        "query_id": "list_all_journeys",
+        "query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
+        "query_id": "list_all_audiences_in_the_sandbox_that_have_been",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-10T01:14:22.496409+00:00"
+      "timestamp": "2026-05-10T01:15:58.934197+00:00"
     },
     {
       "checkpoint_id": "checkpoint_00_prompt_router",
@@ -24,28 +24,28 @@
       "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
       "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
       "input_summary": {
-        "query": "List all journeys"
+        "query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months."
       },
       "output": {
-        "confidence": 0.84,
+        "confidence": 0.9,
         "matched_rules": {
           "items": [
-            "local_db:journey"
+            "api_only:sandbox"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
-        "mode": "LOCAL_DB_ONLY",
-        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: journey, list.",
+        "mode": "API_ONLY",
+        "reason": "API/platform family keyword(s): sandbox.",
         "recommended_strategy": "SQL_FIRST_API_VERIFY",
-        "requires_api": false,
-        "requires_database": true,
-        "risk": "low",
+        "requires_api": true,
+        "requires_database": false,
+        "risk": "medium",
         "truncated_fields": 1
       },
       "stage": "prompt routing",
       "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-10T01:14:22.496447+00:00"
+      "timestamp": "2026-05-10T01:15:58.934340+00:00"
     },
     {
       "checkpoint_id": "checkpoint_simple_prompt_gate",
@@ -54,17 +54,17 @@
       "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
       "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
       "input_summary": {
-        "query": "List all journeys"
+        "query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months."
       },
       "output": {
-        "confidence": 0.84,
+        "confidence": 0.9,
         "is_simple": false,
-        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: journey, list.",
+        "reason": "API/platform family keyword(s): sandbox.",
         "suggested_action": "USE_DATA_PIPELINE"
       },
       "stage": "input routing",
       "technique": "simple prompt gate",
-      "timestamp": "2026-05-10T01:14:22.496466+00:00"
+      "timestamp": "2026-05-10T01:15:58.934382+00:00"
     },
     {
       "checkpoint_id": "checkpoint_02_query_normalization",
@@ -73,11 +73,11 @@
       "effect": "creates matching-friendly text while preserving the original query",
       "efficiency_role": "reduces repeated fuzzy matching work downstream",
       "input_summary": {
-        "query": "List all journeys"
+        "query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months."
       },
       "output": {
-        "matching_text": "list all journey",
-        "normalized_query": "List all journeys",
+        "matching_text": "list all audience in the sandbox that have been mapped to new destination in the last 3 months.",
+        "normalized_query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
         "rewrites": {
           "items": [
             "important_plurals->singular"
@@ -88,7 +88,7 @@
       },
       "stage": "normalization",
       "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-10T01:14:22.496509+00:00"
+      "timestamp": "2026-05-10T01:15:58.934444+00:00"
     },
     {
       "checkpoint_id": "checkpoint_03_query_tokens",
@@ -97,20 +97,20 @@
       "effect": "extracts reusable query fields for routing, planning, and answers",
       "efficiency_role": "avoids reparsing the query in later modules",
       "input_summary": {
-        "normalized_query": "List all journeys"
+        "normalized_query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months."
       },
       "output": {
         "domains": {
           "items": [
-            "journey_campaign"
+            "destination_dataflow"
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         }
       },
       "stage": "tokenization",
       "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-10T01:14:22.496549+00:00"
+      "timestamp": "2026-05-10T01:15:58.934509+00:00"
     },
     {
       "checkpoint_id": "checkpoint_04_relevance_scoring",
@@ -122,9 +122,9 @@
         "tokens": {
           "domains": {
             "items": [
-              "journey_campaign"
+              "destination_dataflow"
             ],
-            "total_items": 1,
+            "total_items": 2,
             "truncated_items": false
           }
         }
@@ -132,36 +132,69 @@
       "output": {
         "top_answer_families": {
           "items": [
-            "inactive_journeys"
+            "segment_destination"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "top_apis": {
           "items": [
-            "journey_list"
+            "audit_events"
           ],
           "total_items": 3,
           "truncated_items": false
         },
         "top_join_hints": {
           "items": [
-            "dim_campaign.CAMPAIGNID->br_campaign_segment.CAMPAIGNID"
+            "dim_segment.SEGMENTID->hkg_br_segment_target.SEGMENTID"
           ],
-          "total_items": 1,
+          "total_items": 3,
           "truncated_items": false
         },
         "top_tables": {
           "items": [
-            "dim_campaign"
+            "dim_collection"
           ],
-          "total_items": 1,
+          "total_items": 3,
           "truncated_items": false
         }
       },
       "stage": "context selection",
       "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-10T01:14:22.497256+00:00"
+      "timestamp": "2026-05-10T01:15:58.935796+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_query_decomposition",
+      "correctness_role": "helps SQL/API planning preserve requested constraints",
+      "duration_ms": 0.0,
+      "effect": "breaks complex prompts into entities, filters, joins, and answer-shape constraints",
+      "efficiency_role": "skips simple queries and uses no LLM/tool calls",
+      "input_summary": {
+        "query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
+        "tokens": {
+          "domains": {
+            "items": [
+              "destination_dataflow"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          }
+        }
+      },
+      "output": {
+        "active": true,
+        "expected_answer_shape": "table_or_list",
+        "sub_questions": {
+          "items": [
+            "Break complex request into SQL planning constraints."
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "query understanding",
+      "technique": "DIN-SQL-style deterministic query decomposition",
+      "timestamp": "2026-05-10T01:15:58.935830+00:00"
     },
     {
       "checkpoint_id": "checkpoint_05_query_analysis",
@@ -170,28 +203,28 @@
       "effect": "computes shared query understanding once",
       "efficiency_role": "avoids repeated template and routing analysis",
       "input_summary": {
-        "domain_type": "JOURNEY_CAMPAIGN",
-        "route_type": "SQL_ONLY"
+        "domain_type": "SEGMENT_AUDIENCE",
+        "route_type": "SQL_THEN_API"
       },
       "output": {
-        "answer_family": "list_journeys",
+        "answer_family": "audit_destination_mapping",
         "api_templates": {
           "items": [
-            "journey_list"
+            "destination_audit_events"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "confidence": 0.65,
-        "domain_type": "JOURNEY_CAMPAIGN",
-        "fast_path": "journey_campaign_list+journey_list",
-        "route_type": "SQL_ONLY",
-        "sql_template": "journey_campaign_list",
+        "confidence": 0.8,
+        "domain_type": "SEGMENT_AUDIENCE",
+        "fast_path": "segment_new_destination_mapping+destination_audit_events",
+        "route_type": "SQL_THEN_API",
+        "sql_template": "segment_new_destination_mapping",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "routing",
       "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-10T01:14:22.497402+00:00"
+      "timestamp": "2026-05-10T01:15:58.935836+00:00"
     },
     {
       "checkpoint_id": "checkpoint_06_lookup_path",
@@ -200,37 +233,37 @@
       "effect": "predicts the relevant table/join/API path",
       "efficiency_role": "filters unrelated schema and endpoint candidates",
       "input_summary": {
-        "answer_family": "list_journeys",
-        "domain_type": "JOURNEY_CAMPAIGN"
+        "answer_family": "audit_destination_mapping",
+        "domain_type": "SEGMENT_AUDIENCE"
       },
       "output": {
         "api_families": {
           "items": [
-            "journey_by_name"
+            "audit_create_events"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "api_mode": "required",
+        "family": "audit",
+        "required_ids": {
+          "items": [
+            "collection_id"
           ],
           "total_items": 3,
           "truncated_items": false
         },
-        "api_mode": "optional",
-        "family": "journey_campaign",
-        "required_ids": {
-          "items": [
-            "campaign_id"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
         "tables": {
           "items": [
-            "dim_campaign"
+            "dim_collection"
           ],
-          "total_items": 1,
-          "truncated_items": false
+          "total_items": 4,
+          "truncated_items": true
         }
       },
       "stage": "path prediction",
       "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-10T01:14:22.497422+00:00"
+      "timestamp": "2026-05-10T01:15:58.935840+00:00"
     },
     {
       "checkpoint_id": "checkpoint_07_context_card",
@@ -240,39 +273,53 @@
       "efficiency_role": "limits context size for non-baseline strategies",
       "input_summary": {
         "broad_context": false,
-        "lookup_path": "journey_campaign"
+        "lookup_path": "audit"
       },
       "output": {
-        "estimated_metadata_tokens": 383,
-        "prompt_tokens": 952,
+        "estimated_metadata_tokens": 862,
+        "prompt_tokens": 1511,
         "selected_apis": {
           "items": [
-            "journey_list"
+            "audit_events"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "selected_card_name": "journey_campaign",
+        "selected_card_name": "audit",
         "selected_columns": {
-          "dim_campaign": {
+          "dim_segment": {
             "items": [
-              "CAMPAIGNID"
+              "SEGMENTID"
             ],
-            "total_items": 5,
-            "truncated_items": true
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "dim_target": {
+            "items": [
+              "TARGETID"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "hkg_br_segment_target": {
+            "items": [
+              "SEGMENTID"
+            ],
+            "total_items": 2,
+            "truncated_items": false
           }
         },
         "selected_tables": {
           "items": [
-            "dim_campaign"
+            "dim_segment"
           ],
-          "total_items": 1,
+          "total_items": 3,
           "truncated_items": false
         }
       },
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-10T01:14:22.503194+00:00"
+      "timestamp": "2026-05-10T01:15:58.941093+00:00"
     },
     {
       "checkpoint_id": "checkpoint_08_candidate_plans",
@@ -294,13 +341,13 @@
         },
         "reason_selected": "highest pre-execution validation/relevance/cost score",
         "scores": {
-          "generic_sql_first": 14.2814
+          "generic_sql_first": 14.247
         },
         "selected_plan": "generic_sql_first"
       },
       "stage": "planning",
       "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-10T01:14:22.504687+00:00"
+      "timestamp": "2026-05-10T01:15:58.945159+00:00"
     },
     {
       "checkpoint_id": "checkpoint_09_plan_optimization",
@@ -328,7 +375,7 @@
       },
       "stage": "optimization",
       "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-10T01:14:22.504700+00:00"
+      "timestamp": "2026-05-10T01:15:58.945173+00:00"
     },
     {
       "checkpoint_id": "checkpoint_10_evidence_policy",
@@ -337,24 +384,24 @@
       "effect": "decides when API evidence is required, optional, or unnecessary",
       "efficiency_role": "skips or caps API calls when SQL evidence is enough",
       "input_summary": {
-        "answer_family": "list_journeys",
-        "route_type": "SQL_ONLY"
+        "answer_family": "audit_destination_mapping",
+        "route_type": "SQL_THEN_API"
       },
       "output": {
         "allowed_api_families": {
           "items": [
-            "journey_list"
+            "destination_audit_events"
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "max_api_calls": 1,
-        "mode": "API_OPTIONAL",
-        "reason": "Live/platform verification may improve the answer."
+        "mode": "API_REQUIRED",
+        "reason": "Query family requires Adobe API evidence."
       },
       "stage": "evidence policy",
       "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-10T01:14:22.504704+00:00"
+      "timestamp": "2026-05-10T01:15:58.945177+00:00"
     },
     {
       "checkpoint_id": "checkpoint_11_call_budget",
@@ -367,9 +414,9 @@
           "items": [
             {
               "action": "sql",
-              "family": "journey_campaign_list",
+              "family": "segment_new_destination_mapping",
               "purpose": "Fast-path SQL grounding.",
-              "sql": "SELECT CAMPAIGN.\"NAME\" AS CAMPAIGNNAME, CAMPAIGN.\"CAMPAIGNID\" AS CAMPAIGNID FROM \"dim_campaign\" AS CAMPAIGN"
+              "sql": "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAM [truncated]"
             }
           ],
           "total_items": 2,
@@ -386,7 +433,34 @@
       },
       "stage": "efficiency control",
       "technique": "tool-call budgeting",
-      "timestamp": "2026-05-10T01:14:22.504723+00:00"
+      "timestamp": "2026-05-10T01:15:58.945198+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_gated_sql_candidate_selection",
+      "correctness_role": "selects only validator- and AST-passing SQL candidates",
+      "duration_ms": 0.0,
+      "effect": "validates hard-case SQL candidates before execution without executing losing candidates",
+      "efficiency_role": "executes only one selected candidate in packaged SQL_FIRST_API_VERIFY mode",
+      "input_summary": {
+        "trigger_reasons": {
+          "items": [
+            "complex_query_decomposition"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "candidate_count": 1,
+        "cost_estimate": 1
+      },
+      "output": {
+        "preview": "{\"active\": true, \"hard_case_triggered\": true, \"trigger_reasons\": {\"items\": [\"complex_query_decomposition\"], \"total_items\": 1, \"truncated_items\": false}, \"candidate_count\": 1, \"candidate_sql_sources\": {\"items\": [\"segment_new_ [truncated]",
+        "truncated": true
+      },
+      "stage": "planning",
+      "technique": "hard-case gated SQL candidate validation",
+      "timestamp": "2026-05-10T01:15:58.949203+00:00"
     },
     {
       "checkpoint_id": "checkpoint_12_validation",
@@ -399,9 +473,9 @@
           "items": [
             {
               "action": "sql",
-              "family": "journey_campaign_list",
+              "family": "segment_new_destination_mapping",
               "purpose": "Fast-path SQL grounding.",
-              "sql": "SELECT CAMPAIGN.\"NAME\" AS CAMPAIGNNAME, CAMPAIGN.\"CAMPAIGNID\" AS CAMPAIGNID FROM \"dim_campaign\" AS CAMPAIGN"
+              "sql": "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAM [truncated]"
             }
           ],
           "total_items": 2,
@@ -440,7 +514,7 @@
       },
       "stage": "validation",
       "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-10T01:14:22.507553+00:00"
+      "timestamp": "2026-05-10T01:15:58.954881+00:00"
     },
     {
       "checkpoint_id": "checkpoint_sql_ast_validation",
@@ -452,53 +526,12 @@
         "sql_call_count": 1
       },
       "output": {
-        "destructive_sql_detected": false,
-        "parsed_ok": true,
-        "selected_columns": {
-          "items": [
-            "CAMPAIGN.CAMPAIGNID"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
-        "selected_tables": {
-          "items": [
-            "dim_campaign"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "summaries": {
-          "items": [
-            {
-              "destructive_sql_detected": false,
-              "enabled": true,
-              "normalized_sql": "SELECT CAMPAIGN.\"NAME\" AS CAMPAIGNNAME, CAMPAIGN.\"CAMPAIGNID\" AS CAMPAIGNID FROM \"dim_campaign\" AS CAMPAIGN",
-              "parsed_ok": true,
-              "selected_columns": {
-                "items": [
-                  "CAMPAIGN.NAME",
-                  "CAMPAIGN.CAMPAIGNID"
-                ],
-                "total_items": 2,
-                "truncated_items": false
-              },
-              "selected_tables": {
-                "items": [
-                  "dim_campaign"
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              }
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        }
+        "preview": "{\"summaries\": {\"items\": [{\"enabled\": true, \"parsed_ok\": true, \"selected_tables\": {\"items\": [\"dim_segment\", \"hkg_br_segment_target\", \"dim_target\"], \"total_items\": 3, \"truncated_items\": false}, \"selected_columns\": {\"items\": [\" [truncated]",
+        "truncated": true
       },
       "stage": "validation",
       "technique": "SQLGlot AST-based SQL validation and extraction",
-      "timestamp": "2026-05-10T01:14:22.507563+00:00"
+      "timestamp": "2026-05-10T01:15:58.954896+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -519,17 +552,18 @@
               "ok": false,
               "result_preview": {
                 "dry_run": true,
-                "endpoint": "/ajo/journey",
+                "endpoint": "/data/foundation/audit/events",
                 "error": "Adobe credentials unavailable; API call not executed.",
                 "method": "GET",
                 "ok": false,
                 "params": {
-                  "pageSize": "10"
+                  "limit": "3",
+                  "property": "assetType==destination"
                 },
                 "result_preview": null,
-                "url": "https://platform.adobe.io/ajo/journey"
+                "url": "https://platform.adobe.io/data/foundation/audit/events"
               },
-              "url": "/ajo/journey"
+              "url": "/data/foundation/audit/events"
             }
           ],
           "total_items": 1,
@@ -538,7 +572,7 @@
         "dry_run_status": true,
         "row_counts": {
           "items": [
-            2
+            1
           ],
           "total_items": 1,
           "truncated_items": false
@@ -551,18 +585,16 @@
               "result_preview": {
                 "items": [
                   {
-                    "CAMPAIGNID": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
-                    "CAMPAIGNNAME": "Birthday Message"
-                  },
-                  {
-                    "CAMPAIGNID": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
-                    "CAMPAIGNNAME": "Gold Tier Welcome Email"
+                    "segment_id": "f6b93428-c021-4058-a1a2-77c277aab564",
+                    "segment_name": "Gender: Male",
+                    "target_id": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+                    "target_name": "amazon-s3"
                   }
                 ],
-                "total_items": 2,
+                "total_items": 1,
                 "truncated_items": false
               },
-              "row_count": 2
+              "row_count": 1
             }
           ],
           "total_items": 1,
@@ -571,7 +603,7 @@
       },
       "stage": "execution",
       "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-10T01:14:22.507571+00:00"
+      "timestamp": "2026-05-10T01:15:58.954905+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -585,20 +617,21 @@
       "output": {
         "evidence": {
           "ids": {
-            "campaign_id": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
+            "segment_id": "f6b93428-c021-4058-a1a2-77c277aab564",
+            "target_id": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
           },
           "names": {
             "items": [
-              "Birthday Message"
+              "Gender: Male"
             ],
-            "total_items": 2,
+            "total_items": 1,
             "truncated_items": false
           }
         }
       },
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-10T01:14:22.507575+00:00"
+      "timestamp": "2026-05-10T01:15:58.954908+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -618,20 +651,20 @@
           "dry_run": true
         },
         "slots": {
-          "answer_family": "list_journeys",
+          "answer_family": "audit_destination_mapping",
           "api_error": false,
           "discrepancy": false,
           "dry_run": true,
           "entity_ids": {
             "items": [
-              "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
+              "f6b93428-c021-4058-a1a2-77c277aab564"
             ],
             "total_items": 2,
             "truncated_items": false
           },
           "entity_names": {
             "items": [
-              "Birthday Message"
+              "Gender: Male"
             ],
             "total_items": 2,
             "truncated_items": false
@@ -643,13 +676,13 @@
             "total_items": 6,
             "truncated_items": true
           },
-          "sql_row_count": 2,
+          "sql_row_count": 1,
           "truncated_fields": 5
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-10T01:14:22.508231+00:00"
+      "timestamp": "2026-05-10T01:15:58.955558+00:00"
     },
     {
       "checkpoint_id": "checkpoint_16_answer_verification",
@@ -658,7 +691,7 @@
       "effect": "checks final-answer claims against SQL/API evidence",
       "efficiency_role": "rewrites safely without extra tool calls",
       "input_summary": {
-        "claim_count": 1,
+        "claim_count": 2,
         "slots_present": {
           "items": [
             "entity_names"
@@ -674,13 +707,13 @@
           "truncated_items": false
         },
         "rewrite_applied": false,
-        "supported_claims_count": 1,
+        "supported_claims_count": 2,
         "unsupported_claims_count": 0,
         "verifier_passed": true
       },
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-10T01:14:22.508238+00:00"
+      "timestamp": "2026-05-10T01:15:58.955565+00:00"
     },
     {
       "checkpoint_id": "checkpoint_17_answer_reranking",
@@ -689,7 +722,7 @@
       "effect": "selects the safest answer from same-evidence candidates",
       "efficiency_role": "uses no additional SQL/API/LLM calls",
       "input_summary": {
-        "answer_family": "list_journeys"
+        "answer_family": "audit_destination_mapping"
       },
       "output": {
         "candidate_count": 0,
@@ -698,7 +731,7 @@
       },
       "stage": "answer selection",
       "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-10T01:14:22.508241+00:00"
+      "timestamp": "2026-05-10T01:15:58.955568+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -710,72 +743,93 @@
         "verifier_passed": true
       },
       "output": {
-        "answer_length": 204,
-        "final_answer": "Based on the available evidence, there are 2 journeys found in the database: Birthday Message and Gold Tier Welcome Email. Live API verification was not executed because Adobe credentials are unavailable.",
-        "final_token_estimate": 36
+        "answer_length": 205,
+        "final_answer": "Based on the SQL evidence, 1 audience(s) match: Gender: Male (ID f6b93428-c021-4058-a1a2-77c277aab564) mapped to amazon-s3. Live API verification was not executed because Adobe credentials are unavailable.",
+        "final_token_estimate": 57
       },
       "stage": "final response",
       "technique": "concise grounded final response",
-      "timestamp": "2026-05-10T01:14:22.508277+00:00"
+      "timestamp": "2026-05-10T01:15:58.955626+00:00"
     },
     {
       "active": true,
       "checkpoint_id": "checkpoint_official_token_reduction",
       "correctness_impact_expected": false,
-      "estimated_tokens_after": 750,
-      "estimated_tokens_before": 815,
-      "expected_savings": 65,
+      "estimated_tokens_after": 1128,
+      "estimated_tokens_before": 1208,
+      "expected_savings": 80,
       "packaged_execution_changed": false,
       "reduced_fields": [
-        "steps[2].metadata_path",
-        "steps[5].result.rows"
+        "steps[0].candidate_apis",
+        "steps[0].candidate_tables",
+        "steps[2].metadata_path"
       ]
     }
   ],
-  "domain_type": "JOURNEY_CAMPAIGN",
+  "domain_type": "SEGMENT_AUDIENCE",
   "errors": [],
-  "estimated_tokens": 750,
-  "execution_time": 0.0015277499333024025,
-  "final_answer": "Based on the available evidence, there are 2 journeys found in the database: Birthday Message and Gold Tier Welcome Email. Live API verification was not executed because Adobe credentials are unavailable.",
-  "original_query": "List all journeys",
-  "planning_time": 0.001609666971489787,
-  "preprocessing_time": 0.006732374895364046,
-  "query_id": "list_all_journeys",
-  "route_type": "SQL_ONLY",
-  "runtime": 0.015199125045910478,
+  "estimated_tokens": 1128,
+  "execution_time": 0.0035479578655213118,
+  "final_answer": "Based on the SQL evidence, 1 audience(s) match: Gender: Male (ID f6b93428-c021-4058-a1a2-77c277aab564) mapped to amazon-s3. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
+  "planning_time": 0.008110207971185446,
+  "preprocessing_time": 0.006714000133797526,
+  "query_id": "list_all_audiences_in_the_sandbox_that_have_been",
+  "route_type": "SQL_THEN_API",
+  "runtime": 0.019359542056918144,
   "sql_call_count": 1,
   "steps": [
     {
       "candidate_apis": [
         {
-          "id": "journey_list",
+          "id": "ups_audiences",
           "method": "GET",
-          "path": "/ajo/journey"
+          "path": "/data/core/ups/audiences"
+        },
+        {
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions"
+        },
+        {
+          "id": "merge_policies",
+          "method": "GET",
+          "path": "/data/core/ups/config/mergePolicies"
         }
       ],
       "candidate_tables": [
         "br_campaign_segment",
-        "dim_campaign"
+        "dim_connector",
+        "dim_segment",
+        "dim_target",
+        "hkg_br_base_segment_used_by_dependent_segment"
       ],
-      "confidence": 0.5,
-      "domain_type": "JOURNEY_CAMPAIGN",
+      "confidence": 0.6499999999999999,
+      "domain_type": "SEGMENT_AUDIENCE",
       "kind": "route",
-      "reason": "Keyword routing using JOURNEY_CAMPAIGN:1.",
-      "route_type": "SQL_ONLY"
+      "reason": "Keyword routing using SEGMENT_AUDIENCE:1, DESTINATION_DATAFLOW:1.",
+      "route_type": "SQL_THEN_API"
     },
     {
+      "decomposition": {
+        "expected_answer_shape": "table_or_list",
+        "sub_questions": [
+          "Break complex request into SQL planning constraints."
+        ]
+      },
       "kind": "nlp",
       "relevance": {
         "apis": [
-          "journey_list",
-          "catalog_batches"
+          "audit_events",
+          "audit_events_short"
         ],
         "lookup_paths": [
-          "journey_campaign",
-          "batch"
+          "audit",
+          "segment_destination"
         ],
         "tables": [
-          "dim_campaign"
+          "dim_collection",
+          "dim_segment"
         ]
       },
       "rewrites": [
@@ -783,38 +837,40 @@
       ],
       "tokens": {
         "domains": [
-          "journey_campaign"
+          "destination_dataflow",
+          "segment_audience"
         ]
       }
     },
     {
-      "estimated_tokens": 383,
+      "estimated_tokens": 862,
       "kind": "metadata",
       "metadata_path": "metadata.json",
-      "prompt_tokens": 952
+      "prompt_tokens": 1511
     },
     {
       "kind": "plan",
       "optimizer_actions": [
         "ensemble selected generic_sql_first"
       ],
-      "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve the answer. Fast path: journey_campaign_list+journey_list.",
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Query family requires Adobe API evidence. Fast path: segment_new_destination_mapping+destination_audit_events.",
       "steps": [
         {
           "action": "sql",
-          "family": "journey_campaign_list",
+          "family": "segment_new_destination_mapping",
           "purpose": "Fast-path SQL grounding.",
-          "sql": "SELECT CAMPAIGN.\"NAME\" AS CAMPAIGNNAME, CAMPAIGN.\"CAMPAIGNID\" AS CAMPAIGNID FROM \"dim_campaign\" AS CAMPAIGN"
+          "sql": "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAME\" AS target_name FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"CREATEDTIME\" >= DATEADD(MONTH, -3, CURRENT_DATE) LIMIT 3"
         },
         {
           "action": "api",
-          "family": "journey_list",
+          "family": "destination_audit_events",
           "method": "GET",
           "params": {
-            "pageSize": "10"
+            "limit": "3",
+            "property": "assetType==destination"
           },
-          "purpose": "API parameter template: journey_list.",
-          "url": "/ajo/journey"
+          "purpose": "API parameter template: destination_audit_events.",
+          "url": "/data/foundation/audit/events"
         }
       ],
       "strategy": "SQL_FIRST_API_VERIFY"
@@ -823,7 +879,7 @@
       "kind": "optimizer",
       "plan_ensemble": {
         "candidate_scores": {
-          "generic_sql_first": 14.2814
+          "generic_sql_first": 14.247
         },
         "candidate_tool_calls": {
           "generic_sql_first": 2
@@ -835,21 +891,23 @@
       "kind": "sql_call",
       "result": {
         "error": null,
-        "limited": true,
+        "limited": false,
         "ok": true,
-        "row_count": 2,
+        "row_count": 1,
         "rows": {
           "items": [
             {
-              "CAMPAIGNID": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
-              "CAMPAIGNNAME": "Birthday Message"
+              "segment_id": "f6b93428-c021-4058-a1a2-77c277aab564",
+              "segment_name": "Gender: Male",
+              "target_id": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+              "target_name": "amazon-s3"
             }
           ],
-          "total_items": 2,
-          "truncated_items": true
+          "total_items": 1,
+          "truncated_items": false
         }
       },
-      "sql": "SELECT CAMPAIGN.\"NAME\" AS CAMPAIGNNAME, CAMPAIGN.\"CAMPAIGNID\" AS CAMPAIGNID FROM \"dim_campaign\" AS CAMPAIGN",
+      "sql": "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAME\" AS target_name FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"CREATEDTIME\" >= DATEADD(MONTH, -3, CURRENT_DATE) LIMIT 3",
       "validation": {
         "errors": [],
         "ok": true,
@@ -862,21 +920,23 @@
       "kind": "api_call",
       "method": "GET",
       "params": {
-        "pageSize": "10"
+        "limit": "3",
+        "property": "assetType==destination"
       },
       "result": {
         "dry_run": true,
-        "endpoint": "/ajo/journey",
+        "endpoint": "/data/foundation/audit/events",
         "error": "Adobe credentials unavailable; API call not executed.",
         "method": "GET",
         "ok": false,
         "params": {
-          "pageSize": "10"
+          "limit": "3",
+          "property": "assetType==destination"
         },
         "result_preview": null,
-        "url": "https://platform.adobe.io/ajo/journey"
+        "url": "https://platform.adobe.io/data/foundation/audit/events"
       },
-      "url": "/ajo/journey",
+      "url": "/data/foundation/audit/events",
       "validation": {
         "errors": [],
         "ok": true,
@@ -885,7 +945,7 @@
       }
     },
     {
-      "answer_family": "list_journeys",
+      "answer_family": "audit_destination_mapping",
       "answer_intent": "LIST",
       "completeness_missing_fields": [],
       "kind": "answer_diagnostics",
@@ -905,10 +965,10 @@
   ],
   "strategy": "SQL_FIRST_API_VERIFY",
   "timings": {
-    "answer_time": 0.0009665421675890684,
-    "execution_time": 0.0015277499333024025,
-    "planning_time": 0.001609666971489787,
-    "preprocessing_time": 0.006732374895364046
+    "answer_time": 0.0008608328644186258,
+    "execution_time": 0.0035479578655213118,
+    "planning_time": 0.008110207971185446,
+    "preprocessing_time": 0.006714000133797526
   },
   "tool_call_count": 2
 }

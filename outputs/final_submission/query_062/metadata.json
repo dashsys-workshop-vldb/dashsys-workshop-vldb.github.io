@@ -8,158 +8,101 @@
     "Prefer fewer tool calls when evidence is sufficient."
   ],
   "context_card": {
-    "answer_policy": "Name audience/destination rows from SQL; only use API to verify live audience/flow evidence.",
+    "answer_policy": "Audit events are API evidence; SQL may ground related local entities.",
     "api_families": [
-      "audience_by_destination_id",
-      "destination_flows"
+      "audit_create_events",
+      "audit_events",
+      "dataset_audit_changes",
+      "destination_audit_events"
     ],
-    "api_mode": "optional",
-    "family": "segment_destination",
-    "join_path": [
-      "dim_segment.segmentid = hkg_br_segment_target.segmentid",
-      "hkg_br_segment_target.targetid = dim_target.targetid"
-    ],
+    "api_mode": "required",
+    "family": "audit",
+    "join_path": [],
     "required_ids": [
+      "collection_id",
       "segment_id",
-      "destination_id",
       "target_id"
     ],
     "tables": [
+      "dim_collection",
       "dim_segment",
       "hkg_br_segment_target",
       "dim_target"
     ]
   },
-  "domain_type": "SEGMENT_AUDIENCE",
+  "domain_type": "UNKNOWN",
   "known_example_patterns": [
     {
       "method": "GET",
       "params": {
-        "limit": "3"
+        "limit": "3",
+        "property": "assetType==destination"
       },
-      "path": "/data/core/ups/segment/jobs"
+      "path": "/data/foundation/audit/events"
     }
   ],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
-        "segment_destination",
-        "audit"
+        "audit",
+        "journey_campaign"
       ]
-    },
-    "rewrites": [
-      "important_plurals->singular"
-    ]
+    }
   },
-  "query": "Show all segment jobs with status 'QUEUED'.",
-  "query_id": "llm_controller_31d155d55f82",
-  "route_type": "API_ONLY",
+  "query": "Show me all entities created by download",
+  "query_id": "show_me_all_entities_created_by_download",
+  "route_type": "SQL_ONLY",
   "selected_apis": [
     {
-      "id": "segment_jobs",
+      "id": "audit_events",
       "method": "GET",
-      "path": "/data/core/ups/segment/jobs"
+      "path": "/data/foundation/audit/events"
     }
   ],
   "selected_columns": {
-    "dim_segment": [
-      "LIFECYCLESTATUS",
-      "SEGMENTID",
-      "CREATEDTIME",
-      "EVALUATIONCOMPLETEDTIME",
-      "MERGEPOLICYID",
+    "dim_collection": [
+      "COLLECTIONID",
       "NAME",
-      "UPDATEDTIME",
-      "ISACCOUNTSEGMENT",
-      "ISPEOPLESEGMENT",
-      "LABELSSEGMENT",
-      "SEGMENTBLUEPRINTCLASS"
-    ],
-    "dim_target": [
-      "CONNECTIONSPECID",
       "CREATEDTIME",
-      "DATAFLOWNAME",
-      "NAME",
-      "STATE",
-      "TARGETID",
-      "UPDATEDTIME"
-    ],
-    "hkg_br_segment_target": [
-      "SEGMENTID",
-      "TARGETID",
-      "LABELSSEGMENT"
+      "CREATEDBY"
     ]
   },
   "selected_join_hints": [
     {
       "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "br_campaign_segment",
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
       "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "dim_segment"
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_blueprint_collection"
     },
     {
       "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "br_campaign_segment",
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
       "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "hkg_br_segment_target"
-    },
-    {
-      "confidence": 0.98,
-      "left_column": "SEGMENTID",
-      "left_table": "dim_segment",
-      "reason": "Curated: Campaign to segment bridge.",
-      "right_column": "SEGMENTID",
-      "right_table": "br_campaign_segment"
-    },
-    {
-      "confidence": 0.75,
-      "left_column": "SEGMENTID",
-      "left_table": "dim_segment",
-      "reason": "Foreign-key-looking column references table root.",
-      "right_column": "DEPENDENTSEGMENTID",
-      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_property"
     },
     {
       "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "dim_segment",
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
       "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "dim_segment",
-      "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
+      "right_column": "COLLECTIONID",
       "right_table": "hkg_br_collection_segment"
     },
     {
       "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "dim_segment",
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
       "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "hkg_br_segment_property"
-    },
-    {
-      "confidence": 0.98,
-      "left_column": "SEGMENTID",
-      "left_table": "dim_segment",
-      "reason": "Curated: Segment to target bridge.",
-      "right_column": "SEGMENTID",
-      "right_table": "hkg_br_segment_target"
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_source_collection"
     }
   ],
   "selected_tables": [
-    "dim_segment",
-    "hkg_br_segment_target",
-    "dim_target"
+    "dim_collection"
   ],
   "strategy": "SQL_FIRST_API_VERIFY"
 }

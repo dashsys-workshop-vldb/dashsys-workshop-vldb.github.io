@@ -4,9 +4,9 @@
 - Current backend/model: `qwen2.5-32b-instruct`
 - Provider/backend type: `openai_compatible` / `openai_sdk`
 - Anthropic SDK support: available_in_client; configure LLM_PROVIDER=anthropic with ANTHROPIC_API_KEY
-- Tool calling supported: `False`
+- Tool calling supported: `True`
 - Best LLM baseline: `LLM_CONTROLLER_OPTIMIZED_AGENT`
-- Best LLM baseline score: `0.6336`
+- Best LLM baseline score: `0.6338`
 - SQL_FIRST_API_VERIFY score: `0.6553`
 - Recommendation: `keep_shadow_only`
 - Reason: Deterministic SQL_FIRST_API_VERIFY remains higher under strict scoring.

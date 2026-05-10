@@ -16,163 +16,75 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
     "Prefer fewer tool calls when evidence is sufficient."
   ],
   "context_card": {
-    "answer_policy": "Name audience/destination rows from SQL; only use API to verify live audience/flow evidence.",
+    "answer_policy": "Report publish/status evidence from dim_campaign; dry-run API is not confirmation.",
     "api_families": [
-      "audience_by_destination_id",
-      "destination_flows"
+      "journey_by_name",
+      "journey_inactive",
+      "journey_list"
     ],
     "api_mode": "optional",
-    "family": "segment_destination",
-    "join_path": [
-      "dim_segment.segmentid = hkg_br_segment_target.segmentid",
-      "hkg_br_segment_target.targetid = dim_target.targetid"
-    ],
+    "family": "journey_campaign",
+    "join_path": [],
     "required_ids": [
-      "segment_id",
-      "destination_id",
-      "target_id"
+      "campaign_id",
+      "journey_name"
     ],
     "tables": [
-      "dim_segment",
-      "hkg_br_segment_target",
-      "dim_target"
+      "dim_campaign"
     ]
   },
-  "domain_type": "SEGMENT_AUDIENCE",
+  "domain_type": "JOURNEY_CAMPAIGN",
   "known_example_patterns": [
     {
       "method": "GET",
       "params": {
-        "limit": "5",
-        "property": "inheritedAttributes.properties.isDestinationFlow==true",
-        "sort": "updatedTime:desc"
+        "filter": "status!=live",
+        "pageSize": "10"
       },
-      "path": "/data/foundation/flowservice/flows"
-    },
-    {
-      "method": "GET",
-      "params": {
-        "limit": "5",
-        "property": "destinationId==<destination_id>"
-      },
-      "path": "/data/core/ups/audiences"
+      "path": "/ajo/journey"
     }
   ],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
-        "segment_destination",
-        "audit"
+        "journey_campaign"
       ]
     },
     "rewrites": [
-      "\\bsegment\\s+audiences?\\b->segments",
       "important_plurals->singular"
     ]
   },
-  "query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
-  "query_id": "example_003",
-  "route_type": "SQL_ONLY",
+  "query": "Give me inactive journeys",
+  "query_id": "example_001",
+  "route_type": "SQL_THEN_API",
   "selected_apis": [
     {
-      "id": "ups_audiences",
+      "id": "journey_list",
       "method": "GET",
-      "path": "/data/core/ups/audiences"
-    },
-    {
-      "id": "flowservice_flows",
-      "method": "GET",
-      "path": "/data/foundation/flowservice/flows"
+      "path": "/ajo/journey"
     }
   ],
   "selected_columns": {
-    "dim_segment": [
-      "SEGMENTID",
+    "dim_campaign": [
+      "CAMPAIGNID",
       "NAME",
-      "TOTALMEMBERS",
-      "CREATEDTIME",
-      "UPDATEDTIME"
-    ],
-    "dim_target": [
-      "TARGETID",
-      "DATAFLOWNAME",
-      "NAME"
-    ],
-    "hkg_br_segment_target": [
-      "SEGMENTID",
-      "TARGETID"
+      "STATE",
+      "UPDATEDTIME",
+      "LASTDEPLOYEDTIME"
     ]
   },
   "selected_join_hints": [
     {
-      "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "dim_segment",
-      "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "hkg_br_base_segment_used_by_dependent_segment",
-      "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "hkg_br_segment_target"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "br_campaign_segment",
-      "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "dim_segment"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "br_campaign_segment",
-      "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "hkg_br_segment_target"
-    },
-    {
       "confidence": 0.98,
-      "left_column": "SEGMENTID",
-      "left_table": "dim_segment",
+      "left_column": "CAMPAIGNID",
+      "left_table": "dim_campaign",
       "reason": "Curated: Campaign to segment bridge.",
-      "right_column": "SEGMENTID",
+      "right_column": "CAMPAIGNID",
       "right_table": "br_campaign_segment"
-    },
-    {
-      "confidence": 0.75,
-      "left_column": "SEGMENTID",
-      "left_table": "dim_segment",
-      "reason": "Foreign-key-looking column references table root.",
-      "right_column": "DEPENDENTSEGMENTID",
-      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "dim_segment",
-      "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "hkg_br_collection_segment"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "dim_segment",
-      "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "hkg_br_segment_property"
     }
   ],
   "selected_tables": [
-    "dim_segment",
-    "hkg_br_segment_target",
-    "dim_target"
+    "dim_campaign"
   ],
   "strategy": "SQL_FIRST_API_VERIFY"
 }

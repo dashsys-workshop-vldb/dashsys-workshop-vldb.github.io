@@ -8,104 +8,76 @@
     "Prefer fewer tool calls when evidence is sufficient."
   ],
   "context_card": {
-    "answer_policy": "Use dim_target/dim_connector evidence first; live API validates platform state.",
+    "answer_policy": "Report publish/status evidence from dim_campaign; dry-run API is not confirmation.",
     "api_families": [
-      "destination_flows",
-      "recent_destination_flows",
-      "failed_dataflow_flows"
+      "journey_by_name",
+      "journey_inactive",
+      "journey_list"
     ],
     "api_mode": "optional",
-    "family": "destination_dataflow",
+    "family": "journey_campaign",
     "join_path": [],
     "required_ids": [
-      "target_id",
-      "dataflow_id"
+      "campaign_id",
+      "journey_name"
     ],
     "tables": [
-      "dim_target",
-      "dim_connector"
+      "dim_campaign"
     ]
   },
-  "domain_type": "DESTINATION_DATAFLOW",
+  "domain_type": "JOURNEY_CAMPAIGN",
   "known_example_patterns": [
     {
       "method": "GET",
       "params": {
-        "limit": "5",
-        "property": "inheritedAttributes.properties.isDestinationFlow==true",
-        "sort": "updatedTime:desc"
+        "filter": "status!=live",
+        "pageSize": "10"
       },
-      "path": "/data/foundation/flowservice/flows"
+      "path": "/ajo/journey"
     }
   ],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
-        "destination_dataflow"
+        "journey_campaign",
+        "batch"
       ]
-    }
+    },
+    "rewrites": [
+      "important_plurals->singular"
+    ]
   },
-  "query": "Show me the IDs of failed dataflow runs",
-  "query_id": "example_004",
-  "route_type": "SQL_THEN_API",
+  "query": "List all journeys",
+  "query_id": "example_002",
+  "route_type": "SQL_ONLY",
   "selected_apis": [
     {
-      "id": "flowservice_flows",
+      "id": "journey_list",
       "method": "GET",
-      "path": "/data/foundation/flowservice/flows"
+      "path": "/ajo/journey"
     }
   ],
   "selected_columns": {
-    "dim_connector": [
-      "CONNECTIONSPECNAME",
-      "CREATEDTIME",
-      "DATAFLOWID",
-      "DATAFLOWNAME",
+    "dim_campaign": [
+      "CAMPAIGNID",
       "NAME",
-      "SOURCEACCOUNTNAME",
-      "UPDATEDTIME",
-      "SOURCEID",
-      "STATE"
-    ],
-    "dim_target": [
-      "CREATEDTIME",
-      "DATAFLOWNAME",
-      "NAME",
-      "UPDATEDTIME",
-      "CONNECTIONSPECID",
       "STATE",
-      "TARGETID"
+      "UPDATEDTIME",
+      "LASTDEPLOYEDTIME"
     ]
   },
   "selected_join_hints": [
     {
-      "confidence": 0.9,
-      "left_column": "SOURCEID",
-      "left_table": "dim_connector",
-      "reason": "Matching ID-like column name.",
-      "right_column": "SOURCEID",
-      "right_table": "hkg_br_source_collection"
-    },
-    {
       "confidence": 0.98,
-      "left_column": "TARGETID",
-      "left_table": "dim_target",
-      "reason": "Curated: Segment to target bridge.",
-      "right_column": "TARGETID",
-      "right_table": "hkg_br_segment_target"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "TARGETID",
-      "left_table": "dim_target",
-      "reason": "Matching ID-like column name.",
-      "right_column": "TARGETID",
-      "right_table": "hkg_br_target_property"
+      "left_column": "CAMPAIGNID",
+      "left_table": "dim_campaign",
+      "reason": "Curated: Campaign to segment bridge.",
+      "right_column": "CAMPAIGNID",
+      "right_table": "br_campaign_segment"
     }
   ],
   "selected_tables": [
-    "dim_target",
-    "dim_connector"
+    "dim_campaign"
   ],
   "strategy": "SQL_FIRST_API_VERIFY"
 }

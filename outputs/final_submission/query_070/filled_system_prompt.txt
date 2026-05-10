@@ -16,101 +16,72 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
     "Prefer fewer tool calls when evidence is sufficient."
   ],
   "context_card": {
-    "answer_policy": "Audit events are API evidence; SQL may ground related local entities.",
+    "answer_policy": "Report publish/status evidence from dim_campaign; dry-run API is not confirmation.",
     "api_families": [
-      "audit_create_events",
-      "audit_events",
-      "dataset_audit_changes",
-      "destination_audit_events"
+      "journey_by_name",
+      "journey_inactive",
+      "journey_list"
     ],
-    "api_mode": "required",
-    "family": "audit",
+    "api_mode": "optional",
+    "family": "journey_campaign",
     "join_path": [],
     "required_ids": [
-      "collection_id",
-      "segment_id",
-      "target_id"
+      "campaign_id",
+      "journey_name"
     ],
     "tables": [
-      "dim_collection",
-      "dim_segment",
-      "hkg_br_segment_target",
-      "dim_target"
+      "dim_campaign"
     ]
   },
-  "domain_type": "UNKNOWN",
+  "domain_type": "JOURNEY_CAMPAIGN",
   "known_example_patterns": [
     {
       "method": "GET",
       "params": {
-        "limit": "3",
-        "property": "assetType==destination"
+        "filter": "status!=live",
+        "pageSize": "10"
       },
-      "path": "/data/foundation/audit/events"
+      "path": "/ajo/journey"
     }
   ],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
-        "audit",
         "journey_campaign"
       ]
     }
   },
-  "query": "Show me all entities created by download",
-  "query_id": "llm_controller_56d7a7bed716",
-  "route_type": "SQL_ONLY",
+  "query": "When was the journey 'Birthday Message' published?",
+  "query_id": "when_was_the_journey_birthday_message_published",
+  "route_type": "SQL_THEN_API",
   "selected_apis": [
     {
-      "id": "audit_events",
+      "id": "journey_list",
       "method": "GET",
-      "path": "/data/foundation/audit/events"
+      "path": "/ajo/journey"
     }
   ],
   "selected_columns": {
-    "dim_collection": [
-      "COLLECTIONID",
+    "dim_campaign": [
+      "CAMPAIGNID",
       "NAME",
-      "CREATEDTIME",
-      "CREATEDBY"
+      "STATE",
+      "UPDATEDTIME",
+      "LASTDEPLOYEDTIME"
     ]
   },
   "selected_join_hints": [
     {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "dim_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_blueprint_collection"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "dim_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_collection_property"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "dim_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_collection_segment"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "COLLECTIONID",
-      "left_table": "dim_collection",
-      "reason": "Matching ID-like column name.",
-      "right_column": "COLLECTIONID",
-      "right_table": "hkg_br_source_collection"
+      "confidence": 0.98,
+      "left_column": "CAMPAIGNID",
+      "left_table": "dim_campaign",
+      "reason": "Curated: Campaign to segment bridge.",
+      "right_column": "CAMPAIGNID",
+      "right_table": "br_campaign_segment"
     }
   ],
   "selected_tables": [
-    "dim_collection"
+    "dim_campaign"
   ],
   "strategy": "SQL_FIRST_API_VERIFY"
 }

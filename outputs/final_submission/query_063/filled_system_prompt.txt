@@ -16,52 +16,41 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
     "Prefer fewer tool calls when evidence is sufficient."
   ],
   "context_card": {
-    "answer_policy": "Batch details/files are API evidence; keep dry-run answers explicit.",
+    "answer_policy": "Tags are API evidence; report dry-run limits when credentials are unavailable.",
     "api_families": [
-      "batch_list",
-      "recent_batches",
-      "batch_details",
-      "batch_export_files",
-      "successful_batch_count"
+      "tag_count",
+      "tag_list",
+      "tag_details_by_id",
+      "tag_categories",
+      "tags_by_uncategorized_category"
     ],
     "api_mode": "required",
-    "family": "batch",
+    "family": "tags",
     "join_path": [],
     "required_ids": [
-      "batch_id"
+      "tag_id",
+      "tag_category_id"
     ],
     "tables": []
   },
-  "domain_type": "COUNT_AGGREGATION",
-  "known_example_patterns": [
-    {
-      "method": "GET",
-      "params": {
-        "limit": "100",
-        "orderBy": "desc:created",
-        "status": "success"
-      },
-      "path": "/data/foundation/catalog/batches"
-    }
-  ],
+  "domain_type": "UNKNOWN",
+  "known_example_patterns": [],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
+        "tags",
         "batch"
       ]
-    },
-    "rewrites": [
-      "important_plurals->singular"
-    ]
+    }
   },
-  "query": "How many batches have status 'success'?",
-  "query_id": "llm_controller_3295d111090e",
+  "query": "Show me the details of the tag named 'cool'.",
+  "query_id": "show_me_the_details_of_the_tag_named_cool",
   "route_type": "API_ONLY",
   "selected_apis": [
     {
-      "id": "catalog_batches",
+      "id": "unified_tag_detail",
       "method": "GET",
-      "path": "/data/foundation/catalog/batches"
+      "path": "/unifiedtags/tags/{tag_id}"
     }
   ],
   "selected_columns": {

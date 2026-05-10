@@ -93,6 +93,7 @@ def run_llm_answer_rewrite_search(config: Config) -> dict[str, Any]:
         "skipped": False,
         "provider": status.provider,
         "model": client.model_name(),
+        **_sdk_metadata(client, provider=status.provider),
         "budget": budget,
         "packaged_execution_changed": False,
         "writes_eval_outputs": False,
@@ -402,6 +403,7 @@ def _skipped(config: Config, status: Any, summary_status: str, reason: str) -> d
         "skipped": True,
         "skip_reason": reason,
         "provider": status.provider,
+        **_sdk_metadata(None, provider=status.provider),
         "packaged_execution_changed": False,
         "writes_eval_outputs": False,
         "writes_final_submission": False,
@@ -426,6 +428,16 @@ def _prompt(query: str, trajectory: dict[str, Any], registry: dict[str, dict[str
         f"Evidence registry: {json.dumps(evidence, sort_keys=True)}\n"
         "Return JSON: {\"rewrites\":[{\"candidate_id\":\"...\",\"claims\":[{\"claim_text\":\"...\",\"evidence_id\":\"...\",\"evidence_source\":\"query_text|endpoint_params|sql_row|parquet_evidence|dry_run_label\",\"supported\":true|false,\"unsupported_action\":null|\"mark_unavailable\"}]}]}."
     )
+
+
+def _sdk_metadata(client: Any | None, *, provider: str | None) -> dict[str, Any]:
+    actual_provider = provider or (client.provider_name() if client and hasattr(client, "provider_name") else None)
+    backend_type = "anthropic_sdk" if actual_provider == "anthropic" else ("openai_sdk" if actual_provider in {"openai", "openai_compatible", "openrouter"} else "none")
+    return {
+        "backend_type": backend_type,
+        "transport": backend_type,
+        "sdk_path_used": backend_type in {"openai_sdk", "anthropic_sdk"},
+    }
 
 
 def _redacted_error(value: Any) -> str:

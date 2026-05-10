@@ -8,15 +8,20 @@
     "Prefer fewer tool calls when evidence is sufficient."
   ],
   "context_card": {
-    "answer_policy": "Merge policies are API evidence; do not infer defaults from absent API payloads.",
+    "answer_policy": "Tags are API evidence; report dry-run limits when credentials are unavailable.",
     "api_families": [
-      "merge_policies"
+      "tag_count",
+      "tag_list",
+      "tag_details_by_id",
+      "tag_categories",
+      "tags_by_uncategorized_category"
     ],
     "api_mode": "required",
-    "family": "merge_policy",
+    "family": "tags",
     "join_path": [],
     "required_ids": [
-      "merge_policy_id"
+      "tag_id",
+      "tag_category_id"
     ],
     "tables": []
   },
@@ -25,30 +30,42 @@
     {
       "method": "GET",
       "params": {
-        "limit": "10"
+        "limit": "20",
+        "tagCategoryId": "Uncategorized-87891E4066602D250A495F91@AdobeOrg"
       },
-      "path": "/data/core/ups/config/mergePolicies"
+      "path": "/unifiedtags/tags"
+    },
+    {
+      "method": "GET",
+      "params": {
+        "limit": "100"
+      },
+      "path": "/unifiedtags/tagCategory"
     }
   ],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
-        "merge_policy",
-        "batch"
+        "tags"
       ]
     },
     "rewrites": [
       "important_plurals->singular"
     ]
   },
-  "query": "List all merge policies in this sandbox.",
-  "query_id": "example_019",
+  "query": "Which tags belong to the category 'Uncategorized'?",
+  "query_id": "example_017",
   "route_type": "API_ONLY",
   "selected_apis": [
     {
-      "id": "merge_policies",
+      "id": "unified_tag_categories",
       "method": "GET",
-      "path": "/data/core/ups/config/mergePolicies"
+      "path": "/unifiedtags/tagCategory"
+    },
+    {
+      "id": "unified_tags",
+      "method": "GET",
+      "path": "/unifiedtags/tags"
     }
   ],
   "selected_columns": {
@@ -123,54 +140,6 @@
       "reason": "Curated: Campaign to segment bridge.",
       "right_column": "SEGMENTID",
       "right_table": "br_campaign_segment"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "br_campaign_segment",
-      "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "dim_segment"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "br_campaign_segment",
-      "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "br_campaign_segment",
-      "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "hkg_br_collection_segment"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "br_campaign_segment",
-      "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "hkg_br_segment_property"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "SEGMENTID",
-      "left_table": "br_campaign_segment",
-      "reason": "Matching ID-like column name.",
-      "right_column": "SEGMENTID",
-      "right_table": "hkg_br_segment_target"
-    },
-    {
-      "confidence": 0.9,
-      "left_column": "BLUEPRINTID",
-      "left_table": "dim_blueprint",
-      "reason": "Matching ID-like column name.",
-      "right_column": "BLUEPRINTID",
-      "right_table": "hkg_br_blueprint_collection"
     }
   ],
   "selected_tables": [

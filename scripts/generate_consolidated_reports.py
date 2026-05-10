@@ -109,6 +109,9 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "llm_baseline": _load_json(outputs / "llm_baseline_eval_report.json"),
         "llm_strict": _load_json(outputs / "llm_strict_baseline_eval.json"),
         "llm_hidden": _load_json(outputs / "llm_hidden_style_diagnostic.json"),
+        "generated_prompt_suite": _load_json(outputs / "reports" / "generated_prompt_suite_summary.json"),
+        "diagnostic_prompt_suite_run": _load_json(outputs / "reports" / "diagnostic_prompt_suite_run.json"),
+        "sdk_usage_audit": _load_json(outputs / "reports" / "sdk_usage_audit.json"),
         "sql_storyboard": _load_json(visualizations / "sql_prompt_storyboard_primary.json"),
         "visualization_index": _load_json(visualizations / "index.json"),
     }
@@ -281,6 +284,22 @@ def build_report_index(
             "outputs/llm_strict_baseline_eval.md",
         ],
         "key_visualizations": visualization["supervisor_visualizations"],
+        "diagnostic_prompt_coverage": [
+            {
+                "path": "outputs/reports/generated_prompt_suite_summary.md",
+                "label": "Diagnostic prompt coverage only; not official strict score.",
+            },
+            {
+                "path": "outputs/reports/diagnostic_prompt_suite_run.md",
+                "label": "Diagnostic prompt runtime coverage only; not official strict score.",
+            },
+        ],
+        "sdk_usage_audit": {
+            "path": "outputs/reports/sdk_usage_audit.md",
+            "runtime_llm_direct_http_hits": _load_json(config.outputs_dir / "reports" / "sdk_usage_audit.json")
+            .get("summary", {})
+            .get("runtime_llm_direct_http_hits", "unavailable"),
+        },
         "cleanup_reports": [
             "outputs/reports/cleanup_audit.md",
             "outputs/reports/cleanup_final_report.md",
@@ -421,6 +440,13 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.extend(f"- `{path}`" for path in payload["key_source_of_truth_reports"])
     lines.extend(["", "## Key Visualizations", ""])
     lines.extend(f"- `{path}`" for path in payload["key_visualizations"])
+    lines.extend(["", "## Diagnostic Prompt Coverage", ""])
+    for item in payload.get("diagnostic_prompt_coverage", []):
+        lines.append(f"- `{item['path']}` - {item['label']}")
+    lines.extend(["", "## System-Wide SDK LLM Audit", ""])
+    audit = payload.get("sdk_usage_audit", {})
+    lines.append(f"- `{audit.get('path')}`")
+    lines.append(f"- Runtime LLM direct HTTP hits: `{audit.get('runtime_llm_direct_http_hits')}`")
     lines.extend(["", "## Cleanup Reports", ""])
     lines.extend(f"- `{path}`" for path in payload.get("cleanup_reports", []))
     lines.extend(["", "## Post-Change Validation Contract", ""])

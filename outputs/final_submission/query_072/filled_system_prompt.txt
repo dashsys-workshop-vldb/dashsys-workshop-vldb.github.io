@@ -16,90 +16,159 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
     "Prefer fewer tool calls when evidence is sufficient."
   ],
   "context_card": {
-    "answer_policy": "Use dim_target/dim_connector evidence first; live API validates platform state.",
+    "answer_policy": "Name audience/destination rows from SQL; only use API to verify live audience/flow evidence.",
     "api_families": [
-      "destination_flows",
-      "recent_destination_flows",
-      "failed_dataflow_flows"
+      "audience_by_destination_id",
+      "destination_flows"
     ],
     "api_mode": "optional",
-    "family": "destination_dataflow",
-    "join_path": [],
+    "family": "segment_destination",
+    "join_path": [
+      "dim_segment.segmentid = hkg_br_segment_target.segmentid",
+      "hkg_br_segment_target.targetid = dim_target.targetid"
+    ],
     "required_ids": [
-      "target_id",
-      "dataflow_id"
+      "segment_id",
+      "destination_id",
+      "target_id"
     ],
     "tables": [
-      "dim_target",
-      "dim_connector"
+      "dim_segment",
+      "hkg_br_segment_target",
+      "dim_target"
     ]
   },
-  "domain_type": "DESTINATION_DATAFLOW",
+  "domain_type": "SEGMENT_AUDIENCE",
   "known_example_patterns": [
     {
       "method": "GET",
       "params": {
-        "limit": "5",
-        "property": "inheritedAttributes.properties.isDestinationFlow==true",
-        "sort": "updatedTime:desc"
+        "limit": "100",
+        "orderBy": "updateTime:desc"
       },
-      "path": "/data/foundation/flowservice/flows"
+      "path": "/data/core/ups/segment/definitions"
     }
   ],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
-        "destination_dataflow",
-        "batch"
+        "segment_destination",
+        "audit"
       ]
     },
     "rewrites": [
       "important_plurals->singular"
     ]
   },
-  "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
-  "query_id": "llm_controller_591f1b5f2e0f",
-  "route_type": "SQL_THEN_API",
+  "query": "Which segment definitions were updated most recently?",
+  "query_id": "which_segment_definitions_were_updated_most_rece",
+  "route_type": "API_ONLY",
   "selected_apis": [
     {
-      "id": "flowservice_flows",
+      "id": "segment_definitions",
       "method": "GET",
-      "path": "/data/foundation/flowservice/flows"
+      "path": "/data/core/ups/segment/definitions"
     }
   ],
   "selected_columns": {
-    "dim_target": [
-      "TARGETID",
-      "DATAFLOWNAME",
+    "dim_segment": [
+      "DEFINITION",
+      "SEGMENTID",
+      "UPDATEDTIME",
+      "CREATEDTIME",
+      "EVALUATIONCOMPLETEDTIME",
+      "LIFECYCLESTATUS",
+      "MERGEPOLICYID",
       "NAME",
-      "DESCRIPTION",
-      "STATE",
+      "DEFINITIONHASH",
+      "ISACCOUNTSEGMENT",
+      "ISPEOPLESEGMENT",
+      "LABELSSEGMENT"
+    ],
+    "dim_target": [
+      "UPDATEDTIME",
       "CONNECTIONSPECID",
       "CREATEDTIME",
-      "UPDATEDTIME",
-      "INTERVAL",
-      "FREQUENCY"
+      "DATAFLOWNAME",
+      "NAME",
+      "STATE",
+      "TARGETID"
+    ],
+    "hkg_br_segment_target": [
+      "SEGMENTID",
+      "TARGETID",
+      "LABELSSEGMENT"
     ]
   },
   "selected_join_hints": [
     {
       "confidence": 0.9,
-      "left_column": "TARGETID",
-      "left_table": "dim_target",
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
       "reason": "Matching ID-like column name.",
-      "right_column": "TARGETID",
-      "right_table": "hkg_br_target_property"
+      "right_column": "SEGMENTID",
+      "right_table": "dim_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_target"
     },
     {
       "confidence": 0.98,
-      "left_column": "TARGETID",
-      "left_table": "dim_target",
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Curated: Campaign to segment bridge.",
+      "right_column": "SEGMENTID",
+      "right_table": "br_campaign_segment"
+    },
+    {
+      "confidence": 0.75,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Foreign-key-looking column references table root.",
+      "right_column": "DEPENDENTSEGMENTID",
+      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_collection_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_property"
+    },
+    {
+      "confidence": 0.98,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
       "reason": "Curated: Segment to target bridge.",
-      "right_column": "TARGETID",
+      "right_column": "SEGMENTID",
       "right_table": "hkg_br_segment_target"
     }
   ],
   "selected_tables": [
+    "dim_segment",
+    "hkg_br_segment_target",
     "dim_target"
   ],
   "strategy": "SQL_FIRST_API_VERIFY"

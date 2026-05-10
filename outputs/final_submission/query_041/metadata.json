@@ -8,15 +8,19 @@
     "Prefer fewer tool calls when evidence is sufficient."
   ],
   "context_card": {
-    "answer_policy": "Merge policies are API evidence; do not infer defaults from absent API payloads.",
+    "answer_policy": "Batch details/files are API evidence; keep dry-run answers explicit.",
     "api_families": [
-      "merge_policies"
+      "batch_list",
+      "recent_batches",
+      "batch_details",
+      "batch_export_files",
+      "successful_batch_count"
     ],
     "api_mode": "required",
-    "family": "merge_policy",
+    "family": "batch",
     "join_path": [],
     "required_ids": [
-      "merge_policy_id"
+      "batch_id"
     ],
     "tables": []
   },
@@ -25,29 +29,31 @@
     {
       "method": "GET",
       "params": {
-        "limit": "10"
+        "limit": "100",
+        "orderBy": "desc:created",
+        "status": "success"
       },
-      "path": "/data/core/ups/config/mergePolicies"
+      "path": "/data/foundation/catalog/batches"
     }
   ],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
-        "merge_policy"
+        "batch"
       ]
     },
     "rewrites": [
       "important_plurals->singular"
     ]
   },
-  "query": "How many merge policies are configured in this sandbox?",
-  "query_id": "how_many_merge_policies_are_configured_in_this_s",
+  "query": "How many batches have status 'success'?",
+  "query_id": "how_many_batches_have_status_success",
   "route_type": "API_ONLY",
   "selected_apis": [
     {
-      "id": "merge_policies",
+      "id": "catalog_batches",
       "method": "GET",
-      "path": "/data/core/ups/config/mergePolicies"
+      "path": "/data/foundation/catalog/batches"
     }
   ],
   "selected_columns": {

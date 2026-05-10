@@ -309,6 +309,8 @@ def run_real_llm_two_tools_baseline(
         "strategy": mode_name,
         "baseline_variant": "guided" if guided else "raw",
         "backend_type": _client_backend_type(client),
+        "transport": _client_backend_type(client),
+        "sdk_path_used": _client_sdk_path_used(client),
         "prompt_route": route.to_dict(),
         "data_driven_prompt": data_driven_prompt,
         "llm_turns": llm_turns,
@@ -350,6 +352,8 @@ def run_real_llm_two_tools_baseline(
             "llm_provider": client.provider_name(),
             "llm_model": client.model_name(),
             "backend_type": _client_backend_type(client),
+            "transport": _client_backend_type(client),
+            "sdk_path_used": _client_sdk_path_used(client),
             "backend_used": False,
             "real_llm_used": True,
             "real_llm_called": real_llm_called,
@@ -429,6 +433,8 @@ def run_optimized_llm_controller_agent(
             "llm_provider": client.provider_name(),
             "llm_model": client.model_name(),
             "backend_type": _client_backend_type(client),
+            "transport": _client_backend_type(client),
+            "sdk_path_used": _client_sdk_path_used(client),
             "backend_used": False,
             "real_llm_used": True,
             "final_answer": final_answer,
@@ -440,6 +446,9 @@ def run_optimized_llm_controller_agent(
                 "checkpoints": checkpoints.to_list(),
                 "final_answer": final_answer,
                 "tool_call_count": 0,
+                "backend_type": _client_backend_type(client),
+                "transport": _client_backend_type(client),
+                "sdk_path_used": _client_sdk_path_used(client),
                 "llm_total_tokens": token_accounting["llm_total_tokens"],
                 "token_source": token_accounting["token_source"],
                 "estimated_tokens": estimate_tokens({"query": query, "answer": final_answer}),
@@ -503,6 +512,9 @@ def run_optimized_llm_controller_agent(
     )
     trajectory["llm_controller_checkpoints"] = checkpoints.to_list()
     trajectory["final_answer"] = final_answer
+    trajectory["backend_type"] = _client_backend_type(client)
+    trajectory["transport"] = _client_backend_type(client)
+    trajectory["sdk_path_used"] = _client_sdk_path_used(client)
     trajectory["llm_total_tokens"] = token_accounting["llm_total_tokens"]
     trajectory["token_source"] = token_accounting["token_source"]
     return {
@@ -510,6 +522,8 @@ def run_optimized_llm_controller_agent(
         "llm_provider": client.provider_name(),
         "llm_model": client.model_name(),
         "backend_type": _client_backend_type(client),
+        "transport": _client_backend_type(client),
+        "sdk_path_used": _client_sdk_path_used(client),
         "backend_used": True,
         "real_llm_used": True,
         "final_answer": final_answer,
@@ -539,11 +553,16 @@ def _controller_fallback(
     trajectory["llm_controller_checkpoints"] = checkpoints
     skipped_reason = _llm_unavailable_reason(client)
     trajectory["llm_skipped_reason"] = skipped_reason
+    trajectory["backend_type"] = _client_backend_type(client)
+    trajectory["transport"] = _client_backend_type(client)
+    trajectory["sdk_path_used"] = _client_sdk_path_used(client)
     return {
         "mode": LLM_CONTROLLER_OPTIMIZED_AGENT,
         "llm_provider": client.provider_name(),
         "llm_model": client.model_name(),
         "backend_type": _client_backend_type(client),
+        "transport": _client_backend_type(client),
+        "sdk_path_used": _client_sdk_path_used(client),
         "backend_used": bool(backend),
         "real_llm_used": False,
         "skipped": True,
@@ -561,6 +580,8 @@ def _skipped_result(query: str, mode: str, client: LLMClient, reason: str) -> di
         "llm_provider": client.provider_name(),
         "llm_model": client.model_name(),
         "backend_type": _client_backend_type(client),
+        "transport": _client_backend_type(client),
+        "sdk_path_used": _client_sdk_path_used(client),
         "backend_used": False,
         "real_llm_used": False,
         "real_llm_called": False,
@@ -590,6 +611,9 @@ def _skipped_result(query: str, mode: str, client: LLMClient, reason: str) -> di
         "trajectory": {
             "original_query": query,
             "strategy": mode,
+            "backend_type": _client_backend_type(client),
+            "transport": _client_backend_type(client),
+            "sdk_path_used": _client_sdk_path_used(client),
             "real_llm_used": False,
             "real_llm_called": False,
             "llm_turns": [],
@@ -760,6 +784,10 @@ def _client_backend_type(client: LLMClient) -> str:
     if provider in {"openai", "openrouter"}:
         return "openai_sdk"
     return "none"
+
+
+def _client_sdk_path_used(client: LLMClient) -> bool:
+    return _client_backend_type(client) in {"openai_sdk", "anthropic_sdk"}
 
 
 def _llm_token_accounting(turns: list[dict[str, Any]], *, fallback_payload: Any) -> dict[str, Any]:

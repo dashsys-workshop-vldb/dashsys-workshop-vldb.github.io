@@ -8,72 +8,91 @@
     "Prefer fewer tool calls when evidence is sufficient."
   ],
   "context_card": {
-    "answer_policy": "Report publish/status evidence from dim_campaign; dry-run API is not confirmation.",
+    "answer_policy": "Use dim_target/dim_connector evidence first; live API validates platform state.",
     "api_families": [
-      "journey_by_name",
-      "journey_inactive",
-      "journey_list"
+      "destination_flows",
+      "recent_destination_flows",
+      "failed_dataflow_flows"
     ],
     "api_mode": "optional",
-    "family": "journey_campaign",
+    "family": "destination_dataflow",
     "join_path": [],
     "required_ids": [
-      "campaign_id",
-      "journey_name"
+      "target_id",
+      "dataflow_id"
     ],
     "tables": [
-      "dim_campaign"
+      "dim_target",
+      "dim_connector"
     ]
   },
-  "domain_type": "JOURNEY_CAMPAIGN",
+  "domain_type": "DESTINATION_DATAFLOW",
   "known_example_patterns": [
     {
       "method": "GET",
       "params": {
-        "filter": "status!=live",
-        "pageSize": "10"
+        "limit": "5",
+        "property": "inheritedAttributes.properties.isDestinationFlow==true",
+        "sort": "updatedTime:desc"
       },
-      "path": "/ajo/journey"
+      "path": "/data/foundation/flowservice/flows"
     }
   ],
   "nlp_diagnostics": {
     "relevance": {
       "lookup_paths": [
-        "journey_campaign"
+        "destination_dataflow",
+        "batch"
       ]
-    }
+    },
+    "rewrites": [
+      "important_plurals->singular"
+    ]
   },
-  "query": "When was the journey 'Birthday Message' published?",
-  "query_id": "example_000",
+  "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
+  "query_id": "debug_example_005",
   "route_type": "SQL_THEN_API",
   "selected_apis": [
     {
-      "id": "journey_list",
+      "id": "flowservice_flows",
       "method": "GET",
-      "path": "/ajo/journey"
+      "path": "/data/foundation/flowservice/flows"
     }
   ],
   "selected_columns": {
-    "dim_campaign": [
-      "CAMPAIGNID",
+    "dim_target": [
+      "TARGETID",
+      "DATAFLOWNAME",
       "NAME",
+      "DESCRIPTION",
       "STATE",
+      "CONNECTIONSPECID",
+      "CREATEDTIME",
       "UPDATEDTIME",
-      "LASTDEPLOYEDTIME"
+      "INTERVAL",
+      "FREQUENCY"
     ]
   },
   "selected_join_hints": [
     {
+      "confidence": 0.9,
+      "left_column": "TARGETID",
+      "left_table": "dim_target",
+      "reason": "Matching ID-like column name.",
+      "right_column": "TARGETID",
+      "right_table": "hkg_br_target_property"
+    },
+    {
       "confidence": 0.98,
-      "left_column": "CAMPAIGNID",
-      "left_table": "dim_campaign",
-      "reason": "Curated: Campaign to segment bridge.",
-      "right_column": "CAMPAIGNID",
-      "right_table": "br_campaign_segment"
+      "left_column": "TARGETID",
+      "left_table": "dim_target",
+      "reason": "Curated: Segment to target bridge.",
+      "right_column": "TARGETID",
+      "right_table": "hkg_br_segment_target"
     }
   ],
   "selected_tables": [
-    "dim_campaign"
+    "dim_target"
   ],
   "strategy": "SQL_FIRST_API_VERIFY"
 }
