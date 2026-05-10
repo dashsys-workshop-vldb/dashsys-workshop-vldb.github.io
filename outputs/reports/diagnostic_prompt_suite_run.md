@@ -4,6 +4,7 @@ Diagnostic prompt coverage only; not official strict score.
 
 - Strategy: `SQL_FIRST_API_VERIFY`
 - LLM runtime used: `False`
+- LLM semantic router shadow enabled: `False`
 - Total prompts in suite: `250`
 - Executed prompts: `50`
 - Passed runtime count: `50`

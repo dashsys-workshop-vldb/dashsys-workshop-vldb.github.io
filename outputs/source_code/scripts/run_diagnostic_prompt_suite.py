@@ -7,6 +7,7 @@ import shutil
 import sys
 import time
 from collections import Counter
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +32,7 @@ def main() -> int:
         limit=args.limit,
         full=args.full,
         clean=args.clean,
+        with_llm_semantic_router_shadow=args.with_llm_semantic_router_shadow,
     )
     print(
         json.dumps(
@@ -54,6 +56,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit", type=int, default=None, help=f"Number of prompts to run. Defaults to {DEFAULT_LIMIT}.")
     parser.add_argument("--full", action="store_true", help="Run all generated prompts.")
     parser.add_argument("--clean", action="store_true", help="Remove only outputs/diagnostic_prompt_suite before running.")
+    parser.add_argument(
+        "--with-llm-semantic-router-shadow",
+        action="store_true",
+        help="Enable the LLM semantic routing helper in shadow mode for diagnostic stats only.",
+    )
     return parser.parse_args()
 
 
@@ -64,8 +71,14 @@ def run_diagnostic_prompt_suite(
     limit: int | None = None,
     full: bool = False,
     clean: bool = False,
+    with_llm_semantic_router_shadow: bool = False,
 ) -> dict[str, Any]:
     config = config or Config.from_env(ROOT)
+    runtime_config = (
+        replace(config, enable_llm_semantic_router=True, llm_semantic_router_shadow_only=True)
+        if with_llm_semantic_router_shadow
+        else config
+    )
     suite_path = suite_path or (config.data_dir / "generated_prompt_suite.json")
     suite = json.loads(suite_path.read_text(encoding="utf-8"))
     if not isinstance(suite, list):
@@ -80,7 +93,7 @@ def run_diagnostic_prompt_suite(
 
     run_limit = len(suite) if full else (limit if limit is not None else DEFAULT_LIMIT)
     selected = suite[: max(0, min(run_limit, len(suite)))]
-    executor = AgentExecutor(config)
+    executor = AgentExecutor(runtime_config)
 
     rows: list[dict[str, Any]] = []
     for item in selected:
@@ -109,7 +122,16 @@ def run_diagnostic_prompt_suite(
             }
         rows.append(redact_secrets(row))
 
-    report = _build_report(config, suite, selected, rows, suite_path=suite_path, full=full, limit=run_limit)
+    report = _build_report(
+        config,
+        suite,
+        selected,
+        rows,
+        suite_path=suite_path,
+        full=full,
+        limit=run_limit,
+        with_llm_semantic_router_shadow=with_llm_semantic_router_shadow,
+    )
     report = redact_secrets(report)
     json_path = reports_dir / "diagnostic_prompt_suite_run.json"
     md_path = reports_dir / "diagnostic_prompt_suite_run.md"
@@ -126,6 +148,7 @@ def _row_from_result(item: dict[str, Any], result: dict[str, Any], trajectory: d
     expected_intent = str(item.get("expected_answer_intent_diagnostic") or "UNKNOWN")
     final_answer = str(result.get("final_answer") or trajectory.get("final_answer") or "")
     actual_answer_family = _extract_answer_family(trajectory, final_answer)
+    semantic_checkpoint = _semantic_checkpoint(trajectory)
     return {
         "prompt_id": item.get("prompt_id"),
         "prompt": item.get("prompt"),
@@ -148,6 +171,7 @@ def _row_from_result(item: dict[str, Any], result: dict[str, Any], trajectory: d
         "validation_failures": _validation_failure_count(trajectory),
         "final_answer": final_answer,
         "weak_answer_flag": _weak_answer(final_answer),
+        "llm_semantic_router_shadow": semantic_checkpoint,
         "errors": trajectory.get("errors", []),
         "output_dir": result.get("output_dir"),
     }
@@ -162,6 +186,7 @@ def _build_report(
     suite_path: Path,
     full: bool,
     limit: int,
+    with_llm_semantic_router_shadow: bool,
 ) -> dict[str, Any]:
     passed = [row for row in rows if row.get("status") == "passed"]
     failed = [row for row in rows if row.get("status") != "passed"]
@@ -173,8 +198,14 @@ def _build_report(
         "official_strict_score_computed": False,
         "not_official_score": True,
         "strategy": "SQL_FIRST_API_VERIFY",
-        "llm_runtime_used": False,
-        "llm_runtime_note": "The diagnostic suite runner uses the deterministic AgentExecutor path; no LLM/model call is made.",
+        "llm_runtime_used": with_llm_semantic_router_shadow,
+        "llm_runtime_note": (
+            "LLM semantic routing helper ran in shadow mode only; no official strict score is computed."
+            if with_llm_semantic_router_shadow
+            else "The diagnostic suite runner uses the deterministic AgentExecutor path; no LLM/model call is made."
+        ),
+        "llm_semantic_router_shadow_enabled": with_llm_semantic_router_shadow,
+        "llm_semantic_router_shadow_stats": _semantic_shadow_stats(rows),
         "suite_path": _rel(config, suite_path),
         "output_root": "outputs/diagnostic_prompt_suite",
         "default_limit": DEFAULT_LIMIT,
@@ -207,6 +238,7 @@ def _render_markdown(report: dict[str, Any]) -> str:
         "",
         f"- Strategy: `{report.get('strategy')}`",
         f"- LLM runtime used: `{report.get('llm_runtime_used')}`",
+        f"- LLM semantic router shadow enabled: `{report.get('llm_semantic_router_shadow_enabled')}`",
         f"- Total prompts in suite: `{report.get('total_prompts')}`",
         f"- Executed prompts: `{report.get('executed_prompts')}`",
         f"- Passed runtime count: `{report.get('passed_runtime_count')}`",
@@ -293,6 +325,26 @@ def _validation_failure_count(trajectory: dict[str, Any]) -> int:
         if isinstance(item, dict) and not item.get("valid", True):
             count += 1
     return count
+
+
+def _semantic_checkpoint(trajectory: dict[str, Any]) -> dict[str, Any]:
+    for checkpoint in trajectory.get("checkpoints") or []:
+        if isinstance(checkpoint, dict) and checkpoint.get("checkpoint_id") == "checkpoint_llm_semantic_routing_helper":
+            output = checkpoint.get("output")
+            return output if isinstance(output, dict) else {}
+    return {}
+
+
+def _semantic_shadow_stats(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    checkpoints = [row.get("llm_semantic_router_shadow") for row in rows if isinstance(row.get("llm_semantic_router_shadow"), dict)]
+    return {
+        "checkpoint_count": len(checkpoints),
+        "helper_called": sum(1 for item in checkpoints if item.get("helper_called")),
+        "helper_valid": sum(1 for item in checkpoints if item.get("helper_valid")),
+        "helper_rejected": sum(1 for item in checkpoints if item.get("helper_called") and not item.get("helper_valid")),
+        "hint_applied": sum(1 for item in checkpoints if item.get("hint_applied")),
+        "application_modes": dict(Counter(item.get("hint_application_mode", "unavailable") for item in checkpoints)),
+    }
 
 
 def _weak_answer(answer: str) -> bool:

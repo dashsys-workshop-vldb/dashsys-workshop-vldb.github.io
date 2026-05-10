@@ -36,6 +36,7 @@ REQUIRED_PATHS = [
     "scripts/generate_sdk_usage_audit.py",
     "scripts/generate_diagnostic_prompt_suite.py",
     "scripts/run_diagnostic_prompt_suite.py",
+    "scripts/run_llm_semantic_router_shadow_eval.py",
     "scripts/generate_failure_analysis.py",
     "scripts/generate_family_score_report.py",
     "scripts/generate_pareto_report.py",

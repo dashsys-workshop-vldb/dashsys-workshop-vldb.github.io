@@ -36,6 +36,15 @@ Start here. Most older generated reports were consolidated or removed.
 - `outputs/reports/sdk_usage_audit.md`
 - Runtime LLM direct HTTP hits: `0`
 
+## LLM Semantic Routing Helper
+
+- `outputs/reports/llm_semantic_router_shadow_eval.md`
+- Feature flag default: `off`
+- Shadow-only by default: `true`
+- Uses SDK-based `LLMClient`; no direct HTTP; routing hints only; no final answers.
+- Status: `complete`
+- Recommendation: `keep_disabled`
+
 ## Workshop Requirement Alignment
 
 - [workshop_requirement_audit.md](workshop_requirement_audit.md)

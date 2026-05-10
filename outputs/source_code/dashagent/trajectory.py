@@ -58,6 +58,22 @@ IMPORTANT_PREVIEW_KEYS = [
     "errors",
     "error",
     "result_preview",
+    "enabled",
+    "shadow_only",
+    "helper_called",
+    "helper_valid",
+    "helper_rejected_reason",
+    "eligibility_reason",
+    "deterministic_confidence_before",
+    "helper_confidence",
+    "final_runtime_confidence",
+    "hint_applied",
+    "hint_application_mode",
+    "applied_to_runtime",
+    "would_change_route",
+    "would_change_domain",
+    "would_change_intent",
+    "sdk_path_used",
 ]
 
 

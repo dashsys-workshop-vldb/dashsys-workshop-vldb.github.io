@@ -9,7 +9,7 @@ Status: **strict-score improvement measured**.
 | strict_final_score | 0.649 | 0.6553 | 0.0063 |
 | strict_correctness | 0.6743 | 0.6805 | 0.0062 |
 | estimated_tokens | 851.7714 | 834.6 | -17.1714 |
-| runtime | 0.0102 | 0.0116 | 0.0014 |
+| runtime | 0.0102 | 0.0115 | 0.0013 |
 | tool_calls | 1.4571 | 1.4571 | 0.0 |
 
 ## Gate Results
@@ -17,7 +17,7 @@ Status: **strict-score improvement measured**.
 - Packaged preferred strategy: `SQL_FIRST_API_VERIFY`
 - Strict score regression gate OK: True
 - Estimated-token overhead: -2.02% (gate OK: True)
-- Runtime overhead: 13.73% (gate OK: True)
+- Runtime overhead: 12.75% (gate OK: True)
 - Tool-call delta: 0.0 (gate OK: True)
 - Value retrieval budget: 250 ms (budget OK: True)
 - Value retrieval cache key algorithm: `sha256` (reproducible: True)

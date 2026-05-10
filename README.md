@@ -102,7 +102,21 @@ python3 scripts/generate_sdk_usage_audit.py
 
 The audit report is written to `outputs/reports/sdk_usage_audit.md/json` and must show `runtime_llm_direct_http_hits = 0`.
 
-## 3.2 Diagnostic Prompt Suite
+## 3.2 LLM Semantic Routing Helper
+
+`dashagent/semantic_routing_helper.py` is an optional SDK-based routing-hint helper for low-confidence or ambiguous prompts. It is default-off with `ENABLE_LLM_SEMANTIC_ROUTER=false` and shadow-only by default with `LLM_SEMANTIC_ROUTER_SHADOW_ONLY=true`.
+
+The helper may suggest validated domain, route, intent, synonym, table, and API-family hints only. It must never produce final answers, SQL/API results, or tool calls, and it must never bypass SQL/API validators. Non-shadow use is isolated-trial only and must not affect packaged submission unless a later explicit strict/safety promotion approves it.
+
+Run the shadow diagnostic with:
+
+```bash
+python3 scripts/run_llm_semantic_router_shadow_eval.py --limit 50
+```
+
+The report is written to `outputs/reports/llm_semantic_router_shadow_eval.md/json`.
+
+## 3.3 Diagnostic Prompt Suite
 
 The generated diagnostic prompt suite broadens coverage testing from `data/data.json` without changing official scoring or packaged behavior.
 
@@ -112,6 +126,7 @@ python3 scripts/run_diagnostic_prompt_suite.py
 python3 scripts/run_diagnostic_prompt_suite.py --full
 python3 scripts/run_diagnostic_prompt_suite.py --limit 50
 python3 scripts/run_diagnostic_prompt_suite.py --clean
+python3 scripts/run_diagnostic_prompt_suite.py --with-llm-semantic-router-shadow
 ```
 
 Outputs:

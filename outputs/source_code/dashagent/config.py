@@ -10,6 +10,18 @@ def _path_from_env(name: str, default: Path) -> Path:
     return Path(value).expanduser() if value else default
 
 
+def _bool_from_env(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    return default
+
+
 def find_project_root(start: Path | None = None) -> Path:
     """Find the project root without relying on machine-local absolute paths."""
     explicit = os.getenv("DASHAGENT_ROOT")
@@ -73,6 +85,11 @@ class Config:
     enable_answer_shape_v2: bool = False
     enable_sql_only_api_skip_guard: bool = False
     enable_endpoint_family_tiebreak_v2: bool = False
+    enable_llm_semantic_router: bool = False
+    llm_semantic_router_shadow_only: bool = True
+    llm_semantic_router_confidence_threshold: float = 0.55
+    llm_semantic_router_ambiguity_margin: float = 0.10
+    llm_semantic_router_max_tokens: int = 512
     value_retrieval_max_tables: int = 6
     value_retrieval_max_columns: int = 18
     value_retrieval_max_rows_per_column: int = 500
@@ -133,6 +150,11 @@ class Config:
             enable_answer_shape_v2=os.getenv("ENABLE_ANSWER_SHAPE_V2", "0") == "1",
             enable_sql_only_api_skip_guard=os.getenv("ENABLE_SQL_ONLY_API_SKIP_GUARD", "0") == "1",
             enable_endpoint_family_tiebreak_v2=os.getenv("ENABLE_ENDPOINT_FAMILY_TIEBREAK_V2", "0") == "1",
+            enable_llm_semantic_router=_bool_from_env("ENABLE_LLM_SEMANTIC_ROUTER", False),
+            llm_semantic_router_shadow_only=_bool_from_env("LLM_SEMANTIC_ROUTER_SHADOW_ONLY", True),
+            llm_semantic_router_confidence_threshold=float(os.getenv("LLM_SEMANTIC_ROUTER_CONFIDENCE_THRESHOLD", "0.55")),
+            llm_semantic_router_ambiguity_margin=float(os.getenv("LLM_SEMANTIC_ROUTER_AMBIGUITY_MARGIN", "0.10")),
+            llm_semantic_router_max_tokens=int(os.getenv("LLM_SEMANTIC_ROUTER_MAX_TOKENS", "512")),
             value_retrieval_max_tables=int(os.getenv("VALUE_RETRIEVAL_MAX_TABLES", "6")),
             value_retrieval_max_columns=int(os.getenv("VALUE_RETRIEVAL_MAX_COLUMNS", "18")),
             value_retrieval_max_rows_per_column=int(os.getenv("VALUE_RETRIEVAL_MAX_ROWS_PER_COLUMN", "500")),

@@ -49,6 +49,7 @@ from .risk_efficiency_controller import classify_candidate_risk
 from .router import QueryRouter
 from .schema_context_voter import vote_schema_contexts
 from .schema_index import SchemaIndex
+from .semantic_routing_helper import apply_semantic_routing_hint, run_semantic_routing_helper
 from .simple_prompt_gate import decide_simple_prompt
 from .sql_only_api_skip_guard import should_skip_api_with_sql_evidence
 from .prompt_router import LLM_DIRECT, route_prompt
@@ -226,6 +227,40 @@ class AgentExecutor:
                 tokens=tokens,
             )
             set_query_analysis_cache(analysis_key, analysis)
+        semantic_routing_result = None
+        if self.config.enable_llm_semantic_router:
+            semantic_routing_result = run_semantic_routing_helper(
+                user_prompt=query,
+                normalization=normalization,
+                tokens=tokens,
+                routing=routing,
+                analysis=analysis,
+                schema_index=self.schema_index,
+                endpoint_catalog=self.endpoint_catalog,
+                config=self.config,
+            )
+            if not self.config.llm_semantic_router_shadow_only:
+                routing, analysis, semantic_routing_result = apply_semantic_routing_hint(
+                    routing=routing,
+                    analysis=analysis,
+                    result=semantic_routing_result,
+                    config=self.config,
+                    endpoint_catalog=self.endpoint_catalog,
+                )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_llm_semantic_routing_helper",
+                stage="routing",
+                technique="feature-flagged SDK LLM semantic routing helper",
+                input_summary={
+                    "route_type": semantic_routing_result.deterministic_route_type,
+                    "domain_type": semantic_routing_result.deterministic_domain_type,
+                    "confidence": round(float(semantic_routing_result.deterministic_confidence_before), 4),
+                },
+                output=semantic_routing_result.to_checkpoint(),
+                effect="optionally records validated semantic routing hints for low-confidence or ambiguous prompts",
+                correctness_role="keeps deterministic routing first and never produces final answers or bypasses validators",
+                efficiency_role="calls the LLM only behind an explicit feature flag and only when eligibility rules trigger",
+            )
         relevance_compact = analysis.relevance.compact(table_k=3, api_k=3)
         checkpoint_logger.add_checkpoint(
             "checkpoint_04_relevance_scoring",
@@ -538,6 +573,8 @@ class AgentExecutor:
                 "sub_questions": decomposition.get("sub_questions", [])[:5],
                 "expected_answer_shape": decomposition.get("expected_answer_shape"),
             }
+        if semantic_routing_result is not None:
+            nlp_step["llm_semantic_routing_helper"] = semantic_routing_result.to_checkpoint()
         trajectory.add_step("nlp", {key: value for key, value in nlp_step.items() if value not in ([], {}, "", None)})
         trajectory.add_step(
             "metadata",

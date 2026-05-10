@@ -6,9 +6,10 @@
 - Anthropic SDK support: available_in_client; configure LLM_PROVIDER=anthropic with ANTHROPIC_API_KEY
 - Tool calling supported: `True`
 - Best LLM baseline: `LLM_CONTROLLER_OPTIMIZED_AGENT`
-- Best LLM baseline score: `0.6333`
+- Best LLM baseline score: `0.6331`
 - SQL_FIRST_API_VERIFY score: `0.6553`
 - Recommendation: `keep_shadow_only`
+- LLM semantic routing helper: `keep_disabled` (complete)
 - Reason: Deterministic SQL_FIRST_API_VERIFY remains higher under strict scoring.
 
 The LLM baseline framework is generic; Qwen is only the current configured backend/model metadata.

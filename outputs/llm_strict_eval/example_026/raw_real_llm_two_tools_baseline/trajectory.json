@@ -2,13 +2,13 @@
   "backend_type": "openai_sdk",
   "baseline_variant": "raw",
   "data_driven_prompt": true,
-  "dry_run_only_api_count": 0,
+  "dry_run_only_api_count": 2,
   "duplicate_invalid_call_count": 0,
   "errors": [],
-  "estimated_tokens": 12922,
+  "estimated_tokens": 10191,
   "execution_previews": [
     {
-      "error": "Unknown column: DAY.; Unknown column: INTERVAL.; Unknown column: STATUS. Suggestions: STATUS, LIFECYCLESTATUS, STATE, STARTDATE",
+      "error": "Unknown column: INTERVAL.",
       "ok": false,
       "row_count": 0,
       "rows_preview": {
@@ -18,9 +18,7 @@
       },
       "validation": {
         "errors": [
-          "Unknown column: DAY.",
-          "Unknown column: INTERVAL.",
-          "Unknown column: STATUS. Suggestions: STATUS, LIFECYCLESTATUS, STATE, STARTDATE"
+          "Unknown column: INTERVAL."
         ],
         "ok": false,
         "repaired": false,
@@ -28,7 +26,20 @@
       }
     },
     {
-      "error": "Unknown column: CURRENT_TIMESTAMP.; Unknown column: DAY.; Unknown column: INTERVAL.",
+      "dry_run": true,
+      "error": "Adobe credentials unavailable; API call not executed.",
+      "ok": false,
+      "result_preview": null,
+      "status_code": null,
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "error": "Unknown column: CURRENT_TIMESTAMP.; Unknown column: INTERVAL.",
       "ok": false,
       "row_count": 0,
       "rows_preview": {
@@ -39,7 +50,6 @@
       "validation": {
         "errors": [
           "Unknown column: CURRENT_TIMESTAMP.",
-          "Unknown column: DAY.",
           "Unknown column: INTERVAL."
         ],
         "ok": false,
@@ -48,38 +58,11 @@
       }
     },
     {
-      "error": "Unknown column: DAY.; Unknown column: INTERVAL.; Unknown column: dim_segment.",
+      "dry_run": true,
+      "error": "Adobe credentials unavailable; API call not executed.",
       "ok": false,
-      "row_count": 0,
-      "rows_preview": {
-        "items": [],
-        "total_items": 0,
-        "truncated_items": false
-      },
-      "validation": {
-        "errors": [
-          "Unknown column: DAY.",
-          "Unknown column: INTERVAL.",
-          "Unknown column: dim_segment."
-        ],
-        "ok": false,
-        "repaired": false,
-        "warnings": []
-      }
-    },
-    {
-      "error": null,
-      "ok": true,
-      "row_count": 1,
-      "rows_preview": {
-        "items": [
-          {
-            "count_star()": 0
-          }
-        ],
-        "total_items": 1,
-        "truncated_items": false
-      },
+      "result_preview": null,
+      "status_code": null,
       "validation": {
         "errors": [],
         "ok": true,
@@ -89,26 +72,27 @@
     }
   ],
   "failure_categories": {
-    "unknown_column_count": 3
+    "dry_run_only_api_count": 2,
+    "unknown_column_count": 2
   },
   "failure_reason": "",
-  "final_answer": "There are currently 0 segment jobs processing.",
-  "invalid_tool_call_count": 3,
+  "final_answer": "Based on the available evidence, the exact number of currently processing segment jobs could not be determined due to issues with executing the SQL query and the inability to execute the API call due to missing Adobe credentials. Therefore, I cannot provide a specific count of segment jobs that are currently processing.",
+  "invalid_tool_call_count": 2,
   "llm_tool_calls": [
     {
       "arguments": {
-        "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > NOW() - INTERVAL '1' DAY AND STATUS = 'PROCESSING';"
+        "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > NOW() - INTERVAL '1 DAY';"
       },
       "dry_run_only": false,
-      "error": "Unknown column: DAY.; Unknown column: INTERVAL.; Unknown column: STATUS. Suggestions: STATUS, LIFECYCLESTATUS, STATE, STARTDATE",
+      "error": "Unknown column: INTERVAL.",
       "evidence_available": false,
       "executed": false,
       "guided_features_used": false,
       "original_arguments": {
-        "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > NOW() - INTERVAL '1' DAY AND STATUS = 'PROCESSING';"
+        "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > NOW() - INTERVAL '1 DAY';"
       },
       "result_preview": {
-        "error": "Unknown column: DAY.; Unknown column: INTERVAL.; Unknown column: STATUS. Suggestions: STATUS, LIFECYCLESTATUS, STATE, STARTDATE",
+        "error": "Unknown column: INTERVAL.",
         "ok": false,
         "row_count": 0,
         "rows_preview": {
@@ -118,9 +102,7 @@
         },
         "validation": {
           "errors": [
-            "Unknown column: DAY.",
-            "Unknown column: INTERVAL.",
-            "Unknown column: STATUS. Suggestions: STATUS, LIFECYCLESTATUS, STATE, STARTDATE"
+            "Unknown column: INTERVAL."
           ],
           "ok": false,
           "repaired": false,
@@ -136,9 +118,7 @@
       "turn": 1,
       "validation": {
         "errors": [
-          "Unknown column: DAY.",
-          "Unknown column: INTERVAL.",
-          "Unknown column: STATUS. Suggestions: STATUS, LIFECYCLESTATUS, STATE, STARTDATE"
+          "Unknown column: INTERVAL."
         ],
         "ok": false,
         "repaired": false,
@@ -148,18 +128,64 @@
     },
     {
       "arguments": {
-        "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > CURRENT_TIMESTAMP - INTERVAL '1' DAY AND LIFECYCLESTATUS = 'PROCESSING';"
+        "headers": {},
+        "method": "GET",
+        "params": {},
+        "url": "/data/core/ups/segment/definitions"
+      },
+      "dry_run_only": true,
+      "error": "Adobe credentials unavailable; API call not executed.",
+      "evidence_available": false,
+      "executed": true,
+      "guided_features_used": false,
+      "original_arguments": {
+        "headers": {},
+        "method": "GET",
+        "params": {},
+        "url": "/data/core/ups/segment/definitions"
+      },
+      "result_preview": {
+        "dry_run": true,
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "ok": false,
+        "result_preview": null,
+        "status_code": null,
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "tool": "call_api",
+      "tool_execution_attempted": true,
+      "tool_execution_ok": false,
+      "tool_invoked": true,
+      "tool_name": "call_api",
+      "tool_validation_ok": true,
+      "turn": 1,
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "validation_ok": true
+    },
+    {
+      "arguments": {
+        "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > CURRENT_TIMESTAMP - INTERVAL '1 DAY';"
       },
       "dry_run_only": false,
-      "error": "Unknown column: CURRENT_TIMESTAMP.; Unknown column: DAY.; Unknown column: INTERVAL.",
+      "error": "Unknown column: CURRENT_TIMESTAMP.; Unknown column: INTERVAL.",
       "evidence_available": false,
       "executed": false,
       "guided_features_used": false,
       "original_arguments": {
-        "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > CURRENT_TIMESTAMP - INTERVAL '1' DAY AND LIFECYCLESTATUS = 'PROCESSING';"
+        "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > CURRENT_TIMESTAMP - INTERVAL '1 DAY';"
       },
       "result_preview": {
-        "error": "Unknown column: CURRENT_TIMESTAMP.; Unknown column: DAY.; Unknown column: INTERVAL.",
+        "error": "Unknown column: CURRENT_TIMESTAMP.; Unknown column: INTERVAL.",
         "ok": false,
         "row_count": 0,
         "rows_preview": {
@@ -170,7 +196,6 @@
         "validation": {
           "errors": [
             "Unknown column: CURRENT_TIMESTAMP.",
-            "Unknown column: DAY.",
             "Unknown column: INTERVAL."
           ],
           "ok": false,
@@ -188,7 +213,6 @@
       "validation": {
         "errors": [
           "Unknown column: CURRENT_TIMESTAMP.",
-          "Unknown column: DAY.",
           "Unknown column: INTERVAL."
         ],
         "ok": false,
@@ -199,80 +223,28 @@
     },
     {
       "arguments": {
-        "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > (SELECT MAX(UPDATEDTIME) - INTERVAL '1' DAY FROM dim_segment) AND LIFECYCLESTATUS = 'PROCESSING';"
+        "headers": {},
+        "method": "GET",
+        "params": {},
+        "url": "/data/core/ups/segment/definitions"
       },
-      "dry_run_only": false,
-      "error": "Unknown column: DAY.; Unknown column: INTERVAL.; Unknown column: dim_segment.",
+      "dry_run_only": true,
+      "error": "Adobe credentials unavailable; API call not executed.",
       "evidence_available": false,
-      "executed": false,
-      "guided_features_used": false,
-      "original_arguments": {
-        "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > (SELECT MAX(UPDATEDTIME) - INTERVAL '1' DAY FROM dim_segment) AND LIFECYCLESTATUS = 'PROCESSING';"
-      },
-      "result_preview": {
-        "error": "Unknown column: DAY.; Unknown column: INTERVAL.; Unknown column: dim_segment.",
-        "ok": false,
-        "row_count": 0,
-        "rows_preview": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "validation": {
-          "errors": [
-            "Unknown column: DAY.",
-            "Unknown column: INTERVAL.",
-            "Unknown column: dim_segment."
-          ],
-          "ok": false,
-          "repaired": false,
-          "warnings": []
-        }
-      },
-      "tool": "execute_sql",
-      "tool_execution_attempted": false,
-      "tool_execution_ok": false,
-      "tool_invoked": true,
-      "tool_name": "execute_sql",
-      "tool_validation_ok": false,
-      "turn": 3,
-      "validation": {
-        "errors": [
-          "Unknown column: DAY.",
-          "Unknown column: INTERVAL.",
-          "Unknown column: dim_segment."
-        ],
-        "ok": false,
-        "repaired": false,
-        "warnings": []
-      },
-      "validation_ok": false
-    },
-    {
-      "arguments": {
-        "sql": "SELECT COUNT(*) FROM dim_segment WHERE LIFECYCLESTATUS = 'PROCESSING';"
-      },
-      "dry_run_only": false,
-      "error": "",
-      "evidence_available": true,
       "executed": true,
       "guided_features_used": false,
       "original_arguments": {
-        "sql": "SELECT COUNT(*) FROM dim_segment WHERE LIFECYCLESTATUS = 'PROCESSING';"
+        "headers": {},
+        "method": "GET",
+        "params": {},
+        "url": "/data/core/ups/segment/definitions"
       },
       "result_preview": {
-        "error": null,
-        "ok": true,
-        "row_count": 1,
-        "rows_preview": {
-          "items": [
-            {
-              "count_star()": 0
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
+        "dry_run": true,
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "ok": false,
+        "result_preview": null,
+        "status_code": null,
         "validation": {
           "errors": [],
           "ok": true,
@@ -280,13 +252,13 @@
           "warnings": []
         }
       },
-      "tool": "execute_sql",
+      "tool": "call_api",
       "tool_execution_attempted": true,
-      "tool_execution_ok": true,
+      "tool_execution_ok": false,
       "tool_invoked": true,
-      "tool_name": "execute_sql",
+      "tool_name": "call_api",
       "tool_validation_ok": true,
-      "turn": 4,
+      "turn": 3,
       "validation": {
         "errors": [],
         "ok": true,
@@ -296,39 +268,48 @@
       "validation_ok": true
     }
   ],
-  "llm_total_tokens": 12922,
+  "llm_total_tokens": 10191,
   "llm_transcript_steps": [
     {
       "assistant_tool_calls": {
         "items": [
           {
             "arguments": {
-              "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > NOW() - INTERVAL '1' DAY AND STATUS = 'PROCESSING';"
+              "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > NOW() - INTERVAL '1 DAY';"
             },
-            "id": "chatcmpl-tool-9d52887bedbe9e41",
+            "id": "chatcmpl-tool-8845b9279e78f1fb",
             "name": "execute_sql",
             "tool": "execute_sql"
+          },
+          {
+            "arguments": {
+              "method": "GET",
+              "url": "/data/core/ups/segment/definitions"
+            },
+            "id": "chatcmpl-tool-b35003bf71793ace",
+            "name": "call_api",
+            "tool": "call_api"
           }
         ],
-        "total_items": 1,
+        "total_items": 2,
         "truncated_items": false
       },
       "kind": "llm_turn",
       "tool_results": [
         {
           "arguments": {
-            "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > NOW() - INTERVAL '1' DAY AND STATUS = 'PROCESSING';"
+            "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > NOW() - INTERVAL '1 DAY';"
           },
           "dry_run_only": false,
-          "error": "Unknown column: DAY.; Unknown column: INTERVAL.; Unknown column: STATUS. Suggestions: STATUS, LIFECYCLESTATUS, STATE, STARTDATE",
+          "error": "Unknown column: INTERVAL.",
           "evidence_available": false,
           "executed": false,
           "guided_features_used": false,
           "original_arguments": {
-            "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > NOW() - INTERVAL '1' DAY AND STATUS = 'PROCESSING';"
+            "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > NOW() - INTERVAL '1 DAY';"
           },
           "result_preview": {
-            "error": "Unknown column: DAY.; Unknown column: INTERVAL.; Unknown column: STATUS. Suggestions: STATUS, LIFECYCLESTATUS, STATE, STARTDATE",
+            "error": "Unknown column: INTERVAL.",
             "ok": false,
             "row_count": 0,
             "rows_preview": {
@@ -338,9 +319,7 @@
             },
             "validation": {
               "errors": [
-                "Unknown column: DAY.",
-                "Unknown column: INTERVAL.",
-                "Unknown column: STATUS. Suggestions: STATUS, LIFECYCLESTATUS, STATE, STARTDATE"
+                "Unknown column: INTERVAL."
               ],
               "ok": false,
               "repaired": false,
@@ -356,15 +335,59 @@
           "turn": 1,
           "validation": {
             "errors": [
-              "Unknown column: DAY.",
-              "Unknown column: INTERVAL.",
-              "Unknown column: STATUS. Suggestions: STATUS, LIFECYCLESTATUS, STATE, STARTDATE"
+              "Unknown column: INTERVAL."
             ],
             "ok": false,
             "repaired": false,
             "warnings": []
           },
           "validation_ok": false
+        },
+        {
+          "arguments": {
+            "headers": {},
+            "method": "GET",
+            "params": {},
+            "url": "/data/core/ups/segment/definitions"
+          },
+          "dry_run_only": true,
+          "error": "Adobe credentials unavailable; API call not executed.",
+          "evidence_available": false,
+          "executed": true,
+          "guided_features_used": false,
+          "original_arguments": {
+            "headers": {},
+            "method": "GET",
+            "params": {},
+            "url": "/data/core/ups/segment/definitions"
+          },
+          "result_preview": {
+            "dry_run": true,
+            "error": "Adobe credentials unavailable; API call not executed.",
+            "ok": false,
+            "result_preview": null,
+            "status_code": null,
+            "validation": {
+              "errors": [],
+              "ok": true,
+              "repaired": false,
+              "warnings": []
+            }
+          },
+          "tool": "call_api",
+          "tool_execution_attempted": true,
+          "tool_execution_ok": false,
+          "tool_invoked": true,
+          "tool_name": "call_api",
+          "tool_validation_ok": true,
+          "turn": 1,
+          "validation": {
+            "errors": [],
+            "ok": true,
+            "repaired": false,
+            "warnings": []
+          },
+          "validation_ok": true
         }
       ],
       "turn": 1
@@ -374,9 +397,9 @@
         "items": [
           {
             "arguments": {
-              "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > CURRENT_TIMESTAMP - INTERVAL '1' DAY AND LIFECYCLESTATUS = 'PROCESSING';"
+              "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > CURRENT_TIMESTAMP - INTERVAL '1 DAY';"
             },
-            "id": "chatcmpl-tool-be6c8ca0fe68f181",
+            "id": "chatcmpl-tool-a6af4b92b05a4acf",
             "name": "execute_sql",
             "tool": "execute_sql"
           }
@@ -388,18 +411,18 @@
       "tool_results": [
         {
           "arguments": {
-            "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > CURRENT_TIMESTAMP - INTERVAL '1' DAY AND LIFECYCLESTATUS = 'PROCESSING';"
+            "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > CURRENT_TIMESTAMP - INTERVAL '1 DAY';"
           },
           "dry_run_only": false,
-          "error": "Unknown column: CURRENT_TIMESTAMP.; Unknown column: DAY.; Unknown column: INTERVAL.",
+          "error": "Unknown column: CURRENT_TIMESTAMP.; Unknown column: INTERVAL.",
           "evidence_available": false,
           "executed": false,
           "guided_features_used": false,
           "original_arguments": {
-            "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > CURRENT_TIMESTAMP - INTERVAL '1' DAY AND LIFECYCLESTATUS = 'PROCESSING';"
+            "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > CURRENT_TIMESTAMP - INTERVAL '1 DAY';"
           },
           "result_preview": {
-            "error": "Unknown column: CURRENT_TIMESTAMP.; Unknown column: DAY.; Unknown column: INTERVAL.",
+            "error": "Unknown column: CURRENT_TIMESTAMP.; Unknown column: INTERVAL.",
             "ok": false,
             "row_count": 0,
             "rows_preview": {
@@ -410,7 +433,6 @@
             "validation": {
               "errors": [
                 "Unknown column: CURRENT_TIMESTAMP.",
-                "Unknown column: DAY.",
                 "Unknown column: INTERVAL."
               ],
               "ok": false,
@@ -428,7 +450,6 @@
           "validation": {
             "errors": [
               "Unknown column: CURRENT_TIMESTAMP.",
-              "Unknown column: DAY.",
               "Unknown column: INTERVAL."
             ],
             "ok": false,
@@ -445,11 +466,12 @@
         "items": [
           {
             "arguments": {
-              "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > (SELECT MAX(UPDATEDTIME) - INTERVAL '1' DAY FROM dim_segment) AND LIFECYCLESTATUS = 'PROCESSING';"
+              "method": "GET",
+              "url": "/data/core/ups/segment/definitions"
             },
-            "id": "chatcmpl-tool-be2ac91999419e87",
-            "name": "execute_sql",
-            "tool": "execute_sql"
+            "id": "chatcmpl-tool-ad6a3d4c497e4e4f",
+            "name": "call_api",
+            "tool": "call_api"
           }
         ],
         "total_items": 1,
@@ -459,100 +481,28 @@
       "tool_results": [
         {
           "arguments": {
-            "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > (SELECT MAX(UPDATEDTIME) - INTERVAL '1' DAY FROM dim_segment) AND LIFECYCLESTATUS = 'PROCESSING';"
+            "headers": {},
+            "method": "GET",
+            "params": {},
+            "url": "/data/core/ups/segment/definitions"
           },
-          "dry_run_only": false,
-          "error": "Unknown column: DAY.; Unknown column: INTERVAL.; Unknown column: dim_segment.",
+          "dry_run_only": true,
+          "error": "Adobe credentials unavailable; API call not executed.",
           "evidence_available": false,
-          "executed": false,
-          "guided_features_used": false,
-          "original_arguments": {
-            "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > (SELECT MAX(UPDATEDTIME) - INTERVAL '1' DAY FROM dim_segment) AND LIFECYCLESTATUS = 'PROCESSING';"
-          },
-          "result_preview": {
-            "error": "Unknown column: DAY.; Unknown column: INTERVAL.; Unknown column: dim_segment.",
-            "ok": false,
-            "row_count": 0,
-            "rows_preview": {
-              "items": [],
-              "total_items": 0,
-              "truncated_items": false
-            },
-            "validation": {
-              "errors": [
-                "Unknown column: DAY.",
-                "Unknown column: INTERVAL.",
-                "Unknown column: dim_segment."
-              ],
-              "ok": false,
-              "repaired": false,
-              "warnings": []
-            }
-          },
-          "tool": "execute_sql",
-          "tool_execution_attempted": false,
-          "tool_execution_ok": false,
-          "tool_invoked": true,
-          "tool_name": "execute_sql",
-          "tool_validation_ok": false,
-          "turn": 3,
-          "validation": {
-            "errors": [
-              "Unknown column: DAY.",
-              "Unknown column: INTERVAL.",
-              "Unknown column: dim_segment."
-            ],
-            "ok": false,
-            "repaired": false,
-            "warnings": []
-          },
-          "validation_ok": false
-        }
-      ],
-      "turn": 3
-    },
-    {
-      "assistant_tool_calls": {
-        "items": [
-          {
-            "arguments": {
-              "sql": "SELECT COUNT(*) FROM dim_segment WHERE LIFECYCLESTATUS = 'PROCESSING';"
-            },
-            "id": "chatcmpl-tool-8441a2a582b62d7b",
-            "name": "execute_sql",
-            "tool": "execute_sql"
-          }
-        ],
-        "total_items": 1,
-        "truncated_items": false
-      },
-      "kind": "llm_turn",
-      "tool_results": [
-        {
-          "arguments": {
-            "sql": "SELECT COUNT(*) FROM dim_segment WHERE LIFECYCLESTATUS = 'PROCESSING';"
-          },
-          "dry_run_only": false,
-          "error": "",
-          "evidence_available": true,
           "executed": true,
           "guided_features_used": false,
           "original_arguments": {
-            "sql": "SELECT COUNT(*) FROM dim_segment WHERE LIFECYCLESTATUS = 'PROCESSING';"
+            "headers": {},
+            "method": "GET",
+            "params": {},
+            "url": "/data/core/ups/segment/definitions"
           },
           "result_preview": {
-            "error": null,
-            "ok": true,
-            "row_count": 1,
-            "rows_preview": {
-              "items": [
-                {
-                  "count_star()": 0
-                }
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
+            "dry_run": true,
+            "error": "Adobe credentials unavailable; API call not executed.",
+            "ok": false,
+            "result_preview": null,
+            "status_code": null,
             "validation": {
               "errors": [],
               "ok": true,
@@ -560,13 +510,13 @@
               "warnings": []
             }
           },
-          "tool": "execute_sql",
+          "tool": "call_api",
           "tool_execution_attempted": true,
-          "tool_execution_ok": true,
+          "tool_execution_ok": false,
           "tool_invoked": true,
-          "tool_name": "execute_sql",
+          "tool_name": "call_api",
           "tool_validation_ok": true,
-          "turn": 4,
+          "turn": 3,
           "validation": {
             "errors": [],
             "ok": true,
@@ -576,10 +526,10 @@
           "validation_ok": true
         }
       ],
-      "turn": 4
+      "turn": 3
     }
   ],
-  "llm_turn_count": 5,
+  "llm_turn_count": 4,
   "llm_turns": [
     {
       "content_preview": "",
@@ -587,18 +537,18 @@
       "final_answer_present": false,
       "finish_reason": "tool_calls",
       "json_tool_call_count": 0,
-      "native_tool_call_count": 1,
+      "native_tool_call_count": 2,
       "response_ok": true,
       "tool_choice": "auto",
       "turn": 1,
       "usage": {
-        "completion_tokens": 44,
+        "completion_tokens": 80,
         "completion_tokens_details": null,
         "prompt_tokens": 2101,
         "prompt_tokens_details": null,
-        "total_tokens": 2145
+        "total_tokens": 2181
       },
-      "usage_total_tokens": 2145
+      "usage_total_tokens": 2181
     },
     {
       "content_preview": "",
@@ -611,16 +561,16 @@
       "tool_choice": "auto",
       "turn": 2,
       "usage": {
-        "completion_tokens": 49,
+        "completion_tokens": 37,
         "completion_tokens_details": null,
-        "prompt_tokens": 2344,
+        "prompt_tokens": 2407,
         "prompt_tokens_details": null,
-        "total_tokens": 2393
+        "total_tokens": 2444
       },
-      "usage_total_tokens": 2393
+      "usage_total_tokens": 2444
     },
     {
-      "content_preview": "",
+      "content_preview": "It seems there's an issue with the SQL syntax used for time intervals in the local database. Let's try a different approach without specifying a time interval and instead rely on the API to get the current status of segment jobs.\n\n",
       "error": "",
       "final_answer_present": false,
       "finish_reason": "tool_calls",
@@ -630,35 +580,16 @@
       "tool_choice": "auto",
       "turn": 3,
       "usage": {
-        "completion_tokens": 58,
+        "completion_tokens": 88,
         "completion_tokens_details": null,
-        "prompt_tokens": 2550,
+        "prompt_tokens": 2585,
         "prompt_tokens_details": null,
-        "total_tokens": 2608
+        "total_tokens": 2673
       },
-      "usage_total_tokens": 2608
+      "usage_total_tokens": 2673
     },
     {
-      "content_preview": "",
-      "error": "",
-      "final_answer_present": false,
-      "finish_reason": "tool_calls",
-      "json_tool_call_count": 0,
-      "native_tool_call_count": 1,
-      "response_ok": true,
-      "tool_choice": "auto",
-      "turn": 4,
-      "usage": {
-        "completion_tokens": 37,
-        "completion_tokens_details": null,
-        "prompt_tokens": 2765,
-        "prompt_tokens_details": null,
-        "total_tokens": 2802
-      },
-      "usage_total_tokens": 2802
-    },
-    {
-      "content_preview": "There are currently 0 segment jobs processing.",
+      "content_preview": "Based on the available evidence, the exact number of currently processing segment jobs could not be determined due to issues with executing the SQL query and the inability to execute the API call due to missing Adobe credentials. Therefore, I cannot provide a specific count of segment jobs that are currently processing.",
       "error": "",
       "final_answer_present": true,
       "finish_reason": "stop",
@@ -666,15 +597,15 @@
       "native_tool_call_count": 0,
       "response_ok": true,
       "tool_choice": "none",
-      "turn": 5,
+      "turn": 4,
       "usage": {
-        "completion_tokens": 10,
+        "completion_tokens": 57,
         "completion_tokens_details": null,
-        "prompt_tokens": 2964,
+        "prompt_tokens": 2836,
         "prompt_tokens_details": null,
-        "total_tokens": 2974
+        "total_tokens": 2893
       },
-      "usage_total_tokens": 2974
+      "usage_total_tokens": 2893
     }
   ],
   "original_query": "How many segment jobs are currently processing?",
@@ -696,7 +627,7 @@
   "real_llm_called": true,
   "real_llm_used": true,
   "repaired_endpoint_count": 0,
-  "runtime": 4.7319,
+  "runtime": 6.0216,
   "schema_hint_injected": 0,
   "sdk_path_used": true,
   "skipped_or_failed": false,
@@ -705,7 +636,7 @@
       "index": 0,
       "kind": "sql_call",
       "result": {
-        "error": "Unknown column: DAY.; Unknown column: INTERVAL.; Unknown column: STATUS. Suggestions: STATUS, LIFECYCLESTATUS, STATE, STARTDATE",
+        "error": "Unknown column: INTERVAL.",
         "ok": false,
         "row_count": 0,
         "rows_preview": {
@@ -715,21 +646,17 @@
         },
         "validation": {
           "errors": [
-            "Unknown column: DAY.",
-            "Unknown column: INTERVAL.",
-            "Unknown column: STATUS. Suggestions: STATUS, LIFECYCLESTATUS, STATE, STARTDATE"
+            "Unknown column: INTERVAL."
           ],
           "ok": false,
           "repaired": false,
           "warnings": []
         }
       },
-      "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > NOW() - INTERVAL '1' DAY AND STATUS = 'PROCESSING';",
+      "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > NOW() - INTERVAL '1 DAY';",
       "validation": {
         "errors": [
-          "Unknown column: DAY.",
-          "Unknown column: INTERVAL.",
-          "Unknown column: STATUS. Suggestions: STATUS, LIFECYCLESTATUS, STATE, STARTDATE"
+          "Unknown column: INTERVAL."
         ],
         "ok": false,
         "repaired": false,
@@ -737,10 +664,37 @@
       }
     },
     {
+      "headers": {},
       "index": 1,
+      "kind": "api_call",
+      "method": "GET",
+      "params": {},
+      "result": {
+        "dry_run": true,
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "ok": false,
+        "result_preview": null,
+        "status_code": null,
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "url": "/data/core/ups/segment/definitions",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "index": 2,
       "kind": "sql_call",
       "result": {
-        "error": "Unknown column: CURRENT_TIMESTAMP.; Unknown column: DAY.; Unknown column: INTERVAL.",
+        "error": "Unknown column: CURRENT_TIMESTAMP.; Unknown column: INTERVAL.",
         "ok": false,
         "row_count": 0,
         "rows_preview": {
@@ -751,7 +705,6 @@
         "validation": {
           "errors": [
             "Unknown column: CURRENT_TIMESTAMP.",
-            "Unknown column: DAY.",
             "Unknown column: INTERVAL."
           ],
           "ok": false,
@@ -759,11 +712,10 @@
           "warnings": []
         }
       },
-      "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > CURRENT_TIMESTAMP - INTERVAL '1' DAY AND LIFECYCLESTATUS = 'PROCESSING';",
+      "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > CURRENT_TIMESTAMP - INTERVAL '1 DAY';",
       "validation": {
         "errors": [
           "Unknown column: CURRENT_TIMESTAMP.",
-          "Unknown column: DAY.",
           "Unknown column: INTERVAL."
         ],
         "ok": false,
@@ -772,56 +724,17 @@
       }
     },
     {
-      "index": 2,
-      "kind": "sql_call",
-      "result": {
-        "error": "Unknown column: DAY.; Unknown column: INTERVAL.; Unknown column: dim_segment.",
-        "ok": false,
-        "row_count": 0,
-        "rows_preview": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "validation": {
-          "errors": [
-            "Unknown column: DAY.",
-            "Unknown column: INTERVAL.",
-            "Unknown column: dim_segment."
-          ],
-          "ok": false,
-          "repaired": false,
-          "warnings": []
-        }
-      },
-      "sql": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > (SELECT MAX(UPDATEDTIME) - INTERVAL '1' DAY FROM dim_segment) AND LIFECYCLESTATUS = 'PROCESSING';",
-      "validation": {
-        "errors": [
-          "Unknown column: DAY.",
-          "Unknown column: INTERVAL.",
-          "Unknown column: dim_segment."
-        ],
-        "ok": false,
-        "repaired": false,
-        "warnings": []
-      }
-    },
-    {
+      "headers": {},
       "index": 3,
-      "kind": "sql_call",
+      "kind": "api_call",
+      "method": "GET",
+      "params": {},
       "result": {
-        "error": null,
-        "ok": true,
-        "row_count": 1,
-        "rows_preview": {
-          "items": [
-            {
-              "count_star()": 0
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
+        "dry_run": true,
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "ok": false,
+        "result_preview": null,
+        "status_code": null,
         "validation": {
           "errors": [],
           "ok": true,
@@ -829,7 +742,7 @@
           "warnings": []
         }
       },
-      "sql": "SELECT COUNT(*) FROM dim_segment WHERE LIFECYCLESTATUS = 'PROCESSING';",
+      "url": "/data/core/ups/segment/definitions",
       "validation": {
         "errors": [],
         "ok": true,
@@ -839,7 +752,7 @@
     }
   ],
   "strategy": "RAW_REAL_LLM_TWO_TOOLS_BASELINE",
-  "successful_evidence_count": 1,
+  "successful_evidence_count": 0,
   "token_source": "measured_usage",
   "tool_call_count": 4,
   "tool_calls_executed": true,
@@ -849,18 +762,6 @@
   "validation_results": [
     {
       "errors": [
-        "Unknown column: DAY.",
-        "Unknown column: INTERVAL.",
-        "Unknown column: STATUS. Suggestions: STATUS, LIFECYCLESTATUS, STATE, STARTDATE"
-      ],
-      "ok": false,
-      "repaired": false,
-      "warnings": []
-    },
-    {
-      "errors": [
-        "Unknown column: CURRENT_TIMESTAMP.",
-        "Unknown column: DAY.",
         "Unknown column: INTERVAL."
       ],
       "ok": false,
@@ -868,10 +769,15 @@
       "warnings": []
     },
     {
+      "errors": [],
+      "ok": true,
+      "repaired": false,
+      "warnings": []
+    },
+    {
       "errors": [
-        "Unknown column: DAY.",
-        "Unknown column: INTERVAL.",
-        "Unknown column: dim_segment."
+        "Unknown column: CURRENT_TIMESTAMP.",
+        "Unknown column: INTERVAL."
       ],
       "ok": false,
       "repaired": false,

@@ -17,10 +17,10 @@ The LLM baseline framework is generic; the configured model/provider is backend 
 
 | Strategy | Rows | Valid | Failed | Strict score | Correctness | Answer | SQL | API | Tokens | Token source | Runtime | Tools | Avg delta |
 | --- | ---: | ---: | ---: | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `RAW_REAL_LLM_TWO_TOOLS_BASELINE` | 35 | 35 | 0 | 0.1719 | 0.2427 | 0.2757 | 0.0000 | 0.3301 | 5887.6000 | {'measured_usage': 35} | 3.8115 | 1.4857 | -0.4834 |
-| `GUIDED_REAL_LLM_TWO_TOOLS_BASELINE` | 35 | 35 | 0 | 0.2257 | 0.3119 | 0.2648 | 0.1200 | 0.4287 | 7883.1714 | {'measured_usage': 35} | 3.6192 | 1.4571 | -0.4296 |
-| `LLM_CONTROLLER_OPTIMIZED_AGENT` | 35 | 35 | 0 | 0.6333 | 0.6639 | 0.2608 | 0.9333 | 0.9791 | 700.9429 | {'measured_usage': 35} | 1.9597 | 1.4571 | -0.0219 |
-| `REAL_LLM_TWO_TOOLS_BASELINE` | 35 | 35 | 0 | 0.1719 | 0.2427 | 0.2757 | 0.0000 | 0.3301 | 5887.6000 | {'measured_usage': 35} | 3.8115 | 1.4857 | -0.4834 |
+| `RAW_REAL_LLM_TWO_TOOLS_BASELINE` | 35 | 35 | 0 | 0.1598 | 0.2307 | 0.2337 | 0.0000 | 0.3397 | 5817.6000 | {'measured_usage': 35} | 3.8508 | 1.4571 | -0.4955 |
+| `GUIDED_REAL_LLM_TWO_TOOLS_BASELINE` | 35 | 35 | 0 | 0.2245 | 0.3111 | 0.2631 | 0.1200 | 0.4287 | 7879.3429 | {'measured_usage': 35} | 3.8341 | 1.4571 | -0.4307 |
+| `LLM_CONTROLLER_OPTIMIZED_AGENT` | 35 | 35 | 0 | 0.6331 | 0.6640 | 0.2609 | 0.9333 | 0.9791 | 700.3143 | {'measured_usage': 35} | 2.0745 | 1.4571 | -0.0222 |
+| `REAL_LLM_TWO_TOOLS_BASELINE` | 35 | 35 | 0 | 0.1598 | 0.2307 | 0.2337 | 0.0000 | 0.3397 | 5817.6000 | {'measured_usage': 35} | 3.8508 | 1.4571 | -0.4955 |
 
 ## Recommendation
 

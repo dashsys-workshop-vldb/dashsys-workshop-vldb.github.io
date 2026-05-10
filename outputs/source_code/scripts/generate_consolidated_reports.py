@@ -111,6 +111,7 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "llm_baseline": _load_json(outputs / "llm_baseline_eval_report.json"),
         "llm_strict": _load_json(outputs / "llm_strict_baseline_eval.json"),
         "llm_hidden": _load_json(outputs / "llm_hidden_style_diagnostic.json"),
+        "llm_semantic_router": _load_json(outputs / "reports" / "llm_semantic_router_shadow_eval.json"),
         "generated_prompt_suite": _load_json(outputs / "reports" / "generated_prompt_suite_summary.json"),
         "diagnostic_prompt_suite_run": _load_json(outputs / "reports" / "diagnostic_prompt_suite_run.json"),
         "sdk_usage_audit": _load_json(outputs / "reports" / "sdk_usage_audit.json"),
@@ -159,6 +160,7 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
             "Evidence extraction, answer synthesis, verification, and packaging",
         ],
         "final_recommendation": sources["winner_readiness"].get("final_recommendation", "ready_to_submit_with_official_token_reduction"),
+        "llm_semantic_routing_helper": _semantic_router_status(sources),
         "source_reports": [
             "outputs/eval_results_strict.json",
             "outputs/winner_readiness_report.json",
@@ -191,6 +193,7 @@ def build_llm_baseline_summary(config: Config, sources: dict[str, Any]) -> dict[
         "comparison_against_deterministic": strict.get("comparison_against_deterministic") or baseline.get("comparison_against_deterministic"),
         "recommendation": baseline.get("recommendation") or strict.get("summary", {}).get("recommendation") or "keep_shadow_only",
         "reason": "Deterministic SQL_FIRST_API_VERIFY remains higher under strict scoring.",
+        "llm_semantic_routing_helper": _semantic_router_status(sources),
         "source_reports": [
             "outputs/llm_sdk_backend_check.json",
             "outputs/llm_baseline_eval_report.json",
@@ -222,7 +225,9 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
             "The 0.70 and 0.75 targets were not reached safely.",
             "High-potential answer rewrites remain constrained by dry-run API payload unavailability.",
             "Endpoint/schema and AST changes are report-only or shadow-only unless strict gates improve.",
+            "The LLM semantic routing helper is default-off and remains shadow-only unless a later strict/safety gate promotes it.",
         ],
+        "llm_semantic_routing_helper": _semantic_router_status(sources),
         "source_reports": [
             "outputs/autonomous_score_push_report.json",
             "outputs/autonomous_packaged_trial.json",
@@ -303,6 +308,10 @@ def build_report_index(
             .get("summary", {})
             .get("runtime_llm_direct_http_hits", "unavailable"),
         },
+        "llm_semantic_routing_helper": {
+            "path": "outputs/reports/llm_semantic_router_shadow_eval.md",
+            **_semantic_router_status({"llm_semantic_router": _load_json(config.outputs_dir / "reports" / "llm_semantic_router_shadow_eval.json")}),
+        },
         "workshop_requirement_alignment": {
             "path": "outputs/reports/workshop_requirement_audit.md",
             "overall_status": _load_json(config.outputs_dir / "reports" / "workshop_requirement_audit.json")
@@ -358,6 +367,8 @@ def render_system_summary(payload: dict[str, Any]) -> str:
             f"- Repair execution enabled: `{payload['repair_execution_enabled']}`",
             f"- Compact context enabled: `{payload['compact_context_enabled']}`",
             f"- Final recommendation: `{payload['final_recommendation']}`",
+            f"- LLM semantic routing helper: `{payload['llm_semantic_routing_helper']['recommendation']}` "
+            f"({payload['llm_semantic_routing_helper']['status']})",
             "",
             "## Workflow",
             "",
@@ -386,6 +397,8 @@ def render_llm_summary(payload: dict[str, Any]) -> str:
             f"- Best LLM baseline score: `{payload.get('best_llm_baseline_score')}`",
             f"- SQL_FIRST_API_VERIFY score: `{payload.get('sql_first_api_verify_score')}`",
             f"- Recommendation: `{payload.get('recommendation')}`",
+            f"- LLM semantic routing helper: `{payload['llm_semantic_routing_helper']['recommendation']}` "
+            f"({payload['llm_semantic_routing_helper']['status']})",
             f"- Reason: {payload.get('reason')}",
             "",
             payload["framework_note"],
@@ -408,6 +421,8 @@ def render_accuracy_summary(payload: dict[str, Any]) -> str:
             f"- Supportable rewrite status: `{payload.get('supportable_rewrite_status')}`",
             f"- Endpoint tie-break status: `{payload.get('endpoint_tiebreak_status')}`",
             f"- AST canary status: `{payload.get('ast_canary_status')}`",
+            f"- LLM semantic routing helper: `{payload['llm_semantic_routing_helper']['recommendation']}` "
+            f"({payload['llm_semantic_routing_helper']['status']})",
             "",
             "## Why Changes Remain Shadow-Only",
             "",
@@ -459,6 +474,14 @@ def render_report_index(payload: dict[str, Any]) -> str:
     audit = payload.get("sdk_usage_audit", {})
     lines.append(f"- `{audit.get('path')}`")
     lines.append(f"- Runtime LLM direct HTTP hits: `{audit.get('runtime_llm_direct_http_hits')}`")
+    lines.extend(["", "## LLM Semantic Routing Helper", ""])
+    semantic = payload.get("llm_semantic_routing_helper", {})
+    lines.append(f"- `{semantic.get('path')}`")
+    lines.append("- Feature flag default: `off`")
+    lines.append("- Shadow-only by default: `true`")
+    lines.append("- Uses SDK-based `LLMClient`; no direct HTTP; routing hints only; no final answers.")
+    lines.append(f"- Status: `{semantic.get('status')}`")
+    lines.append(f"- Recommendation: `{semantic.get('recommendation')}`")
     lines.extend(["", "## Workshop Requirement Alignment", ""])
     workshop = payload.get("workshop_requirement_alignment", {})
     lines.append(f"- [{Path(str(workshop.get('path'))).name}]({Path(str(workshop.get('path'))).name})")
@@ -535,6 +558,26 @@ def _status_from_report(report: dict[str, Any], default: str) -> str:
         or ("shadow_only" if report.get("shadow_only") else None)
         or default
     )
+
+
+def _semantic_router_status(sources: dict[str, Any]) -> dict[str, Any]:
+    report = sources.get("llm_semantic_router") or {}
+    status = report.get("status") or "not_run"
+    recommendation = report.get("recommendation") or "keep_disabled"
+    return {
+        "status": status,
+        "feature_flag_default": "off",
+        "shadow_only_default": True,
+        "sdk_based": True,
+        "direct_http_allowed": False,
+        "final_answer_generation": False,
+        "routing_hints_only": True,
+        "helper_called_prompts": report.get("helper_called_prompts", 0),
+        "valid_helper_outputs": report.get("valid_helper_outputs", 0),
+        "rejected_helper_outputs": report.get("rejected_helper_outputs", 0),
+        "recommendation": recommendation,
+        "source_report": "outputs/reports/llm_semantic_router_shadow_eval.md",
+    }
 
 
 def _first_number(*values: Any) -> float | str:

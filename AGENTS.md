@@ -91,11 +91,19 @@ Do not use raw `requests`, `curl`, direct `/chat/completions`, hand-built provid
 
 Run `python3 scripts/generate_sdk_usage_audit.py` after LLM-related changes. The report at `outputs/reports/sdk_usage_audit.md/json` must show `runtime_llm_direct_http_hits = 0`.
 
+## LLM Semantic Routing Helper
+
+`dashagent/semantic_routing_helper.py` is optional routing-hint infrastructure for low-confidence or ambiguous prompts. It is default-off (`ENABLE_LLM_SEMANTIC_ROUTER=false`) and shadow-only by default (`LLM_SEMANTIC_ROUTER_SHADOW_ONLY=true`).
+
+The helper must use `get_llm_client()` only, return structured routing hints only, validate all hints against known routes/domains/intents/tables/API families, and never generate final answers, fabricate SQL/API evidence, execute tools, or bypass validators. Non-shadow behavior is isolated-trial only and must not be used by packaging scripts unless a later explicit strict/safety promotion approves it.
+
+Run `python3 scripts/run_llm_semantic_router_shadow_eval.py --limit 50` for the diagnostic report at `outputs/reports/llm_semantic_router_shadow_eval.md/json`.
+
 ## Diagnostic Prompt Suite
 
 `scripts/generate_diagnostic_prompt_suite.py` creates `data/generated_prompt_suite.json/md` from `data/data.json` for broad coverage testing. Stable source IDs are assigned by order as `example_001`, `example_002`, and so on when source rows lack IDs.
 
-`scripts/run_diagnostic_prompt_suite.py` runs generated prompts through `SQL_FIRST_API_VERIFY` as diagnostic coverage only. The default runner limit is 50 prompts; use `--full` to run all prompts and `--clean` to remove only `outputs/diagnostic_prompt_suite/`.
+`scripts/run_diagnostic_prompt_suite.py` runs generated prompts through `SQL_FIRST_API_VERIFY` as diagnostic coverage only. The default runner limit is 50 prompts; use `--full` to run all prompts, `--clean` to remove only `outputs/diagnostic_prompt_suite/`, and `--with-llm-semantic-router-shadow` to include routing-helper shadow stats.
 
 Generated prompts are diagnostic-only, `should_be_scored=false`, not official benchmark data, not runtime hints, and not packaged into final submission.
 
