@@ -1,5 +1,5 @@
 {
-  "answer_time": 0.0006001249421387911,
+  "answer_time": 0.0005357910413295031,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-06T14:47:40.033881+00:00"
+      "timestamp": "2026-05-10T01:15:06.973084+00:00"
     },
     {
       "checkpoint_id": "checkpoint_00_prompt_router",
@@ -45,7 +45,7 @@
       },
       "stage": "prompt routing",
       "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-06T14:47:40.033936+00:00"
+      "timestamp": "2026-05-10T01:15:06.973129+00:00"
     },
     {
       "checkpoint_id": "checkpoint_simple_prompt_gate",
@@ -64,7 +64,7 @@
       },
       "stage": "input routing",
       "technique": "simple prompt gate",
-      "timestamp": "2026-05-06T14:47:40.033961+00:00"
+      "timestamp": "2026-05-10T01:15:06.973151+00:00"
     },
     {
       "checkpoint_id": "checkpoint_02_query_normalization",
@@ -88,7 +88,7 @@
       },
       "stage": "normalization",
       "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-06T14:47:40.034019+00:00"
+      "timestamp": "2026-05-10T01:15:06.973206+00:00"
     },
     {
       "checkpoint_id": "checkpoint_03_query_tokens",
@@ -102,9 +102,7 @@
       "output": {
         "domains": {
           "items": [
-            "batch",
-            "schema_dataset",
-            "segment_audience"
+            "batch"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -119,7 +117,7 @@
       },
       "stage": "tokenization",
       "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-06T14:47:40.034077+00:00"
+      "timestamp": "2026-05-10T01:15:06.973261+00:00"
     },
     {
       "checkpoint_id": "checkpoint_04_relevance_scoring",
@@ -131,9 +129,7 @@
         "tokens": {
           "domains": {
             "items": [
-              "batch",
-              "schema_dataset",
-              "segment_audience"
+              "batch"
             ],
             "total_items": 3,
             "truncated_items": false
@@ -157,27 +153,21 @@
         },
         "top_apis": {
           "items": [
-            "catalog_batches",
-            "catalog_datasets",
-            "export_batch_failed"
+            "catalog_batches"
           ],
           "total_items": 3,
           "truncated_items": false
         },
         "top_join_hints": {
           "items": [
-            "dim_blueprint.BLUEPRINTID->hkg_br_blueprint_collection.BLUEPRINTID",
-            "dim_collection.COLLECTIONID->hkg_br_blueprint_collection.COLLECTIONID",
-            "dim_blueprint.BLUEPRINTID->hkg_br_blueprint_property.BLUEPRINTID"
+            "dim_blueprint.BLUEPRINTID->hkg_br_blueprint_collection.BLUEPRINTID"
           ],
           "total_items": 3,
           "truncated_items": false
         },
         "top_tables": {
           "items": [
-            "dim_blueprint",
-            "dim_collection",
-            "hkg_br_blueprint_collection"
+            "dim_blueprint"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -185,7 +175,122 @@
       },
       "stage": "context selection",
       "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-06T14:47:40.035109+00:00"
+      "timestamp": "2026-05-10T01:15:06.974321+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_value_entity_retrieval",
+      "correctness_role": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
+      "duration_ms": 0.0,
+      "effect": "grounds query entities against sampled local DB values before planning",
+      "efficiency_role": "uses a cached bounded value index with per-query scan and wall-time budgets",
+      "input_summary": {
+        "query_values": {
+          "items": [
+            {
+              "kind": "quoted_entity",
+              "text": "hkg_adls_profile_count_history"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "budget_exceeded": false,
+        "match_count": 1,
+        "retrieval_ms": 11.349
+      },
+      "output": {
+        "active": true,
+        "cache_hit": true,
+        "cache_key": "9c6f3a8deea3757e",
+        "cache_key_algorithm": "sha256",
+        "cache_reproducible": true,
+        "match_count": 1,
+        "matches": {
+          "items": [
+            {
+              "confidence": 1.0,
+              "kind": "quoted_entity",
+              "match_type": "exact",
+              "matched_column": "NAME",
+              "matched_table": "dim_collection",
+              "matched_value": "hkg_adls_profile_count_history",
+              "mention": "hkg_adls_profile_count_history",
+              "retrieval_cost": {
+                "budget_exceeded": false,
+                "cache_hit": true,
+                "cache_key": "9c6f3a8deea3757e",
+                "cache_key_algorithm": "sha256",
+                "cache_reproducible": true,
+                "retrieval_ms": 11.349
+              },
+              "truncated_fields": 1
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "query_value_count": 1,
+        "truncated_fields": 8
+      },
+      "stage": "query understanding",
+      "technique": "CHESS-style value/entity retrieval",
+      "timestamp": "2026-05-10T01:15:06.976939+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_query_decomposition",
+      "correctness_role": "helps SQL/API planning preserve requested constraints",
+      "duration_ms": 0.0,
+      "effect": "breaks complex prompts into entities, filters, joins, and answer-shape constraints",
+      "efficiency_role": "skips simple queries and uses no LLM/tool calls",
+      "input_summary": {
+        "query": "List all datasets that use the schema 'hkg_adls_profile_count_history'.",
+        "tokens": {
+          "domains": {
+            "items": [
+              "batch"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "quoted_entities": {
+            "items": [
+              "hkg_adls_profile_count_history"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      },
+      "output": {
+        "active": true,
+        "expected_answer_shape": "scalar_count",
+        "required_aggregations": {
+          "items": [
+            "count"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "required_entities": {
+          "items": [
+            "hkg_adls_profile_count_history"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sub_questions": {
+          "items": [
+            "Ground named entities and identifiers."
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "stage": "query understanding",
+      "technique": "DIN-SQL-style deterministic query decomposition",
+      "timestamp": "2026-05-10T01:15:06.976964+00:00"
     },
     {
       "checkpoint_id": "checkpoint_05_query_analysis",
@@ -215,7 +320,7 @@
       },
       "stage": "routing",
       "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-06T14:47:40.035114+00:00"
+      "timestamp": "2026-05-10T01:15:06.976970+00:00"
     },
     {
       "checkpoint_id": "checkpoint_06_lookup_path",
@@ -230,9 +335,7 @@
       "output": {
         "api_families": {
           "items": [
-            "datasets_by_schema",
-            "schema_registry_by_id",
-            "schema_by_name"
+            "datasets_by_schema"
           ],
           "total_items": 4,
           "truncated_items": true
@@ -241,26 +344,21 @@
         "family": "schema_dataset",
         "join_path": {
           "items": [
-            "dim_blueprint.blueprintid = hkg_br_blueprint_collection.blueprintid",
-            "hkg_br_blueprint_collection.collectionid = dim_collection.collectionid"
+            "dim_blueprint.blueprintid = hkg_br_blueprint_collection.blueprintid"
           ],
           "total_items": 2,
           "truncated_items": false
         },
         "required_ids": {
           "items": [
-            "schema_id",
-            "blueprint_id",
-            "collection_id"
+            "schema_id"
           ],
           "total_items": 3,
           "truncated_items": false
         },
         "tables": {
           "items": [
-            "dim_blueprint",
-            "hkg_br_blueprint_collection",
-            "dim_collection"
+            "dim_blueprint"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -268,7 +366,7 @@
       },
       "stage": "path prediction",
       "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-06T14:47:40.035118+00:00"
+      "timestamp": "2026-05-10T01:15:06.976974+00:00"
     },
     {
       "checkpoint_id": "checkpoint_07_context_card",
@@ -294,26 +392,21 @@
         "selected_columns": {
           "dim_blueprint": {
             "items": [
-              "BLUEPRINTID",
-              "NAME",
-              "CLASS"
+              "BLUEPRINTID"
             ],
             "total_items": 5,
             "truncated_items": true
           },
           "dim_collection": {
             "items": [
-              "COLLECTIONID",
-              "NAME",
-              "ROWCOUNT"
+              "COLLECTIONID"
             ],
             "total_items": 4,
             "truncated_items": true
           },
           "hkg_br_blueprint_collection": {
             "items": [
-              "BLUEPRINTID",
-              "COLLECTIONID"
+              "BLUEPRINTID"
             ],
             "total_items": 2,
             "truncated_items": false
@@ -321,9 +414,7 @@
         },
         "selected_tables": {
           "items": [
-            "dim_blueprint",
-            "hkg_br_blueprint_collection",
-            "dim_collection"
+            "dim_blueprint"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -331,7 +422,7 @@
       },
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-06T14:47:40.037545+00:00"
+      "timestamp": "2026-05-10T01:15:06.981492+00:00"
     },
     {
       "checkpoint_id": "checkpoint_08_candidate_plans",
@@ -359,7 +450,7 @@
       },
       "stage": "planning",
       "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-06T14:47:40.038059+00:00"
+      "timestamp": "2026-05-10T01:15:06.984362+00:00"
     },
     {
       "checkpoint_id": "checkpoint_09_plan_optimization",
@@ -387,7 +478,7 @@
       },
       "stage": "optimization",
       "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-06T14:47:40.038070+00:00"
+      "timestamp": "2026-05-10T01:15:06.984374+00:00"
     },
     {
       "checkpoint_id": "checkpoint_10_evidence_policy",
@@ -413,7 +504,7 @@
       },
       "stage": "evidence policy",
       "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-06T14:47:40.038073+00:00"
+      "timestamp": "2026-05-10T01:15:06.984378+00:00"
     },
     {
       "checkpoint_id": "checkpoint_11_call_budget",
@@ -428,18 +519,7 @@
               "action": "sql",
               "family": "blueprint_collection_list",
               "purpose": "Fast-path SQL grounding.",
-              "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_collection\" AS BC JOIN \"dim_collection\" AS C ON BC.\"COLLECTIONID\" = C.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS B ON BC.\"BLUEPRINTID\" = B.\"BLUEPRINTID\" WHERE B.\"NAME\" = 'hkg_adls_profile_count_history'"
-            },
-            {
-              "action": "api",
-              "family": "datasets_by_schema",
-              "method": "GET",
-              "params": {
-                "filter": "schemaName==\"hkg_adls_profile_count_history\"",
-                "limit": "3"
-              },
-              "purpose": "API parameter template: datasets_by_schema.",
-              "url": "/data/foundation/catalog/dataSets"
+              "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_co [truncated]"
             }
           ],
           "total_items": 2,
@@ -456,7 +536,34 @@
       },
       "stage": "efficiency control",
       "technique": "tool-call budgeting",
-      "timestamp": "2026-05-06T14:47:40.038093+00:00"
+      "timestamp": "2026-05-10T01:15:06.984399+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_gated_sql_candidate_selection",
+      "correctness_role": "selects only validator- and AST-passing SQL candidates",
+      "duration_ms": 0.0,
+      "effect": "validates hard-case SQL candidates before execution without executing losing candidates",
+      "efficiency_role": "executes only one selected candidate in packaged SQL_FIRST_API_VERIFY mode",
+      "input_summary": {
+        "trigger_reasons": {
+          "items": [
+            "complex_query_decomposition"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "candidate_count": 1,
+        "cost_estimate": 1
+      },
+      "output": {
+        "preview": "{\"active\": true, \"hard_case_triggered\": true, \"trigger_reasons\": {\"items\": [\"complex_query_decomposition\", \"value_match_not_used_by_sql\"], \"total_items\": 2, \"truncated_items\": false}, \"candidate_count\": 1, \"candidate_sql_sou [truncated]",
+        "truncated": true
+      },
+      "stage": "planning",
+      "technique": "hard-case gated SQL candidate validation",
+      "timestamp": "2026-05-10T01:15:06.987072+00:00"
     },
     {
       "checkpoint_id": "checkpoint_12_validation",
@@ -471,18 +578,7 @@
               "action": "sql",
               "family": "blueprint_collection_list",
               "purpose": "Fast-path SQL grounding.",
-              "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_collection\" AS BC JOIN \"dim_collection\" AS C ON BC.\"COLLECTIONID\" = C.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS B ON BC.\"BLUEPRINTID\" = B.\"BLUEPRINTID\" WHERE B.\"NAME\" = 'hkg_adls_profile_count_history'"
-            },
-            {
-              "action": "api",
-              "family": "datasets_by_schema",
-              "method": "GET",
-              "params": {
-                "filter": "schemaName==\"hkg_adls_profile_count_history\"",
-                "limit": "3"
-              },
-              "purpose": "API parameter template: datasets_by_schema.",
-              "url": "/data/foundation/catalog/dataSets"
+              "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_co [truncated]"
             }
           ],
           "total_items": 2,
@@ -521,7 +617,24 @@
       },
       "stage": "validation",
       "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-06T14:47:40.043062+00:00"
+      "timestamp": "2026-05-10T01:15:06.992260+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_sql_ast_validation",
+      "correctness_role": "detects unsafe SQL and schema mismatches with parser-backed structure",
+      "duration_ms": 0.0,
+      "effect": "adds AST-level table and column extraction after existing SQL validation",
+      "efficiency_role": "provides precise feedback without extra SQL tool calls",
+      "input_summary": {
+        "sql_call_count": 1
+      },
+      "output": {
+        "preview": "{\"summaries\": {\"items\": [{\"enabled\": true, \"parsed_ok\": true, \"selected_tables\": {\"items\": [\"hkg_br_blueprint_collection\", \"dim_collection\", \"dim_blueprint\"], \"total_items\": 3, \"truncated_items\": false}, \"selected_columns\": [truncated]",
+        "truncated": true
+      },
+      "stage": "validation",
+      "technique": "SQLGlot AST-based SQL validation and extraction",
+      "timestamp": "2026-05-10T01:15:06.992274+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -586,7 +699,7 @@
       },
       "stage": "execution",
       "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-06T14:47:40.043077+00:00"
+      "timestamp": "2026-05-10T01:15:06.992282+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -602,7 +715,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-06T14:47:40.043082+00:00"
+      "timestamp": "2026-05-10T01:15:06.992286+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -642,9 +755,7 @@
           },
           "slots_present": {
             "items": [
-              "entity_names",
-              "counts",
-              "dry_run"
+              "entity_names"
             ],
             "total_items": 3,
             "truncated_items": false
@@ -654,7 +765,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-06T14:47:40.043505+00:00"
+      "timestamp": "2026-05-10T01:15:06.992668+00:00"
     },
     {
       "checkpoint_id": "checkpoint_16_answer_verification",
@@ -666,9 +777,7 @@
         "claim_count": 1,
         "slots_present": {
           "items": [
-            "entity_names",
-            "counts",
-            "dry_run"
+            "entity_names"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -687,7 +796,7 @@
       },
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-06T14:47:40.043513+00:00"
+      "timestamp": "2026-05-10T01:15:06.992674+00:00"
     },
     {
       "checkpoint_id": "checkpoint_17_answer_reranking",
@@ -705,7 +814,7 @@
       },
       "stage": "answer selection",
       "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-06T14:47:40.043517+00:00"
+      "timestamp": "2026-05-10T01:15:06.992677+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -723,20 +832,34 @@
       },
       "stage": "final response",
       "technique": "concise grounded final response",
-      "timestamp": "2026-05-06T14:47:40.043567+00:00"
+      "timestamp": "2026-05-10T01:15:06.992726+00:00"
+    },
+    {
+      "active": true,
+      "checkpoint_id": "checkpoint_official_token_reduction",
+      "correctness_impact_expected": false,
+      "estimated_tokens_after": 1192,
+      "estimated_tokens_before": 1288,
+      "expected_savings": 96,
+      "packaged_execution_changed": false,
+      "reduced_fields": [
+        "steps[0].candidate_apis",
+        "steps[0].candidate_tables",
+        "steps[2].metadata_path"
+      ]
     }
   ],
   "domain_type": "DATASET_SCHEMA",
   "errors": [],
-  "estimated_tokens": 1085,
-  "execution_time": 0.002734165987931192,
+  "estimated_tokens": 1192,
+  "execution_time": 0.0028452498372644186,
   "final_answer": "Based on the evidence provided, no datasets use the schema 'hkg_adls_profile_count_history'. The SQL query returned zero results, and live API verification was not executed because Adobe credentials are unavailable.",
   "original_query": "List all datasets that use the schema 'hkg_adls_profile_count_history'.",
-  "planning_time": 0.0005466250004246831,
-  "preprocessing_time": 0.003583500045351684,
+  "planning_time": 0.005578208016231656,
+  "preprocessing_time": 0.008346500108018517,
   "query_id": "list_all_datasets_that_use_the_schema_hkg_adls_p",
   "route_type": "SQL_ONLY",
-  "runtime": 0.017053665942512453,
+  "runtime": 0.01944766682572663,
   "sql_call_count": 1,
   "steps": [
     {
@@ -755,16 +878,6 @@
           "id": "schema_registry_schemas",
           "method": "GET",
           "path": "/data/foundation/schemaregistry/tenant/schemas"
-        },
-        {
-          "id": "schemas_short",
-          "method": "GET",
-          "path": "/schemas"
-        },
-        {
-          "id": "audit_events",
-          "method": "GET",
-          "path": "/data/foundation/audit/events"
         }
       ],
       "candidate_tables": [
@@ -772,10 +885,7 @@
         "dim_blueprint",
         "dim_collection",
         "dim_segment",
-        "hkg_br_base_segment_used_by_dependent_segment",
-        "hkg_br_blueprint_collection",
-        "hkg_br_blueprint_property",
-        "hkg_br_collection_property"
+        "hkg_br_base_segment_used_by_dependent_segment"
       ],
       "confidence": 0.7999999999999999,
       "domain_type": "DATASET_SCHEMA",
@@ -784,6 +894,13 @@
       "route_type": "SQL_ONLY"
     },
     {
+      "decomposition": {
+        "expected_answer_shape": "scalar_count",
+        "sub_questions": [
+          "Ground named entities and identifiers.",
+          "Compute requested aggregation or time-range result."
+        ]
+      },
       "kind": "nlp",
       "relevance": {
         "apis": [
@@ -811,12 +928,37 @@
         "quoted_entities": [
           "hkg_adls_profile_count_history"
         ]
+      },
+      "value_retrieval": {
+        "budget_exceeded": false,
+        "match_count": 1,
+        "matches": [
+          {
+            "confidence": 1.0,
+            "kind": "quoted_entity",
+            "match_type": "exact",
+            "matched_column": "NAME",
+            "matched_table": "dim_collection",
+            "matched_value": "hkg_adls_profile_count_history",
+            "mention": "hkg_adls_profile_count_history",
+            "retrieval_cost": {
+              "budget_exceeded": false,
+              "cache_hit": true,
+              "cache_key": "9c6f3a8deea3757e",
+              "cache_key_algorithm": "sha256",
+              "cache_reproducible": true,
+              "retrieval_ms": 11.349
+            },
+            "used_for": "sql_filter"
+          }
+        ],
+        "retrieval_ms": 11.349
       }
     },
     {
       "estimated_tokens": 896,
       "kind": "metadata",
-      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/list_all_datasets_that_use_the_schema_hkg_adls_p/sql_first_api_verify/metadata.json",
+      "metadata_path": "metadata.json",
       "prompt_tokens": 1553
     },
     {
@@ -921,10 +1063,10 @@
   ],
   "strategy": "SQL_FIRST_API_VERIFY",
   "timings": {
-    "answer_time": 0.0006001249421387911,
-    "execution_time": 0.002734165987931192,
-    "planning_time": 0.0005466250004246831,
-    "preprocessing_time": 0.003583500045351684
+    "answer_time": 0.0005357910413295031,
+    "execution_time": 0.0028452498372644186,
+    "planning_time": 0.005578208016231656,
+    "preprocessing_time": 0.008346500108018517
   },
   "tool_call_count": 2
 }

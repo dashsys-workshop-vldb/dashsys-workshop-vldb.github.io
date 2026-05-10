@@ -1,5 +1,5 @@
 {
-  "answer_time": 0.0005331659922376275,
+  "answer_time": 0.0005500840488821268,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-06T14:47:14.303597+00:00"
+      "timestamp": "2026-05-10T01:14:41.154899+00:00"
     },
     {
       "checkpoint_id": "checkpoint_00_prompt_router",
@@ -45,7 +45,7 @@
       },
       "stage": "prompt routing",
       "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-06T14:47:14.303640+00:00"
+      "timestamp": "2026-05-10T01:14:41.154945+00:00"
     },
     {
       "checkpoint_id": "checkpoint_simple_prompt_gate",
@@ -64,7 +64,7 @@
       },
       "stage": "input routing",
       "technique": "simple prompt gate",
-      "timestamp": "2026-05-06T14:47:14.303660+00:00"
+      "timestamp": "2026-05-10T01:14:41.154966+00:00"
     },
     {
       "checkpoint_id": "checkpoint_02_query_normalization",
@@ -81,7 +81,7 @@
       },
       "stage": "normalization",
       "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-06T14:47:14.303710+00:00"
+      "timestamp": "2026-05-10T01:14:41.155017+00:00"
     },
     {
       "checkpoint_id": "checkpoint_03_query_tokens",
@@ -110,7 +110,7 @@
       },
       "stage": "tokenization",
       "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-06T14:47:14.303762+00:00"
+      "timestamp": "2026-05-10T01:14:41.155072+00:00"
     },
     {
       "checkpoint_id": "checkpoint_04_relevance_scoring",
@@ -146,26 +146,21 @@
         },
         "top_apis": {
           "items": [
-            "flowservice_runs",
-            "audit_events",
-            "export_batch_failed"
+            "flowservice_runs"
           ],
           "total_items": 3,
           "truncated_items": false
         },
         "top_join_hints": {
           "items": [
-            "dim_connector.SOURCEID->hkg_br_source_collection.SOURCEID",
-            "dim_target.TARGETID->hkg_br_segment_target.TARGETID",
-            "dim_target.TARGETID->hkg_br_target_property.TARGETID"
+            "dim_connector.SOURCEID->hkg_br_source_collection.SOURCEID"
           ],
           "total_items": 3,
           "truncated_items": false
         },
         "top_tables": {
           "items": [
-            "dim_connector",
-            "dim_target"
+            "dim_connector"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -173,7 +168,45 @@
       },
       "stage": "context selection",
       "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-06T14:47:14.304541+00:00"
+      "timestamp": "2026-05-10T01:14:41.155854+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_value_entity_retrieval",
+      "correctness_role": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
+      "duration_ms": 0.0,
+      "effect": "grounds query entities against sampled local DB values before planning",
+      "efficiency_role": "uses a cached bounded value index with per-query scan and wall-time budgets",
+      "input_summary": {
+        "query_values": {
+          "items": [
+            {
+              "kind": "status",
+              "text": "failed"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "budget_exceeded": false,
+        "match_count": 0,
+        "retrieval_ms": 9.312
+      },
+      "output": {
+        "active": true,
+        "cache_hit": true,
+        "cache_key": "213f3d553413a550",
+        "cache_key_algorithm": "sha256",
+        "cache_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/cache/value_index_213f3d553413a550.json",
+        "cache_reproducible": true,
+        "match_count": 0,
+        "query_value_count": 1,
+        "truncated_fields": 8
+      },
+      "stage": "query understanding",
+      "technique": "CHESS-style value/entity retrieval",
+      "timestamp": "2026-05-10T01:14:41.156634+00:00"
     },
     {
       "checkpoint_id": "checkpoint_05_query_analysis",
@@ -202,7 +235,7 @@
       },
       "stage": "routing",
       "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-06T14:47:14.304547+00:00"
+      "timestamp": "2026-05-10T01:14:41.156653+00:00"
     },
     {
       "checkpoint_id": "checkpoint_06_lookup_path",
@@ -217,9 +250,7 @@
       "output": {
         "api_families": {
           "items": [
-            "destination_flows",
-            "recent_destination_flows",
-            "failed_dataflow_flows"
+            "destination_flows"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -228,16 +259,14 @@
         "family": "destination_dataflow",
         "required_ids": {
           "items": [
-            "target_id",
-            "dataflow_id"
+            "target_id"
           ],
           "total_items": 2,
           "truncated_items": false
         },
         "tables": {
           "items": [
-            "dim_target",
-            "dim_connector"
+            "dim_target"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -245,7 +274,7 @@
       },
       "stage": "path prediction",
       "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-06T14:47:14.304551+00:00"
+      "timestamp": "2026-05-10T01:14:41.156658+00:00"
     },
     {
       "checkpoint_id": "checkpoint_07_context_card",
@@ -271,18 +300,14 @@
         "selected_columns": {
           "dim_connector": {
             "items": [
-              "CONNECTIONSPECNAME",
-              "CREATEDTIME",
-              "DATAFLOWID"
+              "CONNECTIONSPECNAME"
             ],
             "total_items": 8,
             "truncated_items": true
           },
           "dim_target": {
             "items": [
-              "CREATEDTIME",
-              "DATAFLOWNAME",
-              "NAME"
+              "CREATEDTIME"
             ],
             "total_items": 7,
             "truncated_items": true
@@ -290,8 +315,7 @@
         },
         "selected_tables": {
           "items": [
-            "dim_target",
-            "dim_connector"
+            "dim_target"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -299,7 +323,7 @@
       },
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-06T14:47:14.306657+00:00"
+      "timestamp": "2026-05-10T01:14:41.161819+00:00"
     },
     {
       "checkpoint_id": "checkpoint_08_candidate_plans",
@@ -327,7 +351,7 @@
       },
       "stage": "planning",
       "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-06T14:47:14.307286+00:00"
+      "timestamp": "2026-05-10T01:14:41.164311+00:00"
     },
     {
       "checkpoint_id": "checkpoint_09_plan_optimization",
@@ -355,7 +379,7 @@
       },
       "stage": "optimization",
       "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-06T14:47:14.307297+00:00"
+      "timestamp": "2026-05-10T01:14:41.164323+00:00"
     },
     {
       "checkpoint_id": "checkpoint_10_evidence_policy",
@@ -381,7 +405,7 @@
       },
       "stage": "evidence policy",
       "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-06T14:47:14.307301+00:00"
+      "timestamp": "2026-05-10T01:14:41.164328+00:00"
     },
     {
       "checkpoint_id": "checkpoint_11_call_budget",
@@ -395,18 +419,7 @@
             {
               "action": "sql",
               "purpose": "Fast-path SQL grounding.",
-              "sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"
-            },
-            {
-              "action": "api",
-              "family": "failed_dataflow_flows",
-              "method": "GET",
-              "params": {
-                "filter": "state eq 'failed'",
-                "limit": "50"
-              },
-              "purpose": "API parameter template: failed_dataflow_flows.",
-              "url": "/data/foundation/flowservice/flows"
+              "sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAS [truncated]"
             }
           ],
           "total_items": 2,
@@ -423,7 +436,7 @@
       },
       "stage": "efficiency control",
       "technique": "tool-call budgeting",
-      "timestamp": "2026-05-06T14:47:14.307320+00:00"
+      "timestamp": "2026-05-10T01:14:41.164349+00:00"
     },
     {
       "checkpoint_id": "checkpoint_12_validation",
@@ -437,18 +450,7 @@
             {
               "action": "sql",
               "purpose": "Fast-path SQL grounding.",
-              "sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"
-            },
-            {
-              "action": "api",
-              "family": "failed_dataflow_flows",
-              "method": "GET",
-              "params": {
-                "filter": "state eq 'failed'",
-                "limit": "50"
-              },
-              "purpose": "API parameter template: failed_dataflow_flows.",
-              "url": "/data/foundation/flowservice/flows"
+              "sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAS [truncated]"
             }
           ],
           "total_items": 2,
@@ -487,7 +489,66 @@
       },
       "stage": "validation",
       "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-06T14:47:14.310257+00:00"
+      "timestamp": "2026-05-10T01:14:41.167889+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_sql_ast_validation",
+      "correctness_role": "detects unsafe SQL and schema mismatches with parser-backed structure",
+      "duration_ms": 0.0,
+      "effect": "adds AST-level table and column extraction after existing SQL validation",
+      "efficiency_role": "provides precise feedback without extra SQL tool calls",
+      "input_summary": {
+        "sql_call_count": 1
+      },
+      "output": {
+        "destructive_sql_detected": false,
+        "parsed_ok": true,
+        "selected_columns": {
+          "items": [
+            "CONNECTIONSPECID"
+          ],
+          "total_items": 5,
+          "truncated_items": true
+        },
+        "selected_tables": {
+          "items": [
+            "dim_target"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "summaries": {
+          "items": [
+            {
+              "destructive_sql_detected": false,
+              "enabled": true,
+              "normalized_sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAS [truncated]",
+              "parsed_ok": true,
+              "selected_columns": {
+                "items": [
+                  "DATAFLOWNAME",
+                  "STATE",
+                  "TARGETID"
+                ],
+                "total_items": 5,
+                "truncated_items": true
+              },
+              "selected_tables": {
+                "items": [
+                  "dim_target"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              }
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "validation",
+      "technique": "SQLGlot AST-based SQL validation and extraction",
+      "timestamp": "2026-05-10T01:14:41.167904+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -552,7 +613,7 @@
       },
       "stage": "execution",
       "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-06T14:47:14.310266+00:00"
+      "timestamp": "2026-05-10T01:14:41.167912+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -568,7 +629,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-06T14:47:14.310270+00:00"
+      "timestamp": "2026-05-10T01:14:41.167916+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -608,8 +669,7 @@
           "dry_run": true,
           "slots_present": {
             "items": [
-              "counts",
-              "dry_run"
+              "counts"
             ],
             "total_items": 2,
             "truncated_items": false
@@ -619,7 +679,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-06T14:47:14.310651+00:00"
+      "timestamp": "2026-05-10T01:14:41.168310+00:00"
     },
     {
       "checkpoint_id": "checkpoint_16_answer_verification",
@@ -631,8 +691,7 @@
         "claim_count": 2,
         "slots_present": {
           "items": [
-            "counts",
-            "dry_run"
+            "counts"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -651,7 +710,7 @@
       },
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-06T14:47:14.310658+00:00"
+      "timestamp": "2026-05-10T01:14:41.168317+00:00"
     },
     {
       "checkpoint_id": "checkpoint_17_answer_reranking",
@@ -669,7 +728,7 @@
       },
       "stage": "answer selection",
       "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-06T14:47:14.310661+00:00"
+      "timestamp": "2026-05-10T01:14:41.168320+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -687,20 +746,32 @@
       },
       "stage": "final response",
       "technique": "concise grounded final response",
-      "timestamp": "2026-05-06T14:47:14.310691+00:00"
+      "timestamp": "2026-05-10T01:14:41.168360+00:00"
+    },
+    {
+      "active": true,
+      "checkpoint_id": "checkpoint_official_token_reduction",
+      "correctness_impact_expected": false,
+      "estimated_tokens_after": 863,
+      "estimated_tokens_before": 892,
+      "expected_savings": 29,
+      "packaged_execution_changed": false,
+      "reduced_fields": [
+        "steps[2].metadata_path"
+      ]
     }
   ],
   "domain_type": "DESTINATION_DATAFLOW",
   "errors": [],
-  "estimated_tokens": 856,
-  "execution_time": 0.0013279169797897339,
+  "estimated_tokens": 863,
+  "execution_time": 0.001586457947269082,
   "final_answer": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
   "original_query": "Show me the IDs of failed dataflow runs",
-  "planning_time": 0.0006605410017073154,
-  "preprocessing_time": 0.002997750067152083,
+  "planning_time": 0.0026119579561054707,
+  "preprocessing_time": 0.00685683311894536,
   "query_id": "show_me_the_ids_of_failed_dataflow_runs",
   "route_type": "SQL_THEN_API",
-  "runtime": 0.014306040946394205,
+  "runtime": 0.016067417105659842,
   "sql_call_count": 1,
   "steps": [
     {
@@ -755,12 +826,18 @@
         "statuses": [
           "failed"
         ]
+      },
+      "value_retrieval": {
+        "budget_exceeded": false,
+        "match_count": 0,
+        "matches": [],
+        "retrieval_ms": 9.312
       }
     },
     {
       "estimated_tokens": 571,
       "kind": "metadata",
-      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/show_me_the_ids_of_failed_dataflow_runs/sql_first_api_verify/metadata.json",
+      "metadata_path": "metadata.json",
       "prompt_tokens": 1170
     },
     {
@@ -865,10 +942,10 @@
   ],
   "strategy": "SQL_FIRST_API_VERIFY",
   "timings": {
-    "answer_time": 0.0005331659922376275,
-    "execution_time": 0.0013279169797897339,
-    "planning_time": 0.0006605410017073154,
-    "preprocessing_time": 0.002997750067152083
+    "answer_time": 0.0005500840488821268,
+    "execution_time": 0.001586457947269082,
+    "planning_time": 0.0026119579561054707,
+    "preprocessing_time": 0.00685683311894536
   },
   "tool_call_count": 2
 }

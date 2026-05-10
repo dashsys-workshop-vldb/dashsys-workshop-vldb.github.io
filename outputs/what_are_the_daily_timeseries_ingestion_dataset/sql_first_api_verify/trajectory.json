@@ -1,5 +1,5 @@
 {
-  "answer_time": 0.0006367920432239771,
+  "answer_time": 0.0006009589415043592,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-06T14:52:09.933121+00:00"
+      "timestamp": "2026-05-10T01:19:11.456851+00:00"
     },
     {
       "checkpoint_id": "checkpoint_00_prompt_router",
@@ -30,8 +30,7 @@
         "confidence": 0.84,
         "matched_rules": {
           "items": [
-            "local_db:count",
-            "local_db:dataset"
+            "local_db:count"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -46,7 +45,7 @@
       },
       "stage": "prompt routing",
       "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-06T14:52:09.933171+00:00"
+      "timestamp": "2026-05-10T01:19:11.456907+00:00"
     },
     {
       "checkpoint_id": "checkpoint_simple_prompt_gate",
@@ -65,7 +64,7 @@
       },
       "stage": "input routing",
       "technique": "simple prompt gate",
-      "timestamp": "2026-05-06T14:52:09.933194+00:00"
+      "timestamp": "2026-05-10T01:19:11.456931+00:00"
     },
     {
       "checkpoint_id": "checkpoint_02_query_normalization",
@@ -82,7 +81,7 @@
       },
       "stage": "normalization",
       "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-06T14:52:09.933255+00:00"
+      "timestamp": "2026-05-10T01:19:11.456995+00:00"
     },
     {
       "checkpoint_id": "checkpoint_03_query_tokens",
@@ -96,16 +95,14 @@
       "output": {
         "dates": {
           "items": [
-            "2026-03-15",
-            "2026-03-31"
+            "2026-03-15"
           ],
           "total_items": 2,
           "truncated_items": false
         },
         "domains": {
           "items": [
-            "observability",
-            "schema_dataset"
+            "observability"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -119,9 +116,7 @@
         },
         "quoted_entities": {
           "items": [
-            "timeseries.ingestion.dataset.recordsuccess.count",
-            "2026-03-15",
-            "2026-03-31"
+            "timeseries.ingestion.dataset.recordsuccess.count"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -129,7 +124,7 @@
       },
       "stage": "tokenization",
       "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-06T14:52:09.933326+00:00"
+      "timestamp": "2026-05-10T01:19:11.457067+00:00"
     },
     {
       "checkpoint_id": "checkpoint_04_relevance_scoring",
@@ -141,16 +136,14 @@
         "tokens": {
           "dates": {
             "items": [
-              "2026-03-15",
-              "2026-03-31"
+              "2026-03-15"
             ],
             "total_items": 2,
             "truncated_items": false
           },
           "domains": {
             "items": [
-              "observability",
-              "schema_dataset"
+              "observability"
             ],
             "total_items": 2,
             "truncated_items": false
@@ -164,9 +157,7 @@
           },
           "quoted_entities": {
             "items": [
-              "timeseries.ingestion.dataset.recordsuccess.count",
-              "2026-03-15",
-              "2026-03-31"
+              "timeseries.ingestion.dataset.recordsuccess.count"
             ],
             "total_items": 3,
             "truncated_items": false
@@ -176,17 +167,14 @@
       "output": {
         "top_answer_families": {
           "items": [
-            "observability_metrics",
-            "schema_dataset"
+            "observability_metrics"
           ],
           "total_items": 2,
           "truncated_items": false
         },
         "top_apis": {
           "items": [
-            "observability_metrics",
-            "catalog_batches",
-            "catalog_datasets"
+            "observability_metrics"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -194,7 +182,120 @@
       },
       "stage": "context selection",
       "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-06T14:52:09.934161+00:00"
+      "timestamp": "2026-05-10T01:19:11.457929+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_value_entity_retrieval",
+      "correctness_role": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
+      "duration_ms": 0.0,
+      "effect": "grounds query entities against sampled local DB values before planning",
+      "efficiency_role": "uses a cached bounded value index with per-query scan and wall-time budgets",
+      "input_summary": {
+        "query_values": {
+          "items": [
+            {
+              "kind": "quoted_entity",
+              "text": "timeseries.ingestion.dataset.recordsuccess.count"
+            }
+          ],
+          "total_items": 6,
+          "truncated_items": true
+        }
+      },
+      "metrics": {
+        "budget_exceeded": true,
+        "match_count": 0,
+        "retrieval_ms": 11.664
+      },
+      "output": {
+        "active": true,
+        "cache_hit": true,
+        "cache_key": "a2f6025ad4340fb6",
+        "cache_key_algorithm": "sha256",
+        "cache_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/cache/value_index_a2f6025ad4340fb6.json",
+        "cache_reproducible": true,
+        "match_count": 0,
+        "query_value_count": 6,
+        "truncated_fields": 8
+      },
+      "stage": "query understanding",
+      "technique": "CHESS-style value/entity retrieval",
+      "timestamp": "2026-05-10T01:19:11.460765+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_query_decomposition",
+      "correctness_role": "helps SQL/API planning preserve requested constraints",
+      "duration_ms": 0.0,
+      "effect": "breaks complex prompts into entities, filters, joins, and answer-shape constraints",
+      "efficiency_role": "skips simple queries and uses no LLM/tool calls",
+      "input_summary": {
+        "query": "What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'?",
+        "tokens": {
+          "dates": {
+            "items": [
+              "2026-03-15"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "domains": {
+            "items": [
+              "observability"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "metrics": {
+            "items": [
+              "timeseries.ingestion.dataset.recordsuccess.count"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "quoted_entities": {
+            "items": [
+              "timeseries.ingestion.dataset.recordsuccess.count"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          }
+        }
+      },
+      "output": {
+        "active": true,
+        "expected_answer_shape": "scalar_count",
+        "required_aggregations": {
+          "items": [
+            "count"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "required_entities": {
+          "items": [
+            "timeseries.ingestion.dataset.recordsuccess.count"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "required_filters": {
+          "items": [
+            "2026-03-15"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "sub_questions": {
+          "items": [
+            "Ground named entities and identifiers."
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "query understanding",
+      "technique": "DIN-SQL-style deterministic query decomposition",
+      "timestamp": "2026-05-10T01:19:11.460789+00:00"
     },
     {
       "checkpoint_id": "checkpoint_05_query_analysis",
@@ -224,7 +325,7 @@
       },
       "stage": "routing",
       "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-06T14:52:09.934166+00:00"
+      "timestamp": "2026-05-10T01:19:11.460794+00:00"
     },
     {
       "checkpoint_id": "checkpoint_06_lookup_path",
@@ -249,7 +350,7 @@
       },
       "stage": "path prediction",
       "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-06T14:52:09.934170+00:00"
+      "timestamp": "2026-05-10T01:19:11.460798+00:00"
     },
     {
       "checkpoint_id": "checkpoint_07_context_card",
@@ -275,26 +376,21 @@
         "selected_columns": {
           "dim_blueprint": {
             "items": [
-              "BLUEPRINTID",
-              "NAME",
-              "CLASS"
+              "BLUEPRINTID"
             ],
             "total_items": 5,
             "truncated_items": true
           },
           "dim_collection": {
             "items": [
-              "COLLECTIONID",
-              "NAME",
-              "ROWCOUNT"
+              "COLLECTIONID"
             ],
             "total_items": 4,
             "truncated_items": true
           },
           "hkg_br_blueprint_collection": {
             "items": [
-              "BLUEPRINTID",
-              "COLLECTIONID"
+              "BLUEPRINTID"
             ],
             "total_items": 2,
             "truncated_items": false
@@ -302,9 +398,7 @@
         },
         "selected_tables": {
           "items": [
-            "dim_blueprint",
-            "hkg_br_blueprint_collection",
-            "dim_collection"
+            "dim_blueprint"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -312,7 +406,7 @@
       },
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-06T14:52:09.936586+00:00"
+      "timestamp": "2026-05-10T01:19:11.463371+00:00"
     },
     {
       "checkpoint_id": "checkpoint_08_candidate_plans",
@@ -340,7 +434,7 @@
       },
       "stage": "planning",
       "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-06T14:52:09.936888+00:00"
+      "timestamp": "2026-05-10T01:19:11.463612+00:00"
     },
     {
       "checkpoint_id": "checkpoint_09_plan_optimization",
@@ -368,7 +462,7 @@
       },
       "stage": "optimization",
       "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-06T14:52:09.936900+00:00"
+      "timestamp": "2026-05-10T01:19:11.463622+00:00"
     },
     {
       "checkpoint_id": "checkpoint_10_evidence_policy",
@@ -394,7 +488,7 @@
       },
       "stage": "evidence policy",
       "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-06T14:52:09.936904+00:00"
+      "timestamp": "2026-05-10T01:19:11.463626+00:00"
     },
     {
       "checkpoint_id": "checkpoint_11_call_budget",
@@ -442,7 +536,7 @@
       },
       "stage": "efficiency control",
       "technique": "tool-call budgeting",
-      "timestamp": "2026-05-06T14:52:09.936922+00:00"
+      "timestamp": "2026-05-10T01:19:11.463641+00:00"
     },
     {
       "checkpoint_id": "checkpoint_12_validation",
@@ -498,7 +592,7 @@
       },
       "stage": "validation",
       "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-06T14:52:09.939603+00:00"
+      "timestamp": "2026-05-10T01:19:11.466346+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -552,7 +646,7 @@
       },
       "stage": "execution",
       "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-06T14:52:09.939611+00:00"
+      "timestamp": "2026-05-10T01:19:11.466354+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -568,7 +662,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-06T14:52:09.939615+00:00"
+      "timestamp": "2026-05-10T01:19:11.466358+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -594,9 +688,7 @@
           "dry_run": true,
           "entity_names": {
             "items": [
-              "timeseries.ingestion.dataset.recordsuccess.count",
-              "2026-03-15",
-              "2026-03-31"
+              "timeseries.ingestion.dataset.recordsuccess.count"
             ],
             "total_items": 3,
             "truncated_items": false
@@ -610,17 +702,14 @@
           },
           "slots_present": {
             "items": [
-              "entity_names",
-              "timestamps",
-              "metrics"
+              "entity_names"
             ],
             "total_items": 5,
             "truncated_items": true
           },
           "timestamps": {
             "items": [
-              "2026-03-15",
-              "2026-03-31"
+              "2026-03-15"
             ],
             "total_items": 2,
             "truncated_items": false
@@ -629,7 +718,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-06T14:52:09.940073+00:00"
+      "timestamp": "2026-05-10T01:19:11.466783+00:00"
     },
     {
       "checkpoint_id": "checkpoint_16_answer_verification",
@@ -641,9 +730,7 @@
         "claim_count": 2,
         "slots_present": {
           "items": [
-            "entity_names",
-            "timestamps",
-            "metrics"
+            "entity_names"
           ],
           "total_items": 5,
           "truncated_items": true
@@ -669,7 +756,7 @@
       },
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-06T14:52:09.940079+00:00"
+      "timestamp": "2026-05-10T01:19:11.466789+00:00"
     },
     {
       "checkpoint_id": "checkpoint_17_answer_reranking",
@@ -687,7 +774,7 @@
       },
       "stage": "answer selection",
       "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-06T14:52:09.940082+00:00"
+      "timestamp": "2026-05-10T01:19:11.466792+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -705,20 +792,34 @@
       },
       "stage": "final response",
       "technique": "concise grounded final response",
-      "timestamp": "2026-05-06T14:52:09.940114+00:00"
+      "timestamp": "2026-05-10T01:19:11.466830+00:00"
+    },
+    {
+      "active": true,
+      "checkpoint_id": "checkpoint_official_token_reduction",
+      "correctness_impact_expected": false,
+      "estimated_tokens_after": 1040,
+      "estimated_tokens_before": 1127,
+      "expected_savings": 87,
+      "packaged_execution_changed": false,
+      "reduced_fields": [
+        "steps[0].candidate_apis",
+        "steps[0].candidate_tables",
+        "steps[2].metadata_path"
+      ]
     }
   ],
   "domain_type": "DATASET_SCHEMA",
   "errors": [],
-  "estimated_tokens": 1052,
-  "execution_time": 0.0005309159168973565,
+  "estimated_tokens": 1040,
+  "execution_time": 0.0007728750351816416,
   "final_answer": "Values for timeseries.ingestion.dataset.recordsuccess.count between 2026-03-15 and 2026-03-31 require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
   "original_query": "What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'?",
-  "planning_time": 0.0003302500117570162,
-  "preprocessing_time": 0.0033959998982027173,
+  "planning_time": 0.0002708751708269119,
+  "preprocessing_time": 0.006441042060032487,
   "query_id": "what_are_the_daily_timeseries_ingestion_dataset",
   "route_type": "API_ONLY",
-  "runtime": 0.014739040983840823,
+  "runtime": 0.015967000043019652,
   "sql_call_count": 0,
   "steps": [
     {
@@ -737,16 +838,6 @@
           "id": "schema_registry_schemas",
           "method": "GET",
           "path": "/data/foundation/schemaregistry/tenant/schemas"
-        },
-        {
-          "id": "schemas_short",
-          "method": "GET",
-          "path": "/schemas"
-        },
-        {
-          "id": "audit_events",
-          "method": "GET",
-          "path": "/data/foundation/audit/events"
         }
       ],
       "candidate_tables": [
@@ -754,9 +845,7 @@
         "dim_collection",
         "hkg_br_blueprint_collection",
         "hkg_br_blueprint_property",
-        "hkg_br_collection_property",
-        "hkg_br_collection_segment",
-        "hkg_br_source_collection"
+        "hkg_br_collection_property"
       ],
       "confidence": 0.6499999999999999,
       "domain_type": "DATASET_SCHEMA",
@@ -765,6 +854,14 @@
       "route_type": "API_ONLY"
     },
     {
+      "decomposition": {
+        "expected_answer_shape": "scalar_count",
+        "sub_questions": [
+          "Ground named entities and identifiers.",
+          "Apply status/date/entity filters.",
+          "Compute requested aggregation or time-range result."
+        ]
+      },
       "kind": "nlp",
       "relevance": {
         "apis": [
@@ -793,12 +890,18 @@
           "2026-03-15",
           "2026-03-31"
         ]
+      },
+      "value_retrieval": {
+        "budget_exceeded": true,
+        "match_count": 0,
+        "matches": [],
+        "retrieval_ms": 11.664
       }
     },
     {
       "estimated_tokens": 902,
       "kind": "metadata",
-      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/what_are_the_daily_timeseries_ingestion_dataset/sql_first_api_verify/metadata.json",
+      "metadata_path": "metadata.json",
       "prompt_tokens": 1536
     },
     {
@@ -910,10 +1013,10 @@
   ],
   "strategy": "SQL_FIRST_API_VERIFY",
   "timings": {
-    "answer_time": 0.0006367920432239771,
-    "execution_time": 0.0005309159168973565,
-    "planning_time": 0.0003302500117570162,
-    "preprocessing_time": 0.0033959998982027173
+    "answer_time": 0.0006009589415043592,
+    "execution_time": 0.0007728750351816416,
+    "planning_time": 0.0002708751708269119,
+    "preprocessing_time": 0.006441042060032487
   },
   "tool_call_count": 1
 }

@@ -28,10 +28,9 @@ def test_env_local_is_gitignored_and_env_example_is_trackable():
 
 def test_env_example_contains_placeholders_only():
     text = open(".env.example", encoding="utf-8").read()
-    assert "OPENROUTER_API_KEY=put_your_key_here" in text
-    assert "OPENAI_API_KEY=${OPENROUTER_API_KEY}" in text
-    assert "OPENAI_BASE_URL=https://openrouter.ai/api/v1" in text
-    assert "OPENROUTER_MODEL=openrouter/free" in text
+    assert "OPENAI_API_KEY=put_your_key_here" in text
+    assert "OPENAI_BASE_URL=https://photos-hewlett-safely-friends.trycloudflare.com/v1" in text
+    assert "OPENAI_MODEL=qwen2.5-32b-instruct" in text
     assert "sk-" not in text
     assert "sk_or" not in text
 

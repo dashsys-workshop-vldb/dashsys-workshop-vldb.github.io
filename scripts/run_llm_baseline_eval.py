@@ -21,11 +21,14 @@ from dashagent.llm_tool_agent import (
     run_optimized_llm_controller_agent,
     run_real_llm_two_tools_baseline,
 )
+from dashagent.trajectory import redact_secrets
+from scripts.load_local_env import load_local_env
 
 
 def main() -> int:
     config = Config.from_env(ROOT)
     config.outputs_dir.mkdir(parents=True, exist_ok=True)
+    load_local_env(config.project_root)
     harness = EvalHarness(config)
     examples = harness.load_examples()
     client = get_llm_client()
@@ -45,6 +48,7 @@ def main() -> int:
             "systems": systems,
         }
         write_outputs(config, payload)
+        write_qwen_report(config, payload)
         print(json.dumps({"skipped": True, "reason": payload["reason"], "json": str(config.outputs_dir / "llm_baseline_eval.json")}, indent=2, sort_keys=True))
         return 0
     rows = []
@@ -100,6 +104,7 @@ def main() -> int:
             )
     payload = {"skipped": False, "rows": rows, "systems": systems}
     write_outputs(config, payload)
+    write_qwen_report(config, payload)
     print(json.dumps({"skipped": False, "rows": len(rows), "json": str(config.outputs_dir / "llm_baseline_eval.json")}, indent=2, sort_keys=True))
     return 0
 
@@ -142,6 +147,171 @@ def write_outputs(config: Config, payload: dict) -> None:
             for row in failed_real[:20]:
                 lines.append(f"| `{row.get('query_id')}` | {row.get('tool_calls_executed')} | {row.get('failure_reason')} |")
     md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def write_qwen_report(config: Config, payload: dict) -> None:
+    report = build_qwen_report(config, payload)
+    json_path = config.outputs_dir / "qwen_llm_baseline_eval_report.json"
+    md_path = config.outputs_dir / "qwen_llm_baseline_eval_report.md"
+    json_path.write_text(json.dumps(report, indent=2, sort_keys=True, default=str), encoding="utf-8")
+    md_path.write_text(render_qwen_markdown(report), encoding="utf-8")
+
+
+def build_qwen_report(config: Config, payload: dict) -> dict:
+    rows = payload.get("rows") or []
+    smoke = _load_json(config.outputs_dir / "openai_compatible_llm_check.json")
+    deterministic = _deterministic_sql_first_summary(config)
+    strategies = []
+    for system in payload.get("systems", []):
+        system_rows = [row for row in rows if row.get("system") == system]
+        valid_rows = [row for row in system_rows if row.get("valid_agent_run")]
+        scored_rows = [row for row in valid_rows if isinstance(row.get("answer_score"), (int, float))]
+        strategies.append(
+            {
+                "system": system,
+                "rows": len(system_rows),
+                "valid_runs": len(valid_rows),
+                "failed_runs": sum(1 for row in system_rows if row.get("skipped_or_failed") and not row.get("valid_agent_run")),
+                "avg_answer_score": _avg(scored_rows, "answer_score"),
+                "strict_score": "unavailable",
+                "avg_tool_calls": _avg(valid_rows, "tool_call_count"),
+                "avg_tokens": _avg(valid_rows, "prompt_context_tokens"),
+                "avg_runtime": _avg(valid_rows, "runtime"),
+                "failure_categories": _aggregate_failures(system_rows),
+            }
+        )
+    skipped = []
+    if payload.get("skipped"):
+        skipped = [{"system": system, "reason": payload.get("reason", "LLM baseline skipped")} for system in payload.get("systems", [])]
+    recommendation = _qwen_recommendation(payload, strategies, smoke)
+    report = {
+        "provider": "openai_compatible_qwen",
+        "base_url": os.getenv("OPENAI_BASE_URL", ""),
+        "model": os.getenv("OPENAI_MODEL", ""),
+        "smoke_test_passed": smoke.get("ok", "unavailable"),
+        "tool_calling_supported": smoke.get("tool_calling_supported", "unavailable"),
+        "baseline_strategies_run": [row["system"] for row in strategies if row["rows"] > 0],
+        "skipped_strategies": skipped,
+        "per_strategy": strategies,
+        "deterministic_sql_first_api_verify": deterministic,
+        "comparison_against_deterministic": _compare_to_deterministic(strategies, deterministic),
+        "failure_categories": _aggregate_failures(rows),
+        "recommendation": recommendation,
+        "promotion_status": "shadow_only",
+        "safety_notes": [
+            "Qwen LLM baseline results are comparison-only.",
+            "Packaged SQL_FIRST_API_VERIFY behavior is unchanged.",
+            "No LLM result is promoted automatically.",
+        ],
+    }
+    safe_report = redact_secrets(report)
+    safe_report["base_url"] = report.get("base_url")
+    safe_report["model"] = report.get("model")
+    safe_report["provider"] = report.get("provider")
+    return safe_report
+
+
+def render_qwen_markdown(report: dict) -> str:
+    lines = [
+        "# Qwen LLM Baseline Evaluation Report",
+        "",
+        f"- Provider: `{report.get('provider')}`",
+        f"- Base URL: `{report.get('base_url') or 'unavailable'}`",
+        f"- Model: `{report.get('model') or 'unavailable'}`",
+        f"- Smoke test passed: `{report.get('smoke_test_passed')}`",
+        f"- Tool calling supported: `{report.get('tool_calling_supported')}`",
+        f"- Recommendation: `{report.get('recommendation')}`",
+        f"- Promotion status: `{report.get('promotion_status')}`",
+        "",
+        "## Strategy Summary",
+        "",
+        "| Strategy | Rows | Valid runs | Failed runs | Avg answer score | Strict score | Avg tools | Avg tokens | Avg runtime |",
+        "| --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: |",
+    ]
+    for row in report.get("per_strategy", []):
+        lines.append(
+            f"| `{row.get('system')}` | {row.get('rows')} | {row.get('valid_runs')} | {row.get('failed_runs')} | "
+            f"{_fmt(row.get('avg_answer_score'))} | {row.get('strict_score')} | {_fmt(row.get('avg_tool_calls'))} | "
+            f"{_fmt(row.get('avg_tokens'))} | {_fmt(row.get('avg_runtime'))} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Deterministic Comparison",
+            "",
+            f"- SQL_FIRST_API_VERIFY strict score: `{report.get('deterministic_sql_first_api_verify', {}).get('avg_final_score', 'unavailable')}`",
+            f"- Comparison: `{report.get('comparison_against_deterministic')}`",
+            "",
+            "Qwen remains shadow-only unless a later explicit promotion passes strict scoring, safety, hidden-style, and packaging gates.",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
+def _load_json(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _deterministic_sql_first_summary(config: Config) -> dict:
+    data = _load_json(config.outputs_dir / "eval_results_strict.json")
+    rows = [row for row in data.get("rows", []) if row.get("strategy") == "SQL_FIRST_API_VERIFY"]
+    return {
+        "rows": len(rows),
+        "avg_final_score": _avg(rows, "final_score"),
+        "avg_correctness_score": _avg(rows, "correctness_score"),
+        "avg_answer_score": _avg(rows, "answer_score"),
+        "avg_tool_calls": _avg(rows, "tool_call_count"),
+        "avg_tokens": _avg(rows, "estimated_tokens"),
+        "avg_runtime": _avg(rows, "runtime"),
+    }
+
+
+def _avg(rows: list[dict], key: str) -> float | str:
+    values = [row.get(key) for row in rows if isinstance(row.get(key), (int, float))]
+    if not values:
+        return "unavailable"
+    return round(sum(values) / len(values), 4)
+
+
+def _aggregate_failures(rows: list[dict]) -> dict:
+    counts: dict[str, int] = {}
+    for row in rows:
+        categories = row.get("failure_categories")
+        if isinstance(categories, dict):
+            for key, value in categories.items():
+                counts[key] = counts.get(key, 0) + int(value or 0)
+        reason = str(row.get("failure_reason") or "").strip()
+        if reason:
+            counts[reason] = counts.get(reason, 0) + 1
+    return counts
+
+
+def _compare_to_deterministic(strategies: list[dict], deterministic: dict) -> str:
+    det_score = deterministic.get("avg_final_score")
+    if not isinstance(det_score, (int, float)):
+        return "deterministic_strict_score_unavailable"
+    return "qwen_strict_score_unavailable; deterministic SQL_FIRST_API_VERIFY remains preferred"
+
+
+def _qwen_recommendation(payload: dict, strategies: list[dict], smoke: dict) -> str:
+    if payload.get("skipped"):
+        return "comparison_only"
+    if smoke and smoke.get("tool_calling_supported") is False:
+        return "keep_shadow_only"
+    if any(row.get("valid_runs", 0) for row in strategies):
+        return "keep_shadow_only"
+    return "comparison_only"
+
+
+def _fmt(value: object) -> str:
+    if isinstance(value, float):
+        return f"{value:.4f}"
+    return str(value)
 
 
 if __name__ == "__main__":

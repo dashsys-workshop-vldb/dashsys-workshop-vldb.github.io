@@ -1,5 +1,5 @@
 {
-  "answer_time": 0.0004502920201048255,
+  "answer_time": 0.0004649159964174032,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-06T14:50:21.357585+00:00"
+      "timestamp": "2026-05-10T01:16:48.719464+00:00"
     },
     {
       "checkpoint_id": "checkpoint_00_prompt_router",
@@ -45,7 +45,7 @@
       },
       "stage": "prompt routing",
       "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-06T14:50:21.357622+00:00"
+      "timestamp": "2026-05-10T01:16:48.719495+00:00"
     },
     {
       "checkpoint_id": "checkpoint_simple_prompt_gate",
@@ -64,7 +64,7 @@
       },
       "stage": "input routing",
       "technique": "simple prompt gate",
-      "timestamp": "2026-05-06T14:50:21.357638+00:00"
+      "timestamp": "2026-05-10T01:16:48.719509+00:00"
     },
     {
       "checkpoint_id": "checkpoint_02_query_normalization",
@@ -81,7 +81,7 @@
       },
       "stage": "normalization",
       "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-06T14:50:21.357683+00:00"
+      "timestamp": "2026-05-10T01:16:48.719549+00:00"
     },
     {
       "checkpoint_id": "checkpoint_03_query_tokens",
@@ -110,7 +110,7 @@
       },
       "stage": "tokenization",
       "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-06T14:50:21.357732+00:00"
+      "timestamp": "2026-05-10T01:16:48.719591+00:00"
     },
     {
       "checkpoint_id": "checkpoint_04_relevance_scoring",
@@ -146,9 +146,7 @@
         },
         "top_apis": {
           "items": [
-            "unified_tag_categories",
-            "unified_tag_detail",
-            "catalog_batch_detail"
+            "unified_tag_categories"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -156,7 +154,45 @@
       },
       "stage": "context selection",
       "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-06T14:50:21.358320+00:00"
+      "timestamp": "2026-05-10T01:16:48.720137+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_value_entity_retrieval",
+      "correctness_role": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
+      "duration_ms": 0.0,
+      "effect": "grounds query entities against sampled local DB values before planning",
+      "efficiency_role": "uses a cached bounded value index with per-query scan and wall-time budgets",
+      "input_summary": {
+        "query_values": {
+          "items": [
+            {
+              "kind": "quoted_entity",
+              "text": "cool"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "budget_exceeded": true,
+        "match_count": 0,
+        "retrieval_ms": 11.664
+      },
+      "output": {
+        "active": true,
+        "cache_hit": true,
+        "cache_key": "a2f6025ad4340fb6",
+        "cache_key_algorithm": "sha256",
+        "cache_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/cache/value_index_a2f6025ad4340fb6.json",
+        "cache_reproducible": true,
+        "match_count": 0,
+        "query_value_count": 1,
+        "truncated_fields": 8
+      },
+      "stage": "query understanding",
+      "technique": "CHESS-style value/entity retrieval",
+      "timestamp": "2026-05-10T01:16:48.722492+00:00"
     },
     {
       "checkpoint_id": "checkpoint_05_query_analysis",
@@ -185,7 +221,7 @@
       },
       "stage": "routing",
       "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-06T14:50:21.358324+00:00"
+      "timestamp": "2026-05-10T01:16:48.722508+00:00"
     },
     {
       "checkpoint_id": "checkpoint_06_lookup_path",
@@ -200,9 +236,7 @@
       "output": {
         "api_families": {
           "items": [
-            "tag_count",
-            "tag_list",
-            "tag_details_by_id"
+            "tag_count"
           ],
           "total_items": 5,
           "truncated_items": true
@@ -211,8 +245,7 @@
         "family": "tags",
         "required_ids": {
           "items": [
-            "tag_id",
-            "tag_category_id"
+            "tag_id"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -220,7 +253,7 @@
       },
       "stage": "path prediction",
       "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-06T14:50:21.358327+00:00"
+      "timestamp": "2026-05-10T01:16:48.722512+00:00"
     },
     {
       "checkpoint_id": "checkpoint_07_context_card",
@@ -246,44 +279,35 @@
         "selected_columns": {
           "br_campaign_segment": {
             "items": [
-              "SEGMENTID",
-              "CAMPAIGNID"
+              "SEGMENTID"
             ],
             "total_items": 2,
             "truncated_items": false
           },
           "dim_blueprint": {
             "items": [
-              "BLUEPRINTTYPE",
-              "UPDATEDCLIENTID",
-              "UPDATEDTIME"
+              "BLUEPRINTTYPE"
             ],
             "total_items": 8,
             "truncated_items": true
           },
           "dim_campaign": {
             "items": [
-              "UPDATEDTIME",
-              "STARTDATE",
-              "IMSORGID"
+              "UPDATEDTIME"
             ],
             "total_items": 8,
             "truncated_items": true
           },
           "dim_collection": {
             "items": [
-              "ISIDENTITYENABLED",
-              "ROWCOUNT",
-              "UPDATEDTIME"
+              "ISIDENTITYENABLED"
             ],
             "total_items": 8,
             "truncated_items": true
           },
           "dim_connector": {
             "items": [
-              "DATAFLOWNAME",
-              "UPDATEDTIME",
-              "CONNECTIONSPECNAME"
+              "DATAFLOWNAME"
             ],
             "total_items": 8,
             "truncated_items": true
@@ -291,9 +315,7 @@
         },
         "selected_tables": {
           "items": [
-            "br_campaign_segment",
-            "dim_blueprint",
-            "dim_campaign"
+            "br_campaign_segment"
           ],
           "total_items": 5,
           "truncated_items": true
@@ -301,7 +323,7 @@
       },
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-06T14:50:21.361435+00:00"
+      "timestamp": "2026-05-10T01:16:48.725562+00:00"
     },
     {
       "checkpoint_id": "checkpoint_08_candidate_plans",
@@ -329,7 +351,7 @@
       },
       "stage": "planning",
       "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-06T14:50:21.361664+00:00"
+      "timestamp": "2026-05-10T01:16:48.725765+00:00"
     },
     {
       "checkpoint_id": "checkpoint_09_plan_optimization",
@@ -357,7 +379,7 @@
       },
       "stage": "optimization",
       "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-06T14:50:21.361674+00:00"
+      "timestamp": "2026-05-10T01:16:48.725774+00:00"
     },
     {
       "checkpoint_id": "checkpoint_10_evidence_policy",
@@ -383,7 +405,7 @@
       },
       "stage": "evidence policy",
       "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-06T14:50:21.361678+00:00"
+      "timestamp": "2026-05-10T01:16:48.725778+00:00"
     },
     {
       "checkpoint_id": "checkpoint_11_call_budget",
@@ -416,7 +438,7 @@
       },
       "stage": "efficiency control",
       "technique": "tool-call budgeting",
-      "timestamp": "2026-05-06T14:50:21.361691+00:00"
+      "timestamp": "2026-05-10T01:16:48.725789+00:00"
     },
     {
       "checkpoint_id": "checkpoint_12_validation",
@@ -457,7 +479,7 @@
       },
       "stage": "validation",
       "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-06T14:50:21.363706+00:00"
+      "timestamp": "2026-05-10T01:16:48.727687+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -496,7 +518,7 @@
       },
       "stage": "execution",
       "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-06T14:50:21.363714+00:00"
+      "timestamp": "2026-05-10T01:16:48.727698+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -512,7 +534,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-06T14:50:21.363717+00:00"
+      "timestamp": "2026-05-10T01:16:48.727702+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -545,8 +567,7 @@
           },
           "slots_present": {
             "items": [
-              "entity_names",
-              "dry_run"
+              "entity_names"
             ],
             "total_items": 2,
             "truncated_items": false
@@ -555,7 +576,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-06T14:50:21.364056+00:00"
+      "timestamp": "2026-05-10T01:16:48.728042+00:00"
     },
     {
       "checkpoint_id": "checkpoint_16_answer_verification",
@@ -567,8 +588,7 @@
         "claim_count": 1,
         "slots_present": {
           "items": [
-            "entity_names",
-            "dry_run"
+            "entity_names"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -594,7 +614,7 @@
       },
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-06T14:50:21.364062+00:00"
+      "timestamp": "2026-05-10T01:16:48.728048+00:00"
     },
     {
       "checkpoint_id": "checkpoint_17_answer_reranking",
@@ -612,7 +632,7 @@
       },
       "stage": "answer selection",
       "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-06T14:50:21.364064+00:00"
+      "timestamp": "2026-05-10T01:16:48.728051+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -630,20 +650,33 @@
       },
       "stage": "final response",
       "technique": "concise grounded final response",
-      "timestamp": "2026-05-06T14:50:21.364087+00:00"
+      "timestamp": "2026-05-10T01:16:48.728084+00:00"
+    },
+    {
+      "active": true,
+      "checkpoint_id": "checkpoint_official_token_reduction",
+      "correctness_impact_expected": false,
+      "estimated_tokens_after": 678,
+      "estimated_tokens_before": 763,
+      "expected_savings": 85,
+      "packaged_execution_changed": false,
+      "reduced_fields": [
+        "steps[0].candidate_apis",
+        "steps[2].metadata_path"
+      ]
     }
   ],
   "domain_type": "UNKNOWN",
   "errors": [],
-  "estimated_tokens": 728,
-  "execution_time": 0.0002668339293450117,
+  "estimated_tokens": 678,
+  "execution_time": 0.0002572920639067888,
   "final_answer": "Details for the tag named 'cool' require live API evidence, including the tag ID, name, category, and Adobe organization. Live API verification was not executed because Adobe credentials are unavailable.",
   "original_query": "Show me the details of the tag named 'cool'.",
-  "planning_time": 0.0002501660492271185,
-  "preprocessing_time": 0.003801707993261516,
+  "planning_time": 0.00022624991834163666,
+  "preprocessing_time": 0.006055958103388548,
   "query_id": "show_me_the_details_of_the_tag_named_cool",
   "route_type": "API_ONLY",
-  "runtime": 0.011915417038835585,
+  "runtime": 0.012500040931627154,
   "sql_call_count": 0,
   "steps": [
     {
@@ -662,16 +695,6 @@
           "id": "segment_definitions",
           "method": "GET",
           "path": "/data/core/ups/segment/definitions"
-        },
-        {
-          "id": "flowservice_flows",
-          "method": "GET",
-          "path": "/data/foundation/flowservice/flows"
-        },
-        {
-          "id": "flowservice_runs",
-          "method": "GET",
-          "path": "/data/foundation/flowservice/runs"
         }
       ],
       "candidate_tables": [
@@ -706,12 +729,18 @@
         "quoted_entities": [
           "cool"
         ]
+      },
+      "value_retrieval": {
+        "budget_exceeded": true,
+        "match_count": 0,
+        "matches": [],
+        "retrieval_ms": 11.664
       }
     },
     {
       "estimated_tokens": 990,
       "kind": "metadata",
-      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/show_me_the_details_of_the_tag_named_cool/sql_first_api_verify/metadata.json",
+      "metadata_path": "metadata.json",
       "prompt_tokens": 1659
     },
     {
@@ -782,10 +811,10 @@
   ],
   "strategy": "SQL_FIRST_API_VERIFY",
   "timings": {
-    "answer_time": 0.0004502920201048255,
-    "execution_time": 0.0002668339293450117,
-    "planning_time": 0.0002501660492271185,
-    "preprocessing_time": 0.003801707993261516
+    "answer_time": 0.0004649159964174032,
+    "execution_time": 0.0002572920639067888,
+    "planning_time": 0.00022624991834163666,
+    "preprocessing_time": 0.006055958103388548
   },
   "tool_call_count": 1
 }
