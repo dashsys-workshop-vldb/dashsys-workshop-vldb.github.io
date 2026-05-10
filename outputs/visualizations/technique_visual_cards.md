@@ -116,7 +116,7 @@ Each card separates **status** from **runtime path** so experimental work is not
 | **Output** | `SQL/API execution plan` | Data emitted downstream. |
 | **Downstream effect** | `Grounds with local SQL first, then verifies with API where needed.` | Why the technique exists. |
 | **Affects** | `accuracy` | Accuracy, efficiency, safety, or observability. |
-| **Measured impact** | `answer_score_delta=0.3076, api_score_delta=0.9791, correctness_delta=0.0, runtime_delta=0.0092, sql_score_delta=0.9333, strict_score_delta=0.0, token_delta=831.4571, tool_call_d...` | Unavailable means no source report measured a delta. |
+| **Measured impact** | `answer_score_delta=0.3076, api_score_delta=0.9791, correctness_delta=0.0, runtime_delta=0.0114, sql_score_delta=0.9333, strict_score_delta=0.0, token_delta=831.4571, tool_call_d...` | Unavailable means no source report measured a delta. |
 
 **Why this status:** Best current strict score and correctness among packaged strategies.
 
@@ -662,6 +662,6 @@ Each card separates **status** from **runtime path** so experimental work is not
 | **Output** | `shadow baseline trajectories and strict comparison reports` | Data emitted downstream. |
 | **Downstream effect** | `Provider-agnostic SDK baseline for OpenAI-compatible and Anthropic LLM comparisons.` | Why the technique exists. |
 | **Affects** | `safety, observability` | Accuracy, efficiency, safety, or observability. |
-| **Measured impact** | `strict_score=-0.0153, recommendation=keep_shadow_only` | Unavailable means no source report measured a delta. |
+| **Measured impact** | `strict_score=-0.0149, recommendation=keep_shadow_only` | Unavailable means no source report measured a delta. |
 
 **Why this status:** Current SDK LLM baseline is a comparison framework; deterministic SQL_FIRST_API_VERIFY remains packaged.

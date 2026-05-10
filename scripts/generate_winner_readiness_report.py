@@ -73,8 +73,8 @@ def generate_winner_readiness_report(config: Config) -> dict[str, Any]:
     sql_first = strict.get("summary", {}).get("by_strategy", {}).get("SQL_FIRST_API_VERIFY", {})
     reports = {name: _load_json(config.outputs_dir / filename) for name, filename in REQUIRED_REPORTS.items()}
     packaged_trial = _load_json(config.outputs_dir / "official_token_reduction_packaged_trial.json")
-    cleanup_audit = _load_json(config.outputs_dir / "redundant_file_audit.json")
-    cleanup_report = _load_json(config.outputs_dir / "redundant_file_cleanup_report.json")
+    cleanup_audit = _load_json(config.outputs_dir / "reports" / "cleanup_audit.json") or _load_json(config.outputs_dir / "redundant_file_audit.json")
+    cleanup_report = _load_json(config.outputs_dir / "reports" / "cleanup_final_report.json") or _load_json(config.outputs_dir / "redundant_file_cleanup_report.json")
     autonomous_trial = _load_json(config.outputs_dir / "autonomous_packaged_trial.json")
     autonomous_score_push = _load_json(config.outputs_dir / "autonomous_score_push_report.json")
     integration_diff = _load_json(config.outputs_dir / "score075_integration_diff_report.json")

@@ -29,12 +29,12 @@ def test_redundant_file_audit_classifies_required_and_safe_paths(tiny_project):
     payload = audit_redundant_files(tiny_project)
     rows = {row["path"]: row for row in payload["rows"]}
 
-    assert rows["dashagent"]["classification"] == "required_runtime"
-    assert rows["scripts"]["classification"] == "required_validation"
-    assert rows["outputs/final_submission"]["classification"] == "required_submission"
-    assert rows["outputs/cache"]["classification"] == "safe_to_delete_generated"
-    assert rows[".pytest_cache"]["classification"] == "safe_to_delete_generated"
-    assert rows[".venv"]["classification"] == "safe_to_gitignore_only"
+    assert rows["dashagent"]["classification"] == "keep_source_of_truth"
+    assert rows["scripts"]["classification"] == "keep_source_of_truth"
+    assert rows["outputs/final_submission"]["classification"] == "keep_required_by_packaging"
+    assert rows["outputs/cache"]["classification"] == "delete_obsolete"
+    assert rows[".pytest_cache"]["classification"] == "delete_obsolete"
+    assert rows[".venv"]["classification"] == "unsure_do_not_delete"
 
 
 def test_cleanup_dry_run_and_apply_delete_only_safe_generated(tiny_project):
@@ -47,7 +47,9 @@ def test_cleanup_dry_run_and_apply_delete_only_safe_generated(tiny_project):
     (final_dir / "keep.txt").write_text("keep", encoding="utf-8")
 
     audit = audit_redundant_files(tiny_project)
-    (tiny_project.outputs_dir / "redundant_file_audit.json").write_text(json.dumps(audit), encoding="utf-8")
+    reports_dir = tiny_project.outputs_dir / "reports"
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    (reports_dir / "cleanup_audit.json").write_text(json.dumps(audit), encoding="utf-8")
     dry = cleanup_redundant_files(tiny_project, apply=False)
 
     assert dry["summary"]["dry_run_delete_count"] >= 1
@@ -69,14 +71,16 @@ def test_cleanup_refuses_misclassified_protected_path(tiny_project):
         "rows": [
             {
                 "path": "scripts/fake.tmp",
-                "classification": "safe_to_delete_generated",
+                "classification": "delete_obsolete",
                 "reason": "malicious or stale audit row",
                 "referenced_by": [],
                 "proposed_action": "delete",
             }
         ]
     }
-    (tiny_project.outputs_dir / "redundant_file_audit.json").write_text(json.dumps(audit), encoding="utf-8")
+    reports_dir = tiny_project.outputs_dir / "reports"
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    (reports_dir / "cleanup_audit.json").write_text(json.dumps(audit), encoding="utf-8")
 
     payload = cleanup_redundant_files(tiny_project, apply=True)
 

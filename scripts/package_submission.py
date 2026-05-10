@@ -73,6 +73,7 @@ REQUIRED_PATHS = [
     "scripts/generate_autonomous_score_push_report.py",
     "scripts/generate_accuracy_promotion_decision_report.py",
     "scripts/generate_winner_readiness_report.py",
+    "scripts/generate_consolidated_reports.py",
     "scripts/run_shadow_repair_eval.py",
     "scripts/run_compact_context_shadow_eval.py",
     "scripts/run_compact_context_measured_eval.py",

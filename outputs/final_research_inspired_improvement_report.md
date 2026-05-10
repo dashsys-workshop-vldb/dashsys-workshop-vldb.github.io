@@ -9,7 +9,7 @@ Status: **strict-score improvement measured**.
 | strict_final_score | 0.649 | 0.6491 | 0.0001 |
 | strict_correctness | 0.6743 | 0.6743 | 0.0 |
 | estimated_tokens | 851.7714 | 831.4571 | -20.3143 |
-| runtime | 0.0102 | 0.0092 | -0.001 |
+| runtime | 0.0102 | 0.0114 | 0.0012 |
 | tool_calls | 1.4571 | 1.4571 | 0.0 |
 
 ## Gate Results
@@ -17,7 +17,7 @@ Status: **strict-score improvement measured**.
 - Packaged preferred strategy: `SQL_FIRST_API_VERIFY`
 - Strict score regression gate OK: True
 - Estimated-token overhead: -2.38% (gate OK: True)
-- Runtime overhead: -9.80% (gate OK: True)
+- Runtime overhead: 11.76% (gate OK: True)
 - Tool-call delta: 0.0 (gate OK: True)
 - Value retrieval budget: 250 ms (budget OK: True)
 - Value retrieval cache key algorithm: `sha256` (reproducible: True)
@@ -91,7 +91,7 @@ Status: **strict-score improvement measured**.
 - Autonomous packaged trial: score=0.6558; 0.75 reached=False; recommendation=continue_iteration_target_not_reached
 - Autonomous 0.75 push report: best=0.6558; 0.75 reached=False; recommendation=continue_iteration_target_not_reached
 - score075 integration merged/rejected/pending branches: 0 / 0 / 10
-- Redundant file audit ran: True; cleanup applied=True; deleted=4; protected files deleted=False
+- Redundant file audit ran: True; cleanup applied=True; deleted=321; protected files deleted=False
 - Winner readiness next actions: ['Submit with official-token reduction if the promotion report remains kept.', 'Keep repair execution disabled.', 'Keep compact context disabled.', 'Use endpoint/schema rule candidates only as future canary inputs.', 'Keep accuracy changes shadow-only unless the accuracy decision report explicitly recommends promotion.', 'Use the 0.70 push report to decide whether any targeted accuracy change is worth a later explicit promotion.', 'Use the autonomous 0.75 score-push report only after integration has merged and validated worker branches.']
 - Risk-efficiency shadow eval rows: 7 (avg token delta: -264.0; avg runtime delta: -0.025; measured efficiency improvement claimed: False)
 - Secret scan OK: True

@@ -271,6 +271,14 @@ outputs/<query_id>/<strategy>/
 
 ## 14. Diagnostic Reports
 
+Start with the consolidated supervisor/submission report index:
+
+```text
+outputs/reports/report_index.md
+```
+
+It summarizes the useful generated evidence and points to the smaller set of canonical reports and visualizations.
+
 ```bash
 python3 scripts/generate_failure_analysis.py
 python3 scripts/generate_family_score_report.py
