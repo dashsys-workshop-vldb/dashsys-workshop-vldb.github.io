@@ -146,6 +146,7 @@ Mandatory post-change validation after every code, report, cleanup, visualizatio
 
 ```bash
 python3 -m pytest -q
+python3 scripts/audit_workshop_requirements.py
 python3 scripts/run_dev_eval.py --strict
 python3 scripts/run_hidden_style_eval.py
 python3 scripts/check_llm_sdk_backend.py
@@ -166,11 +167,12 @@ After validation, regenerate the consolidated report surfaces:
 
 ```bash
 python3 scripts/generate_consolidated_reports.py
+python3 scripts/audit_workshop_requirements.py
 python3 scripts/audit_redundant_files.py
 python3 scripts/cleanup_redundant_files.py --dry-run --write-report
 ```
 
-If any command is skipped, record the command, reason, substitute validation, and residual risk in `outputs/reports/cleanup_final_report.md/json`. Run the secret scan before handoff and report the result:
+The workshop audit writes `outputs/reports/workshop_requirement_audit.md/json` and verifies official DASHSys tools, per-query deliverables, trajectory reproducibility, diagnostic-suite separation, SDK-only LLM usage, and final-submission packaging safety. If any command is skipped, record the command, reason, substitute validation, and residual risk in `outputs/reports/cleanup_final_report.md/json`. Run the secret scan before handoff and report the result:
 
 ```bash
 OPENAI_KEY_PATTERN='OPENAI_API_KEY=.*s''k'

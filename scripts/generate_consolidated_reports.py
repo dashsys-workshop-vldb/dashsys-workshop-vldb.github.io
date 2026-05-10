@@ -19,6 +19,7 @@ REPORTS_DIRNAME = "reports"
 
 POST_CHANGE_VALIDATION_COMMANDS = [
     "python3 -m pytest -q",
+    "python3 scripts/audit_workshop_requirements.py",
     "python3 scripts/run_dev_eval.py --strict",
     "python3 scripts/run_hidden_style_eval.py",
     "python3 scripts/check_llm_sdk_backend.py",
@@ -41,6 +42,7 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/llm_baseline_summary.md/json",
     "outputs/reports/accuracy_and_bottleneck_summary.md/json",
     "outputs/reports/visualization_summary.md/json",
+    "outputs/reports/workshop_requirement_audit.md/json",
     "outputs/reports/cleanup_audit.md/json",
     "outputs/reports/cleanup_final_report.md/json",
     "outputs/winner_readiness_report.md/json",
@@ -112,6 +114,7 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "generated_prompt_suite": _load_json(outputs / "reports" / "generated_prompt_suite_summary.json"),
         "diagnostic_prompt_suite_run": _load_json(outputs / "reports" / "diagnostic_prompt_suite_run.json"),
         "sdk_usage_audit": _load_json(outputs / "reports" / "sdk_usage_audit.json"),
+        "workshop_requirement_audit": _load_json(outputs / "reports" / "workshop_requirement_audit.json"),
         "sql_storyboard": _load_json(visualizations / "sql_prompt_storyboard_primary.json"),
         "visualization_index": _load_json(visualizations / "index.json"),
     }
@@ -300,6 +303,15 @@ def build_report_index(
             .get("summary", {})
             .get("runtime_llm_direct_http_hits", "unavailable"),
         },
+        "workshop_requirement_alignment": {
+            "path": "outputs/reports/workshop_requirement_audit.md",
+            "overall_status": _load_json(config.outputs_dir / "reports" / "workshop_requirement_audit.json")
+            .get("overall_status", "unavailable"),
+            "critical_failure_count": len(
+                _load_json(config.outputs_dir / "reports" / "workshop_requirement_audit.json")
+                .get("critical_failures", [])
+            ),
+        },
         "cleanup_reports": [
             "outputs/reports/cleanup_audit.md",
             "outputs/reports/cleanup_final_report.md",
@@ -447,6 +459,11 @@ def render_report_index(payload: dict[str, Any]) -> str:
     audit = payload.get("sdk_usage_audit", {})
     lines.append(f"- `{audit.get('path')}`")
     lines.append(f"- Runtime LLM direct HTTP hits: `{audit.get('runtime_llm_direct_http_hits')}`")
+    lines.extend(["", "## Workshop Requirement Alignment", ""])
+    workshop = payload.get("workshop_requirement_alignment", {})
+    lines.append(f"- [{Path(str(workshop.get('path'))).name}]({Path(str(workshop.get('path'))).name})")
+    lines.append(f"- Overall status: `{workshop.get('overall_status')}`")
+    lines.append(f"- Critical failures: `{workshop.get('critical_failure_count')}`")
     lines.extend(["", "## Cleanup Reports", ""])
     lines.extend(f"- `{path}`" for path in payload.get("cleanup_reports", []))
     lines.extend(["", "## Post-Change Validation Contract", ""])

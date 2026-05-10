@@ -142,3 +142,5 @@ def test_official_eval_uses_data_json_not_generated_suite(tiny_project):
 
 def test_diagnostic_outputs_are_not_submission_outputs():
     assert "diagnostic_prompt_suite" in NON_SUBMISSION_OUTPUT_DIRS
+    assert "llm_strict_eval" in NON_SUBMISSION_OUTPUT_DIRS
+    assert "llm_controller_baseline_backend" in NON_SUBMISSION_OUTPUT_DIRS

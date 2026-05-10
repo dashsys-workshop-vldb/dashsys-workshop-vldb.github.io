@@ -369,6 +369,7 @@ After every code, report, cleanup, visualization, or documentation change, run t
 
 ```bash
 python3 -m pytest -q
+python3 scripts/audit_workshop_requirements.py
 python3 scripts/run_dev_eval.py --strict
 python3 scripts/run_hidden_style_eval.py
 python3 scripts/check_llm_sdk_backend.py
@@ -389,11 +390,12 @@ Then regenerate the consolidated report entry point:
 
 ```bash
 python3 scripts/generate_consolidated_reports.py
+python3 scripts/audit_workshop_requirements.py
 python3 scripts/audit_redundant_files.py
 python3 scripts/cleanup_redundant_files.py --dry-run --write-report
 ```
 
-If a command is impossible or too expensive in the current environment, record the skipped command, reason, substitute validation, and residual risk in `outputs/reports/cleanup_final_report.md/json`. Also run the secret scan:
+The workshop audit writes `outputs/reports/workshop_requirement_audit.md/json` and checks official DASHSys deliverables, trajectory reproducibility, diagnostic-suite separation, SDK-only LLM usage, and final-submission packaging safety. If a command is impossible or too expensive in the current environment, record the skipped command, reason, substitute validation, and residual risk in `outputs/reports/cleanup_final_report.md/json`. Also run the secret scan:
 
 ```bash
 OPENAI_KEY_PATTERN='OPENAI_API_KEY=.*s''k'

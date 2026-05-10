@@ -33,6 +33,8 @@ NON_SUBMISSION_OUTPUT_DIRS = {
     "supportable_answer_rewrite_eval",
     "llm_candidate_search",
     "llm_answer_rewrite_search",
+    "llm_strict_eval",
+    "llm_controller_baseline_backend",
     "targeted_accuracy_packaged_trial",
     "autonomous_packaged_trial",
     "retrieval_ablation_report",

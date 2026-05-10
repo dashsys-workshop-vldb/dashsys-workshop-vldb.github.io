@@ -1,0 +1,254 @@
+{
+  "assumptions": [
+    "`original_query` satisfies the official user-query trace requirement when `query` is absent.",
+    "Diagnostic prompt labels are coverage hints only and are not official gold labels.",
+    "The SDK-only rule applies to LLM/model provider calls; Adobe REST API execution stays on the existing API client path."
+  ],
+  "critical_failures": [],
+  "items": [
+    {
+      "critical": true,
+      "evidence_path": [
+        "dashagent/db.py",
+        "dashagent/validators.py"
+      ],
+      "explanation": "execute_sql exists and read-only checks block destructive SQL.",
+      "id": "required_tools.execute_sql",
+      "recommended_fix": "Restore DuckDBDatabase.execute_sql, SQLValidator, and destructive SQL blocking.",
+      "requirement": "Implement execute_sql(sql) and keep SQL read-only.",
+      "status": "pass"
+    },
+    {
+      "critical": true,
+      "evidence_path": [
+        "dashagent/api_client.py",
+        "dashagent/validators.py",
+        "dashagent/endpoint_catalog.py"
+      ],
+      "explanation": "call_api exists and APIValidator/endpoint catalog are present.",
+      "id": "required_tools.call_api",
+      "recommended_fix": "Restore AdobeAPIClient.call_api and route all planned API calls through APIValidator.",
+      "requirement": "Implement call_api(method, url, params, headers) with endpoint/API validation.",
+      "status": "pass"
+    },
+    {
+      "critical": true,
+      "evidence_path": [
+        "outputs/final_submission",
+        "outputs/final_submission/system_prompt_template.txt",
+        "outputs/final_submission/source_code.zip",
+        "outputs/final_submission_manifest.json"
+      ],
+      "explanation": "All top-level final submission deliverables exist.",
+      "id": "final_submission.required_artifacts",
+      "recommended_fix": "Run package_submission.py and package_query_outputs.py to regenerate required final-submission artifacts.",
+      "requirement": "Submit system_prompt_template.txt, source_code.zip, final_submission_manifest.json, and final_submission query outputs.",
+      "status": "pass"
+    },
+    {
+      "critical": true,
+      "evidence_path": "outputs/final_submission_manifest.json",
+      "explanation": "preferred_strategy=SQL_FIRST_API_VERIFY",
+      "id": "submission.default_strategy",
+      "recommended_fix": "Regenerate package outputs with SQL_FIRST_API_VERIFY as the preferred strategy.",
+      "requirement": "Keep packaged default strategy unchanged as SQL_FIRST_API_VERIFY.",
+      "status": "pass"
+    },
+    {
+      "critical": true,
+      "evidence_path": "outputs/final_submission",
+      "explanation": "Checked 73 query directories; missing file records=0.",
+      "id": "final_submission.per_query_outputs",
+      "recommended_fix": "Regenerate query outputs with package_query_outputs.py and inspect missing query directories.",
+      "requirement": "Each packaged query directory contains metadata.json, filled_system_prompt.txt, and trajectory.json.",
+      "status": "pass"
+    },
+    {
+      "critical": true,
+      "evidence_path": "outputs/final_submission",
+      "explanation": "Checked 73 trajectories; invalid=0, missing_fields=0, missing_action_records=0.",
+      "id": "final_submission.trajectory_json",
+      "recommended_fix": "Regenerate affected trajectories and preserve original_query, final_answer, tool_call_count, estimated_tokens, runtime, and tool-call steps.",
+      "requirement": "Trajectory JSON is parseable, reproducible, and records query, answer, tool count, tokens, runtime, and SQL/API actions.",
+      "status": "pass"
+    },
+    {
+      "critical": true,
+      "evidence_path": "outputs/final_submission",
+      "explanation": "check_submission_ready secret scan passed.",
+      "id": "final_submission.secret_scan",
+      "recommended_fix": "Remove or redact secrets and regenerate affected artifacts.",
+      "requirement": "Final submission and trajectory artifacts must not leak secrets.",
+      "status": "pass"
+    },
+    {
+      "critical": true,
+      "evidence_path": "outputs/final_submission/source_code.zip",
+      "explanation": "zip_entries=213, forbidden_entries=0, secret_hits=0",
+      "id": "final_submission.source_zip_safety",
+      "recommended_fix": "Rebuild source_code.zip with package_submission.py after excluding unsafe files.",
+      "requirement": "source_code.zip must include source code without .env.local, caches, outputs, generated diagnostic data, or secrets.",
+      "status": "pass"
+    },
+    {
+      "critical": true,
+      "evidence_path": "outputs/final_submission",
+      "explanation": "No diagnostic or stale output contamination found.",
+      "id": "final_submission.diagnostic_contamination",
+      "recommended_fix": "Remove contaminated artifacts from final_submission and update packaging exclusions.",
+      "requirement": "Diagnostic prompts, diagnostic outputs, LLM raw artifacts, caches, and stale duplicate files must not be packaged into final_submission.",
+      "status": "pass"
+    },
+    {
+      "critical": false,
+      "evidence_path": [
+        "outputs/eval_results_strict.json",
+        "outputs/hidden_style_eval.json",
+        "outputs/winner_readiness_report.json",
+        "outputs/final_submission_manifest.json"
+      ],
+      "explanation": "Strict/component metrics, hidden-style report, and readiness checks are available.",
+      "id": "evaluation.strict_component_metrics",
+      "recommended_fix": "Regenerate strict eval, hidden-style eval, winner readiness, and readiness reports.",
+      "requirement": "Reports cover SQL correctness, API correctness, response correctness, tool calls, tokens, wall time, hidden-style robustness, and readiness.",
+      "status": "pass"
+    },
+    {
+      "critical": false,
+      "evidence_path": [
+        "prompts/system_prompt_template.txt",
+        "outputs/final_submission/system_prompt_template.txt"
+      ],
+      "explanation": "Prompt is tool-grounded and model-generic.",
+      "id": "model_generality.system_prompt",
+      "recommended_fix": "Remove model-specific/public-example wording and ensure prompt requires grounded SQL/API evidence.",
+      "requirement": "System prompt should generalize across Claude/OpenAI-style harnesses and avoid public/gold/model-specific runtime assumptions.",
+      "status": "pass"
+    },
+    {
+      "critical": true,
+      "evidence_path": "outputs/reports/sdk_usage_audit.json",
+      "explanation": "runtime_llm_direct_http_hits=0",
+      "id": "llm_sdk.direct_runtime_http",
+      "recommended_fix": "Refactor direct LLM HTTP runtime calls to dashagent.llm_client.get_llm_client().",
+      "requirement": "All LLM/model provider calls must use get_llm_client() or LLMClient SDK paths; direct runtime HTTP hits must be zero.",
+      "status": "pass"
+    },
+    {
+      "critical": false,
+      "evidence_path": [
+        "data/generated_prompt_suite.json",
+        "scripts/run_dev_eval.py",
+        "scripts/package_query_outputs.py"
+      ],
+      "explanation": "prompts=250, diagnostic_flags_ok=True, official_eval_separate=True, packaging_excluded=True",
+      "id": "diagnostic_suite.separation",
+      "recommended_fix": "Regenerate the diagnostic suite, preserve diagnostic_only/should_be_scored flags, and keep package exclusions.",
+      "requirement": "Generated prompt suite is diagnostic-only, not official scoring data, and excluded from final submission.",
+      "status": "pass"
+    },
+    {
+      "critical": false,
+      "evidence_path": [
+        "README.md",
+        "AGENTS.md"
+      ],
+      "explanation": "Documentation contains required alignment guidance.",
+      "id": "documentation.alignment",
+      "recommended_fix": "Update README.md and AGENTS.md with workshop-alignment and post-change validation guidance.",
+      "requirement": "README.md and AGENTS.md explain official tools, deliverables, default strategy, validation, diagnostic separation, SDK LLM rule, and no hardcoding/gold-label rules.",
+      "status": "pass"
+    },
+    {
+      "critical": false,
+      "evidence_path": [
+        "outputs/reports/report_index.md",
+        "outputs/reports/report_index.json"
+      ],
+      "explanation": "markdown_link=True, json_link=True",
+      "id": "reports.workshop_audit_indexed",
+      "recommended_fix": "Regenerate consolidated reports after adding the Workshop Requirement Alignment section.",
+      "requirement": "report_index.md/json links workshop_requirement_audit.md under Workshop Requirement Alignment.",
+      "status": "pass"
+    }
+  ],
+  "official_requirement_mapping": {
+    "additional_deliverables": {
+      "official_requirement": "Submit a system prompt template and source-code archive.",
+      "repo_artifacts": [
+        "outputs/final_submission/system_prompt_template.txt",
+        "outputs/final_submission/source_code.zip",
+        "outputs/final_submission_manifest.json"
+      ],
+      "status": "pass"
+    },
+    "call_api(method, url, params, headers)": {
+      "official_requirement": "Tool call_api(method, url, params, headers) must make sandbox REST API calls.",
+      "repo_artifacts": [
+        "dashagent/api_client.py",
+        "dashagent/validators.py",
+        "dashagent/endpoint_catalog.py"
+      ],
+      "status": "pass"
+    },
+    "diagnostic_prompt_suite_separation": {
+      "official_requirement": "Public examples are illustration/validation only; broader diagnostic prompts must not become official scoring data.",
+      "repo_artifacts": [
+        "data/generated_prompt_suite.json",
+        "outputs/reports/generated_prompt_suite_summary.json",
+        "scripts/package_query_outputs.py"
+      ],
+      "status": "pass"
+    },
+    "documentation_alignment": {
+      "official_requirement": "Submission should be easy to verify and describe architecture, prompting strategy, evaluation, and safe operation.",
+      "repo_artifacts": [
+        "README.md",
+        "AGENTS.md",
+        "outputs/reports/report_index.md"
+      ],
+      "status": "pass"
+    },
+    "evaluation_dimensions": {
+      "official_requirement": "Evaluation covers SQL/API/response correctness plus turns/tool calls/tokens/wall time and trajectory reproducibility.",
+      "repo_artifacts": [
+        "outputs/eval_results_strict.json",
+        "outputs/hidden_style_eval.json",
+        "scripts/check_submission_ready.py"
+      ],
+      "status": "pass"
+    },
+    "execute_sql(sql)": {
+      "official_requirement": "Tool execute_sql(sql) must execute database SQL.",
+      "repo_artifacts": [
+        "dashagent/db.py",
+        "dashagent/validators.py",
+        "tests/test_db.py"
+      ],
+      "status": "pass"
+    },
+    "harness_model_generality": {
+      "official_requirement": "Organizer may run the system prompt with Claude Agent SDK or OpenAI Agents SDK and any model.",
+      "repo_artifacts": [
+        "prompts/system_prompt_template.txt",
+        "dashagent/llm_client.py",
+        "outputs/reports/sdk_usage_audit.json"
+      ],
+      "status": "pass"
+    },
+    "per_query_deliverables": {
+      "official_requirement": "For each query submit metadata.json, filled_system_prompt.txt, and trajectory.json.",
+      "query_directory_count": 73,
+      "repo_artifacts": [
+        "outputs/final_submission/query_###/metadata.json",
+        "outputs/final_submission/query_###/filled_system_prompt.txt",
+        "outputs/final_submission/query_###/trajectory.json"
+      ],
+      "status": "pass"
+    }
+  },
+  "official_source": "https://dashsys-workshop-vldb.github.io/systems.html",
+  "overall_status": "pass",
+  "report_type": "workshop_requirement_audit",
+  "warnings": []
+}

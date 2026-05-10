@@ -36,6 +36,12 @@ Start here. Most older generated reports were consolidated or removed.
 - `outputs/reports/sdk_usage_audit.md`
 - Runtime LLM direct HTTP hits: `0`
 
+## Workshop Requirement Alignment
+
+- [workshop_requirement_audit.md](workshop_requirement_audit.md)
+- Overall status: `pass`
+- Critical failures: `0`
+
 ## Cleanup Reports
 
 - `outputs/reports/cleanup_audit.md`
@@ -47,6 +53,7 @@ Skipped commands must record command, reason, substitute validation, and residua
 
 Required commands:
 - `python3 -m pytest -q`
+- `python3 scripts/audit_workshop_requirements.py`
 - `python3 scripts/run_dev_eval.py --strict`
 - `python3 scripts/run_hidden_style_eval.py`
 - `python3 scripts/check_llm_sdk_backend.py`
@@ -68,6 +75,7 @@ Regenerated report surfaces:
 - `outputs/reports/llm_baseline_summary.md/json`
 - `outputs/reports/accuracy_and_bottleneck_summary.md/json`
 - `outputs/reports/visualization_summary.md/json`
+- `outputs/reports/workshop_requirement_audit.md/json`
 - `outputs/reports/cleanup_audit.md/json`
 - `outputs/reports/cleanup_final_report.md/json`
 - `outputs/winner_readiness_report.md/json`

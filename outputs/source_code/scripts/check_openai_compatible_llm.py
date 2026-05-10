@@ -66,6 +66,9 @@ def _write_compatibility_report(config: Config, report: dict[str, Any]) -> dict[
     safe_report = redact_secrets(report)
     if not isinstance(safe_report, dict):
         safe_report = report
+    for key in ["provider", "provider_type", "backend_type", "transport", "sdk_path_used", "base_url", "model", "backend_name"]:
+        if key in report:
+            safe_report[key] = report.get(key)
     json_path = config.outputs_dir / "openai_compatible_llm_check.json"
     md_path = config.outputs_dir / "openai_compatible_llm_check.md"
     json_path.write_text(json.dumps(safe_report, indent=2, sort_keys=True, default=str), encoding="utf-8")
