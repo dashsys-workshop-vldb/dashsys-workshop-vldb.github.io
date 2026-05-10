@@ -169,6 +169,11 @@ def cleanup_redundant_files(config: Config, *, apply: bool = False) -> dict[str,
         "reports_consolidated": sum(1 for row in rows if row.get("classification") == "consolidate_then_delete"),
         "final_submission_format_unchanged": not any(action["path"].startswith("outputs/final_submission/") for action in actions if action["status"] == "deleted"),
     }
+    summary["actual_deleted_count"] = summary["deleted_count"]
+    summary["dry_run_would_delete_count"] = summary["dry_run_delete_count"]
+    summary["previously_deleted_duplicate_count"] = 0
+    if deleted_files:
+        summary["deleted_file_count"] = len(deleted_files)
     return {
         **report_metadata(config.outputs_dir),
         "mode": "redundant_file_cleanup_report",
@@ -178,6 +183,10 @@ def cleanup_redundant_files(config: Config, *, apply: bool = False) -> dict[str,
         "audit_path": str(audit_path.relative_to(root)),
         "actions": actions,
         "deleted_files": deleted_files,
+        "actual_deleted_count": len(deleted_files),
+        "dry_run_would_delete_count": summary["dry_run_would_delete_count"],
+        "previously_deleted_duplicate_count": 0,
+        "previously_deleted_duplicate_files": [],
         "canonical_reports_kept": [
             "outputs/reports/system_summary.md",
             "outputs/reports/llm_baseline_summary.md",
@@ -277,10 +286,33 @@ def update_validation_results(config: Config, raw_results: list[str]) -> dict[st
         "missing_required_count": len(payload["missing_required_validation_commands"]),
     }
     tracked_deleted = _deleted_files_from_git(config.project_root)
-    if tracked_deleted:
-        merged_deleted = sorted(set(payload.get("deleted_files") or []) | set(tracked_deleted))
-        payload["deleted_files"] = merged_deleted
-        payload.setdefault("summary", {})["deleted_file_count"] = len(merged_deleted)
+    previous_duplicates = _previously_deleted_duplicate_files(tracked_deleted)
+    if previous_duplicates:
+        merged_previous = sorted(set(payload.get("previously_deleted_duplicate_files") or []) | set(previous_duplicates))
+        payload["previously_deleted_duplicate_files"] = merged_previous
+        payload["previously_deleted_duplicate_count"] = len(merged_previous)
+        payload.setdefault("summary", {})["previously_deleted_duplicate_count"] = len(merged_previous)
+    action_deleted = [
+        action["path"]
+        for action in payload.get("actions", [])
+        if action.get("status") == "deleted"
+    ]
+    if action_deleted or payload.get("dry_run") is True:
+        actual_deleted = action_deleted
+    else:
+        actual_deleted = payload.get("deleted_files") or []
+    payload["deleted_files"] = actual_deleted
+    payload["actual_deleted_count"] = len(actual_deleted)
+    payload["dry_run_would_delete_count"] = payload.get("summary", {}).get(
+        "dry_run_would_delete_count",
+        payload.get("summary", {}).get("dry_run_delete_count", 0),
+    )
+    payload.setdefault("summary", {})["actual_deleted_count"] = payload["actual_deleted_count"]
+    payload.setdefault("summary", {})["dry_run_would_delete_count"] = payload["dry_run_would_delete_count"]
+    if actual_deleted:
+        payload.setdefault("summary", {})["deleted_file_count"] = len(actual_deleted)
+    else:
+        payload.get("summary", {}).pop("deleted_file_count", None)
     payload["check_submission_ready_passed"] = any(
         "check_submission_ready.py" in item.get("command", "") and item.get("result") == "passed"
         for item in existing
@@ -382,6 +414,19 @@ def _deleted_files_from_git(root: Path) -> list[str]:
     return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
 
+def _previously_deleted_duplicate_files(paths: list[str]) -> list[str]:
+    return [
+        path
+        for path in paths
+        if _is_duplicate_generated_path(path)
+    ]
+
+
+def _is_duplicate_generated_path(path: str) -> bool:
+    name = Path(path).name
+    return any(f" {index}" in name for index in range(2, 10))
+
+
 def _protected_match(rel: str) -> str | None:
     for pattern in PROTECTED_PATTERNS:
         if _matches_pattern(rel, pattern):
@@ -418,9 +463,9 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- Dry run: {payload.get('dry_run', 'unavailable')}",
         f"- Applied: {payload.get('applied', 'unavailable')}",
         f"- Candidate rows: {summary.get('candidate_count', 'unavailable')}",
-        f"- Deleted: {summary.get('deleted_count', 'unavailable')}",
-        f"- Deleted files total: {summary.get('deleted_file_count', len(payload.get('deleted_files') or []))}",
-        f"- Would delete: {summary.get('dry_run_delete_count', 'unavailable')}",
+        f"- Actual deleted: {payload.get('actual_deleted_count', summary.get('actual_deleted_count', summary.get('deleted_count', 'unavailable')))}",
+        f"- Would delete: {payload.get('dry_run_would_delete_count', summary.get('dry_run_would_delete_count', summary.get('dry_run_delete_count', 'unavailable')))}",
+        f"- Previously deleted duplicates: {payload.get('previously_deleted_duplicate_count', summary.get('previously_deleted_duplicate_count', 'unavailable'))}",
         f"- Refused: {summary.get('refused_count', 'unavailable')}",
         f"- No protected files deleted: {summary.get('no_protected_files_deleted', 'unavailable')}",
         f"- Files before cleanup: {summary.get('files_before_cleanup', 'unavailable')}",
@@ -435,6 +480,9 @@ def render_markdown(payload: dict[str, Any]) -> str:
         "## Actions",
         "",
     ]
+    actual_deleted = payload.get("actual_deleted_count", summary.get("actual_deleted_count", summary.get("deleted_count", 0)))
+    if actual_deleted:
+        lines.insert(8, f"- Deleted files total: {summary.get('deleted_file_count', len(payload.get('deleted_files') or []))}")
     if payload.get("actions"):
         for action in payload["actions"][:150]:
             lines.append(f"- `{action['path']}`: {action['status']} ({action['reason']})")
@@ -475,14 +523,29 @@ def render_markdown(payload: dict[str, Any]) -> str:
             lines.append(f"- `{item.get('path')}`: {'present' if item.get('exists') else 'missing'}")
     else:
         lines.append("- Not recorded yet.")
-    lines.extend(["", "## Deleted Files", ""])
-    deleted = payload.get("deleted_files") or [
-        action["path"] for action in payload.get("actions", []) if action.get("status") == "deleted"
-    ]
-    if deleted:
-        lines.extend(f"- `{path}`" for path in deleted[:200])
+    if payload.get("dry_run") and not actual_deleted:
+        lines.extend(["", "## Would Delete Files", ""])
+        would_delete = [
+            action["path"] for action in payload.get("actions", []) if action.get("status") == "would_delete"
+        ]
+        if would_delete:
+            lines.extend(f"- `{path}`" for path in would_delete[:200])
+        else:
+            lines.append("- None")
     else:
-        lines.append("- None")
+        lines.extend(["", "## Deleted Files", ""])
+        deleted = payload.get("deleted_files") or [
+            action["path"] for action in payload.get("actions", []) if action.get("status") == "deleted"
+        ]
+        if deleted:
+            lines.extend(f"- `{path}`" for path in deleted[:200])
+        else:
+            lines.append("- None")
+    previous_duplicates = payload.get("previously_deleted_duplicate_files") or []
+    if previous_duplicates:
+        lines.extend(["", "## Previously Deleted Duplicate Files", ""])
+        lines.append("These files were already deleted before this dry-run report; they were not deleted by this run.")
+        lines.extend(f"- `{path}`" for path in previous_duplicates[:200])
     lines.extend(["", "## Final Response Checklist", ""])
     for item in payload.get("final_response_required_fields", FINAL_RESPONSE_REQUIRED_FIELDS):
         lines.append(f"- {item}")

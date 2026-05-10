@@ -3,13 +3,13 @@
 - Dry run: True
 - Applied: False
 - Candidate rows: 6
-- Deleted: 0
-- Deleted files total: 89
+- Actual deleted: 0
 - Would delete: 6
+- Previously deleted duplicates: 0
 - Refused: 0
 - No protected files deleted: True
-- Files before cleanup: 17788
-- Files after cleanup: 17788
+- Files before cleanup: 18098
+- Files after cleanup: 18098
 - Reports consolidated: 0
 - Final submission format unchanged: True
 - check_submission_ready passed: True
@@ -83,97 +83,14 @@
 - `outputs/visualizations/technique_visual_cards.md`: present
 - `outputs/visualizations/technique_visual_cards.json`: present
 
-## Deleted Files
+## Would Delete Files
 
-- `outputs/final_submission/query_009/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_009/metadata 2.json`
-- `outputs/final_submission/query_009/trajectory 2.json`
-- `outputs/final_submission/query_014/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_014/metadata 2.json`
-- `outputs/final_submission/query_014/trajectory 2.json`
-- `outputs/final_submission/query_015/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_015/metadata 2.json`
-- `outputs/final_submission/query_015/trajectory 2.json`
-- `outputs/final_submission/query_017/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_017/metadata 2.json`
-- `outputs/final_submission/query_017/trajectory 2.json`
-- `outputs/final_submission/query_018/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_018/metadata 2.json`
-- `outputs/final_submission/query_018/trajectory 2.json`
-- `outputs/final_submission/query_019/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_019/metadata 2.json`
-- `outputs/final_submission/query_019/trajectory 2.json`
-- `outputs/final_submission/query_020/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_020/metadata 2.json`
-- `outputs/final_submission/query_020/trajectory 2.json`
-- `outputs/final_submission/query_021/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_021/metadata 2.json`
-- `outputs/final_submission/query_021/trajectory 2.json`
-- `outputs/final_submission/query_023/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_023/metadata 2.json`
-- `outputs/final_submission/query_023/trajectory 2.json`
-- `outputs/final_submission/query_026/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_026/metadata 2.json`
-- `outputs/final_submission/query_026/trajectory 2.json`
-- `outputs/final_submission/query_028/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_028/metadata 2.json`
-- `outputs/final_submission/query_028/trajectory 2.json`
-- `outputs/final_submission/query_029/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_029/metadata 2.json`
-- `outputs/final_submission/query_029/trajectory 2.json`
-- `outputs/final_submission/query_031/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_031/metadata 2.json`
-- `outputs/final_submission/query_031/trajectory 2.json`
-- `outputs/final_submission/query_033/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_033/metadata 2.json`
-- `outputs/final_submission/query_033/trajectory 2.json`
-- `outputs/final_submission/query_036/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_036/metadata 2.json`
-- `outputs/final_submission/query_036/trajectory 2.json`
-- `outputs/final_submission/query_037/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_037/metadata 2.json`
-- `outputs/final_submission/query_037/trajectory 2.json`
-- `outputs/final_submission/query_040/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_040/metadata 2.json`
-- `outputs/final_submission/query_040/trajectory 2.json`
-- `outputs/final_submission/query_047/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_047/metadata 2.json`
-- `outputs/final_submission/query_047/trajectory 2.json`
-- `outputs/final_submission/query_048/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_048/metadata 2.json`
-- `outputs/final_submission/query_048/trajectory 2.json`
-- `outputs/final_submission/query_049/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_049/metadata 2.json`
-- `outputs/final_submission/query_049/trajectory 2.json`
-- `outputs/final_submission/query_050/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_050/metadata 2.json`
-- `outputs/final_submission/query_050/trajectory 2.json`
-- `outputs/final_submission/query_052/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_052/metadata 2.json`
-- `outputs/final_submission/query_052/trajectory 2.json`
-- `outputs/final_submission/query_054/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_054/metadata 2.json`
-- `outputs/final_submission/query_054/trajectory 2.json`
-- `outputs/final_submission/query_056/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_056/metadata 2.json`
-- `outputs/final_submission/query_056/trajectory 2.json`
-- `outputs/final_submission/query_065/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_065/metadata 2.json`
-- `outputs/final_submission/query_065/trajectory 2.json`
-- `outputs/final_submission/query_067/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_067/metadata 2.json`
-- `outputs/final_submission/query_067/trajectory 2.json`
-- `outputs/final_submission/query_068/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_068/metadata 2.json`
-- `outputs/final_submission/query_068/trajectory 2.json`
-- `outputs/final_submission/query_071/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_071/metadata 2.json`
-- `outputs/final_submission/query_071/trajectory 2.json`
-- `outputs/final_submission/query_072/filled_system_prompt 2.txt`
-- `outputs/final_submission/query_072/metadata 2.json`
-- `outputs/final_submission/query_072/trajectory 2.json`
-- `outputs/final_submission/source_code 2.zip`
-- `outputs/final_submission/system_prompt_template 2.txt`
+- `.pytest_cache`
+- `outputs/cache`
+- `outputs/llm_controller_baseline_backend`
+- `outputs/llm_strict_eval`
+- `outputs/source_code`
+- `outputs/tmp`
 
 ## Final Response Checklist
 
