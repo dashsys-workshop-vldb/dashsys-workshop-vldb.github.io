@@ -575,6 +575,9 @@ def _semantic_router_status(sources: dict[str, Any]) -> dict[str, Any]:
         "helper_called_prompts": report.get("helper_called_prompts", 0),
         "valid_helper_outputs": report.get("valid_helper_outputs", 0),
         "rejected_helper_outputs": report.get("rejected_helper_outputs", 0),
+        "normalization_actions_count": report.get("normalization_actions_count", 0),
+        "synonym_mappings_coerced_count": report.get("synonym_mappings_coerced_count", 0),
+        "domain_aliases_applied_count": report.get("domain_aliases_applied_count", 0),
         "recommendation": recommendation,
         "source_report": "outputs/reports/llm_semantic_router_shadow_eval.md",
     }

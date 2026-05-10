@@ -69,6 +69,7 @@ IMPORTANT_PREVIEW_KEYS = [
     "final_runtime_confidence",
     "hint_applied",
     "hint_application_mode",
+    "normalization_actions",
     "applied_to_runtime",
     "would_change_route",
     "would_change_domain",
@@ -97,7 +98,7 @@ def structural_preview(obj: Any) -> Any:
         compact: dict[str, Any] = {}
         for key in IMPORTANT_PREVIEW_KEYS:
             if key in obj:
-                compact[key] = structural_preview(obj[key])
+                compact[key] = obj[key][:20] if key == "normalization_actions" and isinstance(obj[key], list) else structural_preview(obj[key])
         for key, value in obj.items():
             if key in compact:
                 continue

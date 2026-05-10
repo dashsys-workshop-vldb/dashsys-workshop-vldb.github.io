@@ -169,6 +169,7 @@ def _row_from_trajectory(item: dict[str, Any], trajectory: dict[str, Any], elaps
             "helper_answer_intent": checkpoint.get("helper_answer_intent"),
             "would_change_intent": checkpoint.get("would_change_intent", False),
             "helper_confidence": checkpoint.get("helper_confidence"),
+            "normalization_actions": checkpoint.get("normalization_actions", []),
             "deterministic_confidence_before": checkpoint.get("deterministic_confidence_before"),
             "final_runtime_confidence": checkpoint.get("final_runtime_confidence"),
             "hint_applied": checkpoint.get("hint_applied", False),
@@ -197,6 +198,12 @@ def _build_skipped_report(config: Config, selected: list[dict[str, Any]], backen
             "helper_called_prompts": 0,
             "valid_helper_outputs": 0,
             "rejected_helper_outputs": 0,
+            "normalization_actions": {},
+            "normalization_actions_count": 0,
+            "synonym_mappings_coerced_count": 0,
+            "domain_aliases_applied_count": 0,
+            "valid_hint_examples": [],
+            "rejected_hint_examples": [],
             "recommendation": "keep_disabled",
             "recommendation_reason": "No configured SDK backend/key was available for shadow evaluation.",
             **backend,
@@ -211,6 +218,22 @@ def _build_report(config: Config, selected: list[dict[str, Any]], rows: list[dic
     valid = [row for row in called if row.get("helper_valid")]
     rejected = [row for row in called if not row.get("helper_valid")]
     disagreements = [row for row in valid if row.get("would_change_route") or row.get("would_change_domain") or row.get("would_change_intent")]
+    normalization_actions = Counter(
+        action
+        for row in called
+        for action in row.get("normalization_actions", [])
+        if action
+    )
+    synonym_coercions = sum(
+        count
+        for action, count in normalization_actions.items()
+        if action.startswith("synonym_mappings_")
+    )
+    domain_aliases = sum(
+        count
+        for action, count in normalization_actions.items()
+        if action.startswith("domain_alias:")
+    )
     recommendation = "keep_shadow_only" if valid else "keep_disabled"
     return redact_secrets(
         {
@@ -232,8 +255,14 @@ def _build_report(config: Config, selected: list[dict[str, Any]], rows: list[dic
             "domain_disagreements": sum(1 for row in disagreements if row.get("would_change_domain")),
             "intent_disagreements": sum(1 for row in disagreements if row.get("would_change_intent")),
             "rejection_reasons": dict(Counter(row.get("helper_rejected_reason") for row in rejected if row.get("helper_rejected_reason"))),
+            "normalization_actions": dict(normalization_actions),
+            "normalization_actions_count": sum(normalization_actions.values()),
+            "synonym_mappings_coerced_count": synonym_coercions,
+            "domain_aliases_applied_count": domain_aliases,
             "useful_synonym_examples": disagreements[:10],
             "wrong_suggestion_examples": rejected[:10],
+            "valid_hint_examples": valid[:10],
+            "rejected_hint_examples": rejected[:10],
             "recommendation": recommendation,
             "recommendation_reason": "Shadow-only diagnostic only; no strict-score promotion gate has run.",
             **backend,
@@ -269,6 +298,9 @@ def _render_markdown(report: dict[str, Any]) -> str:
         f"- Helper called prompts: `{report.get('helper_called_prompts')}`",
         f"- Valid helper outputs: `{report.get('valid_helper_outputs')}`",
         f"- Rejected helper outputs: `{report.get('rejected_helper_outputs')}`",
+        f"- Normalization actions count: `{report.get('normalization_actions_count')}`",
+        f"- Synonym mappings coerced count: `{report.get('synonym_mappings_coerced_count')}`",
+        f"- Domain aliases applied count: `{report.get('domain_aliases_applied_count')}`",
         f"- Recommendation: `{report.get('recommendation')}`",
         "",
     ]
@@ -282,6 +314,33 @@ def _render_markdown(report: dict[str, Any]) -> str:
             lines.append(f"- `{key}`: `{value}`")
     else:
         lines.append("- `none`: `0`")
+    lines.append("")
+    lines.extend(["## Normalization Actions", ""])
+    actions = report.get("normalization_actions") or {}
+    if actions:
+        for key, value in sorted(actions.items()):
+            lines.append(f"- `{key}`: `{value}`")
+    else:
+        lines.append("- `none`: `0`")
+    lines.append("")
+    lines.extend(["## Examples", ""])
+    valid_examples = report.get("valid_hint_examples") or []
+    rejected_examples = report.get("rejected_hint_examples") or []
+    lines.append(f"- Valid hint examples shown: `{len(valid_examples[:3])}`")
+    for row in valid_examples[:3]:
+        lines.append(
+            "- "
+            f"`{row.get('prompt_id')}`: domain=`{row.get('helper_likely_domain')}`, "
+            f"route=`{row.get('helper_route_suggestion')}`, intent=`{row.get('helper_answer_intent')}`, "
+            f"actions=`{row.get('normalization_actions', [])}`"
+        )
+    lines.append(f"- Rejected hint examples shown: `{len(rejected_examples[:3])}`")
+    for row in rejected_examples[:3]:
+        lines.append(
+            "- "
+            f"`{row.get('prompt_id')}`: reason=`{row.get('helper_rejected_reason')}`, "
+            f"actions=`{row.get('normalization_actions', [])}`"
+        )
     lines.append("")
     return "\n".join(lines)
 

@@ -44,6 +44,9 @@ HELPER_INTENT_ALIASES = {
 }
 
 HELPER_DOMAIN_ALIASES = {
+    "audit": None,
+    "audit_events": None,
+    "audits": None,
     "schema_dataset": "DATASET_SCHEMA",
     "journey_campaign": "JOURNEY_CAMPAIGN",
     "segment_audience": "SEGMENT_AUDIENCE",
@@ -53,6 +56,9 @@ HELPER_DOMAIN_ALIASES = {
 }
 
 ALLOWED_HELPER_DOMAINS = {
+    "audit",
+    "audit_events",
+    "audits",
     "schema_dataset",
     "journey_campaign",
     "segment_audience",
@@ -63,6 +69,12 @@ ALLOWED_HELPER_DOMAINS = {
     "observability",
     "property_field",
     "unknown",
+}
+
+HELPER_DOMAIN_VALUE_ALIASES = {
+    "audit": "observability",
+    "audits": "observability",
+    "audit_events": "observability",
 }
 
 API_FAMILY_HINTS = {
@@ -96,6 +108,43 @@ ANSWER_NUMERIC_CLAIM_RE = re.compile(
 )
 DATE_RE = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
 UUID_RE = re.compile(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", re.I)
+MISSING = object()
+SYNONYM_MAPPING_KEYS = {"user_phrase", "mapped_to", "target_domain", "reason"}
+SAFE_SYNONYM_WORDS = {
+    "api",
+    "audience",
+    "audiences",
+    "audit",
+    "audit_events",
+    "audits",
+    "blueprint",
+    "blueprints",
+    "count",
+    "data_model",
+    "data_models",
+    "data_set",
+    "data_sets",
+    "dataset",
+    "datasets",
+    "date",
+    "destination",
+    "destinations",
+    "failed",
+    "latest",
+    "list",
+    "observability",
+    "recent",
+    "schema",
+    "schemas",
+    "segment",
+    "segments",
+    "sql",
+    "status",
+    "target",
+    "targets",
+    "when",
+    "yes_no",
+}
 
 
 @dataclass(frozen=True)
@@ -114,6 +163,7 @@ class SemanticRoutingHint:
     needs_api: bool
     confidence: float
     reason: str
+    normalization_actions: list[str]
     raw: dict[str, Any]
 
     def to_dict(self) -> dict[str, Any]:
@@ -196,6 +246,7 @@ class SemanticRoutingResult:
             payload["candidate_api_families"] = self.hint.candidate_api_families
             payload["candidate_api_ids"] = self.hint.candidate_api_ids
             payload["synonym_mappings"] = self.hint.synonym_mappings[:5]
+            payload["normalization_actions"] = self.hint.normalization_actions
         safe = redact_secrets(payload)
         return safe if isinstance(safe, dict) else payload
 
@@ -211,11 +262,21 @@ def normalize_answer_intent(value: Any) -> str:
 
 
 def normalize_helper_domain(value: Any) -> tuple[str, str | None]:
+    normalized, internal, _actions = _normalize_helper_domain_with_actions(value)
+    return normalized, internal
+
+
+def _normalize_helper_domain_with_actions(value: Any) -> tuple[str, str | None, list[str]]:
     domain = str(value or "unknown").strip().lower()
+    actions: list[str] = []
+    if domain in HELPER_DOMAIN_VALUE_ALIASES:
+        original = domain
+        domain = HELPER_DOMAIN_VALUE_ALIASES[domain]
+        actions.append(f"domain_alias:{original}->observability")
     if domain not in ALLOWED_HELPER_DOMAINS:
-        return domain, None
+        return domain, None, actions
     internal = HELPER_DOMAIN_ALIASES.get(domain)
-    return domain, internal if internal in DOMAIN_TYPES else None
+    return domain, internal if internal in DOMAIN_TYPES else None, actions
 
 
 def compute_semantic_router_eligibility(
@@ -288,15 +349,56 @@ def build_semantic_routing_messages(
             "recent": ["WHEN", "updated", "latest"],
         },
     }
+    populated_example = {
+        "likely_domain": "schema_dataset",
+        "answer_intent": "COUNT",
+        "route_suggestion": "SQL_ONLY",
+        "synonym_mappings": [
+            {
+                "user_phrase": "data models",
+                "mapped_to": "schemas",
+                "target_domain": "schema_dataset",
+                "reason": "data models is semantically close to schemas/blueprints",
+            }
+        ],
+        "candidate_tables": ["dim_blueprint"],
+        "candidate_api_families": [],
+        "needs_api": False,
+        "confidence": 0.72,
+        "reason": "The prompt asks for schema-like data objects.",
+    }
+    empty_example = {
+        "likely_domain": "unknown",
+        "answer_intent": "UNKNOWN",
+        "route_suggestion": "UNKNOWN",
+        "synonym_mappings": [],
+        "candidate_tables": [],
+        "candidate_api_families": [],
+        "needs_api": False,
+        "confidence": 0.0,
+        "reason": "No safe routing hint.",
+    }
     system = (
         "You are a semantic routing helper for a deterministic DASHSys agent. "
-        "Return strict JSON only. Do not answer the user. Do not include SQL results, API results, "
-        "final-answer text, gold labels, public example IDs, or actual data values. "
+        "Return one JSON object only. No markdown. No prose. No final answer. "
+        "Do not include SQL results, API results, final-answer text, gold labels, public example IDs, or actual data values. "
         "Only suggest routing/domain/intent/synonym hints that must still be validated."
     )
     user = (
-        "Return one JSON object with keys: likely_domain, answer_intent, route_suggestion, "
+        "Return one JSON object with exactly these keys: likely_domain, answer_intent, route_suggestion, "
         "synonym_mappings, candidate_tables, candidate_api_families, needs_api, confidence, reason.\n"
+        "Schema rules:\n"
+        "- synonym_mappings must always be an array. If there are no synonym mappings, output \"synonym_mappings\": [].\n"
+        "- candidate_tables must always be an array.\n"
+        "- candidate_api_families must always be an array.\n"
+        "- confidence must be a number between 0 and 1.\n"
+        "- Domain must be one of the allowed domains.\n"
+        "- Route must be one of the allowed routes.\n"
+        "- Answer intent must be one of the allowed intents.\n"
+        "Populated example:\n"
+        f"{json.dumps(populated_example, indent=2, sort_keys=True)}\n"
+        "Empty synonym example:\n"
+        f"{json.dumps(empty_example, indent=2, sort_keys=True)}\n"
         f"Safe routing context:\n{json.dumps(context, indent=2, sort_keys=True, default=str)}"
     )
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
@@ -441,7 +543,7 @@ def validate_semantic_routing_hint(
     if _contains_unsafe_numeric_claim(text, user_prompt):
         return None, "helper_output_contains_unsafe_numeric_answer_claim"
 
-    normalized_domain, internal_domain = normalize_helper_domain(raw.get("likely_domain"))
+    normalized_domain, internal_domain, domain_actions = _normalize_helper_domain_with_actions(raw.get("likely_domain"))
     if normalized_domain not in ALLOWED_HELPER_DOMAINS:
         return None, f"unknown_domain:{normalized_domain}"
     raw_route = str(raw.get("route_suggestion") or "UNKNOWN").strip().upper()
@@ -465,7 +567,11 @@ def validate_semantic_routing_hint(
     )
     if api_error:
         return None, api_error
-    synonym_mappings, synonym_error = _normalize_synonym_mappings(raw.get("synonym_mappings"), schema_index, api_labels)
+    synonym_mappings, synonym_actions, synonym_error = _normalize_synonym_mappings(
+        raw.get("synonym_mappings", MISSING),
+        schema_index,
+        api_labels,
+    )
     if synonym_error:
         return None, synonym_error
     try:
@@ -490,6 +596,7 @@ def validate_semantic_routing_hint(
         needs_api=bool(raw.get("needs_api", False)),
         confidence=confidence,
         reason=str(raw.get("reason") or "")[:240],
+        normalization_actions=[*domain_actions, *synonym_actions],
         raw=redact_secrets(raw) if isinstance(redact_secrets(raw), dict) else {},
     )
     return hint, None
@@ -593,25 +700,48 @@ def _normalize_synonym_mappings(
     raw: Any,
     schema_index: SchemaIndex,
     api_labels: dict[str, set[str]],
-) -> tuple[list[dict[str, str]], str | None]:
-    if raw in (None, ""):
-        return [], None
+) -> tuple[list[dict[str, str]], list[str], str | None]:
+    actions: list[str] = []
+    if raw is MISSING:
+        return [], ["synonym_mappings_missing_to_empty"], None
+    if raw is None:
+        return [], ["synonym_mappings_null_to_empty"], None
+    if isinstance(raw, str):
+        return [], actions, "synonym_mappings_string_not_allowed"
+    if isinstance(raw, dict):
+        if any(key in raw for key in SYNONYM_MAPPING_KEYS):
+            raw = [raw]
+            actions.append("synonym_mappings_object_wrapped")
+        else:
+            coerced: list[dict[str, str]] = []
+            for phrase, mapped_to in raw.items():
+                coerced.append(
+                    {
+                        "user_phrase": str(phrase),
+                        "mapped_to": str(mapped_to),
+                        "target_domain": "unknown",
+                        "reason": "Coerced from simple mapping object.",
+                    }
+                )
+            raw = coerced
+            actions.append("synonym_mappings_simple_object_coerced")
     if not isinstance(raw, list):
-        return [], "synonym_mappings_not_list"
+        return [], actions, "synonym_mappings_not_list"
     known = set(ALLOWED_HELPER_DOMAINS)
     known.update(table.lower() for table in schema_index.tables)
     known.update(api_labels.keys())
-    known.update({"failed", "status", "latest", "recent", "count", "list", "yes_no", "when", "date", "api", "sql"})
+    known.update(SAFE_SYNONYM_WORDS)
     normalized: list[dict[str, str]] = []
     for item in raw[:12]:
         if not isinstance(item, dict):
-            return [], "synonym_mapping_not_object"
+            return [], actions, "synonym_mapping_not_object"
         mapped_to = str(item.get("mapped_to") or "").strip()
         target_domain = str(item.get("target_domain") or "unknown").strip().lower()
+        target_domain = HELPER_DOMAIN_VALUE_ALIASES.get(target_domain, target_domain)
         if target_domain and target_domain not in ALLOWED_HELPER_DOMAINS:
-            return [], f"unknown_synonym_target_domain:{target_domain}"
+            return [], actions, f"unknown_synonym_target_domain:{target_domain}"
         if mapped_to and _api_label_key(mapped_to) not in known:
-            return [], f"unknown_synonym_mapping:{mapped_to}"
+            return [], actions, f"unknown_synonym_mapping:{mapped_to}"
         normalized.append(
             {
                 "user_phrase": str(item.get("user_phrase") or "")[:80],
@@ -620,7 +750,7 @@ def _normalize_synonym_mappings(
                 "reason": str(item.get("reason") or "")[:160],
             }
         )
-    return normalized, None
+    return normalized, actions, None
 
 
 def _known_api_labels(endpoint_catalog: EndpointCatalog) -> dict[str, set[str]]:

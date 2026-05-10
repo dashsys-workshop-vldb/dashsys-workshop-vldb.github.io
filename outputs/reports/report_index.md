@@ -43,7 +43,7 @@ Start here. Most older generated reports were consolidated or removed.
 - Shadow-only by default: `true`
 - Uses SDK-based `LLMClient`; no direct HTTP; routing hints only; no final answers.
 - Status: `complete`
-- Recommendation: `keep_disabled`
+- Recommendation: `keep_shadow_only`
 
 ## Workshop Requirement Alignment
 

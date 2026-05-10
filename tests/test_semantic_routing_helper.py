@@ -17,11 +17,12 @@ from dashagent.semantic_routing_helper import (
     build_semantic_routing_messages,
     compute_semantic_router_eligibility,
     normalize_answer_intent,
+    normalize_helper_domain,
     normalize_route_suggestion,
     run_semantic_routing_helper,
     validate_semantic_routing_hint,
 )
-from scripts.run_llm_semantic_router_shadow_eval import run_llm_semantic_router_shadow_eval
+from scripts.run_llm_semantic_router_shadow_eval import _build_report, run_llm_semantic_router_shadow_eval
 from scripts.package_query_outputs import NON_SUBMISSION_OUTPUT_DIRS
 
 
@@ -143,10 +144,38 @@ def test_helper_prompt_excludes_gold_runtime_payloads(tiny_project: Config):
     assert "final_answer" not in text
 
 
+def test_helper_prompt_has_strict_json_schema_examples(tiny_project: Config):
+    executor, routing, norm, tokens, analysis = _context(tiny_project)
+    messages = build_semantic_routing_messages(
+        user_prompt="show me my data models",
+        normalized_query=norm["normalized"],
+        matching_text=norm["matching_text"],
+        routing=routing,
+        analysis=analysis,
+        tokens=tokens,
+        schema_index=executor.schema_index,
+        endpoint_catalog=executor.endpoint_catalog,
+    )
+    text = "\n".join(message["content"] for message in messages)
+    assert "Return one JSON object only. No markdown. No prose. No final answer." in text
+    assert "synonym_mappings must always be an array" in text
+    assert '"user_phrase": "data models"' in text
+    assert '"mapped_to": "schemas"' in text
+    assert '"candidate_tables": [\n    "dim_blueprint"\n  ]' in text
+    assert '"synonym_mappings": []' in text
+
+
 def test_route_and_intent_normalization():
     assert normalize_route_suggestion("SQL_PLUS_API") == "SQL_THEN_API"
     assert normalize_answer_intent("DATE") == "WHEN"
     assert normalize_answer_intent("BOOLEAN") == "YES_NO"
+
+
+def test_audit_domain_aliases_normalize_to_observability():
+    assert normalize_helper_domain("audit") == ("observability", None)
+    assert normalize_helper_domain("audits") == ("observability", None)
+    assert normalize_helper_domain("audit_events") == ("observability", None)
+    assert normalize_helper_domain("not_a_domain") == ("not_a_domain", None)
 
 
 def test_semantic_router_flags_accept_true_false_env(monkeypatch, tiny_project: Config):
@@ -181,21 +210,109 @@ def test_validate_semantic_hint_accepts_normalized_valid_hint(tiny_project: Conf
     assert hint.normalized_answer_intent == "WHEN"
 
 
+def test_synonym_mappings_safe_shape_normalization(tiny_project: Config):
+    executor, *_ = _context(tiny_project)
+    base = _valid_hint_base()
+
+    missing = {key: value for key, value in base.items() if key != "synonym_mappings"}
+    hint, reason = validate_semantic_routing_hint(
+        missing,
+        user_prompt="show me my data models",
+        schema_index=executor.schema_index,
+        endpoint_catalog=executor.endpoint_catalog,
+    )
+    assert hint is not None, reason
+    assert hint.synonym_mappings == []
+    assert "synonym_mappings_missing_to_empty" in hint.normalization_actions
+
+    null_hint, reason = validate_semantic_routing_hint(
+        {**base, "synonym_mappings": None},
+        user_prompt="show me my data models",
+        schema_index=executor.schema_index,
+        endpoint_catalog=executor.endpoint_catalog,
+    )
+    assert null_hint is not None, reason
+    assert null_hint.synonym_mappings == []
+    assert "synonym_mappings_null_to_empty" in null_hint.normalization_actions
+
+    object_hint, reason = validate_semantic_routing_hint(
+        {**base, "synonym_mappings": {"user_phrase": "data models", "mapped_to": "schemas", "target_domain": "schema_dataset"}},
+        user_prompt="show me my data models",
+        schema_index=executor.schema_index,
+        endpoint_catalog=executor.endpoint_catalog,
+    )
+    assert object_hint is not None, reason
+    assert object_hint.synonym_mappings[0]["mapped_to"] == "schemas"
+    assert "synonym_mappings_object_wrapped" in object_hint.normalization_actions
+
+    simple_hint, reason = validate_semantic_routing_hint(
+        {**base, "synonym_mappings": {"data models": "schemas"}},
+        user_prompt="show me my data models",
+        schema_index=executor.schema_index,
+        endpoint_catalog=executor.endpoint_catalog,
+    )
+    assert simple_hint is not None, reason
+    assert simple_hint.synonym_mappings == [
+        {
+            "user_phrase": "data models",
+            "mapped_to": "schemas",
+            "target_domain": "unknown",
+            "reason": "Coerced from simple mapping object.",
+        }
+    ]
+    assert "synonym_mappings_simple_object_coerced" in simple_hint.normalization_actions
+
+    rejected, reason = validate_semantic_routing_hint(
+        {**base, "synonym_mappings": "data models means schemas"},
+        user_prompt="show me my data models",
+        schema_index=executor.schema_index,
+        endpoint_catalog=executor.endpoint_catalog,
+    )
+    assert rejected is None
+    assert reason == "synonym_mappings_string_not_allowed"
+
+
+def test_audit_domain_alias_validation_and_unsupported_domain(tiny_project: Config):
+    executor, *_ = _context(tiny_project)
+    for domain, action in [
+        ("audit", "domain_alias:audit->observability"),
+        ("audits", "domain_alias:audits->observability"),
+        ("audit_events", "domain_alias:audit_events->observability"),
+    ]:
+        hint, reason = validate_semantic_routing_hint(
+            {**_valid_hint_base(), "likely_domain": domain},
+            user_prompt="show audit events",
+            schema_index=executor.schema_index,
+            endpoint_catalog=executor.endpoint_catalog,
+        )
+        assert hint is not None, reason
+        assert hint.normalized_domain == "observability"
+        assert hint.internal_domain_type is None
+        assert action in hint.normalization_actions
+
+    hint, reason = validate_semantic_routing_hint(
+        {**_valid_hint_base(), "likely_domain": "unsupported"},
+        user_prompt="show audit events",
+        schema_index=executor.schema_index,
+        endpoint_catalog=executor.endpoint_catalog,
+    )
+    assert hint is None
+    assert reason == "unknown_domain:unsupported"
+
+
 def test_validate_semantic_hint_rejects_unsafe_outputs(tiny_project: Config):
     executor, *_ = _context(tiny_project)
-    base = {
-        "likely_domain": "schema_dataset",
-        "answer_intent": "COUNT",
-        "route_suggestion": "SQL_ONLY",
-        "synonym_mappings": [],
-        "candidate_tables": [],
-        "candidate_api_families": [],
-        "needs_api": False,
-        "confidence": 0.5,
-        "reason": "safe",
-    }
+    base = _valid_hint_base()
     bad_table = {**base, "candidate_tables": ["missing_table"]}
     assert validate_semantic_routing_hint(bad_table, user_prompt="schemas count", schema_index=executor.schema_index, endpoint_catalog=executor.endpoint_catalog)[0] is None
+    bad_api = {**base, "candidate_api_families": ["missing_api_family"]}
+    assert validate_semantic_routing_hint(bad_api, user_prompt="schemas count", schema_index=executor.schema_index, endpoint_catalog=executor.endpoint_catalog)[0] is None
+    final_answer_key = {**base, "final_answer": "You have 74 schemas."}
+    assert validate_semantic_routing_hint(final_answer_key, user_prompt="schemas count", schema_index=executor.schema_index, endpoint_catalog=executor.endpoint_catalog)[0] is None
+    query_id_ref = {**base, "reason": "This follows example_011."}
+    assert validate_semantic_routing_hint(query_id_ref, user_prompt="schemas count", schema_index=executor.schema_index, endpoint_catalog=executor.endpoint_catalog)[0] is None
+    invalid_confidence = {**base, "confidence": 1.2}
+    assert validate_semantic_routing_hint(invalid_confidence, user_prompt="schemas count", schema_index=executor.schema_index, endpoint_catalog=executor.endpoint_catalog)[0] is None
     answer_like = {**base, "reason": "there are 74 schemas"}
     assert validate_semantic_routing_hint(answer_like, user_prompt="schemas count", schema_index=executor.schema_index, endpoint_catalog=executor.endpoint_catalog)[0] is None
     secret_like = {**base, "reason": "ACCESS_TOKEN_PLACEHOLDER"}
@@ -226,6 +343,7 @@ def test_executor_shadow_mode_records_without_applying(monkeypatch, tiny_project
     assert checkpoint["hint_applied"] is False
     assert checkpoint["hint_application_mode"] == "shadow_only"
     assert checkpoint["sdk_path_used"] is True
+    assert "normalization_actions" in checkpoint
 
 
 def test_non_shadow_isolated_uses_runtime_copy(monkeypatch, tiny_project: Config):
@@ -265,8 +383,61 @@ def test_semantic_shadow_report_and_packaging_exclusion(monkeypatch, tiny_projec
     assert "llm_semantic_router_shadow_eval" in NON_SUBMISSION_OUTPUT_DIRS
 
 
+def test_semantic_shadow_report_includes_normalization_metrics(tiny_project: Config):
+    report = _build_report(
+        tiny_project,
+        [{"prompt_id": "p1"}, {"prompt_id": "p2"}],
+        [
+            {
+                "prompt_id": "p1",
+                "status": "passed",
+                "eligible": True,
+                "helper_called": True,
+                "helper_valid": True,
+                "normalization_actions": [
+                    "synonym_mappings_object_wrapped",
+                    "domain_alias:audit->observability",
+                ],
+            },
+            {
+                "prompt_id": "p2",
+                "status": "passed",
+                "eligible": True,
+                "helper_called": True,
+                "helper_valid": False,
+                "helper_rejected_reason": "unknown_table_in_candidate_tables",
+                "normalization_actions": [],
+            },
+        ],
+        {"model": "unit-test-model", "backend_type": "openai_sdk", "sdk_path_used": True},
+    )
+    assert report["valid_helper_outputs"] == 1
+    assert report["rejected_helper_outputs"] == 1
+    assert report["normalization_actions"]["synonym_mappings_object_wrapped"] == 1
+    assert report["normalization_actions_count"] == 2
+    assert report["synonym_mappings_coerced_count"] == 1
+    assert report["domain_aliases_applied_count"] == 1
+    assert len(report["valid_hint_examples"]) == 1
+    assert len(report["rejected_hint_examples"]) == 1
+    assert report["recommendation"] == "keep_shadow_only"
+
+
 def _checkpoint(trajectory: dict, checkpoint_id: str) -> dict:
     for item in trajectory.get("checkpoints", []):
         if item.get("checkpoint_id") == checkpoint_id:
             return item.get("output") or {}
     raise AssertionError(f"missing checkpoint {checkpoint_id}")
+
+
+def _valid_hint_base() -> dict:
+    return {
+        "likely_domain": "schema_dataset",
+        "answer_intent": "COUNT",
+        "route_suggestion": "SQL_ONLY",
+        "synonym_mappings": [],
+        "candidate_tables": [],
+        "candidate_api_families": [],
+        "needs_api": False,
+        "confidence": 0.5,
+        "reason": "safe",
+    }

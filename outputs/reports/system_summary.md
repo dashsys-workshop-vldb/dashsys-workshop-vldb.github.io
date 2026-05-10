@@ -9,7 +9,7 @@
 - Repair execution enabled: `False`
 - Compact context enabled: `False`
 - Final recommendation: `ready_to_submit_with_official_token_reduction`
-- LLM semantic routing helper: `keep_disabled` (complete)
+- LLM semantic routing helper: `keep_shadow_only` (complete)
 
 ## Workflow
 
