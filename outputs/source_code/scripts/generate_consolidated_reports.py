@@ -112,6 +112,8 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "llm_strict": _load_json(outputs / "llm_strict_baseline_eval.json"),
         "llm_hidden": _load_json(outputs / "llm_hidden_style_diagnostic.json"),
         "llm_semantic_router": _load_json(outputs / "reports" / "llm_semantic_router_shadow_eval.json"),
+        "llm_semantic_router_isolated": _load_json(outputs / "reports" / "llm_semantic_router_isolated_trial.json"),
+        "llm_semantic_router_promotion": _load_json(outputs / "reports" / "llm_semantic_router_promotion_decision.json"),
         "generated_prompt_suite": _load_json(outputs / "reports" / "generated_prompt_suite_summary.json"),
         "diagnostic_prompt_suite_run": _load_json(outputs / "reports" / "diagnostic_prompt_suite_run.json"),
         "sdk_usage_audit": _load_json(outputs / "reports" / "sdk_usage_audit.json"),
@@ -310,7 +312,15 @@ def build_report_index(
         },
         "llm_semantic_routing_helper": {
             "path": "outputs/reports/llm_semantic_router_shadow_eval.md",
-            **_semantic_router_status({"llm_semantic_router": _load_json(config.outputs_dir / "reports" / "llm_semantic_router_shadow_eval.json")}),
+            "isolated_trial_path": "outputs/reports/llm_semantic_router_isolated_trial.md",
+            "promotion_decision_path": "outputs/reports/llm_semantic_router_promotion_decision.md",
+            **_semantic_router_status(
+                {
+                    "llm_semantic_router": _load_json(config.outputs_dir / "reports" / "llm_semantic_router_shadow_eval.json"),
+                    "llm_semantic_router_isolated": _load_json(config.outputs_dir / "reports" / "llm_semantic_router_isolated_trial.json"),
+                    "llm_semantic_router_promotion": _load_json(config.outputs_dir / "reports" / "llm_semantic_router_promotion_decision.json"),
+                }
+            ),
         },
         "workshop_requirement_alignment": {
             "path": "outputs/reports/workshop_requirement_audit.md",
@@ -369,6 +379,9 @@ def render_system_summary(payload: dict[str, Any]) -> str:
             f"- Final recommendation: `{payload['final_recommendation']}`",
             f"- LLM semantic routing helper: `{payload['llm_semantic_routing_helper']['recommendation']}` "
             f"({payload['llm_semantic_routing_helper']['status']})",
+            f"- Semantic router isolated trial: `{payload['llm_semantic_routing_helper'].get('isolated_trial_status')}`; "
+            f"promotion decision: `{payload['llm_semantic_routing_helper'].get('promotion_decision')}`; "
+            f"packaged runtime affected: `{payload['llm_semantic_routing_helper'].get('packaged_runtime_affected')}`",
             "",
             "## Workflow",
             "",
@@ -399,6 +412,8 @@ def render_llm_summary(payload: dict[str, Any]) -> str:
             f"- Recommendation: `{payload.get('recommendation')}`",
             f"- LLM semantic routing helper: `{payload['llm_semantic_routing_helper']['recommendation']}` "
             f"({payload['llm_semantic_routing_helper']['status']})",
+            f"- Semantic router isolated trial: `{payload['llm_semantic_routing_helper'].get('isolated_trial_status')}`; "
+            f"promotion decision: `{payload['llm_semantic_routing_helper'].get('promotion_decision')}`",
             f"- Reason: {payload.get('reason')}",
             "",
             payload["framework_note"],
@@ -423,6 +438,8 @@ def render_accuracy_summary(payload: dict[str, Any]) -> str:
             f"- AST canary status: `{payload.get('ast_canary_status')}`",
             f"- LLM semantic routing helper: `{payload['llm_semantic_routing_helper']['recommendation']}` "
             f"({payload['llm_semantic_routing_helper']['status']})",
+            f"- Semantic router isolated trial: `{payload['llm_semantic_routing_helper'].get('isolated_trial_status')}`; "
+            f"promotion decision: `{payload['llm_semantic_routing_helper'].get('promotion_decision')}`",
             "",
             "## Why Changes Remain Shadow-Only",
             "",
@@ -481,6 +498,10 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.append("- Shadow-only by default: `true`")
     lines.append("- Uses SDK-based `LLMClient`; no direct HTTP; routing hints only; no final answers.")
     lines.append(f"- Status: `{semantic.get('status')}`")
+    lines.append(f"- Isolated trial: `{semantic.get('isolated_trial_status')}`")
+    lines.append(f"- Isolated trial report: `{semantic.get('isolated_trial_path')}`")
+    lines.append(f"- Promotion decision report: `{semantic.get('promotion_decision_path')}`")
+    lines.append(f"- Packaged runtime affected: `{semantic.get('packaged_runtime_affected')}`")
     lines.append(f"- Recommendation: `{semantic.get('recommendation')}`")
     lines.extend(["", "## Workshop Requirement Alignment", ""])
     workshop = payload.get("workshop_requirement_alignment", {})
@@ -562,8 +583,10 @@ def _status_from_report(report: dict[str, Any], default: str) -> str:
 
 def _semantic_router_status(sources: dict[str, Any]) -> dict[str, Any]:
     report = sources.get("llm_semantic_router") or {}
+    isolated = sources.get("llm_semantic_router_isolated") or {}
+    promotion = sources.get("llm_semantic_router_promotion") or {}
     status = report.get("status") or "not_run"
-    recommendation = report.get("recommendation") or "keep_disabled"
+    recommendation = promotion.get("decision") or isolated.get("recommendation") or report.get("recommendation") or "keep_disabled"
     return {
         "status": status,
         "feature_flag_default": "off",
@@ -572,14 +595,21 @@ def _semantic_router_status(sources: dict[str, Any]) -> dict[str, Any]:
         "direct_http_allowed": False,
         "final_answer_generation": False,
         "routing_hints_only": True,
+        "packaged_runtime_affected": False,
         "helper_called_prompts": report.get("helper_called_prompts", 0),
         "valid_helper_outputs": report.get("valid_helper_outputs", 0),
         "rejected_helper_outputs": report.get("rejected_helper_outputs", 0),
         "normalization_actions_count": report.get("normalization_actions_count", 0),
         "synonym_mappings_coerced_count": report.get("synonym_mappings_coerced_count", 0),
         "domain_aliases_applied_count": report.get("domain_aliases_applied_count", 0),
+        "isolated_trial_status": isolated.get("status", "not_run"),
+        "isolated_trial_strict_delta": isolated.get("strict_score_delta"),
+        "isolated_trial_recommendation": isolated.get("recommendation"),
+        "promotion_decision": promotion.get("decision", "not_run"),
         "recommendation": recommendation,
         "source_report": "outputs/reports/llm_semantic_router_shadow_eval.md",
+        "isolated_trial_source_report": "outputs/reports/llm_semantic_router_isolated_trial.md",
+        "promotion_decision_source_report": "outputs/reports/llm_semantic_router_promotion_decision.md",
     }
 
 

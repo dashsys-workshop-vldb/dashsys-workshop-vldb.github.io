@@ -13,6 +13,7 @@ from dashagent.query_tokens import extract_query_tokens
 from dashagent.router import RoutingDecision
 from dashagent.schema_index import SchemaIndex
 from dashagent.semantic_routing_helper import (
+    SemanticRoutingResult,
     apply_semantic_routing_hint,
     build_semantic_routing_messages,
     compute_semantic_router_eligibility,
@@ -22,6 +23,7 @@ from dashagent.semantic_routing_helper import (
     run_semantic_routing_helper,
     validate_semantic_routing_hint,
 )
+from scripts.run_llm_semantic_router_isolated_trial import run_llm_semantic_router_isolated_trial
 from scripts.run_llm_semantic_router_shadow_eval import _build_report, _row_from_trajectory, run_llm_semantic_router_shadow_eval
 from scripts.package_query_outputs import NON_SUBMISSION_OUTPUT_DIRS
 
@@ -374,6 +376,58 @@ def test_non_shadow_isolated_uses_runtime_copy(monkeypatch, tiny_project: Config
     assert effective_routing.route_type == "SQL_THEN_API"
 
 
+def test_non_shadow_high_confidence_close_candidates_only_not_applied(tiny_project: Config):
+    executor, _, norm, tokens, _ = _context(tiny_project)
+    routing = RoutingDecision("SQL_ONLY", "JOURNEY_CAMPAIGN", 0.9, "high confidence", candidate_tables=["dim_campaign"], candidate_apis=[])
+    analysis = analyze_query(
+        "How many campaigns are there?",
+        routing,
+        executor.schema_index,
+        strategy="SQL_FIRST_API_VERIFY",
+        config=tiny_project,
+        endpoint_catalog=executor.endpoint_catalog,
+        normalized=norm,
+        tokens=tokens,
+    )
+    hint, reason = validate_semantic_routing_hint(
+        {
+            **_valid_hint_base(),
+            "likely_domain": "schema_dataset",
+            "route_suggestion": "SQL_PLUS_API",
+            "candidate_tables": ["dim_segment"],
+        },
+        user_prompt="How many campaigns are there?",
+        schema_index=executor.schema_index,
+        endpoint_catalog=executor.endpoint_catalog,
+    )
+    assert hint is not None, reason
+    result = SemanticRoutingResult(
+        enabled=True,
+        shadow_only=False,
+        eligibility_reason=["close_table_candidates"],
+        deterministic_route_type=routing.route_type,
+        deterministic_domain_type=routing.domain_type,
+        deterministic_answer_family=analysis.answer_family,
+        deterministic_confidence_before=routing.confidence,
+        final_runtime_confidence=analysis.confidence,
+        final_runtime_answer_family=analysis.answer_family,
+        helper_called=True,
+        helper_valid=True,
+        hint=hint,
+    )
+    effective_routing, effective_analysis, applied = apply_semantic_routing_hint(
+        routing=routing,
+        analysis=analysis,
+        result=result,
+        config=replace(tiny_project, enable_llm_semantic_router=True, llm_semantic_router_shadow_only=False),
+        endpoint_catalog=executor.endpoint_catalog,
+    )
+    assert applied.hint_applied is False
+    assert applied.hint_application_skipped_reason == "deterministic_route_high_confidence_or_close_candidates_only"
+    assert effective_routing is routing
+    assert effective_analysis is analysis
+
+
 def test_semantic_shadow_report_and_packaging_exclusion(monkeypatch, tiny_project: Config):
     monkeypatch.setattr("scripts.run_llm_semantic_router_shadow_eval.get_llm_client", lambda: FakeLLMClient(available=False))
     report = run_llm_semantic_router_shadow_eval(tiny_project, limit=1, include_generated=False)
@@ -381,6 +435,22 @@ def test_semantic_shadow_report_and_packaging_exclusion(monkeypatch, tiny_projec
     assert report["shadow_only"] is True
     assert (tiny_project.outputs_dir / "reports" / "llm_semantic_router_shadow_eval.json").exists()
     assert "llm_semantic_router_shadow_eval" in NON_SUBMISSION_OUTPUT_DIRS
+
+
+def test_semantic_isolated_trial_report_and_packaging_exclusion(monkeypatch, tiny_project: Config):
+    monkeypatch.setattr("scripts.run_llm_semantic_router_isolated_trial.get_llm_client", lambda: FakeLLMClient())
+    monkeypatch.setattr("dashagent.semantic_routing_helper.get_llm_client", lambda: FakeLLMClient())
+    report = run_llm_semantic_router_isolated_trial(tiny_project, limit=1, clean=True)
+    assert report["status"] == "complete"
+    assert report["isolated_non_shadow"] is True
+    assert report["official_promotion_performed"] is False
+    assert report["packaged_runtime_affected"] is False
+    assert (tiny_project.outputs_dir / "llm_semantic_router_isolated_trial" / "tiny_001" / "trajectory.json").exists()
+    assert (tiny_project.outputs_dir / "reports" / "llm_semantic_router_isolated_trial.json").exists()
+    assert (tiny_project.outputs_dir / "reports" / "llm_semantic_router_promotion_decision.json").exists()
+    assert not (tiny_project.outputs_dir / "final_submission").exists()
+    assert not (tiny_project.outputs_dir / "eval").exists()
+    assert "llm_semantic_router_isolated_trial" in NON_SUBMISSION_OUTPUT_DIRS
 
 
 def test_semantic_shadow_report_includes_normalization_metrics(tiny_project: Config):

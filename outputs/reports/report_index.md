@@ -43,7 +43,11 @@ Start here. Most older generated reports were consolidated or removed.
 - Shadow-only by default: `true`
 - Uses SDK-based `LLMClient`; no direct HTTP; routing hints only; no final answers.
 - Status: `complete`
-- Recommendation: `keep_shadow_only`
+- Isolated trial: `complete`
+- Isolated trial report: `outputs/reports/llm_semantic_router_isolated_trial.md`
+- Promotion decision report: `outputs/reports/llm_semantic_router_promotion_decision.md`
+- Packaged runtime affected: `False`
+- Recommendation: `do_not_promote`
 
 ## Workshop Requirement Alignment
 

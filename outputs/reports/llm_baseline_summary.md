@@ -9,7 +9,8 @@
 - Best LLM baseline score: `0.6331`
 - SQL_FIRST_API_VERIFY score: `0.6553`
 - Recommendation: `keep_shadow_only`
-- LLM semantic routing helper: `keep_shadow_only` (complete)
+- LLM semantic routing helper: `do_not_promote` (complete)
+- Semantic router isolated trial: `complete`; promotion decision: `do_not_promote`
 - Reason: Deterministic SQL_FIRST_API_VERIFY remains higher under strict scoring.
 
 The LLM baseline framework is generic; Qwen is only the current configured backend/model metadata.

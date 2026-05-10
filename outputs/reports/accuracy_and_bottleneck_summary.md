@@ -9,7 +9,8 @@
 - Supportable rewrite status: `safe_for_autonomous_packaged_trial`
 - Endpoint tie-break status: `keep_shadow_only`
 - AST canary status: `keep_shadow_only`
-- LLM semantic routing helper: `keep_shadow_only` (complete)
+- LLM semantic routing helper: `do_not_promote` (complete)
+- Semantic router isolated trial: `complete`; promotion decision: `do_not_promote`
 
 ## Why Changes Remain Shadow-Only
 
