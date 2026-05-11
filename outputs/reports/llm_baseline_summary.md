@@ -12,6 +12,7 @@
 - LLM semantic routing helper: `do_not_promote` (complete)
 - Semantic router isolated trial: `complete`; promotion decision: `do_not_promote`
 - Decision-stage feedback-loop status: `candidate_not_viable_after_feedback_loops`
+- Evidence-aware answer synthesis: `keep_trial_only`
 - Reason: Deterministic SQL_FIRST_API_VERIFY remains higher under strict scoring.
 
 The LLM baseline framework is generic; Qwen is only the current configured backend/model metadata.

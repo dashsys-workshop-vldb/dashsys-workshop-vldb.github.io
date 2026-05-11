@@ -7,10 +7,10 @@
 | Query | List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results. |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
 | Final answer | Based on the evidence provided, there is no data available to answer this question. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable, so audience and flow service evidence could not be checked. |
-| Strict score | 0.7161 |
+| Strict score | 0.716 |
 | Correctness score | 0.7668 |
 | Answer / SQL / API score | 0.3559 / 0.9 / 1.0 |
-| Tools / tokens / runtime | 3 / 1571 / 0.015409708023071289 |
+| Tools / tokens / runtime | 3 / 1571 / 0.04420170793309808 |
 
 ## Dataflow Graph
 
@@ -54,7 +54,7 @@ flowchart LR
 | 19 | checkpoint_13_tool_execution | execution | SQL/API tool execution | validated_step_count=3 | preview={"sql_calls_executed": 1, "api_calls_executed": 2, "dry_r...; truncated=True | captures the actual SQL/API evidence gathered by the backend | yes | yes | no |
 | 20 | checkpoint_14_evidence_bus | evidence forwarding | operand forwarding / EvidenceBus | tool_result_count=3 | {} | forwards structured facts to API params and answer slots | yes | yes | no |
 | 21 | checkpoint_15_answer_slots | answer synthesis | structured answer slot extraction | tool_result_count=3 | answer_intent=WHEN; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); missing_slots=1 item(s) | turns raw tool results into typed evidence fields | yes | yes | no |
-| 22 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=2; slots_present=5 item(s) | verifier_passed=True; rewrite_applied=False | checks final-answer claims against SQL/API evidence | yes | yes | no |
+| 22 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=2; slots_present=3 item(s) | verifier_passed=True; rewrite_applied=False | checks final-answer claims against SQL/API evidence | yes | yes | no |
 | 23 | checkpoint_17_answer_reranking | answer selection | deterministic answer reranking | answer_family=segment_destination | candidate_count=0; selected_candidate_type=base | selects the safest answer from same-evidence candidates | yes | yes | no |
 | 24 | checkpoint_18_final_answer | final response | concise grounded final response | verifier_passed=True | answer_length=263; final_answer=Based on the evidence provided, there is no data availabl... | returns the final concise answer to the agent harness | yes | yes | no |
 | 25 | checkpoint_official_token_reduction | query understanding | unavailable | unavailable | unavailable | Checkpoint recorded query understanding progress. | no | no | no |

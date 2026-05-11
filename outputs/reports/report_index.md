@@ -76,6 +76,19 @@ Start here. Most older generated reports were consolidated or removed.
 - Semantic-router feedback recommendation: `candidate_not_viable_after_feedback_loops`
 - Generated diagnostic prompts remain coverage-only and are not promotion evidence.
 
+## Evidence-Aware Answer Synthesis
+
+- Evidence usage audit: `outputs/reports/evidence_usage_audit.md`
+- Answer rewrite trial: `outputs/reports/evidence_aware_answer_rewrite_trial.md`
+- Feedback-loop final: `outputs/reports/feedback_loop_answer_synthesis_final.md`
+- SQL evidence usage audit: `outputs/reports/sql_evidence_usage_audit.md`
+- Confidence calibration audit: `outputs/reports/confidence_calibration_audit.md`
+- Token efficiency audit: `outputs/reports/token_efficiency_audit.md`
+- Trial status: `complete`
+- Recommendation: `keep_trial_only`
+- Answer-only invariant enforced: `True`
+- Answer-only promotion requires invariant SQL/API/tool/evidence hashes, hidden-style 48/48, readiness pass, and no unsupported-claim increase.
+
 ## Workshop Requirement Alignment
 
 - [workshop_requirement_audit.md](workshop_requirement_audit.md)
@@ -101,6 +114,11 @@ Required commands:
 - `python3 scripts/run_live_api_readiness_smoke.py`
 - `python3 scripts/run_live_api_evidence_pipeline_trial.py`
 - `python3 scripts/run_mock_live_api_evidence_pipeline_trial.py`
+- `python3 scripts/run_evidence_usage_audit.py`
+- `python3 scripts/run_evidence_aware_answer_rewrite_trial.py`
+- `python3 scripts/run_sql_evidence_usage_audit.py`
+- `python3 scripts/run_confidence_calibration_audit.py`
+- `python3 scripts/run_token_efficiency_audit.py`
 - `python3 scripts/check_llm_sdk_backend.py`
 - `python3 scripts/run_workflow_decision_audit.py`
 - `python3 scripts/run_decision_feedback_loop.py`
@@ -128,6 +146,12 @@ Regenerated report surfaces:
 - `outputs/reports/live_api_readiness_smoke.md/json`
 - `outputs/reports/live_api_evidence_pipeline_trial.md/json`
 - `outputs/reports/mock_live_api_evidence_pipeline_trial.md/json`
+- `outputs/reports/evidence_usage_audit.md/json`
+- `outputs/reports/evidence_aware_answer_rewrite_trial.md/json`
+- `outputs/reports/feedback_loop_answer_synthesis_final.md/json`
+- `outputs/reports/sql_evidence_usage_audit.md/json`
+- `outputs/reports/confidence_calibration_audit.md/json`
+- `outputs/reports/token_efficiency_audit.md/json`
 - `outputs/reports/workflow_decision_map.md/json`
 - `outputs/reports/workflow_decision_audit.md/json`
 - `outputs/reports/improvement_feedback_loop_index.md/json`
@@ -149,5 +173,6 @@ Regenerated report surfaces:
 - hidden_style: `48/48`
 - final_submission_ready: `True`
 - live_adobe_api_readiness: `warning`
+- evidence_aware_answer_synthesis: `keep_trial_only`
 - llm_recommendation: `keep_shadow_only`
 - target_0_75_reached: `False`

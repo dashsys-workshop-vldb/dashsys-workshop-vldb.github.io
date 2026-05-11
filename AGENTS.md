@@ -143,6 +143,22 @@ Use `python3 scripts/run_workflow_decision_audit.py` to produce `outputs/reports
 
 Generated diagnostic prompts are coverage-only and cannot support official strict-score improvement or promotion claims. If a variant improves a clear subcategory without total strict-score improvement and without safety regression, label it `locally_useful_but_not_promotable`. For answer-only variants, the trial fails if SQL hash, API hash, tool count, selected evidence hash, or dry-run label changes. Do not mix multiple behavior-changing candidate families in the same diff unless each family has its own isolated flag and report.
 
+## Evidence-Aware Answer Synthesis
+
+Evidence-aware answer synthesis is deterministic and answer-only. It may audit final-answer use of SQL/API evidence, generate isolated rewrite candidates, and run faithfulness checks, but it must not rerun SQL/API, change validators, or alter packaged `SQL_FIRST_API_VERIFY` behavior.
+
+Use:
+
+```bash
+python3 scripts/run_evidence_usage_audit.py
+python3 scripts/run_evidence_aware_answer_rewrite_trial.py
+python3 scripts/run_sql_evidence_usage_audit.py
+python3 scripts/run_confidence_calibration_audit.py
+python3 scripts/run_token_efficiency_audit.py
+```
+
+Answer-only trials must preserve SQL hash, API hash, tool count, route, plan, selected evidence hash, and dry-run label hash. The selected evidence hash covers normalized SQL result facts, parsed API evidence, EvidenceBus fields, answer slots, evidence states, and dry-run labels while excluding runtime timestamps, durations, and debug-only metadata. Faithfulness rejection focuses on factual drift only: wrong counts, names, statuses, dates, unsupported availability claims, or fabricated SQL/API evidence. If `API_REQUIRED` and dry-run unavailable, keep a short live-API-unavailable caveat.
+
 ## Development Workflow
 
 Before major changes, record the current baseline if the user asks for an optimization pass:

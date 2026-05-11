@@ -10,7 +10,7 @@
 | Strict score | 0.7461 |
 | Correctness score | 0.7774 |
 | Answer / SQL / API score | 0.3915 / 0.9 / 1.0 |
-| Tools / tokens / runtime | 2 / 751 / 0.013541792053729296 |
+| Tools / tokens / runtime | 2 / 751 / 0.031017916975542903 |
 
 ## Dataflow Graph
 
@@ -51,7 +51,7 @@ flowchart LR
 | 16 | checkpoint_13_tool_execution | execution | SQL/API tool execution | validated_step_count=2 | sql_calls_executed=1; api_calls_executed=1 | captures the actual SQL/API evidence gathered by the backend | yes | yes | no |
 | 17 | checkpoint_14_evidence_bus | evidence forwarding | operand forwarding / EvidenceBus | tool_result_count=2 | evidence=1 field(s) | forwards structured facts to API params and answer slots | yes | yes | no |
 | 18 | checkpoint_15_answer_slots | answer synthesis | structured answer slot extraction | tool_result_count=2 | answer_intent=COUNT; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); missing_slots=1 item(s) | turns raw tool results into typed evidence fields | yes | yes | no |
-| 19 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=1; slots_present=6 item(s) | verifier_passed=True; rewrite_applied=False | checks final-answer claims against SQL/API evidence | yes | yes | no |
+| 19 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=1; slots_present=4 item(s) | verifier_passed=True; rewrite_applied=False | checks final-answer claims against SQL/API evidence | yes | yes | no |
 | 20 | checkpoint_17_answer_reranking | answer selection | deterministic answer reranking | answer_family=schema_dataset | candidate_count=0; selected_candidate_type=base | selects the safest answer from same-evidence candidates | yes | yes | no |
 | 21 | checkpoint_18_final_answer | final response | concise grounded final response | verifier_passed=True | answer_length=102; final_answer=You have 74 schemas. Live API verification was not execut... | returns the final concise answer to the agent harness | yes | yes | no |
 | 22 | checkpoint_official_token_reduction | query understanding | unavailable | unavailable | unavailable | Checkpoint recorded query understanding progress. | no | no | no |

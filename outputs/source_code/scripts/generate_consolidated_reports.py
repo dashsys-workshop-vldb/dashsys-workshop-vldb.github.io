@@ -27,6 +27,11 @@ POST_CHANGE_VALIDATION_COMMANDS = [
     "python3 scripts/run_live_api_readiness_smoke.py",
     "python3 scripts/run_live_api_evidence_pipeline_trial.py",
     "python3 scripts/run_mock_live_api_evidence_pipeline_trial.py",
+    "python3 scripts/run_evidence_usage_audit.py",
+    "python3 scripts/run_evidence_aware_answer_rewrite_trial.py",
+    "python3 scripts/run_sql_evidence_usage_audit.py",
+    "python3 scripts/run_confidence_calibration_audit.py",
+    "python3 scripts/run_token_efficiency_audit.py",
     "python3 scripts/check_llm_sdk_backend.py",
     "python3 scripts/run_workflow_decision_audit.py",
     "python3 scripts/run_decision_feedback_loop.py",
@@ -55,6 +60,12 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/live_api_readiness_smoke.md/json",
     "outputs/reports/live_api_evidence_pipeline_trial.md/json",
     "outputs/reports/mock_live_api_evidence_pipeline_trial.md/json",
+    "outputs/reports/evidence_usage_audit.md/json",
+    "outputs/reports/evidence_aware_answer_rewrite_trial.md/json",
+    "outputs/reports/feedback_loop_answer_synthesis_final.md/json",
+    "outputs/reports/sql_evidence_usage_audit.md/json",
+    "outputs/reports/confidence_calibration_audit.md/json",
+    "outputs/reports/token_efficiency_audit.md/json",
     "outputs/reports/workflow_decision_map.md/json",
     "outputs/reports/workflow_decision_audit.md/json",
     "outputs/reports/improvement_feedback_loop_index.md/json",
@@ -145,6 +156,12 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "improvement_feedback_loop_index": _load_json(outputs / "reports" / "improvement_feedback_loop_index.json"),
         "feedback_loop_semantic_router_final": _load_json(outputs / "reports" / "feedback_loop_semantic_router_final.json"),
         "decision_stage_improvement_summary": _load_json(outputs / "reports" / "decision_stage_improvement_summary.json"),
+        "evidence_usage_audit": _load_json(outputs / "reports" / "evidence_usage_audit.json"),
+        "evidence_aware_answer_rewrite_trial": _load_json(outputs / "reports" / "evidence_aware_answer_rewrite_trial.json"),
+        "feedback_loop_answer_synthesis_final": _load_json(outputs / "reports" / "feedback_loop_answer_synthesis_final.json"),
+        "sql_evidence_usage_audit": _load_json(outputs / "reports" / "sql_evidence_usage_audit.json"),
+        "confidence_calibration_audit": _load_json(outputs / "reports" / "confidence_calibration_audit.json"),
+        "token_efficiency_audit": _load_json(outputs / "reports" / "token_efficiency_audit.json"),
         "sql_storyboard": _load_json(visualizations / "sql_prompt_storyboard_primary.json"),
         "visualization_index": _load_json(visualizations / "index.json"),
     }
@@ -192,6 +209,7 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
         "live_adobe_api_readiness": _live_api_readiness_status(sources),
         "llm_semantic_routing_helper": _semantic_router_status(sources),
         "decision_stage_methodology": _decision_stage_status(sources),
+        "evidence_aware_answer_synthesis": _evidence_answer_status(sources),
         "source_reports": [
             "outputs/eval_results_strict.json",
             "outputs/winner_readiness_report.json",
@@ -226,6 +244,7 @@ def build_llm_baseline_summary(config: Config, sources: dict[str, Any]) -> dict[
         "reason": "Deterministic SQL_FIRST_API_VERIFY remains higher under strict scoring.",
         "llm_semantic_routing_helper": _semantic_router_status(sources),
         "decision_stage_methodology": _decision_stage_status(sources),
+        "evidence_aware_answer_synthesis": _evidence_answer_status(sources),
         "source_reports": [
             "outputs/llm_sdk_backend_check.json",
             "outputs/llm_baseline_eval_report.json",
@@ -262,6 +281,7 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
         ],
         "llm_semantic_routing_helper": _semantic_router_status(sources),
         "decision_stage_methodology": _decision_stage_status(sources),
+        "evidence_aware_answer_synthesis": _evidence_answer_status(sources),
         "source_reports": [
             "outputs/autonomous_score_push_report.json",
             "outputs/autonomous_packaged_trial.json",
@@ -387,6 +407,24 @@ def build_report_index(
                 }
             ),
         },
+        "evidence_aware_answer_synthesis": {
+            "evidence_usage_audit": "outputs/reports/evidence_usage_audit.md",
+            "rewrite_trial": "outputs/reports/evidence_aware_answer_rewrite_trial.md",
+            "feedback_loop_final": "outputs/reports/feedback_loop_answer_synthesis_final.md",
+            "sql_evidence_usage_audit": "outputs/reports/sql_evidence_usage_audit.md",
+            "confidence_calibration_audit": "outputs/reports/confidence_calibration_audit.md",
+            "token_efficiency_audit": "outputs/reports/token_efficiency_audit.md",
+            **_evidence_answer_status(
+                {
+                    "evidence_usage_audit": _load_json(config.outputs_dir / "reports" / "evidence_usage_audit.json"),
+                    "evidence_aware_answer_rewrite_trial": _load_json(config.outputs_dir / "reports" / "evidence_aware_answer_rewrite_trial.json"),
+                    "feedback_loop_answer_synthesis_final": _load_json(config.outputs_dir / "reports" / "feedback_loop_answer_synthesis_final.json"),
+                    "sql_evidence_usage_audit": _load_json(config.outputs_dir / "reports" / "sql_evidence_usage_audit.json"),
+                    "confidence_calibration_audit": _load_json(config.outputs_dir / "reports" / "confidence_calibration_audit.json"),
+                    "token_efficiency_audit": _load_json(config.outputs_dir / "reports" / "token_efficiency_audit.json"),
+                }
+            ),
+        },
         "workshop_requirement_alignment": {
             "path": "outputs/reports/workshop_requirement_audit.md",
             "overall_status": _load_json(config.outputs_dir / "reports" / "workshop_requirement_audit.json")
@@ -423,6 +461,7 @@ def build_report_index(
             "hidden_style": system["hidden_style"]["label"],
             "final_submission_ready": system["final_submission_ready"],
             "live_adobe_api_readiness": system["live_adobe_api_readiness"]["overall_status"],
+            "evidence_aware_answer_synthesis": system["evidence_aware_answer_synthesis"].get("recommendation"),
             "llm_recommendation": llm["recommendation"],
             "target_0_75_reached": accuracy["target_0_75_reached"],
         },
@@ -452,6 +491,8 @@ def render_system_summary(payload: dict[str, Any]) -> str:
             f"packaged runtime affected: `{payload['llm_semantic_routing_helper'].get('packaged_runtime_affected')}`",
             f"- Decision-stage feedback loops: stages mapped `{payload['decision_stage_methodology'].get('stage_count')}`, "
             f"semantic-router recommendation `{payload['decision_stage_methodology'].get('semantic_router_final_recommendation')}`",
+            f"- Evidence-aware answer synthesis: `{payload['evidence_aware_answer_synthesis'].get('recommendation')}` "
+            f"(trial `{payload['evidence_aware_answer_synthesis'].get('trial_status')}`)",
             "",
             "## Workflow",
             "",
@@ -485,6 +526,7 @@ def render_llm_summary(payload: dict[str, Any]) -> str:
             f"- Semantic router isolated trial: `{payload['llm_semantic_routing_helper'].get('isolated_trial_status')}`; "
             f"promotion decision: `{payload['llm_semantic_routing_helper'].get('promotion_decision')}`",
             f"- Decision-stage feedback-loop status: `{payload['decision_stage_methodology'].get('semantic_router_final_recommendation')}`",
+            f"- Evidence-aware answer synthesis: `{payload['evidence_aware_answer_synthesis'].get('recommendation')}`",
             f"- Reason: {payload.get('reason')}",
             "",
             payload["framework_note"],
@@ -514,6 +556,8 @@ def render_accuracy_summary(payload: dict[str, Any]) -> str:
             f"- Semantic router isolated trial: `{payload['llm_semantic_routing_helper'].get('isolated_trial_status')}`; "
             f"promotion decision: `{payload['llm_semantic_routing_helper'].get('promotion_decision')}`",
             f"- Decision-stage feedback-loop status: `{payload['decision_stage_methodology'].get('semantic_router_final_recommendation')}`",
+            f"- Evidence-aware answer synthesis: `{payload['evidence_aware_answer_synthesis'].get('recommendation')}`; "
+            f"answer-only invariant enforced: `{payload['evidence_aware_answer_synthesis'].get('answer_only_invariant_enforced')}`",
             "",
             "## Why Changes Remain Shadow-Only",
             "",
@@ -602,6 +646,18 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.append(f"- Audited rows: `{decision.get('audited_query_count')}`")
     lines.append(f"- Semantic-router feedback recommendation: `{decision.get('semantic_router_final_recommendation')}`")
     lines.append("- Generated diagnostic prompts remain coverage-only and are not promotion evidence.")
+    lines.extend(["", "## Evidence-Aware Answer Synthesis", ""])
+    evidence = payload.get("evidence_aware_answer_synthesis", {})
+    lines.append(f"- Evidence usage audit: `{evidence.get('evidence_usage_audit')}`")
+    lines.append(f"- Answer rewrite trial: `{evidence.get('rewrite_trial')}`")
+    lines.append(f"- Feedback-loop final: `{evidence.get('feedback_loop_final')}`")
+    lines.append(f"- SQL evidence usage audit: `{evidence.get('sql_evidence_usage_audit')}`")
+    lines.append(f"- Confidence calibration audit: `{evidence.get('confidence_calibration_audit')}`")
+    lines.append(f"- Token efficiency audit: `{evidence.get('token_efficiency_audit')}`")
+    lines.append(f"- Trial status: `{evidence.get('trial_status')}`")
+    lines.append(f"- Recommendation: `{evidence.get('recommendation')}`")
+    lines.append(f"- Answer-only invariant enforced: `{evidence.get('answer_only_invariant_enforced')}`")
+    lines.append("- Answer-only promotion requires invariant SQL/API/tool/evidence hashes, hidden-style 48/48, readiness pass, and no unsupported-claim increase.")
     lines.extend(["", "## Workshop Requirement Alignment", ""])
     workshop = payload.get("workshop_requirement_alignment", {})
     lines.append(f"- [{Path(str(workshop.get('path'))).name}]({Path(str(workshop.get('path'))).name})")
@@ -765,6 +821,41 @@ def _live_api_readiness_status(sources: dict[str, Any]) -> dict[str, Any]:
             "outputs/reports/live_api_readiness_smoke.md",
             "outputs/reports/live_api_evidence_pipeline_trial.md",
             "outputs/reports/mock_live_api_evidence_pipeline_trial.md",
+        ],
+    }
+
+
+def _evidence_answer_status(sources: dict[str, Any]) -> dict[str, Any]:
+    audit = sources.get("evidence_usage_audit") or {}
+    trial = sources.get("evidence_aware_answer_rewrite_trial") or {}
+    final = sources.get("feedback_loop_answer_synthesis_final") or {}
+    sql_audit = sources.get("sql_evidence_usage_audit") or {}
+    confidence = sources.get("confidence_calibration_audit") or {}
+    token = sources.get("token_efficiency_audit") or {}
+    summary = trial.get("summary") or {}
+    recommendation = final.get("final_recommendation") or summary.get("recommendation") or "not_run"
+    return {
+        "audit_status": audit.get("status", "not_run"),
+        "trial_status": trial.get("status", "not_run"),
+        "sql_audit_status": sql_audit.get("status", "not_run"),
+        "confidence_audit_status": confidence.get("status", "not_run"),
+        "token_audit_status": token.get("status", "not_run"),
+        "rows_audited": audit.get("total_rows", 0),
+        "rows_rewritten": summary.get("rows_rewritten", 0),
+        "rows_rejected": summary.get("rows_rejected", 0),
+        "best_variant": summary.get("best_variant") or final.get("best_variant"),
+        "best_strict_score_delta": summary.get("best_strict_score_delta") or final.get("best_strict_score_delta"),
+        "recommendation": recommendation,
+        "answer_only_invariant_enforced": True,
+        "packaged_runtime_changed": False,
+        "official_score_claim": False,
+        "source_reports": [
+            "outputs/reports/evidence_usage_audit.md",
+            "outputs/reports/evidence_aware_answer_rewrite_trial.md",
+            "outputs/reports/feedback_loop_answer_synthesis_final.md",
+            "outputs/reports/sql_evidence_usage_audit.md",
+            "outputs/reports/confidence_calibration_audit.md",
+            "outputs/reports/token_efficiency_audit.md",
         ],
     }
 

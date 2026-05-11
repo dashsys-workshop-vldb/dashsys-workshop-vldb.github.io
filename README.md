@@ -171,6 +171,20 @@ Reports are written under `outputs/reports/` and isolated live trial artifacts u
 
 Discovery chains are GET-only, never guess IDs, and record provenance for discovered IDs. Mocked fixtures under `tests/fixtures/adobe_api_responses/` validate endpoint-family parsing before credentials arrive; they are synthetic and must not be used as official benchmark evidence.
 
+## 3.6 Evidence-Aware Answer Synthesis
+
+Evidence-aware answer synthesis is an isolated answer-only feedback loop. It audits whether final answers use SQL/API evidence, proposes deterministic template rewrites, and verifies faithfulness without rerunning SQL or API calls.
+
+```bash
+python3 scripts/run_evidence_usage_audit.py
+python3 scripts/run_evidence_aware_answer_rewrite_trial.py
+python3 scripts/run_sql_evidence_usage_audit.py
+python3 scripts/run_confidence_calibration_audit.py
+python3 scripts/run_token_efficiency_audit.py
+```
+
+The rewrite trial writes only under `outputs/evidence_aware_answer_rewrite_trial/`. Any answer-only promotion requires invariant SQL hash, API hash, tool count, selected evidence hash, route, plan, and dry-run labels; unsupported claims must not increase; hidden-style must remain 48/48; and `check_submission_ready.py` must pass. Dry-run caveats remain required for `API_REQUIRED` rows when live API verification is unavailable.
+
 ## 4. Prompt Routing Policy
 
 The first decision is whether the prompt needs evidence:
