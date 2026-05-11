@@ -116,7 +116,7 @@ Each card separates **status** from **runtime path** so experimental work is not
 | **Output** | `SQL/API execution plan` | Data emitted downstream. |
 | **Downstream effect** | `Grounds with local SQL first, then verifies with API where needed.` | Why the technique exists. |
 | **Affects** | `accuracy` | Accuracy, efficiency, safety, or observability. |
-| **Measured impact** | `answer_score_delta=0.3199, api_score_delta=0.9791, correctness_delta=0.0, runtime_delta=0.0116, sql_score_delta=0.9333, strict_score_delta=0.0, token_delta=834.6, tool_call_delt...` | Unavailable means no source report measured a delta. |
+| **Measured impact** | `answer_score_delta=0.3199, api_score_delta=0.9791, correctness_delta=0.0, runtime_delta=0.0119, sql_score_delta=0.9333, strict_score_delta=0.0, token_delta=834.6, tool_call_delt...` | Unavailable means no source report measured a delta. |
 
 **Why this status:** Best current strict score and correctness among packaged strategies.
 

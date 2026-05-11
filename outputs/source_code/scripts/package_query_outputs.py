@@ -49,6 +49,7 @@ NON_SUBMISSION_OUTPUT_DIRS = {
     "live_mode_readiness_report",
     "live_api_readiness_smoke",
     "live_api_evidence_pipeline_trial",
+    "mock_live_api_evidence_pipeline_trial",
     "endpoint_family_tiebreak_v2_shadow",
     "final_submission",
     "tmp",

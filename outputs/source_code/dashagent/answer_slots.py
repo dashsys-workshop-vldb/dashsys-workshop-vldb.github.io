@@ -57,6 +57,12 @@ class AnswerSlots:
     api_item_count: int | None = None
     dry_run: bool = False
     api_error: bool = False
+    live_api_evidence_available: bool = False
+    api_evidence_state: str | None = None
+    answer_slot_source: str | None = None
+    api_errors: list[str] = field(default_factory=list)
+    api_pagination: list[dict[str, Any]] = field(default_factory=list)
+    api_parser_modes: list[str] = field(default_factory=list)
     discrepancy: bool = False
     first_rows: list[dict[str, Any]] = field(default_factory=list)
     api_items: list[dict[str, Any]] = field(default_factory=list)
@@ -79,6 +85,12 @@ class AnswerSlots:
             "api_item_count",
             "dry_run",
             "api_error",
+            "live_api_evidence_available",
+            "api_evidence_state",
+            "answer_slot_source",
+            "api_errors",
+            "api_pagination",
+            "api_parser_modes",
             "discrepancy",
             "first_rows",
             "api_items",
@@ -96,6 +108,12 @@ class AnswerSlots:
             "api_item_count": self.api_item_count,
             "dry_run": self.dry_run,
             "api_error": self.api_error,
+            "live_api_evidence_available": self.live_api_evidence_available,
+            "api_evidence_state": self.api_evidence_state,
+            "answer_slot_source": self.answer_slot_source,
+            "api_errors": self.api_errors[:3],
+            "api_pagination": self.api_pagination[:2],
+            "api_parser_modes": self.api_parser_modes[:3],
             "discrepancy": self.discrepancy,
             "entity_names": self.entity_names[:3],
             "entity_ids": self.entity_ids[:3],
@@ -134,10 +152,32 @@ def extract_answer_slots(query: str, tool_results: list[dict[str, Any]]) -> Answ
                 for row in rows[:10]:
                     collect_mapping(slots, row)
         elif kind == "api":
+            parsed = payload.get("parsed_evidence") if isinstance(payload, dict) else None
+            if isinstance(parsed, dict):
+                state = parsed.get("evidence_state")
+                if state:
+                    slots.api_evidence_state = str(state)
+                mode = parsed.get("parser_mode")
+                if mode:
+                    slots.api_parser_modes.append(str(mode))
+                pagination = parsed.get("pagination")
+                if isinstance(pagination, dict) and pagination:
+                    slots.api_pagination.append(pagination)
+                for error in parsed.get("errors", []) if isinstance(parsed.get("errors"), list) else []:
+                    slots.api_errors.append(str(error))
+                if parsed.get("live_evidence_available"):
+                    slots.live_api_evidence_available = True
+                    slots.answer_slot_source = "live_api"
+                elif parsed.get("dry_run"):
+                    slots.answer_slot_source = slots.answer_slot_source or "dry_run_unavailable"
+                elif parsed.get("evidence_state") in {"api_error", "malformed_response"}:
+                    slots.answer_slot_source = slots.answer_slot_source or str(parsed.get("evidence_state"))
             if payload.get("dry_run"):
                 slots.dry_run = True
+                slots.answer_slot_source = slots.answer_slot_source or "dry_run_unavailable"
             if not payload.get("ok") and not payload.get("dry_run"):
                 slots.api_error = True
+                slots.answer_slot_source = slots.answer_slot_source or "api_error"
             step = result.get("step", {})
             collect_api_request_evidence(slots, step, payload)
             family = str(step.get("family") or slots.answer_family)
@@ -149,6 +189,9 @@ def extract_answer_slots(query: str, tool_results: list[dict[str, Any]]) -> Answ
                 slots.counts.append(count)
                 slots.evidence_numbers.add(str(count))
                 live_api_counts.append(count)
+                slots.answer_slot_source = "live_api"
+                if count or evidence.get("items") or not evidence.get("empty"):
+                    slots.live_api_evidence_available = True
             items = [item for item in evidence.get("items", []) if isinstance(item, dict)]
             slots.api_items.extend(items[:3])
             slots.important_items.extend(items[:3])
@@ -158,6 +201,7 @@ def extract_answer_slots(query: str, tool_results: list[dict[str, Any]]) -> Answ
             for item in items[:10]:
                 collect_mapping(slots, item)
             if evidence.get("errors"):
+                slots.api_errors.extend(str(error) for error in evidence.get("errors", [])[:5])
                 if any(error != "dry_run" for error in evidence.get("errors", [])):
                     slots.api_error = True
 
@@ -171,6 +215,8 @@ def extract_answer_slots(query: str, tool_results: list[dict[str, Any]]) -> Answ
     slots.statuses = dedupe(slots.statuses)
     slots.timestamps = dedupe(slots.timestamps)
     slots.counts = dedupe_values(slots.counts)
+    slots.api_errors = dedupe(slots.api_errors)
+    slots.api_parser_modes = dedupe(slots.api_parser_modes)
     return slots
 
 

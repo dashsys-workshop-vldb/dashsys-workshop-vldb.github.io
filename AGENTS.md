@@ -97,11 +97,19 @@ Use:
 
 ```bash
 python3 scripts/audit_live_adobe_api_readiness.py
+python3 scripts/generate_api_required_readiness_matrix.py
 python3 scripts/run_live_api_readiness_smoke.py
 python3 scripts/run_live_api_evidence_pipeline_trial.py
+python3 scripts/run_mock_live_api_evidence_pipeline_trial.py
 ```
 
 Live smoke/trials are GET-only by default, must not call endpoints with unresolved path parameters unless a safe prior GET discovery step supplied the ID, and must never overwrite `outputs/eval/`, `outputs/eval_results_strict.json`, `outputs/final_submission/`, or `outputs/final_submission_manifest.json`. Live readiness reports are not official scoring artifacts, and no live API evidence may be fabricated.
+
+## Live Adobe API Evidence Pipeline
+
+The future target is real Adobe API evidence, not dry-run optimization. Response parsing should populate `parsed_evidence` with endpoint metadata, evidence state, parser mode, IDs, names, statuses, counts, timestamps, errors, pagination, and redacted previews. EvidenceBus and answer slots must keep live API evidence, dry-run unavailable, empty live results, malformed responses, and API errors distinct.
+
+Discovery chains are GET-only and must never guess IDs. Any discovered path parameter must record provenance (`id_source`, `source_endpoint`, `source_field`, `source_query_id_or_fixture`). Mock fixtures in `tests/fixtures/adobe_api_responses/` use synthetic data to validate endpoint-family parsers and discovery readiness before credentials arrive.
 
 ## System-Wide SDK-Based LLM Rule
 

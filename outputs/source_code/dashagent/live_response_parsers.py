@@ -17,15 +17,36 @@ def normalize_api_evidence(family: str, payload: dict[str, Any]) -> dict[str, An
 
 def evidence_from_structured_parser(parsed: dict[str, Any]) -> dict[str, Any]:
     if parsed.get("dry_run"):
-        return {"items": [], "count": 0, "important_fields": {}, "empty": True, "errors": ["dry_run"]}
+        return {
+            "items": [],
+            "count": 0,
+            "important_fields": {},
+            "empty": True,
+            "errors": ["dry_run"],
+            "evidence_state": parsed.get("evidence_state", "dry_run_unavailable"),
+            "parser_mode": parsed.get("parser_mode"),
+            "source": "dry_run_unavailable",
+        }
     if not parsed.get("ok"):
         errors = parsed.get("errors") or ["api_error"]
-        return {"items": [], "count": 0, "important_fields": {}, "empty": True, "errors": errors}
+        return {
+            "items": [],
+            "count": 0,
+            "important_fields": {},
+            "empty": True,
+            "errors": errors,
+            "evidence_state": parsed.get("evidence_state", "api_error"),
+            "parser_mode": parsed.get("parser_mode"),
+            "source": "live_api_error",
+        }
 
     items = [item for item in parsed.get("items", []) if isinstance(item, dict)]
     counts = parsed.get("counts") if isinstance(parsed.get("counts"), dict) else {}
     count = extract_structured_count(counts, items)
     important = first_important_fields(items[0]) if items else {}
+    parsed_important = parsed.get("important_fields")
+    if isinstance(parsed_important, dict):
+        important.update(parsed_important)
     for key in ["ids", "names", "statuses"]:
         value = parsed.get(key)
         if isinstance(value, list) and value:
@@ -37,8 +58,12 @@ def evidence_from_structured_parser(parsed: dict[str, Any]) -> dict[str, Any]:
         "items": items,
         "count": count,
         "important_fields": important,
-        "empty": parsed.get("evidence_state") == "live_empty_result" or (not items and count == 0),
+        "empty": parsed.get("evidence_state") in {"live_empty", "live_empty_result"} or (not items and count == 0),
         "errors": parsed.get("errors") or [],
+        "evidence_state": parsed.get("evidence_state"),
+        "parser_mode": parsed.get("parser_mode"),
+        "pagination": parsed.get("pagination") or {},
+        "source": "live_api",
     }
 
 

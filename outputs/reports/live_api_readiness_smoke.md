@@ -17,3 +17,6 @@ Infrastructure validation only; this report is not official strict-score evidenc
 
 ## Endpoints Tested
 
+
+## Skipped Endpoints
+

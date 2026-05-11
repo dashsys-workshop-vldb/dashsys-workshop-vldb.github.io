@@ -48,6 +48,8 @@ class GetOnlyAdobeAPIClient(AdobeAPIClient):
                     ok=False,
                     dry_run=False,
                     endpoint=url,
+                    method=method.upper(),
+                    path=url,
                     error="live_readiness_get_only_guard_blocked",
                 ),
                 "error": "Live readiness trial blocked a non-GET or unresolved-placeholder API call.",
@@ -144,6 +146,9 @@ def skipped_live_trial_report(config: Config, client: AdobeAPIClient, trial_root
         status_code=200,
         endpoint="/data/core/ups/segment/definitions",
         endpoint_id="segment_definitions",
+        endpoint_family="segment_definitions",
+        method="GET",
+        path="/data/core/ups/segment/definitions",
     )
     rows = [
         {

@@ -40,6 +40,15 @@ class EvidenceBus:
     statuses: list[str] = field(default_factory=list)
     first_rows: list[dict[str, Any]] = field(default_factory=list)
     api_items: list[dict[str, Any]] = field(default_factory=list)
+    api_ids: list[str] = field(default_factory=list)
+    api_names: list[str] = field(default_factory=list)
+    api_statuses: list[str] = field(default_factory=list)
+    api_counts: list[Any] = field(default_factory=list)
+    api_timestamps: list[str] = field(default_factory=list)
+    api_errors: list[str] = field(default_factory=list)
+    api_pagination: list[dict[str, Any]] = field(default_factory=list)
+    api_evidence_states: list[str] = field(default_factory=list)
+    api_parser_modes: list[str] = field(default_factory=list)
 
     def observe_sql(self, step: Any, payload: dict[str, Any]) -> None:
         if not payload.get("ok"):
@@ -52,8 +61,35 @@ class EvidenceBus:
 
     def observe_api(self, step: Any, payload: dict[str, Any]) -> None:
         family = getattr(step, "family", None) or ""
+        parsed = payload.get("parsed_evidence") if isinstance(payload, dict) else None
+        if isinstance(parsed, dict):
+            state = parsed.get("evidence_state")
+            if state:
+                append_unique(self.api_evidence_states, str(state))
+            mode = parsed.get("parser_mode")
+            if mode:
+                append_unique(self.api_parser_modes, str(mode))
+            for value in parsed.get("ids", []) if isinstance(parsed.get("ids"), list) else []:
+                append_unique(self.api_ids, str(value))
+            for value in parsed.get("names", []) if isinstance(parsed.get("names"), list) else []:
+                append_unique(self.api_names, str(value))
+            for value in parsed.get("statuses", []) if isinstance(parsed.get("statuses"), list) else []:
+                append_unique(self.api_statuses, str(value))
+            counts = parsed.get("counts")
+            if isinstance(counts, dict):
+                self.api_counts.extend(value for value in counts.values() if value not in (None, "", [], {}))
+            timestamps = parsed.get("timestamps")
+            if isinstance(timestamps, dict):
+                for value in timestamps.values():
+                    append_unique(self.api_timestamps, str(value))
+            pagination = parsed.get("pagination")
+            if isinstance(pagination, dict) and pagination:
+                self.api_pagination.append(copy.deepcopy(pagination))
+            for error in parsed.get("errors", []) if isinstance(parsed.get("errors"), list) else []:
+                append_unique(self.api_errors, str(error))
+
         evidence = normalize_api_evidence(str(family), payload)
-        if evidence.get("errors"):
+        if evidence.get("errors") and not evidence.get("items"):
             return
         for item in evidence.get("items", [])[:10]:
             if isinstance(item, dict):
@@ -112,6 +148,15 @@ class EvidenceBus:
             "timestamps": self.timestamps[:3],
             "counts": self.counts[:3],
             "statuses": self.statuses[:3],
+            "api_ids": self.api_ids[:5],
+            "api_names": self.api_names[:5],
+            "api_statuses": self.api_statuses[:5],
+            "api_counts": self.api_counts[:5],
+            "api_timestamps": self.api_timestamps[:5],
+            "api_errors": self.api_errors[:3],
+            "api_pagination": self.api_pagination[:2],
+            "api_evidence_states": self.api_evidence_states[:5],
+            "api_parser_modes": self.api_parser_modes[:5],
         }
 
 

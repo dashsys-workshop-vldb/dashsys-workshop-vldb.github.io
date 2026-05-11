@@ -23,8 +23,10 @@ POST_CHANGE_VALIDATION_COMMANDS = [
     "python3 scripts/run_dev_eval.py --strict",
     "python3 scripts/run_hidden_style_eval.py",
     "python3 scripts/audit_live_adobe_api_readiness.py",
+    "python3 scripts/generate_api_required_readiness_matrix.py",
     "python3 scripts/run_live_api_readiness_smoke.py",
     "python3 scripts/run_live_api_evidence_pipeline_trial.py",
+    "python3 scripts/run_mock_live_api_evidence_pipeline_trial.py",
     "python3 scripts/check_llm_sdk_backend.py",
     "python3 scripts/run_workflow_decision_audit.py",
     "python3 scripts/run_decision_feedback_loop.py",
@@ -49,8 +51,10 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/visualization_summary.md/json",
     "outputs/reports/workshop_requirement_audit.md/json",
     "outputs/reports/live_adobe_api_readiness_audit.md/json",
+    "outputs/reports/api_required_readiness_matrix.md/json",
     "outputs/reports/live_api_readiness_smoke.md/json",
     "outputs/reports/live_api_evidence_pipeline_trial.md/json",
+    "outputs/reports/mock_live_api_evidence_pipeline_trial.md/json",
     "outputs/reports/workflow_decision_map.md/json",
     "outputs/reports/workflow_decision_audit.md/json",
     "outputs/reports/improvement_feedback_loop_index.md/json",
@@ -121,8 +125,10 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "ast_canary": _load_json(outputs / "ast_guided_sql_candidate_canary.json"),
         "live_readiness": _load_json(outputs / "live_mode_readiness_report.json"),
         "live_adobe_api_readiness": _load_json(outputs / "reports" / "live_adobe_api_readiness_audit.json"),
+        "api_required_readiness_matrix": _load_json(outputs / "reports" / "api_required_readiness_matrix.json"),
         "live_api_smoke": _load_json(outputs / "reports" / "live_api_readiness_smoke.json"),
         "live_api_pipeline_trial": _load_json(outputs / "reports" / "live_api_evidence_pipeline_trial.json"),
+        "mock_live_api_pipeline_trial": _load_json(outputs / "reports" / "mock_live_api_evidence_pipeline_trial.json"),
         "llm_backend": _load_json(outputs / "llm_sdk_backend_check.json"),
         "llm_baseline": _load_json(outputs / "llm_baseline_eval_report.json"),
         "llm_strict": _load_json(outputs / "llm_strict_baseline_eval.json"),
@@ -339,13 +345,17 @@ def build_report_index(
         },
         "live_adobe_api_readiness": {
             "audit_path": "outputs/reports/live_adobe_api_readiness_audit.md",
+            "api_required_readiness_matrix_path": "outputs/reports/api_required_readiness_matrix.md",
             "smoke_path": "outputs/reports/live_api_readiness_smoke.md",
             "pipeline_trial_path": "outputs/reports/live_api_evidence_pipeline_trial.md",
+            "mock_pipeline_trial_path": "outputs/reports/mock_live_api_evidence_pipeline_trial.md",
             **_live_api_readiness_status(
                 {
                     "live_adobe_api_readiness": _load_json(config.outputs_dir / "reports" / "live_adobe_api_readiness_audit.json"),
+                    "api_required_readiness_matrix": _load_json(config.outputs_dir / "reports" / "api_required_readiness_matrix.json"),
                     "live_api_smoke": _load_json(config.outputs_dir / "reports" / "live_api_readiness_smoke.json"),
                     "live_api_pipeline_trial": _load_json(config.outputs_dir / "reports" / "live_api_evidence_pipeline_trial.json"),
+                    "mock_live_api_pipeline_trial": _load_json(config.outputs_dir / "reports" / "mock_live_api_evidence_pipeline_trial.json"),
                 }
             ),
         },
@@ -558,11 +568,15 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.extend(["", "## Live Adobe API Readiness", ""])
     live = payload.get("live_adobe_api_readiness", {})
     lines.append(f"- Readiness audit: `{live.get('audit_path')}`")
+    lines.append(f"- API_REQUIRED readiness matrix: `{live.get('api_required_readiness_matrix_path')}`")
     lines.append(f"- Smoke report: `{live.get('smoke_path')}`")
     lines.append(f"- Evidence pipeline trial: `{live.get('pipeline_trial_path')}`")
+    lines.append(f"- Mock live evidence pipeline trial: `{live.get('mock_pipeline_trial_path')}`")
     lines.append(f"- Overall status: `{live.get('overall_status')}`")
     lines.append(f"- Credentials present in latest smoke: `{live.get('credentials_present')}`")
     lines.append(f"- Live mode attempted: `{live.get('live_mode_attempted')}`")
+    lines.append(f"- Mock parser success count: `{live.get('mock_parser_success_count')}`")
+    lines.append(f"- Mock discovery chains simulated: `{live.get('mock_discovery_chain_simulated_count')}`")
     lines.append("- Live API readiness is infrastructure validation only; it is not official strict-score evidence.")
     lines.append("- `API_REQUIRED` remains required in live mode; dry-run remains an honest fallback when credentials are missing.")
     lines.extend(["", "## LLM Semantic Routing Helper", ""])
@@ -723,25 +737,34 @@ def _decision_stage_status(sources: dict[str, Any]) -> dict[str, Any]:
 
 def _live_api_readiness_status(sources: dict[str, Any]) -> dict[str, Any]:
     audit = sources.get("live_adobe_api_readiness") or {}
+    matrix = sources.get("api_required_readiness_matrix") or {}
     smoke = sources.get("live_api_smoke") or {}
     pipeline = sources.get("live_api_pipeline_trial") or {}
+    mock_pipeline = sources.get("mock_live_api_pipeline_trial") or {}
     return {
         "overall_status": audit.get("overall_status", "not_run"),
         "critical_failures": len(audit.get("critical_failures", [])),
         "warnings": len(audit.get("warnings", [])),
+        "api_required_readiness_matrix_status": "complete" if matrix.get("report_type") == "api_required_readiness_matrix" else "not_run",
+        "api_required_or_api_only_queries": (matrix.get("summary") or {}).get("total_api_required_or_api_only_queries"),
         "smoke_status": smoke.get("status", "not_run"),
         "pipeline_trial_status": pipeline.get("status", "not_run"),
+        "mock_pipeline_trial_status": mock_pipeline.get("status", "not_run"),
+        "mock_parser_success_count": mock_pipeline.get("parser_success_count", "not_run"),
+        "mock_discovery_chain_simulated_count": mock_pipeline.get("discovery_chain_simulated_count", "not_run"),
         "credentials_present": smoke.get("credentials_present", False),
         "live_mode_attempted": bool(smoke.get("live_mode_attempted") or pipeline.get("live_mode_attempted")),
         "dry_run_fallback_verified": bool(smoke.get("dry_run_fallback_verified") or pipeline.get("dry_run_fallback_verified")),
         "infrastructure_validation_only": True,
         "official_score_claim": False,
         "packaged_runtime_affected": False,
-        "next_best_candidate": "Live Adobe API readiness / response parser / EvidenceBus API evidence pipeline",
+        "next_best_candidate": "Live Adobe API response parser + discovery-chain readiness + EvidenceBus API evidence pipeline",
         "source_reports": [
             "outputs/reports/live_adobe_api_readiness_audit.md",
+            "outputs/reports/api_required_readiness_matrix.md",
             "outputs/reports/live_api_readiness_smoke.md",
             "outputs/reports/live_api_evidence_pipeline_trial.md",
+            "outputs/reports/mock_live_api_evidence_pipeline_trial.md",
         ],
     }
 

@@ -48,7 +48,14 @@ def run_live_api_readiness_smoke(config: Config | None = None, *, limit: int = 5
         _write_json_md(reports_dir / OUTPUT_STEM, payload, render_smoke(payload))
         return payload
 
-    endpoints = [endpoint for endpoint in catalog.endpoints if endpoint_is_safe_get_smoke(endpoint)][: max(0, limit)]
+    safe_endpoints = [endpoint for endpoint in catalog.endpoints if endpoint_is_safe_get_smoke(endpoint)]
+    endpoints = safe_endpoints[: max(0, limit)]
+    selected_ids = {endpoint.id for endpoint in endpoints}
+    skipped_endpoints = [
+        skipped_endpoint_reason(endpoint, selected=endpoint.id in selected_ids)
+        for endpoint in catalog.endpoints
+        if endpoint.id not in selected_ids
+    ]
     rows = []
     for endpoint in endpoints:
         validation = validator.validate(endpoint.method, endpoint.path, endpoint.common_params, {})
@@ -93,6 +100,7 @@ def run_live_api_readiness_smoke(config: Config | None = None, *, limit: int = 5
         "live_mode_attempted": True,
         "dry_run_fallback_verified": False,
         "endpoints_tested": rows,
+        "skipped_endpoints": skipped_endpoints,
         "success_count": sum(1 for row in rows if row.get("ok") is True),
         "failure_count": sum(1 for row in rows if row.get("ok") is False),
         "auth_failure_count": sum(1 for row in rows if row.get("status_code") in {401, 403}),
@@ -117,6 +125,9 @@ def skipped_live_report(config: Config, client: AdobeAPIClient) -> dict[str, Any
         status_code=200,
         endpoint="/ajo/journey",
         endpoint_id="journey_list",
+        endpoint_family="journey_list",
+        method="GET",
+        path="/ajo/journey",
     )
     pipeline = evidence_pipeline_status(
         Endpoint(id="journey_list", method="GET", path="/ajo/journey", use_when="sample"),
@@ -138,6 +149,7 @@ def skipped_live_report(config: Config, client: AdobeAPIClient) -> dict[str, Any
                 "ADOBE_SANDBOX_NAME or SANDBOX",
             ],
             "endpoints_tested": [],
+            "skipped_endpoints": [],
             "success_count": 0,
             "failure_count": 0,
             "auth_failure_count": 0,
@@ -156,6 +168,23 @@ def endpoint_is_safe_get_smoke(endpoint: Endpoint) -> bool:
     return endpoint.method == "GET" and not endpoint.path_params and "{" not in endpoint.path and "}" not in endpoint.path
 
 
+def skipped_endpoint_reason(endpoint: Endpoint, *, selected: bool = False) -> dict[str, Any]:
+    if endpoint.method != "GET":
+        reason = "non_get_endpoint"
+    elif endpoint.path_params or "{" in endpoint.path or "}" in endpoint.path:
+        reason = "requires_discovery_chain_or_path_param"
+    elif not selected:
+        reason = "not_selected_by_limit"
+    else:
+        reason = "selected"
+    return {
+        "endpoint_id": endpoint.id,
+        "method": endpoint.method,
+        "path": endpoint.path,
+        "reason": reason,
+    }
+
+
 def evidence_pipeline_status(endpoint: Endpoint, result: dict[str, Any]) -> dict[str, str]:
     bus = EvidenceBus()
     step = type("Step", (), {"family": endpoint.id})()
@@ -165,13 +194,13 @@ def evidence_pipeline_status(endpoint: Endpoint, result: dict[str, Any]) -> dict
         [{"type": "api", "step": {"family": endpoint.id, "url": endpoint.path}, "payload": result}],
     )
     parsed = result.get("parsed_evidence") if isinstance(result, dict) else None
-    parser_status = "pass" if isinstance(parsed, dict) and parsed.get("evidence_state") in {"live_evidence", "live_empty_result", "api_error"} else "not_available"
+    parser_status = "pass" if isinstance(parsed, dict) and parsed.get("evidence_state") in {"live_evidence", "live_empty", "live_empty_result", "api_error", "malformed_response"} else "not_available"
     if result.get("dry_run"):
         parser_status = "dry_run_fallback"
     return {
         "response_parser_status": parser_status,
-        "evidencebus_forwarding_status": "pass" if bus.api_items or bus.names or bus.ids or bus.statuses or result.get("dry_run") else "no_live_items",
-        "answer_synthesis_status": "pass" if slots.api_items or slots.dry_run or slots.api_error or slots.api_item_count is not None else "no_live_items",
+        "evidencebus_forwarding_status": "pass" if bus.api_items or bus.api_ids or bus.api_errors or bus.names or bus.ids or bus.statuses or result.get("dry_run") else "no_live_items",
+        "answer_synthesis_status": "pass" if slots.api_items or slots.answer_slot_source or slots.dry_run or slots.api_error or slots.api_item_count is not None else "no_live_items",
     }
 
 
@@ -210,6 +239,11 @@ def render_smoke(payload: dict[str, Any]) -> str:
         lines.append(
             f"- `{row.get('endpoint_id')}` {row.get('method')} `{row.get('path')}` "
             f"ok=`{row.get('ok')}` status=`{row.get('status_code')}` parser=`{row.get('response_parser_status')}`"
+        )
+    lines.extend(["", "## Skipped Endpoints", ""])
+    for row in payload.get("skipped_endpoints", [])[:30]:
+        lines.append(
+            f"- `{row.get('endpoint_id')}` {row.get('method')} `{row.get('path')}` reason=`{row.get('reason')}`"
         )
     return "\n".join(lines) + "\n"
 

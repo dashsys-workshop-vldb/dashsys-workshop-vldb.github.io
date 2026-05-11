@@ -161,11 +161,15 @@ Run:
 
 ```bash
 python3 scripts/audit_live_adobe_api_readiness.py
+python3 scripts/generate_api_required_readiness_matrix.py
 python3 scripts/run_live_api_readiness_smoke.py
 python3 scripts/run_live_api_evidence_pipeline_trial.py
+python3 scripts/run_mock_live_api_evidence_pipeline_trial.py
 ```
 
-Reports are written under `outputs/reports/` and isolated live trial artifacts under `outputs/live_api_evidence_pipeline_trial/`. Safe smoke tests are GET-only by default and do not call endpoints with unresolved path parameters unless a later discovery step provides a safe ID.
+Reports are written under `outputs/reports/` and isolated live trial artifacts under `outputs/live_api_evidence_pipeline_trial/` or `outputs/mock_live_api_evidence_pipeline_trial/`. Safe smoke tests are GET-only by default and do not call endpoints with unresolved path parameters unless a discovery step supplies a safe ID. The API response parser normalizes live payloads into `parsed_evidence`, EvidenceBus forwards parsed IDs/names/statuses/counts/timestamps/errors/pagination, and answer slots track whether evidence came from live API, dry-run fallback, empty live results, or API errors.
+
+Discovery chains are GET-only, never guess IDs, and record provenance for discovered IDs. Mocked fixtures under `tests/fixtures/adobe_api_responses/` validate endpoint-family parsing before credentials arrive; they are synthetic and must not be used as official benchmark evidence.
 
 ## 4. Prompt Routing Policy
 

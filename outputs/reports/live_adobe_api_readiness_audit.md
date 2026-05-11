@@ -46,7 +46,7 @@ Infrastructure validation only; this report is not official strict-score evidenc
   Explanation: Current credentials present: False; missing-credential client dry_run=True; fake-token client dry_run=False.
 - `pass` `response_parser_readiness`: API response parser distinguishes live empty results, dry-run unavailability, and live errors.
   Evidence: `dashagent/api_response_parser.py`
-  Explanation: Structured parser extracts ids, names, statuses, counts, timestamps, pagination, errors, and redacted previews.
+  Explanation: Structured parser extracts ids, names, statuses, counts, timestamps, pagination, errors, endpoint metadata, parser mode, evidence state, and redacted previews. Endpoint-family extraction falls back to generic parsing without dropping evidence.
 - `pass` `evidencebus_api_flow`: Real API evidence can flow through EvidenceBus, answer slots, answer synthesis, and trajectory logging.
   Evidence: `dashagent/evidence_bus.py; dashagent/answer_slots.py; dashagent/trajectory.py`
   Explanation: EvidenceBus and answer slots consume normalize_api_evidence, which now understands parsed_evidence from the live API parser.
@@ -57,8 +57,8 @@ Infrastructure validation only; this report is not official strict-score evidenc
   Evidence: `dashagent/trajectory.py`
   Explanation: Access tokens, API keys, and secrets are fully redacted; org ID and sandbox name are masked by default.
 - `pass` `diagnostic_output_isolation`: Live smoke/trial outputs must not overwrite strict eval, eval directories, final_submission, or final_submission_manifest.
-  Evidence: `scripts/run_live_api_readiness_smoke.py; scripts/run_live_api_evidence_pipeline_trial.py`
-  Explanation: Readiness scripts write reports and isolated trial artifacts only.
+  Evidence: `scripts/run_live_api_readiness_smoke.py; scripts/run_live_api_evidence_pipeline_trial.py; scripts/run_mock_live_api_evidence_pipeline_trial.py`
+  Explanation: Readiness scripts write reports and isolated trial artifacts only; mock live trials use synthetic fixtures and do not claim strict-score improvement.
 
 ## Endpoint Smoke Eligibility
 

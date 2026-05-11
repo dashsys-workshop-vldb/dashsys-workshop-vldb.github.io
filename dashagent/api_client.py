@@ -9,7 +9,7 @@ import requests
 
 from .api_response_parser import normalize_api_response
 from .config import Config, DEFAULT_CONFIG
-from .endpoint_catalog import normalize_api_path
+from .endpoint_catalog import EndpointCatalog, normalize_api_path
 from .trajectory import compact_preview, redact_secrets
 
 
@@ -49,6 +49,7 @@ class AdobeAPIClient:
         self.config = config or DEFAULT_CONFIG
         self.credentials = credentials or AdobeCredentials.from_env()
         self.session = requests.Session()
+        self.endpoint_catalog = EndpointCatalog(self.config)
 
     @property
     def dry_run(self) -> bool:
@@ -141,9 +142,16 @@ class AdobeAPIClient:
             else:
                 request_kwargs["params"] = params
             response = self.session.request(**request_kwargs)
+            endpoint_path = normalize_api_path(url)
+            endpoint = self.endpoint_catalog.match(method, endpoint_path)
             content_type = response.headers.get("content-type", "")
+            malformed_response = False
             if "application/json" in content_type:
-                body: Any = response.json()
+                try:
+                    body: Any = response.json()
+                except ValueError:
+                    body = response.text
+                    malformed_response = True
             else:
                 body = response.text
             return {
@@ -151,21 +159,26 @@ class AdobeAPIClient:
                 "dry_run": False,
                 "method": method,
                 "url": full_url,
-                "endpoint": normalize_api_path(url),
+                "endpoint": endpoint_path,
                 "params": params,
                 "headers": redact_secrets(merged_headers),
                 "status_code": response.status_code,
                 "result_preview": compact_preview(body, self.config.max_preview_chars),
                 "parsed_evidence": normalize_api_response(
                     body,
-                    ok=response.ok,
+                    ok=response.ok and not malformed_response,
                     dry_run=False,
                     status_code=response.status_code,
-                    endpoint=normalize_api_path(url),
+                    endpoint=endpoint_path,
+                    endpoint_id=endpoint.id if endpoint else None,
+                    endpoint_family=endpoint.id if endpoint else None,
+                    method=method,
+                    path=endpoint_path,
                     max_preview_chars=self.config.max_preview_chars,
-                    error=None if response.ok else str(body)[:500],
+                    malformed_response=malformed_response,
+                    error="Malformed JSON response." if malformed_response else (None if response.ok else str(body)[:500]),
                 ),
-                "error": None if response.ok else str(body)[:500],
+                "error": "Malformed JSON response." if malformed_response else (None if response.ok else str(body)[:500]),
             }
         except Exception as exc:
             return {
@@ -184,6 +197,8 @@ class AdobeAPIClient:
                     dry_run=False,
                     status_code=None,
                     endpoint=normalize_api_path(url),
+                    method=method,
+                    path=normalize_api_path(url),
                     max_preview_chars=self.config.max_preview_chars,
                     error=str(exc)[:500],
                 ),

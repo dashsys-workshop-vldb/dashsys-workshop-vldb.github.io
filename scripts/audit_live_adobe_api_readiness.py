@@ -183,8 +183,8 @@ def build_audit_rows(config: Config) -> list[dict[str, Any]]:
             "API response parser distinguishes live empty results, dry-run unavailability, and live errors.",
             "pass" if parser_ok else "fail",
             "dashagent/api_response_parser.py",
-            "Structured parser extracts ids, names, statuses, counts, timestamps, pagination, errors, and redacted previews.",
-            "Add endpoint-family extraction when live payloads reveal family-specific shapes.",
+            "Structured parser extracts ids, names, statuses, counts, timestamps, pagination, errors, endpoint metadata, parser mode, evidence state, and redacted previews. Endpoint-family extraction falls back to generic parsing without dropping evidence.",
+            "Use mock and live pipeline trials to inspect any family-specific payload gaps before scoring claims.",
         )
     )
     rows.append(
@@ -222,8 +222,8 @@ def build_audit_rows(config: Config) -> list[dict[str, Any]]:
             "diagnostic_output_isolation",
             "Live smoke/trial outputs must not overwrite strict eval, eval directories, final_submission, or final_submission_manifest.",
             "pass",
-            "scripts/run_live_api_readiness_smoke.py; scripts/run_live_api_evidence_pipeline_trial.py",
-            "Readiness scripts write reports and isolated trial artifacts only.",
+            "scripts/run_live_api_readiness_smoke.py; scripts/run_live_api_evidence_pipeline_trial.py; scripts/run_mock_live_api_evidence_pipeline_trial.py",
+            "Readiness scripts write reports and isolated trial artifacts only; mock live trials use synthetic fixtures and do not claim strict-score improvement.",
             "Keep live readiness as infrastructure validation, not score promotion.",
         )
     )

@@ -39,11 +39,15 @@ Start here. Most older generated reports were consolidated or removed.
 ## Live Adobe API Readiness
 
 - Readiness audit: `outputs/reports/live_adobe_api_readiness_audit.md`
+- API_REQUIRED readiness matrix: `outputs/reports/api_required_readiness_matrix.md`
 - Smoke report: `outputs/reports/live_api_readiness_smoke.md`
 - Evidence pipeline trial: `outputs/reports/live_api_evidence_pipeline_trial.md`
+- Mock live evidence pipeline trial: `outputs/reports/mock_live_api_evidence_pipeline_trial.md`
 - Overall status: `warning`
 - Credentials present in latest smoke: `False`
 - Live mode attempted: `False`
+- Mock parser success count: `126`
+- Mock discovery chains simulated: `5`
 - Live API readiness is infrastructure validation only; it is not official strict-score evidence.
 - `API_REQUIRED` remains required in live mode; dry-run remains an honest fallback when credentials are missing.
 
@@ -93,8 +97,10 @@ Required commands:
 - `python3 scripts/run_dev_eval.py --strict`
 - `python3 scripts/run_hidden_style_eval.py`
 - `python3 scripts/audit_live_adobe_api_readiness.py`
+- `python3 scripts/generate_api_required_readiness_matrix.py`
 - `python3 scripts/run_live_api_readiness_smoke.py`
 - `python3 scripts/run_live_api_evidence_pipeline_trial.py`
+- `python3 scripts/run_mock_live_api_evidence_pipeline_trial.py`
 - `python3 scripts/check_llm_sdk_backend.py`
 - `python3 scripts/run_workflow_decision_audit.py`
 - `python3 scripts/run_decision_feedback_loop.py`
@@ -118,8 +124,10 @@ Regenerated report surfaces:
 - `outputs/reports/visualization_summary.md/json`
 - `outputs/reports/workshop_requirement_audit.md/json`
 - `outputs/reports/live_adobe_api_readiness_audit.md/json`
+- `outputs/reports/api_required_readiness_matrix.md/json`
 - `outputs/reports/live_api_readiness_smoke.md/json`
 - `outputs/reports/live_api_evidence_pipeline_trial.md/json`
+- `outputs/reports/mock_live_api_evidence_pipeline_trial.md/json`
 - `outputs/reports/workflow_decision_map.md/json`
 - `outputs/reports/workflow_decision_audit.md/json`
 - `outputs/reports/improvement_feedback_loop_index.md/json`
@@ -136,7 +144,7 @@ Regenerated report surfaces:
 ## Current Status
 
 - preferred_strategy: `SQL_FIRST_API_VERIFY`
-- packaged_strict_score: `0.6553`
+- packaged_strict_score: `0.6552`
 - best_isolated_score: `0.6558`
 - hidden_style: `48/48`
 - final_submission_ready: `True`
