@@ -24,6 +24,7 @@ GENERATOR_SCRIPTS = [
     "scripts/generate_technique_visual_cards.py",
     "scripts/generate_system_status_dashboard.py",
     "scripts/generate_score_bottleneck_dashboard.py",
+    "scripts/generate_end_to_end_system_dataflow.py",
     "scripts/generate_visualization_index.py",
 ]
 
@@ -32,6 +33,9 @@ REQUIRED_FILES = [
     "index.json",
     "executive_dashboard.md",
     "executive_dashboard.json",
+    "end_to_end_system_dataflow.html",
+    "end_to_end_system_dataflow.md",
+    "end_to_end_system_dataflow.json",
     "sql_prompt_storyboard_primary.md",
     "sql_prompt_storyboard_primary.json",
     "prompt_storyboard_primary.md",
@@ -231,17 +235,93 @@ def test_prompt_transformation_and_execution_visual_contracts():
 def test_visualization_index_first_links_match_sql_primary_order():
     run_generators()
     index_md = (VIS_DIR / "index.md").read_text(encoding="utf-8")
-    links = re.findall(r"\[([^\]]+\.md)\]\(([^)]+)\)", index_md)
+    links = re.findall(r"\[([^\]]+\.(?:md|html))\]\(([^)]+)\)", index_md)
     first_links = [link for _, link in links[:7]]
     assert first_links == [
         "executive_dashboard.md",
+        "end_to_end_system_dataflow.html",
         "sql_prompt_storyboard_primary.md",
+        "system_status_dashboard.md",
+        "technique_visual_cards.md",
         "prompt_transformation_primary.md",
         "end_to_end_execution_primary.md",
-        "technique_pipeline_map.md",
-        "system_status_dashboard.md",
-        "score_bottleneck_dashboard.md",
     ]
+
+
+def test_end_to_end_system_dataflow_is_self_contained_and_complete():
+    run_generators()
+    html = (VIS_DIR / "end_to_end_system_dataflow.html").read_text(encoding="utf-8")
+    md = (VIS_DIR / "end_to_end_system_dataflow.md").read_text(encoding="utf-8")
+    data = json.loads((VIS_DIR / "end_to_end_system_dataflow.json").read_text(encoding="utf-8"))
+    required_text = [
+        "User Prompt",
+        "Prompt Routing",
+        "QueryAnalysis",
+        "SQL_FIRST_API_VERIFY",
+        "SQL Evidence Path",
+        "Adobe REST API Evidence Path",
+        "Live API mode",
+        "Dry-run fallback",
+        "API response parser",
+        "Discovery-chain readiness",
+        "EvidenceBus",
+        "Answer Slots",
+        "Answer Synthesis",
+        "Trajectory Logging",
+        "Final Submission",
+        "Strict Eval",
+        "Live Adobe API Readiness",
+        "Evidence-Aware Answer Synthesis",
+        "LLM Semantic Routing Helper",
+        "Adobe credentials present?",
+        "SQL validation passed?",
+        "API validation passed?",
+        "dry_run fallback?",
+        "semantic router feature enabled?",
+        "promoted or diagnostic-only?",
+        "answer-only rewrite promoted or keep_trial_only?",
+    ]
+    for text in required_text:
+        assert text in html
+    assert "https://cdn" not in html
+    assert "mermaid.min.js" not in html
+    assert not re.search(r"<script\b[^>]*\bsrc=", html, flags=re.I)
+    assert "```mermaid" in md
+    for key in [
+        "generated_at",
+        "source_files",
+        "missing_source_files",
+        "stale_source_warnings",
+        "current_status",
+        "mermaid_source",
+        "node_count",
+        "edge_count",
+        "major_sections",
+    ]:
+        assert key in data
+    assert data["node_count"] > 0
+    assert data["edge_count"] > 0
+    assert data["major_sections"] == [
+        "Input and Guards",
+        "Routing and Analysis",
+        "Planning Context",
+        "SQL Evidence Path",
+        "Adobe REST API Evidence Path",
+        "Evidence and Answer",
+        "Packaging and Evaluation",
+        "Diagnostics and Reports",
+    ]
+    graph_text = html + "\n" + md + "\n" + data["mermaid_source"]
+    for text in [
+        "packaged runtime path",
+        "shadow/diagnostic path",
+        "isolated trial path",
+        "Live API mode",
+        "Dry-run fallback",
+        "Mock live API readiness diagnostics",
+        "Final Submission packaging",
+    ]:
+        assert text in graph_text
 
 
 def test_technique_visual_cards_cover_required_names_status_and_runtime_path():
@@ -323,12 +403,12 @@ def test_visualization_state_matches_source_reports_and_no_secret_patterns():
                 re.escape("sk" + "-or-"),
                 "OPENROUTER_API_KEY" + "=" + ".*" + re.escape("sk"),
                 "OPENAI_API_KEY" + "=" + ".*" + re.escape("sk"),
+                "ANTHROPIC_API_KEY" + "=" + ".*" + re.escape("sk"),
+                "ADOBE_ACCESS_TOKEN" + "=" + ".*",
                 "Authorization:" + r"\s*" + "Bearer",
             ]
         ),
         re.I,
     )
-    for path in VIS_DIR.glob("*.md"):
-        assert not secret_pattern.search(path.read_text(encoding="utf-8")), path
-    for path in VIS_DIR.glob("*.json"):
+    for path in list(VIS_DIR.glob("*.md")) + list(VIS_DIR.glob("*.json")) + list(VIS_DIR.glob("*.html")):
         assert not secret_pattern.search(path.read_text(encoding="utf-8")), path

@@ -12,7 +12,7 @@ This index links the supervisor-facing visualization suite. Every artifact is ge
 
 | Field | Value |
 | --- | --- |
-| Required files | 44/44 |
+| Required files | 47/47 |
 | Technique count | 45 |
 | Packaged strict final score | 0.6553 |
 | Best isolated score | 0.6558 |
@@ -28,14 +28,15 @@ Start here. These pages are diagram/card-first and designed for a quick walkthro
 | Artifact | Kind | Exists |
 | --- | --- | --- |
 | [executive_dashboard.md](executive_dashboard.md) | markdown | True |
+| [end_to_end_system_dataflow.html](end_to_end_system_dataflow.html) | html | True |
 | [sql_prompt_storyboard_primary.md](sql_prompt_storyboard_primary.md) | markdown | True |
+| [system_status_dashboard.md](system_status_dashboard.md) | markdown | True |
+| [technique_visual_cards.md](technique_visual_cards.md) | markdown | True |
 | [prompt_transformation_primary.md](prompt_transformation_primary.md) | markdown | True |
 | [end_to_end_execution_primary.md](end_to_end_execution_primary.md) | markdown | True |
 | [technique_pipeline_map.md](technique_pipeline_map.md) | markdown | True |
-| [system_status_dashboard.md](system_status_dashboard.md) | markdown | True |
 | [score_bottleneck_dashboard.md](score_bottleneck_dashboard.md) | markdown | True |
 | [prompt_storyboard_primary.md](prompt_storyboard_primary.md) | markdown | True |
-| [technique_visual_cards.md](technique_visual_cards.md) | markdown | True |
 
 ## Detailed Reference Views
 
@@ -44,13 +45,15 @@ Start here. These pages are diagram/card-first and designed for a quick walkthro
 | [index.md](index.md) | markdown | True |
 | index.json | json | True |
 | executive_dashboard.json | json | True |
+| [end_to_end_system_dataflow.md](end_to_end_system_dataflow.md) | markdown | True |
+| end_to_end_system_dataflow.json | json | True |
 | sql_prompt_storyboard_primary.json | json | True |
 | prompt_storyboard_primary.json | json | True |
 | prompt_transformation_primary.json | json | True |
 | end_to_end_execution_primary.json | json | True |
 | technique_pipeline_map.json | json | True |
-| technique_visual_cards.json | json | True |
 | system_status_dashboard.json | json | True |
+| technique_visual_cards.json | json | True |
 | score_bottleneck_dashboard.json | json | True |
 | [technique_catalog.md](technique_catalog.md) | markdown | True |
 | technique_catalog.json | json | True |

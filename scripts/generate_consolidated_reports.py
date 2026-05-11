@@ -19,6 +19,7 @@ REPORTS_DIRNAME = "reports"
 
 POST_CHANGE_VALIDATION_COMMANDS = [
     "python3 -m pytest -q",
+    "python3 scripts/generate_end_to_end_system_dataflow.py",
     "python3 scripts/audit_workshop_requirements.py",
     "python3 scripts/run_dev_eval.py --strict",
     "python3 scripts/run_hidden_style_eval.py",
@@ -75,6 +76,8 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/cleanup_final_report.md/json",
     "outputs/winner_readiness_report.md/json",
     "outputs/final_research_inspired_improvement_report.md/json",
+    "outputs/visualizations/end_to_end_system_dataflow.html",
+    "outputs/visualizations/end_to_end_system_dataflow.md/json",
     "outputs/visualizations/index.md/json",
     "outputs/visualizations/system_status_dashboard.md/json",
     "outputs/visualizations/technique_visual_cards.md/json",
@@ -92,6 +95,7 @@ def generate_consolidated_reports(config: Config | None = None) -> dict[str, Any
     config = config or Config.from_env(ROOT)
     reports_dir = config.outputs_dir / REPORTS_DIRNAME
     reports_dir.mkdir(parents=True, exist_ok=True)
+    _maybe_generate_end_to_end_system_dataflow(config)
 
     sources = _load_sources(config)
     system = build_system_summary(config, sources)
@@ -162,9 +166,18 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "sql_evidence_usage_audit": _load_json(outputs / "reports" / "sql_evidence_usage_audit.json"),
         "confidence_calibration_audit": _load_json(outputs / "reports" / "confidence_calibration_audit.json"),
         "token_efficiency_audit": _load_json(outputs / "reports" / "token_efficiency_audit.json"),
+        "end_to_end_system_dataflow": _load_json(visualizations / "end_to_end_system_dataflow.json"),
         "sql_storyboard": _load_json(visualizations / "sql_prompt_storyboard_primary.json"),
         "visualization_index": _load_json(visualizations / "index.json"),
     }
+
+
+def _maybe_generate_end_to_end_system_dataflow(config: Config) -> None:
+    if config.project_root.resolve() != ROOT.resolve() or config.outputs_dir.resolve() != (ROOT / "outputs").resolve():
+        return
+    from scripts.generate_end_to_end_system_dataflow import generate_end_to_end_system_dataflow
+
+    generate_end_to_end_system_dataflow()
 
 
 def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, Any]:
@@ -307,15 +320,20 @@ def build_visualization_summary(config: Config, sources: dict[str, Any]) -> dict
             "result": story.get("sql_result_summary", "blueprint_count = 74"),
         },
         "main_storyboard": "outputs/visualizations/sql_prompt_storyboard_primary.md",
+        "end_to_end_system_dataflow": "outputs/visualizations/end_to_end_system_dataflow.html",
         "supervisor_visualizations": [
             "outputs/visualizations/executive_dashboard.md",
+            "outputs/visualizations/end_to_end_system_dataflow.html",
             "outputs/visualizations/sql_prompt_storyboard_primary.md",
             "outputs/visualizations/system_status_dashboard.md",
+            "outputs/visualizations/technique_visual_cards.md",
+            "outputs/visualizations/end_to_end_system_dataflow.md",
             "outputs/visualizations/score_bottleneck_dashboard.md",
         ],
         "secondary_reference": "example_031 remains a secondary API/dry-run bottleneck reference only.",
         "source_reports": [
             "outputs/visualizations/sql_prompt_storyboard_primary.json",
+            "outputs/visualizations/end_to_end_system_dataflow.json",
             "outputs/visualizations/index.json",
         ],
     }
@@ -576,6 +594,7 @@ def render_visualization_summary(payload: dict[str, Any]) -> str:
             f"- Primary example: `{payload['primary_example']}`",
             f"- Raw prompt: {payload['raw_prompt']}",
             f"- Main storyboard: `{payload['main_storyboard']}`",
+            f"- End-to-end system dataflow: `{payload['end_to_end_system_dataflow']}`",
             f"- Secondary reference: {payload['secondary_reference']}",
             "",
             "## Prompt To SQL Mapping",
@@ -601,7 +620,12 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.extend(["", "## Key Source-Of-Truth Reports", ""])
     lines.extend(f"- `{path}`" for path in payload["key_source_of_truth_reports"])
     lines.extend(["", "## Key Visualizations", ""])
-    lines.extend(f"- `{path}`" for path in payload["key_visualizations"])
+    for path in payload["key_visualizations"]:
+        if path.startswith("outputs/visualizations/"):
+            href = f"../visualizations/{Path(path).name}"
+            lines.append(f"- [{path}]({href})")
+        else:
+            lines.append(f"- `{path}`")
     lines.extend(["", "## Diagnostic Prompt Coverage", ""])
     for item in payload.get("diagnostic_prompt_coverage", []):
         lines.append(f"- `{item['path']}` - {item['label']}")

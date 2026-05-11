@@ -104,7 +104,10 @@ def test_consolidated_reports_are_parseable_and_match_sources(tiny_project):
     assert llm["recommendation"] == "keep_shadow_only"
     assert visualization["primary_example"] == "example_011"
     assert visualization["prompt_to_sql_mapping"]["schemas"] == "dim_blueprint"
+    assert visualization["end_to_end_system_dataflow"] == "outputs/visualizations/end_to_end_system_dataflow.html"
     assert index["post_change_validation"]["required_commands"] == POST_CHANGE_VALIDATION_COMMANDS
+    assert "outputs/visualizations/end_to_end_system_dataflow.html" in index["key_visualizations"]
+    assert "outputs/visualizations/end_to_end_system_dataflow.md" in index["key_visualizations"]
     assert "outputs/reports/cleanup_final_report.md/json" in index["post_change_validation"]["report_regeneration_targets"]
 
 

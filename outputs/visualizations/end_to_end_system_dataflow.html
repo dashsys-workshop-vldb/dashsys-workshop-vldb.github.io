@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DASHSys End-to-End System Data Flow</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --ink: #111827;
+      --muted: #4b5563;
+      --panel: #ffffff;
+      --line: #334155;
+      --packaged: #14532d;
+      --diagnostic: #6d28d9;
+      --trial: #a16207;
+      --final: #1d4ed8;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    header { padding: 28px 32px 12px; }
+    h1 { margin: 0 0 8px; font-size: 30px; letter-spacing: 0; }
+    p { color: var(--muted); line-height: 1.5; }
+    .grid { display: grid; grid-template-columns: minmax(320px, 1.2fr) minmax(320px, .8fr); gap: 16px; padding: 0 32px 18px; }
+    .panel { background: var(--panel); border: 1px solid #dbe3ef; border-radius: 8px; padding: 16px; box-shadow: 0 1px 2px rgba(15,23,42,.04); }
+    .panel h2 { margin: 0 0 12px; font-size: 18px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border-top: 1px solid #e5e7eb; padding: 7px 8px; text-align: left; vertical-align: top; }
+    th { width: 44%; color: #334155; font-weight: 650; }
+    a { color: #1d4ed8; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid #dbe3ef; border-radius: 999px; padding: 5px 9px; font-size: 12px; background: #fff; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .chart-wrap { margin: 0 32px 32px; background: white; border: 1px solid #dbe3ef; border-radius: 8px; overflow: auto; }
+    .chart-title { padding: 14px 16px 0; font-weight: 700; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    svg { display: block; min-width: 2140px; }
+    .section-label { font-size: 14px; font-weight: 750; fill: #0f172a; }
+    .section-bg { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1; }
+    .node rect, .node polygon { stroke: #243044; stroke-width: 1.2; }
+    .node text { font-size: 12px; fill: #111827; font-weight: 650; }
+    .node small { color: #475569; }
+    .edge { fill: none; stroke: var(--line); stroke-width: 2.4; marker-end: url(#arrow); }
+    .edge.diagnostic { stroke: var(--diagnostic); stroke-dasharray: 7 6; marker-end: url(#arrow-diagnostic); }
+    .edge.trial { stroke: var(--trial); stroke-dasharray: 6 5; marker-end: url(#arrow-trial); }
+    .edge.final { stroke: var(--final); stroke-width: 2.2; marker-end: url(#arrow-final); }
+    .edge-label { font-size: 11px; fill: #334155; paint-order: stroke; stroke: white; stroke-width: 3px; }
+    .input { fill: #dbeafe; }
+    .config { fill: #e0f2fe; }
+    .routing { fill: #ede9fe; }
+    .analysis { fill: #f5e8ff; }
+    .planning { fill: #fef3c7; }
+    .sql { fill: #dcfce7; }
+    .api { fill: #ffedd5; }
+    .decision { fill: #fee2e2; }
+    .evidence { fill: #ccfbf1; }
+    .answer { fill: #d1fae5; }
+    .packaging { fill: #e0e7ff; }
+    .eval { fill: #dbeafe; }
+    .llm { fill: #f3e8ff; }
+    .report { fill: #f1f5f9; }
+    .trial { fill: #fef9c3; }
+    footer { padding: 0 32px 32px; color: var(--muted); font-size: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>DASHSys End-to-End System Data Flow</h1>
+    <p>Auto-generated from current DASHSys reports and configuration artifacts. The dominant solid path is packaged <code>SQL_FIRST_API_VERIFY</code>; dashed paths are diagnostic, shadow, or isolated trial only.</p>
+  </header>
+  <section class="grid">
+    <div class="panel">
+      <h2>Current System Status</h2>
+      <table><tr><th>Preferred Strategy</th><td>SQL_FIRST_API_VERIFY</td></tr><tr><th>Packaged Strict Score</th><td>0.6553</td></tr><tr><th>Best Isolated Score</th><td>0.6558</td></tr><tr><th>Hidden Style</th><td>48/48</td></tr><tr><th>Final Submission Ready</th><td>True</td></tr><tr><th>Live Adobe Api Readiness</th><td>warning</td></tr><tr><th>Mock Parser Success Count</th><td>126</td></tr><tr><th>Mock Discovery Chains Simulated</th><td>5</td></tr><tr><th>Evidence Aware Answer Synthesis Recommendation</th><td>keep_trial_only</td></tr><tr><th>Semantic Router Recommendation</th><td>do_not_promote</td></tr><tr><th>Runtime Llm Direct Http Hits</th><td>0</td></tr><tr><th>Workshop Audit Status</th><td>pass</td></tr></table>
+    </div>
+    <div class="panel">
+      <h2>Legend</h2>
+      <div class="legend">
+        <span class="chip"><span class="dot" style="background:#14532d"></span>packaged runtime path</span>
+        <span class="chip"><span class="dot" style="background:#6d28d9"></span>shadow/diagnostic path</span>
+        <span class="chip"><span class="dot" style="background:#a16207"></span>isolated trial path</span>
+        <span class="chip"><span class="dot" style="background:#1d4ed8"></span>packaging/evaluation path</span>
+        <span class="chip"><span class="dot" style="background:#fee2e2"></span>decision node</span>
+      </div>
+      <h2 style="margin-top:18px">Report Links</h2>
+      <ul><li><a href="../reports/report_index.md">Report index</a></li><li><a href="../reports/workflow_decision_audit.md">Workflow decision audit</a></li><li><a href="../reports/live_adobe_api_readiness_audit.md">Live Adobe API readiness</a></li><li><a href="../reports/api_required_readiness_matrix.md">API_REQUIRED readiness matrix</a></li><li><a href="../reports/mock_live_api_evidence_pipeline_trial.md">Mock live API pipeline</a></li><li><a href="../reports/evidence_usage_audit.md">Evidence usage audit</a></li><li><a href="../reports/evidence_aware_answer_rewrite_trial.md">Evidence-aware answer trial</a></li><li><a href="../reports/sdk_usage_audit.md">SDK usage audit</a></li><li><a href="../reports/workshop_requirement_audit.md">Workshop audit</a></li></ul>
+    </div>
+  </section>
+  <section class="chart-wrap">
+    <div class="chart-title">Complete Runtime, Diagnostic, Evaluation, and Reporting Flowchart</div>
+    <p class="sr-only">Input and Guards | Routing and Analysis | Planning Context | SQL Evidence Path | Adobe REST API Evidence Path | Evidence and Answer | Packaging and Evaluation | Diagnostics and Reports | User Prompt input | Runtime config and preflight guards | Prompt Routing | Simple prompt gate | Query normalization | Query token extraction | Deterministic QueryRouter | Answer intent detection | QueryAnalysis | semantic router feature enabled? | SDK LLMClient | LLM Semantic Routing Helper | Validate routing hint | promoted or diagnostic-only? | Metadata/context selection | Endpoint catalog and schema index | SQL_FIRST_API_VERIFY plan generation | Evidence policy | SQL derivation | SQL validation passed? | SQLGlot AST validation | execute_sql / DuckDB local snapshot | SQL result | SQL evidence normalization | Adobe API plan | API validation passed? | Credential/header construction | Adobe credentials present? | Live API mode | dry_run fallback? | Dry-run fallback mode | API response parser | Discovery-chain readiness | Parsed API evidence | EvidenceBus | Answer Slots | Answer Synthesis | Answer verification / reranking | Final answer | Trajectory Logging | Final Submission packaging | Strict Eval | Hidden-style eval | LLM baseline eval | Workflow decision audit | Live Adobe API Readiness | Mock live API readiness diagnostics | Mock live parser + discovery simulation | Evidence-Aware Answer Synthesis reports | answer-only rewrite promoted or keep_trial_only? | Consolidated report index | packaged runtime path | shadow/diagnostic path | isolated trial path | final submission/evaluation path | Evidence-Aware Answer Synthesis | Mock live API readiness diagnostics</p>
+    <svg viewBox="0 0 2142 1018" width="2142" height="1018" role="img" aria-labelledby="chart-title">
+<title id="chart-title">DASHSys end-to-end system dataflow flowchart</title>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/></marker>
+<marker id="arrow-diagnostic" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#6d28d9"/></marker>
+<marker id="arrow-trial" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#a16207"/></marker>
+<marker id="arrow-final" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1d4ed8"/></marker>
+</defs>
+<rect class="section-bg" x="16" y="18" width="214" height="976" rx="8"/>
+<text class="section-label" x="28" y="42">Input and Guards</text>
+<rect class="section-bg" x="248" y="18" width="214" height="976" rx="8"/>
+<text class="section-label" x="260" y="42">Routing and Analysis</text>
+<rect class="section-bg" x="712" y="18" width="214" height="976" rx="8"/>
+<text class="section-label" x="724" y="42">Planning Context</text>
+<rect class="section-bg" x="944" y="18" width="214" height="976" rx="8"/>
+<text class="section-label" x="956" y="42">SQL Evidence Path</text>
+<rect class="section-bg" x="1176" y="18" width="214" height="976" rx="8"/>
+<text class="section-label" x="1188" y="42">Adobe REST API Evidence Path</text>
+<rect class="section-bg" x="1408" y="18" width="214" height="976" rx="8"/>
+<text class="section-label" x="1420" y="42">Evidence and Answer</text>
+<rect class="section-bg" x="1640" y="18" width="214" height="976" rx="8"/>
+<text class="section-label" x="1652" y="42">Packaging and Evaluation</text>
+<rect class="section-bg" x="480" y="18" width="214" height="976" rx="8"/>
+<text class="section-label" x="492" y="42">Diagnostics and Reports</text>
+<path class="edge packaged" d="M 123.0 120.0 C 123.0 120.0, 123.0 146.0, 123.0 146.0"/>
+<path class="edge packaged" d="M 218.0 175.0 C 252.0 175.0, 226.0 91.0, 260.0 91.0"/>
+<path class="edge packaged" d="M 355.0 120.0 C 355.0 120.0, 355.0 146.0, 355.0 146.0"/>
+<path class="edge packaged" d="M 355.0 204.0 C 355.0 204.0, 355.0 230.0, 355.0 230.0"/>
+<text class="edge-label" x="355.0" y="209.0" text-anchor="middle">USE_DATA_PIPELINE</text>
+<path class="edge packaged" d="M 355.0 288.0 C 355.0 288.0, 355.0 314.0, 355.0 314.0"/>
+<path class="edge packaged" d="M 355.0 372.0 C 355.0 372.0, 355.0 398.0, 355.0 398.0"/>
+<path class="edge packaged" d="M 355.0 456.0 C 355.0 456.0, 355.0 482.0, 355.0 482.0"/>
+<path class="edge packaged" d="M 355.0 540.0 C 355.0 540.0, 355.0 566.0, 355.0 566.0"/>
+<path class="edge packaged" d="M 450.0 595.0 C 545.9 595.0, 628.1 91.0, 724.0 91.0"/>
+<path class="edge packaged" d="M 819.0 120.0 C 819.0 120.0, 819.0 146.0, 819.0 146.0"/>
+<path class="edge packaged" d="M 819.0 204.0 C 819.0 204.0, 819.0 230.0, 819.0 230.0"/>
+<path class="edge packaged" d="M 819.0 288.0 C 819.0 288.0, 819.0 314.0, 819.0 314.0"/>
+<path class="edge packaged" d="M 914.0 343.0 C 948.0 343.0, 922.0 91.0, 956.0 91.0"/>
+<text class="edge-label" x="935.0" y="209.0" text-anchor="middle">SQL path</text>
+<path class="edge packaged" d="M 1051.0 120.0 C 1051.0 120.0, 1051.0 146.0, 1051.0 146.0"/>
+<path class="edge packaged" d="M 1051.0 204.0 C 1051.0 204.0, 1051.0 230.0, 1051.0 230.0"/>
+<text class="edge-label" x="1051.0" y="209.0" text-anchor="middle">yes</text>
+<path class="edge packaged" d="M 1051.0 288.0 C 1051.0 288.0, 1051.0 314.0, 1051.0 314.0"/>
+<path class="edge packaged" d="M 1051.0 372.0 C 1051.0 372.0, 1051.0 398.0, 1051.0 398.0"/>
+<path class="edge packaged" d="M 1051.0 456.0 C 1051.0 456.0, 1051.0 482.0, 1051.0 482.0"/>
+<path class="edge packaged" d="M 1146.0 511.0 C 1241.9 511.0, 1324.1 259.0, 1420.0 259.0"/>
+<path class="edge packaged" d="M 914.0 343.0 C 1009.9 343.0, 1092.1 91.0, 1188.0 91.0"/>
+<text class="edge-label" x="1051.0" y="209.0" text-anchor="middle">API path</text>
+<path class="edge packaged" d="M 1283.0 120.0 C 1283.0 120.0, 1283.0 146.0, 1283.0 146.0"/>
+<path class="edge packaged" d="M 1283.0 204.0 C 1283.0 204.0, 1283.0 230.0, 1283.0 230.0"/>
+<text class="edge-label" x="1283.0" y="209.0" text-anchor="middle">yes</text>
+<path class="edge packaged" d="M 1283.0 288.0 C 1283.0 288.0, 1283.0 314.0, 1283.0 314.0"/>
+<path class="edge packaged" d="M 1283.0 372.0 C 1283.0 372.0, 1283.0 398.0, 1283.0 398.0"/>
+<text class="edge-label" x="1283.0" y="377.0" text-anchor="middle">yes</text>
+<path class="edge packaged" d="M 1283.0 372.0 C 1283.0 372.0, 1283.0 482.0, 1283.0 482.0"/>
+<text class="edge-label" x="1283.0" y="419.0" text-anchor="middle">no</text>
+<path class="edge packaged" d="M 1283.0 540.0 C 1283.0 540.0, 1283.0 566.0, 1283.0 566.0"/>
+<text class="edge-label" x="1283.0" y="545.0" text-anchor="middle">true</text>
+<path class="edge packaged" d="M 1283.0 456.0 C 1283.0 456.0, 1283.0 650.0, 1283.0 650.0"/>
+<path class="edge packaged" d="M 1283.0 624.0 C 1283.0 624.0, 1283.0 650.0, 1283.0 650.0"/>
+<text class="edge-label" x="1283.0" y="629.0" text-anchor="middle">dry_run=true</text>
+<path class="edge packaged" d="M 1283.0 708.0 C 1283.0 708.0, 1283.0 734.0, 1283.0 734.0"/>
+<path class="edge packaged" d="M 1283.0 792.0 C 1283.0 792.0, 1283.0 818.0, 1283.0 818.0"/>
+<path class="edge packaged" d="M 1378.0 847.0 C 1412.0 847.0, 1386.0 259.0, 1420.0 259.0"/>
+<path class="edge packaged" d="M 1515.0 288.0 C 1515.0 288.0, 1515.0 314.0, 1515.0 314.0"/>
+<path class="edge packaged" d="M 1515.0 372.0 C 1515.0 372.0, 1515.0 398.0, 1515.0 398.0"/>
+<path class="edge packaged" d="M 1515.0 456.0 C 1515.0 456.0, 1515.0 482.0, 1515.0 482.0"/>
+<path class="edge packaged" d="M 1515.0 540.0 C 1515.0 540.0, 1515.0 566.0, 1515.0 566.0"/>
+<path class="edge packaged" d="M 1610.0 595.0 C 1644.0 595.0, 1618.0 259.0, 1652.0 259.0"/>
+<path class="edge packaged" d="M 1747.0 288.0 C 1747.0 288.0, 1747.0 314.0, 1747.0 314.0"/>
+<text class="edge-label" x="1747.0" y="293.0" text-anchor="middle">packaged</text>
+<path class="edge packaged" d="M 1747.0 288.0 C 1747.0 288.0, 1747.0 398.0, 1747.0 398.0"/>
+<path class="edge packaged" d="M 1747.0 288.0 C 1747.0 288.0, 1747.0 482.0, 1747.0 482.0"/>
+<path class="edge packaged" d="M 1747.0 288.0 C 1747.0 288.0, 1747.0 566.0, 1747.0 566.0"/>
+<text class="edge-label" x="1747.0" y="419.0" text-anchor="middle">baseline</text>
+<path class="edge diagnostic" d="M 450.0 595.0 C 484.0 595.0, 458.0 91.0, 492.0 91.0"/>
+<text class="edge-label" x="471.0" y="335.0" text-anchor="middle">low confidence?</text>
+<path class="edge diagnostic" d="M 587.0 120.0 C 587.0 120.0, 587.0 146.0, 587.0 146.0"/>
+<text class="edge-label" x="587.0" y="125.0" text-anchor="middle">if enabled</text>
+<path class="edge diagnostic" d="M 587.0 204.0 C 587.0 204.0, 587.0 230.0, 587.0 230.0"/>
+<text class="edge-label" x="587.0" y="209.0" text-anchor="middle">SDK only</text>
+<path class="edge diagnostic" d="M 587.0 288.0 C 587.0 288.0, 587.0 314.0, 587.0 314.0"/>
+<text class="edge-label" x="587.0" y="293.0" text-anchor="middle">JSON hint</text>
+<path class="edge diagnostic" d="M 587.0 372.0 C 587.0 372.0, 587.0 398.0, 587.0 398.0"/>
+<text class="edge-label" x="587.0" y="377.0" text-anchor="middle">valid?</text>
+<path class="edge diagnostic" d="M 682.0 427.0 C 1102.7 427.0, 1463.3 91.0, 1884.0 91.0"/>
+<text class="edge-label" x="1283.0" y="251.0" text-anchor="middle">shadow/diagnostic only</text>
+<path class="edge diagnostic" d="M 1842.0 259.0 C 1876.0 259.0, 1850.0 91.0, 1884.0 91.0"/>
+<text class="edge-label" x="1863.0" y="167.0" text-anchor="middle">report-only</text>
+<path class="edge diagnostic" d="M 1378.0 91.0 C 1555.1 91.0, 1706.9 175.0, 1884.0 175.0"/>
+<text class="edge-label" x="1631.0" y="125.0" text-anchor="middle">readiness audit</text>
+<path class="edge trial" d="M 1979.0 288.0 C 1979.0 288.0, 1979.0 314.0, 1979.0 314.0"/>
+<text class="edge-label" x="1979.0" y="293.0" text-anchor="middle">fixture responses</text>
+<path class="edge trial" d="M 1979.0 372.0 C 1979.0 372.0, 1515.0 230.0, 1515.0 230.0"/>
+<text class="edge-label" x="1747.0" y="293.0" text-anchor="middle">diagnostic forwarding</text>
+<path class="edge trial" d="M 1979.0 372.0 C 1979.0 372.0, 1979.0 146.0, 1979.0 146.0"/>
+<text class="edge-label" x="1979.0" y="251.0" text-anchor="middle">readiness report</text>
+<path class="edge trial" d="M 1610.0 427.0 C 1705.9 427.0, 1788.1 427.0, 1884.0 427.0"/>
+<text class="edge-label" x="1747.0" y="419.0" text-anchor="middle">answer-only trial</text>
+<path class="edge trial" d="M 1979.0 456.0 C 1979.0 456.0, 1979.0 482.0, 1979.0 482.0"/>
+<text class="edge-label" x="1979.0" y="461.0" text-anchor="middle">strict gate</text>
+<path class="edge trial" d="M 1979.0 540.0 C 1979.0 540.0, 1979.0 566.0, 1979.0 566.0"/>
+<text class="edge-label" x="1979.0" y="545.0" text-anchor="middle">keep_trial_only</text>
+<path class="edge final" d="M 1842.0 427.0 C 1876.0 427.0, 1850.0 595.0, 1884.0 595.0"/>
+<text class="edge-label" x="1863.0" y="503.0" text-anchor="middle">metrics</text>
+<path class="edge final" d="M 1842.0 511.0 C 1876.0 511.0, 1850.0 595.0, 1884.0 595.0"/>
+<text class="edge-label" x="1863.0" y="545.0" text-anchor="middle">robustness</text>
+<path class="edge diagnostic" d="M 1842.0 595.0 C 1876.0 595.0, 1850.0 595.0, 1884.0 595.0"/>
+<text class="edge-label" x="1863.0" y="587.0" text-anchor="middle">baseline</text>
+<path class="edge diagnostic" d="M 1979.0 204.0 C 1979.0 204.0, 1979.0 566.0, 1979.0 566.0"/>
+<text class="edge-label" x="1979.0" y="377.0" text-anchor="middle">reports</text>
+<path class="edge diagnostic" d="M 1979.0 120.0 C 1979.0 120.0, 1979.0 566.0, 1979.0 566.0"/>
+<text class="edge-label" x="1979.0" y="335.0" text-anchor="middle">reports</text>
+<path class="edge final" d="M 1842.0 343.0 C 1876.0 343.0, 1850.0 595.0, 1884.0 595.0"/>
+<text class="edge-label" x="1863.0" y="461.0" text-anchor="middle">readiness</text>
+<g class="node" id="user_prompt">
+<rect class="input" x="28" y="62" width="190" height="58" rx="8"/>
+<text x="123.0" y="83" text-anchor="middle">User Prompt input</text>
+</g>
+<g class="node" id="runtime_config">
+<rect class="config" x="28" y="146" width="190" height="58" rx="8"/>
+<text x="123.0" y="167" text-anchor="middle">Runtime config and</text>
+<text x="123.0" y="182" text-anchor="middle">preflight guards</text>
+</g>
+<g class="node" id="prompt_router">
+<rect class="routing" x="260" y="62" width="190" height="58" rx="8"/>
+<text x="355.0" y="83" text-anchor="middle">Prompt Routing</text>
+</g>
+<g class="node" id="simple_gate">
+<rect class="routing" x="260" y="146" width="190" height="58" rx="8"/>
+<text x="355.0" y="167" text-anchor="middle">Simple prompt gate</text>
+</g>
+<g class="node" id="normalization">
+<rect class="routing" x="260" y="230" width="190" height="58" rx="8"/>
+<text x="355.0" y="251" text-anchor="middle">Query normalization</text>
+</g>
+<g class="node" id="tokens">
+<rect class="routing" x="260" y="314" width="190" height="58" rx="8"/>
+<text x="355.0" y="335" text-anchor="middle">Query token extraction</text>
+</g>
+<g class="node" id="query_router">
+<rect class="routing" x="260" y="398" width="190" height="58" rx="8"/>
+<text x="355.0" y="419" text-anchor="middle">Deterministic</text>
+<text x="355.0" y="434" text-anchor="middle">QueryRouter</text>
+</g>
+<g class="node" id="intent">
+<rect class="routing" x="260" y="482" width="190" height="58" rx="8"/>
+<text x="355.0" y="503" text-anchor="middle">Answer intent detection</text>
+</g>
+<g class="node" id="analysis">
+<rect class="analysis" x="260" y="566" width="190" height="58" rx="8"/>
+<text x="355.0" y="587" text-anchor="middle">QueryAnalysis</text>
+</g>
+<g class="node" id="semantic_enabled">
+<polygon class="decision" points="587.0,62 682,91.0 587.0,120 492,91.0" rx="8"/>
+<text x="587.0" y="83" text-anchor="middle">semantic router feature</text>
+<text x="587.0" y="98" text-anchor="middle">enabled?</text>
+</g>
+<g class="node" id="llm_client">
+<rect class="llm" x="492" y="146" width="190" height="58" rx="8"/>
+<text x="587.0" y="167" text-anchor="middle">SDK LLMClient</text>
+</g>
+<g class="node" id="semantic_helper">
+<rect class="llm" x="492" y="230" width="190" height="58" rx="8"/>
+<text x="587.0" y="251" text-anchor="middle">LLM Semantic Routing</text>
+<text x="587.0" y="266" text-anchor="middle">Helper</text>
+</g>
+<g class="node" id="semantic_validate">
+<polygon class="decision" points="587.0,314 682,343.0 587.0,372 492,343.0" rx="8"/>
+<text x="587.0" y="335" text-anchor="middle">Validate routing hint</text>
+</g>
+<g class="node" id="semantic_promoted">
+<polygon class="decision" points="587.0,398 682,427.0 587.0,456 492,427.0" rx="8"/>
+<text x="587.0" y="419" text-anchor="middle">promoted or</text>
+<text x="587.0" y="434" text-anchor="middle">diagnostic-only?</text>
+</g>
+<g class="node" id="metadata_context">
+<rect class="planning" x="724" y="62" width="190" height="58" rx="8"/>
+<text x="819.0" y="83" text-anchor="middle">Metadata/context</text>
+<text x="819.0" y="98" text-anchor="middle">selection</text>
+</g>
+<g class="node" id="schema_index">
+<rect class="planning" x="724" y="146" width="190" height="58" rx="8"/>
+<text x="819.0" y="167" text-anchor="middle">Endpoint catalog and</text>
+<text x="819.0" y="182" text-anchor="middle">schema index</text>
+</g>
+<g class="node" id="plan_generation">
+<rect class="planning" x="724" y="230" width="190" height="58" rx="8"/>
+<text x="819.0" y="251" text-anchor="middle">SQL_FIRST_API_VERIFY</text>
+<text x="819.0" y="266" text-anchor="middle">plan generation</text>
+</g>
+<g class="node" id="evidence_policy">
+<polygon class="decision" points="819.0,314 914,343.0 819.0,372 724,343.0" rx="8"/>
+<text x="819.0" y="335" text-anchor="middle">Evidence policy</text>
+</g>
+<g class="node" id="sql_derivation">
+<rect class="sql" x="956" y="62" width="190" height="58" rx="8"/>
+<text x="1051.0" y="83" text-anchor="middle">SQL derivation</text>
+</g>
+<g class="node" id="sql_validation">
+<polygon class="decision" points="1051.0,146 1146,175.0 1051.0,204 956,175.0" rx="8"/>
+<text x="1051.0" y="167" text-anchor="middle">SQL validation passed?</text>
+</g>
+<g class="node" id="sqlglot_ast">
+<rect class="sql" x="956" y="230" width="190" height="58" rx="8"/>
+<text x="1051.0" y="251" text-anchor="middle">SQLGlot AST validation</text>
+</g>
+<g class="node" id="execute_sql">
+<rect class="sql" x="956" y="314" width="190" height="58" rx="8"/>
+<text x="1051.0" y="335" text-anchor="middle">execute_sql / DuckDB</text>
+<text x="1051.0" y="350" text-anchor="middle">local snapshot</text>
+</g>
+<g class="node" id="sql_result">
+<rect class="sql" x="956" y="398" width="190" height="58" rx="8"/>
+<text x="1051.0" y="419" text-anchor="middle">SQL result</text>
+</g>
+<g class="node" id="sql_evidence">
+<rect class="sql" x="956" y="482" width="190" height="58" rx="8"/>
+<text x="1051.0" y="503" text-anchor="middle">SQL evidence</text>
+<text x="1051.0" y="518" text-anchor="middle">normalization</text>
+</g>
+<g class="node" id="api_plan">
+<rect class="api" x="1188" y="62" width="190" height="58" rx="8"/>
+<text x="1283.0" y="83" text-anchor="middle">Adobe API plan</text>
+</g>
+<g class="node" id="api_validation">
+<polygon class="decision" points="1283.0,146 1378,175.0 1283.0,204 1188,175.0" rx="8"/>
+<text x="1283.0" y="167" text-anchor="middle">API validation passed?</text>
+</g>
+<g class="node" id="headers">
+<rect class="api" x="1188" y="230" width="190" height="58" rx="8"/>
+<text x="1283.0" y="251" text-anchor="middle">Credential/header</text>
+<text x="1283.0" y="266" text-anchor="middle">construction</text>
+</g>
+<g class="node" id="credentials">
+<polygon class="decision" points="1283.0,314 1378,343.0 1283.0,372 1188,343.0" rx="8"/>
+<text x="1283.0" y="335" text-anchor="middle">Adobe credentials</text>
+<text x="1283.0" y="350" text-anchor="middle">present?</text>
+</g>
+<g class="node" id="live_api">
+<rect class="api" x="1188" y="398" width="190" height="58" rx="8"/>
+<text x="1283.0" y="419" text-anchor="middle">Live API mode</text>
+</g>
+<g class="node" id="dry_run_decision">
+<polygon class="decision" points="1283.0,482 1378,511.0 1283.0,540 1188,511.0" rx="8"/>
+<text x="1283.0" y="503" text-anchor="middle">dry_run fallback?</text>
+</g>
+<g class="node" id="dry_run">
+<rect class="api" x="1188" y="566" width="190" height="58" rx="8"/>
+<text x="1283.0" y="587" text-anchor="middle">Dry-run fallback mode</text>
+</g>
+<g class="node" id="api_parser">
+<rect class="api" x="1188" y="650" width="190" height="58" rx="8"/>
+<text x="1283.0" y="671" text-anchor="middle">API response parser</text>
+</g>
+<g class="node" id="discovery">
+<rect class="api" x="1188" y="734" width="190" height="58" rx="8"/>
+<text x="1283.0" y="755" text-anchor="middle">Discovery-chain</text>
+<text x="1283.0" y="770" text-anchor="middle">readiness</text>
+</g>
+<g class="node" id="parsed_api">
+<rect class="api" x="1188" y="818" width="190" height="58" rx="8"/>
+<text x="1283.0" y="839" text-anchor="middle">Parsed API evidence</text>
+</g>
+<g class="node" id="evidence_bus">
+<rect class="evidence" x="1420" y="230" width="190" height="58" rx="8"/>
+<text x="1515.0" y="251" text-anchor="middle">EvidenceBus</text>
+</g>
+<g class="node" id="answer_slots">
+<rect class="answer" x="1420" y="314" width="190" height="58" rx="8"/>
+<text x="1515.0" y="335" text-anchor="middle">Answer Slots</text>
+</g>
+<g class="node" id="answer_synthesis">
+<rect class="answer" x="1420" y="398" width="190" height="58" rx="8"/>
+<text x="1515.0" y="419" text-anchor="middle">Answer Synthesis</text>
+</g>
+<g class="node" id="answer_verify">
+<rect class="answer" x="1420" y="482" width="190" height="58" rx="8"/>
+<text x="1515.0" y="503" text-anchor="middle">Answer verification /</text>
+<text x="1515.0" y="518" text-anchor="middle">reranking</text>
+</g>
+<g class="node" id="final_answer">
+<rect class="answer" x="1420" y="566" width="190" height="58" rx="8"/>
+<text x="1515.0" y="587" text-anchor="middle">Final answer</text>
+</g>
+<g class="node" id="trajectory">
+<rect class="packaging" x="1652" y="230" width="190" height="58" rx="8"/>
+<text x="1747.0" y="251" text-anchor="middle">Trajectory Logging</text>
+</g>
+<g class="node" id="final_submission">
+<rect class="packaging" x="1652" y="314" width="190" height="58" rx="8"/>
+<text x="1747.0" y="335" text-anchor="middle">Final Submission</text>
+<text x="1747.0" y="350" text-anchor="middle">packaging</text>
+</g>
+<g class="node" id="strict_eval">
+<rect class="eval" x="1652" y="398" width="190" height="58" rx="8"/>
+<text x="1747.0" y="419" text-anchor="middle">Strict Eval</text>
+</g>
+<g class="node" id="hidden_eval">
+<rect class="eval" x="1652" y="482" width="190" height="58" rx="8"/>
+<text x="1747.0" y="503" text-anchor="middle">Hidden-style eval</text>
+</g>
+<g class="node" id="llm_baseline">
+<rect class="eval" x="1652" y="566" width="190" height="58" rx="8"/>
+<text x="1747.0" y="587" text-anchor="middle">LLM baseline eval</text>
+</g>
+<g class="node" id="workflow_audit">
+<rect class="report" x="1884" y="62" width="190" height="58" rx="8"/>
+<text x="1979.0" y="83" text-anchor="middle">Workflow decision audit</text>
+</g>
+<g class="node" id="live_readiness">
+<rect class="report" x="1884" y="146" width="190" height="58" rx="8"/>
+<text x="1979.0" y="167" text-anchor="middle">Live Adobe API Readiness</text>
+</g>
+<g class="node" id="mock_fixtures">
+<rect class="trial" x="1884" y="230" width="190" height="58" rx="8"/>
+<text x="1979.0" y="251" text-anchor="middle">Mock live API readiness</text>
+<text x="1979.0" y="266" text-anchor="middle">diagnostics</text>
+</g>
+<g class="node" id="mock_parser">
+<rect class="trial" x="1884" y="314" width="190" height="58" rx="8"/>
+<text x="1979.0" y="335" text-anchor="middle">Mock live parser +</text>
+<text x="1979.0" y="350" text-anchor="middle">discovery simulation</text>
+</g>
+<g class="node" id="evidence_reports">
+<rect class="trial" x="1884" y="398" width="190" height="58" rx="8"/>
+<text x="1979.0" y="419" text-anchor="middle">Evidence-Aware Answer</text>
+<text x="1979.0" y="434" text-anchor="middle">Synthesis reports</text>
+</g>
+<g class="node" id="rewrite_promoted">
+<polygon class="decision" points="1979.0,482 2074,511.0 1979.0,540 1884,511.0" rx="8"/>
+<text x="1979.0" y="503" text-anchor="middle">answer-only rewrite</text>
+<text x="1979.0" y="518" text-anchor="middle">promoted or</text>
+<text x="1979.0" y="533" text-anchor="middle">keep_trial_only?</text>
+</g>
+<g class="node" id="consolidated_index">
+<rect class="report" x="1884" y="566" width="190" height="58" rx="8"/>
+<text x="1979.0" y="587" text-anchor="middle">Consolidated report</text>
+<text x="1979.0" y="602" text-anchor="middle">index</text>
+</g>
+</svg>
+  </section>
+  <section class="grid">
+    <div class="panel">
+      <h2>Source Artifacts Used</h2>
+      <table><tr><th>Path</th><th>Timestamp Source</th><th>Age Hours</th></tr><tr><td>outputs/reports/report_index.json</td><td>file_mtime</td><td>0.066</td></tr><tr><td>outputs/reports/workflow_decision_map.json</td><td>file_mtime</td><td>0.697</td></tr><tr><td>outputs/reports/workflow_decision_audit.json</td><td>file_mtime</td><td>0.697</td></tr><tr><td>outputs/reports/live_adobe_api_readiness_audit.json</td><td>file_mtime</td><td>0.7</td></tr><tr><td>outputs/reports/api_required_readiness_matrix.json</td><td>file_mtime</td><td>0.7</td></tr><tr><td>outputs/reports/mock_live_api_evidence_pipeline_trial.json</td><td>file_mtime</td><td>0.7</td></tr><tr><td>outputs/reports/evidence_usage_audit.json</td><td>generated_at</td><td>0.654</td></tr><tr><td>outputs/reports/evidence_aware_answer_rewrite_trial.json</td><td>generated_at</td><td>0.653</td></tr><tr><td>outputs/reports/feedback_loop_answer_synthesis_final.json</td><td>file_mtime</td><td>0.653</td></tr><tr><td>outputs/reports/feedback_loop_semantic_router_final.json</td><td>file_mtime</td><td>16.4</td></tr><tr><td>outputs/reports/sdk_usage_audit.json</td><td>file_mtime</td><td>0.026</td></tr><tr><td>outputs/reports/workshop_requirement_audit.json</td><td>file_mtime</td><td>0.075</td></tr><tr><td>outputs/eval_results_strict.json</td><td>file_mtime</td><td>0.085</td></tr><tr><td>outputs/hidden_style_eval.json</td><td>generated_at</td><td>0.084</td></tr><tr><td>outputs/winner_readiness_report.json</td><td>generated_at</td><td>10.018</td></tr></table>
+    </div>
+    <div class="panel">
+      <h2>Warnings</h2>
+      <ul><li>none</li></ul>
+    </div>
+  </section>
+  <footer>
+    Generated at 2026-05-11T16:49:24.803736+00:00. Fully self-contained; no CDN, network access, or build tools required.
+  </footer>
+</body>
+</html>

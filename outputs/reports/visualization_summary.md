@@ -3,6 +3,7 @@
 - Primary example: `example_011`
 - Raw prompt: How many schemas do I have?
 - Main storyboard: `outputs/visualizations/sql_prompt_storyboard_primary.md`
+- End-to-end system dataflow: `outputs/visualizations/end_to_end_system_dataflow.html`
 - Secondary reference: example_031 remains a secondary API/dry-run bottleneck reference only.
 
 ## Prompt To SQL Mapping

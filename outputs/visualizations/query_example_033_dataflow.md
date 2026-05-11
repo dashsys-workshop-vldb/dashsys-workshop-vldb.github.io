@@ -7,10 +7,10 @@
 | Query | What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'? |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
 | Final answer | Values for timeseries.ingestion.dataset.recordsuccess.count between 2026-03-15 and 2026-03-31 require live API evidence. Live API verification was not executed because Adobe credentials are unavailable. |
-| Strict score | 0.6726 |
+| Strict score | 0.6727 |
 | Correctness score | 0.6939 |
 | Answer / SQL / API score | 0.3878 / None / 1.0 |
-| Tools / tokens / runtime | 1 / 1040 / 0.02792683313600719 |
+| Tools / tokens / runtime | 1 / 1040 / 0.013944291975349188 |
 
 ## Dataflow Graph
 

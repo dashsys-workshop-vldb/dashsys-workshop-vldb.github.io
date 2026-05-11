@@ -18,9 +18,11 @@ from visualization_report_helpers import (  # noqa: E402
     write_json,
     write_md,
 )
+from generate_end_to_end_system_dataflow import generate_end_to_end_system_dataflow  # noqa: E402
 
 
 def main() -> int:
+    generate_end_to_end_system_dataflow()
     entries = build_entries()
     state = load_json("outputs/visualizations/current_system_state.json", {})
     catalog = load_json("outputs/visualizations/technique_catalog.json", {})
@@ -56,8 +58,8 @@ def build_entries() -> list[dict[str, Any]]:
                 "file": filename,
                 "path": str(path),
                 "exists": path.exists() or will_be_written_by_this_script,
-                "kind": "markdown" if filename.endswith(".md") else "json",
-                "link": filename if filename.endswith(".md") else None,
+                "kind": "markdown" if filename.endswith(".md") else "html" if filename.endswith(".html") else "json",
+                "link": filename if filename.endswith((".md", ".html")) else None,
             }
         )
     return entries
@@ -67,6 +69,7 @@ def build_markdown(payload: dict[str, Any]) -> str:
     summary = payload["summary"]
     supervisor_files = {
         "executive_dashboard.md",
+        "end_to_end_system_dataflow.html",
         "sql_prompt_storyboard_primary.md",
         "prompt_storyboard_primary.md",
         "prompt_transformation_primary.md",
@@ -78,11 +81,13 @@ def build_markdown(payload: dict[str, Any]) -> str:
     }
     supervisor_order = [
         "executive_dashboard.md",
+        "end_to_end_system_dataflow.html",
         "sql_prompt_storyboard_primary.md",
+        "system_status_dashboard.md",
+        "technique_visual_cards.md",
         "prompt_transformation_primary.md",
         "end_to_end_execution_primary.md",
         "technique_pipeline_map.md",
-        "system_status_dashboard.md",
         "score_bottleneck_dashboard.md",
     ]
     supervisor_rows = []

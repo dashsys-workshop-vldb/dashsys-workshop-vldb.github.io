@@ -202,10 +202,23 @@ python3 scripts/package_query_outputs.py
 python3 scripts/check_submission_ready.py
 ```
 
+## End-to-End System Data Flow Visualization
+
+`outputs/visualizations/end_to_end_system_dataflow.html` is an auto-generated, fully self-contained browser flowchart for the current DASHSys runtime and reporting workflow. It covers prompt routing, query analysis, `SQL_FIRST_API_VERIFY`, SQL/API validation, live Adobe API versus dry-run fallback, EvidenceBus, answer synthesis, diagnostic-only paths, final packaging, and evaluation.
+
+Refresh it with:
+
+```bash
+python3 scripts/generate_end_to_end_system_dataflow.py
+```
+
+The normal visualization and consolidated-report generators refresh it automatically. Do not manually edit the generated HTML/MD/JSON; update `scripts/generate_end_to_end_system_dataflow.py` and regenerate when workflow code changes.
+
 Mandatory post-change validation after every code, report, cleanup, visualization, or documentation change:
 
 ```bash
 python3 -m pytest -q
+python3 scripts/generate_end_to_end_system_dataflow.py
 python3 scripts/audit_workshop_requirements.py
 python3 scripts/run_dev_eval.py --strict
 python3 scripts/run_hidden_style_eval.py

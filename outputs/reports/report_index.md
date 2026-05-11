@@ -21,10 +21,13 @@ Start here. Most older generated reports were consolidated or removed.
 
 ## Key Visualizations
 
-- `outputs/visualizations/executive_dashboard.md`
-- `outputs/visualizations/sql_prompt_storyboard_primary.md`
-- `outputs/visualizations/system_status_dashboard.md`
-- `outputs/visualizations/score_bottleneck_dashboard.md`
+- [outputs/visualizations/executive_dashboard.md](../visualizations/executive_dashboard.md)
+- [outputs/visualizations/end_to_end_system_dataflow.html](../visualizations/end_to_end_system_dataflow.html)
+- [outputs/visualizations/sql_prompt_storyboard_primary.md](../visualizations/sql_prompt_storyboard_primary.md)
+- [outputs/visualizations/system_status_dashboard.md](../visualizations/system_status_dashboard.md)
+- [outputs/visualizations/technique_visual_cards.md](../visualizations/technique_visual_cards.md)
+- [outputs/visualizations/end_to_end_system_dataflow.md](../visualizations/end_to_end_system_dataflow.md)
+- [outputs/visualizations/score_bottleneck_dashboard.md](../visualizations/score_bottleneck_dashboard.md)
 
 ## Diagnostic Prompt Coverage
 
@@ -106,6 +109,7 @@ Skipped commands must record command, reason, substitute validation, and residua
 
 Required commands:
 - `python3 -m pytest -q`
+- `python3 scripts/generate_end_to_end_system_dataflow.py`
 - `python3 scripts/audit_workshop_requirements.py`
 - `python3 scripts/run_dev_eval.py --strict`
 - `python3 scripts/run_hidden_style_eval.py`
@@ -161,6 +165,8 @@ Regenerated report surfaces:
 - `outputs/reports/cleanup_final_report.md/json`
 - `outputs/winner_readiness_report.md/json`
 - `outputs/final_research_inspired_improvement_report.md/json`
+- `outputs/visualizations/end_to_end_system_dataflow.html`
+- `outputs/visualizations/end_to_end_system_dataflow.md/json`
 - `outputs/visualizations/index.md/json`
 - `outputs/visualizations/system_status_dashboard.md/json`
 - `outputs/visualizations/technique_visual_cards.md/json`

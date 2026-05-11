@@ -23,7 +23,9 @@ SECRET_PATTERNS = [
     re.compile(re.escape(_OPENROUTER_KEY_PREFIX) + r"[A-Za-z0-9_-]+"),
     re.compile(re.escape(_OPENAI_KEY_PREFIX) + r"[A-Za-z0-9_-]{20,}"),
     re.compile(_AUTH_HEADER_PREFIX + r"\s+[A-Za-z0-9._~+/=-]+", re.IGNORECASE),
-    re.compile(r"(OPENROUTER_API_KEY|OPENAI_API_KEY|CLIENT_SECRET|ACCESS_TOKEN)=\S+"),
+    re.compile(
+        r"(OPENROUTER_API_KEY|OPENAI_API_KEY|ANTHROPIC_API_KEY|CLIENT_SECRET|ACCESS_TOKEN|ADOBE_ACCESS_TOKEN|ADOBE_API_KEY|ADOBE_CLIENT_SECRET)=\S+"
+    ),
 ]
 
 
@@ -199,6 +201,9 @@ def required_visualization_files() -> list[str]:
         "index.json",
         "executive_dashboard.md",
         "executive_dashboard.json",
+        "end_to_end_system_dataflow.html",
+        "end_to_end_system_dataflow.md",
+        "end_to_end_system_dataflow.json",
         "sql_prompt_storyboard_primary.md",
         "sql_prompt_storyboard_primary.json",
         "prompt_storyboard_primary.md",
@@ -209,10 +214,10 @@ def required_visualization_files() -> list[str]:
         "end_to_end_execution_primary.json",
         "technique_pipeline_map.md",
         "technique_pipeline_map.json",
-        "technique_visual_cards.md",
-        "technique_visual_cards.json",
         "system_status_dashboard.md",
         "system_status_dashboard.json",
+        "technique_visual_cards.md",
+        "technique_visual_cards.json",
         "score_bottleneck_dashboard.md",
         "score_bottleneck_dashboard.json",
         "technique_catalog.md",

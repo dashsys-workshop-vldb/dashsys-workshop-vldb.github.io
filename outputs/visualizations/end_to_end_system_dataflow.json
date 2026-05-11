@@ -1,0 +1,142 @@
+{
+  "current_status": {
+    "best_isolated_score": 0.6558,
+    "evidence_aware_answer_synthesis_recommendation": "keep_trial_only",
+    "final_submission_ready": true,
+    "hidden_style": "48/48",
+    "live_adobe_api_readiness": "warning",
+    "mock_discovery_chains_simulated": 5,
+    "mock_parser_success_count": 126,
+    "packaged_strict_score": 0.6553,
+    "preferred_strategy": "SQL_FIRST_API_VERIFY",
+    "runtime_llm_direct_http_hits": 0,
+    "semantic_router_recommendation": "do_not_promote",
+    "workshop_audit_status": "pass"
+  },
+  "edge_count": 60,
+  "generated_at": "2026-05-11T16:49:24.803736+00:00",
+  "major_sections": [
+    "Input and Guards",
+    "Routing and Analysis",
+    "Planning Context",
+    "SQL Evidence Path",
+    "Adobe REST API Evidence Path",
+    "Evidence and Answer",
+    "Packaging and Evaluation",
+    "Diagnostics and Reports"
+  ],
+  "mermaid_source": "flowchart LR\n  subgraph S0[\"Input and Guards\"]\n    user_prompt[\"User Prompt input\"]\n    runtime_config[\"Runtime config and preflight guards\"]\n  end\n  subgraph S1[\"Routing and Analysis\"]\n    prompt_router[\"Prompt Routing\"]\n    simple_gate[\"Simple prompt gate\"]\n    normalization[\"Query normalization\"]\n    tokens[\"Query token extraction\"]\n    query_router[\"Deterministic QueryRouter\"]\n    intent[\"Answer intent detection\"]\n    analysis[\"QueryAnalysis\"]\n  end\n  subgraph S2[\"Planning Context\"]\n    metadata_context[\"Metadata/context selection\"]\n    schema_index[\"Endpoint catalog and schema index\"]\n    plan_generation[\"SQL_FIRST_API_VERIFY plan generation\"]\n    evidence_policy{\"Evidence policy\"}\n  end\n  subgraph S3[\"SQL Evidence Path\"]\n    sql_derivation[\"SQL derivation\"]\n    sql_validation{\"SQL validation passed?\"}\n    sqlglot_ast[\"SQLGlot AST validation\"]\n    execute_sql[\"execute_sql / DuckDB local snapshot\"]\n    sql_result[\"SQL result\"]\n    sql_evidence[\"SQL evidence normalization\"]\n  end\n  subgraph S4[\"Adobe REST API Evidence Path\"]\n    api_plan[\"Adobe API plan\"]\n    api_validation{\"API validation passed?\"}\n    headers[\"Credential/header construction\"]\n    credentials{\"Adobe credentials present?\"}\n    live_api[\"Live API mode\"]\n    dry_run_decision{\"dry_run fallback?\"}\n    dry_run[\"Dry-run fallback mode\"]\n    api_parser[\"API response parser\"]\n    discovery[\"Discovery-chain readiness\"]\n    parsed_api[\"Parsed API evidence\"]\n  end\n  subgraph S5[\"Evidence and Answer\"]\n    evidence_bus[\"EvidenceBus\"]\n    answer_slots[\"Answer Slots\"]\n    answer_synthesis[\"Answer Synthesis\"]\n    answer_verify[\"Answer verification / reranking\"]\n    final_answer[\"Final answer\"]\n  end\n  subgraph S6[\"Packaging and Evaluation\"]\n    trajectory[\"Trajectory Logging\"]\n    final_submission[\"Final Submission packaging\"]\n    strict_eval[\"Strict Eval\"]\n    hidden_eval[\"Hidden-style eval\"]\n    llm_baseline[\"LLM baseline eval\"]\n  end\n  subgraph S7[\"Diagnostics and Reports\"]\n    semantic_enabled{\"semantic router feature enabled?\"}\n    llm_client[\"SDK LLMClient\"]\n    semantic_helper[\"LLM Semantic Routing Helper\"]\n    semantic_validate{\"Validate routing hint\"}\n    semantic_promoted{\"promoted or diagnostic-only?\"}\n    workflow_audit[\"Workflow decision audit\"]\n    live_readiness[\"Live Adobe API Readiness\"]\n    mock_fixtures[\"Mock live API readiness diagnostics\"]\n    mock_parser[\"Mock live parser + discovery simulation\"]\n    evidence_reports[\"Evidence-Aware Answer Synthesis reports\"]\n    rewrite_promoted{\"answer-only rewrite promoted or keep_trial_only?\"}\n    consolidated_index[\"Consolidated report index\"]\n  end\n  user_prompt --> runtime_config\n  runtime_config --> prompt_router\n  prompt_router --> simple_gate\n  simple_gate -->|USE_DATA_PIPELINE| normalization\n  normalization --> tokens\n  tokens --> query_router\n  query_router --> intent\n  intent --> analysis\n  analysis --> metadata_context\n  metadata_context --> schema_index\n  schema_index --> plan_generation\n  plan_generation --> evidence_policy\n  evidence_policy -->|SQL path| sql_derivation\n  sql_derivation --> sql_validation\n  sql_validation -->|yes| sqlglot_ast\n  sqlglot_ast --> execute_sql\n  execute_sql --> sql_result\n  sql_result --> sql_evidence\n  sql_evidence --> evidence_bus\n  evidence_policy -->|API path| api_plan\n  api_plan --> api_validation\n  api_validation -->|yes| headers\n  headers --> credentials\n  credentials -->|yes| live_api\n  credentials -->|no| dry_run_decision\n  dry_run_decision -->|true| dry_run\n  live_api --> api_parser\n  dry_run -->|dry_run=true| api_parser\n  api_parser --> discovery\n  discovery --> parsed_api\n  parsed_api --> evidence_bus\n  evidence_bus --> answer_slots\n  answer_slots --> answer_synthesis\n  answer_synthesis --> answer_verify\n  answer_verify --> final_answer\n  final_answer --> trajectory\n  trajectory -->|packaged| final_submission\n  trajectory --> strict_eval\n  trajectory --> hidden_eval\n  trajectory -->|baseline| llm_baseline\n  analysis -.->|low confidence?| semantic_enabled\n  semantic_enabled -.->|if enabled| llm_client\n  llm_client -.->|SDK only| semantic_helper\n  semantic_helper -.->|JSON hint| semantic_validate\n  semantic_validate -.->|valid?| semantic_promoted\n  semantic_promoted -.->|shadow/diagnostic only| workflow_audit\n  trajectory -.->|report-only| workflow_audit\n  api_plan -.->|readiness audit| live_readiness\n  mock_fixtures -.->|fixture responses| mock_parser\n  mock_parser -.->|diagnostic forwarding| evidence_bus\n  mock_parser -.->|readiness report| live_readiness\n  answer_synthesis -.->|answer-only trial| evidence_reports\n  evidence_reports -.->|strict gate| rewrite_promoted\n  rewrite_promoted -.->|keep_trial_only| consolidated_index\n  strict_eval -->|metrics| consolidated_index\n  hidden_eval -->|robustness| consolidated_index\n  llm_baseline -.->|baseline| consolidated_index\n  live_readiness -.->|reports| consolidated_index\n  workflow_audit -.->|reports| consolidated_index\n  final_submission -->|readiness| consolidated_index\n  classDef analysis fill:#f5e8ff,stroke:#243044,color:#111827,stroke-width:1px;\n  classDef answer fill:#d1fae5,stroke:#243044,color:#111827,stroke-width:1px;\n  classDef api fill:#ffedd5,stroke:#243044,color:#111827,stroke-width:1px;\n  classDef config fill:#e0f2fe,stroke:#243044,color:#111827,stroke-width:1px;\n  classDef decision fill:#fee2e2,stroke:#243044,color:#111827,stroke-width:1px;\n  classDef eval fill:#dbeafe,stroke:#243044,color:#111827,stroke-width:1px;\n  classDef evidence fill:#ccfbf1,stroke:#243044,color:#111827,stroke-width:1px;\n  classDef input fill:#dbeafe,stroke:#243044,color:#111827,stroke-width:1px;\n  classDef llm fill:#f3e8ff,stroke:#243044,color:#111827,stroke-width:1px;\n  classDef packaging fill:#e0e7ff,stroke:#243044,color:#111827,stroke-width:1px;\n  classDef planning fill:#fef3c7,stroke:#243044,color:#111827,stroke-width:1px;\n  classDef report fill:#f1f5f9,stroke:#243044,color:#111827,stroke-width:1px;\n  classDef routing fill:#ede9fe,stroke:#243044,color:#111827,stroke-width:1px;\n  classDef sql fill:#dcfce7,stroke:#243044,color:#111827,stroke-width:1px;\n  classDef trial fill:#fef9c3,stroke:#243044,color:#111827,stroke-width:1px;\n  class user_prompt input;\n  class runtime_config config;\n  class prompt_router routing;\n  class simple_gate routing;\n  class normalization routing;\n  class tokens routing;\n  class query_router routing;\n  class intent routing;\n  class analysis analysis;\n  class semantic_enabled decision;\n  class llm_client llm;\n  class semantic_helper llm;\n  class semantic_validate decision;\n  class semantic_promoted decision;\n  class metadata_context planning;\n  class schema_index planning;\n  class plan_generation planning;\n  class evidence_policy decision;\n  class sql_derivation sql;\n  class sql_validation decision;\n  class sqlglot_ast sql;\n  class execute_sql sql;\n  class sql_result sql;\n  class sql_evidence sql;\n  class api_plan api;\n  class api_validation decision;\n  class headers api;\n  class credentials decision;\n  class live_api api;\n  class dry_run_decision decision;\n  class dry_run api;\n  class api_parser api;\n  class discovery api;\n  class parsed_api api;\n  class evidence_bus evidence;\n  class answer_slots answer;\n  class answer_synthesis answer;\n  class answer_verify answer;\n  class final_answer answer;\n  class trajectory packaging;\n  class final_submission packaging;\n  class strict_eval eval;\n  class hidden_eval eval;\n  class llm_baseline eval;\n  class workflow_audit report;\n  class live_readiness report;\n  class mock_fixtures trial;\n  class mock_parser trial;\n  class evidence_reports trial;\n  class rewrite_promoted decision;\n  class consolidated_index report;",
+  "missing_source_files": [],
+  "node_count": 51,
+  "output_html_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/visualizations/end_to_end_system_dataflow.html",
+  "output_md_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/visualizations/end_to_end_system_dataflow.md",
+  "source_files": [
+    {
+      "age_hours": 0.066,
+      "exists": true,
+      "path": "outputs/reports/report_index.json",
+      "source_timestamp": "2026-05-11T16:45:26.837121+00:00",
+      "timestamp_source": "file_mtime"
+    },
+    {
+      "age_hours": 0.697,
+      "exists": true,
+      "path": "outputs/reports/workflow_decision_map.json",
+      "source_timestamp": "2026-05-11T16:07:34.867552+00:00",
+      "timestamp_source": "file_mtime"
+    },
+    {
+      "age_hours": 0.697,
+      "exists": true,
+      "path": "outputs/reports/workflow_decision_audit.json",
+      "source_timestamp": "2026-05-11T16:07:34.911920+00:00",
+      "timestamp_source": "file_mtime"
+    },
+    {
+      "age_hours": 0.7,
+      "exists": true,
+      "path": "outputs/reports/live_adobe_api_readiness_audit.json",
+      "source_timestamp": "2026-05-11T16:07:24.122273+00:00",
+      "timestamp_source": "file_mtime"
+    },
+    {
+      "age_hours": 0.7,
+      "exists": true,
+      "path": "outputs/reports/api_required_readiness_matrix.json",
+      "source_timestamp": "2026-05-11T16:07:25.822495+00:00",
+      "timestamp_source": "file_mtime"
+    },
+    {
+      "age_hours": 0.7,
+      "exists": true,
+      "path": "outputs/reports/mock_live_api_evidence_pipeline_trial.json",
+      "source_timestamp": "2026-05-11T16:07:25.611839+00:00",
+      "timestamp_source": "file_mtime"
+    },
+    {
+      "age_hours": 0.654,
+      "exists": true,
+      "path": "outputs/reports/evidence_usage_audit.json",
+      "source_timestamp": "2026-05-11T16:10:11.420125+00:00",
+      "timestamp_source": "generated_at"
+    },
+    {
+      "age_hours": 0.653,
+      "exists": true,
+      "path": "outputs/reports/evidence_aware_answer_rewrite_trial.json",
+      "source_timestamp": "2026-05-11T16:10:15.011627+00:00",
+      "timestamp_source": "generated_at"
+    },
+    {
+      "age_hours": 0.653,
+      "exists": true,
+      "path": "outputs/reports/feedback_loop_answer_synthesis_final.json",
+      "source_timestamp": "2026-05-11T16:10:15.010904+00:00",
+      "timestamp_source": "file_mtime"
+    },
+    {
+      "age_hours": 16.4,
+      "exists": true,
+      "path": "outputs/reports/feedback_loop_semantic_router_final.json",
+      "source_timestamp": "2026-05-11T00:25:24.072756+00:00",
+      "timestamp_source": "file_mtime"
+    },
+    {
+      "age_hours": 0.026,
+      "exists": true,
+      "path": "outputs/reports/sdk_usage_audit.json",
+      "source_timestamp": "2026-05-11T16:47:51.964001+00:00",
+      "timestamp_source": "file_mtime"
+    },
+    {
+      "age_hours": 0.075,
+      "exists": true,
+      "path": "outputs/reports/workshop_requirement_audit.json",
+      "source_timestamp": "2026-05-11T16:44:55.895255+00:00",
+      "timestamp_source": "file_mtime"
+    },
+    {
+      "age_hours": 0.085,
+      "exists": true,
+      "path": "outputs/eval_results_strict.json",
+      "source_timestamp": "2026-05-11T16:44:17.830814+00:00",
+      "timestamp_source": "file_mtime"
+    },
+    {
+      "age_hours": 0.084,
+      "exists": true,
+      "path": "outputs/hidden_style_eval.json",
+      "source_timestamp": "2026-05-11T16:44:22.484589+00:00",
+      "timestamp_source": "generated_at"
+    },
+    {
+      "age_hours": 10.018,
+      "exists": true,
+      "path": "outputs/winner_readiness_report.json",
+      "source_timestamp": "2026-05-11T06:48:20.049300+00:00",
+      "timestamp_source": "generated_at"
+    }
+  ],
+  "stale_source_warnings": [],
+  "warnings": []
+}
