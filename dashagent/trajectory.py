@@ -11,6 +11,7 @@ from typing import Any
 SECRET_KEYS = {
     "authorization",
     "x-api-key",
+    "client_id",
     "client_secret",
     "access_token",
     "refresh_token",
@@ -18,11 +19,24 @@ SECRET_KEYS = {
     "secret",
 }
 
+MASKED_METADATA_KEYS = {
+    "x-gw-ims-org-id",
+    "ims_org",
+    "adobe_org_id",
+    "org_id",
+    "x-sandbox-name",
+    "sandbox",
+    "sandbox_name",
+    "adobe_sandbox_name",
+}
+
 
 def redact_value(key: str, value: Any) -> Any:
     lowered = key.lower()
     if lowered.startswith("no_secret"):
         return value
+    if lowered in MASKED_METADATA_KEYS:
+        return mask_metadata_value(value)
     if (
         lowered in SECRET_KEYS
         or lowered.endswith("_token")
@@ -34,9 +48,35 @@ def redact_value(key: str, value: Any) -> Any:
     return value
 
 
+def mask_metadata_value(value: Any) -> Any:
+    if not isinstance(value, str):
+        return "[MASKED]" if value is not None else value
+    if not value:
+        return value
+    clean = value.strip()
+    if len(clean) <= 4:
+        return "[MASKED]"
+    return f"{clean[:3]}***"
+
+
 def redact_secrets(obj: Any) -> Any:
     if isinstance(obj, dict):
-        return {key: redact_value(str(key), redact_secrets(value)) for key, value in obj.items()}
+        redacted: dict[Any, Any] = {}
+        for key, value in obj.items():
+            key_text = str(key)
+            lowered = key_text.lower()
+            if (
+                lowered in MASKED_METADATA_KEYS
+                or lowered in SECRET_KEYS
+                or lowered.endswith("_token")
+                or lowered.endswith("-token")
+                or lowered in {"token", "bearer"}
+                or "secret" in lowered
+            ):
+                redacted[key] = redact_value(key_text, value)
+            else:
+                redacted[key] = redact_value(key_text, redact_secrets(value))
+        return redacted
     if isinstance(obj, list):
         return [redact_secrets(item) for item in obj]
     if isinstance(obj, str):

@@ -1,7 +1,7 @@
 # Decision Improvement Plan
 
-- Selected decision stage: `Answer synthesis / Evidence policy`
+- Selected decision stage: `Live API execution / response parsing / EvidenceBus API evidence pipeline`
 - Implemented in this diff: `False`
-- Why: Answer-only rewrite or dry-run wording/API optional skip, because workflow audit often marks answer_shape_weak or unnecessary_dry_run_api while SQL/API evidence is already present.
-- Safety risk: Answer-only variants must preserve SQL/API/tool/evidence/dry-run hashes; API-skip variants must remain isolated.
-- Rollback condition: Any SQL/API/tool/evidence/dry-run hash change for answer-only trials or any strict/readiness/security regression.
+- Why: Live Adobe API readiness / response parser / EvidenceBus API evidence pipeline, because future production behavior should preserve API_REQUIRED live evidence instead of optimizing mainly for missing-credential dry-run artifacts. Answer-only rewrite remains the secondary candidate.
+- Safety risk: Live API trials must be GET-only by default, redact credentials, never fabricate evidence, and never overwrite official eval or final-submission artifacts.
+- Rollback condition: Any credential leak, mutation-capable live API call, official artifact overwrite, strict/readiness/security regression, or final-submission format change.

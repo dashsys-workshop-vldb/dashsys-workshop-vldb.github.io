@@ -1,14 +1,21 @@
 {
   "bottleneck_categories_allowed": [
     "answer_shape_weak",
+    "answer_uses_dry_run_poorly",
+    "api_only_needs_live_credentials",
+    "api_optional_dry_run_noise",
+    "api_required_but_credentials_missing",
     "confidence_miscalibrated",
     "domain_mismatch",
+    "evidencebus_api_gap",
+    "live_api_readiness_gap",
     "no_clear_bottleneck",
+    "response_parser_gap",
     "route_mismatch",
     "semantic_router_no_effect",
+    "sql_complete_but_dry_run_caveat_noisy",
     "token_cost_high",
     "tool_count_high",
-    "unnecessary_dry_run_api",
     "unsupported_answer_claim",
     "weak_relevance_selection",
     "wrong_api_template",
@@ -16,14 +23,31 @@
   ],
   "bottleneck_distribution": {
     "answer_shape_weak": 1,
-    "no_clear_bottleneck": 1,
-    "unnecessary_dry_run_api": 33
+    "answer_uses_dry_run_poorly": 5,
+    "api_only_needs_live_credentials": 20,
+    "api_optional_dry_run_noise": 1,
+    "api_required_but_credentials_missing": 8
   },
   "highest_priority_candidates": [
     {
-      "affected_rows": 33,
-      "bottleneck": "unnecessary_dry_run_api",
-      "candidate": "Dry-run wording/API optional skip isolated trial"
+      "affected_rows": 20,
+      "bottleneck": "api_only_needs_live_credentials",
+      "candidate": "Live Adobe API readiness / response parser / EvidenceBus API evidence pipeline"
+    },
+    {
+      "affected_rows": 8,
+      "bottleneck": "api_required_but_credentials_missing",
+      "candidate": "Live Adobe API readiness / response parser / EvidenceBus API evidence pipeline"
+    },
+    {
+      "affected_rows": 5,
+      "bottleneck": "answer_uses_dry_run_poorly",
+      "candidate": "Dry-run fallback wording polish after live readiness"
+    },
+    {
+      "affected_rows": 1,
+      "bottleneck": "api_optional_dry_run_noise",
+      "candidate": "Live Adobe API readiness first; dry-run wording remains fallback polish"
     },
     {
       "affected_rows": 1,
@@ -52,8 +76,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "The journey \"Birthday Message\" has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "answer_uses_dry_run_poorly",
+      "likely_improvement_candidate": "fallback_dry_run_answer_polish",
       "prompt": "When was the journey 'Birthday Message' published?",
       "query_id": "example_000",
       "rejected_plan_candidates": {
@@ -112,8 +136,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "There are 2 inactive campaigns: Birthday Message (last updated 2026-03-31) and Gold Tier Welcome Email (last updated 2026-03-31). Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "answer_uses_dry_run_poorly",
+      "likely_improvement_candidate": "fallback_dry_run_answer_polish",
       "prompt": "Give me inactive journeys",
       "query_id": "example_001",
       "rejected_plan_candidates": {
@@ -171,8 +195,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "Based on the available evidence, there are 2 journeys found in the database: Birthday Message and Gold Tier Welcome Email. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "answer_uses_dry_run_poorly",
+      "likely_improvement_candidate": "fallback_dry_run_answer_polish",
       "prompt": "List all journeys",
       "query_id": "example_002",
       "rejected_plan_candidates": {
@@ -240,8 +264,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "Based on the evidence provided, there is no data available to answer this question. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable, so audience and flow service evidence could not be checked.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "answer_uses_dry_run_poorly",
+      "likely_improvement_candidate": "fallback_dry_run_answer_polish",
       "prompt": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
       "query_id": "example_003",
       "rejected_plan_candidates": {
@@ -309,8 +333,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "answer_uses_dry_run_poorly",
+      "likely_improvement_candidate": "fallback_dry_run_answer_polish",
       "prompt": "Show me the IDs of failed dataflow runs",
       "query_id": "example_004",
       "rejected_plan_candidates": {
@@ -374,8 +398,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "Based on the evidence provided, 1 destination was found. The most recent is \"Activate segments to S3 Feed\" (amazon-s3 target) with a modification timestamp of 2026-04-14 16:15:03.000 UTC. Live API evidence is needed to validate the requested sandbox. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "no_clear_bottleneck",
-      "likely_improvement_candidate": "monitor_only",
+      "likely_decision_stage_bottleneck": "api_optional_dry_run_noise",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial_then_fallback_wording",
       "prompt": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
       "query_id": "example_005",
       "rejected_plan_candidates": {
@@ -441,8 +465,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "Based on the evidence provided, 2 datasets have been ingested using the same schema. These datasets use \"Journey Inbound External Segment Profile Schema\". Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_required_but_credentials_missing",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "How many datasets have been ingested using the same schema in the prod sandbox?",
       "query_id": "example_006",
       "rejected_plan_candidates": {
@@ -508,8 +532,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "Based on the evidence provided, no datasets use the schema 'hkg_adls_profile_count_history'. The SQL query returned zero results, and live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_required_but_credentials_missing",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "List all datasets that use the schema 'hkg_adls_profile_count_history'.",
       "query_id": "example_007",
       "rejected_plan_candidates": {
@@ -630,8 +654,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "The 'weRetail: Customer Actions' schema has class https://ns.adobe.com/xdm/context/experienceevent, has 6 properties, across 1 collection(s), and was last updated on 2026-03-29. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_required_but_credentials_missing",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "Provide more details for the schema 'weRetail: Customer Actions'",
       "query_id": "example_009",
       "rejected_plan_candidates": {
@@ -697,8 +721,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "Based on the SQL query result, there are 0 XDM Experience Event schemas enabled for profile in your environment.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_required_but_credentials_missing",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "Count the number of XDM Experience Event schemas that are enabled for profile.",
       "query_id": "example_010",
       "rejected_plan_candidates": {
@@ -764,8 +788,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_required_but_credentials_missing",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "How many schemas do I have?",
       "query_id": "example_011",
       "rejected_plan_candidates": {
@@ -831,8 +855,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "Based on the SQL evidence, 1 audience(s) match: Gender: Male (ID f6b93428-c021-4058-a1a2-77c277aab564) mapped to amazon-s3. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_required_but_credentials_missing",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
       "query_id": "example_012",
       "rejected_plan_candidates": {
@@ -900,8 +924,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "Based on the evidence provided, matching datasets are: hkg_adls_segment_profile_history, hkg_adls_profile_count_history, Profile-Snapshot-Export-486e2a5e-dc46-4ab6-ad5f-9cdd16db869d, Profile Export For Destination - Merge Policy - 22a941a9-e598-45f8-846b-c9a8889f5035, BR_Segment_Destination, DIM_Destination, BR_Namespace_Destination, Segmentdefinition-Snapshot-Export-3405afd1-7c78-4aff-84e6-d2136ffcea93, weRetail: CRM, and weRetail: Customer Actions. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_required_but_credentials_missing",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "Show recent changes in datasets.",
       "query_id": "example_013",
       "rejected_plan_candidates": {
@@ -968,8 +992,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "Based on the evidence provided, no entities were created by download. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_required_but_credentials_missing",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "Show me all entities created by download",
       "query_id": "example_014",
       "rejected_plan_candidates": {
@@ -1035,8 +1059,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "The tag count cannot be determined from the available evidence. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "How many tags exist in this sandbox?",
       "query_id": "example_015",
       "rejected_plan_candidates": {
@@ -1095,8 +1119,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "The requested tag list requires live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "List all tags in this sandbox.",
       "query_id": "example_016",
       "rejected_plan_candidates": {
@@ -1166,8 +1190,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "Details for the tag named 'Uncategorized' require live API evidence, including the tag ID, name, category, and Adobe organization. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "Which tags belong to the category 'Uncategorized'?",
       "query_id": "example_017",
       "rejected_plan_candidates": {
@@ -1229,8 +1253,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "Details for the tag named 'cool' require live API evidence, including the tag ID, name, category, and Adobe organization. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "Show me the details of the tag named 'cool'.",
       "query_id": "example_018",
       "rejected_plan_candidates": {
@@ -1292,8 +1316,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "Merge policy information requires Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "List all merge policies in this sandbox.",
       "query_id": "example_019",
       "rejected_plan_candidates": {
@@ -1355,8 +1379,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "The merge policy count cannot be determined from the available evidence. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "How many merge policies are configured in this sandbox?",
       "query_id": "example_020",
       "rejected_plan_candidates": {
@@ -1415,8 +1439,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "The default merge policy requires live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "Show the default merge policy for schema class '_xdm.context.profile'.",
       "query_id": "example_021",
       "rejected_plan_candidates": {
@@ -1477,8 +1501,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "Segment definition details require live Adobe API evidence with definition names, IDs, and counts. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "How many segment definitions exist in this sandbox?",
       "query_id": "example_022",
       "rejected_plan_candidates": {
@@ -1540,8 +1564,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "The requested segment definition list requires live Adobe API evidence with definition names, IDs, and pagination counts. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "List all segment definitions.",
       "query_id": "example_023",
       "rejected_plan_candidates": {
@@ -1603,8 +1627,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "The most recently updated segment definitions require live Adobe API evidence with names, IDs, and update times. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "Which segment definitions were updated most recently?",
       "query_id": "example_024",
       "rejected_plan_candidates": {
@@ -1665,8 +1689,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "Segment evaluation job IDs, statuses, sandbox, and segment counts require live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "List all segment evaluation jobs.",
       "query_id": "example_025",
       "rejected_plan_candidates": {
@@ -1728,8 +1752,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "The segment evaluation job count requires live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "How many segment jobs are currently processing?",
       "query_id": "example_026",
       "rejected_plan_candidates": {
@@ -1791,8 +1815,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "Segment evaluation job IDs, statuses, sandbox, and segment counts require live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "Show all segment jobs with status 'QUEUED'.",
       "query_id": "example_027",
       "rejected_plan_candidates": {
@@ -1856,8 +1880,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "The requested batch detail is unavailable in dry-run mode. Endpoint: GET /data/foundation/catalog/batches params limit=100, orderBy=desc:created. Live API unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "List the most recently created batches.",
       "query_id": "example_028",
       "rejected_plan_candidates": {
@@ -1920,8 +1944,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "success batch count is unavailable in dry-run mode. Endpoint: GET /data/foundation/catalog/batches params limit=10, status=success. Live API unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "How many batches have status 'success'?",
       "query_id": "example_029",
       "rejected_plan_candidates": {
@@ -1978,8 +2002,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "01KP69BPA5ZKFB7HCDYPE4GN6F batch detail is unavailable in dry-run mode. Endpoint: GET /data/foundation/catalog/batches/01KP69BPA5ZKFB7HCDYPE4GN6F. Live API unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "Show the details of batch 01KP69BPA5ZKFB7HCDYPE4GN6F.",
       "query_id": "example_030",
       "rejected_plan_candidates": {
@@ -2039,8 +2063,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "69de8a0e0cc6102b5d11f01e batch list is unavailable in dry-run mode. Endpoint: GET /data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files. Live API unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?",
       "query_id": "example_031",
       "rejected_plan_candidates": {
@@ -2100,8 +2124,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
       "query_id": "example_032",
       "rejected_plan_candidates": {
@@ -2173,8 +2197,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "Values for timeseries.ingestion.dataset.recordsuccess.count between 2026-03-15 and 2026-03-31 require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'?",
       "query_id": "example_033",
       "rejected_plan_candidates": {
@@ -2250,8 +2274,8 @@
       "dry_run_label": "dry_run",
       "dry_run_status": "dry_run",
       "final_answer": "Values for timeseries.ingestion.dataset.recordsuccess.count and timeseries.ingestion.dataset.batchsuccess.count for the requested time window require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
-      "likely_decision_stage_bottleneck": "unnecessary_dry_run_api",
-      "likely_improvement_candidate": "dry_run_wording_or_optional_api_skip_trial",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
       "prompt": "Show ingestion record counts and batch success counts for the last 90 days.",
       "query_id": "example_034",
       "rejected_plan_candidates": {

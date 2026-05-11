@@ -22,7 +22,14 @@ BOTTLENECK_CATEGORIES = {
     "wrong_sql_template",
     "wrong_api_template",
     "weak_relevance_selection",
-    "unnecessary_dry_run_api",
+    "live_api_readiness_gap",
+    "api_required_but_credentials_missing",
+    "api_optional_dry_run_noise",
+    "sql_complete_but_dry_run_caveat_noisy",
+    "api_only_needs_live_credentials",
+    "response_parser_gap",
+    "evidencebus_api_gap",
+    "answer_uses_dry_run_poorly",
     "answer_shape_weak",
     "unsupported_answer_claim",
     "token_cost_high",
@@ -195,16 +202,19 @@ DECISION_STAGES: list[dict[str, Any]] = [
         "stage_id": 11,
         "name": "Evidence policy",
         "decision_made": "API_REQUIRED, API_OPTIONAL, API_SKIP.",
-        "diagnostic_question": "Are optional dry-run API calls helping or hurting answer score?",
+        "diagnostic_question": "Will API_REQUIRED/API_OPTIONAL calls produce useful live evidence when Adobe credentials are available, while dry-run remains an honest fallback?",
         "input_signals_used": ["route", "analysis", "credential/dry-run state"],
         "confidence_or_score": "plan rationale evidence policy label",
         "rejected_alternatives_if_available": "API optional vs skipped not always logged as alternative",
-        "downstream_effect": "can add API calls and dry-run caveats",
-        "known_failure_examples": ["SQL fully answers but answer emphasizes unavailable API"],
-        "possible_improvement": "isolated dry-run skip/wording variants when SQL answer is complete",
-        "safety_risk": "skipping truly required API would lose evidence",
+        "downstream_effect": "can add live API evidence in production or dry-run fallback labels locally",
+        "known_failure_examples": ["API-required families are limited by missing live credentials during local evaluation"],
+        "possible_improvement": "harden live API readiness, response parsing, and EvidenceBus API evidence flow before optimizing dry-run fallback wording",
+        "safety_risk": "skipping truly required API would lose future live evidence",
         "improvement_mode": "isolated_only",
-        "extended_questions": ["When SQL fully answers, does dry-run API hurt answer score?"],
+        "extended_questions": [
+            "Which queries truly need live API?",
+            "Does dry-run fallback remain honest without weakening API_REQUIRED live behavior?",
+        ],
     },
     {
         "stage_id": 12,
@@ -215,8 +225,8 @@ DECISION_STAGES: list[dict[str, Any]] = [
         "confidence_or_score": "tool_call_count and budget settings",
         "rejected_alternatives_if_available": "deduped/optimized plan actions",
         "downstream_effect": "affects efficiency penalty and answer evidence",
-        "known_failure_examples": ["dry-run calls add cost without evidence"],
-        "possible_improvement": "penalize optional dry-run when SQL evidence is complete",
+        "known_failure_examples": ["dry-run calls add cost without evidence, but live calls may be needed later"],
+        "possible_improvement": "track API_REQUIRED vs API_OPTIONAL and live-readiness before changing budgets",
         "safety_risk": "over-pruning useful evidence",
         "improvement_mode": "isolated_only",
         "extended_questions": ["Are extra API calls improving correctness?"],
@@ -261,7 +271,7 @@ DECISION_STAGES: list[dict[str, Any]] = [
         "rejected_alternatives_if_available": "not applicable because exactly one plan executes",
         "downstream_effect": "feeds EvidenceBus and final answer",
         "known_failure_examples": ["dry-run API unavailable under missing credentials"],
-        "possible_improvement": "answer wording improvements for dry-run limitations",
+        "possible_improvement": "live API response parser and EvidenceBus readiness; dry-run wording remains fallback polish",
         "safety_risk": "fabricated live API evidence is prohibited",
         "improvement_mode": "answer_only_or_isolated",
         "extended_questions": ["Did SQL/API results contain enough evidence to answer directly?"],
@@ -483,8 +493,19 @@ def _classify_bottleneck(row: dict[str, Any], trajectory: dict[str, Any], route:
         return "wrong_sql_template"
     if _low(api_score):
         return "wrong_api_template"
-    if dry_run and isinstance(answer_score, (int, float)) and answer_score < 0.55:
-        return "unnecessary_dry_run_api"
+    if dry_run:
+        route_type = str(trajectory.get("route_type") or route.get("route_type") or "")
+        plan = _first_step(trajectory, "plan")
+        rationale = str(plan.get("rationale") or "").lower()
+        if route_type == "API_ONLY":
+            return "api_only_needs_live_credentials"
+        if "required" in rationale or _low(api_score):
+            return "api_required_but_credentials_missing"
+        if isinstance(answer_score, (int, float)) and answer_score < 0.55:
+            return "answer_uses_dry_run_poorly"
+        if isinstance(sql_score, (int, float)) and sql_score >= 0.8 and isinstance(answer_score, (int, float)) and answer_score < 0.8:
+            return "sql_complete_but_dry_run_caveat_noisy"
+        return "api_optional_dry_run_noise"
     if isinstance(answer_score, (int, float)) and answer_score < 0.55:
         return "answer_shape_weak"
     if int(row.get("tool_call_count") or trajectory.get("tool_call_count") or 0) > 3:
@@ -497,8 +518,15 @@ def _classify_bottleneck(row: dict[str, Any], trajectory: dict[str, Any], route:
 def _priority_candidates(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     counts = Counter(row["likely_decision_stage_bottleneck"] for row in rows)
     mapping = {
+        "live_api_readiness_gap": "Live Adobe API readiness / response parser / EvidenceBus API evidence pipeline",
+        "api_required_but_credentials_missing": "Live Adobe API readiness / response parser / EvidenceBus API evidence pipeline",
+        "api_optional_dry_run_noise": "Live Adobe API readiness first; dry-run wording remains fallback polish",
+        "sql_complete_but_dry_run_caveat_noisy": "Answer-only fallback wording trial after live readiness",
+        "api_only_needs_live_credentials": "Live Adobe API readiness / response parser / EvidenceBus API evidence pipeline",
+        "response_parser_gap": "API response parser hardening",
+        "evidencebus_api_gap": "EvidenceBus API evidence pipeline trial",
+        "answer_uses_dry_run_poorly": "Dry-run fallback wording polish after live readiness",
         "answer_shape_weak": "Answer-only rewrite with invariant hashes",
-        "unnecessary_dry_run_api": "Dry-run wording/API optional skip isolated trial",
         "confidence_miscalibrated": "Router confidence calibration audit",
         "wrong_sql_template": "Plan/template family isolated trial",
         "wrong_api_template": "API endpoint-family isolated trial",
@@ -514,8 +542,15 @@ def _priority_candidates(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def _improvement_candidate(category: str) -> str:
     return {
+        "live_api_readiness_gap": "live_adobe_api_readiness_trial",
+        "api_required_but_credentials_missing": "live_adobe_api_readiness_trial",
+        "api_optional_dry_run_noise": "live_adobe_api_readiness_trial_then_fallback_wording",
+        "sql_complete_but_dry_run_caveat_noisy": "fallback_dry_run_wording_polish",
+        "api_only_needs_live_credentials": "live_adobe_api_readiness_trial",
+        "response_parser_gap": "api_response_parser_hardening",
+        "evidencebus_api_gap": "evidencebus_api_pipeline_trial",
+        "answer_uses_dry_run_poorly": "fallback_dry_run_answer_polish",
         "answer_shape_weak": "answer_only_rewrite_trial",
-        "unnecessary_dry_run_api": "dry_run_wording_or_optional_api_skip_trial",
         "confidence_miscalibrated": "confidence_calibration_trial",
         "wrong_sql_template": "plan_template_trial",
         "wrong_api_template": "api_template_trial",

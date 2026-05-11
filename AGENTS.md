@@ -74,6 +74,12 @@ Do not hard-code absolute paths. Use `Config` and environment overrides:
 
 Adobe credentials must come only from environment variables:
 
+- `ADOBE_ACCESS_TOKEN`
+- `ADOBE_API_KEY`
+- `ADOBE_ORG_ID`
+- `ADOBE_SANDBOX_NAME`
+- `ADOBE_CLIENT_ID`
+- `ADOBE_CLIENT_SECRET`
 - `CLIENT_ID`
 - `CLIENT_SECRET`
 - `IMS_ORG`
@@ -81,7 +87,21 @@ Adobe credentials must come only from environment variables:
 - `ACCESS_TOKEN`
 - `ADOBE_BASE_URL`
 
-Never print, log, commit, or package secrets. Missing credentials are expected; dry-run API mode is valid and must be reported honestly in answers and trajectories.
+Never print, log, commit, or package secrets. Access tokens, API keys, and client secrets must be fully redacted; org ID and sandbox name are masked by default. Missing credentials are expected; dry-run API mode is valid and must be reported honestly in answers and trajectories.
+
+## Live Adobe API Readiness
+
+Live Adobe API readiness is infrastructure validation, not score promotion. Assume Adobe API will eventually be connected, so do not optimize away required API behavior just because local credentials are missing. `API_REQUIRED` remains required in live mode, `API_OPTIONAL` can run when policy selects it, and dry-run is only a safe local fallback.
+
+Use:
+
+```bash
+python3 scripts/audit_live_adobe_api_readiness.py
+python3 scripts/run_live_api_readiness_smoke.py
+python3 scripts/run_live_api_evidence_pipeline_trial.py
+```
+
+Live smoke/trials are GET-only by default, must not call endpoints with unresolved path parameters unless a safe prior GET discovery step supplied the ID, and must never overwrite `outputs/eval/`, `outputs/eval_results_strict.json`, `outputs/final_submission/`, or `outputs/final_submission_manifest.json`. Live readiness reports are not official scoring artifacts, and no live API evidence may be fabricated.
 
 ## System-Wide SDK-Based LLM Rule
 

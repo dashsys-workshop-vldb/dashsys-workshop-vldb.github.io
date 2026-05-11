@@ -58,7 +58,7 @@ export DASHAGENT_PROMPTS_DIR=/path/to/prompts
 
 ## 3. Credentials
 
-Adobe credentials are optional for local/public evaluation. Missing credentials put API calls in dry-run mode.
+Adobe credentials are optional for local/public evaluation. Missing credentials put API calls in dry-run mode. Live Adobe API readiness is the target for future connected runs; dry-run is only the honest local fallback.
 
 ```bash
 export CLIENT_ID=...
@@ -68,6 +68,8 @@ export SANDBOX=...
 export ACCESS_TOKEN=...
 export ADOBE_BASE_URL=https://platform.adobe.io
 ```
+
+Preferred Adobe aliases are also supported: `ADOBE_ACCESS_TOKEN`, `ADOBE_API_KEY`, `ADOBE_ORG_ID`, `ADOBE_SANDBOX_NAME`, `ADOBE_CLIENT_ID`, and `ADOBE_CLIENT_SECRET`. Tokens, API keys, and client secrets are fully redacted in reports; org ID and sandbox name are masked by default.
 
 Real LLM integration is also optional. OpenAI remains the default provider:
 
@@ -150,6 +152,20 @@ python3 scripts/run_decision_feedback_loop.py
 The required process is hypothesis → baseline → isolated trial → failure analysis → 3-5 controlled variants → evidence-backed decision. Do not reject a serious candidate after one failed run; report whether a variant failed, the candidate is partially useful, the candidate is not viable after feedback loops, or the candidate is eligible for future limited promotion.
 
 Generated diagnostic prompts are coverage-only and cannot support official strict-score improvement or promotion claims. Answer-only trials must preserve SQL hash, API hash, tool count, selected evidence hash, and dry-run label. Behavior-changing variants stay in isolated outputs unless a later human-reviewed strict/safety promotion explicitly approves them.
+
+## 3.5 Live Adobe API Readiness
+
+Live Adobe API readiness is infrastructure validation, not score promotion. The system keeps `API_REQUIRED` calls required in live mode, uses catalog-approved Adobe REST calls, and falls back to dry-run only when credentials are unavailable. No live API evidence may be fabricated, and live smoke/trial reports must not overwrite `outputs/eval/`, `outputs/eval_results_strict.json`, `outputs/final_submission/`, or `outputs/final_submission_manifest.json`.
+
+Run:
+
+```bash
+python3 scripts/audit_live_adobe_api_readiness.py
+python3 scripts/run_live_api_readiness_smoke.py
+python3 scripts/run_live_api_evidence_pipeline_trial.py
+```
+
+Reports are written under `outputs/reports/` and isolated live trial artifacts under `outputs/live_api_evidence_pipeline_trial/`. Safe smoke tests are GET-only by default and do not call endpoints with unresolved path parameters unless a later discovery step provides a safe ID.
 
 ## 4. Prompt Routing Policy
 

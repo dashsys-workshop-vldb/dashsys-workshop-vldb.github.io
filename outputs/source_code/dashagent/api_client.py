@@ -7,15 +7,25 @@ from urllib.parse import urljoin
 
 import requests
 
+from .api_response_parser import normalize_api_response
 from .config import Config, DEFAULT_CONFIG
 from .endpoint_catalog import normalize_api_path
 from .trajectory import compact_preview, redact_secrets
+
+
+def _env_first(*names: str) -> str | None:
+    for name in names:
+        value = os.getenv(name)
+        if value:
+            return value
+    return None
 
 
 @dataclass
 class AdobeCredentials:
     client_id: str | None
     client_secret: str | None
+    api_key: str | None
     ims_org: str | None
     sandbox: str | None
     access_token: str | None
@@ -24,11 +34,12 @@ class AdobeCredentials:
     @classmethod
     def from_env(cls) -> "AdobeCredentials":
         return cls(
-            client_id=os.getenv("CLIENT_ID"),
-            client_secret=os.getenv("CLIENT_SECRET"),
-            ims_org=os.getenv("IMS_ORG"),
-            sandbox=os.getenv("SANDBOX"),
-            access_token=os.getenv("ACCESS_TOKEN"),
+            client_id=_env_first("ADOBE_CLIENT_ID", "CLIENT_ID", "ADOBE_API_KEY"),
+            client_secret=_env_first("ADOBE_CLIENT_SECRET", "CLIENT_SECRET"),
+            api_key=_env_first("ADOBE_API_KEY", "CLIENT_ID", "ADOBE_CLIENT_ID"),
+            ims_org=_env_first("ADOBE_ORG_ID", "IMS_ORG"),
+            sandbox=_env_first("ADOBE_SANDBOX_NAME", "SANDBOX"),
+            access_token=_env_first("ADOBE_ACCESS_TOKEN", "ACCESS_TOKEN"),
             base_url=os.getenv("ADOBE_BASE_URL", "https://platform.adobe.io"),
         )
 
@@ -78,8 +89,9 @@ class AdobeAPIClient:
         }
         if token:
             headers["Authorization"] = f"Bearer {token}"
-        if self.credentials.client_id:
-            headers["x-api-key"] = self.credentials.client_id
+        api_key = self.credentials.api_key or self.credentials.client_id
+        if api_key:
+            headers["x-api-key"] = api_key
         if self.credentials.ims_org:
             headers["x-gw-ims-org-id"] = self.credentials.ims_org
         if self.credentials.sandbox:
@@ -144,6 +156,15 @@ class AdobeAPIClient:
                 "headers": redact_secrets(merged_headers),
                 "status_code": response.status_code,
                 "result_preview": compact_preview(body, self.config.max_preview_chars),
+                "parsed_evidence": normalize_api_response(
+                    body,
+                    ok=response.ok,
+                    dry_run=False,
+                    status_code=response.status_code,
+                    endpoint=normalize_api_path(url),
+                    max_preview_chars=self.config.max_preview_chars,
+                    error=None if response.ok else str(body)[:500],
+                ),
                 "error": None if response.ok else str(body)[:500],
             }
         except Exception as exc:
@@ -157,5 +178,14 @@ class AdobeAPIClient:
                 "headers": redact_secrets(merged_headers),
                 "status_code": None,
                 "result_preview": None,
+                "parsed_evidence": normalize_api_response(
+                    None,
+                    ok=False,
+                    dry_run=False,
+                    status_code=None,
+                    endpoint=normalize_api_path(url),
+                    max_preview_chars=self.config.max_preview_chars,
+                    error=str(exc)[:500],
+                ),
                 "error": str(exc)[:500],
             }

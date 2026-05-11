@@ -15,6 +15,7 @@
     "best_isolated_score": 0.6558,
     "final_submission_ready": true,
     "hidden_style": "48/48",
+    "live_adobe_api_readiness": "warning",
     "llm_recommendation": "keep_shadow_only",
     "packaged_strict_score": 0.6553,
     "preferred_strategy": "SQL_FIRST_API_VERIFY",
@@ -39,8 +40,10 @@
     "stage_count": 20,
     "top_bottlenecks": {
       "answer_shape_weak": 1,
-      "no_clear_bottleneck": 1,
-      "unnecessary_dry_run_api": 33
+      "answer_uses_dry_run_poorly": 5,
+      "api_only_needs_live_credentials": 20,
+      "api_optional_dry_run_noise": 1,
+      "api_required_but_credentials_missing": 8
     },
     "workflow_decision_audit": "outputs/reports/workflow_decision_audit.md",
     "workflow_decision_map": "outputs/reports/workflow_decision_map.md"
@@ -68,6 +71,28 @@
     "outputs/visualizations/system_status_dashboard.md",
     "outputs/visualizations/score_bottleneck_dashboard.md"
   ],
+  "live_adobe_api_readiness": {
+    "audit_path": "outputs/reports/live_adobe_api_readiness_audit.md",
+    "credentials_present": false,
+    "critical_failures": 0,
+    "dry_run_fallback_verified": true,
+    "infrastructure_validation_only": true,
+    "live_mode_attempted": false,
+    "next_best_candidate": "Live Adobe API readiness / response parser / EvidenceBus API evidence pipeline",
+    "official_score_claim": false,
+    "overall_status": "warning",
+    "packaged_runtime_affected": false,
+    "pipeline_trial_path": "outputs/reports/live_api_evidence_pipeline_trial.md",
+    "pipeline_trial_status": "skipped_live_credentials_missing",
+    "smoke_path": "outputs/reports/live_api_readiness_smoke.md",
+    "smoke_status": "skipped_live_credentials_missing",
+    "source_reports": [
+      "outputs/reports/live_adobe_api_readiness_audit.md",
+      "outputs/reports/live_api_readiness_smoke.md",
+      "outputs/reports/live_api_evidence_pipeline_trial.md"
+    ],
+    "warnings": 1
+  },
   "llm_semantic_routing_helper": {
     "direct_http_allowed": false,
     "domain_aliases_applied_count": 1,
@@ -115,6 +140,9 @@
       "outputs/reports/accuracy_and_bottleneck_summary.md/json",
       "outputs/reports/visualization_summary.md/json",
       "outputs/reports/workshop_requirement_audit.md/json",
+      "outputs/reports/live_adobe_api_readiness_audit.md/json",
+      "outputs/reports/live_api_readiness_smoke.md/json",
+      "outputs/reports/live_api_evidence_pipeline_trial.md/json",
       "outputs/reports/workflow_decision_map.md/json",
       "outputs/reports/workflow_decision_audit.md/json",
       "outputs/reports/improvement_feedback_loop_index.md/json",
@@ -133,6 +161,9 @@
       "python3 scripts/audit_workshop_requirements.py",
       "python3 scripts/run_dev_eval.py --strict",
       "python3 scripts/run_hidden_style_eval.py",
+      "python3 scripts/audit_live_adobe_api_readiness.py",
+      "python3 scripts/run_live_api_readiness_smoke.py",
+      "python3 scripts/run_live_api_evidence_pipeline_trial.py",
       "python3 scripts/check_llm_sdk_backend.py",
       "python3 scripts/run_workflow_decision_audit.py",
       "python3 scripts/run_decision_feedback_loop.py",

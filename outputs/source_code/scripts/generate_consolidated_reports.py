@@ -22,6 +22,9 @@ POST_CHANGE_VALIDATION_COMMANDS = [
     "python3 scripts/audit_workshop_requirements.py",
     "python3 scripts/run_dev_eval.py --strict",
     "python3 scripts/run_hidden_style_eval.py",
+    "python3 scripts/audit_live_adobe_api_readiness.py",
+    "python3 scripts/run_live_api_readiness_smoke.py",
+    "python3 scripts/run_live_api_evidence_pipeline_trial.py",
     "python3 scripts/check_llm_sdk_backend.py",
     "python3 scripts/run_workflow_decision_audit.py",
     "python3 scripts/run_decision_feedback_loop.py",
@@ -45,6 +48,9 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/accuracy_and_bottleneck_summary.md/json",
     "outputs/reports/visualization_summary.md/json",
     "outputs/reports/workshop_requirement_audit.md/json",
+    "outputs/reports/live_adobe_api_readiness_audit.md/json",
+    "outputs/reports/live_api_readiness_smoke.md/json",
+    "outputs/reports/live_api_evidence_pipeline_trial.md/json",
     "outputs/reports/workflow_decision_map.md/json",
     "outputs/reports/workflow_decision_audit.md/json",
     "outputs/reports/improvement_feedback_loop_index.md/json",
@@ -114,6 +120,9 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "endpoint_schema_canary": _load_json(outputs / "endpoint_schema_rule_canary.json"),
         "ast_canary": _load_json(outputs / "ast_guided_sql_candidate_canary.json"),
         "live_readiness": _load_json(outputs / "live_mode_readiness_report.json"),
+        "live_adobe_api_readiness": _load_json(outputs / "reports" / "live_adobe_api_readiness_audit.json"),
+        "live_api_smoke": _load_json(outputs / "reports" / "live_api_readiness_smoke.json"),
+        "live_api_pipeline_trial": _load_json(outputs / "reports" / "live_api_evidence_pipeline_trial.json"),
         "llm_backend": _load_json(outputs / "llm_sdk_backend_check.json"),
         "llm_baseline": _load_json(outputs / "llm_baseline_eval_report.json"),
         "llm_strict": _load_json(outputs / "llm_strict_baseline_eval.json"),
@@ -163,7 +172,7 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
         "architecture": [
             "Deterministic-first natural-language QA agent",
             "DuckDB SQL over local parquet snapshots",
-            "Adobe API verification in dry-run mode when credentials are unavailable",
+            "Adobe API execution is live-ready when credentials are present; dry-run is an honest local fallback",
             "Evidence-driven answer synthesis and trajectory logging",
         ],
         "workflow": [
@@ -174,6 +183,7 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
             "Evidence extraction, answer synthesis, verification, and packaging",
         ],
         "final_recommendation": sources["winner_readiness"].get("final_recommendation", "ready_to_submit_with_official_token_reduction"),
+        "live_adobe_api_readiness": _live_api_readiness_status(sources),
         "llm_semantic_routing_helper": _semantic_router_status(sources),
         "decision_stage_methodology": _decision_stage_status(sources),
         "source_reports": [
@@ -231,6 +241,7 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
         "target_0_75_reached": bool(autonomous.get("target_0_75_reached", False) or trial.get("target_0_75_reached", False)),
         "answer_quality_bottleneck": True,
         "dry_run_api_limitation": True,
+        "live_adobe_api_readiness": _live_api_readiness_status(sources),
         "answer_shape_v2_status": _status_from_report(sources["answer_shape_v2"], "shadow_only"),
         "supportable_rewrite_status": _status_from_report(sources["supportable_rewrite"], "safe_for_autonomous_packaged_trial"),
         "llm_answer_rewrite_status": _status_from_report(sources["llm_answer_rewrite"], "keep_shadow_only"),
@@ -239,7 +250,7 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
         "ast_canary_status": _status_from_report(sources["ast_canary"], "keep_shadow_only"),
         "why_shadow_only": [
             "The 0.70 and 0.75 targets were not reached safely.",
-            "High-potential answer rewrites remain constrained by dry-run API payload unavailability.",
+            "Live Adobe API readiness is now the primary API-path infrastructure target; dry-run wording remains fallback polish.",
             "Endpoint/schema and AST changes are report-only or shadow-only unless strict gates improve.",
             "The LLM semantic routing helper is default-off and remains shadow-only unless a later strict/safety gate promotes it.",
         ],
@@ -252,6 +263,7 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
             "outputs/supportable_answer_rewrite_eval.json",
             "outputs/endpoint_family_tiebreak_v2_shadow.json",
             "outputs/ast_guided_sql_candidate_canary.json",
+            "outputs/reports/live_adobe_api_readiness_audit.json",
         ],
     }
 
@@ -325,6 +337,18 @@ def build_report_index(
             .get("summary", {})
             .get("runtime_llm_direct_http_hits", "unavailable"),
         },
+        "live_adobe_api_readiness": {
+            "audit_path": "outputs/reports/live_adobe_api_readiness_audit.md",
+            "smoke_path": "outputs/reports/live_api_readiness_smoke.md",
+            "pipeline_trial_path": "outputs/reports/live_api_evidence_pipeline_trial.md",
+            **_live_api_readiness_status(
+                {
+                    "live_adobe_api_readiness": _load_json(config.outputs_dir / "reports" / "live_adobe_api_readiness_audit.json"),
+                    "live_api_smoke": _load_json(config.outputs_dir / "reports" / "live_api_readiness_smoke.json"),
+                    "live_api_pipeline_trial": _load_json(config.outputs_dir / "reports" / "live_api_evidence_pipeline_trial.json"),
+                }
+            ),
+        },
         "llm_semantic_routing_helper": {
             "path": "outputs/reports/llm_semantic_router_shadow_eval.md",
             "isolated_trial_path": "outputs/reports/llm_semantic_router_isolated_trial.md",
@@ -388,6 +412,7 @@ def build_report_index(
             "best_isolated_score": system["best_isolated_score"],
             "hidden_style": system["hidden_style"]["label"],
             "final_submission_ready": system["final_submission_ready"],
+            "live_adobe_api_readiness": system["live_adobe_api_readiness"]["overall_status"],
             "llm_recommendation": llm["recommendation"],
             "target_0_75_reached": accuracy["target_0_75_reached"],
         },
@@ -408,6 +433,8 @@ def render_system_summary(payload: dict[str, Any]) -> str:
             f"- Repair execution enabled: `{payload['repair_execution_enabled']}`",
             f"- Compact context enabled: `{payload['compact_context_enabled']}`",
             f"- Final recommendation: `{payload['final_recommendation']}`",
+            f"- Live Adobe API readiness: `{payload['live_adobe_api_readiness']['overall_status']}` "
+            f"(smoke `{payload['live_adobe_api_readiness']['smoke_status']}`, pipeline `{payload['live_adobe_api_readiness']['pipeline_trial_status']}`)",
             f"- LLM semantic routing helper: `{payload['llm_semantic_routing_helper']['recommendation']}` "
             f"({payload['llm_semantic_routing_helper']['status']})",
             f"- Semantic router isolated trial: `{payload['llm_semantic_routing_helper'].get('isolated_trial_status')}`; "
@@ -467,6 +494,8 @@ def render_accuracy_summary(payload: dict[str, Any]) -> str:
             f"- 0.75 target reached: `{payload.get('target_0_75_reached')}`",
             f"- Answer-quality bottleneck: `{payload.get('answer_quality_bottleneck')}`",
             f"- Dry-run API limitation: `{payload.get('dry_run_api_limitation')}`",
+            f"- Live Adobe API readiness: `{payload['live_adobe_api_readiness']['overall_status']}`; "
+            f"infrastructure validation only: `{payload['live_adobe_api_readiness']['infrastructure_validation_only']}`",
             f"- Supportable rewrite status: `{payload.get('supportable_rewrite_status')}`",
             f"- Endpoint tie-break status: `{payload.get('endpoint_tiebreak_status')}`",
             f"- AST canary status: `{payload.get('ast_canary_status')}`",
@@ -526,6 +555,16 @@ def render_report_index(payload: dict[str, Any]) -> str:
     audit = payload.get("sdk_usage_audit", {})
     lines.append(f"- `{audit.get('path')}`")
     lines.append(f"- Runtime LLM direct HTTP hits: `{audit.get('runtime_llm_direct_http_hits')}`")
+    lines.extend(["", "## Live Adobe API Readiness", ""])
+    live = payload.get("live_adobe_api_readiness", {})
+    lines.append(f"- Readiness audit: `{live.get('audit_path')}`")
+    lines.append(f"- Smoke report: `{live.get('smoke_path')}`")
+    lines.append(f"- Evidence pipeline trial: `{live.get('pipeline_trial_path')}`")
+    lines.append(f"- Overall status: `{live.get('overall_status')}`")
+    lines.append(f"- Credentials present in latest smoke: `{live.get('credentials_present')}`")
+    lines.append(f"- Live mode attempted: `{live.get('live_mode_attempted')}`")
+    lines.append("- Live API readiness is infrastructure validation only; it is not official strict-score evidence.")
+    lines.append("- `API_REQUIRED` remains required in live mode; dry-run remains an honest fallback when credentials are missing.")
     lines.extend(["", "## LLM Semantic Routing Helper", ""])
     semantic = payload.get("llm_semantic_routing_helper", {})
     lines.append(f"- `{semantic.get('path')}`")
@@ -678,6 +717,31 @@ def _decision_stage_status(sources: dict[str, Any]) -> dict[str, Any]:
             "outputs/reports/improvement_feedback_loop_index.md",
             "outputs/reports/feedback_loop_semantic_router_final.md",
             "outputs/reports/decision_stage_improvement_summary.md",
+        ],
+    }
+
+
+def _live_api_readiness_status(sources: dict[str, Any]) -> dict[str, Any]:
+    audit = sources.get("live_adobe_api_readiness") or {}
+    smoke = sources.get("live_api_smoke") or {}
+    pipeline = sources.get("live_api_pipeline_trial") or {}
+    return {
+        "overall_status": audit.get("overall_status", "not_run"),
+        "critical_failures": len(audit.get("critical_failures", [])),
+        "warnings": len(audit.get("warnings", [])),
+        "smoke_status": smoke.get("status", "not_run"),
+        "pipeline_trial_status": pipeline.get("status", "not_run"),
+        "credentials_present": smoke.get("credentials_present", False),
+        "live_mode_attempted": bool(smoke.get("live_mode_attempted") or pipeline.get("live_mode_attempted")),
+        "dry_run_fallback_verified": bool(smoke.get("dry_run_fallback_verified") or pipeline.get("dry_run_fallback_verified")),
+        "infrastructure_validation_only": True,
+        "official_score_claim": False,
+        "packaged_runtime_affected": False,
+        "next_best_candidate": "Live Adobe API readiness / response parser / EvidenceBus API evidence pipeline",
+        "source_reports": [
+            "outputs/reports/live_adobe_api_readiness_audit.md",
+            "outputs/reports/live_api_readiness_smoke.md",
+            "outputs/reports/live_api_evidence_pipeline_trial.md",
         ],
     }
 

@@ -158,16 +158,17 @@ Extended questions:
 ### 11. Evidence policy
 
 - Decision made: API_REQUIRED, API_OPTIONAL, API_SKIP.
-- Diagnostic question: Are optional dry-run API calls helping or hurting answer score?
+- Diagnostic question: Will API_REQUIRED/API_OPTIONAL calls produce useful live evidence when Adobe credentials are available, while dry-run remains an honest fallback?
 - Input signals: route, analysis, credential/dry-run state
 - Confidence/score: plan rationale evidence policy label
-- Downstream effect: can add API calls and dry-run caveats
-- Possible improvement: isolated dry-run skip/wording variants when SQL answer is complete
-- Safety risk: skipping truly required API would lose evidence
+- Downstream effect: can add live API evidence in production or dry-run fallback labels locally
+- Possible improvement: harden live API readiness, response parsing, and EvidenceBus API evidence flow before optimizing dry-run fallback wording
+- Safety risk: skipping truly required API would lose future live evidence
 - Improvement mode: `isolated_only`
 
 Extended questions:
-- When SQL fully answers, does dry-run API hurt answer score?
+- Which queries truly need live API?
+- Does dry-run fallback remain honest without weakening API_REQUIRED live behavior?
 
 ### 12. Tool-call budget
 
@@ -176,7 +177,7 @@ Extended questions:
 - Input signals: plan steps, call budget, optimizer actions
 - Confidence/score: tool_call_count and budget settings
 - Downstream effect: affects efficiency penalty and answer evidence
-- Possible improvement: penalize optional dry-run when SQL evidence is complete
+- Possible improvement: track API_REQUIRED vs API_OPTIONAL and live-readiness before changing budgets
 - Safety risk: over-pruning useful evidence
 - Improvement mode: `isolated_only`
 
@@ -218,7 +219,7 @@ Extended questions:
 - Input signals: validated plan, local DB, Adobe credentials
 - Confidence/score: result ok/row_count/dry_run
 - Downstream effect: feeds EvidenceBus and final answer
-- Possible improvement: answer wording improvements for dry-run limitations
+- Possible improvement: live API response parser and EvidenceBus readiness; dry-run wording remains fallback polish
 - Safety risk: fabricated live API evidence is prohibited
 - Improvement mode: `answer_only_or_isolated`
 

@@ -323,7 +323,7 @@ def _build_decision_stage_improvement_summary(final: dict[str, Any], iterations:
         "worst_regression": final.get("worst_regression"),
         "packaged_runtime_changed": False,
         "current_decision": final.get("final_recommendation"),
-        "next_best_candidate": "Answer-only rewrite or dry-run wording/API optional skip, because workflow audit often marks answer_shape_weak or unnecessary_dry_run_api while SQL/API evidence is already present.",
+        "next_best_candidate": "Live Adobe API readiness / response parser / EvidenceBus API evidence pipeline, because future production behavior should preserve API_REQUIRED live evidence instead of optimizing mainly for missing-credential dry-run artifacts. Answer-only rewrite remains the secondary candidate.",
         "scope_control": "Do not implement another behavior-changing candidate family in this diff unless separately isolated and reported.",
     }
 
@@ -331,12 +331,12 @@ def _build_decision_stage_improvement_summary(final: dict[str, Any], iterations:
 def _build_decision_improvement_plan(summary: dict[str, Any]) -> dict[str, Any]:
     return {
         "report_type": "decision_improvement_plan",
-        "selected_decision_stage": "Answer synthesis / Evidence policy",
+        "selected_decision_stage": "Live API execution / response parsing / EvidenceBus API evidence pipeline",
         "why_this_is_best_target": summary["next_best_candidate"],
         "affected_files": [],
-        "expected_score_or_efficiency_impact": "Not implemented in this pass; prepared as the next isolated candidate after semantic-router feedback loop.",
-        "safety_risk": "Answer-only variants must preserve SQL/API/tool/evidence/dry-run hashes; API-skip variants must remain isolated.",
-        "rollback_condition": "Any SQL/API/tool/evidence/dry-run hash change for answer-only trials or any strict/readiness/security regression.",
+        "expected_score_or_efficiency_impact": "Infrastructure readiness only; no strict-score claim until live Adobe credentials enable safe evaluation.",
+        "safety_risk": "Live API trials must be GET-only by default, redact credentials, never fabricate evidence, and never overwrite official eval or final-submission artifacts.",
+        "rollback_condition": "Any credential leak, mutation-capable live API call, official artifact overwrite, strict/readiness/security regression, or final-submission format change.",
         "validation_commands": [
             "python3 -m pytest -q",
             "python3 scripts/run_dev_eval.py --strict",
@@ -344,7 +344,7 @@ def _build_decision_improvement_plan(summary: dict[str, Any]) -> dict[str, Any]:
             "python3 scripts/check_submission_ready.py",
         ],
         "implemented_in_this_diff": False,
-        "reason_not_implemented_now": "Scope control prevents mixing a second behavior-changing candidate family with the semantic-router feedback-loop implementation.",
+        "reason_not_implemented_now": "Live-readiness implementation is tracked by the dedicated live Adobe API readiness pass and remains infrastructure validation only.",
     }
 
 

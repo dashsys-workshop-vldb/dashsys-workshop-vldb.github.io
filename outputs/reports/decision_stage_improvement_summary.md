@@ -5,4 +5,4 @@
 - Best score reached: `0.6521`
 - Current decision: `candidate_not_viable_after_feedback_loops`
 - Packaged runtime changed: `False`
-- Next best candidate: Answer-only rewrite or dry-run wording/API optional skip, because workflow audit often marks answer_shape_weak or unnecessary_dry_run_api while SQL/API evidence is already present.
+- Next best candidate: Live Adobe API readiness / response parser / EvidenceBus API evidence pipeline, because future production behavior should preserve API_REQUIRED live evidence instead of optimizing mainly for missing-credential dry-run artifacts. Answer-only rewrite remains the secondary candidate.

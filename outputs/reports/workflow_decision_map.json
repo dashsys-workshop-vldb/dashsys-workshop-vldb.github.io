@@ -239,10 +239,11 @@
     {
       "confidence_or_score": "plan rationale evidence policy label",
       "decision_made": "API_REQUIRED, API_OPTIONAL, API_SKIP.",
-      "diagnostic_question": "Are optional dry-run API calls helping or hurting answer score?",
-      "downstream_effect": "can add API calls and dry-run caveats",
+      "diagnostic_question": "Will API_REQUIRED/API_OPTIONAL calls produce useful live evidence when Adobe credentials are available, while dry-run remains an honest fallback?",
+      "downstream_effect": "can add live API evidence in production or dry-run fallback labels locally",
       "extended_questions": [
-        "When SQL fully answers, does dry-run API hurt answer score?"
+        "Which queries truly need live API?",
+        "Does dry-run fallback remain honest without weakening API_REQUIRED live behavior?"
       ],
       "improvement_mode": "isolated_only",
       "input_signals_used": [
@@ -251,12 +252,12 @@
         "credential/dry-run state"
       ],
       "known_failure_examples": [
-        "SQL fully answers but answer emphasizes unavailable API"
+        "API-required families are limited by missing live credentials during local evaluation"
       ],
       "name": "Evidence policy",
-      "possible_improvement": "isolated dry-run skip/wording variants when SQL answer is complete",
+      "possible_improvement": "harden live API readiness, response parsing, and EvidenceBus API evidence flow before optimizing dry-run fallback wording",
       "rejected_alternatives_if_available": "API optional vs skipped not always logged as alternative",
-      "safety_risk": "skipping truly required API would lose evidence",
+      "safety_risk": "skipping truly required API would lose future live evidence",
       "stage_id": 11
     },
     {
@@ -274,10 +275,10 @@
         "optimizer actions"
       ],
       "known_failure_examples": [
-        "dry-run calls add cost without evidence"
+        "dry-run calls add cost without evidence, but live calls may be needed later"
       ],
       "name": "Tool-call budget",
-      "possible_improvement": "penalize optional dry-run when SQL evidence is complete",
+      "possible_improvement": "track API_REQUIRED vs API_OPTIONAL and live-readiness before changing budgets",
       "rejected_alternatives_if_available": "deduped/optimized plan actions",
       "safety_risk": "over-pruning useful evidence",
       "stage_id": 12
@@ -346,7 +347,7 @@
         "dry-run API unavailable under missing credentials"
       ],
       "name": "Execution",
-      "possible_improvement": "answer wording improvements for dry-run limitations",
+      "possible_improvement": "live API response parser and EvidenceBus readiness; dry-run wording remains fallback polish",
       "rejected_alternatives_if_available": "not applicable because exactly one plan executes",
       "safety_risk": "fabricated live API evidence is prohibited",
       "stage_id": 15

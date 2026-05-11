@@ -1,0 +1,231 @@
+#!/usr/bin/env python
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+import time
+from pathlib import Path
+from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from dashagent.answer_slots import extract_answer_slots
+from dashagent.api_client import AdobeAPIClient
+from dashagent.api_response_parser import normalize_api_response
+from dashagent.config import Config
+from dashagent.endpoint_catalog import Endpoint, EndpointCatalog
+from dashagent.evidence_bus import EvidenceBus
+from dashagent.trajectory import redact_secrets
+from dashagent.validators import APIValidator
+
+
+OUTPUT_STEM = "live_api_readiness_smoke"
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Run safe GET-only Adobe API readiness smoke checks.")
+    parser.add_argument("--limit", type=int, default=5, help="Maximum catalog-approved GET endpoints to smoke when credentials are present.")
+    args = parser.parse_args()
+    config = Config.from_env(ROOT)
+    payload = run_live_api_readiness_smoke(config, limit=args.limit)
+    print(json.dumps({"status": payload["status"], "report": str(config.outputs_dir / "reports" / f"{OUTPUT_STEM}.json")}, indent=2, sort_keys=True))
+    return 0
+
+
+def run_live_api_readiness_smoke(config: Config | None = None, *, limit: int = 5) -> dict[str, Any]:
+    config = config or Config.from_env(ROOT)
+    reports_dir = config.outputs_dir / "reports"
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    client = AdobeAPIClient(config)
+    catalog = EndpointCatalog(config)
+    validator = APIValidator(catalog)
+
+    if client.dry_run:
+        payload = skipped_live_report(config, client)
+        _write_json_md(reports_dir / OUTPUT_STEM, payload, render_smoke(payload))
+        return payload
+
+    endpoints = [endpoint for endpoint in catalog.endpoints if endpoint_is_safe_get_smoke(endpoint)][: max(0, limit)]
+    rows = []
+    for endpoint in endpoints:
+        validation = validator.validate(endpoint.method, endpoint.path, endpoint.common_params, {})
+        if not validation.ok:
+            rows.append(
+                {
+                    "endpoint_id": endpoint.id,
+                    "method": endpoint.method,
+                    "path": endpoint.path,
+                    "attempted": False,
+                    "validation": validation.to_dict(),
+                    "error": "validation_failed",
+                }
+            )
+            continue
+        result = client.call_api(endpoint.method, endpoint.path, endpoint.common_params, {})
+        evidence_status = evidence_pipeline_status(endpoint, result)
+        rows.append(
+            {
+                "endpoint_id": endpoint.id,
+                "method": endpoint.method,
+                "path": endpoint.path,
+                "attempted": True,
+                "validation": validation.to_dict(),
+                "status_code": result.get("status_code"),
+                "ok": result.get("ok"),
+                "dry_run": result.get("dry_run"),
+                "response_parser_status": evidence_status["response_parser_status"],
+                "evidencebus_forwarding_status": evidence_status["evidencebus_forwarding_status"],
+                "answer_synthesis_status": evidence_status["answer_synthesis_status"],
+                "error": result.get("error"),
+            }
+        )
+        time.sleep(0.2)
+
+    payload = {
+        "report_type": OUTPUT_STEM,
+        "status": "complete",
+        "infrastructure_validation_only": True,
+        "official_score_claim": False,
+        "credentials_present": True,
+        "live_mode_attempted": True,
+        "dry_run_fallback_verified": False,
+        "endpoints_tested": rows,
+        "success_count": sum(1 for row in rows if row.get("ok") is True),
+        "failure_count": sum(1 for row in rows if row.get("ok") is False),
+        "auth_failure_count": sum(1 for row in rows if row.get("status_code") in {401, 403}),
+        "rate_limit_count": sum(1 for row in rows if row.get("status_code") == 429),
+        "response_parser_status": _aggregate_status(rows, "response_parser_status"),
+        "evidencebus_forwarding_status": _aggregate_status(rows, "evidencebus_forwarding_status"),
+        "answer_synthesis_status": _aggregate_status(rows, "answer_synthesis_status"),
+        "residual_risk": "GET smoke checks verify connectivity and parsing only; they do not claim official strict-score improvement.",
+        "protected_outputs_not_written": protected_output_paths(),
+    }
+    payload = redact_secrets(payload)
+    _write_json_md(reports_dir / OUTPUT_STEM, payload, render_smoke(payload))
+    return payload
+
+
+def skipped_live_report(config: Config, client: AdobeAPIClient) -> dict[str, Any]:
+    dry_run_result = client.call_api("GET", "/ajo/journey", {"limit": 1}, {})
+    parsed_sample = normalize_api_response(
+        {"items": [{"id": "journey-1", "name": "Sample Journey", "status": "live"}], "total": 1},
+        ok=True,
+        dry_run=False,
+        status_code=200,
+        endpoint="/ajo/journey",
+        endpoint_id="journey_list",
+    )
+    pipeline = evidence_pipeline_status(
+        Endpoint(id="journey_list", method="GET", path="/ajo/journey", use_when="sample"),
+        {"ok": True, "dry_run": False, "parsed_evidence": parsed_sample, "result_preview": parsed_sample},
+    )
+    return redact_secrets(
+        {
+            "report_type": OUTPUT_STEM,
+            "status": "skipped_live_credentials_missing",
+            "infrastructure_validation_only": True,
+            "official_score_claim": False,
+            "credentials_present": False,
+            "live_mode_attempted": False,
+            "dry_run_fallback_verified": bool(dry_run_result.get("dry_run")),
+            "missing_env_var_groups": [
+                "ADOBE_ACCESS_TOKEN or ACCESS_TOKEN",
+                "ADOBE_API_KEY or CLIENT_ID",
+                "ADOBE_ORG_ID or IMS_ORG",
+                "ADOBE_SANDBOX_NAME or SANDBOX",
+            ],
+            "endpoints_tested": [],
+            "success_count": 0,
+            "failure_count": 0,
+            "auth_failure_count": 0,
+            "rate_limit_count": 0,
+            "response_parser_status": pipeline["response_parser_status"],
+            "evidencebus_forwarding_status": pipeline["evidencebus_forwarding_status"],
+            "answer_synthesis_status": pipeline["answer_synthesis_status"],
+            "dry_run_result": dry_run_result,
+            "residual_risk": "Live connectivity, rate limits, and real payload shapes remain unverified until Adobe credentials are available.",
+            "protected_outputs_not_written": protected_output_paths(),
+        }
+    )
+
+
+def endpoint_is_safe_get_smoke(endpoint: Endpoint) -> bool:
+    return endpoint.method == "GET" and not endpoint.path_params and "{" not in endpoint.path and "}" not in endpoint.path
+
+
+def evidence_pipeline_status(endpoint: Endpoint, result: dict[str, Any]) -> dict[str, str]:
+    bus = EvidenceBus()
+    step = type("Step", (), {"family": endpoint.id})()
+    bus.observe_api(step, result)
+    slots = extract_answer_slots(
+        "live API readiness smoke",
+        [{"type": "api", "step": {"family": endpoint.id, "url": endpoint.path}, "payload": result}],
+    )
+    parsed = result.get("parsed_evidence") if isinstance(result, dict) else None
+    parser_status = "pass" if isinstance(parsed, dict) and parsed.get("evidence_state") in {"live_evidence", "live_empty_result", "api_error"} else "not_available"
+    if result.get("dry_run"):
+        parser_status = "dry_run_fallback"
+    return {
+        "response_parser_status": parser_status,
+        "evidencebus_forwarding_status": "pass" if bus.api_items or bus.names or bus.ids or bus.statuses or result.get("dry_run") else "no_live_items",
+        "answer_synthesis_status": "pass" if slots.api_items or slots.dry_run or slots.api_error or slots.api_item_count is not None else "no_live_items",
+    }
+
+
+def protected_output_paths() -> list[str]:
+    return [
+        "outputs/eval_results_strict.json",
+        "outputs/eval/",
+        "outputs/final_submission/",
+        "outputs/final_submission_manifest.json",
+    ]
+
+
+def render_smoke(payload: dict[str, Any]) -> str:
+    lines = [
+        "# Live API Readiness Smoke",
+        "",
+        "Infrastructure validation only; this report is not official strict-score evidence.",
+        "",
+        f"- Status: `{payload['status']}`",
+        f"- Credentials present: `{payload['credentials_present']}`",
+        f"- Live mode attempted: `{payload['live_mode_attempted']}`",
+        f"- Dry-run fallback verified: `{payload['dry_run_fallback_verified']}`",
+        f"- Success count: `{payload['success_count']}`",
+        f"- Failure count: `{payload['failure_count']}`",
+        f"- Auth failures: `{payload['auth_failure_count']}`",
+        f"- Rate limits: `{payload['rate_limit_count']}`",
+        f"- Response parser status: `{payload['response_parser_status']}`",
+        f"- EvidenceBus forwarding status: `{payload['evidencebus_forwarding_status']}`",
+        f"- Answer synthesis status: `{payload['answer_synthesis_status']}`",
+        f"- Residual risk: {payload['residual_risk']}",
+        "",
+        "## Endpoints Tested",
+        "",
+    ]
+    for row in payload.get("endpoints_tested", []):
+        lines.append(
+            f"- `{row.get('endpoint_id')}` {row.get('method')} `{row.get('path')}` "
+            f"ok=`{row.get('ok')}` status=`{row.get('status_code')}` parser=`{row.get('response_parser_status')}`"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def _aggregate_status(rows: list[dict[str, Any]], key: str) -> str:
+    if not rows:
+        return "not_run"
+    if any(row.get(key) == "pass" for row in rows):
+        return "pass"
+    return rows[0].get(key) or "not_available"
+
+
+def _write_json_md(stem: Path, payload: dict[str, Any], markdown: str) -> None:
+    stem.with_suffix(".json").write_text(json.dumps(redact_secrets(payload), indent=2, sort_keys=True, default=str), encoding="utf-8")
+    stem.with_suffix(".md").write_text(markdown, encoding="utf-8")
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -6,6 +6,7 @@
 - 0.75 target reached: `False`
 - Answer-quality bottleneck: `True`
 - Dry-run API limitation: `True`
+- Live Adobe API readiness: `warning`; infrastructure validation only: `True`
 - Supportable rewrite status: `safe_for_autonomous_packaged_trial`
 - Endpoint tie-break status: `keep_shadow_only`
 - AST canary status: `keep_shadow_only`
@@ -16,6 +17,6 @@
 ## Why Changes Remain Shadow-Only
 
 - The 0.70 and 0.75 targets were not reached safely.
-- High-potential answer rewrites remain constrained by dry-run API payload unavailability.
+- Live Adobe API readiness is now the primary API-path infrastructure target; dry-run wording remains fallback polish.
 - Endpoint/schema and AST changes are report-only or shadow-only unless strict gates improve.
 - The LLM semantic routing helper is default-off and remains shadow-only unless a later strict/safety gate promotes it.

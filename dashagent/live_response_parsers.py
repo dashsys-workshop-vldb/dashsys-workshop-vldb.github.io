@@ -4,12 +4,54 @@ from typing import Any
 
 
 def normalize_api_evidence(family: str, payload: dict[str, Any]) -> dict[str, Any]:
+    parsed = payload.get("parsed_evidence")
+    if isinstance(parsed, dict):
+        return evidence_from_structured_parser(parsed)
     raw = payload.get("result_preview")
     if payload.get("dry_run"):
         return {"items": [], "count": 0, "important_fields": {}, "empty": True, "errors": ["dry_run"]}
     if not payload.get("ok"):
         return {"items": [], "count": 0, "important_fields": {}, "empty": True, "errors": [payload.get("error") or "api_error"]}
     return parse_family_response(family, raw)
+
+
+def evidence_from_structured_parser(parsed: dict[str, Any]) -> dict[str, Any]:
+    if parsed.get("dry_run"):
+        return {"items": [], "count": 0, "important_fields": {}, "empty": True, "errors": ["dry_run"]}
+    if not parsed.get("ok"):
+        errors = parsed.get("errors") or ["api_error"]
+        return {"items": [], "count": 0, "important_fields": {}, "empty": True, "errors": errors}
+
+    items = [item for item in parsed.get("items", []) if isinstance(item, dict)]
+    counts = parsed.get("counts") if isinstance(parsed.get("counts"), dict) else {}
+    count = extract_structured_count(counts, items)
+    important = first_important_fields(items[0]) if items else {}
+    for key in ["ids", "names", "statuses"]:
+        value = parsed.get(key)
+        if isinstance(value, list) and value:
+            important[key] = value[:5]
+    timestamps = parsed.get("timestamps")
+    if isinstance(timestamps, dict) and timestamps:
+        important["timestamps"] = dict(list(timestamps.items())[:5])
+    return {
+        "items": items,
+        "count": count,
+        "important_fields": important,
+        "empty": parsed.get("evidence_state") == "live_empty_result" or (not items and count == 0),
+        "errors": parsed.get("errors") or [],
+    }
+
+
+def extract_structured_count(counts: dict[str, Any], items: list[dict[str, Any]]) -> int:
+    for key in ["total", "totalCount", "total_count", "count", "size", "items"]:
+        value = counts.get(key)
+        if isinstance(value, int):
+            return value
+        if isinstance(value, float):
+            return int(value)
+        if isinstance(value, str) and value.isdigit():
+            return int(value)
+    return len(items)
 
 
 def parse_family_response(family: str, raw: Any) -> dict[str, Any]:
