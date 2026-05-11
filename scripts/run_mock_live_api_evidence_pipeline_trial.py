@@ -132,6 +132,11 @@ def _run_fixture_case(endpoint: Endpoint, case_name: str, fixture: Path, trial_r
         assert answer_slot_source == "live_api"
         assert supported_field is True
         assert unsupported_count == 0
+    if case_name == "empty":
+        assert answer_slot_source == "live_api"
+        assert parsed.get("evidence_state") == "live_empty"
+        assert "credentials are unavailable" not in answer.lower()
+        assert "no matching" in answer.lower()
 
     output_dir = trial_root / endpoint.id / case_name
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -148,7 +153,17 @@ def _run_fixture_case(endpoint: Endpoint, case_name: str, fixture: Path, trial_r
             "parser_mode": parsed.get("parser_mode"),
             "evidence_state": parsed.get("evidence_state"),
             "api_evidence_present": api_evidence_present,
-            "evidencebus_forwarded": bool(bus.api_items or bus.api_ids or bus.api_names or bus.api_statuses or bus.api_errors),
+            "evidencebus_forwarded": bool(
+                bus.api_items
+                or bus.api_ids
+                or bus.api_names
+                or bus.api_statuses
+                or bus.api_errors
+                or bus.api_evidence_states
+            ),
+            "evidencebus_payload_forwarded": bool(bus.api_items or bus.api_ids or bus.api_names or bus.api_statuses or bus.api_errors),
+            "evidencebus_state_only_forwarded": bool(bus.api_evidence_states)
+            and not bool(bus.api_items or bus.api_ids or bus.api_names or bus.api_statuses or bus.api_errors),
             "answer_slot_success": bool(slots.answer_slot_source),
             "answer_slot_source": answer_slot_source,
             "final_answer_contains_api_supported_field": supported_field,
@@ -224,6 +239,19 @@ def _build_payload(trial_root: Path, rows: list[dict[str, Any]], discovery_rows:
         "endpoint_families_covered": sorted({row["endpoint_family"] for row in rows}),
         "parser_success_count": sum(1 for row in rows if row.get("parser_success")),
         "evidencebus_forwarding_count": sum(1 for row in rows if row.get("evidencebus_forwarded")),
+        "evidencebus_payload_forwarding_count": sum(1 for row in rows if row.get("evidencebus_payload_forwarded")),
+        "evidencebus_state_only_forwarding_count": sum(1 for row in rows if row.get("evidencebus_state_only_forwarded")),
+        "evidencebus_non_payload_forwarding_explanation": "State-only forwarding is expected for live-empty cases: EvidenceBus records evidence_state/count/pagination but has no item/name/id payload to forward.",
+        "evidencebus_state_only_examples": [
+            {
+                "query_id": row["query_id"],
+                "case": row.get("case"),
+                "evidence_state": row.get("evidence_state"),
+                "evidence_bus": row.get("evidence_bus"),
+            }
+            for row in rows
+            if row.get("evidencebus_state_only_forwarded")
+        ][:5],
         "answer_slot_success_count": sum(1 for row in rows if row.get("answer_slot_success")),
         "answer_used_api_evidence_count": sum(1 for row in rows if row.get("final_answer_contains_api_supported_field")),
         "unsupported_api_claim_count": sum(int(row.get("unsupported_api_claim_count") or 0) for row in rows),
@@ -271,6 +299,8 @@ def _render(payload: dict[str, Any]) -> str:
         f"- Endpoint families covered: `{len(payload['endpoint_families_covered'])}`",
         f"- Parser success count: `{payload['parser_success_count']}`",
         f"- EvidenceBus forwarding count: `{payload['evidencebus_forwarding_count']}`",
+        f"- EvidenceBus payload forwarding count: `{payload['evidencebus_payload_forwarding_count']}`",
+        f"- EvidenceBus state-only forwarding count: `{payload['evidencebus_state_only_forwarding_count']}`",
         f"- Answer slot success count: `{payload['answer_slot_success_count']}`",
         f"- Answer used API evidence count: `{payload['answer_used_api_evidence_count']}`",
         f"- Unsupported API claim count: `{payload['unsupported_api_claim_count']}`",
@@ -279,6 +309,7 @@ def _render(payload: dict[str, Any]) -> str:
         f"- Malformed response handling count: `{payload['malformed_response_handling_count']}`",
         f"- Discovery-chain simulated count: `{payload['discovery_chain_simulated_count']}`",
         f"- Recommendation: `{payload['recommendation']}`",
+        f"- EvidenceBus note: {payload['evidencebus_non_payload_forwarding_explanation']}",
         "",
         "## Endpoint Families Covered",
         "",

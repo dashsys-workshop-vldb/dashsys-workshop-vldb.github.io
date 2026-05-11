@@ -106,6 +106,8 @@ def safe_rewrite(query: str, slots: AnswerSlots, intent: AnswerIntent, family: s
         row_answer = answer_from_rows(slots, intent)
         if row_answer:
             return row_answer
+    if slots.answer_slot_source == "live_api" and slots.api_evidence_state in {"live_empty", "live_empty_result"}:
+        return live_empty_answer(slots, intent, family)
     if slots.api_items:
         api_answer = answer_from_api_items(slots, intent)
         if api_answer:
@@ -153,6 +155,16 @@ def answer_from_api_items(slots: AnswerSlots, intent: AnswerIntent) -> str | Non
     return f"Live API evidence returned {count} item(s)."
 
 
+def live_empty_answer(slots: AnswerSlots, intent: AnswerIntent, family: str) -> str:
+    noun = family_noun(family)
+    plural = pluralize(noun)
+    if intent == AnswerIntent.COUNT:
+        return f"Live API returned 0 matching {plural}."
+    if intent == AnswerIntent.YES_NO:
+        return f"No. Live API returned no matching {plural}."
+    return f"Live API returned no matching {plural}."
+
+
 def unavailable_answer(query: str, slots: AnswerSlots, intent: AnswerIntent, family: str) -> str:
     noun = family_noun(family)
     live_note = "Live API verification was not executed because Adobe credentials are unavailable."
@@ -178,8 +190,29 @@ def unavailable_answer(query: str, slots: AnswerSlots, intent: AnswerIntent, fam
 def family_noun(family: str) -> str:
     mapping = {
         "observability_metrics": "observability metric",
+        "journey_list": "journey",
+        "journey_default": "journey",
+        "journey_by_name": "journey",
+        "journey_inactive": "journey",
+        "ups_audiences": "audience",
         "segment_definitions": "segment definition",
         "segment_jobs": "segment evaluation job",
+        "flowservice_flows": "flow",
+        "flowservice_runs": "flow run",
+        "catalog_datasets": "dataset",
+        "schema_registry_schemas": "schema",
+        "schema_registry_schema": "schema",
+        "schemas_short": "schema",
+        "unified_tags": "tag",
+        "unified_tag_categories": "tag category",
+        "unified_tag_detail": "tag",
+        "merge_policies": "merge policy",
+        "catalog_batches": "batch",
+        "catalog_batch_detail": "batch",
+        "export_batch_files": "batch file",
+        "export_batch_failed": "failed batch file",
+        "audit_events": "audit event",
+        "audit_events_short": "audit event",
         "tags": "tag",
         "batch": "batch",
         "merge_policy": "merge policy",
@@ -190,3 +223,13 @@ def family_noun(family: str) -> str:
         "failed_dataflow_runs": "failed dataflow run",
     }
     return mapping.get(family, family.replace("_", " "))
+
+
+def pluralize(noun: str) -> str:
+    if "/" in noun:
+        return noun
+    if noun.endswith("y") and not noun.endswith(("ay", "ey", "iy", "oy", "uy")):
+        return noun[:-1] + "ies"
+    if noun.endswith(("s", "x", "z", "ch", "sh")):
+        return noun + "es"
+    return noun + "s"

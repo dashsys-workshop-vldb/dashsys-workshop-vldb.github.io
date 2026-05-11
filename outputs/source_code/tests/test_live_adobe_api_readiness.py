@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 
 from dashagent.answer_slots import extract_answer_slots
+from dashagent.answer_intent import AnswerIntent
+from dashagent.answer_verifier import safe_rewrite
 from dashagent.api_discovery import plan_discovery_for_endpoint, resolve_discovery_chain
 from dashagent.api_client import AdobeAPIClient, AdobeCredentials
 from dashagent.api_response_parser import normalize_api_response
@@ -222,6 +224,9 @@ def test_dry_run_empty_and_api_error_stay_distinct_in_answer_slots():
     assert empty_slots.dry_run is False
     assert empty_slots.api_item_count == 0
     assert empty_slots.answer_slot_source == "live_api"
+    answer = safe_rewrite("list journeys", empty_slots, AnswerIntent.LIST, "journey_list")
+    assert answer == "Live API returned no matching journeys."
+    assert "credentials are unavailable" not in answer.lower()
     assert error_slots.api_error is True
     assert error_slots.answer_slot_source == "api_error"
 
@@ -308,8 +313,13 @@ def test_api_required_matrix_and_mock_live_trial_reports(tiny_project: Config):
     assert mock["infrastructure_validation_only"] is True
     assert mock["official_score_claim"] is False
     assert mock["parser_success_count"] > 0
+    assert mock["evidencebus_forwarding_count"] == mock["total_mocked_live_cases"]
+    assert mock["evidencebus_state_only_forwarding_count"] > 0
     assert mock["answer_slot_success_count"] > 0
     assert mock["unsupported_api_claim_count"] == 0
     assert mock["discovery_chain_simulated_count"] >= 0
+    empty = next(row for row in mock["rows"] if row["query_id"] == "journey_list_empty")
+    assert empty["final_answer"] == "Live API returned no matching journeys."
+    assert empty["evidencebus_state_only_forwarded"] is True
     assert not (tiny_project.outputs_dir / "eval_results_strict.json").exists()
     assert not (tiny_project.outputs_dir / "final_submission").exists()

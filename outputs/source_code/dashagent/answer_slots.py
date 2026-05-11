@@ -96,24 +96,20 @@ class AnswerSlots:
             "api_items",
         ]:
             value = getattr(self, name)
+            if name == "api_errors" and _only_synthetic_dry_run_errors(value):
+                continue
             if value not in (None, False, [], {}, set(), ""):
                 present.append(name)
         return present
 
     def compact(self) -> dict[str, Any]:
-        return {
+        payload = {
             "answer_family": self.answer_family,
             "slots_present": self.slots_present(),
             "sql_row_count": self.sql_row_count,
             "api_item_count": self.api_item_count,
             "dry_run": self.dry_run,
             "api_error": self.api_error,
-            "live_api_evidence_available": self.live_api_evidence_available,
-            "api_evidence_state": self.api_evidence_state,
-            "answer_slot_source": self.answer_slot_source,
-            "api_errors": self.api_errors[:3],
-            "api_pagination": self.api_pagination[:2],
-            "api_parser_modes": self.api_parser_modes[:3],
             "discrepancy": self.discrepancy,
             "entity_names": self.entity_names[:3],
             "entity_ids": self.entity_ids[:3],
@@ -122,6 +118,18 @@ class AnswerSlots:
             "timestamps": self.timestamps[:3],
             "metrics": self.metrics[:2],
         }
+        live_fields = {
+            "live_api_evidence_available": self.live_api_evidence_available,
+            "api_evidence_state": self.api_evidence_state,
+            "answer_slot_source": self.answer_slot_source,
+            "api_errors": [] if _only_synthetic_dry_run_errors(self.api_errors) else self.api_errors[:3],
+            "api_pagination": self.api_pagination[:2],
+            "api_parser_modes": self.api_parser_modes[:3],
+        }
+        for key, value in live_fields.items():
+            if value not in (None, False, [], {}, set(), ""):
+                payload[key] = value
+        return payload
 
 
 def extract_answer_slots(query: str, tool_results: list[dict[str, Any]]) -> AnswerSlots:
@@ -174,7 +182,6 @@ def extract_answer_slots(query: str, tool_results: list[dict[str, Any]]) -> Answ
                     slots.answer_slot_source = slots.answer_slot_source or str(parsed.get("evidence_state"))
             if payload.get("dry_run"):
                 slots.dry_run = True
-                slots.answer_slot_source = slots.answer_slot_source or "dry_run_unavailable"
             if not payload.get("ok") and not payload.get("dry_run"):
                 slots.api_error = True
                 slots.answer_slot_source = slots.answer_slot_source or "api_error"
@@ -218,6 +225,12 @@ def extract_answer_slots(query: str, tool_results: list[dict[str, Any]]) -> Answ
     slots.api_errors = dedupe(slots.api_errors)
     slots.api_parser_modes = dedupe(slots.api_parser_modes)
     return slots
+
+
+def _only_synthetic_dry_run_errors(value: Any) -> bool:
+    if not isinstance(value, list) or not value:
+        return False
+    return all(str(item) == "dry_run" for item in value)
 
 
 def add_query_evidence(slots: AnswerSlots, query: str) -> None:

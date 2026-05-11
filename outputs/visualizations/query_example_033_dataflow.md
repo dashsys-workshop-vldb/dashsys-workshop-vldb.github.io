@@ -10,7 +10,7 @@
 | Strict score | 0.6727 |
 | Correctness score | 0.6939 |
 | Answer / SQL / API score | 0.3878 / None / 1.0 |
-| Tools / tokens / runtime | 1 / 1040 / 0.013215124839916825 |
+| Tools / tokens / runtime | 1 / 1040 / 0.020640458911657333 |
 
 ## Dataflow Graph
 
@@ -51,8 +51,8 @@ flowchart LR
 | 16 | checkpoint_12_validation | validation | SQL/API safety validation | optimized_steps=1 item(s) | api_validation_status=1 item(s) | records whether planned SQL/API calls were safe to execute | yes | yes | yes |
 | 17 | checkpoint_13_tool_execution | execution | SQL/API tool execution | validated_step_count=1 | sql_calls_executed=0; api_calls_executed=1 | captures the actual SQL/API evidence gathered by the backend | yes | yes | no |
 | 18 | checkpoint_14_evidence_bus | evidence forwarding | operand forwarding / EvidenceBus | tool_result_count=1 | {} | forwards structured facts to API params and answer slots | yes | yes | no |
-| 19 | checkpoint_15_answer_slots | answer synthesis | structured answer slot extraction | tool_result_count=1 | answer_intent=WHEN; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); slots=8 field(s) | turns raw tool results into typed evidence fields | yes | yes | no |
-| 20 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=2; slots_present=5 item(s) | verifier_passed=True; rewrite_applied=False | checks final-answer claims against SQL/API evidence | yes | yes | no |
+| 19 | checkpoint_15_answer_slots | answer synthesis | structured answer slot extraction | tool_result_count=1 | answer_intent=WHEN; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); slots=9 field(s) | turns raw tool results into typed evidence fields | yes | yes | no |
+| 20 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=2; slots_present=7 item(s) | verifier_passed=True; rewrite_applied=False | checks final-answer claims against SQL/API evidence | yes | yes | no |
 | 21 | checkpoint_17_answer_reranking | answer selection | deterministic answer reranking | answer_family=observability_metrics | candidate_count=0; selected_candidate_type=base | selects the safest answer from same-evidence candidates | yes | yes | no |
 | 22 | checkpoint_18_final_answer | final response | concise grounded final response | verifier_passed=True | answer_length=202; final_answer=Values for timeseries.ingestion.dataset.recordsuccess.cou... | returns the final concise answer to the agent harness | yes | yes | no |
 | 23 | checkpoint_official_token_reduction | query understanding | unavailable | unavailable | unavailable | Checkpoint recorded query understanding progress. | no | no | no |
