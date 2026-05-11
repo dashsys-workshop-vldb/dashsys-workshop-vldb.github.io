@@ -1,230 +1,279 @@
 # DASHSys End-to-End System Data Flow
 
-Auto-generated system documentation. The HTML artifact is fully self-contained and is the primary browser view.
-
-## Flowchart
-
 ```mermaid
 flowchart LR
-  subgraph S0["Input and Guards"]
-    user_prompt["User Prompt input"]
-    runtime_config["Runtime config and preflight guards"]
+  subgraph S0["User Prompt Input"]
+    user_prompt["User Prompt"]
   end
-  subgraph S1["Routing and Analysis"]
+  subgraph S1["Runtime Config / Safety Preflight"]
+    config_env["Config / env"]
+    preflight["Safety preflight"]
+    tool_contract["Tool contract<br/>execute_sql / call_api"]
+  end
+  subgraph S2["Prompt Routing"]
     prompt_router["Prompt Routing"]
-    simple_gate["Simple prompt gate"]
-    normalization["Query normalization"]
-    tokens["Query token extraction"]
-    query_router["Deterministic QueryRouter"]
-    intent["Answer intent detection"]
+    simple_gate["Simple Prompt Gate"]
+    pipeline_decision{"Use data pipeline?"}
+  end
+  subgraph S3["Query Understanding"]
+    normalization["Query Normalization"]
+    tokens["Query Token Extraction"]
+    query_router["Deterministic<br/>QueryRouter"]
+    intent["Answer Intent"]
     analysis["QueryAnalysis"]
-  end
-  subgraph S2["Planning Context"]
-    metadata_context["Metadata/context selection"]
-    schema_index["Endpoint catalog and schema index"]
-    plan_generation["SQL_FIRST_API_VERIFY plan generation"]
-    evidence_policy{"Evidence policy"}
-  end
-  subgraph S3["SQL Evidence Path"]
-    sql_derivation["SQL derivation"]
-    sql_validation{"SQL validation passed?"}
-    sqlglot_ast["SQLGlot AST validation"]
-    execute_sql["execute_sql / DuckDB local snapshot"]
-    sql_result["SQL result"]
-    sql_evidence["SQL evidence normalization"]
-  end
-  subgraph S4["Adobe REST API Evidence Path"]
-    api_plan["Adobe API plan"]
-    api_validation{"API validation passed?"}
-    headers["Credential/header construction"]
-    credentials{"Adobe credentials present?"}
-    live_api["Live API mode"]
-    dry_run_decision{"dry_run fallback?"}
-    dry_run["Dry-run fallback mode"]
-    api_parser["API response parser"]
-    discovery["Discovery-chain readiness"]
-    parsed_api["Parsed API evidence"]
-  end
-  subgraph S5["Evidence and Answer"]
-    evidence_bus["EvidenceBus"]
-    answer_slots["Answer Slots"]
-    answer_synthesis["Answer Synthesis"]
-    answer_verify["Answer verification / reranking"]
-    final_answer["Final answer"]
-  end
-  subgraph S6["Packaging and Evaluation"]
-    trajectory["Trajectory Logging"]
-    final_submission["Final Submission packaging"]
-    strict_eval["Strict Eval"]
-    hidden_eval["Hidden-style eval"]
-    llm_baseline["LLM baseline eval"]
-  end
-  subgraph S7["Diagnostics and Reports"]
-    semantic_enabled{"semantic router feature enabled?"}
+    semantic_enabled{"Semantic router<br/>enabled?"}
     llm_client["SDK LLMClient"]
-    semantic_helper["LLM Semantic Routing Helper"]
-    semantic_validate{"Validate routing hint"}
-    semantic_promoted{"promoted or diagnostic-only?"}
-    workflow_audit["Workflow decision audit"]
-    live_readiness["Live Adobe API Readiness"]
-    mock_fixtures["Mock live API readiness diagnostics"]
-    mock_parser["Mock live parser + discovery simulation"]
-    evidence_reports["Evidence-Aware Answer Synthesis reports"]
-    rewrite_promoted{"answer-only rewrite promoted or keep_trial_only?"}
-    consolidated_index["Consolidated report index"]
+    semantic_helper["LLM Semantic<br/>Routing Helper"]
+    semantic_validation{"Hint validation"}
+    semantic_status["shadow / not promoted"]
   end
-  user_prompt --> runtime_config
-  runtime_config --> prompt_router
+  subgraph S4["Context Selection"]
+    schema_index["SchemaIndex"]
+    endpoint_catalog["EndpointCatalog"]
+    relevance["Relevance scoring"]
+    context_pack["Context packing"]
+  end
+  subgraph S5["Planning"]
+    planner["SQL_FIRST_API_VERIFY<br/>packaged strategy"]
+    evidence_policy{"Evidence policy"}
+    call_budget["Tool-call budget"]
+    plan_selection["Selected plan"]
+  end
+  subgraph S6["SQL Evidence Path"]
+    sql_template["SQL template /<br/>generic SQL"]
+    sql_validation{"SQL validation<br/>passed?"}
+    sqlglot["SQLGlot AST<br/>validation"]
+    duckdb["execute_sql<br/>DuckDB snapshot"]
+    sql_result["SQL result"]
+    sql_evidence["SQL evidence"]
+  end
+  subgraph S7["Adobe API Evidence Path"]
+    api_plan["API plan"]
+    api_catalog["Endpoint catalog<br/>validation"]
+    api_validation{"API validation<br/>passed?"}
+    headers["Credential/header<br/>construction"]
+    call_api["call_api(method,<br/>url, params, headers)"]
+  end
+  subgraph S8["Live API / Dry-run Split"]
+    credentials{"Adobe credentials<br/>present?"}
+    live_api["Live API mode<br/>live readiness: warning"]
+    dry_run["Dry-run fallback<br/>no credentials"]
+    api_parser["API response<br/>parser"]
+    evidence_state["evidence_state<br/>live_success / live_empty<br/>api_error / malformed<br/>dry_run_unavailable"]
+    parsed_api["Parsed API<br/>evidence"]
+  end
+  subgraph S9["Mock Live API Readiness"]
+    fixtures["Synthetic fixtures"]
+    mock_parser["Mock live parser<br/>success: 126"]
+    discovery["Discovery-chain<br/>readiness<br/>chains: 5"]
+    mock_forward["EvidenceBus<br/>forwarding"]
+    mock_slots["Answer slot<br/>verification"]
+    diagnostic_only["diagnostic only"]
+  end
+  subgraph S10["EvidenceBus"]
+    evidence_bus["EvidenceBus"]
+    evidence_fields["ids / names / counts<br/>statuses / timestamps"]
+    evidence_sources["SQL / live API /<br/>dry-run state"]
+  end
+  subgraph S11["Answer Slots"]
+    answer_slots["Answer Slots"]
+    slot_shape["COUNT / LIST<br/>STATUS / WHEN<br/>YES_NO"]
+    slot_sources["source tracking"]
+  end
+  subgraph S12["Answer Synthesis"]
+    answer_synthesis["Evidence-Aware<br/>Answer Synthesis"]
+    templates["Evidence-aware<br/>templates"]
+    faithfulness{"Claim Faithfulness<br/>Check"}
+    rewrite_trial["Answer-only<br/>rewrite trial<br/>keep_trial_only"]
+    rewrite_status["not promoted"]
+    final_answer["Final Answer"]
+  end
+  subgraph S13["Trajectory Logging"]
+    trajectory["Trajectory Logging"]
+    metadata_json["metadata.json"]
+    filled_prompt["filled_system_prompt.txt"]
+    trajectory_json["trajectory.json"]
+  end
+  subgraph S14["Evaluation"]
+    strict_eval["Strict Eval<br/>score: 0.6553"]
+    hidden_eval["Hidden-style Eval<br/>48/48"]
+    llm_baseline["LLM baseline eval<br/>diagnostic only"]
+    readiness["check_submission_ready<br/>ready: True"]
+  end
+  subgraph S15["Final Submission / Reports"]
+    final_package["final_submission<br/>packaging"]
+    source_zip["source_code.zip"]
+    workshop_audit["Workshop audit<br/>pass"]
+    report_index["Consolidated<br/>report index"]
+  end
+  user_prompt --> config_env
+  config_env --> preflight
+  preflight --> tool_contract
+  tool_contract --> prompt_router
   prompt_router --> simple_gate
-  simple_gate -->|USE_DATA_PIPELINE| normalization
+  simple_gate --> pipeline_decision
+  pipeline_decision -->|yes| normalization
   normalization --> tokens
   tokens --> query_router
   query_router --> intent
   intent --> analysis
-  analysis --> metadata_context
-  metadata_context --> schema_index
-  schema_index --> plan_generation
-  plan_generation --> evidence_policy
-  evidence_policy -->|SQL path| sql_derivation
-  sql_derivation --> sql_validation
-  sql_validation -->|yes| sqlglot_ast
-  sqlglot_ast --> execute_sql
-  execute_sql --> sql_result
+  analysis --> schema_index
+  analysis --> endpoint_catalog
+  schema_index --> relevance
+  endpoint_catalog --> relevance
+  relevance --> context_pack
+  context_pack --> planner
+  planner --> evidence_policy
+  evidence_policy --> call_budget
+  call_budget --> plan_selection
+  plan_selection -->|SQL branch| sql_template
+  sql_template --> sql_validation
+  sql_validation -->|yes| sqlglot
+  sqlglot --> duckdb
+  duckdb --> sql_result
   sql_result --> sql_evidence
   sql_evidence --> evidence_bus
-  evidence_policy -->|API path| api_plan
-  api_plan --> api_validation
+  plan_selection -->|API branch| api_plan
+  api_plan --> api_catalog
+  api_catalog --> api_validation
   api_validation -->|yes| headers
-  headers --> credentials
+  headers --> call_api
+  call_api --> credentials
   credentials -->|yes| live_api
-  credentials -->|no| dry_run_decision
-  dry_run_decision -->|true| dry_run
+  credentials -->|no| dry_run
   live_api --> api_parser
-  dry_run -->|dry_run=true| api_parser
-  api_parser --> discovery
-  discovery --> parsed_api
+  dry_run --> api_parser
+  api_parser --> evidence_state
+  evidence_state --> parsed_api
   parsed_api --> evidence_bus
-  evidence_bus --> answer_slots
-  answer_slots --> answer_synthesis
-  answer_synthesis --> answer_verify
-  answer_verify --> final_answer
+  evidence_bus --> evidence_fields
+  evidence_fields --> evidence_sources
+  evidence_sources --> answer_slots
+  answer_slots --> slot_shape
+  slot_shape --> slot_sources
+  slot_sources --> answer_synthesis
+  answer_synthesis --> templates
+  templates --> faithfulness
+  faithfulness -->|supported| final_answer
   final_answer --> trajectory
-  trajectory -->|packaged| final_submission
-  trajectory --> strict_eval
-  trajectory --> hidden_eval
-  trajectory -->|baseline| llm_baseline
-  analysis -.->|low confidence?| semantic_enabled
-  semantic_enabled -.->|if enabled| llm_client
+  trajectory --> metadata_json
+  trajectory --> filled_prompt
+  trajectory --> trajectory_json
+  trajectory_json --> final_package
+  final_package --> source_zip
+  final_package --> strict_eval
+  final_package --> hidden_eval
+  final_package --> readiness
+  strict_eval -->|metrics| report_index
+  hidden_eval -->|robustness| report_index
+  readiness -->|ready| report_index
+  workshop_audit -->|compliance| report_index
+  analysis -.->|low confidence| semantic_enabled
+  semantic_enabled -.->|feature flag| llm_client
   llm_client -.->|SDK only| semantic_helper
-  semantic_helper -.->|JSON hint| semantic_validate
-  semantic_validate -.->|valid?| semantic_promoted
-  semantic_promoted -.->|shadow/diagnostic only| workflow_audit
-  trajectory -.->|report-only| workflow_audit
-  api_plan -.->|readiness audit| live_readiness
-  mock_fixtures -.->|fixture responses| mock_parser
-  mock_parser -.->|diagnostic forwarding| evidence_bus
-  mock_parser -.->|readiness report| live_readiness
-  answer_synthesis -.->|answer-only trial| evidence_reports
-  evidence_reports -.->|strict gate| rewrite_promoted
-  rewrite_promoted -.->|keep_trial_only| consolidated_index
-  strict_eval -->|metrics| consolidated_index
-  hidden_eval -->|robustness| consolidated_index
-  llm_baseline -.->|baseline| consolidated_index
-  live_readiness -.->|reports| consolidated_index
-  workflow_audit -.->|reports| consolidated_index
-  final_submission -->|readiness| consolidated_index
-  classDef analysis fill:#f5e8ff,stroke:#243044,color:#111827,stroke-width:1px;
+  semantic_helper -.->|JSON hint| semantic_validation
+  semantic_validation -.->|valid| semantic_status
+  semantic_status -.->|shadow only| relevance
+  fixtures -.->|fixture data| mock_parser
+  mock_parser -.->|mock| discovery
+  discovery -.->|GET-only| mock_forward
+  mock_forward -.->|parsed evidence| mock_slots
+  mock_slots -.->|verified| diagnostic_only
+  diagnostic_only -.->|readiness report| report_index
+  faithfulness -.->|answer-only| rewrite_trial
+  rewrite_trial -.->|strict gate| rewrite_status
+  rewrite_status -.->|trial report| report_index
+  trajectory -.->|baseline| llm_baseline
+  llm_baseline -.->|diagnostic| report_index
   classDef answer fill:#d1fae5,stroke:#243044,color:#111827,stroke-width:1px;
   classDef api fill:#ffedd5,stroke:#243044,color:#111827,stroke-width:1px;
   classDef config fill:#e0f2fe,stroke:#243044,color:#111827,stroke-width:1px;
+  classDef context fill:#fef3c7,stroke:#243044,color:#111827,stroke-width:1px;
   classDef decision fill:#fee2e2,stroke:#243044,color:#111827,stroke-width:1px;
   classDef eval fill:#dbeafe,stroke:#243044,color:#111827,stroke-width:1px;
   classDef evidence fill:#ccfbf1,stroke:#243044,color:#111827,stroke-width:1px;
+  classDef final fill:#ddd6fe,stroke:#243044,color:#111827,stroke-width:1px;
   classDef input fill:#dbeafe,stroke:#243044,color:#111827,stroke-width:1px;
-  classDef llm fill:#f3e8ff,stroke:#243044,color:#111827,stroke-width:1px;
-  classDef packaging fill:#e0e7ff,stroke:#243044,color:#111827,stroke-width:1px;
-  classDef planning fill:#fef3c7,stroke:#243044,color:#111827,stroke-width:1px;
-  classDef report fill:#f1f5f9,stroke:#243044,color:#111827,stroke-width:1px;
+  classDef live fill:#fed7aa,stroke:#243044,color:#111827,stroke-width:1px;
+  classDef muted fill:#f1f5f9,stroke:#243044,color:#111827,stroke-width:1px;
+  classDef planning fill:#fde68a,stroke:#243044,color:#111827,stroke-width:1px;
   classDef routing fill:#ede9fe,stroke:#243044,color:#111827,stroke-width:1px;
+  classDef slots fill:#cffafe,stroke:#243044,color:#111827,stroke-width:1px;
   classDef sql fill:#dcfce7,stroke:#243044,color:#111827,stroke-width:1px;
-  classDef trial fill:#fef9c3,stroke:#243044,color:#111827,stroke-width:1px;
+  classDef trajectory fill:#e0e7ff,stroke:#243044,color:#111827,stroke-width:1px;
+  classDef understanding fill:#f5e8ff,stroke:#243044,color:#111827,stroke-width:1px;
   class user_prompt input;
-  class runtime_config config;
+  class config_env config;
+  class preflight config;
+  class tool_contract config;
   class prompt_router routing;
   class simple_gate routing;
-  class normalization routing;
-  class tokens routing;
-  class query_router routing;
-  class intent routing;
-  class analysis analysis;
+  class pipeline_decision decision;
+  class normalization understanding;
+  class tokens understanding;
+  class query_router understanding;
+  class intent understanding;
+  class analysis understanding;
   class semantic_enabled decision;
-  class llm_client llm;
-  class semantic_helper llm;
-  class semantic_validate decision;
-  class semantic_promoted decision;
-  class metadata_context planning;
-  class schema_index planning;
-  class plan_generation planning;
+  class llm_client muted;
+  class semantic_helper muted;
+  class semantic_validation decision;
+  class semantic_status muted;
+  class schema_index context;
+  class endpoint_catalog context;
+  class relevance context;
+  class context_pack context;
+  class planner planning;
   class evidence_policy decision;
-  class sql_derivation sql;
+  class call_budget planning;
+  class plan_selection planning;
+  class sql_template sql;
   class sql_validation decision;
-  class sqlglot_ast sql;
-  class execute_sql sql;
+  class sqlglot sql;
+  class duckdb sql;
   class sql_result sql;
   class sql_evidence sql;
   class api_plan api;
+  class api_catalog api;
   class api_validation decision;
   class headers api;
+  class call_api api;
   class credentials decision;
-  class live_api api;
-  class dry_run_decision decision;
-  class dry_run api;
-  class api_parser api;
-  class discovery api;
-  class parsed_api api;
+  class live_api live;
+  class dry_run live;
+  class api_parser live;
+  class evidence_state live;
+  class parsed_api live;
+  class fixtures muted;
+  class mock_parser muted;
+  class discovery muted;
+  class mock_forward muted;
+  class mock_slots muted;
+  class diagnostic_only muted;
   class evidence_bus evidence;
-  class answer_slots answer;
+  class evidence_fields evidence;
+  class evidence_sources evidence;
+  class answer_slots slots;
+  class slot_shape slots;
+  class slot_sources slots;
   class answer_synthesis answer;
-  class answer_verify answer;
+  class templates answer;
+  class faithfulness decision;
+  class rewrite_trial muted;
+  class rewrite_status muted;
   class final_answer answer;
-  class trajectory packaging;
-  class final_submission packaging;
+  class trajectory trajectory;
+  class metadata_json trajectory;
+  class filled_prompt trajectory;
+  class trajectory_json trajectory;
   class strict_eval eval;
   class hidden_eval eval;
-  class llm_baseline eval;
-  class workflow_audit report;
-  class live_readiness report;
-  class mock_fixtures trial;
-  class mock_parser trial;
-  class evidence_reports trial;
-  class rewrite_promoted decision;
-  class consolidated_index report;
+  class llm_baseline muted;
+  class readiness eval;
+  class final_package final;
+  class source_zip final;
+  class workshop_audit final;
+  class report_index final;
 ```
 
-## Current Status
-
-| Field | Value |
-| --- | --- |
-| preferred strategy | SQL_FIRST_API_VERIFY |
-| packaged strict score | 0.6553 |
-| best isolated score | 0.6558 |
-| hidden style | 48/48 |
-| final submission ready | True |
-| live adobe api readiness | warning |
-| mock parser success count | 126 |
-| mock discovery chains simulated | 5 |
-| evidence aware answer synthesis recommendation | keep_trial_only |
-| semantic router recommendation | do_not_promote |
-| runtime llm direct http hits | 0 |
-| workshop audit status | pass |
-
-## Artifact Links
-
-| Artifact | Path |
-| --- | --- |
-| HTML artifact | outputs/visualizations/end_to_end_system_dataflow.html |
-| JSON metadata | outputs/visualizations/end_to_end_system_dataflow.json |
-| Report index | outputs/reports/report_index.md |
-
-## Source Warnings
-
+HTML artifact: `outputs/visualizations/end_to_end_system_dataflow.html`

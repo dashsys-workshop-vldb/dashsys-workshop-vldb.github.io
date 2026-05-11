@@ -259,67 +259,94 @@ def test_end_to_end_system_dataflow_is_self_contained_and_complete():
         "QueryAnalysis",
         "SQL_FIRST_API_VERIFY",
         "SQL Evidence Path",
-        "Adobe REST API Evidence Path",
+        "Adobe API Evidence Path",
         "Live API mode",
         "Dry-run fallback",
         "API response parser",
         "Discovery-chain readiness",
+        "Mock Live API Readiness",
         "EvidenceBus",
         "Answer Slots",
         "Answer Synthesis",
+        "Claim Faithfulness",
         "Trajectory Logging",
         "Final Submission",
         "Strict Eval",
-        "Live Adobe API Readiness",
+        "Hidden-style Eval",
         "Evidence-Aware Answer Synthesis",
         "LLM Semantic Routing Helper",
+        "not promoted",
+        "keep_trial_only",
         "Adobe credentials present?",
         "SQL validation passed?",
         "API validation passed?",
-        "dry_run fallback?",
-        "semantic router feature enabled?",
-        "promoted or diagnostic-only?",
-        "answer-only rewrite promoted or keep_trial_only?",
     ]
     for text in required_text:
         assert text in html
+    assert html.count("<svg") == 1
+    assert "viewBox=" in html
+    assert 'class="flowchart-canvas"' in html
+    assert "overflow: auto" in html
+    for forbidden in [
+        "<table",
+        "Current System Status",
+        "Report Links",
+        "Source Artifacts",
+        "Artifact Links",
+        "Status Panel",
+        "report links panel",
+        'class="panel"',
+        "metadata table",
+    ]:
+        assert forbidden not in html
     assert "https://cdn" not in html
     assert "mermaid.min.js" not in html
     assert not re.search(r"<script\b[^>]*\bsrc=", html, flags=re.I)
     assert "```mermaid" in md
+    assert md.count("```mermaid") == 1
+    assert "| --- |" not in md
+    assert "## Current Status" not in md
+    assert "## Artifact Links" not in md
     for key in [
         "generated_at",
         "source_files",
         "missing_source_files",
         "stale_source_warnings",
-        "current_status",
         "mermaid_source",
+        "svg_source",
         "node_count",
         "edge_count",
         "major_sections",
     ]:
         assert key in data
-    assert data["node_count"] > 0
-    assert data["edge_count"] > 0
+    assert data["node_count"] > 30
+    assert data["edge_count"] > 30
     assert data["major_sections"] == [
-        "Input and Guards",
-        "Routing and Analysis",
-        "Planning Context",
+        "User Prompt Input",
+        "Runtime Config / Safety Preflight",
+        "Prompt Routing",
+        "Query Understanding",
+        "Context Selection",
+        "Planning",
         "SQL Evidence Path",
-        "Adobe REST API Evidence Path",
-        "Evidence and Answer",
-        "Packaging and Evaluation",
-        "Diagnostics and Reports",
+        "Adobe API Evidence Path",
+        "Live API / Dry-run Split",
+        "Mock Live API Readiness",
+        "EvidenceBus",
+        "Answer Slots",
+        "Answer Synthesis",
+        "Trajectory Logging",
+        "Evaluation",
+        "Final Submission / Reports",
     ]
     graph_text = html + "\n" + md + "\n" + data["mermaid_source"]
     for text in [
-        "packaged runtime path",
-        "shadow/diagnostic path",
-        "isolated trial path",
+        'class="edge diagnostic"',
+        'class="edge trial"',
         "Live API mode",
         "Dry-run fallback",
-        "Mock live API readiness diagnostics",
-        "Final Submission packaging",
+        "Mock Live API Readiness",
+        "final_submission packaging",
     ]:
         assert text in graph_text
 

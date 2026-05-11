@@ -425,9 +425,9 @@ python3 scripts/package_query_outputs.py
 python3 scripts/check_submission_ready.py
 ```
 
-## End-to-End System Data Flow Visualization
+## End-to-End System Data Flow Flowchart
 
-`outputs/visualizations/end_to_end_system_dataflow.html` is an auto-generated, fully self-contained browser flowchart of the current DASHSys runtime, SQL path, Adobe API path, EvidenceBus, answer synthesis, diagnostics, packaging, and evaluation surfaces. The companion Markdown and JSON artifacts live next to it under `outputs/visualizations/`.
+`outputs/visualizations/end_to_end_system_dataflow.html` is an auto-generated, fully self-contained single-flowchart artifact for the current DASHSys workflow. It is not a dashboard: the HTML is one large SVG diagram covering runtime, SQL path, Adobe API path, EvidenceBus, answer synthesis, diagnostics, packaging, and evaluation.
 
 Refresh it with:
 

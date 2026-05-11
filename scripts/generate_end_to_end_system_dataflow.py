@@ -20,7 +20,6 @@ from visualization_report_helpers import (  # noqa: E402
     load_json,
     mermaid_block,
     redact_text,
-    table,
     write_json,
     write_md,
 )
@@ -30,14 +29,9 @@ STALE_SOURCE_HOURS = 72
 OUTPUT_STEM = "end_to_end_system_dataflow"
 IMPORTANT_SOURCES = [
     "outputs/reports/report_index.json",
-    "outputs/reports/workflow_decision_map.json",
-    "outputs/reports/workflow_decision_audit.json",
     "outputs/reports/live_adobe_api_readiness_audit.json",
-    "outputs/reports/api_required_readiness_matrix.json",
     "outputs/reports/mock_live_api_evidence_pipeline_trial.json",
-    "outputs/reports/evidence_usage_audit.json",
     "outputs/reports/evidence_aware_answer_rewrite_trial.json",
-    "outputs/reports/feedback_loop_answer_synthesis_final.json",
     "outputs/reports/feedback_loop_semantic_router_final.json",
     "outputs/reports/sdk_usage_audit.json",
     "outputs/reports/workshop_requirement_audit.json",
@@ -66,133 +60,181 @@ class Edge:
 
 
 MAJOR_SECTIONS = [
-    "Input and Guards",
-    "Routing and Analysis",
-    "Planning Context",
+    "User Prompt Input",
+    "Runtime Config / Safety Preflight",
+    "Prompt Routing",
+    "Query Understanding",
+    "Context Selection",
+    "Planning",
     "SQL Evidence Path",
-    "Adobe REST API Evidence Path",
-    "Evidence and Answer",
-    "Packaging and Evaluation",
-    "Diagnostics and Reports",
+    "Adobe API Evidence Path",
+    "Live API / Dry-run Split",
+    "Mock Live API Readiness",
+    "EvidenceBus",
+    "Answer Slots",
+    "Answer Synthesis",
+    "Trajectory Logging",
+    "Evaluation",
+    "Final Submission / Reports",
 ]
 
 
-NODES = [
-    Node("user_prompt", "User Prompt input", "Input and Guards", "input", 0, 0),
-    Node("runtime_config", "Runtime config and preflight guards", "Input and Guards", "config", 0, 1),
-    Node("prompt_router", "Prompt Routing", "Routing and Analysis", "routing", 1, 0),
-    Node("simple_gate", "Simple prompt gate", "Routing and Analysis", "routing", 1, 1),
-    Node("normalization", "Query normalization", "Routing and Analysis", "routing", 1, 2),
-    Node("tokens", "Query token extraction", "Routing and Analysis", "routing", 1, 3),
-    Node("query_router", "Deterministic QueryRouter", "Routing and Analysis", "routing", 1, 4),
-    Node("intent", "Answer intent detection", "Routing and Analysis", "routing", 1, 5),
-    Node("analysis", "QueryAnalysis", "Routing and Analysis", "analysis", 1, 6),
-    Node("semantic_enabled", "semantic router feature enabled?", "Diagnostics and Reports", "decision", 2, 0),
-    Node("llm_client", "SDK LLMClient", "Diagnostics and Reports", "llm", 2, 1),
-    Node("semantic_helper", "LLM Semantic Routing Helper", "Diagnostics and Reports", "llm", 2, 2),
-    Node("semantic_validate", "Validate routing hint", "Diagnostics and Reports", "decision", 2, 3),
-    Node("semantic_promoted", "promoted or diagnostic-only?", "Diagnostics and Reports", "decision", 2, 4),
-    Node("metadata_context", "Metadata/context selection", "Planning Context", "planning", 3, 0),
-    Node("schema_index", "Endpoint catalog and schema index", "Planning Context", "planning", 3, 1),
-    Node("plan_generation", "SQL_FIRST_API_VERIFY plan generation", "Planning Context", "planning", 3, 2),
-    Node("evidence_policy", "Evidence policy", "Planning Context", "decision", 3, 3),
-    Node("sql_derivation", "SQL derivation", "SQL Evidence Path", "sql", 4, 0),
-    Node("sql_validation", "SQL validation passed?", "SQL Evidence Path", "decision", 4, 1),
-    Node("sqlglot_ast", "SQLGlot AST validation", "SQL Evidence Path", "sql", 4, 2),
-    Node("execute_sql", "execute_sql / DuckDB local snapshot", "SQL Evidence Path", "sql", 4, 3),
-    Node("sql_result", "SQL result", "SQL Evidence Path", "sql", 4, 4),
-    Node("sql_evidence", "SQL evidence normalization", "SQL Evidence Path", "sql", 4, 5),
-    Node("api_plan", "Adobe API plan", "Adobe REST API Evidence Path", "api", 5, 0),
-    Node("api_validation", "API validation passed?", "Adobe REST API Evidence Path", "decision", 5, 1),
-    Node("headers", "Credential/header construction", "Adobe REST API Evidence Path", "api", 5, 2),
-    Node("credentials", "Adobe credentials present?", "Adobe REST API Evidence Path", "decision", 5, 3),
-    Node("live_api", "Live API mode", "Adobe REST API Evidence Path", "api", 5, 4),
-    Node("dry_run_decision", "dry_run fallback?", "Adobe REST API Evidence Path", "decision", 5, 5),
-    Node("dry_run", "Dry-run fallback mode", "Adobe REST API Evidence Path", "api", 5, 6),
-    Node("api_parser", "API response parser", "Adobe REST API Evidence Path", "api", 5, 7),
-    Node("discovery", "Discovery-chain readiness", "Adobe REST API Evidence Path", "api", 5, 8),
-    Node("parsed_api", "Parsed API evidence", "Adobe REST API Evidence Path", "api", 5, 9),
-    Node("evidence_bus", "EvidenceBus", "Evidence and Answer", "evidence", 6, 2),
-    Node("answer_slots", "Answer Slots", "Evidence and Answer", "answer", 6, 3),
-    Node("answer_synthesis", "Answer Synthesis", "Evidence and Answer", "answer", 6, 4),
-    Node("answer_verify", "Answer verification / reranking", "Evidence and Answer", "answer", 6, 5),
-    Node("final_answer", "Final answer", "Evidence and Answer", "answer", 6, 6),
-    Node("trajectory", "Trajectory Logging", "Packaging and Evaluation", "packaging", 7, 2),
-    Node("final_submission", "Final Submission packaging", "Packaging and Evaluation", "packaging", 7, 3),
-    Node("strict_eval", "Strict Eval", "Packaging and Evaluation", "eval", 7, 4),
-    Node("hidden_eval", "Hidden-style eval", "Packaging and Evaluation", "eval", 7, 5),
-    Node("llm_baseline", "LLM baseline eval", "Packaging and Evaluation", "eval", 7, 6),
-    Node("workflow_audit", "Workflow decision audit", "Diagnostics and Reports", "report", 8, 0),
-    Node("live_readiness", "Live Adobe API Readiness", "Diagnostics and Reports", "report", 8, 1),
-    Node("mock_fixtures", "Mock live API readiness diagnostics", "Diagnostics and Reports", "trial", 8, 2),
-    Node("mock_parser", "Mock live parser + discovery simulation", "Diagnostics and Reports", "trial", 8, 3),
-    Node("evidence_reports", "Evidence-Aware Answer Synthesis reports", "Diagnostics and Reports", "trial", 8, 4),
-    Node("rewrite_promoted", "answer-only rewrite promoted or keep_trial_only?", "Diagnostics and Reports", "decision", 8, 5),
-    Node("consolidated_index", "Consolidated report index", "Diagnostics and Reports", "report", 8, 6),
+BASE_NODES = [
+    Node("user_prompt", "User Prompt", "User Prompt Input", "input", 0, 1),
+    Node("config_env", "Config / env", "Runtime Config / Safety Preflight", "config", 1, 0),
+    Node("preflight", "Safety preflight", "Runtime Config / Safety Preflight", "config", 1, 1),
+    Node("tool_contract", "Tool contract\nexecute_sql / call_api", "Runtime Config / Safety Preflight", "config", 1, 2),
+    Node("prompt_router", "Prompt Routing", "Prompt Routing", "routing", 2, 0),
+    Node("simple_gate", "Simple Prompt Gate", "Prompt Routing", "routing", 2, 1),
+    Node("pipeline_decision", "Use data pipeline?", "Prompt Routing", "decision", 2, 2),
+    Node("normalization", "Query Normalization", "Query Understanding", "understanding", 3, 0),
+    Node("tokens", "Query Token Extraction", "Query Understanding", "understanding", 3, 1),
+    Node("query_router", "Deterministic\nQueryRouter", "Query Understanding", "understanding", 3, 2),
+    Node("intent", "Answer Intent", "Query Understanding", "understanding", 3, 3),
+    Node("analysis", "QueryAnalysis", "Query Understanding", "understanding", 3, 4),
+    Node("semantic_enabled", "Semantic router\nenabled?", "Query Understanding", "decision", 3, 5),
+    Node("llm_client", "SDK LLMClient", "Query Understanding", "muted", 3, 6),
+    Node("semantic_helper", "LLM Semantic\nRouting Helper", "Query Understanding", "muted", 3, 7),
+    Node("semantic_validation", "Hint validation", "Query Understanding", "decision", 3, 8),
+    Node("semantic_status", "shadow / not promoted", "Query Understanding", "muted", 3, 9),
+    Node("schema_index", "SchemaIndex", "Context Selection", "context", 4, 0),
+    Node("endpoint_catalog", "EndpointCatalog", "Context Selection", "context", 4, 1),
+    Node("relevance", "Relevance scoring", "Context Selection", "context", 4, 2),
+    Node("context_pack", "Context packing", "Context Selection", "context", 4, 3),
+    Node("planner", "SQL_FIRST_API_VERIFY\npackaged strategy", "Planning", "planning", 5, 0),
+    Node("evidence_policy", "Evidence policy", "Planning", "decision", 5, 1),
+    Node("call_budget", "Tool-call budget", "Planning", "planning", 5, 2),
+    Node("plan_selection", "Selected plan", "Planning", "planning", 5, 3),
+    Node("sql_template", "SQL template /\ngeneric SQL", "SQL Evidence Path", "sql", 6, 0),
+    Node("sql_validation", "SQL validation\npassed?", "SQL Evidence Path", "decision", 6, 1),
+    Node("sqlglot", "SQLGlot AST\nvalidation", "SQL Evidence Path", "sql", 6, 2),
+    Node("duckdb", "execute_sql\nDuckDB snapshot", "SQL Evidence Path", "sql", 6, 3),
+    Node("sql_result", "SQL result", "SQL Evidence Path", "sql", 6, 4),
+    Node("sql_evidence", "SQL evidence", "SQL Evidence Path", "sql", 6, 5),
+    Node("api_plan", "API plan", "Adobe API Evidence Path", "api", 7, 0),
+    Node("api_catalog", "Endpoint catalog\nvalidation", "Adobe API Evidence Path", "api", 7, 1),
+    Node("api_validation", "API validation\npassed?", "Adobe API Evidence Path", "decision", 7, 2),
+    Node("headers", "Credential/header\nconstruction", "Adobe API Evidence Path", "api", 7, 3),
+    Node("call_api", "call_api(method,\nurl, params, headers)", "Adobe API Evidence Path", "api", 7, 4),
+    Node("credentials", "Adobe credentials\npresent?", "Live API / Dry-run Split", "decision", 8, 0),
+    Node("live_api", "Live API mode\nlive readiness: {live_status}", "Live API / Dry-run Split", "live", 8, 1),
+    Node("dry_run", "Dry-run fallback\nno credentials", "Live API / Dry-run Split", "live", 8, 2),
+    Node("api_parser", "API response\nparser", "Live API / Dry-run Split", "live", 8, 3),
+    Node("evidence_state", "evidence_state\nlive_success / live_empty\napi_error / malformed\ndry_run_unavailable", "Live API / Dry-run Split", "live", 8, 4),
+    Node("parsed_api", "Parsed API\nevidence", "Live API / Dry-run Split", "live", 8, 5),
+    Node("fixtures", "Synthetic fixtures", "Mock Live API Readiness", "muted", 9, 0),
+    Node("mock_parser", "Mock live parser\nsuccess: {mock_parser}", "Mock Live API Readiness", "muted", 9, 1),
+    Node("discovery", "Discovery-chain\nreadiness\nchains: {mock_discovery}", "Mock Live API Readiness", "muted", 9, 2),
+    Node("mock_forward", "EvidenceBus\nforwarding", "Mock Live API Readiness", "muted", 9, 3),
+    Node("mock_slots", "Answer slot\nverification", "Mock Live API Readiness", "muted", 9, 4),
+    Node("diagnostic_only", "diagnostic only", "Mock Live API Readiness", "muted", 9, 5),
+    Node("evidence_bus", "EvidenceBus", "EvidenceBus", "evidence", 10, 1),
+    Node("evidence_fields", "ids / names / counts\nstatuses / timestamps", "EvidenceBus", "evidence", 10, 2),
+    Node("evidence_sources", "SQL / live API /\ndry-run state", "EvidenceBus", "evidence", 10, 3),
+    Node("answer_slots", "Answer Slots", "Answer Slots", "slots", 11, 1),
+    Node("slot_shape", "COUNT / LIST\nSTATUS / WHEN\nYES_NO", "Answer Slots", "slots", 11, 2),
+    Node("slot_sources", "source tracking", "Answer Slots", "slots", 11, 3),
+    Node("answer_synthesis", "Evidence-Aware\nAnswer Synthesis", "Answer Synthesis", "answer", 12, 0),
+    Node("templates", "Evidence-aware\ntemplates", "Answer Synthesis", "answer", 12, 1),
+    Node("faithfulness", "Claim Faithfulness\nCheck", "Answer Synthesis", "decision", 12, 2),
+    Node("rewrite_trial", "Answer-only\nrewrite trial\nkeep_trial_only", "Answer Synthesis", "muted", 12, 3),
+    Node("rewrite_status", "not promoted", "Answer Synthesis", "muted", 12, 4),
+    Node("final_answer", "Final Answer", "Answer Synthesis", "answer", 12, 5),
+    Node("trajectory", "Trajectory Logging", "Trajectory Logging", "trajectory", 13, 1),
+    Node("metadata_json", "metadata.json", "Trajectory Logging", "trajectory", 13, 2),
+    Node("filled_prompt", "filled_system_prompt.txt", "Trajectory Logging", "trajectory", 13, 3),
+    Node("trajectory_json", "trajectory.json", "Trajectory Logging", "trajectory", 13, 4),
+    Node("strict_eval", "Strict Eval\nscore: {strict_score}", "Evaluation", "eval", 14, 0),
+    Node("hidden_eval", "Hidden-style Eval\n{hidden_style}", "Evaluation", "eval", 14, 1),
+    Node("llm_baseline", "LLM baseline eval\ndiagnostic only", "Evaluation", "muted", 14, 2),
+    Node("readiness", "check_submission_ready\nready: {ready}", "Evaluation", "eval", 14, 3),
+    Node("final_package", "final_submission\npackaging", "Final Submission / Reports", "final", 15, 0),
+    Node("source_zip", "source_code.zip", "Final Submission / Reports", "final", 15, 1),
+    Node("workshop_audit", "Workshop audit\n{workshop_status}", "Final Submission / Reports", "final", 15, 2),
+    Node("report_index", "Consolidated\nreport index", "Final Submission / Reports", "final", 15, 3),
 ]
 
 
 EDGES = [
-    Edge("user_prompt", "runtime_config"),
-    Edge("runtime_config", "prompt_router"),
+    Edge("user_prompt", "config_env"),
+    Edge("config_env", "preflight"),
+    Edge("preflight", "tool_contract"),
+    Edge("tool_contract", "prompt_router"),
     Edge("prompt_router", "simple_gate"),
-    Edge("simple_gate", "normalization", "USE_DATA_PIPELINE"),
+    Edge("simple_gate", "pipeline_decision"),
+    Edge("pipeline_decision", "normalization", "yes"),
     Edge("normalization", "tokens"),
     Edge("tokens", "query_router"),
     Edge("query_router", "intent"),
     Edge("intent", "analysis"),
-    Edge("analysis", "metadata_context"),
-    Edge("metadata_context", "schema_index"),
-    Edge("schema_index", "plan_generation"),
-    Edge("plan_generation", "evidence_policy"),
-    Edge("evidence_policy", "sql_derivation", "SQL path"),
-    Edge("sql_derivation", "sql_validation"),
-    Edge("sql_validation", "sqlglot_ast", "yes"),
-    Edge("sqlglot_ast", "execute_sql"),
-    Edge("execute_sql", "sql_result"),
+    Edge("analysis", "schema_index"),
+    Edge("analysis", "endpoint_catalog"),
+    Edge("schema_index", "relevance"),
+    Edge("endpoint_catalog", "relevance"),
+    Edge("relevance", "context_pack"),
+    Edge("context_pack", "planner"),
+    Edge("planner", "evidence_policy"),
+    Edge("evidence_policy", "call_budget"),
+    Edge("call_budget", "plan_selection"),
+    Edge("plan_selection", "sql_template", "SQL branch"),
+    Edge("sql_template", "sql_validation"),
+    Edge("sql_validation", "sqlglot", "yes"),
+    Edge("sqlglot", "duckdb"),
+    Edge("duckdb", "sql_result"),
     Edge("sql_result", "sql_evidence"),
     Edge("sql_evidence", "evidence_bus"),
-    Edge("evidence_policy", "api_plan", "API path"),
-    Edge("api_plan", "api_validation"),
+    Edge("plan_selection", "api_plan", "API branch"),
+    Edge("api_plan", "api_catalog"),
+    Edge("api_catalog", "api_validation"),
     Edge("api_validation", "headers", "yes"),
-    Edge("headers", "credentials"),
+    Edge("headers", "call_api"),
+    Edge("call_api", "credentials"),
     Edge("credentials", "live_api", "yes"),
-    Edge("credentials", "dry_run_decision", "no"),
-    Edge("dry_run_decision", "dry_run", "true"),
+    Edge("credentials", "dry_run", "no"),
     Edge("live_api", "api_parser"),
-    Edge("dry_run", "api_parser", "dry_run=true"),
-    Edge("api_parser", "discovery"),
-    Edge("discovery", "parsed_api"),
+    Edge("dry_run", "api_parser"),
+    Edge("api_parser", "evidence_state"),
+    Edge("evidence_state", "parsed_api"),
     Edge("parsed_api", "evidence_bus"),
-    Edge("evidence_bus", "answer_slots"),
-    Edge("answer_slots", "answer_synthesis"),
-    Edge("answer_synthesis", "answer_verify"),
-    Edge("answer_verify", "final_answer"),
+    Edge("evidence_bus", "evidence_fields"),
+    Edge("evidence_fields", "evidence_sources"),
+    Edge("evidence_sources", "answer_slots"),
+    Edge("answer_slots", "slot_shape"),
+    Edge("slot_shape", "slot_sources"),
+    Edge("slot_sources", "answer_synthesis"),
+    Edge("answer_synthesis", "templates"),
+    Edge("templates", "faithfulness"),
+    Edge("faithfulness", "final_answer", "supported"),
     Edge("final_answer", "trajectory"),
-    Edge("trajectory", "final_submission", "packaged"),
-    Edge("trajectory", "strict_eval"),
-    Edge("trajectory", "hidden_eval"),
-    Edge("trajectory", "llm_baseline", "baseline"),
-    Edge("analysis", "semantic_enabled", "low confidence?", "diagnostic"),
-    Edge("semantic_enabled", "llm_client", "if enabled", "diagnostic"),
+    Edge("trajectory", "metadata_json"),
+    Edge("trajectory", "filled_prompt"),
+    Edge("trajectory", "trajectory_json"),
+    Edge("trajectory_json", "final_package"),
+    Edge("final_package", "source_zip"),
+    Edge("final_package", "strict_eval"),
+    Edge("final_package", "hidden_eval"),
+    Edge("final_package", "readiness"),
+    Edge("strict_eval", "report_index", "metrics", "final"),
+    Edge("hidden_eval", "report_index", "robustness", "final"),
+    Edge("readiness", "report_index", "ready", "final"),
+    Edge("workshop_audit", "report_index", "compliance", "final"),
+    Edge("analysis", "semantic_enabled", "low confidence", "diagnostic"),
+    Edge("semantic_enabled", "llm_client", "feature flag", "diagnostic"),
     Edge("llm_client", "semantic_helper", "SDK only", "diagnostic"),
-    Edge("semantic_helper", "semantic_validate", "JSON hint", "diagnostic"),
-    Edge("semantic_validate", "semantic_promoted", "valid?", "diagnostic"),
-    Edge("semantic_promoted", "workflow_audit", "shadow/diagnostic only", "diagnostic"),
-    Edge("trajectory", "workflow_audit", "report-only", "diagnostic"),
-    Edge("api_plan", "live_readiness", "readiness audit", "diagnostic"),
-    Edge("mock_fixtures", "mock_parser", "fixture responses", "trial"),
-    Edge("mock_parser", "evidence_bus", "diagnostic forwarding", "trial"),
-    Edge("mock_parser", "live_readiness", "readiness report", "trial"),
-    Edge("answer_synthesis", "evidence_reports", "answer-only trial", "trial"),
-    Edge("evidence_reports", "rewrite_promoted", "strict gate", "trial"),
-    Edge("rewrite_promoted", "consolidated_index", "keep_trial_only", "trial"),
-    Edge("strict_eval", "consolidated_index", "metrics", "final"),
-    Edge("hidden_eval", "consolidated_index", "robustness", "final"),
-    Edge("llm_baseline", "consolidated_index", "baseline", "diagnostic"),
-    Edge("live_readiness", "consolidated_index", "reports", "diagnostic"),
-    Edge("workflow_audit", "consolidated_index", "reports", "diagnostic"),
-    Edge("final_submission", "consolidated_index", "readiness", "final"),
+    Edge("semantic_helper", "semantic_validation", "JSON hint", "diagnostic"),
+    Edge("semantic_validation", "semantic_status", "valid", "diagnostic"),
+    Edge("semantic_status", "relevance", "shadow only", "diagnostic"),
+    Edge("fixtures", "mock_parser", "fixture data", "trial"),
+    Edge("mock_parser", "discovery", "mock", "trial"),
+    Edge("discovery", "mock_forward", "GET-only", "trial"),
+    Edge("mock_forward", "mock_slots", "parsed evidence", "trial"),
+    Edge("mock_slots", "diagnostic_only", "verified", "trial"),
+    Edge("diagnostic_only", "report_index", "readiness report", "trial"),
+    Edge("faithfulness", "rewrite_trial", "answer-only", "trial"),
+    Edge("rewrite_trial", "rewrite_status", "strict gate", "trial"),
+    Edge("rewrite_status", "report_index", "trial report", "trial"),
+    Edge("trajectory", "llm_baseline", "baseline", "diagnostic"),
+    Edge("llm_baseline", "report_index", "diagnostic", "diagnostic"),
 ]
 
 
@@ -219,28 +261,43 @@ def generate_end_to_end_system_dataflow() -> dict[str, Any]:
     generated_at = datetime.now(timezone.utc)
     sources = source_metadata(generated_at)
     status = current_status()
-    mermaid = build_mermaid()
-    warnings = list(sources["warnings"])
+    nodes = build_nodes(status)
+    mermaid = build_mermaid(nodes, EDGES)
+    svg = render_svg(nodes, EDGES)
     payload = {
         "generated_at": generated_at.isoformat(),
         "source_files": sources["source_files"],
         "missing_source_files": sources["missing_source_files"],
         "stale_source_warnings": sources["stale_source_warnings"],
-        "current_status": status,
-        "node_count": len(NODES),
+        "node_count": len(nodes),
         "edge_count": len(EDGES),
         "major_sections": list(MAJOR_SECTIONS),
         "mermaid_source": mermaid,
+        "svg_source": svg,
         "output_html_path": str(VIS_DIR / f"{OUTPUT_STEM}.html"),
         "output_md_path": str(VIS_DIR / f"{OUTPUT_STEM}.md"),
-        "warnings": warnings,
+        "warnings": sources["warnings"],
     }
-    html_text = render_html(payload)
-    md_text = render_markdown(payload)
-    write_html(VIS_DIR / f"{OUTPUT_STEM}.html", html_text)
-    write_md(VIS_DIR / f"{OUTPUT_STEM}.md", md_text)
+    write_html(VIS_DIR / f"{OUTPUT_STEM}.html", render_html(payload, svg))
+    write_md(VIS_DIR / f"{OUTPUT_STEM}.md", render_markdown(payload))
     write_json(VIS_DIR / f"{OUTPUT_STEM}.json", payload)
     return payload
+
+
+def build_nodes(status: dict[str, Any]) -> list[Node]:
+    values = {
+        "live_status": status.get("live_adobe_api_readiness", "unavailable"),
+        "mock_parser": status.get("mock_parser_success_count", "unavailable"),
+        "mock_discovery": status.get("mock_discovery_chains_simulated", "unavailable"),
+        "strict_score": status.get("packaged_strict_score", "unavailable"),
+        "hidden_style": status.get("hidden_style", "unavailable"),
+        "ready": status.get("final_submission_ready", "unavailable"),
+        "workshop_status": status.get("workshop_audit_status", "unavailable"),
+    }
+    return [
+        Node(node.node_id, node.label.format(**values), node.section, node.kind, node.col, node.row)
+        for node in BASE_NODES
+    ]
 
 
 def source_metadata(generated_at: datetime) -> dict[str, Any]:
@@ -258,14 +315,15 @@ def source_metadata(generated_at: datetime) -> dict[str, Any]:
         mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
         source_time = generated or mtime
         age_hours = max(0.0, (generated_at - source_time).total_seconds() / 3600)
-        info = {
-            "path": rel,
-            "exists": True,
-            "source_timestamp": source_time.isoformat(),
-            "timestamp_source": "generated_at" if generated else "file_mtime",
-            "age_hours": round(age_hours, 3),
-        }
-        source_files.append(info)
+        source_files.append(
+            {
+                "path": rel,
+                "exists": True,
+                "source_timestamp": source_time.isoformat(),
+                "timestamp_source": "generated_at" if generated else "file_mtime",
+                "age_hours": round(age_hours, 3),
+            }
+        )
         if age_hours > STALE_SOURCE_HOURS:
             message = f"stale_source_warning:{rel}:age_hours={round(age_hours, 1)}"
             stale.append(message)
@@ -301,29 +359,23 @@ def current_status() -> dict[str, Any]:
     system = load_json("outputs/reports/system_summary.json", {})
     index = load_json("outputs/reports/report_index.json", {})
     mock = load_json("outputs/reports/mock_live_api_evidence_pipeline_trial.json", {})
-    sdk = load_json("outputs/reports/sdk_usage_audit.json", {})
     workshop = load_json("outputs/reports/workshop_requirement_audit.json", {})
     strict = load_json("outputs/eval_results_strict.json", {})
     hidden = load_json("outputs/hidden_style_eval.json", {})
     readiness = load_json("outputs/winner_readiness_report.json", {})
-
     index_status = index.get("current_status", {}) if isinstance(index, dict) else {}
     strict_summary = strict.get("summary", {}).get("by_strategy", {}).get("SQL_FIRST_API_VERIFY", {})
     hidden_summary = hidden.get("summary", {}) if isinstance(hidden, dict) else {}
     packaged = readiness.get("packaged", {}) if isinstance(readiness, dict) else {}
     live = system.get("live_adobe_api_readiness", {}) if isinstance(system, dict) else {}
-    semantic = system.get("llm_semantic_routing_helper", {}) if isinstance(system, dict) else {}
-    evidence = system.get("evidence_aware_answer_synthesis", {}) if isinstance(system, dict) else {}
     return clean_status(
         {
-            "preferred_strategy": first_value(system.get("preferred_strategy"), packaged.get("preferred_strategy"), "SQL_FIRST_API_VERIFY"),
             "packaged_strict_score": first_value(
                 system.get("packaged_strict_score"),
                 packaged.get("strict_final_score"),
                 strict_summary.get("avg_final_score"),
                 index_status.get("packaged_strict_score"),
             ),
-            "best_isolated_score": first_value(system.get("best_isolated_score"), index_status.get("best_isolated_score")),
             "hidden_style": first_value(
                 (system.get("hidden_style") or {}).get("label") if isinstance(system.get("hidden_style"), dict) else None,
                 f"{hidden_summary.get('passed_cases')}/{hidden_summary.get('total_cases')}"
@@ -331,13 +383,23 @@ def current_status() -> dict[str, Any]:
                 else None,
                 index_status.get("hidden_style"),
             ),
-            "final_submission_ready": first_value(system.get("final_submission_ready"), packaged.get("final_submission_ready"), index_status.get("final_submission_ready")),
-            "live_adobe_api_readiness": first_value(live.get("overall_status"), index_status.get("live_adobe_api_readiness")),
-            "mock_parser_success_count": first_value(live.get("mock_parser_success_count"), mock.get("parser_success_count")),
-            "mock_discovery_chains_simulated": first_value(live.get("mock_discovery_chain_simulated_count"), mock.get("discovery_chain_simulated_count")),
-            "evidence_aware_answer_synthesis_recommendation": first_value(evidence.get("recommendation"), index_status.get("evidence_aware_answer_synthesis")),
-            "semantic_router_recommendation": first_value(semantic.get("recommendation"), index_status.get("llm_recommendation")),
-            "runtime_llm_direct_http_hits": first_value(sdk.get("summary", {}).get("runtime_llm_direct_http_hits")),
+            "final_submission_ready": first_value(
+                system.get("final_submission_ready"),
+                packaged.get("final_submission_ready"),
+                index_status.get("final_submission_ready"),
+            ),
+            "live_adobe_api_readiness": first_value(
+                live.get("overall_status"),
+                index_status.get("live_adobe_api_readiness"),
+            ),
+            "mock_parser_success_count": first_value(
+                live.get("mock_parser_success_count"),
+                mock.get("parser_success_count"),
+            ),
+            "mock_discovery_chains_simulated": first_value(
+                live.get("mock_discovery_chain_simulated_count"),
+                mock.get("discovery_chain_simulated_count"),
+            ),
             "workshop_audit_status": first_value(workshop.get("overall_status")),
         }
     )
@@ -354,10 +416,10 @@ def first_value(*values: Any) -> Any:
     return "unavailable"
 
 
-def build_mermaid() -> str:
+def build_mermaid(nodes: list[Node], edges: list[Edge]) -> str:
     lines = ["flowchart LR"]
     by_section: dict[str, list[Node]] = {section: [] for section in MAJOR_SECTIONS}
-    for node in NODES:
+    for node in nodes:
         by_section.setdefault(node.section, []).append(node)
     for index, section in enumerate(MAJOR_SECTIONS):
         lines.append(f"  subgraph S{index}[\"{section}\"]")
@@ -368,62 +430,18 @@ def build_mermaid() -> str:
             else:
                 lines.append(f"    {node.node_id}[\"{label}\"]")
         lines.append("  end")
-    for edge in EDGES:
+    for edge in edges:
         connector = "-.->" if edge.path_type in {"diagnostic", "trial"} else "-->"
         label = f"|{mermaid_label(edge.label, 36)}|" if edge.label else ""
         lines.append(f"  {edge.source} {connector}{label} {edge.target}")
-    for kind in sorted({node.kind for node in NODES}):
+    for kind in sorted({node.kind for node in nodes}):
         lines.append(f"  classDef {kind} fill:{color_for_kind(kind)},stroke:#243044,color:#111827,stroke-width:1px;")
-    for node in NODES:
+    for node in nodes:
         lines.append(f"  class {node.node_id} {node.kind};")
     return "\n".join(lines)
 
 
-def mermaid_label(value: Any, max_chars: int = 64) -> str:
-    text = str(value if value is not None else "unavailable")
-    text = redact_text(text)
-    text = re.sub(r"[\n\r\t{}<>|`]+", " ", text)
-    text = re.sub(r"\s+", " ", text).strip()
-    if len(text) > max_chars:
-        text = text[: max_chars - 3].rstrip() + "..."
-    return text.replace('"', "'")
-
-
-def render_html(payload: dict[str, Any]) -> str:
-    status_rows = "".join(
-        f"<tr><th>{esc(key.replace('_', ' ').title())}</th><td>{esc(value)}</td></tr>"
-        for key, value in payload["current_status"].items()
-    )
-    source_rows = "".join(
-        f"<tr><td>{esc(item['path'])}</td><td>{esc(item['timestamp_source'])}</td><td>{esc(item['age_hours'])}</td></tr>"
-        for item in payload["source_files"]
-    )
-    warning_items = "".join(f"<li>{esc(item)}</li>" for item in payload["warnings"]) or "<li>none</li>"
-    report_links = [
-        ("Report index", "../reports/report_index.md"),
-        ("Workflow decision audit", "../reports/workflow_decision_audit.md"),
-        ("Live Adobe API readiness", "../reports/live_adobe_api_readiness_audit.md"),
-        ("API_REQUIRED readiness matrix", "../reports/api_required_readiness_matrix.md"),
-        ("Mock live API pipeline", "../reports/mock_live_api_evidence_pipeline_trial.md"),
-        ("Evidence usage audit", "../reports/evidence_usage_audit.md"),
-        ("Evidence-aware answer trial", "../reports/evidence_aware_answer_rewrite_trial.md"),
-        ("SDK usage audit", "../reports/sdk_usage_audit.md"),
-        ("Workshop audit", "../reports/workshop_requirement_audit.md"),
-    ]
-    links = "".join(f'<li><a href="{esc(href)}">{esc(label)}</a></li>' for label, href in report_links)
-    svg = render_svg()
-    workflow_keywords = " | ".join(
-        [
-            *MAJOR_SECTIONS,
-            *(node.label for node in NODES),
-            "packaged runtime path",
-            "shadow/diagnostic path",
-            "isolated trial path",
-            "final submission/evaluation path",
-            "Evidence-Aware Answer Synthesis",
-            "Mock live API readiness diagnostics",
-        ]
-    )
+def render_html(payload: dict[str, Any], svg: str) -> str:
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -432,149 +450,127 @@ def render_html(payload: dict[str, Any]) -> str:
   <title>DASHSys End-to-End System Data Flow</title>
   <style>
     :root {{
-      --bg: #f8fafc;
+      --bg: #eef2f7;
       --ink: #111827;
-      --muted: #4b5563;
-      --panel: #ffffff;
-      --line: #334155;
-      --packaged: #14532d;
-      --diagnostic: #6d28d9;
-      --trial: #a16207;
-      --final: #1d4ed8;
+      --muted: #64748b;
     }}
     * {{ box-sizing: border-box; }}
-    body {{ margin: 0; background: var(--bg); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
-    header {{ padding: 28px 32px 12px; }}
-    h1 {{ margin: 0 0 8px; font-size: 30px; letter-spacing: 0; }}
-    p {{ color: var(--muted); line-height: 1.5; }}
-    .grid {{ display: grid; grid-template-columns: minmax(320px, 1.2fr) minmax(320px, .8fr); gap: 16px; padding: 0 32px 18px; }}
-    .panel {{ background: var(--panel); border: 1px solid #dbe3ef; border-radius: 8px; padding: 16px; box-shadow: 0 1px 2px rgba(15,23,42,.04); }}
-    .panel h2 {{ margin: 0 0 12px; font-size: 18px; }}
-    table {{ width: 100%; border-collapse: collapse; font-size: 13px; }}
-    th, td {{ border-top: 1px solid #e5e7eb; padding: 7px 8px; text-align: left; vertical-align: top; }}
-    th {{ width: 44%; color: #334155; font-weight: 650; }}
-    a {{ color: #1d4ed8; text-decoration: none; }}
-    a:hover {{ text-decoration: underline; }}
-    .legend {{ display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }}
-    .chip {{ display: inline-flex; align-items: center; gap: 6px; border: 1px solid #dbe3ef; border-radius: 999px; padding: 5px 9px; font-size: 12px; background: #fff; }}
-    .dot {{ width: 12px; height: 12px; border-radius: 50%; display: inline-block; }}
-    .chart-wrap {{ margin: 0 32px 32px; background: white; border: 1px solid #dbe3ef; border-radius: 8px; overflow: auto; }}
-    .chart-title {{ padding: 14px 16px 0; font-weight: 700; }}
-    .sr-only {{ position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }}
-    svg {{ display: block; min-width: 2140px; }}
-    .section-label {{ font-size: 14px; font-weight: 750; fill: #0f172a; }}
-    .section-bg {{ fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1; }}
-    .node rect, .node polygon {{ stroke: #243044; stroke-width: 1.2; }}
-    .node text {{ font-size: 12px; fill: #111827; font-weight: 650; }}
-    .node small {{ color: #475569; }}
-    .edge {{ fill: none; stroke: var(--line); stroke-width: 2.4; marker-end: url(#arrow); }}
-    .edge.diagnostic {{ stroke: var(--diagnostic); stroke-dasharray: 7 6; marker-end: url(#arrow-diagnostic); }}
-    .edge.trial {{ stroke: var(--trial); stroke-dasharray: 6 5; marker-end: url(#arrow-trial); }}
-    .edge.final {{ stroke: var(--final); stroke-width: 2.2; marker-end: url(#arrow-final); }}
-    .edge-label {{ font-size: 11px; fill: #334155; paint-order: stroke; stroke: white; stroke-width: 3px; }}
+    html, body {{ height: 100%; }}
+    body {{
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }}
+    header {{
+      padding: 14px 18px 8px;
+      background: #f8fafc;
+      border-bottom: 1px solid #dbe3ef;
+    }}
+    h1 {{
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }}
+    .flowchart-canvas {{
+      width: 100vw;
+      height: calc(100vh - 74px);
+      overflow: auto;
+      background:
+        linear-gradient(90deg, rgba(148, 163, 184, .12) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(148, 163, 184, .12) 1px, transparent 1px),
+        #f8fafc;
+      background-size: 24px 24px;
+      padding: 18px;
+    }}
+    svg {{
+      display: block;
+      min-width: 3440px;
+      min-height: 1030px;
+      shape-rendering: geometricPrecision;
+    }}
+    .section-bg {{ fill: rgba(255, 255, 255, .78); stroke: #cbd5e1; stroke-width: 1.2; }}
+    .section-label {{ font-size: 15px; font-weight: 800; fill: #0f172a; }}
+    .node rect, .node polygon {{ stroke: #243044; stroke-width: 1.4; filter: url(#soft-shadow); }}
+    .node.packaged rect, .node.packaged polygon {{ stroke-width: 2.8; }}
+    .node text {{ font-size: 12px; fill: #0f172a; font-weight: 700; }}
+    .node .small {{ font-size: 11px; fill: #475569; font-weight: 650; }}
+    .edge {{ fill: none; stroke: #14532d; stroke-width: 3.3; marker-end: url(#arrow-packaged); }}
+    .edge.final {{ stroke: #1d4ed8; stroke-width: 2.8; marker-end: url(#arrow-final); }}
+    .edge.diagnostic {{ stroke: #64748b; stroke-width: 2.2; stroke-dasharray: 8 7; marker-end: url(#arrow-muted); }}
+    .edge.trial {{ stroke: #a16207; stroke-width: 2.2; stroke-dasharray: 7 6; marker-end: url(#arrow-trial); }}
+    .edge-label {{ font-size: 11px; fill: #334155; paint-order: stroke; stroke: white; stroke-width: 4px; font-weight: 700; }}
     .input {{ fill: #dbeafe; }}
     .config {{ fill: #e0f2fe; }}
     .routing {{ fill: #ede9fe; }}
-    .analysis {{ fill: #f5e8ff; }}
-    .planning {{ fill: #fef3c7; }}
+    .understanding {{ fill: #f5e8ff; }}
+    .context {{ fill: #fef3c7; }}
+    .planning {{ fill: #fde68a; }}
     .sql {{ fill: #dcfce7; }}
     .api {{ fill: #ffedd5; }}
+    .live {{ fill: #fed7aa; }}
     .decision {{ fill: #fee2e2; }}
     .evidence {{ fill: #ccfbf1; }}
+    .slots {{ fill: #cffafe; }}
     .answer {{ fill: #d1fae5; }}
-    .packaging {{ fill: #e0e7ff; }}
+    .trajectory {{ fill: #e0e7ff; }}
     .eval {{ fill: #dbeafe; }}
-    .llm {{ fill: #f3e8ff; }}
-    .report {{ fill: #f1f5f9; }}
-    .trial {{ fill: #fef9c3; }}
-    footer {{ padding: 0 32px 32px; color: var(--muted); font-size: 12px; }}
+    .final {{ fill: #ddd6fe; }}
+    .muted {{ fill: #f1f5f9; stroke: #94a3b8; }}
+    footer {{
+      height: 28px;
+      padding: 5px 18px;
+      color: var(--muted);
+      font-size: 12px;
+      background: #f8fafc;
+      border-top: 1px solid #dbe3ef;
+    }}
   </style>
 </head>
 <body>
-  <header>
-    <h1>DASHSys End-to-End System Data Flow</h1>
-    <p>Auto-generated from current DASHSys reports and configuration artifacts. The dominant solid path is packaged <code>SQL_FIRST_API_VERIFY</code>; dashed paths are diagnostic, shadow, or isolated trial only.</p>
-  </header>
-  <section class="grid">
-    <div class="panel">
-      <h2>Current System Status</h2>
-      <table>{status_rows}</table>
-    </div>
-    <div class="panel">
-      <h2>Legend</h2>
-      <div class="legend">
-        <span class="chip"><span class="dot" style="background:#14532d"></span>packaged runtime path</span>
-        <span class="chip"><span class="dot" style="background:#6d28d9"></span>shadow/diagnostic path</span>
-        <span class="chip"><span class="dot" style="background:#a16207"></span>isolated trial path</span>
-        <span class="chip"><span class="dot" style="background:#1d4ed8"></span>packaging/evaluation path</span>
-        <span class="chip"><span class="dot" style="background:#fee2e2"></span>decision node</span>
-      </div>
-      <h2 style="margin-top:18px">Report Links</h2>
-      <ul>{links}</ul>
-    </div>
-  </section>
-  <section class="chart-wrap">
-    <div class="chart-title">Complete Runtime, Diagnostic, Evaluation, and Reporting Flowchart</div>
-    <p class="sr-only">{esc(workflow_keywords)}</p>
+  <header><h1>DASHSys End-to-End System Data Flow</h1></header>
+  <main class="flowchart-canvas" aria-label="DASHSys end-to-end system workflow flowchart">
     {svg}
-  </section>
-  <section class="grid">
-    <div class="panel">
-      <h2>Source Artifacts Used</h2>
-      <table><tr><th>Path</th><th>Timestamp Source</th><th>Age Hours</th></tr>{source_rows}</table>
-    </div>
-    <div class="panel">
-      <h2>Warnings</h2>
-      <ul>{warning_items}</ul>
-    </div>
-  </section>
-  <footer>
-    Generated at {esc(payload['generated_at'])}. Fully self-contained; no CDN, network access, or build tools required.
-  </footer>
+  </main>
+  <footer>Generated {esc(payload['generated_at'])}</footer>
 </body>
 </html>
 """
 
 
-def render_svg() -> str:
-    node_w = 190
-    node_h = 58
-    col_gap = 232
-    row_gap = 84
-    margin_x = 28
-    margin_y = 62
-    max_col = max(node.col for node in NODES)
-    max_row = max(node.row for node in NODES)
-    width = margin_x * 2 + max_col * col_gap + node_w + 40
-    height = margin_y * 2 + max_row * row_gap + node_h + 80
-    positions = {
-        node.node_id: (
-            margin_x + node.col * col_gap,
-            margin_y + node.row * row_gap,
-        )
-        for node in NODES
-    }
-    section_col: dict[str, int] = {}
-    for node in NODES:
-        section_col.setdefault(node.section, node.col)
+def render_svg(nodes: list[Node], edges: list[Edge]) -> str:
+    node_w = 172
+    node_h = 66
+    col_gap = 214
+    row_gap = 87
+    margin_x = 30
+    margin_y = 72
+    max_col = max(node.col for node in nodes)
+    max_row = max(node.row for node in nodes)
+    width = margin_x * 2 + max_col * col_gap + node_w + 44
+    height = margin_y * 2 + max_row * row_gap + node_h + 64
+    positions = {node.node_id: (margin_x + node.col * col_gap, margin_y + node.row * row_gap) for node in nodes}
+    section_col = {section: index for index, section in enumerate(MAJOR_SECTIONS)}
+    searchable = " | ".join([*MAJOR_SECTIONS, *(node.label.replace("\n", " ") for node in nodes)])
     parts = [
-        f'<svg viewBox="0 0 {width} {height}" width="{width}" height="{height}" role="img" aria-labelledby="chart-title">',
+        f'<svg viewBox="0 0 {width} {height}" width="{width}" height="{height}" role="img" aria-labelledby="chart-title chart-desc">',
         '<title id="chart-title">DASHSys end-to-end system dataflow flowchart</title>',
+        f'<desc id="chart-desc">{esc(searchable)}</desc>',
         "<defs>",
-        '<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/></marker>',
-        '<marker id="arrow-diagnostic" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#6d28d9"/></marker>',
-        '<marker id="arrow-trial" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#a16207"/></marker>',
+        '<filter id="soft-shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="1.2" stdDeviation="1.4" flood-color="#0f172a" flood-opacity=".12"/></filter>',
+        '<marker id="arrow-packaged" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#14532d"/></marker>',
         '<marker id="arrow-final" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1d4ed8"/></marker>',
+        '<marker id="arrow-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/></marker>',
+        '<marker id="arrow-trial" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#a16207"/></marker>',
         "</defs>",
     ]
     for section in MAJOR_SECTIONS:
-        col = section_col.get(section)
-        if col is None:
-            continue
-        x = margin_x + col * col_gap - 12
-        parts.append(f'<rect class="section-bg" x="{x}" y="18" width="{node_w + 24}" height="{height - 42}" rx="8"/>')
-        parts.append(f'<text class="section-label" x="{x + 12}" y="42">{esc(section)}</text>')
-    for edge in EDGES:
+        col = section_col[section]
+        x = margin_x + col * col_gap - 14
+        parts.append(f'<rect class="section-bg" x="{x}" y="18" width="{node_w + 28}" height="{height - 42}" rx="12"/>')
+        parts.append(f'<text class="section-label" x="{x + 14}" y="42">{esc(section)}</text>')
+    for edge in edges:
         x1, y1 = positions[edge.source]
         x2, y2 = positions[edge.target]
         start = (x1 + node_w, y1 + node_h / 2)
@@ -582,8 +578,9 @@ def render_svg() -> str:
         if x2 <= x1:
             start = (x1 + node_w / 2, y1 + node_h)
             end = (x2 + node_w / 2, y2)
-        cx1 = start[0] + max(34, abs(end[0] - start[0]) * 0.35)
-        cx2 = end[0] - max(34, abs(end[0] - start[0]) * 0.35)
+        distance = abs(end[0] - start[0])
+        cx1 = start[0] + max(36, distance * 0.34)
+        cx2 = end[0] - max(36, distance * 0.34)
         if x2 <= x1:
             cx1 = start[0]
             cx2 = end[0]
@@ -591,53 +588,42 @@ def render_svg() -> str:
         parts.append(f'<path class="edge {esc(edge.path_type)}" d="{path}"/>')
         if edge.label:
             lx = (start[0] + end[0]) / 2
-            ly = (start[1] + end[1]) / 2 - 8
+            ly = (start[1] + end[1]) / 2 - 7
             parts.append(f'<text class="edge-label" x="{lx:.1f}" y="{ly:.1f}" text-anchor="middle">{esc(edge.label)}</text>')
-    for node in NODES:
+    packaged_nodes = set()
+    for edge in edges:
+        if edge.path_type == "packaged":
+            packaged_nodes.add(edge.source)
+            packaged_nodes.add(edge.target)
+    for node in nodes:
         x, y = positions[node.node_id]
-        parts.append(f'<g class="node" id="{esc(node.node_id)}">')
+        group_classes = f"node {'packaged' if node.node_id in packaged_nodes and node.kind != 'muted' else ''}"
+        parts.append(f'<g class="{group_classes}" id="{esc(node.node_id)}">')
         if node.kind == "decision":
             cx = x + node_w / 2
             cy = y + node_h / 2
             points = f"{cx},{y} {x + node_w},{cy} {cx},{y + node_h} {x},{cy}"
-            parts.append(f'<polygon class="{esc(node.kind)}" points="{points}" rx="8"/>')
+            parts.append(f'<polygon class="{esc(node.kind)}" points="{points}"/>')
         else:
-            parts.append(f'<rect class="{esc(node.kind)}" x="{x}" y="{y}" width="{node_w}" height="{node_h}" rx="8"/>')
-        for i, line in enumerate(wrap_label(node.label, 24)[:3]):
-            parts.append(f'<text x="{x + node_w / 2}" y="{y + 21 + (i * 15)}" text-anchor="middle">{esc(line)}</text>')
+            parts.append(f'<rect class="{esc(node.kind)}" x="{x}" y="{y}" width="{node_w}" height="{node_h}" rx="9"/>')
+        lines = compact_label_lines(node.label, 22, 4)
+        y_start = y + 20 if len(lines) >= 4 else y + 24
+        for i, line in enumerate(lines):
+            css = ' class="small"' if i > 0 and len(lines) >= 3 else ""
+            parts.append(f'<text{css} x="{x + node_w / 2}" y="{y_start + (i * 14)}" text-anchor="middle">{esc(line)}</text>')
         parts.append("</g>")
     parts.append("</svg>")
     return "\n".join(parts)
 
 
 def render_markdown(payload: dict[str, Any]) -> str:
-    status_rows = [[key.replace("_", " "), value] for key, value in payload["current_status"].items()]
-    links = [
-        ["HTML artifact", "outputs/visualizations/end_to_end_system_dataflow.html"],
-        ["JSON metadata", "outputs/visualizations/end_to_end_system_dataflow.json"],
-        ["Report index", "outputs/reports/report_index.md"],
-    ]
     return "\n".join(
         [
             "# DASHSys End-to-End System Data Flow",
             "",
-            "Auto-generated system documentation. The HTML artifact is fully self-contained and is the primary browser view.",
-            "",
-            "## Flowchart",
-            "",
             mermaid_block(payload["mermaid_source"]),
             "",
-            "## Current Status",
-            "",
-            table(["Field", "Value"], status_rows),
-            "",
-            "## Artifact Links",
-            "",
-            table(["Artifact", "Path"], links),
-            "",
-            "## Source Warnings",
-            "",
-            *(f"- `{warning}`" for warning in payload["warnings"]),
+            "HTML artifact: `outputs/visualizations/end_to_end_system_dataflow.html`",
             "",
         ]
     )
@@ -649,41 +635,56 @@ def write_html(path: Path, content: str) -> None:
     path.write_text(redact_text(content), encoding="utf-8")
 
 
+def mermaid_label(value: Any, max_chars: int = 120) -> str:
+    text = str(value if value is not None else "unavailable")
+    text = redact_text(text).replace("\n", "<br/>")
+    text = re.sub(r"[\r\t{}|`]+", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    if len(text) > max_chars:
+        text = text[: max_chars - 3].rstrip() + "..."
+    return text.replace('"', "'")
+
+
+def compact_label_lines(label: str, width: int, max_lines: int) -> list[str]:
+    lines: list[str] = []
+    for raw_line in str(label).splitlines():
+        words = raw_line.split()
+        current = ""
+        for word in words:
+            if not current:
+                current = word
+            elif len(current) + len(word) + 1 <= width:
+                current += " " + word
+            else:
+                lines.append(current)
+                current = word
+        if current:
+            lines.append(current)
+    if len(lines) > max_lines:
+        lines = lines[: max_lines - 1] + [lines[max_lines - 1].rstrip(" .") + "..."]
+    return lines or ["unavailable"]
+
+
 def color_for_kind(kind: str) -> str:
     return {
         "input": "#dbeafe",
         "config": "#e0f2fe",
         "routing": "#ede9fe",
-        "analysis": "#f5e8ff",
-        "planning": "#fef3c7",
+        "understanding": "#f5e8ff",
+        "context": "#fef3c7",
+        "planning": "#fde68a",
         "sql": "#dcfce7",
         "api": "#ffedd5",
+        "live": "#fed7aa",
         "decision": "#fee2e2",
         "evidence": "#ccfbf1",
+        "slots": "#cffafe",
         "answer": "#d1fae5",
-        "packaging": "#e0e7ff",
+        "trajectory": "#e0e7ff",
         "eval": "#dbeafe",
-        "llm": "#f3e8ff",
-        "report": "#f1f5f9",
-        "trial": "#fef9c3",
+        "final": "#ddd6fe",
+        "muted": "#f1f5f9",
     }.get(kind, "#f8fafc")
-
-
-def wrap_label(label: str, width: int) -> list[str]:
-    words = str(label).split()
-    lines: list[str] = []
-    current = ""
-    for word in words:
-        if not current:
-            current = word
-        elif len(current) + len(word) + 1 <= width:
-            current += " " + word
-        else:
-            lines.append(current)
-            current = word
-    if current:
-        lines.append(current)
-    return lines or [str(label)]
 
 
 def esc(value: Any) -> str:
