@@ -90,83 +90,84 @@ MAJOR_SECTIONS = [
 
 
 BASE_NODES = [
-    Node("user_prompt", "User Prompt", "Input + Preflight", "input", 445, 76),
-    Node("runtime_config", "Runtime Config\nEnv + strategy", "Input + Preflight", "config", 445, 156),
-    Node("preflight", "Safety Preflight\nvalidators intact", "Input + Preflight", "config", 445, 236),
-    Node("prompt_router", "Prompt Routing", "Routing + Query Understanding", "routing", 445, 388),
-    Node("simple_gate", "Simple Prompt Gate", "Routing + Query Understanding", "routing", 445, 468),
-    Node("normalization", "Query Normalization", "Routing + Query Understanding", "understanding", 445, 548),
-    Node("tokens", "Query Token\nExtraction", "Routing + Query Understanding", "understanding", 445, 628),
-    Node("query_router", "Deterministic\nQueryRouter", "Routing + Query Understanding", "understanding", 445, 708),
-    Node("intent", "Answer Intent", "Routing + Query Understanding", "understanding", 445, 788),
-    Node("analysis", "QueryAnalysis", "Routing + Query Understanding", "understanding", 445, 868),
-    Node("schema_catalog", "SchemaIndex /\nEndpointCatalog", "Context + Planning", "context", 445, 1060),
-    Node("relevance", "Relevance Scoring", "Context + Planning", "context", 445, 1140),
-    Node("context_pack", "Context Packing", "Context + Planning", "context", 445, 1220),
-    Node("planner", "SQL_FIRST_API_VERIFY\nmain strategy", "Context + Planning", "planning", 445, 1300),
-    Node("evidence_policy", "Evidence Policy", "Context + Planning", "decision", 445, 1380),
-    Node("sql_api_plan", "SQL / API Plan", "Context + Planning", "planning", 445, 1460),
-    Node("sql_template", "SQL Template /\nGeneric SQL", "SQL Evidence Path", "sql", 175, 1654),
-    Node("sql_validation", "SQL validation\npassed?", "SQL Evidence Path", "decision", 175, 1734),
-    Node("sqlglot", "SQLGlot AST\nValidation", "SQL Evidence Path", "sql", 175, 1814),
-    Node("duckdb", "execute_sql\nDuckDB snapshot", "SQL Evidence Path", "sql", 175, 1894),
-    Node("sql_result", "SQL Result", "SQL Evidence Path", "sql", 175, 1974),
-    Node("sql_evidence", "SQL Evidence", "SQL Evidence Path", "sql", 175, 2054),
-    Node("api_plan", "API Plan", "Adobe API Evidence Path", "api", 715, 1654),
-    Node("api_validation", "API validation\npassed?", "Adobe API Evidence Path", "decision", 715, 1734),
-    Node("headers", "Credential Headers", "Adobe API Evidence Path", "api", 715, 1814),
-    Node("credentials", "Adobe credentials\npresent?", "Adobe API Evidence Path", "decision", 715, 1894),
-    Node("live_api", "Live API mode\nreadiness: {live_status}", "Adobe API Evidence Path", "live", 595, 1994),
-    Node("dry_run", "Dry-run fallback", "Adobe API Evidence Path", "live", 835, 1994),
-    Node("api_parser", "API Response\nParser", "Adobe API Evidence Path", "live", 715, 2084),
-    Node("evidence_state", "Evidence State\nlive / empty / error", "Adobe API Evidence Path", "live", 715, 2164),
-    Node("parsed_api", "Parsed API\nEvidence", "Adobe API Evidence Path", "live", 715, 2244),
-    Node("evidence_bus", "EvidenceBus", "EvidenceBus", "evidence", 445, 2428),
-    Node("evidence_fields", "IDs / names /\ncounts / statuses", "EvidenceBus", "evidence", 445, 2508),
-    Node("evidence_sources", "SQL / live API /\ndry-run state", "EvidenceBus", "evidence", 445, 2588),
-    Node("answer_slots", "Answer Slots", "Answer Generation", "slots", 445, 2772),
-    Node("answer_synthesis", "Answer Synthesis", "Answer Generation", "answer", 445, 2852),
-    Node("claim_verification", "Claim Faithfulness\nCheck", "Answer Generation", "decision", 445, 2932),
-    Node("final_answer", "Final Answer", "Answer Generation", "answer", 445, 3032),
-    Node("trajectory", "Trajectory Logging", "Trajectory + Packaging", "trajectory", 445, 3260),
-    Node("deliverables", "trajectory.json /\nmetadata.json / prompt", "Trajectory + Packaging", "trajectory", 445, 3340),
-    Node("final_submission", "Final Submission", "Trajectory + Packaging", "final", 445, 3420),
-    Node("strict_eval", "Strict Eval\nscore: {strict_score}", "Evaluation + Reports", "eval", 445, 3650),
-    Node("hidden_eval", "Hidden-style Eval\n{hidden_style}", "Evaluation + Reports", "eval", 445, 3730),
-    Node("readiness", "Check Submission\nready: {ready}", "Evaluation + Reports", "eval", 445, 3810),
-    Node("report_index", "Report Index /\nConsolidated reports", "Evaluation + Reports", "final", 445, 3890),
-    Node("semantic_flag", "Semantic router\nenabled?", "Diagnostic / Trial Side Paths", "decision", 815, 412),
-    Node("llm_client", "SDK LLMClient", "Diagnostic / Trial Side Paths", "muted", 815, 492),
-    Node("semantic_helper", "LLM Semantic\nRouting Helper", "Diagnostic / Trial Side Paths", "muted", 815, 572),
-    Node("semantic_validation", "Hint Validation", "Diagnostic / Trial Side Paths", "muted", 815, 652),
-    Node("semantic_status", "shadow /\nnot promoted", "Diagnostic / Trial Side Paths", "muted", 815, 732),
-    Node("llm_baseline", "SDK LLM Baseline\nDiagnostic only", "Diagnostic / Trial Side Paths", "muted", 815, 852),
-    Node("fixtures", "Synthetic Fixtures", "Mock Live API Readiness", "muted", 815, 1654),
-    Node("mock_parser", "Mock Parser\nsuccess: {mock_parser}", "Mock Live API Readiness", "muted", 815, 1734),
-    Node("discovery", "Discovery-chain\nreadiness", "Mock Live API Readiness", "muted", 815, 1814),
-    Node("mock_forward", "EvidenceBus\nForwarding", "Mock Live API Readiness", "muted", 815, 1894),
-    Node("mock_slots", "Answer Slot\nVerification", "Mock Live API Readiness", "muted", 815, 1974),
-    Node("diagnostic_only", "Diagnostic only", "Mock Live API Readiness", "muted", 815, 2054),
-    Node("templates", "Evidence-Aware\nAnswer Synthesis", "Evidence-Aware Answer Rewrite", "muted", 815, 2772),
-    Node("faithfulness_trial", "Claim Faithfulness", "Evidence-Aware Answer Rewrite", "muted", 815, 2852),
-    Node("rewrite_trial", "Answer-only\nRewrite Trial", "Evidence-Aware Answer Rewrite", "muted", 815, 2932),
-    Node("rewrite_status", "keep_trial_only\nnot promoted", "Evidence-Aware Answer Rewrite", "muted", 815, 3012),
+    Node("user_prompt", "User Prompt", "Input + Preflight", "input", 415, 64, 200, 52),
+    Node("runtime_config", "Runtime Config", "Input + Preflight", "config", 415, 124, 200, 52),
+    Node("preflight", "Validation Guard", "Input + Preflight", "config", 415, 184, 200, 52),
+    Node("prompt_router", "Prompt Routing", "Routing + Query Understanding", "routing", 415, 318, 200, 52),
+    Node("simple_gate", "Simple Prompt Gate", "Routing + Query Understanding", "routing", 415, 378, 200, 52),
+    Node("normalization", "Query Normalization", "Routing + Query Understanding", "understanding", 415, 438, 200, 52),
+    Node("tokens", "Query Token\nExtraction", "Routing + Query Understanding", "understanding", 415, 498, 200, 52),
+    Node("query_router", "Deterministic\nQueryRouter", "Routing + Query Understanding", "understanding", 415, 558, 200, 52),
+    Node("intent", "Answer Intent", "Routing + Query Understanding", "understanding", 415, 618, 200, 52),
+    Node("analysis", "QueryAnalysis", "Routing + Query Understanding", "understanding", 415, 678, 200, 52),
+    Node("schema_catalog", "SchemaIndex /\nEndpointCatalog", "Context + Planning", "context", 415, 838, 200, 52),
+    Node("relevance", "Relevance Scoring", "Context + Planning", "context", 415, 898, 200, 52),
+    Node("context_pack", "Context Packing", "Context + Planning", "context", 415, 958, 200, 52),
+    Node("planner", "SQL_FIRST_API_VERIFY\nmain strategy", "Context + Planning", "planning", 415, 1018, 200, 52),
+    Node("evidence_policy", "Evidence Policy", "Context + Planning", "decision", 415, 1078, 200, 52),
+    Node("sql_api_plan", "SQL / API Plan", "Context + Planning", "planning", 415, 1138, 200, 52),
+    Node("sql_template", "SQL Template /\nGeneric SQL", "SQL Evidence Path", "sql", 152, 1328, 196, 52),
+    Node("sql_validation", "SQL validation\npassed?", "SQL Evidence Path", "decision", 152, 1388, 196, 52),
+    Node("sqlglot", "SQLGlot AST", "SQL Evidence Path", "sql", 152, 1448, 196, 52),
+    Node("duckdb", "execute_sql\nDuckDB", "SQL Evidence Path", "sql", 152, 1508, 196, 52),
+    Node("sql_result", "SQL Result", "SQL Evidence Path", "sql", 152, 1568, 196, 52),
+    Node("sql_evidence", "Local SQL\nEvidence", "SQL Evidence Path", "sql", 152, 1628, 196, 52),
+    Node("api_plan", "API Plan", "Adobe API Evidence Path", "api", 690, 1328, 196, 52),
+    Node("api_validation", "API validation\npassed?", "Adobe API Evidence Path", "decision", 690, 1388, 196, 52),
+    Node("headers", "Credential Headers", "Adobe API Evidence Path", "api", 690, 1448, 196, 52),
+    Node("credentials", "Adobe credentials\npresent?", "Adobe API Evidence Path", "decision", 690, 1508, 196, 52),
+    Node("live_api", "Live API mode\n{live_status}", "Adobe API Evidence Path", "live", 580, 1590, 162, 48),
+    Node("dry_run", "Dry-run fallback", "Adobe API Evidence Path", "live", 838, 1590, 162, 48),
+    Node("api_parser", "API Response\nParser", "Adobe API Evidence Path", "live", 690, 1668, 196, 52),
+    Node("evidence_state", "Evidence State\nsuccess / empty / error", "Adobe API Evidence Path", "live", 690, 1728, 196, 52),
+    Node("parsed_api", "Adobe API\nEvidence", "Adobe API Evidence Path", "live", 690, 1788, 196, 52),
+    Node("evidence_bus", "EvidenceBus", "EvidenceBus", "evidence", 415, 1976, 200, 52),
+    Node("evidence_fields", "IDs / names /\ncounts / statuses", "EvidenceBus", "evidence", 415, 2036, 200, 52),
+    Node("evidence_sources", "SQL / live API /\ndry-run state", "EvidenceBus", "evidence", 415, 2096, 200, 52),
+    Node("answer_slots", "Answer Slots", "Answer Generation", "slots", 415, 2270, 200, 52),
+    Node("answer_synthesis", "Answer Synthesis", "Answer Generation", "answer", 415, 2330, 200, 52),
+    Node("claim_verification", "Claim Faithfulness", "Answer Generation", "decision", 415, 2390, 200, 52),
+    Node("final_answer", "Final Answer", "Answer Generation", "answer", 415, 2468, 200, 52),
+    Node("trajectory", "Trajectory Logging", "Trajectory + Packaging", "trajectory", 415, 2666, 200, 52),
+    Node("deliverables", "trajectory.json /\nmetadata.json / prompt", "Trajectory + Packaging", "trajectory", 415, 2726, 200, 52),
+    Node("final_submission", "Final Submission", "Trajectory + Packaging", "final", 415, 2786, 200, 52),
+    Node("eval_hub", "Evaluation + Reports", "Evaluation + Reports", "eval", 415, 2956, 200, 52),
+    Node("strict_eval", "Strict Eval\nscore: {strict_score}", "Evaluation + Reports", "eval", 120, 3050, 170, 48),
+    Node("hidden_eval", "Hidden-style Eval\n{hidden_style}", "Evaluation + Reports", "eval", 330, 3050, 170, 48),
+    Node("readiness", "Check Submission\nready: {ready}", "Evaluation + Reports", "eval", 540, 3050, 170, 48),
+    Node("report_index", "Report Index", "Evaluation + Reports", "final", 750, 3050, 170, 48),
+    Node("semantic_flag", "Semantic router\nenabled?", "Diagnostic / Trial Side Paths", "decision", 802, 334, 168, 42),
+    Node("llm_client", "SDK LLMClient", "Diagnostic / Trial Side Paths", "muted", 802, 386, 168, 42),
+    Node("semantic_helper", "LLM Semantic\nRouting Helper", "Diagnostic / Trial Side Paths", "muted", 802, 438, 168, 42),
+    Node("semantic_validation", "Hint Validation", "Diagnostic / Trial Side Paths", "muted", 802, 490, 168, 42),
+    Node("semantic_status", "shadow /\nnot promoted", "Diagnostic / Trial Side Paths", "muted", 802, 542, 168, 42),
+    Node("llm_baseline", "SDK LLM Baseline\nDiagnostic only", "Diagnostic / Trial Side Paths", "muted", 802, 630, 168, 42),
+    Node("fixtures", "Synthetic Fixtures", "Mock Live API Readiness", "muted", 1112, 1328, 168, 42),
+    Node("mock_parser", "Mock Parser\nsuccess: {mock_parser}", "Mock Live API Readiness", "muted", 1112, 1380, 168, 42),
+    Node("discovery", "Discovery-chain\nreadiness", "Mock Live API Readiness", "muted", 1112, 1432, 168, 42),
+    Node("mock_forward", "EvidenceBus\nForwarding", "Mock Live API Readiness", "muted", 1112, 1484, 168, 42),
+    Node("mock_slots", "Answer Slot\nVerification", "Mock Live API Readiness", "muted", 1112, 1536, 168, 42),
+    Node("diagnostic_only", "Diagnostic only", "Mock Live API Readiness", "muted", 1112, 1588, 168, 42),
+    Node("templates", "Evidence-Aware\nAnswer Synthesis", "Evidence-Aware Answer Rewrite", "muted", 802, 2270, 168, 42),
+    Node("faithfulness_trial", "Claim Faithfulness", "Evidence-Aware Answer Rewrite", "muted", 802, 2322, 168, 42),
+    Node("rewrite_trial", "Answer-only\nRewrite Trial", "Evidence-Aware Answer Rewrite", "muted", 802, 2374, 168, 42),
+    Node("rewrite_status", "keep_trial_only\nnot promoted", "Evidence-Aware Answer Rewrite", "muted", 802, 2426, 168, 42),
 ]
 
 
 CLUSTERS = [
-    Cluster("cluster_input", "Input + Preflight", "Input + Preflight", 315, 34, 470, 292, "main"),
-    Cluster("cluster_routing", "Routing + Query Understanding", "Routing + Query Understanding", 300, 352, 500, 600, "main"),
-    Cluster("cluster_context", "Context + Planning", "Context + Planning", 300, 1016, 500, 530, "main"),
-    Cluster("cluster_sql", "SQL Evidence Path", "SQL Evidence Path", 86, 1608, 420, 545, "sql"),
-    Cluster("cluster_api", "Adobe API Evidence Path", "Adobe API Evidence Path", 580, 1608, 480, 728, "api"),
-    Cluster("cluster_evidence", "EvidenceBus", "EvidenceBus", 335, 2388, 430, 300, "evidence"),
-    Cluster("cluster_answer", "Answer Generation", "Answer Generation", 335, 2732, 430, 386, "answer"),
-    Cluster("cluster_package", "Trajectory + Packaging", "Trajectory + Packaging", 335, 3220, 430, 296, "final"),
-    Cluster("cluster_eval", "Evaluation + Reports", "Evaluation + Reports", 335, 3610, 430, 366, "eval"),
-    Cluster("cluster_diag", "Diagnostic / Trial Side Paths", "Diagnostic / Trial Side Paths", 760, 372, 330, 580, "diag"),
-    Cluster("cluster_mock", "Mock Live API Readiness", "Mock Live API Readiness", 760, 1608, 330, 545, "diag"),
-    Cluster("cluster_rewrite", "Evidence-Aware Answer Rewrite", "Evidence-Aware Answer Rewrite", 760, 2732, 330, 386, "diag"),
+    Cluster("cluster_input", "Input + Preflight", "Input + Preflight", 310, 30, 410, 226, "main"),
+    Cluster("cluster_routing", "Routing + Query Understanding", "Routing + Query Understanding", 300, 288, 430, 462, "main"),
+    Cluster("cluster_context", "Context + Planning", "Context + Planning", 300, 808, 430, 404, "main"),
+    Cluster("cluster_sql", "SQL Evidence Path", "SQL Evidence Path", 92, 1288, 320, 410, "sql"),
+    Cluster("cluster_api", "Adobe API Evidence Path", "Adobe API Evidence Path", 548, 1288, 480, 575, "api"),
+    Cluster("cluster_evidence", "EvidenceBus", "EvidenceBus", 325, 1936, 380, 240, "evidence"),
+    Cluster("cluster_answer", "Answer Generation", "Answer Generation", 325, 2232, 380, 310, "answer"),
+    Cluster("cluster_package", "Trajectory + Packaging", "Trajectory + Packaging", 325, 2628, 380, 232, "final"),
+    Cluster("cluster_eval", "Evaluation + Reports", "Evaluation + Reports", 60, 2918, 910, 214, "eval"),
+    Cluster("cluster_diag", "Diagnostic / Trial Side Paths", "Diagnostic / Trial Side Paths", 760, 300, 260, 396, "diag"),
+    Cluster("cluster_mock", "Mock Live API Readiness", "Mock Live API Readiness", 1070, 1288, 260, 362, "diag"),
+    Cluster("cluster_rewrite", "Evidence-Aware Answer Rewrite", "Evidence-Aware Answer Rewrite", 760, 2232, 260, 276, "diag"),
 ]
 
 
@@ -213,13 +214,11 @@ EDGES = [
     Edge("final_answer", "trajectory"),
     Edge("trajectory", "deliverables"),
     Edge("deliverables", "final_submission"),
-    Edge("final_submission", "strict_eval"),
-    Edge("strict_eval", "hidden_eval"),
-    Edge("hidden_eval", "readiness"),
-    Edge("readiness", "report_index"),
-    Edge("strict_eval", "report_index", "metrics", "final"),
-    Edge("hidden_eval", "report_index", "robustness", "final"),
-    Edge("readiness", "report_index", "ready", "final"),
+    Edge("final_submission", "eval_hub"),
+    Edge("eval_hub", "strict_eval", "strict", "final"),
+    Edge("eval_hub", "hidden_eval", "hidden", "final"),
+    Edge("eval_hub", "readiness", "ready", "final"),
+    Edge("eval_hub", "report_index", "reports", "final"),
     Edge("analysis", "semantic_flag", "low confidence", "diagnostic"),
     Edge("semantic_flag", "llm_client", "feature flag", "diagnostic"),
     Edge("llm_client", "semantic_helper", "SDK only", "diagnostic"),
@@ -227,19 +226,16 @@ EDGES = [
     Edge("semantic_validation", "semantic_status", "valid", "diagnostic"),
     Edge("semantic_status", "relevance", "shadow only", "diagnostic"),
     Edge("trajectory", "llm_baseline", "baseline", "diagnostic"),
-    Edge("llm_baseline", "report_index", "diagnostic", "diagnostic"),
     Edge("api_plan", "fixtures", "mock live", "trial"),
     Edge("fixtures", "mock_parser", "fixture data", "trial"),
     Edge("mock_parser", "discovery", "mock", "trial"),
     Edge("discovery", "mock_forward", "GET-only", "trial"),
     Edge("mock_forward", "mock_slots", "parsed evidence", "trial"),
     Edge("mock_slots", "diagnostic_only", "verified", "trial"),
-    Edge("diagnostic_only", "report_index", "readiness report", "trial"),
     Edge("answer_synthesis", "templates", "answer-only", "trial"),
     Edge("templates", "faithfulness_trial", "", "trial"),
     Edge("faithfulness_trial", "rewrite_trial", "", "trial"),
     Edge("rewrite_trial", "rewrite_status", "strict gate", "trial"),
-    Edge("rewrite_status", "report_index", "trial report", "trial"),
 ]
 
 
@@ -500,40 +496,43 @@ def render_html(payload: dict[str, Any], svg: str) -> str:
       max-width: none;
       shape-rendering: geometricPrecision;
     }}
-    .section-bg {{ fill: #fbfdff; stroke: #d1d5db; stroke-width: 1.2; }}
+    .section-bg {{ fill: #fcfdff; stroke: #d1d5db; stroke-width: 1.05; }}
     .section-bg.sql-cluster {{ fill: #f0fdf4; stroke: #bbf7d0; }}
     .section-bg.api-cluster {{ fill: #fff7ed; stroke: #fed7aa; }}
     .section-bg.evidence-cluster {{ fill: #f0fdfa; stroke: #99f6e4; }}
     .section-bg.answer-cluster {{ fill: #fdf2f8; stroke: #fbcfe8; }}
     .section-bg.eval-cluster, .section-bg.final-cluster {{ fill: #f5f3ff; stroke: #ddd6fe; }}
-    .section-bg.diag-cluster {{ fill: #f8fafc; stroke: #cbd5e1; stroke-dasharray: 8 6; }}
-    .section-label {{ font-size: 15px; font-weight: 800; fill: #0f172a; }}
-    .node rect, .node polygon {{ stroke: #334155; stroke-width: 1.35; filter: url(#soft-shadow); }}
-    .node.packaged rect, .node.packaged polygon {{ stroke-width: 2.8; }}
+    .section-bg.diag-cluster {{ fill: #f8fafc; stroke: #d1d5db; stroke-dasharray: 7 6; }}
+    .section-label {{ font-size: 14px; font-weight: 800; fill: #0f172a; }}
+    .node rect, .node polygon {{ stroke: #334155; stroke-width: 1.25; filter: url(#soft-shadow); }}
+    .node.packaged rect, .node.packaged polygon {{ stroke-width: 2.45; }}
     .node text {{ font-size: 12px; fill: #0f172a; font-weight: 700; }}
     .node .small {{ font-size: 11px; fill: #475569; font-weight: 650; }}
-    .edge {{ fill: none; stroke: #14532d; stroke-width: 3.3; marker-end: url(#arrow-packaged); }}
-    .edge.final {{ stroke: #1d4ed8; stroke-width: 2.8; marker-end: url(#arrow-final); }}
-    .edge.diagnostic {{ stroke: #64748b; stroke-width: 2.2; stroke-dasharray: 8 7; marker-end: url(#arrow-muted); }}
-    .edge.trial {{ stroke: #a16207; stroke-width: 2.2; stroke-dasharray: 7 6; marker-end: url(#arrow-trial); }}
+    .node-muted rect, .node-muted polygon {{ stroke: #cbd5e1; stroke-width: .9; filter: none; }}
+    .node-muted text {{ font-size: 10.5px; fill: #475569; font-weight: 650; }}
+    .node-muted .small {{ font-size: 10px; fill: #64748b; }}
+    .edge {{ fill: none; stroke: #166534; stroke-width: 2.8; marker-end: url(#arrow-packaged); }}
+    .edge.final {{ stroke: #6d28d9; stroke-width: 2.0; marker-end: url(#arrow-final); }}
+    .edge.diagnostic {{ stroke: #94a3b8; stroke-width: 1.55; stroke-dasharray: 7 6; marker-end: url(#arrow-muted); }}
+    .edge.trial {{ stroke: #9ca3af; stroke-width: 1.55; stroke-dasharray: 7 6; marker-end: url(#arrow-trial); }}
     .edge-label {{ font-size: 11px; fill: #334155; paint-order: stroke; stroke: white; stroke-width: 4px; font-weight: 700; }}
     .input {{ fill: #dbeafe; }}
     .config {{ fill: #e0f2fe; }}
     .routing {{ fill: #e0f2fe; }}
     .understanding {{ fill: #e0f2fe; }}
     .context {{ fill: #dbeafe; }}
-    .planning {{ fill: #fde68a; }}
+    .planning {{ fill: #dcfce7; }}
     .sql {{ fill: #dcfce7; }}
     .api {{ fill: #ffedd5; }}
     .live {{ fill: #fed7aa; }}
-    .decision {{ fill: #fee2e2; }}
+    .decision {{ fill: #fef3c7; }}
     .evidence {{ fill: #ccfbf1; }}
     .slots {{ fill: #cffafe; }}
-    .answer {{ fill: #d1fae5; }}
+    .answer {{ fill: #fce7f3; }}
     .trajectory {{ fill: #e0e7ff; }}
-    .eval {{ fill: #dbeafe; }}
+    .eval {{ fill: #ede9fe; }}
     .final {{ fill: #ddd6fe; }}
-    .muted {{ fill: #f1f5f9; stroke: #94a3b8; }}
+    .muted {{ fill: #f8fafc; stroke: #cbd5e1; }}
     footer {{
       height: 28px;
       padding: 5px 18px;
@@ -556,8 +555,8 @@ def render_html(payload: dict[str, Any], svg: str) -> str:
 
 
 def render_svg(nodes: list[Node], edges: list[Edge]) -> str:
-    width = 1120
-    height = 4040
+    width = 1360
+    height = 3180
     node_by_id = {node.node_id: node for node in nodes}
     positions = {node.node_id: (node.x, node.y) for node in nodes}
     required_keywords = [
@@ -598,9 +597,9 @@ def render_svg(nodes: list[Node], edges: list[Edge]) -> str:
         "<defs>",
         '<filter id="soft-shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="1.2" stdDeviation="1.4" flood-color="#0f172a" flood-opacity=".12"/></filter>',
         '<marker id="arrow-packaged" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#14532d"/></marker>',
-        '<marker id="arrow-final" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1d4ed8"/></marker>',
-        '<marker id="arrow-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/></marker>',
-        '<marker id="arrow-trial" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#a16207"/></marker>',
+        '<marker id="arrow-final" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#6d28d9"/></marker>',
+        '<marker id="arrow-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/></marker>',
+        '<marker id="arrow-trial" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#9ca3af"/></marker>',
         "</defs>",
     ]
     for cluster in CLUSTERS:
@@ -614,7 +613,7 @@ def render_svg(nodes: list[Node], edges: list[Edge]) -> str:
             "diag": "diag-cluster",
         }.get(cluster.kind, "main-cluster")
         parts.append(
-            f'<rect class="section-bg {cluster_class}" x="{cluster.x}" y="{cluster.y}" '
+            f'<rect id="{esc(cluster.cluster_id)}" class="section-bg {cluster_class}" x="{cluster.x}" y="{cluster.y}" '
             f'width="{cluster.width}" height="{cluster.height}" rx="16"/>'
         )
         parts.append(f'<text class="section-label" x="{cluster.x + 18}" y="{cluster.y + 28}">{esc(cluster.label)}</text>')
@@ -636,7 +635,15 @@ def render_svg(nodes: list[Node], edges: list[Edge]) -> str:
             packaged_nodes.add(edge.target)
     for node in nodes:
         x, y = positions[node.node_id]
-        group_classes = f"node {'packaged' if node.node_id in packaged_nodes and node.kind != 'muted' else ''}"
+        group_classes = " ".join(
+            part
+            for part in [
+                "node",
+                f"node-{node.kind}",
+                "packaged" if node.node_id in packaged_nodes and node.kind != "muted" else "",
+            ]
+            if part
+        )
         parts.append(f'<g class="{group_classes}" id="{esc(node.node_id)}">')
         if node.kind == "decision":
             cx = x + node.width / 2

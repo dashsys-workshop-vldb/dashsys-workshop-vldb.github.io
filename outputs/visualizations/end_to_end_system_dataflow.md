@@ -4,8 +4,8 @@
 flowchart TB
   subgraph S0["Input + Preflight"]
     user_prompt["User Prompt"]
-    runtime_config["Runtime Config<br/>Env + strategy"]
-    preflight["Safety Preflight<br/>validators intact"]
+    runtime_config["Runtime Config"]
+    preflight["Validation Guard"]
   end
   subgraph S1["Routing + Query Understanding"]
     prompt_router["Prompt Routing"]
@@ -27,21 +27,21 @@ flowchart TB
   subgraph S3["SQL Evidence Path"]
     sql_template["SQL Template /<br/>Generic SQL"]
     sql_validation{"SQL validation<br/>passed?"}
-    sqlglot["SQLGlot AST<br/>Validation"]
-    duckdb["execute_sql<br/>DuckDB snapshot"]
+    sqlglot["SQLGlot AST"]
+    duckdb["execute_sql<br/>DuckDB"]
     sql_result["SQL Result"]
-    sql_evidence["SQL Evidence"]
+    sql_evidence["Local SQL<br/>Evidence"]
   end
   subgraph S4["Adobe API Evidence Path"]
     api_plan["API Plan"]
     api_validation{"API validation<br/>passed?"}
     headers["Credential Headers"]
     credentials{"Adobe credentials<br/>present?"}
-    live_api["Live API mode<br/>readiness: warning"]
+    live_api["Live API mode<br/>warning"]
     dry_run["Dry-run fallback"]
     api_parser["API Response<br/>Parser"]
-    evidence_state["Evidence State<br/>live / empty / error"]
-    parsed_api["Parsed API<br/>Evidence"]
+    evidence_state["Evidence State<br/>success / empty / error"]
+    parsed_api["Adobe API<br/>Evidence"]
   end
   subgraph S5["EvidenceBus"]
     evidence_bus["EvidenceBus"]
@@ -51,7 +51,7 @@ flowchart TB
   subgraph S6["Answer Generation"]
     answer_slots["Answer Slots"]
     answer_synthesis["Answer Synthesis"]
-    claim_verification{"Claim Faithfulness<br/>Check"}
+    claim_verification{"Claim Faithfulness"}
     final_answer["Final Answer"]
   end
   subgraph S7["Trajectory + Packaging"]
@@ -60,10 +60,11 @@ flowchart TB
     final_submission["Final Submission"]
   end
   subgraph S8["Evaluation + Reports"]
+    eval_hub["Evaluation + Reports"]
     strict_eval["Strict Eval<br/>score: 0.6553"]
     hidden_eval["Hidden-style Eval<br/>48/48"]
     readiness["Check Submission<br/>ready: True"]
-    report_index["Report Index /<br/>Consolidated reports"]
+    report_index["Report Index"]
   end
   subgraph S9["Diagnostic / Trial Side Paths"]
     semantic_flag{"Semantic router<br/>enabled?"}
@@ -129,13 +130,11 @@ flowchart TB
   final_answer --> trajectory
   trajectory --> deliverables
   deliverables --> final_submission
-  final_submission --> strict_eval
-  strict_eval --> hidden_eval
-  hidden_eval --> readiness
-  readiness --> report_index
-  strict_eval -->|metrics| report_index
-  hidden_eval -->|robustness| report_index
-  readiness -->|ready| report_index
+  final_submission --> eval_hub
+  eval_hub -->|strict| strict_eval
+  eval_hub -->|hidden| hidden_eval
+  eval_hub -->|ready| readiness
+  eval_hub -->|reports| report_index
   analysis -.->|low confidence| semantic_flag
   semantic_flag -.->|feature flag| llm_client
   llm_client -.->|SDK only| semantic_helper
@@ -143,19 +142,16 @@ flowchart TB
   semantic_validation -.->|valid| semantic_status
   semantic_status -.->|shadow only| relevance
   trajectory -.->|baseline| llm_baseline
-  llm_baseline -.->|diagnostic| report_index
   api_plan -.->|mock live| fixtures
   fixtures -.->|fixture data| mock_parser
   mock_parser -.->|mock| discovery
   discovery -.->|GET-only| mock_forward
   mock_forward -.->|parsed evidence| mock_slots
   mock_slots -.->|verified| diagnostic_only
-  diagnostic_only -.->|readiness report| report_index
   answer_synthesis -.->|answer-only| templates
   templates -.-> faithfulness_trial
   faithfulness_trial -.-> rewrite_trial
   rewrite_trial -.->|strict gate| rewrite_status
-  rewrite_status -.->|trial report| report_index
   classDef answer fill:#d1fae5,stroke:#243044,color:#111827,stroke-width:1px;
   classDef api fill:#ffedd5,stroke:#243044,color:#111827,stroke-width:1px;
   classDef config fill:#e0f2fe,stroke:#243044,color:#111827,stroke-width:1px;
@@ -214,6 +210,7 @@ flowchart TB
   class trajectory trajectory;
   class deliverables trajectory;
   class final_submission final;
+  class eval_hub eval;
   class strict_eval eval;
   class hidden_eval eval;
   class readiness eval;

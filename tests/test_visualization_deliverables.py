@@ -288,6 +288,17 @@ def test_end_to_end_system_dataflow_is_self_contained_and_complete():
     viewbox_match = re.search(r'viewBox="0 0 ([0-9.]+) ([0-9.]+)"', html)
     assert viewbox_match
     assert float(viewbox_match.group(2)) > float(viewbox_match.group(1))
+    cluster_rects = {
+        match.group("id"): {
+            "x": float(match.group("x")),
+            "width": float(match.group("width")),
+        }
+        for match in re.finditer(
+            r'<rect id="(?P<id>cluster_(?:api|mock))"[^>]*\sx="(?P<x>[0-9.]+)"[^>]*\swidth="(?P<width>[0-9.]+)"',
+            html,
+        )
+    }
+    assert cluster_rects["cluster_mock"]["x"] >= cluster_rects["cluster_api"]["x"] + cluster_rects["cluster_api"]["width"] + 36
     assert 'class="flowchart-canvas"' in html
     assert "overflow: auto" in html
     assert "linear-gradient" not in html
