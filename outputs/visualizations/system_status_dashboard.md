@@ -33,7 +33,7 @@ flowchart LR
 | **Packaged strict score** | `0.6553` | Submit-ready packaged score. |
 | **Best isolated score** | `0.6558` | Best safe trial score; below winner target. |
 | **Correctness** | `0.6805` | Current strict correctness. |
-| **Tokens/runtime/tools** | `834.6 / 0.0115 / 1.4571` | Efficiency metrics. |
+| **Tokens/runtime/tools** | `834.6 / 0.0116 / 1.4571` | Efficiency metrics. |
 | **Hidden-style** | `48/48` | Current hidden-style pass result. |
 | **Readiness** | `True` | Final submission package status. |
 | **Secret scan** | `True` | Readiness secret scan status. |

@@ -23,6 +23,8 @@ POST_CHANGE_VALIDATION_COMMANDS = [
     "python3 scripts/run_dev_eval.py --strict",
     "python3 scripts/run_hidden_style_eval.py",
     "python3 scripts/check_llm_sdk_backend.py",
+    "python3 scripts/run_workflow_decision_audit.py",
+    "python3 scripts/run_decision_feedback_loop.py",
     "python3 scripts/run_llm_baseline_eval.py",
     "python3 scripts/run_llm_strict_baseline_eval.py",
     "python3 scripts/run_llm_hidden_style_diagnostic.py",
@@ -43,6 +45,11 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/accuracy_and_bottleneck_summary.md/json",
     "outputs/reports/visualization_summary.md/json",
     "outputs/reports/workshop_requirement_audit.md/json",
+    "outputs/reports/workflow_decision_map.md/json",
+    "outputs/reports/workflow_decision_audit.md/json",
+    "outputs/reports/improvement_feedback_loop_index.md/json",
+    "outputs/reports/feedback_loop_semantic_router_final.md/json",
+    "outputs/reports/decision_stage_improvement_summary.md/json",
     "outputs/reports/cleanup_audit.md/json",
     "outputs/reports/cleanup_final_report.md/json",
     "outputs/winner_readiness_report.md/json",
@@ -118,6 +125,11 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "diagnostic_prompt_suite_run": _load_json(outputs / "reports" / "diagnostic_prompt_suite_run.json"),
         "sdk_usage_audit": _load_json(outputs / "reports" / "sdk_usage_audit.json"),
         "workshop_requirement_audit": _load_json(outputs / "reports" / "workshop_requirement_audit.json"),
+        "workflow_decision_map": _load_json(outputs / "reports" / "workflow_decision_map.json"),
+        "workflow_decision_audit": _load_json(outputs / "reports" / "workflow_decision_audit.json"),
+        "improvement_feedback_loop_index": _load_json(outputs / "reports" / "improvement_feedback_loop_index.json"),
+        "feedback_loop_semantic_router_final": _load_json(outputs / "reports" / "feedback_loop_semantic_router_final.json"),
+        "decision_stage_improvement_summary": _load_json(outputs / "reports" / "decision_stage_improvement_summary.json"),
         "sql_storyboard": _load_json(visualizations / "sql_prompt_storyboard_primary.json"),
         "visualization_index": _load_json(visualizations / "index.json"),
     }
@@ -163,6 +175,7 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
         ],
         "final_recommendation": sources["winner_readiness"].get("final_recommendation", "ready_to_submit_with_official_token_reduction"),
         "llm_semantic_routing_helper": _semantic_router_status(sources),
+        "decision_stage_methodology": _decision_stage_status(sources),
         "source_reports": [
             "outputs/eval_results_strict.json",
             "outputs/winner_readiness_report.json",
@@ -196,6 +209,7 @@ def build_llm_baseline_summary(config: Config, sources: dict[str, Any]) -> dict[
         "recommendation": baseline.get("recommendation") or strict.get("summary", {}).get("recommendation") or "keep_shadow_only",
         "reason": "Deterministic SQL_FIRST_API_VERIFY remains higher under strict scoring.",
         "llm_semantic_routing_helper": _semantic_router_status(sources),
+        "decision_stage_methodology": _decision_stage_status(sources),
         "source_reports": [
             "outputs/llm_sdk_backend_check.json",
             "outputs/llm_baseline_eval_report.json",
@@ -230,6 +244,7 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
             "The LLM semantic routing helper is default-off and remains shadow-only unless a later strict/safety gate promotes it.",
         ],
         "llm_semantic_routing_helper": _semantic_router_status(sources),
+        "decision_stage_methodology": _decision_stage_status(sources),
         "source_reports": [
             "outputs/autonomous_score_push_report.json",
             "outputs/autonomous_packaged_trial.json",
@@ -322,6 +337,22 @@ def build_report_index(
                 }
             ),
         },
+        "decision_stage_audit_and_feedback_loops": {
+            "workflow_decision_map": "outputs/reports/workflow_decision_map.md",
+            "workflow_decision_audit": "outputs/reports/workflow_decision_audit.md",
+            "feedback_loop_index": "outputs/reports/improvement_feedback_loop_index.md",
+            "semantic_router_feedback_loop_final": "outputs/reports/feedback_loop_semantic_router_final.md",
+            "decision_stage_improvement_summary": "outputs/reports/decision_stage_improvement_summary.md",
+            **_decision_stage_status(
+                {
+                    "workflow_decision_map": _load_json(config.outputs_dir / "reports" / "workflow_decision_map.json"),
+                    "workflow_decision_audit": _load_json(config.outputs_dir / "reports" / "workflow_decision_audit.json"),
+                    "improvement_feedback_loop_index": _load_json(config.outputs_dir / "reports" / "improvement_feedback_loop_index.json"),
+                    "feedback_loop_semantic_router_final": _load_json(config.outputs_dir / "reports" / "feedback_loop_semantic_router_final.json"),
+                    "decision_stage_improvement_summary": _load_json(config.outputs_dir / "reports" / "decision_stage_improvement_summary.json"),
+                }
+            ),
+        },
         "workshop_requirement_alignment": {
             "path": "outputs/reports/workshop_requirement_audit.md",
             "overall_status": _load_json(config.outputs_dir / "reports" / "workshop_requirement_audit.json")
@@ -382,6 +413,8 @@ def render_system_summary(payload: dict[str, Any]) -> str:
             f"- Semantic router isolated trial: `{payload['llm_semantic_routing_helper'].get('isolated_trial_status')}`; "
             f"promotion decision: `{payload['llm_semantic_routing_helper'].get('promotion_decision')}`; "
             f"packaged runtime affected: `{payload['llm_semantic_routing_helper'].get('packaged_runtime_affected')}`",
+            f"- Decision-stage feedback loops: stages mapped `{payload['decision_stage_methodology'].get('stage_count')}`, "
+            f"semantic-router recommendation `{payload['decision_stage_methodology'].get('semantic_router_final_recommendation')}`",
             "",
             "## Workflow",
             "",
@@ -414,6 +447,7 @@ def render_llm_summary(payload: dict[str, Any]) -> str:
             f"({payload['llm_semantic_routing_helper']['status']})",
             f"- Semantic router isolated trial: `{payload['llm_semantic_routing_helper'].get('isolated_trial_status')}`; "
             f"promotion decision: `{payload['llm_semantic_routing_helper'].get('promotion_decision')}`",
+            f"- Decision-stage feedback-loop status: `{payload['decision_stage_methodology'].get('semantic_router_final_recommendation')}`",
             f"- Reason: {payload.get('reason')}",
             "",
             payload["framework_note"],
@@ -440,6 +474,7 @@ def render_accuracy_summary(payload: dict[str, Any]) -> str:
             f"({payload['llm_semantic_routing_helper']['status']})",
             f"- Semantic router isolated trial: `{payload['llm_semantic_routing_helper'].get('isolated_trial_status')}`; "
             f"promotion decision: `{payload['llm_semantic_routing_helper'].get('promotion_decision')}`",
+            f"- Decision-stage feedback-loop status: `{payload['decision_stage_methodology'].get('semantic_router_final_recommendation')}`",
             "",
             "## Why Changes Remain Shadow-Only",
             "",
@@ -503,6 +538,17 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.append(f"- Promotion decision report: `{semantic.get('promotion_decision_path')}`")
     lines.append(f"- Packaged runtime affected: `{semantic.get('packaged_runtime_affected')}`")
     lines.append(f"- Recommendation: `{semantic.get('recommendation')}`")
+    lines.extend(["", "## Decision-Stage Audit And Feedback Loops", ""])
+    decision = payload.get("decision_stage_audit_and_feedback_loops", {})
+    lines.append(f"- Workflow decision map: `{decision.get('workflow_decision_map')}`")
+    lines.append(f"- Workflow decision audit: `{decision.get('workflow_decision_audit')}`")
+    lines.append(f"- Feedback-loop index: `{decision.get('feedback_loop_index')}`")
+    lines.append(f"- Semantic-router loop final: `{decision.get('semantic_router_feedback_loop_final')}`")
+    lines.append(f"- Decision-stage improvement summary: `{decision.get('decision_stage_improvement_summary')}`")
+    lines.append(f"- Stages mapped: `{decision.get('stage_count')}`")
+    lines.append(f"- Audited rows: `{decision.get('audited_query_count')}`")
+    lines.append(f"- Semantic-router feedback recommendation: `{decision.get('semantic_router_final_recommendation')}`")
+    lines.append("- Generated diagnostic prompts remain coverage-only and are not promotion evidence.")
     lines.extend(["", "## Workshop Requirement Alignment", ""])
     workshop = payload.get("workshop_requirement_alignment", {})
     lines.append(f"- [{Path(str(workshop.get('path'))).name}]({Path(str(workshop.get('path'))).name})")
@@ -610,6 +656,29 @@ def _semantic_router_status(sources: dict[str, Any]) -> dict[str, Any]:
         "source_report": "outputs/reports/llm_semantic_router_shadow_eval.md",
         "isolated_trial_source_report": "outputs/reports/llm_semantic_router_isolated_trial.md",
         "promotion_decision_source_report": "outputs/reports/llm_semantic_router_promotion_decision.md",
+    }
+
+
+def _decision_stage_status(sources: dict[str, Any]) -> dict[str, Any]:
+    decision_map = sources.get("workflow_decision_map") or {}
+    audit = sources.get("workflow_decision_audit") or {}
+    final = sources.get("feedback_loop_semantic_router_final") or {}
+    summary = sources.get("decision_stage_improvement_summary") or {}
+    return {
+        "stage_count": decision_map.get("stage_count", "not_run"),
+        "audited_query_count": audit.get("total_queries", "not_run"),
+        "top_bottlenecks": audit.get("bottleneck_distribution", {}),
+        "feedback_loop_candidate_count": len((sources.get("improvement_feedback_loop_index") or {}).get("candidates", [])),
+        "semantic_router_iteration_count": final.get("iteration_count", "not_run"),
+        "semantic_router_final_recommendation": final.get("final_recommendation", "not_run"),
+        "packaged_runtime_changed": summary.get("packaged_runtime_changed", False),
+        "source_reports": [
+            "outputs/reports/workflow_decision_map.md",
+            "outputs/reports/workflow_decision_audit.md",
+            "outputs/reports/improvement_feedback_loop_index.md",
+            "outputs/reports/feedback_loop_semantic_router_final.md",
+            "outputs/reports/decision_stage_improvement_summary.md",
+        ],
     }
 
 

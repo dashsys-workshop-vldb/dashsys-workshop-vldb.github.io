@@ -20,13 +20,13 @@ The LLM baseline framework is generic; the configured model/provider is backend 
 
 | Strategy | Rows | Valid runs | Failed runs | Avg answer score | Strict score | Strict status | Avg tools | Avg tokens | Token source | Avg runtime |
 | --- | ---: | ---: | ---: | ---: | --- | --- | ---: | ---: | --- | ---: |
-| `RAW_REAL_LLM_TWO_TOOLS_BASELINE` | 35 | 34 | 1 | 0.4182 | 0.1594 | available | 1.4412 | 5704.9706 | {'measured_usage': 34} | 3.9006 |
-| `GUIDED_REAL_LLM_TWO_TOOLS_BASELINE` | 35 | 35 | 0 | 0.4076 | 0.2245 | available | 1.4571 | 7879.3429 | {'measured_usage': 35} | 3.8653 |
-| `LLM_CONTROLLER_OPTIMIZED_AGENT` | 35 | 35 | 0 | 0.4447 | 0.6331 | available | 1.4571 | 700.2571 | {'measured_usage': 35} | 2.0533 |
+| `RAW_REAL_LLM_TWO_TOOLS_BASELINE` | 35 | 34 | 1 | 0.4182 | 0.1596 | available | 1.4412 | 5704.9706 | {'measured_usage': 34} | 3.8197 |
+| `GUIDED_REAL_LLM_TWO_TOOLS_BASELINE` | 35 | 35 | 0 | 0.4076 | 0.2244 | available | 1.4571 | 7879.3429 | {'measured_usage': 35} | 3.8873 |
+| `LLM_CONTROLLER_OPTIMIZED_AGENT` | 35 | 35 | 0 | 0.4471 | 0.6328 | available | 1.4571 | 698.8286 | {'measured_usage': 35} | 2.2144 |
 
 ## Deterministic Comparison
 
 - SQL_FIRST_API_VERIFY strict score: `0.6553`
-- Comparison: `best_llm_strategy=LLM_CONTROLLER_OPTIMIZED_AGENT strict_delta=-0.0222; deterministic SQL_FIRST_API_VERIFY remains preferred`
+- Comparison: `best_llm_strategy=LLM_CONTROLLER_OPTIMIZED_AGENT strict_delta=-0.0225; deterministic SQL_FIRST_API_VERIFY remains preferred`
 
 The SDK LLM baseline remains shadow-only unless a later explicit promotion passes strict scoring, safety, hidden-style, and packaging gates.

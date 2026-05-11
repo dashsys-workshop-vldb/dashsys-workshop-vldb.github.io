@@ -188,6 +188,12 @@ def test_semantic_router_flags_accept_true_false_env(monkeypatch, tiny_project: 
     assert config.llm_semantic_router_shadow_only is False
 
 
+def test_semantic_router_trial_policy_env(monkeypatch, tiny_project: Config):
+    monkeypatch.setenv("LLM_SEMANTIC_ROUTER_TRIAL_POLICY", "priority_only")
+    config = Config.from_env(tiny_project.project_root)
+    assert config.llm_semantic_router_trial_policy == "priority_only"
+
+
 def test_validate_semantic_hint_accepts_normalized_valid_hint(tiny_project: Config):
     executor, *_ = _context(tiny_project)
     hint, reason = validate_semantic_routing_hint(
@@ -376,6 +382,139 @@ def test_non_shadow_isolated_uses_runtime_copy(monkeypatch, tiny_project: Config
     assert effective_routing.route_type == "SQL_THEN_API"
 
 
+def test_priority_only_changes_candidate_priority_only(tiny_project: Config):
+    executor, routing, _, _, analysis = _context(tiny_project)
+    hint, reason = validate_semantic_routing_hint(
+        {**_valid_hint_base(), "route_suggestion": "SQL_PLUS_API", "candidate_tables": ["dim_campaign"]},
+        user_prompt="show me my data models",
+        schema_index=executor.schema_index,
+        endpoint_catalog=executor.endpoint_catalog,
+    )
+    assert hint is not None, reason
+    result = SemanticRoutingResult(
+        enabled=True,
+        shadow_only=False,
+        eligibility_reason=["low_confidence", "unknown_domain"],
+        deterministic_route_type=routing.route_type,
+        deterministic_domain_type=routing.domain_type,
+        deterministic_answer_family=analysis.answer_family,
+        deterministic_confidence_before=routing.confidence,
+        final_runtime_confidence=analysis.confidence,
+        final_runtime_answer_family=analysis.answer_family,
+        helper_called=True,
+        helper_valid=True,
+        hint=hint,
+    )
+    effective_routing, effective_analysis, applied = apply_semantic_routing_hint(
+        routing=routing,
+        analysis=analysis,
+        result=result,
+        config=replace(
+            tiny_project,
+            enable_llm_semantic_router=True,
+            llm_semantic_router_shadow_only=False,
+            llm_semantic_router_trial_policy="priority_only",
+        ),
+        endpoint_catalog=executor.endpoint_catalog,
+    )
+    assert applied.hint_applied is True
+    assert effective_routing.route_type == routing.route_type
+    assert effective_analysis.route_type == analysis.route_type
+    assert effective_routing.domain_type == routing.domain_type
+    assert effective_routing.candidate_tables[0] == "dim_campaign"
+    assert "priority_only:candidate_tables_prepended" in (applied.hint_application_reason or "")
+
+
+def test_unknown_only_allows_unknown_domain_hint(tiny_project: Config):
+    executor, routing, _, _, analysis = _context(tiny_project)
+    hint, reason = validate_semantic_routing_hint(
+        {**_valid_hint_base(), "likely_domain": "journey_campaign", "candidate_tables": ["dim_campaign"]},
+        user_prompt="show me my data models",
+        schema_index=executor.schema_index,
+        endpoint_catalog=executor.endpoint_catalog,
+    )
+    assert hint is not None, reason
+    result = SemanticRoutingResult(
+        enabled=True,
+        shadow_only=False,
+        eligibility_reason=["unknown_domain"],
+        deterministic_route_type=routing.route_type,
+        deterministic_domain_type=routing.domain_type,
+        deterministic_answer_family=analysis.answer_family,
+        deterministic_confidence_before=routing.confidence,
+        final_runtime_confidence=analysis.confidence,
+        final_runtime_answer_family=analysis.answer_family,
+        helper_called=True,
+        helper_valid=True,
+        hint=hint,
+    )
+    effective_routing, _, applied = apply_semantic_routing_hint(
+        routing=routing,
+        analysis=analysis,
+        result=result,
+        config=replace(
+            tiny_project,
+            enable_llm_semantic_router=True,
+            llm_semantic_router_shadow_only=False,
+            llm_semantic_router_trial_policy="unknown_only",
+        ),
+        endpoint_catalog=executor.endpoint_catalog,
+    )
+    assert applied.hint_applied is True
+    assert effective_routing.domain_type == "JOURNEY_CAMPAIGN"
+
+
+def test_no_api_forcing_does_not_force_sql_only_to_api_route(tiny_project: Config):
+    executor, _, norm, tokens, _ = _context(tiny_project)
+    routing = RoutingDecision("SQL_ONLY", "UNKNOWN", 0.2, "low confidence", candidate_tables=[], candidate_apis=[])
+    analysis = analyze_query(
+        "show me my data models",
+        routing,
+        executor.schema_index,
+        strategy="SQL_FIRST_API_VERIFY",
+        config=tiny_project,
+        endpoint_catalog=executor.endpoint_catalog,
+        normalized=norm,
+        tokens=tokens,
+    )
+    hint, reason = validate_semantic_routing_hint(
+        {**_valid_hint_base(), "route_suggestion": "SQL_PLUS_API", "candidate_tables": ["dim_campaign"]},
+        user_prompt="show me my data models",
+        schema_index=executor.schema_index,
+        endpoint_catalog=executor.endpoint_catalog,
+    )
+    assert hint is not None, reason
+    result = SemanticRoutingResult(
+        enabled=True,
+        shadow_only=False,
+        eligibility_reason=["low_confidence", "unknown_domain"],
+        deterministic_route_type=routing.route_type,
+        deterministic_domain_type=routing.domain_type,
+        deterministic_answer_family=analysis.answer_family,
+        deterministic_confidence_before=routing.confidence,
+        final_runtime_confidence=analysis.confidence,
+        final_runtime_answer_family=analysis.answer_family,
+        helper_called=True,
+        helper_valid=True,
+        hint=hint,
+    )
+    effective_routing, _, applied = apply_semantic_routing_hint(
+        routing=routing,
+        analysis=analysis,
+        result=result,
+        config=replace(
+            tiny_project,
+            enable_llm_semantic_router=True,
+            llm_semantic_router_shadow_only=False,
+            llm_semantic_router_trial_policy="no_api_forcing",
+        ),
+        endpoint_catalog=executor.endpoint_catalog,
+    )
+    assert applied.hint_applied is True
+    assert effective_routing.route_type == "SQL_ONLY"
+    assert "route_changed" not in (applied.hint_application_reason or "")
+
+
 def test_non_shadow_high_confidence_close_candidates_only_not_applied(tiny_project: Config):
     executor, _, norm, tokens, _ = _context(tiny_project)
     routing = RoutingDecision("SQL_ONLY", "JOURNEY_CAMPAIGN", 0.9, "high confidence", candidate_tables=["dim_campaign"], candidate_apis=[])
@@ -451,6 +590,25 @@ def test_semantic_isolated_trial_report_and_packaging_exclusion(monkeypatch, tin
     assert not (tiny_project.outputs_dir / "final_submission").exists()
     assert not (tiny_project.outputs_dir / "eval").exists()
     assert "llm_semantic_router_isolated_trial" in NON_SUBMISSION_OUTPUT_DIRS
+    assert "llm_semantic_router_feedback_loop" in NON_SUBMISSION_OUTPUT_DIRS
+
+
+def test_semantic_isolated_trial_variant_writes_feedback_loop_root(monkeypatch, tiny_project: Config):
+    monkeypatch.setattr("scripts.run_llm_semantic_router_isolated_trial.get_llm_client", lambda: FakeLLMClient())
+    monkeypatch.setattr("dashagent.semantic_routing_helper.get_llm_client", lambda: FakeLLMClient())
+    report = run_llm_semantic_router_isolated_trial(
+        tiny_project,
+        limit=1,
+        clean=True,
+        trial_policy="priority_only",
+        output_root_name="llm_semantic_router_feedback_loop/priority_only",
+        write_reports=False,
+    )
+    assert report["status"] == "complete"
+    assert report["trial_policy"] == "priority_only"
+    assert "llm_semantic_router_feedback_loop/priority_only" in report["output_root"]
+    assert (tiny_project.outputs_dir / "llm_semantic_router_feedback_loop" / "priority_only" / "tiny_001" / "trajectory.json").exists()
+    assert not (tiny_project.outputs_dir / "final_submission").exists()
 
 
 def test_semantic_shadow_report_includes_normalization_metrics(tiny_project: Config):

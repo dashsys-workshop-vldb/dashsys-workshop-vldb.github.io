@@ -107,6 +107,14 @@ Run `python3 scripts/run_llm_semantic_router_shadow_eval.py --limit 50` for the 
 
 Generated prompts are diagnostic-only, `should_be_scored=false`, not official benchmark data, not runtime hints, and not packaged into final submission.
 
+## Decision-Stage Feedback Loops
+
+Every serious improvement candidate must start from a workflow decision-stage question, then proceed through hypothesis, baseline, isolated trial, failure analysis, 3-5 controlled variants, and an evidence-backed decision. Do not treat one failed isolated run as proof that a whole idea is impossible; say the variant failed, explain why, then test the next controlled variant when the candidate remains plausible.
+
+Use `python3 scripts/run_workflow_decision_audit.py` to produce `outputs/reports/workflow_decision_map.md/json` and `outputs/reports/workflow_decision_audit.md/json`. Use `python3 scripts/run_decision_feedback_loop.py` for isolated feedback-loop reports such as `outputs/reports/improvement_feedback_loop_index.md/json` and `outputs/reports/feedback_loop_semantic_router_final.md/json`.
+
+Generated diagnostic prompts are coverage-only and cannot support official strict-score improvement or promotion claims. If a variant improves a clear subcategory without total strict-score improvement and without safety regression, label it `locally_useful_but_not_promotable`. For answer-only variants, the trial fails if SQL hash, API hash, tool count, selected evidence hash, or dry-run label changes. Do not mix multiple behavior-changing candidate families in the same diff unless each family has its own isolated flag and report.
+
 ## Development Workflow
 
 Before major changes, record the current baseline if the user asks for an optimization pass:
@@ -158,6 +166,8 @@ python3 scripts/audit_workshop_requirements.py
 python3 scripts/run_dev_eval.py --strict
 python3 scripts/run_hidden_style_eval.py
 python3 scripts/check_llm_sdk_backend.py
+python3 scripts/run_workflow_decision_audit.py
+python3 scripts/run_decision_feedback_loop.py
 python3 scripts/run_llm_baseline_eval.py
 python3 scripts/run_llm_strict_baseline_eval.py
 python3 scripts/run_llm_hidden_style_diagnostic.py

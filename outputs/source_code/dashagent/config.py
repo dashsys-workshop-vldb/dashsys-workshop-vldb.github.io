@@ -90,6 +90,7 @@ class Config:
     llm_semantic_router_confidence_threshold: float = 0.55
     llm_semantic_router_ambiguity_margin: float = 0.10
     llm_semantic_router_max_tokens: int = 512
+    llm_semantic_router_trial_policy: str = "broad"
     value_retrieval_max_tables: int = 6
     value_retrieval_max_columns: int = 18
     value_retrieval_max_rows_per_column: int = 500
@@ -155,6 +156,7 @@ class Config:
             llm_semantic_router_confidence_threshold=float(os.getenv("LLM_SEMANTIC_ROUTER_CONFIDENCE_THRESHOLD", "0.55")),
             llm_semantic_router_ambiguity_margin=float(os.getenv("LLM_SEMANTIC_ROUTER_AMBIGUITY_MARGIN", "0.10")),
             llm_semantic_router_max_tokens=int(os.getenv("LLM_SEMANTIC_ROUTER_MAX_TOKENS", "512")),
+            llm_semantic_router_trial_policy=os.getenv("LLM_SEMANTIC_ROUTER_TRIAL_POLICY", "broad"),
             value_retrieval_max_tables=int(os.getenv("VALUE_RETRIEVAL_MAX_TABLES", "6")),
             value_retrieval_max_columns=int(os.getenv("VALUE_RETRIEVAL_MAX_COLUMNS", "18")),
             value_retrieval_max_rows_per_column=int(os.getenv("VALUE_RETRIEVAL_MAX_ROWS_PER_COLUMN", "500")),

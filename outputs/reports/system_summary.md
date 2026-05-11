@@ -11,6 +11,7 @@
 - Final recommendation: `ready_to_submit_with_official_token_reduction`
 - LLM semantic routing helper: `do_not_promote` (complete)
 - Semantic router isolated trial: `complete`; promotion decision: `do_not_promote`; packaged runtime affected: `False`
+- Decision-stage feedback loops: stages mapped `20`, semantic-router recommendation `candidate_not_viable_after_feedback_loops`
 
 ## Workflow
 

@@ -138,6 +138,19 @@ Outputs:
 
 Generated prompts are diagnostic-only, `should_be_scored=false`, not used as official benchmark data, and excluded from final submission packaging.
 
+## 3.4 Decision-Stage Feedback Loops
+
+Serious improvement candidates must start from a workflow decision-stage question, not a module guess. Use:
+
+```bash
+python3 scripts/run_workflow_decision_audit.py
+python3 scripts/run_decision_feedback_loop.py
+```
+
+The required process is hypothesis → baseline → isolated trial → failure analysis → 3-5 controlled variants → evidence-backed decision. Do not reject a serious candidate after one failed run; report whether a variant failed, the candidate is partially useful, the candidate is not viable after feedback loops, or the candidate is eligible for future limited promotion.
+
+Generated diagnostic prompts are coverage-only and cannot support official strict-score improvement or promotion claims. Answer-only trials must preserve SQL hash, API hash, tool count, selected evidence hash, and dry-run label. Behavior-changing variants stay in isolated outputs unless a later human-reviewed strict/safety promotion explicitly approves them.
+
 ## 4. Prompt Routing Policy
 
 The first decision is whether the prompt needs evidence:
@@ -388,6 +401,8 @@ python3 scripts/audit_workshop_requirements.py
 python3 scripts/run_dev_eval.py --strict
 python3 scripts/run_hidden_style_eval.py
 python3 scripts/check_llm_sdk_backend.py
+python3 scripts/run_workflow_decision_audit.py
+python3 scripts/run_decision_feedback_loop.py
 python3 scripts/run_llm_baseline_eval.py
 python3 scripts/run_llm_strict_baseline_eval.py
 python3 scripts/run_llm_hidden_style_diagnostic.py

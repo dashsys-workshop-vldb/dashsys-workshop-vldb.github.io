@@ -99,6 +99,16 @@ AMBIGUOUS_PHRASES = [
     "latest broken",
 ]
 
+SEMANTIC_ROUTER_TRIAL_POLICIES = {
+    "broad",
+    "narrow_eligibility",
+    "no_intent_application",
+    "priority_only",
+    "unknown_only",
+    "no_api_forcing",
+    "generated_diagnostic_only",
+}
+
 SECRET_RE = re.compile(r"sk-[A-Za-z0-9_-]{8,}|Authorization\s*:\s*Bearer|CLIENT_SECRET|ACCESS_TOKEN", re.I)
 QUERY_ID_RE = re.compile(r"\b(example|query)_\d{3,}\b", re.I)
 FINAL_ANSWER_LANGUAGE_RE = re.compile(r"\b(final answer|the answer is)\b", re.I)
@@ -199,6 +209,7 @@ class SemanticRoutingResult:
     llm_client_path_used: bool = True
     hint_application_reason: str | None = None
     hint_application_skipped_reason: str | None = None
+    trial_policy: str = "broad"
 
     @property
     def helper_confidence(self) -> float | None:
@@ -212,7 +223,7 @@ class SemanticRoutingResult:
         reason: str | None = None,
         skipped_reason: str | None = None,
     ) -> "SemanticRoutingResult":
-        mode = "isolated_non_shadow" if applied else ("shadow_only" if self.shadow_only else "disabled")
+        mode = "shadow_only" if self.shadow_only else ("isolated_non_shadow" if self.enabled else "disabled")
         return replace(
             self,
             hint_applied=applied,
@@ -248,6 +259,7 @@ class SemanticRoutingResult:
             "hint_application_mode": self.hint_application_mode,
             "hint_application_reason": self.hint_application_reason,
             "hint_application_skipped_reason": self.hint_application_skipped_reason,
+            "trial_policy": self.trial_policy,
             "applied_to_runtime": self.applied_to_runtime,
             "final_runtime_confidence": round(self.final_runtime_confidence, 4),
             "final_runtime_answer_family": self.final_runtime_answer_family,
@@ -445,6 +457,7 @@ def run_semantic_routing_helper(
         final_runtime_confidence=float(analysis.confidence),
         final_runtime_answer_family=analysis.answer_family,
         hint_application_mode="shadow_only" if cfg.enable_llm_semantic_router and cfg.llm_semantic_router_shadow_only else "disabled",
+        trial_policy=_normalized_trial_policy(cfg),
     )
     if not cfg.enable_llm_semantic_router or not eligibility.get("eligible"):
         return base
@@ -631,6 +644,7 @@ def apply_semantic_routing_hint(
 ) -> tuple[RoutingDecision, QueryAnalysis, SemanticRoutingResult]:
     cfg = config or DEFAULT_CONFIG
     hint = result.hint
+    policy = _normalized_trial_policy(cfg)
     if cfg.llm_semantic_router_shadow_only or not hint or not result.helper_valid:
         return routing, analysis, result.with_application(
             applied=False,
@@ -640,28 +654,44 @@ def apply_semantic_routing_hint(
 
     reasons = set(result.eligibility_reason or [])
     low_confidence = float(routing.confidence) < cfg.llm_semantic_router_confidence_threshold
+    very_low_confidence = float(routing.confidence) < 0.35
     unknown_domain = routing.domain_type == "UNKNOWN"
+    ambiguous_and_weak = "ambiguous_phrase" in reasons and "weak_schema_relevance" in reasons
     allowed_reasons = {"low_confidence", "unknown_domain", "ambiguous_phrase"}
     application_allowed = low_confidence or unknown_domain or bool(reasons & allowed_reasons)
+    if policy == "narrow_eligibility":
+        application_allowed = unknown_domain or very_low_confidence or ambiguous_and_weak
+    elif policy == "unknown_only":
+        application_allowed = unknown_domain
+    elif policy == "generated_diagnostic_only":
+        application_allowed = unknown_domain or very_low_confidence or ambiguous_and_weak
     if not application_allowed:
         return routing, analysis, result.with_application(
             applied=False,
             final_runtime_confidence=float(analysis.confidence),
-            skipped_reason="deterministic_route_high_confidence_or_close_candidates_only",
+            skipped_reason=(
+                "deterministic_route_high_confidence_or_close_candidates_only"
+                if policy == "broad"
+                else f"{policy}:deterministic_route_high_confidence_or_close_candidates_only"
+            ),
         )
 
     route_type = routing.route_type
     applied_reasons: list[str] = []
-    if low_confidence and hint.internal_route_suggestion != "UNKNOWN" and hint.internal_route_suggestion != routing.route_type:
+    route_change_allowed = low_confidence and policy not in {"priority_only"}
+    if policy == "no_api_forcing" and hint.internal_route_suggestion in {"API_ONLY", "SQL_THEN_API", "API_THEN_SQL"}:
+        route_change_allowed = route_change_allowed and routing.route_type in {"API_ONLY", "SQL_THEN_API", "API_THEN_SQL"}
+    if route_change_allowed and hint.internal_route_suggestion != "UNKNOWN" and hint.internal_route_suggestion != routing.route_type:
         route_type = hint.internal_route_suggestion
-        applied_reasons.append("route_changed_low_confidence")
+        applied_reasons.append(f"{policy}:route_changed_low_confidence")
     domain_type = routing.domain_type
-    if (low_confidence or unknown_domain) and hint.internal_domain_type and hint.internal_domain_type != routing.domain_type:
+    domain_change_allowed = (low_confidence or unknown_domain) and policy not in {"priority_only"}
+    if domain_change_allowed and hint.internal_domain_type and hint.internal_domain_type != routing.domain_type:
         domain_type = hint.internal_domain_type
-        applied_reasons.append("domain_changed_low_confidence_or_unknown")
+        applied_reasons.append(f"{policy}:domain_changed_low_confidence_or_unknown")
     candidate_tables = _dedupe([*hint.candidate_tables, *routing.candidate_tables])
     if candidate_tables != routing.candidate_tables:
-        applied_reasons.append("candidate_tables_prepended")
+        applied_reasons.append(f"{policy}:candidate_tables_prepended")
     candidate_apis = list(routing.candidate_apis)
     if endpoint_catalog is not None and hint.candidate_api_ids:
         by_id = {api.get("id"): api for api in candidate_apis if isinstance(api, dict)}
@@ -670,7 +700,7 @@ def apply_semantic_routing_hint(
             if endpoint and endpoint.id not in by_id:
                 candidate_apis.insert(0, endpoint.to_dict())
                 by_id[endpoint.id] = endpoint.to_dict()
-                applied_reasons.append("candidate_apis_prepended")
+                applied_reasons.append(f"{policy}:candidate_apis_prepended")
     if not applied_reasons:
         return routing, analysis, result.with_application(
             applied=False,
@@ -697,6 +727,11 @@ def apply_semantic_routing_hint(
         final_runtime_confidence=float(effective_analysis.confidence),
         reason=", ".join(_dedupe(applied_reasons)),
     )
+
+
+def _normalized_trial_policy(cfg: Config) -> str:
+    policy = str(getattr(cfg, "llm_semantic_router_trial_policy", "broad") or "broad").strip().lower()
+    return policy if policy in SEMANTIC_ROUTER_TRIAL_POLICIES else "broad"
 
 
 def _normalize_candidate_tables(raw: Any, schema_index: SchemaIndex) -> list[str] | None:

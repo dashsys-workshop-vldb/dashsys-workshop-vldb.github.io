@@ -11,6 +11,7 @@
 - AST canary status: `keep_shadow_only`
 - LLM semantic routing helper: `do_not_promote` (complete)
 - Semantic router isolated trial: `complete`; promotion decision: `do_not_promote`
+- Decision-stage feedback-loop status: `candidate_not_viable_after_feedback_loops`
 
 ## Why Changes Remain Shadow-Only
 

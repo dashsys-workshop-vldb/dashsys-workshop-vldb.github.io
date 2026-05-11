@@ -3,7 +3,7 @@
 - Freshness run ID: `20260506T205804480909Z-885373750216791`
 - Preferred strategy: `SQL_FIRST_API_VERIFY`
 - Strict final score: 0.6553
-- Estimated tokens/runtime/tools: 834.6 / 0.0115 / 1.4571
+- Estimated tokens/runtime/tools: 834.6 / 0.0116 / 1.4571
 - Final submission ready: True
 - Official-token packaged trial recommendation: `safe_to_make_packaged_default_in_future`
 - Official-token promotion recommendation: `promoted_keep_enabled`

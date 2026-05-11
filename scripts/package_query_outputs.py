@@ -44,6 +44,7 @@ NON_SUBMISSION_OUTPUT_DIRS = {
     "diagnostic_prompt_suite",
     "llm_semantic_router_shadow_eval",
     "llm_semantic_router_isolated_trial",
+    "llm_semantic_router_feedback_loop",
     "visualizations",
     "live_mode_readiness_report",
     "endpoint_family_tiebreak_v2_shadow",

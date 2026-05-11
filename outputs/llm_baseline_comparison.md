@@ -4,7 +4,7 @@
 | --- | ---: | ---: | ---: | ---: | ---: |
 | RAW_REAL_LLM_TWO_TOOLS_BASELINE | 35 | 34 | 1 | 0.4182 | 1.44 |
 | GUIDED_REAL_LLM_TWO_TOOLS_BASELINE | 35 | 35 | 0 | 0.4076 | 1.46 |
-| LLM_CONTROLLER_OPTIMIZED_AGENT | 35 | 35 | 0 | 0.4447 | 1.46 |
+| LLM_CONTROLLER_OPTIMIZED_AGENT | 35 | 35 | 0 | 0.4471 | 1.46 |
 
 ## Failed Real LLM Tool Loops
 

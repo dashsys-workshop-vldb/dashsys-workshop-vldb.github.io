@@ -49,6 +49,18 @@ Start here. Most older generated reports were consolidated or removed.
 - Packaged runtime affected: `False`
 - Recommendation: `do_not_promote`
 
+## Decision-Stage Audit And Feedback Loops
+
+- Workflow decision map: `outputs/reports/workflow_decision_map.md`
+- Workflow decision audit: `outputs/reports/workflow_decision_audit.md`
+- Feedback-loop index: `outputs/reports/improvement_feedback_loop_index.md`
+- Semantic-router loop final: `outputs/reports/feedback_loop_semantic_router_final.md`
+- Decision-stage improvement summary: `outputs/reports/decision_stage_improvement_summary.md`
+- Stages mapped: `20`
+- Audited rows: `35`
+- Semantic-router feedback recommendation: `candidate_not_viable_after_feedback_loops`
+- Generated diagnostic prompts remain coverage-only and are not promotion evidence.
+
 ## Workshop Requirement Alignment
 
 - [workshop_requirement_audit.md](workshop_requirement_audit.md)
@@ -70,6 +82,8 @@ Required commands:
 - `python3 scripts/run_dev_eval.py --strict`
 - `python3 scripts/run_hidden_style_eval.py`
 - `python3 scripts/check_llm_sdk_backend.py`
+- `python3 scripts/run_workflow_decision_audit.py`
+- `python3 scripts/run_decision_feedback_loop.py`
 - `python3 scripts/run_llm_baseline_eval.py`
 - `python3 scripts/run_llm_strict_baseline_eval.py`
 - `python3 scripts/run_llm_hidden_style_diagnostic.py`
@@ -89,6 +103,11 @@ Regenerated report surfaces:
 - `outputs/reports/accuracy_and_bottleneck_summary.md/json`
 - `outputs/reports/visualization_summary.md/json`
 - `outputs/reports/workshop_requirement_audit.md/json`
+- `outputs/reports/workflow_decision_map.md/json`
+- `outputs/reports/workflow_decision_audit.md/json`
+- `outputs/reports/improvement_feedback_loop_index.md/json`
+- `outputs/reports/feedback_loop_semantic_router_final.md/json`
+- `outputs/reports/decision_stage_improvement_summary.md/json`
 - `outputs/reports/cleanup_audit.md/json`
 - `outputs/reports/cleanup_final_report.md/json`
 - `outputs/winner_readiness_report.md/json`

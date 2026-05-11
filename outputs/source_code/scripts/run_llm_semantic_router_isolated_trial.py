@@ -31,6 +31,7 @@ from dashagent.eval_harness import (
 )
 from dashagent.executor import AgentExecutor
 from dashagent.llm_client import get_llm_client
+from dashagent.semantic_routing_helper import SEMANTIC_ROUTER_TRIAL_POLICIES
 from dashagent.trajectory import redact_secrets
 from scripts.load_local_env import load_local_env
 from scripts.run_llm_semantic_router_shadow_eval import _backend_metadata
@@ -39,6 +40,7 @@ from scripts.run_llm_semantic_router_shadow_eval import _backend_metadata
 DEFAULT_LIMIT = 50
 PACKAGED_STRICT_BASELINE = 0.6553
 ISOLATED_OUTPUT_DIR = "llm_semantic_router_isolated_trial"
+FEEDBACK_OUTPUT_DIR = "llm_semantic_router_feedback_loop"
 REPORT_STEM = "llm_semantic_router_isolated_trial"
 PROMOTION_STEM = "llm_semantic_router_promotion_decision"
 
@@ -55,6 +57,8 @@ def main() -> int:
         generated_only=args.generated_only,
         clean=args.clean,
         strict_public_set=args.strict_public_set,
+        trial_policy=args.trial_policy,
+        output_root_name=args.output_root_name,
     )
     print(
         json.dumps(
@@ -80,6 +84,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--generated-only", action="store_true", help="Run only generated diagnostic prompts.")
     parser.add_argument("--clean", action="store_true", help=f"Remove only outputs/{ISOLATED_OUTPUT_DIR}/ before running.")
     parser.add_argument("--strict-public-set", action="store_true", help="Run the complete public/dev strict set only.")
+    parser.add_argument(
+        "--trial-policy",
+        default="broad",
+        choices=sorted(SEMANTIC_ROUTER_TRIAL_POLICIES),
+        help="Isolated semantic-router application policy. Defaults to broad for backward-compatible isolated trial.",
+    )
+    parser.add_argument(
+        "--output-root-name",
+        default=None,
+        help="Optional outputs/ subdirectory for isolated artifacts, for example llm_semantic_router_feedback_loop/narrow_eligibility.",
+    )
     return parser.parse_args()
 
 
@@ -92,12 +107,20 @@ def run_llm_semantic_router_isolated_trial(
     generated_only: bool = False,
     clean: bool = False,
     strict_public_set: bool = False,
+    trial_policy: str = "broad",
+    output_root_name: str | None = None,
+    write_reports: bool = True,
 ) -> dict[str, Any]:
     config = config or Config.from_env(ROOT)
     config.outputs_dir.mkdir(parents=True, exist_ok=True)
     reports_dir = config.outputs_dir / "reports"
     reports_dir.mkdir(parents=True, exist_ok=True)
-    output_root = config.outputs_dir / ISOLATED_OUTPUT_DIR
+    trial_policy = trial_policy if trial_policy in SEMANTIC_ROUTER_TRIAL_POLICIES else "broad"
+    if trial_policy == "generated_diagnostic_only":
+        generated_only = True
+        public_only = False
+    root_name = output_root_name or ISOLATED_OUTPUT_DIR
+    output_root = config.outputs_dir / root_name
     if clean and output_root.exists():
         shutil.rmtree(output_root)
     output_root.mkdir(parents=True, exist_ok=True)
@@ -115,13 +138,17 @@ def run_llm_semantic_router_isolated_trial(
     if not client.available():
         reason = client.generate_messages([]).get("reason", "LLM provider API key is not set")
         report = _skipped_report(config, prompts, backend, str(reason))
-        _write_reports(config, report)
+        report["trial_policy"] = trial_policy
+        report["output_root"] = _rel(config, output_root)
+        if write_reports:
+            _write_reports(config, report)
         return report
 
     trial_config = replace(
         config,
         enable_llm_semantic_router=True,
         llm_semantic_router_shadow_only=False,
+        llm_semantic_router_trial_policy=trial_policy,
     )
     executor = AgentExecutor(trial_config)
     harness = EvalHarness(config)
@@ -137,7 +164,7 @@ def run_llm_semantic_router_isolated_trial(
             elapsed = time.perf_counter() - start
             trajectory = result.get("trajectory") or _load_json(out_dir / "trajectory.json")
             example = examples_by_id.get(prompt_id)
-            rows.append(_build_row(config, harness, item, trajectory, elapsed, out_dir, example, baseline.get(prompt_id)))
+            rows.append(_build_row(config, harness, item, trajectory, elapsed, out_dir, example, baseline.get(prompt_id), trial_policy))
         except Exception as exc:
             rows.append(
                 redact_secrets(
@@ -155,7 +182,10 @@ def run_llm_semantic_router_isolated_trial(
             )
 
     report = _build_report(config, prompts, rows, backend)
-    _write_reports(config, report)
+    report["trial_policy"] = trial_policy
+    report["output_root"] = _rel(config, output_root)
+    if write_reports:
+        _write_reports(config, report)
     return report
 
 
@@ -241,6 +271,7 @@ def _build_row(
     out_dir: Path,
     example: EvalExample | None,
     baseline: dict[str, Any] | None,
+    trial_policy: str = "broad",
 ) -> dict[str, Any]:
     prompt_id = str(item.get("prompt_id") or trajectory.get("query_id"))
     checkpoint = _semantic_checkpoint(trajectory)
@@ -262,11 +293,14 @@ def _build_row(
     baseline_tokens = _as_int(baseline_row.get("estimated_tokens") or baseline_trajectory.get("estimated_tokens"))
     validation_failures = count_validation_failures(trajectory)
     baseline_validation_failures = int(baseline_row.get("validation_failures") or count_validation_failures(baseline_trajectory))
+    applied_intent = checkpoint.get("final_runtime_answer_family") or checkpoint.get("deterministic_answer_family")
+    intent_changed = bool(checkpoint.get("hint_applied")) and applied_intent != checkpoint.get("deterministic_answer_family")
     row = {
         "prompt_id": prompt_id,
         "query_id": prompt_id,
         "prompt": item.get("prompt") or trajectory.get("original_query"),
         "source": item.get("source"),
+        "trial_policy": trial_policy,
         "status": "passed",
         "diagnostic_only": bool(item.get("diagnostic_only", False)),
         "output_dir": _rel(config, out_dir),
@@ -298,7 +332,7 @@ def _build_row(
         "applied_domain": trajectory.get("domain_type"),
         "deterministic_intent_before": checkpoint.get("deterministic_answer_family"),
         "helper_intent_suggestion": checkpoint.get("helper_answer_intent"),
-        "applied_intent": checkpoint.get("final_runtime_answer_family"),
+        "applied_intent": applied_intent,
         "hint_applied": checkpoint.get("hint_applied", False),
         "hint_application_mode": checkpoint.get("hint_application_mode"),
         "hint_application_reason": checkpoint.get("hint_application_reason"),
@@ -311,7 +345,7 @@ def _build_row(
         "final_runtime_confidence": checkpoint.get("final_runtime_confidence"),
         "route_changed": bool(checkpoint.get("hint_applied")) and checkpoint.get("deterministic_route_type") != trajectory.get("route_type"),
         "domain_changed": bool(checkpoint.get("hint_applied")) and checkpoint.get("deterministic_domain_type") != trajectory.get("domain_type"),
-        "intent_changed": bool(checkpoint.get("would_change_intent")),
+        "intent_changed": intent_changed,
         "sql_changed": normalize_sql(generated_sql) != normalize_sql(baseline_sql),
         "api_changed": _normalize_api_calls(generated_api) != _normalize_api_calls(baseline_api),
         "answer_changed": bool(baseline_answer) and trial_answer.strip() != baseline_answer.strip(),

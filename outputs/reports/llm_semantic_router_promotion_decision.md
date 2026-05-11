@@ -4,8 +4,8 @@ Report-only decision. No automatic promotion was performed.
 
 - Decision: `do_not_promote`
 - Packaged runtime affected: `False`
-- Strict score delta: `-0.0031`
-- Trial avg strict score: `0.6522`
+- Strict score delta: `-0.0032`
+- Trial avg strict score: `0.6521`
 - Recommendation reason: Strict score regressed in isolated trial.
 
 ## Gates
