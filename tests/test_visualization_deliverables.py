@@ -255,6 +255,7 @@ def test_end_to_end_system_dataflow_is_self_contained_and_complete():
     data = json.loads((VIS_DIR / "end_to_end_system_dataflow.json").read_text(encoding="utf-8"))
     required_text = [
         "User Prompt",
+        "Runtime Config",
         "Prompt Routing",
         "QueryAnalysis",
         "SQL_FIRST_API_VERIFY",
@@ -262,7 +263,7 @@ def test_end_to_end_system_dataflow_is_self_contained_and_complete():
         "Adobe API Evidence Path",
         "Live API mode",
         "Dry-run fallback",
-        "API response parser",
+        "API Response Parser",
         "Discovery-chain readiness",
         "Mock Live API Readiness",
         "EvidenceBus",
@@ -284,9 +285,13 @@ def test_end_to_end_system_dataflow_is_self_contained_and_complete():
     for text in required_text:
         assert text in html
     assert html.count("<svg") == 1
-    assert "viewBox=" in html
+    viewbox_match = re.search(r'viewBox="0 0 ([0-9.]+) ([0-9.]+)"', html)
+    assert viewbox_match
+    assert float(viewbox_match.group(2)) > float(viewbox_match.group(1))
     assert 'class="flowchart-canvas"' in html
     assert "overflow: auto" in html
+    assert "linear-gradient" not in html
+    assert "background-size" not in html
     for forbidden in [
         "<table",
         "Current System Status",
@@ -294,8 +299,10 @@ def test_end_to_end_system_dataflow_is_self_contained_and_complete():
         "Source Artifacts",
         "Artifact Links",
         "Status Panel",
+        "status panel",
         "report links panel",
         'class="panel"',
+        "dashboard cards",
         "metadata table",
     ]:
         assert forbidden not in html
@@ -312,6 +319,7 @@ def test_end_to_end_system_dataflow_is_self_contained_and_complete():
         "source_files",
         "missing_source_files",
         "stale_source_warnings",
+        "layout_orientation",
         "mermaid_source",
         "svg_source",
         "node_count",
@@ -319,25 +327,22 @@ def test_end_to_end_system_dataflow_is_self_contained_and_complete():
         "major_sections",
     ]:
         assert key in data
+    assert data["layout_orientation"] == "vertical"
     assert data["node_count"] > 30
     assert data["edge_count"] > 30
     assert data["major_sections"] == [
-        "User Prompt Input",
-        "Runtime Config / Safety Preflight",
-        "Prompt Routing",
-        "Query Understanding",
-        "Context Selection",
-        "Planning",
+        "Input + Preflight",
+        "Routing + Query Understanding",
+        "Context + Planning",
         "SQL Evidence Path",
         "Adobe API Evidence Path",
-        "Live API / Dry-run Split",
-        "Mock Live API Readiness",
         "EvidenceBus",
-        "Answer Slots",
-        "Answer Synthesis",
-        "Trajectory Logging",
-        "Evaluation",
-        "Final Submission / Reports",
+        "Answer Generation",
+        "Trajectory + Packaging",
+        "Evaluation + Reports",
+        "Diagnostic / Trial Side Paths",
+        "Mock Live API Readiness",
+        "Evidence-Aware Answer Rewrite",
     ]
     graph_text = html + "\n" + md + "\n" + data["mermaid_source"]
     for text in [
@@ -346,7 +351,7 @@ def test_end_to_end_system_dataflow_is_self_contained_and_complete():
         "Live API mode",
         "Dry-run fallback",
         "Mock Live API Readiness",
-        "final_submission packaging",
+        "Final Submission",
     ]:
         assert text in graph_text
 

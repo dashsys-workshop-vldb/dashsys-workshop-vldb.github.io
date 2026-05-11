@@ -204,7 +204,7 @@ python3 scripts/check_submission_ready.py
 
 ## End-to-End System Data Flow Flowchart
 
-`outputs/visualizations/end_to_end_system_dataflow.html` is an auto-generated, fully self-contained single-flowchart artifact for the current DASHSys runtime and reporting workflow. It is not a dashboard: the HTML is one large SVG diagram covering prompt routing, query analysis, `SQL_FIRST_API_VERIFY`, SQL/API validation, live Adobe API versus dry-run fallback, EvidenceBus, answer synthesis, diagnostic-only paths, final packaging, and evaluation.
+`outputs/visualizations/end_to_end_system_dataflow.html` is an auto-generated, fully self-contained single vertical flowchart for the current DASHSys runtime and reporting workflow. It intentionally follows a Graphviz-style process diagram: top-to-bottom main runtime path, clustered sections, and dashed diagnostic side branches. It is not a dashboard: the HTML is one large SVG diagram covering prompt routing, query analysis, `SQL_FIRST_API_VERIFY`, SQL/API validation, live Adobe API versus dry-run fallback, EvidenceBus, answer synthesis, diagnostic-only paths, final packaging, and evaluation.
 
 Refresh it with:
 
