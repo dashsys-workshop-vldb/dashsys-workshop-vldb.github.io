@@ -18,6 +18,7 @@ from dashagent.config import Config
 from dashagent.eval_harness import EvalExample, EvalHarness
 from dashagent.executor import AgentExecutor
 from dashagent.trajectory import redact_secrets
+from scripts.load_local_env import load_local_env
 
 
 OUTPUT_STEM = "live_api_evidence_pipeline_trial"
@@ -58,6 +59,7 @@ class GetOnlyAdobeAPIClient(AdobeAPIClient):
 
 
 def main() -> int:
+    load_local_env(ROOT)
     parser = argparse.ArgumentParser(description="Run isolated live API evidence pipeline readiness trial.")
     parser.add_argument("--limit", type=int, default=10)
     parser.add_argument("--full", action="store_true")

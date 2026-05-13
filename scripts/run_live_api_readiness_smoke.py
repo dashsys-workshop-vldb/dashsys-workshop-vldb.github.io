@@ -20,12 +20,14 @@ from dashagent.endpoint_catalog import Endpoint, EndpointCatalog
 from dashagent.evidence_bus import EvidenceBus
 from dashagent.trajectory import redact_secrets
 from dashagent.validators import APIValidator
+from scripts.load_local_env import load_local_env
 
 
 OUTPUT_STEM = "live_api_readiness_smoke"
 
 
 def main() -> int:
+    load_local_env(ROOT)
     parser = argparse.ArgumentParser(description="Run safe GET-only Adobe API readiness smoke checks.")
     parser.add_argument("--limit", type=int, default=5, help="Maximum catalog-approved GET endpoints to smoke when credentials are present.")
     args = parser.parse_args()
