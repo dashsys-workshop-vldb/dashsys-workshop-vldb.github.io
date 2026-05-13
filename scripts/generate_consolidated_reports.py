@@ -374,7 +374,24 @@ def build_report_index(
                 "path": "outputs/reports/diagnostic_prompt_suite_run.md",
                 "label": "Diagnostic prompt runtime coverage only; not official strict score.",
             },
+            {
+                "path": "outputs/reports/full_generated_prompt_suite_diagnostic.md",
+                "label": "Full 250-prompt generated suite diagnostic only; no official strict score claim.",
+            },
+            {
+                "path": "outputs/reports/generated_prompt_coverage_gap_analysis.md",
+                "label": "Generated prompt coverage gaps; diagnostic-only and not promotion evidence.",
+            },
         ],
+        "llm_controller_diagnostics": {
+            "failure_decomposition_path": "outputs/reports/llm_controller_failure_decomposition.md",
+            "rewrite_ablation_path": "outputs/reports/controller_rewrite_ablation.md",
+            "automatic_promotion": False,
+            "controller_status": "shadow_only",
+            "recommendation": _load_json(config.outputs_dir / "reports" / "controller_rewrite_ablation.json")
+            .get("summary", {})
+            .get("recommendation", "unavailable"),
+        },
         "sdk_usage_audit": {
             "path": "outputs/reports/sdk_usage_audit.md",
             "runtime_llm_direct_http_hits": _load_json(config.outputs_dir / "reports" / "sdk_usage_audit.json")
@@ -629,6 +646,13 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.extend(["", "## Diagnostic Prompt Coverage", ""])
     for item in payload.get("diagnostic_prompt_coverage", []):
         lines.append(f"- `{item['path']}` - {item['label']}")
+    lines.extend(["", "## LLM Controller Diagnostics", ""])
+    controller = payload.get("llm_controller_diagnostics", {})
+    lines.append(f"- Failure decomposition: `{controller.get('failure_decomposition_path')}`")
+    lines.append(f"- Rewrite ablation: `{controller.get('rewrite_ablation_path')}`")
+    lines.append(f"- Controller status: `{controller.get('controller_status')}`")
+    lines.append(f"- Automatic promotion: `{controller.get('automatic_promotion')}`")
+    lines.append(f"- Recommendation: `{controller.get('recommendation')}`")
     lines.extend(["", "## System-Wide SDK LLM Audit", ""])
     audit = payload.get("sdk_usage_audit", {})
     lines.append(f"- `{audit.get('path')}`")

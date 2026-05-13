@@ -3,17 +3,17 @@
 This audit checks that LLM/model calls use the shared SDK-based LLM client abstraction.
 
 - Runtime LLM direct HTTP hits: `0`
-- Source code hits: `13`
-- Generated output hits: `170`
+- Source code hits: `12`
+- Generated output hits: `82`
 - Documentation hits: `9`
-- Runtime hits: `9`
+- Runtime hits: `8`
 - All LLM calls SDK-based: `True`
 
 ## Classification Counts
 
 - `documentation_only`: `9`
-- `generated_output_stale_copy`: `170`
-- `sdk_client_allowed`: `9`
+- `generated_output_stale_copy`: `82`
+- `sdk_client_allowed`: `8`
 - `test_fixture_allowed`: `16`
 
 ## Remaining Allowed Exceptions

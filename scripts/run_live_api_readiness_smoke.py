@@ -13,7 +13,9 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from dashagent.answer_slots import extract_answer_slots
+from dashagent.adobe_env import adobe_env_readiness
 from dashagent.api_client import AdobeAPIClient
+from dashagent.api_outcome_classifier import classify_api_outcome, outcome_counts
 from dashagent.api_response_parser import normalize_api_response
 from dashagent.config import Config
 from dashagent.endpoint_catalog import Endpoint, EndpointCatalog
@@ -44,9 +46,10 @@ def run_live_api_readiness_smoke(config: Config | None = None, *, limit: int = 5
     client = AdobeAPIClient(config)
     catalog = EndpointCatalog(config)
     validator = APIValidator(catalog)
+    readiness = adobe_env_readiness()
 
     if client.dry_run:
-        payload = skipped_live_report(config, client)
+        payload = skipped_live_report(config, client, readiness)
         _write_json_md(reports_dir / OUTPUT_STEM, payload, render_smoke(payload))
         return payload
 
@@ -62,6 +65,14 @@ def run_live_api_readiness_smoke(config: Config | None = None, *, limit: int = 5
     for endpoint in endpoints:
         validation = validator.validate(endpoint.method, endpoint.path, endpoint.common_params, {})
         if not validation.ok:
+            result = {
+                "ok": False,
+                "dry_run": False,
+                "endpoint": endpoint.path,
+                "status_code": None,
+                "error_category": "endpoint_path_issue",
+                "error": "validation_failed",
+            }
             rows.append(
                 {
                     "endpoint_id": endpoint.id,
@@ -69,6 +80,7 @@ def run_live_api_readiness_smoke(config: Config | None = None, *, limit: int = 5
                     "path": endpoint.path,
                     "attempted": False,
                     "validation": validation.to_dict(),
+                    "outcome": classify_api_outcome(result, method=endpoint.method, path=endpoint.path),
                     "error": "validation_failed",
                 }
             )
@@ -85,6 +97,7 @@ def run_live_api_readiness_smoke(config: Config | None = None, *, limit: int = 5
                 "status_code": result.get("status_code"),
                 "ok": result.get("ok"),
                 "dry_run": result.get("dry_run"),
+                "outcome": classify_api_outcome(result, method=endpoint.method, path=endpoint.path),
                 "response_parser_status": evidence_status["response_parser_status"],
                 "evidencebus_forwarding_status": evidence_status["evidencebus_forwarding_status"],
                 "answer_synthesis_status": evidence_status["answer_synthesis_status"],
@@ -99,10 +112,26 @@ def run_live_api_readiness_smoke(config: Config | None = None, *, limit: int = 5
         "infrastructure_validation_only": True,
         "official_score_claim": False,
         "credentials_present": True,
+        "env_names_detected": readiness.get("env_names_detected"),
+        "credential_ready": readiness.get("credential_ready"),
+        "sandbox_ready": readiness.get("sandbox_ready"),
+        "ready_for_live_adobe_api_smoke": readiness.get("ready_for_live_adobe_api_smoke"),
+        "ready_for_sandbox_endpoints": readiness.get("ready_for_sandbox_endpoints"),
         "live_mode_attempted": True,
         "dry_run_fallback_verified": False,
         "endpoints_tested": rows,
         "skipped_endpoints": skipped_endpoints,
+        "outcome_counts": outcome_counts(rows),
+        "endpoints_attempted": sum(1 for row in rows if row.get("attempted")),
+        "endpoints_success": sum(1 for row in rows if row.get("outcome") == "live_success"),
+        "endpoints_empty": sum(1 for row in rows if row.get("outcome") == "live_empty"),
+        "endpoints_auth_error": sum(1 for row in rows if row.get("outcome") == "auth_error"),
+        "endpoints_rate_limited": sum(1 for row in rows if row.get("outcome") == "rate_limited"),
+        "endpoints_api_error": sum(1 for row in rows if row.get("outcome") in {"api_error", "external_api_unavailable", "endpoint_path_issue", "scope_or_permission_issue", "sandbox_scope_issue", "token_acquisition_failed"}),
+        "parser_success": sum(1 for row in rows if row.get("response_parser_status") == "pass"),
+        "parser_failure": sum(1 for row in rows if row.get("response_parser_status") not in {"pass", "dry_run_fallback"}),
+        "discovery_success": 0,
+        "discovery_blocked": sum(1 for row in skipped_endpoints if row.get("reason") == "requires_discovery_chain_or_path_param"),
         "success_count": sum(1 for row in rows if row.get("ok") is True),
         "failure_count": sum(1 for row in rows if row.get("ok") is False),
         "auth_failure_count": sum(1 for row in rows if row.get("status_code") in {401, 403}),
@@ -118,7 +147,8 @@ def run_live_api_readiness_smoke(config: Config | None = None, *, limit: int = 5
     return payload
 
 
-def skipped_live_report(config: Config, client: AdobeAPIClient) -> dict[str, Any]:
+def skipped_live_report(config: Config, client: AdobeAPIClient, readiness: dict[str, Any] | None = None) -> dict[str, Any]:
+    readiness = readiness or adobe_env_readiness()
     dry_run_result = client.call_api("GET", "/ajo/journey", {"limit": 1}, {})
     parsed_sample = normalize_api_response(
         {"items": [{"id": "journey-1", "name": "Sample Journey", "status": "live"}], "total": 1},
@@ -142,6 +172,11 @@ def skipped_live_report(config: Config, client: AdobeAPIClient) -> dict[str, Any
             "infrastructure_validation_only": True,
             "official_score_claim": False,
             "credentials_present": False,
+            "env_names_detected": readiness.get("env_names_detected"),
+            "credential_ready": readiness.get("credential_ready"),
+            "sandbox_ready": readiness.get("sandbox_ready"),
+            "ready_for_live_adobe_api_smoke": readiness.get("ready_for_live_adobe_api_smoke"),
+            "ready_for_sandbox_endpoints": readiness.get("ready_for_sandbox_endpoints"),
             "live_mode_attempted": False,
             "dry_run_fallback_verified": bool(dry_run_result.get("dry_run")),
             "missing_env_var_groups": [
@@ -156,6 +191,17 @@ def skipped_live_report(config: Config, client: AdobeAPIClient) -> dict[str, Any
             "failure_count": 0,
             "auth_failure_count": 0,
             "rate_limit_count": 0,
+            "outcome_counts": {},
+            "endpoints_attempted": 0,
+            "endpoints_success": 0,
+            "endpoints_empty": 0,
+            "endpoints_auth_error": 0,
+            "endpoints_rate_limited": 0,
+            "endpoints_api_error": 0,
+            "parser_success": 0,
+            "parser_failure": 0,
+            "discovery_success": 0,
+            "discovery_blocked": 0,
             "response_parser_status": pipeline["response_parser_status"],
             "evidencebus_forwarding_status": pipeline["evidencebus_forwarding_status"],
             "answer_synthesis_status": pipeline["answer_synthesis_status"],
@@ -196,7 +242,7 @@ def evidence_pipeline_status(endpoint: Endpoint, result: dict[str, Any]) -> dict
         [{"type": "api", "step": {"family": endpoint.id, "url": endpoint.path}, "payload": result}],
     )
     parsed = result.get("parsed_evidence") if isinstance(result, dict) else None
-    parser_status = "pass" if isinstance(parsed, dict) and parsed.get("evidence_state") in {"live_evidence", "live_empty", "live_empty_result", "api_error", "malformed_response"} else "not_available"
+    parser_status = "pass" if isinstance(parsed, dict) and parsed.get("evidence_state") in {"live_evidence", "live_empty", "live_empty_result", "api_error", "malformed_response", "token_acquisition_failed"} else "not_available"
     if result.get("dry_run"):
         parser_status = "dry_run_fallback"
     return {
@@ -225,6 +271,10 @@ def render_smoke(payload: dict[str, Any]) -> str:
         f"- Credentials present: `{payload['credentials_present']}`",
         f"- Live mode attempted: `{payload['live_mode_attempted']}`",
         f"- Dry-run fallback verified: `{payload['dry_run_fallback_verified']}`",
+        f"- Credential ready: `{payload.get('credential_ready')}`",
+        f"- Sandbox ready: `{payload.get('sandbox_ready')}`",
+        f"- Ready for live smoke: `{payload.get('ready_for_live_adobe_api_smoke')}`",
+        f"- Ready for sandbox endpoints: `{payload.get('ready_for_sandbox_endpoints')}`",
         f"- Success count: `{payload['success_count']}`",
         f"- Failure count: `{payload['failure_count']}`",
         f"- Auth failures: `{payload['auth_failure_count']}`",
@@ -240,7 +290,7 @@ def render_smoke(payload: dict[str, Any]) -> str:
     for row in payload.get("endpoints_tested", []):
         lines.append(
             f"- `{row.get('endpoint_id')}` {row.get('method')} `{row.get('path')}` "
-            f"ok=`{row.get('ok')}` status=`{row.get('status_code')}` parser=`{row.get('response_parser_status')}`"
+            f"outcome=`{row.get('outcome')}` ok=`{row.get('ok')}` status=`{row.get('status_code')}` parser=`{row.get('response_parser_status')}`"
         )
     lines.extend(["", "## Skipped Endpoints", ""])
     for row in payload.get("skipped_endpoints", [])[:30]:

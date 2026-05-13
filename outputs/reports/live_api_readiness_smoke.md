@@ -6,6 +6,10 @@ Infrastructure validation only; this report is not official strict-score evidenc
 - Credentials present: `True`
 - Live mode attempted: `True`
 - Dry-run fallback verified: `False`
+- Credential ready: `True`
+- Sandbox ready: `True`
+- Ready for live smoke: `True`
+- Ready for sandbox endpoints: `True`
 - Success count: `0`
 - Failure count: `5`
 - Auth failures: `2`
@@ -17,11 +21,11 @@ Infrastructure validation only; this report is not official strict-score evidenc
 
 ## Endpoints Tested
 
-- `journey_list` GET `/ajo/journey` ok=`False` status=`500` parser=`pass`
-- `ups_audiences` GET `/data/core/ups/audiences` ok=`False` status=`401` parser=`pass`
-- `segment_definitions` GET `/data/core/ups/segment/definitions` ok=`False` status=`401` parser=`pass`
-- `flowservice_flows` GET `/data/foundation/flowservice/flows` ok=`False` status=`500` parser=`pass`
-- `flowservice_runs` GET `/data/foundation/flowservice/runs` ok=`False` status=`500` parser=`pass`
+- `journey_list` GET `/ajo/journey` outcome=`external_api_unavailable` ok=`False` status=`500` parser=`pass`
+- `ups_audiences` GET `/data/core/ups/audiences` outcome=`auth_error` ok=`False` status=`401` parser=`pass`
+- `segment_definitions` GET `/data/core/ups/segment/definitions` outcome=`auth_error` ok=`False` status=`401` parser=`pass`
+- `flowservice_flows` GET `/data/foundation/flowservice/flows` outcome=`external_api_unavailable` ok=`False` status=`500` parser=`pass`
+- `flowservice_runs` GET `/data/foundation/flowservice/runs` outcome=`external_api_unavailable` ok=`False` status=`500` parser=`pass`
 
 ## Skipped Endpoints
 

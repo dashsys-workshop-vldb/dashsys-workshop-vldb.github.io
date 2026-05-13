@@ -2,24 +2,23 @@
 
 Infrastructure validation only; this report is not official strict-score evidence.
 
-- Overall status: `warning`
+- Overall status: `pass`
 - Critical failures: `0`
-- Warnings: `1`
+- Warnings: `0`
 - Official score claim: `False`
 - Packaged runtime affected: `False`
-- Manual token refresh required: `True`
+- Manual token refresh required: `False`
 
 ## Credential Presence
 
-- `access_token_env`: `{'present': False, 'env_name': None}`
-- `api_key_env`: `{'present': False, 'env_name': None}`
-- `client_id_env`: `{'present': False, 'env_name': None}`
-- `client_credential_env`: `{'present': False, 'env_name': None}`
-- `org_id_env`: `{'present': False, 'env_name': None}`
-- `sandbox_name_env`: `{'present': False, 'env_name': None}`
-- `base_url_env`: `{'present': False, 'env_name': None}`
-- `masked_org_id`: `None`
-- `masked_sandbox_name`: `None`
+- `auth_mode`: `client_credentials`
+- `authorization_constructible`: `True`
+- `env_names_detected`: `{'access_token': '[REDACTED]', 'api_key': '[REDACTED]', 'client_id': '[REDACTED]', 'client_secret': '[REDACTED]', 'org_id': 'ali***', 'sandbox_name': 'ali***', 'base_url': 'primary', 'scopes': 'default'}`
+- `headers_constructible`: `{'Authorization': '[REDACTED]', 'x-api-key': '[REDACTED]', 'x-gw-ims-org-id': '[MASKED]', 'x-sandbox-name': '[MASKED]', 'Content-Type': True}`
+- `credential_ready`: `True`
+- `sandbox_ready`: `True`
+- `ready_for_live_adobe_api_smoke`: `True`
+- `ready_for_sandbox_endpoints`: `True`
 
 ## Audit Items
 
@@ -29,9 +28,12 @@ Infrastructure validation only; this report is not official strict-score evidenc
 - `pass` `required_headers`: call_api can attach Authorization, x-api-key, x-gw-ims-org-id, x-sandbox-name, and Content-Type.
   Evidence: `dashagent/api_client.py`
   Explanation: Header keys available: ['Authorization', 'Content-Type', 'x-api-key', 'x-gw-ims-org-id', 'x-sandbox-name']; values are redacted or masked in reports.
-- `warning` `manual_token_refresh`: Refreshed access tokens can be supplied through env; automated refresh is optional.
+- `pass` `manual_token_refresh`: Refreshed access tokens can be supplied through env; automated refresh is optional.
   Evidence: `dashagent/api_client.py`
-  Explanation: Manual token refresh is required when no access token is present. Client-credentials token generation remains available through ADOBE_CLIENT_ID/SECRET or CLIENT_ID/SECRET.
+  Explanation: Access-token and client-credentials modes are both supported by the same AdobeAPIClient token path.
+- `pass` `token_acquisition_preflight`: Client-credentials token acquisition reuses AdobeAPIClient token handling and reports only status.
+  Evidence: `dashagent/api_client.py; scripts/audit_live_adobe_api_readiness.py`
+  Explanation: auth_mode=client_credentials attempted=True ok=True expires_in_present=True error_category=None
 - `pass` `endpoint_catalog_coverage`: Endpoint catalog documents method, path, params, family, and path-param discovery needs.
   Evidence: `dashagent/endpoint_catalog.py`
   Explanation: 21 catalog endpoints are available; GET endpoints with unresolved path params are marked discovery-required.
@@ -43,7 +45,7 @@ Infrastructure validation only; this report is not official strict-score evidenc
   Explanation: APIValidator validates catalog-approved paths and blocks unresolved placeholders.
 - `pass` `live_dry_run_separation`: Credentials present allow live mode; missing credentials use honest dry-run fallback.
   Evidence: `dashagent/api_client.py`
-  Explanation: Current credentials present: False; missing-credential client dry_run=True; fake-token client dry_run=False.
+  Explanation: Current credential_ready=True; sandbox_ready=True; missing-credential client dry_run=True; fake-token client dry_run=False.
 - `pass` `response_parser_readiness`: API response parser distinguishes live empty results, dry-run unavailability, and live errors.
   Evidence: `dashagent/api_response_parser.py`
   Explanation: Structured parser extracts ids, names, statuses, counts, timestamps, pagination, errors, endpoint metadata, parser mode, evidence state, and redacted previews. Endpoint-family extraction falls back to generic parsing without dropping evidence.

@@ -12,7 +12,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from dashagent.adobe_env import adobe_env_readiness
 from dashagent.api_client import AdobeAPIClient
+from dashagent.api_outcome_classifier import classify_api_outcome, outcome_counts
 from dashagent.api_response_parser import normalize_api_response
 from dashagent.config import Config
 from dashagent.eval_harness import EvalExample, EvalHarness
@@ -34,6 +36,7 @@ PROTECTED_OUTPUTS = [
 class GetOnlyAdobeAPIClient(AdobeAPIClient):
     def call_api(self, method: str, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> dict[str, Any]:
         if method.upper() != "GET" or "{" in url or "}" in url:
+            error_category = "unresolved_path_param" if "{" in url or "}" in url else "endpoint_path_issue"
             return {
                 "ok": False,
                 "dry_run": False,
@@ -44,6 +47,7 @@ class GetOnlyAdobeAPIClient(AdobeAPIClient):
                 "headers": {},
                 "status_code": None,
                 "result_preview": None,
+                "error_category": error_category,
                 "parsed_evidence": normalize_api_response(
                     None,
                     ok=False,
@@ -51,6 +55,7 @@ class GetOnlyAdobeAPIClient(AdobeAPIClient):
                     endpoint=url,
                     method=method.upper(),
                     path=url,
+                    error_category=error_category,
                     error="live_readiness_get_only_guard_blocked",
                 ),
                 "error": "Live readiness trial blocked a non-GET or unresolved-placeholder API call.",
@@ -87,8 +92,9 @@ def run_live_api_evidence_pipeline_trial(
     trial_root.mkdir(parents=True, exist_ok=True)
 
     client = GetOnlyAdobeAPIClient(config)
+    readiness = adobe_env_readiness()
     if client.dry_run:
-        payload = skipped_live_trial_report(config, client, trial_root)
+        payload = skipped_live_trial_report(config, client, trial_root, readiness)
         _write_json_md(reports_dir / OUTPUT_STEM, payload, render_trial(payload))
         return payload
 
@@ -106,6 +112,14 @@ def run_live_api_evidence_pipeline_trial(
         live_calls = [step for step in api_calls if not ((step.get("result") or {}).get("dry_run"))]
         dry_runs = [step for step in api_calls if (step.get("result") or {}).get("dry_run")]
         parser_success = sum(1 for step in live_calls if isinstance((step.get("result") or {}).get("parsed_evidence"), dict))
+        outcomes = [
+            classify_api_outcome(
+                step.get("result") or {},
+                method=(step.get("method") or (step.get("step") or {}).get("method")),
+                path=(step.get("url") or (step.get("step") or {}).get("url")),
+            )
+            for step in live_calls
+        ]
         rows.append(
             {
                 "query_id": example.query_id,
@@ -114,6 +128,8 @@ def run_live_api_evidence_pipeline_trial(
                 "api_call_count": len(api_calls),
                 "live_api_executed": len(live_calls),
                 "dry_run_count": len(dry_runs),
+                "api_outcomes": outcomes,
+                "primary_api_outcome": outcomes[0] if outcomes else None,
                 "parser_success_count": parser_success,
                 "answer_used_api_evidence": "api" in str(trajectory.get("final_answer", "")).lower() or parser_success > 0,
                 "unsupported_api_claim_count": 0,
@@ -139,7 +155,8 @@ def run_live_api_evidence_pipeline_trial(
     return payload
 
 
-def skipped_live_trial_report(config: Config, client: AdobeAPIClient, trial_root: Path) -> dict[str, Any]:
+def skipped_live_trial_report(config: Config, client: AdobeAPIClient, trial_root: Path, readiness: dict[str, Any] | None = None) -> dict[str, Any]:
+    readiness = readiness or adobe_env_readiness()
     dry_run_result = client.call_api("GET", "/ajo/journey", {"limit": 1}, {})
     parser_sample = normalize_api_response(
         {"items": [{"id": "segment-1", "displayName": "Sample Segment", "state": "active"}], "totalCount": 1},
@@ -160,6 +177,8 @@ def skipped_live_trial_report(config: Config, client: AdobeAPIClient, trial_root
             "api_call_count": 1,
             "live_api_executed": 0,
             "dry_run_count": 1 if dry_run_result.get("dry_run") else 0,
+            "api_outcomes": [],
+            "primary_api_outcome": None,
             "parser_success_count": 1 if parser_sample.get("evidence_state") == "live_evidence" else 0,
             "answer_used_api_evidence": False,
             "unsupported_api_claim_count": 0,
@@ -176,6 +195,7 @@ def skipped_live_trial_report(config: Config, client: AdobeAPIClient, trial_root
         trial_root=trial_root,
         residual_risk="Live API execution, real payload parsing, EvidenceBus forwarding from live payloads, and auth/rate-limit handling remain unverified until Adobe credentials are available.",
         dry_run_fallback_verified=bool(dry_run_result.get("dry_run")),
+        readiness=readiness,
     )
 
 
@@ -197,9 +217,12 @@ def build_trial_payload(
     trial_root: Path,
     residual_risk: str,
     dry_run_fallback_verified: bool | None = None,
+    readiness: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     total_live = sum(int(row.get("live_api_executed") or 0) for row in rows)
     total_dry = sum(int(row.get("dry_run_count") or 0) for row in rows)
+    readiness = readiness or adobe_env_readiness()
+    outcome_rows = [{"outcome": outcome} for row in rows for outcome in row.get("api_outcomes", [])]
     payload = {
         "report_type": OUTPUT_STEM,
         "status": status,
@@ -208,6 +231,11 @@ def build_trial_payload(
         "strict_score_computed": False,
         "strict_score_promotion_claim": False,
         "credentials_present": credentials_present,
+        "env_names_detected": readiness.get("env_names_detected"),
+        "credential_ready": readiness.get("credential_ready"),
+        "sandbox_ready": readiness.get("sandbox_ready"),
+        "ready_for_live_adobe_api_smoke": readiness.get("ready_for_live_adobe_api_smoke"),
+        "ready_for_sandbox_endpoints": readiness.get("ready_for_sandbox_endpoints"),
         "live_mode_attempted": live_mode_attempted,
         "dry_run_fallback_verified": dry_run_fallback_verified if dry_run_fallback_verified is not None else total_dry > 0,
         "trial_output_root": str(trial_root),
@@ -217,6 +245,7 @@ def build_trial_payload(
         "api_optional_prompts": "not_scored_in_infrastructure_trial",
         "live_api_executed_count": total_live,
         "dry_run_fallback_count": total_dry,
+        "outcome_counts": outcome_counts(outcome_rows),
         "parser_success_count": sum(int(row.get("parser_success_count") or 0) for row in rows),
         "evidencebus_api_evidence_count": sum(1 for row in rows if int(row.get("parser_success_count") or 0) > 0),
         "answer_used_api_evidence_count": sum(1 for row in rows if row.get("answer_used_api_evidence")),
@@ -244,6 +273,7 @@ def render_trial(payload: dict[str, Any]) -> str:
         f"- Total prompts: `{payload['total_prompts']}`",
         f"- Live API executed count: `{payload['live_api_executed_count']}`",
         f"- Dry-run fallback count: `{payload['dry_run_fallback_count']}`",
+        f"- Outcome counts: `{payload.get('outcome_counts')}`",
         f"- Parser success count: `{payload['parser_success_count']}`",
         f"- EvidenceBus API evidence count: `{payload['evidencebus_api_evidence_count']}`",
         f"- Answer used API evidence count: `{payload['answer_used_api_evidence_count']}`",
@@ -258,7 +288,7 @@ def render_trial(payload: dict[str, Any]) -> str:
     for row in payload.get("rows", [])[:20]:
         lines.append(
             f"- `{row.get('query_id')}` live_api=`{row.get('live_api_executed')}` "
-            f"dry_run=`{row.get('dry_run_count')}` parser=`{row.get('parser_success_count')}`"
+            f"dry_run=`{row.get('dry_run_count')}` outcome=`{row.get('primary_api_outcome')}` parser=`{row.get('parser_success_count')}`"
         )
     return "\n".join(lines) + "\n"
 

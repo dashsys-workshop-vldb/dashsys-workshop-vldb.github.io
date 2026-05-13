@@ -33,6 +33,16 @@ Start here. Most older generated reports were consolidated or removed.
 
 - `outputs/reports/generated_prompt_suite_summary.md` - Diagnostic prompt coverage only; not official strict score.
 - `outputs/reports/diagnostic_prompt_suite_run.md` - Diagnostic prompt runtime coverage only; not official strict score.
+- `outputs/reports/full_generated_prompt_suite_diagnostic.md` - Full 250-prompt generated suite diagnostic only; no official strict score claim.
+- `outputs/reports/generated_prompt_coverage_gap_analysis.md` - Generated prompt coverage gaps; diagnostic-only and not promotion evidence.
+
+## LLM Controller Diagnostics
+
+- Failure decomposition: `outputs/reports/llm_controller_failure_decomposition.md`
+- Rewrite ablation: `outputs/reports/controller_rewrite_ablation.md`
+- Controller status: `shadow_only`
+- Automatic promotion: `False`
+- Recommendation: `controller_no_rewrite_better`
 
 ## System-Wide SDK LLM Audit
 
@@ -46,9 +56,9 @@ Start here. Most older generated reports were consolidated or removed.
 - Smoke report: `outputs/reports/live_api_readiness_smoke.md`
 - Evidence pipeline trial: `outputs/reports/live_api_evidence_pipeline_trial.md`
 - Mock live evidence pipeline trial: `outputs/reports/mock_live_api_evidence_pipeline_trial.md`
-- Overall status: `warning`
-- Credentials present in latest smoke: `False`
-- Live mode attempted: `False`
+- Overall status: `pass`
+- Credentials present in latest smoke: `True`
+- Live mode attempted: `True`
 - Mock parser success count: `126`
 - Mock discovery chains simulated: `5`
 - Live API readiness is infrastructure validation only; it is not official strict-score evidence.
@@ -178,7 +188,7 @@ Regenerated report surfaces:
 - best_isolated_score: `0.6558`
 - hidden_style: `48/48`
 - final_submission_ready: `True`
-- live_adobe_api_readiness: `warning`
+- live_adobe_api_readiness: `pass`
 - evidence_aware_answer_synthesis: `keep_trial_only`
 - llm_recommendation: `keep_shadow_only`
 - target_0_75_reached: `False`

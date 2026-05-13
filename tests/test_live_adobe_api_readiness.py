@@ -7,13 +7,15 @@ from dashagent.answer_slots import extract_answer_slots
 from dashagent.answer_intent import AnswerIntent
 from dashagent.answer_verifier import safe_rewrite
 from dashagent.api_discovery import plan_discovery_for_endpoint, resolve_discovery_chain
-from dashagent.api_client import AdobeAPIClient, AdobeCredentials
+from dashagent.api_client import AdobeAPIClient, AdobeCredentials, TokenAcquisitionError
+from dashagent.api_outcome_classifier import classify_api_outcome
 from dashagent.api_response_parser import normalize_api_response
 from dashagent.config import Config
 from dashagent.endpoint_catalog import Endpoint, EndpointCatalog
 from dashagent.evidence_bus import EvidenceBus
 from dashagent.trajectory import redact_secrets
-from scripts.audit_live_adobe_api_readiness import audit_live_adobe_api_readiness
+from scripts.audit_live_adobe_api_readiness import audit_live_adobe_api_readiness, token_acquisition_preflight
+from scripts.generate_live_api_strict_eval_delta import generate_live_api_strict_eval_delta, preserve_pre_live_baseline
 from scripts.generate_api_required_readiness_matrix import generate_api_required_readiness_matrix
 from scripts.package_query_outputs import NON_SUBMISSION_OUTPUT_DIRS
 from scripts.run_live_api_evidence_pipeline_trial import run_live_api_evidence_pipeline_trial
@@ -29,6 +31,7 @@ ADOBE_ENV_NAMES = [
     "ADOBE_BASE_URL",
     "ADOBE_CLIENT_ID",
     "ADOBE_CLIENT_SECRET",
+    "ADOBE_SCOPES",
     "ACCESS_TOKEN",
     "CLIENT_ID",
     "CLIENT_SECRET",
@@ -74,6 +77,56 @@ def test_live_and_dry_run_mode_separation(monkeypatch):
     assert AdobeAPIClient().dry_run is False
 
 
+def test_client_credentials_mode_is_live_ready(monkeypatch):
+    clear_adobe_env(monkeypatch)
+    monkeypatch.setenv("CLIENT_ID", "client-id-live-ready")
+    monkeypatch.setenv("CLIENT_SECRET", "client-secret-live-ready")
+    monkeypatch.setenv("IMS_ORG", "org-live-ready")
+    monkeypatch.setenv("SANDBOX", "sandbox-live-ready")
+    assert AdobeAPIClient().dry_run is False
+
+
+def test_token_acquisition_failure_returns_structured_result_without_secret_leak(monkeypatch):
+    clear_adobe_env(monkeypatch)
+    credentials = AdobeCredentials(
+        client_id="client-id-secret-value",
+        client_secret="client-secret-value",
+        api_key="api-key-secret-value",
+        ims_org="org-secret-value",
+        sandbox="sandbox-secret-value",
+        access_token=None,
+        base_url="https://platform.adobe.io",
+    )
+
+    class FailingTokenClient(AdobeAPIClient):
+        def get_access_token(self):
+            raise TokenAcquisitionError(status_code=None, error_category="token_acquisition_failed")
+
+    result = FailingTokenClient(credentials=credentials).call_api("GET", "/ajo/journey", {"limit": 1}, {})
+    rendered = json.dumps(result, sort_keys=True)
+    assert result["ok"] is False
+    assert result["dry_run"] is False
+    assert result["error_category"] == "token_acquisition_failed"
+    assert result["parsed_evidence"]["evidence_state"] == "token_acquisition_failed"
+    assert classify_api_outcome(result, method="GET", path="/ajo/journey") == "token_acquisition_failed"
+    for secret in ["client-id-secret-value", "client-secret-value", "api-key-secret-value", "org-secret-value", "sandbox-secret-value"]:
+        assert secret not in rendered
+
+
+def test_shared_api_outcome_classifier_covers_live_error_states():
+    assert classify_api_outcome({"status_code": 401, "ok": False}) == "auth_error"
+    assert classify_api_outcome({"status_code": 403, "ok": False, "error": "missing scope"}) == "scope_or_permission_issue"
+    assert classify_api_outcome({"status_code": 403, "ok": False, "error": "sandbox not authorized"}) == "sandbox_scope_issue"
+    assert classify_api_outcome({"status_code": 404, "ok": False}) == "endpoint_path_issue"
+    assert classify_api_outcome({"status_code": 429, "ok": False}) == "rate_limited"
+    assert classify_api_outcome({"status_code": 503, "ok": False}) == "external_api_unavailable"
+    assert classify_api_outcome({"parsed_evidence": normalize_api_response("bad", ok=False, dry_run=False, malformed_response=True)}) == "malformed_response"
+    assert classify_api_outcome({"status_code": 200, "ok": True, "parsed_evidence": normalize_api_response([], ok=True, dry_run=False, status_code=200)}) == "live_empty"
+    assert classify_api_outcome({"status_code": 200, "ok": True, "parsed_evidence": normalize_api_response({"items": [{"id": "1"}]}, ok=True, dry_run=False, status_code=200)}) == "live_success"
+    assert classify_api_outcome({}, path="/unifiedtags/tags/{tag_id}") == "unresolved_path_param"
+    assert classify_api_outcome({}, discovery_status="discovery_blocked_missing_id") == "discovery_blocked_missing_id"
+
+
 def test_api_response_parser_distinguishes_live_empty_dry_run_and_error():
     live_empty = normalize_api_response([], ok=True, dry_run=False, status_code=200)
     dry_run = normalize_api_response(None, ok=False, dry_run=True)
@@ -91,6 +144,25 @@ def test_api_response_parser_distinguishes_live_empty_dry_run_and_error():
     assert api_error["dry_run"] is False
     assert api_error["evidence_state"] == "api_error"
     assert api_error["errors"]
+
+
+def test_token_acquisition_preflight_uses_client_helper(monkeypatch, tiny_project: Config):
+    clear_adobe_env(monkeypatch)
+    monkeypatch.setenv("CLIENT_ID", "client-id-preflight")
+    monkeypatch.setenv("CLIENT_SECRET", "client-secret-preflight")
+    monkeypatch.setenv("IMS_ORG", "org-preflight")
+    monkeypatch.setenv("SANDBOX", "sandbox-preflight")
+
+    def fake_payload(self):
+        return {"access_token": "token-preflight-secret", "expires_in": 3600}
+
+    monkeypatch.setattr(AdobeAPIClient, "fetch_access_token_payload", fake_payload)
+    preflight = token_acquisition_preflight(tiny_project)
+    rendered = json.dumps(preflight)
+    assert preflight["token_acquisition_attempted"] is True
+    assert preflight["token_acquisition_ok"] is True
+    assert preflight["expires_in_present"] is True
+    assert "token-preflight-secret" not in rendered
 
 
 def test_malformed_response_is_live_only():
@@ -323,3 +395,60 @@ def test_api_required_matrix_and_mock_live_trial_reports(tiny_project: Config):
     assert empty["evidencebus_state_only_forwarded"] is True
     assert not (tiny_project.outputs_dir / "eval_results_strict.json").exists()
     assert not (tiny_project.outputs_dir / "final_submission").exists()
+
+
+def test_pre_live_strict_baseline_and_meta_are_preserved_once(tiny_project: Config):
+    strict = {
+        "summary": {"by_strategy": {"SQL_FIRST_API_VERIFY": {"avg_final_score": 0.5}}},
+        "rows": [{"query_id": "q1", "strategy": "SQL_FIRST_API_VERIFY", "final_score": 0.5}],
+    }
+    strict_path = tiny_project.outputs_dir / "eval_results_strict.json"
+    tiny_project.outputs_dir.mkdir(parents=True, exist_ok=True)
+    strict_path.write_text(json.dumps(strict), encoding="utf-8")
+
+    first = preserve_pre_live_baseline(tiny_project, reason="test-baseline")
+    meta_path = tiny_project.outputs_dir / "reports" / "baselines" / "pre_live_api_eval_results_strict.meta.json"
+    baseline_path = tiny_project.outputs_dir / "reports" / "baselines" / "pre_live_api_eval_results_strict.json"
+    assert first["created"] is True
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    assert meta["reason"] == "test-baseline"
+    assert meta["source_path"] == str(strict_path)
+    assert len(meta["source_sha256"]) == 64
+
+    strict_path.write_text(json.dumps({"summary": {}, "rows": []}), encoding="utf-8")
+    second = preserve_pre_live_baseline(tiny_project, reason="should-not-overwrite")
+    assert second["created"] is False
+    assert json.loads(baseline_path.read_text(encoding="utf-8")) == strict
+
+
+def test_live_api_strict_delta_report_is_diagnostic_only(tiny_project: Config):
+    strict = {
+        "summary": {"by_strategy": {"SQL_FIRST_API_VERIFY": {"avg_final_score": 0.5, "avg_sql_score": 1.0}}},
+        "rows": [{"query_id": "q1", "strategy": "SQL_FIRST_API_VERIFY", "final_score": 0.5, "answer_score": 0.4, "sql_score": 1.0, "api_score": None}],
+    }
+    tiny_project.outputs_dir.mkdir(parents=True, exist_ok=True)
+    (tiny_project.outputs_dir / "eval_results_strict.json").write_text(json.dumps(strict), encoding="utf-8")
+    report = generate_live_api_strict_eval_delta(tiny_project, reason="test-delta")
+    assert report["official_score_claim"] is False
+    assert report["automatic_promotion"] is False
+    assert report["baseline_preserved"]["created"] is True
+    assert (tiny_project.outputs_dir / "reports" / "live_api_strict_eval_delta.json").exists()
+
+
+def test_live_audit_reports_do_not_include_actual_credential_values(tiny_project: Config, monkeypatch):
+    clear_adobe_env(monkeypatch)
+    fake_values = {
+        "ADOBE_ACCESS_TOKEN": "tok_actual_secret_value_123456",
+        "ADOBE_API_KEY": "api_actual_secret_value_123456",
+        "ADOBE_ORG_ID": "org_actual_secret_value_123456",
+        "ADOBE_SANDBOX_NAME": "sandbox_actual_secret_value_123456",
+    }
+    for key, value in fake_values.items():
+        monkeypatch.setenv(key, value)
+    audit_live_adobe_api_readiness(tiny_project)
+    combined = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in (tiny_project.outputs_dir / "reports").glob("live_adobe_api_readiness_audit.*")
+    )
+    for value in fake_values.values():
+        assert value not in combined

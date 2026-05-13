@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -11,11 +10,12 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from dashagent.api_client import AdobeAPIClient, AdobeCredentials
+from dashagent.adobe_env import adobe_env_readiness
+from dashagent.api_client import AdobeAPIClient, AdobeCredentials, TokenAcquisitionError
 from dashagent.api_response_parser import normalize_api_response
 from dashagent.config import Config
 from dashagent.endpoint_catalog import EndpointCatalog
-from dashagent.trajectory import mask_metadata_value, redact_secrets
+from dashagent.trajectory import redact_secrets
 from dashagent.validators import APIValidator
 from scripts.load_local_env import load_local_env
 
@@ -27,6 +27,7 @@ CRITICAL_FAILURE_REQUIREMENTS = {
     "api_validator_path",
     "live_dry_run_separation",
     "diagnostic_output_isolation",
+    "token_acquisition_preflight",
 }
 
 
@@ -43,7 +44,9 @@ def audit_live_adobe_api_readiness(config: Config | None = None) -> dict[str, An
     reports_dir = config.outputs_dir / "reports"
     reports_dir.mkdir(parents=True, exist_ok=True)
 
-    rows = build_audit_rows(config)
+    readiness = adobe_env_readiness()
+    token_preflight = token_acquisition_preflight(config, readiness)
+    rows = build_audit_rows(config, readiness, token_preflight)
     critical_failures = [
         row for row in rows
         if row["status"] == "fail" and row.get("requirement_id") in CRITICAL_FAILURE_REQUIREMENTS
@@ -60,9 +63,11 @@ def audit_live_adobe_api_readiness(config: Config | None = None) -> dict[str, An
             "critical_failures": critical_failures,
             "warnings": warnings,
             "credential_env_support": credential_env_support(),
-            "credential_presence": credential_presence_summary(),
+            "credential_presence": readiness,
+            "credential_readiness": readiness,
+            "token_acquisition_preflight": token_preflight,
             "endpoint_catalog_readiness": endpoint_catalog_readiness(config),
-            "manual_token_refresh_required": not bool(os.getenv("ADOBE_ACCESS_TOKEN") or os.getenv("ACCESS_TOKEN")),
+            "manual_token_refresh_required": readiness.get("auth_mode") == "missing",
             "items": rows,
             "safety_statement": "Live Adobe API readiness is infrastructure validation only. It must not overwrite official eval or final-submission artifacts.",
         }
@@ -71,8 +76,10 @@ def audit_live_adobe_api_readiness(config: Config | None = None) -> dict[str, An
     return payload
 
 
-def build_audit_rows(config: Config) -> list[dict[str, Any]]:
+def build_audit_rows(config: Config, readiness: dict[str, Any] | None = None, token_preflight: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
+    readiness = readiness or adobe_env_readiness()
+    token_preflight = token_preflight or token_acquisition_preflight(config, readiness)
     credentials = AdobeCredentials.from_env()
     client = AdobeAPIClient(config, credentials=credentials)
     no_creds_client = AdobeAPIClient(
@@ -118,10 +125,24 @@ def build_audit_rows(config: Config) -> list[dict[str, Any]]:
         row(
             "manual_token_refresh",
             "Refreshed access tokens can be supplied through env; automated refresh is optional.",
-            "warning" if not (os.getenv("ADOBE_ACCESS_TOKEN") or os.getenv("ACCESS_TOKEN")) else "pass",
+            "warning" if readiness.get("auth_mode") == "missing" else "pass",
             "dashagent/api_client.py",
-            "Manual token refresh is required when no access token is present. Client-credentials token generation remains available through ADOBE_CLIENT_ID/SECRET or CLIENT_ID/SECRET.",
-            "Before live smoke, provide a fresh ADOBE_ACCESS_TOKEN or configured client credentials.",
+            "Access-token and client-credentials modes are both supported by the same AdobeAPIClient token path.",
+            "Before live smoke, provide either a fresh access token or configured client credentials.",
+        )
+    )
+    rows.append(
+        row(
+            "token_acquisition_preflight",
+            "Client-credentials token acquisition reuses AdobeAPIClient token handling and reports only status.",
+            _token_preflight_status(readiness, token_preflight),
+            "dashagent/api_client.py; scripts/audit_live_adobe_api_readiness.py",
+            (
+                f"auth_mode={readiness.get('auth_mode')} attempted={token_preflight.get('token_acquisition_attempted')} "
+                f"ok={token_preflight.get('token_acquisition_ok')} expires_in_present={token_preflight.get('expires_in_present')} "
+                f"error_category={token_preflight.get('error_category')}"
+            ),
+            "Fix token credentials or scopes before live data endpoint smoke if token acquisition fails.",
         )
     )
     catalog = EndpointCatalog(config)
@@ -163,7 +184,7 @@ def build_audit_rows(config: Config) -> list[dict[str, Any]]:
             "Credentials present allow live mode; missing credentials use honest dry-run fallback.",
             "pass" if no_creds_client.dry_run and not fake_live_client.dry_run else "fail",
             "dashagent/api_client.py",
-            f"Current credentials present: {not client.dry_run}; missing-credential client dry_run={no_creds_client.dry_run}; fake-token client dry_run={fake_live_client.dry_run}.",
+            f"Current credential_ready={readiness.get('credential_ready')}; sandbox_ready={readiness.get('sandbox_ready')}; missing-credential client dry_run={no_creds_client.dry_run}; fake-token client dry_run={fake_live_client.dry_run}.",
             "Keep API_REQUIRED behavior intact for live mode; dry-run remains fallback only.",
         )
     )
@@ -255,18 +276,39 @@ def credential_env_support() -> dict[str, list[str]]:
     }
 
 
-def credential_presence_summary() -> dict[str, Any]:
-    support = credential_env_support()
-    summary: dict[str, Any] = {}
-    for logical_name, names in support.items():
-        found_name = next((name for name in names if os.getenv(name)), None)
-        display_name = "client_credential_env" if logical_name == "client_secret" else f"{logical_name}_env"
-        summary[display_name] = {"present": bool(found_name), "env_name": found_name}
-    org = os.getenv("ADOBE_ORG_ID") or os.getenv("IMS_ORG")
-    sandbox = os.getenv("ADOBE_SANDBOX_NAME") or os.getenv("SANDBOX")
-    summary["masked_org_id"] = mask_metadata_value(org) if org else None
-    summary["masked_sandbox_name"] = mask_metadata_value(sandbox) if sandbox else None
-    return summary
+def token_acquisition_preflight(config: Config, readiness: dict[str, Any] | None = None) -> dict[str, Any]:
+    readiness = readiness or adobe_env_readiness()
+    if readiness.get("auth_mode") != "client_credentials":
+        return {
+            "token_acquisition_attempted": False,
+            "token_acquisition_ok": False,
+            "expires_in_present": False,
+            "error_category": None,
+        }
+    client = AdobeAPIClient(config)
+    try:
+        payload = client.fetch_access_token_payload()
+        return {
+            "token_acquisition_attempted": True,
+            "token_acquisition_ok": bool(payload.get("access_token")),
+            "expires_in_present": "expires_in" in payload,
+            "error_category": None if payload.get("access_token") else "token_missing",
+        }
+    except TokenAcquisitionError as exc:
+        return {
+            "token_acquisition_attempted": True,
+            "token_acquisition_ok": False,
+            "expires_in_present": False,
+            "error_category": exc.error_category,
+        }
+
+
+def _token_preflight_status(readiness: dict[str, Any], token_preflight: dict[str, Any]) -> str:
+    if readiness.get("auth_mode") == "missing":
+        return "warning"
+    if readiness.get("auth_mode") == "access_token":
+        return "pass"
+    return "pass" if token_preflight.get("token_acquisition_ok") else "fail"
 
 
 def endpoint_catalog_readiness(config: Config) -> list[dict[str, Any]]:

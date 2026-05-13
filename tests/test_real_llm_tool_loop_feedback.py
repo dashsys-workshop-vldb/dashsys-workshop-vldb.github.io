@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from dashagent.llm_tool_agent import run_real_llm_two_tools_baseline
 
 
@@ -25,6 +27,24 @@ class FakeLLMClient:
         if self.responses:
             return self.responses.pop(0)
         return {"ok": True, "content": "Done.", "tool_calls": [], "finish_reason": "stop"}
+
+
+@pytest.fixture(autouse=True)
+def clear_adobe_env(monkeypatch):
+    for name in [
+        "ADOBE_ACCESS_TOKEN",
+        "ACCESS_TOKEN",
+        "ADOBE_API_KEY",
+        "CLIENT_ID",
+        "ADOBE_CLIENT_ID",
+        "ADOBE_CLIENT_SECRET",
+        "CLIENT_SECRET",
+        "ADOBE_ORG_ID",
+        "IMS_ORG",
+        "ADOBE_SANDBOX_NAME",
+        "SANDBOX",
+    ]:
+        monkeypatch.delenv(name, raising=False)
 
 
 def test_raw_baseline_does_not_use_guided_features(tiny_project):
