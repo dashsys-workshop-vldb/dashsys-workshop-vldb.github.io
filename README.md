@@ -71,6 +71,40 @@ export ADOBE_BASE_URL=https://platform.adobe.io
 
 Preferred Adobe aliases are also supported: `ADOBE_ACCESS_TOKEN`, `ADOBE_API_KEY`, `ADOBE_ORG_ID`, `ADOBE_SANDBOX_NAME`, `ADOBE_CLIENT_ID`, and `ADOBE_CLIENT_SECRET`. Tokens, API keys, and client secrets are fully redacted in reports; org ID and sandbox name are masked by default.
 
+### Local Adobe Credentials
+
+Use committed placeholders plus a local untracked env file:
+
+```bash
+cp .env.local.example .env.local
+```
+
+Edit `.env.local` locally with real values only:
+
+```bash
+ADOBE_ACCESS_TOKEN=...
+ADOBE_API_KEY=...
+ADOBE_ORG_ID=...
+ADOBE_SANDBOX_NAME=...
+ADOBE_BASE_URL=https://platform.adobe.io
+```
+
+Check status without exposing secrets:
+
+```bash
+python3 scripts/check_adobe_env_local.py
+```
+
+Then run live readiness checks:
+
+```bash
+python3 scripts/audit_live_adobe_api_readiness.py
+python3 scripts/run_live_api_readiness_smoke.py
+python3 scripts/run_live_api_evidence_pipeline_trial.py
+```
+
+Never commit `.env.local`.
+
 Real LLM integration is also optional. OpenAI remains the default provider:
 
 ```bash

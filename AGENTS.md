@@ -89,6 +89,40 @@ Adobe credentials must come only from environment variables:
 
 Never print, log, commit, or package secrets. Access tokens, API keys, and client secrets must be fully redacted; org ID and sandbox name are masked by default. Missing credentials are expected; dry-run API mode is valid and must be reported honestly in answers and trajectories.
 
+## Local Adobe Credentials
+
+Use placeholders in `.env.local.example` and keep real values only in local `.env.local`.
+
+```bash
+cp .env.local.example .env.local
+```
+
+Set local-only values:
+
+```bash
+ADOBE_ACCESS_TOKEN=...
+ADOBE_API_KEY=...
+ADOBE_ORG_ID=...
+ADOBE_SANDBOX_NAME=...
+ADOBE_BASE_URL=https://platform.adobe.io
+```
+
+Validate local credential presence without printing secrets:
+
+```bash
+python3 scripts/check_adobe_env_local.py
+```
+
+Then run:
+
+```bash
+python3 scripts/audit_live_adobe_api_readiness.py
+python3 scripts/run_live_api_readiness_smoke.py
+python3 scripts/run_live_api_evidence_pipeline_trial.py
+```
+
+Never commit `.env.local`.
+
 ## Live Adobe API Readiness
 
 Live Adobe API readiness is infrastructure validation, not score promotion. Assume Adobe API will eventually be connected, so do not optimize away required API behavior just because local credentials are missing. `API_REQUIRED` remains required in live mode, `API_OPTIONAL` can run when policy selects it, and dry-run is only a safe local fallback.

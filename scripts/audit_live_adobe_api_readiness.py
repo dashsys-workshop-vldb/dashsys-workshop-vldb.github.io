@@ -17,6 +17,7 @@ from dashagent.config import Config
 from dashagent.endpoint_catalog import EndpointCatalog
 from dashagent.trajectory import mask_metadata_value, redact_secrets
 from dashagent.validators import APIValidator
+from scripts.load_local_env import load_local_env
 
 
 OUTPUT_STEM = "live_adobe_api_readiness_audit"
@@ -30,6 +31,7 @@ CRITICAL_FAILURE_REQUIREMENTS = {
 
 
 def main() -> int:
+    load_local_env(ROOT)
     config = Config.from_env(ROOT)
     payload = audit_live_adobe_api_readiness(config)
     print(json.dumps({"overall_status": payload["overall_status"], "report": str(config.outputs_dir / "reports" / f"{OUTPUT_STEM}.json")}, indent=2, sort_keys=True))
