@@ -69,7 +69,7 @@ export ACCESS_TOKEN=...
 export ADOBE_BASE_URL=https://platform.adobe.io
 ```
 
-Preferred Adobe aliases are also supported: `ADOBE_ACCESS_TOKEN`, `ADOBE_API_KEY`, `ADOBE_ORG_ID`, `ADOBE_SANDBOX_NAME`, `ADOBE_CLIENT_ID`, and `ADOBE_CLIENT_SECRET`. Tokens, API keys, and client secrets are fully redacted in reports; org ID and sandbox name are masked by default.
+Preferred Adobe aliases are also supported: `ADOBE_ACCESS_TOKEN`, `ADOBE_API_KEY`, `ADOBE_ORG_ID`, `ADOBE_SANDBOX_NAME`, `ADOBE_CLIENT_ID`, and `ADOBE_CLIENT_SECRET`. Reports may show only source labels and booleans such as `primary`, `alias`, `default`, `missing`, `true`, or `false`; they must not show tokens, API keys, client IDs, client secrets, org IDs, sandbox names, or masked prefixes.
 
 ### Local Adobe Credentials
 
@@ -204,6 +204,8 @@ python3 scripts/run_mock_live_api_evidence_pipeline_trial.py
 Reports are written under `outputs/reports/` and isolated live trial artifacts under `outputs/live_api_evidence_pipeline_trial/` or `outputs/mock_live_api_evidence_pipeline_trial/`. Safe smoke tests are GET-only by default and do not call endpoints with unresolved path parameters unless a discovery step supplies a safe ID. The API response parser normalizes live payloads into `parsed_evidence`, EvidenceBus forwards parsed IDs/names/statuses/counts/timestamps/errors/pagination, and answer slots track whether evidence came from live API, dry-run fallback, empty live results, or API errors.
 
 Discovery chains are GET-only, never guess IDs, and record provenance for discovered IDs. Mocked fixtures under `tests/fixtures/adobe_api_responses/` validate endpoint-family parsing before credentials arrive; they are synthetic and must not be used as official benchmark evidence.
+
+Client-credentials token acquisition is supported through the same local `.env.local` setup. Current live smoke diagnostics can show token readiness while endpoint-level calls still fail because of product permission, sandbox scope, endpoint path, or Adobe service behavior. Run `python3 scripts/run_live_api_endpoint_path_diagnosis.py` before any full live prompt suite, and do not claim live API success until at least one catalog-approved safe GET endpoint returns `live_success`. Generated prompts remain diagnostic-only.
 
 ## 3.6 Evidence-Aware Answer Synthesis
 

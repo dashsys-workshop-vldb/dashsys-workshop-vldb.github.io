@@ -142,6 +142,7 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "live_adobe_api_readiness": _load_json(outputs / "reports" / "live_adobe_api_readiness_audit.json"),
         "api_required_readiness_matrix": _load_json(outputs / "reports" / "api_required_readiness_matrix.json"),
         "live_api_smoke": _load_json(outputs / "reports" / "live_api_readiness_smoke.json"),
+        "live_api_endpoint_path_diagnosis": _load_json(outputs / "reports" / "live_api_endpoint_path_diagnosis.json"),
         "live_api_pipeline_trial": _load_json(outputs / "reports" / "live_api_evidence_pipeline_trial.json"),
         "mock_live_api_pipeline_trial": _load_json(outputs / "reports" / "mock_live_api_evidence_pipeline_trial.json"),
         "llm_backend": _load_json(outputs / "llm_sdk_backend_check.json"),
@@ -402,6 +403,7 @@ def build_report_index(
             "audit_path": "outputs/reports/live_adobe_api_readiness_audit.md",
             "api_required_readiness_matrix_path": "outputs/reports/api_required_readiness_matrix.md",
             "smoke_path": "outputs/reports/live_api_readiness_smoke.md",
+            "endpoint_path_diagnosis_path": "outputs/reports/live_api_endpoint_path_diagnosis.md",
             "pipeline_trial_path": "outputs/reports/live_api_evidence_pipeline_trial.md",
             "mock_pipeline_trial_path": "outputs/reports/mock_live_api_evidence_pipeline_trial.md",
             **_live_api_readiness_status(
@@ -409,6 +411,7 @@ def build_report_index(
                     "live_adobe_api_readiness": _load_json(config.outputs_dir / "reports" / "live_adobe_api_readiness_audit.json"),
                     "api_required_readiness_matrix": _load_json(config.outputs_dir / "reports" / "api_required_readiness_matrix.json"),
                     "live_api_smoke": _load_json(config.outputs_dir / "reports" / "live_api_readiness_smoke.json"),
+                    "live_api_endpoint_path_diagnosis": _load_json(config.outputs_dir / "reports" / "live_api_endpoint_path_diagnosis.json"),
                     "live_api_pipeline_trial": _load_json(config.outputs_dir / "reports" / "live_api_evidence_pipeline_trial.json"),
                     "mock_live_api_pipeline_trial": _load_json(config.outputs_dir / "reports" / "mock_live_api_evidence_pipeline_trial.json"),
                 }
@@ -662,6 +665,7 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.append(f"- Readiness audit: `{live.get('audit_path')}`")
     lines.append(f"- API_REQUIRED readiness matrix: `{live.get('api_required_readiness_matrix_path')}`")
     lines.append(f"- Smoke report: `{live.get('smoke_path')}`")
+    lines.append(f"- Endpoint path diagnosis: `{live.get('endpoint_path_diagnosis_path')}`")
     lines.append(f"- Evidence pipeline trial: `{live.get('pipeline_trial_path')}`")
     lines.append(f"- Mock live evidence pipeline trial: `{live.get('mock_pipeline_trial_path')}`")
     lines.append(f"- Overall status: `{live.get('overall_status')}`")
@@ -843,6 +847,7 @@ def _live_api_readiness_status(sources: dict[str, Any]) -> dict[str, Any]:
     audit = sources.get("live_adobe_api_readiness") or {}
     matrix = sources.get("api_required_readiness_matrix") or {}
     smoke = sources.get("live_api_smoke") or {}
+    path_diagnosis = sources.get("live_api_endpoint_path_diagnosis") or {}
     pipeline = sources.get("live_api_pipeline_trial") or {}
     mock_pipeline = sources.get("mock_live_api_pipeline_trial") or {}
     return {
@@ -852,6 +857,7 @@ def _live_api_readiness_status(sources: dict[str, Any]) -> dict[str, Any]:
         "api_required_readiness_matrix_status": "complete" if matrix.get("report_type") == "api_required_readiness_matrix" else "not_run",
         "api_required_or_api_only_queries": (matrix.get("summary") or {}).get("total_api_required_or_api_only_queries"),
         "smoke_status": smoke.get("status", "not_run"),
+        "endpoint_path_diagnosis_status": "complete" if path_diagnosis.get("report_type") == "live_api_endpoint_path_diagnosis" else "not_run",
         "pipeline_trial_status": pipeline.get("status", "not_run"),
         "mock_pipeline_trial_status": mock_pipeline.get("status", "not_run"),
         "mock_parser_success_count": mock_pipeline.get("parser_success_count", "not_run"),
@@ -867,6 +873,7 @@ def _live_api_readiness_status(sources: dict[str, Any]) -> dict[str, Any]:
             "outputs/reports/live_adobe_api_readiness_audit.md",
             "outputs/reports/api_required_readiness_matrix.md",
             "outputs/reports/live_api_readiness_smoke.md",
+            "outputs/reports/live_api_endpoint_path_diagnosis.md",
             "outputs/reports/live_api_evidence_pipeline_trial.md",
             "outputs/reports/mock_live_api_evidence_pipeline_trial.md",
         ],

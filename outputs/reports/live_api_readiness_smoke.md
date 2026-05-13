@@ -31,7 +31,7 @@ Infrastructure validation only; this report is not official strict-score evidenc
 - `unified_tags` GET `/unifiedtags/tags` outcome=`endpoint_path_issue` ok=`False` status=`404` parser=`pass`
 - `merge_policies` GET `/data/core/ups/config/mergePolicies` outcome=`auth_error` ok=`False` status=`401` parser=`pass`
 - `catalog_batches` GET `/data/foundation/catalog/batches` outcome=`endpoint_path_issue` ok=`False` status=`500` parser=`pass`
-- `audit_events` GET `/data/foundation/audit/events` outcome=`api_error` ok=`False` status=`400` parser=`pass`
+- `audit_events` GET `/data/foundation/audit/events` outcome=`sandbox_scope_issue` ok=`False` status=`400` parser=`pass`
 - `schemas_short` GET `/schemas` outcome=`endpoint_path_issue` ok=`False` status=`404` parser=`pass`
 
 ## Skipped Endpoints

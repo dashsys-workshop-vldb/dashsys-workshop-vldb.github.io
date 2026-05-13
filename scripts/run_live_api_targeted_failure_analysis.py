@@ -12,10 +12,11 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from dashagent.adobe_env import adobe_env_readiness, format_adobe_readiness_for_report
-from dashagent.api_outcome_classifier import classify_api_outcome
+from dashagent.api_outcome_classifier import classify_api_outcome, diagnose_api_outcome
 from dashagent.config import Config
 from dashagent.trajectory import redact_secrets
 from scripts.load_local_env import load_local_env
+from scripts.run_live_api_readiness_smoke import safe_error_excerpt
 
 
 OUTPUT_STEM = "live_api_targeted_failure_analysis"
@@ -61,17 +62,21 @@ def _smoke_rows(config: Config) -> list[dict[str, Any]]:
         outcome = row.get("outcome") or classify_api_outcome(row, method=row.get("method"), path=row.get("path"))
         if outcome == "live_success":
             continue
+        diagnosis = diagnose_api_outcome(row, method=row.get("method"), path=row.get("path"), outcome=outcome)
         rows.append(
             {
                 "source_report": "live_api_readiness_smoke",
                 "failure_type": outcome,
-                "next_action": _next_action(outcome),
+                "likely_failure_area": diagnosis["likely_failure_area"],
+                "next_action": diagnosis["next_action"],
+                "confidence": diagnosis["confidence"],
                 "endpoint_id": row.get("endpoint_id"),
                 "method": row.get("method"),
                 "path": row.get("path"),
                 "status_code": row.get("status_code"),
-                "root_cause": _root_cause(outcome),
-                "runtime_safe_fix_candidate": _fix_candidate(outcome),
+                "safe_error_excerpt": row.get("safe_error_excerpt") or safe_error_excerpt(row),
+                "root_cause": _root_cause(outcome, diagnosis["likely_failure_area"]),
+                "runtime_safe_fix_candidate": _fix_candidate(outcome, diagnosis["likely_failure_area"]),
             }
         )
     return rows
@@ -85,14 +90,18 @@ def _trial_rows(config: Config) -> list[dict[str, Any]]:
         for outcome in outcomes:
             if outcome == "live_success":
                 continue
+            diagnosis = diagnose_api_outcome({"error": row.get("final_answer_preview")}, outcome=outcome)
             rows.append(
                 {
                     "source_report": "live_api_evidence_pipeline_trial",
                     "failure_type": outcome,
-                    "next_action": _next_action(outcome),
+                    "likely_failure_area": diagnosis["likely_failure_area"],
+                    "next_action": diagnosis["next_action"],
+                    "confidence": diagnosis["confidence"],
                     "query_id": row.get("query_id"),
-                    "root_cause": _root_cause(outcome),
-                    "runtime_safe_fix_candidate": _fix_candidate(outcome),
+                    "safe_error_excerpt": safe_error_excerpt({"error": row.get("final_answer_preview")}),
+                    "root_cause": _root_cause(outcome, diagnosis["likely_failure_area"]),
+                    "runtime_safe_fix_candidate": _fix_candidate(outcome, diagnosis["likely_failure_area"]),
                 }
             )
     return rows
@@ -113,7 +122,11 @@ def _full_diagnostics_gate(config: Config) -> dict[str, Any]:
     }
 
 
-def _root_cause(outcome: str) -> str:
+def _root_cause(outcome: str, likely_failure_area: str = "") -> str:
+    if likely_failure_area == "required_param":
+        return "endpoint_path_issue"
+    if likely_failure_area == "parser_gap":
+        return "parser_gap"
     mapping = {
         "auth_error": "credential_header_issue",
         "token_acquisition_failed": "credential_header_issue",
@@ -130,7 +143,9 @@ def _root_cause(outcome: str) -> str:
     return mapping.get(outcome, "no_clear_failure")
 
 
-def _fix_candidate(outcome: str) -> str:
+def _fix_candidate(outcome: str, likely_failure_area: str = "") -> str:
+    if likely_failure_area == "required_param":
+        return "add safe required query parameter only if the API explicitly requires it"
     mapping = {
         "auth_error": "verify token scopes and credential freshness; no code promotion",
         "token_acquisition_failed": "fix token acquisition inputs before live endpoint smoke",
@@ -145,24 +160,6 @@ def _fix_candidate(outcome: str) -> str:
         "live_empty": "ensure answer synthesis treats live empty as no matching records",
     }
     return mapping.get(outcome, "inspect evidence before changing runtime")
-
-
-def _next_action(outcome: str) -> str:
-    mapping = {
-        "auth_error": "verify_permission",
-        "token_acquisition_failed": "verify_permission",
-        "scope_or_permission_issue": "verify_permission",
-        "sandbox_scope_issue": "verify_sandbox",
-        "endpoint_path_issue": "fix_endpoint_path",
-        "unresolved_path_param": "rerun_with_endpoint_filter",
-        "discovery_blocked_missing_id": "rerun_with_endpoint_filter",
-        "rate_limited": "no_code_fix",
-        "malformed_response": "fix_parser",
-        "external_api_unavailable": "wait_external_service",
-        "api_error": "no_code_fix",
-        "live_empty": "no_code_fix",
-    }
-    return mapping.get(outcome, "no_code_fix")
 
 
 def _load_json(path: Path) -> dict[str, Any]:

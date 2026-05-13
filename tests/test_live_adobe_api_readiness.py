@@ -9,7 +9,7 @@ from dashagent.answer_verifier import safe_rewrite
 from dashagent.adobe_env import format_adobe_readiness_for_report
 from dashagent.api_discovery import plan_discovery_for_endpoint, resolve_discovery_chain
 from dashagent.api_client import AdobeAPIClient, AdobeCredentials, TokenAcquisitionError
-from dashagent.api_outcome_classifier import classify_api_outcome
+from dashagent.api_outcome_classifier import classify_api_outcome, diagnose_api_outcome
 from dashagent.api_response_parser import normalize_api_response
 from dashagent.config import Config
 from dashagent.endpoint_catalog import Endpoint, EndpointCatalog
@@ -20,6 +20,7 @@ from scripts.generate_live_api_strict_eval_delta import generate_live_api_strict
 from scripts.generate_api_required_readiness_matrix import generate_api_required_readiness_matrix
 from scripts.package_query_outputs import NON_SUBMISSION_OUTPUT_DIRS
 from scripts.run_live_api_evidence_pipeline_trial import run_live_api_evidence_pipeline_trial
+from scripts.run_live_api_endpoint_path_diagnosis import run_live_api_endpoint_path_diagnosis
 from scripts.run_live_api_readiness_smoke import (
     filter_safe_smoke_endpoints,
     run_live_api_readiness_smoke,
@@ -128,6 +129,10 @@ def test_shared_api_outcome_classifier_covers_live_error_states():
     assert classify_api_outcome({"status_code": 503, "ok": False}) == "external_api_unavailable"
     assert classify_api_outcome({"status_code": 500, "ok": False, "error": "route not found"}) == "endpoint_path_issue"
     assert classify_api_outcome({"status_code": 500, "ok": False, "error": "tenant sandbox mismatch"}) == "sandbox_scope_issue"
+    assert classify_api_outcome({"status_code": 400, "ok": False, "error": "missing required query parameter"}) == "api_error"
+    required = diagnose_api_outcome({"status_code": 400, "ok": False, "error": "missing required query parameter"})
+    assert required["likely_failure_area"] == "required_param"
+    assert required["next_action"] == "add_required_param"
     assert classify_api_outcome({"parsed_evidence": normalize_api_response("bad", ok=False, dry_run=False, malformed_response=True)}) == "malformed_response"
     assert classify_api_outcome({"status_code": 200, "ok": True, "parsed_evidence": normalize_api_response([], ok=True, dry_run=False, status_code=200)}) == "live_empty"
     assert classify_api_outcome({"status_code": 200, "ok": True, "parsed_evidence": normalize_api_response({"items": [{"id": "1"}]}, ok=True, dry_run=False, status_code=200)}) == "live_success"
@@ -468,9 +473,16 @@ def test_live_trial_client_credentials_success_does_not_emit_stale_skip(monkeypa
     assert report["status"] == "complete"
     assert report["credentials_present"] is True
     assert report["recommendation"] != "provide_live_credentials_then_rerun"
+    assert report["usable_live_api_evidence_count"] == 0
+    assert report["answer_used_usable_api_evidence_count"] == 0
+    assert report["api_state_forwarded_count"] == 1
+    assert report["answer_used_api_state_count"] == 1
+    assert report["evidencebus_api_evidence_count"] == 0
     assert "skipped_live_credentials_missing" not in json.dumps(report)
     assert "Credentials present: `False`" not in markdown
     assert "provide_live_credentials_then_rerun" not in markdown
+    assert "Answer used usable API evidence count" in markdown
+    assert "Answer used API state/caveat count" in markdown
 
 
 def test_live_readiness_audit_and_skipped_reports_are_infrastructure_only(tiny_project: Config, monkeypatch):
@@ -626,4 +638,58 @@ def test_targeted_failure_analysis_rows_include_next_action(tiny_project: Config
     actions = {row["next_action"] for row in report["rows"]}
     assert "verify_permission" in actions
     assert "wait_external_service" in actions
+    assert all(row["likely_failure_area"] for row in report["rows"])
+    assert all(row["confidence"] in {"high", "medium", "low"} for row in report["rows"])
+    assert all("safe_error_excerpt" in row for row in report["rows"])
     assert report["uses_shared_api_outcome_classifier"] is True
+
+
+def test_live_endpoint_path_diagnosis_reports_safe_candidates(monkeypatch, tiny_project: Config):
+    reports = tiny_project.outputs_dir / "reports"
+    reports.mkdir(parents=True, exist_ok=True)
+    (reports / "live_api_readiness_smoke.json").write_text(
+        json.dumps(
+            {
+                "endpoints_tested": [
+                    {
+                        "endpoint_id": "unified_tags",
+                        "method": "GET",
+                        "path": "/unifiedtags/tags",
+                        "status_code": 404,
+                        "outcome": "endpoint_path_issue",
+                    },
+                    {
+                        "endpoint_id": "merge_policies",
+                        "method": "GET",
+                        "path": "/data/core/ups/config/mergePolicies",
+                        "status_code": 403,
+                        "outcome": "scope_or_permission_issue",
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    class FakeClient:
+        dry_run = False
+
+        def __init__(self, config):
+            pass
+
+        def call_api(self, method, url, params, headers):
+            assert method == "GET"
+            assert "{" not in url and "}" not in url
+            return {"ok": False, "dry_run": False, "status_code": 404, "error": "route not found"}
+
+    monkeypatch.setattr("scripts.run_live_api_endpoint_path_diagnosis.AdobeAPIClient", FakeClient)
+    report = run_live_api_endpoint_path_diagnosis(tiny_project)
+    assert report["diagnostic_only"] is True
+    assert report["mutating_calls_executed"] is False
+    assert len(report["rows"]) == 1
+    row = report["rows"][0]
+    assert row["endpoint_id"] == "unified_tags"
+    assert row["recommended_action"] == "no_code_fix"
+    assert row["code_change_recommended"] is False
+    assert row["candidate_safe_get_paths_attempted"]
+    assert all(path.startswith("/") for path in row["candidate_safe_get_paths_attempted"])

@@ -17,7 +17,7 @@ if str(ROOT) not in sys.path:
 from dashagent.answer_slots import extract_answer_slots
 from dashagent.adobe_env import adobe_env_readiness, format_adobe_readiness_for_report
 from dashagent.api_client import AdobeAPIClient
-from dashagent.api_outcome_classifier import classify_api_outcome, outcome_counts
+from dashagent.api_outcome_classifier import classify_api_outcome, diagnose_api_outcome, outcome_counts
 from dashagent.api_response_parser import normalize_api_response
 from dashagent.config import Config
 from dashagent.endpoint_catalog import Endpoint, EndpointCatalog
@@ -216,6 +216,7 @@ def smoke_endpoint_row(
     evidence_status: dict[str, str],
 ) -> dict[str, Any]:
     outcome = classify_api_outcome(result, method=endpoint.method, path=endpoint.path)
+    diagnosis = diagnose_api_outcome(result, method=endpoint.method, path=endpoint.path, outcome=outcome)
     return {
         "endpoint_id": endpoint.id,
         "method": endpoint.method,
@@ -227,7 +228,9 @@ def smoke_endpoint_row(
         "dry_run": result.get("dry_run"),
         "outcome": outcome,
         "safe_error_category": result.get("error_category") or outcome,
-        "likely_failure_area": likely_failure_area(outcome),
+        "likely_failure_area": diagnosis["likely_failure_area"],
+        "next_action": diagnosis["next_action"],
+        "confidence": diagnosis["confidence"],
         "response_parser_status": evidence_status["response_parser_status"],
         "evidencebus_forwarding_status": evidence_status["evidencebus_forwarding_status"],
         "answer_synthesis_status": evidence_status["answer_synthesis_status"],
@@ -357,21 +360,21 @@ def skipped_endpoint_reason(endpoint: Endpoint, *, selected: bool = False, filte
 
 def likely_failure_area(outcome: str) -> str:
     mapping = {
-        "live_success": "none",
-        "live_empty": "none",
-        "auth_error": "auth",
-        "token_acquisition_failed": "auth",
-        "scope_or_permission_issue": "permission",
-        "sandbox_scope_issue": "sandbox",
-        "endpoint_path_issue": "path",
-        "unresolved_path_param": "path",
-        "discovery_blocked_missing_id": "path",
-        "rate_limited": "rate_limit",
-        "malformed_response": "parser",
-        "external_api_unavailable": "service",
-        "api_error": "api",
+        "live_success": "no_code_fix",
+        "live_empty": "no_code_fix",
+        "auth_error": "auth_token",
+        "token_acquisition_failed": "auth_token",
+        "scope_or_permission_issue": "product_permission",
+        "sandbox_scope_issue": "sandbox_scope",
+        "endpoint_path_issue": "endpoint_path",
+        "unresolved_path_param": "endpoint_path",
+        "discovery_blocked_missing_id": "endpoint_path",
+        "rate_limited": "adobe_service",
+        "malformed_response": "parser_gap",
+        "external_api_unavailable": "adobe_service",
+        "api_error": "no_code_fix",
     }
-    return mapping.get(outcome, "api")
+    return mapping.get(outcome, "no_code_fix")
 
 
 def safe_error_excerpt(result: dict[str, Any], *, max_chars: int = 300) -> str:

@@ -54,6 +54,7 @@ Start here. Most older generated reports were consolidated or removed.
 - Readiness audit: `outputs/reports/live_adobe_api_readiness_audit.md`
 - API_REQUIRED readiness matrix: `outputs/reports/api_required_readiness_matrix.md`
 - Smoke report: `outputs/reports/live_api_readiness_smoke.md`
+- Endpoint path diagnosis: `outputs/reports/live_api_endpoint_path_diagnosis.md`
 - Evidence pipeline trial: `outputs/reports/live_api_evidence_pipeline_trial.md`
 - Mock live evidence pipeline trial: `outputs/reports/mock_live_api_evidence_pipeline_trial.md`
 - Overall status: `pass`

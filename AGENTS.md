@@ -139,6 +139,8 @@ python3 scripts/run_mock_live_api_evidence_pipeline_trial.py
 
 Live smoke/trials are GET-only by default, must not call endpoints with unresolved path parameters unless a safe prior GET discovery step supplied the ID, and must never overwrite `outputs/eval/`, `outputs/eval_results_strict.json`, `outputs/final_submission/`, or `outputs/final_submission_manifest.json`. Live readiness reports are not official scoring artifacts, and no live API evidence may be fabricated.
 
+Client-credentials token acquisition is supported through `.env.local` using the repo-supported names `ADOBE_ACCESS_TOKEN`, `ADOBE_API_KEY`, `ADOBE_ORG_ID`, `ADOBE_SANDBOX_NAME`, and `ADOBE_BASE_URL` plus legacy aliases. Reports may include only present/missing/source-label booleans, never actual values or masked prefixes. Endpoint-level failures are diagnosed with `python3 scripts/run_live_api_endpoint_path_diagnosis.py`; do not run the full generated prompt suite or live strict eval until at least one safe GET endpoint returns `live_success` or targeted analysis concludes all safe endpoints are blocked by permission, sandbox, or service issues. Generated prompts remain diagnostic-only.
+
 ## Live Adobe API Evidence Pipeline
 
 The future target is real Adobe API evidence, not dry-run optimization. Response parsing should populate `parsed_evidence` with endpoint metadata, evidence state, parser mode, IDs, names, statuses, counts, timestamps, errors, pagination, and redacted previews. EvidenceBus and answer slots must keep live API evidence, dry-run unavailable, empty live results, malformed responses, and API errors distinct.

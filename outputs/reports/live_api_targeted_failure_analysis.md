@@ -4,11 +4,11 @@ Diagnostic-only analysis using the shared API outcome classifier.
 
 ## Failure Counts
 
-- `api_error`: `11`
+- `api_error`: `10`
 - `auth_error`: `3`
 - `endpoint_path_issue`: `4`
 - `external_api_unavailable`: `1`
-- `sandbox_scope_issue`: `3`
+- `sandbox_scope_issue`: `4`
 
 ## Next Actions
 
@@ -22,7 +22,7 @@ Diagnostic-only analysis using the shared API outcome classifier.
 - `unified_tags` failure=`endpoint_path_issue` next_action=`fix_endpoint_path`
 - `merge_policies` failure=`auth_error` next_action=`verify_permission`
 - `catalog_batches` failure=`endpoint_path_issue` next_action=`fix_endpoint_path`
-- `audit_events` failure=`api_error` next_action=`no_code_fix`
+- `audit_events` failure=`sandbox_scope_issue` next_action=`verify_sandbox`
 - `schemas_short` failure=`endpoint_path_issue` next_action=`fix_endpoint_path`
 - `example_000` failure=`api_error` next_action=`no_code_fix`
 - `example_001` failure=`api_error` next_action=`no_code_fix`
