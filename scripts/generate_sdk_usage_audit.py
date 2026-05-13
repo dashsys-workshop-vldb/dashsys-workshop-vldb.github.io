@@ -116,6 +116,8 @@ def _iter_text_files(root: Path) -> list[Path]:
         rel = path.relative_to(root).as_posix()
         if rel.startswith("outputs/") and not rel.startswith("outputs/reports/"):
             continue
+        if rel in {"outputs/reports/sdk_usage_audit.json", "outputs/reports/sdk_usage_audit.md"}:
+            continue
         rel_parts = set(path.relative_to(root).parts)
         if rel_parts & SKIP_DIRS:
             continue
@@ -205,6 +207,9 @@ def _summary(hits: list[dict[str, Any]]) -> dict[str, int]:
 
 def _snippet(line: str) -> str:
     line = line.strip()
+    line = re.sub(r"Authorization\s*:\s*Bearer\s+[^\s,;\"']+", "Authorization: [REDACTED]", line, flags=re.I)
+    line = re.sub(r"x-api-key\s*=\s*[^\s,;\"']+", "x-api-key=[REDACTED]", line, flags=re.I)
+    line = re.sub(r"\b[A-Za-z0-9_.@-]{1,12}\*\*\*", "[REDACTED]", line)
     if len(line) > 180:
         line = line[:177] + "..."
     return line

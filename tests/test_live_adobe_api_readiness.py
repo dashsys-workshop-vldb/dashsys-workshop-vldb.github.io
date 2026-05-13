@@ -6,6 +6,7 @@ from pathlib import Path
 from dashagent.answer_slots import extract_answer_slots
 from dashagent.answer_intent import AnswerIntent
 from dashagent.answer_verifier import safe_rewrite
+from dashagent.adobe_env import format_adobe_readiness_for_report
 from dashagent.api_discovery import plan_discovery_for_endpoint, resolve_discovery_chain
 from dashagent.api_client import AdobeAPIClient, AdobeCredentials, TokenAcquisitionError
 from dashagent.api_outcome_classifier import classify_api_outcome
@@ -19,7 +20,12 @@ from scripts.generate_live_api_strict_eval_delta import generate_live_api_strict
 from scripts.generate_api_required_readiness_matrix import generate_api_required_readiness_matrix
 from scripts.package_query_outputs import NON_SUBMISSION_OUTPUT_DIRS
 from scripts.run_live_api_evidence_pipeline_trial import run_live_api_evidence_pipeline_trial
-from scripts.run_live_api_readiness_smoke import run_live_api_readiness_smoke
+from scripts.run_live_api_readiness_smoke import (
+    filter_safe_smoke_endpoints,
+    run_live_api_readiness_smoke,
+    safe_error_excerpt,
+)
+from scripts.run_live_api_targeted_failure_analysis import run_live_api_targeted_failure_analysis
 from scripts.run_mock_live_api_evidence_pipeline_trial import run_mock_live_api_evidence_pipeline_trial
 
 
@@ -120,6 +126,8 @@ def test_shared_api_outcome_classifier_covers_live_error_states():
     assert classify_api_outcome({"status_code": 404, "ok": False}) == "endpoint_path_issue"
     assert classify_api_outcome({"status_code": 429, "ok": False}) == "rate_limited"
     assert classify_api_outcome({"status_code": 503, "ok": False}) == "external_api_unavailable"
+    assert classify_api_outcome({"status_code": 500, "ok": False, "error": "route not found"}) == "endpoint_path_issue"
+    assert classify_api_outcome({"status_code": 500, "ok": False, "error": "tenant sandbox mismatch"}) == "sandbox_scope_issue"
     assert classify_api_outcome({"parsed_evidence": normalize_api_response("bad", ok=False, dry_run=False, malformed_response=True)}) == "malformed_response"
     assert classify_api_outcome({"status_code": 200, "ok": True, "parsed_evidence": normalize_api_response([], ok=True, dry_run=False, status_code=200)}) == "live_empty"
     assert classify_api_outcome({"status_code": 200, "ok": True, "parsed_evidence": normalize_api_response({"items": [{"id": "1"}]}, ok=True, dry_run=False, status_code=200)}) == "live_success"
@@ -339,6 +347,132 @@ def test_discovery_chain_records_provenance_and_blocks_unsafe_paths():
     assert plan_discovery_for_endpoint(unsafe, catalog).discovery_status == "discovery_blocked_non_get"
 
 
+def test_smoke_default_order_filters_and_safe_excerpt(monkeypatch):
+    catalog = EndpointCatalog()
+    safe = [
+        endpoint
+        for endpoint in catalog.endpoints
+        if endpoint.method == "GET" and not endpoint.path_params and "{" not in endpoint.path
+    ]
+    selected = filter_safe_smoke_endpoints(safe, limit=12)
+    selected_ids = [endpoint.id for endpoint in selected]
+    for endpoint_id in [
+        "catalog_datasets",
+        "schema_registry_schemas",
+        "unified_tags",
+        "merge_policies",
+        "catalog_batches",
+        "audit_events",
+    ]:
+        assert endpoint_id in selected_ids
+    assert len(filter_safe_smoke_endpoints(safe, limit="all-safe-get")) == len(safe)
+    assert [endpoint.id for endpoint in filter_safe_smoke_endpoints(safe, limit="all-safe-get", endpoint_id="merge_policies")] == ["merge_policies"]
+    assert all(
+        "DATASET_SCHEMA" in endpoint.domains or "dataset" in endpoint.id
+        for endpoint in filter_safe_smoke_endpoints(safe, limit="all-safe-get", endpoint_family="DATASET_SCHEMA")
+    )
+
+    monkeypatch.setenv("ADOBE_ACCESS_TOKEN", "tok_secret_excerpt_value")
+    monkeypatch.setenv("ADOBE_API_KEY", "api_secret_excerpt_value")
+    monkeypatch.setenv("ADOBE_ORG_ID", "alias-org-secret")
+    monkeypatch.setenv("ADOBE_SANDBOX_NAME", "alias-sandbox-secret")
+    excerpt = safe_error_excerpt(
+        {
+            "error": "Authorization" + ": " + "Bearer tok_secret_excerpt_value x-api-key=api_secret_excerpt_value ali***",
+            "result_preview": "alias-org-secret alias-sandbox-secret route not found",
+            "headers": {"Authorization": "Bearer should-not-appear"},
+        },
+        max_chars=300,
+    )
+    assert len(excerpt) <= 300
+    for forbidden in [
+        "tok_secret_excerpt_value",
+        "api_secret_excerpt_value",
+        "alias-org-secret",
+        "alias-sandbox-secret",
+        "Bearer tok",
+        "ali***",
+    ]:
+        assert forbidden not in excerpt
+
+
+def test_live_trial_client_credentials_success_does_not_emit_stale_skip(monkeypatch, tiny_project: Config):
+    clear_adobe_env(monkeypatch)
+    monkeypatch.setenv("CLIENT_ID", "client-id-live-trial")
+    monkeypatch.setenv("CLIENT_SECRET", "client-secret-live-trial")
+    monkeypatch.setenv("IMS_ORG", "org-live-trial")
+    monkeypatch.setenv("SANDBOX", "sandbox-live-trial")
+
+    monkeypatch.setattr(
+        "scripts.run_live_api_evidence_pipeline_trial.token_acquisition_preflight",
+        lambda config, readiness=None: {
+            "token_acquisition_attempted": True,
+            "token_acquisition_ok": True,
+            "expires_in_present": True,
+            "error_category": None,
+        },
+    )
+
+    class FakeHarness:
+        def __init__(self, config):
+            pass
+
+        def load_examples(self):
+            return [
+                type(
+                    "Example",
+                    (),
+                    {
+                        "query_id": "query_live_trial",
+                        "query": "List journeys.",
+                        "gold_api": [{"method": "GET", "url": "/ajo/journey"}],
+                    },
+                )()
+            ]
+
+    class FakeExecutor:
+        def __init__(self, config, api_client=None):
+            pass
+
+        def run(self, query, strategy, query_id, output_dir):
+            output_dir.mkdir(parents=True, exist_ok=True)
+            return {
+                "trajectory": {
+                    "steps": [
+                        {
+                            "kind": "api_call",
+                            "method": "GET",
+                            "url": "/ajo/journey",
+                            "result": {
+                                "ok": False,
+                                "dry_run": False,
+                                "status_code": 403,
+                                "error": "missing scope",
+                                "parsed_evidence": normalize_api_response(
+                                    {"error": "missing scope"},
+                                    ok=False,
+                                    dry_run=False,
+                                    status_code=403,
+                                ),
+                            },
+                        }
+                    ],
+                    "final_answer": "API evidence unavailable.",
+                }
+            }
+
+    monkeypatch.setattr("scripts.run_live_api_evidence_pipeline_trial.EvalHarness", FakeHarness)
+    monkeypatch.setattr("scripts.run_live_api_evidence_pipeline_trial.AgentExecutor", FakeExecutor)
+    report = run_live_api_evidence_pipeline_trial(tiny_project, limit=1, clean=True)
+    markdown = (tiny_project.outputs_dir / "reports" / "live_api_evidence_pipeline_trial.md").read_text(encoding="utf-8")
+    assert report["status"] == "complete"
+    assert report["credentials_present"] is True
+    assert report["recommendation"] != "provide_live_credentials_then_rerun"
+    assert "skipped_live_credentials_missing" not in json.dumps(report)
+    assert "Credentials present: `False`" not in markdown
+    assert "provide_live_credentials_then_rerun" not in markdown
+
+
 def test_live_readiness_audit_and_skipped_reports_are_infrastructure_only(tiny_project: Config, monkeypatch):
     clear_adobe_env(monkeypatch)
     audit = audit_live_adobe_api_readiness(tiny_project)
@@ -440,8 +574,8 @@ def test_live_audit_reports_do_not_include_actual_credential_values(tiny_project
     fake_values = {
         "ADOBE_ACCESS_TOKEN": "tok_actual_secret_value_123456",
         "ADOBE_API_KEY": "api_actual_secret_value_123456",
-        "ADOBE_ORG_ID": "org_actual_secret_value_123456",
-        "ADOBE_SANDBOX_NAME": "sandbox_actual_secret_value_123456",
+        "ADOBE_ORG_ID": "alias-org-actual-secret-value",
+        "ADOBE_SANDBOX_NAME": "alias-sandbox-actual-secret-value",
     }
     for key, value in fake_values.items():
         monkeypatch.setenv(key, value)
@@ -452,3 +586,44 @@ def test_live_audit_reports_do_not_include_actual_credential_values(tiny_project
     )
     for value in fake_values.values():
         assert value not in combined
+        assert f"{value[:3]}***" not in combined
+    assert '"org_id":' not in combined
+    assert "`org_id`" not in combined
+    assert '"sandbox_name":' not in combined
+    assert "`sandbox_name`" not in combined
+    assert "ali***" not in combined
+
+
+def test_targeted_failure_analysis_rows_include_next_action(tiny_project: Config):
+    reports = tiny_project.outputs_dir / "reports"
+    reports.mkdir(parents=True, exist_ok=True)
+    (reports / "live_api_readiness_smoke.json").write_text(
+        json.dumps(
+            {
+                "endpoints_tested": [
+                    {
+                        "endpoint_id": "merge_policies",
+                        "method": "GET",
+                        "path": "/data/core/ups/config/mergePolicies",
+                        "status_code": 403,
+                        "outcome": "scope_or_permission_issue",
+                    },
+                    {
+                        "endpoint_id": "schema_registry_schemas",
+                        "method": "GET",
+                        "path": "/data/foundation/schemaregistry/tenant/schemas",
+                        "status_code": 500,
+                        "outcome": "external_api_unavailable",
+                    },
+                ],
+                "selection_filters": {"limit": "all-safe-get"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    (reports / "live_api_evidence_pipeline_trial.json").write_text(json.dumps({"rows": []}), encoding="utf-8")
+    report = run_live_api_targeted_failure_analysis(tiny_project)
+    actions = {row["next_action"] for row in report["rows"]}
+    assert "verify_permission" in actions
+    assert "wait_external_service" in actions
+    assert report["uses_shared_api_outcome_classifier"] is True

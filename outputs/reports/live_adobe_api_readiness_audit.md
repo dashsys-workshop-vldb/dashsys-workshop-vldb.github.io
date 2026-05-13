@@ -13,12 +13,12 @@ Infrastructure validation only; this report is not official strict-score evidenc
 
 - `auth_mode`: `client_credentials`
 - `authorization_constructible`: `True`
-- `env_names_detected`: `{'access_token': '[REDACTED]', 'api_key': '[REDACTED]', 'client_id': '[REDACTED]', 'client_secret': '[REDACTED]', 'org_id': 'ali***', 'sandbox_name': 'ali***', 'base_url': 'primary', 'scopes': 'default'}`
-- `headers_constructible`: `{'Authorization': '[REDACTED]', 'x-api-key': '[REDACTED]', 'x-gw-ims-org-id': '[MASKED]', 'x-sandbox-name': '[MASKED]', 'Content-Type': True}`
 - `credential_ready`: `True`
 - `sandbox_ready`: `True`
 - `ready_for_live_adobe_api_smoke`: `True`
 - `ready_for_sandbox_endpoints`: `True`
+- `detected_env_sources`: `[{"name": "access_token", "source": "missing"}, {"name": "api_key", "source": "alias"}, {"name": "client_id", "source": "alias"}, {"name": "client_secret", "source": "alias"}, {"name": "organization", "source": "alias"}, {"name": "sandbox", "source": "alias"}, {"name": "base_url", "source": "primary"}, {"name": "scopes", "source": "default"}]`
+- `header_constructibility`: `[{"constructible": true, "header_name": "Authorization"}, {"constructible": true, "header_name": "Content-Type"}, {"constructible": true, "header_name": "x-api-key"}, {"constructible": true, "header_name": "x-gw-ims-org-id"}, {"constructible": true, "header_name": "x-sandbox-name"}]`
 
 ## Audit Items
 
@@ -27,7 +27,7 @@ Infrastructure validation only; this report is not official strict-score evidenc
   Explanation: AdobeCredentials.from_env reads ADOBE_ACCESS_TOKEN/ACCESS_TOKEN, ADOBE_API_KEY/CLIENT_ID, ADOBE_ORG_ID/IMS_ORG, ADOBE_SANDBOX_NAME/SANDBOX, ADOBE_BASE_URL, and ADOBE_CLIENT_ID/SECRET.
 - `pass` `required_headers`: call_api can attach Authorization, x-api-key, x-gw-ims-org-id, x-sandbox-name, and Content-Type.
   Evidence: `dashagent/api_client.py`
-  Explanation: Header keys available: ['Authorization', 'Content-Type', 'x-api-key', 'x-gw-ims-org-id', 'x-sandbox-name']; values are redacted or masked in reports.
+  Explanation: Header names available: ['Authorization', 'Content-Type', 'x-api-key', 'x-gw-ims-org-id', 'x-sandbox-name']; credential values are never included in reports.
 - `pass` `manual_token_refresh`: Refreshed access tokens can be supplied through env; automated refresh is optional.
   Evidence: `dashagent/api_client.py`
   Explanation: Access-token and client-credentials modes are both supported by the same AdobeAPIClient token path.
@@ -57,7 +57,7 @@ Infrastructure validation only; this report is not official strict-score evidenc
   Explanation: HTTP non-OK responses set dry_run=false and parsed_evidence.evidence_state=api_error; exceptions also produce api_error.
 - `pass` `credential_secret_safety`: Tokens, API keys, client secrets, org IDs, sandbox names, and Authorization headers are not exposed in reports/trajectories.
   Evidence: `dashagent/trajectory.py`
-  Explanation: Access tokens, API keys, and secrets are fully redacted; org ID and sandbox name are masked by default.
+  Explanation: Readiness reports use source labels and constructible booleans only; credential values and metadata prefixes are not displayed.
 - `pass` `diagnostic_output_isolation`: Live smoke/trial outputs must not overwrite strict eval, eval directories, final_submission, or final_submission_manifest.
   Evidence: `scripts/run_live_api_readiness_smoke.py; scripts/run_live_api_evidence_pipeline_trial.py; scripts/run_mock_live_api_evidence_pipeline_trial.py`
   Explanation: Readiness scripts write reports and isolated trial artifacts only; mock live trials use synthetic fixtures and do not claim strict-score improvement.

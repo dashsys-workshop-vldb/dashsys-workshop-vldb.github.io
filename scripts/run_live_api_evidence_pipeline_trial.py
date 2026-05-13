@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from dashagent.adobe_env import adobe_env_readiness
+from dashagent.adobe_env import adobe_env_readiness, format_adobe_readiness_for_report
 from dashagent.api_client import AdobeAPIClient
 from dashagent.api_outcome_classifier import classify_api_outcome, outcome_counts
 from dashagent.api_response_parser import normalize_api_response
@@ -20,6 +20,7 @@ from dashagent.config import Config
 from dashagent.eval_harness import EvalExample, EvalHarness
 from dashagent.executor import AgentExecutor
 from dashagent.trajectory import redact_secrets
+from scripts.audit_live_adobe_api_readiness import token_acquisition_preflight
 from scripts.load_local_env import load_local_env
 
 
@@ -93,8 +94,10 @@ def run_live_api_evidence_pipeline_trial(
 
     client = GetOnlyAdobeAPIClient(config)
     readiness = adobe_env_readiness()
-    if client.dry_run:
-        payload = skipped_live_trial_report(config, client, trial_root, readiness)
+    token_preflight = token_acquisition_preflight(config, readiness)
+    skip_status = live_trial_skip_status(readiness, token_preflight)
+    if skip_status:
+        payload = skipped_live_trial_report(config, client, trial_root, readiness, token_preflight, status=skip_status)
         _write_json_md(reports_dir / OUTPUT_STEM, payload, render_trial(payload))
         return payload
 
@@ -150,13 +153,32 @@ def run_live_api_evidence_pipeline_trial(
         rows=rows,
         trial_root=trial_root,
         residual_risk="Only safe GET calls are allowed; POST/mutation and unresolved path-param calls are blocked by the trial guard.",
+        readiness=readiness,
+        token_preflight=token_preflight,
     )
     _write_json_md(reports_dir / OUTPUT_STEM, payload, render_trial(payload))
     return payload
 
 
-def skipped_live_trial_report(config: Config, client: AdobeAPIClient, trial_root: Path, readiness: dict[str, Any] | None = None) -> dict[str, Any]:
+def live_trial_skip_status(readiness: dict[str, Any], token_preflight: dict[str, Any]) -> str | None:
+    if readiness.get("auth_mode") == "missing" or not readiness.get("credential_ready"):
+        return "skipped_live_credentials_missing"
+    if readiness.get("auth_mode") == "client_credentials" and not token_preflight.get("token_acquisition_ok"):
+        return "skipped_live_token_acquisition_failed"
+    return None
+
+
+def skipped_live_trial_report(
+    config: Config,
+    client: AdobeAPIClient,
+    trial_root: Path,
+    readiness: dict[str, Any] | None = None,
+    token_preflight: dict[str, Any] | None = None,
+    *,
+    status: str = "skipped_live_credentials_missing",
+) -> dict[str, Any]:
     readiness = readiness or adobe_env_readiness()
+    token_preflight = token_preflight or token_acquisition_preflight(config, readiness)
     dry_run_result = client.call_api("GET", "/ajo/journey", {"limit": 1}, {})
     parser_sample = normalize_api_response(
         {"items": [{"id": "segment-1", "displayName": "Sample Segment", "state": "active"}], "totalCount": 1},
@@ -184,18 +206,21 @@ def skipped_live_trial_report(config: Config, client: AdobeAPIClient, trial_root
             "unsupported_api_claim_count": 0,
             "live_dry_run_mismatch_count": 0,
             "guard_blocked_count": 0,
-            "final_answer_preview": "Live mode skipped because Adobe credentials are missing; dry-run fallback remains honest.",
+            "final_answer_preview": _skip_preview(status),
         }
     ]
+    credentials_present = status != "skipped_live_credentials_missing"
     return build_trial_payload(
-        status="skipped_live_credentials_missing",
-        credentials_present=False,
+        status=status,
+        credentials_present=credentials_present,
         live_mode_attempted=False,
         rows=rows,
         trial_root=trial_root,
-        residual_risk="Live API execution, real payload parsing, EvidenceBus forwarding from live payloads, and auth/rate-limit handling remain unverified until Adobe credentials are available.",
+        residual_risk=_skip_residual_risk(status),
         dry_run_fallback_verified=bool(dry_run_result.get("dry_run")),
         readiness=readiness,
+        token_preflight=token_preflight,
+        recommendation=_skip_recommendation(status),
     )
 
 
@@ -218,10 +243,14 @@ def build_trial_payload(
     residual_risk: str,
     dry_run_fallback_verified: bool | None = None,
     readiness: dict[str, Any] | None = None,
+    token_preflight: dict[str, Any] | None = None,
+    recommendation: str | None = None,
 ) -> dict[str, Any]:
     total_live = sum(int(row.get("live_api_executed") or 0) for row in rows)
     total_dry = sum(int(row.get("dry_run_count") or 0) for row in rows)
     readiness = readiness or adobe_env_readiness()
+    report_readiness = format_adobe_readiness_for_report(readiness)
+    token_preflight = token_preflight or token_acquisition_preflight(Config.from_env(ROOT), readiness)
     outcome_rows = [{"outcome": outcome} for row in rows for outcome in row.get("api_outcomes", [])]
     payload = {
         "report_type": OUTPUT_STEM,
@@ -231,11 +260,12 @@ def build_trial_payload(
         "strict_score_computed": False,
         "strict_score_promotion_claim": False,
         "credentials_present": credentials_present,
-        "env_names_detected": readiness.get("env_names_detected"),
-        "credential_ready": readiness.get("credential_ready"),
-        "sandbox_ready": readiness.get("sandbox_ready"),
-        "ready_for_live_adobe_api_smoke": readiness.get("ready_for_live_adobe_api_smoke"),
-        "ready_for_sandbox_endpoints": readiness.get("ready_for_sandbox_endpoints"),
+        "adobe_readiness": report_readiness,
+        "token_acquisition_preflight": token_preflight,
+        "credential_ready": report_readiness.get("credential_ready"),
+        "sandbox_ready": report_readiness.get("sandbox_ready"),
+        "ready_for_live_adobe_api_smoke": report_readiness.get("ready_for_live_adobe_api_smoke"),
+        "ready_for_sandbox_endpoints": report_readiness.get("ready_for_sandbox_endpoints"),
         "live_mode_attempted": live_mode_attempted,
         "dry_run_fallback_verified": dry_run_fallback_verified if dry_run_fallback_verified is not None else total_dry > 0,
         "trial_output_root": str(trial_root),
@@ -253,11 +283,29 @@ def build_trial_payload(
         "live_dry_run_mismatch_count": sum(int(row.get("live_dry_run_mismatch_count") or 0) for row in rows),
         "examples_helped": [row for row in rows if row.get("live_api_executed") and row.get("parser_success_count")][:5],
         "examples_risky": [row for row in rows if row.get("guard_blocked_count") or row.get("live_dry_run_mismatch_count")][:5],
-        "recommendation": "provide_live_credentials_then_rerun" if not credentials_present else "inspect_live_payload_gaps_before_any_score_claim",
+        "recommendation": recommendation or ("provide_live_credentials_then_rerun" if not credentials_present else "inspect_live_payload_gaps_before_any_score_claim"),
         "residual_risk": residual_risk,
         "rows": rows,
     }
     return redact_secrets(payload)
+
+
+def _skip_preview(status: str) -> str:
+    if status == "skipped_live_token_acquisition_failed":
+        return "Live mode skipped because token acquisition failed; dry-run fallback remains honest."
+    return "Live mode skipped because Adobe credentials are missing; dry-run fallback remains honest."
+
+
+def _skip_residual_risk(status: str) -> str:
+    if status == "skipped_live_token_acquisition_failed":
+        return "Live API execution remains unverified until client-credentials token acquisition succeeds."
+    return "Live API execution, real payload parsing, EvidenceBus forwarding from live payloads, and auth/rate-limit handling remain unverified until Adobe credentials are available."
+
+
+def _skip_recommendation(status: str) -> str:
+    if status == "skipped_live_token_acquisition_failed":
+        return "fix_token_acquisition_then_rerun"
+    return "provide_live_credentials_then_rerun"
 
 
 def render_trial(payload: dict[str, Any]) -> str:

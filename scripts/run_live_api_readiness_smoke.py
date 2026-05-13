@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -13,7 +15,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from dashagent.answer_slots import extract_answer_slots
-from dashagent.adobe_env import adobe_env_readiness
+from dashagent.adobe_env import adobe_env_readiness, format_adobe_readiness_for_report
 from dashagent.api_client import AdobeAPIClient
 from dashagent.api_outcome_classifier import classify_api_outcome, outcome_counts
 from dashagent.api_response_parser import normalize_api_response
@@ -26,20 +28,59 @@ from scripts.load_local_env import load_local_env
 
 
 OUTPUT_STEM = "live_api_readiness_smoke"
+DEFAULT_SMOKE_ENDPOINT_ORDER = [
+    "journey_list",
+    "ups_audiences",
+    "segment_definitions",
+    "flowservice_flows",
+    "flowservice_runs",
+    "catalog_datasets",
+    "schema_registry_schemas",
+    "unified_tags",
+    "merge_policies",
+    "catalog_batches",
+    "audit_events",
+]
+SENSITIVE_ENV_NAMES = [
+    "ADOBE_ACCESS_TOKEN",
+    "ACCESS_TOKEN",
+    "ADOBE_API_KEY",
+    "CLIENT_ID",
+    "ADOBE_CLIENT_ID",
+    "ADOBE_CLIENT_SECRET",
+    "CLIENT_SECRET",
+    "ADOBE_ORG_ID",
+    "IMS_ORG",
+    "ADOBE_SANDBOX_NAME",
+    "SANDBOX",
+]
 
 
 def main() -> int:
     load_local_env(ROOT)
     parser = argparse.ArgumentParser(description="Run safe GET-only Adobe API readiness smoke checks.")
-    parser.add_argument("--limit", type=int, default=5, help="Maximum catalog-approved GET endpoints to smoke when credentials are present.")
+    parser.add_argument("--limit", default="12", help="Maximum catalog-approved GET endpoints, or all-safe-get.")
+    parser.add_argument("--endpoint-id", default=None, help="Optional single catalog endpoint id to smoke.")
+    parser.add_argument("--endpoint-family", default=None, help="Optional endpoint id/domain family filter.")
     args = parser.parse_args()
     config = Config.from_env(ROOT)
-    payload = run_live_api_readiness_smoke(config, limit=args.limit)
+    payload = run_live_api_readiness_smoke(
+        config,
+        limit=args.limit,
+        endpoint_id=args.endpoint_id,
+        endpoint_family=args.endpoint_family,
+    )
     print(json.dumps({"status": payload["status"], "report": str(config.outputs_dir / "reports" / f"{OUTPUT_STEM}.json")}, indent=2, sort_keys=True))
     return 0
 
 
-def run_live_api_readiness_smoke(config: Config | None = None, *, limit: int = 5) -> dict[str, Any]:
+def run_live_api_readiness_smoke(
+    config: Config | None = None,
+    *,
+    limit: int | str = 12,
+    endpoint_id: str | None = None,
+    endpoint_family: str | None = None,
+) -> dict[str, Any]:
     config = config or Config.from_env(ROOT)
     reports_dir = config.outputs_dir / "reports"
     reports_dir.mkdir(parents=True, exist_ok=True)
@@ -47,6 +88,7 @@ def run_live_api_readiness_smoke(config: Config | None = None, *, limit: int = 5
     catalog = EndpointCatalog(config)
     validator = APIValidator(catalog)
     readiness = adobe_env_readiness()
+    report_readiness = format_adobe_readiness_for_report(readiness)
 
     if client.dry_run:
         payload = skipped_live_report(config, client, readiness)
@@ -54,10 +96,29 @@ def run_live_api_readiness_smoke(config: Config | None = None, *, limit: int = 5
         return payload
 
     safe_endpoints = [endpoint for endpoint in catalog.endpoints if endpoint_is_safe_get_smoke(endpoint)]
-    endpoints = safe_endpoints[: max(0, limit)]
+    filtered_endpoints = filter_safe_smoke_endpoints(
+        safe_endpoints,
+        limit=limit,
+        endpoint_id=endpoint_id,
+        endpoint_family=endpoint_family,
+    )
+    endpoints = filtered_endpoints
     selected_ids = {endpoint.id for endpoint in endpoints}
+    filtered_ids = {
+        endpoint.id
+        for endpoint in filter_safe_smoke_endpoints(
+            safe_endpoints,
+            limit="all-safe-get",
+            endpoint_id=endpoint_id,
+            endpoint_family=endpoint_family,
+        )
+    }
     skipped_endpoints = [
-        skipped_endpoint_reason(endpoint, selected=endpoint.id in selected_ids)
+        skipped_endpoint_reason(
+            endpoint,
+            selected=endpoint.id in selected_ids,
+            filter_matched=endpoint.id in filtered_ids,
+        )
         for endpoint in catalog.endpoints
         if endpoint.id not in selected_ids
     ]
@@ -74,35 +135,29 @@ def run_live_api_readiness_smoke(config: Config | None = None, *, limit: int = 5
                 "error": "validation_failed",
             }
             rows.append(
-                {
-                    "endpoint_id": endpoint.id,
-                    "method": endpoint.method,
-                    "path": endpoint.path,
-                    "attempted": False,
-                    "validation": validation.to_dict(),
-                    "outcome": classify_api_outcome(result, method=endpoint.method, path=endpoint.path),
-                    "error": "validation_failed",
-                }
+                smoke_endpoint_row(
+                    endpoint=endpoint,
+                    result=result,
+                    validation=validation.to_dict(),
+                    attempted=False,
+                    evidence_status={
+                        "response_parser_status": "not_available",
+                        "evidencebus_forwarding_status": "no_live_items",
+                        "answer_synthesis_status": "no_live_items",
+                    },
+                )
             )
             continue
         result = client.call_api(endpoint.method, endpoint.path, endpoint.common_params, {})
         evidence_status = evidence_pipeline_status(endpoint, result)
         rows.append(
-            {
-                "endpoint_id": endpoint.id,
-                "method": endpoint.method,
-                "path": endpoint.path,
-                "attempted": True,
-                "validation": validation.to_dict(),
-                "status_code": result.get("status_code"),
-                "ok": result.get("ok"),
-                "dry_run": result.get("dry_run"),
-                "outcome": classify_api_outcome(result, method=endpoint.method, path=endpoint.path),
-                "response_parser_status": evidence_status["response_parser_status"],
-                "evidencebus_forwarding_status": evidence_status["evidencebus_forwarding_status"],
-                "answer_synthesis_status": evidence_status["answer_synthesis_status"],
-                "error": result.get("error"),
-            }
+            smoke_endpoint_row(
+                endpoint=endpoint,
+                result=result,
+                validation=validation.to_dict(),
+                attempted=True,
+                evidence_status=evidence_status,
+            )
         )
         time.sleep(0.2)
 
@@ -112,11 +167,16 @@ def run_live_api_readiness_smoke(config: Config | None = None, *, limit: int = 5
         "infrastructure_validation_only": True,
         "official_score_claim": False,
         "credentials_present": True,
-        "env_names_detected": readiness.get("env_names_detected"),
-        "credential_ready": readiness.get("credential_ready"),
-        "sandbox_ready": readiness.get("sandbox_ready"),
-        "ready_for_live_adobe_api_smoke": readiness.get("ready_for_live_adobe_api_smoke"),
-        "ready_for_sandbox_endpoints": readiness.get("ready_for_sandbox_endpoints"),
+        "adobe_readiness": report_readiness,
+        "credential_ready": report_readiness.get("credential_ready"),
+        "sandbox_ready": report_readiness.get("sandbox_ready"),
+        "ready_for_live_adobe_api_smoke": report_readiness.get("ready_for_live_adobe_api_smoke"),
+        "ready_for_sandbox_endpoints": report_readiness.get("ready_for_sandbox_endpoints"),
+        "selection_filters": {
+            "limit": str(limit),
+            "endpoint_id": endpoint_id,
+            "endpoint_family": endpoint_family,
+        },
         "live_mode_attempted": True,
         "dry_run_fallback_verified": False,
         "endpoints_tested": rows,
@@ -147,8 +207,37 @@ def run_live_api_readiness_smoke(config: Config | None = None, *, limit: int = 5
     return payload
 
 
+def smoke_endpoint_row(
+    *,
+    endpoint: Endpoint,
+    result: dict[str, Any],
+    validation: dict[str, Any],
+    attempted: bool,
+    evidence_status: dict[str, str],
+) -> dict[str, Any]:
+    outcome = classify_api_outcome(result, method=endpoint.method, path=endpoint.path)
+    return {
+        "endpoint_id": endpoint.id,
+        "method": endpoint.method,
+        "path": endpoint.path,
+        "attempted": attempted,
+        "validation": validation,
+        "status_code": result.get("status_code"),
+        "ok": result.get("ok"),
+        "dry_run": result.get("dry_run"),
+        "outcome": outcome,
+        "safe_error_category": result.get("error_category") or outcome,
+        "likely_failure_area": likely_failure_area(outcome),
+        "response_parser_status": evidence_status["response_parser_status"],
+        "evidencebus_forwarding_status": evidence_status["evidencebus_forwarding_status"],
+        "answer_synthesis_status": evidence_status["answer_synthesis_status"],
+        "safe_error_excerpt": safe_error_excerpt(result),
+    }
+
+
 def skipped_live_report(config: Config, client: AdobeAPIClient, readiness: dict[str, Any] | None = None) -> dict[str, Any]:
     readiness = readiness or adobe_env_readiness()
+    report_readiness = format_adobe_readiness_for_report(readiness)
     dry_run_result = client.call_api("GET", "/ajo/journey", {"limit": 1}, {})
     parsed_sample = normalize_api_response(
         {"items": [{"id": "journey-1", "name": "Sample Journey", "status": "live"}], "total": 1},
@@ -172,11 +261,12 @@ def skipped_live_report(config: Config, client: AdobeAPIClient, readiness: dict[
             "infrastructure_validation_only": True,
             "official_score_claim": False,
             "credentials_present": False,
-            "env_names_detected": readiness.get("env_names_detected"),
-            "credential_ready": readiness.get("credential_ready"),
-            "sandbox_ready": readiness.get("sandbox_ready"),
-            "ready_for_live_adobe_api_smoke": readiness.get("ready_for_live_adobe_api_smoke"),
-            "ready_for_sandbox_endpoints": readiness.get("ready_for_sandbox_endpoints"),
+            "adobe_readiness": report_readiness,
+            "credential_ready": report_readiness.get("credential_ready"),
+            "sandbox_ready": report_readiness.get("sandbox_ready"),
+            "ready_for_live_adobe_api_smoke": report_readiness.get("ready_for_live_adobe_api_smoke"),
+            "ready_for_sandbox_endpoints": report_readiness.get("ready_for_sandbox_endpoints"),
+            "selection_filters": {"limit": "not_run", "endpoint_id": None, "endpoint_family": None},
             "live_mode_attempted": False,
             "dry_run_fallback_verified": bool(dry_run_result.get("dry_run")),
             "missing_env_var_groups": [
@@ -212,15 +302,47 @@ def skipped_live_report(config: Config, client: AdobeAPIClient, readiness: dict[
     )
 
 
+def filter_safe_smoke_endpoints(
+    endpoints: list[Endpoint],
+    *,
+    limit: int | str,
+    endpoint_id: str | None = None,
+    endpoint_family: str | None = None,
+) -> list[Endpoint]:
+    filtered = [endpoint for endpoint in endpoints if _endpoint_matches_filters(endpoint, endpoint_id, endpoint_family)]
+    order = {endpoint_id: index for index, endpoint_id in enumerate(DEFAULT_SMOKE_ENDPOINT_ORDER)}
+    filtered.sort(key=lambda endpoint: (order.get(endpoint.id, len(order)), endpoints.index(endpoint)))
+    if str(limit) == "all-safe-get":
+        return filtered
+    try:
+        max_count = int(limit)
+    except (TypeError, ValueError):
+        max_count = 12
+    return filtered[: max(0, max_count)]
+
+
+def _endpoint_matches_filters(endpoint: Endpoint, endpoint_id: str | None, endpoint_family: str | None) -> bool:
+    if endpoint_id and endpoint.id != endpoint_id:
+        return False
+    if endpoint_family:
+        family = endpoint_family.lower()
+        haystack = [endpoint.id.lower(), *(domain.lower() for domain in endpoint.domains)]
+        if not any(family in item for item in haystack):
+            return False
+    return True
+
+
 def endpoint_is_safe_get_smoke(endpoint: Endpoint) -> bool:
     return endpoint.method == "GET" and not endpoint.path_params and "{" not in endpoint.path and "}" not in endpoint.path
 
 
-def skipped_endpoint_reason(endpoint: Endpoint, *, selected: bool = False) -> dict[str, Any]:
+def skipped_endpoint_reason(endpoint: Endpoint, *, selected: bool = False, filter_matched: bool = True) -> dict[str, Any]:
     if endpoint.method != "GET":
         reason = "non_get_endpoint"
     elif endpoint.path_params or "{" in endpoint.path or "}" in endpoint.path:
         reason = "requires_discovery_chain_or_path_param"
+    elif not filter_matched:
+        reason = "not_matching_filter"
     elif not selected:
         reason = "not_selected_by_limit"
     else:
@@ -231,6 +353,52 @@ def skipped_endpoint_reason(endpoint: Endpoint, *, selected: bool = False) -> di
         "path": endpoint.path,
         "reason": reason,
     }
+
+
+def likely_failure_area(outcome: str) -> str:
+    mapping = {
+        "live_success": "none",
+        "live_empty": "none",
+        "auth_error": "auth",
+        "token_acquisition_failed": "auth",
+        "scope_or_permission_issue": "permission",
+        "sandbox_scope_issue": "sandbox",
+        "endpoint_path_issue": "path",
+        "unresolved_path_param": "path",
+        "discovery_blocked_missing_id": "path",
+        "rate_limited": "rate_limit",
+        "malformed_response": "parser",
+        "external_api_unavailable": "service",
+        "api_error": "api",
+    }
+    return mapping.get(outcome, "api")
+
+
+def safe_error_excerpt(result: dict[str, Any], *, max_chars: int = 300) -> str:
+    parsed = result.get("parsed_evidence") if isinstance(result.get("parsed_evidence"), dict) else {}
+    parts = [
+        result.get("error"),
+        result.get("result_preview"),
+        parsed.get("errors"),
+        parsed.get("raw_preview"),
+    ]
+    text = " ".join(str(part) for part in parts if part not in (None, "", [], {}))
+    text = _replace_sensitive_env_values(text)
+    text = str(redact_secrets(text))
+    text = re.sub(r"Authorization\s*[:=]\s*Bearer\s+[^\s,;]+", "Authorization: [REDACTED]", text, flags=re.I)
+    text = re.sub(r"x-api-key\s*[:=]\s*[^\s,;]+", "x-api-key: [REDACTED]", text, flags=re.I)
+    text = re.sub(r"x-gw-ims-org-id\s*[:=]\s*[^\s,;]+", "x-gw-ims-org-id: [REDACTED]", text, flags=re.I)
+    text = re.sub(r"x-sandbox-name\s*[:=]\s*[^\s,;]+", "x-sandbox-name: [REDACTED]", text, flags=re.I)
+    text = re.sub(r"\b[A-Za-z0-9_.@-]{1,12}\*\*\*", "[REDACTED]", text)
+    return text[:max_chars]
+
+
+def _replace_sensitive_env_values(text: str) -> str:
+    for name in SENSITIVE_ENV_NAMES:
+        value = os.environ.get(name)
+        if value:
+            text = text.replace(value, "[REDACTED]")
+    return text
 
 
 def evidence_pipeline_status(endpoint: Endpoint, result: dict[str, Any]) -> dict[str, str]:

@@ -59,12 +59,16 @@ def classify_api_outcome(
     if status_code == 401:
         return "auth_error"
     if status_code == 403:
-        return "sandbox_scope_issue" if "sandbox" in text else "scope_or_permission_issue"
+        return "sandbox_scope_issue" if _mentions_sandbox_scope(text) else "scope_or_permission_issue"
     if status_code == 404:
         return "endpoint_path_issue"
     if status_code == 429:
         return "rate_limited"
     if status_code is not None and status_code >= 500:
+        if _mentions_endpoint_path_issue(text):
+            return "endpoint_path_issue"
+        if _mentions_sandbox_scope(text):
+            return "sandbox_scope_issue"
         return "external_api_unavailable"
     if parsed.get("evidence_state") == "malformed_response":
         return "malformed_response"
@@ -115,3 +119,25 @@ def _truthy_count(value: Any) -> bool:
         return float(value) != 0
     except (TypeError, ValueError):
         return bool(value)
+
+
+def _mentions_sandbox_scope(text: str) -> bool:
+    return any(token in text for token in ("sandbox", "tenant", "ims", "org", "organization"))
+
+
+def _mentions_endpoint_path_issue(text: str) -> bool:
+    return any(
+        token in text
+        for token in (
+            "not found",
+            "not_found",
+            "no route",
+            "route",
+            "path",
+            "endpoint",
+            "resource not found",
+            "unknown resource",
+            "uri",
+            "url",
+        )
+    )

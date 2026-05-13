@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from dashagent.adobe_env import adobe_env_readiness
+from dashagent.adobe_env import adobe_env_readiness, format_adobe_readiness_for_report
 from dashagent.api_client import AdobeAPIClient, AdobeCredentials, TokenAcquisitionError
 from dashagent.api_response_parser import normalize_api_response
 from dashagent.config import Config
@@ -45,6 +45,7 @@ def audit_live_adobe_api_readiness(config: Config | None = None) -> dict[str, An
     reports_dir.mkdir(parents=True, exist_ok=True)
 
     readiness = adobe_env_readiness()
+    report_readiness = format_adobe_readiness_for_report(readiness)
     token_preflight = token_acquisition_preflight(config, readiness)
     rows = build_audit_rows(config, readiness, token_preflight)
     critical_failures = [
@@ -63,8 +64,8 @@ def audit_live_adobe_api_readiness(config: Config | None = None) -> dict[str, An
             "critical_failures": critical_failures,
             "warnings": warnings,
             "credential_env_support": credential_env_support(),
-            "credential_presence": readiness,
-            "credential_readiness": readiness,
+            "credential_presence": report_readiness,
+            "credential_readiness": report_readiness,
             "token_acquisition_preflight": token_preflight,
             "endpoint_catalog_readiness": endpoint_catalog_readiness(config),
             "manual_token_refresh_required": readiness.get("auth_mode") == "missing",
@@ -117,7 +118,7 @@ def build_audit_rows(config: Config, readiness: dict[str, Any] | None = None, to
             "call_api can attach Authorization, x-api-key, x-gw-ims-org-id, x-sandbox-name, and Content-Type.",
             "pass" if required_headers.issubset(headers) else "fail",
             "dashagent/api_client.py",
-            f"Header keys available: {sorted(headers)}; values are redacted or masked in reports.",
+            f"Header names available: {sorted(headers)}; credential values are never included in reports.",
             "Ensure all live Adobe calls use AdobeAPIClient.default_headers.",
         )
     )
@@ -236,7 +237,7 @@ def build_audit_rows(config: Config, readiness: dict[str, Any] | None = None, to
             "Tokens, API keys, client secrets, org IDs, sandbox names, and Authorization headers are not exposed in reports/trajectories.",
             "pass",
             "dashagent/trajectory.py",
-            "Access tokens, API keys, and secrets are fully redacted; org ID and sandbox name are masked by default.",
+            "Readiness reports use source labels and constructible booleans only; credential values and metadata prefixes are not displayed.",
             "Continue excluding .env.local and zip files from scans and packages.",
         )
     )
@@ -266,12 +267,12 @@ def row(requirement_id: str, requirement: str, status: str, evidence_path: str, 
 
 def credential_env_support() -> dict[str, list[str]]:
     return {
-        "access_token": ["ADOBE_ACCESS_TOKEN", "ACCESS_TOKEN"],
-        "api_key": ["ADOBE_API_KEY", "CLIENT_ID", "ADOBE_CLIENT_ID"],
-        "client_id": ["ADOBE_CLIENT_ID", "CLIENT_ID", "ADOBE_API_KEY"],
-        "client_secret": ["ADOBE_CLIENT_SECRET", "CLIENT_SECRET"],
-        "org_id": ["ADOBE_ORG_ID", "IMS_ORG"],
-        "sandbox_name": ["ADOBE_SANDBOX_NAME", "SANDBOX"],
+        "access_token_env": ["ADOBE_ACCESS_TOKEN", "ACCESS_TOKEN"],
+        "api_key_env": ["ADOBE_API_KEY", "CLIENT_ID", "ADOBE_CLIENT_ID"],
+        "client_identifier_env": ["ADOBE_CLIENT_ID", "CLIENT_ID", "ADOBE_API_KEY"],
+        "oauth_client_credential_env": ["ADOBE_CLIENT_SECRET", "CLIENT_SECRET"],
+        "organization_env": ["ADOBE_ORG_ID", "IMS_ORG"],
+        "sandbox_env": ["ADOBE_SANDBOX_NAME", "SANDBOX"],
         "base_url": ["ADOBE_BASE_URL"],
     }
 
@@ -348,7 +349,11 @@ def render_audit(payload: dict[str, Any]) -> str:
         "",
     ]
     for key, value in (payload.get("credential_presence") or {}).items():
-        lines.append(f"- `{key}`: `{value}`")
+        if isinstance(value, (dict, list)):
+            value_text = json.dumps(value, sort_keys=True)
+        else:
+            value_text = str(value)
+        lines.append(f"- `{key}`: `{value_text}`")
     lines.extend(["", "## Audit Items", ""])
     for item in payload.get("items", []):
         lines.append(f"- `{item['status']}` `{item['requirement_id']}`: {item['requirement']}")

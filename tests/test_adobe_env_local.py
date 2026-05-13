@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from dashagent.adobe_env import format_adobe_readiness_for_report
 from scripts import check_adobe_env_local
 
 
@@ -47,8 +48,8 @@ def test_check_adobe_env_local_reports_presence_only(monkeypatch, tmp_path, caps
     assert payload['credential_ready'] is True
     assert payload['sandbox_ready'] is True
     assert payload['ready_for_sandbox_endpoints'] is True
-    assert payload['env_names_detected']['access_token'] == 'primary'
-    assert payload['headers_constructible']['Authorization'] is True
+    assert _source(payload, 'access_token') == 'primary'
+    assert _header(payload, 'Authorization') is True
     assert 'test-token-value' not in out
     assert 'test-api-key' not in out
     assert 'test-org' not in out
@@ -74,10 +75,10 @@ def test_check_adobe_env_local_accepts_client_credentials_without_access_token(m
     assert payload['sandbox_ready'] is True
     assert payload['ready_for_live_adobe_api_smoke'] is True
     assert payload['ready_for_sandbox_endpoints'] is True
-    assert payload['env_names_detected']['client_id'] == 'alias'
-    assert payload['env_names_detected']['client_secret'] == 'alias'
-    assert payload['env_names_detected']['base_url'] == 'default'
-    assert payload['env_names_detected']['scopes'] == 'default'
+    assert _source(payload, 'client_id') == 'alias'
+    assert _source(payload, 'client_secret') == 'alias'
+    assert _source(payload, 'base_url') == 'default'
+    assert _source(payload, 'scopes') == 'default'
     assert 'test-client-id' not in out
     assert 'test-client-secret' not in out
     assert 'test-org' not in out
@@ -98,3 +99,47 @@ def test_check_adobe_env_local_missing_auth_not_ready(monkeypatch, tmp_path, cap
     assert payload['credential_ready'] is False
     assert payload['sandbox_ready'] is True
     assert payload['ready_for_live_adobe_api_smoke'] is False
+
+
+def test_report_formatter_uses_only_source_labels_and_booleans():
+    readiness = {
+        'auth_mode': 'client_credentials',
+        'authorization_constructible': True,
+        'env_names_detected': {
+            'access_token': 'missing',
+            'api_key': 'alias',
+            'client_id': 'alias',
+            'client_secret': 'alias',
+            'org_id': 'alias',
+            'sandbox_name': 'alias',
+            'base_url': 'default',
+            'scopes': 'default',
+        },
+        'headers_constructible': {
+            'Authorization': True,
+            'x-api-key': True,
+            'x-gw-ims-org-id': True,
+            'x-sandbox-name': True,
+            'Content-Type': True,
+        },
+        'credential_ready': True,
+        'sandbox_ready': True,
+        'ready_for_live_adobe_api_smoke': True,
+        'ready_for_sandbox_endpoints': True,
+    }
+    formatted = format_adobe_readiness_for_report(readiness)
+    rendered = json.dumps(formatted)
+    assert 'org_id' not in rendered
+    assert 'sandbox_name' not in rendered
+    assert 'ali***' not in rendered
+    assert _source(formatted, 'organization') == 'alias'
+    assert _source(formatted, 'sandbox') == 'alias'
+    assert _header(formatted, 'x-gw-ims-org-id') is True
+
+
+def _source(payload: dict, name: str) -> str:
+    return next(item['source'] for item in payload['detected_env_sources'] if item['name'] == name)
+
+
+def _header(payload: dict, header_name: str) -> bool:
+    return next(item['constructible'] for item in payload['header_constructibility'] if item['header_name'] == header_name)

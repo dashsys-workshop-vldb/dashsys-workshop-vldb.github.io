@@ -1,8 +1,81 @@
 {
+  "adobe_readiness": {
+    "auth_mode": "client_credentials",
+    "authorization_constructible": true,
+    "credential_ready": true,
+    "detected_env_sources": [
+      {
+        "name": "access_token",
+        "source": "missing"
+      },
+      {
+        "name": "api_key",
+        "source": "alias"
+      },
+      {
+        "name": "client_id",
+        "source": "alias"
+      },
+      {
+        "name": "client_secret",
+        "source": "alias"
+      },
+      {
+        "name": "organization",
+        "source": "alias"
+      },
+      {
+        "name": "sandbox",
+        "source": "alias"
+      },
+      {
+        "name": "base_url",
+        "source": "primary"
+      },
+      {
+        "name": "scopes",
+        "source": "default"
+      }
+    ],
+    "header_constructibility": [
+      {
+        "constructible": true,
+        "header_name": "Authorization"
+      },
+      {
+        "constructible": true,
+        "header_name": "Content-Type"
+      },
+      {
+        "constructible": true,
+        "header_name": "x-api-key"
+      },
+      {
+        "constructible": true,
+        "header_name": "x-gw-ims-org-id"
+      },
+      {
+        "constructible": true,
+        "header_name": "x-sandbox-name"
+      }
+    ],
+    "ready_for_live_adobe_api_smoke": true,
+    "ready_for_sandbox_endpoints": true,
+    "sandbox_ready": true
+  },
   "diagnostic_only": true,
   "failure_type_counts": {
-    "auth_error": 2,
-    "external_api_unavailable": 3
+    "api_error": 11,
+    "auth_error": 3,
+    "endpoint_path_issue": 4,
+    "external_api_unavailable": 1,
+    "sandbox_scope_issue": 3
+  },
+  "full_diagnostics_gate": {
+    "all_attempted_safe_gets_blocked_by_auth_scope_sandbox_or_service": false,
+    "full_generated_prompt_suite_allowed": false,
+    "live_strict_eval_allowed": false,
+    "live_success_seen": false
   },
   "official_score_claim": false,
   "recommendation": "fix_high_count_runtime_safe_failures_before_score_claims",
@@ -12,6 +85,7 @@
       "endpoint_id": "journey_list",
       "failure_type": "external_api_unavailable",
       "method": "GET",
+      "next_action": "wait_external_service",
       "path": "/ajo/journey",
       "root_cause": "external_api_unavailable",
       "runtime_safe_fix_candidate": "record external outage; avoid runtime behavior changes",
@@ -22,6 +96,7 @@
       "endpoint_id": "ups_audiences",
       "failure_type": "auth_error",
       "method": "GET",
+      "next_action": "verify_permission",
       "path": "/data/core/ups/audiences",
       "root_cause": "credential_header_issue",
       "runtime_safe_fix_candidate": "verify token scopes and credential freshness; no code promotion",
@@ -32,6 +107,7 @@
       "endpoint_id": "segment_definitions",
       "failure_type": "auth_error",
       "method": "GET",
+      "next_action": "verify_permission",
       "path": "/data/core/ups/segment/definitions",
       "root_cause": "credential_header_issue",
       "runtime_safe_fix_candidate": "verify token scopes and credential freshness; no code promotion",
@@ -40,23 +116,182 @@
     },
     {
       "endpoint_id": "flowservice_flows",
-      "failure_type": "external_api_unavailable",
+      "failure_type": "sandbox_scope_issue",
       "method": "GET",
+      "next_action": "verify_sandbox",
       "path": "/data/foundation/flowservice/flows",
-      "root_cause": "external_api_unavailable",
-      "runtime_safe_fix_candidate": "record external outage; avoid runtime behavior changes",
+      "root_cause": "sandbox_scope_issue",
+      "runtime_safe_fix_candidate": "verify sandbox header and org access",
       "source_report": "live_api_readiness_smoke",
       "status_code": 500
     },
     {
       "endpoint_id": "flowservice_runs",
-      "failure_type": "external_api_unavailable",
+      "failure_type": "sandbox_scope_issue",
       "method": "GET",
+      "next_action": "verify_sandbox",
       "path": "/data/foundation/flowservice/runs",
-      "root_cause": "external_api_unavailable",
-      "runtime_safe_fix_candidate": "record external outage; avoid runtime behavior changes",
+      "root_cause": "sandbox_scope_issue",
+      "runtime_safe_fix_candidate": "verify sandbox header and org access",
       "source_report": "live_api_readiness_smoke",
       "status_code": 500
+    },
+    {
+      "endpoint_id": "catalog_datasets",
+      "failure_type": "endpoint_path_issue",
+      "method": "GET",
+      "next_action": "fix_endpoint_path",
+      "path": "/data/foundation/catalog/dataSets",
+      "root_cause": "endpoint_path_issue",
+      "runtime_safe_fix_candidate": "validate endpoint catalog path against live Adobe API",
+      "source_report": "live_api_readiness_smoke",
+      "status_code": 500
+    },
+    {
+      "endpoint_id": "schema_registry_schemas",
+      "failure_type": "sandbox_scope_issue",
+      "method": "GET",
+      "next_action": "verify_sandbox",
+      "path": "/data/foundation/schemaregistry/tenant/schemas",
+      "root_cause": "sandbox_scope_issue",
+      "runtime_safe_fix_candidate": "verify sandbox header and org access",
+      "source_report": "live_api_readiness_smoke",
+      "status_code": 500
+    },
+    {
+      "endpoint_id": "unified_tags",
+      "failure_type": "endpoint_path_issue",
+      "method": "GET",
+      "next_action": "fix_endpoint_path",
+      "path": "/unifiedtags/tags",
+      "root_cause": "endpoint_path_issue",
+      "runtime_safe_fix_candidate": "validate endpoint catalog path against live Adobe API",
+      "source_report": "live_api_readiness_smoke",
+      "status_code": 404
+    },
+    {
+      "endpoint_id": "merge_policies",
+      "failure_type": "auth_error",
+      "method": "GET",
+      "next_action": "verify_permission",
+      "path": "/data/core/ups/config/mergePolicies",
+      "root_cause": "credential_header_issue",
+      "runtime_safe_fix_candidate": "verify token scopes and credential freshness; no code promotion",
+      "source_report": "live_api_readiness_smoke",
+      "status_code": 401
+    },
+    {
+      "endpoint_id": "catalog_batches",
+      "failure_type": "endpoint_path_issue",
+      "method": "GET",
+      "next_action": "fix_endpoint_path",
+      "path": "/data/foundation/catalog/batches",
+      "root_cause": "endpoint_path_issue",
+      "runtime_safe_fix_candidate": "validate endpoint catalog path against live Adobe API",
+      "source_report": "live_api_readiness_smoke",
+      "status_code": 500
+    },
+    {
+      "endpoint_id": "audit_events",
+      "failure_type": "api_error",
+      "method": "GET",
+      "next_action": "no_code_fix",
+      "path": "/data/foundation/audit/events",
+      "root_cause": "no_clear_failure",
+      "runtime_safe_fix_candidate": "inspect evidence before changing runtime",
+      "source_report": "live_api_readiness_smoke",
+      "status_code": 400
+    },
+    {
+      "endpoint_id": "schemas_short",
+      "failure_type": "endpoint_path_issue",
+      "method": "GET",
+      "next_action": "fix_endpoint_path",
+      "path": "/schemas",
+      "root_cause": "endpoint_path_issue",
+      "runtime_safe_fix_candidate": "validate endpoint catalog path against live Adobe API",
+      "source_report": "live_api_readiness_smoke",
+      "status_code": 404
+    },
+    {
+      "failure_type": "api_error",
+      "next_action": "no_code_fix",
+      "query_id": "example_000",
+      "root_cause": "no_clear_failure",
+      "runtime_safe_fix_candidate": "inspect evidence before changing runtime",
+      "source_report": "live_api_evidence_pipeline_trial"
+    },
+    {
+      "failure_type": "api_error",
+      "next_action": "no_code_fix",
+      "query_id": "example_001",
+      "root_cause": "no_clear_failure",
+      "runtime_safe_fix_candidate": "inspect evidence before changing runtime",
+      "source_report": "live_api_evidence_pipeline_trial"
+    },
+    {
+      "failure_type": "api_error",
+      "next_action": "no_code_fix",
+      "query_id": "example_002",
+      "root_cause": "no_clear_failure",
+      "runtime_safe_fix_candidate": "inspect evidence before changing runtime",
+      "source_report": "live_api_evidence_pipeline_trial"
+    },
+    {
+      "failure_type": "api_error",
+      "next_action": "no_code_fix",
+      "query_id": "example_003",
+      "root_cause": "no_clear_failure",
+      "runtime_safe_fix_candidate": "inspect evidence before changing runtime",
+      "source_report": "live_api_evidence_pipeline_trial"
+    },
+    {
+      "failure_type": "api_error",
+      "next_action": "no_code_fix",
+      "query_id": "example_003",
+      "root_cause": "no_clear_failure",
+      "runtime_safe_fix_candidate": "inspect evidence before changing runtime",
+      "source_report": "live_api_evidence_pipeline_trial"
+    },
+    {
+      "failure_type": "api_error",
+      "next_action": "no_code_fix",
+      "query_id": "example_004",
+      "root_cause": "no_clear_failure",
+      "runtime_safe_fix_candidate": "inspect evidence before changing runtime",
+      "source_report": "live_api_evidence_pipeline_trial"
+    },
+    {
+      "failure_type": "api_error",
+      "next_action": "no_code_fix",
+      "query_id": "example_005",
+      "root_cause": "no_clear_failure",
+      "runtime_safe_fix_candidate": "inspect evidence before changing runtime",
+      "source_report": "live_api_evidence_pipeline_trial"
+    },
+    {
+      "failure_type": "api_error",
+      "next_action": "no_code_fix",
+      "query_id": "example_006",
+      "root_cause": "no_clear_failure",
+      "runtime_safe_fix_candidate": "inspect evidence before changing runtime",
+      "source_report": "live_api_evidence_pipeline_trial"
+    },
+    {
+      "failure_type": "api_error",
+      "next_action": "no_code_fix",
+      "query_id": "example_007",
+      "root_cause": "no_clear_failure",
+      "runtime_safe_fix_candidate": "inspect evidence before changing runtime",
+      "source_report": "live_api_evidence_pipeline_trial"
+    },
+    {
+      "failure_type": "api_error",
+      "next_action": "no_code_fix",
+      "query_id": "example_009",
+      "root_cause": "no_clear_failure",
+      "runtime_safe_fix_candidate": "inspect evidence before changing runtime",
+      "source_report": "live_api_evidence_pipeline_trial"
     }
   ],
   "uses_shared_api_outcome_classifier": true
