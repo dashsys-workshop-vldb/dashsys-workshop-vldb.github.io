@@ -14,6 +14,7 @@ from dashagent.api_response_parser import normalize_api_response
 from dashagent.config import Config
 from dashagent.endpoint_catalog import Endpoint, EndpointCatalog
 from dashagent.evidence_bus import EvidenceBus
+from dashagent.live_api_guard import OVERRIDE_FLAG, evaluate_live_api_full_run_guard
 from dashagent.trajectory import redact_secrets
 from scripts.audit_live_adobe_api_readiness import audit_live_adobe_api_readiness, token_acquisition_preflight
 from scripts.generate_live_api_strict_eval_delta import generate_live_api_strict_eval_delta, preserve_pre_live_baseline
@@ -27,7 +28,9 @@ from scripts.run_live_api_readiness_smoke import (
     safe_error_excerpt,
 )
 from scripts.run_live_api_targeted_failure_analysis import run_live_api_targeted_failure_analysis
+from scripts.run_full_generated_prompt_suite_diagnostic import run_full_generated_prompt_suite_diagnostic
 from scripts.run_mock_live_api_evidence_pipeline_trial import run_mock_live_api_evidence_pipeline_trial
+from scripts import run_dev_eval
 
 
 ADOBE_ENV_NAMES = [
@@ -507,6 +510,7 @@ def test_live_readiness_audit_and_skipped_reports_are_infrastructure_only(tiny_p
 def test_live_readiness_outputs_excluded_from_final_submission():
     assert "live_api_readiness_smoke" in NON_SUBMISSION_OUTPUT_DIRS
     assert "live_api_evidence_pipeline_trial" in NON_SUBMISSION_OUTPUT_DIRS
+    assert "live_api_strict_eval_diagnostic_override" in NON_SUBMISSION_OUTPUT_DIRS
     assert "mock_live_api_evidence_pipeline_trial" in NON_SUBMISSION_OUTPUT_DIRS
 
 
@@ -606,6 +610,97 @@ def test_live_audit_reports_do_not_include_actual_credential_values(tiny_project
     assert "ali***" not in combined
 
 
+def test_live_api_full_run_guard_blocks_missing_or_zero_success_smoke(tiny_project: Config):
+    missing = evaluate_live_api_full_run_guard(tiny_project, live_mode_active=True)
+    assert missing["allowed"] is False
+    assert missing["reason"] == "smoke_report_missing_or_stale"
+    blocker = json.loads((tiny_project.outputs_dir / "reports" / "live_api_full_run_blocker.json").read_text(encoding="utf-8"))
+    for key in [
+        "created_at",
+        "guard_decision",
+        "source_smoke_report",
+        "source_smoke_report_sha256",
+        "live_success_count",
+        "failure_counts",
+        "override_available_flag",
+        "safe_rerun_commands",
+    ]:
+        assert key in blocker
+
+    reports = tiny_project.outputs_dir / "reports"
+    (reports / "live_api_readiness_smoke.json").write_text(
+        json.dumps({"endpoints_tested": [{"endpoint_id": "journey_list", "outcome": "external_api_unavailable"}]}),
+        encoding="utf-8",
+    )
+    blocked = evaluate_live_api_full_run_guard(tiny_project, live_mode_active=True)
+    assert blocked["allowed"] is False
+    assert blocked["reason"] == "no_live_success"
+    assert blocked["failure_counts"]["external_api_unavailable"] == 1
+    assert blocked["source_smoke_report_sha256"]
+
+
+def test_live_api_full_run_guard_allows_success_and_cli_override(tiny_project: Config):
+    reports = tiny_project.outputs_dir / "reports"
+    reports.mkdir(parents=True, exist_ok=True)
+    (reports / "live_api_readiness_smoke.json").write_text(
+        json.dumps({"endpoints_tested": [{"endpoint_id": "journey_list", "outcome": "live_success"}]}),
+        encoding="utf-8",
+    )
+    allowed = evaluate_live_api_full_run_guard(tiny_project, live_mode_active=True)
+    assert allowed["allowed"] is True
+    assert allowed["guard_decision"] == "allowed_live_success"
+
+    (reports / "live_api_readiness_smoke.json").write_text(
+        json.dumps({"endpoints_tested": [{"endpoint_id": "journey_list", "outcome": "external_api_unavailable"}]}),
+        encoding="utf-8",
+    )
+    override = evaluate_live_api_full_run_guard(tiny_project, live_mode_active=True, override=True)
+    assert override["allowed"] is True
+    assert override["guard_decision"] == "allowed_diagnostic_override"
+    assert override["override_available_flag"] == OVERRIDE_FLAG
+    assert override["diagnostic_only"] is True
+    assert override["promotion_allowed"] is False
+
+
+def test_full_generated_prompt_diagnostic_obeys_live_api_guard(monkeypatch, tiny_project: Config):
+    clear_adobe_env(monkeypatch)
+    monkeypatch.setenv("CLIENT_ID", "client-id-guard-test")
+    monkeypatch.setenv("CLIENT_SECRET", "client-secret-guard-test")
+    reports = tiny_project.outputs_dir / "reports"
+    reports.mkdir(parents=True, exist_ok=True)
+    (reports / "live_api_readiness_smoke.json").write_text(
+        json.dumps({"endpoints_tested": [{"endpoint_id": "journey_list", "outcome": "external_api_unavailable"}]}),
+        encoding="utf-8",
+    )
+    report = run_full_generated_prompt_suite_diagnostic(tiny_project)
+    assert report["status"] == "blocked_by_live_api_guard"
+    assert report["live_api_guard"]["reason"] == "no_live_success"
+    assert report["executed_prompts"] == 0
+
+
+def test_run_dev_eval_strict_guard_blocks_live_mode_without_overwriting(monkeypatch, tiny_project: Config):
+    clear_adobe_env(monkeypatch)
+    monkeypatch.setenv("CLIENT_ID", "client-id-guard-test")
+    monkeypatch.setenv("CLIENT_SECRET", "client-secret-guard-test")
+    monkeypatch.setenv("DASHAGENT_DATA_DIR", str(tiny_project.data_dir))
+    monkeypatch.setenv("DASHAGENT_DBSNAPSHOT_DIR", str(tiny_project.dbsnapshot_dir))
+    monkeypatch.setenv("DASHAGENT_DATA_JSON", str(tiny_project.data_json_path))
+    monkeypatch.setenv("DASHAGENT_OUTPUTS_DIR", str(tiny_project.outputs_dir))
+    monkeypatch.setenv("DASHAGENT_PROMPTS_DIR", str(tiny_project.prompts_dir))
+    reports = tiny_project.outputs_dir / "reports"
+    reports.mkdir(parents=True, exist_ok=True)
+    (reports / "live_api_readiness_smoke.json").write_text(
+        json.dumps({"endpoints_tested": [{"endpoint_id": "journey_list", "outcome": "external_api_unavailable"}]}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(run_dev_eval, "load_local_env", lambda root: {})
+    monkeypatch.setattr(run_dev_eval.sys, "argv", ["run_dev_eval.py", "--strict"])
+    assert run_dev_eval.main() == 2
+    assert (reports / "live_api_full_run_blocker.json").exists()
+    assert not (tiny_project.outputs_dir / "eval_results_strict.json").exists()
+    assert not (tiny_project.outputs_dir / "eval").exists()
+
+
 def test_targeted_failure_analysis_rows_include_next_action(tiny_project: Config):
     reports = tiny_project.outputs_dir / "reports"
     reports.mkdir(parents=True, exist_ok=True)
@@ -636,12 +731,31 @@ def test_targeted_failure_analysis_rows_include_next_action(tiny_project: Config
     (reports / "live_api_evidence_pipeline_trial.json").write_text(json.dumps({"rows": []}), encoding="utf-8")
     report = run_live_api_targeted_failure_analysis(tiny_project)
     actions = {row["next_action"] for row in report["rows"]}
-    assert "verify_permission" in actions
+    assert "verify_scope" in actions
     assert "wait_external_service" in actions
     assert all(row["likely_failure_area"] for row in report["rows"])
     assert all(row["confidence"] in {"high", "medium", "low"} for row in report["rows"])
     assert all("safe_error_excerpt" in row for row in report["rows"])
+    for row in report["rows"]:
+        for key in [
+            "outcome",
+            "code_fix_allowed",
+            "reason_code",
+            "human_explanation",
+            "evidence_source",
+        ]:
+            assert key in row
     assert report["uses_shared_api_outcome_classifier"] is True
+    followup = json.loads((reports / "live_api_endpoint_followup_commands.json").read_text(encoding="utf-8"))
+    blockers = json.loads((reports / "live_api_external_blockers.json").read_text(encoding="utf-8"))
+    assert followup["report_type"] == "live_api_endpoint_followup_commands"
+    assert any("--endpoint-id merge_policies" in item["command"] for item in followup["commands"])
+    assert blockers["report_type"] == "live_api_external_blockers"
+    titles = {group["title"] for group in blockers["groups"]}
+    assert "Likely Adobe permission/scope setup" in titles
+    assert "Likely sandbox/environment setup" in titles
+    assert "Unresolved endpoint/path evidence with no proven code fix" in titles
+    assert "Likely Adobe service/server issue" in titles
 
 
 def test_live_endpoint_path_diagnosis_reports_safe_candidates(monkeypatch, tiny_project: Config):
@@ -693,3 +807,48 @@ def test_live_endpoint_path_diagnosis_reports_safe_candidates(monkeypatch, tiny_
     assert row["code_change_recommended"] is False
     assert row["candidate_safe_get_paths_attempted"]
     assert all(path.startswith("/") for path in row["candidate_safe_get_paths_attempted"])
+
+
+def test_targeted_failure_analysis_uses_path_diagnosis_to_block_catalog_fix(tiny_project: Config):
+    reports = tiny_project.outputs_dir / "reports"
+    reports.mkdir(parents=True, exist_ok=True)
+    (reports / "live_api_readiness_smoke.json").write_text(
+        json.dumps(
+            {
+                "endpoints_tested": [
+                    {
+                        "endpoint_id": "unified_tags",
+                        "method": "GET",
+                        "path": "/unifiedtags/tags",
+                        "status_code": 404,
+                        "outcome": "endpoint_path_issue",
+                        "safe_error_excerpt": "route not found",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    (reports / "live_api_endpoint_path_diagnosis.json").write_text(
+        json.dumps(
+            {
+                "rows": [
+                    {
+                        "endpoint_id": "unified_tags",
+                        "recommended_action": "no_code_fix",
+                        "code_change_recommended": False,
+                        "evidence": "best candidate outcome remained endpoint_path_issue",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    (reports / "live_api_evidence_pipeline_trial.json").write_text(json.dumps({"rows": []}), encoding="utf-8")
+    report = run_live_api_targeted_failure_analysis(tiny_project)
+    row = report["rows"][0]
+    assert row["outcome"] == "endpoint_path_issue"
+    assert row["code_fix_allowed"] is False
+    assert row["next_action"] == "no_code_fix"
+    assert row["reason_code"] == "no_successful_safe_get_candidate"
+    assert row["evidence_source"] == "endpoint_path_diagnosis"

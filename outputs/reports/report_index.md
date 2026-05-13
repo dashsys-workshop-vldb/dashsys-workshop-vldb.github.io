@@ -55,11 +55,16 @@ Start here. Most older generated reports were consolidated or removed.
 - API_REQUIRED readiness matrix: `outputs/reports/api_required_readiness_matrix.md`
 - Smoke report: `outputs/reports/live_api_readiness_smoke.md`
 - Endpoint path diagnosis: `outputs/reports/live_api_endpoint_path_diagnosis.md`
+- External blockers: `outputs/reports/live_api_external_blockers.md`
+- Follow-up commands: `outputs/reports/live_api_endpoint_followup_commands.md`
+- Full-run blocker: `outputs/reports/live_api_full_run_blocker.md`
 - Evidence pipeline trial: `outputs/reports/live_api_evidence_pipeline_trial.md`
 - Mock live evidence pipeline trial: `outputs/reports/mock_live_api_evidence_pipeline_trial.md`
 - Overall status: `pass`
 - Credentials present in latest smoke: `True`
 - Live mode attempted: `True`
+- Full live strict eval blocked: `True`
+- Full generated prompt suite blocked: `True`
 - Mock parser success count: `126`
 - Mock discovery chains simulated: `5`
 - Live API readiness is infrastructure validation only; it is not official strict-score evidence.

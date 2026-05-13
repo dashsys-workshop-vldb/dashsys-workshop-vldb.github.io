@@ -205,7 +205,9 @@ Reports are written under `outputs/reports/` and isolated live trial artifacts u
 
 Discovery chains are GET-only, never guess IDs, and record provenance for discovered IDs. Mocked fixtures under `tests/fixtures/adobe_api_responses/` validate endpoint-family parsing before credentials arrive; they are synthetic and must not be used as official benchmark evidence.
 
-Client-credentials token acquisition is supported through the same local `.env.local` setup. Current live smoke diagnostics can show token readiness while endpoint-level calls still fail because of product permission, sandbox scope, endpoint path, or Adobe service behavior. Run `python3 scripts/run_live_api_endpoint_path_diagnosis.py` before any full live prompt suite, and do not claim live API success until at least one catalog-approved safe GET endpoint returns `live_success`. Generated prompts remain diagnostic-only.
+Client-credentials token acquisition is supported through the same local `.env.local` setup. Current live smoke diagnostics can show token readiness while endpoint-level calls still fail because of product permission, sandbox scope, endpoint path, or Adobe service behavior. Run `python3 scripts/run_live_api_endpoint_path_diagnosis.py` and inspect `outputs/reports/live_api_external_blockers.md` before any full live prompt suite. Large live runs are guarded by structured smoke JSON and stay blocked until at least one catalog-approved safe GET endpoint returns `live_success`, unless an explicit diagnostic-only CLI override is used. Generated prompts remain diagnostic-only, and no live API data success should be claimed before a safe GET `live_success`.
+
+Use `outputs/reports/live_api_endpoint_followup_commands.md` for safe rerun commands such as `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id <endpoint_id>`, `--endpoint-family <family>`, and `--limit all-safe-get`. These commands never include credentials.
 
 ## 3.6 Evidence-Aware Answer Synthesis
 

@@ -1,0 +1,87 @@
+{
+  "diagnostic_only": true,
+  "full_generated_prompt_suite_blocked": true,
+  "full_live_eval_blocked": true,
+  "full_live_run_guard": {
+    "all_attempted_safe_gets_blocked_by_auth_scope_sandbox_or_service": false,
+    "full_generated_prompt_suite_allowed": false,
+    "guard_decision": "blocked",
+    "guard_reason": "no_live_success",
+    "live_strict_eval_allowed": false,
+    "live_success_seen": false,
+    "override_available_flag": "--allow-live-diagnostic-without-success"
+  },
+  "groups": [
+    {
+      "affected_endpoints": [
+        "ups_audiences",
+        "segment_definitions",
+        "merge_policies"
+      ],
+      "blocked_full_live_runs": true,
+      "key": "permission_scope",
+      "rerun_commands": [
+        "python3 scripts/run_live_api_readiness_smoke.py --endpoint-id ups_audiences",
+        "python3 scripts/run_live_api_readiness_smoke.py --endpoint-id segment_definitions",
+        "python3 scripts/run_live_api_readiness_smoke.py --endpoint-id merge_policies"
+      ],
+      "title": "Likely Adobe permission/scope setup",
+      "what_to_verify": "Verify Adobe product access, API key entitlement, and OAuth scopes for these endpoint families.",
+      "why_code_should_not_blindly_change_runtime": "Token acquisition works, but the data endpoint rejects access. Changing runtime code would hide an Adobe access problem."
+    },
+    {
+      "affected_endpoints": [
+        "flowservice_flows",
+        "flowservice_runs",
+        "schema_registry_schemas",
+        "audit_events"
+      ],
+      "blocked_full_live_runs": true,
+      "key": "sandbox_environment",
+      "rerun_commands": [
+        "python3 scripts/run_live_api_readiness_smoke.py --endpoint-id flowservice_flows",
+        "python3 scripts/run_live_api_readiness_smoke.py --endpoint-id flowservice_runs",
+        "python3 scripts/run_live_api_readiness_smoke.py --endpoint-id schema_registry_schemas",
+        "python3 scripts/run_live_api_readiness_smoke.py --endpoint-id audit_events"
+      ],
+      "title": "Likely sandbox/environment setup",
+      "what_to_verify": "Verify the sandbox name, org/project access, and whether the selected sandbox has these services enabled.",
+      "why_code_should_not_blindly_change_runtime": "Responses point to sandbox, tenant, org, or environment scope. Runtime should not guess a different sandbox or org."
+    },
+    {
+      "affected_endpoints": [
+        "catalog_datasets",
+        "unified_tags",
+        "catalog_batches",
+        "schemas_short"
+      ],
+      "blocked_full_live_runs": true,
+      "key": "unresolved_endpoint_path",
+      "rerun_commands": [
+        "python3 scripts/run_live_api_readiness_smoke.py --endpoint-id catalog_datasets",
+        "python3 scripts/run_live_api_readiness_smoke.py --endpoint-id unified_tags",
+        "python3 scripts/run_live_api_readiness_smoke.py --endpoint-id catalog_batches",
+        "python3 scripts/run_live_api_readiness_smoke.py --endpoint-id schemas_short"
+      ],
+      "title": "Unresolved endpoint/path evidence with no proven code fix",
+      "what_to_verify": "Review endpoint path diagnosis and rerun focused smoke after external checks; do not change catalog paths without a successful safe GET candidate.",
+      "why_code_should_not_blindly_change_runtime": "Endpoint path probes did not return a successful safe GET candidate, so a blind catalog edit would be speculative."
+    },
+    {
+      "affected_endpoints": [
+        "journey_list"
+      ],
+      "blocked_full_live_runs": true,
+      "key": "service_server",
+      "rerun_commands": [
+        "python3 scripts/run_live_api_readiness_smoke.py --endpoint-id journey_list"
+      ],
+      "title": "Likely Adobe service/server issue",
+      "what_to_verify": "Rerun later and check Adobe service status or request logs for the endpoint.",
+      "why_code_should_not_blindly_change_runtime": "The response shape looks like a server/service failure rather than actionable local code evidence."
+    }
+  ],
+  "official_score_claim": false,
+  "plain_language_summary": "Adobe credentials and token acquisition work, but live data endpoints have not returned usable payload evidence. Treat current blockers as external setup or unresolved endpoint evidence until at least one safe GET endpoint returns live_success.",
+  "report_type": "live_api_external_blockers"
+}

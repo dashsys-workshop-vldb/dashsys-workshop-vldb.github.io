@@ -143,6 +143,9 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "api_required_readiness_matrix": _load_json(outputs / "reports" / "api_required_readiness_matrix.json"),
         "live_api_smoke": _load_json(outputs / "reports" / "live_api_readiness_smoke.json"),
         "live_api_endpoint_path_diagnosis": _load_json(outputs / "reports" / "live_api_endpoint_path_diagnosis.json"),
+        "live_api_external_blockers": _load_json(outputs / "reports" / "live_api_external_blockers.json"),
+        "live_api_endpoint_followup_commands": _load_json(outputs / "reports" / "live_api_endpoint_followup_commands.json"),
+        "live_api_full_run_blocker": _load_json(outputs / "reports" / "live_api_full_run_blocker.json"),
         "live_api_pipeline_trial": _load_json(outputs / "reports" / "live_api_evidence_pipeline_trial.json"),
         "mock_live_api_pipeline_trial": _load_json(outputs / "reports" / "mock_live_api_evidence_pipeline_trial.json"),
         "llm_backend": _load_json(outputs / "llm_sdk_backend_check.json"),
@@ -404,6 +407,9 @@ def build_report_index(
             "api_required_readiness_matrix_path": "outputs/reports/api_required_readiness_matrix.md",
             "smoke_path": "outputs/reports/live_api_readiness_smoke.md",
             "endpoint_path_diagnosis_path": "outputs/reports/live_api_endpoint_path_diagnosis.md",
+            "external_blockers_path": "outputs/reports/live_api_external_blockers.md",
+            "followup_commands_path": "outputs/reports/live_api_endpoint_followup_commands.md",
+            "full_run_blocker_path": "outputs/reports/live_api_full_run_blocker.md",
             "pipeline_trial_path": "outputs/reports/live_api_evidence_pipeline_trial.md",
             "mock_pipeline_trial_path": "outputs/reports/mock_live_api_evidence_pipeline_trial.md",
             **_live_api_readiness_status(
@@ -412,6 +418,9 @@ def build_report_index(
                     "api_required_readiness_matrix": _load_json(config.outputs_dir / "reports" / "api_required_readiness_matrix.json"),
                     "live_api_smoke": _load_json(config.outputs_dir / "reports" / "live_api_readiness_smoke.json"),
                     "live_api_endpoint_path_diagnosis": _load_json(config.outputs_dir / "reports" / "live_api_endpoint_path_diagnosis.json"),
+                    "live_api_external_blockers": _load_json(config.outputs_dir / "reports" / "live_api_external_blockers.json"),
+                    "live_api_endpoint_followup_commands": _load_json(config.outputs_dir / "reports" / "live_api_endpoint_followup_commands.json"),
+                    "live_api_full_run_blocker": _load_json(config.outputs_dir / "reports" / "live_api_full_run_blocker.json"),
                     "live_api_pipeline_trial": _load_json(config.outputs_dir / "reports" / "live_api_evidence_pipeline_trial.json"),
                     "mock_live_api_pipeline_trial": _load_json(config.outputs_dir / "reports" / "mock_live_api_evidence_pipeline_trial.json"),
                 }
@@ -666,11 +675,16 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.append(f"- API_REQUIRED readiness matrix: `{live.get('api_required_readiness_matrix_path')}`")
     lines.append(f"- Smoke report: `{live.get('smoke_path')}`")
     lines.append(f"- Endpoint path diagnosis: `{live.get('endpoint_path_diagnosis_path')}`")
+    lines.append(f"- External blockers: `{live.get('external_blockers_path')}`")
+    lines.append(f"- Follow-up commands: `{live.get('followup_commands_path')}`")
+    lines.append(f"- Full-run blocker: `{live.get('full_run_blocker_path')}`")
     lines.append(f"- Evidence pipeline trial: `{live.get('pipeline_trial_path')}`")
     lines.append(f"- Mock live evidence pipeline trial: `{live.get('mock_pipeline_trial_path')}`")
     lines.append(f"- Overall status: `{live.get('overall_status')}`")
     lines.append(f"- Credentials present in latest smoke: `{live.get('credentials_present')}`")
     lines.append(f"- Live mode attempted: `{live.get('live_mode_attempted')}`")
+    lines.append(f"- Full live strict eval blocked: `{live.get('full_live_eval_blocked')}`")
+    lines.append(f"- Full generated prompt suite blocked: `{live.get('full_generated_prompt_suite_blocked')}`")
     lines.append(f"- Mock parser success count: `{live.get('mock_parser_success_count')}`")
     lines.append(f"- Mock discovery chains simulated: `{live.get('mock_discovery_chain_simulated_count')}`")
     lines.append("- Live API readiness is infrastructure validation only; it is not official strict-score evidence.")
@@ -848,6 +862,9 @@ def _live_api_readiness_status(sources: dict[str, Any]) -> dict[str, Any]:
     matrix = sources.get("api_required_readiness_matrix") or {}
     smoke = sources.get("live_api_smoke") or {}
     path_diagnosis = sources.get("live_api_endpoint_path_diagnosis") or {}
+    blockers = sources.get("live_api_external_blockers") or {}
+    followup = sources.get("live_api_endpoint_followup_commands") or {}
+    full_run_blocker = sources.get("live_api_full_run_blocker") or {}
     pipeline = sources.get("live_api_pipeline_trial") or {}
     mock_pipeline = sources.get("mock_live_api_pipeline_trial") or {}
     return {
@@ -858,6 +875,11 @@ def _live_api_readiness_status(sources: dict[str, Any]) -> dict[str, Any]:
         "api_required_or_api_only_queries": (matrix.get("summary") or {}).get("total_api_required_or_api_only_queries"),
         "smoke_status": smoke.get("status", "not_run"),
         "endpoint_path_diagnosis_status": "complete" if path_diagnosis.get("report_type") == "live_api_endpoint_path_diagnosis" else "not_run",
+        "external_blockers_status": "complete" if blockers.get("report_type") == "live_api_external_blockers" else "not_run",
+        "followup_commands_status": "complete" if followup.get("report_type") == "live_api_endpoint_followup_commands" else "not_run",
+        "full_run_blocker_status": "complete" if full_run_blocker.get("report_type") == "live_api_full_run_blocker" else "not_run",
+        "full_live_eval_blocked": blockers.get("full_live_eval_blocked", "unavailable"),
+        "full_generated_prompt_suite_blocked": blockers.get("full_generated_prompt_suite_blocked", "unavailable"),
         "pipeline_trial_status": pipeline.get("status", "not_run"),
         "mock_pipeline_trial_status": mock_pipeline.get("status", "not_run"),
         "mock_parser_success_count": mock_pipeline.get("parser_success_count", "not_run"),
@@ -874,6 +896,9 @@ def _live_api_readiness_status(sources: dict[str, Any]) -> dict[str, Any]:
             "outputs/reports/api_required_readiness_matrix.md",
             "outputs/reports/live_api_readiness_smoke.md",
             "outputs/reports/live_api_endpoint_path_diagnosis.md",
+            "outputs/reports/live_api_external_blockers.md",
+            "outputs/reports/live_api_endpoint_followup_commands.md",
+            "outputs/reports/live_api_full_run_blocker.md",
             "outputs/reports/live_api_evidence_pipeline_trial.md",
             "outputs/reports/mock_live_api_evidence_pipeline_trial.md",
         ],

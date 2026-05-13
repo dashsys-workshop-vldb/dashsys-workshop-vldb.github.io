@@ -49,6 +49,7 @@ NON_SUBMISSION_OUTPUT_DIRS = {
     "live_mode_readiness_report",
     "live_api_readiness_smoke",
     "live_api_evidence_pipeline_trial",
+    "live_api_strict_eval_diagnostic_override",
     "mock_live_api_evidence_pipeline_trial",
     "evidence_aware_answer_rewrite_trial",
     "endpoint_family_tiebreak_v2_shadow",

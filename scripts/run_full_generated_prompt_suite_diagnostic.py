@@ -16,6 +16,7 @@ if str(ROOT) not in sys.path:
 
 from dashagent.config import Config
 from dashagent.executor import AgentExecutor
+from dashagent.live_api_guard import evaluate_live_api_full_run_guard, guard_override_metadata
 from dashagent.trajectory import redact_secrets
 from scripts.run_diagnostic_prompt_suite import _intent_matches, _route_matches, _validation_failure_count, _weak_answer
 
@@ -31,14 +32,16 @@ def main() -> int:
         suite_path=Path(args.suite) if args.suite else config.data_dir / "generated_prompt_suite.json",
         limit=args.limit,
         clean=args.clean,
+        allow_live_diagnostic_without_success=args.allow_live_diagnostic_without_success,
     )
     print(
         json.dumps(
             {
-                "total_prompts": report["total_prompts"],
-                "executed_prompts": report["executed_prompts"],
-                "runtime_pass_count": report["runtime_pass_count"],
-                "runtime_fail_count": report["runtime_fail_count"],
+                "status": report.get("status", "complete"),
+                "total_prompts": report.get("total_prompts"),
+                "executed_prompts": report.get("executed_prompts"),
+                "runtime_pass_count": report.get("runtime_pass_count"),
+                "runtime_fail_count": report.get("runtime_fail_count"),
                 "json": str(config.outputs_dir / "reports" / "full_generated_prompt_suite_diagnostic.json"),
                 "coverage_gap_json": str(config.outputs_dir / "reports" / "generated_prompt_coverage_gap_analysis.json"),
             },
@@ -54,6 +57,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--suite", help="Path to generated_prompt_suite.json. Defaults to data/generated_prompt_suite.json.")
     parser.add_argument("--limit", type=int, default=None, help="Optional local debug limit. Default runs the full suite.")
     parser.add_argument("--clean", action="store_true", help=f"Remove only outputs/{OUTPUT_ROOT_NAME} before running.")
+    parser.add_argument(
+        "--allow-live-diagnostic-without-success",
+        action="store_true",
+        help="Explicitly allow a diagnostic-only live run when smoke has no live_success.",
+    )
     return parser.parse_args()
 
 
@@ -63,8 +71,17 @@ def run_full_generated_prompt_suite_diagnostic(
     suite_path: Path | None = None,
     limit: int | None = None,
     clean: bool = False,
+    allow_live_diagnostic_without_success: bool = False,
 ) -> dict[str, Any]:
     config = config or Config.from_env(ROOT)
+    guard = evaluate_live_api_full_run_guard(
+        config,
+        override=allow_live_diagnostic_without_success,
+        run_label="full_generated_prompt_suite_diagnostic",
+    )
+    if not guard.get("allowed"):
+        return _blocked_report(config, guard)
+    override_meta = guard_override_metadata(guard) if guard.get("override_used") else {}
     suite_path = suite_path or config.data_dir / "generated_prompt_suite.json"
     suite = json.loads(suite_path.read_text(encoding="utf-8"))
     if not isinstance(suite, list):
@@ -111,8 +128,10 @@ def run_full_generated_prompt_suite_diagnostic(
             }
         rows.append(redact_secrets(row))
 
-    report = redact_secrets(_build_report(config, suite, selected, rows, suite_path))
+    report = redact_secrets({**_build_report(config, suite, selected, rows, suite_path), **override_meta})
     gap_report = redact_secrets(_build_gap_report(report))
+    if override_meta:
+        gap_report.update(override_meta)
     (reports_dir / "full_generated_prompt_suite_diagnostic.json").write_text(
         json.dumps(report, indent=2, sort_keys=True, default=str), encoding="utf-8"
     )
@@ -121,6 +140,36 @@ def run_full_generated_prompt_suite_diagnostic(
         json.dumps(gap_report, indent=2, sort_keys=True, default=str), encoding="utf-8"
     )
     (reports_dir / "generated_prompt_coverage_gap_analysis.md").write_text(_render_gap_md(gap_report), encoding="utf-8")
+    return report
+
+
+def _blocked_report(config: Config, guard: dict[str, Any]) -> dict[str, Any]:
+    reports_dir = config.outputs_dir / "reports"
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    report = redact_secrets(
+        {
+            "report_type": "full_generated_prompt_suite_diagnostic",
+            "status": "blocked_by_live_api_guard",
+            "diagnostic_only": True,
+            "official_strict_score_computed": False,
+            "generated_prompt_score_claim": False,
+            "official_score_claim": False,
+            "promotion_allowed": False,
+            "live_api_guard": guard,
+            "total_prompts": None,
+            "executed_prompts": 0,
+            "runtime_pass_count": 0,
+            "runtime_fail_count": 0,
+            "rows": [],
+        }
+    )
+    (reports_dir / "full_generated_prompt_suite_diagnostic.json").write_text(
+        json.dumps(report, indent=2, sort_keys=True, default=str), encoding="utf-8"
+    )
+    (reports_dir / "full_generated_prompt_suite_diagnostic.md").write_text(
+        "# Full Generated Prompt Suite Diagnostic\n\nBlocked by live API guard. See `live_api_full_run_blocker.md`.\n",
+        encoding="utf-8",
+    )
     return report
 
 
