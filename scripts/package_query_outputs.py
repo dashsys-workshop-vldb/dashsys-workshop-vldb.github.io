@@ -42,6 +42,7 @@ NON_SUBMISSION_OUTPUT_DIRS = {
     "repair_selector_v3_shadow_eval",
     "shadow_repair_eval",
     "diagnostic_prompt_suite",
+    "generated_prompt_suite_local_diagnostic",
     "llm_semantic_router_shadow_eval",
     "llm_semantic_router_isolated_trial",
     "llm_semantic_router_feedback_loop",

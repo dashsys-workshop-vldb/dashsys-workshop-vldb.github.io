@@ -8,6 +8,7 @@ from dashagent.eval_harness import EvalHarness
 from scripts.generate_diagnostic_prompt_suite import DOMAINS, INTENTS, GENERATION_TYPES, ROUTES, generate_prompt_suite
 from scripts.package_query_outputs import NON_SUBMISSION_OUTPUT_DIRS
 from scripts.run_diagnostic_prompt_suite import DEFAULT_LIMIT, run_diagnostic_prompt_suite
+from scripts.run_generated_prompt_suite_local_diagnostic import run_generated_prompt_suite_local_diagnostic
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -142,5 +143,51 @@ def test_official_eval_uses_data_json_not_generated_suite(tiny_project):
 
 def test_diagnostic_outputs_are_not_submission_outputs():
     assert "diagnostic_prompt_suite" in NON_SUBMISSION_OUTPUT_DIRS
+    assert "generated_prompt_suite_local_diagnostic" in NON_SUBMISSION_OUTPUT_DIRS
     assert "llm_strict_eval" in NON_SUBMISSION_OUTPUT_DIRS
     assert "llm_controller_baseline_backend" in NON_SUBMISSION_OUTPUT_DIRS
+
+
+def test_local_generated_prompt_diagnostic_is_dry_run_only(tiny_project):
+    suite_path = tiny_project.data_dir / "generated_prompt_suite.json"
+    suite_path.write_text(
+        json.dumps(
+            [
+                {
+                    "prompt_id": "local_gen_0001",
+                    "prompt": "How many campaigns are there?",
+                    "generation_type": "paraphrase",
+                    "expected_route_diagnostic": "SQL_ONLY",
+                    "expected_answer_intent_diagnostic": "COUNT",
+                    "domain_family": "journey_campaign",
+                    "diagnostic_only": True,
+                    "should_be_scored": False,
+                },
+                {
+                    "prompt_id": "local_gen_0002",
+                    "prompt": "List all journeys",
+                    "generation_type": "domain_coverage",
+                    "expected_route_diagnostic": "SQL_ONLY",
+                    "expected_answer_intent_diagnostic": "LIST",
+                    "domain_family": "journey_campaign",
+                    "diagnostic_only": True,
+                    "should_be_scored": False,
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    report = run_generated_prompt_suite_local_diagnostic(tiny_project, suite_path=suite_path, clean=True)
+
+    assert report["total_prompts"] == 2
+    assert report["executed_prompts"] == 2
+    assert report["diagnostic_only"] is True
+    assert report["official_score_claim"] is False
+    assert report["promotion_allowed"] is False
+    assert report["dry_run_only"] is True
+    assert report["live_api_calls"] == 0
+    assert report["heuristics_are_advisory_only"] is True
+    assert report["no_safe_deterministic_improvement_applied"] is True
+    assert (tiny_project.outputs_dir / "generated_prompt_suite_local_diagnostic" / "local_gen_0001" / "trajectory.json").exists()
+    assert (tiny_project.outputs_dir / "reports" / "generated_prompt_suite_local_diagnostic.json").exists()

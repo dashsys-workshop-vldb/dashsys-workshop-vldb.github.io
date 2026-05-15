@@ -33,6 +33,7 @@ Start here. Most older generated reports were consolidated or removed.
 
 - `outputs/reports/generated_prompt_suite_summary.md` - Diagnostic prompt coverage only; not official strict score.
 - `outputs/reports/diagnostic_prompt_suite_run.md` - Diagnostic prompt runtime coverage only; not official strict score.
+- `outputs/reports/generated_prompt_suite_local_diagnostic.md` - Local dry-run 250-prompt diagnostic only; no live API calls or official score claim.
 - `outputs/reports/full_generated_prompt_suite_diagnostic.md` - Full 250-prompt generated suite diagnostic only; no official strict score claim.
 - `outputs/reports/generated_prompt_coverage_gap_analysis.md` - Generated prompt coverage gaps; diagnostic-only and not promotion evidence.
 
@@ -58,6 +59,8 @@ Start here. Most older generated reports were consolidated or removed.
 - External blockers: `outputs/reports/live_api_external_blockers.md`
 - Follow-up commands: `outputs/reports/live_api_endpoint_followup_commands.md`
 - Full-run blocker: `outputs/reports/live_api_full_run_blocker.md`
+- Post-permission verification: `outputs/reports/post_permission_live_api_verification.md`
+- Adobe access waiting status: `outputs/reports/adobe_access_waiting_status.md`
 - Evidence pipeline trial: `outputs/reports/live_api_evidence_pipeline_trial.md`
 - Mock live evidence pipeline trial: `outputs/reports/mock_live_api_evidence_pipeline_trial.md`
 - Overall status: `pass`

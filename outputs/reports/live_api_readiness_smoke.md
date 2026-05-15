@@ -11,7 +11,7 @@ Infrastructure validation only; this report is not official strict-score evidenc
 - Ready for live smoke: `True`
 - Ready for sandbox endpoints: `True`
 - Success count: `0`
-- Failure count: `12`
+- Failure count: `15`
 - Auth failures: `3`
 - Rate limits: `0`
 - Response parser status: `pass`
@@ -33,14 +33,14 @@ Infrastructure validation only; this report is not official strict-score evidenc
 - `catalog_batches` GET `/data/foundation/catalog/batches` outcome=`endpoint_path_issue` ok=`False` status=`500` parser=`pass`
 - `audit_events` GET `/data/foundation/audit/events` outcome=`sandbox_scope_issue` ok=`False` status=`400` parser=`pass`
 - `schemas_short` GET `/schemas` outcome=`endpoint_path_issue` ok=`False` status=`404` parser=`pass`
+- `audit_events_short` GET `/audit/events` outcome=`endpoint_path_issue` ok=`False` status=`404` parser=`pass`
+- `unified_tag_categories` GET `/unifiedtags/tagCategory` outcome=`endpoint_path_issue` ok=`False` status=`404` parser=`pass`
+- `segment_jobs` GET `/data/core/ups/segment/jobs` outcome=`sandbox_scope_issue` ok=`False` status=`400` parser=`pass`
 
 ## Skipped Endpoints
 
 - `schema_registry_schema` GET `/data/foundation/schemaregistry/tenant/schemas/{schema_id}` reason=`requires_discovery_chain_or_path_param`
-- `audit_events_short` GET `/audit/events` reason=`not_selected_by_limit`
-- `unified_tag_categories` GET `/unifiedtags/tagCategory` reason=`not_selected_by_limit`
 - `unified_tag_detail` GET `/unifiedtags/tags/{tag_id}` reason=`requires_discovery_chain_or_path_param`
-- `segment_jobs` GET `/data/core/ups/segment/jobs` reason=`not_selected_by_limit`
 - `catalog_batch_detail` GET `/data/foundation/catalog/batches/{batch_id}` reason=`requires_discovery_chain_or_path_param`
 - `export_batch_files` GET `/data/foundation/export/batches/{batch_id}/files` reason=`requires_discovery_chain_or_path_param`
 - `export_batch_failed` GET `/data/foundation/export/batches/{batch_id}/failed` reason=`requires_discovery_chain_or_path_param`

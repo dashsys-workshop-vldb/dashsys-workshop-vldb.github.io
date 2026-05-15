@@ -11,10 +11,13 @@ Diagnostic-only safe rerun commands. No credentials are included.
 - `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id flowservice_runs` - action: `verify_sandbox`
 - `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id schema_registry_schemas` - action: `verify_sandbox`
 - `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id audit_events` - action: `verify_sandbox`
+- `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id segment_jobs` - action: `verify_sandbox`
 - `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id catalog_datasets` - action: `no_code_fix`
 - `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id unified_tags` - action: `no_code_fix`
 - `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id catalog_batches` - action: `no_code_fix`
 - `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id schemas_short` - action: `verify_sandbox`
+- `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id audit_events_short` - action: `rerun_with_endpoint_filter`
+- `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id unified_tag_categories` - action: `rerun_with_endpoint_filter`
 - `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id journey_list` - action: `wait_external_service`
 
 ## Family Commands

@@ -141,6 +141,8 @@ Live smoke/trials are GET-only by default, must not call endpoints with unresolv
 
 Client-credentials token acquisition is supported through `.env.local` using the repo-supported names `ADOBE_ACCESS_TOKEN`, `ADOBE_API_KEY`, `ADOBE_ORG_ID`, `ADOBE_SANDBOX_NAME`, and `ADOBE_BASE_URL` plus legacy aliases. Reports may include only present/missing/source-label booleans, never actual values or masked prefixes. Endpoint-level failures are diagnosed with `python3 scripts/run_live_api_endpoint_path_diagnosis.py`; use `outputs/reports/live_api_external_blockers.md` to see what must be verified in Adobe and `outputs/reports/live_api_endpoint_followup_commands.md` for safe rerun commands. Full generated prompt suite and live strict eval are guarded by structured smoke JSON and must not run until at least one safe GET endpoint returns `live_success`, unless the user explicitly passes the diagnostic-only override flag. Generated prompts remain diagnostic-only, and no live API data success claim is valid before a safe GET `live_success`.
 
+While Adobe org/sandbox permission access is pending, use `python3 scripts/run_generated_prompt_suite_local_diagnostic.py` for the offline 250-prompt diagnostic; it forces Adobe API calls into dry-run mode and cannot support official score or promotion claims. After permissions are granted, run `python3 scripts/run_post_permission_live_api_verification.py` and read `outputs/reports/adobe_access_waiting_status.md` for the short supervisor-facing status. Do not run full live strict eval or the live full prompt suite unless the guard allows it.
+
 ## Live Adobe API Evidence Pipeline
 
 The future target is real Adobe API evidence, not dry-run optimization. Response parsing should populate `parsed_evidence` with endpoint metadata, evidence state, parser mode, IDs, names, statuses, counts, timestamps, errors, pagination, and redacted previews. EvidenceBus and answer slots must keep live API evidence, dry-run unavailable, empty live results, malformed responses, and API errors distinct.
@@ -169,7 +171,7 @@ Run `python3 scripts/run_llm_semantic_router_shadow_eval.py --limit 50` for the 
 
 `scripts/run_diagnostic_prompt_suite.py` runs generated prompts through `SQL_FIRST_API_VERIFY` as diagnostic coverage only. The default runner limit is 50 prompts; use `--full` to run all prompts, `--clean` to remove only `outputs/diagnostic_prompt_suite/`, and `--with-llm-semantic-router-shadow` to include routing-helper shadow stats.
 
-Generated prompts are diagnostic-only, `should_be_scored=false`, not official benchmark data, not runtime hints, and not packaged into final submission.
+Generated prompts are diagnostic-only, `should_be_scored=false`, not official benchmark data, not runtime hints, and not packaged into final submission. The local full-suite diagnostic writes `outputs/generated_prompt_suite_local_diagnostic/` and marks vague-answer/missing-count heuristics as advisory only.
 
 ## Decision-Stage Feedback Loops
 

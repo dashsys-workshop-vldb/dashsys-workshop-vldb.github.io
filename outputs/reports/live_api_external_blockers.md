@@ -18,7 +18,7 @@ Rerun commands:
 
 ## Likely sandbox/environment setup
 
-- Affected endpoints: `['flowservice_flows', 'flowservice_runs', 'schema_registry_schemas', 'audit_events']`
+- Affected endpoints: `['flowservice_flows', 'flowservice_runs', 'schema_registry_schemas', 'audit_events', 'segment_jobs']`
 - Why code should not blindly change runtime: Responses point to sandbox, tenant, org, or environment scope. Runtime should not guess a different sandbox or org.
 - What to verify: Verify the sandbox name, org/project access, and whether the selected sandbox has these services enabled.
 
@@ -27,10 +27,11 @@ Rerun commands:
 - `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id flowservice_runs`
 - `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id schema_registry_schemas`
 - `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id audit_events`
+- `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id segment_jobs`
 
 ## Unresolved endpoint/path evidence with no proven code fix
 
-- Affected endpoints: `['catalog_datasets', 'unified_tags', 'catalog_batches', 'schemas_short']`
+- Affected endpoints: `['catalog_datasets', 'unified_tags', 'catalog_batches', 'schemas_short', 'audit_events_short', 'unified_tag_categories']`
 - Why code should not blindly change runtime: Endpoint path probes did not return a successful safe GET candidate, so a blind catalog edit would be speculative.
 - What to verify: Review endpoint path diagnosis and rerun focused smoke after external checks; do not change catalog paths without a successful safe GET candidate.
 
@@ -39,6 +40,8 @@ Rerun commands:
 - `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id unified_tags`
 - `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id catalog_batches`
 - `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id schemas_short`
+- `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id audit_events_short`
+- `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id unified_tag_categories`
 
 ## Likely Adobe service/server issue
 

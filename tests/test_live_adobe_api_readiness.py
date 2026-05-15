@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import zipfile
 from pathlib import Path
 
 from dashagent.answer_slots import extract_answer_slots
@@ -20,6 +21,7 @@ from scripts.audit_live_adobe_api_readiness import audit_live_adobe_api_readines
 from scripts.generate_live_api_strict_eval_delta import generate_live_api_strict_eval_delta, preserve_pre_live_baseline
 from scripts.generate_api_required_readiness_matrix import generate_api_required_readiness_matrix
 from scripts.package_query_outputs import NON_SUBMISSION_OUTPUT_DIRS
+from scripts.package_submission import REQUIRED_PATHS
 from scripts.run_live_api_evidence_pipeline_trial import run_live_api_evidence_pipeline_trial
 from scripts.run_live_api_endpoint_path_diagnosis import run_live_api_endpoint_path_diagnosis
 from scripts.run_live_api_readiness_smoke import (
@@ -29,6 +31,10 @@ from scripts.run_live_api_readiness_smoke import (
 )
 from scripts.run_live_api_targeted_failure_analysis import run_live_api_targeted_failure_analysis
 from scripts.run_full_generated_prompt_suite_diagnostic import run_full_generated_prompt_suite_diagnostic
+from scripts.run_post_permission_live_api_verification import (
+    run_post_permission_live_api_verification,
+    write_adobe_access_waiting_status,
+)
 from scripts.run_mock_live_api_evidence_pipeline_trial import run_mock_live_api_evidence_pipeline_trial
 from scripts import run_dev_eval
 
@@ -852,3 +858,119 @@ def test_targeted_failure_analysis_uses_path_diagnosis_to_block_catalog_fix(tiny
     assert row["next_action"] == "no_code_fix"
     assert row["reason_code"] == "no_successful_safe_get_candidate"
     assert row["evidence_source"] == "endpoint_path_diagnosis"
+
+
+def test_post_permission_runner_records_subcommands_and_waiting_status(tiny_project: Config, monkeypatch):
+    clear_adobe_env(monkeypatch)
+    reports = tiny_project.outputs_dir / "reports"
+    reports.mkdir(parents=True, exist_ok=True)
+    (reports / "live_api_readiness_smoke.json").write_text(
+        json.dumps(
+            {
+                "status": "complete",
+                "endpoints_tested": [
+                    {"endpoint_id": "merge_policies", "outcome": "auth_error"},
+                    {"endpoint_id": "journey_list", "outcome": "external_api_unavailable"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (reports / "live_api_evidence_pipeline_trial.json").write_text(
+        json.dumps({"usable_live_api_evidence_count": 0, "api_state_forwarded_count": 2}),
+        encoding="utf-8",
+    )
+    (reports / "live_api_endpoint_followup_commands.json").write_text(
+        json.dumps({"commands": [{"command": "python3 scripts/run_live_api_readiness_smoke.py --endpoint-id merge_policies"}]}),
+        encoding="utf-8",
+    )
+    (reports / "live_api_external_blockers.json").write_text(
+        json.dumps({"groups": [{"title": "Likely Adobe permission/scope setup", "affected_endpoints": ["merge_policies"]}]}),
+        encoding="utf-8",
+    )
+
+    commands_seen: list[str] = []
+
+    def fake_runner(command: list[str], cwd: Path) -> int:
+        commands_seen.append(" ".join(command))
+        return 0
+
+    report = run_post_permission_live_api_verification(tiny_project, command_runner=fake_runner)
+
+    assert report["diagnostic_only"] is True
+    assert report["full_strict_eval_executed"] is False
+    assert report["full_generated_prompt_suite_executed"] is False
+    assert len(report["commands"]) == 5
+    assert all({"command", "exit_code", "started_at", "ended_at", "duration_seconds", "status", "report_path"} <= set(row) for row in report["commands"])
+    assert not any("run_dev_eval.py" in command for command in commands_seen)
+    assert not any("run_full_generated_prompt_suite_diagnostic.py" in command for command in commands_seen)
+    assert report["live_success_count"] == 0
+    assert report["recommended_next_command"].endswith("--endpoint-id merge_policies")
+    waiting = json.loads((reports / "adobe_access_waiting_status.json").read_text(encoding="utf-8"))
+    waiting_md = (reports / "adobe_access_waiting_status.md").read_text(encoding="utf-8")
+    assert waiting["report_type"] == "adobe_access_waiting_status"
+    assert "## What Works" in waiting_md
+    assert "## What Is Blocked" in waiting_md
+    assert "## What External Access Is Needed" in waiting_md
+    assert "## What Command To Run After Permission Is Granted" in waiting_md
+
+
+def test_adobe_access_waiting_status_is_short_and_redacted(tiny_project: Config, monkeypatch):
+    clear_adobe_env(monkeypatch)
+    reports = tiny_project.outputs_dir / "reports"
+    reports.mkdir(parents=True, exist_ok=True)
+    (reports / "live_api_readiness_smoke.json").write_text(json.dumps({"endpoints_tested": []}), encoding="utf-8")
+    payload = write_adobe_access_waiting_status(tiny_project)
+    markdown = (reports / "adobe_access_waiting_status.md").read_text(encoding="utf-8")
+    assert payload["official_score_claim"] is False
+    assert "Authorization" not in markdown
+    assert "ADOBE_ACCESS_TOKEN" not in markdown
+    assert "ali***" not in markdown
+    assert markdown.count("## ") == 4
+
+
+def test_redacted_live_api_error_fixtures_classify_expected_outcomes():
+    fixture_dir = Path(__file__).parent / "fixtures" / "live_api_errors"
+    expected = {
+        "auth_error_401.json": "auth_error",
+        "invalid_sandbox_400.json": "sandbox_scope_issue",
+        "endpoint_path_404.json": "endpoint_path_issue",
+        "sandbox_internal_500.json": "sandbox_scope_issue",
+        "service_unavailable_500.json": "external_api_unavailable",
+    }
+    forbidden = [
+        "Bearer ",
+        "ADOBE_ACCESS_TOKEN",
+        "ADOBE_API_KEY",
+        "ADOBE_CLIENT_SECRET",
+        "IMS_ORG",
+        "ali***",
+    ]
+    for name, outcome in expected.items():
+        payload = json.loads((fixture_dir / name).read_text(encoding="utf-8"))
+        text = json.dumps(payload)
+        assert all(token not in text for token in forbidden)
+        result = {
+            "ok": False,
+            "dry_run": False,
+            "status_code": payload["status_code"],
+            "error": json.dumps(payload["body"]),
+        }
+        assert classify_api_outcome(result, method="GET", path="/synthetic/path") == outcome
+
+
+def test_generated_local_diagnostic_is_excluded_from_packages(tmp_path: Path):
+    assert "generated_prompt_suite_local_diagnostic" in NON_SUBMISSION_OUTPUT_DIRS
+    assert "outputs" not in REQUIRED_PATHS
+    assert ".env.local" not in REQUIRED_PATHS
+    package_dir = tmp_path / "source_code"
+    local_output = package_dir / "outputs" / "generated_prompt_suite_local_diagnostic" / "prompt_001"
+    local_output.mkdir(parents=True)
+    (local_output / "trajectory.json").write_text("{}", encoding="utf-8")
+    zip_path = tmp_path / "source_code.zip"
+    with zipfile.ZipFile(zip_path, "w") as archive:
+        for file_path in package_dir.rglob("*"):
+            if "generated_prompt_suite_local_diagnostic" not in file_path.parts:
+                archive.write(file_path, file_path.relative_to(package_dir))
+    with zipfile.ZipFile(zip_path) as archive:
+        assert not any("generated_prompt_suite_local_diagnostic" in name for name in archive.namelist())

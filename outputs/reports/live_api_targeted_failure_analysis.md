@@ -6,9 +6,9 @@ Diagnostic-only analysis using the shared API outcome classifier.
 
 - `api_error`: `10`
 - `auth_error`: `3`
-- `endpoint_path_issue`: `4`
+- `endpoint_path_issue`: `6`
 - `external_api_unavailable`: `1`
-- `sandbox_scope_issue`: `4`
+- `sandbox_scope_issue`: `5`
 
 ## Next Actions
 
@@ -24,6 +24,9 @@ Diagnostic-only analysis using the shared API outcome classifier.
 - `catalog_batches` failure=`endpoint_path_issue` next_action=`no_code_fix` code_fix_allowed=`False` reason=`no_successful_safe_get_candidate`
 - `audit_events` failure=`sandbox_scope_issue` next_action=`verify_sandbox` code_fix_allowed=`False` reason=`adobe_sandbox_or_environment_setup`
 - `schemas_short` failure=`endpoint_path_issue` next_action=`verify_sandbox` code_fix_allowed=`False` reason=`no_successful_safe_get_candidate`
+- `audit_events_short` failure=`endpoint_path_issue` next_action=`rerun_with_endpoint_filter` code_fix_allowed=`False` reason=`endpoint_path_unverified`
+- `unified_tag_categories` failure=`endpoint_path_issue` next_action=`rerun_with_endpoint_filter` code_fix_allowed=`False` reason=`endpoint_path_unverified`
+- `segment_jobs` failure=`sandbox_scope_issue` next_action=`verify_sandbox` code_fix_allowed=`False` reason=`adobe_sandbox_or_environment_setup`
 - `example_000` failure=`api_error` next_action=`inspect_redacted_error_shape` code_fix_allowed=`False` reason=`api_error_state_only`
 - `example_001` failure=`api_error` next_action=`inspect_redacted_error_shape` code_fix_allowed=`False` reason=`api_error_state_only`
 - `example_002` failure=`api_error` next_action=`inspect_redacted_error_shape` code_fix_allowed=`False` reason=`api_error_state_only`

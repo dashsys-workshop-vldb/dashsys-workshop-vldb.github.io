@@ -105,6 +105,20 @@ python3 scripts/run_live_api_evidence_pipeline_trial.py
 
 Never commit `.env.local`.
 
+While Adobe org/sandbox permissions are pending, run the offline diagnostic with:
+
+```bash
+python3 scripts/run_generated_prompt_suite_local_diagnostic.py
+```
+
+After permissions are granted, run:
+
+```bash
+python3 scripts/run_post_permission_live_api_verification.py
+```
+
+This post-permission runner performs only the minimal safe live verification sequence and does not run full live strict eval or the full live generated prompt suite.
+
 Real LLM integration is also optional. OpenAI remains the default provider:
 
 ```bash
@@ -174,6 +188,8 @@ Outputs:
 
 Generated prompts are diagnostic-only, `should_be_scored=false`, not used as official benchmark data, and excluded from final submission packaging.
 
+`scripts/run_generated_prompt_suite_local_diagnostic.py` runs the full suite in dry-run-safe local mode, even when live Adobe credentials exist. Its vague-answer and missing-count/name heuristics are advisory only and cannot support official score claims or promotion.
+
 ## 3.4 Decision-Stage Feedback Loops
 
 Serious improvement candidates must start from a workflow decision-stage question, not a module guess. Use:
@@ -208,6 +224,8 @@ Discovery chains are GET-only, never guess IDs, and record provenance for discov
 Client-credentials token acquisition is supported through the same local `.env.local` setup. Current live smoke diagnostics can show token readiness while endpoint-level calls still fail because of product permission, sandbox scope, endpoint path, or Adobe service behavior. Run `python3 scripts/run_live_api_endpoint_path_diagnosis.py` and inspect `outputs/reports/live_api_external_blockers.md` before any full live prompt suite. Large live runs are guarded by structured smoke JSON and stay blocked until at least one catalog-approved safe GET endpoint returns `live_success`, unless an explicit diagnostic-only CLI override is used. Generated prompts remain diagnostic-only, and no live API data success should be claimed before a safe GET `live_success`.
 
 Use `outputs/reports/live_api_endpoint_followup_commands.md` for safe rerun commands such as `python3 scripts/run_live_api_readiness_smoke.py --endpoint-id <endpoint_id>`, `--endpoint-family <family>`, and `--limit all-safe-get`. These commands never include credentials.
+
+Use `outputs/reports/adobe_access_waiting_status.md` for the short supervisor-facing access status. After external access changes, `python3 scripts/run_post_permission_live_api_verification.py` reruns the minimal safe sequence and reports whether guarded full live runs are allowed.
 
 ## 3.6 Evidence-Aware Answer Synthesis
 

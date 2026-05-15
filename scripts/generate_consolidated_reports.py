@@ -146,6 +146,8 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "live_api_external_blockers": _load_json(outputs / "reports" / "live_api_external_blockers.json"),
         "live_api_endpoint_followup_commands": _load_json(outputs / "reports" / "live_api_endpoint_followup_commands.json"),
         "live_api_full_run_blocker": _load_json(outputs / "reports" / "live_api_full_run_blocker.json"),
+        "post_permission_live_api_verification": _load_json(outputs / "reports" / "post_permission_live_api_verification.json"),
+        "adobe_access_waiting_status": _load_json(outputs / "reports" / "adobe_access_waiting_status.json"),
         "live_api_pipeline_trial": _load_json(outputs / "reports" / "live_api_evidence_pipeline_trial.json"),
         "mock_live_api_pipeline_trial": _load_json(outputs / "reports" / "mock_live_api_evidence_pipeline_trial.json"),
         "llm_backend": _load_json(outputs / "llm_sdk_backend_check.json"),
@@ -157,6 +159,7 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "llm_semantic_router_promotion": _load_json(outputs / "reports" / "llm_semantic_router_promotion_decision.json"),
         "generated_prompt_suite": _load_json(outputs / "reports" / "generated_prompt_suite_summary.json"),
         "diagnostic_prompt_suite_run": _load_json(outputs / "reports" / "diagnostic_prompt_suite_run.json"),
+        "generated_prompt_suite_local_diagnostic": _load_json(outputs / "reports" / "generated_prompt_suite_local_diagnostic.json"),
         "sdk_usage_audit": _load_json(outputs / "reports" / "sdk_usage_audit.json"),
         "workshop_requirement_audit": _load_json(outputs / "reports" / "workshop_requirement_audit.json"),
         "workflow_decision_map": _load_json(outputs / "reports" / "workflow_decision_map.json"),
@@ -232,6 +235,8 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
             "outputs/winner_readiness_report.json",
             "outputs/hidden_style_eval.json",
             "outputs/official_token_reduction_promotion_report.json",
+            "outputs/reports/post_permission_live_api_verification.md",
+            "outputs/reports/adobe_access_waiting_status.md",
         ],
     }
 
@@ -307,6 +312,7 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
             "outputs/endpoint_family_tiebreak_v2_shadow.json",
             "outputs/ast_guided_sql_candidate_canary.json",
             "outputs/reports/live_adobe_api_readiness_audit.json",
+            "outputs/reports/generated_prompt_suite_local_diagnostic.md",
         ],
     }
 
@@ -379,6 +385,10 @@ def build_report_index(
                 "label": "Diagnostic prompt runtime coverage only; not official strict score.",
             },
             {
+                "path": "outputs/reports/generated_prompt_suite_local_diagnostic.md",
+                "label": "Local dry-run 250-prompt diagnostic only; no live API calls or official score claim.",
+            },
+            {
                 "path": "outputs/reports/full_generated_prompt_suite_diagnostic.md",
                 "label": "Full 250-prompt generated suite diagnostic only; no official strict score claim.",
             },
@@ -410,6 +420,8 @@ def build_report_index(
             "external_blockers_path": "outputs/reports/live_api_external_blockers.md",
             "followup_commands_path": "outputs/reports/live_api_endpoint_followup_commands.md",
             "full_run_blocker_path": "outputs/reports/live_api_full_run_blocker.md",
+            "post_permission_verification_path": "outputs/reports/post_permission_live_api_verification.md",
+            "adobe_access_waiting_status_path": "outputs/reports/adobe_access_waiting_status.md",
             "pipeline_trial_path": "outputs/reports/live_api_evidence_pipeline_trial.md",
             "mock_pipeline_trial_path": "outputs/reports/mock_live_api_evidence_pipeline_trial.md",
             **_live_api_readiness_status(
@@ -421,6 +433,8 @@ def build_report_index(
                     "live_api_external_blockers": _load_json(config.outputs_dir / "reports" / "live_api_external_blockers.json"),
                     "live_api_endpoint_followup_commands": _load_json(config.outputs_dir / "reports" / "live_api_endpoint_followup_commands.json"),
                     "live_api_full_run_blocker": _load_json(config.outputs_dir / "reports" / "live_api_full_run_blocker.json"),
+                    "post_permission_live_api_verification": _load_json(config.outputs_dir / "reports" / "post_permission_live_api_verification.json"),
+                    "adobe_access_waiting_status": _load_json(config.outputs_dir / "reports" / "adobe_access_waiting_status.json"),
                     "live_api_pipeline_trial": _load_json(config.outputs_dir / "reports" / "live_api_evidence_pipeline_trial.json"),
                     "mock_live_api_pipeline_trial": _load_json(config.outputs_dir / "reports" / "mock_live_api_evidence_pipeline_trial.json"),
                 }
@@ -531,6 +545,8 @@ def render_system_summary(payload: dict[str, Any]) -> str:
             f"- Final recommendation: `{payload['final_recommendation']}`",
             f"- Live Adobe API readiness: `{payload['live_adobe_api_readiness']['overall_status']}` "
             f"(smoke `{payload['live_adobe_api_readiness']['smoke_status']}`, pipeline `{payload['live_adobe_api_readiness']['pipeline_trial_status']}`)",
+            f"- Post-permission live verification: `{payload['live_adobe_api_readiness'].get('post_permission_verification_status')}`; "
+            f"waiting-status report: `{payload['live_adobe_api_readiness'].get('adobe_access_waiting_status')}`",
             f"- LLM semantic routing helper: `{payload['llm_semantic_routing_helper']['recommendation']}` "
             f"({payload['llm_semantic_routing_helper']['status']})",
             f"- Semantic router isolated trial: `{payload['llm_semantic_routing_helper'].get('isolated_trial_status')}`; "
@@ -678,6 +694,8 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.append(f"- External blockers: `{live.get('external_blockers_path')}`")
     lines.append(f"- Follow-up commands: `{live.get('followup_commands_path')}`")
     lines.append(f"- Full-run blocker: `{live.get('full_run_blocker_path')}`")
+    lines.append(f"- Post-permission verification: `{live.get('post_permission_verification_path')}`")
+    lines.append(f"- Adobe access waiting status: `{live.get('adobe_access_waiting_status_path')}`")
     lines.append(f"- Evidence pipeline trial: `{live.get('pipeline_trial_path')}`")
     lines.append(f"- Mock live evidence pipeline trial: `{live.get('mock_pipeline_trial_path')}`")
     lines.append(f"- Overall status: `{live.get('overall_status')}`")
@@ -865,6 +883,8 @@ def _live_api_readiness_status(sources: dict[str, Any]) -> dict[str, Any]:
     blockers = sources.get("live_api_external_blockers") or {}
     followup = sources.get("live_api_endpoint_followup_commands") or {}
     full_run_blocker = sources.get("live_api_full_run_blocker") or {}
+    post_permission = sources.get("post_permission_live_api_verification") or {}
+    waiting = sources.get("adobe_access_waiting_status") or {}
     pipeline = sources.get("live_api_pipeline_trial") or {}
     mock_pipeline = sources.get("mock_live_api_pipeline_trial") or {}
     return {
@@ -878,6 +898,8 @@ def _live_api_readiness_status(sources: dict[str, Any]) -> dict[str, Any]:
         "external_blockers_status": "complete" if blockers.get("report_type") == "live_api_external_blockers" else "not_run",
         "followup_commands_status": "complete" if followup.get("report_type") == "live_api_endpoint_followup_commands" else "not_run",
         "full_run_blocker_status": "complete" if full_run_blocker.get("report_type") == "live_api_full_run_blocker" else "not_run",
+        "post_permission_verification_status": "complete" if post_permission.get("report_type") == "post_permission_live_api_verification" else "not_run",
+        "adobe_access_waiting_status": "complete" if waiting.get("report_type") == "adobe_access_waiting_status" else "not_run",
         "full_live_eval_blocked": blockers.get("full_live_eval_blocked", "unavailable"),
         "full_generated_prompt_suite_blocked": blockers.get("full_generated_prompt_suite_blocked", "unavailable"),
         "pipeline_trial_status": pipeline.get("status", "not_run"),
@@ -899,6 +921,8 @@ def _live_api_readiness_status(sources: dict[str, Any]) -> dict[str, Any]:
             "outputs/reports/live_api_external_blockers.md",
             "outputs/reports/live_api_endpoint_followup_commands.md",
             "outputs/reports/live_api_full_run_blocker.md",
+            "outputs/reports/post_permission_live_api_verification.md",
+            "outputs/reports/adobe_access_waiting_status.md",
             "outputs/reports/live_api_evidence_pipeline_trial.md",
             "outputs/reports/mock_live_api_evidence_pipeline_trial.md",
         ],
