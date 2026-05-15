@@ -392,6 +392,21 @@ def safe_error_excerpt(result: dict[str, Any], *, max_chars: int = 300) -> str:
     text = re.sub(r"x-api-key\s*[:=]\s*[^\s,;]+", "x-api-key: [REDACTED]", text, flags=re.I)
     text = re.sub(r"x-gw-ims-org-id\s*[:=]\s*[^\s,;]+", "x-gw-ims-org-id: [REDACTED]", text, flags=re.I)
     text = re.sub(r"x-sandbox-name\s*[:=]\s*[^\s,;]+", "x-sandbox-name: [REDACTED]", text, flags=re.I)
+    text = re.sub(r"\b(org|organization|tenant|sandbox)\s+[A-Za-z0-9_.@-]+", r"\1 [REDACTED]", text, flags=re.I)
+    text = re.sub(
+        r"([\"']?(?:request[-_ ]?id|requestid|registryrequestid|trace[-_ ]?id|traceid|x-request-id)[\"']?\s*[:=]\s*[\"']?)[^\"',}\s]+",
+        r"\1synthetic-request-id",
+        text,
+        flags=re.I,
+    )
+    text = re.sub(
+        r"([\"']?(?:timestamp|timeStamp|diagnostic[-_ ]?id)[\"']?\s*[:=]\s*[\"']?)[^\"',}\s]+",
+        r"\1synthetic-timestamp",
+        text,
+        flags=re.I,
+    )
+    text = re.sub(r"\bsk-[A-Za-z0-9_-]{12,}\b", "[REDACTED]", text)
+    text = re.sub(r"\beyJ[A-Za-z0-9._-]{20,}\b", "[REDACTED]", text)
     text = re.sub(r"\b[A-Za-z0-9_.@-]{1,12}\*\*\*", "[REDACTED]", text)
     return text[:max_chars]
 

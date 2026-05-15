@@ -120,9 +120,12 @@ def run_post_permission_live_api_verification(
             "api_state_caveat_forwarded_count": int(trial.get("api_state_forwarded_count") or 0),
             "live_api_guard_decision": guard.get("guard_decision"),
             "live_api_guard_reason": guard.get("reason"),
+            "guard_decision": guard.get("guard_decision"),
+            "reason": guard.get("reason"),
             "full_live_eval_allowed": bool(guard.get("allowed")),
             "full_generated_prompt_suite_allowed": bool(guard.get("allowed")),
             "recommended_next_command": next_commands[0] if next_commands else "unavailable",
+            "recommended_followup_commands": next_commands[1:],
             "recommended_next_commands": next_commands,
             "safe_rerun_commands": safe_rerun_commands,
             "source_reports": [
@@ -154,6 +157,7 @@ def write_adobe_access_waiting_status(config: Config | None = None, *, verificat
     smoke = _load_json(reports_dir / "live_api_readiness_smoke.json")
     trial = _load_json(reports_dir / "live_api_evidence_pipeline_trial.json")
     blockers = _load_json(reports_dir / "live_api_external_blockers.json")
+    local_diag = _load_json(reports_dir / "generated_prompt_suite_local_diagnostic.json")
     guard = evaluate_live_api_full_run_guard(config, run_label=WAITING_STEM, write_blocker=True)
     smoke_rows = [row for row in smoke.get("endpoints_tested", []) if isinstance(row, dict)]
     counts = Counter(str(row.get("outcome") or "api_error") for row in smoke_rows)
@@ -177,6 +181,12 @@ def write_adobe_access_waiting_status(config: Config | None = None, *, verificat
                 "full_live_eval_allowed": bool(guard.get("allowed")),
                 "full_generated_prompt_suite_allowed": bool(guard.get("allowed")),
             },
+            "why_likely_external_access": [
+                "credential loading and client-credentials token acquisition pass locally",
+                "safe GET smoke infrastructure executes real Adobe requests",
+                "endpoint failures are grouped as permission/scope, sandbox/environment, unresolved path evidence, or service/server issues",
+                "no safe GET endpoint has returned live payload evidence yet",
+            ],
             "likely_external_blockers": [
                 group.get("title")
                 for group in blockers.get("groups", [])
@@ -195,6 +205,22 @@ def write_adobe_access_waiting_status(config: Config | None = None, *, verificat
             ],
             "run_after_permission_granted": "python3 scripts/run_post_permission_live_api_verification.py",
             "secondary_rerun_command": "python3 scripts/run_live_api_readiness_smoke.py --limit all-safe-get",
+            "current_guard_status": {
+                "guard_decision": guard.get("guard_decision"),
+                "reason": guard.get("reason"),
+                "live_success_count": guard.get("live_success_count"),
+                "full_live_eval_allowed": bool(guard.get("allowed")),
+                "full_generated_prompt_suite_allowed": bool(guard.get("allowed")),
+            },
+            "local_work_completed_while_waiting": {
+                "local_250_prompt_diagnostic_completed": bool(local_diag.get("executed_prompts")),
+                "executed_prompts": local_diag.get("executed_prompts", "unavailable"),
+                "total_prompts": local_diag.get("total_prompts", "unavailable"),
+                "runtime_pass_count": local_diag.get("runtime_pass_count", "unavailable"),
+                "runtime_fail_count": local_diag.get("runtime_fail_count", "unavailable"),
+                "official_score_claim": False,
+                "no_safe_deterministic_improvement_applied": local_diag.get("no_safe_deterministic_improvement_applied", "unavailable"),
+            },
             "live_api_guard": guard,
             "source_reports": [
                 "outputs/reports/live_api_readiness_smoke.json",
@@ -246,10 +272,14 @@ def _recommended_next_commands(live_success_count: int, safe_rerun_commands: lis
             "python3 scripts/run_dev_eval.py --strict --live-api",
             "python3 scripts/run_full_generated_prompt_suite_diagnostic.py",
         ]
-    return safe_rerun_commands or [
-        "python3 scripts/run_live_api_readiness_smoke.py --limit all-safe-get",
-        "python3 scripts/run_live_api_endpoint_path_diagnosis.py",
-    ]
+    broad = "python3 scripts/run_live_api_readiness_smoke.py --limit all-safe-get"
+    commands = [broad]
+    for command in safe_rerun_commands:
+        if command and command not in commands:
+            commands.append(command)
+    if "python3 scripts/run_live_api_endpoint_path_diagnosis.py" not in commands:
+        commands.append("python3 scripts/run_live_api_endpoint_path_diagnosis.py")
+    return commands
 
 
 def _render_post_permission_md(payload: dict[str, Any]) -> str:
@@ -270,9 +300,11 @@ def _render_post_permission_md(payload: dict[str, Any]) -> str:
         f"- Usable live API evidence count: `{payload.get('usable_live_api_evidence_count')}`",
         f"- API state/caveat forwarded count: `{payload.get('api_state_caveat_forwarded_count')}`",
         f"- Guard decision: `{payload.get('live_api_guard_decision')}`",
+        f"- Reason: `{payload.get('reason')}`",
         f"- Full live eval allowed: `{payload.get('full_live_eval_allowed')}`",
         f"- Full generated prompt suite allowed: `{payload.get('full_generated_prompt_suite_allowed')}`",
         f"- Recommended next command: `{payload.get('recommended_next_command')}`",
+        f"- Recommended follow-up commands: `{payload.get('recommended_followup_commands')}`",
         "",
         "## Subcommands",
         "",
@@ -287,6 +319,8 @@ def _render_post_permission_md(payload: dict[str, Any]) -> str:
 
 def _render_waiting_md(payload: dict[str, Any]) -> str:
     blocked = payload.get("what_is_blocked", {})
+    guard = payload.get("current_guard_status", {})
+    local = payload.get("local_work_completed_while_waiting", {})
     return "\n".join(
         [
             "# Adobe Access Waiting Status",
@@ -302,6 +336,10 @@ def _render_waiting_md(payload: dict[str, Any]) -> str:
             f"- Full live eval allowed: `{blocked.get('full_live_eval_allowed')}`",
             f"- Full live generated prompt suite allowed: `{blocked.get('full_generated_prompt_suite_allowed')}`",
             "",
+            "## Why This Is Likely External Adobe Access",
+            "",
+            *[f"- {item}" for item in payload.get("why_likely_external_access", [])],
+            "",
             "## What External Access Is Needed",
             "",
             *[f"- {item}" for item in payload.get("external_access_needed", [])],
@@ -309,6 +347,24 @@ def _render_waiting_md(payload: dict[str, Any]) -> str:
             "## What Command To Run After Permission Is Granted",
             "",
             f"`{payload.get('run_after_permission_granted')}`",
+            "",
+            f"Immediate smoke rerun: `{payload.get('secondary_rerun_command')}`",
+            "",
+            "## Current Guard Status",
+            "",
+            f"- Guard decision: `{guard.get('guard_decision')}`",
+            f"- Reason: `{guard.get('reason')}`",
+            f"- Live success count: `{guard.get('live_success_count')}`",
+            f"- Full live eval allowed: `{guard.get('full_live_eval_allowed')}`",
+            f"- Full generated prompt suite allowed: `{guard.get('full_generated_prompt_suite_allowed')}`",
+            "",
+            "## What Local Work Was Completed While Waiting",
+            "",
+            f"- Local 250-prompt diagnostic completed: `{local.get('executed_prompts')}` / `{local.get('total_prompts')}`",
+            f"- Runtime pass count: `{local.get('runtime_pass_count')}`",
+            f"- Runtime fail count: `{local.get('runtime_fail_count')}`",
+            f"- Official score claim: `{local.get('official_score_claim')}`",
+            f"- No safe deterministic improvement applied: `{local.get('no_safe_deterministic_improvement_applied')}`",
             "",
         ]
     )

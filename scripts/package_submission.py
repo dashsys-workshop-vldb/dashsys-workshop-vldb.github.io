@@ -37,6 +37,7 @@ REQUIRED_PATHS = [
     "scripts/generate_diagnostic_prompt_suite.py",
     "scripts/run_diagnostic_prompt_suite.py",
     "scripts/run_generated_prompt_suite_local_diagnostic.py",
+    "scripts/analyze_generated_prompt_local_diagnostic_gaps.py",
     "scripts/run_llm_semantic_router_shadow_eval.py",
     "scripts/run_llm_semantic_router_isolated_trial.py",
     "scripts/run_workflow_decision_audit.py",

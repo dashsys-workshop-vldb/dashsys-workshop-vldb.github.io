@@ -7,6 +7,7 @@ from pathlib import Path
 from dashagent.eval_harness import EvalHarness
 from scripts.generate_diagnostic_prompt_suite import DOMAINS, INTENTS, GENERATION_TYPES, ROUTES, generate_prompt_suite
 from scripts.package_query_outputs import NON_SUBMISSION_OUTPUT_DIRS
+from scripts.analyze_generated_prompt_local_diagnostic_gaps import analyze_generated_prompt_local_diagnostic_gaps
 from scripts.run_diagnostic_prompt_suite import DEFAULT_LIMIT, run_diagnostic_prompt_suite
 from scripts.run_generated_prompt_suite_local_diagnostic import run_generated_prompt_suite_local_diagnostic
 
@@ -191,3 +192,61 @@ def test_local_generated_prompt_diagnostic_is_dry_run_only(tiny_project):
     assert report["no_safe_deterministic_improvement_applied"] is True
     assert (tiny_project.outputs_dir / "generated_prompt_suite_local_diagnostic" / "local_gen_0001" / "trajectory.json").exists()
     assert (tiny_project.outputs_dir / "reports" / "generated_prompt_suite_local_diagnostic.json").exists()
+
+
+def test_local_generated_prompt_gap_sampler_and_candidate_report(tiny_project):
+    reports = tiny_project.outputs_dir / "reports"
+    reports.mkdir(parents=True, exist_ok=True)
+    rows = []
+    for idx in range(3):
+        rows.append(
+            {
+                "prompt_id": f"gen_gap_{idx}",
+                "prompt": f"How many unknown campaign records {idx}?",
+                "domain_family": "journey_campaign",
+                "answer_intent": "COUNT",
+                "expected_route_label": "SQL_ONLY",
+                "actual_route": "API_ONLY",
+                "domain_type": "JOURNEY_CAMPAIGN",
+                "actual_answer_intent": "COUNT",
+                "route_matches_diagnostic": False,
+                "domain_matches_diagnostic": True,
+                "answer_intent_matches_diagnostic": True,
+                "missing_count_or_name_advisory": True,
+                "zero_row_sql": False,
+                "requires_live_api": True,
+                "sql_calls": 0,
+                "api_calls": 1,
+                "dry_run_count": 1,
+                "sql_template": "unavailable",
+                "evidence_state": "dry_run_unavailable",
+                "final_answer": "The live API was unavailable in dry-run mode.",
+            }
+        )
+    (reports / "generated_prompt_suite_local_diagnostic.json").write_text(
+        json.dumps(
+            {
+                "report_type": "generated_prompt_suite_local_diagnostic",
+                "total_prompts": 3,
+                "executed_prompts": 3,
+                "diagnostic_only": True,
+                "official_score_claim": False,
+                "rows": rows,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    gap_report, candidate_report = analyze_generated_prompt_local_diagnostic_gaps(tiny_project)
+
+    assert gap_report["diagnostic_only"] is True
+    assert gap_report["official_score_claim"] is False
+    assert gap_report["gap_types"]["route_mismatch"]["total_count"] == 3
+    example = gap_report["gap_types"]["requires_live_api"]["representative_examples"][0]
+    assert example["likely_cause"] == "live_api_required"
+    assert example["suggested_action"] == "wait_for_live_api"
+    assert candidate_report["promotion_allowed"] is False
+    assert candidate_report["runtime_change_applied"] is False
+    assert candidate_report["no_safe_deterministic_improvement_applied"] is True
+    assert (reports / "generated_prompt_local_gap_samples.md").exists()
+    assert (reports / "local_deterministic_improvement_candidates.md").exists()

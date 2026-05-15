@@ -862,6 +862,13 @@ def test_targeted_failure_analysis_uses_path_diagnosis_to_block_catalog_fix(tiny
 
 def test_post_permission_runner_records_subcommands_and_waiting_status(tiny_project: Config, monkeypatch):
     clear_adobe_env(monkeypatch)
+    monkeypatch.setenv("CLIENT_ID", "client-id-test")
+    monkeypatch.setenv("CLIENT_SECRET", "client-secret-test")
+    monkeypatch.setenv("ADOBE_API_KEY", "api-key-test")
+    monkeypatch.setattr(
+        "scripts.run_post_permission_live_api_verification.token_acquisition_preflight",
+        lambda config, readiness: {"token_acquisition_attempted": True, "token_acquisition_ok": True},
+    )
     reports = tiny_project.outputs_dir / "reports"
     reports.mkdir(parents=True, exist_ok=True)
     (reports / "live_api_readiness_smoke.json").write_text(
@@ -905,14 +912,20 @@ def test_post_permission_runner_records_subcommands_and_waiting_status(tiny_proj
     assert not any("run_dev_eval.py" in command for command in commands_seen)
     assert not any("run_full_generated_prompt_suite_diagnostic.py" in command for command in commands_seen)
     assert report["live_success_count"] == 0
-    assert report["recommended_next_command"].endswith("--endpoint-id merge_policies")
+    assert report["recommended_next_command"] == "python3 scripts/run_live_api_readiness_smoke.py --limit all-safe-get"
+    assert any(command.endswith("--endpoint-id merge_policies") for command in report["recommended_followup_commands"])
+    assert report["guard_decision"] == "blocked"
+    assert report["reason"] == "no_live_success"
     waiting = json.loads((reports / "adobe_access_waiting_status.json").read_text(encoding="utf-8"))
     waiting_md = (reports / "adobe_access_waiting_status.md").read_text(encoding="utf-8")
     assert waiting["report_type"] == "adobe_access_waiting_status"
     assert "## What Works" in waiting_md
     assert "## What Is Blocked" in waiting_md
+    assert "## Why This Is Likely External Adobe Access" in waiting_md
     assert "## What External Access Is Needed" in waiting_md
     assert "## What Command To Run After Permission Is Granted" in waiting_md
+    assert "## Current Guard Status" in waiting_md
+    assert "## What Local Work Was Completed While Waiting" in waiting_md
 
 
 def test_adobe_access_waiting_status_is_short_and_redacted(tiny_project: Config, monkeypatch):
@@ -926,7 +939,7 @@ def test_adobe_access_waiting_status_is_short_and_redacted(tiny_project: Config,
     assert "Authorization" not in markdown
     assert "ADOBE_ACCESS_TOKEN" not in markdown
     assert "ali***" not in markdown
-    assert markdown.count("## ") == 4
+    assert markdown.count("## ") == 7
 
 
 def test_redacted_live_api_error_fixtures_classify_expected_outcomes():
@@ -957,6 +970,38 @@ def test_redacted_live_api_error_fixtures_classify_expected_outcomes():
             "error": json.dumps(payload["body"]),
         }
         assert classify_api_outcome(result, method="GET", path="/synthetic/path") == outcome
+
+
+def test_safe_error_excerpt_redacts_ids_and_token_like_values():
+    fake_key = "sk-" + "1234567890abcdef"
+    fake_auth = "Authorization: " + "Bearer secret-token-value"
+    excerpt = safe_error_excerpt(
+        {
+            "error": {
+                "message": "failed for org ali-prod sandbox abc-prod",
+                "requestId": "real-request-id-123",
+                "registryRequestId": "real-registry-request-id-123",
+                "traceId": "real-trace-id-123",
+                "timestamp": "2026-05-16T00:00:00Z",
+                "token": fake_key,
+            },
+            "result_preview": f"{fake_auth} x-api-key=secret-api-key abc***",
+        },
+        max_chars=300,
+    )
+    assert len(excerpt) <= 300
+    assert "real-request-id" not in excerpt
+    assert "real-registry-request-id" not in excerpt
+    assert "real-trace-id" not in excerpt
+    assert "2026-05-16" not in excerpt
+    assert "ali-prod" not in excerpt
+    assert "abc-prod" not in excerpt
+    assert fake_key not in excerpt
+    assert "Bearer secret-token-value" not in excerpt
+    assert "secret-api-key" not in excerpt
+    assert "abc***" not in excerpt
+    assert "synthetic-request-id" in excerpt
+    assert "synthetic-timestamp" in excerpt
 
 
 def test_generated_local_diagnostic_is_excluded_from_packages(tmp_path: Path):

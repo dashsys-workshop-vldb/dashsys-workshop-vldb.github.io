@@ -171,7 +171,7 @@ Run `python3 scripts/run_llm_semantic_router_shadow_eval.py --limit 50` for the 
 
 `scripts/run_diagnostic_prompt_suite.py` runs generated prompts through `SQL_FIRST_API_VERIFY` as diagnostic coverage only. The default runner limit is 50 prompts; use `--full` to run all prompts, `--clean` to remove only `outputs/diagnostic_prompt_suite/`, and `--with-llm-semantic-router-shadow` to include routing-helper shadow stats.
 
-Generated prompts are diagnostic-only, `should_be_scored=false`, not official benchmark data, not runtime hints, and not packaged into final submission. The local full-suite diagnostic writes `outputs/generated_prompt_suite_local_diagnostic/` and marks vague-answer/missing-count heuristics as advisory only.
+Generated prompts are diagnostic-only, `should_be_scored=false`, not official benchmark data, not runtime hints, and not packaged into final submission. The local full-suite diagnostic writes `outputs/generated_prompt_suite_local_diagnostic/` and marks vague-answer/missing-count heuristics as advisory only. Use `python3 scripts/analyze_generated_prompt_local_diagnostic_gaps.py` to sample mismatches and produce local deterministic improvement candidates; that report is proposal-only and must not trigger runtime changes without the strict evidence gate and no-regression validation.
 
 ## Decision-Stage Feedback Loops
 

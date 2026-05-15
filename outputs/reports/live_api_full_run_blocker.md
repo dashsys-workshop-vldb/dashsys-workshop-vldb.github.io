@@ -2,7 +2,7 @@
 
 Large live API diagnostics are blocked until smoke evidence is trustworthy or an explicit diagnostic override is used.
 
-- Created at: `2026-05-15T15:39:38.459119+00:00`
+- Created at: `2026-05-15T18:06:52.315031+00:00`
 - Guard decision: `blocked`
 - Reason: `no_live_success`
 - Live success count: `0`

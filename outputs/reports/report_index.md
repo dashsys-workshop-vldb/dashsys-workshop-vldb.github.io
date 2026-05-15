@@ -34,6 +34,8 @@ Start here. Most older generated reports were consolidated or removed.
 - `outputs/reports/generated_prompt_suite_summary.md` - Diagnostic prompt coverage only; not official strict score.
 - `outputs/reports/diagnostic_prompt_suite_run.md` - Diagnostic prompt runtime coverage only; not official strict score.
 - `outputs/reports/generated_prompt_suite_local_diagnostic.md` - Local dry-run 250-prompt diagnostic only; no live API calls or official score claim.
+- `outputs/reports/generated_prompt_local_gap_samples.md` - Representative local diagnostic gap samples; advisory-only and not promotion evidence.
+- `outputs/reports/local_deterministic_improvement_candidates.md` - Evidence-gated deterministic improvement candidates; no automatic runtime change.
 - `outputs/reports/full_generated_prompt_suite_diagnostic.md` - Full 250-prompt generated suite diagnostic only; no official strict score claim.
 - `outputs/reports/generated_prompt_coverage_gap_analysis.md` - Generated prompt coverage gaps; diagnostic-only and not promotion evidence.
 

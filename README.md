@@ -190,6 +190,8 @@ Generated prompts are diagnostic-only, `should_be_scored=false`, not used as off
 
 `scripts/run_generated_prompt_suite_local_diagnostic.py` runs the full suite in dry-run-safe local mode, even when live Adobe credentials exist. Its vague-answer and missing-count/name heuristics are advisory only and cannot support official score claims or promotion.
 
+Use `python3 scripts/analyze_generated_prompt_local_diagnostic_gaps.py` after the local diagnostic to inspect representative mismatch samples and write `outputs/reports/local_deterministic_improvement_candidates.md`. It proposes only evidence-gated future fixes and does not change runtime behavior.
+
 ## 3.4 Decision-Stage Feedback Loops
 
 Serious improvement candidates must start from a workflow decision-stage question, not a module guess. Use:
