@@ -939,7 +939,8 @@ def test_adobe_access_waiting_status_is_short_and_redacted(tiny_project: Config,
     assert "Authorization" not in markdown
     assert "ADOBE_ACCESS_TOKEN" not in markdown
     assert "ali***" not in markdown
-    assert markdown.count("## ") == 7
+    assert markdown.count("## ") == 8
+    assert "Recommended Next Human Review" in markdown
 
 
 def test_redacted_live_api_error_fixtures_classify_expected_outcomes():
@@ -1000,8 +1001,8 @@ def test_safe_error_excerpt_redacts_ids_and_token_like_values():
     assert "Bearer secret-token-value" not in excerpt
     assert "secret-api-key" not in excerpt
     assert "abc***" not in excerpt
-    assert "synthetic-request-id" in excerpt
-    assert "synthetic-timestamp" in excerpt
+    assert "[REDACTED_REQUEST_ID]" in excerpt
+    assert "[REDACTED_TIMESTAMP]" in excerpt
 
 
 def test_generated_local_diagnostic_is_excluded_from_packages(tmp_path: Path):

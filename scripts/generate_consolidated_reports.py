@@ -162,6 +162,9 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "generated_prompt_suite_local_diagnostic": _load_json(outputs / "reports" / "generated_prompt_suite_local_diagnostic.json"),
         "generated_prompt_local_gap_samples": _load_json(outputs / "reports" / "generated_prompt_local_gap_samples.json"),
         "local_deterministic_improvement_candidates": _load_json(outputs / "reports" / "local_deterministic_improvement_candidates.json"),
+        "superpowers_next_steps_preflight": _load_json(outputs / "reports" / "superpowers_next_steps_preflight.json"),
+        "local_gap_manual_review": _load_json(outputs / "reports" / "local_gap_manual_review.json"),
+        "superpowers_fix_decision": _load_json(outputs / "reports" / "superpowers_fix_decision.json"),
         "sdk_usage_audit": _load_json(outputs / "reports" / "sdk_usage_audit.json"),
         "workshop_requirement_audit": _load_json(outputs / "reports" / "workshop_requirement_audit.json"),
         "workflow_decision_map": _load_json(outputs / "reports" / "workflow_decision_map.json"),
@@ -317,6 +320,9 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
             "outputs/reports/generated_prompt_suite_local_diagnostic.md",
             "outputs/reports/generated_prompt_local_gap_samples.md",
             "outputs/reports/local_deterministic_improvement_candidates.md",
+            "outputs/reports/superpowers_next_steps_preflight.md",
+            "outputs/reports/local_gap_manual_review.md",
+            "outputs/reports/superpowers_fix_decision.md",
         ],
     }
 
@@ -399,6 +405,18 @@ def build_report_index(
             {
                 "path": "outputs/reports/local_deterministic_improvement_candidates.md",
                 "label": "Evidence-gated deterministic improvement candidates; no automatic runtime change.",
+            },
+            {
+                "path": "outputs/reports/superpowers_next_steps_preflight.md",
+                "label": "Superpowers-style protected-artifact preflight before any local deterministic improvement.",
+            },
+            {
+                "path": "outputs/reports/local_gap_manual_review.md",
+                "label": "Manual review of high-value local diagnostic gaps; generated labels are advisory only.",
+            },
+            {
+                "path": "outputs/reports/superpowers_fix_decision.md",
+                "label": "Evidence-gated fix decision; no runtime change unless exactly one safe candidate passes.",
             },
             {
                 "path": "outputs/reports/full_generated_prompt_suite_diagnostic.md",

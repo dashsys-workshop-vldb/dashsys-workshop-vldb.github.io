@@ -6,7 +6,7 @@
 - 0.75 target reached: `False`
 - Answer-quality bottleneck: `True`
 - Dry-run API limitation: `True`
-- Live Adobe API readiness: `pass`; infrastructure validation only: `True`
+- Live Adobe API readiness: `warning`; infrastructure validation only: `True`
 - Supportable rewrite status: `safe_for_autonomous_packaged_trial`
 - Endpoint tie-break status: `keep_shadow_only`
 - AST canary status: `keep_shadow_only`

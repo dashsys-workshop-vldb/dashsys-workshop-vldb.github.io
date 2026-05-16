@@ -85,6 +85,7 @@ def run_post_permission_live_api_verification(
     smoke_rows = [row for row in smoke.get("endpoints_tested", []) if isinstance(row, dict)]
     smoke_counts = Counter(str(row.get("outcome") or "api_error") for row in smoke_rows)
     live_success_count = int(smoke_counts.get("live_success", 0))
+    full_live_runs_allowed = bool(guard.get("allowed") and live_success_count > 0)
     safe_rerun_commands = [
         str(item.get("command"))
         for item in followup.get("commands", [])
@@ -122,8 +123,8 @@ def run_post_permission_live_api_verification(
             "live_api_guard_reason": guard.get("reason"),
             "guard_decision": guard.get("guard_decision"),
             "reason": guard.get("reason"),
-            "full_live_eval_allowed": bool(guard.get("allowed")),
-            "full_generated_prompt_suite_allowed": bool(guard.get("allowed")),
+            "full_live_eval_allowed": full_live_runs_allowed,
+            "full_generated_prompt_suite_allowed": full_live_runs_allowed,
             "recommended_next_command": next_commands[0] if next_commands else "unavailable",
             "recommended_followup_commands": next_commands[1:],
             "recommended_next_commands": next_commands,
@@ -158,9 +159,12 @@ def write_adobe_access_waiting_status(config: Config | None = None, *, verificat
     trial = _load_json(reports_dir / "live_api_evidence_pipeline_trial.json")
     blockers = _load_json(reports_dir / "live_api_external_blockers.json")
     local_diag = _load_json(reports_dir / "generated_prompt_suite_local_diagnostic.json")
+    manual_review = _load_json(reports_dir / "local_gap_manual_review.json")
     guard = evaluate_live_api_full_run_guard(config, run_label=WAITING_STEM, write_blocker=True)
     smoke_rows = [row for row in smoke.get("endpoints_tested", []) if isinstance(row, dict)]
     counts = Counter(str(row.get("outcome") or "api_error") for row in smoke_rows)
+    live_success_count = int(counts.get("live_success", 0))
+    full_live_runs_allowed = bool(guard.get("allowed") and live_success_count > 0)
     payload = redact_secrets(
         {
             "report_type": WAITING_STEM,
@@ -176,10 +180,10 @@ def write_adobe_access_waiting_status(config: Config | None = None, *, verificat
                 "local deterministic SQL_FIRST_API_VERIFY pipeline",
             ],
             "what_is_blocked": {
-                "live_success_count": int(counts.get("live_success", 0)),
+                "live_success_count": live_success_count,
                 "usable_live_api_evidence_count": int(trial.get("usable_live_api_evidence_count") or 0),
-                "full_live_eval_allowed": bool(guard.get("allowed")),
-                "full_generated_prompt_suite_allowed": bool(guard.get("allowed")),
+                "full_live_eval_allowed": full_live_runs_allowed,
+                "full_generated_prompt_suite_allowed": full_live_runs_allowed,
             },
             "why_likely_external_access": [
                 "credential loading and client-credentials token acquisition pass locally",
@@ -209,8 +213,8 @@ def write_adobe_access_waiting_status(config: Config | None = None, *, verificat
                 "guard_decision": guard.get("guard_decision"),
                 "reason": guard.get("reason"),
                 "live_success_count": guard.get("live_success_count"),
-                "full_live_eval_allowed": bool(guard.get("allowed")),
-                "full_generated_prompt_suite_allowed": bool(guard.get("allowed")),
+                "full_live_eval_allowed": full_live_runs_allowed,
+                "full_generated_prompt_suite_allowed": full_live_runs_allowed,
             },
             "local_work_completed_while_waiting": {
                 "local_250_prompt_diagnostic_completed": bool(local_diag.get("executed_prompts")),
@@ -220,6 +224,13 @@ def write_adobe_access_waiting_status(config: Config | None = None, *, verificat
                 "runtime_fail_count": local_diag.get("runtime_fail_count", "unavailable"),
                 "official_score_claim": False,
                 "no_safe_deterministic_improvement_applied": local_diag.get("no_safe_deterministic_improvement_applied", "unavailable"),
+            },
+            "recommended_next_human_review": manual_review.get("recommended_next_human_review")
+            or {
+                "category": "local diagnostic gap candidates",
+                "why": "Run scripts/review_local_diagnostic_gap_candidates.py to classify high-value advisory gaps before any deterministic fix.",
+                "report_to_open": "outputs/reports/local_gap_manual_review.md",
+                "can_be_fixed_before_adobe_access": False,
             },
             "live_api_guard": guard,
             "source_reports": [
@@ -321,6 +332,7 @@ def _render_waiting_md(payload: dict[str, Any]) -> str:
     blocked = payload.get("what_is_blocked", {})
     guard = payload.get("current_guard_status", {})
     local = payload.get("local_work_completed_while_waiting", {})
+    next_review = payload.get("recommended_next_human_review", {})
     return "\n".join(
         [
             "# Adobe Access Waiting Status",
@@ -365,6 +377,13 @@ def _render_waiting_md(payload: dict[str, Any]) -> str:
             f"- Runtime fail count: `{local.get('runtime_fail_count')}`",
             f"- Official score claim: `{local.get('official_score_claim')}`",
             f"- No safe deterministic improvement applied: `{local.get('no_safe_deterministic_improvement_applied')}`",
+            "",
+            "## Recommended Next Human Review",
+            "",
+            f"- Category: `{next_review.get('category')}`",
+            f"- Why: {next_review.get('why')}",
+            f"- Report: `{next_review.get('report_to_open')}`",
+            f"- Can be fixed before Adobe access: `{next_review.get('can_be_fixed_before_adobe_access')}`",
             "",
         ]
     )

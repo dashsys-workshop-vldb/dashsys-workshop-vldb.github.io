@@ -395,13 +395,15 @@ def safe_error_excerpt(result: dict[str, Any], *, max_chars: int = 300) -> str:
     text = re.sub(r"\b(org|organization|tenant|sandbox)\s+[A-Za-z0-9_.@-]+", r"\1 [REDACTED]", text, flags=re.I)
     text = re.sub(
         r"([\"']?(?:request[-_ ]?id|requestid|registryrequestid|trace[-_ ]?id|traceid|x-request-id)[\"']?\s*[:=]\s*[\"']?)[^\"',}\s]+",
-        r"\1synthetic-request-id",
+        r"\1[REDACTED_REQUEST_ID]",
         text,
         flags=re.I,
     )
+    text = re.sub(r"\brequest\s+id\s*[:=]\s*[^\"',}\s]+", "request id: [REDACTED_REQUEST_ID]", text, flags=re.I)
+    text = re.sub(r"\btrace\s+id\s*[:=]\s*[^\"',}\s]+", "trace id: [REDACTED_REQUEST_ID]", text, flags=re.I)
     text = re.sub(
         r"([\"']?(?:timestamp|timeStamp|diagnostic[-_ ]?id)[\"']?\s*[:=]\s*[\"']?)[^\"',}\s]+",
-        r"\1synthetic-timestamp",
+        r"\1[REDACTED_TIMESTAMP]",
         text,
         flags=re.I,
     )

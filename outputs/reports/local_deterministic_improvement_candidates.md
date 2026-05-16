@@ -28,3 +28,9 @@ Diagnostic-only candidate report. No runtime changes are applied by this report.
 - `answer_intent_mismatch:schema_dataset` ready=`False` count=`38` reason=diagnostic-only proposal; requires manual evidence review before implementation
 - `answer_intent_mismatch:segment_audience` ready=`False` count=`21` reason=diagnostic-only proposal; requires manual evidence review before implementation
 - `answer_intent_mismatch:destination_flow` ready=`False` count=`20` reason=diagnostic-only proposal; requires manual evidence review before implementation
+
+## Recommended Next Human Review
+
+- Gap type: `requires_live_api`
+- Why: Highest-volume advisory gap; review representative examples before considering deterministic rules.
+- Generated prompts remain diagnostic-only; this report does not authorize runtime changes.

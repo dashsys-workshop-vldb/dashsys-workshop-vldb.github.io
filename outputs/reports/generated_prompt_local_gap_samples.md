@@ -70,3 +70,9 @@ Diagnostic-only sampler for local dry-run generated prompts. Generated labels ma
 - `gen_0003` cause=`live_api_required` action=`wait_for_live_api` prompt="Find the relevant date or timestamp for: When was the journey 'Birthday Message' published."
 - `gen_0004` cause=`live_api_required` action=`wait_for_live_api` prompt='Can you please give me inactive journeys?'
 - `gen_0005` cause=`live_api_required` action=`wait_for_live_api` prompt='Using the available DASHSys evidence, give me inactive journeys.'
+
+## Recommended Next Human Review
+
+- Gap type: `requires_live_api`
+- Why: Highest-volume advisory gap; review representative examples before considering deterministic rules.
+- Runtime change allowed from this report: `False`

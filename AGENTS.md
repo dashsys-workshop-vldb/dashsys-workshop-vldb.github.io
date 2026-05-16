@@ -143,6 +143,15 @@ Client-credentials token acquisition is supported through `.env.local` using the
 
 While Adobe org/sandbox permission access is pending, use `python3 scripts/run_generated_prompt_suite_local_diagnostic.py` for the offline 250-prompt diagnostic; it forces Adobe API calls into dry-run mode and cannot support official score or promotion claims. After permissions are granted, run `python3 scripts/run_post_permission_live_api_verification.py` and read `outputs/reports/adobe_access_waiting_status.md` for the short supervisor-facing status. Do not run full live strict eval or the live full prompt suite unless the guard allows it.
 
+For deterministic local improvement work, use the Superpowers-style reports before editing runtime code:
+
+```bash
+python3 scripts/run_superpowers_next_steps_preflight.py
+python3 scripts/review_local_diagnostic_gap_candidates.py
+```
+
+The preflight protects final submission artifacts, strict/hidden eval artifacts, endpoint catalog paths, and packaged defaults. Manual review must treat generated labels as advisory, compare them to actual route/domain/evidence behavior, and apply no runtime change unless exactly one low-risk deterministic candidate passes the evidence gate and mandatory strict/hidden/submission/pytest validation succeeds.
+
 ## Live Adobe API Evidence Pipeline
 
 The future target is real Adobe API evidence, not dry-run optimization. Response parsing should populate `parsed_evidence` with endpoint metadata, evidence state, parser mode, IDs, names, statuses, counts, timestamps, errors, pagination, and redacted previews. EvidenceBus and answer slots must keep live API evidence, dry-run unavailable, empty live results, malformed responses, and API errors distinct.

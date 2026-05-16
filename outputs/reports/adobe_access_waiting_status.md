@@ -36,8 +36,8 @@ Immediate smoke rerun: `python3 scripts/run_live_api_readiness_smoke.py --limit 
 
 ## Current Guard Status
 
-- Guard decision: `blocked`
-- Reason: `no_live_success`
+- Guard decision: `allowed_not_live_mode`
+- Reason: `not_live_mode`
 - Live success count: `0`
 - Full live eval allowed: `False`
 - Full generated prompt suite allowed: `False`
@@ -49,3 +49,10 @@ Immediate smoke rerun: `python3 scripts/run_live_api_readiness_smoke.py --limit 
 - Runtime fail count: `0`
 - Official score claim: `False`
 - No safe deterministic improvement applied: `True`
+
+## Recommended Next Human Review
+
+- Category: `missing_count_or_name_advisory / segment_audience`
+- Why: Largest reviewed high-value category; inspect examples before any runtime change.
+- Report: `outputs/reports/local_gap_manual_review.md`
+- Can be fixed before Adobe access: `False`

@@ -192,6 +192,15 @@ Generated prompts are diagnostic-only, `should_be_scored=false`, not used as off
 
 Use `python3 scripts/analyze_generated_prompt_local_diagnostic_gaps.py` after the local diagnostic to inspect representative mismatch samples and write `outputs/reports/local_deterministic_improvement_candidates.md`. It proposes only evidence-gated future fixes and does not change runtime behavior.
 
+For a Superpowers-style improvement pass, run:
+
+```bash
+python3 scripts/run_superpowers_next_steps_preflight.py
+python3 scripts/review_local_diagnostic_gap_candidates.py
+```
+
+These reports protect `outputs/final_submission/**`, strict/hidden eval artifacts, endpoint catalog paths, and packaged defaults. Generated labels are compared against actual route/domain/evidence behavior before any mismatch is treated as a true bug. If no single low-risk deterministic candidate passes the evidence gate, no runtime change is applied.
+
 ## 3.4 Decision-Stage Feedback Loops
 
 Serious improvement candidates must start from a workflow decision-stage question, not a module guess. Use:

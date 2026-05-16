@@ -84,6 +84,7 @@ def _build_gap_report(config: Config, source_path: Path, source: dict[str, Any],
             "top_domain_families": dict(Counter(str(row.get("domain_family") or "unknown") for row in selected).most_common(10)),
             "representative_examples": [_example(row, gap_type) for row in selected[:10]],
         }
+    next_review = _recommended_next_human_review(gap_sections)
     return {
         "report_type": GAP_REPORT_STEM,
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -96,6 +97,7 @@ def _build_gap_report(config: Config, source_path: Path, source: dict[str, Any],
         "source_total_prompts": source.get("total_prompts"),
         "source_executed_prompts": source.get("executed_prompts"),
         "gap_types": gap_sections,
+        "recommended_next_human_review": next_review,
         "rules": [
             "Generated prompt labels are diagnostic-only and may contain label noise.",
             "Representative examples must not be converted into exact prompt-specific runtime rules.",
@@ -178,7 +180,29 @@ def _build_candidate_report(gap_report: dict[str, Any]) -> dict[str, Any]:
         "implementation_ready_count": len(ready),
         "no_safe_deterministic_improvement_applied": len(ready) == 0,
         "runtime_change_applied": False,
+        "recommended_next_human_review": gap_report.get("recommended_next_human_review"),
         "candidates": candidates[:50],
+    }
+
+
+def _recommended_next_human_review(gap_sections: dict[str, Any]) -> dict[str, Any]:
+    ordered = sorted(
+        gap_sections.items(),
+        key=lambda item: (-int((item[1] or {}).get("total_count") or 0), item[0]),
+    )
+    for gap_type, section in ordered:
+        if int(section.get("total_count") or 0) > 0:
+            return {
+                "gap_type": gap_type,
+                "why": "Highest-volume advisory gap; review representative examples before considering deterministic rules.",
+                "report_to_open": "outputs/reports/generated_prompt_local_gap_samples.md",
+                "runtime_change_allowed_from_this_report": False,
+            }
+    return {
+        "gap_type": "none",
+        "why": "No advisory gaps found.",
+        "report_to_open": "outputs/reports/generated_prompt_local_gap_samples.md",
+        "runtime_change_allowed_from_this_report": False,
     }
 
 
@@ -337,6 +361,17 @@ def _render_gap_md(report: dict[str, Any]) -> str:
                 f"action=`{example.get('suggested_action')}` prompt={_excerpt(example.get('prompt'), 120)!r}"
             )
         lines.append("")
+    next_review = report.get("recommended_next_human_review") or {}
+    lines.extend(
+        [
+            "## Recommended Next Human Review",
+            "",
+            f"- Gap type: `{next_review.get('gap_type')}`",
+            f"- Why: {next_review.get('why')}",
+            f"- Runtime change allowed from this report: `{next_review.get('runtime_change_allowed_from_this_report')}`",
+            "",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -361,6 +396,17 @@ def _render_candidate_md(report: dict[str, Any]) -> str:
             f"- `{candidate.get('candidate_id')}` ready=`{candidate.get('implementation_ready')}` "
             f"count=`{candidate.get('evidence_count')}` reason={candidate.get('reason')}"
         )
+    next_review = report.get("recommended_next_human_review") or {}
+    lines.extend(
+        [
+            "",
+            "## Recommended Next Human Review",
+            "",
+            f"- Gap type: `{next_review.get('gap_type')}`",
+            f"- Why: {next_review.get('why')}",
+            "- Generated prompts remain diagnostic-only; this report does not authorize runtime changes.",
+        ]
+    )
     return "\n".join(lines) + "\n"
 
 

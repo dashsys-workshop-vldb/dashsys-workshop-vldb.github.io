@@ -9,7 +9,7 @@
 - Repair execution enabled: `False`
 - Compact context enabled: `False`
 - Final recommendation: `ready_to_submit_with_official_token_reduction`
-- Live Adobe API readiness: `pass` (smoke `complete`, pipeline `complete`)
+- Live Adobe API readiness: `warning` (smoke `skipped_live_credentials_missing`, pipeline `skipped_live_credentials_missing`)
 - Post-permission live verification: `complete`; waiting-status report: `complete`
 - LLM semantic routing helper: `do_not_promote` (complete)
 - Semantic router isolated trial: `complete`; promotion decision: `do_not_promote`; packaged runtime affected: `False`
