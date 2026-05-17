@@ -229,6 +229,18 @@ python3 scripts/run_score_focused_core_improvement_trials.py
 
 These scripts create `outputs/reports/score_path_contribution_audit.md/json`, `outputs/reports/score_focused_core_improvement_trials.md/json`, and `outputs/reports/score_focused_core_fix_decision.md/json`. They are isolated diagnostics and must not overwrite `outputs/eval_results_strict.json`, `outputs/eval/`, `outputs/final_submission/`, or final submission manifests. Do not promote a runtime change unless a general deterministic variant improves strict score, preserves hidden-style 48/48, passes `check_submission_ready.py`, does not increase unsupported claims, and leaves final-submission format unchanged. The current decision is `keep_trial_only`; no score-focused runtime change is applied.
 
+## Comprehensive Failure Analysis
+
+Use:
+
+```bash
+python3 scripts/run_comprehensive_failure_analysis.py
+```
+
+This analysis combines official public/dev strict rows with all generated prompt local diagnostics. Official rows diagnose real score loss; generated prompts provide only generality and coverage evidence. The reports include official row failures, generated prompt failures, cross-dataset clusters, candidate deterministic rules, counterfactual answer sketches, a hardcoding-risk audit, and `outputs/reports/comprehensive_failure_fix_decision.md/json`.
+
+This pass is analysis-only. Do not implement runtime changes from it directly, do not write sketches into final submission, and do not use generated prompts as official score evidence. Any future deterministic rule must be based on general signals such as query intent, route/domain class, SQL result shape, EvidenceBus fields, API state, answer-slot type, and general field names. Never use query IDs, prompt IDs, exact prompt strings, public/dev constants, generated-prompt constants, hidden-eval assumptions, or gold answer text as runtime triggers.
+
 ## Development Workflow
 
 Before major changes, record the current baseline if the user asks for an optimization pass:
@@ -338,6 +350,7 @@ python3 scripts/generate_project_mermaid_visualizations.py
 python3 scripts/generate_full_project_dataflow_svg.py
 python3 scripts/run_score_path_contribution_audit.py
 python3 scripts/run_score_focused_core_improvement_trials.py
+python3 scripts/run_comprehensive_failure_analysis.py
 python3 scripts/generate_visualization_index.py
 python3 scripts/package_submission.py
 python3 scripts/package_query_outputs.py

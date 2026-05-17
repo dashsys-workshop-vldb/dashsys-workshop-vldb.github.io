@@ -1,6 +1,6 @@
 # Live Adobe API Status Mermaid
 
-Generated: 2026-05-17T17:11:23Z
+Generated: 2026-05-17T17:42:15Z
 
 This generated Mermaid diagram is synchronized from current local reports and code/module names only. It does not change runtime behavior.
 

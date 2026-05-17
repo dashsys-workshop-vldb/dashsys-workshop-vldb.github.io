@@ -15,6 +15,7 @@
 - Decision-stage feedback-loop status: `candidate_not_viable_after_feedback_loops`
 - Evidence-aware answer synthesis: `keep_trial_only`; answer-only invariant enforced: `True`
 - Score-focused core path trials: `keep_trial_only`; best strict delta `0.0`; runtime change applied `False`
+- Comprehensive failure analysis: `wait_for_adobe_access`; rule candidates `5`; runtime change applied `False`
 
 ## Why Changes Remain Shadow-Only
 

@@ -273,6 +273,16 @@ python3 scripts/run_score_focused_core_improvement_trials.py
 
 These scripts write `outputs/reports/score_path_contribution_audit.md/json`, `outputs/reports/score_focused_core_improvement_trials.md/json`, and `outputs/reports/score_focused_core_fix_decision.md/json`. They are isolated diagnostics: they must not overwrite `outputs/eval_results_strict.json`, `outputs/eval/`, `outputs/final_submission/`, or final submission manifests. A runtime change may be promoted only if a general deterministic variant improves strict score, preserves hidden-style 48/48, passes `check_submission_ready.py`, does not increase unsupported claims, and leaves final-submission format unchanged. The current trial decision is `keep_trial_only`; no runtime code path was promoted.
 
+## 3.8 Comprehensive Failure Analysis
+
+Use the comprehensive failure analysis when deciding whether an implementation prompt is justified. It combines official public/dev strict rows for real score-loss diagnosis with generated prompt diagnostics for generality and coverage only.
+
+```bash
+python3 scripts/run_comprehensive_failure_analysis.py
+```
+
+The script writes official row failure tables, generated prompt failure tables, cross-dataset clusters, candidate general deterministic rules, counterfactual answer sketches, a hardcoding-risk audit, and `outputs/reports/comprehensive_failure_fix_decision.md/json`. It is analysis-only: generated prompts are never official score evidence, counterfactual sketches are report-only, and no runtime change, endpoint catalog change, packaged-strategy change, or final-submission change is allowed in this pass. Any future rule must use general signals such as intent, route/domain, SQL result shape, EvidenceBus fields, API state, and answer-slot type; never query IDs, prompt IDs, exact prompt strings, or gold answers.
+
 ## 4. Prompt Routing Policy
 
 The first decision is whether the prompt needs evidence:
@@ -573,6 +583,7 @@ python3 scripts/generate_project_mermaid_visualizations.py
 python3 scripts/generate_full_project_dataflow_svg.py
 python3 scripts/run_score_path_contribution_audit.py
 python3 scripts/run_score_focused_core_improvement_trials.py
+python3 scripts/run_comprehensive_failure_analysis.py
 python3 scripts/generate_visualization_index.py
 python3 scripts/package_submission.py
 python3 scripts/package_query_outputs.py

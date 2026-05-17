@@ -33,6 +33,7 @@ POST_CHANGE_VALIDATION_COMMANDS = [
     "python3 scripts/run_sql_evidence_usage_audit.py",
     "python3 scripts/run_score_path_contribution_audit.py",
     "python3 scripts/run_score_focused_core_improvement_trials.py",
+    "python3 scripts/run_comprehensive_failure_analysis.py",
     "python3 scripts/run_confidence_calibration_audit.py",
     "python3 scripts/run_token_efficiency_audit.py",
     "python3 scripts/check_llm_sdk_backend.py",
@@ -76,6 +77,14 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/score_path_contribution_audit.md/json",
     "outputs/reports/score_focused_core_improvement_trials.md/json",
     "outputs/reports/score_focused_core_fix_decision.md/json",
+    "outputs/reports/comprehensive_failure_analysis_preflight.md/json",
+    "outputs/reports/official_row_failure_table.md/json",
+    "outputs/reports/generated_prompt_failure_table.md/json",
+    "outputs/reports/cross_dataset_failure_clusters.md/json",
+    "outputs/reports/general_deterministic_rule_candidates.md/json",
+    "outputs/reports/cross_dataset_counterfactual_answer_sketches.md/json",
+    "outputs/reports/general_rule_hardcoding_risk_audit.md/json",
+    "outputs/reports/comprehensive_failure_fix_decision.md/json",
     "outputs/reports/confidence_calibration_audit.md/json",
     "outputs/reports/token_efficiency_audit.md/json",
     "outputs/reports/workflow_decision_map.md/json",
@@ -207,6 +216,14 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "score_path_contribution_audit": _load_json(outputs / "reports" / "score_path_contribution_audit.json"),
         "score_focused_core_improvement_trials": _load_json(outputs / "reports" / "score_focused_core_improvement_trials.json"),
         "score_focused_core_fix_decision": _load_json(outputs / "reports" / "score_focused_core_fix_decision.json"),
+        "comprehensive_failure_analysis_preflight": _load_json(outputs / "reports" / "comprehensive_failure_analysis_preflight.json"),
+        "official_row_failure_table": _load_json(outputs / "reports" / "official_row_failure_table.json"),
+        "generated_prompt_failure_table": _load_json(outputs / "reports" / "generated_prompt_failure_table.json"),
+        "cross_dataset_failure_clusters": _load_json(outputs / "reports" / "cross_dataset_failure_clusters.json"),
+        "general_deterministic_rule_candidates": _load_json(outputs / "reports" / "general_deterministic_rule_candidates.json"),
+        "cross_dataset_counterfactual_answer_sketches": _load_json(outputs / "reports" / "cross_dataset_counterfactual_answer_sketches.json"),
+        "general_rule_hardcoding_risk_audit": _load_json(outputs / "reports" / "general_rule_hardcoding_risk_audit.json"),
+        "comprehensive_failure_fix_decision": _load_json(outputs / "reports" / "comprehensive_failure_fix_decision.json"),
         "confidence_calibration_audit": _load_json(outputs / "reports" / "confidence_calibration_audit.json"),
         "token_efficiency_audit": _load_json(outputs / "reports" / "token_efficiency_audit.json"),
         "end_to_end_system_dataflow": _load_json(visualizations / "end_to_end_system_dataflow.json"),
@@ -279,6 +296,7 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
         "decision_stage_methodology": _decision_stage_status(sources),
         "evidence_aware_answer_synthesis": _evidence_answer_status(sources),
         "score_focused_core_path": _score_path_status(sources),
+        "comprehensive_failure_analysis": _comprehensive_failure_status(sources),
         "context7_documentation_grounded_audit": _context7_audit_status(sources),
         "source_reports": [
             "outputs/eval_results_strict.json",
@@ -292,6 +310,12 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
             "outputs/reports/score_path_contribution_audit.md",
             "outputs/reports/score_focused_core_improvement_trials.md",
             "outputs/reports/score_focused_core_fix_decision.md",
+            "outputs/reports/official_row_failure_table.md",
+            "outputs/reports/generated_prompt_failure_table.md",
+            "outputs/reports/cross_dataset_failure_clusters.md",
+            "outputs/reports/general_deterministic_rule_candidates.md",
+            "outputs/reports/general_rule_hardcoding_risk_audit.md",
+            "outputs/reports/comprehensive_failure_fix_decision.md",
         ],
     }
 
@@ -323,6 +347,7 @@ def build_llm_baseline_summary(config: Config, sources: dict[str, Any]) -> dict[
         "decision_stage_methodology": _decision_stage_status(sources),
         "evidence_aware_answer_synthesis": _evidence_answer_status(sources),
         "score_focused_core_path": _score_path_status(sources),
+        "comprehensive_failure_analysis": _comprehensive_failure_status(sources),
         "source_reports": [
             "outputs/llm_sdk_backend_check.json",
             "outputs/llm_baseline_eval_report.json",
@@ -361,6 +386,7 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
         "decision_stage_methodology": _decision_stage_status(sources),
         "evidence_aware_answer_synthesis": _evidence_answer_status(sources),
         "score_focused_core_path": _score_path_status(sources),
+        "comprehensive_failure_analysis": _comprehensive_failure_status(sources),
         "source_reports": [
             "outputs/autonomous_score_push_report.json",
             "outputs/autonomous_packaged_trial.json",
@@ -381,6 +407,12 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
             "outputs/reports/score_path_contribution_audit.md",
             "outputs/reports/score_focused_core_improvement_trials.md",
             "outputs/reports/score_focused_core_fix_decision.md",
+            "outputs/reports/official_row_failure_table.md",
+            "outputs/reports/generated_prompt_failure_table.md",
+            "outputs/reports/cross_dataset_failure_clusters.md",
+            "outputs/reports/general_deterministic_rule_candidates.md",
+            "outputs/reports/general_rule_hardcoding_risk_audit.md",
+            "outputs/reports/comprehensive_failure_fix_decision.md",
         ],
     }
 
@@ -536,6 +568,27 @@ def build_report_index(
                 }
             ),
         },
+        "comprehensive_failure_analysis": {
+            "preflight_path": "outputs/reports/comprehensive_failure_analysis_preflight.md",
+            "official_row_failure_table_path": "outputs/reports/official_row_failure_table.md",
+            "generated_prompt_failure_table_path": "outputs/reports/generated_prompt_failure_table.md",
+            "cross_dataset_clusters_path": "outputs/reports/cross_dataset_failure_clusters.md",
+            "rule_candidates_path": "outputs/reports/general_deterministic_rule_candidates.md",
+            "counterfactual_sketches_path": "outputs/reports/cross_dataset_counterfactual_answer_sketches.md",
+            "hardcoding_risk_audit_path": "outputs/reports/general_rule_hardcoding_risk_audit.md",
+            "fix_decision_path": "outputs/reports/comprehensive_failure_fix_decision.md",
+            **_comprehensive_failure_status(
+                {
+                    "comprehensive_failure_analysis_preflight": _load_json(config.outputs_dir / "reports" / "comprehensive_failure_analysis_preflight.json"),
+                    "official_row_failure_table": _load_json(config.outputs_dir / "reports" / "official_row_failure_table.json"),
+                    "generated_prompt_failure_table": _load_json(config.outputs_dir / "reports" / "generated_prompt_failure_table.json"),
+                    "cross_dataset_failure_clusters": _load_json(config.outputs_dir / "reports" / "cross_dataset_failure_clusters.json"),
+                    "general_deterministic_rule_candidates": _load_json(config.outputs_dir / "reports" / "general_deterministic_rule_candidates.json"),
+                    "general_rule_hardcoding_risk_audit": _load_json(config.outputs_dir / "reports" / "general_rule_hardcoding_risk_audit.json"),
+                    "comprehensive_failure_fix_decision": _load_json(config.outputs_dir / "reports" / "comprehensive_failure_fix_decision.json"),
+                }
+            ),
+        },
         "live_adobe_api_readiness": {
             "audit_path": "outputs/reports/live_adobe_api_readiness_audit.md",
             "api_required_readiness_matrix_path": "outputs/reports/api_required_readiness_matrix.md",
@@ -684,6 +737,10 @@ def render_system_summary(payload: dict[str, Any]) -> str:
             f"- Score-focused core path trials: `{payload['score_focused_core_path'].get('recommendation')}`; "
             f"best delta `{payload['score_focused_core_path'].get('best_strict_score_delta')}`; "
             f"runtime change applied: `{payload['score_focused_core_path'].get('runtime_change_applied')}`",
+            f"- Comprehensive failure analysis: `{payload['comprehensive_failure_analysis'].get('decision')}`; "
+            f"official rows `{payload['comprehensive_failure_analysis'].get('official_rows_analyzed')}`; "
+            f"generated prompts `{payload['comprehensive_failure_analysis'].get('generated_prompts_analyzed')}`; "
+            f"runtime change applied: `{payload['comprehensive_failure_analysis'].get('runtime_change_applied')}`",
             f"- Context7 docs audit: `{payload['context7_documentation_grounded_audit'].get('status')}`; "
             f"runtime change applied: `{payload['context7_documentation_grounded_audit'].get('code_changes_applied')}`",
             "",
@@ -754,6 +811,9 @@ def render_accuracy_summary(payload: dict[str, Any]) -> str:
             f"- Score-focused core path trials: `{payload['score_focused_core_path'].get('recommendation')}`; "
             f"best strict delta `{payload['score_focused_core_path'].get('best_strict_score_delta')}`; "
             f"runtime change applied `{payload['score_focused_core_path'].get('runtime_change_applied')}`",
+            f"- Comprehensive failure analysis: `{payload['comprehensive_failure_analysis'].get('decision')}`; "
+            f"rule candidates `{payload['comprehensive_failure_analysis'].get('candidate_count')}`; "
+            f"runtime change applied `{payload['comprehensive_failure_analysis'].get('runtime_change_applied')}`",
             "",
             "## Why Changes Remain Shadow-Only",
             "",
@@ -838,6 +898,19 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.append(f"- Best strict delta: `{score_path.get('best_strict_score_delta')}`")
     lines.append(f"- Runtime change applied: `{score_path.get('runtime_change_applied')}`")
     lines.append("- These reports use the SVG only as a score-path map; visualization changes are not score improvements.")
+    lines.extend(["", "## Comprehensive Failure Analysis", ""])
+    comprehensive = payload.get("comprehensive_failure_analysis", {})
+    lines.append(f"- Preflight: `{comprehensive.get('preflight_path')}`")
+    lines.append(f"- Official row table: `{comprehensive.get('official_row_failure_table_path')}`")
+    lines.append(f"- Generated prompt table: `{comprehensive.get('generated_prompt_failure_table_path')}`")
+    lines.append(f"- Cross-dataset clusters: `{comprehensive.get('cross_dataset_clusters_path')}`")
+    lines.append(f"- Rule candidates: `{comprehensive.get('rule_candidates_path')}`")
+    lines.append(f"- Hardcoding risk audit: `{comprehensive.get('hardcoding_risk_audit_path')}`")
+    lines.append(f"- Fix decision: `{comprehensive.get('fix_decision_path')}`")
+    lines.append(f"- Decision: `{comprehensive.get('decision')}`")
+    lines.append(f"- Runtime change applied: `{comprehensive.get('runtime_change_applied')}`")
+    lines.append(f"- Generated prompts used for: `{comprehensive.get('generated_prompts_used_for')}`")
+    lines.append("- Official strict rows diagnose real score loss; generated prompts provide coverage/generalization evidence only.")
     lines.extend(["", "## Live Adobe API Readiness", ""])
     live = payload.get("live_adobe_api_readiness", {})
     lines.append(f"- Readiness audit: `{live.get('audit_path')}`")
@@ -1050,6 +1123,52 @@ def _score_path_status(sources: dict[str, Any]) -> dict[str, Any]:
             "outputs/reports/score_path_contribution_audit.md",
             "outputs/reports/score_focused_core_improvement_trials.md",
             "outputs/reports/score_focused_core_fix_decision.md",
+        ],
+    }
+
+
+def _comprehensive_failure_status(sources: dict[str, Any]) -> dict[str, Any]:
+    preflight = sources.get("comprehensive_failure_analysis_preflight") or {}
+    official = sources.get("official_row_failure_table") or {}
+    generated = sources.get("generated_prompt_failure_table") or {}
+    clusters = sources.get("cross_dataset_failure_clusters") or {}
+    candidates = sources.get("general_deterministic_rule_candidates") or {}
+    hardcoding = sources.get("general_rule_hardcoding_risk_audit") or {}
+    decision = sources.get("comprehensive_failure_fix_decision") or {}
+    official_summary = official.get("summary") or {}
+    generated_summary = generated.get("summary") or {}
+    candidate_rows = candidates.get("candidates") or []
+    cluster_rows = clusters.get("clusters") or []
+    return {
+        "preflight_status": "complete" if preflight.get("report_type") == "comprehensive_failure_analysis_preflight" else "not_run",
+        "official_table_status": "complete" if official.get("report_type") == "official_row_failure_table" else "not_run",
+        "generated_table_status": "complete" if generated.get("report_type") == "generated_prompt_failure_table" else "not_run",
+        "cluster_status": "complete" if clusters.get("report_type") == "cross_dataset_failure_clusters" else "not_run",
+        "candidate_status": "complete" if candidates.get("report_type") == "general_deterministic_rule_candidates" else "not_run",
+        "hardcoding_audit_status": "complete" if hardcoding.get("report_type") == "general_rule_hardcoding_risk_audit" else "not_run",
+        "decision_status": "complete" if decision.get("report_type") == "comprehensive_failure_fix_decision" else "not_run",
+        "decision": decision.get("decision", "not_run"),
+        "official_rows_analyzed": decision.get("total_official_rows_analyzed", official_summary.get("total_rows")),
+        "generated_prompts_analyzed": decision.get("total_generated_prompts_analyzed", generated_summary.get("total_prompts")),
+        "rows_requiring_adobe_access": decision.get("rows_requiring_adobe_access", official_summary.get("requires_live_api_rows")),
+        "prompts_requiring_live_api": decision.get("prompts_requiring_live_api", generated_summary.get("requires_live_api_prompts")),
+        "candidate_count": len(candidate_rows),
+        "cluster_count": len(cluster_rows),
+        "strongest_candidate_rule": decision.get("strongest_candidate_rule"),
+        "hardcoding_audit_passed": decision.get("hardcoding_audit_passed", hardcoding.get("all_candidates_pass_hardcoding_audit")),
+        "runtime_change_applied": bool(decision.get("runtime_change_applied", False)),
+        "final_submission_changed": bool(decision.get("final_submission_changed", False)),
+        "official_rows_used_for": "real_score_loss_diagnosis",
+        "generated_prompts_used_for": "generality_and_coverage_only",
+        "source_reports": [
+            "outputs/reports/comprehensive_failure_analysis_preflight.md",
+            "outputs/reports/official_row_failure_table.md",
+            "outputs/reports/generated_prompt_failure_table.md",
+            "outputs/reports/cross_dataset_failure_clusters.md",
+            "outputs/reports/general_deterministic_rule_candidates.md",
+            "outputs/reports/cross_dataset_counterfactual_answer_sketches.md",
+            "outputs/reports/general_rule_hardcoding_risk_audit.md",
+            "outputs/reports/comprehensive_failure_fix_decision.md",
         ],
     }
 

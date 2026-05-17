@@ -82,6 +82,20 @@ Start here. Most older generated reports were consolidated or removed.
 - Runtime change applied: `False`
 - These reports use the SVG only as a score-path map; visualization changes are not score improvements.
 
+## Comprehensive Failure Analysis
+
+- Preflight: `outputs/reports/comprehensive_failure_analysis_preflight.md`
+- Official row table: `outputs/reports/official_row_failure_table.md`
+- Generated prompt table: `outputs/reports/generated_prompt_failure_table.md`
+- Cross-dataset clusters: `outputs/reports/cross_dataset_failure_clusters.md`
+- Rule candidates: `outputs/reports/general_deterministic_rule_candidates.md`
+- Hardcoding risk audit: `outputs/reports/general_rule_hardcoding_risk_audit.md`
+- Fix decision: `outputs/reports/comprehensive_failure_fix_decision.md`
+- Decision: `wait_for_adobe_access`
+- Runtime change applied: `False`
+- Generated prompts used for: `generality_and_coverage_only`
+- Official strict rows diagnose real score loss; generated prompts provide coverage/generalization evidence only.
+
 ## Live Adobe API Readiness
 
 - Readiness audit: `outputs/reports/live_adobe_api_readiness_audit.md`
@@ -174,6 +188,7 @@ Required commands:
 - `python3 scripts/run_sql_evidence_usage_audit.py`
 - `python3 scripts/run_score_path_contribution_audit.py`
 - `python3 scripts/run_score_focused_core_improvement_trials.py`
+- `python3 scripts/run_comprehensive_failure_analysis.py`
 - `python3 scripts/run_confidence_calibration_audit.py`
 - `python3 scripts/run_token_efficiency_audit.py`
 - `python3 scripts/check_llm_sdk_backend.py`
@@ -216,6 +231,14 @@ Regenerated report surfaces:
 - `outputs/reports/score_path_contribution_audit.md/json`
 - `outputs/reports/score_focused_core_improvement_trials.md/json`
 - `outputs/reports/score_focused_core_fix_decision.md/json`
+- `outputs/reports/comprehensive_failure_analysis_preflight.md/json`
+- `outputs/reports/official_row_failure_table.md/json`
+- `outputs/reports/generated_prompt_failure_table.md/json`
+- `outputs/reports/cross_dataset_failure_clusters.md/json`
+- `outputs/reports/general_deterministic_rule_candidates.md/json`
+- `outputs/reports/cross_dataset_counterfactual_answer_sketches.md/json`
+- `outputs/reports/general_rule_hardcoding_risk_audit.md/json`
+- `outputs/reports/comprehensive_failure_fix_decision.md/json`
 - `outputs/reports/confidence_calibration_audit.md/json`
 - `outputs/reports/token_efficiency_audit.md/json`
 - `outputs/reports/workflow_decision_map.md/json`

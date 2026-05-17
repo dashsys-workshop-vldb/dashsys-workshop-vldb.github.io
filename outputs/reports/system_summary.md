@@ -16,6 +16,7 @@
 - Decision-stage feedback loops: stages mapped `20`, semantic-router recommendation `candidate_not_viable_after_feedback_loops`
 - Evidence-aware answer synthesis: `keep_trial_only` (trial `complete`)
 - Score-focused core path trials: `keep_trial_only`; best delta `0.0`; runtime change applied: `False`
+- Comprehensive failure analysis: `wait_for_adobe_access`; official rows `35`; generated prompts `250`; runtime change applied: `False`
 - Context7 docs audit: `complete`; runtime change applied: `False`
 
 ## Workflow
@@ -39,3 +40,9 @@
 - `outputs/reports/score_path_contribution_audit.md`
 - `outputs/reports/score_focused_core_improvement_trials.md`
 - `outputs/reports/score_focused_core_fix_decision.md`
+- `outputs/reports/official_row_failure_table.md`
+- `outputs/reports/generated_prompt_failure_table.md`
+- `outputs/reports/cross_dataset_failure_clusters.md`
+- `outputs/reports/general_deterministic_rule_candidates.md`
+- `outputs/reports/general_rule_hardcoding_risk_audit.md`
+- `outputs/reports/comprehensive_failure_fix_decision.md`
