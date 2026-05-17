@@ -201,7 +201,17 @@ python3 scripts/review_local_diagnostic_gap_candidates.py
 
 These reports protect `outputs/final_submission/**`, strict/hidden eval artifacts, endpoint catalog paths, and packaged defaults. Generated labels are compared against actual route/domain/evidence behavior before any mismatch is treated as a true bug. If no single low-risk deterministic candidate passes the evidence gate, no runtime change is applied.
 
-## 3.4 Decision-Stage Feedback Loops
+## 3.4 Context7 Documentation-Grounded Audit
+
+Use Context7 for external documentation lookup only. Do not print or commit Context7 API keys, Adobe credentials, or raw Authorization/header values. Before changing behavior tied to an external SDK, library, or API, run:
+
+```bash
+python3 scripts/run_context7_code_alignment_audit.py
+```
+
+The audit writes `outputs/reports/context7_docs_audit_preflight.md/json`, `outputs/reports/context7_dependency_docs_summary.md/json`, `outputs/reports/context7_code_alignment_audit.md/json`, and `outputs/reports/context7_fix_decision.md/json`. Reports store short findings and library IDs, not raw docs. No runtime change should be applied unless `context7_fix_decision` documents a small docs-proven issue, focused tests, and no-regression validation. Live Adobe API data success still requires at least one safe GET endpoint returning `live_success`.
+
+## 3.5 Decision-Stage Feedback Loops
 
 Serious improvement candidates must start from a workflow decision-stage question, not a module guess. Use:
 
@@ -214,7 +224,7 @@ The required process is hypothesis → baseline → isolated trial → failure a
 
 Generated diagnostic prompts are coverage-only and cannot support official strict-score improvement or promotion claims. Answer-only trials must preserve SQL hash, API hash, tool count, selected evidence hash, and dry-run label. Behavior-changing variants stay in isolated outputs unless a later human-reviewed strict/safety promotion explicitly approves them.
 
-## 3.5 Live Adobe API Readiness
+## 3.6 Live Adobe API Readiness
 
 Live Adobe API readiness is infrastructure validation, not score promotion. The system keeps `API_REQUIRED` calls required in live mode, uses catalog-approved Adobe REST calls, and falls back to dry-run only when credentials are unavailable. No live API evidence may be fabricated, and live smoke/trial reports must not overwrite `outputs/eval/`, `outputs/eval_results_strict.json`, `outputs/final_submission/`, or `outputs/final_submission_manifest.json`.
 

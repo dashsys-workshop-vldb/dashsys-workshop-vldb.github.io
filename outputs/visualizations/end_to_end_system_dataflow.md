@@ -37,7 +37,7 @@ flowchart TB
     api_validation{"API validation<br/>passed?"}
     headers["Credential Headers"]
     credentials{"Adobe credentials<br/>present?"}
-    live_api["Live API mode<br/>pass"]
+    live_api["Live API mode<br/>warning"]
     dry_run["Dry-run fallback"]
     api_parser["API Response<br/>Parser"]
     evidence_state["Evidence State<br/>success / empty / error"]

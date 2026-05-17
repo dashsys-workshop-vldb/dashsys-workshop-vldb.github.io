@@ -59,6 +59,10 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/live_adobe_api_readiness_audit.md/json",
     "outputs/reports/api_required_readiness_matrix.md/json",
     "outputs/reports/live_api_readiness_smoke.md/json",
+    "outputs/reports/context7_docs_audit_preflight.md/json",
+    "outputs/reports/context7_dependency_docs_summary.md/json",
+    "outputs/reports/context7_code_alignment_audit.md/json",
+    "outputs/reports/context7_fix_decision.md/json",
     "outputs/reports/live_api_evidence_pipeline_trial.md/json",
     "outputs/reports/mock_live_api_evidence_pipeline_trial.md/json",
     "outputs/reports/evidence_usage_audit.md/json",
@@ -165,6 +169,10 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "superpowers_next_steps_preflight": _load_json(outputs / "reports" / "superpowers_next_steps_preflight.json"),
         "local_gap_manual_review": _load_json(outputs / "reports" / "local_gap_manual_review.json"),
         "superpowers_fix_decision": _load_json(outputs / "reports" / "superpowers_fix_decision.json"),
+        "context7_docs_audit_preflight": _load_json(outputs / "reports" / "context7_docs_audit_preflight.json"),
+        "context7_dependency_docs_summary": _load_json(outputs / "reports" / "context7_dependency_docs_summary.json"),
+        "context7_code_alignment_audit": _load_json(outputs / "reports" / "context7_code_alignment_audit.json"),
+        "context7_fix_decision": _load_json(outputs / "reports" / "context7_fix_decision.json"),
         "sdk_usage_audit": _load_json(outputs / "reports" / "sdk_usage_audit.json"),
         "workshop_requirement_audit": _load_json(outputs / "reports" / "workshop_requirement_audit.json"),
         "workflow_decision_map": _load_json(outputs / "reports" / "workflow_decision_map.json"),
@@ -235,6 +243,7 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
         "llm_semantic_routing_helper": _semantic_router_status(sources),
         "decision_stage_methodology": _decision_stage_status(sources),
         "evidence_aware_answer_synthesis": _evidence_answer_status(sources),
+        "context7_documentation_grounded_audit": _context7_audit_status(sources),
         "source_reports": [
             "outputs/eval_results_strict.json",
             "outputs/winner_readiness_report.json",
@@ -242,6 +251,8 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
             "outputs/official_token_reduction_promotion_report.json",
             "outputs/reports/post_permission_live_api_verification.md",
             "outputs/reports/adobe_access_waiting_status.md",
+            "outputs/reports/context7_code_alignment_audit.md",
+            "outputs/reports/context7_fix_decision.md",
         ],
     }
 
@@ -323,6 +334,9 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
             "outputs/reports/superpowers_next_steps_preflight.md",
             "outputs/reports/local_gap_manual_review.md",
             "outputs/reports/superpowers_fix_decision.md",
+            "outputs/reports/context7_dependency_docs_summary.md",
+            "outputs/reports/context7_code_alignment_audit.md",
+            "outputs/reports/context7_fix_decision.md",
         ],
     }
 
@@ -442,6 +456,20 @@ def build_report_index(
             .get("summary", {})
             .get("runtime_llm_direct_http_hits", "unavailable"),
         },
+        "context7_documentation_grounded_audit": {
+            "preflight_path": "outputs/reports/context7_docs_audit_preflight.md",
+            "docs_summary_path": "outputs/reports/context7_dependency_docs_summary.md",
+            "code_alignment_path": "outputs/reports/context7_code_alignment_audit.md",
+            "fix_decision_path": "outputs/reports/context7_fix_decision.md",
+            **_context7_audit_status(
+                {
+                    "context7_docs_audit_preflight": _load_json(config.outputs_dir / "reports" / "context7_docs_audit_preflight.json"),
+                    "context7_dependency_docs_summary": _load_json(config.outputs_dir / "reports" / "context7_dependency_docs_summary.json"),
+                    "context7_code_alignment_audit": _load_json(config.outputs_dir / "reports" / "context7_code_alignment_audit.json"),
+                    "context7_fix_decision": _load_json(config.outputs_dir / "reports" / "context7_fix_decision.json"),
+                }
+            ),
+        },
         "live_adobe_api_readiness": {
             "audit_path": "outputs/reports/live_adobe_api_readiness_audit.md",
             "api_required_readiness_matrix_path": "outputs/reports/api_required_readiness_matrix.md",
@@ -554,6 +582,7 @@ def build_report_index(
             "live_adobe_api_readiness": system["live_adobe_api_readiness"]["overall_status"],
             "evidence_aware_answer_synthesis": system["evidence_aware_answer_synthesis"].get("recommendation"),
             "llm_recommendation": llm["recommendation"],
+            "context7_docs_audit": system["context7_documentation_grounded_audit"].get("status"),
             "target_0_75_reached": accuracy["target_0_75_reached"],
         },
     }
@@ -586,6 +615,8 @@ def render_system_summary(payload: dict[str, Any]) -> str:
             f"semantic-router recommendation `{payload['decision_stage_methodology'].get('semantic_router_final_recommendation')}`",
             f"- Evidence-aware answer synthesis: `{payload['evidence_aware_answer_synthesis'].get('recommendation')}` "
             f"(trial `{payload['evidence_aware_answer_synthesis'].get('trial_status')}`)",
+            f"- Context7 docs audit: `{payload['context7_documentation_grounded_audit'].get('status')}`; "
+            f"runtime change applied: `{payload['context7_documentation_grounded_audit'].get('code_changes_applied')}`",
             "",
             "## Workflow",
             "",
@@ -715,6 +746,16 @@ def render_report_index(payload: dict[str, Any]) -> str:
     audit = payload.get("sdk_usage_audit", {})
     lines.append(f"- `{audit.get('path')}`")
     lines.append(f"- Runtime LLM direct HTTP hits: `{audit.get('runtime_llm_direct_http_hits')}`")
+    lines.extend(["", "## Context7 Documentation-Grounded Audit", ""])
+    context7 = payload.get("context7_documentation_grounded_audit", {})
+    lines.append(f"- Preflight: `{context7.get('preflight_path')}`")
+    lines.append(f"- Dependency docs summary: `{context7.get('docs_summary_path')}`")
+    lines.append(f"- Code alignment audit: `{context7.get('code_alignment_path')}`")
+    lines.append(f"- Fix decision: `{context7.get('fix_decision_path')}`")
+    lines.append(f"- Status: `{context7.get('status')}`")
+    lines.append(f"- Dependencies reviewed: `{context7.get('dependency_count')}`")
+    lines.append(f"- Code changes applied: `{context7.get('code_changes_applied')}`")
+    lines.append("- External SDK/API changes require Context7 documentation lookup first; Context7 secrets must never be printed.")
     lines.extend(["", "## Live Adobe API Readiness", ""])
     live = payload.get("live_adobe_api_readiness", {})
     lines.append(f"- Readiness audit: `{live.get('audit_path')}`")
@@ -901,6 +942,34 @@ def _decision_stage_status(sources: dict[str, Any]) -> dict[str, Any]:
             "outputs/reports/improvement_feedback_loop_index.md",
             "outputs/reports/feedback_loop_semantic_router_final.md",
             "outputs/reports/decision_stage_improvement_summary.md",
+        ],
+    }
+
+
+def _context7_audit_status(sources: dict[str, Any]) -> dict[str, Any]:
+    preflight = sources.get("context7_docs_audit_preflight") or {}
+    docs = sources.get("context7_dependency_docs_summary") or {}
+    audit = sources.get("context7_code_alignment_audit") or {}
+    fix = sources.get("context7_fix_decision") or {}
+    return {
+        "status": audit.get("status", "not_run"),
+        "preflight_status": "complete" if preflight.get("report_type") == "context7_docs_audit_preflight" else "not_run",
+        "dependency_docs_status": "complete" if docs.get("report_type") == "context7_dependency_docs_summary" else "not_run",
+        "dependency_count": docs.get("dependency_count", 0),
+        "context7_found_count": docs.get("context7_found_count", 0),
+        "potential_bug_count": (audit.get("summary") or {}).get("potential_bug_count", "not_run"),
+        "needs_manual_review_count": (audit.get("summary") or {}).get("needs_manual_review_count", "not_run"),
+        "blocked_by_adobe_permission_count": (audit.get("summary") or {}).get(
+            "blocked_by_adobe_permission_count", "not_run"
+        ),
+        "code_changes_applied": bool(fix.get("code_changes_applied", False)),
+        "no_context7_backed_code_change": bool(fix.get("no_context7_backed_code_change", True)),
+        "packaged_runtime_affected": False,
+        "source_reports": [
+            "outputs/reports/context7_docs_audit_preflight.md",
+            "outputs/reports/context7_dependency_docs_summary.md",
+            "outputs/reports/context7_code_alignment_audit.md",
+            "outputs/reports/context7_fix_decision.md",
         ],
     }
 

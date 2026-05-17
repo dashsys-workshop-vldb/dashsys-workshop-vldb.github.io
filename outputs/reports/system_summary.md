@@ -15,6 +15,7 @@
 - Semantic router isolated trial: `complete`; promotion decision: `do_not_promote`; packaged runtime affected: `False`
 - Decision-stage feedback loops: stages mapped `20`, semantic-router recommendation `candidate_not_viable_after_feedback_loops`
 - Evidence-aware answer synthesis: `keep_trial_only` (trial `complete`)
+- Context7 docs audit: `complete`; runtime change applied: `False`
 
 ## Workflow
 
@@ -32,3 +33,5 @@
 - `outputs/official_token_reduction_promotion_report.json`
 - `outputs/reports/post_permission_live_api_verification.md`
 - `outputs/reports/adobe_access_waiting_status.md`
+- `outputs/reports/context7_code_alignment_audit.md`
+- `outputs/reports/context7_fix_decision.md`

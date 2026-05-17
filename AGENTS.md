@@ -166,6 +166,16 @@ Do not use raw `requests`, `curl`, direct `/chat/completions`, hand-built provid
 
 Run `python3 scripts/generate_sdk_usage_audit.py` after LLM-related changes. The report at `outputs/reports/sdk_usage_audit.md/json` must show `runtime_llm_direct_http_hits = 0`.
 
+## Context7 Documentation-Grounded Audit
+
+Use Context7 only for documentation lookup; never print or commit a Context7 API key. Before changing behavior that depends on an external SDK, library, or API, run:
+
+```bash
+python3 scripts/run_context7_code_alignment_audit.py
+```
+
+The audit writes `outputs/reports/context7_docs_audit_preflight.md/json`, `outputs/reports/context7_dependency_docs_summary.md/json`, `outputs/reports/context7_code_alignment_audit.md/json`, and `outputs/reports/context7_fix_decision.md/json`. Store only short findings and library IDs, not raw docs. Do not apply runtime changes unless `context7_fix_decision` documents a small docs-proven issue, focused tests, and no-regression validation. Live Adobe API data success still requires at least one safe GET endpoint with `live_success`.
+
 ## LLM Semantic Routing Helper
 
 `dashagent/semantic_routing_helper.py` is optional routing-hint infrastructure for low-confidence or ambiguous prompts. It is default-off (`ENABLE_LLM_SEMANTIC_ROUTER=false`) and shadow-only by default (`LLM_SEMANTIC_ROUTER_SHADOW_ONLY=true`).

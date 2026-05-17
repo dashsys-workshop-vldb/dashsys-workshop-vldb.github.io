@@ -22,8 +22,8 @@ Diagnostic-only verification after Adobe org/sandbox/permission access changes.
 
 ## Subcommands
 
-- `python3 scripts/check_adobe_env_local.py` -> `passed` exit=`0` duration=`1.5091`s
-- `python3 scripts/audit_live_adobe_api_readiness.py` -> `passed` exit=`0` duration=`1.9783`s
-- `python3 scripts/run_live_api_readiness_smoke.py --limit all-safe-get` -> `passed` exit=`0` duration=`1.6337`s
-- `python3 scripts/run_live_api_evidence_pipeline_trial.py` -> `passed` exit=`0` duration=`1.2876`s
-- `python3 scripts/run_live_api_targeted_failure_analysis.py` -> `passed` exit=`0` duration=`1.029`s
+- `python3 scripts/check_adobe_env_local.py` -> `passed` exit=`0` duration=`0.5416`s
+- `python3 scripts/audit_live_adobe_api_readiness.py` -> `passed` exit=`0` duration=`0.5241`s
+- `python3 scripts/run_live_api_readiness_smoke.py --limit all-safe-get` -> `passed` exit=`0` duration=`0.557`s
+- `python3 scripts/run_live_api_evidence_pipeline_trial.py` -> `passed` exit=`0` duration=`0.534`s
+- `python3 scripts/run_live_api_targeted_failure_analysis.py` -> `passed` exit=`0` duration=`0.4854`s

@@ -55,6 +55,17 @@ Start here. Most older generated reports were consolidated or removed.
 - `outputs/reports/sdk_usage_audit.md`
 - Runtime LLM direct HTTP hits: `0`
 
+## Context7 Documentation-Grounded Audit
+
+- Preflight: `outputs/reports/context7_docs_audit_preflight.md`
+- Dependency docs summary: `outputs/reports/context7_dependency_docs_summary.md`
+- Code alignment audit: `outputs/reports/context7_code_alignment_audit.md`
+- Fix decision: `outputs/reports/context7_fix_decision.md`
+- Status: `complete`
+- Dependencies reviewed: `8`
+- Code changes applied: `False`
+- External SDK/API changes require Context7 documentation lookup first; Context7 secrets must never be printed.
+
 ## Live Adobe API Readiness
 
 - Readiness audit: `outputs/reports/live_adobe_api_readiness_audit.md`
@@ -172,6 +183,10 @@ Regenerated report surfaces:
 - `outputs/reports/live_adobe_api_readiness_audit.md/json`
 - `outputs/reports/api_required_readiness_matrix.md/json`
 - `outputs/reports/live_api_readiness_smoke.md/json`
+- `outputs/reports/context7_docs_audit_preflight.md/json`
+- `outputs/reports/context7_dependency_docs_summary.md/json`
+- `outputs/reports/context7_code_alignment_audit.md/json`
+- `outputs/reports/context7_fix_decision.md/json`
 - `outputs/reports/live_api_evidence_pipeline_trial.md/json`
 - `outputs/reports/mock_live_api_evidence_pipeline_trial.md/json`
 - `outputs/reports/evidence_usage_audit.md/json`
@@ -205,4 +220,5 @@ Regenerated report surfaces:
 - live_adobe_api_readiness: `warning`
 - evidence_aware_answer_synthesis: `keep_trial_only`
 - llm_recommendation: `keep_shadow_only`
+- context7_docs_audit: `complete`
 - target_0_75_reached: `False`

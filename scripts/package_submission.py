@@ -40,6 +40,7 @@ REQUIRED_PATHS = [
     "scripts/analyze_generated_prompt_local_diagnostic_gaps.py",
     "scripts/run_superpowers_next_steps_preflight.py",
     "scripts/review_local_diagnostic_gap_candidates.py",
+    "scripts/run_context7_code_alignment_audit.py",
     "scripts/run_llm_semantic_router_shadow_eval.py",
     "scripts/run_llm_semantic_router_isolated_trial.py",
     "scripts/run_workflow_decision_audit.py",
