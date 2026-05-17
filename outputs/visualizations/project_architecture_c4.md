@@ -1,6 +1,6 @@
 # Project Architecture C4
 
-Generated: 2026-05-17T12:58:37Z
+Generated: 2026-05-17T15:12:20Z
 
 This generated Mermaid diagram is synchronized from current local reports and code/module names only. It does not change runtime behavior.
 

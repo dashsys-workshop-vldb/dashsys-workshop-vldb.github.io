@@ -23,6 +23,8 @@ Start here. Most older generated reports were consolidated or removed.
 
 - [outputs/visualizations/executive_dashboard.md](../visualizations/executive_dashboard.md)
 - [outputs/visualizations/end_to_end_system_dataflow.html](../visualizations/end_to_end_system_dataflow.html)
+- [outputs/visualizations/full_project_dataflow.svg](../visualizations/full_project_dataflow.svg)
+- [outputs/visualizations/full_project_dataflow.md](../visualizations/full_project_dataflow.md)
 - [outputs/visualizations/project_architecture_c4.md](../visualizations/project_architecture_c4.md)
 - [outputs/visualizations/end_to_end_pipeline_mermaid.md](../visualizations/end_to_end_pipeline_mermaid.md)
 - [outputs/visualizations/live_adobe_api_status_mermaid.md](../visualizations/live_adobe_api_status_mermaid.md)
@@ -173,6 +175,7 @@ Required commands:
 - `python3 scripts/generate_system_status_dashboard.py`
 - `python3 scripts/generate_technique_visual_cards.py`
 - `python3 scripts/generate_project_mermaid_visualizations.py`
+- `python3 scripts/generate_full_project_dataflow_svg.py`
 - `python3 scripts/generate_visualization_index.py`
 - `python3 scripts/package_submission.py`
 - `python3 scripts/package_query_outputs.py`
@@ -215,6 +218,9 @@ Regenerated report surfaces:
 - `outputs/visualizations/end_to_end_pipeline_mermaid.md/mmd`
 - `outputs/visualizations/live_adobe_api_status_mermaid.md/mmd`
 - `outputs/visualizations/report_generation_map.md/mmd`
+- `outputs/visualizations/full_project_dataflow.svg`
+- `outputs/visualizations/full_project_dataflow.md/json`
+- `outputs/reports/full_project_dataflow_svg_audit.md/json`
 - `outputs/visualizations/index.md/json`
 - `outputs/visualizations/system_status_dashboard.md/json`
 - `outputs/visualizations/technique_visual_cards.md/json`

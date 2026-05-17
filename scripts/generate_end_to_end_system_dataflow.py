@@ -14,15 +14,26 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from visualization_report_helpers import (  # noqa: E402
-    VIS_DIR,
-    ensure_visualization_path,
-    load_json,
-    mermaid_block,
-    redact_text,
-    write_json,
-    write_md,
-)
+try:  # noqa: E402
+    from scripts.visualization_report_helpers import (
+        VIS_DIR,
+        ensure_visualization_path,
+        load_json,
+        mermaid_block,
+        redact_text,
+        write_json,
+        write_md,
+    )
+except ModuleNotFoundError:  # pragma: no cover - direct script execution fallback
+    from visualization_report_helpers import (
+        VIS_DIR,
+        ensure_visualization_path,
+        load_json,
+        mermaid_block,
+        redact_text,
+        write_json,
+        write_md,
+    )
 
 
 STALE_SOURCE_HOURS = 72

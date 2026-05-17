@@ -9,16 +9,28 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from visualization_report_helpers import (  # noqa: E402
-    VIS_DIR,
-    how_to_read_page,
-    load_json,
-    required_visualization_files,
-    table,
-    write_json,
-    write_md,
-)
-from generate_end_to_end_system_dataflow import generate_end_to_end_system_dataflow  # noqa: E402
+try:  # noqa: E402
+    from scripts.visualization_report_helpers import (
+        VIS_DIR,
+        how_to_read_page,
+        load_json,
+        required_visualization_files,
+        table,
+        write_json,
+        write_md,
+    )
+    from scripts.generate_end_to_end_system_dataflow import generate_end_to_end_system_dataflow
+except ModuleNotFoundError:  # pragma: no cover - direct script execution fallback
+    from visualization_report_helpers import (
+        VIS_DIR,
+        how_to_read_page,
+        load_json,
+        required_visualization_files,
+        table,
+        write_json,
+        write_md,
+    )
+    from generate_end_to_end_system_dataflow import generate_end_to_end_system_dataflow
 
 
 def main() -> int:
@@ -53,13 +65,23 @@ def build_entries() -> list[dict[str, Any]]:
     for filename in required_visualization_files():
         path = VIS_DIR / filename
         will_be_written_by_this_script = filename in {"index.md", "index.json"}
+        suffix = path.suffix.lower()
+        kind = (
+            "markdown"
+            if suffix == ".md"
+            else "html"
+            if suffix == ".html"
+            else "svg"
+            if suffix == ".svg"
+            else "json"
+        )
         entries.append(
             {
                 "file": filename,
                 "path": str(path),
                 "exists": path.exists() or will_be_written_by_this_script,
-                "kind": "markdown" if filename.endswith(".md") else "html" if filename.endswith(".html") else "json",
-                "link": filename if filename.endswith((".md", ".html")) else None,
+                "kind": kind,
+                "link": filename if suffix in {".md", ".html", ".svg"} else None,
             }
         )
     return entries
@@ -70,6 +92,8 @@ def build_markdown(payload: dict[str, Any]) -> str:
     supervisor_files = {
         "executive_dashboard.md",
         "end_to_end_system_dataflow.html",
+        "full_project_dataflow.svg",
+        "full_project_dataflow.md",
         "project_architecture_c4.md",
         "end_to_end_pipeline_mermaid.md",
         "live_adobe_api_status_mermaid.md",
@@ -91,6 +115,8 @@ def build_markdown(payload: dict[str, Any]) -> str:
         "technique_visual_cards.md",
         "prompt_transformation_primary.md",
         "end_to_end_execution_primary.md",
+        "full_project_dataflow.svg",
+        "full_project_dataflow.md",
         "project_architecture_c4.md",
         "end_to_end_pipeline_mermaid.md",
         "live_adobe_api_status_mermaid.md",

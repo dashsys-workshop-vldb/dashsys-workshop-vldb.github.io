@@ -271,6 +271,18 @@ python3 scripts/generate_end_to_end_system_dataflow.py
 
 The normal visualization and consolidated-report generators refresh it automatically. Do not manually edit the generated HTML/MD/JSON; update `scripts/generate_end_to_end_system_dataflow.py` and regenerate when workflow code changes.
 
+## Full Project Dataflow SVG
+
+`outputs/visualizations/full_project_dataflow.svg` is the recommended single-diagram overview for supervisor walkthroughs. It is a large, locally generated SVG covering the complete DASHSys project flow: user prompts, query understanding, packaged `SQL_FIRST_API_VERIFY`, SQL/API validation, live Adobe API guard, EvidenceBus, answer synthesis, diagnostics, evaluation, reporting, visualization, packaging, and final submission.
+
+Refresh it with:
+
+```bash
+python3 scripts/generate_full_project_dataflow_svg.py
+```
+
+The generator writes `outputs/visualizations/full_project_dataflow.md/json` and `outputs/reports/full_project_dataflow_svg_audit.md/json`. It must use current reports and module/script names only. Do not access `.env.local`, credential files, external rendering services, or live Adobe endpoints to regenerate the SVG. Do not change runtime behavior, packaged defaults, validators, endpoint catalog paths, scoring, or final-submission format for visualization work.
+
 ## Project-Level Mermaid Visualization Workflow
 
 `scripts/generate_project_mermaid_visualizations.py` creates local, text-based Mermaid diagrams that stay synchronized with current reports and project module/script names. It writes:
@@ -310,6 +322,7 @@ python3 scripts/generate_research_inspired_report.py
 python3 scripts/generate_system_status_dashboard.py
 python3 scripts/generate_technique_visual_cards.py
 python3 scripts/generate_project_mermaid_visualizations.py
+python3 scripts/generate_full_project_dataflow_svg.py
 python3 scripts/generate_visualization_index.py
 python3 scripts/package_submission.py
 python3 scripts/package_query_outputs.py

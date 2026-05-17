@@ -12,7 +12,7 @@ This index links the supervisor-facing visualization suite. Every artifact is ge
 
 | Field | Value |
 | --- | --- |
-| Required files | 55/55 |
+| Required files | 58/58 |
 | Technique count | 45 |
 | Packaged strict final score | 0.6553 |
 | Best isolated score | 0.6558 |
@@ -34,6 +34,8 @@ Start here. These pages are diagram/card-first and designed for a quick walkthro
 | [technique_visual_cards.md](technique_visual_cards.md) | markdown | True |
 | [prompt_transformation_primary.md](prompt_transformation_primary.md) | markdown | True |
 | [end_to_end_execution_primary.md](end_to_end_execution_primary.md) | markdown | True |
+| [full_project_dataflow.svg](full_project_dataflow.svg) | svg | True |
+| [full_project_dataflow.md](full_project_dataflow.md) | markdown | True |
 | [project_architecture_c4.md](project_architecture_c4.md) | markdown | True |
 | [end_to_end_pipeline_mermaid.md](end_to_end_pipeline_mermaid.md) | markdown | True |
 | [live_adobe_api_status_mermaid.md](live_adobe_api_status_mermaid.md) | markdown | True |
@@ -51,6 +53,7 @@ Start here. These pages are diagram/card-first and designed for a quick walkthro
 | executive_dashboard.json | json | True |
 | [end_to_end_system_dataflow.md](end_to_end_system_dataflow.md) | markdown | True |
 | end_to_end_system_dataflow.json | json | True |
+| full_project_dataflow.json | json | True |
 | project_architecture_c4.mmd | json | True |
 | end_to_end_pipeline_mermaid.mmd | json | True |
 | live_adobe_api_status_mermaid.mmd | json | True |

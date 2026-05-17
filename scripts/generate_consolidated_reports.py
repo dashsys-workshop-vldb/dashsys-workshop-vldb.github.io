@@ -44,6 +44,7 @@ POST_CHANGE_VALIDATION_COMMANDS = [
     "python3 scripts/generate_system_status_dashboard.py",
     "python3 scripts/generate_technique_visual_cards.py",
     "python3 scripts/generate_project_mermaid_visualizations.py",
+    "python3 scripts/generate_full_project_dataflow_svg.py",
     "python3 scripts/generate_visualization_index.py",
     "python3 scripts/package_submission.py",
     "python3 scripts/package_query_outputs.py",
@@ -87,6 +88,9 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/visualizations/end_to_end_pipeline_mermaid.md/mmd",
     "outputs/visualizations/live_adobe_api_status_mermaid.md/mmd",
     "outputs/visualizations/report_generation_map.md/mmd",
+    "outputs/visualizations/full_project_dataflow.svg",
+    "outputs/visualizations/full_project_dataflow.md/json",
+    "outputs/reports/full_project_dataflow_svg_audit.md/json",
     "outputs/visualizations/index.md/json",
     "outputs/visualizations/system_status_dashboard.md/json",
     "outputs/visualizations/technique_visual_cards.md/json",
@@ -107,6 +111,7 @@ def generate_consolidated_reports(config: Config | None = None) -> dict[str, Any
     reports_dir.mkdir(parents=True, exist_ok=True)
     _maybe_generate_end_to_end_system_dataflow(config)
     _maybe_generate_project_mermaid_visualizations(config)
+    _maybe_generate_full_project_dataflow_svg(config)
 
     sources = _load_sources(config)
     system = build_system_summary(config, sources)
@@ -181,6 +186,8 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "context7_code_alignment_audit": _load_json(outputs / "reports" / "context7_code_alignment_audit.json"),
         "context7_fix_decision": _load_json(outputs / "reports" / "context7_fix_decision.json"),
         "visualization_sync_audit": _load_json(outputs / "reports" / "visualization_sync_audit.json"),
+        "full_project_dataflow": _load_json(visualizations / "full_project_dataflow.json"),
+        "full_project_dataflow_svg_audit": _load_json(outputs / "reports" / "full_project_dataflow_svg_audit.json"),
         "sdk_usage_audit": _load_json(outputs / "reports" / "sdk_usage_audit.json"),
         "workshop_requirement_audit": _load_json(outputs / "reports" / "workshop_requirement_audit.json"),
         "workflow_decision_map": _load_json(outputs / "reports" / "workflow_decision_map.json"),
@@ -212,6 +219,12 @@ def _maybe_generate_project_mermaid_visualizations(config: Config) -> None:
     from scripts.generate_project_mermaid_visualizations import generate_project_mermaid_visualizations
 
     generate_project_mermaid_visualizations(config)
+
+
+def _maybe_generate_full_project_dataflow_svg(config: Config) -> None:
+    from scripts.generate_full_project_dataflow_svg import generate_full_project_dataflow_svg
+
+    generate_full_project_dataflow_svg(config)
 
 
 def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, Any]:
@@ -369,9 +382,12 @@ def build_visualization_summary(config: Config, sources: dict[str, Any]) -> dict
         },
         "main_storyboard": "outputs/visualizations/sql_prompt_storyboard_primary.md",
         "end_to_end_system_dataflow": "outputs/visualizations/end_to_end_system_dataflow.html",
+        "single_svg_project_overview": "outputs/visualizations/full_project_dataflow.svg",
         "supervisor_visualizations": [
             "outputs/visualizations/executive_dashboard.md",
             "outputs/visualizations/end_to_end_system_dataflow.html",
+            "outputs/visualizations/full_project_dataflow.svg",
+            "outputs/visualizations/full_project_dataflow.md",
             "outputs/visualizations/project_architecture_c4.md",
             "outputs/visualizations/end_to_end_pipeline_mermaid.md",
             "outputs/visualizations/live_adobe_api_status_mermaid.md",
@@ -386,6 +402,8 @@ def build_visualization_summary(config: Config, sources: dict[str, Any]) -> dict
         "source_reports": [
             "outputs/visualizations/sql_prompt_storyboard_primary.json",
             "outputs/visualizations/end_to_end_system_dataflow.json",
+            "outputs/visualizations/full_project_dataflow.json",
+            "outputs/reports/full_project_dataflow_svg_audit.json",
             "outputs/visualizations/index.json",
             "outputs/reports/visualization_sync_audit.json",
         ],
@@ -720,6 +738,7 @@ def render_visualization_summary(payload: dict[str, Any]) -> str:
             f"- Raw prompt: {payload['raw_prompt']}",
             f"- Main storyboard: `{payload['main_storyboard']}`",
             f"- End-to-end system dataflow: `{payload['end_to_end_system_dataflow']}`",
+            f"- Single SVG project overview: `{payload['single_svg_project_overview']}`",
             f"- Secondary reference: {payload['secondary_reference']}",
             "",
             "## Prompt To SQL Mapping",
