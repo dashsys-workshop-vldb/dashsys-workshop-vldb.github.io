@@ -514,6 +514,18 @@ python3 scripts/generate_end_to_end_system_dataflow.py
 
 Normal visualization and consolidated-report regeneration refreshes it too. Do not manually edit the generated HTML/MD/JSON; update `scripts/generate_end_to_end_system_dataflow.py` and regenerate when the workflow changes.
 
+## Project-Level Mermaid Visualization Workflow
+
+`scripts/generate_project_mermaid_visualizations.py` creates text-based, versionable Mermaid diagrams from current reports and project module/script names only. It writes a C4-style architecture diagram, an end-to-end pipeline flow, a live Adobe API guard/status flow, a report dependency map, and `outputs/reports/visualization_sync_audit.md/json` with source-report SHA-256 hashes.
+
+Refresh it with:
+
+```bash
+python3 scripts/generate_project_mermaid_visualizations.py
+```
+
+`generate_consolidated_reports.py` runs this workflow automatically. The diagrams must remain local, report-derived, and secret-safe: do not access `.env.local`, do not call external live services, and do not change runtime behavior to update a visualization.
+
 ## 17. Mandatory Post-Change Validation
 
 After every code, report, cleanup, visualization, or documentation change, run the full validation suite before calling the work complete:
@@ -534,6 +546,7 @@ python3 scripts/generate_winner_readiness_report.py
 python3 scripts/generate_research_inspired_report.py
 python3 scripts/generate_system_status_dashboard.py
 python3 scripts/generate_technique_visual_cards.py
+python3 scripts/generate_project_mermaid_visualizations.py
 python3 scripts/generate_visualization_index.py
 python3 scripts/package_submission.py
 python3 scripts/package_query_outputs.py

@@ -271,6 +271,26 @@ python3 scripts/generate_end_to_end_system_dataflow.py
 
 The normal visualization and consolidated-report generators refresh it automatically. Do not manually edit the generated HTML/MD/JSON; update `scripts/generate_end_to_end_system_dataflow.py` and regenerate when workflow code changes.
 
+## Project-Level Mermaid Visualization Workflow
+
+`scripts/generate_project_mermaid_visualizations.py` creates local, text-based Mermaid diagrams that stay synchronized with current reports and project module/script names. It writes:
+
+- `outputs/visualizations/project_architecture_c4.md/mmd`
+- `outputs/visualizations/end_to_end_pipeline_mermaid.md/mmd`
+- `outputs/visualizations/live_adobe_api_status_mermaid.md/mmd`
+- `outputs/visualizations/report_generation_map.md/mmd`
+- `outputs/reports/visualization_sync_audit.md/json`
+
+Use Mermaid as the primary diagram format and C4-style structure for architecture diagrams. Do not access `.env.local`, external live services, credentials, or local credential files to regenerate these diagrams. Visualization updates must not change runtime behavior, packaged `SQL_FIRST_API_VERIFY`, validators, scoring, endpoint catalog paths, or final-submission format.
+
+Refresh it with:
+
+```bash
+python3 scripts/generate_project_mermaid_visualizations.py
+```
+
+`generate_consolidated_reports.py` runs this workflow automatically.
+
 Mandatory post-change validation after every code, report, cleanup, visualization, or documentation change:
 
 ```bash
@@ -289,6 +309,7 @@ python3 scripts/generate_winner_readiness_report.py
 python3 scripts/generate_research_inspired_report.py
 python3 scripts/generate_system_status_dashboard.py
 python3 scripts/generate_technique_visual_cards.py
+python3 scripts/generate_project_mermaid_visualizations.py
 python3 scripts/generate_visualization_index.py
 python3 scripts/package_submission.py
 python3 scripts/package_query_outputs.py

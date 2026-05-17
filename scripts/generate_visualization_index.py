@@ -70,6 +70,10 @@ def build_markdown(payload: dict[str, Any]) -> str:
     supervisor_files = {
         "executive_dashboard.md",
         "end_to_end_system_dataflow.html",
+        "project_architecture_c4.md",
+        "end_to_end_pipeline_mermaid.md",
+        "live_adobe_api_status_mermaid.md",
+        "report_generation_map.md",
         "sql_prompt_storyboard_primary.md",
         "prompt_storyboard_primary.md",
         "prompt_transformation_primary.md",
@@ -87,6 +91,10 @@ def build_markdown(payload: dict[str, Any]) -> str:
         "technique_visual_cards.md",
         "prompt_transformation_primary.md",
         "end_to_end_execution_primary.md",
+        "project_architecture_c4.md",
+        "end_to_end_pipeline_mermaid.md",
+        "live_adobe_api_status_mermaid.md",
+        "report_generation_map.md",
         "technique_pipeline_map.md",
         "score_bottleneck_dashboard.md",
     ]
