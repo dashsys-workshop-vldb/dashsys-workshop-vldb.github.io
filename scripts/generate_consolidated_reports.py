@@ -31,6 +31,8 @@ POST_CHANGE_VALIDATION_COMMANDS = [
     "python3 scripts/run_evidence_usage_audit.py",
     "python3 scripts/run_evidence_aware_answer_rewrite_trial.py",
     "python3 scripts/run_sql_evidence_usage_audit.py",
+    "python3 scripts/run_score_path_contribution_audit.py",
+    "python3 scripts/run_score_focused_core_improvement_trials.py",
     "python3 scripts/run_confidence_calibration_audit.py",
     "python3 scripts/run_token_efficiency_audit.py",
     "python3 scripts/check_llm_sdk_backend.py",
@@ -71,6 +73,9 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/evidence_aware_answer_rewrite_trial.md/json",
     "outputs/reports/feedback_loop_answer_synthesis_final.md/json",
     "outputs/reports/sql_evidence_usage_audit.md/json",
+    "outputs/reports/score_path_contribution_audit.md/json",
+    "outputs/reports/score_focused_core_improvement_trials.md/json",
+    "outputs/reports/score_focused_core_fix_decision.md/json",
     "outputs/reports/confidence_calibration_audit.md/json",
     "outputs/reports/token_efficiency_audit.md/json",
     "outputs/reports/workflow_decision_map.md/json",
@@ -199,6 +204,9 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "evidence_aware_answer_rewrite_trial": _load_json(outputs / "reports" / "evidence_aware_answer_rewrite_trial.json"),
         "feedback_loop_answer_synthesis_final": _load_json(outputs / "reports" / "feedback_loop_answer_synthesis_final.json"),
         "sql_evidence_usage_audit": _load_json(outputs / "reports" / "sql_evidence_usage_audit.json"),
+        "score_path_contribution_audit": _load_json(outputs / "reports" / "score_path_contribution_audit.json"),
+        "score_focused_core_improvement_trials": _load_json(outputs / "reports" / "score_focused_core_improvement_trials.json"),
+        "score_focused_core_fix_decision": _load_json(outputs / "reports" / "score_focused_core_fix_decision.json"),
         "confidence_calibration_audit": _load_json(outputs / "reports" / "confidence_calibration_audit.json"),
         "token_efficiency_audit": _load_json(outputs / "reports" / "token_efficiency_audit.json"),
         "end_to_end_system_dataflow": _load_json(visualizations / "end_to_end_system_dataflow.json"),
@@ -270,6 +278,7 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
         "llm_semantic_routing_helper": _semantic_router_status(sources),
         "decision_stage_methodology": _decision_stage_status(sources),
         "evidence_aware_answer_synthesis": _evidence_answer_status(sources),
+        "score_focused_core_path": _score_path_status(sources),
         "context7_documentation_grounded_audit": _context7_audit_status(sources),
         "source_reports": [
             "outputs/eval_results_strict.json",
@@ -280,6 +289,9 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
             "outputs/reports/adobe_access_waiting_status.md",
             "outputs/reports/context7_code_alignment_audit.md",
             "outputs/reports/context7_fix_decision.md",
+            "outputs/reports/score_path_contribution_audit.md",
+            "outputs/reports/score_focused_core_improvement_trials.md",
+            "outputs/reports/score_focused_core_fix_decision.md",
         ],
     }
 
@@ -310,6 +322,7 @@ def build_llm_baseline_summary(config: Config, sources: dict[str, Any]) -> dict[
         "llm_semantic_routing_helper": _semantic_router_status(sources),
         "decision_stage_methodology": _decision_stage_status(sources),
         "evidence_aware_answer_synthesis": _evidence_answer_status(sources),
+        "score_focused_core_path": _score_path_status(sources),
         "source_reports": [
             "outputs/llm_sdk_backend_check.json",
             "outputs/llm_baseline_eval_report.json",
@@ -347,6 +360,7 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
         "llm_semantic_routing_helper": _semantic_router_status(sources),
         "decision_stage_methodology": _decision_stage_status(sources),
         "evidence_aware_answer_synthesis": _evidence_answer_status(sources),
+        "score_focused_core_path": _score_path_status(sources),
         "source_reports": [
             "outputs/autonomous_score_push_report.json",
             "outputs/autonomous_packaged_trial.json",
@@ -364,6 +378,9 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
             "outputs/reports/context7_dependency_docs_summary.md",
             "outputs/reports/context7_code_alignment_audit.md",
             "outputs/reports/context7_fix_decision.md",
+            "outputs/reports/score_path_contribution_audit.md",
+            "outputs/reports/score_focused_core_improvement_trials.md",
+            "outputs/reports/score_focused_core_fix_decision.md",
         ],
     }
 
@@ -504,6 +521,18 @@ def build_report_index(
                     "context7_dependency_docs_summary": _load_json(config.outputs_dir / "reports" / "context7_dependency_docs_summary.json"),
                     "context7_code_alignment_audit": _load_json(config.outputs_dir / "reports" / "context7_code_alignment_audit.json"),
                     "context7_fix_decision": _load_json(config.outputs_dir / "reports" / "context7_fix_decision.json"),
+                }
+            ),
+        },
+        "score_focused_core_path": {
+            "contribution_audit_path": "outputs/reports/score_path_contribution_audit.md",
+            "trials_path": "outputs/reports/score_focused_core_improvement_trials.md",
+            "fix_decision_path": "outputs/reports/score_focused_core_fix_decision.md",
+            **_score_path_status(
+                {
+                    "score_path_contribution_audit": _load_json(config.outputs_dir / "reports" / "score_path_contribution_audit.json"),
+                    "score_focused_core_improvement_trials": _load_json(config.outputs_dir / "reports" / "score_focused_core_improvement_trials.json"),
+                    "score_focused_core_fix_decision": _load_json(config.outputs_dir / "reports" / "score_focused_core_fix_decision.json"),
                 }
             ),
         },
@@ -652,6 +681,9 @@ def render_system_summary(payload: dict[str, Any]) -> str:
             f"semantic-router recommendation `{payload['decision_stage_methodology'].get('semantic_router_final_recommendation')}`",
             f"- Evidence-aware answer synthesis: `{payload['evidence_aware_answer_synthesis'].get('recommendation')}` "
             f"(trial `{payload['evidence_aware_answer_synthesis'].get('trial_status')}`)",
+            f"- Score-focused core path trials: `{payload['score_focused_core_path'].get('recommendation')}`; "
+            f"best delta `{payload['score_focused_core_path'].get('best_strict_score_delta')}`; "
+            f"runtime change applied: `{payload['score_focused_core_path'].get('runtime_change_applied')}`",
             f"- Context7 docs audit: `{payload['context7_documentation_grounded_audit'].get('status')}`; "
             f"runtime change applied: `{payload['context7_documentation_grounded_audit'].get('code_changes_applied')}`",
             "",
@@ -719,6 +751,9 @@ def render_accuracy_summary(payload: dict[str, Any]) -> str:
             f"- Decision-stage feedback-loop status: `{payload['decision_stage_methodology'].get('semantic_router_final_recommendation')}`",
             f"- Evidence-aware answer synthesis: `{payload['evidence_aware_answer_synthesis'].get('recommendation')}`; "
             f"answer-only invariant enforced: `{payload['evidence_aware_answer_synthesis'].get('answer_only_invariant_enforced')}`",
+            f"- Score-focused core path trials: `{payload['score_focused_core_path'].get('recommendation')}`; "
+            f"best strict delta `{payload['score_focused_core_path'].get('best_strict_score_delta')}`; "
+            f"runtime change applied `{payload['score_focused_core_path'].get('runtime_change_applied')}`",
             "",
             "## Why Changes Remain Shadow-Only",
             "",
@@ -794,6 +829,15 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.append(f"- Dependencies reviewed: `{context7.get('dependency_count')}`")
     lines.append(f"- Code changes applied: `{context7.get('code_changes_applied')}`")
     lines.append("- External SDK/API changes require Context7 documentation lookup first; Context7 secrets must never be printed.")
+    lines.extend(["", "## Score-Focused Direct Path Trials", ""])
+    score_path = payload.get("score_focused_core_path", {})
+    lines.append(f"- Contribution audit: `{score_path.get('contribution_audit_path')}`")
+    lines.append(f"- Isolated trials: `{score_path.get('trials_path')}`")
+    lines.append(f"- Fix decision: `{score_path.get('fix_decision_path')}`")
+    lines.append(f"- Recommendation: `{score_path.get('recommendation')}`")
+    lines.append(f"- Best strict delta: `{score_path.get('best_strict_score_delta')}`")
+    lines.append(f"- Runtime change applied: `{score_path.get('runtime_change_applied')}`")
+    lines.append("- These reports use the SVG only as a score-path map; visualization changes are not score improvements.")
     lines.extend(["", "## Live Adobe API Readiness", ""])
     live = payload.get("live_adobe_api_readiness", {})
     lines.append(f"- Readiness audit: `{live.get('audit_path')}`")
@@ -980,6 +1024,32 @@ def _decision_stage_status(sources: dict[str, Any]) -> dict[str, Any]:
             "outputs/reports/improvement_feedback_loop_index.md",
             "outputs/reports/feedback_loop_semantic_router_final.md",
             "outputs/reports/decision_stage_improvement_summary.md",
+        ],
+    }
+
+
+def _score_path_status(sources: dict[str, Any]) -> dict[str, Any]:
+    audit = sources.get("score_path_contribution_audit") or {}
+    trials = sources.get("score_focused_core_improvement_trials") or {}
+    decision = sources.get("score_focused_core_fix_decision") or {}
+    summary = trials.get("summary") or {}
+    return {
+        "contribution_audit_status": "complete" if audit.get("report_type") == "score_path_contribution_audit" else "not_run",
+        "trial_status": "complete" if trials.get("report_type") == "score_focused_core_improvement_trials" else "not_run",
+        "fix_decision_status": "complete" if decision.get("report_type") == "score_focused_core_fix_decision" else "not_run",
+        "primary_score_focus": (audit.get("conclusions") or {}).get("primary_score_focus", []),
+        "baseline_strict_score": summary.get("baseline_strict_score") or decision.get("baseline_strict_score"),
+        "best_variant": summary.get("best_variant") or decision.get("best_variant"),
+        "best_strict_score_delta": summary.get("best_strict_score_delta") or decision.get("best_strict_score_delta"),
+        "recommendation": decision.get("recommendation") or summary.get("recommendation", "not_run"),
+        "promotion_safe": bool(decision.get("promotion_safe", False)),
+        "runtime_change_applied": bool(decision.get("runtime_change_applied", False)),
+        "final_submission_changed": bool(decision.get("final_submission_changed", False)),
+        "packaged_runtime_affected": False,
+        "source_reports": [
+            "outputs/reports/score_path_contribution_audit.md",
+            "outputs/reports/score_focused_core_improvement_trials.md",
+            "outputs/reports/score_focused_core_fix_decision.md",
         ],
     }
 

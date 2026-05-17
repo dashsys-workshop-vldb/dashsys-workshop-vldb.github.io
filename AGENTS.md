@@ -216,6 +216,19 @@ python3 scripts/run_token_efficiency_audit.py
 
 Answer-only trials must preserve SQL hash, API hash, tool count, route, plan, selected evidence hash, and dry-run label hash. The selected evidence hash covers normalized SQL result facts, parsed API evidence, EvidenceBus fields, answer slots, evidence states, and dry-run labels while excluding runtime timestamps, durations, and debug-only metadata. Faithfulness rejection focuses on factual drift only: wrong counts, names, statuses, dates, unsupported availability claims, or fabricated SQL/API evidence. If `API_REQUIRED` and dry-run unavailable, keep a short live-API-unavailable caveat.
 
+## Score-Focused Direct Path Trials
+
+Use the full project dataflow SVG as a score-path map, not as a thing to optimize for its own sake. The score-producing path is prompt understanding, deterministic route/domain/intent, `SQL_FIRST_API_VERIFY`, SQL/API planning, SQL/API validation and execution, EvidenceBus, answer slots, answer synthesis, verifier output, and final trajectory packaging.
+
+Use:
+
+```bash
+python3 scripts/run_score_path_contribution_audit.py
+python3 scripts/run_score_focused_core_improvement_trials.py
+```
+
+These scripts create `outputs/reports/score_path_contribution_audit.md/json`, `outputs/reports/score_focused_core_improvement_trials.md/json`, and `outputs/reports/score_focused_core_fix_decision.md/json`. They are isolated diagnostics and must not overwrite `outputs/eval_results_strict.json`, `outputs/eval/`, `outputs/final_submission/`, or final submission manifests. Do not promote a runtime change unless a general deterministic variant improves strict score, preserves hidden-style 48/48, passes `check_submission_ready.py`, does not increase unsupported claims, and leaves final-submission format unchanged. The current decision is `keep_trial_only`; no score-focused runtime change is applied.
+
 ## Development Workflow
 
 Before major changes, record the current baseline if the user asks for an optimization pass:
@@ -323,6 +336,8 @@ python3 scripts/generate_system_status_dashboard.py
 python3 scripts/generate_technique_visual_cards.py
 python3 scripts/generate_project_mermaid_visualizations.py
 python3 scripts/generate_full_project_dataflow_svg.py
+python3 scripts/run_score_path_contribution_audit.py
+python3 scripts/run_score_focused_core_improvement_trials.py
 python3 scripts/generate_visualization_index.py
 python3 scripts/package_submission.py
 python3 scripts/package_query_outputs.py

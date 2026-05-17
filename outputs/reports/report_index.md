@@ -72,6 +72,16 @@ Start here. Most older generated reports were consolidated or removed.
 - Code changes applied: `False`
 - External SDK/API changes require Context7 documentation lookup first; Context7 secrets must never be printed.
 
+## Score-Focused Direct Path Trials
+
+- Contribution audit: `outputs/reports/score_path_contribution_audit.md`
+- Isolated trials: `outputs/reports/score_focused_core_improvement_trials.md`
+- Fix decision: `outputs/reports/score_focused_core_fix_decision.md`
+- Recommendation: `keep_trial_only`
+- Best strict delta: `0.0`
+- Runtime change applied: `False`
+- These reports use the SVG only as a score-path map; visualization changes are not score improvements.
+
 ## Live Adobe API Readiness
 
 - Readiness audit: `outputs/reports/live_adobe_api_readiness_audit.md`
@@ -162,6 +172,8 @@ Required commands:
 - `python3 scripts/run_evidence_usage_audit.py`
 - `python3 scripts/run_evidence_aware_answer_rewrite_trial.py`
 - `python3 scripts/run_sql_evidence_usage_audit.py`
+- `python3 scripts/run_score_path_contribution_audit.py`
+- `python3 scripts/run_score_focused_core_improvement_trials.py`
 - `python3 scripts/run_confidence_calibration_audit.py`
 - `python3 scripts/run_token_efficiency_audit.py`
 - `python3 scripts/check_llm_sdk_backend.py`
@@ -201,6 +213,9 @@ Regenerated report surfaces:
 - `outputs/reports/evidence_aware_answer_rewrite_trial.md/json`
 - `outputs/reports/feedback_loop_answer_synthesis_final.md/json`
 - `outputs/reports/sql_evidence_usage_audit.md/json`
+- `outputs/reports/score_path_contribution_audit.md/json`
+- `outputs/reports/score_focused_core_improvement_trials.md/json`
+- `outputs/reports/score_focused_core_fix_decision.md/json`
 - `outputs/reports/confidence_calibration_audit.md/json`
 - `outputs/reports/token_efficiency_audit.md/json`
 - `outputs/reports/workflow_decision_map.md/json`

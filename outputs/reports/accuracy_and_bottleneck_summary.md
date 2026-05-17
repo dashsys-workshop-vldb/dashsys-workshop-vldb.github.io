@@ -14,6 +14,7 @@
 - Semantic router isolated trial: `complete`; promotion decision: `do_not_promote`
 - Decision-stage feedback-loop status: `candidate_not_viable_after_feedback_loops`
 - Evidence-aware answer synthesis: `keep_trial_only`; answer-only invariant enforced: `True`
+- Score-focused core path trials: `keep_trial_only`; best strict delta `0.0`; runtime change applied `False`
 
 ## Why Changes Remain Shadow-Only
 

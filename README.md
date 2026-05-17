@@ -262,6 +262,17 @@ python3 scripts/run_token_efficiency_audit.py
 
 The rewrite trial writes only under `outputs/evidence_aware_answer_rewrite_trial/`. Any answer-only promotion requires invariant SQL hash, API hash, tool count, selected evidence hash, route, plan, and dry-run labels; unsupported claims must not increase; hidden-style must remain 48/48; and `check_submission_ready.py` must pass. Dry-run caveats remain required for `API_REQUIRED` rows when live API verification is unavailable.
 
+## 3.7 Score-Focused Direct Path Trials
+
+Use the full project dataflow SVG as a map for score-producing code, not as an optimization target. The direct score path is prompt understanding, deterministic routing/domain/intent, `SQL_FIRST_API_VERIFY`, SQL/API planning and validation, EvidenceBus, answer slots, answer synthesis, verifier output, and final trajectory packaging.
+
+```bash
+python3 scripts/run_score_path_contribution_audit.py
+python3 scripts/run_score_focused_core_improvement_trials.py
+```
+
+These scripts write `outputs/reports/score_path_contribution_audit.md/json`, `outputs/reports/score_focused_core_improvement_trials.md/json`, and `outputs/reports/score_focused_core_fix_decision.md/json`. They are isolated diagnostics: they must not overwrite `outputs/eval_results_strict.json`, `outputs/eval/`, `outputs/final_submission/`, or final submission manifests. A runtime change may be promoted only if a general deterministic variant improves strict score, preserves hidden-style 48/48, passes `check_submission_ready.py`, does not increase unsupported claims, and leaves final-submission format unchanged. The current trial decision is `keep_trial_only`; no runtime code path was promoted.
+
 ## 4. Prompt Routing Policy
 
 The first decision is whether the prompt needs evidence:
@@ -560,6 +571,8 @@ python3 scripts/generate_system_status_dashboard.py
 python3 scripts/generate_technique_visual_cards.py
 python3 scripts/generate_project_mermaid_visualizations.py
 python3 scripts/generate_full_project_dataflow_svg.py
+python3 scripts/run_score_path_contribution_audit.py
+python3 scripts/run_score_focused_core_improvement_trials.py
 python3 scripts/generate_visualization_index.py
 python3 scripts/package_submission.py
 python3 scripts/package_query_outputs.py

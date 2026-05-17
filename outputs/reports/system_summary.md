@@ -15,6 +15,7 @@
 - Semantic router isolated trial: `complete`; promotion decision: `do_not_promote`; packaged runtime affected: `False`
 - Decision-stage feedback loops: stages mapped `20`, semantic-router recommendation `candidate_not_viable_after_feedback_loops`
 - Evidence-aware answer synthesis: `keep_trial_only` (trial `complete`)
+- Score-focused core path trials: `keep_trial_only`; best delta `0.0`; runtime change applied: `False`
 - Context7 docs audit: `complete`; runtime change applied: `False`
 
 ## Workflow
@@ -35,3 +36,6 @@
 - `outputs/reports/adobe_access_waiting_status.md`
 - `outputs/reports/context7_code_alignment_audit.md`
 - `outputs/reports/context7_fix_decision.md`
+- `outputs/reports/score_path_contribution_audit.md`
+- `outputs/reports/score_focused_core_improvement_trials.md`
+- `outputs/reports/score_focused_core_fix_decision.md`
