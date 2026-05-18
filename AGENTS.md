@@ -265,6 +265,18 @@ This workflow searches for several small non-LLM deterministic fast paths by pro
 
 Generated prompts are diagnostic-only and may support generality or speed evidence, but official strict rows are the only score evidence. The isolated trials must not overwrite `outputs/eval_results_strict.json`, `outputs/eval/`, `outputs/final_submission/`, or packaged defaults. Speed-only candidates are not automatically promoted; runtime implementation requires a separate pass with focused tests, strict eval, hidden-style eval, `check_submission_ready.py`, no direct LLM HTTP hits, and no final-submission format change.
 
+## Correctness + Efficiency Evaluation
+
+Do not treat strict correctness score as the only promotion signal. The organizer evaluation also considers efficiency: number of agent turns, number of tool calls, total tokens, wall time, and end-to-end runtime including preprocessing/context selection when available.
+
+Use:
+
+```bash
+python3 scripts/run_correctness_efficiency_scorecard.py
+```
+
+The scorecard writes `outputs/reports/correctness_efficiency_scorecard.md/json` and `outputs/reports/correctness_efficiency_fix_decision.md/json`. Official efficiency weights are unknown, so the report must provide sensitivity scenarios rather than an official overall score claim. Speed-only candidates with no correctness regression can be considered, but do not promote them until strict eval, hidden-style 48/48, generated-prompt diagnostics, SDK usage audit, `check_submission_ready.py`, and pytest all pass without unsupported-claim, hardcoding, direct-HTTP, or final-submission-format regression.
+
 ## Development Workflow
 
 Before major changes, record the current baseline if the user asks for an optimization pass:

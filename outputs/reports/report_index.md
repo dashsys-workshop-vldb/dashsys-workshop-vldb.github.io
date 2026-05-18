@@ -74,6 +74,17 @@ Start here. Most older generated reports were consolidated or removed.
 - Direct HTTP hits: `0`
 - These reports are shadow-only SDK/tool-call policy analysis; SQL_FIRST_API_VERIFY remains packaged default.
 
+## Correctness + Efficiency Evaluation
+
+- Scorecard: `outputs/reports/correctness_efficiency_scorecard.md`
+- Fix decision: `outputs/reports/correctness_efficiency_fix_decision.md`
+- Decision: `speed_only_patch_needs_validation`
+- Best candidate: `compact_tool_schema`
+- Official overall score claim: `False`
+- Organizer weights known: `False`
+- Runtime change applied: `False`
+- Correctness-only strict score is not treated as the full organizer evaluation picture.
+
 ## Context7 Documentation-Grounded Audit
 
 - Preflight: `outputs/reports/context7_docs_audit_preflight.md`
@@ -218,6 +229,7 @@ Required commands:
 - `python3 scripts/run_type_specific_deterministic_rule_trials.py`
 - `python3 scripts/run_sdk_tool_calling_optimization_audit.py`
 - `python3 scripts/run_sdk_tool_calling_optimization_trials.py`
+- `python3 scripts/run_correctness_efficiency_scorecard.py`
 - `python3 scripts/run_confidence_calibration_audit.py`
 - `python3 scripts/run_token_efficiency_audit.py`
 - `python3 scripts/check_llm_sdk_backend.py`
@@ -278,6 +290,8 @@ Regenerated report surfaces:
 - `outputs/reports/sdk_tool_call_optimization_variants.md/json`
 - `outputs/reports/sdk_tool_calling_optimization_trials.md/json`
 - `outputs/reports/sdk_tool_calling_fix_decision.md/json`
+- `outputs/reports/correctness_efficiency_scorecard.md/json`
+- `outputs/reports/correctness_efficiency_fix_decision.md/json`
 - `outputs/reports/confidence_calibration_audit.md/json`
 - `outputs/reports/token_efficiency_audit.md/json`
 - `outputs/reports/workflow_decision_map.md/json`
@@ -314,5 +328,6 @@ Regenerated report surfaces:
 - evidence_aware_answer_synthesis: `keep_trial_only`
 - llm_recommendation: `keep_shadow_only`
 - sdk_tool_calling_optimization: `speed_only_shadow_candidates_no_promotion`
+- correctness_efficiency_evaluation: `speed_only_patch_needs_validation`
 - context7_docs_audit: `complete`
 - target_0_75_reached: `False`

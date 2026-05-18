@@ -18,6 +18,7 @@
 - Comprehensive failure analysis: `wait_for_adobe_access`; rule candidates `5`; runtime change applied `False`
 - Type-specific deterministic rules: `speed_only_candidate`; candidate families `8`; runtime change applied `False`
 - SDK tool-calling optimization: `speed_only_shadow_candidates_no_promotion`; best projected strict delta `0.0`; runtime change applied `False`
+- Correctness + efficiency evaluation: `speed_only_patch_needs_validation`; best candidate `compact_tool_schema`; runtime change applied `False`
 
 ## Why Changes Remain Shadow-Only
 

@@ -38,6 +38,7 @@ POST_CHANGE_VALIDATION_COMMANDS = [
     "python3 scripts/run_type_specific_deterministic_rule_trials.py",
     "python3 scripts/run_sdk_tool_calling_optimization_audit.py",
     "python3 scripts/run_sdk_tool_calling_optimization_trials.py",
+    "python3 scripts/run_correctness_efficiency_scorecard.py",
     "python3 scripts/run_confidence_calibration_audit.py",
     "python3 scripts/run_token_efficiency_audit.py",
     "python3 scripts/check_llm_sdk_backend.py",
@@ -99,6 +100,8 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/sdk_tool_call_optimization_variants.md/json",
     "outputs/reports/sdk_tool_calling_optimization_trials.md/json",
     "outputs/reports/sdk_tool_calling_fix_decision.md/json",
+    "outputs/reports/correctness_efficiency_scorecard.md/json",
+    "outputs/reports/correctness_efficiency_fix_decision.md/json",
     "outputs/reports/confidence_calibration_audit.md/json",
     "outputs/reports/token_efficiency_audit.md/json",
     "outputs/reports/workflow_decision_map.md/json",
@@ -248,6 +251,8 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "sdk_tool_call_optimization_variants": _load_json(outputs / "reports" / "sdk_tool_call_optimization_variants.json"),
         "sdk_tool_calling_optimization_trials": _load_json(outputs / "reports" / "sdk_tool_calling_optimization_trials.json"),
         "sdk_tool_calling_fix_decision": _load_json(outputs / "reports" / "sdk_tool_calling_fix_decision.json"),
+        "correctness_efficiency_scorecard": _load_json(outputs / "reports" / "correctness_efficiency_scorecard.json"),
+        "correctness_efficiency_fix_decision": _load_json(outputs / "reports" / "correctness_efficiency_fix_decision.json"),
         "confidence_calibration_audit": _load_json(outputs / "reports" / "confidence_calibration_audit.json"),
         "token_efficiency_audit": _load_json(outputs / "reports" / "token_efficiency_audit.json"),
         "end_to_end_system_dataflow": _load_json(visualizations / "end_to_end_system_dataflow.json"),
@@ -323,6 +328,7 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
         "comprehensive_failure_analysis": _comprehensive_failure_status(sources),
         "type_specific_deterministic_rules": _type_specific_rule_status(sources),
         "sdk_tool_calling_optimization": _sdk_tool_calling_optimization_status(sources),
+        "correctness_efficiency_evaluation": _correctness_efficiency_status(sources),
         "context7_documentation_grounded_audit": _context7_audit_status(sources),
         "source_reports": [
             "outputs/eval_results_strict.json",
@@ -352,6 +358,8 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
             "outputs/reports/sdk_tool_call_optimization_variants.md",
             "outputs/reports/sdk_tool_calling_optimization_trials.md",
             "outputs/reports/sdk_tool_calling_fix_decision.md",
+            "outputs/reports/correctness_efficiency_scorecard.md",
+            "outputs/reports/correctness_efficiency_fix_decision.md",
         ],
     }
 
@@ -386,6 +394,7 @@ def build_llm_baseline_summary(config: Config, sources: dict[str, Any]) -> dict[
         "comprehensive_failure_analysis": _comprehensive_failure_status(sources),
         "type_specific_deterministic_rules": _type_specific_rule_status(sources),
         "sdk_tool_calling_optimization": _sdk_tool_calling_optimization_status(sources),
+        "correctness_efficiency_evaluation": _correctness_efficiency_status(sources),
         "source_reports": [
             "outputs/llm_sdk_backend_check.json",
             "outputs/llm_baseline_eval_report.json",
@@ -394,6 +403,8 @@ def build_llm_baseline_summary(config: Config, sources: dict[str, Any]) -> dict[
             "outputs/reports/sdk_tool_call_surface_audit.md",
             "outputs/reports/sdk_tool_calling_optimization_trials.md",
             "outputs/reports/sdk_tool_calling_fix_decision.md",
+            "outputs/reports/correctness_efficiency_scorecard.md",
+            "outputs/reports/correctness_efficiency_fix_decision.md",
         ],
     }
 
@@ -430,6 +441,7 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
         "comprehensive_failure_analysis": _comprehensive_failure_status(sources),
         "type_specific_deterministic_rules": _type_specific_rule_status(sources),
         "sdk_tool_calling_optimization": _sdk_tool_calling_optimization_status(sources),
+        "correctness_efficiency_evaluation": _correctness_efficiency_status(sources),
         "source_reports": [
             "outputs/autonomous_score_push_report.json",
             "outputs/autonomous_packaged_trial.json",
@@ -462,6 +474,8 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
             "outputs/reports/type_specific_rule_fix_decision.md",
             "outputs/reports/sdk_tool_calling_optimization_trials.md",
             "outputs/reports/sdk_tool_calling_fix_decision.md",
+            "outputs/reports/correctness_efficiency_scorecard.md",
+            "outputs/reports/correctness_efficiency_fix_decision.md",
         ],
     }
 
@@ -606,6 +620,16 @@ def build_report_index(
                     "sdk_tool_call_optimization_variants": _load_json(config.outputs_dir / "reports" / "sdk_tool_call_optimization_variants.json"),
                     "sdk_tool_calling_optimization_trials": _load_json(config.outputs_dir / "reports" / "sdk_tool_calling_optimization_trials.json"),
                     "sdk_tool_calling_fix_decision": _load_json(config.outputs_dir / "reports" / "sdk_tool_calling_fix_decision.json"),
+                }
+            ),
+        },
+        "correctness_efficiency_evaluation": {
+            "scorecard_path": "outputs/reports/correctness_efficiency_scorecard.md",
+            "fix_decision_path": "outputs/reports/correctness_efficiency_fix_decision.md",
+            **_correctness_efficiency_status(
+                {
+                    "correctness_efficiency_scorecard": _load_json(config.outputs_dir / "reports" / "correctness_efficiency_scorecard.json"),
+                    "correctness_efficiency_fix_decision": _load_json(config.outputs_dir / "reports" / "correctness_efficiency_fix_decision.json"),
                 }
             ),
         },
@@ -783,6 +807,7 @@ def build_report_index(
             "evidence_aware_answer_synthesis": system["evidence_aware_answer_synthesis"].get("recommendation"),
             "llm_recommendation": llm["recommendation"],
             "sdk_tool_calling_optimization": system["sdk_tool_calling_optimization"].get("decision"),
+            "correctness_efficiency_evaluation": system["correctness_efficiency_evaluation"].get("decision"),
             "context7_docs_audit": system["context7_documentation_grounded_audit"].get("status"),
             "target_0_75_reached": accuracy["target_0_75_reached"],
         },
@@ -829,6 +854,9 @@ def render_system_summary(payload: dict[str, Any]) -> str:
             f"- SDK tool-calling optimization: `{payload['sdk_tool_calling_optimization'].get('decision')}`; "
             f"runtime change applied: `{payload['sdk_tool_calling_optimization'].get('runtime_change_applied')}`; "
             f"direct HTTP hits: `{payload['sdk_tool_calling_optimization'].get('direct_http_hits')}`",
+            f"- Correctness + efficiency evaluation: `{payload['correctness_efficiency_evaluation'].get('decision')}`; "
+            f"official overall score claim: `{payload['correctness_efficiency_evaluation'].get('official_overall_score_claim')}`; "
+            f"runtime change applied: `{payload['correctness_efficiency_evaluation'].get('runtime_change_applied')}`",
             f"- Context7 docs audit: `{payload['context7_documentation_grounded_audit'].get('status')}`; "
             f"runtime change applied: `{payload['context7_documentation_grounded_audit'].get('code_changes_applied')}`",
             "",
@@ -868,6 +896,9 @@ def render_llm_summary(payload: dict[str, Any]) -> str:
             f"- SDK tool-calling optimization: `{payload['sdk_tool_calling_optimization'].get('decision')}`; "
             f"best variant `{payload['sdk_tool_calling_optimization'].get('best_variant')}`; "
             f"runtime change applied `{payload['sdk_tool_calling_optimization'].get('runtime_change_applied')}`",
+            f"- Correctness + efficiency evaluation: `{payload['correctness_efficiency_evaluation'].get('decision')}`; "
+            f"best candidate `{payload['correctness_efficiency_evaluation'].get('best_candidate')}`; "
+            f"official overall score claim `{payload['correctness_efficiency_evaluation'].get('official_overall_score_claim')}`",
             f"- Reason: {payload.get('reason')}",
             "",
             payload["framework_note"],
@@ -911,6 +942,9 @@ def render_accuracy_summary(payload: dict[str, Any]) -> str:
             f"- SDK tool-calling optimization: `{payload['sdk_tool_calling_optimization'].get('decision')}`; "
             f"best projected strict delta `{payload['sdk_tool_calling_optimization'].get('strict_score_delta_projected')}`; "
             f"runtime change applied `{payload['sdk_tool_calling_optimization'].get('runtime_change_applied')}`",
+            f"- Correctness + efficiency evaluation: `{payload['correctness_efficiency_evaluation'].get('decision')}`; "
+            f"best candidate `{payload['correctness_efficiency_evaluation'].get('best_candidate')}`; "
+            f"runtime change applied `{payload['correctness_efficiency_evaluation'].get('runtime_change_applied')}`",
             "",
             "## Why Changes Remain Shadow-Only",
             "",
@@ -988,6 +1022,16 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.append(f"- Runtime change applied: `{sdk_opt.get('runtime_change_applied')}`")
     lines.append(f"- Direct HTTP hits: `{sdk_opt.get('direct_http_hits')}`")
     lines.append("- These reports are shadow-only SDK/tool-call policy analysis; SQL_FIRST_API_VERIFY remains packaged default.")
+    lines.extend(["", "## Correctness + Efficiency Evaluation", ""])
+    ce = payload.get("correctness_efficiency_evaluation", {})
+    lines.append(f"- Scorecard: `{ce.get('scorecard_path')}`")
+    lines.append(f"- Fix decision: `{ce.get('fix_decision_path')}`")
+    lines.append(f"- Decision: `{ce.get('decision')}`")
+    lines.append(f"- Best candidate: `{ce.get('best_candidate')}`")
+    lines.append(f"- Official overall score claim: `{ce.get('official_overall_score_claim')}`")
+    lines.append(f"- Organizer weights known: `{ce.get('organizer_weights_known')}`")
+    lines.append(f"- Runtime change applied: `{ce.get('runtime_change_applied')}`")
+    lines.append("- Correctness-only strict score is not treated as the full organizer evaluation picture.")
     lines.extend(["", "## Context7 Documentation-Grounded Audit", ""])
     context7 = payload.get("context7_documentation_grounded_audit", {})
     lines.append(f"- Preflight: `{context7.get('preflight_path')}`")
@@ -1361,6 +1405,32 @@ def _sdk_tool_calling_optimization_status(sources: dict[str, Any]) -> dict[str, 
             "outputs/reports/sdk_tool_call_optimization_variants.md",
             "outputs/reports/sdk_tool_calling_optimization_trials.md",
             "outputs/reports/sdk_tool_calling_fix_decision.md",
+        ],
+    }
+
+
+def _correctness_efficiency_status(sources: dict[str, Any]) -> dict[str, Any]:
+    scorecard = sources.get("correctness_efficiency_scorecard") or {}
+    decision = sources.get("correctness_efficiency_fix_decision") or {}
+    baseline = scorecard.get("baseline") or {}
+    variants = scorecard.get("variants") or []
+    pareto_count = sum(1 for row in variants if row.get("pareto_dominates_baseline"))
+    return {
+        "scorecard_status": "complete" if scorecard.get("report_type") == "correctness_efficiency_scorecard" else "not_run",
+        "fix_decision_status": "complete" if decision.get("report_type") == "correctness_efficiency_fix_decision" else "not_run",
+        "decision": decision.get("decision", "not_run"),
+        "best_candidate": decision.get("best_candidate"),
+        "baseline_correctness_score": baseline.get("correctness_score") or decision.get("baseline_correctness_score"),
+        "baseline_strict_final_score": baseline.get("strict_final_score") or decision.get("baseline_strict_final_score"),
+        "variant_count": len(variants),
+        "pareto_dominating_variant_count": pareto_count,
+        "organizer_weights_known": bool(scorecard.get("organizer_weights_known", False)),
+        "official_overall_score_claim": bool(scorecard.get("official_overall_score_claim", False)),
+        "runtime_change_applied": bool(decision.get("runtime_change_applied", False)),
+        "final_submission_format_changed": bool(decision.get("final_submission_format_changed", False)),
+        "source_reports": [
+            "outputs/reports/correctness_efficiency_scorecard.md",
+            "outputs/reports/correctness_efficiency_fix_decision.md",
         ],
     }
 

@@ -305,6 +305,16 @@ python3 scripts/run_sdk_tool_calling_optimization_trials.py
 
 The reports are `outputs/reports/sdk_tool_calling_optimization_preflight.md/json`, `outputs/reports/sdk_tool_call_surface_audit.md/json`, `outputs/reports/sdk_tool_call_decision_analysis.md/json`, `outputs/reports/sdk_tool_call_optimization_variants.md/json`, `outputs/reports/sdk_tool_calling_optimization_trials.md/json`, and `outputs/reports/sdk_tool_calling_fix_decision.md/json`. Current trials are diagnostic-only: direct LLM HTTP hits remain `0`, generated prompts remain diagnostic-only, speed candidates remain shadow-only, and no runtime change is promoted without strict/hidden-style/submission no-regression validation.
 
+## 3.11 Correctness + Efficiency Evaluation
+
+Organizer evaluation includes both correctness and efficiency. Correctness-only strict score is not the whole picture: efficiency also includes agent turns, tool calls, total tokens, wall time, and end-to-end runtime including preprocessing/context selection where the artifacts expose it.
+
+```bash
+python3 scripts/run_correctness_efficiency_scorecard.py
+```
+
+The scorecard writes `outputs/reports/correctness_efficiency_scorecard.md/json` and `outputs/reports/correctness_efficiency_fix_decision.md/json`. Because official organizer weights are unknown, it reports sensitivity scenarios instead of fabricating an official overall score: correctness-dominant, balanced, efficiency-sensitive, strict-no-regression efficiency rank, and hidden-safe efficiency rank. Speed-only candidates with `strict delta = 0.0` can be valuable, but a runtime patch still requires no correctness regression, hidden-style 48/48, `check_submission_ready.py`, direct LLM HTTP hits `0`, no unsupported-claim increase, no hardcoding, and unchanged final-submission format.
+
 ## 4. Prompt Routing Policy
 
 The first decision is whether the prompt needs evidence:

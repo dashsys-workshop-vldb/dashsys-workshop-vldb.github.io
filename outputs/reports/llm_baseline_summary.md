@@ -14,6 +14,7 @@
 - Decision-stage feedback-loop status: `candidate_not_viable_after_feedback_loops`
 - Evidence-aware answer synthesis: `keep_trial_only`
 - SDK tool-calling optimization: `speed_only_shadow_candidates_no_promotion`; best variant `combined_safe_tool_policy`; runtime change applied `False`
+- Correctness + efficiency evaluation: `speed_only_patch_needs_validation`; best candidate `compact_tool_schema`; official overall score claim `False`
 - Reason: Deterministic SQL_FIRST_API_VERIFY remains higher under strict scoring.
 
 The LLM baseline framework is generic; Qwen is only the current configured backend/model metadata.
