@@ -283,6 +283,17 @@ python3 scripts/run_comprehensive_failure_analysis.py
 
 The script writes official row failure tables, generated prompt failure tables, cross-dataset clusters, candidate general deterministic rules, counterfactual answer sketches, a hardcoding-risk audit, and `outputs/reports/comprehensive_failure_fix_decision.md/json`. It is analysis-only: generated prompts are never official score evidence, counterfactual sketches are report-only, and no runtime change, endpoint catalog change, packaged-strategy change, or final-submission change is allowed in this pass. Any future rule must use general signals such as intent, route/domain, SQL result shape, EvidenceBus fields, API state, and answer-slot type; never query IDs, prompt IDs, exact prompt strings, or gold answers.
 
+## 3.9 Type-Specific Deterministic Rule Discovery
+
+Use type-specific rule discovery when looking for several small non-LLM fast paths instead of one broad rewrite. It groups official rows and generated diagnostics by prompt type, domain, execution need, and evidence shape, then runs isolated simulations for rule families such as SQL-only fast paths, count/list/status/date answer fast paths, zero-row local-evidence wording, API caveat ordering, router synonym candidates, and unknown/ambiguous fallbacks.
+
+```bash
+python3 scripts/run_deterministic_prompt_type_audit.py
+python3 scripts/run_type_specific_deterministic_rule_trials.py
+```
+
+The outputs are `outputs/reports/deterministic_prompt_type_audit.md/json`, `outputs/reports/type_specific_deterministic_rule_candidates.md/json`, `outputs/reports/type_specific_deterministic_rule_trials.md/json`, and `outputs/reports/type_specific_rule_fix_decision.md/json`. These reports are diagnostic and isolated: generated prompts are used only for generality/speed evidence, official rows remain the score evidence, and no runtime rule is promoted unless a later implementation pass proves strict/hidden-style/submission safety. Current type-specific trials identify speed-only candidates but keep `runtime_change_applied=false`.
+
 ## 4. Prompt Routing Policy
 
 The first decision is whether the prompt needs evidence:
@@ -584,6 +595,8 @@ python3 scripts/generate_full_project_dataflow_svg.py
 python3 scripts/run_score_path_contribution_audit.py
 python3 scripts/run_score_focused_core_improvement_trials.py
 python3 scripts/run_comprehensive_failure_analysis.py
+python3 scripts/run_deterministic_prompt_type_audit.py
+python3 scripts/run_type_specific_deterministic_rule_trials.py
 python3 scripts/generate_visualization_index.py
 python3 scripts/package_submission.py
 python3 scripts/package_query_outputs.py

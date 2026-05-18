@@ -17,6 +17,7 @@
 - Evidence-aware answer synthesis: `keep_trial_only` (trial `complete`)
 - Score-focused core path trials: `keep_trial_only`; best delta `0.0`; runtime change applied: `False`
 - Comprehensive failure analysis: `wait_for_adobe_access`; official rows `35`; generated prompts `250`; runtime change applied: `False`
+- Type-specific deterministic rules: `speed_only_candidate`; candidate families `8`; runtime change applied: `False`
 - Context7 docs audit: `complete`; runtime change applied: `False`
 
 ## Workflow
@@ -46,3 +47,7 @@
 - `outputs/reports/general_deterministic_rule_candidates.md`
 - `outputs/reports/general_rule_hardcoding_risk_audit.md`
 - `outputs/reports/comprehensive_failure_fix_decision.md`
+- `outputs/reports/deterministic_prompt_type_audit.md`
+- `outputs/reports/type_specific_deterministic_rule_candidates.md`
+- `outputs/reports/type_specific_deterministic_rule_trials.md`
+- `outputs/reports/type_specific_rule_fix_decision.md`

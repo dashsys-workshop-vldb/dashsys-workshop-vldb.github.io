@@ -96,6 +96,18 @@ Start here. Most older generated reports were consolidated or removed.
 - Generated prompts used for: `generality_and_coverage_only`
 - Official strict rows diagnose real score loss; generated prompts provide coverage/generalization evidence only.
 
+## Type-Specific Deterministic Rules
+
+- Prompt-type audit: `outputs/reports/deterministic_prompt_type_audit.md`
+- Rule candidates: `outputs/reports/type_specific_deterministic_rule_candidates.md`
+- Isolated trials: `outputs/reports/type_specific_deterministic_rule_trials.md`
+- Fix decision: `outputs/reports/type_specific_rule_fix_decision.md`
+- Decision: `speed_only_candidate`
+- Candidate count: `8`
+- Trial count: `8`
+- Runtime change applied: `False`
+- Rules are grouped by prompt type, domain, answer intent, execution need, and evidence shape.
+
 ## Live Adobe API Readiness
 
 - Readiness audit: `outputs/reports/live_adobe_api_readiness_audit.md`
@@ -189,6 +201,8 @@ Required commands:
 - `python3 scripts/run_score_path_contribution_audit.py`
 - `python3 scripts/run_score_focused_core_improvement_trials.py`
 - `python3 scripts/run_comprehensive_failure_analysis.py`
+- `python3 scripts/run_deterministic_prompt_type_audit.py`
+- `python3 scripts/run_type_specific_deterministic_rule_trials.py`
 - `python3 scripts/run_confidence_calibration_audit.py`
 - `python3 scripts/run_token_efficiency_audit.py`
 - `python3 scripts/check_llm_sdk_backend.py`
@@ -239,6 +253,10 @@ Regenerated report surfaces:
 - `outputs/reports/cross_dataset_counterfactual_answer_sketches.md/json`
 - `outputs/reports/general_rule_hardcoding_risk_audit.md/json`
 - `outputs/reports/comprehensive_failure_fix_decision.md/json`
+- `outputs/reports/deterministic_prompt_type_audit.md/json`
+- `outputs/reports/type_specific_deterministic_rule_candidates.md/json`
+- `outputs/reports/type_specific_deterministic_rule_trials.md/json`
+- `outputs/reports/type_specific_rule_fix_decision.md/json`
 - `outputs/reports/confidence_calibration_audit.md/json`
 - `outputs/reports/token_efficiency_audit.md/json`
 - `outputs/reports/workflow_decision_map.md/json`

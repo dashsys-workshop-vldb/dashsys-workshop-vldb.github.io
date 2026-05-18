@@ -241,6 +241,19 @@ This analysis combines official public/dev strict rows with all generated prompt
 
 This pass is analysis-only. Do not implement runtime changes from it directly, do not write sketches into final submission, and do not use generated prompts as official score evidence. Any future deterministic rule must be based on general signals such as query intent, route/domain class, SQL result shape, EvidenceBus fields, API state, answer-slot type, and general field names. Never use query IDs, prompt IDs, exact prompt strings, public/dev constants, generated-prompt constants, hidden-eval assumptions, or gold answer text as runtime triggers.
 
+## Type-Specific Deterministic Rule Discovery
+
+Use:
+
+```bash
+python3 scripts/run_deterministic_prompt_type_audit.py
+python3 scripts/run_type_specific_deterministic_rule_trials.py
+```
+
+This workflow searches for several small non-LLM deterministic fast paths by prompt intent, domain, execution need, and evidence shape. Candidate families include SQL-only fast paths, count/list/status/date answer fast paths, zero-row local-evidence wording, optional API caveat ordering, router synonym candidates, and unknown/ambiguous fallbacks.
+
+Generated prompts are diagnostic-only and may support generality or speed evidence, but official strict rows are the only score evidence. The isolated trials must not overwrite `outputs/eval_results_strict.json`, `outputs/eval/`, `outputs/final_submission/`, or packaged defaults. Speed-only candidates are not automatically promoted; runtime implementation requires a separate pass with focused tests, strict eval, hidden-style eval, `check_submission_ready.py`, no direct LLM HTTP hits, and no final-submission format change.
+
 ## Development Workflow
 
 Before major changes, record the current baseline if the user asks for an optimization pass:
@@ -351,6 +364,8 @@ python3 scripts/generate_full_project_dataflow_svg.py
 python3 scripts/run_score_path_contribution_audit.py
 python3 scripts/run_score_focused_core_improvement_trials.py
 python3 scripts/run_comprehensive_failure_analysis.py
+python3 scripts/run_deterministic_prompt_type_audit.py
+python3 scripts/run_type_specific_deterministic_rule_trials.py
 python3 scripts/generate_visualization_index.py
 python3 scripts/package_submission.py
 python3 scripts/package_query_outputs.py

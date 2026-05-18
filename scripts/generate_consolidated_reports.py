@@ -34,6 +34,8 @@ POST_CHANGE_VALIDATION_COMMANDS = [
     "python3 scripts/run_score_path_contribution_audit.py",
     "python3 scripts/run_score_focused_core_improvement_trials.py",
     "python3 scripts/run_comprehensive_failure_analysis.py",
+    "python3 scripts/run_deterministic_prompt_type_audit.py",
+    "python3 scripts/run_type_specific_deterministic_rule_trials.py",
     "python3 scripts/run_confidence_calibration_audit.py",
     "python3 scripts/run_token_efficiency_audit.py",
     "python3 scripts/check_llm_sdk_backend.py",
@@ -85,6 +87,10 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/cross_dataset_counterfactual_answer_sketches.md/json",
     "outputs/reports/general_rule_hardcoding_risk_audit.md/json",
     "outputs/reports/comprehensive_failure_fix_decision.md/json",
+    "outputs/reports/deterministic_prompt_type_audit.md/json",
+    "outputs/reports/type_specific_deterministic_rule_candidates.md/json",
+    "outputs/reports/type_specific_deterministic_rule_trials.md/json",
+    "outputs/reports/type_specific_rule_fix_decision.md/json",
     "outputs/reports/confidence_calibration_audit.md/json",
     "outputs/reports/token_efficiency_audit.md/json",
     "outputs/reports/workflow_decision_map.md/json",
@@ -224,6 +230,10 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "cross_dataset_counterfactual_answer_sketches": _load_json(outputs / "reports" / "cross_dataset_counterfactual_answer_sketches.json"),
         "general_rule_hardcoding_risk_audit": _load_json(outputs / "reports" / "general_rule_hardcoding_risk_audit.json"),
         "comprehensive_failure_fix_decision": _load_json(outputs / "reports" / "comprehensive_failure_fix_decision.json"),
+        "deterministic_prompt_type_audit": _load_json(outputs / "reports" / "deterministic_prompt_type_audit.json"),
+        "type_specific_deterministic_rule_candidates": _load_json(outputs / "reports" / "type_specific_deterministic_rule_candidates.json"),
+        "type_specific_deterministic_rule_trials": _load_json(outputs / "reports" / "type_specific_deterministic_rule_trials.json"),
+        "type_specific_rule_fix_decision": _load_json(outputs / "reports" / "type_specific_rule_fix_decision.json"),
         "confidence_calibration_audit": _load_json(outputs / "reports" / "confidence_calibration_audit.json"),
         "token_efficiency_audit": _load_json(outputs / "reports" / "token_efficiency_audit.json"),
         "end_to_end_system_dataflow": _load_json(visualizations / "end_to_end_system_dataflow.json"),
@@ -297,6 +307,7 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
         "evidence_aware_answer_synthesis": _evidence_answer_status(sources),
         "score_focused_core_path": _score_path_status(sources),
         "comprehensive_failure_analysis": _comprehensive_failure_status(sources),
+        "type_specific_deterministic_rules": _type_specific_rule_status(sources),
         "context7_documentation_grounded_audit": _context7_audit_status(sources),
         "source_reports": [
             "outputs/eval_results_strict.json",
@@ -316,6 +327,10 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
             "outputs/reports/general_deterministic_rule_candidates.md",
             "outputs/reports/general_rule_hardcoding_risk_audit.md",
             "outputs/reports/comprehensive_failure_fix_decision.md",
+            "outputs/reports/deterministic_prompt_type_audit.md",
+            "outputs/reports/type_specific_deterministic_rule_candidates.md",
+            "outputs/reports/type_specific_deterministic_rule_trials.md",
+            "outputs/reports/type_specific_rule_fix_decision.md",
         ],
     }
 
@@ -348,6 +363,7 @@ def build_llm_baseline_summary(config: Config, sources: dict[str, Any]) -> dict[
         "evidence_aware_answer_synthesis": _evidence_answer_status(sources),
         "score_focused_core_path": _score_path_status(sources),
         "comprehensive_failure_analysis": _comprehensive_failure_status(sources),
+        "type_specific_deterministic_rules": _type_specific_rule_status(sources),
         "source_reports": [
             "outputs/llm_sdk_backend_check.json",
             "outputs/llm_baseline_eval_report.json",
@@ -387,6 +403,7 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
         "evidence_aware_answer_synthesis": _evidence_answer_status(sources),
         "score_focused_core_path": _score_path_status(sources),
         "comprehensive_failure_analysis": _comprehensive_failure_status(sources),
+        "type_specific_deterministic_rules": _type_specific_rule_status(sources),
         "source_reports": [
             "outputs/autonomous_score_push_report.json",
             "outputs/autonomous_packaged_trial.json",
@@ -413,6 +430,10 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
             "outputs/reports/general_deterministic_rule_candidates.md",
             "outputs/reports/general_rule_hardcoding_risk_audit.md",
             "outputs/reports/comprehensive_failure_fix_decision.md",
+            "outputs/reports/deterministic_prompt_type_audit.md",
+            "outputs/reports/type_specific_deterministic_rule_candidates.md",
+            "outputs/reports/type_specific_deterministic_rule_trials.md",
+            "outputs/reports/type_specific_rule_fix_decision.md",
         ],
     }
 
@@ -589,6 +610,20 @@ def build_report_index(
                 }
             ),
         },
+        "type_specific_deterministic_rules": {
+            "prompt_type_audit_path": "outputs/reports/deterministic_prompt_type_audit.md",
+            "rule_candidates_path": "outputs/reports/type_specific_deterministic_rule_candidates.md",
+            "rule_trials_path": "outputs/reports/type_specific_deterministic_rule_trials.md",
+            "fix_decision_path": "outputs/reports/type_specific_rule_fix_decision.md",
+            **_type_specific_rule_status(
+                {
+                    "deterministic_prompt_type_audit": _load_json(config.outputs_dir / "reports" / "deterministic_prompt_type_audit.json"),
+                    "type_specific_deterministic_rule_candidates": _load_json(config.outputs_dir / "reports" / "type_specific_deterministic_rule_candidates.json"),
+                    "type_specific_deterministic_rule_trials": _load_json(config.outputs_dir / "reports" / "type_specific_deterministic_rule_trials.json"),
+                    "type_specific_rule_fix_decision": _load_json(config.outputs_dir / "reports" / "type_specific_rule_fix_decision.json"),
+                }
+            ),
+        },
         "live_adobe_api_readiness": {
             "audit_path": "outputs/reports/live_adobe_api_readiness_audit.md",
             "api_required_readiness_matrix_path": "outputs/reports/api_required_readiness_matrix.md",
@@ -741,6 +776,9 @@ def render_system_summary(payload: dict[str, Any]) -> str:
             f"official rows `{payload['comprehensive_failure_analysis'].get('official_rows_analyzed')}`; "
             f"generated prompts `{payload['comprehensive_failure_analysis'].get('generated_prompts_analyzed')}`; "
             f"runtime change applied: `{payload['comprehensive_failure_analysis'].get('runtime_change_applied')}`",
+            f"- Type-specific deterministic rules: `{payload['type_specific_deterministic_rules'].get('decision')}`; "
+            f"candidate families `{payload['type_specific_deterministic_rules'].get('candidate_count')}`; "
+            f"runtime change applied: `{payload['type_specific_deterministic_rules'].get('runtime_change_applied')}`",
             f"- Context7 docs audit: `{payload['context7_documentation_grounded_audit'].get('status')}`; "
             f"runtime change applied: `{payload['context7_documentation_grounded_audit'].get('code_changes_applied')}`",
             "",
@@ -814,6 +852,9 @@ def render_accuracy_summary(payload: dict[str, Any]) -> str:
             f"- Comprehensive failure analysis: `{payload['comprehensive_failure_analysis'].get('decision')}`; "
             f"rule candidates `{payload['comprehensive_failure_analysis'].get('candidate_count')}`; "
             f"runtime change applied `{payload['comprehensive_failure_analysis'].get('runtime_change_applied')}`",
+            f"- Type-specific deterministic rules: `{payload['type_specific_deterministic_rules'].get('decision')}`; "
+            f"candidate families `{payload['type_specific_deterministic_rules'].get('candidate_count')}`; "
+            f"runtime change applied `{payload['type_specific_deterministic_rules'].get('runtime_change_applied')}`",
             "",
             "## Why Changes Remain Shadow-Only",
             "",
@@ -911,6 +952,17 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.append(f"- Runtime change applied: `{comprehensive.get('runtime_change_applied')}`")
     lines.append(f"- Generated prompts used for: `{comprehensive.get('generated_prompts_used_for')}`")
     lines.append("- Official strict rows diagnose real score loss; generated prompts provide coverage/generalization evidence only.")
+    lines.extend(["", "## Type-Specific Deterministic Rules", ""])
+    type_rules = payload.get("type_specific_deterministic_rules", {})
+    lines.append(f"- Prompt-type audit: `{type_rules.get('prompt_type_audit_path')}`")
+    lines.append(f"- Rule candidates: `{type_rules.get('rule_candidates_path')}`")
+    lines.append(f"- Isolated trials: `{type_rules.get('rule_trials_path')}`")
+    lines.append(f"- Fix decision: `{type_rules.get('fix_decision_path')}`")
+    lines.append(f"- Decision: `{type_rules.get('decision')}`")
+    lines.append(f"- Candidate count: `{type_rules.get('candidate_count')}`")
+    lines.append(f"- Trial count: `{type_rules.get('trial_count')}`")
+    lines.append(f"- Runtime change applied: `{type_rules.get('runtime_change_applied')}`")
+    lines.append("- Rules are grouped by prompt type, domain, answer intent, execution need, and evidence shape.")
     lines.extend(["", "## Live Adobe API Readiness", ""])
     live = payload.get("live_adobe_api_readiness", {})
     lines.append(f"- Readiness audit: `{live.get('audit_path')}`")
@@ -1169,6 +1221,40 @@ def _comprehensive_failure_status(sources: dict[str, Any]) -> dict[str, Any]:
             "outputs/reports/cross_dataset_counterfactual_answer_sketches.md",
             "outputs/reports/general_rule_hardcoding_risk_audit.md",
             "outputs/reports/comprehensive_failure_fix_decision.md",
+        ],
+    }
+
+
+def _type_specific_rule_status(sources: dict[str, Any]) -> dict[str, Any]:
+    audit = sources.get("deterministic_prompt_type_audit") or {}
+    candidates = sources.get("type_specific_deterministic_rule_candidates") or {}
+    trials = sources.get("type_specific_deterministic_rule_trials") or {}
+    decision = sources.get("type_specific_rule_fix_decision") or {}
+    summary = trials.get("summary") or {}
+    return {
+        "prompt_type_audit_status": "complete" if audit.get("report_type") == "deterministic_prompt_type_audit" else "not_run",
+        "candidate_status": "complete" if candidates.get("report_type") == "type_specific_deterministic_rule_candidates" else "not_run",
+        "trial_status": "complete" if trials.get("report_type") == "type_specific_deterministic_rule_trials" else "not_run",
+        "decision_status": "complete" if decision.get("report_type") == "type_specific_rule_fix_decision" else "not_run",
+        "decision": decision.get("decision", "not_run"),
+        "official_row_count": audit.get("official_row_count"),
+        "generated_prompt_count": audit.get("generated_prompt_count"),
+        "bucket_count": (audit.get("summary") or {}).get("bucket_count"),
+        "fast_path_possible_buckets": (audit.get("summary") or {}).get("fast_path_possible_buckets"),
+        "candidate_count": len(candidates.get("candidates") or []),
+        "trial_count": len(trials.get("trial_reports") or []),
+        "best_rule_family": summary.get("best_rule_family"),
+        "best_strict_score_delta": summary.get("best_strict_score_delta"),
+        "total_api_dry_run_call_reduction": summary.get("total_api_dry_run_call_reduction"),
+        "safe_for_promotion_count": summary.get("safe_for_promotion_count"),
+        "runtime_change_applied": bool(decision.get("runtime_change_applied", trials.get("runtime_change_applied", False))),
+        "final_submission_changed": bool(decision.get("final_submission_changed", False)),
+        "generated_prompts_used_for": "generality_and_speed_evidence_only",
+        "source_reports": [
+            "outputs/reports/deterministic_prompt_type_audit.md",
+            "outputs/reports/type_specific_deterministic_rule_candidates.md",
+            "outputs/reports/type_specific_deterministic_rule_trials.md",
+            "outputs/reports/type_specific_rule_fix_decision.md",
         ],
     }
 
