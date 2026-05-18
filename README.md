@@ -592,12 +592,19 @@ python3 scripts/generate_project_mermaid_visualizations.py
 
 `generate_consolidated_reports.py` runs this workflow automatically. The diagrams must remain local, report-derived, and secret-safe: do not access `.env.local`, do not call external live services, and do not change runtime behavior to update a visualization.
 
+## DASHSys Project Skill
+
+Use this skill before any serious Codex change: [`skills/dashsys_project_skill/SKILL.md`](skills/dashsys_project_skill/SKILL.md).
+
+The Skill protects final submission and official eval artifacts, separates correctness from efficiency work, keeps generated prompts diagnostic-only, blocks live eval until the live_success guard allows it, forbids hardcoding, and requires strict validation before promotion. It is repo-local and does not auto-install into a user home directory.
+
 ## 17. Mandatory Post-Change Validation
 
 After every code, report, cleanup, visualization, or documentation change, run the full validation suite before calling the work complete:
 
 ```bash
 python3 -m pytest -q
+python3 scripts/audit_dashsys_project_skill.py
 python3 scripts/generate_end_to_end_system_dataflow.py
 python3 scripts/audit_workshop_requirements.py
 python3 scripts/run_dev_eval.py --strict

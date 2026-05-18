@@ -6,6 +6,7 @@ from pathlib import Path
 
 from dashagent.config import Config
 from scripts.audit_dashsys_project_skill import audit_dashsys_project_skill
+from scripts.generate_consolidated_reports import POST_CHANGE_VALIDATION_COMMANDS, REPORT_REGENERATION_TARGETS
 
 
 SKILL_DIR = Path("skills/dashsys_project_skill")
@@ -140,6 +141,11 @@ def test_dashsys_skill_files_have_no_secret_values_or_unsafe_instructions():
     )
     assert "hard-code query IDs" not in combined.replace("Never hard-code query IDs", "")
     assert "hard-code gold answers" not in combined.replace("gold answers", "")
+
+
+def test_consolidated_report_contract_includes_dashsys_skill_audit():
+    assert "python3 scripts/audit_dashsys_project_skill.py" in POST_CHANGE_VALIDATION_COMMANDS
+    assert "outputs/reports/dashsys_project_skill_audit.md/json" in REPORT_REGENERATION_TARGETS
 
 
 def tmp_project_with_skill_docs(config: Config) -> Config:

@@ -19,6 +19,7 @@ REPORTS_DIRNAME = "reports"
 
 POST_CHANGE_VALIDATION_COMMANDS = [
     "python3 -m pytest -q",
+    "python3 scripts/audit_dashsys_project_skill.py",
     "python3 scripts/generate_end_to_end_system_dataflow.py",
     "python3 scripts/audit_workshop_requirements.py",
     "python3 scripts/run_dev_eval.py --strict",
@@ -106,6 +107,7 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/sdk_tool_calling_promotion_preflight.md/json",
     "outputs/reports/sdk_tool_calling_promotion_plan.md/json",
     "outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md/json",
+    "outputs/reports/dashsys_project_skill_audit.md/json",
     "outputs/reports/confidence_calibration_audit.md/json",
     "outputs/reports/token_efficiency_audit.md/json",
     "outputs/reports/workflow_decision_map.md/json",
@@ -260,6 +262,7 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "sdk_tool_calling_promotion_preflight": _load_json(outputs / "reports" / "sdk_tool_calling_promotion_preflight.json"),
         "sdk_tool_calling_promotion_plan": _load_json(outputs / "reports" / "sdk_tool_calling_promotion_plan.json"),
         "sdk_tool_calling_efficiency_promotion_decision": _load_json(outputs / "reports" / "sdk_tool_calling_efficiency_promotion_decision.json"),
+        "dashsys_project_skill_audit": _load_json(outputs / "reports" / "dashsys_project_skill_audit.json"),
         "confidence_calibration_audit": _load_json(outputs / "reports" / "confidence_calibration_audit.json"),
         "token_efficiency_audit": _load_json(outputs / "reports" / "token_efficiency_audit.json"),
         "end_to_end_system_dataflow": _load_json(visualizations / "end_to_end_system_dataflow.json"),
@@ -337,6 +340,7 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
         "sdk_tool_calling_optimization": _sdk_tool_calling_optimization_status(sources),
         "correctness_efficiency_evaluation": _correctness_efficiency_status(sources),
         "sdk_tool_calling_efficiency_promotion": _sdk_tool_calling_efficiency_promotion_status(sources),
+        "dashsys_project_skill": _dashsys_project_skill_status(sources),
         "context7_documentation_grounded_audit": _context7_audit_status(sources),
         "source_reports": [
             "outputs/eval_results_strict.json",
@@ -369,6 +373,7 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
             "outputs/reports/correctness_efficiency_scorecard.md",
             "outputs/reports/correctness_efficiency_fix_decision.md",
             "outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md",
+            "outputs/reports/dashsys_project_skill_audit.md",
         ],
     }
 
@@ -660,6 +665,15 @@ def build_report_index(
                 }
             ),
         },
+        "dashsys_project_skill": {
+            "skill_path": "skills/dashsys_project_skill/SKILL.md",
+            "audit_path": "outputs/reports/dashsys_project_skill_audit.md",
+            **_dashsys_project_skill_status(
+                {
+                    "dashsys_project_skill_audit": _load_json(config.outputs_dir / "reports" / "dashsys_project_skill_audit.json"),
+                }
+            ),
+        },
         "context7_documentation_grounded_audit": {
             "preflight_path": "outputs/reports/context7_docs_audit_preflight.md",
             "docs_summary_path": "outputs/reports/context7_dependency_docs_summary.md",
@@ -836,6 +850,7 @@ def build_report_index(
             "sdk_tool_calling_optimization": system["sdk_tool_calling_optimization"].get("decision"),
             "correctness_efficiency_evaluation": system["correctness_efficiency_evaluation"].get("decision"),
             "sdk_tool_calling_efficiency_promotion": system["sdk_tool_calling_efficiency_promotion"].get("decision"),
+            "dashsys_project_skill": system["dashsys_project_skill"].get("overall_status"),
             "context7_docs_audit": system["context7_documentation_grounded_audit"].get("status"),
             "target_0_75_reached": accuracy["target_0_75_reached"],
         },
@@ -888,6 +903,8 @@ def render_system_summary(payload: dict[str, Any]) -> str:
             f"- SDK tool-calling efficiency promotion: `{payload['sdk_tool_calling_efficiency_promotion'].get('decision')}`; "
             f"promotion accepted: `{payload['sdk_tool_calling_efficiency_promotion'].get('promotion_accepted')}`; "
             f"direct HTTP hits: `{payload['sdk_tool_calling_efficiency_promotion'].get('direct_http_hits')}`",
+            f"- DASHSys Project Skill audit: `{payload['dashsys_project_skill'].get('overall_status')}`; "
+            f"runtime behavior changed: `{payload['dashsys_project_skill'].get('runtime_behavior_changed')}`",
             f"- Context7 docs audit: `{payload['context7_documentation_grounded_audit'].get('status')}`; "
             f"runtime change applied: `{payload['context7_documentation_grounded_audit'].get('code_changes_applied')}`",
             "",
@@ -1076,6 +1093,14 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.append(f"- Promotion accepted: `{sdk_promo.get('promotion_accepted')}`")
     lines.append(f"- Direct HTTP hits: `{sdk_promo.get('direct_http_hits')}`")
     lines.append("- This is a speed-only SDK/tool-call patch; SQL_FIRST_API_VERIFY remains the packaged default.")
+    lines.extend(["", "## DASHSys Project Skill", ""])
+    dashsys_skill = payload.get("dashsys_project_skill", {})
+    lines.append(f"- Skill: `{dashsys_skill.get('skill_path')}`")
+    lines.append(f"- Audit: `{dashsys_skill.get('audit_path')}`")
+    lines.append(f"- Overall status: `{dashsys_skill.get('overall_status')}`")
+    lines.append(f"- Runtime behavior changed: `{dashsys_skill.get('runtime_behavior_changed')}`")
+    lines.append(f"- Env local accessed: `{dashsys_skill.get('env_local_accessed')}`")
+    lines.append("- Use this repo-local Skill before serious Codex changes; it separates correctness, efficiency, live API, reporting, packaging, and security work.")
     lines.extend(["", "## Context7 Documentation-Grounded Audit", ""])
     context7 = payload.get("context7_documentation_grounded_audit", {})
     lines.append(f"- Preflight: `{context7.get('preflight_path')}`")
@@ -1505,6 +1530,21 @@ def _sdk_tool_calling_efficiency_promotion_status(sources: dict[str, Any]) -> di
             "outputs/reports/sdk_tool_calling_promotion_plan.md",
             "outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md",
         ],
+    }
+
+
+def _dashsys_project_skill_status(sources: dict[str, Any]) -> dict[str, Any]:
+    audit = sources.get("dashsys_project_skill_audit") or {}
+    return {
+        "overall_status": audit.get("overall_status", "unavailable"),
+        "skill_dir": audit.get("skill_dir", "skills/dashsys_project_skill"),
+        "runtime_behavior_changed": audit.get("runtime_behavior_changed", False),
+        "credentials_accessed": audit.get("credentials_accessed", False),
+        "env_local_accessed": audit.get("env_local_accessed", False),
+        "unsafe_live_eval_allowed": audit.get("unsafe_live_eval_allowed", False),
+        "mutating_adobe_calls_allowed": audit.get("mutating_adobe_calls_allowed", False),
+        "failed_checks": audit.get("failed_checks", []),
+        "source_reports": ["outputs/reports/dashsys_project_skill_audit.md"],
     }
 
 

@@ -369,6 +369,7 @@ Mandatory post-change validation after every code, report, cleanup, visualizatio
 
 ```bash
 python3 -m pytest -q
+python3 scripts/audit_dashsys_project_skill.py
 python3 scripts/generate_end_to_end_system_dataflow.py
 python3 scripts/audit_workshop_requirements.py
 python3 scripts/run_dev_eval.py --strict
@@ -416,6 +417,12 @@ rg -n "$SECRET_SCAN_PATTERN" . --glob '!.git/**' --glob '!.env.local' --glob '!*
 ```
 
 Update `README.md`, this file, report indices, and visualization indices when script names, canonical report paths, setup commands, validation commands, LLM provider behavior, or cleanup-linked paths change. Final responses must include files changed, reports generated, files deleted, validation commands/results, skipped commands and reasons, `check_submission_ready` status, secret scan status, and confirmations that packaged `SQL_FIRST_API_VERIFY` behavior and final submission format are unchanged.
+
+## DASHSys Project Skill
+
+Use this skill before any serious Codex change: `skills/dashsys_project_skill/SKILL.md`.
+
+The Skill protects final submission and official eval artifacts, distinguishes correctness vs efficiency work, keeps generated prompts diagnostic-only, blocks live eval until the live_success guard allows it, forbids hardcoding, and requires strict validation before promotion. It is repo-local; do not auto-copy it into a user home directory.
 
 ## Evaluation Expectations
 

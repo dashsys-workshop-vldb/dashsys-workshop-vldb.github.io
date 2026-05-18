@@ -21,6 +21,7 @@
 - SDK tool-calling optimization: `speed_only_shadow_candidates_no_promotion`; runtime change applied: `False`; direct HTTP hits: `0`
 - Correctness + efficiency evaluation: `speed_only_patch_needs_validation`; official overall score claim: `False`; runtime change applied: `False`
 - SDK tool-calling efficiency promotion: `promoted_speed_only_patch`; promotion accepted: `True`; direct HTTP hits: `0`
+- DASHSys Project Skill audit: `pass`; runtime behavior changed: `False`
 - Context7 docs audit: `complete`; runtime change applied: `False`
 
 ## Workflow
@@ -63,3 +64,4 @@
 - `outputs/reports/correctness_efficiency_scorecard.md`
 - `outputs/reports/correctness_efficiency_fix_decision.md`
 - `outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md`
+- `outputs/reports/dashsys_project_skill_audit.md`

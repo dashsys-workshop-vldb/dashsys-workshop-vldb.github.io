@@ -96,6 +96,15 @@ Start here. Most older generated reports were consolidated or removed.
 - Direct HTTP hits: `0`
 - This is a speed-only SDK/tool-call patch; SQL_FIRST_API_VERIFY remains the packaged default.
 
+## DASHSys Project Skill
+
+- Skill: `skills/dashsys_project_skill/SKILL.md`
+- Audit: `outputs/reports/dashsys_project_skill_audit.md`
+- Overall status: `pass`
+- Runtime behavior changed: `False`
+- Env local accessed: `False`
+- Use this repo-local Skill before serious Codex changes; it separates correctness, efficiency, live API, reporting, packaging, and security work.
+
 ## Context7 Documentation-Grounded Audit
 
 - Preflight: `outputs/reports/context7_docs_audit_preflight.md`
@@ -221,6 +230,7 @@ Skipped commands must record command, reason, substitute validation, and residua
 
 Required commands:
 - `python3 -m pytest -q`
+- `python3 scripts/audit_dashsys_project_skill.py`
 - `python3 scripts/generate_end_to_end_system_dataflow.py`
 - `python3 scripts/audit_workshop_requirements.py`
 - `python3 scripts/run_dev_eval.py --strict`
@@ -307,6 +317,7 @@ Regenerated report surfaces:
 - `outputs/reports/sdk_tool_calling_promotion_preflight.md/json`
 - `outputs/reports/sdk_tool_calling_promotion_plan.md/json`
 - `outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md/json`
+- `outputs/reports/dashsys_project_skill_audit.md/json`
 - `outputs/reports/confidence_calibration_audit.md/json`
 - `outputs/reports/token_efficiency_audit.md/json`
 - `outputs/reports/workflow_decision_map.md/json`
@@ -345,5 +356,6 @@ Regenerated report surfaces:
 - sdk_tool_calling_optimization: `speed_only_shadow_candidates_no_promotion`
 - correctness_efficiency_evaluation: `speed_only_patch_needs_validation`
 - sdk_tool_calling_efficiency_promotion: `promoted_speed_only_patch`
+- dashsys_project_skill: `pass`
 - context7_docs_audit: `complete`
 - target_0_75_reached: `False`
