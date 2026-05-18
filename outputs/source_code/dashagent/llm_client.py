@@ -53,6 +53,7 @@ class LLMClient:
         messages: list[dict[str, Any]],
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
+        parallel_tool_calls: bool | None = None,
     ) -> dict[str, Any]:
         raise NotImplementedError
 
@@ -91,6 +92,7 @@ class NoOpLLMClient(LLMClient):
         messages: list[dict[str, Any]],
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
+        parallel_tool_calls: bool | None = None,
     ) -> dict[str, Any]:
         return {
             "ok": False,
@@ -157,10 +159,11 @@ class OpenAILLMClient(LLMClient):
         messages: list[dict[str, Any]],
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
+        parallel_tool_calls: bool | None = None,
     ) -> dict[str, Any]:
         if not self.available():
             return NoOpLLMClient(reason=self.missing_key_reason, model=self.model).generate_messages(
-                messages, tools=tools, tool_choice=tool_choice
+                messages, tools=tools, tool_choice=tool_choice, parallel_tool_calls=parallel_tool_calls
             )
         payload: dict[str, Any] = {
             "model": self.model,
@@ -170,6 +173,8 @@ class OpenAILLMClient(LLMClient):
         }
         if tools:
             payload["tools"] = tools
+            if parallel_tool_calls is not None:
+                payload["parallel_tool_calls"] = bool(parallel_tool_calls)
         if tool_choice is not None:
             payload["tool_choice"] = tool_choice
         try:
@@ -314,10 +319,11 @@ class AnthropicLLMClient(LLMClient):
         messages: list[dict[str, Any]],
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
+        parallel_tool_calls: bool | None = None,
     ) -> dict[str, Any]:
         if not self.available():
             return NoOpLLMClient(reason=self.missing_key_reason, model=self.model).generate_messages(
-                messages, tools=tools, tool_choice=tool_choice
+                messages, tools=tools, tool_choice=tool_choice, parallel_tool_calls=parallel_tool_calls
             )
         payload = _anthropic_payload(
             messages,

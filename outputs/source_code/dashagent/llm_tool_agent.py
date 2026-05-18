@@ -4,6 +4,7 @@ import json
 import re
 import time
 import hashlib
+import inspect
 from collections import Counter
 from difflib import get_close_matches
 from typing import Any
@@ -17,7 +18,7 @@ from .config import Config
 from .db import DuckDBDatabase
 from .endpoint_catalog import EndpointCatalog
 from .llm_client import LLMClient, get_llm_client
-from .prompt_router import API_ONLY, LLM_DIRECT, route_prompt
+from .prompt_router import API_ONLY, API_REQUIRED, LLM_DIRECT, LOCAL_DB_ONLY, route_prompt
 from .schema_index import SchemaIndex
 from .trajectory import compact_preview, estimate_tokens, redact_secrets
 from .validators import APIValidator, SQLValidator
@@ -55,7 +56,7 @@ def run_real_llm_two_tools_baseline(
     route = route_prompt(query)
     data_driven_prompt = route.mode != LLM_DIRECT
 
-    tool_schemas = _baseline_tool_schemas()
+    tool_schemas = _allowed_tool_schemas_for_route(_baseline_tool_schemas(), route)
     schema_affordance = build_baseline_schema_affordance(schema_index) if guided else ""
     user_payload = {
         "query": query,
@@ -97,10 +98,10 @@ def run_real_llm_two_tools_baseline(
     start = time.perf_counter()
 
     for turn in range(max_turns):
-        tool_choice: str | dict[str, Any] | None = "auto"
+        tool_choice: str | dict[str, Any] | None = "auto" if tool_schemas else None
         if force_tool_retry:
             tool_choice = _forced_tool_choice(route.mode)
-        response = _call_llm_messages(client, messages, tools=tool_schemas, tool_choice=tool_choice)
+        response = _call_llm_messages(client, messages, tools=tool_schemas, tool_choice=tool_choice, parallel_tool_calls=False)
         force_tool_retry = False
         real_llm_called = True
         parsed = _parse_json(response.get("content", ""))
@@ -255,7 +256,7 @@ def run_real_llm_two_tools_baseline(
                     "content": "Now produce the final answer. Do not call more tools. Use only the evidence in the tool results.",
                 }
             )
-            response = _call_llm_messages(client, messages, tools=tool_schemas, tool_choice="none")
+            response = _call_llm_messages(client, messages, tools=tool_schemas, tool_choice="none", parallel_tool_calls=False)
             real_llm_called = True
             parsed = _parse_json(response.get("content", ""))
             final_answer = str(parsed.get("final_answer") or response.get("content") or "").strip()
@@ -472,6 +473,48 @@ def run_optimized_llm_controller_agent(
         correctness_role="grounds final answer in validated backend evidence",
         efficiency_role="one high-level backend call instead of free-form tool probing",
     )
+    completion = _controller_backend_answer_complete(query, backend)
+    if completion.get("complete"):
+        final_answer = str(backend.get("final_answer") or "")
+        trajectory = dict(backend.get("trajectory", {}))
+        checkpoints.add_checkpoint(
+            "checkpoint_llm_rewrite_skipped",
+            stage="llm rewrite gate",
+            technique="no rewrite when backend answer complete",
+            output={
+                "rewrite_skipped": True,
+                "reason": completion.get("reason"),
+                "required_signal": completion.get("required_signal"),
+            },
+            effect="saves the controller LLM turn when the backend answer already uses supported evidence",
+            correctness_role="keeps the deterministic backend answer unchanged",
+            efficiency_role="reduces LLM tokens and wall time in shadow/controller paths",
+        )
+        trajectory["llm_controller_checkpoints"] = checkpoints.to_list()
+        trajectory["final_answer"] = final_answer
+        trajectory["backend_type"] = _client_backend_type(client)
+        trajectory["transport"] = _client_backend_type(client)
+        trajectory["sdk_path_used"] = _client_sdk_path_used(client)
+        trajectory["llm_total_tokens"] = 0
+        trajectory["token_source"] = "rewrite_skipped_backend_complete"
+        trajectory["rewrite_skipped_reason"] = "backend_answer_complete"
+        return {
+            "mode": LLM_CONTROLLER_OPTIMIZED_AGENT,
+            "llm_provider": client.provider_name(),
+            "llm_model": client.model_name(),
+            "backend_type": _client_backend_type(client),
+            "transport": _client_backend_type(client),
+            "sdk_path_used": _client_sdk_path_used(client),
+            "backend_used": True,
+            "real_llm_used": False,
+            "rewrite_skipped_reason": "backend_answer_complete",
+            "final_answer": final_answer,
+            "evidence_summary": backend.get("tool_results_summary", {}),
+            "llm_total_tokens": 0,
+            "token_source": "rewrite_skipped_backend_complete",
+            "estimated_tokens": trajectory.get("estimated_tokens", estimate_tokens({"query": query, "answer": final_answer})),
+            "trajectory": trajectory,
+        }
     if not client.available():
         return _controller_fallback(query, client, route, checkpoints.to_list(), backend=backend)
     prompt = {
@@ -718,11 +761,11 @@ def _baseline_tool_schemas() -> list[dict[str, Any]]:
             "type": "function",
             "function": {
                 "name": "execute_sql",
-                "description": "Execute a read-only SQL query against the local DuckDB snapshot.",
+                "description": "Read-only DuckDB SQL over local data.",
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "sql": {"type": "string", "description": "Read-only DuckDB SQL query."}
+                        "sql": {"type": "string", "description": "Read-only SQL."}
                     },
                     "required": ["sql"],
                     "additionalProperties": False,
@@ -733,7 +776,7 @@ def _baseline_tool_schemas() -> list[dict[str, Any]]:
             "type": "function",
             "function": {
                 "name": "call_api",
-                "description": "Call an Adobe API endpoint using method, URL/path, params, and headers.",
+                "description": "GET Adobe REST endpoint when required.",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -750,18 +793,55 @@ def _baseline_tool_schemas() -> list[dict[str, Any]]:
     ]
 
 
+def _allowed_tool_schemas_for_route(
+    tools: list[dict[str, Any]],
+    route: Any,
+) -> list[dict[str, Any]]:
+    """Expose only the tools useful for a deterministic prompt route."""
+    by_name = {
+        tool.get("function", {}).get("name"): tool
+        for tool in tools
+        if isinstance(tool.get("function"), dict)
+    }
+    mode = getattr(route, "mode", None)
+    api_policy = getattr(route, "api_policy", None)
+    requires_database = bool(getattr(route, "requires_database", False))
+    requires_api = bool(getattr(route, "requires_api", False))
+    if mode == LLM_DIRECT:
+        return []
+    if mode == API_ONLY or (api_policy == API_REQUIRED and requires_api and not requires_database):
+        return [by_name["call_api"]] if "call_api" in by_name else []
+    if requires_database and not requires_api:
+        return [by_name["execute_sql"]] if "execute_sql" in by_name else []
+    if mode == LOCAL_DB_ONLY:
+        return [by_name["execute_sql"]] if "execute_sql" in by_name else []
+    return [tool for name, tool in (("execute_sql", by_name.get("execute_sql")), ("call_api", by_name.get("call_api"))) if tool]
+
+
 def _call_llm_messages(
     client: LLMClient,
     messages: list[dict[str, Any]],
     *,
     tools: list[dict[str, Any]] | None = None,
     tool_choice: str | dict[str, Any] | None = None,
+    parallel_tool_calls: bool | None = None,
 ) -> dict[str, Any]:
     if hasattr(client, "generate_messages"):
-        return client.generate_messages(messages, tools=tools, tool_choice=tool_choice)
+        kwargs: dict[str, Any] = {"tools": tools, "tool_choice": tool_choice}
+        if parallel_tool_calls is not None and _generate_messages_accepts(client, "parallel_tool_calls"):
+            kwargs["parallel_tool_calls"] = parallel_tool_calls
+        return client.generate_messages(messages, **kwargs)
     system_prompt = messages[0].get("content", "") if messages and messages[0].get("role") == "system" else ""
     user_prompt = "\n\n".join(str(message.get("content", "")) for message in messages if message.get("role") != "system")
     return client.generate(system_prompt, user_prompt, tools=tools)
+
+
+def _generate_messages_accepts(client: LLMClient, parameter: str) -> bool:
+    try:
+        signature = inspect.signature(client.generate_messages)
+    except (TypeError, ValueError):
+        return False
+    return parameter in signature.parameters
 
 
 def _usage_total_tokens(usage: Any) -> int | None:
@@ -861,19 +941,157 @@ def _assistant_tool_message(requested: list[dict[str, Any]], response: dict[str,
 
 
 def _tool_result_message(raw_call: dict[str, Any], executed: dict[str, Any]) -> dict[str, Any]:
-    payload = {
-        "ok": bool(executed.get("executed")),
-        "tool_name": executed.get("tool_name") or executed.get("tool"),
-        "validation_ok": executed.get("validation_ok"),
-        "result_preview": executed.get("result_preview"),
-        "error": executed.get("error"),
-    }
+    payload = _compact_llm_tool_result_summary(executed)
     return {
         "role": "tool",
         "tool_call_id": raw_call.get("id") or "call_1",
         "name": executed.get("tool_name") or executed.get("tool") or "unknown",
         "content": json.dumps(redact_secrets(payload), default=str),
     }
+
+
+def _compact_llm_tool_result_summary(executed: dict[str, Any]) -> dict[str, Any]:
+    preview = executed.get("result_preview") if isinstance(executed.get("result_preview"), dict) else {}
+    rows = preview.get("rows_preview")
+    if not isinstance(rows, list):
+        rows = []
+    key_fields = _result_key_fields(rows)
+    sample_values: dict[str, list[Any]] = {}
+    for field in key_fields[:8]:
+        values = []
+        for row in rows[:5]:
+            if isinstance(row, dict) and row.get(field) is not None:
+                values.append(row.get(field))
+        if values:
+            sample_values[field] = values[:3]
+    api_state = None
+    if executed.get("tool_name") == "call_api" or executed.get("tool") == "call_api":
+        api_state = "dry_run_unavailable" if preview.get("dry_run") else ("live_success" if preview.get("ok") else "api_error")
+    summary: dict[str, Any] = {
+        "ok": bool(executed.get("executed")),
+        "tool_name": executed.get("tool_name") or executed.get("tool"),
+        "validation_ok": executed.get("validation_ok"),
+        "evidence_type": "sql" if (executed.get("tool_name") or executed.get("tool")) == "execute_sql" else "api",
+        "row_count": preview.get("row_count") if isinstance(preview.get("row_count"), int) else len(rows),
+        "key_fields": key_fields,
+        "api_state": api_state,
+        "caveat": "dry_run_unavailable" if preview.get("dry_run") else None,
+        "status_code": preview.get("status_code"),
+        "error": executed.get("error") or preview.get("error"),
+    }
+    if sample_values:
+        summary["sample_values"] = sample_values
+    validation = executed.get("validation")
+    if isinstance(validation, dict) and validation.get("errors"):
+        summary["validation_errors"] = validation.get("errors")[:3]
+    return redact_secrets({key: value for key, value in summary.items() if value not in (None, "", [], {})})
+
+
+def _result_key_fields(rows: list[Any]) -> list[str]:
+    priority = ["count", "name", "id", "status", "state", "updated_at", "created_at", "timestamp", "date"]
+    seen: list[str] = []
+    for key in priority:
+        for row in rows:
+            if isinstance(row, dict) and key in row and key not in seen:
+                seen.append(key)
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        for key in row:
+            if key not in seen:
+                seen.append(str(key))
+            if len(seen) >= 12:
+                return seen
+    return seen
+
+
+def _controller_backend_answer_complete(query: str, backend: dict[str, Any]) -> dict[str, Any]:
+    answer = str(backend.get("final_answer") or "").strip()
+    if not answer:
+        return {"complete": False, "reason": "empty_backend_answer"}
+    tool_results = _controller_tool_results(backend)
+    verification = verify_answer_tool(query, answer, {"tool_results": tool_results})
+    if not verification.get("verifier_passed"):
+        return {"complete": False, "reason": "verifier_failed", "verification": verification}
+    required = _required_answer_signal(query, tool_results)
+    if required and not _answer_contains_required_signal(answer, required):
+        return {"complete": False, "reason": "missing_required_signal", "required_signal": required, "verification": verification}
+    return {"complete": True, "reason": "backend_answer_complete", "required_signal": required, "verification": verification}
+
+
+def _controller_tool_results(backend: dict[str, Any]) -> list[dict[str, Any]]:
+    direct = backend.get("tool_results")
+    if isinstance(direct, list):
+        return direct
+    trajectory = backend.get("trajectory") if isinstance(backend.get("trajectory"), dict) else {}
+    for key in ("tool_results", "steps"):
+        value = trajectory.get(key)
+        if isinstance(value, list):
+            return value
+    summary = backend.get("tool_results_summary")
+    if isinstance(summary, list):
+        return summary
+    return []
+
+
+def _required_answer_signal(query: str, tool_results: list[dict[str, Any]]) -> dict[str, Any] | None:
+    lowered = query.lower()
+    rows = _evidence_rows_from_tool_results(tool_results)
+    if not rows:
+        return None
+    if "how many" in lowered or "count" in lowered or "number of" in lowered:
+        counts = [str(row.get("count")) for row in rows if isinstance(row, dict) and row.get("count") is not None]
+        if counts:
+            return {"type": "count", "values": counts[:3]}
+    if any(token in lowered for token in ["status", "state"]):
+        statuses = [str(row.get(key)) for row in rows if isinstance(row, dict) for key in ("status", "state") if row.get(key) is not None]
+        if statuses:
+            return {"type": "status", "values": statuses[:3]}
+    if any(token in lowered for token in ["when", "timestamp", "date", "created", "updated"]):
+        timestamps = [
+            str(row.get(key))
+            for row in rows
+            if isinstance(row, dict)
+            for key in ("timestamp", "updated_at", "created_at", "date")
+            if row.get(key) is not None
+        ]
+        if timestamps:
+            return {"type": "timestamp", "values": timestamps[:3]}
+    if any(token in lowered for token in ["list", "show", "name", "id", "which"]):
+        values = [
+            str(row.get(key))
+            for row in rows
+            if isinstance(row, dict)
+            for key in ("name", "id")
+            if row.get(key) is not None
+        ]
+        if values:
+            return {"type": "name_or_id", "values": values[:5]}
+    return None
+
+
+def _evidence_rows_from_tool_results(tool_results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for result in tool_results:
+        payload = result.get("payload") if isinstance(result.get("payload"), dict) else {}
+        preview = result.get("result_preview") if isinstance(result.get("result_preview"), dict) else {}
+        for candidate in (payload.get("rows"), preview.get("rows_preview"), result.get("rows")):
+            if isinstance(candidate, list):
+                rows.extend(row for row in candidate if isinstance(row, dict))
+        if isinstance(payload.get("row"), dict):
+            rows.append(payload["row"])
+    return rows
+
+
+def _answer_contains_required_signal(answer: str, required: dict[str, Any]) -> bool:
+    lowered = answer.lower()
+    for value in required.get("values") or []:
+        text = str(value)
+        if text and text.lower() in lowered:
+            return True
+        if required.get("type") == "timestamp" and len(text) >= 10 and text[:10].lower() in lowered:
+            return True
+    return False
 
 
 def _execute_llm_tool_call(

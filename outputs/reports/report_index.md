@@ -85,6 +85,17 @@ Start here. Most older generated reports were consolidated or removed.
 - Runtime change applied: `False`
 - Correctness-only strict score is not treated as the full organizer evaluation picture.
 
+## SDK Tool Calling Efficiency Promotion
+
+- Preflight: `outputs/reports/sdk_tool_calling_promotion_preflight.md`
+- Plan: `outputs/reports/sdk_tool_calling_promotion_plan.md`
+- Decision: `outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md`
+- Decision status: `promoted_speed_only_patch`
+- Runtime change applied: `True`
+- Promotion accepted: `True`
+- Direct HTTP hits: `0`
+- This is a speed-only SDK/tool-call patch; SQL_FIRST_API_VERIFY remains the packaged default.
+
 ## Context7 Documentation-Grounded Audit
 
 - Preflight: `outputs/reports/context7_docs_audit_preflight.md`
@@ -230,6 +241,7 @@ Required commands:
 - `python3 scripts/run_sdk_tool_calling_optimization_audit.py`
 - `python3 scripts/run_sdk_tool_calling_optimization_trials.py`
 - `python3 scripts/run_correctness_efficiency_scorecard.py`
+- `python3 scripts/run_sdk_tool_calling_efficiency_promotion.py --validation-complete`
 - `python3 scripts/run_confidence_calibration_audit.py`
 - `python3 scripts/run_token_efficiency_audit.py`
 - `python3 scripts/check_llm_sdk_backend.py`
@@ -292,6 +304,9 @@ Regenerated report surfaces:
 - `outputs/reports/sdk_tool_calling_fix_decision.md/json`
 - `outputs/reports/correctness_efficiency_scorecard.md/json`
 - `outputs/reports/correctness_efficiency_fix_decision.md/json`
+- `outputs/reports/sdk_tool_calling_promotion_preflight.md/json`
+- `outputs/reports/sdk_tool_calling_promotion_plan.md/json`
+- `outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md/json`
 - `outputs/reports/confidence_calibration_audit.md/json`
 - `outputs/reports/token_efficiency_audit.md/json`
 - `outputs/reports/workflow_decision_map.md/json`
@@ -329,5 +344,6 @@ Regenerated report surfaces:
 - llm_recommendation: `keep_shadow_only`
 - sdk_tool_calling_optimization: `speed_only_shadow_candidates_no_promotion`
 - correctness_efficiency_evaluation: `speed_only_patch_needs_validation`
+- sdk_tool_calling_efficiency_promotion: `promoted_speed_only_patch`
 - context7_docs_audit: `complete`
 - target_0_75_reached: `False`

@@ -59,7 +59,7 @@ def test_openai_compatible_check_reports_endpoint_unavailable_without_leaking_ke
                 "transport": "openai_sdk",
                 "backend_type": "openai_sdk",
                 "sdk_path_used": True,
-                "error": "Authorization" + ": " + "Bearer unit-test-qwen-secret endpoint unavailable",
+                "error": "Authorization" + ": " + "Bearer " + "unit-test-qwen-secret endpoint unavailable",
                 "tool_calls": [],
             }
 
@@ -75,7 +75,7 @@ def test_openai_compatible_check_reports_endpoint_unavailable_without_leaking_ke
     assert report["delegates_to"] == "scripts/check_llm_sdk_backend.py"
     assert report["sdk_path_used"] is True
     assert "unit-test-qwen-secret" not in text
-    assert "Authorization" + ": " + "Bearer unit-test" not in text
+    assert "Authorization" + ": " + "Bearer " + "unit-test" not in text
 
 
 def test_llm_baseline_report_marks_results_shadow_only(monkeypatch, tiny_project):

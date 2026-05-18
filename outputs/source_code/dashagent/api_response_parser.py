@@ -194,6 +194,7 @@ def normalize_api_response(
     method: str | None = None,
     path: str | None = None,
     error: str | None = None,
+    error_category: str | None = None,
     malformed_response: bool = False,
     max_preview_chars: int = 1000,
 ) -> dict[str, Any]:
@@ -217,6 +218,7 @@ def normalize_api_response(
             "dry_run": True,
             "live_evidence_available": False,
             "evidence_state": "dry_run_unavailable",
+            "error_category": "dry_run_unavailable",
             "parser_mode": "dry_run_unavailable",
             "items": [],
             "ids": [],
@@ -236,6 +238,7 @@ def normalize_api_response(
             "dry_run": False,
             "live_evidence_available": False,
             "evidence_state": "malformed_response",
+            "error_category": "malformed_response",
             "parser_mode": "malformed_response",
             "items": [],
             "ids": [],
@@ -252,13 +255,15 @@ def normalize_api_response(
     if error:
         errors.append(error)
     if not ok:
+        state = error_category or "api_error"
         return {
             **identity,
             "ok": False,
             "dry_run": False,
             "live_evidence_available": False,
-            "evidence_state": "api_error",
-            "parser_mode": "api_error",
+            "evidence_state": state,
+            "error_category": state,
+            "parser_mode": state,
             "items": [],
             "ids": [],
             "names": [],
@@ -308,6 +313,7 @@ def normalize_api_response(
         "dry_run": False,
         "live_evidence_available": evidence_state == "live_evidence",
         "evidence_state": evidence_state,
+        "error_category": None,
         "parser_mode": parser_mode,
         "items": items,
         "ids": _dedupe(ids),

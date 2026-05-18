@@ -7,6 +7,6 @@
 - SDK direct HTTP hits: `0`
 - Tool calling supported: `True`
 - Runtime change allowed: `False`
-- Blocker: `False`
+- Blocker: `True`
 
 Protected artifacts remain outside this diagnostic pass.

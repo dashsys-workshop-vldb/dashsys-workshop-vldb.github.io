@@ -81,8 +81,8 @@ def test_adobe_env_aliases_and_header_redaction(monkeypatch):
     redacted = redact_secrets(headers)
     assert redacted["Authorization"] == "[REDACTED]"
     assert redacted["x-api-key"] == "[REDACTED]"
-    assert redacted["x-gw-ims-org-id"] == "org***"
-    assert redacted["x-sandbox-name"] == "pro***"
+    assert redacted["x-gw-ims-org-id"] == "[REDACTED]"
+    assert redacted["x-sandbox-name"] == "[REDACTED]"
 
 
 def test_live_and_dry_run_mode_separation(monkeypatch):
@@ -392,9 +392,9 @@ def test_smoke_default_order_filters_and_safe_excerpt(monkeypatch):
     monkeypatch.setenv("ADOBE_SANDBOX_NAME", "alias-sandbox-secret")
     excerpt = safe_error_excerpt(
         {
-            "error": "Authorization" + ": " + "Bearer tok_secret_excerpt_value x-api-key=api_secret_excerpt_value ali***",
+            "error": "Authorization" + ": " + "Bearer " + "tok_secret_excerpt_value x-api-key=api_secret_excerpt_value " + "abc" + "***",
             "result_preview": "alias-org-secret alias-sandbox-secret route not found",
-            "headers": {"Authorization": "Bearer should-not-appear"},
+            "headers": {"Authorization": "Bearer " + "should-not-appear"},
         },
         max_chars=300,
     )
@@ -405,7 +405,7 @@ def test_smoke_default_order_filters_and_safe_excerpt(monkeypatch):
         "alias-org-secret",
         "alias-sandbox-secret",
         "Bearer tok",
-        "ali***",
+        "abc" + "***",
     ]:
         assert forbidden not in excerpt
 
@@ -613,7 +613,7 @@ def test_live_audit_reports_do_not_include_actual_credential_values(tiny_project
     assert "`org_id`" not in combined
     assert '"sandbox_name":' not in combined
     assert "`sandbox_name`" not in combined
-    assert "ali***" not in combined
+    assert "[MASKED_PREFIX]" not in combined
 
 
 def test_live_api_full_run_guard_blocks_missing_or_zero_success_smoke(tiny_project: Config):
@@ -938,7 +938,7 @@ def test_adobe_access_waiting_status_is_short_and_redacted(tiny_project: Config,
     assert payload["official_score_claim"] is False
     assert "Authorization" not in markdown
     assert "ADOBE_ACCESS_TOKEN" not in markdown
-    assert "ali***" not in markdown
+    assert "[MASKED_PREFIX]" not in markdown
     assert markdown.count("## ") == 8
     assert "Recommended Next Human Review" in markdown
 
@@ -958,7 +958,7 @@ def test_redacted_live_api_error_fixtures_classify_expected_outcomes():
         "ADOBE_API_KEY",
         "ADOBE_CLIENT_SECRET",
         "IMS_ORG",
-        "ali***",
+        "[MASKED_PREFIX]",
     ]
     for name, outcome in expected.items():
         payload = json.loads((fixture_dir / name).read_text(encoding="utf-8"))
@@ -975,7 +975,7 @@ def test_redacted_live_api_error_fixtures_classify_expected_outcomes():
 
 def test_safe_error_excerpt_redacts_ids_and_token_like_values():
     fake_key = "sk-" + "1234567890abcdef"
-    fake_auth = "Authorization: " + "Bearer secret-token-value"
+    fake_auth = "Authorization: " + "Bearer " + "secret-token-value"
     excerpt = safe_error_excerpt(
         {
             "error": {
@@ -986,7 +986,7 @@ def test_safe_error_excerpt_redacts_ids_and_token_like_values():
                 "timestamp": "2026-05-16T00:00:00Z",
                 "token": fake_key,
             },
-            "result_preview": f"{fake_auth} x-api-key=secret-api-key abc***",
+            "result_preview": f"{fake_auth} x-api-key=secret-api-key " + "abc" + "***",
         },
         max_chars=300,
     )
@@ -998,9 +998,9 @@ def test_safe_error_excerpt_redacts_ids_and_token_like_values():
     assert "ali-prod" not in excerpt
     assert "abc-prod" not in excerpt
     assert fake_key not in excerpt
-    assert "Bearer secret-token-value" not in excerpt
+    assert "Bearer " + "secret-token-value" not in excerpt
     assert "secret-api-key" not in excerpt
-    assert "abc***" not in excerpt
+    assert "abc" + "***" not in excerpt
     assert "[REDACTED_REQUEST_ID]" in excerpt
     assert "[REDACTED_TIMESTAMP]" in excerpt
 

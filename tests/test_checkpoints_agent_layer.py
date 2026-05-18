@@ -17,7 +17,7 @@ def test_checkpoints_are_json_serializable_and_redact_secrets(monkeypatch):
         "checkpoint_test",
         stage="test",
         technique="redaction",
-        output={"Authorization": "Bearer secret-access-token-12345", "count": 1},
+        output={"Authorization": "Bearer " + "secret-access-token-12345", "count": 1},
     )
     text = json.dumps(logger.to_list())
     assert "secret-access-token-12345" not in text

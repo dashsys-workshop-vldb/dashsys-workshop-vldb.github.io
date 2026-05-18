@@ -20,6 +20,7 @@
 - Type-specific deterministic rules: `speed_only_candidate`; candidate families `8`; runtime change applied: `False`
 - SDK tool-calling optimization: `speed_only_shadow_candidates_no_promotion`; runtime change applied: `False`; direct HTTP hits: `0`
 - Correctness + efficiency evaluation: `speed_only_patch_needs_validation`; official overall score claim: `False`; runtime change applied: `False`
+- SDK tool-calling efficiency promotion: `promoted_speed_only_patch`; promotion accepted: `True`; direct HTTP hits: `0`
 - Context7 docs audit: `complete`; runtime change applied: `False`
 
 ## Workflow
@@ -61,3 +62,4 @@
 - `outputs/reports/sdk_tool_calling_fix_decision.md`
 - `outputs/reports/correctness_efficiency_scorecard.md`
 - `outputs/reports/correctness_efficiency_fix_decision.md`
+- `outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md`

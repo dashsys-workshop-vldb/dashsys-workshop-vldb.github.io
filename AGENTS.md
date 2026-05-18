@@ -173,9 +173,10 @@ Use the SDK tool-calling optimization audit for diagnostic-only LLM/tool-policy 
 ```bash
 python3 scripts/run_sdk_tool_calling_optimization_audit.py
 python3 scripts/run_sdk_tool_calling_optimization_trials.py
+python3 scripts/run_sdk_tool_calling_efficiency_promotion.py --validation-complete
 ```
 
-The audit writes `outputs/reports/sdk_tool_calling_optimization_preflight.md/json`, `outputs/reports/sdk_tool_call_surface_audit.md/json`, `outputs/reports/sdk_tool_call_decision_analysis.md/json`, `outputs/reports/sdk_tool_call_optimization_variants.md/json`, `outputs/reports/sdk_tool_calling_optimization_trials.md/json`, and `outputs/reports/sdk_tool_calling_fix_decision.md/json`. These reports are shadow-only and may evaluate compact tool schemas, allowed-tools-by-prompt-type policies, tool-choice policy, compact EvidenceBus-style tool results, and rewrite gates. Do not promote any SDK/tool-calling change unless strict score improves or speed/tool-call reduction has zero strict regression, hidden-style remains 48/48, `check_submission_ready.py` passes, direct LLM HTTP hits remain 0, unsupported claims do not increase, and final-submission format stays unchanged.
+The audit writes `outputs/reports/sdk_tool_calling_optimization_preflight.md/json`, `outputs/reports/sdk_tool_call_surface_audit.md/json`, `outputs/reports/sdk_tool_call_decision_analysis.md/json`, `outputs/reports/sdk_tool_call_optimization_variants.md/json`, `outputs/reports/sdk_tool_calling_optimization_trials.md/json`, and `outputs/reports/sdk_tool_calling_fix_decision.md/json`. The efficiency promotion writes `outputs/reports/sdk_tool_calling_promotion_preflight.md/json`, `outputs/reports/sdk_tool_calling_promotion_plan.md/json`, and `outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md/json`. A speed-only SDK/tool-calling patch may be promoted only after strict score improves or stays unchanged, hidden-style remains 48/48, `check_submission_ready.py` passes, direct LLM HTTP hits remain 0, unsupported claims do not increase, and final-submission format stays unchanged. This is not a broad LLM controller, semantic router, answer rewrite, or packaged-strategy promotion.
 
 ## Context7 Documentation-Grounded Audit
 

@@ -4,7 +4,7 @@ Metrics below are copied from current reports. Missing values are `unavailable`.
 
 | Technique | Status | Promoted? | Strict Δ | Correctness Δ | Answer Δ | SQL Δ | API Δ | Token Δ | Runtime Δ | Tool Δ | Hidden-style impact | Recommendation |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| SQL_FIRST_API_VERIFY packaged strategy | promoted_default | True | 0.0 | 0.0 | 0.3199 | 0.9333 | 0.9791 | 834.6 | 0.012 | 1.4571 | 48/48 hidden-style in current report | current safe default |
+| SQL_FIRST_API_VERIFY packaged strategy | promoted_default | True | 0.0 | 0.0 | 0.3199 | 0.9333 | 0.9791 | 834.6 | 0.0123 | 1.4571 | 48/48 hidden-style in current report | current safe default |
 | official-token reduction | promoted_default | True | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | 48/48 maintained | promoted_keep_enabled |
 | supportable answer rewrite | shadow_only | False | -0.0001 | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | no packaged effect | safe_for_autonomous_packaged_trial |
 | evidence-aware answer candidates | shadow_only | False | -0.0059 | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | no packaged effect | safe_for_autonomous_packaged_trial |

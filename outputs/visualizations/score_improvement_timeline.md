@@ -2,8 +2,8 @@
 
 | Milestone | Score before | Score after | Score Δ | Changed | Promoted? | Why it mattered |
 | --- | --- | --- | --- | --- | --- | --- |
-| initial baseline | unavailable | 0.459 | unavailable | LLM-free baseline comparison | False | Baseline only; not packaged. |
-| SQL/API template improvements | unavailable | 0.6518 | unavailable | Reusable SQL/API templates and deterministic metadata path | False | Competitive but not preferred due to cost/risk tradeoff. |
+| initial baseline | unavailable | 0.4589 | unavailable | LLM-free baseline comparison | False | Baseline only; not packaged. |
+| SQL/API template improvements | unavailable | 0.6517 | unavailable | Reusable SQL/API templates and deterministic metadata path | False | Competitive but not preferred due to cost/risk tradeoff. |
 | SQL_FIRST_API_VERIFY selection | unavailable | 0.6553 | unavailable | SQL-first grounding with API verification | True | Current preferred packaged strategy. |
 | official-token reduction promotion | unavailable | unavailable | unavailable | Official token reduction enabled | True | unavailable |
 | supportable answer rewrite | 0.6553 | 0.6552 | -0.0001 | Evidence-cited answer-only rewrite candidates | False | safe_for_autonomous_packaged_trial |

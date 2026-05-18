@@ -260,7 +260,7 @@ def _build_surface_audit(sources: dict[str, Any], inspected_sources: dict[str, A
             "openai_parallel_tool_calls",
             "openai_compatible",
             "aligned" if "parallel_tool_calls" in llm_client or "parallel_tool_calls" in llm_tool_agent else "parallel_calls_uncontrolled",
-            "No explicit parallel tool-call control was found in the SDK payload path.",
+            "OpenAI-compatible SDK payloads can explicitly disable parallel tool calls in deterministic SDK-tool paths.",
             ["dashagent/llm_client.py", "dashagent/llm_tool_agent.py"],
         )
     )
@@ -316,8 +316,8 @@ def _build_surface_audit(sources: dict[str, Any], inspected_sources: dict[str, A
         _issue(
             "two_tools_always_available_baseline",
             "all_providers",
-            "unnecessary_tool_available",
-            "The two-tool LLM baseline exposes execute_sql and call_api together; prompt-type pruning is trial-only.",
+            "aligned" if "_allowed_tool_schemas_for_route" in llm_tool_agent else "unnecessary_tool_available",
+            "The two-tool LLM baseline prunes exposed tools by deterministic prompt route before SDK calls.",
             ["dashagent/llm_tool_agent.py"],
         )
     )
@@ -325,8 +325,8 @@ def _build_surface_audit(sources: dict[str, Any], inspected_sources: dict[str, A
         _issue(
             "tool_result_message_size",
             "all_providers",
-            "tool_result_too_verbose" if "result_preview" in llm_tool_agent else "no_action",
-            "Tool results expose preview/error state; compact EvidenceBus summaries may reduce token use in shadow trials.",
+            "aligned" if "_compact_llm_tool_result_summary" in llm_tool_agent else "tool_result_too_verbose",
+            "Native tool-result messages use compact EvidenceBus-style summaries instead of raw previews.",
             ["dashagent/llm_tool_agent.py"],
         )
     )

@@ -19,6 +19,7 @@
 - Type-specific deterministic rules: `speed_only_candidate`; candidate families `8`; runtime change applied `False`
 - SDK tool-calling optimization: `speed_only_shadow_candidates_no_promotion`; best projected strict delta `0.0`; runtime change applied `False`
 - Correctness + efficiency evaluation: `speed_only_patch_needs_validation`; best candidate `compact_tool_schema`; runtime change applied `False`
+- SDK tool-calling efficiency promotion: `promoted_speed_only_patch`; promotion accepted `True`; runtime change applied `True`
 
 ## Why Changes Remain Shadow-Only
 

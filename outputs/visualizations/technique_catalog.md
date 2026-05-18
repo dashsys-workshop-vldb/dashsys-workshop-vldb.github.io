@@ -420,7 +420,7 @@ Every technique below is tied to source artifacts. Missing measurements are mark
 | SQL Δ | 0.9333 |
 | API Δ | 0.9791 |
 | Token Δ | 834.6 |
-| Runtime Δ | 0.012 |
+| Runtime Δ | 0.0123 |
 | Tool Δ | 1.4571 |
 | Hidden-style impact | Hidden-style 48/48 in current report. |
 | Safety notes | Preferred packaged strategy. |

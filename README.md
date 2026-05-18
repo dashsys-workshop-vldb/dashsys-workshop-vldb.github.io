@@ -301,9 +301,10 @@ Use the SDK tool-calling optimization audit for shadow-only analysis of LLM tool
 ```bash
 python3 scripts/run_sdk_tool_calling_optimization_audit.py
 python3 scripts/run_sdk_tool_calling_optimization_trials.py
+python3 scripts/run_sdk_tool_calling_efficiency_promotion.py --validation-complete
 ```
 
-The reports are `outputs/reports/sdk_tool_calling_optimization_preflight.md/json`, `outputs/reports/sdk_tool_call_surface_audit.md/json`, `outputs/reports/sdk_tool_call_decision_analysis.md/json`, `outputs/reports/sdk_tool_call_optimization_variants.md/json`, `outputs/reports/sdk_tool_calling_optimization_trials.md/json`, and `outputs/reports/sdk_tool_calling_fix_decision.md/json`. Current trials are diagnostic-only: direct LLM HTTP hits remain `0`, generated prompts remain diagnostic-only, speed candidates remain shadow-only, and no runtime change is promoted without strict/hidden-style/submission no-regression validation.
+The audit reports are `outputs/reports/sdk_tool_calling_optimization_preflight.md/json`, `outputs/reports/sdk_tool_call_surface_audit.md/json`, `outputs/reports/sdk_tool_call_decision_analysis.md/json`, `outputs/reports/sdk_tool_call_optimization_variants.md/json`, `outputs/reports/sdk_tool_calling_optimization_trials.md/json`, and `outputs/reports/sdk_tool_calling_fix_decision.md/json`. The promotion reports are `outputs/reports/sdk_tool_calling_promotion_preflight.md/json`, `outputs/reports/sdk_tool_calling_promotion_plan.md/json`, and `outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md/json`. A small speed-only SDK tool-call patch is promoted only after strict score stays unchanged, hidden-style remains 48/48, `check_submission_ready.py` passes, SDK direct HTTP hits remain `0`, and final-submission format stays unchanged. This does not replace `SQL_FIRST_API_VERIFY` or broadly promote the LLM controller/semantic router/answer rewrite paths.
 
 ## 3.11 Correctness + Efficiency Evaluation
 

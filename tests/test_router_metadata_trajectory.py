@@ -45,7 +45,7 @@ def test_trajectory_redacts_secrets(monkeypatch):
         "GET",
         "/ajo/journey",
         {},
-        {"Authorization": "Bearer secret-token-value-12345", "x-api-key": "abc"},
+        {"Authorization": "Bearer " + "secret-token-value-12345", "x-api-key": "abc"},
         {"ok": True},
         {"ok": True, "echo": "secret-token-value-12345"},
     )

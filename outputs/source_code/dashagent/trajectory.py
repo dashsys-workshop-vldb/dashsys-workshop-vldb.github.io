@@ -49,14 +49,9 @@ def redact_value(key: str, value: Any) -> Any:
 
 
 def mask_metadata_value(value: Any) -> Any:
-    if not isinstance(value, str):
-        return "[MASKED]" if value is not None else value
-    if not value:
+    if value is None:
         return value
-    clean = value.strip()
-    if len(clean) <= 4:
-        return "[MASKED]"
-    return f"{clean[:3]}***"
+    return "[REDACTED]"
 
 
 def redact_secrets(obj: Any) -> Any:

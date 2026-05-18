@@ -17,13 +17,10 @@
     "all_providers"
   ],
   "classification_counts": {
-    "aligned": 8,
-    "parallel_calls_uncontrolled": 1,
-    "tool_result_too_verbose": 1,
-    "unnecessary_tool_available": 1
+    "aligned": 11
   },
   "diagnostic_only": true,
-  "generated_at": "2026-05-18T12:30:10+00:00",
+  "generated_at": "2026-05-18T13:43:49+00:00",
   "issues": [
     {
       "area": "openai_compatible",
@@ -49,9 +46,9 @@
     },
     {
       "area": "openai_compatible",
-      "classification": "parallel_calls_uncontrolled",
-      "code_audit_needed": true,
-      "finding": "No explicit parallel tool-call control was found in the SDK payload path.",
+      "classification": "aligned",
+      "code_audit_needed": false,
+      "finding": "OpenAI-compatible SDK payloads can explicitly disable parallel tool calls in deterministic SDK-tool paths.",
       "issue_id": "openai_parallel_tool_calls",
       "repo_files": [
         "dashagent/llm_client.py",
@@ -118,9 +115,9 @@
     },
     {
       "area": "all_providers",
-      "classification": "unnecessary_tool_available",
-      "code_audit_needed": true,
-      "finding": "The two-tool LLM baseline exposes execute_sql and call_api together; prompt-type pruning is trial-only.",
+      "classification": "aligned",
+      "code_audit_needed": false,
+      "finding": "The two-tool LLM baseline prunes exposed tools by deterministic prompt route before SDK calls.",
       "issue_id": "two_tools_always_available_baseline",
       "repo_files": [
         "dashagent/llm_tool_agent.py"
@@ -129,9 +126,9 @@
     },
     {
       "area": "all_providers",
-      "classification": "tool_result_too_verbose",
-      "code_audit_needed": true,
-      "finding": "Tool results expose preview/error state; compact EvidenceBus summaries may reduce token use in shadow trials.",
+      "classification": "aligned",
+      "code_audit_needed": false,
+      "finding": "Native tool-result messages use compact EvidenceBus-style summaries instead of raw previews.",
       "issue_id": "tool_result_message_size",
       "repo_files": [
         "dashagent/llm_tool_agent.py"
