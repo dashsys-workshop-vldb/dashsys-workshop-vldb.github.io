@@ -1,0 +1,164 @@
+{
+  "default_decision": "trial_only_no_runtime_change",
+  "diagnostic_only": true,
+  "generated_at": "2026-05-18T12:30:10+00:00",
+  "official_score_claim": false,
+  "promotion_allowed": false,
+  "promotion_gate": [
+    "strict score improves or speed/tool-call reduction has zero strict regression",
+    "hidden-style remains 48/48 if runtime changes are made",
+    "check_submission_ready passes",
+    "SDK direct HTTP hits remain 0",
+    "unsupported claims do not increase",
+    "no high-scoring official rows regress",
+    "no live API assumption while live_success_count=0",
+    "no hardcoding",
+    "final submission format unchanged"
+  ],
+  "report_type": "sdk_tool_call_optimization_variants",
+  "variants": [
+    {
+      "affected_rows_or_signals": 0,
+      "description": "Reduce tool descriptions/schema wording while preserving required parameters.",
+      "expected_impact": "token input reduction",
+      "implementation_scope": "scripts/run_sdk_tool_calling_optimization_trials.py",
+      "promotion_status": "trial_only",
+      "risk": "low",
+      "runtime_change_applied": false,
+      "test_requirements": [
+        "tool schema compression preserves required parameters"
+      ],
+      "trigger_signals": [
+        "baseline_tool_schema_size"
+      ],
+      "variant_id": "compact_tool_schema"
+    },
+    {
+      "affected_rows_or_signals": 4,
+      "description": "Expose only tools needed by deterministic prompt type in shadow/controller trials.",
+      "expected_impact": "tool-call reduction",
+      "implementation_scope": "shadow controller policy only",
+      "promotion_status": "trial_only",
+      "risk": "medium",
+      "runtime_change_applied": false,
+      "test_requirements": [
+        "SQL-only prompt exposes SQL/no API in simulation",
+        "API_REQUIRED prompts keep API available"
+      ],
+      "trigger_signals": [
+        "no_tool_needed",
+        "unnecessary_tool_available"
+      ],
+      "variant_id": "allowed_tools_by_prompt_type"
+    },
+    {
+      "affected_rows_or_signals": 2,
+      "description": "Select no-tools, allowed-tools, or forced-SQL policy by deterministic route evidence.",
+      "expected_impact": "tool-call stability",
+      "implementation_scope": "shadow tool policy",
+      "promotion_status": "trial_only",
+      "risk": "medium",
+      "runtime_change_applied": false,
+      "test_requirements": [
+        "forced SQL only for SQL-answerable evidence",
+        "no forced API while live_success_count=0"
+      ],
+      "trigger_signals": [
+        "tool_choice",
+        "route_type",
+        "answer_intent"
+      ],
+      "variant_id": "tool_choice_policy"
+    },
+    {
+      "affected_rows_or_signals": 1,
+      "description": "Set or simulate parallel_tool_calls=false where supported.",
+      "expected_impact": "stability",
+      "implementation_scope": "SDK payload guard",
+      "promotion_status": "trial_only",
+      "risk": "low",
+      "runtime_change_applied": false,
+      "test_requirements": [
+        "provider payload does not break when flag unsupported",
+        "strict score no-regression if applied"
+      ],
+      "trigger_signals": [
+        "parallel_calls_uncontrolled"
+      ],
+      "variant_id": "disable_parallel_tool_calls"
+    },
+    {
+      "affected_rows_or_signals": 1,
+      "description": "Summarize tool outputs as EvidenceBus fields instead of verbose raw previews.",
+      "expected_impact": "token output reduction",
+      "implementation_scope": "tool result formatter",
+      "promotion_status": "trial_only",
+      "risk": "low",
+      "runtime_change_applied": false,
+      "test_requirements": [
+        "count/name/status/timestamp fields preserved",
+        "API state preserved"
+      ],
+      "trigger_signals": [
+        "tool_result_too_verbose"
+      ],
+      "variant_id": "compact_tool_result_evidence_summary"
+    },
+    {
+      "affected_rows_or_signals": 0,
+      "description": "Allow rewrite only when backend answer is incomplete, evidence exists, and faithfulness passes.",
+      "expected_impact": "unsupported claim reduction",
+      "implementation_scope": "answer rewrite trial gate",
+      "promotion_status": "trial_only",
+      "risk": "medium",
+      "runtime_change_applied": false,
+      "test_requirements": [
+        "complete backend answer skips rewrite",
+        "unsupported facts block rewrite"
+      ],
+      "trigger_signals": [
+        "LLM_rewrite_hurt",
+        "backend_complete"
+      ],
+      "variant_id": "rewrite_gate_strict"
+    },
+    {
+      "affected_rows_or_signals": 2,
+      "description": "Skip LLM rewrite when backend answer already contains required evidence fields.",
+      "expected_impact": "runtime/token reduction",
+      "implementation_scope": "answer rewrite gate",
+      "promotion_status": "trial_only",
+      "risk": "low",
+      "runtime_change_applied": false,
+      "test_requirements": [
+        "backend_complete true skips rewrite",
+        "incomplete answer may still be trialed"
+      ],
+      "trigger_signals": [
+        "backend_complete",
+        "required evidence present"
+      ],
+      "variant_id": "no_rewrite_when_backend_complete"
+    },
+    {
+      "affected_rows_or_signals": 3,
+      "description": "Combine safe schema compression, compact evidence summary, and strict rewrite gating in shadow replay.",
+      "expected_impact": "combined token/tool reduction",
+      "implementation_scope": "shadow-only combined trial",
+      "promotion_status": "trial_only",
+      "risk": "medium",
+      "runtime_change_applied": false,
+      "test_requirements": [
+        "isolated output root",
+        "no official artifact overwrite",
+        "no final submission write"
+      ],
+      "trigger_signals": [
+        "compact_tool_schema",
+        "compact_tool_result_evidence_summary",
+        "rewrite_gate_strict"
+      ],
+      "variant_id": "combined_safe_tool_policy"
+    }
+  ]
+}

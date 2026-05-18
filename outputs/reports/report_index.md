@@ -61,6 +61,19 @@ Start here. Most older generated reports were consolidated or removed.
 - `outputs/reports/sdk_usage_audit.md`
 - Runtime LLM direct HTTP hits: `0`
 
+## SDK Tool Calling Optimization
+
+- Preflight: `outputs/reports/sdk_tool_calling_optimization_preflight.md`
+- Tool-call surface audit: `outputs/reports/sdk_tool_call_surface_audit.md`
+- Decision analysis: `outputs/reports/sdk_tool_call_decision_analysis.md`
+- Variants: `outputs/reports/sdk_tool_call_optimization_variants.md`
+- Isolated trials: `outputs/reports/sdk_tool_calling_optimization_trials.md`
+- Fix decision: `outputs/reports/sdk_tool_calling_fix_decision.md`
+- Decision: `speed_only_shadow_candidates_no_promotion`
+- Runtime change applied: `False`
+- Direct HTTP hits: `0`
+- These reports are shadow-only SDK/tool-call policy analysis; SQL_FIRST_API_VERIFY remains packaged default.
+
 ## Context7 Documentation-Grounded Audit
 
 - Preflight: `outputs/reports/context7_docs_audit_preflight.md`
@@ -203,6 +216,8 @@ Required commands:
 - `python3 scripts/run_comprehensive_failure_analysis.py`
 - `python3 scripts/run_deterministic_prompt_type_audit.py`
 - `python3 scripts/run_type_specific_deterministic_rule_trials.py`
+- `python3 scripts/run_sdk_tool_calling_optimization_audit.py`
+- `python3 scripts/run_sdk_tool_calling_optimization_trials.py`
 - `python3 scripts/run_confidence_calibration_audit.py`
 - `python3 scripts/run_token_efficiency_audit.py`
 - `python3 scripts/check_llm_sdk_backend.py`
@@ -257,6 +272,12 @@ Regenerated report surfaces:
 - `outputs/reports/type_specific_deterministic_rule_candidates.md/json`
 - `outputs/reports/type_specific_deterministic_rule_trials.md/json`
 - `outputs/reports/type_specific_rule_fix_decision.md/json`
+- `outputs/reports/sdk_tool_calling_optimization_preflight.md/json`
+- `outputs/reports/sdk_tool_call_surface_audit.md/json`
+- `outputs/reports/sdk_tool_call_decision_analysis.md/json`
+- `outputs/reports/sdk_tool_call_optimization_variants.md/json`
+- `outputs/reports/sdk_tool_calling_optimization_trials.md/json`
+- `outputs/reports/sdk_tool_calling_fix_decision.md/json`
 - `outputs/reports/confidence_calibration_audit.md/json`
 - `outputs/reports/token_efficiency_audit.md/json`
 - `outputs/reports/workflow_decision_map.md/json`
@@ -292,5 +313,6 @@ Regenerated report surfaces:
 - live_adobe_api_readiness: `warning`
 - evidence_aware_answer_synthesis: `keep_trial_only`
 - llm_recommendation: `keep_shadow_only`
+- sdk_tool_calling_optimization: `speed_only_shadow_candidates_no_promotion`
 - context7_docs_audit: `complete`
 - target_0_75_reached: `False`

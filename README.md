@@ -294,6 +294,17 @@ python3 scripts/run_type_specific_deterministic_rule_trials.py
 
 The outputs are `outputs/reports/deterministic_prompt_type_audit.md/json`, `outputs/reports/type_specific_deterministic_rule_candidates.md/json`, `outputs/reports/type_specific_deterministic_rule_trials.md/json`, and `outputs/reports/type_specific_rule_fix_decision.md/json`. These reports are diagnostic and isolated: generated prompts are used only for generality/speed evidence, official rows remain the score evidence, and no runtime rule is promoted unless a later implementation pass proves strict/hidden-style/submission safety. Current type-specific trials identify speed-only candidates but keep `runtime_change_applied=false`.
 
+## 3.10 SDK Tool Calling Optimization Audit
+
+Use the SDK tool-calling optimization audit for shadow-only analysis of LLM tool policy, schema compactness, tool-result verbosity, and rewrite gates. It does not replace `SQL_FIRST_API_VERIFY`, does not run live Adobe API calls, and must not overwrite strict eval or final-submission artifacts.
+
+```bash
+python3 scripts/run_sdk_tool_calling_optimization_audit.py
+python3 scripts/run_sdk_tool_calling_optimization_trials.py
+```
+
+The reports are `outputs/reports/sdk_tool_calling_optimization_preflight.md/json`, `outputs/reports/sdk_tool_call_surface_audit.md/json`, `outputs/reports/sdk_tool_call_decision_analysis.md/json`, `outputs/reports/sdk_tool_call_optimization_variants.md/json`, `outputs/reports/sdk_tool_calling_optimization_trials.md/json`, and `outputs/reports/sdk_tool_calling_fix_decision.md/json`. Current trials are diagnostic-only: direct LLM HTTP hits remain `0`, generated prompts remain diagnostic-only, speed candidates remain shadow-only, and no runtime change is promoted without strict/hidden-style/submission no-regression validation.
+
 ## 4. Prompt Routing Policy
 
 The first decision is whether the prompt needs evidence:

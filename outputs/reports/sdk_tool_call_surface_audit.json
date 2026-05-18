@@ -1,0 +1,163 @@
+{
+  "allowed_classifications": [
+    "aligned",
+    "schema_too_large",
+    "ambiguous_tool_description",
+    "unnecessary_tool_available",
+    "missing_tool_choice_control",
+    "parallel_calls_uncontrolled",
+    "tool_result_too_verbose",
+    "provider_normalization_gap",
+    "usage_metadata_gap",
+    "no_action"
+  ],
+  "audited_areas": [
+    "openai_compatible",
+    "anthropic",
+    "all_providers"
+  ],
+  "classification_counts": {
+    "aligned": 8,
+    "parallel_calls_uncontrolled": 1,
+    "tool_result_too_verbose": 1,
+    "unnecessary_tool_available": 1
+  },
+  "diagnostic_only": true,
+  "generated_at": "2026-05-18T12:30:10+00:00",
+  "issues": [
+    {
+      "area": "openai_compatible",
+      "classification": "aligned",
+      "code_audit_needed": false,
+      "finding": "OpenAI-compatible calls are routed through the OpenAI SDK client.",
+      "issue_id": "openai_sdk_client",
+      "repo_files": [
+        "dashagent/llm_client.py"
+      ],
+      "runtime_change_recommended": false
+    },
+    {
+      "area": "openai_compatible",
+      "classification": "aligned",
+      "code_audit_needed": false,
+      "finding": "Tool choice is accepted by the shared generate_messages path.",
+      "issue_id": "openai_tool_choice",
+      "repo_files": [
+        "dashagent/llm_client.py"
+      ],
+      "runtime_change_recommended": false
+    },
+    {
+      "area": "openai_compatible",
+      "classification": "parallel_calls_uncontrolled",
+      "code_audit_needed": true,
+      "finding": "No explicit parallel tool-call control was found in the SDK payload path.",
+      "issue_id": "openai_parallel_tool_calls",
+      "repo_files": [
+        "dashagent/llm_client.py",
+        "dashagent/llm_tool_agent.py"
+      ],
+      "runtime_change_recommended": false
+    },
+    {
+      "area": "openai_compatible",
+      "classification": "aligned",
+      "code_audit_needed": false,
+      "finding": "Usage metadata is read defensively when the SDK response contains it.",
+      "issue_id": "openai_usage_metadata",
+      "repo_files": [
+        "dashagent/llm_client.py"
+      ],
+      "runtime_change_recommended": false
+    },
+    {
+      "area": "anthropic",
+      "classification": "aligned",
+      "code_audit_needed": false,
+      "finding": "Anthropic calls are routed through the Anthropic SDK client.",
+      "issue_id": "anthropic_sdk_client",
+      "repo_files": [
+        "dashagent/llm_client.py"
+      ],
+      "runtime_change_recommended": false
+    },
+    {
+      "area": "anthropic",
+      "classification": "aligned",
+      "code_audit_needed": false,
+      "finding": "OpenAI function tools are converted into Anthropic name/description/input_schema tools.",
+      "issue_id": "anthropic_tool_shape",
+      "repo_files": [
+        "dashagent/llm_client.py"
+      ],
+      "runtime_change_recommended": false
+    },
+    {
+      "area": "anthropic",
+      "classification": "aligned",
+      "code_audit_needed": false,
+      "finding": "Anthropic tool_use blocks are normalized into the shared tool-call shape.",
+      "issue_id": "anthropic_tool_use_normalization",
+      "repo_files": [
+        "dashagent/llm_client.py"
+      ],
+      "runtime_change_recommended": false
+    },
+    {
+      "area": "all_providers",
+      "classification": "aligned",
+      "code_audit_needed": false,
+      "finding": "Baseline tool schema estimate is 693 characters.",
+      "issue_id": "baseline_tool_schema_size",
+      "repo_files": [
+        "dashagent/llm_tool_agent.py"
+      ],
+      "runtime_change_recommended": false,
+      "schema_chars": 693,
+      "tool_count": 2
+    },
+    {
+      "area": "all_providers",
+      "classification": "unnecessary_tool_available",
+      "code_audit_needed": true,
+      "finding": "The two-tool LLM baseline exposes execute_sql and call_api together; prompt-type pruning is trial-only.",
+      "issue_id": "two_tools_always_available_baseline",
+      "repo_files": [
+        "dashagent/llm_tool_agent.py"
+      ],
+      "runtime_change_recommended": false
+    },
+    {
+      "area": "all_providers",
+      "classification": "tool_result_too_verbose",
+      "code_audit_needed": true,
+      "finding": "Tool results expose preview/error state; compact EvidenceBus summaries may reduce token use in shadow trials.",
+      "issue_id": "tool_result_message_size",
+      "repo_files": [
+        "dashagent/llm_tool_agent.py"
+      ],
+      "runtime_change_recommended": false
+    },
+    {
+      "area": "all_providers",
+      "classification": "aligned",
+      "code_audit_needed": false,
+      "finding": "SDK usage audit reports runtime direct LLM HTTP hits.",
+      "issue_id": "direct_http_guard",
+      "repo_files": [
+        "outputs/reports/sdk_usage_audit.json"
+      ],
+      "runtime_change_recommended": false,
+      "runtime_llm_direct_http_hits": 0
+    }
+  ],
+  "official_score_claim": false,
+  "report_type": "sdk_tool_call_surface_audit",
+  "summary": {
+    "direct_http_hits": 0,
+    "recommendation": "trial_only_shadow_optimization",
+    "runtime_change_recommended": false,
+    "tool_count": 2,
+    "tool_schema_chars": 693
+  }
+}

@@ -36,6 +36,8 @@ POST_CHANGE_VALIDATION_COMMANDS = [
     "python3 scripts/run_comprehensive_failure_analysis.py",
     "python3 scripts/run_deterministic_prompt_type_audit.py",
     "python3 scripts/run_type_specific_deterministic_rule_trials.py",
+    "python3 scripts/run_sdk_tool_calling_optimization_audit.py",
+    "python3 scripts/run_sdk_tool_calling_optimization_trials.py",
     "python3 scripts/run_confidence_calibration_audit.py",
     "python3 scripts/run_token_efficiency_audit.py",
     "python3 scripts/check_llm_sdk_backend.py",
@@ -91,6 +93,12 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/type_specific_deterministic_rule_candidates.md/json",
     "outputs/reports/type_specific_deterministic_rule_trials.md/json",
     "outputs/reports/type_specific_rule_fix_decision.md/json",
+    "outputs/reports/sdk_tool_calling_optimization_preflight.md/json",
+    "outputs/reports/sdk_tool_call_surface_audit.md/json",
+    "outputs/reports/sdk_tool_call_decision_analysis.md/json",
+    "outputs/reports/sdk_tool_call_optimization_variants.md/json",
+    "outputs/reports/sdk_tool_calling_optimization_trials.md/json",
+    "outputs/reports/sdk_tool_calling_fix_decision.md/json",
     "outputs/reports/confidence_calibration_audit.md/json",
     "outputs/reports/token_efficiency_audit.md/json",
     "outputs/reports/workflow_decision_map.md/json",
@@ -234,6 +242,12 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "type_specific_deterministic_rule_candidates": _load_json(outputs / "reports" / "type_specific_deterministic_rule_candidates.json"),
         "type_specific_deterministic_rule_trials": _load_json(outputs / "reports" / "type_specific_deterministic_rule_trials.json"),
         "type_specific_rule_fix_decision": _load_json(outputs / "reports" / "type_specific_rule_fix_decision.json"),
+        "sdk_tool_calling_optimization_preflight": _load_json(outputs / "reports" / "sdk_tool_calling_optimization_preflight.json"),
+        "sdk_tool_call_surface_audit": _load_json(outputs / "reports" / "sdk_tool_call_surface_audit.json"),
+        "sdk_tool_call_decision_analysis": _load_json(outputs / "reports" / "sdk_tool_call_decision_analysis.json"),
+        "sdk_tool_call_optimization_variants": _load_json(outputs / "reports" / "sdk_tool_call_optimization_variants.json"),
+        "sdk_tool_calling_optimization_trials": _load_json(outputs / "reports" / "sdk_tool_calling_optimization_trials.json"),
+        "sdk_tool_calling_fix_decision": _load_json(outputs / "reports" / "sdk_tool_calling_fix_decision.json"),
         "confidence_calibration_audit": _load_json(outputs / "reports" / "confidence_calibration_audit.json"),
         "token_efficiency_audit": _load_json(outputs / "reports" / "token_efficiency_audit.json"),
         "end_to_end_system_dataflow": _load_json(visualizations / "end_to_end_system_dataflow.json"),
@@ -308,6 +322,7 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
         "score_focused_core_path": _score_path_status(sources),
         "comprehensive_failure_analysis": _comprehensive_failure_status(sources),
         "type_specific_deterministic_rules": _type_specific_rule_status(sources),
+        "sdk_tool_calling_optimization": _sdk_tool_calling_optimization_status(sources),
         "context7_documentation_grounded_audit": _context7_audit_status(sources),
         "source_reports": [
             "outputs/eval_results_strict.json",
@@ -331,6 +346,12 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
             "outputs/reports/type_specific_deterministic_rule_candidates.md",
             "outputs/reports/type_specific_deterministic_rule_trials.md",
             "outputs/reports/type_specific_rule_fix_decision.md",
+            "outputs/reports/sdk_tool_calling_optimization_preflight.md",
+            "outputs/reports/sdk_tool_call_surface_audit.md",
+            "outputs/reports/sdk_tool_call_decision_analysis.md",
+            "outputs/reports/sdk_tool_call_optimization_variants.md",
+            "outputs/reports/sdk_tool_calling_optimization_trials.md",
+            "outputs/reports/sdk_tool_calling_fix_decision.md",
         ],
     }
 
@@ -364,11 +385,15 @@ def build_llm_baseline_summary(config: Config, sources: dict[str, Any]) -> dict[
         "score_focused_core_path": _score_path_status(sources),
         "comprehensive_failure_analysis": _comprehensive_failure_status(sources),
         "type_specific_deterministic_rules": _type_specific_rule_status(sources),
+        "sdk_tool_calling_optimization": _sdk_tool_calling_optimization_status(sources),
         "source_reports": [
             "outputs/llm_sdk_backend_check.json",
             "outputs/llm_baseline_eval_report.json",
             "outputs/llm_strict_baseline_eval.json",
             "outputs/llm_hidden_style_diagnostic.json",
+            "outputs/reports/sdk_tool_call_surface_audit.md",
+            "outputs/reports/sdk_tool_calling_optimization_trials.md",
+            "outputs/reports/sdk_tool_calling_fix_decision.md",
         ],
     }
 
@@ -404,6 +429,7 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
         "score_focused_core_path": _score_path_status(sources),
         "comprehensive_failure_analysis": _comprehensive_failure_status(sources),
         "type_specific_deterministic_rules": _type_specific_rule_status(sources),
+        "sdk_tool_calling_optimization": _sdk_tool_calling_optimization_status(sources),
         "source_reports": [
             "outputs/autonomous_score_push_report.json",
             "outputs/autonomous_packaged_trial.json",
@@ -434,6 +460,8 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
             "outputs/reports/type_specific_deterministic_rule_candidates.md",
             "outputs/reports/type_specific_deterministic_rule_trials.md",
             "outputs/reports/type_specific_rule_fix_decision.md",
+            "outputs/reports/sdk_tool_calling_optimization_trials.md",
+            "outputs/reports/sdk_tool_calling_fix_decision.md",
         ],
     }
 
@@ -562,6 +590,24 @@ def build_report_index(
             "runtime_llm_direct_http_hits": _load_json(config.outputs_dir / "reports" / "sdk_usage_audit.json")
             .get("summary", {})
             .get("runtime_llm_direct_http_hits", "unavailable"),
+        },
+        "sdk_tool_calling_optimization": {
+            "preflight_path": "outputs/reports/sdk_tool_calling_optimization_preflight.md",
+            "surface_audit_path": "outputs/reports/sdk_tool_call_surface_audit.md",
+            "decision_analysis_path": "outputs/reports/sdk_tool_call_decision_analysis.md",
+            "variants_path": "outputs/reports/sdk_tool_call_optimization_variants.md",
+            "trials_path": "outputs/reports/sdk_tool_calling_optimization_trials.md",
+            "fix_decision_path": "outputs/reports/sdk_tool_calling_fix_decision.md",
+            **_sdk_tool_calling_optimization_status(
+                {
+                    "sdk_tool_calling_optimization_preflight": _load_json(config.outputs_dir / "reports" / "sdk_tool_calling_optimization_preflight.json"),
+                    "sdk_tool_call_surface_audit": _load_json(config.outputs_dir / "reports" / "sdk_tool_call_surface_audit.json"),
+                    "sdk_tool_call_decision_analysis": _load_json(config.outputs_dir / "reports" / "sdk_tool_call_decision_analysis.json"),
+                    "sdk_tool_call_optimization_variants": _load_json(config.outputs_dir / "reports" / "sdk_tool_call_optimization_variants.json"),
+                    "sdk_tool_calling_optimization_trials": _load_json(config.outputs_dir / "reports" / "sdk_tool_calling_optimization_trials.json"),
+                    "sdk_tool_calling_fix_decision": _load_json(config.outputs_dir / "reports" / "sdk_tool_calling_fix_decision.json"),
+                }
+            ),
         },
         "context7_documentation_grounded_audit": {
             "preflight_path": "outputs/reports/context7_docs_audit_preflight.md",
@@ -736,6 +782,7 @@ def build_report_index(
             "live_adobe_api_readiness": system["live_adobe_api_readiness"]["overall_status"],
             "evidence_aware_answer_synthesis": system["evidence_aware_answer_synthesis"].get("recommendation"),
             "llm_recommendation": llm["recommendation"],
+            "sdk_tool_calling_optimization": system["sdk_tool_calling_optimization"].get("decision"),
             "context7_docs_audit": system["context7_documentation_grounded_audit"].get("status"),
             "target_0_75_reached": accuracy["target_0_75_reached"],
         },
@@ -779,6 +826,9 @@ def render_system_summary(payload: dict[str, Any]) -> str:
             f"- Type-specific deterministic rules: `{payload['type_specific_deterministic_rules'].get('decision')}`; "
             f"candidate families `{payload['type_specific_deterministic_rules'].get('candidate_count')}`; "
             f"runtime change applied: `{payload['type_specific_deterministic_rules'].get('runtime_change_applied')}`",
+            f"- SDK tool-calling optimization: `{payload['sdk_tool_calling_optimization'].get('decision')}`; "
+            f"runtime change applied: `{payload['sdk_tool_calling_optimization'].get('runtime_change_applied')}`; "
+            f"direct HTTP hits: `{payload['sdk_tool_calling_optimization'].get('direct_http_hits')}`",
             f"- Context7 docs audit: `{payload['context7_documentation_grounded_audit'].get('status')}`; "
             f"runtime change applied: `{payload['context7_documentation_grounded_audit'].get('code_changes_applied')}`",
             "",
@@ -815,6 +865,9 @@ def render_llm_summary(payload: dict[str, Any]) -> str:
             f"promotion decision: `{payload['llm_semantic_routing_helper'].get('promotion_decision')}`",
             f"- Decision-stage feedback-loop status: `{payload['decision_stage_methodology'].get('semantic_router_final_recommendation')}`",
             f"- Evidence-aware answer synthesis: `{payload['evidence_aware_answer_synthesis'].get('recommendation')}`",
+            f"- SDK tool-calling optimization: `{payload['sdk_tool_calling_optimization'].get('decision')}`; "
+            f"best variant `{payload['sdk_tool_calling_optimization'].get('best_variant')}`; "
+            f"runtime change applied `{payload['sdk_tool_calling_optimization'].get('runtime_change_applied')}`",
             f"- Reason: {payload.get('reason')}",
             "",
             payload["framework_note"],
@@ -855,6 +908,9 @@ def render_accuracy_summary(payload: dict[str, Any]) -> str:
             f"- Type-specific deterministic rules: `{payload['type_specific_deterministic_rules'].get('decision')}`; "
             f"candidate families `{payload['type_specific_deterministic_rules'].get('candidate_count')}`; "
             f"runtime change applied `{payload['type_specific_deterministic_rules'].get('runtime_change_applied')}`",
+            f"- SDK tool-calling optimization: `{payload['sdk_tool_calling_optimization'].get('decision')}`; "
+            f"best projected strict delta `{payload['sdk_tool_calling_optimization'].get('strict_score_delta_projected')}`; "
+            f"runtime change applied `{payload['sdk_tool_calling_optimization'].get('runtime_change_applied')}`",
             "",
             "## Why Changes Remain Shadow-Only",
             "",
@@ -920,6 +976,18 @@ def render_report_index(payload: dict[str, Any]) -> str:
     audit = payload.get("sdk_usage_audit", {})
     lines.append(f"- `{audit.get('path')}`")
     lines.append(f"- Runtime LLM direct HTTP hits: `{audit.get('runtime_llm_direct_http_hits')}`")
+    lines.extend(["", "## SDK Tool Calling Optimization", ""])
+    sdk_opt = payload.get("sdk_tool_calling_optimization", {})
+    lines.append(f"- Preflight: `{sdk_opt.get('preflight_path')}`")
+    lines.append(f"- Tool-call surface audit: `{sdk_opt.get('surface_audit_path')}`")
+    lines.append(f"- Decision analysis: `{sdk_opt.get('decision_analysis_path')}`")
+    lines.append(f"- Variants: `{sdk_opt.get('variants_path')}`")
+    lines.append(f"- Isolated trials: `{sdk_opt.get('trials_path')}`")
+    lines.append(f"- Fix decision: `{sdk_opt.get('fix_decision_path')}`")
+    lines.append(f"- Decision: `{sdk_opt.get('decision')}`")
+    lines.append(f"- Runtime change applied: `{sdk_opt.get('runtime_change_applied')}`")
+    lines.append(f"- Direct HTTP hits: `{sdk_opt.get('direct_http_hits')}`")
+    lines.append("- These reports are shadow-only SDK/tool-call policy analysis; SQL_FIRST_API_VERIFY remains packaged default.")
     lines.extend(["", "## Context7 Documentation-Grounded Audit", ""])
     context7 = payload.get("context7_documentation_grounded_audit", {})
     lines.append(f"- Preflight: `{context7.get('preflight_path')}`")
@@ -1255,6 +1323,44 @@ def _type_specific_rule_status(sources: dict[str, Any]) -> dict[str, Any]:
             "outputs/reports/type_specific_deterministic_rule_candidates.md",
             "outputs/reports/type_specific_deterministic_rule_trials.md",
             "outputs/reports/type_specific_rule_fix_decision.md",
+        ],
+    }
+
+
+def _sdk_tool_calling_optimization_status(sources: dict[str, Any]) -> dict[str, Any]:
+    preflight = sources.get("sdk_tool_calling_optimization_preflight") or {}
+    surface = sources.get("sdk_tool_call_surface_audit") or {}
+    decision_analysis = sources.get("sdk_tool_call_decision_analysis") or {}
+    variants = sources.get("sdk_tool_call_optimization_variants") or {}
+    trials = sources.get("sdk_tool_calling_optimization_trials") or {}
+    fix_decision = sources.get("sdk_tool_calling_fix_decision") or {}
+    trial_summary = trials.get("summary") or {}
+    return {
+        "preflight_status": "complete" if preflight.get("report_type") == "sdk_tool_calling_optimization_preflight" else "not_run",
+        "surface_audit_status": "complete" if surface.get("report_type") == "sdk_tool_call_surface_audit" else "not_run",
+        "decision_analysis_status": "complete" if decision_analysis.get("report_type") == "sdk_tool_call_decision_analysis" else "not_run",
+        "variants_status": "complete" if variants.get("report_type") == "sdk_tool_call_optimization_variants" else "not_run",
+        "trial_status": "complete" if trials.get("report_type") == "sdk_tool_calling_optimization_trials" else "not_run",
+        "fix_decision_status": "complete" if fix_decision.get("report_type") == "sdk_tool_calling_fix_decision" else "not_run",
+        "decision": fix_decision.get("decision", "not_run"),
+        "best_variant": fix_decision.get("best_variant") or trial_summary.get("best_variant"),
+        "strict_score_before": fix_decision.get("strict_score_before") or trials.get("baseline_strict_score"),
+        "strict_score_delta_projected": fix_decision.get("strict_score_delta_projected"),
+        "variant_count": len(variants.get("variants") or trials.get("variants") or []),
+        "speed_safe_candidate_count": trial_summary.get("speed_safe_candidate_count"),
+        "promotion_safe": bool(fix_decision.get("promotion_safe", False)),
+        "runtime_change_applied": bool(fix_decision.get("runtime_change_applied", False)),
+        "final_submission_format_changed": bool(fix_decision.get("final_submission_format_changed", False)),
+        "direct_http_hits": fix_decision.get("direct_http_hits", preflight.get("sdk_direct_http_hits")),
+        "generated_prompts_used_for": "diagnostic_only_generality_evidence",
+        "packaged_runtime_affected": False,
+        "source_reports": [
+            "outputs/reports/sdk_tool_calling_optimization_preflight.md",
+            "outputs/reports/sdk_tool_call_surface_audit.md",
+            "outputs/reports/sdk_tool_call_decision_analysis.md",
+            "outputs/reports/sdk_tool_call_optimization_variants.md",
+            "outputs/reports/sdk_tool_calling_optimization_trials.md",
+            "outputs/reports/sdk_tool_calling_fix_decision.md",
         ],
     }
 

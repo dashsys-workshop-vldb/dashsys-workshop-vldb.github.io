@@ -18,6 +18,7 @@
 - Score-focused core path trials: `keep_trial_only`; best delta `0.0`; runtime change applied: `False`
 - Comprehensive failure analysis: `wait_for_adobe_access`; official rows `35`; generated prompts `250`; runtime change applied: `False`
 - Type-specific deterministic rules: `speed_only_candidate`; candidate families `8`; runtime change applied: `False`
+- SDK tool-calling optimization: `speed_only_shadow_candidates_no_promotion`; runtime change applied: `False`; direct HTTP hits: `0`
 - Context7 docs audit: `complete`; runtime change applied: `False`
 
 ## Workflow
@@ -51,3 +52,9 @@
 - `outputs/reports/type_specific_deterministic_rule_candidates.md`
 - `outputs/reports/type_specific_deterministic_rule_trials.md`
 - `outputs/reports/type_specific_rule_fix_decision.md`
+- `outputs/reports/sdk_tool_calling_optimization_preflight.md`
+- `outputs/reports/sdk_tool_call_surface_audit.md`
+- `outputs/reports/sdk_tool_call_decision_analysis.md`
+- `outputs/reports/sdk_tool_call_optimization_variants.md`
+- `outputs/reports/sdk_tool_calling_optimization_trials.md`
+- `outputs/reports/sdk_tool_calling_fix_decision.md`
