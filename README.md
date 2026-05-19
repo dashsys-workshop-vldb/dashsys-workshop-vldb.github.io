@@ -317,6 +317,19 @@ python3 scripts/run_correctness_efficiency_scorecard.py
 
 The scorecard writes `outputs/reports/correctness_efficiency_scorecard.md/json` and `outputs/reports/correctness_efficiency_fix_decision.md/json`. Because official organizer weights are unknown, it reports sensitivity scenarios instead of fabricating an official overall score: correctness-dominant, balanced, efficiency-sensitive, strict-no-regression efficiency rank, and hidden-safe efficiency rank. Speed-only candidates with `strict delta = 0.0` can be valuable, but a runtime patch still requires no correctness regression, hidden-style 48/48, `check_submission_ready.py`, direct LLM HTTP hits `0`, no unsupported-claim increase, no hardcoding, and unchanged final-submission format.
 
+## 3.12 Core Tool Optimization
+
+Use the core tool optimizer for offline search and conservative deterministic policies inside the two official tools: `execute_sql(sql)` and `call_api(method, url, params, headers)`. This is not a broad LLM/controller promotion and does not replace `SQL_FIRST_API_VERIFY`.
+
+```bash
+python3 scripts/run_core_tool_optimization_audit.py
+python3 scripts/run_core_tool_policy_optimizer.py
+```
+
+The reports are `outputs/reports/core_tool_optimization_audit.md/json`, `outputs/reports/core_tool_optimization_search_space.md/json`, `outputs/reports/core_tool_policy_optimizer.md/json`, `outputs/reports/core_tool_policy_search_results.md/json`, `outputs/reports/execute_sql_optimization_candidates.md/json`, `outputs/reports/call_api_optimization_candidates.md/json`, `outputs/reports/core_tool_compiled_policy_candidate.md/json`, and `outputs/reports/core_tool_policy_promotion_decision.md/json`.
+
+The promoted low-risk policy keeps SQL read-only and Adobe data endpoints GET-only. It adds exact SQL validation caching, per-query duplicate API attempt reuse, and compact API outcome summaries while keeping optional API suppression report-only until strict/live validation proves no API score loss. No official organizer-weighted score is claimed because weights are unknown.
+
 ## 4. Prompt Routing Policy
 
 The first decision is whether the prompt needs evidence:
@@ -628,6 +641,8 @@ python3 scripts/run_comprehensive_failure_analysis.py
 python3 scripts/run_deterministic_prompt_type_audit.py
 python3 scripts/run_type_specific_deterministic_rule_trials.py
 python3 scripts/run_tool_calling_policy_optimizer.py
+python3 scripts/run_core_tool_optimization_audit.py
+python3 scripts/run_core_tool_policy_optimizer.py
 python3 scripts/generate_visualization_index.py
 python3 scripts/package_submission.py
 python3 scripts/package_query_outputs.py

@@ -42,6 +42,8 @@ POST_CHANGE_VALIDATION_COMMANDS = [
     "python3 scripts/run_correctness_efficiency_scorecard.py",
     "python3 scripts/run_sdk_tool_calling_efficiency_promotion.py --validation-complete",
     "python3 scripts/run_tool_calling_policy_optimizer.py",
+    "python3 scripts/run_core_tool_optimization_audit.py",
+    "python3 scripts/run_core_tool_policy_optimizer.py",
     "python3 scripts/run_confidence_calibration_audit.py",
     "python3 scripts/run_token_efficiency_audit.py",
     "python3 scripts/check_llm_sdk_backend.py",
@@ -113,6 +115,14 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/tool_calling_policy_search_results.md/json",
     "outputs/reports/tool_calling_compiled_policy_candidate.md/json",
     "outputs/reports/tool_calling_policy_promotion_decision.md/json",
+    "outputs/reports/core_tool_optimization_audit.md/json",
+    "outputs/reports/core_tool_optimization_search_space.md/json",
+    "outputs/reports/core_tool_policy_optimizer.md/json",
+    "outputs/reports/core_tool_policy_search_results.md/json",
+    "outputs/reports/execute_sql_optimization_candidates.md/json",
+    "outputs/reports/call_api_optimization_candidates.md/json",
+    "outputs/reports/core_tool_compiled_policy_candidate.md/json",
+    "outputs/reports/core_tool_policy_promotion_decision.md/json",
     "outputs/reports/dashsys_project_skill_audit.md/json",
     "outputs/reports/confidence_calibration_audit.md/json",
     "outputs/reports/token_efficiency_audit.md/json",
@@ -273,6 +283,14 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "tool_calling_policy_search_results": _load_json(outputs / "reports" / "tool_calling_policy_search_results.json"),
         "tool_calling_compiled_policy_candidate": _load_json(outputs / "reports" / "tool_calling_compiled_policy_candidate.json"),
         "tool_calling_policy_promotion_decision": _load_json(outputs / "reports" / "tool_calling_policy_promotion_decision.json"),
+        "core_tool_optimization_audit": _load_json(outputs / "reports" / "core_tool_optimization_audit.json"),
+        "core_tool_optimization_search_space": _load_json(outputs / "reports" / "core_tool_optimization_search_space.json"),
+        "core_tool_policy_optimizer": _load_json(outputs / "reports" / "core_tool_policy_optimizer.json"),
+        "core_tool_policy_search_results": _load_json(outputs / "reports" / "core_tool_policy_search_results.json"),
+        "execute_sql_optimization_candidates": _load_json(outputs / "reports" / "execute_sql_optimization_candidates.json"),
+        "call_api_optimization_candidates": _load_json(outputs / "reports" / "call_api_optimization_candidates.json"),
+        "core_tool_compiled_policy_candidate": _load_json(outputs / "reports" / "core_tool_compiled_policy_candidate.json"),
+        "core_tool_policy_promotion_decision": _load_json(outputs / "reports" / "core_tool_policy_promotion_decision.json"),
         "dashsys_project_skill_audit": _load_json(outputs / "reports" / "dashsys_project_skill_audit.json"),
         "confidence_calibration_audit": _load_json(outputs / "reports" / "confidence_calibration_audit.json"),
         "token_efficiency_audit": _load_json(outputs / "reports" / "token_efficiency_audit.json"),
@@ -352,6 +370,7 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
         "correctness_efficiency_evaluation": _correctness_efficiency_status(sources),
         "sdk_tool_calling_efficiency_promotion": _sdk_tool_calling_efficiency_promotion_status(sources),
         "tool_calling_policy_optimizer": _tool_calling_policy_optimizer_status(sources),
+        "core_tool_policy_optimizer": _core_tool_policy_optimizer_status(sources),
         "dashsys_project_skill": _dashsys_project_skill_status(sources),
         "context7_documentation_grounded_audit": _context7_audit_status(sources),
         "source_reports": [
@@ -389,6 +408,10 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
             "outputs/reports/tool_calling_policy_search_results.md",
             "outputs/reports/tool_calling_compiled_policy_candidate.md",
             "outputs/reports/tool_calling_policy_promotion_decision.md",
+            "outputs/reports/core_tool_optimization_audit.md",
+            "outputs/reports/core_tool_policy_optimizer.md",
+            "outputs/reports/core_tool_compiled_policy_candidate.md",
+            "outputs/reports/core_tool_policy_promotion_decision.md",
             "outputs/reports/dashsys_project_skill_audit.md",
         ],
     }
@@ -427,6 +450,7 @@ def build_llm_baseline_summary(config: Config, sources: dict[str, Any]) -> dict[
         "correctness_efficiency_evaluation": _correctness_efficiency_status(sources),
         "sdk_tool_calling_efficiency_promotion": _sdk_tool_calling_efficiency_promotion_status(sources),
         "tool_calling_policy_optimizer": _tool_calling_policy_optimizer_status(sources),
+        "core_tool_policy_optimizer": _core_tool_policy_optimizer_status(sources),
         "source_reports": [
             "outputs/llm_sdk_backend_check.json",
             "outputs/llm_baseline_eval_report.json",
@@ -442,6 +466,10 @@ def build_llm_baseline_summary(config: Config, sources: dict[str, Any]) -> dict[
             "outputs/reports/tool_calling_policy_search_results.md",
             "outputs/reports/tool_calling_compiled_policy_candidate.md",
             "outputs/reports/tool_calling_policy_promotion_decision.md",
+            "outputs/reports/core_tool_optimization_audit.md",
+            "outputs/reports/core_tool_policy_optimizer.md",
+            "outputs/reports/core_tool_compiled_policy_candidate.md",
+            "outputs/reports/core_tool_policy_promotion_decision.md",
         ],
     }
 
@@ -481,6 +509,7 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
         "correctness_efficiency_evaluation": _correctness_efficiency_status(sources),
         "sdk_tool_calling_efficiency_promotion": _sdk_tool_calling_efficiency_promotion_status(sources),
         "tool_calling_policy_optimizer": _tool_calling_policy_optimizer_status(sources),
+        "core_tool_policy_optimizer": _core_tool_policy_optimizer_status(sources),
         "source_reports": [
             "outputs/autonomous_score_push_report.json",
             "outputs/autonomous_packaged_trial.json",
@@ -522,6 +551,10 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
             "outputs/reports/tool_calling_policy_search_results.md",
             "outputs/reports/tool_calling_compiled_policy_candidate.md",
             "outputs/reports/tool_calling_policy_promotion_decision.md",
+            "outputs/reports/core_tool_optimization_audit.md",
+            "outputs/reports/core_tool_policy_optimizer.md",
+            "outputs/reports/core_tool_compiled_policy_candidate.md",
+            "outputs/reports/core_tool_policy_promotion_decision.md",
         ],
     }
 
@@ -583,6 +616,9 @@ def build_report_index(
             "outputs/reports/llm_baseline_summary.md",
             "outputs/reports/accuracy_and_bottleneck_summary.md",
             "outputs/reports/visualization_summary.md",
+            "outputs/reports/core_tool_optimization_audit.md",
+            "outputs/reports/core_tool_policy_optimizer.md",
+            "outputs/reports/core_tool_compiled_policy_candidate.md",
             "outputs/reports/overnight_autonomous_improvement_report.md",
             "outputs/reports/report_index.md",
         ],
@@ -688,6 +724,28 @@ def build_report_index(
                     "sdk_tool_calling_promotion_preflight": _load_json(config.outputs_dir / "reports" / "sdk_tool_calling_promotion_preflight.json"),
                     "sdk_tool_calling_promotion_plan": _load_json(config.outputs_dir / "reports" / "sdk_tool_calling_promotion_plan.json"),
                     "sdk_tool_calling_efficiency_promotion_decision": _load_json(config.outputs_dir / "reports" / "sdk_tool_calling_efficiency_promotion_decision.json"),
+                }
+            ),
+        },
+        "core_tool_policy_optimizer": {
+            "audit_path": "outputs/reports/core_tool_optimization_audit.md",
+            "search_space_path": "outputs/reports/core_tool_optimization_search_space.md",
+            "optimizer_path": "outputs/reports/core_tool_policy_optimizer.md",
+            "search_results_path": "outputs/reports/core_tool_policy_search_results.md",
+            "execute_sql_candidates_path": "outputs/reports/execute_sql_optimization_candidates.md",
+            "call_api_candidates_path": "outputs/reports/call_api_optimization_candidates.md",
+            "compiled_candidate_path": "outputs/reports/core_tool_compiled_policy_candidate.md",
+            "promotion_decision_path": "outputs/reports/core_tool_policy_promotion_decision.md",
+            **_core_tool_policy_optimizer_status(
+                {
+                    "core_tool_optimization_audit": _load_json(config.outputs_dir / "reports" / "core_tool_optimization_audit.json"),
+                    "core_tool_optimization_search_space": _load_json(config.outputs_dir / "reports" / "core_tool_optimization_search_space.json"),
+                    "core_tool_policy_optimizer": _load_json(config.outputs_dir / "reports" / "core_tool_policy_optimizer.json"),
+                    "core_tool_policy_search_results": _load_json(config.outputs_dir / "reports" / "core_tool_policy_search_results.json"),
+                    "execute_sql_optimization_candidates": _load_json(config.outputs_dir / "reports" / "execute_sql_optimization_candidates.json"),
+                    "call_api_optimization_candidates": _load_json(config.outputs_dir / "reports" / "call_api_optimization_candidates.json"),
+                    "core_tool_compiled_policy_candidate": _load_json(config.outputs_dir / "reports" / "core_tool_compiled_policy_candidate.json"),
+                    "core_tool_policy_promotion_decision": _load_json(config.outputs_dir / "reports" / "core_tool_policy_promotion_decision.json"),
                 }
             ),
         },
@@ -876,6 +934,7 @@ def build_report_index(
             "sdk_tool_calling_optimization": system["sdk_tool_calling_optimization"].get("decision"),
             "correctness_efficiency_evaluation": system["correctness_efficiency_evaluation"].get("decision"),
             "sdk_tool_calling_efficiency_promotion": system["sdk_tool_calling_efficiency_promotion"].get("decision"),
+            "core_tool_policy_optimizer": system["core_tool_policy_optimizer"].get("decision"),
             "dashsys_project_skill": system["dashsys_project_skill"].get("overall_status"),
             "context7_docs_audit": system["context7_documentation_grounded_audit"].get("status"),
             "target_0_75_reached": accuracy["target_0_75_reached"],
@@ -929,6 +988,9 @@ def render_system_summary(payload: dict[str, Any]) -> str:
             f"- SDK tool-calling efficiency promotion: `{payload['sdk_tool_calling_efficiency_promotion'].get('decision')}`; "
             f"promotion accepted: `{payload['sdk_tool_calling_efficiency_promotion'].get('promotion_accepted')}`; "
             f"direct HTTP hits: `{payload['sdk_tool_calling_efficiency_promotion'].get('direct_http_hits')}`",
+            f"- Core tool policy optimizer: `{payload['core_tool_policy_optimizer'].get('decision')}`; "
+            f"compiled recommendation: `{payload['core_tool_policy_optimizer'].get('compiled_recommendation')}`; "
+            f"runtime change expected: `{payload['core_tool_policy_optimizer'].get('runtime_change_expected_in_repo')}`",
             f"- DASHSys Project Skill audit: `{payload['dashsys_project_skill'].get('overall_status')}`; "
             f"runtime behavior changed: `{payload['dashsys_project_skill'].get('runtime_behavior_changed')}`",
             f"- Context7 docs audit: `{payload['context7_documentation_grounded_audit'].get('status')}`; "
@@ -1022,6 +1084,9 @@ def render_accuracy_summary(payload: dict[str, Any]) -> str:
             f"- SDK tool-calling efficiency promotion: `{payload['sdk_tool_calling_efficiency_promotion'].get('decision')}`; "
             f"promotion accepted `{payload['sdk_tool_calling_efficiency_promotion'].get('promotion_accepted')}`; "
             f"runtime change applied `{payload['sdk_tool_calling_efficiency_promotion'].get('runtime_change_applied')}`",
+            f"- Core tool policy optimizer: `{payload['core_tool_policy_optimizer'].get('decision')}`; "
+            f"strict after projected `{payload['core_tool_policy_optimizer'].get('strict_score_after_projected')}`; "
+            f"runtime change expected `{payload['core_tool_policy_optimizer'].get('runtime_change_expected_in_repo')}`",
             "",
             "## Why Changes Remain Shadow-Only",
             "",
@@ -1119,6 +1184,19 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.append(f"- Promotion accepted: `{sdk_promo.get('promotion_accepted')}`")
     lines.append(f"- Direct HTTP hits: `{sdk_promo.get('direct_http_hits')}`")
     lines.append("- This is a speed-only SDK/tool-call patch; SQL_FIRST_API_VERIFY remains the packaged default.")
+    lines.extend(["", "## Core Tool Policy Optimizer", ""])
+    core = payload.get("core_tool_policy_optimizer", {})
+    lines.append(f"- Tool audit: `{core.get('audit_path')}`")
+    lines.append(f"- Search space: `{core.get('search_space_path')}`")
+    lines.append(f"- Optimizer: `{core.get('optimizer_path')}`")
+    lines.append(f"- Search results: `{core.get('search_results_path')}`")
+    lines.append(f"- execute_sql candidates: `{core.get('execute_sql_candidates_path')}`")
+    lines.append(f"- call_api candidates: `{core.get('call_api_candidates_path')}`")
+    lines.append(f"- Compiled candidate: `{core.get('compiled_candidate_path')}`")
+    lines.append(f"- Promotion decision: `{core.get('promotion_decision_path')}`")
+    lines.append(f"- Decision: `{core.get('decision')}`")
+    lines.append(f"- Runtime change expected in repo: `{core.get('runtime_change_expected_in_repo')}`")
+    lines.append("- This optimizer is restricted to execute_sql/call_api internals; SQL_FIRST_API_VERIFY remains packaged default.")
     lines.extend(["", "## DASHSys Project Skill", ""])
     dashsys_skill = payload.get("dashsys_project_skill", {})
     lines.append(f"- Skill: `{dashsys_skill.get('skill_path')}`")
@@ -1594,6 +1672,62 @@ def _tool_calling_policy_optimizer_status(sources: dict[str, Any]) -> dict[str, 
             "outputs/reports/tool_calling_policy_search_results.md",
             "outputs/reports/tool_calling_compiled_policy_candidate.md",
             "outputs/reports/tool_calling_policy_promotion_decision.md",
+        ],
+    }
+
+
+def _core_tool_policy_optimizer_status(sources: dict[str, Any]) -> dict[str, Any]:
+    audit = sources.get("core_tool_optimization_audit") or {}
+    search_space = sources.get("core_tool_optimization_search_space") or {}
+    optimizer = sources.get("core_tool_policy_optimizer") or {}
+    search = sources.get("core_tool_policy_search_results") or {}
+    sql_candidates = sources.get("execute_sql_optimization_candidates") or {}
+    api_candidates = sources.get("call_api_optimization_candidates") or {}
+    candidate = sources.get("core_tool_compiled_policy_candidate") or {}
+    decision = sources.get("core_tool_policy_promotion_decision") or {}
+    return {
+        "audit_status": "complete" if audit.get("report_type") == "core_tool_optimization_audit" else "not_run",
+        "search_space_status": "complete" if search_space.get("report_type") == "core_tool_optimization_search_space" else "not_run",
+        "optimizer_status": "complete" if optimizer.get("report_type") == "core_tool_policy_optimizer" else "not_run",
+        "search_status": "complete" if search.get("report_type") == "core_tool_policy_search_results" else "not_run",
+        "execute_sql_candidate_status": "complete"
+        if sql_candidates.get("report_type") == "execute_sql_optimization_candidates"
+        else "not_run",
+        "call_api_candidate_status": "complete"
+        if api_candidates.get("report_type") == "call_api_optimization_candidates"
+        else "not_run",
+        "compiled_candidate_status": "complete"
+        if candidate.get("report_type") == "core_tool_compiled_policy_candidate"
+        else "not_run",
+        "promotion_decision_status": "complete"
+        if decision.get("report_type") == "core_tool_policy_promotion_decision"
+        else "not_run",
+        "decision": decision.get("decision", "not_run"),
+        "compiled_recommendation": candidate.get("recommendation", "not_run"),
+        "included_rules": candidate.get("included_rules", []),
+        "policy_count": search_space.get("policy_count") or optimizer.get("policy_count"),
+        "pareto_frontier_count": search.get("pareto_frontier_count"),
+        "runtime_change_expected_in_repo": bool(decision.get("runtime_change_expected_in_repo", False)),
+        "runtime_change_applied_by_script": bool(decision.get("runtime_change_applied_by_script", False)),
+        "strict_score_before": decision.get("strict_score_before"),
+        "strict_score_after_projected": decision.get("strict_score_after_projected"),
+        "tool_calls_delta_projected": decision.get("tool_calls_delta_projected"),
+        "tokens_delta_projected": decision.get("tokens_delta_projected"),
+        "wall_time_delta_projected": decision.get("wall_time_delta_projected"),
+        "direct_http_hits": decision.get("direct_http_hits"),
+        "final_submission_format_changed": bool(decision.get("final_submission_format_changed", False)),
+        "official_overall_score_claim": bool(
+            audit.get("official_organizer_weighted_score_claim", decision.get("official_organizer_weighted_score_claim", False))
+        ),
+        "source_reports": [
+            "outputs/reports/core_tool_optimization_audit.md",
+            "outputs/reports/core_tool_optimization_search_space.md",
+            "outputs/reports/core_tool_policy_optimizer.md",
+            "outputs/reports/core_tool_policy_search_results.md",
+            "outputs/reports/execute_sql_optimization_candidates.md",
+            "outputs/reports/call_api_optimization_candidates.md",
+            "outputs/reports/core_tool_compiled_policy_candidate.md",
+            "outputs/reports/core_tool_policy_promotion_decision.md",
         ],
     }
 

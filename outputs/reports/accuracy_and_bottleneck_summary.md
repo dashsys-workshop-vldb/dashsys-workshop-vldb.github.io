@@ -20,6 +20,7 @@
 - SDK tool-calling optimization: `speed_only_shadow_candidates_no_promotion`; best projected strict delta `0.0`; runtime change applied `False`
 - Correctness + efficiency evaluation: `speed_only_patch_needs_validation`; best candidate `compact_tool_schema`; runtime change applied `False`
 - SDK tool-calling efficiency promotion: `promoted_speed_only_patch`; promotion accepted `True`; runtime change applied `True`
+- Core tool policy optimizer: `promoted_core_tool_efficiency_policy`; strict after projected `0.6553`; runtime change expected `True`
 
 ## Why Changes Remain Shadow-Only
 

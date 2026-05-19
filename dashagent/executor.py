@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 import time
+import copy
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +32,7 @@ from .candidate_context_builder import build_adaptive_context, build_candidate_c
 from .call_budget import budget_for_strategy
 from .checkpoints import CheckpointLogger
 from .config import Config, DEFAULT_CONFIG
+from .core_tool_policy import compact_api_outcome
 from .db import DuckDBDatabase
 from .endpoint_catalog import EndpointCatalog
 from .evidence_bus import EvidenceBus
@@ -595,6 +597,7 @@ class AgentExecutor:
         blocked_calls: list[dict[str, Any]] = []
         forwarding_actions_all: list[str] = []
         execution_start = time.perf_counter()
+        per_query_api_response_cache: dict[str, dict[str, Any]] = {}
         for step in plan.steps:
             if step.action == "sql" and step.sql:
                 validation = self.sql_validator.validate(step.sql)
@@ -656,11 +659,15 @@ class AgentExecutor:
                 validation = self.api_validator.validate(step.method, step.url, step.params, step.headers)
                 if validation.ok:
                     api_cache_key = api_response_cache_key(step.method, step.url, step.params)
-                    result = get_api_response_cache(api_cache_key) if self.api_client.dry_run else None
+                    result = copy.deepcopy(per_query_api_response_cache.get(api_cache_key))
+                    if result is None:
+                        cached_result = get_api_response_cache(api_cache_key) if self.api_client.dry_run else None
+                        result = copy.deepcopy(cached_result) if cached_result is not None else None
                     if result is None:
                         result = self.api_client.call_api(step.method, step.url, step.params, step.headers)
                         if result.get("dry_run"):
                             set_api_response_cache(api_cache_key, result)
+                    per_query_api_response_cache[api_cache_key] = copy.deepcopy(result)
                 else:
                     result = {"ok": False, "dry_run": False, "error": "; ".join(validation.errors)}
                     blocked_calls.append({"type": "api", "errors": validation.errors, "step": step.to_dict()})
@@ -1176,6 +1183,7 @@ def tool_results_execution_summary(tool_results: list[dict[str, Any]]) -> dict[s
             )
         elif result.get("type") == "api":
             step = result.get("step", {})
+            compact_outcome = compact_api_outcome(payload)
             api_summaries.append(
                 {
                     "ok": bool(payload.get("ok")),
@@ -1183,7 +1191,7 @@ def tool_results_execution_summary(tool_results: list[dict[str, Any]]) -> dict[s
                     "method": step.get("method"),
                     "url": step.get("url"),
                     "status_code": payload.get("status_code") or payload.get("status"),
-                    "result_preview": payload.get("result_preview") or payload.get("body") or payload,
+                    "result_preview": compact_outcome,
                 }
             )
     return {

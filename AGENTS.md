@@ -279,6 +279,19 @@ python3 scripts/run_correctness_efficiency_scorecard.py
 
 The scorecard writes `outputs/reports/correctness_efficiency_scorecard.md/json` and `outputs/reports/correctness_efficiency_fix_decision.md/json`. Official efficiency weights are unknown, so the report must provide sensitivity scenarios rather than an official overall score claim. Speed-only candidates with no correctness regression can be considered, but do not promote them until strict eval, hidden-style 48/48, generated-prompt diagnostics, SDK usage audit, `check_submission_ready.py`, and pytest all pass without unsupported-claim, hardcoding, direct-HTTP, or final-submission-format regression.
 
+## Core Tool Optimization
+
+Use the core tool optimizer when changing or auditing the internals of the official tools:
+
+```bash
+python3 scripts/run_core_tool_optimization_audit.py
+python3 scripts/run_core_tool_policy_optimizer.py
+```
+
+The workflow writes `outputs/reports/core_tool_optimization_audit.md/json`, `outputs/reports/core_tool_optimization_search_space.md/json`, `outputs/reports/core_tool_policy_optimizer.md/json`, `outputs/reports/core_tool_policy_search_results.md/json`, `outputs/reports/execute_sql_optimization_candidates.md/json`, `outputs/reports/call_api_optimization_candidates.md/json`, `outputs/reports/core_tool_compiled_policy_candidate.md/json`, and `outputs/reports/core_tool_policy_promotion_decision.md/json`.
+
+Only promote deterministic tool-internal policies that preserve strict correctness, hidden-style 48/48, SQL read-only validation, Adobe GET-only data calls, endpoint catalog safety, SDK direct HTTP hits 0, and final-submission format. Current low-risk promoted rules are exact SQL validation caching, selected-SQL-only execution, per-query duplicate API reuse, compact API outcome summaries, and unresolved-path blocking. Optional API suppression while `live_success_count=0` remains report-only unless later strict/live validation proves no API score loss.
+
 ## Development Workflow
 
 Before major changes, record the current baseline if the user asks for an optimization pass:
@@ -393,6 +406,8 @@ python3 scripts/run_comprehensive_failure_analysis.py
 python3 scripts/run_deterministic_prompt_type_audit.py
 python3 scripts/run_type_specific_deterministic_rule_trials.py
 python3 scripts/run_tool_calling_policy_optimizer.py
+python3 scripts/run_core_tool_optimization_audit.py
+python3 scripts/run_core_tool_policy_optimizer.py
 python3 scripts/generate_visualization_index.py
 python3 scripts/package_submission.py
 python3 scripts/package_query_outputs.py

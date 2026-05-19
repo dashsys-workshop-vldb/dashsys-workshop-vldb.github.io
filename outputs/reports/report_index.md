@@ -8,6 +8,9 @@ Start here. Most older generated reports were consolidated or removed.
 - [llm_baseline_summary.md](llm_baseline_summary.md)
 - [accuracy_and_bottleneck_summary.md](accuracy_and_bottleneck_summary.md)
 - [visualization_summary.md](visualization_summary.md)
+- [core_tool_optimization_audit.md](core_tool_optimization_audit.md)
+- [core_tool_policy_optimizer.md](core_tool_policy_optimizer.md)
+- [core_tool_compiled_policy_candidate.md](core_tool_compiled_policy_candidate.md)
 - [overnight_autonomous_improvement_report.md](overnight_autonomous_improvement_report.md)
 - [report_index.md](report_index.md)
 
@@ -95,6 +98,20 @@ Start here. Most older generated reports were consolidated or removed.
 - Promotion accepted: `True`
 - Direct HTTP hits: `0`
 - This is a speed-only SDK/tool-call patch; SQL_FIRST_API_VERIFY remains the packaged default.
+
+## Core Tool Policy Optimizer
+
+- Tool audit: `outputs/reports/core_tool_optimization_audit.md`
+- Search space: `outputs/reports/core_tool_optimization_search_space.md`
+- Optimizer: `outputs/reports/core_tool_policy_optimizer.md`
+- Search results: `outputs/reports/core_tool_policy_search_results.md`
+- execute_sql candidates: `outputs/reports/execute_sql_optimization_candidates.md`
+- call_api candidates: `outputs/reports/call_api_optimization_candidates.md`
+- Compiled candidate: `outputs/reports/core_tool_compiled_policy_candidate.md`
+- Promotion decision: `outputs/reports/core_tool_policy_promotion_decision.md`
+- Decision: `promoted_core_tool_efficiency_policy`
+- Runtime change expected in repo: `True`
+- This optimizer is restricted to execute_sql/call_api internals; SQL_FIRST_API_VERIFY remains packaged default.
 
 ## DASHSys Project Skill
 
@@ -253,6 +270,8 @@ Required commands:
 - `python3 scripts/run_correctness_efficiency_scorecard.py`
 - `python3 scripts/run_sdk_tool_calling_efficiency_promotion.py --validation-complete`
 - `python3 scripts/run_tool_calling_policy_optimizer.py`
+- `python3 scripts/run_core_tool_optimization_audit.py`
+- `python3 scripts/run_core_tool_policy_optimizer.py`
 - `python3 scripts/run_confidence_calibration_audit.py`
 - `python3 scripts/run_token_efficiency_audit.py`
 - `python3 scripts/check_llm_sdk_backend.py`
@@ -323,6 +342,14 @@ Regenerated report surfaces:
 - `outputs/reports/tool_calling_policy_search_results.md/json`
 - `outputs/reports/tool_calling_compiled_policy_candidate.md/json`
 - `outputs/reports/tool_calling_policy_promotion_decision.md/json`
+- `outputs/reports/core_tool_optimization_audit.md/json`
+- `outputs/reports/core_tool_optimization_search_space.md/json`
+- `outputs/reports/core_tool_policy_optimizer.md/json`
+- `outputs/reports/core_tool_policy_search_results.md/json`
+- `outputs/reports/execute_sql_optimization_candidates.md/json`
+- `outputs/reports/call_api_optimization_candidates.md/json`
+- `outputs/reports/core_tool_compiled_policy_candidate.md/json`
+- `outputs/reports/core_tool_policy_promotion_decision.md/json`
 - `outputs/reports/dashsys_project_skill_audit.md/json`
 - `outputs/reports/confidence_calibration_audit.md/json`
 - `outputs/reports/token_efficiency_audit.md/json`
@@ -362,6 +389,7 @@ Regenerated report surfaces:
 - sdk_tool_calling_optimization: `speed_only_shadow_candidates_no_promotion`
 - correctness_efficiency_evaluation: `speed_only_patch_needs_validation`
 - sdk_tool_calling_efficiency_promotion: `promoted_speed_only_patch`
+- core_tool_policy_optimizer: `promoted_core_tool_efficiency_policy`
 - dashsys_project_skill: `pass`
 - context7_docs_audit: `complete`
 - target_0_75_reached: `False`

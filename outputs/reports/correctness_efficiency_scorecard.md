@@ -22,11 +22,11 @@
 
 | Variant | Correctness delta | Efficiency | Pareto dominates baseline | Promotion candidate status |
 | --- | ---: | ---: | --- | --- |
-| `compact_tool_schema` | 0.0 | 1.0415 | True | `efficiency_candidate_needs_strict_validation` |
+| `compact_tool_schema` | 0.0 | 1.0417 | True | `efficiency_candidate_needs_strict_validation` |
 | `allowed_tools_by_prompt_type` | 0.0 | 1.125 | True | `efficiency_candidate_needs_strict_validation` |
 | `tool_choice_policy` | 0.0 | 1.125 | True | `efficiency_candidate_needs_strict_validation` |
 | `disable_parallel_tool_calls` | 0.0 | 1.0 | False | `keep_shadow_only` |
-| `compact_tool_result_evidence_summary` | 0.0 | 1.0486 | True | `efficiency_candidate_needs_strict_validation` |
+| `compact_tool_result_evidence_summary` | 0.0 | 1.0488 | True | `efficiency_candidate_needs_strict_validation` |
 | `rewrite_gate_strict` | 0.0 | 1.0 | False | `keep_shadow_only` |
 | `no_rewrite_when_backend_complete` | 0.0 | 1.0126 | True | `efficiency_candidate_needs_strict_validation` |
 | `combined_safe_tool_policy` | 0.0 | 1.167 | True | `efficiency_candidate_needs_strict_validation` |
