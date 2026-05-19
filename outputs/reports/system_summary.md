@@ -22,6 +22,7 @@
 - Correctness + efficiency evaluation: `speed_only_patch_needs_validation`; official overall score claim: `False`; runtime change applied: `False`
 - SDK tool-calling efficiency promotion: `promoted_speed_only_patch`; promotion accepted: `True`; direct HTTP hits: `0`
 - Core tool policy optimizer: `promoted_core_tool_efficiency_policy`; compiled recommendation: `promote_candidate`; runtime change expected: `True`
+- Repo cleanup: `validated`; deleted paths: `5`; runtime behavior changed: `False`
 - DASHSys Project Skill audit: `pass`; runtime behavior changed: `False`
 - Context7 docs audit: `complete`; runtime change applied: `False`
 
@@ -73,4 +74,5 @@
 - `outputs/reports/core_tool_policy_optimizer.md`
 - `outputs/reports/core_tool_compiled_policy_candidate.md`
 - `outputs/reports/core_tool_policy_promotion_decision.md`
+- `outputs/reports/repo_cleanup_result.md`
 - `outputs/reports/dashsys_project_skill_audit.md`

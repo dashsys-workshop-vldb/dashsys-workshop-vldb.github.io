@@ -219,6 +219,14 @@ Every new analysis pass should write:
 - report index links
 - system summary update if relevant
 
+## Diagnostic / Trial Cleanup Rule
+
+Classify every diagnostic, trial, audit, optimizer, or experiment as `promoted`, `keep_trial_only`, `rejected`, `wait_for_external_access`, or `diagnostic_only`.
+
+If the result is not `promoted`, clean up temporary artifacts after the final report is written. Keep only one final `.md` report, one final `.json` report, and any small fixture or test still needed by active validation. Delete or avoid committing one-off diagnostic scripts, large per-prompt output folders, trial variant directories, temporary generated artifacts, and obsolete tests that only validate deleted diagnostics.
+
+Never delete final summary reports, promoted-policy reports, system summary, report index, final submission artifacts, packaged runtime code, or validation scripts required by README, AGENTS, or this skill. Before deleting, write `outputs/reports/repo_cleanup_deletion_plan.md/json`; after deleting, write `outputs/reports/repo_cleanup_result.md/json`; then run `python3 scripts/check_submission_ready.py` and `python3 -m pytest -q`.
+
 Do not claim score improvement unless backed by strict eval. Do not claim official organizer ranking improvement unless official weights are known.
 
 ## Stop Conditions

@@ -15,6 +15,7 @@ Start here. Most older generated reports were consolidated or removed.
 - [core_tool_correctness_trials.md](core_tool_correctness_trials.md)
 - [core_tool_correctness_fix_decision.md](core_tool_correctness_fix_decision.md)
 - [overnight_autonomous_improvement_report.md](overnight_autonomous_improvement_report.md)
+- [repo_cleanup_result.md](repo_cleanup_result.md)
 - [report_index.md](report_index.md)
 
 ## Key Source-Of-Truth Reports
@@ -243,6 +244,10 @@ Start here. Most older generated reports were consolidated or removed.
 
 - `outputs/reports/cleanup_audit.md`
 - `outputs/reports/cleanup_final_report.md`
+- `outputs/reports/repo_cleanup_preflight.md`
+- `outputs/reports/repo_cleanup_candidate_inventory.md`
+- `outputs/reports/repo_cleanup_deletion_plan.md`
+- `outputs/reports/repo_cleanup_result.md`
 
 ## Post-Change Validation Contract
 
@@ -275,6 +280,7 @@ Required commands:
 - `python3 scripts/run_tool_calling_policy_optimizer.py`
 - `python3 scripts/run_core_tool_optimization_audit.py`
 - `python3 scripts/run_core_tool_policy_optimizer.py`
+- `python3 scripts/audit_repo_cleanup_candidates.py`
 - `python3 scripts/run_confidence_calibration_audit.py`
 - `python3 scripts/run_token_efficiency_audit.py`
 - `python3 scripts/check_llm_sdk_backend.py`
@@ -353,6 +359,10 @@ Regenerated report surfaces:
 - `outputs/reports/call_api_optimization_candidates.md/json`
 - `outputs/reports/core_tool_compiled_policy_candidate.md/json`
 - `outputs/reports/core_tool_policy_promotion_decision.md/json`
+- `outputs/reports/repo_cleanup_preflight.md/json`
+- `outputs/reports/repo_cleanup_candidate_inventory.md/json`
+- `outputs/reports/repo_cleanup_deletion_plan.md/json`
+- `outputs/reports/repo_cleanup_result.md/json`
 - `outputs/reports/dashsys_project_skill_audit.md/json`
 - `outputs/reports/confidence_calibration_audit.md/json`
 - `outputs/reports/token_efficiency_audit.md/json`
@@ -393,6 +403,7 @@ Regenerated report surfaces:
 - correctness_efficiency_evaluation: `speed_only_patch_needs_validation`
 - sdk_tool_calling_efficiency_promotion: `promoted_speed_only_patch`
 - core_tool_policy_optimizer: `promoted_core_tool_efficiency_policy`
+- repo_cleanup: `validated`
 - dashsys_project_skill: `pass`
 - context7_docs_audit: `complete`
 - target_0_75_reached: `False`

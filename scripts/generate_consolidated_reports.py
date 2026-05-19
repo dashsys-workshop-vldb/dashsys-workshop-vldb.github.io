@@ -44,6 +44,7 @@ POST_CHANGE_VALIDATION_COMMANDS = [
     "python3 scripts/run_tool_calling_policy_optimizer.py",
     "python3 scripts/run_core_tool_optimization_audit.py",
     "python3 scripts/run_core_tool_policy_optimizer.py",
+    "python3 scripts/audit_repo_cleanup_candidates.py",
     "python3 scripts/run_confidence_calibration_audit.py",
     "python3 scripts/run_token_efficiency_audit.py",
     "python3 scripts/check_llm_sdk_backend.py",
@@ -123,6 +124,10 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/call_api_optimization_candidates.md/json",
     "outputs/reports/core_tool_compiled_policy_candidate.md/json",
     "outputs/reports/core_tool_policy_promotion_decision.md/json",
+    "outputs/reports/repo_cleanup_preflight.md/json",
+    "outputs/reports/repo_cleanup_candidate_inventory.md/json",
+    "outputs/reports/repo_cleanup_deletion_plan.md/json",
+    "outputs/reports/repo_cleanup_result.md/json",
     "outputs/reports/dashsys_project_skill_audit.md/json",
     "outputs/reports/confidence_calibration_audit.md/json",
     "outputs/reports/token_efficiency_audit.md/json",
@@ -291,6 +296,10 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "call_api_optimization_candidates": _load_json(outputs / "reports" / "call_api_optimization_candidates.json"),
         "core_tool_compiled_policy_candidate": _load_json(outputs / "reports" / "core_tool_compiled_policy_candidate.json"),
         "core_tool_policy_promotion_decision": _load_json(outputs / "reports" / "core_tool_policy_promotion_decision.json"),
+        "repo_cleanup_preflight": _load_json(outputs / "reports" / "repo_cleanup_preflight.json"),
+        "repo_cleanup_candidate_inventory": _load_json(outputs / "reports" / "repo_cleanup_candidate_inventory.json"),
+        "repo_cleanup_deletion_plan": _load_json(outputs / "reports" / "repo_cleanup_deletion_plan.json"),
+        "repo_cleanup_result": _load_json(outputs / "reports" / "repo_cleanup_result.json"),
         "dashsys_project_skill_audit": _load_json(outputs / "reports" / "dashsys_project_skill_audit.json"),
         "confidence_calibration_audit": _load_json(outputs / "reports" / "confidence_calibration_audit.json"),
         "token_efficiency_audit": _load_json(outputs / "reports" / "token_efficiency_audit.json"),
@@ -371,6 +380,7 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
         "sdk_tool_calling_efficiency_promotion": _sdk_tool_calling_efficiency_promotion_status(sources),
         "tool_calling_policy_optimizer": _tool_calling_policy_optimizer_status(sources),
         "core_tool_policy_optimizer": _core_tool_policy_optimizer_status(sources),
+        "repo_cleanup": _repo_cleanup_status(sources),
         "dashsys_project_skill": _dashsys_project_skill_status(sources),
         "context7_documentation_grounded_audit": _context7_audit_status(sources),
         "source_reports": [
@@ -412,6 +422,7 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
             "outputs/reports/core_tool_policy_optimizer.md",
             "outputs/reports/core_tool_compiled_policy_candidate.md",
             "outputs/reports/core_tool_policy_promotion_decision.md",
+            "outputs/reports/repo_cleanup_result.md",
             "outputs/reports/dashsys_project_skill_audit.md",
         ],
     }
@@ -623,6 +634,7 @@ def build_report_index(
             "outputs/reports/core_tool_correctness_trials.md",
             "outputs/reports/core_tool_correctness_fix_decision.md",
             "outputs/reports/overnight_autonomous_improvement_report.md",
+            "outputs/reports/repo_cleanup_result.md",
             "outputs/reports/report_index.md",
         ],
         "key_source_of_truth_reports": [
@@ -908,6 +920,10 @@ def build_report_index(
         "cleanup_reports": [
             "outputs/reports/cleanup_audit.md",
             "outputs/reports/cleanup_final_report.md",
+            "outputs/reports/repo_cleanup_preflight.md",
+            "outputs/reports/repo_cleanup_candidate_inventory.md",
+            "outputs/reports/repo_cleanup_deletion_plan.md",
+            "outputs/reports/repo_cleanup_result.md",
         ],
         "post_change_validation": {
             "required_commands": list(POST_CHANGE_VALIDATION_COMMANDS),
@@ -938,6 +954,7 @@ def build_report_index(
             "correctness_efficiency_evaluation": system["correctness_efficiency_evaluation"].get("decision"),
             "sdk_tool_calling_efficiency_promotion": system["sdk_tool_calling_efficiency_promotion"].get("decision"),
             "core_tool_policy_optimizer": system["core_tool_policy_optimizer"].get("decision"),
+            "repo_cleanup": system["repo_cleanup"].get("status"),
             "dashsys_project_skill": system["dashsys_project_skill"].get("overall_status"),
             "context7_docs_audit": system["context7_documentation_grounded_audit"].get("status"),
             "target_0_75_reached": accuracy["target_0_75_reached"],
@@ -994,6 +1011,9 @@ def render_system_summary(payload: dict[str, Any]) -> str:
             f"- Core tool policy optimizer: `{payload['core_tool_policy_optimizer'].get('decision')}`; "
             f"compiled recommendation: `{payload['core_tool_policy_optimizer'].get('compiled_recommendation')}`; "
             f"runtime change expected: `{payload['core_tool_policy_optimizer'].get('runtime_change_expected_in_repo')}`",
+            f"- Repo cleanup: `{payload['repo_cleanup'].get('status')}`; "
+            f"deleted paths: `{payload['repo_cleanup'].get('deleted_path_count')}`; "
+            f"runtime behavior changed: `{payload['repo_cleanup'].get('runtime_behavior_changed')}`",
             f"- DASHSys Project Skill audit: `{payload['dashsys_project_skill'].get('overall_status')}`; "
             f"runtime behavior changed: `{payload['dashsys_project_skill'].get('runtime_behavior_changed')}`",
             f"- Context7 docs audit: `{payload['context7_documentation_grounded_audit'].get('status')}`; "
@@ -1747,6 +1767,33 @@ def _dashsys_project_skill_status(sources: dict[str, Any]) -> dict[str, Any]:
         "mutating_adobe_calls_allowed": audit.get("mutating_adobe_calls_allowed", False),
         "failed_checks": audit.get("failed_checks", []),
         "source_reports": ["outputs/reports/dashsys_project_skill_audit.md"],
+    }
+
+
+def _repo_cleanup_status(sources: dict[str, Any]) -> dict[str, Any]:
+    preflight = sources.get("repo_cleanup_preflight") or {}
+    inventory = sources.get("repo_cleanup_candidate_inventory") or {}
+    plan = sources.get("repo_cleanup_deletion_plan") or {}
+    result = sources.get("repo_cleanup_result") or {}
+    return {
+        "status": result.get("status", "not_run"),
+        "preflight_status": "complete" if preflight.get("report_type") == "repo_cleanup_preflight" else "not_run",
+        "inventory_status": "complete"
+        if inventory.get("report_type") == "repo_cleanup_candidate_inventory"
+        else "not_run",
+        "deletion_plan_status": "complete" if plan.get("report_type") == "repo_cleanup_deletion_plan" else "not_run",
+        "deleted_path_count": len(result.get("paths_deleted", [])),
+        "size_reduction_bytes": result.get("total_size_reduction_bytes"),
+        "manual_review_count": len(result.get("manual_review_paths", [])),
+        "runtime_behavior_changed": bool(result.get("runtime_behavior_changed", False)),
+        "final_submission_ready_after_cleanup": result.get("final_submission_ready_after_cleanup"),
+        "pytest_result": result.get("pytest_result"),
+        "source_reports": [
+            "outputs/reports/repo_cleanup_preflight.md",
+            "outputs/reports/repo_cleanup_candidate_inventory.md",
+            "outputs/reports/repo_cleanup_deletion_plan.md",
+            "outputs/reports/repo_cleanup_result.md",
+        ],
     }
 
 

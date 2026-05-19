@@ -224,7 +224,19 @@ The required process is hypothesis → baseline → isolated trial → failure a
 
 Generated diagnostic prompts are coverage-only and cannot support official strict-score improvement or promotion claims. Answer-only trials must preserve SQL hash, API hash, tool count, selected evidence hash, and dry-run label. Behavior-changing variants stay in isolated outputs unless a later human-reviewed strict/safety promotion explicitly approves them.
 
-## 3.6 Live Adobe API Readiness
+## 3.6 Diagnostic / Trial Cleanup
+
+Unpromoted diagnostics, trials, audits, optimizers, and experiments should leave behind only their final `.md` and `.json` summary reports plus any small fixture/test still needed by active validation. Large per-prompt folders, trial variant directories, temporary generated artifacts, and one-off diagnostic scripts should be removed or avoided after the final report is written.
+
+Before deleting cleanup candidates, generate:
+
+```bash
+python3 scripts/audit_repo_cleanup_candidates.py
+```
+
+The cleanup audit writes `outputs/reports/repo_cleanup_preflight.md/json`, `outputs/reports/repo_cleanup_candidate_inventory.md/json`, and `outputs/reports/repo_cleanup_deletion_plan.md/json`. After deleting safe candidates, write `outputs/reports/repo_cleanup_result.md/json`, then run `python3 scripts/check_submission_ready.py` and `python3 -m pytest -q`.
+
+## 3.7 Live Adobe API Readiness
 
 Live Adobe API readiness is infrastructure validation, not score promotion. The system keeps `API_REQUIRED` calls required in live mode, uses catalog-approved Adobe REST calls, and falls back to dry-run only when credentials are unavailable. No live API evidence may be fabricated, and live smoke/trial reports must not overwrite `outputs/eval/`, `outputs/eval_results_strict.json`, `outputs/final_submission/`, or `outputs/final_submission_manifest.json`.
 
@@ -248,7 +260,7 @@ Use `outputs/reports/live_api_endpoint_followup_commands.md` for safe rerun comm
 
 Use `outputs/reports/adobe_access_waiting_status.md` for the short supervisor-facing access status. After external access changes, `python3 scripts/run_post_permission_live_api_verification.py` reruns the minimal safe sequence and reports whether guarded full live runs are allowed.
 
-## 3.6 Evidence-Aware Answer Synthesis
+## 3.8 Evidence-Aware Answer Synthesis
 
 Evidence-aware answer synthesis is an isolated answer-only feedback loop. It audits whether final answers use SQL/API evidence, proposes deterministic template rewrites, and verifies faithfulness without rerunning SQL or API calls.
 
@@ -262,7 +274,7 @@ python3 scripts/run_token_efficiency_audit.py
 
 The rewrite trial writes only under `outputs/evidence_aware_answer_rewrite_trial/`. Any answer-only promotion requires invariant SQL hash, API hash, tool count, selected evidence hash, route, plan, and dry-run labels; unsupported claims must not increase; hidden-style must remain 48/48; and `check_submission_ready.py` must pass. Dry-run caveats remain required for `API_REQUIRED` rows when live API verification is unavailable.
 
-## 3.7 Score-Focused Direct Path Trials
+## 3.9 Score-Focused Direct Path Trials
 
 Use the full project dataflow SVG as a map for score-producing code, not as an optimization target. The direct score path is prompt understanding, deterministic routing/domain/intent, `SQL_FIRST_API_VERIFY`, SQL/API planning and validation, EvidenceBus, answer slots, answer synthesis, verifier output, and final trajectory packaging.
 
@@ -273,7 +285,7 @@ python3 scripts/run_score_focused_core_improvement_trials.py
 
 These scripts write `outputs/reports/score_path_contribution_audit.md/json`, `outputs/reports/score_focused_core_improvement_trials.md/json`, and `outputs/reports/score_focused_core_fix_decision.md/json`. They are isolated diagnostics: they must not overwrite `outputs/eval_results_strict.json`, `outputs/eval/`, `outputs/final_submission/`, or final submission manifests. A runtime change may be promoted only if a general deterministic variant improves strict score, preserves hidden-style 48/48, passes `check_submission_ready.py`, does not increase unsupported claims, and leaves final-submission format unchanged. The current trial decision is `keep_trial_only`; no runtime code path was promoted.
 
-## 3.8 Comprehensive Failure Analysis
+## 3.10 Comprehensive Failure Analysis
 
 Use the comprehensive failure analysis when deciding whether an implementation prompt is justified. It combines official public/dev strict rows for real score-loss diagnosis with generated prompt diagnostics for generality and coverage only.
 
@@ -283,7 +295,7 @@ python3 scripts/run_comprehensive_failure_analysis.py
 
 The script writes official row failure tables, generated prompt failure tables, cross-dataset clusters, candidate general deterministic rules, counterfactual answer sketches, a hardcoding-risk audit, and `outputs/reports/comprehensive_failure_fix_decision.md/json`. It is analysis-only: generated prompts are never official score evidence, counterfactual sketches are report-only, and no runtime change, endpoint catalog change, packaged-strategy change, or final-submission change is allowed in this pass. Any future rule must use general signals such as intent, route/domain, SQL result shape, EvidenceBus fields, API state, and answer-slot type; never query IDs, prompt IDs, exact prompt strings, or gold answers.
 
-## 3.9 Type-Specific Deterministic Rule Discovery
+## 3.11 Type-Specific Deterministic Rule Discovery
 
 Use type-specific rule discovery when looking for several small non-LLM fast paths instead of one broad rewrite. It groups official rows and generated diagnostics by prompt type, domain, execution need, and evidence shape, then runs isolated simulations for rule families such as SQL-only fast paths, count/list/status/date answer fast paths, zero-row local-evidence wording, API caveat ordering, router synonym candidates, and unknown/ambiguous fallbacks.
 
@@ -294,7 +306,7 @@ python3 scripts/run_type_specific_deterministic_rule_trials.py
 
 The outputs are `outputs/reports/deterministic_prompt_type_audit.md/json`, `outputs/reports/type_specific_deterministic_rule_candidates.md/json`, `outputs/reports/type_specific_deterministic_rule_trials.md/json`, and `outputs/reports/type_specific_rule_fix_decision.md/json`. These reports are diagnostic and isolated: generated prompts are used only for generality/speed evidence, official rows remain the score evidence, and no runtime rule is promoted unless a later implementation pass proves strict/hidden-style/submission safety. Current type-specific trials identify speed-only candidates but keep `runtime_change_applied=false`.
 
-## 3.10 SDK Tool Calling Optimization Audit
+## 3.12 SDK Tool Calling Optimization Audit
 
 Use the SDK tool-calling optimization audit for shadow-only analysis of LLM tool policy, schema compactness, tool-result verbosity, and rewrite gates. It does not replace `SQL_FIRST_API_VERIFY`, does not run live Adobe API calls, and must not overwrite strict eval or final-submission artifacts.
 
@@ -307,7 +319,7 @@ python3 scripts/run_tool_calling_policy_optimizer.py
 
 The audit reports are `outputs/reports/sdk_tool_calling_optimization_preflight.md/json`, `outputs/reports/sdk_tool_call_surface_audit.md/json`, `outputs/reports/sdk_tool_call_decision_analysis.md/json`, `outputs/reports/sdk_tool_call_optimization_variants.md/json`, `outputs/reports/sdk_tool_calling_optimization_trials.md/json`, and `outputs/reports/sdk_tool_calling_fix_decision.md/json`. The promotion reports are `outputs/reports/sdk_tool_calling_promotion_preflight.md/json`, `outputs/reports/sdk_tool_calling_promotion_plan.md/json`, and `outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md/json`. A small speed-only SDK tool-call patch is promoted only after strict score stays unchanged, hidden-style remains 48/48, `check_submission_ready.py` passes, SDK direct HTTP hits remain `0`, and final-submission format stays unchanged. This does not replace `SQL_FIRST_API_VERIFY` or broadly promote the LLM controller/semantic router/answer rewrite paths.
 
-## 3.11 Correctness + Efficiency Evaluation
+## 3.13 Correctness + Efficiency Evaluation
 
 Organizer evaluation includes both correctness and efficiency. Correctness-only strict score is not the whole picture: efficiency also includes agent turns, tool calls, total tokens, wall time, and end-to-end runtime including preprocessing/context selection where the artifacts expose it.
 
@@ -317,7 +329,7 @@ python3 scripts/run_correctness_efficiency_scorecard.py
 
 The scorecard writes `outputs/reports/correctness_efficiency_scorecard.md/json` and `outputs/reports/correctness_efficiency_fix_decision.md/json`. Because official organizer weights are unknown, it reports sensitivity scenarios instead of fabricating an official overall score: correctness-dominant, balanced, efficiency-sensitive, strict-no-regression efficiency rank, and hidden-safe efficiency rank. Speed-only candidates with `strict delta = 0.0` can be valuable, but a runtime patch still requires no correctness regression, hidden-style 48/48, `check_submission_ready.py`, direct LLM HTTP hits `0`, no unsupported-claim increase, no hardcoding, and unchanged final-submission format.
 
-## 3.12 Core Tool Optimization
+## 3.14 Core Tool Optimization
 
 Use the core tool optimizer for offline search and conservative deterministic policies inside the two official tools: `execute_sql(sql)` and `call_api(method, url, params, headers)`. This is not a broad LLM/controller promotion and does not replace `SQL_FIRST_API_VERIFY`.
 

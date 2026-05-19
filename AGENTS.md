@@ -213,6 +213,57 @@ Use `python3 scripts/run_workflow_decision_audit.py` to produce `outputs/reports
 
 Generated diagnostic prompts are coverage-only and cannot support official strict-score improvement or promotion claims. If a variant improves a clear subcategory without total strict-score improvement and without safety regression, label it `locally_useful_but_not_promotable`. For answer-only variants, the trial fails if SQL hash, API hash, tool count, selected evidence hash, or dry-run label changes. Do not mix multiple behavior-changing candidate families in the same diff unless each family has its own isolated flag and report.
 
+## Diagnostic / Trial Cleanup Rule
+
+When Codex creates a diagnostic, trial, audit, optimizer, or experiment script, it must classify the run as one of:
+
+- `promoted`
+- `keep_trial_only`
+- `rejected`
+- `wait_for_external_access`
+- `diagnostic_only`
+
+If the result is not `promoted`, Codex must clean up temporary artifacts after writing the final report. For every unpromoted diagnostic or trial, keep only:
+
+1. one final `.md` report
+2. one final `.json` report
+3. any small fixture/test only if still needed by active validation
+
+Delete or avoid committing:
+
+- one-off diagnostic scripts
+- large per-prompt output folders
+- trial variant directories
+- temporary generated artifacts
+- obsolete tests that only validate deleted diagnostic scripts
+
+Do not delete:
+
+- final summary reports
+- promoted-policy reports
+- system summary
+- report index
+- final submission artifacts
+- packaged runtime code
+- validation scripts required by README/Skill/AGENTS
+
+Before deleting, Codex must create:
+
+- `outputs/reports/repo_cleanup_deletion_plan.md`
+- `outputs/reports/repo_cleanup_deletion_plan.json`
+
+After deleting, Codex must create:
+
+- `outputs/reports/repo_cleanup_result.md`
+- `outputs/reports/repo_cleanup_result.json`
+
+After cleanup, Codex must run:
+
+- `python3 scripts/check_submission_ready.py`
+- `python3 -m pytest -q`
+
+If deletion breaks validation, Codex must restore the deleted files or stop and write a blocker report.
+
 ## Evidence-Aware Answer Synthesis
 
 Evidence-aware answer synthesis is deterministic and answer-only. It may audit final-answer use of SQL/API evidence, generate isolated rewrite candidates, and run faithfulness checks, but it must not rerun SQL/API, change validators, or alter packaged `SQL_FIRST_API_VERIFY` behavior.
@@ -408,6 +459,7 @@ python3 scripts/run_type_specific_deterministic_rule_trials.py
 python3 scripts/run_tool_calling_policy_optimizer.py
 python3 scripts/run_core_tool_optimization_audit.py
 python3 scripts/run_core_tool_policy_optimizer.py
+python3 scripts/audit_repo_cleanup_candidates.py
 python3 scripts/generate_visualization_index.py
 python3 scripts/package_submission.py
 python3 scripts/package_query_outputs.py

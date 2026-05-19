@@ -52,6 +52,16 @@
 - Do not claim score improvement from report wording or visualization changes.
 - Keep diagrams and reports free of credentials and masked prefixes.
 
+## Diagnostic cleanup checklist
+
+- Classify each diagnostic/trial as `promoted`, `keep_trial_only`, `rejected`, `wait_for_external_access`, or `diagnostic_only`.
+- If the result is not promoted, keep only one final `.md` report, one final `.json` report, and active small fixtures/tests.
+- Delete or avoid committing one-off diagnostic scripts, large per-prompt folders, trial variant directories, temporary artifacts, and obsolete diagnostic-only tests.
+- Keep final reports, promoted-policy reports, system summary, report index, final submission artifacts, packaged runtime code, and validation scripts.
+- Write `outputs/reports/repo_cleanup_deletion_plan.md/json` before deleting.
+- Write `outputs/reports/repo_cleanup_result.md/json` after deleting.
+- Run `python3 scripts/check_submission_ready.py` and `python3 -m pytest -q`.
+
 ## Packaging/submission checklist
 
 - Protect `outputs/final_submission/**`.
