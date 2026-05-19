@@ -278,7 +278,7 @@ def collect_mapping(slots: AnswerSlots, mapping: dict[str, Any]) -> None:
             slots.statuses.append(text)
         if key_norm in {normalize_key(key) for key in TIME_KEYS} or re.match(r"20\d{2}-\d{2}-\d{2}", text):
             slots.timestamps.append(text)
-        if key_norm in {normalize_key(key) for key in COUNT_KEYS} and re.search(r"\d", text):
+        if looks_like_count_key(key_norm) and re.search(r"\d", text):
             slots.counts.append(value)
             slots.evidence_numbers.add(re.sub(r"[^\d.]", "", text) or text)
 
@@ -321,6 +321,17 @@ def looks_like_id(text: str) -> bool:
     return bool(
         re.fullmatch(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", text, flags=re.I)
         or re.fullmatch(r"01[A-Z0-9]{20,}", text)
+    )
+
+
+def looks_like_count_key(key_norm: str) -> bool:
+    count_keys = {normalize_key(key) for key in COUNT_KEYS}
+    return (
+        key_norm in count_keys
+        or key_norm.endswith("count")
+        or key_norm.endswith("counts")
+        or key_norm.startswith("num")
+        or key_norm.startswith("numberof")
     )
 
 

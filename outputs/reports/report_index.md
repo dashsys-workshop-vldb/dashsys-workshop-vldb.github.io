@@ -11,6 +11,9 @@ Start here. Most older generated reports were consolidated or removed.
 - [core_tool_optimization_audit.md](core_tool_optimization_audit.md)
 - [core_tool_policy_optimizer.md](core_tool_policy_optimizer.md)
 - [core_tool_compiled_policy_candidate.md](core_tool_compiled_policy_candidate.md)
+- [core_tool_correctness_audit.md](core_tool_correctness_audit.md)
+- [core_tool_correctness_trials.md](core_tool_correctness_trials.md)
+- [core_tool_correctness_fix_decision.md](core_tool_correctness_fix_decision.md)
 - [overnight_autonomous_improvement_report.md](overnight_autonomous_improvement_report.md)
 - [report_index.md](report_index.md)
 

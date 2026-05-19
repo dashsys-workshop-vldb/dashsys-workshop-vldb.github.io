@@ -10,7 +10,7 @@ Diagnostic coverage only. This local run forces Adobe API calls into dry-run mod
 - Dry-run API call count: `212`
 - Zero-row SQL count: `23`
 - Vague-answer advisory count: `0`
-- Missing count/name advisory count: `89`
+- Missing count/name advisory count: `86`
 - Official score claim: `False`
 - Promotion allowed: `False`
 - No safe deterministic improvement applied: `True`
