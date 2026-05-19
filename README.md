@@ -11,13 +11,12 @@ The system answers questions using two official data tools:
 - `execute_sql(sql)` over local DuckDB/parquet data
 - `call_api(method, url, params, headers)` for Adobe API requests
 
-Architecture is organized around a deterministic execution path:
+Architecture is split into four layers:
 
-- `DuckDBDatabase` exposes parquet files as read-only DuckDB views.
-- `SchemaIndex`, routing helpers, and query analysis select the compact schema/API context needed for one query.
-- `MetadataSelector`, `StrategyPlanner`, `PlanOptimizer`, and `plan_ensemble` create and select exactly one SQL/API plan.
-- `SQLValidator` and `APIValidator` guard every tool call before execution.
-- `AgentExecutor` runs the validated plan, forwards facts through `EvidenceBus`, writes the final answer, and records `metadata.json`, `filled_system_prompt.txt`, and `trajectory.json`.
+- Data access: `DuckDBDatabase` exposes local parquet files as read-only DuckDB views, while the Adobe API client is constrained by `EndpointCatalog`.
+- Query understanding: `SchemaIndex`, routing helpers, token extraction, and `QueryAnalysis` turn the user question into compact schema, join, ID, and API context.
+- Planning and validation: `MetadataSelector`, `StrategyPlanner`, `PlanOptimizer`, and `plan_ensemble` produce one selected SQL/API plan, then `SQLValidator` and `APIValidator` approve each tool call before it can run.
+- Execution and evidence: `AgentExecutor` runs the validated plan, sends facts through `EvidenceBus` and answer slots, writes the final answer, and records `metadata.json`, `filled_system_prompt.txt`, and `trajectory.json`.
 
 The full runtime path is:
 
