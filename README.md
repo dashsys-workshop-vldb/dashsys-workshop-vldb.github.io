@@ -11,24 +11,30 @@ The system answers questions using two official data tools:
 - `execute_sql(sql)` over local DuckDB/parquet data
 - `call_api(method, url, params, headers)` for Adobe API requests
 
-The full data path is:
+Architecture is organized around a deterministic execution path:
+
+- `DuckDBDatabase` exposes parquet files as read-only DuckDB views.
+- `SchemaIndex`, routing helpers, and query analysis select the compact schema/API context needed for one query.
+- `MetadataSelector`, `StrategyPlanner`, `PlanOptimizer`, and `plan_ensemble` create and select exactly one SQL/API plan.
+- `SQLValidator` and `APIValidator` guard every tool call before execution.
+- `AgentExecutor` runs the validated plan, forwards facts through `EvidenceBus`, writes the final answer, and records `metadata.json`, `filled_system_prompt.txt`, and `trajectory.json`.
+
+The full runtime path is:
 
 ```text
 User query
--> Prompt Router
--> query normalization and token extraction
--> candidate/full schema context selection
--> QueryAnalysis and metadata selection
--> SQL/API planning or optional LLM NL-to-SQL
--> validation and optional repair/fallback
--> SQL/API execution
--> EvidenceBus forwarding
--> answer slots and claim verification
+-> PromptRouter, query normalization, and token extraction
+-> SchemaIndex context selection and QueryAnalysis
+-> MetadataSelector
+-> StrategyPlanner, PlanOptimizer, and plan_ensemble
+-> SQLValidator and APIValidator
+-> DuckDBDatabase and Adobe API client execution
+-> EvidenceBus, answer slots, and claim verification
 -> final answer
 -> trajectory JSON with checkpoints
 ```
 
-The project hardcodes routing policy, not final answers. Templates and LLM SQL are both validated before execution.
+The project hardcodes routing policy and validation rules, not final answers. Templates and optional LLM SQL are both validated before execution, and `SQL_FIRST_API_VERIFY` remains the packaged default.
 
 ## 2. Setup
 
