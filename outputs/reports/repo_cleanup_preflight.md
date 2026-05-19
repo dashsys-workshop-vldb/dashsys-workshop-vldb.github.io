@@ -1,6 +1,6 @@
 # Repo Cleanup Preflight
 
-- Generated at: `2026-05-19T12:25:57Z`
+- Generated at: `2026-05-19T13:30:50Z`
 - Packaged strategy: `SQL_FIRST_API_VERIFY`
 - Strict score: `0.6553`
 - Hidden-style: `48/48`
@@ -27,7 +27,7 @@
 
 ## Git Status Summary
 
-- line_count: `55`
-- modified_count: `21`
-- deleted_count: `25`
-- untracked_count: `9`
+- line_count: `18`
+- modified_count: `18`
+- deleted_count: `0`
+- untracked_count: `0`

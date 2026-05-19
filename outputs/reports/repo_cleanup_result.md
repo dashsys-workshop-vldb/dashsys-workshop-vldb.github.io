@@ -6,7 +6,7 @@
 - Size reduction: `94407` bytes
 - Runtime behavior changed: `False`
 - Final submission ready after cleanup: `True`
-- Pytest: `478 passed in 37.33s`
+- Pytest: `478 passed in 42.06s`
 - Secret scan: `passed_no_hits`
 - Rollback needed: `False`
 
@@ -48,3 +48,4 @@
 - `python3 scripts/generate_consolidated_reports.py`: `passed`
 - `python3 scripts/check_submission_ready.py`: `passed`
 - `python3 -m pytest -q`: `passed`
+- `secret scan excluding .git, .env.local, zip files`: `passed`

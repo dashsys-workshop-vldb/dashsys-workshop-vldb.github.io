@@ -1,6 +1,6 @@
 # Repo Cleanup Candidate Inventory
 
-- Generated at: `2026-05-19T12:25:57Z`
+- Generated at: `2026-05-19T13:30:50Z`
 - Runtime behavior changed: `False`
 
 ## Classification Rules

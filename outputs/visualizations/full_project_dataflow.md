@@ -6,7 +6,7 @@ Single large SVG overview for supervisor/project walkthrough.
 
 ## Current Status
 
-- Generated at: `2026-05-19T12:25:58Z`
+- Generated at: `2026-05-19T13:31:14Z`
 - Packaged strategy: `SQL_FIRST_API_VERIFY`
 - Strict score: `0.6553`
 - Hidden-style: `48/48`
