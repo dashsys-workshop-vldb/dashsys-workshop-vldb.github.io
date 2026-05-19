@@ -302,6 +302,7 @@ Use the SDK tool-calling optimization audit for shadow-only analysis of LLM tool
 python3 scripts/run_sdk_tool_calling_optimization_audit.py
 python3 scripts/run_sdk_tool_calling_optimization_trials.py
 python3 scripts/run_sdk_tool_calling_efficiency_promotion.py --validation-complete
+python3 scripts/run_tool_calling_policy_optimizer.py
 ```
 
 The audit reports are `outputs/reports/sdk_tool_calling_optimization_preflight.md/json`, `outputs/reports/sdk_tool_call_surface_audit.md/json`, `outputs/reports/sdk_tool_call_decision_analysis.md/json`, `outputs/reports/sdk_tool_call_optimization_variants.md/json`, `outputs/reports/sdk_tool_calling_optimization_trials.md/json`, and `outputs/reports/sdk_tool_calling_fix_decision.md/json`. The promotion reports are `outputs/reports/sdk_tool_calling_promotion_preflight.md/json`, `outputs/reports/sdk_tool_calling_promotion_plan.md/json`, and `outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md/json`. A small speed-only SDK tool-call patch is promoted only after strict score stays unchanged, hidden-style remains 48/48, `check_submission_ready.py` passes, SDK direct HTTP hits remain `0`, and final-submission format stays unchanged. This does not replace `SQL_FIRST_API_VERIFY` or broadly promote the LLM controller/semantic router/answer rewrite paths.
@@ -592,12 +593,19 @@ python3 scripts/generate_project_mermaid_visualizations.py
 
 `generate_consolidated_reports.py` runs this workflow automatically. The diagrams must remain local, report-derived, and secret-safe: do not access `.env.local`, do not call external live services, and do not change runtime behavior to update a visualization.
 
+## DASHSys Project Skill
+
+Use this skill before any serious Codex change: [`skills/dashsys_project_skill/SKILL.md`](skills/dashsys_project_skill/SKILL.md).
+
+The Skill protects final submission and official eval artifacts, separates correctness from efficiency work, keeps generated prompts diagnostic-only, blocks live eval until the live_success guard allows it, forbids hardcoding, and requires strict validation before promotion. It is repo-local and does not auto-install into a user home directory.
+
 ## 17. Mandatory Post-Change Validation
 
 After every code, report, cleanup, visualization, or documentation change, run the full validation suite before calling the work complete:
 
 ```bash
 python3 -m pytest -q
+python3 scripts/audit_dashsys_project_skill.py
 python3 scripts/generate_end_to_end_system_dataflow.py
 python3 scripts/audit_workshop_requirements.py
 python3 scripts/run_dev_eval.py --strict
@@ -619,6 +627,7 @@ python3 scripts/run_score_focused_core_improvement_trials.py
 python3 scripts/run_comprehensive_failure_analysis.py
 python3 scripts/run_deterministic_prompt_type_audit.py
 python3 scripts/run_type_specific_deterministic_rule_trials.py
+python3 scripts/run_tool_calling_policy_optimizer.py
 python3 scripts/generate_visualization_index.py
 python3 scripts/package_submission.py
 python3 scripts/package_query_outputs.py

@@ -41,6 +41,7 @@ POST_CHANGE_VALIDATION_COMMANDS = [
     "python3 scripts/run_sdk_tool_calling_optimization_trials.py",
     "python3 scripts/run_correctness_efficiency_scorecard.py",
     "python3 scripts/run_sdk_tool_calling_efficiency_promotion.py --validation-complete",
+    "python3 scripts/run_tool_calling_policy_optimizer.py",
     "python3 scripts/run_confidence_calibration_audit.py",
     "python3 scripts/run_token_efficiency_audit.py",
     "python3 scripts/check_llm_sdk_backend.py",
@@ -107,6 +108,11 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/sdk_tool_calling_promotion_preflight.md/json",
     "outputs/reports/sdk_tool_calling_promotion_plan.md/json",
     "outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md/json",
+    "outputs/reports/tool_calling_policy_optimizer.md/json",
+    "outputs/reports/tool_calling_objective_functions.md/json",
+    "outputs/reports/tool_calling_policy_search_results.md/json",
+    "outputs/reports/tool_calling_compiled_policy_candidate.md/json",
+    "outputs/reports/tool_calling_policy_promotion_decision.md/json",
     "outputs/reports/dashsys_project_skill_audit.md/json",
     "outputs/reports/confidence_calibration_audit.md/json",
     "outputs/reports/token_efficiency_audit.md/json",
@@ -262,6 +268,11 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "sdk_tool_calling_promotion_preflight": _load_json(outputs / "reports" / "sdk_tool_calling_promotion_preflight.json"),
         "sdk_tool_calling_promotion_plan": _load_json(outputs / "reports" / "sdk_tool_calling_promotion_plan.json"),
         "sdk_tool_calling_efficiency_promotion_decision": _load_json(outputs / "reports" / "sdk_tool_calling_efficiency_promotion_decision.json"),
+        "tool_calling_policy_optimizer": _load_json(outputs / "reports" / "tool_calling_policy_optimizer.json"),
+        "tool_calling_objective_functions": _load_json(outputs / "reports" / "tool_calling_objective_functions.json"),
+        "tool_calling_policy_search_results": _load_json(outputs / "reports" / "tool_calling_policy_search_results.json"),
+        "tool_calling_compiled_policy_candidate": _load_json(outputs / "reports" / "tool_calling_compiled_policy_candidate.json"),
+        "tool_calling_policy_promotion_decision": _load_json(outputs / "reports" / "tool_calling_policy_promotion_decision.json"),
         "dashsys_project_skill_audit": _load_json(outputs / "reports" / "dashsys_project_skill_audit.json"),
         "confidence_calibration_audit": _load_json(outputs / "reports" / "confidence_calibration_audit.json"),
         "token_efficiency_audit": _load_json(outputs / "reports" / "token_efficiency_audit.json"),
@@ -340,6 +351,7 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
         "sdk_tool_calling_optimization": _sdk_tool_calling_optimization_status(sources),
         "correctness_efficiency_evaluation": _correctness_efficiency_status(sources),
         "sdk_tool_calling_efficiency_promotion": _sdk_tool_calling_efficiency_promotion_status(sources),
+        "tool_calling_policy_optimizer": _tool_calling_policy_optimizer_status(sources),
         "dashsys_project_skill": _dashsys_project_skill_status(sources),
         "context7_documentation_grounded_audit": _context7_audit_status(sources),
         "source_reports": [
@@ -373,6 +385,10 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
             "outputs/reports/correctness_efficiency_scorecard.md",
             "outputs/reports/correctness_efficiency_fix_decision.md",
             "outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md",
+            "outputs/reports/tool_calling_policy_optimizer.md",
+            "outputs/reports/tool_calling_policy_search_results.md",
+            "outputs/reports/tool_calling_compiled_policy_candidate.md",
+            "outputs/reports/tool_calling_policy_promotion_decision.md",
             "outputs/reports/dashsys_project_skill_audit.md",
         ],
     }
@@ -410,6 +426,7 @@ def build_llm_baseline_summary(config: Config, sources: dict[str, Any]) -> dict[
         "sdk_tool_calling_optimization": _sdk_tool_calling_optimization_status(sources),
         "correctness_efficiency_evaluation": _correctness_efficiency_status(sources),
         "sdk_tool_calling_efficiency_promotion": _sdk_tool_calling_efficiency_promotion_status(sources),
+        "tool_calling_policy_optimizer": _tool_calling_policy_optimizer_status(sources),
         "source_reports": [
             "outputs/llm_sdk_backend_check.json",
             "outputs/llm_baseline_eval_report.json",
@@ -421,6 +438,10 @@ def build_llm_baseline_summary(config: Config, sources: dict[str, Any]) -> dict[
             "outputs/reports/correctness_efficiency_scorecard.md",
             "outputs/reports/correctness_efficiency_fix_decision.md",
             "outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md",
+            "outputs/reports/tool_calling_policy_optimizer.md",
+            "outputs/reports/tool_calling_policy_search_results.md",
+            "outputs/reports/tool_calling_compiled_policy_candidate.md",
+            "outputs/reports/tool_calling_policy_promotion_decision.md",
         ],
     }
 
@@ -459,6 +480,7 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
         "sdk_tool_calling_optimization": _sdk_tool_calling_optimization_status(sources),
         "correctness_efficiency_evaluation": _correctness_efficiency_status(sources),
         "sdk_tool_calling_efficiency_promotion": _sdk_tool_calling_efficiency_promotion_status(sources),
+        "tool_calling_policy_optimizer": _tool_calling_policy_optimizer_status(sources),
         "source_reports": [
             "outputs/autonomous_score_push_report.json",
             "outputs/autonomous_packaged_trial.json",
@@ -496,6 +518,10 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
             "outputs/reports/sdk_tool_calling_promotion_preflight.md",
             "outputs/reports/sdk_tool_calling_promotion_plan.md",
             "outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md",
+            "outputs/reports/tool_calling_policy_optimizer.md",
+            "outputs/reports/tool_calling_policy_search_results.md",
+            "outputs/reports/tool_calling_compiled_policy_candidate.md",
+            "outputs/reports/tool_calling_policy_promotion_decision.md",
         ],
     }
 
@@ -1529,6 +1555,45 @@ def _sdk_tool_calling_efficiency_promotion_status(sources: dict[str, Any]) -> di
             "outputs/reports/sdk_tool_calling_promotion_preflight.md",
             "outputs/reports/sdk_tool_calling_promotion_plan.md",
             "outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md",
+        ],
+    }
+
+
+def _tool_calling_policy_optimizer_status(sources: dict[str, Any]) -> dict[str, Any]:
+    optimizer = sources.get("tool_calling_policy_optimizer") or {}
+    objectives = sources.get("tool_calling_objective_functions") or {}
+    search = sources.get("tool_calling_policy_search_results") or {}
+    candidate = sources.get("tool_calling_compiled_policy_candidate") or {}
+    decision = sources.get("tool_calling_policy_promotion_decision") or {}
+    search_space = optimizer.get("search_space") if isinstance(optimizer.get("search_space"), dict) else {}
+    return {
+        "optimizer_status": "complete" if optimizer.get("report_type") == "tool_calling_policy_optimizer" else "not_run",
+        "objective_status": "complete" if objectives.get("report_type") == "tool_calling_objective_functions" else "not_run",
+        "search_status": "complete" if search.get("report_type") == "tool_calling_policy_search_results" else "not_run",
+        "compiled_candidate_status": "complete"
+        if candidate.get("report_type") == "tool_calling_compiled_policy_candidate"
+        else "not_run",
+        "promotion_decision_status": "complete"
+        if decision.get("report_type") == "tool_calling_policy_promotion_decision"
+        else "not_run",
+        "decision": decision.get("decision", "not_run"),
+        "runtime_change_applied": bool(decision.get("runtime_change_applied", False)),
+        "promotion_safe": bool(decision.get("promotion_safe", False)),
+        "compiled_policy_id": candidate.get("policy_id"),
+        "policy_count": search_space.get("policy_count") or search.get("total_policies_evaluated"),
+        "pareto_frontier_count": len(search.get("pareto_frontier_policies") or []),
+        "official_overall_score_claim": bool(
+            optimizer.get("official_overall_score_claim", decision.get("official_overall_score_claim", False))
+        ),
+        "diagnostic_only": bool(optimizer.get("diagnostic_only", True)),
+        "direct_http_hits": decision.get("direct_http_hits"),
+        "final_submission_ready": decision.get("final_submission_ready"),
+        "source_reports": [
+            "outputs/reports/tool_calling_policy_optimizer.md",
+            "outputs/reports/tool_calling_objective_functions.md",
+            "outputs/reports/tool_calling_policy_search_results.md",
+            "outputs/reports/tool_calling_compiled_policy_candidate.md",
+            "outputs/reports/tool_calling_policy_promotion_decision.md",
         ],
     }
 

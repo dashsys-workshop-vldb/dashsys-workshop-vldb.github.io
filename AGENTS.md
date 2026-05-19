@@ -174,6 +174,7 @@ Use the SDK tool-calling optimization audit for diagnostic-only LLM/tool-policy 
 python3 scripts/run_sdk_tool_calling_optimization_audit.py
 python3 scripts/run_sdk_tool_calling_optimization_trials.py
 python3 scripts/run_sdk_tool_calling_efficiency_promotion.py --validation-complete
+python3 scripts/run_tool_calling_policy_optimizer.py
 ```
 
 The audit writes `outputs/reports/sdk_tool_calling_optimization_preflight.md/json`, `outputs/reports/sdk_tool_call_surface_audit.md/json`, `outputs/reports/sdk_tool_call_decision_analysis.md/json`, `outputs/reports/sdk_tool_call_optimization_variants.md/json`, `outputs/reports/sdk_tool_calling_optimization_trials.md/json`, and `outputs/reports/sdk_tool_calling_fix_decision.md/json`. The efficiency promotion writes `outputs/reports/sdk_tool_calling_promotion_preflight.md/json`, `outputs/reports/sdk_tool_calling_promotion_plan.md/json`, and `outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md/json`. A speed-only SDK/tool-calling patch may be promoted only after strict score improves or stays unchanged, hidden-style remains 48/48, `check_submission_ready.py` passes, direct LLM HTTP hits remain 0, unsupported claims do not increase, and final-submission format stays unchanged. This is not a broad LLM controller, semantic router, answer rewrite, or packaged-strategy promotion.
@@ -391,6 +392,7 @@ python3 scripts/run_score_focused_core_improvement_trials.py
 python3 scripts/run_comprehensive_failure_analysis.py
 python3 scripts/run_deterministic_prompt_type_audit.py
 python3 scripts/run_type_specific_deterministic_rule_trials.py
+python3 scripts/run_tool_calling_policy_optimizer.py
 python3 scripts/generate_visualization_index.py
 python3 scripts/package_submission.py
 python3 scripts/package_query_outputs.py

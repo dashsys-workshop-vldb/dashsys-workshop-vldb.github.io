@@ -252,6 +252,7 @@ Required commands:
 - `python3 scripts/run_sdk_tool_calling_optimization_trials.py`
 - `python3 scripts/run_correctness_efficiency_scorecard.py`
 - `python3 scripts/run_sdk_tool_calling_efficiency_promotion.py --validation-complete`
+- `python3 scripts/run_tool_calling_policy_optimizer.py`
 - `python3 scripts/run_confidence_calibration_audit.py`
 - `python3 scripts/run_token_efficiency_audit.py`
 - `python3 scripts/check_llm_sdk_backend.py`
@@ -317,6 +318,11 @@ Regenerated report surfaces:
 - `outputs/reports/sdk_tool_calling_promotion_preflight.md/json`
 - `outputs/reports/sdk_tool_calling_promotion_plan.md/json`
 - `outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md/json`
+- `outputs/reports/tool_calling_policy_optimizer.md/json`
+- `outputs/reports/tool_calling_objective_functions.md/json`
+- `outputs/reports/tool_calling_policy_search_results.md/json`
+- `outputs/reports/tool_calling_compiled_policy_candidate.md/json`
+- `outputs/reports/tool_calling_policy_promotion_decision.md/json`
 - `outputs/reports/dashsys_project_skill_audit.md/json`
 - `outputs/reports/confidence_calibration_audit.md/json`
 - `outputs/reports/token_efficiency_audit.md/json`

@@ -1,0 +1,52 @@
+{
+  "composite_scenarios": {
+    "balanced": {
+      "formula": "0.60 correctness + 0.40 efficiency"
+    },
+    "correctness_dominant": {
+      "formula": "0.80 correctness + 0.20 efficiency"
+    },
+    "efficiency_sensitive": {
+      "formula": "0.50 correctness + 0.50 efficiency"
+    },
+    "no_regression_efficiency": {
+      "rank_by": "efficiency_score_equal_weight",
+      "requirement": "correctness >= baseline"
+    },
+    "pareto_frontier": {
+      "requirement": "correctness >= baseline and at least one efficiency metric improves"
+    }
+  },
+  "correctness_metrics": [
+    "strict_score",
+    "sql_score",
+    "api_score",
+    "response_score",
+    "unsupported_claim_count",
+    "high_scoring_row_regression_count"
+  ],
+  "efficiency_metrics": [
+    "turns",
+    "tool_calls",
+    "input_tokens",
+    "output_tokens",
+    "total_tokens",
+    "wall_time",
+    "end_to_end_runtime",
+    "preprocessing_time"
+  ],
+  "formulas": [
+    "tool_call_efficiency = baseline_tool_calls / max(policy_tool_calls, 1)",
+    "token_efficiency = baseline_total_tokens / max(policy_total_tokens, 1)",
+    "runtime_efficiency = baseline_wall_time / max(policy_wall_time, 0.001)",
+    "turns_efficiency = baseline_turns / max(policy_turns, 1), or neutral 1.0 when unavailable",
+    "efficiency_score_equal_weight = average(turns_efficiency, tool_call_efficiency, token_efficiency, runtime_efficiency)",
+    "correctness_dominant = 0.80 * correctness + 0.20 * efficiency",
+    "balanced = 0.60 * correctness + 0.40 * efficiency",
+    "efficiency_sensitive = 0.50 * correctness + 0.50 * efficiency"
+  ],
+  "generated_at": "2026-05-19T00:17:07+00:00",
+  "official_overall_score_claim": false,
+  "organizer_weights_known": false,
+  "report_type": "tool_calling_objective_functions"
+}

@@ -123,12 +123,22 @@ def test_allowed_tools_by_prompt_type_keeps_api_required_safe():
 
     sql_only = _allowed_tool_schemas_for_route(tools, _route(LOCAL_DB_ONLY, api_policy=API_SKIP, requires_api=False))
     api_only = _allowed_tool_schemas_for_route(tools, _route(API_ONLY, api_policy=API_REQUIRED, requires_database=False, requires_api=True))
-    ambiguous = _allowed_tool_schemas_for_route(tools, _route(SQL_PLUS_API, api_policy="API_OPTIONAL", requires_api=True))
+    ambiguous = _allowed_tool_schemas_for_route(
+        tools,
+        _route(SQL_PLUS_API, api_policy="API_OPTIONAL", requires_api=True),
+        live_success_count=1,
+    )
+    optional_blocked = _allowed_tool_schemas_for_route(
+        tools,
+        _route(SQL_PLUS_API, api_policy="API_OPTIONAL", requires_api=True),
+        live_success_count=0,
+    )
     direct = _allowed_tool_schemas_for_route(tools, _route(LLM_DIRECT, api_policy=API_SKIP, requires_database=False, requires_api=False))
 
     assert [tool["function"]["name"] for tool in sql_only] == ["execute_sql"]
     assert [tool["function"]["name"] for tool in api_only] == ["call_api"]
     assert [tool["function"]["name"] for tool in ambiguous] == ["execute_sql", "call_api"]
+    assert [tool["function"]["name"] for tool in optional_blocked] == ["execute_sql"]
     assert direct == []
 
 

@@ -7,6 +7,7 @@ import hashlib
 import inspect
 from collections import Counter
 from difflib import get_close_matches
+from pathlib import Path
 from typing import Any
 
 from .agent_tools import run_data_answer_tool, verify_answer_tool
@@ -56,7 +57,11 @@ def run_real_llm_two_tools_baseline(
     route = route_prompt(query)
     data_driven_prompt = route.mode != LLM_DIRECT
 
-    tool_schemas = _allowed_tool_schemas_for_route(_baseline_tool_schemas(), route)
+    tool_schemas = _allowed_tool_schemas_for_route(
+        _baseline_tool_schemas(),
+        route,
+        live_success_count=_live_success_count_from_reports(cfg.outputs_dir),
+    )
     schema_affordance = build_baseline_schema_affordance(schema_index) if guided else ""
     user_payload = {
         "query": query,
@@ -796,6 +801,8 @@ def _baseline_tool_schemas() -> list[dict[str, Any]]:
 def _allowed_tool_schemas_for_route(
     tools: list[dict[str, Any]],
     route: Any,
+    *,
+    live_success_count: int | None = None,
 ) -> list[dict[str, Any]]:
     """Expose only the tools useful for a deterministic prompt route."""
     by_name = {
@@ -815,7 +822,28 @@ def _allowed_tool_schemas_for_route(
         return [by_name["execute_sql"]] if "execute_sql" in by_name else []
     if mode == LOCAL_DB_ONLY:
         return [by_name["execute_sql"]] if "execute_sql" in by_name else []
+    if requires_database and requires_api and api_policy != API_REQUIRED and int(live_success_count or 0) <= 0:
+        return [by_name["execute_sql"]] if "execute_sql" in by_name else []
     return [tool for name, tool in (("execute_sql", by_name.get("execute_sql")), ("call_api", by_name.get("call_api"))) if tool]
+
+
+def _live_success_count_from_reports(outputs_dir: Path) -> int:
+    smoke_path = outputs_dir / "reports" / "live_api_readiness_smoke.json"
+    if not smoke_path.exists():
+        return 0
+    try:
+        payload = json.loads(smoke_path.read_text(encoding="utf-8"))
+    except Exception:
+        return 0
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    for source in (summary, payload):
+        value = source.get("live_success_count") if isinstance(source, dict) else None
+        if isinstance(value, (int, float)):
+            return max(0, int(value))
+    rows = payload.get("endpoint_rows") or payload.get("endpoints") or payload.get("rows")
+    if isinstance(rows, list):
+        return sum(1 for row in rows if isinstance(row, dict) and row.get("outcome") == "live_success")
+    return 0
 
 
 def _call_llm_messages(

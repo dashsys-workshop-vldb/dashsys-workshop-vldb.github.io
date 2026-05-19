@@ -64,4 +64,8 @@
 - `outputs/reports/correctness_efficiency_scorecard.md`
 - `outputs/reports/correctness_efficiency_fix_decision.md`
 - `outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md`
+- `outputs/reports/tool_calling_policy_optimizer.md`
+- `outputs/reports/tool_calling_policy_search_results.md`
+- `outputs/reports/tool_calling_compiled_policy_candidate.md`
+- `outputs/reports/tool_calling_policy_promotion_decision.md`
 - `outputs/reports/dashsys_project_skill_audit.md`
