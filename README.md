@@ -11,12 +11,13 @@ The system answers questions using two official data tools:
 - `execute_sql(sql)` over local DuckDB/parquet data
 - `call_api(method, url, params, headers)` for Adobe API requests
 
-Architecture is split into four layers:
+At a high level, the agent is a deterministic pipeline around two constrained tools:
 
-- Data access: `DuckDBDatabase` exposes local parquet files as read-only DuckDB views, while the Adobe API client is constrained by `EndpointCatalog`.
-- Query understanding: `SchemaIndex`, routing helpers, token extraction, and `QueryAnalysis` turn the user question into compact schema, join, ID, and API context.
-- Planning and validation: `MetadataSelector`, `StrategyPlanner`, `PlanOptimizer`, and `plan_ensemble` produce one selected SQL/API plan, then `SQLValidator` and `APIValidator` approve each tool call before it can run.
-- Execution and evidence: `AgentExecutor` runs the validated plan, sends facts through `EvidenceBus` and answer slots, writes the final answer, and records `metadata.json`, `filled_system_prompt.txt`, and `trajectory.json`.
+- **Data layer**: `DuckDBDatabase` exposes local parquet files as read-only DuckDB views. The Adobe API path is limited to endpoints declared in `EndpointCatalog`.
+- **Understanding layer**: `SchemaIndex`, routing helpers, token extraction, and `QueryAnalysis` convert the original question into compact table, join, identifier, and API context.
+- **Planning layer**: `MetadataSelector`, `StrategyPlanner`, `PlanOptimizer`, and `plan_ensemble` build and deduplicate candidate steps, then select exactly one SQL/API plan for the query.
+- **Safety layer**: `SQLValidator` enforces read-only SQL, and `APIValidator` blocks calls outside the allowed Adobe API surface before any tool execution.
+- **Execution layer**: `AgentExecutor` runs the approved plan, carries SQL/API facts through `EvidenceBus` and answer slots, writes the final answer, and records `metadata.json`, `filled_system_prompt.txt`, and `trajectory.json`.
 
 The full runtime path is:
 
@@ -33,7 +34,7 @@ User query
 -> trajectory JSON with checkpoints
 ```
 
-The project hardcodes routing policy and validation rules, not final answers. Templates and optional LLM SQL are both validated before execution, and `SQL_FIRST_API_VERIFY` remains the packaged default.
+The project hardcodes routing policy and validation rules, not final answers. Templates, optional LLM SQL, and API calls all pass through the same validators before execution. `SQL_FIRST_API_VERIFY` remains the packaged default, so local SQL evidence is gathered first and Adobe API evidence is used to verify or supplement it when policy and credentials allow.
 
 ## 2. Setup
 
