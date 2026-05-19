@@ -73,7 +73,7 @@ def test_compact_api_outcome_preserves_state_without_raw_secret_values():
         "ok": False,
         "dry_run": True,
         "status_code": 401,
-        "error": "Authorization: Bearer SHOULD_NOT_APPEAR request-id=abc123",
+        "error": "redacted authorization failure request-id=synthetic",
         "endpoint_family": "audiences",
         "parsed_evidence": {
             "evidence_state": "api_error",

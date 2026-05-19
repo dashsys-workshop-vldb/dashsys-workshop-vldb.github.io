@@ -13,7 +13,7 @@ This audit checks that LLM/model calls use the shared SDK-based LLM client abstr
 
 - `documentation_only`: `9`
 - `sdk_client_allowed`: `8`
-- `test_fixture_allowed`: `17`
+- `test_fixture_allowed`: `16`
 
 ## Remaining Allowed Exceptions
 
