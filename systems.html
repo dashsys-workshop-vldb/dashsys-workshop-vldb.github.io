@@ -6,12 +6,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Workshop on Data-AI Systems (co-located with VLDB 2026)">
 <link rel="stylesheet" href="w3.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Rubik">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
 <style>
-body,h1,h2,h3,h4,h5,h6 {font-family: "Rubik", sans-serif}
-h1,h2,h3,h4,h5,h6 {font-family: "Rubik", sans-serif; color:#563d2d}
+body,h1,h2,h3,h4,h5,h6 {font-family: "Inter", sans-serif; color: #2d3748}
+h1,h2 {font-family: "Inter", sans-serif; color:#1a2332; font-weight: 600}
+h3 {font-family: "Inter", sans-serif; color:#1e3a4f; font-weight: 500}
+h4,h5,h6 {font-family: "Inter", sans-serif; color:#1e3a4f; font-weight: 500}
 code:not(pre code) {background:#f0f0f0; border:1px solid #ddd; border-radius:4px; padding:1px 5px; font-size:0.88em;}
 
 :target::before {
@@ -54,12 +56,41 @@ body, html {
 .bgimg-1 {
   background-position: center;
   background-size: cover;
-  background-image: url("boston.jpg");
+  background-image: url("images/boston.jpg");
   min-height: 10%;
 }
 
 .w3-bar .w3-button {
   padding: 16px;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.w3-bar .w3-button::after {
+  content: "";
+  position: absolute;
+  bottom: 8px;
+  left: 16px;
+  right: 16px;
+  height: 2px;
+  background: #257a91;
+  transform: scaleX(0);
+  transition: transform 0.2s ease;
+}
+
+.w3-bar .w3-button:hover::after {
+  transform: scaleX(1);
+}
+
+.w3-bar .w3-button:hover {
+  color: #257a91 !important;
+  background-color: transparent !important;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #e8ecf0;
+  margin: 40px 0;
 }
 
 .container {
@@ -84,15 +115,15 @@ body, html {
 <!-- Navbar (sit on top) -->
 <div class="w3-top" style="max-width:1280px">
   <div class="w3-bar w3-white w3-card" id="myNavbar">
-    <a href="#home" class="w3-wide"><img src="logo.png" height=80px></a>
+    <a href="#home" class="w3-wide"><img src="images/logo.png" height=80px></a>
     <!-- Right-sided navbar links -->
     <div class="w3-right w3-hide-small">
       <a href="index.html#home" class="w3-bar-item w3-button">Home</a>
-      <a href="index.html#keynotepanel" class="w3-bar-item w3-button">Keynotes & Panels</a>
+      <a href="index.html#keynotepanel" class="w3-bar-item w3-button">Keynotes</a>
       <a href="index.html#program" class="w3-bar-item w3-button">Program</a>
       <a href="systems.html" class="w3-bar-item w3-button">Systems Track</a>
 	  <a href="index.html#acpapers" class="w3-bar-item w3-button">Accepted Papers</a>
-      <a href="index.html#cfp" class="w3-bar-item w3-button"><i class="fa"></i>Call for Papers</a>
+      <a href="index.html#cfp" class="w3-bar-item w3-button"><i class="fa"></i>Call for Submissions</a>
       <a href="index.html#dates" class="w3-bar-item w3-button"><i class="fa"></i>Important Dates</a>
       <a href="index.html#org" class="w3-bar-item w3-button"><i class="fa"></i>Organization</a>
       <a href="index.html#photos" class="w3-bar-item w3-button"><i class="fa"></i>Photos</a>
@@ -111,9 +142,9 @@ body, html {
 <nav class="w3-sidebar w3-bar-block w3-black w3-card w3-animate-left w3-hide-medium w3-hide-large" style="display:none" id="mySidebar">
   <a href="javascript:void(0)" onclick="w3_close()" class="w3-bar-item w3-button w3-large w3-padding-16">Close ×</a>
   <a href="index.html#home" onclick="w3_close()" class="w3-bar-item w3-button">Home</a>
-  <a href="index.html#cfp" onclick="w3_close()" class="w3-bar-item w3-button"><i class="fa"></i>Call for Papers</a>
+  <a href="index.html#cfp" onclick="w3_close()" class="w3-bar-item w3-button"><i class="fa"></i>Call for Submissions</a>
   <a href="index.html#dates" onclick="w3_close()" class="w3-bar-item w3-button"><i class="fa"></i>Important Dates</a>
-  <a href="index.html#keynotepanel" onclick="w3_close()" class="w3-bar-item w3-button">Keynotes and Panels</a>
+  <a href="index.html#keynotepanel" onclick="w3_close()" class="w3-bar-item w3-button">Keynotes</a>
   <a href="index.html#org" onclick="w3_close()" class="w3-bar-item w3-button"><i class="fa"></i>Organization</a>
   <a href="index.html#program" onclick="w3_close()" class="w3-bar-item w3-button">Program</a>
 </nav>
@@ -121,11 +152,12 @@ body, html {
 <!-- Header with full-height image -->
 <header class="bgimg-1 w3-display-container">
 <div class="w3-container" style="padding:10px 16px" id="home" >
-    <p style="margin-top:150px"><a class="w3-xlarge" style="color:white; background-color:black;">Workshop on Systems for Data-centric Agents with Human-in-the-loop</a><br>
-    <a class="w3-xxlarge" style="color:white; background-color:black">DASHSys</a><br>
-    <a class="w3-large" style="color:white; background-color:black">Co-located with VLDB 2026, Boston, USA</a><br>
-    <a class="w3-large" style="color:white; background-color:black">Sep 4, 2026 (Friday)</a> 
-    </p>
+    <div style="margin-top:150px; background: rgba(20, 30, 48, 0.75); display: inline-block; padding: 24px 32px; border-radius: 8px; backdrop-filter: blur(4px);">
+      <span class="w3-xlarge" style="color:white; font-weight:500; line-height:1.4;">Workshop on Systems for Data-centric Agents with Human-in-the-loop</span><br>
+      <span class="w3-xxlarge" style="color:white; font-weight:700; letter-spacing:2px;">DASHSys</span><br>
+      <span class="w3-large" style="color:rgba(255,255,255,0.9);">Co-located with VLDB 2026, Boston, USA</span><br>
+      <span class="w3-large" style="color:rgba(255,255,255,0.9);">Sep 4, 2026 (Friday)</span>
+    </div>
 		<div style="height:100%; margin-top:5%">
 			<a href="LINK" 
 			class="twitter-follow-button" style="float:right" data-show-count="false">Follow on X</a>		
@@ -358,7 +390,7 @@ print(response.json())</code></pre>
 <li>A <b>zipped archive</b> of the system's source code</li>
 </ul>
 
-<p>The test set will be released approximately 48 hours before the submission deadline. Participants must submit the deliverables as described above within this window.</p>
+<p>The test set will be released 48 hours before the submission deadline. Participants must submit the deliverables as described above within this window.</p>
 
 </div>
 
@@ -457,17 +489,17 @@ a chosen model (not necessarily the latest) and collects the response and a traj
 
 <tr>
 <td>System paper submission deadline</td>
-<td><s>May 19, 2026</s> <strong style="color:red;">June 3, 2026</strong> — 8:00 AM PT</td>
+<td><s>May 29, 2026</s> <span style="color:red; font-weight:bold">June 3, 2026</span> — 8:00 AM PT</td>
 </tr>
 
 <tr>
 <td>Competition winners announced</td>
-<td><s>May 31, 2026</s> <strong style="color:red;">June 26, 2026</strong></td>
+<td><s>June 12, 2026</s> <span style="color:red; font-weight:bold">June 26, 2026</span></td>
 </tr>
 
 <tr>
 <td>Notification of acceptance</td>
-<td><s>June 12, 2026</s> <strong style="color:red;">June 26, 2026</strong></td>
+<td><s>June 12, 2026</s> <span style="color:red; font-weight:bold">June 26, 2026</span></td>
 </tr>
 
 <tr>
