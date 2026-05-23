@@ -408,6 +408,24 @@ python3 scripts/run_dev_eval.py --strict --strategies LLM_SQL_FIRST_API_VERIFY
 
 Without an LLM key, these strategies still complete by using the deterministic fallback.
 
+## 6.1 Schema-Aware SQL Fallback Diagnostics
+
+Fixed SQL templates remain the fast path. `dashagent/schema_aware_sql_generator.py` is a feature-flagged deterministic fallback that proposes validator-checked SQL candidates from `SchemaIndex` tables/columns, relevance-ranked tables, known join hints, query tokens, and answer intent. The packaged default keeps `ENABLE_SCHEMA_AWARE_SQL_FALLBACK=false`; no fallback candidate is promoted unless a later explicit validation pass proves strict/hidden/submission safety.
+
+Run the diagnostic-only coverage and trial reports with:
+
+```bash
+python3 scripts/run_sql_template_coverage_audit.py
+python3 scripts/run_schema_aware_sql_trial.py
+```
+
+Outputs:
+
+- `outputs/reports/sql_template_coverage_audit.md/json`
+- `outputs/reports/schema_aware_sql_trial.md/json`
+
+The trial compares baseline `SQL_FIRST_API_VERIFY` against the schema-aware fallback in isolated outputs and keeps the result `keep_trial_only` unless explicitly promoted later.
+
 ## 7. Candidate Context Report
 
 Generate a report showing that schema context selection is retrieval, not public-example hardcoding:

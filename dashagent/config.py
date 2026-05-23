@@ -85,6 +85,7 @@ class Config:
     enable_answer_shape_v2: bool = False
     enable_sql_only_api_skip_guard: bool = False
     enable_endpoint_family_tiebreak_v2: bool = False
+    enable_schema_aware_sql_fallback: bool = False
     enable_llm_semantic_router: bool = False
     llm_semantic_router_shadow_only: bool = True
     llm_semantic_router_confidence_threshold: float = 0.55
@@ -151,6 +152,7 @@ class Config:
             enable_answer_shape_v2=os.getenv("ENABLE_ANSWER_SHAPE_V2", "0") == "1",
             enable_sql_only_api_skip_guard=os.getenv("ENABLE_SQL_ONLY_API_SKIP_GUARD", "0") == "1",
             enable_endpoint_family_tiebreak_v2=os.getenv("ENABLE_ENDPOINT_FAMILY_TIEBREAK_V2", "0") == "1",
+            enable_schema_aware_sql_fallback=_bool_from_env("ENABLE_SCHEMA_AWARE_SQL_FALLBACK", False),
             enable_llm_semantic_router=_bool_from_env("ENABLE_LLM_SEMANTIC_ROUTER", False),
             llm_semantic_router_shadow_only=_bool_from_env("LLM_SEMANTIC_ROUTER_SHADOW_ONLY", True),
             llm_semantic_router_confidence_threshold=float(os.getenv("LLM_SEMANTIC_ROUTER_CONFIDENCE_THRESHOLD", "0.55")),

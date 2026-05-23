@@ -55,6 +55,11 @@ Start here. Most older generated reports were consolidated or removed.
 - `outputs/reports/full_generated_prompt_suite_diagnostic.md` - Full 250-prompt generated suite diagnostic only; no official strict score claim.
 - `outputs/reports/generated_prompt_coverage_gap_analysis.md` - Generated prompt coverage gaps; diagnostic-only and not promotion evidence.
 
+## Schema-Aware SQL Diagnostics
+
+- `outputs/reports/sql_template_coverage_audit.md` - Template hit/miss audit across public/dev and generated diagnostic prompts.
+- `outputs/reports/schema_aware_sql_trial.md` - Isolated schema-aware SQL fallback trial; decision `keep_trial_only`, no packaged runtime promotion.
+
 ## LLM Controller Diagnostics
 
 - Failure decomposition: `outputs/reports/llm_controller_failure_decomposition.md`

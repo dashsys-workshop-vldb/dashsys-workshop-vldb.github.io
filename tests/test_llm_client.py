@@ -6,8 +6,20 @@ import dashagent.llm_client as llm_client
 from dashagent.llm_client import AnthropicLLMClient, NoOpLLMClient, OpenAILLMClient, OpenRouterLLMClient, get_llm_client
 
 
+def clear_llm_env(monkeypatch):
+    for key in [
+        "LLM_PROVIDER",
+        "OPENAI_API_KEY",
+        "OPENAI_BASE_URL",
+        "OPENROUTER_API_KEY",
+        "OPENROUTER_BASE_URL",
+        "ANTHROPIC_API_KEY",
+    ]:
+        monkeypatch.delenv(key, raising=False)
+
+
 def test_noop_llm_client_skips_without_key(monkeypatch):
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    clear_llm_env(monkeypatch)
     client = NoOpLLMClient()
     result = client.generate("system", "user")
     assert not client.available()
@@ -16,7 +28,7 @@ def test_noop_llm_client_skips_without_key(monkeypatch):
 
 
 def test_openai_client_unavailable_without_key(monkeypatch):
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    clear_llm_env(monkeypatch)
     client = OpenAILLMClient()
     assert not client.available()
     assert client.provider_name() == "none"
@@ -25,7 +37,7 @@ def test_openai_client_unavailable_without_key(monkeypatch):
 
 
 def test_openrouter_client_skips_without_key(monkeypatch):
-    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    clear_llm_env(monkeypatch)
     client = OpenRouterLLMClient()
     assert not client.available()
     assert client.provider_name() == "none"
@@ -35,8 +47,8 @@ def test_openrouter_client_skips_without_key(monkeypatch):
 
 
 def test_provider_selection_openrouter_without_key(monkeypatch):
+    clear_llm_env(monkeypatch)
     monkeypatch.setenv("LLM_PROVIDER", "openrouter")
-    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
     client = get_llm_client()
     assert not client.available()
     result = client.generate("system", "user")
@@ -45,8 +57,8 @@ def test_provider_selection_openrouter_without_key(monkeypatch):
 
 
 def test_provider_selection_openai_without_key(monkeypatch):
+    clear_llm_env(monkeypatch)
     monkeypatch.setenv("LLM_PROVIDER", "openai")
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     client = get_llm_client()
     assert not client.available()
     result = client.generate("system", "user")
@@ -54,7 +66,7 @@ def test_provider_selection_openai_without_key(monkeypatch):
 
 
 def test_provider_selection_prefers_explicit_openai_compatible_base(monkeypatch):
-    monkeypatch.delenv("LLM_PROVIDER", raising=False)
+    clear_llm_env(monkeypatch)
     monkeypatch.setenv("OPENROUTER_API_KEY", "unit-test-openrouter-key")
     monkeypatch.setenv("OPENAI_API_KEY", "unit-test-openai-key")
     monkeypatch.setenv("OPENAI_BASE_URL", "https://photos-hewlett-safely-friends.trycloudflare.com/v1")
@@ -68,6 +80,7 @@ def test_provider_selection_prefers_explicit_openai_compatible_base(monkeypatch)
 
 
 def test_provider_selection_anthropic(monkeypatch):
+    clear_llm_env(monkeypatch)
     monkeypatch.setenv("LLM_PROVIDER", "anthropic")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "unit-test-anthropic-key")
     monkeypatch.setenv("ANTHROPIC_MODEL", "claude-test")

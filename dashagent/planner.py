@@ -5,6 +5,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from .api_templates import find_api_templates
+from .config import Config, DEFAULT_CONFIG
 from .db import quote_ident
 from .evidence_policy import API_SKIP, decide_api_need
 from .endpoint_catalog import Endpoint
@@ -13,6 +14,10 @@ from .plan_optimizer import optimize_plan_steps
 from .query_analysis import QueryAnalysis
 from .router import RoutingDecision
 from .schema_index import SchemaIndex
+from .schema_aware_sql_generator import (
+    SchemaAwareSQLCandidate,
+    generate_schema_aware_sql_candidates,
+)
 from .sql_templates import SQLTemplate, find_sql_template
 
 
@@ -74,8 +79,9 @@ class Plan:
 
 
 class StrategyPlanner:
-    def __init__(self, schema_index: SchemaIndex) -> None:
+    def __init__(self, schema_index: SchemaIndex, config: Config | None = None) -> None:
         self.schema_index = schema_index
+        self.config = config or DEFAULT_CONFIG
 
     def create_plan(
         self,
@@ -181,15 +187,24 @@ class StrategyPlanner:
         planning_query = analysis.normalized_query if analysis else query
         fast_path = analysis.fast_path if analysis else find_fast_path(planning_query, self.schema_index)
         sql_template = analysis.sql_template if analysis else (fast_path.sql_template if fast_path else find_sql_template(planning_query, self.schema_index))
-        sql = self._build_sql(planning_query, routing, metadata, sql_template=sql_template) if routing.route_type != "API_ONLY" else None
+        schema_candidate: SchemaAwareSQLCandidate | None = None
+        if routing.route_type != "API_ONLY":
+            if sql_template is not None:
+                sql = self._build_sql(planning_query, routing, metadata, sql_template=sql_template)
+            else:
+                schema_candidate = self._schema_aware_sql_candidate(planning_query, metadata, analysis)
+                sql = schema_candidate.sql if schema_candidate else self._build_sql(planning_query, routing, metadata)
+        else:
+            sql = None
         if sql:
             steps.append(
                 PlanStep(
                     action="sql",
-                    purpose="Fast-path SQL grounding." if fast_path else "Ground names/IDs in local snapshot before API verification.",
+                    purpose=_sql_step_purpose(fast_path=bool(fast_path), schema_candidate=bool(schema_candidate)),
                     sql=sql,
                     allow_full_result=sql_template.allow_full_result if sql_template else asks_all_rows(planning_query),
-                    family=sql_template.family if sql_template else None,
+                    family=sql_template.family if sql_template else ("schema_aware_sql_fallback" if schema_candidate else None),
+                    warnings=schema_candidate.warnings if schema_candidate else [],
                 )
             )
         api_templates = analysis.api_templates if analysis else (fast_path.api_templates if fast_path else find_api_templates(planning_query))
@@ -220,7 +235,10 @@ class StrategyPlanner:
             rationale = (rationale[0], rationale[1] + f" Fast path: {fast_path.family}.", rationale[2])
         if optimized.actions:
             rationale = (rationale[0], rationale[1] + " Optimized plan.", rationale[2])
-        return Plan(*rationale, optimizer_actions=optimized.actions)
+        optimizer_actions = list(optimized.actions)
+        if schema_candidate:
+            optimizer_actions.append(f"schema-aware SQL fallback selected {schema_candidate.candidate_id}")
+        return Plan(*rationale, optimizer_actions=optimizer_actions)
 
     def _template_first(
         self,
@@ -363,6 +381,23 @@ class StrategyPlanner:
             return self._build_sql(query, RoutingDecision("SQL_ONLY", metadata.get("domain_type", "UNKNOWN"), 0.8, ""), metadata)
         return None
 
+    def _schema_aware_sql_candidate(
+        self,
+        query: str,
+        metadata: dict[str, Any],
+        analysis: QueryAnalysis | None,
+    ) -> SchemaAwareSQLCandidate | None:
+        if not self.config.enable_schema_aware_sql_fallback:
+            return None
+        result = generate_schema_aware_sql_candidates(
+            query,
+            self.schema_index,
+            analysis=analysis,
+            selected_tables=metadata.get("selected_tables", []),
+            max_candidates=3,
+        )
+        return result.selected_candidate
+
 
 def endpoint_from_dict(payload: dict[str, Any]) -> Endpoint | None:
     try:
@@ -379,6 +414,14 @@ def endpoint_from_dict(payload: dict[str, Any]) -> Endpoint | None:
         )
     except KeyError:
         return None
+
+
+def _sql_step_purpose(*, fast_path: bool, schema_candidate: bool) -> str:
+    if fast_path:
+        return "Fast-path SQL grounding."
+    if schema_candidate:
+        return "Schema-aware SQL fallback grounding."
+    return "Ground names/IDs in local snapshot before API verification."
 
 
 PREFERRED_TABLES = {

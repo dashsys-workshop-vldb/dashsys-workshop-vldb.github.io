@@ -85,7 +85,7 @@ class AgentExecutor:
         self.api_client = api_client or AdobeAPIClient(self.config)
         self.router = QueryRouter(self.db.list_tables(), self.endpoint_catalog)
         self.metadata_selector = MetadataSelector(self.schema_index, self.endpoint_catalog, self.config)
-        self.planner = StrategyPlanner(self.schema_index)
+        self.planner = StrategyPlanner(self.schema_index, self.config)
         self.sql_validator = SQLValidator(self.schema_index, enable_ast_validation=self.config.enable_sql_ast_validation)
         self.api_validator = APIValidator(
             self.endpoint_catalog,

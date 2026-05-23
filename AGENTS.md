@@ -575,6 +575,17 @@ Run `python3 scripts/check_submission_ready.py` before handing off final work.
 
 `SQL_FIRST_API_VERIFY` is the best default because it grounds entity names/IDs in local SQL before using API evidence only when needed. `TEMPLATE_FIRST` can be competitive on public examples but carries more overfitting risk and usually higher tool-call cost.
 
+`dashagent/schema_aware_sql_generator.py` is a deterministic, schema-aware NL-to-SQL fallback candidate generator. It may be enabled only with `ENABLE_SCHEMA_AWARE_SQL_FALLBACK=true`; the packaged default remains off. It uses `SchemaIndex`, relevance-ranked tables, known join hints/bridge tables, query tokens, and answer intent to propose read-only SQL candidates, and every candidate must pass `SQLValidator`/SQLGlot table-column checks before execution. Existing SQL templates remain the fast path.
+
+Use:
+
+```bash
+python3 scripts/run_sql_template_coverage_audit.py
+python3 scripts/run_schema_aware_sql_trial.py
+```
+
+The reports are `outputs/reports/sql_template_coverage_audit.md/json` and `outputs/reports/schema_aware_sql_trial.md/json`. These are diagnostic-only and must not overwrite strict eval, final submission artifacts, or packaged defaults. The current schema-aware SQL trial is `keep_trial_only`; no runtime promotion is allowed without explicit approval plus strict eval, hidden-style 48/48, `check_submission_ready.py`, pytest, and no hardcoding/secret regressions.
+
 Highest-value remaining improvements are usually:
 
 - richer answer templates for batch, tags, merge-policy, segment-job, observability, and recent-dataset families
