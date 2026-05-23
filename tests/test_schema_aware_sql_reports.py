@@ -29,5 +29,6 @@ def test_schema_aware_sql_trial_is_diagnostic_and_keeps_packaged_default(tiny_pr
     assert report["runtime_change_applied"] is False
     assert report["packaged_default_changed"] is False
     assert report["decision"]["decision"] == "keep_trial_only"
-    assert (tiny_project.outputs_dir / "schema_aware_sql_trial" / "baseline" / "eval_results_strict.json").exists()
-    assert (tiny_project.outputs_dir / "schema_aware_sql_trial" / "schema_aware" / "eval_results_strict.json").exists()
+    assert report["isolated_output_root_kept"] is False
+    assert report["isolated_output_root_cleaned"] is True
+    assert not (tiny_project.outputs_dir / "schema_aware_sql_trial").exists()

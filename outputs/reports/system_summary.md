@@ -25,6 +25,7 @@
 - Repo cleanup: `validated`; deleted paths: `5`; runtime behavior changed: `False`
 - DASHSys Project Skill audit: `pass`; runtime behavior changed: `False`
 - Context7 docs audit: `complete`; runtime change applied: `False`
+- NL-to-SQL robustness-first diagnostics: `diagnostic_only`; schema-aware fallback status `keep_trial_only`; packaged runtime affected: `False`
 
 ## Workflow
 
@@ -44,6 +45,11 @@
 - `outputs/reports/adobe_access_waiting_status.md`
 - `outputs/reports/context7_code_alignment_audit.md`
 - `outputs/reports/context7_fix_decision.md`
+- `outputs/reports/nl_sql_robustness_audit.md`
+- `outputs/reports/nl_sql_paraphrase_consistency.md`
+- `outputs/reports/multi_llm_backend_robustness.md`
+- `outputs/reports/schema_aware_sql_feedback_loop.md`
+- `outputs/reports/robustness_first_system_summary.md`
 - `outputs/reports/score_path_contribution_audit.md`
 - `outputs/reports/score_focused_core_improvement_trials.md`
 - `outputs/reports/score_focused_core_fix_decision.md`

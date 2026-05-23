@@ -58,6 +58,11 @@ Start here. Most older generated reports were consolidated or removed.
 ## Schema-Aware SQL Diagnostics
 
 - `outputs/reports/sql_template_coverage_audit.md` - Template hit/miss audit across public/dev and generated diagnostic prompts.
+- `outputs/reports/nl_sql_robustness_audit.md` - Robustness-first NL-to-SQL audit across deterministic paraphrase/synonym/order variants.
+- `outputs/reports/nl_sql_paraphrase_consistency.md` - Per-semantic-group route/table/join/count/intent/SQL-shape consistency report.
+- `outputs/reports/multi_llm_backend_robustness.md` - Backend-sensitivity status report; records no-hosted-call deterministic baseline and unavailable backends.
+- `outputs/reports/schema_aware_sql_feedback_loop.md` - Robustness-gated promotion decision for schema-aware SQL fallback.
+- `outputs/reports/robustness_first_system_summary.md` - System summary stating score is not meaningful unless robustness gates pass.
 - `outputs/reports/schema_aware_sql_trial.md` - Isolated schema-aware SQL fallback trial; decision `keep_trial_only`, no packaged runtime promotion.
 
 ## LLM Controller Diagnostics

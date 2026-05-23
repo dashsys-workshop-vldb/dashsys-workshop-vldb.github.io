@@ -581,10 +581,13 @@ Use:
 
 ```bash
 python3 scripts/run_sql_template_coverage_audit.py
+python3 scripts/run_nl_sql_robustness_audit.py
+python3 scripts/run_nl_sql_paraphrase_consistency.py
+python3 scripts/run_schema_aware_sql_feedback_loop.py
 python3 scripts/run_schema_aware_sql_trial.py
 ```
 
-The reports are `outputs/reports/sql_template_coverage_audit.md/json` and `outputs/reports/schema_aware_sql_trial.md/json`. These are diagnostic-only and must not overwrite strict eval, final submission artifacts, or packaged defaults. The current schema-aware SQL trial is `keep_trial_only`; no runtime promotion is allowed without explicit approval plus strict eval, hidden-style 48/48, `check_submission_ready.py`, pytest, and no hardcoding/secret regressions.
+The reports are `outputs/reports/sql_template_coverage_audit.md/json`, `outputs/reports/nl_sql_robustness_audit.md/json`, `outputs/reports/nl_sql_paraphrase_consistency.md/json`, `outputs/reports/multi_llm_backend_robustness.md/json`, `outputs/reports/schema_aware_sql_feedback_loop.md/json`, `outputs/reports/robustness_first_system_summary.md/json`, and `outputs/reports/schema_aware_sql_trial.md/json`. These are diagnostic-only and must not overwrite strict eval, final submission artifacts, or packaged defaults. Higher score is not meaningful unless robustness and generalization gates pass. The current schema-aware SQL trial is `keep_trial_only`; no runtime promotion is allowed without explicit approval plus strict eval, hidden-style 48/48, paraphrase consistency stability, reduced template dependency, no unsafe SQL or unsupported-claim increase, `check_submission_ready.py`, pytest, and no hardcoding/secret regressions.
 
 Highest-value remaining improvements are usually:
 

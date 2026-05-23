@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
+import argparse
 import json
 import shutil
 import sys
@@ -27,8 +28,15 @@ CANDIDATE_NAME = "schema_aware_sql_fallback"
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Run isolated schema-aware SQL fallback trial.")
+    parser.add_argument(
+        "--keep-isolated-outputs",
+        action="store_true",
+        help="Keep temporary per-variant trial outputs for manual inspection.",
+    )
+    args = parser.parse_args()
     config = Config.from_env(ROOT)
-    payload = run_schema_aware_sql_trial(config)
+    payload = run_schema_aware_sql_trial(config, keep_isolated_outputs=args.keep_isolated_outputs)
     print(
         json.dumps(
             {
@@ -44,7 +52,7 @@ def main() -> int:
     return 0
 
 
-def run_schema_aware_sql_trial(config: Config | None = None) -> dict[str, Any]:
+def run_schema_aware_sql_trial(config: Config | None = None, *, keep_isolated_outputs: bool = False) -> dict[str, Any]:
     config = config or Config.from_env(ROOT)
     reports_dir = config.outputs_dir / "reports"
     reports_dir.mkdir(parents=True, exist_ok=True)
@@ -90,6 +98,7 @@ def run_schema_aware_sql_trial(config: Config | None = None) -> dict[str, Any]:
             },
             "decision": _decision(baseline, candidate, comparison_rows),
             "isolated_output_root": str(output_root),
+            "isolated_output_root_kept": keep_isolated_outputs,
         }
     )
     (reports_dir / f"{REPORT_STEM}.json").write_text(
@@ -97,6 +106,13 @@ def run_schema_aware_sql_trial(config: Config | None = None) -> dict[str, Any]:
         encoding="utf-8",
     )
     (reports_dir / f"{REPORT_STEM}.md").write_text(_render_markdown(payload), encoding="utf-8")
+    if not keep_isolated_outputs and output_root.exists():
+        shutil.rmtree(output_root)
+        payload["isolated_output_root_cleaned"] = True
+        (reports_dir / f"{REPORT_STEM}.json").write_text(
+            json.dumps(payload, indent=2, sort_keys=True, default=str),
+            encoding="utf-8",
+        )
     return payload
 
 

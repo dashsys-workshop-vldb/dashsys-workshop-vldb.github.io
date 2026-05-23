@@ -416,15 +416,23 @@ Run the diagnostic-only coverage and trial reports with:
 
 ```bash
 python3 scripts/run_sql_template_coverage_audit.py
+python3 scripts/run_nl_sql_robustness_audit.py
+python3 scripts/run_nl_sql_paraphrase_consistency.py
+python3 scripts/run_schema_aware_sql_feedback_loop.py
 python3 scripts/run_schema_aware_sql_trial.py
 ```
 
 Outputs:
 
 - `outputs/reports/sql_template_coverage_audit.md/json`
+- `outputs/reports/nl_sql_robustness_audit.md/json`
+- `outputs/reports/nl_sql_paraphrase_consistency.md/json`
+- `outputs/reports/multi_llm_backend_robustness.md/json`
+- `outputs/reports/schema_aware_sql_feedback_loop.md/json`
+- `outputs/reports/robustness_first_system_summary.md/json`
 - `outputs/reports/schema_aware_sql_trial.md/json`
 
-The trial compares baseline `SQL_FIRST_API_VERIFY` against the schema-aware fallback in isolated outputs and keeps the result `keep_trial_only` unless explicitly promoted later.
+The trial compares baseline `SQL_FIRST_API_VERIFY` against the schema-aware fallback in isolated outputs and keeps the result `keep_trial_only` unless explicitly promoted later. Higher score is not considered meaningful unless robustness and generalization gates pass: strict score must not regress, hidden-style must remain 48/48, paraphrase consistency must improve or stay stable, template dependency must decrease, unsafe SQL and unsupported claims must not increase, and no single hosted LLM backend may become a dependency.
 
 ## 7. Candidate Context Report
 
