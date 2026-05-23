@@ -55,6 +55,10 @@ Start here. Most older generated reports were consolidated or removed.
 - `outputs/reports/full_generated_prompt_suite_diagnostic.md` - Full 250-prompt generated suite diagnostic only; no official strict score claim.
 - `outputs/reports/generated_prompt_coverage_gap_analysis.md` - Generated prompt coverage gaps; diagnostic-only and not promotion evidence.
 
+## Live Adobe Organizer Smoke
+
+- `outputs/reports/organizer_adobe_ups_audiences_smoke.md` - Safe implementation of the organizer client-credentials plus UPS audiences smoke snippet; credentials and headers are redacted.
+
 ## Schema-Aware SQL Diagnostics
 
 - `outputs/reports/sql_template_coverage_audit.md` - Template hit/miss audit across public/dev and generated diagnostic prompts.
@@ -196,9 +200,9 @@ Start here. Most older generated reports were consolidated or removed.
 - Adobe access waiting status: `outputs/reports/adobe_access_waiting_status.md`
 - Evidence pipeline trial: `outputs/reports/live_api_evidence_pipeline_trial.md`
 - Mock live evidence pipeline trial: `outputs/reports/mock_live_api_evidence_pipeline_trial.md`
-- Overall status: `warning`
-- Credentials present in latest smoke: `False`
-- Live mode attempted: `False`
+- Overall status: `pass`
+- Credentials present in latest smoke: `True`
+- Live mode attempted: `True`
 - Full live strict eval blocked: `False`
 - Full generated prompt suite blocked: `False`
 - Mock parser success count: `126`
@@ -406,7 +410,7 @@ Regenerated report surfaces:
 - best_isolated_score: `0.6558`
 - hidden_style: `48/48`
 - final_submission_ready: `True`
-- live_adobe_api_readiness: `warning`
+- live_adobe_api_readiness: `pass`
 - evidence_aware_answer_synthesis: `keep_trial_only`
 - llm_recommendation: `keep_shadow_only`
 - sdk_tool_calling_optimization: `speed_only_shadow_candidates_no_promotion`

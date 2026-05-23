@@ -2,23 +2,23 @@
 
 Infrastructure validation only; this report is not official strict-score evidence.
 
-- Overall status: `warning`
+- Overall status: `pass`
 - Critical failures: `0`
-- Warnings: `2`
+- Warnings: `0`
 - Official score claim: `False`
 - Packaged runtime affected: `False`
-- Manual token refresh required: `True`
+- Manual token refresh required: `False`
 
 ## Credential Presence
 
-- `auth_mode`: `missing`
-- `authorization_constructible`: `False`
-- `credential_ready`: `False`
-- `sandbox_ready`: `False`
-- `ready_for_live_adobe_api_smoke`: `False`
-- `ready_for_sandbox_endpoints`: `False`
-- `detected_env_sources`: `[{"name": "access_token", "source": "missing"}, {"name": "api_key", "source": "missing"}, {"name": "client_id", "source": "missing"}, {"name": "client_secret", "source": "missing"}, {"name": "organization", "source": "missing"}, {"name": "sandbox", "source": "missing"}, {"name": "base_url", "source": "default"}, {"name": "scopes", "source": "default"}]`
-- `header_constructibility`: `[{"constructible": false, "header_name": "Authorization"}, {"constructible": true, "header_name": "Content-Type"}, {"constructible": false, "header_name": "x-api-key"}, {"constructible": false, "header_name": "x-gw-ims-org-id"}, {"constructible": false, "header_name": "x-sandbox-name"}]`
+- `auth_mode`: `client_credentials`
+- `authorization_constructible`: `True`
+- `credential_ready`: `True`
+- `sandbox_ready`: `True`
+- `ready_for_live_adobe_api_smoke`: `True`
+- `ready_for_sandbox_endpoints`: `True`
+- `detected_env_sources`: `[{"name": "access_token", "source": "missing"}, {"name": "api_key", "source": "alias"}, {"name": "client_id", "source": "alias"}, {"name": "client_secret", "source": "alias"}, {"name": "organization", "source": "alias"}, {"name": "sandbox", "source": "alias"}, {"name": "base_url", "source": "primary"}, {"name": "scopes", "source": "default"}]`
+- `header_constructibility`: `[{"constructible": true, "header_name": "Authorization"}, {"constructible": true, "header_name": "Content-Type"}, {"constructible": true, "header_name": "x-api-key"}, {"constructible": true, "header_name": "x-gw-ims-org-id"}, {"constructible": true, "header_name": "x-sandbox-name"}]`
 
 ## Audit Items
 
@@ -28,12 +28,12 @@ Infrastructure validation only; this report is not official strict-score evidenc
 - `pass` `required_headers`: call_api can attach Authorization, x-api-key, x-gw-ims-org-id, x-sandbox-name, and Content-Type.
   Evidence: `dashagent/api_client.py`
   Explanation: Header names available: ['Authorization', 'Content-Type', 'x-api-key', 'x-gw-ims-org-id', 'x-sandbox-name']; credential values are never included in reports.
-- `warning` `manual_token_refresh`: Refreshed access tokens can be supplied through env; automated refresh is optional.
+- `pass` `manual_token_refresh`: Refreshed access tokens can be supplied through env; automated refresh is optional.
   Evidence: `dashagent/api_client.py`
   Explanation: Access-token and client-credentials modes are both supported by the same AdobeAPIClient token path.
-- `warning` `token_acquisition_preflight`: Client-credentials token acquisition reuses AdobeAPIClient token handling and reports only status.
+- `pass` `token_acquisition_preflight`: Client-credentials token acquisition reuses AdobeAPIClient token handling and reports only status.
   Evidence: `dashagent/api_client.py; scripts/audit_live_adobe_api_readiness.py`
-  Explanation: auth_mode=missing attempted=False ok=False expires_in_present=False error_category=None
+  Explanation: auth_mode=client_credentials attempted=True ok=True expires_in_present=True error_category=None
 - `pass` `endpoint_catalog_coverage`: Endpoint catalog documents method, path, params, family, and path-param discovery needs.
   Evidence: `dashagent/endpoint_catalog.py`
   Explanation: 21 catalog endpoints are available; GET endpoints with unresolved path params are marked discovery-required.
@@ -45,7 +45,7 @@ Infrastructure validation only; this report is not official strict-score evidenc
   Explanation: APIValidator validates catalog-approved paths and blocks unresolved placeholders.
 - `pass` `live_dry_run_separation`: Credentials present allow live mode; missing credentials use honest dry-run fallback.
   Evidence: `dashagent/api_client.py`
-  Explanation: Current credential_ready=False; sandbox_ready=False; missing-credential client dry_run=True; fake-token client dry_run=False.
+  Explanation: Current credential_ready=True; sandbox_ready=True; missing-credential client dry_run=True; fake-token client dry_run=False.
 - `pass` `response_parser_readiness`: API response parser distinguishes live empty results, dry-run unavailability, and live errors.
   Evidence: `dashagent/api_response_parser.py`
   Explanation: Structured parser extracts ids, names, statuses, counts, timestamps, pagination, errors, endpoint metadata, parser mode, evidence state, and redacted previews. Endpoint-family extraction falls back to generic parsing without dropping evidence.

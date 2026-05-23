@@ -1,8 +1,8 @@
 {
   "adobe_readiness": {
-    "auth_mode": "missing",
-    "authorization_constructible": false,
-    "credential_ready": false,
+    "auth_mode": "client_credentials",
+    "authorization_constructible": true,
+    "credential_ready": true,
     "detected_env_sources": [
       {
         "name": "access_token",
@@ -10,27 +10,27 @@
       },
       {
         "name": "api_key",
-        "source": "missing"
+        "source": "alias"
       },
       {
         "name": "client_id",
-        "source": "missing"
+        "source": "alias"
       },
       {
         "name": "client_secret",
-        "source": "missing"
+        "source": "alias"
       },
       {
         "name": "organization",
-        "source": "missing"
+        "source": "alias"
       },
       {
         "name": "sandbox",
-        "source": "missing"
+        "source": "alias"
       },
       {
         "name": "base_url",
-        "source": "default"
+        "source": "primary"
       },
       {
         "name": "scopes",
@@ -39,7 +39,7 @@
     ],
     "header_constructibility": [
       {
-        "constructible": false,
+        "constructible": true,
         "header_name": "Authorization"
       },
       {
@@ -47,64 +47,71 @@
         "header_name": "Content-Type"
       },
       {
-        "constructible": false,
+        "constructible": true,
         "header_name": "x-api-key"
       },
       {
-        "constructible": false,
+        "constructible": true,
         "header_name": "x-gw-ims-org-id"
       },
       {
-        "constructible": false,
+        "constructible": true,
         "header_name": "x-sandbox-name"
       }
     ],
-    "ready_for_live_adobe_api_smoke": false,
-    "ready_for_sandbox_endpoints": false,
-    "sandbox_ready": false
+    "ready_for_live_adobe_api_smoke": true,
+    "ready_for_sandbox_endpoints": true,
+    "sandbox_ready": true
   },
   "answer_synthesis_status": "pass",
   "auth_failure_count": 0,
-  "credential_ready": false,
-  "credentials_present": false,
-  "discovery_blocked": 0,
+  "credential_ready": true,
+  "credentials_present": true,
+  "discovery_blocked": 5,
   "discovery_success": 0,
-  "dry_run_fallback_verified": true,
-  "dry_run_result": {
-    "dry_run": true,
-    "endpoint": "/ajo/journey",
-    "error": "Adobe credentials unavailable; API call not executed.",
-    "headers": {},
-    "method": "GET",
-    "ok": false,
-    "params": {
-      "limit": 1
-    },
-    "result_preview": null,
-    "status_code": null,
-    "url": "https://platform.adobe.io/ajo/journey"
-  },
-  "endpoints_api_error": 0,
-  "endpoints_attempted": 0,
+  "dry_run_fallback_verified": false,
+  "endpoints_api_error": 1,
+  "endpoints_attempted": 1,
   "endpoints_auth_error": 0,
   "endpoints_empty": 0,
   "endpoints_rate_limited": 0,
   "endpoints_success": 0,
-  "endpoints_tested": [],
-  "evidencebus_forwarding_status": "pass",
-  "failure_count": 0,
-  "infrastructure_validation_only": true,
-  "live_mode_attempted": false,
-  "missing_env_var_groups": [
-    "ADOBE_ACCESS_TOKEN or ACCESS_TOKEN",
-    "ADOBE_API_KEY or CLIENT_ID",
-    "ADOBE_ORG_ID or IMS_ORG",
-    "ADOBE_SANDBOX_NAME or SANDBOX"
+  "endpoints_tested": [
+    {
+      "answer_synthesis_status": "pass",
+      "attempted": true,
+      "confidence": "medium",
+      "dry_run": false,
+      "endpoint_id": "ups_audiences",
+      "evidencebus_forwarding_status": "pass",
+      "likely_failure_area": "adobe_service",
+      "method": "GET",
+      "next_action": "wait_external_service",
+      "ok": false,
+      "outcome": "external_api_unavailable",
+      "path": "/data/core/ups/audiences",
+      "response_parser_status": "pass",
+      "safe_error_category": "external_api_unavailable",
+      "safe_error_excerpt": "{'detail': \"com.fasterxml.jackson.core.JsonParseException: Unexpected character ('<' (code 60)): expected a valid value (JSON String, Number, Array, Object or token 'null', 'true' or 'false')\\n at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 1]\", 'sta",
+      "status_code": 500,
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
   ],
+  "evidencebus_forwarding_status": "pass",
+  "failure_count": 1,
+  "infrastructure_validation_only": true,
+  "live_mode_attempted": true,
   "official_score_claim": false,
-  "outcome_counts": {},
+  "outcome_counts": {
+    "external_api_unavailable": 1
+  },
   "parser_failure": 0,
-  "parser_success": 0,
+  "parser_success": 1,
   "protected_outputs_not_written": [
     "outputs/eval_results_strict.json",
     "outputs/eval/",
@@ -112,18 +119,139 @@
     "outputs/final_submission_manifest.json"
   ],
   "rate_limit_count": 0,
-  "ready_for_live_adobe_api_smoke": false,
-  "ready_for_sandbox_endpoints": false,
+  "ready_for_live_adobe_api_smoke": true,
+  "ready_for_sandbox_endpoints": true,
   "report_type": "live_api_readiness_smoke",
-  "residual_risk": "Live connectivity, rate limits, and real payload shapes remain unverified until Adobe credentials are available.",
+  "residual_risk": "GET smoke checks verify connectivity and parsing only; they do not claim official strict-score improvement.",
   "response_parser_status": "pass",
-  "sandbox_ready": false,
+  "sandbox_ready": true,
   "selection_filters": {
     "endpoint_family": null,
-    "endpoint_id": null,
-    "limit": "not_run"
+    "endpoint_id": "ups_audiences",
+    "limit": "12"
   },
-  "skipped_endpoints": [],
-  "status": "skipped_live_credentials_missing",
+  "skipped_endpoints": [
+    {
+      "endpoint_id": "journey_list",
+      "method": "GET",
+      "path": "/ajo/journey",
+      "reason": "not_matching_filter"
+    },
+    {
+      "endpoint_id": "segment_definitions",
+      "method": "GET",
+      "path": "/data/core/ups/segment/definitions",
+      "reason": "not_matching_filter"
+    },
+    {
+      "endpoint_id": "flowservice_flows",
+      "method": "GET",
+      "path": "/data/foundation/flowservice/flows",
+      "reason": "not_matching_filter"
+    },
+    {
+      "endpoint_id": "flowservice_runs",
+      "method": "GET",
+      "path": "/data/foundation/flowservice/runs",
+      "reason": "not_matching_filter"
+    },
+    {
+      "endpoint_id": "catalog_datasets",
+      "method": "GET",
+      "path": "/data/foundation/catalog/dataSets",
+      "reason": "not_matching_filter"
+    },
+    {
+      "endpoint_id": "schema_registry_schema",
+      "method": "GET",
+      "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}",
+      "reason": "requires_discovery_chain_or_path_param"
+    },
+    {
+      "endpoint_id": "schema_registry_schemas",
+      "method": "GET",
+      "path": "/data/foundation/schemaregistry/tenant/schemas",
+      "reason": "not_matching_filter"
+    },
+    {
+      "endpoint_id": "schemas_short",
+      "method": "GET",
+      "path": "/schemas",
+      "reason": "not_matching_filter"
+    },
+    {
+      "endpoint_id": "audit_events",
+      "method": "GET",
+      "path": "/data/foundation/audit/events",
+      "reason": "not_matching_filter"
+    },
+    {
+      "endpoint_id": "audit_events_short",
+      "method": "GET",
+      "path": "/audit/events",
+      "reason": "not_matching_filter"
+    },
+    {
+      "endpoint_id": "unified_tags",
+      "method": "GET",
+      "path": "/unifiedtags/tags",
+      "reason": "not_matching_filter"
+    },
+    {
+      "endpoint_id": "unified_tag_categories",
+      "method": "GET",
+      "path": "/unifiedtags/tagCategory",
+      "reason": "not_matching_filter"
+    },
+    {
+      "endpoint_id": "unified_tag_detail",
+      "method": "GET",
+      "path": "/unifiedtags/tags/{tag_id}",
+      "reason": "requires_discovery_chain_or_path_param"
+    },
+    {
+      "endpoint_id": "merge_policies",
+      "method": "GET",
+      "path": "/data/core/ups/config/mergePolicies",
+      "reason": "not_matching_filter"
+    },
+    {
+      "endpoint_id": "segment_jobs",
+      "method": "GET",
+      "path": "/data/core/ups/segment/jobs",
+      "reason": "not_matching_filter"
+    },
+    {
+      "endpoint_id": "catalog_batches",
+      "method": "GET",
+      "path": "/data/foundation/catalog/batches",
+      "reason": "not_matching_filter"
+    },
+    {
+      "endpoint_id": "catalog_batch_detail",
+      "method": "GET",
+      "path": "/data/foundation/catalog/batches/{batch_id}",
+      "reason": "requires_discovery_chain_or_path_param"
+    },
+    {
+      "endpoint_id": "export_batch_files",
+      "method": "GET",
+      "path": "/data/foundation/export/batches/{batch_id}/files",
+      "reason": "requires_discovery_chain_or_path_param"
+    },
+    {
+      "endpoint_id": "export_batch_failed",
+      "method": "GET",
+      "path": "/data/foundation/export/batches/{batch_id}/failed",
+      "reason": "requires_discovery_chain_or_path_param"
+    },
+    {
+      "endpoint_id": "observability_metrics",
+      "method": "POST",
+      "path": "/data/infrastructure/observability/insights/metrics",
+      "reason": "non_get_endpoint"
+    }
+  ],
+  "status": "complete",
   "success_count": 0
 }

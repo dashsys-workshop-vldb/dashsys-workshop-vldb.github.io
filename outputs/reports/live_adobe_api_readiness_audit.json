@@ -31,9 +31,9 @@
     ]
   },
   "credential_presence": {
-    "auth_mode": "missing",
-    "authorization_constructible": false,
-    "credential_ready": false,
+    "auth_mode": "client_credentials",
+    "authorization_constructible": true,
+    "credential_ready": true,
     "detected_env_sources": [
       {
         "name": "access_token",
@@ -41,27 +41,27 @@
       },
       {
         "name": "api_key",
-        "source": "missing"
+        "source": "alias"
       },
       {
         "name": "client_id",
-        "source": "missing"
+        "source": "alias"
       },
       {
         "name": "client_secret",
-        "source": "missing"
+        "source": "alias"
       },
       {
         "name": "organization",
-        "source": "missing"
+        "source": "alias"
       },
       {
         "name": "sandbox",
-        "source": "missing"
+        "source": "alias"
       },
       {
         "name": "base_url",
-        "source": "default"
+        "source": "primary"
       },
       {
         "name": "scopes",
@@ -70,7 +70,7 @@
     ],
     "header_constructibility": [
       {
-        "constructible": false,
+        "constructible": true,
         "header_name": "Authorization"
       },
       {
@@ -78,26 +78,26 @@
         "header_name": "Content-Type"
       },
       {
-        "constructible": false,
+        "constructible": true,
         "header_name": "x-api-key"
       },
       {
-        "constructible": false,
+        "constructible": true,
         "header_name": "x-gw-ims-org-id"
       },
       {
-        "constructible": false,
+        "constructible": true,
         "header_name": "x-sandbox-name"
       }
     ],
-    "ready_for_live_adobe_api_smoke": false,
-    "ready_for_sandbox_endpoints": false,
-    "sandbox_ready": false
+    "ready_for_live_adobe_api_smoke": true,
+    "ready_for_sandbox_endpoints": true,
+    "sandbox_ready": true
   },
   "credential_readiness": {
-    "auth_mode": "missing",
-    "authorization_constructible": false,
-    "credential_ready": false,
+    "auth_mode": "client_credentials",
+    "authorization_constructible": true,
+    "credential_ready": true,
     "detected_env_sources": [
       {
         "name": "access_token",
@@ -105,27 +105,27 @@
       },
       {
         "name": "api_key",
-        "source": "missing"
+        "source": "alias"
       },
       {
         "name": "client_id",
-        "source": "missing"
+        "source": "alias"
       },
       {
         "name": "client_secret",
-        "source": "missing"
+        "source": "alias"
       },
       {
         "name": "organization",
-        "source": "missing"
+        "source": "alias"
       },
       {
         "name": "sandbox",
-        "source": "missing"
+        "source": "alias"
       },
       {
         "name": "base_url",
-        "source": "default"
+        "source": "primary"
       },
       {
         "name": "scopes",
@@ -134,7 +134,7 @@
     ],
     "header_constructibility": [
       {
-        "constructible": false,
+        "constructible": true,
         "header_name": "Authorization"
       },
       {
@@ -142,21 +142,21 @@
         "header_name": "Content-Type"
       },
       {
-        "constructible": false,
+        "constructible": true,
         "header_name": "x-api-key"
       },
       {
-        "constructible": false,
+        "constructible": true,
         "header_name": "x-gw-ims-org-id"
       },
       {
-        "constructible": false,
+        "constructible": true,
         "header_name": "x-sandbox-name"
       }
     ],
-    "ready_for_live_adobe_api_smoke": false,
-    "ready_for_sandbox_endpoints": false,
-    "sandbox_ready": false
+    "ready_for_live_adobe_api_smoke": true,
+    "ready_for_sandbox_endpoints": true,
+    "sandbox_ready": true
   },
   "critical_failures": [],
   "endpoint_catalog_readiness": [
@@ -537,15 +537,15 @@
       "recommended_fix": "Before live smoke, provide either a fresh access token or configured client credentials.",
       "requirement": "Refreshed access tokens can be supplied through env; automated refresh is optional.",
       "requirement_id": "manual_token_refresh",
-      "status": "warning"
+      "status": "pass"
     },
     {
       "evidence_path": "dashagent/api_client.py; scripts/audit_live_adobe_api_readiness.py",
-      "explanation": "auth_mode=missing attempted=False ok=False expires_in_present=False error_category=None",
+      "explanation": "auth_mode=client_credentials attempted=True ok=True expires_in_present=True error_category=None",
       "recommended_fix": "Fix token credentials or scopes before live data endpoint smoke if token acquisition fails.",
       "requirement": "Client-credentials token acquisition reuses AdobeAPIClient token handling and reports only status.",
       "requirement_id": "token_acquisition_preflight",
-      "status": "warning"
+      "status": "pass"
     },
     {
       "evidence_path": "dashagent/endpoint_catalog.py",
@@ -573,7 +573,7 @@
     },
     {
       "evidence_path": "dashagent/api_client.py",
-      "explanation": "Current credential_ready=False; sandbox_ready=False; missing-credential client dry_run=True; fake-token client dry_run=False.",
+      "explanation": "Current credential_ready=True; sandbox_ready=True; missing-credential client dry_run=True; fake-token client dry_run=False.",
       "recommended_fix": "Keep API_REQUIRED behavior intact for live mode; dry-run remains fallback only.",
       "requirement": "Credentials present allow live mode; missing credentials use honest dry-run fallback.",
       "requirement_id": "live_dry_run_separation",
@@ -620,34 +620,17 @@
       "status": "pass"
     }
   ],
-  "manual_token_refresh_required": true,
+  "manual_token_refresh_required": false,
   "official_score_claim": false,
-  "overall_status": "warning",
+  "overall_status": "pass",
   "packaged_runtime_affected": false,
   "report_type": "live_adobe_api_readiness_audit",
   "safety_statement": "Live Adobe API readiness is infrastructure validation only. It must not overwrite official eval or final-submission artifacts.",
   "token_acquisition_preflight": {
     "error_category": null,
-    "expires_in_present": false,
-    "token_acquisition_attempted": false,
-    "token_acquisition_ok": false
+    "expires_in_present": true,
+    "token_acquisition_attempted": true,
+    "token_acquisition_ok": true
   },
-  "warnings": [
-    {
-      "evidence_path": "dashagent/api_client.py",
-      "explanation": "Access-token and client-credentials modes are both supported by the same AdobeAPIClient token path.",
-      "recommended_fix": "Before live smoke, provide either a fresh access token or configured client credentials.",
-      "requirement": "Refreshed access tokens can be supplied through env; automated refresh is optional.",
-      "requirement_id": "manual_token_refresh",
-      "status": "warning"
-    },
-    {
-      "evidence_path": "dashagent/api_client.py; scripts/audit_live_adobe_api_readiness.py",
-      "explanation": "auth_mode=missing attempted=False ok=False expires_in_present=False error_category=None",
-      "recommended_fix": "Fix token credentials or scopes before live data endpoint smoke if token acquisition fails.",
-      "requirement": "Client-credentials token acquisition reuses AdobeAPIClient token handling and reports only status.",
-      "requirement_id": "token_acquisition_preflight",
-      "status": "warning"
-    }
-  ]
+  "warnings": []
 }

@@ -9,7 +9,8 @@
 - Repair execution enabled: `False`
 - Compact context enabled: `False`
 - Final recommendation: `ready_to_submit_with_official_token_reduction`
-- Live Adobe API readiness: `warning` (smoke `skipped_live_credentials_missing`, pipeline `skipped_live_credentials_missing`)
+- Live Adobe API readiness: `pass` (smoke `complete`, pipeline `skipped_live_credentials_missing`)
+- Organizer UPS audiences smoke: token `true`, UPS access `false`, outcome `external_api_unavailable`, direct/repo comparison `both_same_failure`
 - Post-permission live verification: `complete`; waiting-status report: `complete`
 - LLM semantic routing helper: `do_not_promote` (complete)
 - Semantic router isolated trial: `complete`; promotion decision: `do_not_promote`; packaged runtime affected: `False`
@@ -43,6 +44,7 @@
 - `outputs/official_token_reduction_promotion_report.json`
 - `outputs/reports/post_permission_live_api_verification.md`
 - `outputs/reports/adobe_access_waiting_status.md`
+- `outputs/reports/organizer_adobe_ups_audiences_smoke.md`
 - `outputs/reports/context7_code_alignment_audit.md`
 - `outputs/reports/context7_fix_decision.md`
 - `outputs/reports/nl_sql_robustness_audit.md`
