@@ -6,11 +6,11 @@
 | --- | --- |
 | Query | List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results. |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
-| Final answer | Based on the evidence provided, there is no data available to answer this question. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable, so audience and flow service evidence could not be checked. |
-| Strict score | 0.7161 |
-| Correctness score | 0.7668 |
-| Answer / SQL / API score | 0.3559 / 0.9 / 1.0 |
-| Tools / tokens / runtime | 3 / 1571 / 0.015346416039392352 |
+| Final answer | Based on the evidence provided, there is no data available to answer this question. The SQL query returned zero rows, and the API returned usable supporting evidence. |
+| Strict score | 0.6822 |
+| Correctness score | 0.7393 |
+| Answer / SQL / API score | 0.2642 / 0.9 / 1.0 |
+| Tools / tokens / runtime | 3 / 1976 / 0.9307709163986146 |
 
 ## Dataflow Graph
 
@@ -22,7 +22,7 @@ flowchart LR
   C --> P["Plan SQL/API"]
   P --> S["No SQL evidence"]
   P --> A["API candidates: 'items': ['merge_policies'], 'total_ite..."]
-  A --> E["Dry-run API"]
+  A --> E["Live/API evidence"]
   S --> V["Evidence bus"]
   E --> V
   V --> H["Answer synthesis"]
@@ -52,11 +52,11 @@ flowchart LR
 | 17 | checkpoint_12_validation | validation | SQL/API safety validation | preview={"optimized_steps": {"items": [{"action": "sql", "purpose...; truncated=True | api_validation_status=2 item(s); sql_validation_status=1 item(s) | records whether planned SQL/API calls were safe to execute | yes | yes | yes |
 | 18 | checkpoint_sql_ast_validation | validation | SQLGlot AST-based SQL validation and extraction | sql_call_count=1 | preview={"summaries": {"items": [{"enabled": true, "parsed_ok": t...; truncated=True | adds AST-level table and column extraction after existing SQL validation | yes | yes | yes |
 | 19 | checkpoint_13_tool_execution | execution | SQL/API tool execution | validated_step_count=3 | preview={"sql_calls_executed": 1, "api_calls_executed": 2, "dry_r...; truncated=True | captures the actual SQL/API evidence gathered by the backend | yes | yes | no |
-| 20 | checkpoint_14_evidence_bus | evidence forwarding | operand forwarding / EvidenceBus | tool_result_count=3 | {} | forwards structured facts to API params and answer slots | yes | yes | no |
-| 21 | checkpoint_15_answer_slots | answer synthesis | structured answer slot extraction | tool_result_count=3 | answer_intent=WHEN; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); missing_slots=1 item(s) | turns raw tool results into typed evidence fields | yes | yes | no |
-| 22 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=2; slots_present=3 item(s) | verifier_passed=True; rewrite_applied=False | checks final-answer claims against SQL/API evidence | yes | yes | no |
+| 20 | checkpoint_14_evidence_bus | evidence forwarding | operand forwarding / EvidenceBus | tool_result_count=3 | evidence=9 field(s) | forwards structured facts to API params and answer slots | yes | yes | no |
+| 21 | checkpoint_15_answer_slots | answer synthesis | structured answer slot extraction | tool_result_count=3 | answer_intent=WHEN; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); slots=9 field(s) | turns raw tool results into typed evidence fields | yes | yes | no |
+| 22 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=3; slots_present=14 item(s) | verifier_passed=True; rewrite_applied=False | checks final-answer claims against SQL/API evidence | yes | yes | no |
 | 23 | checkpoint_17_answer_reranking | answer selection | deterministic answer reranking | answer_family=segment_destination | candidate_count=0; selected_candidate_type=base | selects the safest answer from same-evidence candidates | yes | yes | no |
-| 24 | checkpoint_18_final_answer | final response | concise grounded final response | verifier_passed=True | answer_length=263; final_answer=Based on the evidence provided, there is no data availabl... | returns the final concise answer to the agent harness | yes | yes | no |
+| 24 | checkpoint_18_final_answer | final response | concise grounded final response | verifier_passed=True | answer_length=166; final_answer=Based on the evidence provided, there is no data availabl... | returns the final concise answer to the agent harness | yes | yes | no |
 | 25 | checkpoint_official_token_reduction | query understanding | unavailable | unavailable | unavailable | Checkpoint recorded query understanding progress. | no | no | no |
 
 ## Evidence Table
@@ -64,9 +64,9 @@ flowchart LR
 | Evidence | Used/status | Source | Preview |
 | --- | --- | --- | --- |
 | SQL evidence | no | SELECT A."SEGMENTID" AS segment_id, A."NAME" AS segment_name, A."TOTALMEMBERS" AS total_profiles, A."CREATEDTIME" AS created_time, A."UPDATEDTIME" AS updated_time FROM "dim_segment" AS A JOIN "hkg_br_segment_target" AS AD ON A."SEGMENTID" = AD."SEGMENTID" JOIN "dim_target" AS D ON AD."TARGETID" = D."TARGETID" WHERE D."DATAFLOWNAME" = 'SMS Opt-In' OR D."NAME" = 'SMS Opt-In' ORDER BY A."NAME" | n/a - no SQL rows preview recorded |
-| API evidence | dry-run | GET /data/core/ups/audiences | n/a - no API result preview recorded |
+| API evidence | yes | GET /data/core/ups/audiences | {"preview": "{\"status\": 400, \"errors\": {\"400\": {\"items\": {\"items\": {\"items\": [{\"code\": \"NEBULA-100058-400\", \"message\": \"Unknown operator: ==<\", \"value\": \"==<\"}], \"total_items\": 1, \"truncated_items\": false}, \"total_items\": 1, \"truncated_items\": false}, \"total_items\": 1, \"tr...", "truncated": true} |
 | Local Parquet evidence | yes | unavailable | query=List all segment audiences connected to the destination n...; query_id=example_003 |
-| Dry-run label | yes | API dry-run result label | API tool was invoked and validated, but live evidence was unavailable because Adobe credentials were missing. |
+| Dry-run label | no | API dry-run result label | At least one SQL/API result provided evidence for answer construction. |
 | Unsupported claims replaced | no | supportable_answer_rewrite_eval | unavailable |
 
 ## Decision Table
@@ -74,7 +74,7 @@ flowchart LR
 | Decision | Selected value | Reason | Promotion status |
 | --- | --- | --- | --- |
 | Why SQL was used | SQL calls=1 | API_ONLY | promoted_default |
-| Why API was used or skipped | API calls=2; dry_run=True | n/a - no API policy recorded | promoted_default |
+| Why API was used or skipped | API calls=2; dry_run=False | n/a - no API policy recorded | promoted_default |
 | Answer template / rewriter | packaged answer synthesizer | No default-on answer rewrite promoted. | promoted_default + shadow_only diagnostics |
 | Endpoint family changed? | unavailable | no_validated_replacement_endpoint_candidate | shadow_only |
 | Candidate promoted? | unavailable | No promoted candidate for packaged path. | shadow_only / isolated_trial |

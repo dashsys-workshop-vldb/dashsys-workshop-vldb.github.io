@@ -318,6 +318,7 @@ class StrategyPlanner:
                 method=template.method,
                 url=template.path,
                 params=template.params,
+                headers=getattr(template, "headers", {}),
                 warnings=template.warnings,
                 family=template.family,
             )
@@ -357,6 +358,7 @@ class StrategyPlanner:
                     method=endpoint.method,
                     url=url,
                     params=params,
+                    headers=dict(endpoint.common_headers),
                 )
             )
         return steps
@@ -407,6 +409,7 @@ def endpoint_from_dict(payload: dict[str, Any]) -> Endpoint | None:
             path=payload["path"],
             use_when=payload.get("use_when", ""),
             common_params=payload.get("common_params", {}),
+            common_headers=payload.get("common_headers", {}),
             path_params=payload.get("path_params", []),
             examples=payload.get("examples", []),
             risk_notes=payload.get("risk_notes", []),

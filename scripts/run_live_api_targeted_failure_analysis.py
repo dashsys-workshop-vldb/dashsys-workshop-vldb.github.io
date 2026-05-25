@@ -31,6 +31,7 @@ ALLOWED_NEXT_ACTIONS = {
     "no_code_fix",
     "rerun_with_endpoint_filter",
     "inspect_redacted_error_shape",
+    "run_isolated_header_trial",
 }
 
 
@@ -48,6 +49,7 @@ def run_live_api_targeted_failure_analysis(config: Config | None = None) -> dict
     reports_dir.mkdir(parents=True, exist_ok=True)
     path_diagnosis = _path_diagnosis_by_endpoint(config)
     rows = _smoke_rows(config, path_diagnosis) + _trial_rows(config)
+    endpoint_rows = [row for row in rows if row.get("endpoint_id")]
     counts = Counter(row.get("failure_type", "no_clear_failure") for row in rows)
     gate = _full_diagnostics_gate(config)
     payload = redact_secrets(
@@ -58,6 +60,11 @@ def run_live_api_targeted_failure_analysis(config: Config | None = None) -> dict
             "uses_shared_api_outcome_classifier": True,
             "adobe_readiness": format_adobe_readiness_for_report(adobe_env_readiness()),
             "failure_type_counts": dict(counts),
+            "classification_counts": dict(Counter(row.get("classification", "unresolved") for row in rows)),
+            "remaining_failure_row_count": len(rows),
+            "remaining_failed_endpoint_count": len(endpoint_rows),
+            "code_fix_supported_count": sum(1 for row in rows if row.get("code_fix_supported")),
+            "code_fix_allowed_count": sum(1 for row in rows if row.get("code_fix_allowed")),
             "full_diagnostics_gate": gate,
             "rows": rows,
             "recommendation": "fix_high_count_runtime_safe_failures_before_score_claims",
@@ -74,11 +81,27 @@ def _smoke_rows(config: Config, path_diagnosis: dict[str, dict[str, Any]]) -> li
     rows = []
     for row in payload.get("endpoints_tested", []) or []:
         outcome = row.get("outcome") or classify_api_outcome(row, method=row.get("method"), path=row.get("path"))
-        if outcome == "live_success":
+        if outcome in {"live_success", "live_empty"}:
             continue
         diagnosis = diagnose_api_outcome(row, method=row.get("method"), path=row.get("path"), outcome=outcome)
         policy = _row_policy(outcome, diagnosis, path_diagnosis.get(str(row.get("endpoint_id") or "")))
         next_action = policy["next_action"]
+        excerpt = row.get("safe_error_excerpt") or safe_error_excerpt(row)
+        if (
+            row.get("endpoint_id") == "schema_registry_schemas"
+            and row.get("status_code") == 400
+            and "Accept header invalid" in str(excerpt)
+        ):
+            policy = {
+                **policy,
+                "code_fix_allowed": True,
+                "reason_code": "safe_required_header_candidate",
+                "next_action": "run_isolated_header_trial",
+                "human_explanation": "The redacted response indicates an endpoint-specific Accept header mismatch; prove the safe header with an isolated GET trial before any runtime change.",
+            }
+            next_action = policy["next_action"]
+            diagnosis = {**diagnosis, "likely_failure_area": "required_accept_header", "confidence": "high"}
+        classification = _classification(outcome, diagnosis["likely_failure_area"], policy["reason_code"])
         rows.append(
             {
                 "source_report": "live_api_readiness_smoke",
@@ -89,13 +112,22 @@ def _smoke_rows(config: Config, path_diagnosis: dict[str, dict[str, Any]]) -> li
                 "next_action": next_action,
                 "confidence": diagnosis["confidence"],
                 "code_fix_allowed": policy["code_fix_allowed"],
+                "code_fix_supported": policy["code_fix_allowed"],
+                "classification": classification,
+                "permission_or_scope_issue": classification == "permission_or_scope_issue",
+                "sandbox_or_environment_issue": classification == "sandbox_or_environment_issue",
+                "endpoint_path_issue": classification == "endpoint_path_issue",
+                "required_param_issue": classification == "required_param_issue",
+                "adobe_service_issue": classification == "adobe_service_issue",
+                "unresolved": classification == "unresolved",
                 "reason_code": policy["reason_code"],
                 "human_explanation": policy["human_explanation"],
                 "endpoint_id": row.get("endpoint_id"),
                 "method": row.get("method"),
                 "path": row.get("path"),
                 "status_code": row.get("status_code"),
-                "safe_error_excerpt": row.get("safe_error_excerpt") or safe_error_excerpt(row),
+                "safe_error_excerpt": excerpt,
+                "exact_next_safe_diagnostic_action": _next_safe_diagnostic_action(classification, next_action, policy["reason_code"]),
                 "root_cause": _root_cause(outcome, diagnosis["likely_failure_area"]),
                 "runtime_safe_fix_candidate": _fix_candidate(outcome, diagnosis["likely_failure_area"]),
             }
@@ -107,12 +139,15 @@ def _trial_rows(config: Config) -> list[dict[str, Any]]:
     payload = _load_json(config.outputs_dir / "reports" / "live_api_evidence_pipeline_trial.json")
     rows = []
     for row in payload.get("rows", []) or []:
-        outcomes = row.get("api_outcomes") or []
-        for outcome in outcomes:
-            if outcome == "live_success":
+        call_summaries = row.get("api_call_summaries") or []
+        call_rows = call_summaries if call_summaries else [{"outcome": outcome} for outcome in row.get("api_outcomes") or []]
+        for call in call_rows:
+            outcome = call.get("outcome")
+            if outcome in {"live_success", "live_empty"}:
                 continue
             diagnosis = diagnose_api_outcome({"error": row.get("final_answer_preview")}, outcome=outcome)
             policy = _row_policy(outcome, diagnosis, None, source="evidence_pipeline_trial")
+            classification = _classification(outcome, diagnosis["likely_failure_area"], policy["reason_code"])
             rows.append(
                 {
                     "source_report": "live_api_evidence_pipeline_trial",
@@ -123,13 +158,22 @@ def _trial_rows(config: Config) -> list[dict[str, Any]]:
                     "next_action": policy["next_action"],
                     "confidence": diagnosis["confidence"],
                     "code_fix_allowed": policy["code_fix_allowed"],
+                    "code_fix_supported": policy["code_fix_allowed"],
+                    "classification": classification,
+                    "permission_or_scope_issue": classification == "permission_or_scope_issue",
+                    "sandbox_or_environment_issue": classification == "sandbox_or_environment_issue",
+                    "endpoint_path_issue": classification == "endpoint_path_issue",
+                    "required_param_issue": classification == "required_param_issue",
+                    "adobe_service_issue": classification == "adobe_service_issue",
+                    "unresolved": classification == "unresolved",
                     "reason_code": policy["reason_code"],
                     "human_explanation": policy["human_explanation"],
                     "query_id": row.get("query_id"),
-                    "method": row.get("method"),
-                    "path": row.get("path"),
-                    "status_code": row.get("status_code"),
+                    "method": call.get("method") or row.get("method"),
+                    "path": call.get("safe_path") or row.get("path"),
+                    "status_code": call.get("status_code") or row.get("status_code"),
                     "safe_error_excerpt": safe_error_excerpt({"error": row.get("final_answer_preview")}),
+                    "exact_next_safe_diagnostic_action": _next_safe_diagnostic_action(classification, policy["next_action"], policy["reason_code"]),
                     "root_cause": _root_cause(outcome, diagnosis["likely_failure_area"]),
                     "runtime_safe_fix_candidate": _fix_candidate(outcome, diagnosis["likely_failure_area"]),
                 }
@@ -243,8 +287,32 @@ def _allowed_next_action(value: Any) -> str:
     return text if text in ALLOWED_NEXT_ACTIONS else "no_code_fix"
 
 
+def _classification(outcome: str, likely_failure_area: str = "", reason_code: str = "") -> str:
+    if outcome in {"auth_error", "scope_or_permission_issue"}:
+        return "permission_or_scope_issue"
+    if outcome == "sandbox_scope_issue":
+        return "sandbox_or_environment_issue"
+    if outcome == "endpoint_path_issue":
+        return "endpoint_path_issue"
+    if likely_failure_area in {"required_param", "required_accept_header"} or reason_code in {"safe_required_param_candidate", "safe_required_header_candidate"}:
+        return "required_param_issue"
+    if outcome == "external_api_unavailable":
+        return "adobe_service_issue"
+    return "unresolved"
+
+
+def _next_safe_diagnostic_action(classification: str, next_action: str, reason_code: str = "") -> str:
+    if reason_code == "safe_required_header_candidate":
+        return "run isolated schema-registry Accept-header GET trial; apply endpoint-specific safe header only after HTTP 200 proof"
+    if classification == "endpoint_path_issue":
+        return "run docs-backed endpoint-path audit and change catalog only after a successful safe GET candidate"
+    if classification == "required_param_issue":
+        return "run isolated required-param/header trial; apply only if the focused safe GET returns 200"
+    return next_action
+
+
 def _root_cause(outcome: str, likely_failure_area: str = "") -> str:
-    if likely_failure_area == "required_param":
+    if likely_failure_area in {"required_param", "required_accept_header"}:
         return "endpoint_path_issue"
     if likely_failure_area == "parser_gap":
         return "parser_gap"
@@ -267,6 +335,8 @@ def _root_cause(outcome: str, likely_failure_area: str = "") -> str:
 def _fix_candidate(outcome: str, likely_failure_area: str = "") -> str:
     if likely_failure_area == "required_param":
         return "add safe required query parameter only if the API explicitly requires it"
+    if likely_failure_area == "required_accept_header":
+        return "prove endpoint-specific Accept header with an isolated safe GET trial before runtime change"
     mapping = {
         "auth_error": "verify token scopes and credential freshness; no code promotion",
         "token_acquisition_failed": "fix token acquisition inputs before live endpoint smoke",
@@ -373,9 +443,16 @@ def _build_external_blockers_report(rows: list[dict[str, Any]], gate: dict[str, 
         _blocker_group(
             key="unresolved_endpoint_path",
             title="Unresolved endpoint/path evidence with no proven code fix",
-            rows=[row for row in endpoint_rows if row.get("outcome") == "endpoint_path_issue"],
+            rows=[row for row in endpoint_rows if row.get("classification") == "endpoint_path_issue"],
             verify="Review endpoint path diagnosis and rerun focused smoke after external checks; do not change catalog paths without a successful safe GET candidate.",
             why="Endpoint path probes did not return a successful safe GET candidate, so a blind catalog edit would be speculative.",
+        ),
+        _blocker_group(
+            key="required_safe_request_shape",
+            title="Required safe request shape mismatch",
+            rows=[row for row in endpoint_rows if row.get("classification") == "required_param_issue"],
+            verify="Run the isolated request-shape trial and apply only if the focused safe GET succeeds.",
+            why="This points to endpoint-specific request shape, not an AdobeAPIClient token/auth defect.",
         ),
         _blocker_group(
             key="service_server",
@@ -385,11 +462,19 @@ def _build_external_blockers_report(rows: list[dict[str, Any]], gate: dict[str, 
             why="The response shape looks like a server/service failure rather than actionable local code evidence.",
         ),
     ]
+    if gate.get("live_success_seen"):
+        for group in groups:
+            group["blocked_full_live_runs"] = False
+    summary = (
+        "Current normal runtime has live_success endpoints and usable live API evidence. Remaining blockers are endpoint-specific; historical HTTP 500 results are old misaligned-runtime evidence only."
+        if gate.get("live_success_seen")
+        else "Adobe credentials and token acquisition work, but no safe GET endpoint has returned live_success yet."
+    )
     return {
         "report_type": "live_api_external_blockers",
         "diagnostic_only": True,
         "official_score_claim": False,
-        "plain_language_summary": "Adobe credentials and token acquisition work, but live data endpoints have not returned usable payload evidence. Treat current blockers as external setup or unresolved endpoint evidence until at least one safe GET endpoint returns live_success.",
+        "plain_language_summary": summary,
         "full_live_eval_blocked": not bool(gate.get("live_strict_eval_allowed")),
         "full_generated_prompt_suite_blocked": not bool(gate.get("full_generated_prompt_suite_allowed")),
         "full_live_run_guard": gate,

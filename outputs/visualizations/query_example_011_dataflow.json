@@ -103,7 +103,7 @@
       "checkpoint_id": "checkpoint_07_context_card",
       "checkpoint_order": 9,
       "short_input_summary": "lookup_path=schema_dataset",
-      "short_output_summary": "estimated_metadata_tokens=451; prompt_tokens=1032; selected_apis=1 item(s); selected_card_name=schema_dataset",
+      "short_output_summary": "estimated_metadata_tokens=490; prompt_tokens=1072; selected_apis=1 item(s); selected_card_name=schema_dataset",
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
       "what_changed": "packs family-relevant context into metadata.json and the filled prompt"
@@ -199,7 +199,7 @@
       "checkpoint_id": "checkpoint_14_evidence_bus",
       "checkpoint_order": 17,
       "short_input_summary": "tool_result_count=2",
-      "short_output_summary": "evidence=1 field(s)",
+      "short_output_summary": "evidence=3 field(s)",
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
       "what_changed": "forwards structured facts to API params and answer slots"
@@ -211,7 +211,7 @@
       "checkpoint_id": "checkpoint_15_answer_slots",
       "checkpoint_order": 18,
       "short_input_summary": "tool_result_count=2",
-      "short_output_summary": "answer_intent=COUNT; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); missing_slots=1 item(s)",
+      "short_output_summary": "answer_intent=COUNT; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); slots=9 field(s)",
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
       "what_changed": "turns raw tool results into typed evidence fields"
@@ -222,7 +222,7 @@
       "affects_safety": "no",
       "checkpoint_id": "checkpoint_16_answer_verification",
       "checkpoint_order": 19,
-      "short_input_summary": "claim_count=1; slots_present=4 item(s)",
+      "short_input_summary": "claim_count=1; slots_present=6 item(s)",
       "short_output_summary": "verifier_passed=True; rewrite_applied=False",
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
@@ -247,7 +247,7 @@
       "checkpoint_id": "checkpoint_18_final_answer",
       "checkpoint_order": 21,
       "short_input_summary": "verifier_passed=True",
-      "short_output_summary": "answer_length=102; final_answer=You have 74 schemas. Live API verification was not execut...",
+      "short_output_summary": "answer_length=170; final_answer=You have 74 schemas. This count comes from your blueprint...",
       "stage": "final response",
       "technique": "concise grounded final response",
       "what_changed": "returns the final concise answer to the agent harness"
@@ -276,7 +276,7 @@
       "decision": "Why API was used or skipped",
       "promotion_status": "promoted_default",
       "reason": "n/a - no API policy recorded",
-      "selected_value": "API calls=1; dry_run=True"
+      "selected_value": "API calls=1; dry_run=False"
     },
     {
       "decision": "Answer template / rewriter",
@@ -307,8 +307,8 @@
     {
       "evidence_type": "API evidence",
       "preview": "n/a - no API result preview recorded",
-      "source": "GET /schemas",
-      "used_or_status": "dry-run"
+      "source": "GET /data/foundation/schemaregistry/tenant/schemas",
+      "used_or_status": "no"
     },
     {
       "evidence_type": "Local Parquet evidence",
@@ -318,9 +318,9 @@
     },
     {
       "evidence_type": "Dry-run label",
-      "preview": "SQL evidence is available. API tool was invoked and validated, but live API evidence was unavailable because Adobe credentials were missing.",
+      "preview": "At least one SQL/API result provided evidence for answer construction.",
       "source": "API dry-run result label",
-      "used_or_status": "yes"
+      "used_or_status": "no"
     },
     {
       "evidence_type": "Unsupported claims replaced",
@@ -329,20 +329,20 @@
       "used_or_status": "no"
     }
   ],
-  "mermaid_dataflow_graph": "\nflowchart LR\n  Q[\"Raw query: How many schemas do I have?\"] --> N[\"Normalize + tokens\"]\n  N --> R[\"Route: LOCAL_DB_ONLY\"]\n  R --> C[\"Context tables: 'items': ['dim_blueprint'], 'total_item...\"]\n  C --> P[\"Plan SQL/API\"]\n  P --> S[\"SQL rows\"]\n  P --> A[\"API candidates: 'items': ['audit_events'], 'total_items...\"]\n  A --> E[\"Dry-run API\"]\n  S --> V[\"Evidence bus\"]\n  E --> V\n  V --> H[\"Answer synthesis\"]\n  H --> F[\"Final: You have 74 schemas. Live API verificat...\"]\n",
+  "mermaid_dataflow_graph": "\nflowchart LR\n  Q[\"Raw query: How many schemas do I have?\"] --> N[\"Normalize + tokens\"]\n  N --> R[\"Route: LOCAL_DB_ONLY\"]\n  R --> C[\"Context tables: 'items': ['dim_blueprint'], 'total_item...\"]\n  C --> P[\"Plan SQL/API\"]\n  P --> S[\"SQL rows\"]\n  P --> A[\"API candidates: 'items': ['audit_events'], 'total_items...\"]\n  A --> E[\"Live/API evidence\"]\n  S --> V[\"Evidence bus\"]\n  E --> V\n  V --> H[\"Answer synthesis\"]\n  H --> F[\"Final: You have 74 schemas. This count comes f...\"]\n",
   "query_summary": {
-    "answer_score": 0.3915,
+    "answer_score": 0.5396,
     "api_score": 1.0,
-    "correctness_score": 0.7774,
+    "correctness_score": 0.8219,
     "current_packaged_strategy_used": "SQL_FIRST_API_VERIFY",
-    "final_answer": "You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable.",
+    "final_answer": "You have 74 schemas. This count comes from your blueprint query and is confirmed by the API response from Adobe Schema Registry, which shows tenant schemas are available.",
     "query": "How many schemas do I have?",
     "query_id": "example_011",
-    "runtime": 0.010883167153224349,
+    "runtime": 0.4232120830565691,
     "sql_score": 0.9,
-    "strict_score": 0.7462,
-    "tokens": 751,
+    "strict_score": 0.7852,
+    "tokens": 1238,
     "tool_calls": 2
   },
-  "source_trajectory": "[REDACTED]/.codex/worktrees/a2c7/dashsys-workshop-vldb/outputs/eval/example_011/sql_first_api_verify/trajectory.json"
+  "source_trajectory": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_011/sql_first_api_verify/trajectory.json"
 }

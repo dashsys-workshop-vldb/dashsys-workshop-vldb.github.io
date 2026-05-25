@@ -235,7 +235,7 @@
       "checkpoint_id": "checkpoint_14_evidence_bus",
       "checkpoint_order": 20,
       "short_input_summary": "tool_result_count=3",
-      "short_output_summary": "{}",
+      "short_output_summary": "evidence=9 field(s)",
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
       "what_changed": "forwards structured facts to API params and answer slots"
@@ -247,7 +247,7 @@
       "checkpoint_id": "checkpoint_15_answer_slots",
       "checkpoint_order": 21,
       "short_input_summary": "tool_result_count=3",
-      "short_output_summary": "answer_intent=WHEN; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); missing_slots=1 item(s)",
+      "short_output_summary": "answer_intent=WHEN; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); slots=9 field(s)",
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
       "what_changed": "turns raw tool results into typed evidence fields"
@@ -258,7 +258,7 @@
       "affects_safety": "no",
       "checkpoint_id": "checkpoint_16_answer_verification",
       "checkpoint_order": 22,
-      "short_input_summary": "claim_count=2; slots_present=3 item(s)",
+      "short_input_summary": "claim_count=3; slots_present=14 item(s)",
       "short_output_summary": "verifier_passed=True; rewrite_applied=False",
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
@@ -283,7 +283,7 @@
       "checkpoint_id": "checkpoint_18_final_answer",
       "checkpoint_order": 24,
       "short_input_summary": "verifier_passed=True",
-      "short_output_summary": "answer_length=263; final_answer=Based on the evidence provided, there is no data availabl...",
+      "short_output_summary": "answer_length=166; final_answer=Based on the evidence provided, there is no data availabl...",
       "stage": "final response",
       "technique": "concise grounded final response",
       "what_changed": "returns the final concise answer to the agent harness"
@@ -312,7 +312,7 @@
       "decision": "Why API was used or skipped",
       "promotion_status": "promoted_default",
       "reason": "n/a - no API policy recorded",
-      "selected_value": "API calls=2; dry_run=True"
+      "selected_value": "API calls=2; dry_run=False"
     },
     {
       "decision": "Answer template / rewriter",
@@ -342,9 +342,9 @@
     },
     {
       "evidence_type": "API evidence",
-      "preview": "n/a - no API result preview recorded",
+      "preview": "{\"preview\": \"{\\\"status\\\": 400, \\\"errors\\\": {\\\"400\\\": {\\\"items\\\": {\\\"items\\\": {\\\"items\\\": [{\\\"code\\\": \\\"NEBULA-100058-400\\\", \\\"message\\\": \\\"Unknown operator: ==<\\\", \\\"value\\\": \\\"==<\\\"}], \\\"total_items\\\": 1, \\\"truncated_items\\\": false}, \\\"total_items\\\": 1, \\\"truncated_items\\\": false}, \\\"total_items\\\": 1, \\\"tr...\", \"truncated\": true}",
       "source": "GET /data/core/ups/audiences",
-      "used_or_status": "dry-run"
+      "used_or_status": "yes"
     },
     {
       "evidence_type": "Local Parquet evidence",
@@ -354,9 +354,9 @@
     },
     {
       "evidence_type": "Dry-run label",
-      "preview": "API tool was invoked and validated, but live evidence was unavailable because Adobe credentials were missing.",
+      "preview": "At least one SQL/API result provided evidence for answer construction.",
       "source": "API dry-run result label",
-      "used_or_status": "yes"
+      "used_or_status": "no"
     },
     {
       "evidence_type": "Unsupported claims replaced",
@@ -365,20 +365,20 @@
       "used_or_status": "no"
     }
   ],
-  "mermaid_dataflow_graph": "\nflowchart LR\n  Q[\"Raw query: List all segment audiences connected to t...\"] --> N[\"Normalize + tokens\"]\n  N --> R[\"Route: API_ONLY\"]\n  R --> C[\"Context tables: 'items': ['dim_segment'], 'total_items'...\"]\n  C --> P[\"Plan SQL/API\"]\n  P --> S[\"No SQL evidence\"]\n  P --> A[\"API candidates: 'items': ['merge_policies'], 'total_ite...\"]\n  A --> E[\"Dry-run API\"]\n  S --> V[\"Evidence bus\"]\n  E --> V\n  V --> H[\"Answer synthesis\"]\n  H --> F[\"Final: Based on the evidence provided, there i...\"]\n",
+  "mermaid_dataflow_graph": "\nflowchart LR\n  Q[\"Raw query: List all segment audiences connected to t...\"] --> N[\"Normalize + tokens\"]\n  N --> R[\"Route: API_ONLY\"]\n  R --> C[\"Context tables: 'items': ['dim_segment'], 'total_items'...\"]\n  C --> P[\"Plan SQL/API\"]\n  P --> S[\"No SQL evidence\"]\n  P --> A[\"API candidates: 'items': ['merge_policies'], 'total_ite...\"]\n  A --> E[\"Live/API evidence\"]\n  S --> V[\"Evidence bus\"]\n  E --> V\n  V --> H[\"Answer synthesis\"]\n  H --> F[\"Final: Based on the evidence provided, there i...\"]\n",
   "query_summary": {
-    "answer_score": 0.3559,
+    "answer_score": 0.2642,
     "api_score": 1.0,
-    "correctness_score": 0.7668,
+    "correctness_score": 0.7393,
     "current_packaged_strategy_used": "SQL_FIRST_API_VERIFY",
-    "final_answer": "Based on the evidence provided, there is no data available to answer this question. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable, so audience and flow service evidence could not be checked.",
+    "final_answer": "Based on the evidence provided, there is no data available to answer this question. The SQL query returned zero rows, and the API returned usable supporting evidence.",
     "query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
     "query_id": "example_003",
-    "runtime": 0.015346416039392352,
+    "runtime": 0.9307709163986146,
     "sql_score": 0.9,
-    "strict_score": 0.7161,
-    "tokens": 1571,
+    "strict_score": 0.6822,
+    "tokens": 1976,
     "tool_calls": 3
   },
-  "source_trajectory": "[REDACTED]/.codex/worktrees/a2c7/dashsys-workshop-vldb/outputs/eval/example_003/sql_first_api_verify/trajectory.json"
+  "source_trajectory": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_003/sql_first_api_verify/trajectory.json"
 }

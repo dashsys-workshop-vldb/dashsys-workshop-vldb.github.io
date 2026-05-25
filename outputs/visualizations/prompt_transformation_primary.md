@@ -67,13 +67,13 @@ flowchart LR
 
 | Before | After | Technique | Impact |
 | --- | --- | --- | --- |
-| analysis=strategy=SQL_FIRST_API_VERIFY; route_type=SQL_ONLY; domai...; lookup=api_mode=required | estimated_metadata_tokens=451; prompt_tokens=1032; selected_apis=1 item(s); selected_card_name=schema_dataset | metadata_selector + context cards | accuracy + efficiency |
+| analysis=strategy=SQL_FIRST_API_VERIFY; route_type=SQL_ONLY; domai...; lookup=api_mode=required | estimated_metadata_tokens=490; prompt_tokens=1072; selected_apis=1 item(s); selected_card_name=schema_dataset | metadata_selector + context cards | accuracy + efficiency |
 
 ### Context → selected plan
 
 | Before | After | Technique | Impact |
 | --- | --- | --- | --- |
-| estimated_metadata_tokens=451; prompt_tokens=1032; selected_apis=1 item(s); selected_card_name=schema_dataset | selected_plan=generic_sql_first | planner + plan_ensemble | efficiency + safety |
+| estimated_metadata_tokens=490; prompt_tokens=1072; selected_apis=1 item(s); selected_card_name=schema_dataset | selected_plan=generic_sql_first | planner + plan_ensemble | efficiency + safety |
 
 ### Plan → evidence
 
@@ -85,4 +85,4 @@ flowchart LR
 
 | Before | After | Technique | Impact |
 | --- | --- | --- | --- |
-| evidence=sql_calls_executed=1; api_calls_executed=1; slots=answer_intent=COUNT | answer_length=102; final_answer=You have 74 schemas. Live API verification was not execut... | answer slots + verifier | accuracy + safety |
+| evidence=sql_calls_executed=1; api_calls_executed=1; slots=answer_intent=COUNT | answer_length=170; final_answer=You have 74 schemas. This count comes from your blueprint... | answer slots + verifier | accuracy + safety |

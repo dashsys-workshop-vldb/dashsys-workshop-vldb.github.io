@@ -17,7 +17,7 @@ Infrastructure validation only; this report is not official strict-score evidenc
 - `sandbox_ready`: `True`
 - `ready_for_live_adobe_api_smoke`: `True`
 - `ready_for_sandbox_endpoints`: `True`
-- `detected_env_sources`: `[{"name": "access_token", "source": "missing"}, {"name": "api_key", "source": "alias"}, {"name": "client_id", "source": "alias"}, {"name": "client_secret", "source": "alias"}, {"name": "organization", "source": "alias"}, {"name": "sandbox", "source": "alias"}, {"name": "base_url", "source": "primary"}, {"name": "scopes", "source": "default"}]`
+- `detected_env_sources`: `[{"name": "access_token", "source": "missing"}, {"name": "api_key", "source": "primary"}, {"name": "client_id", "source": "primary"}, {"name": "client_secret", "source": "primary"}, {"name": "organization", "source": "primary"}, {"name": "sandbox", "source": "primary"}, {"name": "base_url", "source": "primary"}, {"name": "scopes", "source": "primary"}]`
 - `header_constructibility`: `[{"constructible": true, "header_name": "Authorization"}, {"constructible": true, "header_name": "Content-Type"}, {"constructible": true, "header_name": "x-api-key"}, {"constructible": true, "header_name": "x-gw-ims-org-id"}, {"constructible": true, "header_name": "x-sandbox-name"}]`
 
 ## Audit Items

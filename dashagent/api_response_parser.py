@@ -468,12 +468,61 @@ def _collect_family_fields(family: str | None, items: list[dict[str, Any]], raw:
                 fields.setdefault("metric_names", []).append(str(metric))
             if value is not None:
                 fields["counts"].setdefault(str(metric or "value"), _coerce_number(value))
+    if family == "observability_metrics":
+        values = _extract_observability_values(raw)
+        if values:
+            fields["values"] = values[:100]
 
     _collect_evidence(raw, ids=fields["ids"], names=fields["names"], statuses=fields["statuses"], counts=fields["counts"], timestamps=fields["timestamps"])
     for key, value in list(fields.items()):
+        if key == "values":
+            continue
         if isinstance(value, list):
             fields[key] = _dedupe([str(item) for item in value])
     return fields
+
+
+def _extract_observability_values(raw: Any) -> list[dict[str, Any]]:
+    values: list[dict[str, Any]] = []
+
+    def visit(obj: Any, metric_name: Any = None) -> None:
+        if isinstance(obj, list):
+            for item in obj:
+                visit(item, metric_name)
+            return
+        if not isinstance(obj, dict):
+            return
+        current_metric = obj.get("metric") or obj.get("name") or obj.get("metricName") or metric_name
+        dps = obj.get("dps")
+        if isinstance(dps, dict):
+            for timestamp, value in dps.items():
+                if timestamp == "truncated_fields":
+                    continue
+                values.append(
+                    {
+                        "metric": str(current_metric) if current_metric is not None else None,
+                        "timestamp": str(timestamp),
+                        "value": _coerce_number(value),
+                    }
+                )
+        for key in ("metricResponses", "datapoints", "points", "values", "data", "series", "items", "results"):
+            child = obj.get(key)
+            if isinstance(child, (dict, list)):
+                visit(child, current_metric)
+        for child in obj.values():
+            if isinstance(child, (dict, list)) and child is not dps:
+                visit(child, current_metric)
+
+    visit(raw)
+    deduped: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for item in values:
+        key = (str(item.get("metric")), str(item.get("timestamp")), str(item.get("value")))
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append({key: value for key, value in item.items() if value is not None})
+    return deduped
 
 
 def _collect_by_aliases(item: dict[str, Any], fields: dict[str, Any]) -> None:

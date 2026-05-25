@@ -193,7 +193,14 @@ def flowchart_source(data: dict[str, Any]) -> str:
     generated_sql = sql_node_label(data["generated_sql"])
     result = flow_label(data["sql_result_summary"], 60)
     grounded_fact = flow_label(data["grounded_fact_summary"], 80)
-    final_answer = flow_label("You have 74 schemas.\nDry-run note: live API verification unavailable.", 120)
+    api_branch_summary = str(data.get("api_branch_summary") or "")
+    api_is_dry_run = "dry-run" in api_branch_summary.lower() or "unavailable" in api_branch_summary.lower()
+    api_plan_label = "side check: dry-run API verification" if api_is_dry_run else "side check: live API verification"
+    api_status_label = "API status = dry-run only" if api_is_dry_run else f"API status = {api_branch_summary}"
+    api_branch_label = "dry-run verification only<br/>not answer source" if api_is_dry_run else "live API verification<br/>supporting evidence"
+    answer_synthesis_label = "use SQL count + dry-run note" if api_is_dry_run else "use SQL count + live API note"
+    api_edge_label = "dry-run status only" if api_is_dry_run else "live API status"
+    final_answer = flow_label(data.get("final_answer"), 120)
     strategy = flow_label(data["strategy"], 60)
     selected_plan = flow_label(data["selected_plan"], 60)
     metrics = data["metrics"]
@@ -230,7 +237,7 @@ flowchart TD
 
   subgraph C["4. Context + Planning"]
     C0["Selected plan<br/>{strategy}<br/>{selected_plan}"]:::plan
-    C1["Plan split<br/>main answer path: SQL count<br/>side check: dry-run API verification"]:::plan
+    C1["Plan split<br/>main answer path: SQL count<br/>{flow_label(api_plan_label, 80)}"]:::plan
     C2["Main answer path<br/>SQL count → evidence → final answer"]:::evidence
   end
 
@@ -246,13 +253,13 @@ flowchart TD
     E1["SQL result<br/>{result}"]:::sql
     E2["Grounded fact<br/>The SQL result means:<br/>{grounded_fact}"]:::evidence
     E3["SQL is the answer source<br/>SQL_ONLY = SQL provides the count"]:::evidence
-    E4["Evidence bus<br/>SQL evidence = 74 schemas<br/>API status = dry-run only"]:::evidence
-    API0["API verification branch<br/>dry-run verification only<br/>not answer source"]:::api
+    E4["Evidence bus<br/>SQL evidence = 74 schemas<br/>{flow_label(api_status_label, 90)}"]:::evidence
+    API0["API verification branch<br/>{flow_label(api_branch_label, 90)}"]:::api
   end
 
   subgraph A["7. Answer Generation"]
     A0["Answer intent<br/>COUNT"]:::answer
-    A1["Answer synthesis<br/>use SQL count + dry-run note"]:::answer
+    A1["Answer synthesis<br/>{flow_label(answer_synthesis_label, 80)}"]:::answer
     A2["Answer verification<br/>&quot;74 schemas&quot; supported by SQL result"]:::answer
     A3["Final answer<br/>{final_answer}"]:::answer
   end
@@ -283,7 +290,7 @@ flowchart TD
   E2 -->|"answer fact"| E3
   E3 -->|"structured evidence"| E4
   C1 -.->|"verification side path"| API0
-  API0 -.->|"dry-run status only"| E4
+  API0 -.->|"{flow_label(api_edge_label, 40)}"| E4
   E4 -->|"answer slot receives count"| A0
   A0 -->|"compose concise answer"| A1
   A1 -->|"claim support check"| A2
@@ -294,15 +301,23 @@ flowchart TD
 
 
 def build_markdown(payload: dict[str, Any]) -> str:
+    api_branch = str(payload.get("api_branch_summary") or "")
+    api_is_dry_run = "dry-run" in api_branch.lower() or "unavailable" in api_branch.lower()
+    branch_phrase = "API verification is dry-run/unavailable" if api_is_dry_run else "API verification returned live supporting evidence"
+    takeaway_suffix = (
+        "it is dry-run/unavailable and does not provide the answer value"
+        if api_is_dry_run
+        else "it provides supporting live evidence while SQL remains the count source"
+    )
     return "\n".join(
         [
             "# SQL-Backed Primary Prompt Storyboard",
             "",
-            f"`{md_escape(payload['query_id'])}` was chosen because it is SQL-backed in the packaged path: the prompt becomes validated SQL, SQL returns the answer count, and API verification is dry-run/unavailable.",
+            f"`{md_escape(payload['query_id'])}` was chosen because it is SQL-backed in the packaged path: the prompt becomes validated SQL, SQL returns the answer count, and {branch_phrase}.",
             "",
             mermaid_block(payload["flowchart_source"]),
             "",
-            "**Takeaway:** SQL is the answer source (`blueprint_count = 74`). The API branch is shown because the packaged trace attempts verification, but it is dry-run/unavailable and does not provide the answer value.",
+            f"**Takeaway:** SQL is the answer source (`blueprint_count = 74`). The API branch is shown because the packaged trace attempts verification; {takeaway_suffix}.",
             "",
         ]
     )

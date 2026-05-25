@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import requests
 
@@ -29,10 +29,13 @@ from scripts.load_local_env import load_local_env
 
 
 REPORT_STEM = "organizer_adobe_ups_audiences_smoke"
+EVIDENCE_REPORT_STEM = "organizer_adobe_ups_audiences_evidence_package"
 UPS_AUDIENCES_PATH = "/data/core/ups/audiences"
 DEFAULT_IMS_TOKEN_URL = "https://ims-na1.adobelogin.com/ims/token/v3"
 ORGANIZER_DEFAULT_SCOPES = "openid,AdobeID,read_organizations,additional_info.projectedProductContext,session"
 MAX_EXCERPT_CHARS = 300
+EVIDENCE_MAX_EXCERPT_CHARS = 1000
+REQUIRED_HEADER_NAMES = ["Authorization", "x-api-key", "x-gw-ims-org-id", "x-sandbox-name", "Content-Type"]
 
 
 @dataclass(frozen=True)
@@ -105,9 +108,12 @@ def run_organizer_adobe_ups_audiences_smoke(
     get_func: Callable[..., Any] | None = None,
     repo_client_factory: Callable[[Config], AdobeAPIClient] | None = None,
     write_reports: bool = True,
+    report_stem: str = REPORT_STEM,
+    evidence_report_stem: str = EVIDENCE_REPORT_STEM,
+    test_template: str = "organizer_adobe_ups_audiences_smoke",
 ) -> dict[str, Any]:
     config = config or Config.from_env(ROOT)
-    load_local_env(config.project_root)
+    load_meta = load_local_env(config.project_root)
     credentials = resolve_organizer_adobe_credentials(os.environ)
     _mirror_token_url_for_repo_client(credentials.token_url)
     reports_dir = config.outputs_dir / "reports"
@@ -118,13 +124,31 @@ def run_organizer_adobe_ups_audiences_smoke(
     repo_client_factory = repo_client_factory or (lambda cfg: AdobeAPIClient(cfg))
 
     report: dict[str, Any] = {
-        "report_type": REPORT_STEM,
+        "report_type": report_stem,
+        "test_template": test_template,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "diagnostic_only": True,
         "official_score_claim": False,
         "promotion_allowed": False,
         "auth_mode": "client_credentials",
+        "request_template_shape": {
+            "token_request_method": "POST",
+            "token_request_url_host": urlparse(credentials.token_url).hostname or "",
+            "token_request_path": urlparse(credentials.token_url).path or "",
+            "token_request_content_type": "application/x-www-form-urlencoded",
+            "grant_type": "client_credentials",
+            "scopes_source": env_source_labels(os.environ).get("scopes_source", "missing"),
+            "base_url_host": urlparse(credentials.base_url).hostname or "",
+            "data_endpoint_method": "GET",
+            "data_endpoint_path": UPS_AUDIENCES_PATH,
+            "data_endpoint_params": {"limit": 5},
+            "required_header_names": REQUIRED_HEADER_NAMES,
+            "org_placeholder_name": "IMS_ORG",
+            "sandbox_placeholder_name": "SANDBOX",
+        },
         "env_present_missing": env_present_missing(credentials),
+        "env_source_labels": env_source_labels(os.environ),
+        "env_file_loaded": bool(load_meta.get("loaded")),
         "headers_constructible": {
             "Authorization": bool(credentials.client_id and credentials.client_secret),
             "Content-Type": True,
@@ -164,9 +188,16 @@ def run_organizer_adobe_ups_audiences_smoke(
                 "next_action": "Populate .env.local with CLIENT_ID/CLIENT_SECRET/IMS_ORG/SANDBOX or the supported ADOBE_* aliases.",
             }
         )
-        return _finalize_report(config, report, write_reports=write_reports)
+        return _finalize_report(
+            config,
+            report,
+            write_reports=write_reports,
+            report_stem=report_stem,
+            evidence_report_stem=evidence_report_stem,
+        )
 
     token_result = _request_access_token(credentials, config, post_func)
+    report["token_request_evidence"] = token_result.get("evidence", {})
     report.update(
         {
             "token_status_code": token_result["status_code"],
@@ -190,7 +221,13 @@ def run_organizer_adobe_ups_audiences_smoke(
                 "next_action": "Verify client credentials, project API key, and IMS token scopes with the organizer.",
             }
         )
-        return _finalize_report(config, report, write_reports=write_reports)
+        return _finalize_report(
+            config,
+            report,
+            write_reports=write_reports,
+            report_stem=report_stem,
+            evidence_report_stem=evidence_report_stem,
+        )
 
     direct_result = _request_ups_audiences(credentials, config, str(access_token), get_func)
     outcome = direct_result["outcome"]
@@ -210,19 +247,33 @@ def run_organizer_adobe_ups_audiences_smoke(
                 "status_code": direct_result["status_code"],
                 "outcome": outcome,
             },
+            "direct_request_evidence": direct_result.get("evidence", {}),
         }
     )
 
     repo_result = _run_repo_client_comparison(config, repo_client_factory)
     report["repo_client_result"] = repo_result
+    report["repo_request_evidence"] = repo_result.get("evidence", {})
     report["comparison"] = {
         "direct_requests_result": report["direct_requests_result"],
         "repo_client_result": repo_result,
         "conclusion": _comparison_conclusion(report["direct_requests_result"], repo_result),
     }
+    report["evidence_equivalence"] = _evidence_equivalence(
+        report.get("direct_request_evidence", {}),
+        report.get("repo_request_evidence", {}),
+        report.get("env_source_labels", {}),
+        report["comparison"]["conclusion"],
+    )
     if report["comparison"]["conclusion"] == "direct_success_repo_failure":
         report["next_action"] = "Investigate AdobeAPIClient header construction, endpoint path, and query params for this endpoint."
-    return _finalize_report(config, report, write_reports=write_reports)
+    return _finalize_report(
+        config,
+        report,
+        write_reports=write_reports,
+        report_stem=report_stem,
+        evidence_report_stem=evidence_report_stem,
+    )
 
 
 def resolve_organizer_adobe_credentials(env: dict[str, str] | os._Environ[str]) -> OrganizerAdobeCredentials:
@@ -246,6 +297,17 @@ def env_present_missing(credentials: OrganizerAdobeCredentials) -> dict[str, str
         "base_url": "present" if credentials.base_url else "missing",
         "token_url": "present" if credentials.token_url else "missing",
         "scopes": "present" if credentials.scopes else "missing",
+    }
+
+
+def env_source_labels(env: dict[str, str] | os._Environ[str]) -> dict[str, str]:
+    return {
+        "client_id_source": _source_label(env, primary=("ADOBE_CLIENT_ID", "ADOBE_API_KEY"), alias=("CLIENT_ID",)),
+        "client_secret_source": _source_label(env, primary=("ADOBE_CLIENT_SECRET",), alias=("CLIENT_SECRET",)),
+        "org_id_source": _source_label(env, primary=("ADOBE_ORG_ID",), alias=("IMS_ORG",)),
+        "sandbox_source": _source_label(env, primary=("ADOBE_SANDBOX_NAME",), alias=("SANDBOX",)),
+        "base_url_source": "primary" if env.get("ADOBE_BASE_URL") else "default",
+        "scopes_source": "primary" if env.get("ADOBE_SCOPES") else "default",
     }
 
 
@@ -290,6 +352,7 @@ def _request_access_token(
     try:
         response = post_func(
             credentials.token_url,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
             data={
                 "grant_type": "client_credentials",
                 "client_id": credentials.client_id,
@@ -299,11 +362,22 @@ def _request_access_token(
             timeout=config.api_timeout_seconds,
         )
     except Exception as exc:
+        evidence = _token_request_evidence(
+            credentials,
+            status_code=None,
+            json_parse_ok=False,
+            access_token_field_present=False,
+            token_acquisition_ok=False,
+            expires_in_present=False,
+            error_category="token_request_exception",
+            failure_excerpt=_safe_excerpt(str(exc), credentials.secret_values),
+        )
         return {
             "ok": False,
             "status_code": None,
             "error_category": "token_request_exception",
             "safe_excerpt": _safe_excerpt(str(exc), credentials.secret_values),
+            "evidence": evidence,
         }
     status_code = getattr(response, "status_code", None)
     text = getattr(response, "text", "")
@@ -328,6 +402,16 @@ def _request_access_token(
         "access_token": token if ok else None,
         "error_category": error_category,
         "safe_excerpt": None if ok else _safe_excerpt(body, credentials.secret_values),
+        "evidence": _token_request_evidence(
+            credentials,
+            status_code=status_code,
+            json_parse_ok=json_ok,
+            access_token_field_present=bool(token),
+            token_acquisition_ok=ok,
+            expires_in_present=bool(isinstance(body, dict) and body.get("expires_in")),
+            error_category=error_category,
+            failure_excerpt=None if ok else _safe_excerpt(body, credentials.secret_values),
+        ),
     }
 
 
@@ -349,12 +433,27 @@ def _request_ups_audiences(
     try:
         response = get_func(url, headers=headers, params={"limit": 5}, timeout=config.api_timeout_seconds)
     except Exception as exc:
+        evidence = _data_request_evidence(
+            prefix="direct",
+            method="GET",
+            base_url=credentials.base_url,
+            path=UPS_AUDIENCES_PATH,
+            params={"limit": 5},
+            header_names_sent=REQUIRED_HEADER_NAMES,
+            status_code=None,
+            json_parse_ok=False,
+            outcome="external_api_unavailable",
+            response_content_type=None,
+            body=str(exc),
+            secrets=secrets,
+        )
         return {
             "status_code": None,
             "outcome": "external_api_unavailable",
             "json_parse_succeeded": False,
             "audience_items_present": False,
             "safe_excerpt": _safe_excerpt(str(exc), secrets),
+            "evidence": evidence,
         }
     status_code = getattr(response, "status_code", None)
     text = getattr(response, "text", "")
@@ -380,6 +479,21 @@ def _request_ups_audiences(
         "json_parse_succeeded": json_parse_succeeded,
         "audience_items_present": _audience_items_present(body),
         "safe_excerpt": _safe_excerpt(body, secrets),
+        "evidence": _data_request_evidence(
+            prefix="direct",
+            method="GET",
+            base_url=credentials.base_url,
+            path=UPS_AUDIENCES_PATH,
+            params={"limit": 5},
+            header_names_sent=list(headers),
+            status_code=status_code,
+            json_parse_ok=json_parse_succeeded,
+            outcome=outcome,
+            response_content_type=_header_value(getattr(response, "headers", {}), "content-type"),
+            body=body,
+            secrets=secrets,
+            response_headers=getattr(response, "headers", {}),
+        ),
     }
 
 
@@ -396,19 +510,23 @@ def _run_repo_client_comparison(
             "token_ok": False,
             "status_code": exc.status_code,
             "outcome": "token_acquisition_failed",
+            "evidence": _repo_failure_evidence(status_code=exc.status_code, outcome="token_acquisition_failed"),
         }
     except Exception:
         return {
             "token_ok": False,
             "status_code": None,
             "outcome": "token_acquisition_failed",
+            "evidence": _repo_failure_evidence(status_code=None, outcome="token_acquisition_failed"),
         }
     result = client.call_api("GET", UPS_AUDIENCES_PATH, {"limit": 5}, {})
     outcome = classify_api_outcome(result, method="GET", path=UPS_AUDIENCES_PATH)
+    evidence = _repo_request_evidence(result, outcome)
     return {
         "token_ok": token_ok,
         "status_code": result.get("status_code"),
         "outcome": outcome,
+        "evidence": evidence,
     }
 
 
@@ -465,22 +583,100 @@ def _next_action_for_outcome(outcome: str | None) -> str:
     }[issue]
 
 
-def _finalize_report(config: Config, report: dict[str, Any], *, write_reports: bool) -> dict[str, Any]:
+def _finalize_report(
+    config: Config,
+    report: dict[str, Any],
+    *,
+    write_reports: bool,
+    report_stem: str = REPORT_STEM,
+    evidence_report_stem: str = EVIDENCE_REPORT_STEM,
+) -> dict[str, Any]:
     reports_dir = config.outputs_dir / "reports"
     credential_valid_for_token = bool(report.get("credential_valid_for_token"))
+    safe_env_present_missing = report.get("env_present_missing")
+    safe_env_source_labels = report.get("env_source_labels")
+    safe_request_template_shape = report.get("request_template_shape")
     report = redact_secrets(report)
     # Generic key-based redaction treats any key ending in "_token" as secret.
     # This report field is a boolean readiness result, not a token value.
     report["credential_valid_for_token"] = credential_valid_for_token
+    if isinstance(safe_env_present_missing, dict):
+        report["env_present_missing"] = safe_env_present_missing
+    if isinstance(safe_env_source_labels, dict):
+        report["env_source_labels"] = safe_env_source_labels
+    if isinstance(safe_request_template_shape, dict):
+        report["request_template_shape"] = safe_request_template_shape
     report["output_paths"] = {
-        "json": str(reports_dir / f"{REPORT_STEM}.json"),
-        "markdown": str(reports_dir / f"{REPORT_STEM}.md"),
+        "json": str(reports_dir / f"{report_stem}.json"),
+        "markdown": str(reports_dir / f"{report_stem}.md"),
     }
     if write_reports:
         reports_dir.mkdir(parents=True, exist_ok=True)
-        (reports_dir / f"{REPORT_STEM}.json").write_text(json.dumps(report, indent=2, sort_keys=True, default=str), encoding="utf-8")
-        (reports_dir / f"{REPORT_STEM}.md").write_text(_render_markdown(report), encoding="utf-8")
+        evidence_package = _build_evidence_package(report, evidence_report_stem=evidence_report_stem)
+        _assert_report_safe(report)
+        _assert_report_safe(evidence_package)
+        (reports_dir / f"{report_stem}.json").write_text(json.dumps(report, indent=2, sort_keys=True, default=str), encoding="utf-8")
+        (reports_dir / f"{report_stem}.md").write_text(_render_markdown(report), encoding="utf-8")
+        (reports_dir / f"{evidence_report_stem}.json").write_text(
+            json.dumps(evidence_package, indent=2, sort_keys=True, default=str),
+            encoding="utf-8",
+        )
+        evidence_markdown = _render_evidence_markdown(evidence_package)
+        _assert_report_safe(evidence_markdown)
+        (reports_dir / f"{evidence_report_stem}.md").write_text(evidence_markdown, encoding="utf-8")
     return report
+
+
+def _build_evidence_package(report: dict[str, Any], *, evidence_report_stem: str = EVIDENCE_REPORT_STEM) -> dict[str, Any]:
+    env_sources = report.get("env_source_labels") or {}
+    token = report.get("token_request_evidence") or {}
+    direct = report.get("direct_request_evidence") or {}
+    repo = report.get("repo_request_evidence") or {}
+    equivalence = report.get("evidence_equivalence") or _evidence_equivalence(
+        direct,
+        repo,
+        env_sources,
+        (report.get("comparison") or {}).get("conclusion"),
+    )
+    conclusion = _evidence_based_conclusion(equivalence.get("comparison_result"))
+    package = {
+        "test_identity": {
+            "test_name": report.get("test_template") or "organizer_adobe_ups_audiences_smoke",
+            "endpoint_purpose": "UPS audiences read-only validation",
+            "data_endpoint_method": "GET",
+            "data_endpoint_path": UPS_AUDIENCES_PATH,
+            "data_endpoint_params": {"limit": 5},
+            "data_endpoint_mutating": False,
+            "direct_path_tested": bool(direct.get("direct_request_attempted")),
+            "repo_client_path_tested": bool(repo.get("repo_request_attempted")),
+            "generated_at": report.get("generated_at"),
+        },
+        "credential_loading_status": {
+            "env_file_loaded": bool(report.get("env_file_loaded")),
+            "auth_mode": report.get("auth_mode"),
+            "client_id_source": env_sources.get("client_id_source", "missing"),
+            "client_secret_source": env_sources.get("client_secret_source", "missing"),
+            "org_id_source": env_sources.get("org_id_source", "missing"),
+            "sandbox_source": env_sources.get("sandbox_source", "missing"),
+            "base_url_source": env_sources.get("base_url_source", "missing"),
+            "scopes_source": env_sources.get("scopes_source", "missing"),
+            "same_resolved_config_used_for_direct_and_repo_paths": bool(equivalence.get("same_credential_sources")),
+        },
+        "token_acquisition_evidence": token,
+        "direct_organizer_requests_path": direct,
+        "repo_adobe_api_client_path": repo,
+        "equivalence_verification": equivalence,
+        "evidence_based_conclusion": {
+            "conclusion": conclusion,
+            "summary": _conclusion_summary(conclusion),
+        },
+        "output_paths": {
+            "json": f"outputs/reports/{evidence_report_stem}.json",
+            "markdown": f"outputs/reports/{evidence_report_stem}.md",
+        },
+    }
+    _assert_report_safe(package)
+    return package
 
 
 def _render_markdown(report: dict[str, Any]) -> str:
@@ -521,7 +717,368 @@ def _render_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _safe_excerpt(value: Any, secrets: list[str]) -> str:
+def _render_evidence_markdown(package: dict[str, Any]) -> str:
+    identity = package.get("test_identity", {})
+    credentials = package.get("credential_loading_status", {})
+    token = package.get("token_acquisition_evidence", {})
+    direct = package.get("direct_organizer_requests_path", {})
+    repo = package.get("repo_adobe_api_client_path", {})
+    equivalence = package.get("equivalence_verification", {})
+    conclusion = package.get("evidence_based_conclusion", {})
+    lines = [
+        "# Organizer Adobe UPS Audiences Evidence Package",
+        "",
+        "Fully redacted evidence package for the organizer-provided UPS audiences smoke test.",
+        "",
+        "## A. Test Identity",
+        "",
+        f"- test_name: `{identity.get('test_name')}`",
+        f"- endpoint_purpose: `{identity.get('endpoint_purpose')}`",
+        f"- data_endpoint_method: `{identity.get('data_endpoint_method')}`",
+        f"- data_endpoint_path: `{identity.get('data_endpoint_path')}`",
+        f"- data_endpoint_params: `{identity.get('data_endpoint_params')}`",
+        f"- data_endpoint_mutating: `{identity.get('data_endpoint_mutating')}`",
+        f"- direct_path_tested: `{identity.get('direct_path_tested')}`",
+        f"- repo_client_path_tested: `{identity.get('repo_client_path_tested')}`",
+        f"- generated_at: `{identity.get('generated_at')}`",
+        "",
+        "## B. Credential Loading Status",
+        "",
+    ]
+    for key in [
+        "env_file_loaded",
+        "auth_mode",
+        "client_id_source",
+        "client_secret_source",
+        "org_id_source",
+        "sandbox_source",
+        "base_url_source",
+        "scopes_source",
+        "same_resolved_config_used_for_direct_and_repo_paths",
+    ]:
+        lines.append(f"- {key}: `{credentials.get(key)}`")
+    lines.extend(
+        [
+            "",
+            "## C. Token Acquisition Evidence",
+            "",
+        ]
+    )
+    for key in [
+        "token_request_attempted",
+        "token_request_method",
+        "token_request_url_host",
+        "grant_type",
+        "token_status_code",
+        "token_json_parse_ok",
+        "access_token_field_present",
+        "token_acquisition_ok",
+        "expires_in_present",
+        "token_error_category",
+        "token_redacted_response_excerpt",
+    ]:
+        if key in token:
+            lines.append(f"- {key}: `{token.get(key)}`")
+    lines.extend(["", "## D. Direct Organizer-Style Requests Path", ""])
+    lines.extend(_request_markdown_lines(direct))
+    lines.extend(["", "## E. Repo AdobeAPIClient Path", ""])
+    lines.extend(_request_markdown_lines(repo))
+    lines.extend(["", "## F. Equivalence Verification", ""])
+    for key in [
+        "same_method",
+        "same_path",
+        "same_params",
+        "same_required_header_names",
+        "same_credential_sources",
+        "same_status_code",
+        "same_outcome",
+        "same_safe_error_shape",
+        "comparison_result",
+    ]:
+        lines.append(f"- {key}: `{equivalence.get(key)}`")
+    mismatch = equivalence.get("mismatch_explanation")
+    if mismatch:
+        lines.append(f"- mismatch_explanation: {mismatch}")
+    lines.extend(
+        [
+            "",
+            "## G. Evidence-Based Conclusion",
+            "",
+            f"- conclusion: `{conclusion.get('conclusion')}`",
+            "",
+            str(conclusion.get("summary") or ""),
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _request_markdown_lines(section: dict[str, Any]) -> list[str]:
+    return [
+        f"- request_attempted: `{section.get('direct_request_attempted', section.get('repo_request_attempted'))}`",
+        f"- method: `{section.get('method')}`",
+        f"- base_url_host: `{section.get('base_url_host')}`",
+        f"- path: `{section.get('path')}`",
+        f"- params: `{section.get('params')}`",
+        f"- header_names_sent: `{section.get('header_names_sent')}`",
+        f"- header_values_redacted: `{section.get('header_values_redacted')}`",
+        f"- status_code: `{section.get('status_code')}`",
+        f"- json_parse_ok: `{section.get('json_parse_ok')}`",
+        f"- outcome: `{section.get('outcome')}`",
+        f"- response_content_type: `{section.get('response_content_type')}`",
+        f"- safe_response_error_fields: `{section.get('safe_response_error_fields')}`",
+        f"- adobe_diagnostic_ids: `{section.get('adobe_diagnostic_ids')}`",
+        f"- redacted_response_excerpt: `{section.get('redacted_response_excerpt')}`",
+    ]
+
+
+def _token_request_evidence(
+    credentials: OrganizerAdobeCredentials,
+    *,
+    status_code: int | None,
+    json_parse_ok: bool,
+    access_token_field_present: bool,
+    token_acquisition_ok: bool,
+    expires_in_present: bool,
+    error_category: str | None,
+    failure_excerpt: str | None,
+) -> dict[str, Any]:
+    evidence = {
+        "token_request_attempted": True,
+        "token_request_method": "POST",
+        "token_request_url_host": urlparse(credentials.token_url).hostname or "",
+        "grant_type": "client_credentials",
+        "token_status_code": status_code,
+        "token_json_parse_ok": json_parse_ok,
+        "access_token_field_present": access_token_field_present,
+        "token_acquisition_ok": token_acquisition_ok,
+        "expires_in_present": expires_in_present,
+        "token_error_category": error_category,
+    }
+    if not token_acquisition_ok:
+        evidence["token_redacted_response_excerpt"] = failure_excerpt
+    return evidence
+
+
+def _data_request_evidence(
+    *,
+    prefix: str,
+    method: str,
+    base_url: str,
+    path: str,
+    params: dict[str, Any],
+    header_names_sent: list[str],
+    status_code: int | None,
+    json_parse_ok: bool,
+    outcome: str,
+    response_content_type: str | None,
+    body: Any,
+    secrets: list[str],
+    response_headers: Any | None = None,
+) -> dict[str, Any]:
+    excerpt = _safe_excerpt(body, secrets, max_chars=EVIDENCE_MAX_EXCERPT_CHARS)
+    safe_error_fields = _safe_error_fields(body, secrets)
+    return {
+        f"{prefix}_request_attempted": True,
+        "method": method,
+        "base_url_host": urlparse(base_url).hostname or "",
+        "path": normalize_api_path(path),
+        "params": params,
+        "header_names_sent": sorted(_dedupe(header_names_sent)),
+        "header_values_redacted": True,
+        "headers": _redacted_headers(header_names_sent),
+        "status_code": status_code,
+        "json_parse_ok": json_parse_ok,
+        "outcome": outcome,
+        "response_content_type": response_content_type,
+        "redacted_response_excerpt": excerpt,
+        "safe_response_error_fields": safe_error_fields,
+        "adobe_diagnostic_ids": _diagnostic_ids(response_headers or {}, body),
+    }
+
+
+def _repo_request_evidence(result: dict[str, Any], outcome: str) -> dict[str, Any]:
+    headers = result.get("headers") if isinstance(result.get("headers"), dict) else {}
+    header_names = list(headers) if headers else REQUIRED_HEADER_NAMES
+    parsed = result.get("parsed_evidence") if isinstance(result.get("parsed_evidence"), dict) else {}
+    body = result.get("result_preview") or parsed.get("raw_preview") or result.get("error") or parsed.get("errors")
+    return _data_request_evidence(
+        prefix="repo",
+        method=str(result.get("method") or "GET"),
+        base_url=str(result.get("url") or DEFAULT_ADOBE_BASE_URL),
+        path=str(result.get("endpoint") or UPS_AUDIENCES_PATH),
+        params=result.get("params") if isinstance(result.get("params"), dict) else {"limit": 5},
+        header_names_sent=header_names,
+        status_code=result.get("status_code"),
+        json_parse_ok=bool(parsed),
+        outcome=outcome,
+        response_content_type=result.get("response_content_type"),
+        body=body,
+        secrets=[],
+    )
+
+
+def _repo_failure_evidence(*, status_code: int | None, outcome: str) -> dict[str, Any]:
+    return _data_request_evidence(
+        prefix="repo",
+        method="GET",
+        base_url=DEFAULT_ADOBE_BASE_URL,
+        path=UPS_AUDIENCES_PATH,
+        params={"limit": 5},
+        header_names_sent=REQUIRED_HEADER_NAMES,
+        status_code=status_code,
+        json_parse_ok=False,
+        outcome=outcome,
+        response_content_type=None,
+        body={"error": outcome},
+        secrets=[],
+    )
+
+
+def _evidence_equivalence(
+    direct: dict[str, Any],
+    repo: dict[str, Any],
+    env_sources: dict[str, Any],
+    comparison_result: str | None,
+) -> dict[str, Any]:
+    required = set(REQUIRED_HEADER_NAMES)
+    direct_headers = set(direct.get("header_names_sent") or [])
+    repo_headers = set(repo.get("header_names_sent") or [])
+    same_error_shape = _error_shape(direct.get("safe_response_error_fields")) == _error_shape(repo.get("safe_response_error_fields"))
+    if not direct.get("direct_request_attempted") or not repo.get("repo_request_attempted"):
+        comparison_result = "not_comparable"
+    comparison_result = comparison_result or "not_comparable"
+    if comparison_result == "mismatch_needs_client_fix":
+        comparison_result = _comparison_result_from_booleans(direct, repo)
+    booleans = {
+        "same_method": direct.get("method") == repo.get("method"),
+        "same_path": direct.get("path") == repo.get("path"),
+        "same_params": direct.get("params") == repo.get("params"),
+        "same_required_header_names": required <= direct_headers and required <= repo_headers,
+        "same_credential_sources": all(
+            env_sources.get(key) in {"primary", "alias", "default"}
+            for key in ["client_id_source", "client_secret_source", "org_id_source", "sandbox_source", "base_url_source", "scopes_source"]
+        ),
+        "same_status_code": direct.get("status_code") == repo.get("status_code"),
+        "same_outcome": direct.get("outcome") == repo.get("outcome"),
+        "same_safe_error_shape": same_error_shape,
+    }
+    return {
+        **booleans,
+        "comparison_result": comparison_result,
+        "mismatch_explanation": _mismatch_explanation(booleans),
+    }
+
+
+def _comparison_result_from_booleans(direct: dict[str, Any], repo: dict[str, Any]) -> str:
+    direct_success = direct.get("outcome") in {"live_success", "live_empty"}
+    repo_success = repo.get("outcome") in {"live_success", "live_empty"}
+    if direct_success and repo_success:
+        return "both_success"
+    if direct_success and not repo_success:
+        return "direct_success_repo_failure"
+    if not direct_success and repo_success:
+        return "direct_failure_repo_success"
+    if direct.get("status_code") == repo.get("status_code") and direct.get("outcome") == repo.get("outcome"):
+        return "both_same_failure"
+    return "not_comparable"
+
+
+def _evidence_based_conclusion(comparison_result: str | None) -> str:
+    if comparison_result == "both_success":
+        return "repo_client_path_validated_against_direct_success"
+    if comparison_result in {"direct_success_repo_failure", "direct_failure_repo_success"}:
+        return "repo_client_mismatch_detected"
+    if comparison_result == "both_same_failure":
+        return "both_paths_failed_equivalently_no_repo_specific_mismatch_shown"
+    return "test_not_comparable_due_to_missing_evidence"
+
+
+def _conclusion_summary(conclusion: str) -> str:
+    if conclusion == "both_paths_failed_equivalently_no_repo_specific_mismatch_shown":
+        return (
+            "Both the organizer-style direct request and the repo AdobeAPIClient request failed with the same HTTP "
+            "status/outcome. This does not show a repo-specific header/client mismatch. Root cause may still be Adobe "
+            "endpoint availability, sandbox, organization context, or product-profile permission."
+        )
+    if conclusion == "repo_client_path_validated_against_direct_success":
+        return "Both paths reached UPS audiences successfully with equivalent redacted request shape."
+    if conclusion == "repo_client_mismatch_detected":
+        return "The direct and repo client paths diverged; inspect the redacted equivalence fields before changing runtime code."
+    return "The evidence package is incomplete or the two requests were not comparable."
+
+
+def _mismatch_explanation(booleans: dict[str, bool]) -> str | None:
+    mismatched = [name for name, value in booleans.items() if not value]
+    if not mismatched:
+        return None
+    return "Mismatched redacted comparison fields: " + ", ".join(mismatched)
+
+
+def _redacted_headers(header_names: list[str]) -> dict[str, str]:
+    headers = {}
+    for name in sorted(_dedupe(header_names)):
+        headers[name] = "application/json" if name.lower() == "content-type" else "<redacted>"
+    return headers
+
+
+def _safe_error_fields(body: Any, secrets: list[str]) -> dict[str, Any]:
+    if not isinstance(body, dict):
+        return {}
+    candidates = {
+        "error_code": _first_present(body, ["error_code", "errorCode", "code", "error"]),
+        "error_message": _first_present(body, ["error_message", "errorMessage", "message", "detail", "description"]),
+        "title": body.get("title"),
+        "status": body.get("status"),
+    }
+    return {
+        key: _safe_excerpt(value, secrets, max_chars=240)
+        for key, value in candidates.items()
+        if value not in (None, "", [], {})
+    }
+
+
+def _first_present(body: dict[str, Any], keys: list[str]) -> Any:
+    for key in keys:
+        if key in body and body[key] not in (None, "", [], {}):
+            return body[key]
+    nested = body.get("error")
+    if isinstance(nested, dict):
+        return _first_present(nested, keys)
+    return None
+
+
+def _diagnostic_ids(headers: Any, body: Any) -> dict[str, str]:
+    result: dict[str, str] = {}
+    if isinstance(headers, dict):
+        for key, value in headers.items():
+            lowered = str(key).lower()
+            if lowered in {"x-request-id", "request-id", "x-correlation-id", "x-trace-id", "x-adobe-request-id"}:
+                result[str(key)] = _safe_diagnostic_id(value)
+    if isinstance(body, dict):
+        for key in ["requestId", "request-id", "registryRequestId", "correlationId", "traceId"]:
+            value = body.get(key)
+            if value:
+                result[key] = _safe_diagnostic_id(value)
+    return result
+
+
+def _safe_diagnostic_id(value: Any) -> str:
+    text = str(value or "")
+    if not text:
+        return ""
+    if len(text) > 120:
+        return "[REDACTED_DIAGNOSTIC_ID]"
+    return text
+
+
+def _error_shape(fields: Any) -> list[str]:
+    if not isinstance(fields, dict):
+        return []
+    return sorted(fields)
+
+
+def _safe_excerpt(value: Any, secrets: list[str], *, max_chars: int = MAX_EXCERPT_CHARS) -> str:
     redacted = redact_secrets(value)
     text = _body_to_text(redacted)
     for secret in secrets:
@@ -532,7 +1089,7 @@ def _safe_excerpt(value: Any, secrets: list[str]) -> str:
     text = re.sub(r"sk-[A-Za-z0-9_-]{8,}", "[REDACTED]", text)
     text = re.sub(r"\b(request-id|registryRequestId|x-request-id|trace[-_ ]?id)\b[\"':= ]+[A-Za-z0-9._:-]+", r"\1=[REDACTED]", text, flags=re.IGNORECASE)
     text = re.sub(r"\s+", " ", text).strip()
-    return text[:MAX_EXCERPT_CHARS]
+    return text[:max_chars]
 
 
 def _audience_items_present(body: Any) -> bool:
@@ -566,6 +1123,14 @@ def _env_first(env: dict[str, str] | os._Environ[str], *names: str) -> str | Non
     return None
 
 
+def _source_label(env: dict[str, str] | os._Environ[str], *, primary: tuple[str, ...], alias: tuple[str, ...]) -> str:
+    if any(env.get(name) for name in primary):
+        return "primary"
+    if any(env.get(name) for name in alias):
+        return "alias"
+    return "missing"
+
+
 def _present_missing(value: Any) -> str:
     return "present" if bool(value) else "missing"
 
@@ -573,6 +1138,58 @@ def _present_missing(value: Any) -> str:
 def _mirror_token_url_for_repo_client(token_url: str) -> None:
     if token_url and not os.environ.get("ADOBE_TOKEN_URL"):
         os.environ["ADOBE_TOKEN_URL"] = token_url
+
+
+def _header_value(headers: Any, name: str) -> str | None:
+    if not isinstance(headers, dict):
+        return None
+    for key, value in headers.items():
+        if str(key).lower() == name.lower():
+            text = str(value)
+            return text[:120]
+    return None
+
+
+def _dedupe(values: list[str]) -> list[str]:
+    result: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        text = str(value or "").strip()
+        key = text.lower()
+        if text and key not in seen:
+            seen.add(key)
+            result.append(text)
+    return result
+
+
+def _assert_report_safe(payload: Any) -> None:
+    text = payload if isinstance(payload, str) else json.dumps(payload, sort_keys=True, default=str)
+    secret_env_names = [
+        "ADOBE_ACCESS_TOKEN",
+        "ACCESS_TOKEN",
+        "CLIENT_SECRET",
+        "ADOBE_CLIENT_SECRET",
+        "CLIENT_ID",
+        "ADOBE_CLIENT_ID",
+        "ADOBE_API_KEY",
+        "IMS_ORG",
+        "ADOBE_ORG_ID",
+        "SANDBOX",
+        "ADOBE_SANDBOX_NAME",
+    ]
+    leaked = []
+    for name in secret_env_names:
+        value = os.environ.get(name)
+        if value and len(value) >= 3 and value in text:
+            leaked.append(name)
+    if leaked:
+        raise RuntimeError(f"Refusing to write report with unredacted secret values: {', '.join(sorted(set(leaked)))}")
+    if re.search(r"Authorization\s*:\s*Bearer\s+(?!\[REDACTED\])[^\s,'\"}]+", text, flags=re.IGNORECASE):
+        raise RuntimeError("Refusing to write report with unredacted Authorization bearer value.")
+    if re.search(r"\bBearer\s+(?!\[REDACTED\])[A-Za-z0-9._-]{8,}", text, flags=re.IGNORECASE):
+        raise RuntimeError("Refusing to write report with unredacted bearer value.")
+    if re.search(r"\b[A-Za-z0-9_-]{3,}\*\*\*", text):
+        raise RuntimeError("Refusing to write report with masked credential prefix.")
 
 
 if __name__ == "__main__":

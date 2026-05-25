@@ -12,6 +12,7 @@ from dashagent.api_discovery import plan_discovery_for_endpoint, resolve_discove
 from dashagent.api_client import AdobeAPIClient, AdobeCredentials, TokenAcquisitionError
 from dashagent.api_outcome_classifier import classify_api_outcome, diagnose_api_outcome
 from dashagent.api_response_parser import normalize_api_response
+from dashagent.api_templates import find_api_templates
 from dashagent.config import Config
 from dashagent.endpoint_catalog import Endpoint, EndpointCatalog
 from dashagent.evidence_bus import EvidenceBus
@@ -30,6 +31,12 @@ from scripts.run_live_api_readiness_smoke import (
     safe_error_excerpt,
 )
 from scripts.run_live_api_targeted_failure_analysis import run_live_api_targeted_failure_analysis
+from scripts.run_guarded_dash_agent_live_e2e_trial import (
+    TrialCase,
+    build_report as build_guarded_live_e2e_report,
+    build_trial_cases as build_guarded_live_e2e_trial_cases,
+    run_case as run_guarded_live_e2e_case,
+)
 from scripts.run_full_generated_prompt_suite_diagnostic import run_full_generated_prompt_suite_diagnostic
 from scripts.run_post_permission_live_api_verification import (
     run_post_permission_live_api_verification,
@@ -37,6 +44,7 @@ from scripts.run_post_permission_live_api_verification import (
 )
 from scripts.run_mock_live_api_evidence_pipeline_trial import run_mock_live_api_evidence_pipeline_trial
 from scripts import run_dev_eval
+from dashagent.validators import APIValidator
 
 
 ADOBE_ENV_NAMES = [
@@ -76,6 +84,7 @@ def test_adobe_env_aliases_and_header_redaction(monkeypatch):
     assert headers["x-api-key"] == "api_key_header_test_value_123"
     assert headers["x-gw-ims-org-id"] == "org_debug_value"
     assert headers["x-sandbox-name"] == "production-sandbox"
+    assert "Accept" not in headers
     assert client.dry_run is False
 
     redacted = redact_secrets(headers)
@@ -348,7 +357,7 @@ def test_discovery_chain_records_provenance_and_blocks_unsafe_paths():
         catalog=catalog,
     )
     assert resolved.discovery_status == "ready_with_discovered_id"
-    assert resolved.filled_path == "/unifiedtags/tags/tag-001"
+    assert resolved.filled_path == "https://experience.adobe.io/unifiedtags/tags/tag-001"
     assert resolved.id_source == "live_api"
     assert resolved.source_endpoint == "unified_tags"
     assert resolved.source_field in {"tag_id", "ids[0]", "id"}
@@ -408,6 +417,321 @@ def test_smoke_default_order_filters_and_safe_excerpt(monkeypatch):
         "abc" + "***",
     ]:
         assert forbidden not in excerpt
+
+
+def test_schema_registry_accept_header_is_endpoint_specific():
+    catalog = EndpointCatalog()
+    schema = catalog.by_id("schema_registry_schemas")
+    ups = catalog.by_id("ups_audiences")
+    shorthand = catalog.by_id("schemas_short")
+
+    assert schema is not None
+    assert schema.path == "/data/foundation/schemaregistry/tenant/schemas"
+    assert schema.common_headers == {"Accept": "application/vnd.adobe.xed-id+json"}
+    assert ups is not None
+    assert ups.common_headers == {}
+    assert shorthand is not None
+    assert shorthand.path == "/data/foundation/schemaregistry/tenant/schemas"
+    assert shorthand.common_params == {}
+    assert shorthand.common_headers == {"Accept": "application/vnd.adobe.xed-id+json"}
+    assert not shorthand.path_params
+
+
+def test_schemas_short_semantics_document_schema_list_alias_not_lookup():
+    endpoint = EndpointCatalog().by_id("schemas_short")
+
+    assert endpoint is not None
+    assert "schema list/name lookup" in endpoint.use_when
+    assert endpoint.path_params == []
+    assert endpoint.path.endswith("/tenant/schemas")
+
+
+def test_schema_list_templates_use_proven_tenant_alias_shape():
+    templates = find_api_templates("List schemas available in this tenant")
+    schema_templates = [template for template in templates if template.family == "schema_list"]
+
+    assert schema_templates
+    assert all(template.path == "/data/foundation/schemaregistry/tenant/schemas" for template in schema_templates)
+    assert all(template.headers == {"Accept": "application/vnd.adobe.xed-id+json"} for template in schema_templates)
+
+
+def test_schema_by_name_template_does_not_become_schema_id_lookup():
+    templates = find_api_templates('Show schema named "Loyalty Members"')
+    by_name = [template for template in templates if template.family == "schema_by_name"]
+
+    assert by_name
+    assert all(template.path == "/data/foundation/schemaregistry/tenant/schemas" for template in by_name)
+    assert all("{schema_id}" not in template.path for template in by_name)
+    assert all(template.headers == {"Accept": "application/vnd.adobe.xed-id+json"} for template in by_name)
+
+
+def test_schema_registry_detail_lookup_remains_id_required():
+    detail = EndpointCatalog().by_id("schema_registry_schema")
+
+    assert detail is not None
+    assert detail.path == "/data/foundation/schemaregistry/tenant/schemas/{schema_id}"
+    assert detail.path_params == ["schema_id"]
+
+
+def test_audit_events_short_aliases_to_documented_canonical_path():
+    catalog = EndpointCatalog()
+    canonical = catalog.by_id("audit_events")
+    shorthand = catalog.by_id("audit_events_short")
+
+    assert canonical is not None
+    assert shorthand is not None
+    assert canonical.path == "/data/foundation/audit/events"
+    assert shorthand.path == canonical.path
+    assert shorthand.common_headers == {}
+    assert "shorthand" in shorthand.use_when.lower()
+
+
+def test_audit_templates_do_not_emit_broken_short_audit_path():
+    probes = ["recent dataset changes", "audit events", "new destinations in last 3 months"]
+
+    for query in probes:
+        templates = [template for template in find_api_templates(query) if "audit" in template.family]
+        assert templates
+        assert all(template.path == "/data/foundation/audit/events" for template in templates)
+
+
+def test_unified_tags_use_documented_experience_host_without_global_headers():
+    catalog = EndpointCatalog()
+    tags = catalog.by_id("unified_tags")
+    categories = catalog.by_id("unified_tag_categories")
+    ups = catalog.by_id("ups_audiences")
+
+    assert tags is not None
+    assert categories is not None
+    assert tags.path == "https://experience.adobe.io/unifiedtags/tags"
+    assert categories.path == "https://experience.adobe.io/unifiedtags/tagCategory"
+    assert tags.common_headers == {}
+    assert categories.common_headers == {}
+    assert ups is not None
+    assert ups.common_headers == {}
+
+
+def test_endpoint_catalog_matches_absolute_unified_tag_urls_by_safe_path():
+    catalog = EndpointCatalog()
+
+    assert catalog.match("GET", "https://experience.adobe.io/unifiedtags/tags").id == "unified_tags"
+    assert catalog.match("GET", "https://experience.adobe.io/unifiedtags/tagCategory").id == "unified_tag_categories"
+    assert catalog.match("GET", "/unifiedtags/tags").id == "unified_tags"
+
+
+def test_tag_templates_use_documented_unified_tags_host():
+    probes = ["Show the complete tag list for this workspace", "Which governance tags sit in the uncategorized category?"]
+    paths = []
+    for query in probes:
+        paths.extend(template.path for template in find_api_templates(query) if "tag" in template.family)
+
+    assert paths
+    assert "https://experience.adobe.io/unifiedtags/tags" in paths
+    assert "https://experience.adobe.io/unifiedtags/tagCategory" in paths
+    assert all(path.startswith("https://experience.adobe.io/unifiedtags/") for path in paths)
+
+
+def test_guarded_live_e2e_trial_cases_cover_resolved_runtime_families():
+    cases = build_guarded_live_e2e_trial_cases()
+    endpoint_ids = {case.endpoint_id for case in cases}
+    routes = {case.route for case in cases}
+
+    assert {
+        "ups_audiences",
+        "segment_definitions",
+        "merge_policies",
+        "flowservice_flows",
+        "flowservice_runs",
+        "catalog_datasets",
+        "catalog_batches",
+        "schema_registry_schemas",
+        "schemas_short",
+        "audit_events_short",
+        "unified_tags",
+        "unified_tag_categories",
+    } <= endpoint_ids
+    assert {"audience_segment", "merge_policies", "flows_runs", "datasets_batches", "schemas", "audit_events", "tags"} <= routes
+
+
+def test_guarded_live_e2e_case_uses_catalog_request_shape_and_no_secret_leak():
+    catalog = EndpointCatalog()
+    calls = []
+
+    class FakeClient:
+        dry_run = False
+
+        def call_api(self, method, url, params, headers):
+            endpoint = catalog.match(method, url)
+            calls.append({"method": method, "url": url, "params": params, "headers": headers})
+            return {
+                "ok": True,
+                "dry_run": False,
+                "status_code": 200,
+                "parsed_evidence": normalize_api_response(
+                    {"items": [{"id": "tag-1", "name": "Governance"}]},
+                    ok=True,
+                    dry_run=False,
+                    status_code=200,
+                    endpoint_id=endpoint.id,
+                    endpoint_family=endpoint.id,
+                    method=method,
+                    path=url,
+                ),
+            }
+
+    row = run_guarded_live_e2e_case(
+        TrialCase("tag_probe", "List tags", "tags", "unified_tags"),
+        catalog=catalog,
+        validator=APIValidator(catalog),
+        client=FakeClient(),
+    )
+
+    assert row["api_endpoint_selected"] == "unified_tags"
+    assert row["safe_path"] == "https://experience.adobe.io/unifiedtags/tags"
+    assert row["safe_header_names"] == []
+    assert row["api_outcome"] == "live_success"
+    assert row["parser_result"] == "pass"
+    assert row["evidencebus_usable_evidence"] is True
+    assert row["answer_evidence_usage"] == "used_usable_api_evidence"
+    assert row["selected_endpoint_unresolved_path_failure"] is False
+    rendered = json.dumps(row)
+    assert "Authorization" not in rendered
+    assert "ADOBE_ACCESS_TOKEN" not in rendered
+    assert calls[0]["url"] == "https://experience.adobe.io/unifiedtags/tags"
+
+
+def test_guarded_live_e2e_report_blocks_unresolved_runtime_path_failures():
+    payload = build_guarded_live_e2e_report(
+        [
+            {
+                "query_id": "bad_path",
+                "route": "tags",
+                "api_endpoint_selected": "unified_tags",
+                "api_outcome": "endpoint_path_issue",
+                "parser_result": "not_available",
+                "evidencebus_usable_evidence": False,
+                "api_state_forwarded": False,
+                "answer_used_usable_api_evidence": False,
+                "answer_used_api_state": False,
+                "unsupported_claims": [],
+                "tool_count": 1,
+                "selected_endpoint_unresolved_path_failure": True,
+            }
+        ]
+    )
+
+    assert payload["status"] == "fail"
+    assert payload["summary"]["parser_evidencebus_failure_count"] == 1
+    assert payload["summary"]["unresolved_path_failure_count"] == 1
+    assert payload["requirements"]["no_selected_endpoint_unresolved_path_failure"] is False
+
+
+def test_live_smoke_uses_only_schema_registry_accept_header(monkeypatch, tiny_project: Config):
+    captured = []
+
+    class FakeClient:
+        dry_run = False
+
+        def __init__(self, config):
+            pass
+
+        def call_api(self, method, url, params, headers):
+            captured.append({"method": method, "url": url, "params": params, "headers": headers})
+            parsed = normalize_api_response(
+                {"results": [], "_page": {"count": 0}},
+                ok=True,
+                dry_run=False,
+                status_code=200,
+                endpoint_id=(
+                    "schema_registry_schemas"
+                    if url == "/data/foundation/schemaregistry/tenant/schemas"
+                    else "ups_audiences"
+                ),
+                endpoint_family=(
+                    "schema_registry_schemas"
+                    if url == "/data/foundation/schemaregistry/tenant/schemas"
+                    else "ups_audiences"
+                ),
+                method=method,
+                path=url,
+            )
+            return {
+                "ok": True,
+                "dry_run": False,
+                "status_code": 200,
+                "result_preview": {"results": []},
+                "parsed_evidence": parsed,
+            }
+
+    monkeypatch.setattr("scripts.run_live_api_readiness_smoke.AdobeAPIClient", FakeClient)
+
+    run_live_api_readiness_smoke(tiny_project, endpoint_id="schema_registry_schemas")
+    run_live_api_readiness_smoke(tiny_project, endpoint_id="schemas_short")
+    run_live_api_readiness_smoke(tiny_project, endpoint_id="ups_audiences")
+
+    assert captured[0]["url"] == "/data/foundation/schemaregistry/tenant/schemas"
+    assert captured[0]["headers"] == {"Accept": "application/vnd.adobe.xed-id+json"}
+    assert captured[1]["url"] == "/data/foundation/schemaregistry/tenant/schemas"
+    assert captured[1]["headers"] == {"Accept": "application/vnd.adobe.xed-id+json"}
+    assert captured[2]["url"] == "/data/core/ups/audiences"
+    assert captured[2]["headers"] == {}
+
+
+def test_schema_registry_parser_and_evidencebus_for_list_response():
+    parsed = normalize_api_response(
+        {
+            "results": [
+                {
+                    "$id": "https://ns.adobe.com/example/schemas/abc",
+                    "meta:altId": "_example.schemas.abc",
+                    "version": "1.0",
+                    "title": "Loyalty Members",
+                }
+            ],
+            "_page": {"count": 1},
+        },
+        ok=True,
+        dry_run=False,
+        status_code=200,
+        endpoint_id="schema_registry_schemas",
+        endpoint_family="schema_registry_schemas",
+        method="GET",
+        path="/data/foundation/schemaregistry/tenant/schemas",
+    )
+    assert parsed["evidence_state"] == "live_evidence"
+    assert parsed["live_evidence_available"] is True
+    assert "Loyalty Members" in parsed["names"]
+
+    bus = EvidenceBus()
+    step = type("Step", (), {"family": "schema_registry_schemas"})()
+    bus.observe_api(step, {"ok": True, "dry_run": False, "parsed_evidence": parsed})
+    compact = bus.compact()
+    assert "Loyalty Members" in compact["api_names"]
+
+    empty = normalize_api_response(
+        {"results": [], "_page": {"count": 0}},
+        ok=True,
+        dry_run=False,
+        status_code=200,
+        endpoint_id="schema_registry_schemas",
+        endpoint_family="schema_registry_schemas",
+        method="GET",
+        path="/data/foundation/schemaregistry/tenant/schemas",
+    )
+    assert empty["evidence_state"] == "live_empty"
+    assert empty["live_evidence_available"] is False
+
+    failure = normalize_api_response(
+        {"error": "Accept header invalid"},
+        ok=False,
+        dry_run=False,
+        status_code=400,
+        endpoint_id="schema_registry_schemas",
+        endpoint_family="schema_registry_schemas",
+        method="GET",
+        path="/data/foundation/schemaregistry/tenant/schemas",
+    )
+    assert failure["live_evidence_available"] is False
 
 
 def test_live_trial_client_credentials_success_does_not_emit_stale_skip(monkeypatch, tiny_project: Config):

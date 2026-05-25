@@ -127,7 +127,7 @@
       "checkpoint_id": "checkpoint_07_context_card",
       "checkpoint_order": 11,
       "short_input_summary": "lookup_path=merge_policy",
-      "short_output_summary": "estimated_metadata_tokens=846; prompt_tokens=1498; selected_apis=2 item(s); selected_card_name=merge_policy",
+      "short_output_summary": "estimated_metadata_tokens=885; prompt_tokens=1538; selected_apis=2 item(s); selected_card_name=merge_policy",
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
       "what_changed": "packs family-relevant context into metadata.json and the filled prompt"
@@ -211,7 +211,7 @@
       "checkpoint_id": "checkpoint_14_evidence_bus",
       "checkpoint_order": 18,
       "short_input_summary": "tool_result_count=1",
-      "short_output_summary": "{}",
+      "short_output_summary": "evidence=9 field(s)",
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
       "what_changed": "forwards structured facts to API params and answer slots"
@@ -223,7 +223,7 @@
       "checkpoint_id": "checkpoint_15_answer_slots",
       "checkpoint_order": 19,
       "short_input_summary": "tool_result_count=1",
-      "short_output_summary": "answer_intent=DETAIL; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); slots=6 field(s)",
+      "short_output_summary": "answer_intent=DETAIL; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); slots=9 field(s)",
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
       "what_changed": "turns raw tool results into typed evidence fields"
@@ -234,7 +234,7 @@
       "affects_safety": "no",
       "checkpoint_id": "checkpoint_16_answer_verification",
       "checkpoint_order": 20,
-      "short_input_summary": "claim_count=0; slots_present=2 item(s)",
+      "short_input_summary": "claim_count=1; slots_present=10 item(s)",
       "short_output_summary": "verifier_passed=True; rewrite_applied=False",
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
@@ -259,7 +259,7 @@
       "checkpoint_id": "checkpoint_18_final_answer",
       "checkpoint_order": 22,
       "short_input_summary": "verifier_passed=True",
-      "short_output_summary": "answer_length=140; final_answer=The default merge policy requires live Adobe API evidence...",
+      "short_output_summary": "answer_length=95; final_answer=The default merge policy is Default Timebased. This is ba...",
       "stage": "final response",
       "technique": "concise grounded final response",
       "what_changed": "returns the final concise answer to the agent harness"
@@ -288,7 +288,7 @@
       "decision": "Why API was used or skipped",
       "promotion_status": "promoted_default",
       "reason": "n/a - no API policy recorded",
-      "selected_value": "API calls=1; dry_run=True"
+      "selected_value": "API calls=1; dry_run=False"
     },
     {
       "decision": "Answer template / rewriter",
@@ -320,7 +320,7 @@
       "evidence_type": "API evidence",
       "preview": "n/a - no API result preview recorded",
       "source": "GET /data/core/ups/config/mergePolicies",
-      "used_or_status": "dry-run"
+      "used_or_status": "no"
     },
     {
       "evidence_type": "Local Parquet evidence",
@@ -330,9 +330,9 @@
     },
     {
       "evidence_type": "Dry-run label",
-      "preview": "API tool was invoked and validated, but live evidence was unavailable because Adobe credentials were missing.",
+      "preview": "No successful evidence was available from executed tools.",
       "source": "API dry-run result label",
-      "used_or_status": "yes"
+      "used_or_status": "no"
     },
     {
       "evidence_type": "Unsupported claims replaced",
@@ -341,20 +341,20 @@
       "used_or_status": "no"
     }
   ],
-  "mermaid_dataflow_graph": "\nflowchart LR\n  Q[\"Raw query: Show the default merge policy for schema...\"] --> N[\"Normalize + tokens\"]\n  N --> R[\"Route: API_ONLY\"]\n  R --> C[\"Context tables: n/a - no candidate tables recorded\"]\n  C --> P[\"Plan SQL/API\"]\n  P --> S[\"SQL rows\"]\n  P --> A[\"API candidates: 'items': ['merge_policies'], 'total_ite...\"]\n  A --> E[\"Dry-run API\"]\n  S --> V[\"Evidence bus\"]\n  E --> V\n  V --> H[\"Answer synthesis\"]\n  H --> F[\"Final: The default merge policy requires live...\"]\n",
+  "mermaid_dataflow_graph": "\nflowchart LR\n  Q[\"Raw query: Show the default merge policy for schema...\"] --> N[\"Normalize + tokens\"]\n  N --> R[\"Route: API_ONLY\"]\n  R --> C[\"Context tables: n/a - no candidate tables recorded\"]\n  C --> P[\"Plan SQL/API\"]\n  P --> S[\"SQL rows\"]\n  P --> A[\"API candidates: 'items': ['merge_policies'], 'total_ite...\"]\n  A --> E[\"Live/API evidence\"]\n  S --> V[\"Evidence bus\"]\n  E --> V\n  V --> H[\"Answer synthesis\"]\n  H --> F[\"Final: The default merge policy is Default Tim...\"]\n",
   "query_summary": {
-    "answer_score": 0.117,
+    "answer_score": 0.1157,
     "api_score": 1.0,
-    "correctness_score": 0.5585,
+    "correctness_score": 0.5579,
     "current_packaged_strategy_used": "SQL_FIRST_API_VERIFY",
-    "final_answer": "The default merge policy requires live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+    "final_answer": "The default merge policy is Default Timebased. This is based on live merge-policy API evidence.",
     "query": "Show the default merge policy for schema class '_xdm.context.profile'.",
     "query_id": "example_021",
-    "runtime": 0.011562084080651402,
+    "runtime": 0.3741079168394208,
     "sql_score": null,
-    "strict_score": 0.54,
-    "tokens": 711,
+    "strict_score": 0.5356,
+    "tokens": 1016,
     "tool_calls": 1
   },
-  "source_trajectory": "[REDACTED]/.codex/worktrees/a2c7/dashsys-workshop-vldb/outputs/eval/example_021/sql_first_api_verify/trajectory.json"
+  "source_trajectory": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_021/sql_first_api_verify/trajectory.json"
 }

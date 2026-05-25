@@ -15,10 +15,10 @@ Safe diagnostic implementation of the organizer token plus `/data/core/ups/audie
 
 ## Environment Presence
 
-- `client_id`: `[REDACTED]`
-- `client_secret`: `[REDACTED]`
-- `ims_org`: `[REDACTED]`
-- `sandbox`: `[REDACTED]`
+- `client_id`: `present`
+- `client_secret`: `present`
+- `ims_org`: `present`
+- `sandbox`: `present`
 - `base_url`: `present`
 - `token_url`: `present`
 - `scopes`: `present`

@@ -222,6 +222,10 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "live_api_full_run_blocker": _load_json(outputs / "reports" / "live_api_full_run_blocker.json"),
         "post_permission_live_api_verification": _load_json(outputs / "reports" / "post_permission_live_api_verification.json"),
         "adobe_access_waiting_status": _load_json(outputs / "reports" / "adobe_access_waiting_status.json"),
+        "live_api_safe_get_endpoint_matrix": _load_json(outputs / "reports" / "live_api_safe_get_endpoint_matrix.json"),
+        "live_api_remaining_endpoint_resolution": _load_json(outputs / "reports" / "live_api_remaining_endpoint_resolution_summary.json"),
+        "guarded_dash_agent_live_e2e_trial": _load_json(outputs / "reports" / "guarded_dash_agent_live_e2e_trial.json"),
+        "live_api_post_exact_go_no_go": _load_json(outputs / "reports" / "live_api_post_exact_reproduction_go_no_go.json"),
         "live_api_pipeline_trial": _load_json(outputs / "reports" / "live_api_evidence_pipeline_trial.json"),
         "mock_live_api_pipeline_trial": _load_json(outputs / "reports" / "mock_live_api_evidence_pipeline_trial.json"),
         "llm_backend": _load_json(outputs / "llm_sdk_backend_check.json"),
@@ -846,6 +850,10 @@ def build_report_index(
             "adobe_access_waiting_status_path": "outputs/reports/adobe_access_waiting_status.md",
             "pipeline_trial_path": "outputs/reports/live_api_evidence_pipeline_trial.md",
             "mock_pipeline_trial_path": "outputs/reports/mock_live_api_evidence_pipeline_trial.md",
+            "safe_get_endpoint_matrix_path": "outputs/reports/live_api_safe_get_endpoint_matrix.md",
+            "remaining_endpoint_resolution_path": "outputs/reports/live_api_remaining_endpoint_resolution_summary.md",
+            "guarded_live_e2e_trial_path": "outputs/reports/guarded_dash_agent_live_e2e_trial.md",
+            "post_exact_go_no_go_path": "outputs/reports/live_api_post_exact_reproduction_go_no_go.md",
             **_live_api_readiness_status(
                 {
                     "live_adobe_api_readiness": _load_json(config.outputs_dir / "reports" / "live_adobe_api_readiness_audit.json"),
@@ -857,6 +865,10 @@ def build_report_index(
                     "live_api_full_run_blocker": _load_json(config.outputs_dir / "reports" / "live_api_full_run_blocker.json"),
                     "post_permission_live_api_verification": _load_json(config.outputs_dir / "reports" / "post_permission_live_api_verification.json"),
                     "adobe_access_waiting_status": _load_json(config.outputs_dir / "reports" / "adobe_access_waiting_status.json"),
+                    "live_api_safe_get_endpoint_matrix": _load_json(config.outputs_dir / "reports" / "live_api_safe_get_endpoint_matrix.json"),
+                    "live_api_remaining_endpoint_resolution": _load_json(config.outputs_dir / "reports" / "live_api_remaining_endpoint_resolution_summary.json"),
+                    "guarded_dash_agent_live_e2e_trial": _load_json(config.outputs_dir / "reports" / "guarded_dash_agent_live_e2e_trial.json"),
+                    "live_api_post_exact_go_no_go": _load_json(config.outputs_dir / "reports" / "live_api_post_exact_reproduction_go_no_go.json"),
                     "live_api_pipeline_trial": _load_json(config.outputs_dir / "reports" / "live_api_evidence_pipeline_trial.json"),
                     "mock_live_api_pipeline_trial": _load_json(config.outputs_dir / "reports" / "mock_live_api_evidence_pipeline_trial.json"),
                 }
@@ -978,6 +990,10 @@ def render_system_summary(payload: dict[str, Any]) -> str:
             f"- Final recommendation: `{payload['final_recommendation']}`",
             f"- Live Adobe API readiness: `{payload['live_adobe_api_readiness']['overall_status']}` "
             f"(smoke `{payload['live_adobe_api_readiness']['smoke_status']}`, pipeline `{payload['live_adobe_api_readiness']['pipeline_trial_status']}`)",
+            f"- Live Adobe endpoint resolution: path failures remaining "
+            f"`{payload['live_adobe_api_readiness'].get('endpoint_path_failures_remaining')}`; "
+            f"guarded E2E `{payload['live_adobe_api_readiness'].get('guarded_live_e2e_status')}`; "
+            f"go/no-go `{payload['live_adobe_api_readiness'].get('go_no_go_recommendation')}`",
             f"- Post-permission live verification: `{payload['live_adobe_api_readiness'].get('post_permission_verification_status')}`; "
             f"waiting-status report: `{payload['live_adobe_api_readiness'].get('adobe_access_waiting_status')}`",
             f"- LLM semantic routing helper: `{payload['llm_semantic_routing_helper']['recommendation']}` "
@@ -1835,8 +1851,14 @@ def _live_api_readiness_status(sources: dict[str, Any]) -> dict[str, Any]:
     full_run_blocker = sources.get("live_api_full_run_blocker") or {}
     post_permission = sources.get("post_permission_live_api_verification") or {}
     waiting = sources.get("adobe_access_waiting_status") or {}
+    safe_get = sources.get("live_api_safe_get_endpoint_matrix") or {}
+    endpoint_resolution = sources.get("live_api_remaining_endpoint_resolution") or {}
+    guarded_e2e = sources.get("guarded_dash_agent_live_e2e_trial") or {}
+    go_no_go = sources.get("live_api_post_exact_go_no_go") or {}
     pipeline = sources.get("live_api_pipeline_trial") or {}
     mock_pipeline = sources.get("mock_live_api_pipeline_trial") or {}
+    resolution_after_totals = endpoint_resolution.get("after_totals") or {}
+    safe_get_totals = safe_get.get("outcome_counts") or {}
     return {
         "overall_status": audit.get("overall_status", "not_run"),
         "critical_failures": len(audit.get("critical_failures", [])),
@@ -1852,6 +1874,18 @@ def _live_api_readiness_status(sources: dict[str, Any]) -> dict[str, Any]:
         "adobe_access_waiting_status": "complete" if waiting.get("report_type") == "adobe_access_waiting_status" else "not_run",
         "full_live_eval_blocked": blockers.get("full_live_eval_blocked", "unavailable"),
         "full_generated_prompt_suite_blocked": blockers.get("full_generated_prompt_suite_blocked", "unavailable"),
+        "safe_get_matrix_status": "complete" if safe_get.get("report_type") == "live_api_safe_get_endpoint_matrix" else "not_run",
+        "safe_get_total_attempted": resolution_after_totals.get("total_safe_get_endpoints_attempted", smoke.get("endpoints_attempted")),
+        "safe_get_live_success_count": resolution_after_totals.get("live_success_count", safe_get_totals.get("live_success")),
+        "safe_get_live_empty_count": resolution_after_totals.get("live_empty_count", safe_get_totals.get("live_empty")),
+        "endpoint_path_failures_remaining": resolution_after_totals.get("endpoint_path_issue_count", "unavailable"),
+        "runtime_relevant_endpoint_path_failures_remain": endpoint_resolution.get("runtime_relevant_endpoint_path_failures_remain", "unavailable"),
+        "remaining_endpoint_resolution_status": "complete" if endpoint_resolution.get("report_type") == "live_api_remaining_endpoint_resolution_summary" else "not_run",
+        "guarded_live_e2e_status": guarded_e2e.get("status", "not_run"),
+        "guarded_live_e2e_parser_evidencebus_failure_count": (guarded_e2e.get("summary") or {}).get("parser_evidencebus_failure_count"),
+        "guarded_live_e2e_unsupported_api_claim_count": (guarded_e2e.get("summary") or {}).get("unsupported_api_claim_count"),
+        "guarded_live_e2e_unresolved_path_failure_count": (guarded_e2e.get("summary") or {}).get("unresolved_path_failure_count"),
+        "go_no_go_recommendation": go_no_go.get("go_no_go_recommendation", "unavailable"),
         "pipeline_trial_status": pipeline.get("status", "not_run"),
         "mock_pipeline_trial_status": mock_pipeline.get("status", "not_run"),
         "mock_parser_success_count": mock_pipeline.get("parser_success_count", "not_run"),
@@ -1873,6 +1907,10 @@ def _live_api_readiness_status(sources: dict[str, Any]) -> dict[str, Any]:
             "outputs/reports/live_api_full_run_blocker.md",
             "outputs/reports/post_permission_live_api_verification.md",
             "outputs/reports/adobe_access_waiting_status.md",
+            "outputs/reports/live_api_safe_get_endpoint_matrix.md",
+            "outputs/reports/live_api_remaining_endpoint_resolution_summary.md",
+            "outputs/reports/guarded_dash_agent_live_e2e_trial.md",
+            "outputs/reports/live_api_post_exact_reproduction_go_no_go.md",
             "outputs/reports/live_api_evidence_pipeline_trial.md",
             "outputs/reports/mock_live_api_evidence_pipeline_trial.md",
         ],

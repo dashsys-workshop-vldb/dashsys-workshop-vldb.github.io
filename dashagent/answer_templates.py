@@ -305,18 +305,50 @@ def render_answer_template(
         return f"The matching field evidence is: {format_rows(rows)}. {sentence_case(api_phrase)}."
 
     if family == "tags":
-        live = first_api_evidence(api_results, "tag")
+        tag_list_live = first_api_evidence_for_families(
+            api_results,
+            ["tags_by_uncategorized_category", "tag_list", "tag_count", "unified_tags"],
+        )
+        tag_detail_live = first_api_evidence_for_families(api_results, ["tag_details_by_id", "unified_tag_detail"])
+        category_live = first_api_evidence_for_families(api_results, ["tag_categories", "unified_tag_categories"])
+        live = tag_detail_live or tag_list_live or category_live or first_api_evidence(api_results, "tag")
         if live and not live["empty"]:
             count = live.get("count", 0)
             items = live.get("items", [])
             fields = live.get("important_fields", {})
             name = fields.get("name") or fields.get("title")
             tag_id = fields.get("id")
+            requested_name = quoted_text(query)
+            if "category" in lowered and tag_list_live and not tag_list_live["empty"]:
+                names = extract_names(tag_list_live.get("items", []), ["name", "title", "id"])
+                visible_count = len(names) or int(tag_list_live.get("count", 0) or 0)
+                category_name = requested_name or row_value((category_live or {}).get("important_fields", {}), ["name", "title"]) or "the requested"
+                total = category_total_count(category_live)
+                total_phrase = f" The category metadata reports {total} total tag(s)." if total is not None else ""
+                if names:
+                    return (
+                        f"Based on live API evidence, the {category_name} category contains at least {visible_count} visible tag(s): "
+                        f"{join_human(names[:10])}.{total_phrase}"
+                    )
+                return f"Based on live API evidence, the {category_name} category contains at least {visible_count} visible tag(s).{total_phrase}"
+            if requested_name and tag_detail_live and name and normalize_key(str(name)) != normalize_key(requested_name):
+                category = fields.get("tagCategoryName") or fields.get("category") or fields.get("tagCategoryId")
+                category_phrase = f" in the {category} category" if category else ""
+                suffix = f" (ID: {tag_id})" if tag_id else ""
+                return (
+                    f"The API response did not return details for a tag named '{requested_name}'; "
+                    f"it returned the tag '{name}'{suffix}{category_phrase}."
+                )
             if asks_count(lowered):
+                names = extract_names(items, ["name", "title", "id"])
+                if names:
+                    return f"Based on live API evidence, at least {count} tag(s) are visible in this sandbox: {join_human(names[:10])}."
                 return f"The API evidence reports {count} tag(s)."
             if "list" in lowered or "all tags" in lowered:
                 names = extract_names(items, ["name", "title", "id"])
-                return f"The tag(s) returned by the API are: {join_human(names[:10]) if names else name or 'available in the API evidence'}."
+                if names:
+                    return f"Based on live API evidence, the visible tags in this sandbox are: {join_human(names[:10])}."
+                return f"The tag(s) returned by the API are: {name or 'available in the API evidence'}."
             suffix = f" (ID: {tag_id})" if tag_id else ""
             return f"The tag API returned {name or 'a matching tag'}{suffix}."
         if api_has_live_payload(api_results):
@@ -347,12 +379,21 @@ def schema_dataset_answer(query: str, rows: list[dict[str, Any]] | None, api_phr
             return f"Based on the evidence provided, no datasets use the schema '{name}'. The SQL query returned zero results, and {api_phrase}."
         return f"The SQL query returned zero matching schema or dataset rows, and {api_phrase}."
     first = rows[0]
+    if ("recent" in lowered or "changes" in lowered) and "dataset" in lowered:
+        recent = dataset_recent_change_summary(rows)
+        if recent:
+            return f"{recent} {sentence_case(api_phrase)}."
     if asks_count(lowered):
         count = first_count_value(first)
         if count is not None:
             if "experience event" in lowered:
                 return f"Based on the SQL query result, there are {count} XDM Experience Event schemas enabled for profile in your environment."
             if "schema" in lowered and "dataset" not in lowered:
+                if api_phrase == "the API returned usable supporting evidence":
+                    return (
+                        f"You have {count} schemas. This count comes from your blueprint query and is confirmed by the API response "
+                        "from Adobe Schema Registry, which shows tenant schemas are available."
+                    )
                 return f"You have {count} schemas. {sentence_case(api_phrase)}."
             schema_name = row_value(first, ["blueprint_name", "schema_name", "name"])
             tail = f' These datasets use "{schema_name}".' if schema_name else ""
@@ -508,6 +549,56 @@ def first_api_evidence(api_results: list[dict[str, Any]], family_prefix: str) ->
     return None
 
 
+def first_api_evidence_for_families(api_results: list[dict[str, Any]], families: list[str]) -> dict[str, Any] | None:
+    wanted = set(families)
+    for result in api_results:
+        step = result.get("step", {})
+        family = str(step.get("family") or "")
+        if family in wanted:
+            return normalize_api_evidence(family, result.get("payload", {}))
+    return None
+
+
+def category_total_count(category_live: dict[str, Any] | None) -> int | None:
+    if not category_live:
+        return None
+    fields = category_live.get("important_fields") if isinstance(category_live, dict) else None
+    if isinstance(fields, dict):
+        for key in ["tagCount", "count", "totalCount", "total"]:
+            value = fields.get(key)
+            if isinstance(value, int):
+                return value
+            if isinstance(value, str) and value.isdigit():
+                return int(value)
+    for item in category_live.get("items", []) if isinstance(category_live.get("items"), list) else []:
+        if not isinstance(item, dict):
+            continue
+        for key in ["tagCount", "count", "totalCount", "total"]:
+            value = item.get(key)
+            if isinstance(value, int):
+                return value
+            if isinstance(value, str) and value.isdigit():
+                return int(value)
+    return None
+
+
+def dataset_recent_change_summary(rows: list[dict[str, Any]]) -> str | None:
+    details = []
+    for row in rows[:3]:
+        name = row_value(row, ["collection_name", "dataset_name", "name"])
+        updated = row_value(row, ["updated_time", "updatedtime", "modified", "timestamp"])
+        if name and updated:
+            details.append(f"{name} ({human_datetime(updated)})")
+        elif name:
+            details.append(str(name))
+    if not details:
+        return None
+    first_updated = row_value(rows[0], ["updated_time", "updatedtime", "modified", "timestamp"])
+    if first_updated:
+        return f"The most recent dataset changes occurred on {human_datetime(first_updated)}, including {join_human(details)}."
+    return f"Recent dataset changes include {join_human(details)}."
+
+
 def row_value(row: dict[str, Any] | None, candidates: list[str]) -> Any:
     if not row:
         return None
@@ -573,8 +664,12 @@ def render_observability_values(query: str, evidence: dict[str, Any]) -> str | N
     values = fields.get("values") if isinstance(fields, dict) else None
     if not isinstance(values, list) or not values:
         return None
+    sorted_values = sorted(
+        [item for item in values if isinstance(item, dict)],
+        key=lambda item: (is_zero_value(item.get("value") if "value" in item else item.get("count")), str(item.get("timestamp") or item.get("date") or item.get("time") or "")),
+    )
     rendered = []
-    for item in values[:8]:
+    for item in sorted_values[:8]:
         if not isinstance(item, dict):
             continue
         date = item.get("timestamp") or item.get("date") or item.get("time")
@@ -589,7 +684,15 @@ def render_observability_values(query: str, evidence: dict[str, Any]) -> str | N
         return None
     metric_names = extract_metric_names(query)
     metric_phrase = join_human(metric_names) if metric_names else "the requested metrics"
-    return f"Based on live observability API evidence, {metric_phrase} values include: {join_human(rendered)}."
+    zero_note = " Other returned daily values were 0." if any(is_zero_value((item or {}).get("value")) for item in values if isinstance(item, dict)) else ""
+    return f"Based on live observability API evidence, {metric_phrase} values include: {join_human(rendered)}.{zero_note}"
+
+
+def is_zero_value(value: Any) -> bool:
+    try:
+        return float(value) == 0.0
+    except (TypeError, ValueError):
+        return False
 
 
 def human_date(value: Any) -> str:

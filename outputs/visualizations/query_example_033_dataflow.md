@@ -6,11 +6,11 @@
 | --- | --- |
 | Query | What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'? |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
-| Final answer | Values for timeseries.ingestion.dataset.recordsuccess.count between 2026-03-15 and 2026-03-31 require live API evidence. Live API verification was not executed because Adobe credentials are unavailable. |
-| Strict score | 0.6727 |
-| Correctness score | 0.6939 |
-| Answer / SQL / API score | 0.3878 / None / 1.0 |
-| Tools / tokens / runtime | 1 / 1040 / 0.014595333952456713 |
+| Final answer | Based on live observability API evidence, timeseries.ingestion.dataset.recordsuccess.count values include: 2026-03-29 timeseries.ingestion.dataset.recordsuccess.count: 152120.0, 2026-03-30 timeseries.ingestion.dataset.recordsuccess.count: 16231.0, 2026-03-31 timeseries.ingestion.dataset.recordsuccess.count: 2701.0, 2026-03-16 timeseries.ingestion.dataset.recordsuccess.count: 0.0, 2026-03-17 timeseries.ingestion.dataset.recordsuccess.count: 0.0, 2026-03-18 timeseries.ingestion.dataset.recordsuccess.count: 0.0, 2026-03-19 timeseries.ingestion.dataset.recordsuccess.count: 0.0, and 2026-03-20 timeseries.ingestion.dataset.recordsuccess.count: 0.0. Other returned daily values were 0. |
+| Strict score | 0.5452 |
+| Correctness score | 0.5712 |
+| Answer / SQL / API score | 0.1424 / None / 1.0 |
+| Tools / tokens / runtime | 1 / 1462 / 0.3881697920151055 |
 
 ## Dataflow Graph
 
@@ -22,11 +22,11 @@ flowchart LR
   C --> P["Plan SQL/API"]
   P --> S["SQL rows"]
   P --> A["API candidates: 'items': ['observability_metrics'], 'to..."]
-  A --> E["Dry-run API"]
+  A --> E["Live/API evidence"]
   S --> V["Evidence bus"]
   E --> V
   V --> H["Answer synthesis"]
-  H --> F["Final: Values for timeseries.ingestion.dataset..."]
+  H --> F["Final: Based on live observability API evidenc..."]
 ```
 
 ## Checkpoint Timeline
@@ -50,11 +50,11 @@ flowchart LR
 | 15 | checkpoint_11_call_budget | efficiency control | tool-call budgeting | planned_steps=1 item(s) | planned_sql_calls=0; planned_api_calls=1; final_planned_calls=1; max_total_tool_calls=2 | keeps tool calls within per-family limits | yes | yes | no |
 | 16 | checkpoint_12_validation | validation | SQL/API safety validation | optimized_steps=1 item(s) | api_validation_status=1 item(s) | records whether planned SQL/API calls were safe to execute | yes | yes | yes |
 | 17 | checkpoint_13_tool_execution | execution | SQL/API tool execution | validated_step_count=1 | sql_calls_executed=0; api_calls_executed=1 | captures the actual SQL/API evidence gathered by the backend | yes | yes | no |
-| 18 | checkpoint_14_evidence_bus | evidence forwarding | operand forwarding / EvidenceBus | tool_result_count=1 | {} | forwards structured facts to API params and answer slots | yes | yes | no |
-| 19 | checkpoint_15_answer_slots | answer synthesis | structured answer slot extraction | tool_result_count=1 | answer_intent=WHEN; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); slots=8 field(s) | turns raw tool results into typed evidence fields | yes | yes | no |
-| 20 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=2; slots_present=5 item(s) | verifier_passed=True; rewrite_applied=False | checks final-answer claims against SQL/API evidence | yes | yes | no |
+| 18 | checkpoint_14_evidence_bus | evidence forwarding | operand forwarding / EvidenceBus | tool_result_count=1 | evidence=5 field(s) | forwards structured facts to API params and answer slots | yes | yes | no |
+| 19 | checkpoint_15_answer_slots | answer synthesis | structured answer slot extraction | tool_result_count=1 | answer_intent=WHEN; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); slots=9 field(s) | turns raw tool results into typed evidence fields | yes | yes | no |
+| 20 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=16; slots_present=11 item(s) | verifier_passed=True; rewrite_applied=False | checks final-answer claims against SQL/API evidence | yes | yes | no |
 | 21 | checkpoint_17_answer_reranking | answer selection | deterministic answer reranking | answer_family=observability_metrics | candidate_count=0; selected_candidate_type=base | selects the safest answer from same-evidence candidates | yes | yes | no |
-| 22 | checkpoint_18_final_answer | final response | concise grounded final response | verifier_passed=True | answer_length=202; final_answer=Values for timeseries.ingestion.dataset.recordsuccess.cou... | returns the final concise answer to the agent harness | yes | yes | no |
+| 22 | checkpoint_18_final_answer | final response | concise grounded final response | verifier_passed=True | answer_length=686; final_answer=Based on live observability API evidence, timeseries.inge... | returns the final concise answer to the agent harness | yes | yes | no |
 | 23 | checkpoint_official_token_reduction | query understanding | unavailable | unavailable | unavailable | Checkpoint recorded query understanding progress. | no | no | no |
 
 ## Evidence Table
@@ -62,9 +62,9 @@ flowchart LR
 | Evidence | Used/status | Source | Preview |
 | --- | --- | --- | --- |
 | SQL evidence | n/a - no SQL call in trajectory | n/a - no SQL call in trajectory | n/a - no SQL rows preview recorded |
-| API evidence | dry-run | POST /data/infrastructure/observability/insights/metrics | n/a - no API result preview recorded |
+| API evidence | no | POST /data/infrastructure/observability/insights/metrics | n/a - no API result preview recorded |
 | Local Parquet evidence | yes | unavailable | query=What are the daily 'timeseries.ingestion.dataset.recordsu...; query_id=example_033 |
-| Dry-run label | yes | API dry-run result label | API tool was invoked and validated, but live evidence was unavailable because Adobe credentials were missing. |
+| Dry-run label | no | API dry-run result label | No successful evidence was available from executed tools. |
 | Unsupported claims replaced | no | supportable_answer_rewrite_eval | unavailable |
 
 ## Decision Table
@@ -72,7 +72,7 @@ flowchart LR
 | Decision | Selected value | Reason | Promotion status |
 | --- | --- | --- | --- |
 | Why SQL was used | SQL calls=0 | LOCAL_DB_ONLY | promoted_default |
-| Why API was used or skipped | API calls=1; dry_run=True | n/a - no API policy recorded | promoted_default |
+| Why API was used or skipped | API calls=1; dry_run=False | n/a - no API policy recorded | promoted_default |
 | Answer template / rewriter | packaged answer synthesizer | No default-on answer rewrite promoted. | promoted_default + shadow_only diagnostics |
 | Endpoint family changed? | unavailable | no_validated_replacement_endpoint_candidate | shadow_only |
 | Candidate promoted? | unavailable | No promoted candidate for packaged path. | shadow_only / isolated_trial |

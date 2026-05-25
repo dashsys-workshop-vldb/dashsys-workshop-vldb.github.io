@@ -1,11 +1,11 @@
 # Live Adobe API Status Mermaid
 
-Generated: 2026-05-19T14:11:52Z
+Generated: 2026-05-25T02:38:18Z
 
 This generated Mermaid diagram is synchronized from current local reports and code/module names only. It does not change runtime behavior.
 
 - Packaged strategy: `SQL_FIRST_API_VERIFY`
-- live_success guard: `blocked`
+- live_success guard: `allowed_full_live_diagnostic_eval`
 
 ```mermaid
 flowchart TD
@@ -18,7 +18,7 @@ flowchart TD
   blocked --> follow["Follow-up commands<br/>all-safe-get + endpoint filters"]
   allowed --> trial["Live evidence pipeline trial"]
   trial --> prompts["Live generated prompts<br/>diagnostic-only"]
-  meta["Current status<br/>live_success_count: 0<br/>guard: blocked<br/>usable evidence: unavailable"] -.-> success
+  meta["Current status<br/>live_success_count: 10<br/>guard: allowed_full_live_diagnostic_eval<br/>usable evidence: unavailable"] -.-> success
   classDef ready fill:#ecfdf5,stroke:#16a34a,color:#111827
   classDef blocked fill:#fff7ed,stroke:#ea580c,color:#111827
   classDef neutral fill:#f8fafc,stroke:#64748b,color:#111827

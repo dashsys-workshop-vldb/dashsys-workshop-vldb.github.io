@@ -6,11 +6,11 @@
 | --- | --- |
 | Query | Show the default merge policy for schema class '_xdm.context.profile'. |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
-| Final answer | The default merge policy requires live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable. |
-| Strict score | 0.54 |
-| Correctness score | 0.5585 |
-| Answer / SQL / API score | 0.117 / None / 1.0 |
-| Tools / tokens / runtime | 1 / 711 / 0.011562084080651402 |
+| Final answer | The default merge policy is Default Timebased. This is based on live merge-policy API evidence. |
+| Strict score | 0.5356 |
+| Correctness score | 0.5579 |
+| Answer / SQL / API score | 0.1157 / None / 1.0 |
+| Tools / tokens / runtime | 1 / 1016 / 0.3741079168394208 |
 
 ## Dataflow Graph
 
@@ -22,11 +22,11 @@ flowchart LR
   C --> P["Plan SQL/API"]
   P --> S["SQL rows"]
   P --> A["API candidates: 'items': ['merge_policies'], 'total_ite..."]
-  A --> E["Dry-run API"]
+  A --> E["Live/API evidence"]
   S --> V["Evidence bus"]
   E --> V
   V --> H["Answer synthesis"]
-  H --> F["Final: The default merge policy requires live..."]
+  H --> F["Final: The default merge policy is Default Tim..."]
 ```
 
 ## Checkpoint Timeline
@@ -43,18 +43,18 @@ flowchart LR
 | 8 | checkpoint_query_decomposition | query understanding | DIN-SQL-style deterministic query decomposition | query=Show the default merge policy for schema class '_xdm.cont... | active=True; expected_answer_shape=table_or_list; required_entities=1 item(s); sub_questions=1 item(s) | breaks complex prompts into entities, filters, joins, and answer-shape constraints | yes | yes | no |
 | 9 | checkpoint_05_query_analysis | routing | branch prediction / QueryAnalysis | route_type=API_ONLY; domain_type=SEGMENT_AUDIENCE | strategy=SQL_FIRST_API_VERIFY; route_type=API_ONLY; domain_type=SEGMENT_AUDIENCE; answer_family=merge_policy | computes shared query understanding once | yes | yes | no |
 | 10 | checkpoint_06_lookup_path | path prediction | TLB-style lookup path prediction | domain_type=SEGMENT_AUDIENCE; answer_family=merge_policy | api_families=1 item(s); api_mode=required; family=merge_policy; required_ids=1 item(s) | predicts the relevant table/join/API path | yes | yes | no |
-| 11 | checkpoint_07_context_card | metadata packing | huge-page-style compact context card | lookup_path=merge_policy | estimated_metadata_tokens=846; prompt_tokens=1498; selected_apis=2 item(s); selected_card_name=merge_policy | packs family-relevant context into metadata.json and the filled prompt | yes | yes | no |
+| 11 | checkpoint_07_context_card | metadata packing | huge-page-style compact context card | lookup_path=merge_policy | estimated_metadata_tokens=885; prompt_tokens=1538; selected_apis=2 item(s); selected_card_name=merge_policy | packs family-relevant context into metadata.json and the filled prompt | yes | yes | no |
 | 12 | checkpoint_08_candidate_plans | planning | pre-execution plan ensemble | strategy=SQL_FIRST_API_VERIFY; base_step_count=1 | candidate_plan_names=1 item(s); reason_selected=highest pre-execution validation/relevance/cost score; scores=1 field(s); selected_plan=generic_sql_first | selects one plan before execution | yes | yes | no |
 | 13 | checkpoint_09_plan_optimization | optimization | compiler-style plan optimization | original_step_count=1 | optimized_step_count=1 | removes duplicate, skippable, or unsafe calls before validation | yes | yes | no |
 | 14 | checkpoint_10_evidence_policy | evidence policy | API_REQUIRED/API_OPTIONAL/API_SKIP policy | route_type=API_ONLY; answer_family=merge_policy | reason=Merge policies are Adobe API objects. | decides when API evidence is required, optional, or unnecessary | yes | yes | no |
 | 15 | checkpoint_11_call_budget | efficiency control | tool-call budgeting | planned_steps=1 item(s) | planned_sql_calls=0; planned_api_calls=1; final_planned_calls=1; max_total_tool_calls=2 | keeps tool calls within per-family limits | yes | yes | no |
 | 16 | checkpoint_12_validation | validation | SQL/API safety validation | optimized_steps=1 item(s) | api_validation_status=1 item(s) | records whether planned SQL/API calls were safe to execute | yes | yes | yes |
 | 17 | checkpoint_13_tool_execution | execution | SQL/API tool execution | validated_step_count=1 | sql_calls_executed=0; api_calls_executed=1 | captures the actual SQL/API evidence gathered by the backend | yes | yes | no |
-| 18 | checkpoint_14_evidence_bus | evidence forwarding | operand forwarding / EvidenceBus | tool_result_count=1 | {} | forwards structured facts to API params and answer slots | yes | yes | no |
-| 19 | checkpoint_15_answer_slots | answer synthesis | structured answer slot extraction | tool_result_count=1 | answer_intent=DETAIL; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); slots=6 field(s) | turns raw tool results into typed evidence fields | yes | yes | no |
-| 20 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=0; slots_present=2 item(s) | verifier_passed=True; rewrite_applied=False | checks final-answer claims against SQL/API evidence | yes | yes | no |
+| 18 | checkpoint_14_evidence_bus | evidence forwarding | operand forwarding / EvidenceBus | tool_result_count=1 | evidence=9 field(s) | forwards structured facts to API params and answer slots | yes | yes | no |
+| 19 | checkpoint_15_answer_slots | answer synthesis | structured answer slot extraction | tool_result_count=1 | answer_intent=DETAIL; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); slots=9 field(s) | turns raw tool results into typed evidence fields | yes | yes | no |
+| 20 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=1; slots_present=10 item(s) | verifier_passed=True; rewrite_applied=False | checks final-answer claims against SQL/API evidence | yes | yes | no |
 | 21 | checkpoint_17_answer_reranking | answer selection | deterministic answer reranking | answer_family=merge_policy | candidate_count=0; selected_candidate_type=base | selects the safest answer from same-evidence candidates | yes | yes | no |
-| 22 | checkpoint_18_final_answer | final response | concise grounded final response | verifier_passed=True | answer_length=140; final_answer=The default merge policy requires live Adobe API evidence... | returns the final concise answer to the agent harness | yes | yes | no |
+| 22 | checkpoint_18_final_answer | final response | concise grounded final response | verifier_passed=True | answer_length=95; final_answer=The default merge policy is Default Timebased. This is ba... | returns the final concise answer to the agent harness | yes | yes | no |
 | 23 | checkpoint_official_token_reduction | query understanding | unavailable | unavailable | unavailable | Checkpoint recorded query understanding progress. | no | no | no |
 
 ## Evidence Table
@@ -62,9 +62,9 @@ flowchart LR
 | Evidence | Used/status | Source | Preview |
 | --- | --- | --- | --- |
 | SQL evidence | n/a - no SQL call in trajectory | n/a - no SQL call in trajectory | n/a - no SQL rows preview recorded |
-| API evidence | dry-run | GET /data/core/ups/config/mergePolicies | n/a - no API result preview recorded |
+| API evidence | no | GET /data/core/ups/config/mergePolicies | n/a - no API result preview recorded |
 | Local Parquet evidence | unavailable | unavailable | query=Show the default merge policy for schema class '_xdm.cont...; query_id=example_021 |
-| Dry-run label | yes | API dry-run result label | API tool was invoked and validated, but live evidence was unavailable because Adobe credentials were missing. |
+| Dry-run label | no | API dry-run result label | No successful evidence was available from executed tools. |
 | Unsupported claims replaced | no | supportable_answer_rewrite_eval | unavailable |
 
 ## Decision Table
@@ -72,7 +72,7 @@ flowchart LR
 | Decision | Selected value | Reason | Promotion status |
 | --- | --- | --- | --- |
 | Why SQL was used | SQL calls=0 | API_ONLY | promoted_default |
-| Why API was used or skipped | API calls=1; dry_run=True | n/a - no API policy recorded | promoted_default |
+| Why API was used or skipped | API calls=1; dry_run=False | n/a - no API policy recorded | promoted_default |
 | Answer template / rewriter | packaged answer synthesizer | No default-on answer rewrite promoted. | promoted_default + shadow_only diagnostics |
 | Endpoint family changed? | unavailable | no_validated_replacement_endpoint_candidate | shadow_only |
 | Candidate promoted? | unavailable | No promoted candidate for packaged path. | shadow_only / isolated_trial |

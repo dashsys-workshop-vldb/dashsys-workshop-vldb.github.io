@@ -9,8 +9,8 @@
 - Repair execution enabled: `False`
 - Compact context enabled: `False`
 - Final recommendation: `ready_to_submit_with_official_token_reduction`
-- Live Adobe API readiness: `pass` (smoke `complete`, pipeline `skipped_live_credentials_missing`)
-- Organizer UPS audiences smoke: token `true`, UPS access `false`, outcome `external_api_unavailable`, direct/repo comparison `both_same_failure`
+- Live Adobe API readiness: `pass` (smoke `complete`, pipeline `complete`)
+- Live Adobe endpoint resolution: path failures remaining `0`; guarded E2E `pass`; go/no-go `promote_arbitration_policy`
 - Post-permission live verification: `complete`; waiting-status report: `complete`
 - LLM semantic routing helper: `do_not_promote` (complete)
 - Semantic router isolated trial: `complete`; promotion decision: `do_not_promote`; packaged runtime affected: `False`
@@ -26,7 +26,6 @@
 - Repo cleanup: `validated`; deleted paths: `5`; runtime behavior changed: `False`
 - DASHSys Project Skill audit: `pass`; runtime behavior changed: `False`
 - Context7 docs audit: `complete`; runtime change applied: `False`
-- NL-to-SQL robustness-first diagnostics: `diagnostic_only`; schema-aware fallback status `keep_trial_only`; packaged runtime affected: `False`
 
 ## Workflow
 
@@ -44,14 +43,8 @@
 - `outputs/official_token_reduction_promotion_report.json`
 - `outputs/reports/post_permission_live_api_verification.md`
 - `outputs/reports/adobe_access_waiting_status.md`
-- `outputs/reports/organizer_adobe_ups_audiences_smoke.md`
 - `outputs/reports/context7_code_alignment_audit.md`
 - `outputs/reports/context7_fix_decision.md`
-- `outputs/reports/nl_sql_robustness_audit.md`
-- `outputs/reports/nl_sql_paraphrase_consistency.md`
-- `outputs/reports/multi_llm_backend_robustness.md`
-- `outputs/reports/schema_aware_sql_feedback_loop.md`
-- `outputs/reports/robustness_first_system_summary.md`
 - `outputs/reports/score_path_contribution_audit.md`
 - `outputs/reports/score_focused_core_improvement_trials.md`
 - `outputs/reports/score_focused_core_fix_decision.md`

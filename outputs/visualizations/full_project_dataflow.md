@@ -6,13 +6,13 @@ Single large SVG overview for supervisor/project walkthrough.
 
 ## Current Status
 
-- Generated at: `2026-05-19T14:11:52Z`
+- Generated at: `2026-05-25T02:38:18Z`
 - Packaged strategy: `SQL_FIRST_API_VERIFY`
 - Strict score: `0.6553`
 - Hidden-style: `48/48`
 - Final submission ready: `True`
-- Live success count: `0`
-- Live guard status: `blocked`
+- Live success count: `10`
+- Live guard status: `allowed_full_live_diagnostic_eval`
 
 Generated locally; no runtime behavior changed; no credentials accessed.
 

@@ -1,6 +1,6 @@
 # Live API External Blockers
 
-Adobe credentials and token acquisition work, but live data endpoints have not returned usable payload evidence. Treat current blockers as external setup or unresolved endpoint evidence until at least one safe GET endpoint returns live_success.
+Current normal runtime has live_success endpoints and usable live API evidence. Remaining blockers are endpoint-specific; historical HTTP 500 results are old misaligned-runtime evidence only.
 
 - Full live strict eval blocked: `False`
 - Full generated prompt suite blocked: `False`
@@ -26,6 +26,14 @@ Rerun commands:
 - Affected endpoints: `[]`
 - Why code should not blindly change runtime: Endpoint path probes did not return a successful safe GET candidate, so a blind catalog edit would be speculative.
 - What to verify: Review endpoint path diagnosis and rerun focused smoke after external checks; do not change catalog paths without a successful safe GET candidate.
+
+Rerun commands:
+
+## Required safe request shape mismatch
+
+- Affected endpoints: `[]`
+- Why code should not blindly change runtime: This points to endpoint-specific request shape, not an AdobeAPIClient token/auth defect.
+- What to verify: Run the isolated request-shape trial and apply only if the focused safe GET succeeds.
 
 Rerun commands:
 

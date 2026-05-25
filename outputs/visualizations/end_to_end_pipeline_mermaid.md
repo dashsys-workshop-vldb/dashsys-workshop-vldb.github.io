@@ -1,11 +1,11 @@
 # End-To-End Pipeline Mermaid
 
-Generated: 2026-05-19T14:11:52Z
+Generated: 2026-05-25T02:38:18Z
 
 This generated Mermaid diagram is synchronized from current local reports and code/module names only. It does not change runtime behavior.
 
 - Packaged strategy: `SQL_FIRST_API_VERIFY`
-- live_success guard: `blocked`
+- live_success guard: `allowed_full_live_diagnostic_eval`
 
 ```mermaid
 flowchart TD

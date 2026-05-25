@@ -11,6 +11,10 @@ from urllib.parse import urlparse
 from .config import Config, DEFAULT_CONFIG
 
 
+SCHEMA_REGISTRY_LIST_ACCEPT = "application/vnd.adobe.xed-id+json"
+UNIFIED_TAGS_BASE_URL = "https://experience.adobe.io"
+
+
 @dataclass(frozen=True)
 class Endpoint:
     id: str
@@ -18,6 +22,7 @@ class Endpoint:
     path: str
     use_when: str
     common_params: dict[str, Any] = field(default_factory=dict)
+    common_headers: dict[str, Any] = field(default_factory=dict)
     path_params: list[str] = field(default_factory=list)
     examples: list[dict[str, Any]] = field(default_factory=list)
     risk_notes: list[str] = field(default_factory=list)
@@ -119,6 +124,7 @@ class EndpointCatalog:
                 path="/data/foundation/schemaregistry/tenant/schemas",
                 use_when="List tenant schemas or filter schema registry metadata.",
                 common_params={"limit": 25},
+                common_headers={"Accept": SCHEMA_REGISTRY_LIST_ACCEPT},
                 examples=[{"query": "profile-enabled ExperienceEvent schemas"}],
                 risk_notes=["Schema-registry filters vary by endpoint version."],
                 domains=["DATASET_SCHEMA"],
@@ -126,11 +132,12 @@ class EndpointCatalog:
             Endpoint(
                 id="schemas_short",
                 method="GET",
-                path="/schemas",
+                path="/data/foundation/schemaregistry/tenant/schemas",
                 use_when="Gold-example shorthand for schema list/name lookup.",
-                common_params={"limit": 25},
+                common_params={},
+                common_headers={"Accept": SCHEMA_REGISTRY_LIST_ACCEPT},
                 examples=[{"query": "schema named weRetail: Customer Actions"}],
-                risk_notes=["Shorthand path is retained for benchmark compatibility."],
+                risk_notes=["Retained as a schema-list alias for benchmark compatibility; request shape is the proven tenant Schema Registry list endpoint."],
                 domains=["DATASET_SCHEMA"],
             ),
             Endpoint(
@@ -145,7 +152,7 @@ class EndpointCatalog:
             Endpoint(
                 id="audit_events_short",
                 method="GET",
-                path="/audit/events",
+                path="/data/foundation/audit/events",
                 use_when="Gold-example shorthand for audit events.",
                 common_params={"limit": 50},
                 examples=[{"query": "recent dataset changes"}],
@@ -154,25 +161,28 @@ class EndpointCatalog:
             Endpoint(
                 id="unified_tags",
                 method="GET",
-                path="/unifiedtags/tags",
+                path=f"{UNIFIED_TAGS_BASE_URL}/unifiedtags/tags",
                 use_when="List or count tags.",
                 common_params={"limit": 25},
+                risk_notes=["Unified Tags API is hosted on experience.adobe.io, not the default platform.adobe.io base."],
                 domains=["UNKNOWN"],
             ),
             Endpoint(
                 id="unified_tag_categories",
                 method="GET",
-                path="/unifiedtags/tagCategory",
+                path=f"{UNIFIED_TAGS_BASE_URL}/unifiedtags/tagCategory",
                 use_when="List tag categories.",
                 common_params={"limit": 100},
+                risk_notes=["Unified Tags API is hosted on experience.adobe.io, not the default platform.adobe.io base."],
                 domains=["UNKNOWN"],
             ),
             Endpoint(
                 id="unified_tag_detail",
                 method="GET",
-                path="/unifiedtags/tags/{tag_id}",
+                path=f"{UNIFIED_TAGS_BASE_URL}/unifiedtags/tags/{{tag_id}}",
                 use_when="Fetch tag details when a tag ID is known.",
                 path_params=["tag_id"],
+                risk_notes=["Unified Tags API is hosted on experience.adobe.io, not the default platform.adobe.io base."],
                 domains=["UNKNOWN"],
             ),
             Endpoint(
@@ -252,7 +262,8 @@ class EndpointCatalog:
         for endpoint in self.endpoints:
             if endpoint.method != method:
                 continue
-            pattern = "^" + re.sub(r"\\\{[^/]+\\\}", r"[^/]+", re.escape(endpoint.path)) + "$"
+            endpoint_path = normalize_api_path(endpoint.path)
+            pattern = "^" + re.sub(r"\\\{[^/]+\\\}", r"[^/]+", re.escape(endpoint_path)) + "$"
             if re.match(pattern, path, flags=re.IGNORECASE):
                 return endpoint
         return None

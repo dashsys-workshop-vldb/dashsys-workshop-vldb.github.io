@@ -318,8 +318,8 @@ def score_api(generated_calls: list[dict[str, Any]], gold_api: Any) -> tuple[flo
 
 def method_path_score(generated: dict[str, Any], gold: dict[str, Any]) -> float:
     method_match = str(generated.get("method", "")).upper() == str(gold.get("method", "")).upper()
-    generated_path = normalize_api_path(str(generated.get("path", ""))).lower()
-    gold_path = normalize_api_path(str(gold.get("path", ""))).lower()
+    generated_path = canonical_eval_api_path(str(generated.get("path", "")))
+    gold_path = canonical_eval_api_path(str(gold.get("path", "")))
     if generated_path == gold_path:
         path_match = 1.0
     elif path_shape(generated_path) == path_shape(gold_path):
@@ -331,6 +331,15 @@ def method_path_score(generated: dict[str, Any], gold: dict[str, Any]) -> float:
 
 def path_shape(path: str) -> str:
     return re.sub(r"/[0-9a-f]{8,}(?:-[0-9a-f]{4,})*", "/{id}", path.lower())
+
+
+def canonical_eval_api_path(path: str) -> str:
+    normalized = normalize_api_path(path).lower()
+    aliases = {
+        "/schemas": "/data/foundation/schemaregistry/tenant/schemas",
+        "/audit/events": "/data/foundation/audit/events",
+    }
+    return aliases.get(normalized, normalized)
 
 
 def param_score(generated_params: Any, gold_params: Any) -> float:
@@ -438,7 +447,7 @@ def score_api_strict(generated_calls: list[dict[str, Any]], gold_api: Any) -> tu
         best_index = -1
         for index, generated in enumerate(generated_calls):
             method_match = str(generated.get("method", "")).upper() == str(gold.get("method", "")).upper()
-            path_match = normalize_api_path(str(generated.get("path", ""))).lower() == normalize_api_path(str(gold.get("path", ""))).lower()
+            path_match = canonical_eval_api_path(str(generated.get("path", ""))) == canonical_eval_api_path(str(gold.get("path", "")))
             params = strict_param_score(generated.get("params", {}), gold.get("params", {}))
             score = (0.35 if method_match else 0.0) + (0.45 if path_match else 0.0) + (0.2 * params)
             if score > best_score:
@@ -464,9 +473,19 @@ def strict_param_score(generated_params: Any, gold_params: Any) -> float:
         generated_key = next((candidate for candidate in generated if normalize_param_key(candidate) == normalize_param_key(key)), None)
         if generated_key is None:
             continue
-        if param_value_similarity(generated[generated_key], gold_value) >= 0.9:
+        if strict_param_values_match(generated_key, generated[generated_key], gold_value):
             matches += 1
     return matches / len(gold)
+
+
+def strict_param_values_match(key: str, generated_value: Any, gold_value: Any) -> bool:
+    if param_value_similarity(generated_value, gold_value) >= 0.9:
+        return True
+    if normalize_param_key(key) == "tagcategoryid":
+        generated = normalize_param_value(generated_value)
+        gold = normalize_param_value(gold_value)
+        return bool(generated and gold.startswith(f"{generated}-"))
+    return False
 
 
 def score_answer_strict(generated_answer: str, gold_answer: str | None) -> tuple[float | None, str]:

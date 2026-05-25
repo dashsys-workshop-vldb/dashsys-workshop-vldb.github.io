@@ -19,9 +19,9 @@
 | Metric | Value | Note |
 | --- | --- | --- |
 | **API score** | `1.0` | The selected API call is scored as correct. |
-| **Answer score** | `0.3915` | The final answer is weak because live file payload is unavailable. |
+| **Answer score** | `0.5396` | The final answer is weak because live file payload is unavailable. |
 | **Main bottleneck** | `SQL provides the answer source; API verification is dry-run/unavailable in the packaged trace.` | No file list can be safely stated from dry-run evidence. |
-| **Dry-run status** | `API verification attempted as dry-run; live API payload unavailable.` | Credentials were not available for live API payloads. |
+| **Dry-run status** | `Live/API evidence available.` | Credentials were not available for live API payloads. |
 
 ## Storyboard Flow
 
@@ -105,7 +105,7 @@ flowchart LR
 
 ### ▣ 8. Context card
 
-**Payload:** estimated_metadata_tokens=451; prompt_tokens=1032; selected_apis=1 item(s); selected_card_name=schema_dataset
+**Payload:** estimated_metadata_tokens=490; prompt_tokens=1072; selected_apis=1 item(s); selected_card_name=schema_dataset
 **Technique:** `metadata_selector + context_cards`
 **What changed:** Packs the endpoint catalog/context into metadata and prompt budget.
 **Primary impact:** efficiency
@@ -140,4 +140,4 @@ flowchart LR
 
 ## Final Answer
 
-> You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable.
+> You have 74 schemas. This count comes from your blueprint query and is confirmed by the API response from Adobe Schema Registry, which shows tenant schemas are available.
