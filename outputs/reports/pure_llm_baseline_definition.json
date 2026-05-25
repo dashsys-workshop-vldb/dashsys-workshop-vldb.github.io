@@ -1,0 +1,79 @@
+{
+  "diagnostic_only": true,
+  "generated_at": "2026-05-25T18:57:11.184519+00:00",
+  "packaged_default_strategy": "SQL_FIRST_API_VERIFY",
+  "promotion_allowed": false,
+  "report_type": "pure_llm_baseline_definition",
+  "variants": [
+    {
+      "description": "Current raw LLM with execute_sql and call_api, no extra scaffolding.",
+      "status": "existing_baseline",
+      "variant": "raw_two_tools_current"
+    },
+    {
+      "description": "Current guided prompt baseline with schema/API affordances.",
+      "status": "existing_baseline",
+      "variant": "guided_two_tools_current"
+    },
+    {
+      "capabilities": {
+        "api_guard": false,
+        "evidence_locked_answer": false,
+        "schema_context": false,
+        "sql_repair": false,
+        "structured_plan": true
+      },
+      "description": "LLM outputs a structured plan before tool use.",
+      "status": "shadow_diagnostic",
+      "variant": "structured_plan_then_tools"
+    },
+    {
+      "capabilities": {
+        "api_guard": false,
+        "evidence_locked_answer": false,
+        "schema_context": true,
+        "sql_repair": false,
+        "structured_plan": true
+      },
+      "description": "Adds compact schema and endpoint retrieval context for LLM SQL planning.",
+      "status": "shadow_diagnostic",
+      "variant": "schema_retrieved_sql_agent"
+    },
+    {
+      "capabilities": {
+        "api_guard": false,
+        "evidence_locked_answer": false,
+        "schema_context": true,
+        "sql_repair": true,
+        "structured_plan": true
+      },
+      "description": "Adds SQLValidator/SQLGlot validation and up to two repair rounds.",
+      "status": "shadow_diagnostic",
+      "variant": "validate_repair_sql_agent"
+    },
+    {
+      "capabilities": {
+        "api_guard": false,
+        "evidence_locked_answer": true,
+        "schema_context": true,
+        "sql_repair": true,
+        "structured_plan": true
+      },
+      "description": "Locks final answer claims to structured tool observations.",
+      "status": "shadow_diagnostic",
+      "variant": "evidence_locked_answer_agent"
+    },
+    {
+      "capabilities": {
+        "api_guard": true,
+        "evidence_locked_answer": true,
+        "schema_context": true,
+        "sql_repair": true,
+        "structured_plan": true
+      },
+      "description": "Combines planning, schema retrieval, SQL repair, API validation, and evidence-locked answer.",
+      "status": "shadow_diagnostic",
+      "variant": "full_pure_llm_tool_agent_v1"
+    }
+  ]
+}

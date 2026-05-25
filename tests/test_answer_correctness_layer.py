@@ -74,6 +74,14 @@ def test_claim_extraction_and_verifier_rejects_unsupported_facts():
     assert verify_answer(safe, slots).ok is True
 
 
+def test_live_title_words_are_not_status_claims():
+    claims = extract_claims("The matching item is AJO Live Activities Feedback Event Dataset.")
+    assert not any(claim.claim_type == "status" and claim.value == "Live" for claim in claims)
+
+    status_claims = extract_claims("The destination is live.")
+    assert any(claim.claim_type == "status" and claim.value == "live" for claim in status_claims)
+
+
 def test_reranker_prefers_verifier_passing_intent_answer():
     query = "How many tags exist in this sandbox?"
     tool_results = [{"type": "api", "step": {"family": "tag_count"}, "payload": {"ok": False, "dry_run": True}}]
@@ -109,6 +117,25 @@ def test_weak_family_answers_are_intent_matched_and_dry_run_safe():
         [{"type": "api", "step": {"family": "merge_policies"}, "payload": {"ok": False, "dry_run": True}}],
     )
     assert merge.startswith("The merge policy count")
+
+
+def test_schema_detail_without_specific_name_does_not_invent_the_schema_entity():
+    answer = synthesize_answer(
+        "schema _xdm.context.profile details",
+        [
+            {
+                "type": "sql",
+                "payload": {
+                    "ok": True,
+                    "rows": [{"collection_id": "collection_1"}],
+                    "row_count": 1,
+                },
+            },
+            {"type": "api", "payload": {"ok": False, "error": "api_error"}},
+        ],
+    )
+    assert "'the schema'" not in answer
+    assert answer.startswith("A matching schema or dataset record")
 
 
 def test_endpoint_aware_dry_run_answers_are_feature_flagged(monkeypatch):

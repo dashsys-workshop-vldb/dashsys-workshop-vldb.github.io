@@ -102,8 +102,22 @@ def status_claims(answer: str) -> list[AnswerClaim]:
         for match in re.finditer(rf"\b{re.escape(status)}\b", answer, flags=re.I):
             if status == "live" and "api" in answer[match.end() : match.end() + 32].lower():
                 continue
+            if status == "live" and _live_is_title_word(answer, match.start(), match.end()):
+                continue
             claims.append(AnswerClaim("status", match.group(0), match.start(), match.end()))
     return claims
+
+
+def _live_is_title_word(answer: str, start: int, end: int) -> bool:
+    """Avoid treating product/dataset names like "AJO Live Activities" as status claims."""
+    token = answer[start:end]
+    if token != "Live":
+        return False
+    before = answer[max(0, start - 20) : start]
+    after = answer[end : min(len(answer), end + 36)]
+    if re.search(r"\b(status|state|is|was|are|were|currently)\s*$", before, flags=re.I):
+        return False
+    return bool(re.match(r"\s+[A-Z][A-Za-z0-9_-]+", after))
 
 
 def is_date_component(answer: str, start: int, end: int) -> bool:

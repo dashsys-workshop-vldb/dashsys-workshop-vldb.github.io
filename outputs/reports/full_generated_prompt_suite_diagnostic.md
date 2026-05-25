@@ -13,7 +13,7 @@ Generated prompts are diagnostic coverage only; this report is not official stri
 - Dry-run count: `0`
 - Template hit rate: `0.32`
 - Template miss rate: `0.68`
-- Unsupported claim count: `15`
+- Unsupported claim count: `0`
 - Official strict score computed: `False`
 
 ## Route Distribution

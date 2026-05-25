@@ -62,7 +62,13 @@ Start here. Most older generated reports were consolidated or removed.
 - Next robustness preflight: `outputs/reports/next_robustness_improvement_preflight.md`
 - External text-to-SQL/tool-agent research: `outputs/reports/external_text_to_sql_tool_agent_research.md`
 - Arbitration guard: `outputs/reports/live_api_arbitration_regression_guard.md`
+- Strict score drift analysis: `outputs/reports/strict_score_drift_analysis.md`
+- Efficiency recovery preflight: `outputs/reports/efficiency_recovery_preflight.md`
+- Strict efficiency component analysis: `outputs/reports/strict_efficiency_component_analysis.md`
+- Live efficiency recovery trials: `outputs/reports/live_efficiency_recovery_trials.md`
 - Full generated suite: `outputs/reports/full_generated_prompt_suite_diagnostic.md`
+- Generated unsupported claims audit: `outputs/reports/generated_unsupported_claims_audit.md`
+- Generated unsupported claim fix trial: `outputs/reports/generated_unsupported_claim_fix_trial.md`
 - Generated prompt failure clusters: `outputs/reports/generated_prompt_failure_cluster_analysis.md`
 - Targeted answer-shape trial: `outputs/reports/targeted_answer_shape_trial.md`
 - Route mismatch root-cause analysis: `outputs/reports/route_mismatch_root_cause_analysis.md`
@@ -78,8 +84,8 @@ Start here. Most older generated reports were consolidated or removed.
 - Multi-LLM robustness: `outputs/reports/multi_llm_backend_robustness.md`
 - Live tool efficiency: `outputs/reports/live_tool_efficiency_audit.md`
 - Integrated gate: `outputs/reports/integrated_robustness_gate.md`
-- Recommendation: `blocked_by_robustness_regression`
-- Current strict score: `0.6514`
+- Recommendation: `promote_efficiency_recovery_fix`
+- Current strict score: `0.6572`
 - Generated diagnostic prompts executed: `250`
 - Template dependency score: `0.1634`
 - Schema-aware fallback decision: `keep_trial_only`
@@ -91,6 +97,19 @@ Start here. Most older generated reports were consolidated or removed.
 - Controller status: `shadow_only`
 - Automatic promotion: `False`
 - Recommendation: `controller_no_rewrite_better`
+
+## Pure LLM Tool-Agent Baseline
+
+- Definition: `outputs/reports/pure_llm_baseline_definition.md`
+- Eval: `outputs/reports/pure_llm_tool_agent_eval.md`
+- Trace decomposition: `outputs/reports/pure_llm_agent_trace_decomposition.md`
+- Multi-backend eval: `outputs/reports/pure_llm_multi_backend_eval.md`
+- Promotion gate: `outputs/reports/pure_llm_promotion_gate.md`
+- External pattern alignment: `outputs/reports/pure_llm_external_pattern_alignment.md`
+- Best variant: `LLM_CONTROLLER_OPTIMIZED_AGENT`
+- Best strict score: `0.6328`
+- New full-agent rows executed: `1`
+- Promotion allowed: `False`
 
 ## System-Wide SDK LLM Audit
 
@@ -349,7 +368,13 @@ Regenerated report surfaces:
 - `outputs/reports/next_robustness_improvement_preflight.md/json`
 - `outputs/reports/external_text_to_sql_tool_agent_research.md/json`
 - `outputs/reports/live_api_arbitration_regression_guard.md/json`
+- `outputs/reports/strict_score_drift_analysis.md/json`
+- `outputs/reports/efficiency_recovery_preflight.md/json`
+- `outputs/reports/strict_efficiency_component_analysis.md/json`
+- `outputs/reports/live_efficiency_recovery_trials.md/json`
 - `outputs/reports/full_generated_prompt_suite_diagnostic.md/json`
+- `outputs/reports/generated_unsupported_claims_audit.md/json`
+- `outputs/reports/generated_unsupported_claim_fix_trial.md/json`
 - `outputs/reports/generated_prompt_failure_cluster_analysis.md/json`
 - `outputs/reports/targeted_answer_shape_trial.md/json`
 - `outputs/reports/route_mismatch_root_cause_analysis.md/json`
@@ -446,7 +471,7 @@ Regenerated report surfaces:
 - hidden_style: `48/48`
 - final_submission_ready: `True`
 - live_adobe_api_readiness: `pass`
-- post_live_robustness: `blocked_by_robustness_regression`
+- post_live_robustness: `promote_efficiency_recovery_fix`
 - evidence_aware_answer_synthesis: `keep_trial_only`
 - llm_recommendation: `keep_shadow_only`
 - sdk_tool_calling_optimization: `speed_only_shadow_candidates_no_promotion`

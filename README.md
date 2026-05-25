@@ -158,6 +158,19 @@ python3 scripts/generate_sdk_usage_audit.py
 
 The audit report is written to `outputs/reports/sdk_usage_audit.md/json` and must show `runtime_llm_direct_http_hits = 0`.
 
+## 3.1.1 Pure LLM Tool-Agent Baseline
+
+The pure LLM baseline now has a shadow-only tool-agent scaffold for diagnosis:
+
+```bash
+python3 scripts/run_pure_llm_tool_agent_eval.py
+python3 scripts/run_pure_llm_agent_trace_decomposition.py
+python3 scripts/run_pure_llm_multi_backend_eval.py
+python3 scripts/run_pure_llm_promotion_gate.py
+```
+
+The scaffold adds structured planning, compact schema retrieval, SQL validation/repair, API endpoint guarding, and evidence-locked answer checks around the same two organizer tools: `execute_sql` and `call_api`. It remains a baseline, not packaged runtime. Reports are written to `outputs/reports/pure_llm_*` and must keep `promotion_allowed=false` unless a future strict/hidden/robustness/safety gate explicitly approves review. `SQL_FIRST_API_VERIFY` remains the packaged default.
+
 ## 3.2 LLM Semantic Routing Helper
 
 `dashagent/semantic_routing_helper.py` is an optional SDK-based routing-hint helper for low-confidence or ambiguous prompts. It is default-off with `ENABLE_LLM_SEMANTIC_ROUTER=false` and shadow-only by default with `LLM_SEMANTIC_ROUTER_SHADOW_ONLY=true`.
@@ -451,6 +464,7 @@ The post-live robustness pass is diagnostic-first:
 - `outputs/reports/no_template_sql_mode_diagnostic.md/json` isolates template-miss fallback behavior without disabling templates in packaged runtime.
 - `outputs/reports/schema_aware_sql_feedback_loop.md/json` keeps schema-aware SQL `keep_trial_only`; it is not promoted because strict non-regression and template-dependency gates did not pass.
 - `outputs/reports/llm_agent_trace_decomposition.md/json`, `outputs/reports/controller_rewrite_policy_trial.md/json`, and `outputs/reports/multi_llm_backend_robustness.md/json` show that pure LLM/controller work remains diagnostic-only and SDK-only.
+- `outputs/reports/pure_llm_baseline_definition.md/json`, `outputs/reports/pure_llm_tool_agent_eval.md/json`, `outputs/reports/pure_llm_agent_trace_decomposition.md/json`, `outputs/reports/pure_llm_multi_backend_eval.md/json`, and `outputs/reports/pure_llm_promotion_gate.md/json` document the upgraded pure LLM tool-agent baseline. These reports are shadow-only and do not change packaged `SQL_FIRST_API_VERIFY`.
 - `outputs/reports/integrated_robustness_gate.md/json` is the source of truth for whether any new runtime change can be promoted.
 
 The main remaining risk is NL-to-SQL generalization rather than Adobe connectivity. Current robustness diagnostics show a template dependency score of 0.1634, a generated-prompt template miss rate of 0.68, and paraphrase consistency of 0.9907. Future improvements should reduce template dependence with gated, validator-backed SQL selection rather than adding public-example-specific templates.

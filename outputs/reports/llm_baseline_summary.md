@@ -7,6 +7,7 @@
 - Tool calling supported: `True`
 - Best LLM baseline: `LLM_CONTROLLER_OPTIMIZED_AGENT`
 - Best LLM baseline score: `0.6328`
+- Pure LLM tool-agent pass: best `LLM_CONTROLLER_OPTIMIZED_AGENT`; score `0.6328`; new rows `1`; gate `blocked_by_unsupported_claims`
 - SQL_FIRST_API_VERIFY score: `0.6553`
 - Recommendation: `keep_shadow_only`
 - LLM semantic routing helper: `do_not_promote` (complete)

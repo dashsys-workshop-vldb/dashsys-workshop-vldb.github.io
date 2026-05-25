@@ -85,7 +85,13 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/next_robustness_improvement_preflight.md/json",
     "outputs/reports/external_text_to_sql_tool_agent_research.md/json",
     "outputs/reports/live_api_arbitration_regression_guard.md/json",
+    "outputs/reports/strict_score_drift_analysis.md/json",
+    "outputs/reports/efficiency_recovery_preflight.md/json",
+    "outputs/reports/strict_efficiency_component_analysis.md/json",
+    "outputs/reports/live_efficiency_recovery_trials.md/json",
     "outputs/reports/full_generated_prompt_suite_diagnostic.md/json",
+    "outputs/reports/generated_unsupported_claims_audit.md/json",
+    "outputs/reports/generated_unsupported_claim_fix_trial.md/json",
     "outputs/reports/generated_prompt_failure_cluster_analysis.md/json",
     "outputs/reports/targeted_answer_shape_trial.md/json",
     "outputs/reports/route_mismatch_root_cause_analysis.md/json",
@@ -252,7 +258,13 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "next_robustness_improvement_preflight": _load_json(outputs / "reports" / "next_robustness_improvement_preflight.json"),
         "external_text_to_sql_tool_agent_research": _load_json(outputs / "reports" / "external_text_to_sql_tool_agent_research.json"),
         "live_api_arbitration_regression_guard": _load_json(outputs / "reports" / "live_api_arbitration_regression_guard.json"),
+        "strict_score_drift_analysis": _load_json(outputs / "reports" / "strict_score_drift_analysis.json"),
+        "efficiency_recovery_preflight": _load_json(outputs / "reports" / "efficiency_recovery_preflight.json"),
+        "strict_efficiency_component_analysis": _load_json(outputs / "reports" / "strict_efficiency_component_analysis.json"),
+        "live_efficiency_recovery_trials": _load_json(outputs / "reports" / "live_efficiency_recovery_trials.json"),
         "full_generated_prompt_suite_diagnostic": _load_json(outputs / "reports" / "full_generated_prompt_suite_diagnostic.json"),
+        "generated_unsupported_claims_audit": _load_json(outputs / "reports" / "generated_unsupported_claims_audit.json"),
+        "generated_unsupported_claim_fix_trial": _load_json(outputs / "reports" / "generated_unsupported_claim_fix_trial.json"),
         "generated_prompt_failure_cluster_analysis": _load_json(outputs / "reports" / "generated_prompt_failure_cluster_analysis.json"),
         "targeted_answer_shape_trial": _load_json(outputs / "reports" / "targeted_answer_shape_trial.json"),
         "route_mismatch_root_cause_analysis": _load_json(outputs / "reports" / "route_mismatch_root_cause_analysis.json"),
@@ -266,6 +278,12 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "llm_agent_trace_decomposition": _load_json(outputs / "reports" / "llm_agent_trace_decomposition.json"),
         "controller_rewrite_policy_trial": _load_json(outputs / "reports" / "controller_rewrite_policy_trial.json"),
         "multi_llm_backend_robustness": _load_json(outputs / "reports" / "multi_llm_backend_robustness.json"),
+        "pure_llm_baseline_definition": _load_json(outputs / "reports" / "pure_llm_baseline_definition.json"),
+        "pure_llm_tool_agent_eval": _load_json(outputs / "reports" / "pure_llm_tool_agent_eval.json"),
+        "pure_llm_agent_trace_decomposition": _load_json(outputs / "reports" / "pure_llm_agent_trace_decomposition.json"),
+        "pure_llm_multi_backend_eval": _load_json(outputs / "reports" / "pure_llm_multi_backend_eval.json"),
+        "pure_llm_promotion_gate": _load_json(outputs / "reports" / "pure_llm_promotion_gate.json"),
+        "pure_llm_external_pattern_alignment": _load_json(outputs / "reports" / "pure_llm_external_pattern_alignment.json"),
         "live_tool_efficiency_audit": _load_json(outputs / "reports" / "live_tool_efficiency_audit.json"),
         "integrated_robustness_gate": _load_json(outputs / "reports" / "integrated_robustness_gate.json"),
         "llm_backend": _load_json(outputs / "llm_sdk_backend_check.json"),
@@ -504,6 +522,7 @@ def build_llm_baseline_summary(config: Config, sources: dict[str, Any]) -> dict[
         "strict_scoring_status": baseline.get("strict_scoring_status", strict.get("summary", {}).get("strict_scoring_status")),
         "best_llm_baseline": best,
         "best_llm_baseline_score": best.get("strict_score") or best.get("strict_final_score"),
+        "pure_llm_tool_agent": _pure_llm_tool_agent_status(sources),
         "sql_first_api_verify_score": deterministic.get("avg_final_score") or _sql_first_metrics(sources).get("avg_final_score"),
         "comparison_against_deterministic": strict.get("comparison_against_deterministic") or baseline.get("comparison_against_deterministic"),
         "recommendation": baseline.get("recommendation") or strict.get("summary", {}).get("recommendation") or "keep_shadow_only",
@@ -531,6 +550,12 @@ def build_llm_baseline_summary(config: Config, sources: dict[str, Any]) -> dict[
             "outputs/reports/correctness_efficiency_fix_decision.md",
             "outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md",
             "outputs/reports/tool_calling_policy_optimizer.md",
+            "outputs/reports/pure_llm_baseline_definition.md",
+            "outputs/reports/pure_llm_tool_agent_eval.md",
+            "outputs/reports/pure_llm_agent_trace_decomposition.md",
+            "outputs/reports/pure_llm_multi_backend_eval.md",
+            "outputs/reports/pure_llm_promotion_gate.md",
+            "outputs/reports/pure_llm_external_pattern_alignment.md",
             "outputs/reports/tool_calling_policy_search_results.md",
             "outputs/reports/tool_calling_compiled_policy_candidate.md",
             "outputs/reports/tool_calling_policy_promotion_decision.md",
@@ -761,7 +786,13 @@ def build_report_index(
         "post_live_robustness": {
             "preflight_path": "outputs/reports/post_live_robustness_preflight.md",
             "arbitration_guard_path": "outputs/reports/live_api_arbitration_regression_guard.md",
+            "strict_score_drift_path": "outputs/reports/strict_score_drift_analysis.md",
+            "efficiency_recovery_preflight_path": "outputs/reports/efficiency_recovery_preflight.md",
+            "strict_efficiency_component_analysis_path": "outputs/reports/strict_efficiency_component_analysis.md",
+            "live_efficiency_recovery_trials_path": "outputs/reports/live_efficiency_recovery_trials.md",
             "full_generated_suite_path": "outputs/reports/full_generated_prompt_suite_diagnostic.md",
+            "unsupported_claims_audit_path": "outputs/reports/generated_unsupported_claims_audit.md",
+            "unsupported_claim_fix_trial_path": "outputs/reports/generated_unsupported_claim_fix_trial.md",
             "nl_sql_robustness_path": "outputs/reports/nl_sql_robustness_audit.md",
             "paraphrase_consistency_path": "outputs/reports/nl_sql_paraphrase_consistency.md",
             "schema_aware_failure_decomposition_path": "outputs/reports/schema_aware_sql_failure_decomposition.md",
@@ -776,7 +807,13 @@ def build_report_index(
                     "eval_results_strict": _load_json(config.outputs_dir / "eval_results_strict.json"),
                     "post_live_robustness_preflight": _load_json(config.outputs_dir / "reports" / "post_live_robustness_preflight.json"),
                     "live_api_arbitration_regression_guard": _load_json(config.outputs_dir / "reports" / "live_api_arbitration_regression_guard.json"),
+                    "strict_score_drift_analysis": _load_json(config.outputs_dir / "reports" / "strict_score_drift_analysis.json"),
+                    "efficiency_recovery_preflight": _load_json(config.outputs_dir / "reports" / "efficiency_recovery_preflight.json"),
+                    "strict_efficiency_component_analysis": _load_json(config.outputs_dir / "reports" / "strict_efficiency_component_analysis.json"),
+                    "live_efficiency_recovery_trials": _load_json(config.outputs_dir / "reports" / "live_efficiency_recovery_trials.json"),
                     "full_generated_prompt_suite_diagnostic": _load_json(config.outputs_dir / "reports" / "full_generated_prompt_suite_diagnostic.json"),
+                    "generated_unsupported_claims_audit": _load_json(config.outputs_dir / "reports" / "generated_unsupported_claims_audit.json"),
+                    "generated_unsupported_claim_fix_trial": _load_json(config.outputs_dir / "reports" / "generated_unsupported_claim_fix_trial.json"),
                     "nl_sql_robustness_audit": _load_json(config.outputs_dir / "reports" / "nl_sql_robustness_audit.json"),
                     "nl_sql_paraphrase_consistency": _load_json(config.outputs_dir / "reports" / "nl_sql_paraphrase_consistency.json"),
                     "schema_aware_sql_feedback_loop": _load_json(config.outputs_dir / "reports" / "schema_aware_sql_feedback_loop.json"),
@@ -796,6 +833,21 @@ def build_report_index(
             "recommendation": _load_json(config.outputs_dir / "reports" / "controller_rewrite_ablation.json")
             .get("summary", {})
             .get("recommendation", "unavailable"),
+        },
+        "pure_llm_tool_agent": {
+            "definition_path": "outputs/reports/pure_llm_baseline_definition.md",
+            "eval_path": "outputs/reports/pure_llm_tool_agent_eval.md",
+            "trace_decomposition_path": "outputs/reports/pure_llm_agent_trace_decomposition.md",
+            "multi_backend_path": "outputs/reports/pure_llm_multi_backend_eval.md",
+            "promotion_gate_path": "outputs/reports/pure_llm_promotion_gate.md",
+            "external_pattern_alignment_path": "outputs/reports/pure_llm_external_pattern_alignment.md",
+            **_pure_llm_tool_agent_status(
+                {
+                    "pure_llm_tool_agent_eval": _load_json(config.outputs_dir / "reports" / "pure_llm_tool_agent_eval.json"),
+                    "pure_llm_promotion_gate": _load_json(config.outputs_dir / "reports" / "pure_llm_promotion_gate.json"),
+                    "pure_llm_multi_backend_eval": _load_json(config.outputs_dir / "reports" / "pure_llm_multi_backend_eval.json"),
+                }
+            ),
         },
         "sdk_usage_audit": {
             "path": "outputs/reports/sdk_usage_audit.md",
@@ -1166,6 +1218,10 @@ def render_llm_summary(payload: dict[str, Any]) -> str:
             f"- Tool calling supported: `{payload.get('tool_calling_supported')}`",
             f"- Best LLM baseline: `{best.get('system', 'unavailable')}`",
             f"- Best LLM baseline score: `{payload.get('best_llm_baseline_score')}`",
+            f"- Pure LLM tool-agent pass: best `{payload.get('pure_llm_tool_agent', {}).get('best_variant')}`; "
+            f"score `{payload.get('pure_llm_tool_agent', {}).get('best_strict_score')}`; "
+            f"new rows `{payload.get('pure_llm_tool_agent', {}).get('executed_new_llm_rows')}`; "
+            f"gate `{payload.get('pure_llm_tool_agent', {}).get('promotion_gate_recommendation')}`",
             f"- SQL_FIRST_API_VERIFY score: `{payload.get('sql_first_api_verify_score')}`",
             f"- Recommendation: `{payload.get('recommendation')}`",
             f"- LLM semantic routing helper: `{payload['llm_semantic_routing_helper']['recommendation']}` "
@@ -1299,7 +1355,13 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.append("- Next robustness preflight: `outputs/reports/next_robustness_improvement_preflight.md`")
     lines.append("- External text-to-SQL/tool-agent research: `outputs/reports/external_text_to_sql_tool_agent_research.md`")
     lines.append(f"- Arbitration guard: `{robustness.get('arbitration_guard_path')}`")
+    lines.append(f"- Strict score drift analysis: `{robustness.get('strict_score_drift_path')}`")
+    lines.append(f"- Efficiency recovery preflight: `{robustness.get('efficiency_recovery_preflight_path')}`")
+    lines.append(f"- Strict efficiency component analysis: `{robustness.get('strict_efficiency_component_analysis_path')}`")
+    lines.append(f"- Live efficiency recovery trials: `{robustness.get('live_efficiency_recovery_trials_path')}`")
     lines.append(f"- Full generated suite: `{robustness.get('full_generated_suite_path')}`")
+    lines.append(f"- Generated unsupported claims audit: `{robustness.get('unsupported_claims_audit_path')}`")
+    lines.append(f"- Generated unsupported claim fix trial: `{robustness.get('unsupported_claim_fix_trial_path')}`")
     lines.append("- Generated prompt failure clusters: `outputs/reports/generated_prompt_failure_cluster_analysis.md`")
     lines.append("- Targeted answer-shape trial: `outputs/reports/targeted_answer_shape_trial.md`")
     lines.append("- Route mismatch root-cause analysis: `outputs/reports/route_mismatch_root_cause_analysis.md`")
@@ -1327,6 +1389,18 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.append(f"- Controller status: `{controller.get('controller_status')}`")
     lines.append(f"- Automatic promotion: `{controller.get('automatic_promotion')}`")
     lines.append(f"- Recommendation: `{controller.get('recommendation')}`")
+    pure = payload.get("pure_llm_tool_agent", {})
+    lines.extend(["", "## Pure LLM Tool-Agent Baseline", ""])
+    lines.append(f"- Definition: `{pure.get('definition_path')}`")
+    lines.append(f"- Eval: `{pure.get('eval_path')}`")
+    lines.append(f"- Trace decomposition: `{pure.get('trace_decomposition_path')}`")
+    lines.append(f"- Multi-backend eval: `{pure.get('multi_backend_path')}`")
+    lines.append(f"- Promotion gate: `{pure.get('promotion_gate_path')}`")
+    lines.append(f"- External pattern alignment: `{pure.get('external_pattern_alignment_path')}`")
+    lines.append(f"- Best variant: `{pure.get('best_variant')}`")
+    lines.append(f"- Best strict score: `{pure.get('best_strict_score')}`")
+    lines.append(f"- New full-agent rows executed: `{pure.get('executed_new_llm_rows')}`")
+    lines.append(f"- Promotion allowed: `{pure.get('promotion_allowed')}`")
     lines.extend(["", "## System-Wide SDK LLM Audit", ""])
     audit = payload.get("sdk_usage_audit", {})
     lines.append(f"- `{audit.get('path')}`")
@@ -1560,6 +1634,26 @@ def _status_from_report(report: dict[str, Any], default: str) -> str:
         or ("shadow_only" if report.get("shadow_only") else None)
         or default
     )
+
+
+def _pure_llm_tool_agent_status(sources: dict[str, Any]) -> dict[str, Any]:
+    eval_report = sources.get("pure_llm_tool_agent_eval") or {}
+    gate = sources.get("pure_llm_promotion_gate") or {}
+    multi = sources.get("pure_llm_multi_backend_eval") or {}
+    summary = eval_report.get("summary") or {}
+    return {
+        "status": "shadow_only",
+        "packaged_runtime_affected": False,
+        "best_variant": summary.get("best_variant") or gate.get("best_variant"),
+        "best_strict_score": summary.get("best_strict_score") or gate.get("best_strict_score"),
+        "executed_new_llm_rows": summary.get("executed_new_llm_rows"),
+        "new_llm_calls_executed": eval_report.get("new_llm_calls_executed"),
+        "skipped_reason": eval_report.get("skipped_reason"),
+        "promotion_gate_recommendation": gate.get("recommendation"),
+        "promotion_allowed": gate.get("promotion_allowed", False),
+        "available_backend_count": (multi.get("summary") or {}).get("available_backend_count"),
+        "executed_backend_count": (multi.get("summary") or {}).get("executed_backend_count"),
+    }
 
 
 def _semantic_router_status(sources: dict[str, Any]) -> dict[str, Any]:
@@ -1984,7 +2078,13 @@ def _context7_audit_status(sources: dict[str, Any]) -> dict[str, Any]:
 def _post_live_robustness_status(sources: dict[str, Any]) -> dict[str, Any]:
     preflight = sources.get("post_live_robustness_preflight") or {}
     arbitration = sources.get("live_api_arbitration_regression_guard") or {}
+    drift = sources.get("strict_score_drift_analysis") or {}
+    efficiency_preflight = sources.get("efficiency_recovery_preflight") or {}
+    efficiency_components = sources.get("strict_efficiency_component_analysis") or {}
+    efficiency_recovery = sources.get("live_efficiency_recovery_trials") or {}
     generated = sources.get("full_generated_prompt_suite_diagnostic") or {}
+    unsupported_audit = sources.get("generated_unsupported_claims_audit") or {}
+    unsupported_trial = sources.get("generated_unsupported_claim_fix_trial") or {}
     clusters = sources.get("generated_prompt_failure_cluster_analysis") or {}
     answer_shape = sources.get("targeted_answer_shape_trial") or {}
     route_mismatch = sources.get("route_mismatch_root_cause_analysis") or {}
@@ -2014,11 +2114,22 @@ def _post_live_robustness_status(sources: dict[str, Any]) -> dict[str, Any]:
         "arbitration_policy_safe": arbitration.get("policy_safe_to_keep", "unavailable"),
         "arbitration_critical_violations": arbitration.get("critical_policy_violation_count", "unavailable"),
         "arbitration_warning_count": arbitration.get("policy_warning_count", "unavailable"),
+        "strict_drift_root_cause": (drift.get("root_cause_summary") or {}).get("primary_root_cause"),
+        "strict_drift_reason": (drift.get("root_cause_summary") or {}).get("reason_current_score_is_below_reference"),
+        "efficiency_recovery_preflight_score_gap": efficiency_preflight.get("score_gap"),
+        "strict_efficiency_primary_source": (efficiency_components.get("summary") or {}).get("primary_efficiency_source"),
+        "strict_efficiency_token_overhead": (efficiency_components.get("summary") or {}).get("avg_token_overhead_vs_baseline"),
+        "strict_efficiency_runtime_overhead": (efficiency_components.get("summary") or {}).get("avg_runtime_overhead_vs_baseline"),
+        "efficiency_recovery_best_variant": (efficiency_recovery.get("summary") or {}).get("best_variant"),
+        "efficiency_recovery_best_projected_score": (efficiency_recovery.get("summary") or {}).get("best_projected_strict_score"),
+        "efficiency_recovery_recommendation": (efficiency_recovery.get("summary") or {}).get("recommendation"),
         "generated_prompts_total": generated.get("total_prompts"),
         "generated_prompts_executed": generated.get("executed_prompts"),
         "generated_prompt_runtime_pass_count": generated.get("runtime_pass_count"),
         "generated_prompt_validation_fail_count": generated.get("validation_fail_count"),
         "generated_prompt_unsupported_claim_count": generated.get("unsupported_claim_count"),
+        "previous_gate_unsupported_claim_count": (unsupported_audit.get("summary") or {}).get("previous_gate_unsupported_claim_count"),
+        "unsupported_claim_fix_runtime_change_applied": unsupported_trial.get("runtime_change_applied"),
         "generated_prompt_live_api_calls": generated.get("live_api_calls"),
         "generated_prompt_template_hit_rate": generated.get("template_hit_rate"),
         "generated_prompt_template_miss_rate": generated.get("template_miss_rate"),
@@ -2052,7 +2163,13 @@ def _post_live_robustness_status(sources: dict[str, Any]) -> dict[str, Any]:
             "outputs/reports/next_robustness_improvement_preflight.md",
             "outputs/reports/external_text_to_sql_tool_agent_research.md",
             "outputs/reports/live_api_arbitration_regression_guard.md",
+            "outputs/reports/strict_score_drift_analysis.md",
+            "outputs/reports/efficiency_recovery_preflight.md",
+            "outputs/reports/strict_efficiency_component_analysis.md",
+            "outputs/reports/live_efficiency_recovery_trials.md",
             "outputs/reports/full_generated_prompt_suite_diagnostic.md",
+            "outputs/reports/generated_unsupported_claims_audit.md",
+            "outputs/reports/generated_unsupported_claim_fix_trial.md",
             "outputs/reports/generated_prompt_failure_cluster_analysis.md",
             "outputs/reports/targeted_answer_shape_trial.md",
             "outputs/reports/route_mismatch_root_cause_analysis.md",

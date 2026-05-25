@@ -399,7 +399,7 @@ def schema_dataset_answer(query: str, rows: list[dict[str, Any]] | None, api_phr
             tail = f' These datasets use "{schema_name}".' if schema_name else ""
             return f"Based on the evidence provided, {count} datasets have been ingested using the same schema.{tail} {sentence_case(api_phrase)}."
     if "detail" in lowered or "details" in lowered:
-        name = row_value(first, ["name", "blueprint_name"]) or quoted_text(query) or "the schema"
+        name = row_value(first, ["name", "blueprint_name", "schema_name", "title", "collection_name", "dataset_name"]) or quoted_text(query)
         class_value = row_value(first, ["class"])
         props = row_value(first, ["property_count"])
         collections = row_value(first, ["collection_count"])
@@ -414,6 +414,8 @@ def schema_dataset_answer(query: str, rows: list[dict[str, Any]] | None, api_phr
         if updated:
             bits.append(f"and was last updated on {human_date(updated)}")
         details = ", ".join(bits) if bits else "was found"
+        if not name:
+            return f"A matching schema or dataset record {details}. {sentence_case(api_phrase)}."
         return f"The '{name}' schema {details}. {sentence_case(api_phrase)}."
     names = extract_names(rows, ["collection_name", "dataset_name", "name"])
     if names:

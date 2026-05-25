@@ -33,6 +33,9 @@ def main() -> int:
         suite_path=Path(args.suite) if args.suite else config.data_dir / "generated_prompt_suite.json",
         limit=args.limit,
         clean=args.clean,
+        resume=args.resume,
+        skip_raw_per_prompt_artifacts=args.skip_raw_per_prompt_artifacts or args.write_summary_only,
+        write_summary_only=args.write_summary_only,
         allow_live_diagnostic_without_success=args.allow_live_diagnostic_without_success,
     )
     print(
@@ -58,6 +61,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--suite", help="Path to generated_prompt_suite.json. Defaults to data/generated_prompt_suite.json.")
     parser.add_argument("--limit", type=int, default=None, help="Optional local debug limit. Default runs the full suite.")
     parser.add_argument("--clean", action="store_true", help=f"Remove only outputs/{OUTPUT_ROOT_NAME} before running.")
+    parser.add_argument("--resume", action="store_true", help="Reuse completed per-prompt row summaries when present.")
+    parser.add_argument(
+        "--skip-raw-per-prompt-artifacts",
+        action="store_true",
+        help="Keep only compact row summaries under the per-prompt output root after each prompt completes.",
+    )
+    parser.add_argument(
+        "--write-summary-only",
+        action="store_true",
+        help="Alias for --skip-raw-per-prompt-artifacts; final reports still include all rows and aggregate diagnostics.",
+    )
     parser.add_argument(
         "--allow-live-diagnostic-without-success",
         action="store_true",
@@ -72,6 +86,9 @@ def run_full_generated_prompt_suite_diagnostic(
     suite_path: Path | None = None,
     limit: int | None = None,
     clean: bool = False,
+    resume: bool = False,
+    skip_raw_per_prompt_artifacts: bool = False,
+    write_summary_only: bool = False,
     allow_live_diagnostic_without_success: bool = False,
 ) -> dict[str, Any]:
     config = config or Config.from_env(ROOT)
@@ -103,6 +120,12 @@ def run_full_generated_prompt_suite_diagnostic(
         prompt_id = str(item.get("prompt_id") or f"gen_{len(rows) + 1:04d}")
         prompt = str(item.get("prompt") or "")
         out_dir = output_root / prompt_id
+        row_path = out_dir / "row_summary.json"
+        if resume and row_path.exists():
+            cached = _load_json(row_path)
+            if cached:
+                rows.append(redact_secrets(cached))
+                continue
         start = time.perf_counter()
         try:
             result = executor.run(prompt, strategy="SQL_FIRST_API_VERIFY", query_id=prompt_id, output_dir=out_dir)
@@ -128,21 +151,25 @@ def run_full_generated_prompt_suite_diagnostic(
                 "expected_route_label": item.get("expected_route_diagnostic", "UNKNOWN"),
                 "output_dir": _rel(config, out_dir),
             }
-        rows.append(redact_secrets(row))
+        row = redact_secrets(row)
+        if resume or skip_raw_per_prompt_artifacts:
+            _write_row_summary(row_path, row)
+        if skip_raw_per_prompt_artifacts:
+            _prune_prompt_artifacts(out_dir, keep={row_path.name})
+        rows.append(row)
 
     report = redact_secrets({**_build_report(config, suite, selected, rows, suite_path), **override_meta})
     report["local_env_loaded"] = bool(local_env)
+    report["resume_enabled"] = bool(resume)
+    report["raw_per_prompt_artifacts_skipped"] = bool(skip_raw_per_prompt_artifacts)
+    report["summary_only_mode"] = bool(write_summary_only)
     gap_report = redact_secrets(_build_gap_report(report))
     if override_meta:
         gap_report.update(override_meta)
-    (reports_dir / "full_generated_prompt_suite_diagnostic.json").write_text(
-        json.dumps(report, indent=2, sort_keys=True, default=str), encoding="utf-8"
-    )
-    (reports_dir / "full_generated_prompt_suite_diagnostic.md").write_text(_render_report_md(report), encoding="utf-8")
-    (reports_dir / "generated_prompt_coverage_gap_analysis.json").write_text(
-        json.dumps(gap_report, indent=2, sort_keys=True, default=str), encoding="utf-8"
-    )
-    (reports_dir / "generated_prompt_coverage_gap_analysis.md").write_text(_render_gap_md(gap_report), encoding="utf-8")
+    _atomic_write_json(reports_dir / "full_generated_prompt_suite_diagnostic.json", report)
+    _atomic_write_text(reports_dir / "full_generated_prompt_suite_diagnostic.md", _render_report_md(report))
+    _atomic_write_json(reports_dir / "generated_prompt_coverage_gap_analysis.json", gap_report)
+    _atomic_write_text(reports_dir / "generated_prompt_coverage_gap_analysis.md", _render_gap_md(gap_report))
     return report
 
 
@@ -588,6 +615,35 @@ def _clean_output(config: Config, output_root: Path) -> None:
         raise ValueError(f"Refusing to clean unexpected path: {output_root}")
     if output_root.exists():
         shutil.rmtree(output_root)
+
+
+def _write_row_summary(path: Path, row: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    _atomic_write_json(path, row)
+
+
+def _prune_prompt_artifacts(out_dir: Path, *, keep: set[str]) -> None:
+    if not out_dir.exists():
+        return
+    for child in out_dir.iterdir():
+        if child.name in keep:
+            continue
+        if child.is_dir():
+            shutil.rmtree(child)
+        else:
+            child.unlink()
+
+
+def _atomic_write_json(path: Path, payload: dict[str, Any]) -> None:
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(payload, indent=2, sort_keys=True, default=str), encoding="utf-8")
+    tmp.replace(path)
+
+
+def _atomic_write_text(path: Path, text: str) -> None:
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(text, encoding="utf-8")
+    tmp.replace(path)
 
 
 def _load_json(path: Path) -> dict[str, Any]:

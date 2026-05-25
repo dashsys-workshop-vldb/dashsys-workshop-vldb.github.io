@@ -54,23 +54,30 @@ def run_integrated_robustness_gate(config: Config | None = None) -> dict[str, An
     route_mismatch = _load_json(reports_dir / "route_mismatch_root_cause_analysis.json")
     endpoint_selection = _load_json(reports_dir / "api_endpoint_selection_gap_analysis.json")
     live_efficiency = _load_json(reports_dir / "live_api_efficiency_compression_trial.json")
+    efficiency_recovery = _load_json(reports_dir / "live_efficiency_recovery_trials.json")
     no_template = _load_json(reports_dir / "no_template_sql_mode_diagnostic.json")
     arbitration = _load_json(reports_dir / "live_api_evidence_arbitration_trial.json")
     check = _safe_check(config)
     gates = _gates(strict, hidden, smoke, robustness, consistency, multi_llm, tool, schema, check, generated)
-    gates.update(_diagnostic_gates(clusters, answer_shape, route_mismatch, endpoint_selection, live_efficiency, no_template))
-    recommendation = _recommendation(gates, arbitration, schema, answer_shape, endpoint_selection, live_efficiency)
+    gates.update(_diagnostic_gates(clusters, answer_shape, route_mismatch, endpoint_selection, live_efficiency, efficiency_recovery, no_template))
+    recommendation = _recommendation(gates, arbitration, schema, answer_shape, endpoint_selection, live_efficiency, efficiency_recovery)
     report = redact_secrets(
         {
             "report_type": REPORT_STEM,
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "diagnostic_only": False,
-            "promotion_allowed": recommendation in {"promote_arbitration_policy_only", "keep_current_packaged_behavior"},
+            "promotion_allowed": recommendation in {"promote_arbitration_policy_only", "promote_efficiency_recovery_fix", "keep_current_packaged_behavior"},
             "recommendation": recommendation,
             "gates": gates,
             "source_reports": [
                 "outputs/reports/live_api_evidence_arbitration_trial.json",
+                "outputs/reports/strict_score_drift_analysis.json",
+                "outputs/reports/efficiency_recovery_preflight.json",
+                "outputs/reports/strict_efficiency_component_analysis.json",
+                "outputs/reports/live_efficiency_recovery_trials.json",
                 "outputs/reports/full_generated_prompt_suite_diagnostic.json",
+                "outputs/reports/generated_unsupported_claims_audit.json",
+                "outputs/reports/generated_unsupported_claim_fix_trial.json",
                 "outputs/reports/nl_sql_robustness_audit.json",
                 "outputs/reports/nl_sql_paraphrase_consistency.json",
                 "outputs/reports/schema_aware_sql_feedback_loop.json",
@@ -155,6 +162,7 @@ def _diagnostic_gates(
     route_mismatch: dict[str, Any],
     endpoint_selection: dict[str, Any],
     live_efficiency: dict[str, Any],
+    efficiency_recovery: dict[str, Any],
     no_template: dict[str, Any],
 ) -> dict[str, dict[str, Any]]:
     return {
@@ -191,6 +199,14 @@ def _diagnostic_gates(
                 "runtime_change_applied": live_efficiency.get("runtime_change_applied"),
             },
         },
+        "efficiency_recovery_trial_recorded": {
+            "passed": bool((efficiency_recovery.get("summary") or {}).get("best_variant")),
+            "observed": {
+                "best_variant": (efficiency_recovery.get("summary") or {}).get("best_variant"),
+                "best_projected_strict_score": (efficiency_recovery.get("summary") or {}).get("best_projected_strict_score"),
+                "recommendation": (efficiency_recovery.get("summary") or {}).get("recommendation"),
+            },
+        },
         "no_template_mode_not_packaged": {
             "passed": (no_template.get("promotion_gate") or {}).get("promotable") is False,
             "observed": no_template.get("promotion_gate"),
@@ -205,6 +221,7 @@ def _recommendation(
     answer_shape: dict[str, Any],
     endpoint_selection: dict[str, Any],
     live_efficiency: dict[str, Any],
+    efficiency_recovery: dict[str, Any],
 ) -> str:
     failed = [name for name, gate in gates.items() if not gate.get("passed")]
     if "strict_score_non_regression" in failed or "hidden_style_passes" in failed or "check_submission_ready_passes" in failed:
@@ -215,6 +232,8 @@ def _recommendation(
         return "promote_targeted_answer_shape_fix"
     if endpoint_selection.get("runtime_change_applied") is True:
         return "promote_endpoint_selection_fix"
+    if (efficiency_recovery.get("summary") or {}).get("recommendation") == "promote_efficiency_recovery_fix":
+        return "promote_efficiency_recovery_fix"
     if live_efficiency.get("runtime_change_applied") is True:
         return "promote_live_api_efficiency_fix"
     if (schema.get("promotion_decision") or {}).get("decision") != "keep_trial_only":
