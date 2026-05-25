@@ -29,6 +29,34 @@ DOMAIN_TABLE_HINTS = {
     "property": ("dim_property",),
 }
 
+BUSINESS_TERM_ALIASES = {
+    "journey": "dim_campaign",
+    "journeys": "dim_campaign",
+    "campaign": "dim_campaign",
+    "campaigns": "dim_campaign",
+    "audience": "dim_segment",
+    "audiences": "dim_segment",
+    "segment": "dim_segment",
+    "segments": "dim_segment",
+    "dataset": "dim_collection",
+    "datasets": "dim_collection",
+    "collection": "dim_collection",
+    "collections": "dim_collection",
+    "schema": "dim_blueprint",
+    "schemas": "dim_blueprint",
+    "blueprint": "dim_blueprint",
+    "blueprints": "dim_blueprint",
+    "destination": "dim_target",
+    "destinations": "dim_target",
+    "target": "dim_target",
+    "targets": "dim_target",
+    "connector": "dim_connector",
+    "connectors": "dim_connector",
+    "source": "dim_connector",
+    "dataflow": "dim_connector",
+    "dataflows": "dim_connector",
+}
+
 
 def build_llm_sql_context(
     prompt: str,
@@ -73,9 +101,13 @@ def build_llm_sql_context(
         "value_hints": _value_hints(prompt),
         "answer_intent": intent,
         "endpoint_candidates": endpoint_candidates,
+        "business_term_aliases": _business_term_aliases(schema_index),
         "sql_rules": [
             "SELECT only; no writes, DDL, PRAGMA, COPY, INSTALL, LOAD, or multiple statements.",
             "Use only listed table and column names.",
+            "You must use actual table names from the allowed list.",
+            "Do not invent a table named journey, audience, dataset, schema, destination, connector, or dataflow.",
+            "Map business terms to actual tables using business_term_aliases.",
             "Use COUNT DISTINCT for unique entity counts when an ID column is the counted entity.",
             "Join only through listed join hints or bridge tables.",
             "Add LIMIT for broad list/detail queries.",
@@ -148,6 +180,14 @@ def _endpoint_candidates(prompt: str, catalog: EndpointCatalog) -> list[dict[str
         )
     candidates.sort(key=lambda item: (-int(item["score"]), item["endpoint_id"]))
     return candidates[:8]
+
+
+def _business_term_aliases(schema_index: SchemaIndex) -> dict[str, str]:
+    return {
+        term: table
+        for term, table in BUSINESS_TERM_ALIASES.items()
+        if table in schema_index.tables
+    }
 
 
 def _value_hints(prompt: str) -> list[dict[str, str]]:

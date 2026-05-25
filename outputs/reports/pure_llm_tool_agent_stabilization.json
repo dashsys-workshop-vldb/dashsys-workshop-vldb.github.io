@@ -6,7 +6,7 @@
   },
   "diagnostic_only": true,
   "execute_real_requested": true,
-  "generated_at": "2026-05-25T19:40:02.660479+00:00",
+  "generated_at": "2026-05-25T20:41:49.526073+00:00",
   "new_llm_calls_executed": true,
   "official_score_claim": false,
   "packaged_default_strategy": "SQL_FIRST_API_VERIFY",
@@ -16,17 +16,17 @@
   "rows": [
     {
       "category": "sql_count",
-      "estimated_tokens": 1016,
+      "estimated_tokens": 1118,
       "expected_tool_family": "sql",
       "failure_stage": "no_clear_failure",
-      "final_answer": "37",
+      "final_answer": "2 journeys are in the local dataset.",
       "prompt": "How many journeys are in the local dataset?",
       "prompt_id": "pure_llm_stab_001",
       "rejected_unsupported_claim_count": 0,
-      "runtime": 7.1921,
+      "runtime": 10.2435,
       "stabilization_row": true,
       "strict_scoring_status": "not_applicable_stabilization",
-      "system": "full_pure_llm_tool_agent_v1",
+      "system": "structured_sql_plan_with_repair_v1",
       "tool_calls": 1,
       "trace_assertions": {
         "api_endpoint_candidate": null,
@@ -34,27 +34,29 @@
         "api_endpoint_validation_ok": false,
         "did_llm_choose_tool": true,
         "did_llm_plan": true,
-        "final_answer": "37",
+        "final_answer": "2 journeys are in the local dataset.",
         "rejected_unsupported_claim_count": 0,
         "selected_tool": "execute_sql",
-        "sql_candidate": "SELECT COUNT(*) FROM dim_collection;",
+        "sql_candidate": "SELECT COUNT(*) AS count FROM \"dim_campaign\"",
         "sql_repair_attempted": false,
         "sql_repair_success": false,
         "sql_validation_ok": true,
+        "structured_plan_compile_ok": true,
+        "structured_plan_validation_ok": true,
         "tool_execution_ok": true,
         "tool_result_used_in_answer": true,
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "full_pure_llm_tool_agent_v1",
-        "estimated_tokens": 1016,
+        "baseline_variant": "structured_sql_plan_with_repair_v1",
+        "estimated_tokens": 1118,
         "failure_stage": "no_clear_failure",
-        "final_answer": "37",
-        "llm_total_tokens": 1745,
+        "final_answer": "2 journeys are in the local dataset.",
+        "llm_total_tokens": 1703,
         "original_query": "How many journeys are in the local dataset?",
         "pure_llm_tool_agent": true,
         "rejected_unsupported_claim_count": 0,
-        "runtime": 7.192138041835278,
+        "runtime": 10.243485334329307,
         "steps": [
           {
             "context_summary": {
@@ -82,73 +84,51 @@
             "plan": {
               "_normalization_actions": [],
               "_usage": {
-                "completion_tokens": 168,
+                "completion_tokens": 112,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1577,
+                "prompt_tokens": 1591,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1745
+                "total_tokens": 1703
               },
               "answer_intent": "COUNT",
               "answer_shape": "A single integer representing the total number of journeys.",
               "api_task": null,
               "candidate_endpoints": [],
               "candidate_tables": [
-                {
-                  "score": 6.1,
-                  "table": "dim_collection"
-                },
-                {
-                  "score": 0.3,
-                  "table": "dim_campaign"
-                },
-                {
-                  "score": 0.2,
-                  "table": "dim_connector"
-                }
+                "dim_campaign"
               ],
               "needs_api": false,
               "needs_sql": true,
-              "reason": "The user asked for the total number of journeys in the dataset, which can be answered using a COUNT function.",
-              "sql_task": "SELECT COUNT(*) FROM table_name WHERE condition;"
+              "reason": "The user is asking for the total number of journeys in the dataset, which can be obtained by counting the rows in the 'dim_campaign' table.",
+              "sql_task": "SELECT COUNT(*) FROM dim_campaign;"
             },
             "raw_plan": {
               "_usage": {
-                "completion_tokens": 168,
+                "completion_tokens": 112,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1577,
+                "prompt_tokens": 1591,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1745
+                "total_tokens": 1703
               },
               "answer_intent": "COUNT",
               "answer_shape": "A single integer representing the total number of journeys.",
               "api_task": null,
               "candidate_endpoints": [],
               "candidate_tables": [
-                {
-                  "score": 6.1,
-                  "table": "dim_collection"
-                },
-                {
-                  "score": 0.3,
-                  "table": "dim_campaign"
-                },
-                {
-                  "score": 0.2,
-                  "table": "dim_connector"
-                }
+                "dim_campaign"
               ],
               "needs_api": false,
               "needs_sql": true,
-              "reason": "The user asked for the total number of journeys in the dataset, which can be answered using a COUNT function.",
-              "sql_task": "SELECT COUNT(*) FROM table_name WHERE condition;"
+              "reason": "The user is asking for the total number of journeys in the dataset, which can be obtained by counting the rows in the 'dim_campaign' table.",
+              "sql_task": "SELECT COUNT(*) FROM dim_campaign;"
             },
-            "variant": "full_pure_llm_tool_agent_v1"
+            "variant": "structured_sql_plan_with_repair_v1"
           },
           {
             "attempts": [
@@ -158,42 +138,79 @@
                   "closest_table_suggestions": {},
                   "destructive_sql_detected": false,
                   "enabled": true,
-                  "normalized_sql": "SELECT COUNT(*) FROM dim_collection",
+                  "normalized_sql": "SELECT COUNT(*) AS count FROM \"dim_campaign\"",
                   "parsed_ok": true,
                   "selected_columns": [],
                   "selected_tables": [
-                    "dim_collection"
+                    "dim_campaign"
                   ],
                   "unknown_columns": [],
                   "unknown_tables": []
                 },
-                "candidate": {
+                "compile": {
+                  "aggregation": "count",
+                  "errors": [],
+                  "filters": [],
+                  "join_path": [],
+                  "ok": true,
+                  "selected_columns": [
+                    "*"
+                  ],
+                  "selected_tables": [
+                    "dim_campaign"
+                  ],
+                  "sql": "SELECT COUNT(*) AS count FROM \"dim_campaign\"",
+                  "warnings": []
+                },
+                "executed": true,
+                "execution_ok": true,
+                "plan_validation": {
+                  "errors": [],
+                  "ok": true,
+                  "warnings": []
+                },
+                "round": 0,
+                "sql": "SELECT COUNT(*) AS count FROM \"dim_campaign\"",
+                "structured_sql_plan": {
                   "_usage": {
-                    "completion_tokens": 68,
+                    "completion_tokens": 260,
                     "completion_tokens_details": null,
-                    "prompt_tokens": 1859,
+                    "prompt_tokens": 1842,
                     "prompt_tokens_details": {
                       "audio_tokens": null,
                       "cached_tokens": 3
                     },
-                    "total_tokens": 1927
+                    "total_tokens": 2102
                   },
-                  "aggregation": null,
-                  "columns_used": [
-                    "ROWCOUNT"
+                  "aggregation": [
+                    {
+                      "columns": [
+                        "*"
+                      ],
+                      "function": "COUNT"
+                    }
+                  ],
+                  "answer_intent": "COUNT",
+                  "answer_shape": "A single integer representing the total number of journeys.",
+                  "columns_needed": [
+                    {
+                      "column_name": "COUNT(*)"
+                    }
                   ],
                   "confidence": 1,
-                  "filters": null,
-                  "join_reason": null,
-                  "sql": "SELECT COUNT(*) FROM dim_collection;",
-                  "tables_used": [
-                    "dim_collection"
+                  "filters": [],
+                  "join_needed": false,
+                  "join_path_reason": null,
+                  "limit": null,
+                  "order_by": null,
+                  "primary_entity": "journeys",
+                  "primary_table": "dim_campaign",
+                  "tables_needed": [
+                    {
+                      "table_name": "dim_campaign"
+                    }
                   ]
                 },
-                "executed": true,
-                "execution_ok": true,
-                "round": 0,
-                "sql": "SELECT COUNT(*) FROM dim_collection;",
                 "validation": {
                   "errors": [],
                   "ok": true,
@@ -211,11 +228,11 @@
               "row_count": 1,
               "rows": [
                 {
-                  "count_star()": 37
+                  "count": 2
                 }
               ]
             },
-            "sql": "SELECT COUNT(*) FROM dim_collection;",
+            "sql": "SELECT COUNT(*) AS count FROM \"dim_campaign\"",
             "validation": {
               "errors": [],
               "ok": true,
@@ -224,34 +241,34 @@
             }
           },
           {
-            "answer": "37",
+            "answer": "2 journeys are in the local dataset.",
             "answer_guard": {
-              "answer": "37",
+              "answer": "2 journeys are in the local dataset.",
               "claims": [
                 {
-                  "claim": "The local dataset contains 37 journeys.",
-                  "evidence_field": "count_star()",
+                  "claim": "The local dataset contains 2 journeys.",
+                  "evidence_field": "rows.items.count",
                   "evidence_source": "sql"
                 }
               ],
               "fallback_used": false,
               "llm_usage": {
-                "completion_tokens": 62,
+                "completion_tokens": 67,
                 "completion_tokens_details": null,
-                "prompt_tokens": 189,
+                "prompt_tokens": 186,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 251
+                "total_tokens": 253
               },
               "rejected_unsupported_claim_count": 0,
               "rejected_unsupported_claims": [],
               "skipped": false,
               "supported_values": [
                 "1",
-                "37",
-                "count_star()",
+                "2",
+                "count",
                 "row_count",
                 "rows",
                 "source",
@@ -264,7 +281,7 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "full_pure_llm_tool_agent_v1",
+        "strategy": "structured_sql_plan_with_repair_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
@@ -273,13 +290,15 @@
           "api_endpoint_validation_ok": false,
           "did_llm_choose_tool": true,
           "did_llm_plan": true,
-          "final_answer": "37",
+          "final_answer": "2 journeys are in the local dataset.",
           "rejected_unsupported_claim_count": 0,
           "selected_tool": "execute_sql",
-          "sql_candidate": "SELECT COUNT(*) FROM dim_collection;",
+          "sql_candidate": "SELECT COUNT(*) AS count FROM \"dim_campaign\"",
           "sql_repair_attempted": false,
           "sql_repair_success": false,
           "sql_validation_ok": true,
+          "structured_plan_compile_ok": true,
+          "structured_plan_validation_ok": true,
           "tool_execution_ok": true,
           "tool_result_used_in_answer": true,
           "unsupported_claim_count": 0
@@ -287,49 +306,51 @@
         "unsupported_claim_count": 0
       },
       "unsupported_claim_count": 0,
-      "variant": "full_pure_llm_tool_agent_v1"
+      "variant": "structured_sql_plan_with_repair_v1"
     },
     {
       "category": "sql_list",
-      "estimated_tokens": 1662,
+      "estimated_tokens": 1097,
       "expected_tool_family": "sql",
-      "failure_stage": "sql_repair_failed",
+      "failure_stage": "no_clear_failure",
       "final_answer": "The local database does not contain any journey names and statuses.",
       "prompt": "List journey names and statuses from the local database.",
       "prompt_id": "pure_llm_stab_002",
       "rejected_unsupported_claim_count": 0,
-      "runtime": 11.3136,
+      "runtime": 18.091,
       "stabilization_row": true,
       "strict_scoring_status": "not_applicable_stabilization",
-      "system": "full_pure_llm_tool_agent_v1",
+      "system": "structured_sql_plan_with_repair_v1",
       "tool_calls": 1,
       "trace_assertions": {
-        "api_endpoint_candidate": null,
+        "api_endpoint_candidate": "journey_list",
         "api_endpoint_repair_attempted": false,
-        "api_endpoint_validation_ok": false,
+        "api_endpoint_validation_ok": true,
         "did_llm_choose_tool": true,
         "did_llm_plan": true,
         "final_answer": "The local database does not contain any journey names and statuses.",
         "rejected_unsupported_claim_count": 0,
-        "selected_tool": "execute_sql",
-        "sql_candidate": "SELECT journey_name, status FROM journeys LIMIT 50;",
-        "sql_repair_attempted": true,
+        "selected_tool": "call_api",
+        "sql_candidate": null,
+        "sql_repair_attempted": false,
         "sql_repair_success": false,
         "sql_validation_ok": false,
-        "tool_execution_ok": false,
-        "tool_result_used_in_answer": false,
+        "structured_plan_compile_ok": null,
+        "structured_plan_validation_ok": null,
+        "tool_execution_ok": true,
+        "tool_result_used_in_answer": true,
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "full_pure_llm_tool_agent_v1",
-        "estimated_tokens": 1662,
-        "failure_stage": "sql_repair_failed",
+        "baseline_variant": "structured_sql_plan_with_repair_v1",
+        "estimated_tokens": 1097,
+        "failure_stage": "no_clear_failure",
         "final_answer": "The local database does not contain any journey names and statuses.",
-        "llm_total_tokens": 1846,
+        "llm_total_tokens": 1859,
         "original_query": "List journey names and statuses from the local database.",
         "pure_llm_tool_agent": true,
         "rejected_unsupported_claim_count": 0,
-        "runtime": 11.313640750013292,
+        "runtime": 18.09103695768863,
         "steps": [
           {
             "context_summary": {
@@ -357,14 +378,14 @@
             "plan": {
               "_normalization_actions": [],
               "_usage": {
-                "completion_tokens": 250,
+                "completion_tokens": 249,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1596,
+                "prompt_tokens": 1610,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1846
+                "total_tokens": 1859
               },
               "answer_intent": "LIST",
               "answer_shape": {
@@ -401,21 +422,21 @@
                 }
               ],
               "candidate_tables": [],
-              "needs_api": false,
-              "needs_sql": true,
-              "reason": "The task is to list journey names and statuses, which can be achieved through an API call.",
+              "needs_api": true,
+              "needs_sql": false,
+              "reason": "The task requires listing journey names and statuses, which can be achieved through an API call.",
               "sql_task": null
             },
             "raw_plan": {
               "_usage": {
-                "completion_tokens": 250,
+                "completion_tokens": 249,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1596,
+                "prompt_tokens": 1610,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1846
+                "total_tokens": 1859
               },
               "answer_intent": "LIST",
               "answer_shape": {
@@ -452,201 +473,33 @@
                 }
               ],
               "candidate_tables": [],
-              "needs_api": false,
-              "needs_sql": true,
-              "reason": "The task is to list journey names and statuses, which can be achieved through an API call.",
+              "needs_api": true,
+              "needs_sql": false,
+              "reason": "The task requires listing journey names and statuses, which can be achieved through an API call.",
               "sql_task": null
             },
-            "variant": "full_pure_llm_tool_agent_v1"
+            "variant": "structured_sql_plan_with_repair_v1"
           },
           {
-            "attempts": [
-              {
-                "ast_summary": {
-                  "closest_column_suggestions": {
-                    "journey_name": [],
-                    "status": []
-                  },
-                  "closest_table_suggestions": {
-                    "journey_status": []
-                  },
-                  "destructive_sql_detected": false,
-                  "enabled": true,
-                  "normalized_sql": "SELECT journey_name, status FROM journey_status LIMIT 50",
-                  "parsed_ok": true,
-                  "selected_columns": [
-                    "journey_name",
-                    "status"
-                  ],
-                  "selected_tables": [
-                    "journey_status"
-                  ],
-                  "unknown_columns": [
-                    "journey_name",
-                    "status"
-                  ],
-                  "unknown_tables": [
-                    "journey_status"
-                  ]
-                },
-                "candidate": {
-                  "_usage": {
-                    "completion_tokens": 71,
-                    "completion_tokens_details": null,
-                    "prompt_tokens": 1960,
-                    "prompt_tokens_details": {
-                      "audio_tokens": null,
-                      "cached_tokens": 3
-                    },
-                    "total_tokens": 2031
-                  },
-                  "aggregation": null,
-                  "columns_used": [
-                    "journey_name",
-                    "status"
-                  ],
-                  "confidence": 1,
-                  "filters": null,
-                  "join_reason": null,
-                  "sql": "SELECT journey_name, status FROM journey_status LIMIT 50;",
-                  "tables_used": [
-                    "journey_status"
-                  ]
-                },
-                "executed": false,
-                "round": 0,
-                "sql": "SELECT journey_name, status FROM journey_status LIMIT 50;",
-                "validation": {
-                  "errors": [
-                    "Unknown table: journey_status."
-                  ],
-                  "ok": false,
-                  "repaired": false,
-                  "warnings": []
-                }
-              },
-              {
-                "ast_summary": {
-                  "closest_column_suggestions": {
-                    "journey_name": [],
-                    "status": []
-                  },
-                  "closest_table_suggestions": {
-                    "journeys": [
-                      "dim_campaign",
-                      "hkg_br_source_collection"
-                    ]
-                  },
-                  "destructive_sql_detected": false,
-                  "enabled": true,
-                  "normalized_sql": "SELECT journey_name, status FROM journeys LIMIT 50",
-                  "parsed_ok": true,
-                  "selected_columns": [
-                    "journey_name",
-                    "status"
-                  ],
-                  "selected_tables": [
-                    "journeys"
-                  ],
-                  "unknown_columns": [
-                    "journey_name",
-                    "status"
-                  ],
-                  "unknown_tables": [
-                    "journeys"
-                  ]
-                },
-                "candidate": {
-                  "_usage": {
-                    "completion_tokens": 20,
-                    "completion_tokens_details": null,
-                    "prompt_tokens": 1609,
-                    "prompt_tokens_details": {
-                      "audio_tokens": null,
-                      "cached_tokens": 3
-                    },
-                    "total_tokens": 1629
-                  },
-                  "sql": "SELECT journey_name, status FROM journeys LIMIT 50;"
-                },
-                "executed": false,
-                "round": 1,
-                "sql": "SELECT journey_name, status FROM journeys LIMIT 50;",
-                "validation": {
-                  "errors": [
-                    "Unknown table: journeys. Suggestions: dim_campaign, hkg_br_source_collection"
-                  ],
-                  "ok": false,
-                  "repaired": false,
-                  "warnings": []
-                }
-              },
-              {
-                "ast_summary": {
-                  "closest_column_suggestions": {
-                    "journey_name": [],
-                    "status": []
-                  },
-                  "closest_table_suggestions": {
-                    "journeys": [
-                      "dim_campaign",
-                      "hkg_br_source_collection"
-                    ]
-                  },
-                  "destructive_sql_detected": false,
-                  "enabled": true,
-                  "normalized_sql": "SELECT journey_name, status FROM journeys LIMIT 50",
-                  "parsed_ok": true,
-                  "selected_columns": [
-                    "journey_name",
-                    "status"
-                  ],
-                  "selected_tables": [
-                    "journeys"
-                  ],
-                  "unknown_columns": [
-                    "journey_name",
-                    "status"
-                  ],
-                  "unknown_tables": [
-                    "journeys"
-                  ]
-                },
-                "candidate": {
-                  "_usage": {
-                    "completion_tokens": 20,
-                    "completion_tokens_details": null,
-                    "prompt_tokens": 1618,
-                    "prompt_tokens_details": {
-                      "audio_tokens": null,
-                      "cached_tokens": 79
-                    },
-                    "total_tokens": 1638
-                  },
-                  "sql": "SELECT journey_name, status FROM journeys LIMIT 50;"
-                },
-                "executed": false,
-                "round": 2,
-                "sql": "SELECT journey_name, status FROM journeys LIMIT 50;",
-                "validation": {
-                  "errors": [
-                    "Unknown table: journeys. Suggestions: dim_campaign, hkg_br_source_collection"
-                  ],
-                  "ok": false,
-                  "repaired": false,
-                  "warnings": []
-                }
-              }
-            ],
-            "kind": "sql_call",
-            "repair_rounds": 2,
-            "result": null,
-            "sql": "SELECT journey_name, status FROM journeys LIMIT 50;",
+            "endpoint_candidate": "journey_list",
+            "kind": "api_call",
+            "method": "GET",
+            "params": {
+              "limit": 50,
+              "start": 0
+            },
+            "rejected_candidate": null,
+            "result": {
+              "dry_run": false,
+              "ok": true,
+              "outcome": "live_empty",
+              "status_code": 200
+            },
+            "retry_attempted": false,
+            "url": "/ajo/journey",
             "validation": {
-              "errors": [
-                "Unknown table: journeys. Suggestions: dim_campaign, hkg_br_source_collection"
-              ],
-              "ok": false,
+              "errors": [],
+              "ok": true,
               "repaired": false,
               "warnings": []
             }
@@ -655,95 +508,146 @@
             "answer": "The local database does not contain any journey names and statuses.",
             "answer_guard": {
               "answer": "The local database does not contain any journey names and statuses.",
-              "claims": [],
+              "claims": [
+                {
+                  "claim": "The local database does not contain any journey names and statuses.",
+                  "evidence_field": "parsed_evidence",
+                  "evidence_source": "api"
+                }
+              ],
               "fallback_used": false,
               "llm_usage": {
-                "completion_tokens": 61,
+                "completion_tokens": 75,
                 "completion_tokens_details": null,
-                "prompt_tokens": 125,
+                "prompt_tokens": 332,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 186
+                "total_tokens": 407
               },
               "rejected_unsupported_claim_count": 0,
               "rejected_unsupported_claims": [],
               "skipped": false,
-              "supported_values": [],
-              "tool_result_used": false,
+              "supported_values": [
+                "/ajo/journey",
+                "0",
+                "100",
+                "200",
+                "False",
+                "GET",
+                "True",
+                "api",
+                "counts",
+                "dry_run",
+                "endpoint",
+                "endpoint_family",
+                "endpoint_id",
+                "error_category",
+                "errors",
+                "evidence_state",
+                "false",
+                "filter",
+                "generic_fallback",
+                "get",
+                "ids",
+                "important_fields",
+                "items",
+                "journey_list",
+                "live_empty",
+                "live_evidence_available",
+                "metadata.lastModifiedAt>2026-05-18",
+                "metadata.lastmodifiedat>2026-05-18",
+                "method",
+                "names",
+                "no matching records",
+                "no records",
+                "ok",
+                "page",
+                "pageSize",
+                "pagesize",
+                "pagination",
+                "parsed_evidence",
+                "parser_mode",
+                "path"
+              ],
+              "tool_result_used": true,
               "unsupported_claim_count": 0,
               "unsupported_claims": []
             },
             "kind": "final_answer"
           }
         ],
-        "strategy": "full_pure_llm_tool_agent_v1",
+        "strategy": "structured_sql_plan_with_repair_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
-          "api_endpoint_candidate": null,
+          "api_endpoint_candidate": "journey_list",
           "api_endpoint_repair_attempted": false,
-          "api_endpoint_validation_ok": false,
+          "api_endpoint_validation_ok": true,
           "did_llm_choose_tool": true,
           "did_llm_plan": true,
           "final_answer": "The local database does not contain any journey names and statuses.",
           "rejected_unsupported_claim_count": 0,
-          "selected_tool": "execute_sql",
-          "sql_candidate": "SELECT journey_name, status FROM journeys LIMIT 50;",
-          "sql_repair_attempted": true,
+          "selected_tool": "call_api",
+          "sql_candidate": null,
+          "sql_repair_attempted": false,
           "sql_repair_success": false,
           "sql_validation_ok": false,
-          "tool_execution_ok": false,
-          "tool_result_used_in_answer": false,
+          "structured_plan_compile_ok": null,
+          "structured_plan_validation_ok": null,
+          "tool_execution_ok": true,
+          "tool_result_used_in_answer": true,
           "unsupported_claim_count": 0
         },
         "unsupported_claim_count": 0
       },
       "unsupported_claim_count": 0,
-      "variant": "full_pure_llm_tool_agent_v1"
+      "variant": "structured_sql_plan_with_repair_v1"
     },
     {
       "category": "sql_status_date",
-      "estimated_tokens": 1013,
+      "estimated_tokens": 997,
       "expected_tool_family": "sql",
       "failure_stage": "no_clear_failure",
-      "final_answer": "The available evidence is: [{'state': 'enabled'}].",
+      "final_answer": "The API returned no recent journeys as per the filter criteria.",
       "prompt": "Show recent journeys with their status and publish time when available.",
       "prompt_id": "pure_llm_stab_003",
-      "rejected_unsupported_claim_count": 2,
-      "runtime": 13.8388,
+      "rejected_unsupported_claim_count": 0,
+      "runtime": 9.07,
       "stabilization_row": true,
       "strict_scoring_status": "not_applicable_stabilization",
-      "system": "full_pure_llm_tool_agent_v1",
+      "system": "structured_sql_plan_with_repair_v1",
       "tool_calls": 1,
       "trace_assertions": {
-        "api_endpoint_candidate": null,
+        "api_endpoint_candidate": "journey_list",
         "api_endpoint_repair_attempted": false,
-        "api_endpoint_validation_ok": false,
+        "api_endpoint_validation_ok": true,
         "did_llm_choose_tool": true,
         "did_llm_plan": true,
-        "final_answer": "The available evidence is: [{'state': 'enabled'}].",
-        "rejected_unsupported_claim_count": 2,
-        "selected_tool": "execute_sql",
-        "sql_candidate": "SELECT UPDATEDTIME, STATE FROM dim_target WHERE STATE IS NOT NULL LIMIT 50;",
+        "final_answer": "The API returned no recent journeys as per the filter criteria.",
+        "rejected_unsupported_claim_count": 0,
+        "selected_tool": "call_api",
+        "sql_candidate": null,
         "sql_repair_attempted": false,
         "sql_repair_success": false,
-        "sql_validation_ok": true,
+        "sql_validation_ok": false,
+        "structured_plan_compile_ok": null,
+        "structured_plan_validation_ok": null,
         "tool_execution_ok": true,
         "tool_result_used_in_answer": true,
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "full_pure_llm_tool_agent_v1",
-        "estimated_tokens": 1013,
+        "baseline_variant": "structured_sql_plan_with_repair_v1",
+        "estimated_tokens": 997,
         "failure_stage": "no_clear_failure",
-        "final_answer": "The available evidence is: [{'state': 'enabled'}].",
-        "llm_total_tokens": 1813,
+        "final_answer": "The API returned no recent journeys as per the filter criteria.",
+        "llm_total_tokens": 1782,
         "original_query": "Show recent journeys with their status and publish time when available.",
         "pure_llm_tool_agent": true,
-        "rejected_unsupported_claim_count": 2,
-        "runtime": 13.838785707950592,
+        "rejected_unsupported_claim_count": 0,
+        "runtime": 9.069998166989535,
         "steps": [
           {
             "context_summary": {
@@ -771,119 +675,103 @@
             "plan": {
               "_normalization_actions": [],
               "_usage": {
-                "completion_tokens": 229,
+                "completion_tokens": 184,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1584,
+                "prompt_tokens": 1598,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1813
+                "total_tokens": 1782
               },
               "answer_intent": "LIST",
+              "answer_shape": {
+                "journeys": [
+                  {
+                    "publish_time": null,
+                    "status": null
+                  }
+                ]
+              },
+              "api_task": {
+                "method": "GET",
+                "path": "/ajo/journey",
+                "score": 2,
+                "task": "journey_list"
+              },
               "candidate_endpoints": [
-                "flowservice_runs",
-                "journey_list",
-                "observability_metrics"
+                {
+                  "endpoint_id": "journey_list",
+                  "method": "GET",
+                  "path": "/ajo/journey",
+                  "score": 2
+                }
               ],
-              "candidate_tables": [
-                "dim_campaign",
-                "dim_connector",
-                "dim_blueprint"
-              ],
-              "needs_api": false,
-              "needs_sql": true
+              "candidate_tables": [],
+              "needs_api": true,
+              "needs_sql": false,
+              "reason": "The task requires retrieving recent journeys with their status and publish time, which can be achieved through an API call.",
+              "sql_task": null
             },
             "raw_plan": {
               "_usage": {
-                "completion_tokens": 229,
+                "completion_tokens": 184,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1584,
+                "prompt_tokens": 1598,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1813
+                "total_tokens": 1782
               },
               "answer_intent": "LIST",
-              "needs_api": false,
-              "needs_sql": true
+              "answer_shape": {
+                "journeys": [
+                  {
+                    "publish_time": null,
+                    "status": null
+                  }
+                ]
+              },
+              "api_task": {
+                "method": "GET",
+                "path": "/ajo/journey",
+                "score": 2,
+                "task": "journey_list"
+              },
+              "candidate_endpoints": [
+                {
+                  "endpoint_id": "journey_list",
+                  "method": "GET",
+                  "path": "/ajo/journey",
+                  "score": 2
+                }
+              ],
+              "candidate_tables": [],
+              "needs_api": true,
+              "needs_sql": false,
+              "reason": "The task requires retrieving recent journeys with their status and publish time, which can be achieved through an API call.",
+              "sql_task": null
             },
-            "variant": "full_pure_llm_tool_agent_v1"
+            "variant": "structured_sql_plan_with_repair_v1"
           },
           {
-            "attempts": [
-              {
-                "ast_summary": {
-                  "closest_column_suggestions": {},
-                  "closest_table_suggestions": {},
-                  "destructive_sql_detected": false,
-                  "enabled": true,
-                  "normalized_sql": "SELECT UPDATEDTIME, STATE FROM dim_target WHERE NOT STATE IS NULL LIMIT 50",
-                  "parsed_ok": true,
-                  "selected_columns": [
-                    "UPDATEDTIME",
-                    "STATE"
-                  ],
-                  "selected_tables": [
-                    "dim_target"
-                  ],
-                  "unknown_columns": [],
-                  "unknown_tables": []
-                },
-                "candidate": {
-                  "_usage": {
-                    "completion_tokens": 89,
-                    "completion_tokens_details": null,
-                    "prompt_tokens": 1773,
-                    "prompt_tokens_details": {
-                      "audio_tokens": null,
-                      "cached_tokens": 3
-                    },
-                    "total_tokens": 1862
-                  },
-                  "aggregation": null,
-                  "columns_used": [
-                    "UPDATEDTIME",
-                    "STATE"
-                  ],
-                  "confidence": 1,
-                  "filters": [
-                    "= NOT NULL"
-                  ],
-                  "join_reason": null,
-                  "sql": "SELECT UPDATEDTIME, STATE FROM dim_target WHERE STATE IS NOT NULL LIMIT 50;",
-                  "tables_used": [
-                    "dim_target"
-                  ]
-                },
-                "executed": true,
-                "execution_ok": true,
-                "round": 0,
-                "sql": "SELECT UPDATEDTIME, STATE FROM dim_target WHERE STATE IS NOT NULL LIMIT 50;",
-                "validation": {
-                  "errors": [],
-                  "ok": true,
-                  "repaired": false,
-                  "warnings": []
-                }
-              }
-            ],
-            "kind": "sql_call",
-            "repair_rounds": 0,
-            "result": {
-              "error": null,
-              "limited": false,
-              "ok": true,
-              "row_count": 1,
-              "rows": [
-                {
-                  "STATE": "enabled",
-                  "UPDATEDTIME": "2026-04-14T16:15:03.000+00:00"
-                }
-              ]
+            "endpoint_candidate": "journey_list",
+            "kind": "api_call",
+            "method": "GET",
+            "params": {
+              "limit": 50,
+              "start": 0
             },
-            "sql": "SELECT UPDATEDTIME, STATE FROM dim_target WHERE STATE IS NOT NULL LIMIT 50;",
+            "rejected_candidate": null,
+            "result": {
+              "dry_run": false,
+              "ok": true,
+              "outcome": "live_empty",
+              "status_code": 200
+            },
+            "retry_attempted": false,
+            "url": "/ajo/journey",
             "validation": {
               "errors": [],
               "ok": true,
@@ -892,52 +780,71 @@
             }
           },
           {
-            "answer": "The available evidence is: [{'state': 'enabled'}].",
+            "answer": "The API returned no recent journeys as per the filter criteria.",
             "answer_guard": {
-              "answer": "The available evidence is: [{'state': 'enabled'}].",
+              "answer": "The API returned no recent journeys as per the filter criteria.",
               "claims": [
                 {
-                  "claim": "There is one recent journey with status 'enabled'.",
-                  "evidence_field": "rows",
-                  "evidence_source": "sql"
+                  "claim": "No recent journeys were found.",
+                  "evidence_field": "parsed_evidence.errors.items",
+                  "evidence_source": "api"
                 }
               ],
-              "fallback_used": true,
+              "fallback_used": false,
               "llm_usage": {
-                "completion_tokens": 106,
+                "completion_tokens": 122,
                 "completion_tokens_details": null,
-                "prompt_tokens": 225,
+                "prompt_tokens": 334,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 331
+                "total_tokens": 456
               },
-              "rejected_unsupported_claim_count": 2,
-              "rejected_unsupported_claims": [
-                {
-                  "claim_type": "timestamp",
-                  "value": "15:03"
-                },
-                {
-                  "claim_type": "timestamp",
-                  "value": "00:00"
-                }
-              ],
+              "rejected_unsupported_claim_count": 0,
+              "rejected_unsupported_claims": [],
               "skipped": false,
               "supported_values": [
-                "1",
-                "2026-04-14T16:15:03.000+00:00",
-                "2026-04-14t16:15:03.000+00:00",
-                "STATE",
-                "UPDATEDTIME",
-                "enabled",
-                "row_count",
-                "rows",
-                "source",
-                "sql",
-                "state",
-                "updatedtime"
+                "/ajo/journey",
+                "0",
+                "100",
+                "200",
+                "False",
+                "GET",
+                "True",
+                "api",
+                "counts",
+                "dry_run",
+                "endpoint",
+                "endpoint_family",
+                "endpoint_id",
+                "error_category",
+                "errors",
+                "evidence_state",
+                "false",
+                "filter",
+                "generic_fallback",
+                "get",
+                "ids",
+                "important_fields",
+                "items",
+                "journey_list",
+                "live_empty",
+                "live_evidence_available",
+                "metadata.lastModifiedAt>2026-05-18",
+                "metadata.lastmodifiedat>2026-05-18",
+                "method",
+                "names",
+                "no matching records",
+                "no records",
+                "ok",
+                "page",
+                "pageSize",
+                "pagesize",
+                "pagination",
+                "parsed_evidence",
+                "parser_mode",
+                "path"
               ],
               "tool_result_used": true,
               "unsupported_claim_count": 0,
@@ -946,22 +853,24 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "full_pure_llm_tool_agent_v1",
+        "strategy": "structured_sql_plan_with_repair_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
-          "api_endpoint_candidate": null,
+          "api_endpoint_candidate": "journey_list",
           "api_endpoint_repair_attempted": false,
-          "api_endpoint_validation_ok": false,
+          "api_endpoint_validation_ok": true,
           "did_llm_choose_tool": true,
           "did_llm_plan": true,
-          "final_answer": "The available evidence is: [{'state': 'enabled'}].",
-          "rejected_unsupported_claim_count": 2,
-          "selected_tool": "execute_sql",
-          "sql_candidate": "SELECT UPDATEDTIME, STATE FROM dim_target WHERE STATE IS NOT NULL LIMIT 50;",
+          "final_answer": "The API returned no recent journeys as per the filter criteria.",
+          "rejected_unsupported_claim_count": 0,
+          "selected_tool": "call_api",
+          "sql_candidate": null,
           "sql_repair_attempted": false,
           "sql_repair_success": false,
-          "sql_validation_ok": true,
+          "sql_validation_ok": false,
+          "structured_plan_compile_ok": null,
+          "structured_plan_validation_ok": null,
           "tool_execution_ok": true,
           "tool_result_used_in_answer": true,
           "unsupported_claim_count": 0
@@ -969,21 +878,21 @@
         "unsupported_claim_count": 0
       },
       "unsupported_claim_count": 0,
-      "variant": "full_pure_llm_tool_agent_v1"
+      "variant": "structured_sql_plan_with_repair_v1"
     },
     {
       "category": "sql_join",
-      "estimated_tokens": 1665,
+      "estimated_tokens": 1585,
       "expected_tool_family": "sql",
       "failure_stage": "no_clear_failure",
       "final_answer": "The audiences connected to destinations are as follows:",
       "prompt": "List audiences connected to destinations, using only known local relationship tables.",
       "prompt_id": "pure_llm_stab_004",
       "rejected_unsupported_claim_count": 0,
-      "runtime": 18.5422,
+      "runtime": 20.8444,
       "stabilization_row": true,
       "strict_scoring_status": "not_applicable_stabilization",
-      "system": "full_pure_llm_tool_agent_v1",
+      "system": "structured_sql_plan_with_repair_v1",
       "tool_calls": 1,
       "trace_assertions": {
         "api_endpoint_candidate": "ups_audiences",
@@ -998,20 +907,22 @@
         "sql_repair_attempted": false,
         "sql_repair_success": false,
         "sql_validation_ok": false,
+        "structured_plan_compile_ok": null,
+        "structured_plan_validation_ok": null,
         "tool_execution_ok": true,
         "tool_result_used_in_answer": true,
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "full_pure_llm_tool_agent_v1",
-        "estimated_tokens": 1665,
+        "baseline_variant": "structured_sql_plan_with_repair_v1",
+        "estimated_tokens": 1585,
         "failure_stage": "no_clear_failure",
         "final_answer": "The audiences connected to destinations are as follows:",
-        "llm_total_tokens": 1906,
+        "llm_total_tokens": 1848,
         "original_query": "List audiences connected to destinations, using only known local relationship tables.",
         "pure_llm_tool_agent": true,
         "rejected_unsupported_claim_count": 0,
-        "runtime": 18.542198833078146,
+        "runtime": 20.844368249643594,
         "steps": [
           {
             "context_summary": {
@@ -1039,38 +950,22 @@
             "plan": {
               "_normalization_actions": [],
               "_usage": {
-                "completion_tokens": 319,
+                "completion_tokens": 247,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1587,
+                "prompt_tokens": 1601,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1906
+                "total_tokens": 1848
               },
               "answer_intent": "LIST",
-              "answer_shape": {
-                "items": [
-                  {
-                    "column": "ISIDENTITYENABLED",
-                    "value": null
-                  },
-                  {
-                    "column": "ROWCOUNT",
-                    "value": null
-                  },
-                  {
-                    "column": "UPDATEDTIME",
-                    "value": null
-                  }
-                ],
-                "total_items": 3,
-                "truncated_items": false
-              },
+              "answer_shape": "LIST",
               "api_task": {
-                "endpoint": "ups_audiences",
+                "endpoint_id": "ups_audiences",
                 "method": "GET",
-                "path": "/data/core/ups/audiences"
+                "path": "/data/core/ups/audiences",
+                "score": 2
               },
               "candidate_endpoints": [
                 {
@@ -1100,38 +995,22 @@
             },
             "raw_plan": {
               "_usage": {
-                "completion_tokens": 319,
+                "completion_tokens": 247,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1587,
+                "prompt_tokens": 1601,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1906
+                "total_tokens": 1848
               },
               "answer_intent": "LIST",
-              "answer_shape": {
-                "items": [
-                  {
-                    "column": "ISIDENTITYENABLED",
-                    "value": null
-                  },
-                  {
-                    "column": "ROWCOUNT",
-                    "value": null
-                  },
-                  {
-                    "column": "UPDATEDTIME",
-                    "value": null
-                  }
-                ],
-                "total_items": 3,
-                "truncated_items": false
-              },
+              "answer_shape": "LIST",
               "api_task": {
-                "endpoint": "ups_audiences",
+                "endpoint_id": "ups_audiences",
                 "method": "GET",
-                "path": "/data/core/ups/audiences"
+                "path": "/data/core/ups/audiences",
+                "score": 2
               },
               "candidate_endpoints": [
                 {
@@ -1159,7 +1038,7 @@
               "reason": "The task requires listing audiences connected to destinations, which can be achieved through API calls to the available endpoints.",
               "sql_task": null
             },
-            "variant": "full_pure_llm_tool_agent_v1"
+            "variant": "structured_sql_plan_with_repair_v1"
           },
           {
             "endpoint_candidate": "ups_audiences",
@@ -1192,19 +1071,20 @@
               "claims": [
                 {
                   "evidence_field": "result_preview.result_preview.items",
+                  "evidence_field_value": "items[0].name",
                   "evidence_source": "api"
                 }
               ],
               "fallback_used": false,
               "llm_usage": {
-                "completion_tokens": 70,
+                "completion_tokens": 113,
                 "completion_tokens_details": null,
                 "prompt_tokens": 717,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 787
+                "total_tokens": 830
               },
               "rejected_unsupported_claim_count": 0,
               "rejected_unsupported_claims": [],
@@ -1258,7 +1138,7 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "full_pure_llm_tool_agent_v1",
+        "strategy": "structured_sql_plan_with_repair_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
@@ -1274,6 +1154,8 @@
           "sql_repair_attempted": false,
           "sql_repair_success": false,
           "sql_validation_ok": false,
+          "structured_plan_compile_ok": null,
+          "structured_plan_validation_ok": null,
           "tool_execution_ok": true,
           "tool_result_used_in_answer": true,
           "unsupported_claim_count": 0
@@ -1281,49 +1163,51 @@
         "unsupported_claim_count": 0
       },
       "unsupported_claim_count": 0,
-      "variant": "full_pure_llm_tool_agent_v1"
+      "variant": "structured_sql_plan_with_repair_v1"
     },
     {
       "category": "api_only_audience",
-      "estimated_tokens": 2403,
+      "estimated_tokens": 1606,
       "expected_tool_family": "api",
       "failure_stage": "no_clear_failure",
-      "final_answer": "The Adobe UPS audiences API returned two results. The first result is a list of audience records, and the second result is a preview of audience records.",
+      "final_answer": "The Adobe UPS audiences API was successfully queried and returned up to five audience records.",
       "prompt": "Use the Adobe UPS audiences API to list up to five audience records.",
       "prompt_id": "pure_llm_stab_005",
       "rejected_unsupported_claim_count": 0,
-      "runtime": 28.3733,
+      "runtime": 11.2685,
       "stabilization_row": true,
       "strict_scoring_status": "not_applicable_stabilization",
-      "system": "full_pure_llm_tool_agent_v1",
-      "tool_calls": 2,
+      "system": "structured_sql_plan_with_repair_v1",
+      "tool_calls": 1,
       "trace_assertions": {
         "api_endpoint_candidate": "ups_audiences",
         "api_endpoint_repair_attempted": false,
         "api_endpoint_validation_ok": true,
         "did_llm_choose_tool": true,
         "did_llm_plan": true,
-        "final_answer": "The Adobe UPS audiences API returned two results. The first result is a list of audience records, and the second result is a preview of audience records.",
+        "final_answer": "The Adobe UPS audiences API was successfully queried and returned up to five audience records.",
         "rejected_unsupported_claim_count": 0,
-        "selected_tool": "execute_sql",
-        "sql_candidate": "SELECT SEGMENTID, UPDATEDTIME, ISACCOUNTSEGMENT FROM dim_segment LIMIT 50;",
+        "selected_tool": "call_api",
+        "sql_candidate": null,
         "sql_repair_attempted": false,
         "sql_repair_success": false,
-        "sql_validation_ok": true,
+        "sql_validation_ok": false,
+        "structured_plan_compile_ok": null,
+        "structured_plan_validation_ok": null,
         "tool_execution_ok": true,
         "tool_result_used_in_answer": true,
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "full_pure_llm_tool_agent_v1",
-        "estimated_tokens": 2403,
+        "baseline_variant": "structured_sql_plan_with_repair_v1",
+        "estimated_tokens": 1606,
         "failure_stage": "no_clear_failure",
-        "final_answer": "The Adobe UPS audiences API returned two results. The first result is a list of audience records, and the second result is a preview of audience records.",
-        "llm_total_tokens": 2100,
+        "final_answer": "The Adobe UPS audiences API was successfully queried and returned up to five audience records.",
+        "llm_total_tokens": 1883,
         "original_query": "Use the Adobe UPS audiences API to list up to five audience records.",
         "pure_llm_tool_agent": true,
         "rejected_unsupported_claim_count": 0,
-        "runtime": 28.37328716693446,
+        "runtime": 11.26853174995631,
         "steps": [
           {
             "context_summary": {
@@ -1351,14 +1235,14 @@
             "plan": {
               "_normalization_actions": [],
               "_usage": {
-                "completion_tokens": 502,
+                "completion_tokens": 271,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1598,
+                "prompt_tokens": 1612,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 2100
+                "total_tokens": 1883
               },
               "answer_intent": "LIST",
               "answer_shape": {
@@ -1368,11 +1252,9 @@
                       "SEGMENTID",
                       "UPDATEDTIME",
                       "ISACCOUNTSEGMENT"
-                    ],
-                    "type": "record"
+                    ]
                   }
-                ],
-                "type": "LIST"
+                ]
               },
               "api_task": {
                 "common_params": {
@@ -1382,10 +1264,10 @@
                 "domains": [
                   "SEGMENT_AUDIENCE"
                 ],
-                "endpoint": "ups_audiences",
+                "endpoint_id": "ups_audiences",
                 "method": "GET",
                 "path": "/data/core/ups/audiences",
-                "task_type": "LIST"
+                "score": 5
               },
               "candidate_endpoints": [
                 {
@@ -1402,25 +1284,22 @@
                   "score": 5
                 }
               ],
-              "candidate_tables": [
-                "dim_segment",
-                "dim_campaign",
-                "dim_connector"
-              ],
+              "candidate_tables": [],
               "needs_api": true,
-              "needs_sql": true,
-              "reason": "The task requires listing up to five audience records, which can be achieved using the Adobe UPS audiences API."
+              "needs_sql": false,
+              "reason": "The task requires listing audience records using the Adobe UPS audiences API.",
+              "sql_task": null
             },
             "raw_plan": {
               "_usage": {
-                "completion_tokens": 502,
+                "completion_tokens": 271,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1598,
+                "prompt_tokens": 1612,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 2100
+                "total_tokens": 1883
               },
               "answer_intent": "LIST",
               "answer_shape": {
@@ -1430,11 +1309,9 @@
                       "SEGMENTID",
                       "UPDATEDTIME",
                       "ISACCOUNTSEGMENT"
-                    ],
-                    "type": "record"
+                    ]
                   }
-                ],
-                "type": "LIST"
+                ]
               },
               "api_task": {
                 "common_params": {
@@ -1444,10 +1321,10 @@
                 "domains": [
                   "SEGMENT_AUDIENCE"
                 ],
-                "endpoint": "ups_audiences",
+                "endpoint_id": "ups_audiences",
                 "method": "GET",
                 "path": "/data/core/ups/audiences",
-                "task_type": "LIST"
+                "score": 5
               },
               "candidate_endpoints": [
                 {
@@ -1464,112 +1341,13 @@
                   "score": 5
                 }
               ],
+              "candidate_tables": [],
               "needs_api": true,
-              "needs_sql": true,
-              "reason": "The task requires listing up to five audience records, which can be achieved using the Adobe UPS audiences API."
+              "needs_sql": false,
+              "reason": "The task requires listing audience records using the Adobe UPS audiences API.",
+              "sql_task": null
             },
-            "variant": "full_pure_llm_tool_agent_v1"
-          },
-          {
-            "attempts": [
-              {
-                "ast_summary": {
-                  "closest_column_suggestions": {},
-                  "closest_table_suggestions": {},
-                  "destructive_sql_detected": false,
-                  "enabled": true,
-                  "normalized_sql": "SELECT SEGMENTID, UPDATEDTIME, ISACCOUNTSEGMENT FROM dim_segment LIMIT 50",
-                  "parsed_ok": true,
-                  "selected_columns": [
-                    "SEGMENTID",
-                    "UPDATEDTIME",
-                    "ISACCOUNTSEGMENT"
-                  ],
-                  "selected_tables": [
-                    "dim_segment"
-                  ],
-                  "unknown_columns": [],
-                  "unknown_tables": []
-                },
-                "candidate": {
-                  "_usage": {
-                    "completion_tokens": 94,
-                    "completion_tokens_details": null,
-                    "prompt_tokens": 2015,
-                    "prompt_tokens_details": {
-                      "audio_tokens": null,
-                      "cached_tokens": 3
-                    },
-                    "total_tokens": 2109
-                  },
-                  "aggregation": null,
-                  "columns_used": [
-                    "SEGMENTID",
-                    "UPDATEDTIME",
-                    "ISACCOUNTSEGMENT"
-                  ],
-                  "confidence": 1,
-                  "filters": null,
-                  "join_reason": null,
-                  "sql": "SELECT SEGMENTID, UPDATEDTIME, ISACCOUNTSEGMENT FROM dim_segment LIMIT 50;",
-                  "tables_used": [
-                    "dim_segment"
-                  ]
-                },
-                "executed": true,
-                "execution_ok": true,
-                "round": 0,
-                "sql": "SELECT SEGMENTID, UPDATEDTIME, ISACCOUNTSEGMENT FROM dim_segment LIMIT 50;",
-                "validation": {
-                  "errors": [],
-                  "ok": true,
-                  "repaired": false,
-                  "warnings": []
-                }
-              }
-            ],
-            "kind": "sql_call",
-            "repair_rounds": 0,
-            "result": {
-              "error": null,
-              "limited": false,
-              "ok": true,
-              "row_count": 13,
-              "rows": [
-                {
-                  "ISACCOUNTSEGMENT": false,
-                  "SEGMENTID": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                  "UPDATEDTIME": "2026-04-05T04:33:25.000+00:00"
-                },
-                {
-                  "ISACCOUNTSEGMENT": false,
-                  "SEGMENTID": "574372f1-7b74-489c-b77f-139024b083a5",
-                  "UPDATEDTIME": "2026-03-29T07:52:25.000+00:00"
-                },
-                {
-                  "ISACCOUNTSEGMENT": false,
-                  "SEGMENTID": "7e7b3d71-ae29-4c97-8b24-99905ea6bf68",
-                  "UPDATEDTIME": "2026-03-29T07:52:17.000+00:00"
-                },
-                {
-                  "ISACCOUNTSEGMENT": false,
-                  "SEGMENTID": "78acb3db-39ef-4be9-aa24-b62d82293136",
-                  "UPDATEDTIME": "2026-03-29T07:52:08.000+00:00"
-                },
-                {
-                  "ISACCOUNTSEGMENT": false,
-                  "SEGMENTID": "38bdeb6d-1788-46e9-b68e-ac10b68640d9",
-                  "UPDATEDTIME": "2026-03-29T07:52:03.000+00:00"
-                }
-              ]
-            },
-            "sql": "SELECT SEGMENTID, UPDATEDTIME, ISACCOUNTSEGMENT FROM dim_segment LIMIT 50;",
-            "validation": {
-              "errors": [],
-              "ok": true,
-              "repaired": false,
-              "warnings": []
-            }
+            "variant": "structured_sql_plan_with_repair_v1"
           },
           {
             "endpoint_candidate": "ups_audiences",
@@ -1596,31 +1374,26 @@
             }
           },
           {
-            "answer": "The Adobe UPS audiences API returned two results. The first result is a list of audience records, and the second result is a preview of audience records.",
+            "answer": "The Adobe UPS audiences API was successfully queried and returned up to five audience records.",
             "answer_guard": {
-              "answer": "The Adobe UPS audiences API returned two results. The first result is a list of audience records, and the second result is a preview of audience records.",
+              "answer": "The Adobe UPS audiences API was successfully queried and returned up to five audience records.",
               "claims": [
                 {
-                  "claim": "The Adobe UPS audiences API returned a list of audience records.",
-                  "evidence_field": "result_preview",
-                  "evidence_source": "api"
-                },
-                {
-                  "claim": "The Adobe UPS audiences API returned a preview of audience records.",
-                  "evidence_field": "parsed_evidence",
+                  "claim": "The Adobe UPS audiences API returned up to five audience records.",
+                  "evidence_field": "result_preview.preview",
                   "evidence_source": "api"
                 }
               ],
               "fallback_used": false,
               "llm_usage": {
-                "completion_tokens": 181,
+                "completion_tokens": 135,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1036,
+                "prompt_tokens": 718,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1217
+                "total_tokens": 853
               },
               "rejected_unsupported_claim_count": 0,
               "rejected_unsupported_claims": [],
@@ -1651,7 +1424,6 @@
                 "10dce0fc-d2f7-405e-a3d5-31e14ee13ffc",
                 "1120",
                 "12189",
-                "13",
                 "1362d293-0757-4f69-837a-83f13caad71b",
                 "144bc8b4-4eb2-4c61-a821-b1750f9177ab",
                 "1517",
@@ -1665,7 +1437,8 @@
                 "1776359740910",
                 "1776359800",
                 "1776359800897",
-                "1776359920"
+                "1776359920",
+                "1776359920985"
               ],
               "tool_result_used": true,
               "unsupported_claim_count": 0,
@@ -1674,22 +1447,24 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "full_pure_llm_tool_agent_v1",
+        "strategy": "structured_sql_plan_with_repair_v1",
         "token_source": "measured_usage_or_estimated",
-        "tool_call_count": 2,
+        "tool_call_count": 1,
         "trace_assertions": {
           "api_endpoint_candidate": "ups_audiences",
           "api_endpoint_repair_attempted": false,
           "api_endpoint_validation_ok": true,
           "did_llm_choose_tool": true,
           "did_llm_plan": true,
-          "final_answer": "The Adobe UPS audiences API returned two results. The first result is a list of audience records, and the second result is a preview of audience records.",
+          "final_answer": "The Adobe UPS audiences API was successfully queried and returned up to five audience records.",
           "rejected_unsupported_claim_count": 0,
-          "selected_tool": "execute_sql",
-          "sql_candidate": "SELECT SEGMENTID, UPDATEDTIME, ISACCOUNTSEGMENT FROM dim_segment LIMIT 50;",
+          "selected_tool": "call_api",
+          "sql_candidate": null,
           "sql_repair_attempted": false,
           "sql_repair_success": false,
-          "sql_validation_ok": true,
+          "sql_validation_ok": false,
+          "structured_plan_compile_ok": null,
+          "structured_plan_validation_ok": null,
           "tool_execution_ok": true,
           "tool_result_used_in_answer": true,
           "unsupported_claim_count": 0
@@ -1697,21 +1472,21 @@
         "unsupported_claim_count": 0
       },
       "unsupported_claim_count": 0,
-      "variant": "full_pure_llm_tool_agent_v1"
+      "variant": "structured_sql_plan_with_repair_v1"
     },
     {
       "category": "api_endpoint_selection",
-      "estimated_tokens": 1275,
+      "estimated_tokens": 1308,
       "expected_tool_family": "api",
       "failure_stage": "no_clear_failure",
-      "final_answer": "The merge policies retrieved from the safe Adobe API endpoint are 'Default Timebased' for both '_xdm.context.profile' and '_xdm.context.segmentdefinition' schemas. The attributeMerge type for both is 'timestampOrdered'.",
+      "final_answer": "The merge policies retrieved from the safe Adobe API endpoint are 'Default Timebased' for both context.profile and context.segmentdefinition schemas. The attributeMerge type is 'timestampOrdered' for both.",
       "prompt": "Retrieve merge policies from the safe Adobe API endpoint and summarize the result state.",
       "prompt_id": "pure_llm_stab_006",
       "rejected_unsupported_claim_count": 0,
-      "runtime": 7.7538,
+      "runtime": 9.1899,
       "stabilization_row": true,
       "strict_scoring_status": "not_applicable_stabilization",
-      "system": "full_pure_llm_tool_agent_v1",
+      "system": "structured_sql_plan_with_repair_v1",
       "tool_calls": 1,
       "trace_assertions": {
         "api_endpoint_candidate": "merge_policies",
@@ -1719,27 +1494,29 @@
         "api_endpoint_validation_ok": true,
         "did_llm_choose_tool": true,
         "did_llm_plan": true,
-        "final_answer": "The merge policies retrieved from the safe Adobe API endpoint are 'Default Timebased' for both '_xdm.context.profile' and '_xdm.context.segmentdefinition' schemas. The attributeMerge type for both is 'timestampOrdered'.",
+        "final_answer": "The merge policies retrieved from the safe Adobe API endpoint are 'Default Timebased' for both context.profile and context.segmentdefinition schemas. The attributeMerge type is 'timestampOrdered' for both.",
         "rejected_unsupported_claim_count": 0,
         "selected_tool": "call_api",
         "sql_candidate": null,
         "sql_repair_attempted": false,
         "sql_repair_success": false,
         "sql_validation_ok": false,
+        "structured_plan_compile_ok": null,
+        "structured_plan_validation_ok": null,
         "tool_execution_ok": true,
         "tool_result_used_in_answer": true,
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "full_pure_llm_tool_agent_v1",
-        "estimated_tokens": 1275,
+        "baseline_variant": "structured_sql_plan_with_repair_v1",
+        "estimated_tokens": 1308,
         "failure_stage": "no_clear_failure",
-        "final_answer": "The merge policies retrieved from the safe Adobe API endpoint are 'Default Timebased' for both '_xdm.context.profile' and '_xdm.context.segmentdefinition' schemas. The attributeMerge type for both is 'timestampOrdered'.",
-        "llm_total_tokens": 1805,
+        "final_answer": "The merge policies retrieved from the safe Adobe API endpoint are 'Default Timebased' for both context.profile and context.segmentdefinition schemas. The attributeMerge type is 'timestampOrdered' for both.",
+        "llm_total_tokens": 1834,
         "original_query": "Retrieve merge policies from the safe Adobe API endpoint and summarize the result state.",
         "pure_llm_tool_agent": true,
         "rejected_unsupported_claim_count": 0,
-        "runtime": 7.753847042098641,
+        "runtime": 9.18992270808667,
         "steps": [
           {
             "context_summary": {
@@ -1767,33 +1544,38 @@
             "plan": {
               "_normalization_actions": [],
               "_usage": {
-                "completion_tokens": 220,
+                "completion_tokens": 235,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1585,
+                "prompt_tokens": 1599,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1805
+                "total_tokens": 1834
               },
-              "answer_intent": "RETRIEVE_DATA",
+              "answer_intent": "RETRIEVE",
               "answer_shape": {
                 "items": [
                   {
+                    "column": "DATAFLOWNAME",
+                    "value": null
+                  },
+                  {
+                    "column": "UPDATEDTIME",
+                    "value": null
+                  },
+                  {
                     "column": "STATE",
-                    "type": "state"
+                    "value": null
                   }
                 ],
-                "total_items": 1,
+                "total_items": 3,
                 "truncated_items": false
               },
               "api_task": {
-                "endpoint": {
-                  "id": "merge_policies",
-                  "method": "GET",
-                  "path": "/data/core/ups/config/mergePolicies"
-                },
-                "task": "Retrieve merge policies from the specified endpoint"
+                "endpoint": "merge_policies",
+                "path": "/data/core/ups/config/mergePolicies",
+                "task": "GET"
               },
               "candidate_endpoints": [
                 {
@@ -1811,33 +1593,38 @@
             },
             "raw_plan": {
               "_usage": {
-                "completion_tokens": 220,
+                "completion_tokens": 235,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1585,
+                "prompt_tokens": 1599,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1805
+                "total_tokens": 1834
               },
-              "answer_intent": "RETRIEVE_DATA",
+              "answer_intent": "RETRIEVE",
               "answer_shape": {
                 "items": [
                   {
+                    "column": "DATAFLOWNAME",
+                    "value": null
+                  },
+                  {
+                    "column": "UPDATEDTIME",
+                    "value": null
+                  },
+                  {
                     "column": "STATE",
-                    "type": "state"
+                    "value": null
                   }
                 ],
-                "total_items": 1,
+                "total_items": 3,
                 "truncated_items": false
               },
               "api_task": {
-                "endpoint": {
-                  "id": "merge_policies",
-                  "method": "GET",
-                  "path": "/data/core/ups/config/mergePolicies"
-                },
-                "task": "Retrieve merge policies from the specified endpoint"
+                "endpoint": "merge_policies",
+                "path": "/data/core/ups/config/mergePolicies",
+                "task": "GET"
               },
               "candidate_endpoints": [
                 {
@@ -1853,7 +1640,7 @@
               "reason": "The task requires retrieving merge policies from the safe Adobe API endpoint.",
               "sql_task": null
             },
-            "variant": "full_pure_llm_tool_agent_v1"
+            "variant": "structured_sql_plan_with_repair_v1"
           },
           {
             "endpoint_candidate": "merge_policies",
@@ -1879,26 +1666,31 @@
             }
           },
           {
-            "answer": "The merge policies retrieved from the safe Adobe API endpoint are 'Default Timebased' for both '_xdm.context.profile' and '_xdm.context.segmentdefinition' schemas. The attributeMerge type for both is 'timestampOrdered'.",
+            "answer": "The merge policies retrieved from the safe Adobe API endpoint are 'Default Timebased' for both context.profile and context.segmentdefinition schemas. The attributeMerge type is 'timestampOrdered' for both.",
             "answer_guard": {
-              "answer": "The merge policies retrieved from the safe Adobe API endpoint are 'Default Timebased' for both '_xdm.context.profile' and '_xdm.context.segmentdefinition' schemas. The attributeMerge type for both is 'timestampOrdered'.",
+              "answer": "The merge policies retrieved from the safe Adobe API endpoint are 'Default Timebased' for both context.profile and context.segmentdefinition schemas. The attributeMerge type is 'timestampOrdered' for both.",
               "claims": [
                 {
-                  "claim": "'Default Timebased' merge policy is available for both '_xdm.context.profile' and '_xdm.context.segmentdefinition' schemas.",
+                  "claim": "'Default Timebased' merge policy is available for context.profile and context.segmentdefinition schemas with attributeMerge type 'timestampOrdered'.",
+                  "evidence_field": "result_preview",
+                  "evidence_source": "api"
+                },
+                {
+                  "claim": "'Default Timebased' merge policy is available for context.profile and context.segmentdefinition schemas with attributeMerge type 'timestampOrdered'.",
                   "evidence_field": "result_preview",
                   "evidence_source": "api"
                 }
               ],
               "fallback_used": false,
               "llm_usage": {
-                "completion_tokens": 146,
+                "completion_tokens": 217,
                 "completion_tokens_details": null,
-                "prompt_tokens": 689,
+                "prompt_tokens": 688,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 835
+                "total_tokens": 905
               },
               "rejected_unsupported_claim_count": 0,
               "rejected_unsupported_claims": [],
@@ -1952,7 +1744,7 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "full_pure_llm_tool_agent_v1",
+        "strategy": "structured_sql_plan_with_repair_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
@@ -1961,13 +1753,15 @@
           "api_endpoint_validation_ok": true,
           "did_llm_choose_tool": true,
           "did_llm_plan": true,
-          "final_answer": "The merge policies retrieved from the safe Adobe API endpoint are 'Default Timebased' for both '_xdm.context.profile' and '_xdm.context.segmentdefinition' schemas. The attributeMerge type for both is 'timestampOrdered'.",
+          "final_answer": "The merge policies retrieved from the safe Adobe API endpoint are 'Default Timebased' for both context.profile and context.segmentdefinition schemas. The attributeMerge type is 'timestampOrdered' for both.",
           "rejected_unsupported_claim_count": 0,
           "selected_tool": "call_api",
           "sql_candidate": null,
           "sql_repair_attempted": false,
           "sql_repair_success": false,
           "sql_validation_ok": false,
+          "structured_plan_compile_ok": null,
+          "structured_plan_validation_ok": null,
           "tool_execution_ok": true,
           "tool_result_used_in_answer": true,
           "unsupported_claim_count": 0
@@ -1975,21 +1769,21 @@
         "unsupported_claim_count": 0
       },
       "unsupported_claim_count": 0,
-      "variant": "full_pure_llm_tool_agent_v1"
+      "variant": "structured_sql_plan_with_repair_v1"
     },
     {
       "category": "sql_api_verification",
-      "estimated_tokens": 1985,
+      "estimated_tokens": 2281,
       "expected_tool_family": "sql_api",
       "failure_stage": "no_clear_failure",
       "final_answer": "COUNT",
       "prompt": "Count local audience segments and verify with the UPS audiences API if live evidence is available.",
       "prompt_id": "pure_llm_stab_007",
       "rejected_unsupported_claim_count": 0,
-      "runtime": 19.9205,
+      "runtime": 17.1356,
       "stabilization_row": true,
       "strict_scoring_status": "not_applicable_stabilization",
-      "system": "full_pure_llm_tool_agent_v1",
+      "system": "structured_sql_plan_with_repair_v1",
       "tool_calls": 2,
       "trace_assertions": {
         "api_endpoint_candidate": "ups_audiences",
@@ -2000,24 +1794,26 @@
         "final_answer": "COUNT",
         "rejected_unsupported_claim_count": 0,
         "selected_tool": "execute_sql",
-        "sql_candidate": "SELECT COUNT(DISTINCT SEGMENTID) FROM dim_segment",
+        "sql_candidate": "SELECT COUNT(DISTINCT \"SEGMENTID\") AS count FROM \"dim_segment\" WHERE \"dim_segment\".\"ISACCOUNTSEGMENT\" = 'True'",
         "sql_repair_attempted": false,
         "sql_repair_success": false,
         "sql_validation_ok": true,
+        "structured_plan_compile_ok": true,
+        "structured_plan_validation_ok": true,
         "tool_execution_ok": true,
         "tool_result_used_in_answer": true,
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "full_pure_llm_tool_agent_v1",
-        "estimated_tokens": 1985,
+        "baseline_variant": "structured_sql_plan_with_repair_v1",
+        "estimated_tokens": 2281,
         "failure_stage": "no_clear_failure",
         "final_answer": "COUNT",
-        "llm_total_tokens": 1811,
+        "llm_total_tokens": 1902,
         "original_query": "Count local audience segments and verify with the UPS audiences API if live evidence is available.",
         "pure_llm_tool_agent": true,
         "rejected_unsupported_claim_count": 0,
-        "runtime": 19.9205314591527,
+        "runtime": 17.135598000138998,
         "steps": [
           {
             "context_summary": {
@@ -2045,20 +1841,38 @@
             "plan": {
               "_normalization_actions": [],
               "_usage": {
-                "completion_tokens": 210,
+                "completion_tokens": 287,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1601,
+                "prompt_tokens": 1615,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1811
+                "total_tokens": 1902
               },
               "answer_intent": "COUNT",
               "answer_shape": {
                 "api_response": {
-                  "description": "Boolean indicating if live evidence is available",
-                  "type": "boolean"
+                  "properties": {
+                    "audiences": {
+                      "items": {
+                        "properties": {
+                          "audience_id": {
+                            "type": "string"
+                          },
+                          "audience_name": {
+                            "type": "string"
+                          },
+                          "segment_id": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
                 },
                 "count_segments": {
                   "description": "Number of local audience segments",
@@ -2087,20 +1901,38 @@
             },
             "raw_plan": {
               "_usage": {
-                "completion_tokens": 210,
+                "completion_tokens": 287,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1601,
+                "prompt_tokens": 1615,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1811
+                "total_tokens": 1902
               },
               "answer_intent": "COUNT",
               "answer_shape": {
                 "api_response": {
-                  "description": "Boolean indicating if live evidence is available",
-                  "type": "boolean"
+                  "properties": {
+                    "audiences": {
+                      "items": {
+                        "properties": {
+                          "audience_id": {
+                            "type": "string"
+                          },
+                          "audience_name": {
+                            "type": "string"
+                          },
+                          "segment_id": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
                 },
                 "count_segments": {
                   "description": "Number of local audience segments",
@@ -2127,7 +1959,7 @@
               "reason": "The task requires counting local audience segments and verifying with the UPS audiences API.",
               "sql_task": "COUNT local audience segments"
             },
-            "variant": "full_pure_llm_tool_agent_v1"
+            "variant": "structured_sql_plan_with_repair_v1"
           },
           {
             "attempts": [
@@ -2137,9 +1969,10 @@
                   "closest_table_suggestions": {},
                   "destructive_sql_detected": false,
                   "enabled": true,
-                  "normalized_sql": "SELECT COUNT(DISTINCT SEGMENTID) FROM dim_segment",
+                  "normalized_sql": "SELECT COUNT(DISTINCT \"SEGMENTID\") AS count FROM \"dim_segment\" WHERE \"dim_segment\".\"ISACCOUNTSEGMENT\" = 'True'",
                   "parsed_ok": true,
                   "selected_columns": [
+                    "dim_segment.ISACCOUNTSEGMENT",
                     "SEGMENTID"
                   ],
                   "selected_tables": [
@@ -2148,33 +1981,72 @@
                   "unknown_columns": [],
                   "unknown_tables": []
                 },
-                "candidate": {
+                "compile": {
+                  "aggregation": "count_distinct",
+                  "errors": [],
+                  "filters": [
+                    {
+                      "column": "ISACCOUNTSEGMENT",
+                      "operator": "equals",
+                      "table": "dim_segment",
+                      "value": true
+                    }
+                  ],
+                  "join_path": [],
+                  "ok": true,
+                  "selected_columns": [
+                    "SEGMENTID"
+                  ],
+                  "selected_tables": [
+                    "dim_segment"
+                  ],
+                  "sql": "SELECT COUNT(DISTINCT \"SEGMENTID\") AS count FROM \"dim_segment\" WHERE \"dim_segment\".\"ISACCOUNTSEGMENT\" = 'True'",
+                  "warnings": []
+                },
+                "executed": true,
+                "execution_ok": true,
+                "plan_validation": {
+                  "errors": [],
+                  "ok": true,
+                  "warnings": []
+                },
+                "round": 0,
+                "sql": "SELECT COUNT(DISTINCT \"SEGMENTID\") AS count FROM \"dim_segment\" WHERE \"dim_segment\".\"ISACCOUNTSEGMENT\" = 'True'",
+                "structured_sql_plan": {
                   "_usage": {
-                    "completion_tokens": 84,
+                    "completion_tokens": 135,
                     "completion_tokens_details": null,
-                    "prompt_tokens": 1925,
+                    "prompt_tokens": 2037,
                     "prompt_tokens_details": {
                       "audio_tokens": null,
                       "cached_tokens": 3
                     },
-                    "total_tokens": 2009
+                    "total_tokens": 2172
                   },
-                  "aggregation": "COUNT(DISTINCT SEGMENTID)",
-                  "columns_used": [
+                  "aggregation": null,
+                  "answer_intent": "COUNT",
+                  "columns_needed": [
                     "SEGMENTID"
                   ],
                   "confidence": 6.1,
-                  "filters": null,
-                  "join_reason": null,
-                  "sql": "SELECT COUNT(DISTINCT SEGMENTID) FROM dim_segment",
-                  "tables_used": [
-                    "dim_segment"
+                  "filters": [
+                    {
+                      "column": "ISACCOUNTSEGMENT",
+                      "value": true
+                    }
+                  ],
+                  "join_needed": false,
+                  "join_path_reason": null,
+                  "limit": null,
+                  "order_by": null,
+                  "primary_entity": "local audience segments",
+                  "primary_table": "dim_segment",
+                  "tables_needed": [
+                    {
+                      "table": "dim_segment"
+                    }
                   ]
                 },
-                "executed": true,
-                "execution_ok": true,
-                "round": 0,
-                "sql": "SELECT COUNT(DISTINCT SEGMENTID) FROM dim_segment",
                 "validation": {
                   "errors": [],
                   "ok": true,
@@ -2192,11 +2064,11 @@
               "row_count": 1,
               "rows": [
                 {
-                  "count(DISTINCT SEGMENTID)": 13
+                  "count": 0
                 }
               ]
             },
-            "sql": "SELECT COUNT(DISTINCT SEGMENTID) FROM dim_segment",
+            "sql": "SELECT COUNT(DISTINCT \"SEGMENTID\") AS count FROM \"dim_segment\" WHERE \"dim_segment\".\"ISACCOUNTSEGMENT\" = 'True'",
             "validation": {
               "errors": [],
               "ok": true,
@@ -2236,42 +2108,40 @@
                 {
                   "claims": [
                     {
-                      "endpoint": "/data/core/ups/audiences",
-                      "endpoint_family": "ups_audiences",
-                      "endpoint_id": "ups_audiences",
                       "evidence_field": "result_preview",
-                      "evidence_source": "api",
-                      "method": "GET",
-                      "path": "/data/core/ups/audiences",
-                      "source": "api",
-                      "status_code": 200
+                      "evidence_source": "api"
                     }
                   ],
-                  "uncertainties": [
-                    {
-                      "endpoint": "/data/core/ups/audiences",
-                      "endpoint_family": "ups_audiences",
-                      "endpoint_id": "ups_audiences",
-                      "evidence_field": "result_preview",
-                      "evidence_source": "api",
-                      "method": "GET",
-                      "path": "/data/core/ups/audiences",
-                      "source": "api",
-                      "status_code": 200
-                    }
-                  ]
+                  "endpoint": "/data/core/ups/audiences",
+                  "parsed_evidence": {
+                    "endpoint": "/data/core/ups/audiences",
+                    "endpoint_family": "ups_audiences",
+                    "endpoint_id": "ups_audiences",
+                    "errors": {
+                      "items": [],
+                      "total_items": 0,
+                      "truncated_items": false
+                    },
+                    "method": "GET",
+                    "ok": true,
+                    "path": "/data/core/ups/audiences",
+                    "status_code": 200,
+                    "truncated_fields": 14
+                  },
+                  "source": "api",
+                  "status_code": 200
                 }
               ],
               "fallback_used": false,
               "llm_usage": {
-                "completion_tokens": 331,
+                "completion_tokens": 206,
                 "completion_tokens_details": null,
-                "prompt_tokens": 788,
+                "prompt_tokens": 781,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1119
+                "total_tokens": 987
               },
               "rejected_unsupported_claim_count": 0,
               "rejected_unsupported_claims": [],
@@ -2302,7 +2172,6 @@
                 "10dce0fc-d2f7-405e-a3d5-31e14ee13ffc",
                 "1120",
                 "12189",
-                "13",
                 "1362d293-0757-4f69-837a-83f13caad71b",
                 "144bc8b4-4eb2-4c61-a821-b1750f9177ab",
                 "1517",
@@ -2316,7 +2185,8 @@
                 "1776359740910",
                 "1776359800",
                 "1776359800897",
-                "1776359920"
+                "1776359920",
+                "1776359920985"
               ],
               "tool_result_used": true,
               "unsupported_claim_count": 0,
@@ -2325,7 +2195,7 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "full_pure_llm_tool_agent_v1",
+        "strategy": "structured_sql_plan_with_repair_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 2,
         "trace_assertions": {
@@ -2337,10 +2207,12 @@
           "final_answer": "COUNT",
           "rejected_unsupported_claim_count": 0,
           "selected_tool": "execute_sql",
-          "sql_candidate": "SELECT COUNT(DISTINCT SEGMENTID) FROM dim_segment",
+          "sql_candidate": "SELECT COUNT(DISTINCT \"SEGMENTID\") AS count FROM \"dim_segment\" WHERE \"dim_segment\".\"ISACCOUNTSEGMENT\" = 'True'",
           "sql_repair_attempted": false,
           "sql_repair_success": false,
           "sql_validation_ok": true,
+          "structured_plan_compile_ok": true,
+          "structured_plan_validation_ok": true,
           "tool_execution_ok": true,
           "tool_result_used_in_answer": true,
           "unsupported_claim_count": 0
@@ -2348,21 +2220,21 @@
         "unsupported_claim_count": 0
       },
       "unsupported_claim_count": 0,
-      "variant": "full_pure_llm_tool_agent_v1"
+      "variant": "structured_sql_plan_with_repair_v1"
     },
     {
       "category": "live_empty_safe",
-      "estimated_tokens": 1320,
+      "estimated_tokens": 1249,
       "expected_tool_family": "api",
       "failure_stage": "no_clear_failure",
       "final_answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
       "prompt": "Check recent journeys through the Journey API and explain a live empty result without claiming broader absence.",
       "prompt_id": "pure_llm_stab_008",
       "rejected_unsupported_claim_count": 3,
-      "runtime": 9.1529,
+      "runtime": 9.0831,
       "stabilization_row": true,
       "strict_scoring_status": "not_applicable_stabilization",
-      "system": "full_pure_llm_tool_agent_v1",
+      "system": "structured_sql_plan_with_repair_v1",
       "tool_calls": 1,
       "trace_assertions": {
         "api_endpoint_candidate": "journey_list",
@@ -2377,20 +2249,22 @@
         "sql_repair_attempted": false,
         "sql_repair_success": false,
         "sql_validation_ok": false,
+        "structured_plan_compile_ok": null,
+        "structured_plan_validation_ok": null,
         "tool_execution_ok": true,
         "tool_result_used_in_answer": true,
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "full_pure_llm_tool_agent_v1",
-        "estimated_tokens": 1320,
+        "baseline_variant": "structured_sql_plan_with_repair_v1",
+        "estimated_tokens": 1249,
         "failure_stage": "no_clear_failure",
         "final_answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
-        "llm_total_tokens": 1815,
+        "llm_total_tokens": 1791,
         "original_query": "Check recent journeys through the Journey API and explain a live empty result without claiming broader absence.",
         "pure_llm_tool_agent": true,
         "rejected_unsupported_claim_count": 3,
-        "runtime": 9.152868959121406,
+        "runtime": 9.083146082703024,
         "steps": [
           {
             "context_summary": {
@@ -2418,30 +2292,27 @@
             "plan": {
               "_normalization_actions": [],
               "_usage": {
-                "completion_tokens": 267,
+                "completion_tokens": 229,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1548,
+                "prompt_tokens": 1562,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1815
+                "total_tokens": 1791
               },
               "answer_intent": "EXPLAIN",
-              "answer_shape": "EXPLANATION",
+              "answer_shape": {
+                "shape": "EXPLAIN"
+              },
               "api_task": {
-                "common_params": {
+                "endpoint": "/ajo/journey",
+                "endpoint_id": "journey_list",
+                "params": {
                   "limit": 50,
                   "start": 0
                 },
-                "domains": [
-                  "JOURNEY_CAMPAIGN",
-                  "STATUS_MONITORING"
-                ],
-                "endpoint_id": "journey_list",
-                "method": "GET",
-                "path": "/ajo/journey",
-                "score": 3
+                "task": "GET"
               },
               "candidate_endpoints": [
                 {
@@ -2462,35 +2333,32 @@
               "candidate_tables": [],
               "needs_api": true,
               "needs_sql": false,
-              "reason": "The task is to explain a live empty result without claiming broader absence, which suggests an API call to the Journey API is needed to fetch recent journeys and then explain the empty result.",
+              "reason": "The task requires checking recent journeys through the Journey API, which can be achieved by querying the Journey API endpoint.",
               "sql_task": null
             },
             "raw_plan": {
               "_usage": {
-                "completion_tokens": 267,
+                "completion_tokens": 229,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1548,
+                "prompt_tokens": 1562,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1815
+                "total_tokens": 1791
               },
               "answer_intent": "EXPLAIN",
-              "answer_shape": "EXPLANATION",
+              "answer_shape": {
+                "shape": "EXPLAIN"
+              },
               "api_task": {
-                "common_params": {
+                "endpoint": "/ajo/journey",
+                "endpoint_id": "journey_list",
+                "params": {
                   "limit": 50,
                   "start": 0
                 },
-                "domains": [
-                  "JOURNEY_CAMPAIGN",
-                  "STATUS_MONITORING"
-                ],
-                "endpoint_id": "journey_list",
-                "method": "GET",
-                "path": "/ajo/journey",
-                "score": 3
+                "task": "GET"
               },
               "candidate_endpoints": [
                 {
@@ -2511,10 +2379,10 @@
               "candidate_tables": [],
               "needs_api": true,
               "needs_sql": false,
-              "reason": "The task is to explain a live empty result without claiming broader absence, which suggests an API call to the Journey API is needed to fetch recent journeys and then explain the empty result.",
+              "reason": "The task requires checking recent journeys through the Journey API, which can be achieved by querying the Journey API endpoint.",
               "sql_task": null
             },
-            "variant": "full_pure_llm_tool_agent_v1"
+            "variant": "structured_sql_plan_with_repair_v1"
           },
           {
             "endpoint_candidate": "journey_list",
@@ -2642,7 +2510,7 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "full_pure_llm_tool_agent_v1",
+        "strategy": "structured_sql_plan_with_repair_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
@@ -2658,6 +2526,8 @@
           "sql_repair_attempted": false,
           "sql_repair_success": false,
           "sql_validation_ok": false,
+          "structured_plan_compile_ok": null,
+          "structured_plan_validation_ok": null,
           "tool_execution_ok": true,
           "tool_result_used_in_answer": true,
           "unsupported_claim_count": 0
@@ -2665,21 +2535,21 @@
         "unsupported_claim_count": 0
       },
       "unsupported_claim_count": 0,
-      "variant": "full_pure_llm_tool_agent_v1"
+      "variant": "structured_sql_plan_with_repair_v1"
     },
     {
       "category": "schema_dataset",
-      "estimated_tokens": 1444,
+      "estimated_tokens": 1445,
       "expected_tool_family": "sql",
       "failure_stage": "no_clear_failure",
       "final_answer": "The local datasets or collections with their schema or blueprint names are as follows: Decision Object Repository - Fallback Offers, Decision Object Repository - Placements, Decision Object Repository - Personalized Offers.",
       "prompt": "List local datasets or collections with their schema or blueprint names when available.",
       "prompt_id": "pure_llm_stab_009",
       "rejected_unsupported_claim_count": 0,
-      "runtime": 9.5315,
+      "runtime": 10.1291,
       "stabilization_row": true,
       "strict_scoring_status": "not_applicable_stabilization",
-      "system": "full_pure_llm_tool_agent_v1",
+      "system": "structured_sql_plan_with_repair_v1",
       "tool_calls": 1,
       "trace_assertions": {
         "api_endpoint_candidate": "catalog_datasets",
@@ -2694,20 +2564,22 @@
         "sql_repair_attempted": false,
         "sql_repair_success": false,
         "sql_validation_ok": false,
+        "structured_plan_compile_ok": null,
+        "structured_plan_validation_ok": null,
         "tool_execution_ok": true,
         "tool_result_used_in_answer": true,
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "full_pure_llm_tool_agent_v1",
-        "estimated_tokens": 1444,
+        "baseline_variant": "structured_sql_plan_with_repair_v1",
+        "estimated_tokens": 1445,
         "failure_stage": "no_clear_failure",
         "final_answer": "The local datasets or collections with their schema or blueprint names are as follows: Decision Object Repository - Fallback Offers, Decision Object Repository - Placements, Decision Object Repository - Personalized Offers.",
-        "llm_total_tokens": 1934,
+        "llm_total_tokens": 1952,
         "original_query": "List local datasets or collections with their schema or blueprint names when available.",
         "pure_llm_tool_agent": true,
         "rejected_unsupported_claim_count": 0,
-        "runtime": 9.5314776673913,
+        "runtime": 10.12911312514916,
         "steps": [
           {
             "context_summary": {
@@ -2735,37 +2607,39 @@
             "plan": {
               "_normalization_actions": [],
               "_usage": {
-                "completion_tokens": 334,
+                "completion_tokens": 338,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1600,
+                "prompt_tokens": 1614,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1934
+                "total_tokens": 1952
               },
               "answer_intent": "LIST",
               "answer_shape": {
-                "DESCRIPTION": "string",
-                "SCHEMA_NAME": "string"
+                "items": [
+                  {
+                    "collection": {
+                      "collection_id": "collection_id",
+                      "schema": {
+                        "columns": [
+                          {
+                            "column_name": "column_name",
+                            "column_type": "column_type"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
               },
               "api_task": {
-                "selected_columns": [
-                  {
-                    "column_name": "SCHEMA_NAME",
-                    "column_type": "string"
-                  },
-                  {
-                    "column_name": "DESCRIPTION",
-                    "column_type": "string"
-                  }
-                ],
-                "selected_endpoint": {
-                  "endpoint_id": "catalog_datasets",
-                  "method": "GET",
-                  "path": "/data/foundation/catalog/dataSets",
-                  "score": 3
-                }
+                "endpoint": "catalog_datasets",
+                "method": "GET",
+                "path": "/data/foundation/catalog/dataSets",
+                "score": 3,
+                "task": "SELECT"
               },
               "candidate_endpoints": [
                 {
@@ -2775,57 +2649,59 @@
                   "score": 3
                 },
                 {
-                  "endpoint_id": "export_batch_files",
-                  "method": "GET",
-                  "path": "/data/foundation/export/batches/{batch_id}/files",
-                  "score": 3
-                },
-                {
                   "endpoint_id": "schema_registry_schemas",
                   "method": "GET",
                   "path": "/data/foundation/schemaregistry/tenant/schemas",
+                  "score": 3
+                },
+                {
+                  "endpoint_id": "export_batch_files",
+                  "method": "GET",
+                  "path": "/data/foundation/export/batches/{batch_id}/files",
                   "score": 3
                 }
               ],
               "candidate_tables": [],
               "needs_api": true,
               "needs_sql": false,
-              "reason": "The task is to list local datasets or collections with their schema or blueprint names when available, and the available options are API endpoints.",
+              "reason": "The user request is to list local datasets or collections with their schema or blueprint names. The available options include catalog_datasets, schema_registry_schemas, and export_batch_files endpoints.",
               "sql_task": null
             },
             "raw_plan": {
               "_usage": {
-                "completion_tokens": 334,
+                "completion_tokens": 338,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1600,
+                "prompt_tokens": 1614,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1934
+                "total_tokens": 1952
               },
               "answer_intent": "LIST",
               "answer_shape": {
-                "DESCRIPTION": "string",
-                "SCHEMA_NAME": "string"
+                "items": [
+                  {
+                    "collection": {
+                      "collection_id": "collection_id",
+                      "schema": {
+                        "columns": [
+                          {
+                            "column_name": "column_name",
+                            "column_type": "column_type"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
               },
               "api_task": {
-                "selected_columns": [
-                  {
-                    "column_name": "SCHEMA_NAME",
-                    "column_type": "string"
-                  },
-                  {
-                    "column_name": "DESCRIPTION",
-                    "column_type": "string"
-                  }
-                ],
-                "selected_endpoint": {
-                  "endpoint_id": "catalog_datasets",
-                  "method": "GET",
-                  "path": "/data/foundation/catalog/dataSets",
-                  "score": 3
-                }
+                "endpoint": "catalog_datasets",
+                "method": "GET",
+                "path": "/data/foundation/catalog/dataSets",
+                "score": 3,
+                "task": "SELECT"
               },
               "candidate_endpoints": [
                 {
@@ -2835,25 +2711,25 @@
                   "score": 3
                 },
                 {
-                  "endpoint_id": "export_batch_files",
-                  "method": "GET",
-                  "path": "/data/foundation/export/batches/{batch_id}/files",
-                  "score": 3
-                },
-                {
                   "endpoint_id": "schema_registry_schemas",
                   "method": "GET",
                   "path": "/data/foundation/schemaregistry/tenant/schemas",
+                  "score": 3
+                },
+                {
+                  "endpoint_id": "export_batch_files",
+                  "method": "GET",
+                  "path": "/data/foundation/export/batches/{batch_id}/files",
                   "score": 3
                 }
               ],
               "candidate_tables": [],
               "needs_api": true,
               "needs_sql": false,
-              "reason": "The task is to list local datasets or collections with their schema or blueprint names when available, and the available options are API endpoints.",
+              "reason": "The user request is to list local datasets or collections with their schema or blueprint names. The available options include catalog_datasets, schema_registry_schemas, and export_batch_files endpoints.",
               "sql_task": null
             },
-            "variant": "full_pure_llm_tool_agent_v1"
+            "variant": "structured_sql_plan_with_repair_v1"
           },
           {
             "endpoint_candidate": "catalog_datasets",
@@ -2962,7 +2838,7 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "full_pure_llm_tool_agent_v1",
+        "strategy": "structured_sql_plan_with_repair_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
@@ -2978,6 +2854,8 @@
           "sql_repair_attempted": false,
           "sql_repair_success": false,
           "sql_validation_ok": false,
+          "structured_plan_compile_ok": null,
+          "structured_plan_validation_ok": null,
           "tool_execution_ok": true,
           "tool_result_used_in_answer": true,
           "unsupported_claim_count": 0
@@ -2985,21 +2863,21 @@
         "unsupported_claim_count": 0
       },
       "unsupported_claim_count": 0,
-      "variant": "full_pure_llm_tool_agent_v1"
+      "variant": "structured_sql_plan_with_repair_v1"
     },
     {
       "category": "error_caveat_safe",
-      "estimated_tokens": 1117,
+      "estimated_tokens": 1109,
       "expected_tool_family": "api",
       "failure_stage": "api_validation_failed",
-      "final_answer": "The available tool evidence does not contain enough supported data to answer.",
+      "final_answer": "STATUS",
       "prompt": "Check batch details for a provided batch identifier only if a safe endpoint can be validated; otherwise state the evidence gap.",
       "prompt_id": "pure_llm_stab_010",
-      "rejected_unsupported_claim_count": 1,
-      "runtime": 13.7728,
+      "rejected_unsupported_claim_count": 0,
+      "runtime": 9.499,
       "stabilization_row": true,
       "strict_scoring_status": "not_applicable_stabilization",
-      "system": "full_pure_llm_tool_agent_v1",
+      "system": "structured_sql_plan_with_repair_v1",
       "tool_calls": 1,
       "trace_assertions": {
         "api_endpoint_candidate": "catalog_batch_detail",
@@ -3007,27 +2885,29 @@
         "api_endpoint_validation_ok": false,
         "did_llm_choose_tool": true,
         "did_llm_plan": true,
-        "final_answer": "The available tool evidence does not contain enough supported data to answer.",
-        "rejected_unsupported_claim_count": 1,
+        "final_answer": "STATUS",
+        "rejected_unsupported_claim_count": 0,
         "selected_tool": "call_api",
         "sql_candidate": null,
         "sql_repair_attempted": false,
         "sql_repair_success": false,
         "sql_validation_ok": false,
+        "structured_plan_compile_ok": null,
+        "structured_plan_validation_ok": null,
         "tool_execution_ok": false,
         "tool_result_used_in_answer": false,
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "full_pure_llm_tool_agent_v1",
-        "estimated_tokens": 1117,
+        "baseline_variant": "structured_sql_plan_with_repair_v1",
+        "estimated_tokens": 1109,
         "failure_stage": "api_validation_failed",
-        "final_answer": "The available tool evidence does not contain enough supported data to answer.",
-        "llm_total_tokens": 1902,
+        "final_answer": "STATUS",
+        "llm_total_tokens": 1957,
         "original_query": "Check batch details for a provided batch identifier only if a safe endpoint can be validated; otherwise state the evidence gap.",
         "pure_llm_tool_agent": true,
-        "rejected_unsupported_claim_count": 1,
-        "runtime": 13.772790833376348,
+        "rejected_unsupported_claim_count": 0,
+        "runtime": 9.498999916017056,
         "steps": [
           {
             "context_summary": {
@@ -3055,39 +2935,58 @@
             "plan": {
               "_normalization_actions": [],
               "_usage": {
-                "completion_tokens": 342,
+                "completion_tokens": 383,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1560,
+                "prompt_tokens": 1574,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1902
+                "total_tokens": 1957
               },
-              "answer_intent": "Check batch details for a provided batch identifier only if a safe endpoint can be validated; otherwise state the evidence gap.",
-              "answer_shape": "The batch detail endpoint is validated and the result is returned if it is safe to use, otherwise an evidence gap is stated.",
-              "api_task": "Validate the batch detail endpoint for the provided batch identifier.",
+              "answer_intent": "STATUS",
+              "answer_shape": {
+                "batch_details": {
+                  "items": [
+                    {
+                      "column_name": "UPDATEDTIME",
+                      "value": "Updated time"
+                    },
+                    {
+                      "column_name": "STARTDATE",
+                      "value": "Start date"
+                    },
+                    {
+                      "column_name": "IMSORGID",
+                      "value": "IMSORGID"
+                    }
+                  ],
+                  "total_items": 3,
+                  "truncated_items": false
+                },
+                "batch_id": "Provided batch identifier"
+              },
+              "api_task": {
+                "endpoint": "catalog_batch_detail",
+                "method": "GET",
+                "path": "/data/foundation/catalog/batches/{batch_id}",
+                "score": 2,
+                "task": "Check batch details for a provided batch identifier"
+              },
               "candidate_endpoints": [
                 {
-                  "domains": [
-                    "DATASET_SCHEMA"
-                  ],
                   "endpoint_id": "catalog_batch_detail",
                   "method": "GET",
                   "path": "/data/foundation/catalog/batches/{batch_id}",
                   "score": 2
                 },
                 {
-                  "domains": [
-                    "STATUS_MONITORING"
-                  ],
                   "endpoint_id": "export_batch_failed",
                   "method": "GET",
                   "path": "/data/foundation/export/batches/{batch_id}/failed",
                   "score": 2
                 },
                 {
-                  "domains": [],
                   "endpoint_id": "export_batch_files",
                   "method": "GET",
                   "path": "/data/foundation/export/batches/{batch_id}/files",
@@ -3097,44 +2996,63 @@
               "candidate_tables": [],
               "needs_api": true,
               "needs_sql": false,
-              "reason": "The task requires checking batch details for a specific batch identifier. The provided API endpoints are safe to use for this purpose, but no SQL task is needed as the task is primarily about API validation.",
-              "sql_task": ""
+              "reason": "The task requires checking batch details for a provided batch identifier, which can be done through an API call.",
+              "sql_task": null
             },
             "raw_plan": {
               "_usage": {
-                "completion_tokens": 342,
+                "completion_tokens": 383,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1560,
+                "prompt_tokens": 1574,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1902
+                "total_tokens": 1957
               },
-              "answer_intent": "Check batch details for a provided batch identifier only if a safe endpoint can be validated; otherwise state the evidence gap.",
-              "answer_shape": "The batch detail endpoint is validated and the result is returned if it is safe to use, otherwise an evidence gap is stated.",
-              "api_task": "Validate the batch detail endpoint for the provided batch identifier.",
+              "answer_intent": "STATUS",
+              "answer_shape": {
+                "batch_details": {
+                  "items": [
+                    {
+                      "column_name": "UPDATEDTIME",
+                      "value": "Updated time"
+                    },
+                    {
+                      "column_name": "STARTDATE",
+                      "value": "Start date"
+                    },
+                    {
+                      "column_name": "IMSORGID",
+                      "value": "IMSORGID"
+                    }
+                  ],
+                  "total_items": 3,
+                  "truncated_items": false
+                },
+                "batch_id": "Provided batch identifier"
+              },
+              "api_task": {
+                "endpoint": "catalog_batch_detail",
+                "method": "GET",
+                "path": "/data/foundation/catalog/batches/{batch_id}",
+                "score": 2,
+                "task": "Check batch details for a provided batch identifier"
+              },
               "candidate_endpoints": [
                 {
-                  "domains": [
-                    "DATASET_SCHEMA"
-                  ],
                   "endpoint_id": "catalog_batch_detail",
                   "method": "GET",
                   "path": "/data/foundation/catalog/batches/{batch_id}",
                   "score": 2
                 },
                 {
-                  "domains": [
-                    "STATUS_MONITORING"
-                  ],
                   "endpoint_id": "export_batch_failed",
                   "method": "GET",
                   "path": "/data/foundation/export/batches/{batch_id}/failed",
                   "score": 2
                 },
                 {
-                  "domains": [],
                   "endpoint_id": "export_batch_files",
                   "method": "GET",
                   "path": "/data/foundation/export/batches/{batch_id}/files",
@@ -3144,10 +3062,10 @@
               "candidate_tables": [],
               "needs_api": true,
               "needs_sql": false,
-              "reason": "The task requires checking batch details for a specific batch identifier. The provided API endpoints are safe to use for this purpose, but no SQL task is needed as the task is primarily about API validation.",
-              "sql_task": ""
+              "reason": "The task requires checking batch details for a provided batch identifier, which can be done through an API call.",
+              "sql_task": null
             },
-            "variant": "full_pure_llm_tool_agent_v1"
+            "variant": "structured_sql_plan_with_repair_v1"
           },
           {
             "endpoint_candidate": "catalog_batch_detail",
@@ -3158,7 +3076,7 @@
               "params": {
                 "batch_id": "{batch_id}"
               },
-              "reason": "This endpoint is safe to use for checking batch details for a specific identifier, as it does not have unresolved path parameters."
+              "reason": "This endpoint allows checking batch details for a provided batch identifier, which directly addresses the requirement of the prompt."
             },
             "retry_attempted": true,
             "validation": {
@@ -3169,33 +3087,23 @@
             }
           },
           {
-            "answer": "The available tool evidence does not contain enough supported data to answer.",
+            "answer": "STATUS",
             "answer_guard": {
-              "answer": "The available tool evidence does not contain enough supported data to answer.",
-              "claims": [
-                {
-                  "evidence_field": "items",
-                  "evidence_source": "tool observation"
-                }
-              ],
-              "fallback_used": true,
+              "answer": "STATUS",
+              "claims": [],
+              "fallback_used": false,
               "llm_usage": {
-                "completion_tokens": 88,
+                "completion_tokens": 40,
                 "completion_tokens_details": null,
-                "prompt_tokens": 159,
+                "prompt_tokens": 138,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 247
+                "total_tokens": 178
               },
-              "rejected_unsupported_claim_count": 1,
-              "rejected_unsupported_claims": [
-                {
-                  "claim_type": "no_result",
-                  "value": "no items were found"
-                }
-              ],
+              "rejected_unsupported_claim_count": 0,
+              "rejected_unsupported_claims": [],
               "skipped": false,
               "supported_values": [],
               "tool_result_used": false,
@@ -3205,7 +3113,7 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "full_pure_llm_tool_agent_v1",
+        "strategy": "structured_sql_plan_with_repair_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
@@ -3214,13 +3122,15 @@
           "api_endpoint_validation_ok": false,
           "did_llm_choose_tool": true,
           "did_llm_plan": true,
-          "final_answer": "The available tool evidence does not contain enough supported data to answer.",
-          "rejected_unsupported_claim_count": 1,
+          "final_answer": "STATUS",
+          "rejected_unsupported_claim_count": 0,
           "selected_tool": "call_api",
           "sql_candidate": null,
           "sql_repair_attempted": false,
           "sql_repair_success": false,
           "sql_validation_ok": false,
+          "structured_plan_compile_ok": null,
+          "structured_plan_validation_ok": null,
           "tool_execution_ok": false,
           "tool_result_used_in_answer": false,
           "unsupported_claim_count": 0
@@ -3228,19 +3138,15 @@
         "unsupported_claim_count": 0
       },
       "unsupported_claim_count": 0,
-      "variant": "full_pure_llm_tool_agent_v1"
+      "variant": "structured_sql_plan_with_repair_v1"
     }
   ],
   "skipped_reason": null,
   "stabilization_set": true,
   "summary": {
-    "api_endpoint_validation_pass_rate": 0.8571,
+    "api_endpoint_validation_pass_rate": 0.8889,
+    "compile_success_rate": 1.0,
     "examples_still_failing": [
-      {
-        "category": "sql_list",
-        "failure_stage": "sql_repair_failed",
-        "prompt_id": "pure_llm_stab_002"
-      },
       {
         "category": "error_caveat_safe",
         "failure_stage": "api_validation_failed",
@@ -3249,16 +3155,15 @@
     ],
     "failure_stage_distribution": {
       "api_validation_failed": 1,
-      "no_clear_failure": 8,
-      "sql_repair_failed": 1
+      "no_clear_failure": 9
     },
     "prompts_attempted": 10,
-    "rejected_unsupported_claim_count": 6,
-    "sql_repair_success_rate": 0.0,
-    "sql_validation_pass_rate": 0.8,
+    "rejected_unsupported_claim_count": 3,
+    "sql_repair_success_rate": null,
+    "sql_validation_pass_rate": 1.0,
     "tool_called_when_needed_rate": 1.0,
     "tool_needed_count": 10,
-    "tool_result_used_rate": 0.8,
+    "tool_result_used_rate": 0.9,
     "unsupported_claim_count": 0
   },
   "variants_defined": [
@@ -3331,6 +3236,46 @@
       "description": "Combines planning, schema retrieval, SQL repair, API validation, and evidence-locked answer.",
       "status": "shadow_diagnostic",
       "variant": "full_pure_llm_tool_agent_v1"
+    },
+    {
+      "capabilities": {
+        "api_guard": true,
+        "evidence_locked_answer": true,
+        "schema_context": true,
+        "sql_repair": false,
+        "structured_plan": true,
+        "structured_sql_plan": true
+      },
+      "description": "LLM emits structured SQL plan JSON; deterministic compiler emits validated SQL without repair.",
+      "status": "shadow_diagnostic",
+      "variant": "structured_sql_plan_agent_v1"
+    },
+    {
+      "capabilities": {
+        "api_guard": true,
+        "evidence_locked_answer": true,
+        "schema_context": true,
+        "sql_repair": true,
+        "structured_plan": true,
+        "structured_sql_plan": true
+      },
+      "description": "Structured SQL plan JSON plus deterministic compiler and up to two plan repair rounds.",
+      "status": "shadow_diagnostic",
+      "variant": "structured_sql_plan_with_repair_v1"
+    },
+    {
+      "capabilities": {
+        "api_guard": true,
+        "backend_answer_only": true,
+        "evidence_locked_answer": true,
+        "schema_context": true,
+        "sql_repair": true,
+        "structured_plan": true,
+        "structured_sql_plan": true
+      },
+      "description": "Structured SQL plan with deterministic tool-evidence answer fallback only.",
+      "status": "shadow_diagnostic",
+      "variant": "structured_sql_plan_backend_answer_only"
     }
   ]
 }

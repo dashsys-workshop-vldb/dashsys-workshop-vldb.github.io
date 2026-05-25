@@ -93,11 +93,11 @@ def _recommendation(
     if unsupported not in (0, None):
         return "blocked_by_unsupported_claims"
     if not isinstance(sql_score, (int, float)) or sql_score <= 0.12:
-        return "blocked_by_sql_generation"
+        return "pure_llm_still_blocked_by_sql_generation"
     if not beats_current_pure:
         return "pure_llm_still_too_weak"
     if not beats_controller:
-        return "pure_llm_improved_keep_shadow"
+        return "pure_llm_sql_grounding_improved_keep_shadow"
     if not beats_full:
         return "controller_still_preferred"
     return "candidate_for_limited_promotion_review"

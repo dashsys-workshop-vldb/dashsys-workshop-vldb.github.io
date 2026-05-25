@@ -47,6 +47,24 @@ def build_sql_candidate_prompt(prompt: str, context: dict[str, Any], plan: dict[
     )
 
 
+def build_structured_sql_plan_prompt(prompt: str, context: dict[str, Any], plan: dict[str, Any] | None = None) -> PromptBundle:
+    return PromptBundle(
+        system_prompt=(
+            "Create a structured SQL plan JSON only. Do not output raw SQL. Required keys: "
+            '"answer_intent", "primary_entity", "primary_table", "tables_needed", "columns_needed", '
+            '"join_needed", "join_path_reason", "filters", "aggregation", "order_by", "limit", "confidence". '
+            "Use actual table names and columns from the supplied schema context only. "
+            "Use business_term_aliases to map words like journey, audience, dataset, schema, destination, connector. "
+            "Do not invent tables named journey, audience, dataset, schema, destination, connector, or dataflow."
+        ),
+        user_prompt=json.dumps(
+            {"prompt": prompt, "tool_plan": plan or {}, "schema_context": compact_preview(context, 9000)},
+            indent=2,
+            default=str,
+        ),
+    )
+
+
 def build_sql_repair_prompt(
     prompt: str,
     context: dict[str, Any],
@@ -64,6 +82,33 @@ def build_sql_repair_prompt(
                 "prompt": prompt,
                 "bad_sql": bad_sql,
                 "validation_errors": validation_errors,
+                "schema_context": compact_preview(context, 9000),
+            },
+            indent=2,
+            default=str,
+        ),
+    )
+
+
+def build_structured_sql_plan_repair_prompt(
+    prompt: str,
+    context: dict[str, Any],
+    bad_plan: dict[str, Any],
+    errors: list[str],
+) -> PromptBundle:
+    return PromptBundle(
+        system_prompt=(
+            "Repair the structured SQL plan JSON only. Do not output raw SQL. "
+            "Use only actual table and column names from the schema context. "
+            "If an error mentions an alias suggestion, use that actual table name. "
+            "Return only the corrected plan object with the required structured SQL plan keys. "
+            "Do not echo wrapper keys such as bad_plan, errors, prompt, or schema_context."
+        ),
+        user_prompt=json.dumps(
+            {
+                "prompt": prompt,
+                "bad_plan": bad_plan,
+                "errors": errors,
                 "schema_context": compact_preview(context, 9000),
             },
             indent=2,

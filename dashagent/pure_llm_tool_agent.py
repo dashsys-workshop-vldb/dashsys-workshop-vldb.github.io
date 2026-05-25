@@ -24,6 +24,9 @@ SCHEMA_RETRIEVED_SQL_AGENT = "schema_retrieved_sql_agent"
 VALIDATE_REPAIR_SQL_AGENT = "validate_repair_sql_agent"
 EVIDENCE_LOCKED_ANSWER_AGENT = "evidence_locked_answer_agent"
 FULL_PURE_LLM_TOOL_AGENT_V1 = "full_pure_llm_tool_agent_v1"
+STRUCTURED_SQL_PLAN_AGENT_V1 = "structured_sql_plan_agent_v1"
+STRUCTURED_SQL_PLAN_WITH_REPAIR_V1 = "structured_sql_plan_with_repair_v1"
+STRUCTURED_SQL_PLAN_BACKEND_ANSWER_ONLY = "structured_sql_plan_backend_answer_only"
 
 PURE_LLM_TOOL_AGENT_VARIANTS = [
     STRUCTURED_PLAN_THEN_TOOLS,
@@ -31,6 +34,9 @@ PURE_LLM_TOOL_AGENT_VARIANTS = [
     VALIDATE_REPAIR_SQL_AGENT,
     EVIDENCE_LOCKED_ANSWER_AGENT,
     FULL_PURE_LLM_TOOL_AGENT_V1,
+    STRUCTURED_SQL_PLAN_AGENT_V1,
+    STRUCTURED_SQL_PLAN_WITH_REPAIR_V1,
+    STRUCTURED_SQL_PLAN_BACKEND_ANSWER_ONLY,
 ]
 
 
@@ -69,6 +75,31 @@ VARIANT_CAPABILITIES = {
         "sql_repair": True,
         "api_guard": True,
         "evidence_locked_answer": True,
+    },
+    STRUCTURED_SQL_PLAN_AGENT_V1: {
+        "structured_plan": True,
+        "schema_context": True,
+        "sql_repair": False,
+        "structured_sql_plan": True,
+        "api_guard": True,
+        "evidence_locked_answer": True,
+    },
+    STRUCTURED_SQL_PLAN_WITH_REPAIR_V1: {
+        "structured_plan": True,
+        "schema_context": True,
+        "sql_repair": True,
+        "structured_sql_plan": True,
+        "api_guard": True,
+        "evidence_locked_answer": True,
+    },
+    STRUCTURED_SQL_PLAN_BACKEND_ANSWER_ONLY: {
+        "structured_plan": True,
+        "schema_context": True,
+        "sql_repair": True,
+        "structured_sql_plan": True,
+        "api_guard": True,
+        "evidence_locked_answer": True,
+        "backend_answer_only": True,
     },
 }
 
@@ -113,6 +144,24 @@ def pure_llm_baseline_definitions() -> list[dict[str, Any]]:
             "variant": FULL_PURE_LLM_TOOL_AGENT_V1,
             "description": "Combines planning, schema retrieval, SQL repair, API validation, and evidence-locked answer.",
             "capabilities": VARIANT_CAPABILITIES[FULL_PURE_LLM_TOOL_AGENT_V1],
+            "status": "shadow_diagnostic",
+        },
+        {
+            "variant": STRUCTURED_SQL_PLAN_AGENT_V1,
+            "description": "LLM emits structured SQL plan JSON; deterministic compiler emits validated SQL without repair.",
+            "capabilities": VARIANT_CAPABILITIES[STRUCTURED_SQL_PLAN_AGENT_V1],
+            "status": "shadow_diagnostic",
+        },
+        {
+            "variant": STRUCTURED_SQL_PLAN_WITH_REPAIR_V1,
+            "description": "Structured SQL plan JSON plus deterministic compiler and up to two plan repair rounds.",
+            "capabilities": VARIANT_CAPABILITIES[STRUCTURED_SQL_PLAN_WITH_REPAIR_V1],
+            "status": "shadow_diagnostic",
+        },
+        {
+            "variant": STRUCTURED_SQL_PLAN_BACKEND_ANSWER_ONLY,
+            "description": "Structured SQL plan with deterministic tool-evidence answer fallback only.",
+            "capabilities": VARIANT_CAPABILITIES[STRUCTURED_SQL_PLAN_BACKEND_ANSWER_ONLY],
             "status": "shadow_diagnostic",
         },
     ]
@@ -163,6 +212,7 @@ def run_pure_llm_tool_agent_variant(
             llm_client=client,
             plan=plan,
             max_repair_rounds=2 if capabilities.get("sql_repair") else 0,
+            structured_sql_plan=bool(capabilities.get("structured_sql_plan")),
         )
         sql_result = repair
         steps.append(
@@ -183,11 +233,12 @@ def run_pure_llm_tool_agent_variant(
         steps.append(api_result.get("step", {"kind": "api_call", "validation": {"ok": False}}))
         if api_result.get("observation"):
             observations.append(api_result["observation"])
+    answer_client = _UnavailableLLMClient() if capabilities.get("backend_answer_only") else client
     if capabilities.get("evidence_locked_answer"):
-        answer_payload = evidence_locked_answer(prompt, observations, llm_client=client, answer_intent=answer_intent)
+        answer_payload = evidence_locked_answer(prompt, observations, llm_client=answer_client, answer_intent=answer_intent)
         final_answer = str(answer_payload.get("answer") or "")
     else:
-        answer_payload = evidence_locked_answer(prompt, observations, llm_client=client, answer_intent=answer_intent)
+        answer_payload = evidence_locked_answer(prompt, observations, llm_client=answer_client, answer_intent=answer_intent)
         final_answer = str(answer_payload.get("answer") or "")
     steps.append({"kind": "final_answer", "answer": final_answer, "answer_guard": answer_payload})
     runtime = time.perf_counter() - start
@@ -432,6 +483,17 @@ def _sum_usage_tokens(items: list[dict[str, Any]]) -> int | None:
     return total if seen else None
 
 
+class _UnavailableLLMClient:
+    def available(self) -> bool:
+        return False
+
+    def provider_name(self) -> str:
+        return "deterministic_backend_answer"
+
+    def model_name(self) -> str:
+        return "none"
+
+
 def _trace_assertions(plan: dict[str, Any], steps: list[dict[str, Any]], answer_payload: dict[str, Any]) -> dict[str, Any]:
     sql_step = next((step for step in steps if step.get("kind") == "sql_call"), {})
     api_step = next((step for step in steps if step.get("kind") == "api_call"), {})
@@ -439,6 +501,10 @@ def _trace_assertions(plan: dict[str, Any], steps: list[dict[str, Any]], answer_
     api_validation = api_step.get("validation") if isinstance(api_step.get("validation"), dict) else {}
     sql_result = sql_step.get("result") if isinstance(sql_step.get("result"), dict) else {}
     api_result = api_step.get("result") if isinstance(api_step.get("result"), dict) else {}
+    attempts = sql_step.get("attempts") if isinstance(sql_step.get("attempts"), list) else []
+    final_attempt = attempts[-1] if attempts else {}
+    compile_result = final_attempt.get("compile") if isinstance(final_attempt.get("compile"), dict) else {}
+    plan_validation = final_attempt.get("plan_validation") if isinstance(final_attempt.get("plan_validation"), dict) else {}
     selected_tool = None
     if sql_step:
         selected_tool = "execute_sql"
@@ -450,6 +516,8 @@ def _trace_assertions(plan: dict[str, Any], steps: list[dict[str, Any]], answer_
         "selected_tool": selected_tool,
         "sql_candidate": sql_step.get("sql"),
         "sql_validation_ok": bool(sql_validation.get("ok")),
+        "structured_plan_compile_ok": bool(compile_result.get("ok")) if compile_result else None,
+        "structured_plan_validation_ok": bool(plan_validation.get("ok")) if plan_validation else None,
         "sql_repair_attempted": int(sql_step.get("repair_rounds") or 0) > 0,
         "sql_repair_success": bool(sql_validation.get("ok")) and int(sql_step.get("repair_rounds") or 0) > 0,
         "api_endpoint_candidate": api_step.get("endpoint_candidate"),

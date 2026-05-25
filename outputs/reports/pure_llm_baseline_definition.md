@@ -8,3 +8,6 @@ All variants are diagnostic/shadow-only.
 - `validate_repair_sql_agent`: Adds SQLValidator/SQLGlot validation and up to two repair rounds.
 - `evidence_locked_answer_agent`: Locks final answer claims to structured tool observations.
 - `full_pure_llm_tool_agent_v1`: Combines planning, schema retrieval, SQL repair, API validation, and evidence-locked answer.
+- `structured_sql_plan_agent_v1`: LLM emits structured SQL plan JSON; deterministic compiler emits validated SQL without repair.
+- `structured_sql_plan_with_repair_v1`: Structured SQL plan JSON plus deterministic compiler and up to two plan repair rounds.
+- `structured_sql_plan_backend_answer_only`: Structured SQL plan with deterministic tool-evidence answer fallback only.

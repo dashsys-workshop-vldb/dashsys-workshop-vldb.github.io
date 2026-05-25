@@ -1,0 +1,1825 @@
+{
+  "diagnostic_only": true,
+  "failures": [
+    {
+      "aggregation": "count",
+      "execution_result": {
+        "error": null,
+        "limited": true,
+        "ok": true,
+        "row_count": 1,
+        "rows": [
+          {
+            "count": 2
+          }
+        ]
+      },
+      "expected_answer_intent": "COUNT",
+      "failure_reason": "invalid_sql_syntax",
+      "failure_stage": "no_clear_failure",
+      "filters": [],
+      "llm_sql_plan": {
+        "_usage": {
+          "completion_tokens": 260,
+          "completion_tokens_details": null,
+          "prompt_tokens": 1842,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cached_tokens": 3
+          },
+          "total_tokens": 2102
+        },
+        "aggregation": [
+          {
+            "columns": [
+              "*"
+            ],
+            "function": "COUNT"
+          }
+        ],
+        "answer_intent": "COUNT",
+        "answer_shape": "A single integer representing the total number of journeys.",
+        "columns_needed": [
+          {
+            "column_name": "COUNT(*)"
+          }
+        ],
+        "confidence": 1,
+        "filters": [],
+        "join_needed": false,
+        "join_path_reason": null,
+        "limit": null,
+        "order_by": null,
+        "primary_entity": "journeys",
+        "primary_table": "dim_campaign",
+        "tables_needed": [
+          {
+            "table_name": "dim_campaign"
+          }
+        ]
+      },
+      "prompt": "How many journeys are in the local dataset?",
+      "prompt_id": "pure_llm_stab_001",
+      "query_id": null,
+      "raw_sql_candidate": "SELECT COUNT(*) AS count FROM \"dim_campaign\"",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [
+        "*"
+      ],
+      "selected_joins": [],
+      "selected_tables": [
+        "dim_campaign"
+      ],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": {
+        "closest_column_suggestions": {},
+        "closest_table_suggestions": {},
+        "destructive_sql_detected": false,
+        "enabled": true,
+        "normalized_sql": "SELECT COUNT(*) AS count FROM \"dim_campaign\"",
+        "parsed_ok": true,
+        "selected_columns": [],
+        "selected_tables": [
+          "dim_campaign"
+        ],
+        "unknown_columns": [],
+        "unknown_tables": []
+      },
+      "variant": "structured_sql_plan_with_repair_v1"
+    },
+    {
+      "aggregation": "count_distinct",
+      "execution_result": {
+        "error": null,
+        "limited": true,
+        "ok": true,
+        "row_count": 1,
+        "rows": [
+          {
+            "count": 0
+          }
+        ]
+      },
+      "expected_answer_intent": "COUNT",
+      "failure_reason": "invalid_sql_syntax",
+      "failure_stage": "no_clear_failure",
+      "filters": [
+        {
+          "column": "ISACCOUNTSEGMENT",
+          "operator": "equals",
+          "table": "dim_segment",
+          "value": true
+        }
+      ],
+      "llm_sql_plan": {
+        "_usage": {
+          "completion_tokens": 135,
+          "completion_tokens_details": null,
+          "prompt_tokens": 2037,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cached_tokens": 3
+          },
+          "total_tokens": 2172
+        },
+        "aggregation": null,
+        "answer_intent": "COUNT",
+        "columns_needed": [
+          "SEGMENTID"
+        ],
+        "confidence": 6.1,
+        "filters": [
+          {
+            "column": "ISACCOUNTSEGMENT",
+            "value": true
+          }
+        ],
+        "join_needed": false,
+        "join_path_reason": null,
+        "limit": null,
+        "order_by": null,
+        "primary_entity": "local audience segments",
+        "primary_table": "dim_segment",
+        "tables_needed": [
+          {
+            "table": "dim_segment"
+          }
+        ]
+      },
+      "prompt": "Count local audience segments and verify with the UPS audiences API if live evidence is available.",
+      "prompt_id": "pure_llm_stab_007",
+      "query_id": null,
+      "raw_sql_candidate": "SELECT COUNT(DISTINCT \"SEGMENTID\") AS count FROM \"dim_segment\" WHERE \"dim_segment\".\"ISACCOUNTSEGMENT\" = 'True'",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [
+        "SEGMENTID"
+      ],
+      "selected_joins": [],
+      "selected_tables": [
+        "dim_segment"
+      ],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": {
+        "closest_column_suggestions": {},
+        "closest_table_suggestions": {},
+        "destructive_sql_detected": false,
+        "enabled": true,
+        "normalized_sql": "SELECT COUNT(DISTINCT \"SEGMENTID\") AS count FROM \"dim_segment\" WHERE \"dim_segment\".\"ISACCOUNTSEGMENT\" = 'True'",
+        "parsed_ok": true,
+        "selected_columns": [
+          "dim_segment.ISACCOUNTSEGMENT",
+          "SEGMENTID"
+        ],
+        "selected_tables": [
+          "dim_segment"
+        ],
+        "unknown_columns": [],
+        "unknown_tables": []
+      },
+      "variant": "structured_sql_plan_with_repair_v1"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": "Unknown column: LABELSSEGMENT. Suggestions: LABELSSEGMENT, LABELSDEPENDENTSEGMENT, LABELSTARGET, ISPEOPLESEGMENT",
+        "ok": false,
+        "row_count": 0,
+        "rows_preview": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [
+            "Unknown column: LABELSSEGMENT. Suggestions: LABELSSEGMENT, LABELSDEPENDENTSEGMENT, LABELSTARGET, ISPEOPLESEGMENT"
+          ],
+          "ok": false,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "hallucinated_column",
+      "failure_stage": "invalid_sql",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "When was the journey 'Birthday Message' published?",
+      "prompt_id": null,
+      "query_id": "example_000",
+      "raw_sql_candidate": "SELECT CAMPAIGNID, STARTDATE FROM dim_campaign WHERE LABELSSEGMENT = 'Birthday Message';",
+      "repair_attempt_count": 0,
+      "repair_result": "failed",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [
+          "Unknown column: LABELSSEGMENT. Suggestions: LABELSSEGMENT, LABELSDEPENDENTSEGMENT, LABELSTARGET, ISPEOPLESEGMENT"
+        ],
+        "ok": false,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "RAW_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": null,
+        "ok": true,
+        "row_count": 0,
+        "rows_preview": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "api_endpoint_selection_wrong",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "Give me inactive journeys",
+      "prompt_id": null,
+      "query_id": "example_001",
+      "raw_sql_candidate": "SELECT * FROM dim_campaign WHERE STATUS = 'INACTIVE';",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "RAW_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": null,
+        "ok": true,
+        "row_count": 0,
+        "rows_preview": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "api_endpoint_selection_wrong",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "Give me inactive journeys",
+      "prompt_id": null,
+      "query_id": "example_001",
+      "raw_sql_candidate": "SELECT * FROM dim_campaign WHERE STATE = 'inactive';",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "GUIDED_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": null,
+        "ok": true,
+        "row_count": 2,
+        "rows_preview": {
+          "preview": "{\"items\": [{\"_ACP_SYSTEM_METADATA\": \"{\\\"acp_sourceBatchId\\\": null, \\\"commitBatchId\\\": null, \\\"trackingId\\\": \\\"9f4ebca4-2fdd-4873-95f5-8d66bab358c6\\\", \\\"rowId\\\": \\\"9f4ebca4-2fdd-4873-95f5-8d66bab358c6-0\\\", \\\"rowVersion\\\": 1, \\\"primaryIdentity\\\": null, \\\"ingestTime\\\": 1776236297744, \\\"isDeleted\\\": false}\", \"UPDATEDTIME\": \"2026-03-31T06:07:32.838462639Z\", \"LABELSCAMPAIGN\": \"[]\", \"IMSORGID\": \"[REDACTED]\", \"STATE\": \"updated\", \"ISSCHEDULED\": false, \"ISRECURRING\": false, \"CAMPAIGNTYPE\": \"TRIGGERED\", \"truncated_fields\": 13}, {\"_ACP_SYSTEM_METADATA\": \"{\\\"acp_sourceBatchId\\\": null, \\\"commitBatchId\\\": null, \\\"trackingId\\\": \\\"3f277603-ac4d-4022-a993-8cbd3afc0d62\\\", \\\"rowId\\\": \\\"3f277603-ac4d-4022-a993-8cbd3afc0d62-0\\\", \\\"rowVersion\\\": 1, \\\"primaryIdentity\\\": null, \\\"ingestTime\\\": 1776236297744, \\\"isDeleted\\\": false}\", \"UPDATEDTIME\": \"2026-03-31T15:35:12.042188843Z\", \"LABELSCAMPAIGN\": \"[]\", \"IMSORGID\": \"[REDACTED]\", \"STATE\": \"created\", \"ISSCHEDULED\": tr...",
+          "truncated": true
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "api_endpoint_selection_wrong",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "List all journeys",
+      "prompt_id": null,
+      "query_id": "example_002",
+      "raw_sql_candidate": "SELECT * FROM dim_campaign;",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "RAW_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": null,
+        "ok": true,
+        "row_count": 2,
+        "rows_preview": {
+          "items": [
+            {
+              "CAMPAIGNID": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+              "NAME": "Birthday Message",
+              "STATE": "updated"
+            },
+            {
+              "CAMPAIGNID": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+              "NAME": "Gold Tier Welcome Email",
+              "STATE": "created"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "api_endpoint_selection_wrong",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "List all journeys",
+      "prompt_id": null,
+      "query_id": "example_002",
+      "raw_sql_candidate": "SELECT NAME, CAMPAIGNID, STARTDATE, STATE FROM dim_campaign;",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "GUIDED_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": "Unknown column: STATUS. Suggestions: STATUS, LIFECYCLESTATUS, STATE, STARTDATE",
+        "ok": false,
+        "row_count": 0,
+        "rows_preview": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [
+            "Unknown column: STATUS. Suggestions: STATUS, LIFECYCLESTATUS, STATE, STARTDATE"
+          ],
+          "ok": false,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "hallucinated_column",
+      "failure_stage": "invalid_sql",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "Show me the IDs of failed dataflow runs",
+      "prompt_id": null,
+      "query_id": "example_004",
+      "raw_sql_candidate": "SELECT DATAFLOWID FROM dim_connector WHERE STATUS = 'FAILED';",
+      "repair_attempt_count": 0,
+      "repair_result": "failed",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [
+          "Unknown column: STATUS. Suggestions: STATUS, LIFECYCLESTATUS, STATE, STARTDATE"
+        ],
+        "ok": false,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "RAW_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": null,
+        "ok": true,
+        "row_count": 0,
+        "rows_preview": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "api_endpoint_selection_wrong",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "Show me the IDs of failed dataflow runs",
+      "prompt_id": null,
+      "query_id": "example_004",
+      "raw_sql_candidate": "SELECT DATAFLOWID FROM dim_connector WHERE STATE = 'FAILED';",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "GUIDED_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": null,
+        "ok": true,
+        "row_count": 0,
+        "rows_preview": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "invalid_sql",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
+      "prompt_id": null,
+      "query_id": "example_005",
+      "raw_sql_candidate": "SELECT * FROM dim_campaign WHERE SANDBOXID = 'b2b-prod' ORDER BY UPDATEDTIME DESC;",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "RAW_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": null,
+        "ok": true,
+        "row_count": 0,
+        "rows_preview": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "api_endpoint_selection_wrong",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "show me the field for Person: Birthday Today 001",
+      "prompt_id": null,
+      "query_id": "example_008",
+      "raw_sql_candidate": "SELECT * FROM dim_segment WHERE LABELSSEGMENT = 'Person: Birthday Today 001';",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "RAW_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": null,
+        "ok": true,
+        "row_count": 1,
+        "rows_preview": {
+          "preview": "{\"items\": [{\"DEFINITION\": \"{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"and\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"=\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getDayOfMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"birthDate\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"person\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"parameterReference\\\",\\\"position\\\":1}}}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getDayOfMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"literal\\\",\\\"literalType\\\":\\\"Timestamp\\\",\\\"value\\\":\\\"today\\\"}]}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"=\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"birthDate\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"person\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"parameterReference\\\",\\\"position\\\":1}}}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"literal\\\",\\\"literalType\\\":\\\"Timestamp\\\",\\\"value\\\":\\\"today\\\"}]}]}]}\"...",
+          "truncated": true
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "api_endpoint_selection_wrong",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "show me the field for Person: Birthday Today 001",
+      "prompt_id": null,
+      "query_id": "example_008",
+      "raw_sql_candidate": "SELECT * FROM dim_segment WHERE NAME = 'Person: Birthday Today 001';",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "GUIDED_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "row_count": 1,
+        "rows": {
+          "items": [
+            {
+              "property_name": "person.birthDate",
+              "segment_name": "Person: Birthday Today 001"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "api_endpoint_selection_wrong",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "show me the field for Person: Birthday Today 001",
+      "prompt_id": null,
+      "query_id": "example_008",
+      "raw_sql_candidate": "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "LLM_CONTROLLER_OPTIMIZED_AGENT"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": null,
+        "ok": true,
+        "row_count": 2,
+        "rows_preview": {
+          "preview": "{\"items\": [{\"_ACP_SYSTEM_METADATA\": \"{\\\"acp_sourceBatchId\\\": null, \\\"commitBatchId\\\": null, \\\"trackingId\\\": \\\"9f4ebca4-2fdd-4873-95f5-8d66bab358c6\\\", \\\"rowId\\\": \\\"9f4ebca4-2fdd-4873-95f5-8d66bab358c6-0\\\", \\\"rowVersion\\\": 1, \\\"primaryIdentity\\\": null, \\\"ingestTime\\\": 1776236297744, \\\"isDeleted\\\": false}\", \"UPDATEDTIME\": \"2026-03-31T06:07:32.838462639Z\", \"LABELSCAMPAIGN\": \"[]\", \"IMSORGID\": \"[REDACTED]\", \"STATE\": \"updated\", \"ISSCHEDULED\": false, \"ISRECURRING\": false, \"CAMPAIGNTYPE\": \"TRIGGERED\", \"truncated_fields\": 13}, {\"_ACP_SYSTEM_METADATA\": \"{\\\"acp_sourceBatchId\\\": null, \\\"commitBatchId\\\": null, \\\"trackingId\\\": \\\"3f277603-ac4d-4022-a993-8cbd3afc0d62\\\", \\\"rowId\\\": \\\"3f277603-ac4d-4022-a993-8cbd3afc0d62-0\\\", \\\"rowVersion\\\": 1, \\\"primaryIdentity\\\": null, \\\"ingestTime\\\": 1776236297744, \\\"isDeleted\\\": false}\", \"UPDATEDTIME\": \"2026-03-31T15:35:12.042188843Z\", \"LABELSCAMPAIGN\": \"[]\", \"IMSORGID\": \"[REDACTED]\", \"STATE\": \"created\", \"ISSCHEDULED\": tr...",
+          "truncated": true
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "api_endpoint_selection_wrong",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "Provide more details for the schema 'weRetail: Customer Actions'",
+      "prompt_id": null,
+      "query_id": "example_009",
+      "raw_sql_candidate": "SELECT * FROM dim_campaign LIMIT 5;",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "RAW_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": null,
+        "ok": true,
+        "row_count": 10,
+        "rows_preview": {
+          "preview": "{\"items\": [{\"DEFINITION\": \"{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"and\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"=\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getDayOfMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"birthDate\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"person\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"parameterReference\\\",\\\"position\\\":1}}}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getDayOfMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"literal\\\",\\\"literalType\\\":\\\"Timestamp\\\",\\\"value\\\":\\\"today\\\"}]}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"=\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"birthDate\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"person\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"parameterReference\\\",\\\"position\\\":1}}}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"literal\\\",\\\"literalType\\\":\\\"Timestamp\\\",\\\"value\\\":\\\"today\\\"}]}]}]}\"...",
+          "truncated": true
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "api_endpoint_selection_wrong",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "Provide more details for the schema 'weRetail: Customer Actions'",
+      "prompt_id": null,
+      "query_id": "example_009",
+      "raw_sql_candidate": "SELECT * FROM dim_segment LIMIT 10;",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "GUIDED_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": "Unknown table: information_schema.",
+        "ok": false,
+        "row_count": 0,
+        "rows_preview": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [
+            "Unknown table: information_schema."
+          ],
+          "ok": false,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "hallucinated_table",
+      "failure_stage": "invalid_sql",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "How many schemas do I have?",
+      "prompt_id": null,
+      "query_id": "example_011",
+      "raw_sql_candidate": "SELECT COUNT(DISTINCT TABLE_SCHEMA) FROM information_schema.tables;",
+      "repair_attempt_count": 0,
+      "repair_result": "failed",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [
+          "Unknown table: information_schema."
+        ],
+        "ok": false,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "RAW_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "allowed_tables": [
+          "br_campaign_segment",
+          "dim_blueprint",
+          "dim_campaign",
+          "dim_collection",
+          "dim_connector",
+          "dim_property",
+          "dim_segment",
+          "dim_target",
+          "hkg_br_base_segment_used_by_dependent_segment",
+          "hkg_br_blueprint_collection",
+          "hkg_br_blueprint_property",
+          "hkg_br_collection_property",
+          "hkg_br_collection_segment",
+          "hkg_br_property_property",
+          "hkg_br_segment_property",
+          "hkg_br_segment_target",
+          "hkg_br_source_collection",
+          "hkg_br_target_property"
+        ],
+        "error": "Use only allowed tables; information_schema/sqlite_master/duckdb_tables are not available.",
+        "ok": false,
+        "row_count": 0,
+        "rows_preview": [
+          {
+            "important_columns": [
+              "SEGMENTID",
+              "CAMPAIGNID",
+              "LABELSSEGMENT",
+              "LABELSCAMPAIGN"
+            ],
+            "table_name": "br_campaign_segment"
+          },
+          {
+            "important_columns": [
+              "BLUEPRINTTYPE",
+              "UPDATEDCLIENTID",
+              "UPDATEDTIME",
+              "BLUEPRINTID",
+              "NAME",
+              "ISBEHAVIORTIMESERIESTYPE",
+              "ISBEHAVIORRECORDTYPE",
+              "CREATEDTIME"
+            ],
+            "table_name": "dim_blueprint"
+          },
+          {
+            "important_columns": [
+              "UPDATEDTIME",
+              "STARTDATE",
+              "IMSORGID",
+              "LASTDEPLOYEDTIME",
+              "STATE",
+              "CAMPAIGNTYPE",
+              "STOPPEDTIME",
+              "FINISHEDTIME"
+            ],
+            "table_name": "dim_campaign"
+          },
+          {
+            "important_columns": [
+              "ISIDENTITYENABLED",
+              "ROWCOUNT",
+              "UPDATEDTIME",
+              "NAME",
+              "COLLECTIONID",
+              "CREATEDTIME",
+              "UPDATEDBY",
+              "CREATEDCLIENTID"
+            ],
+            "table_name": "dim_collection"
+          },
+          {
+            "important_columns": [
+              "DATAFLOWNAME",
+              "UPDATEDTIME",
+              "CONNECTIONSPECNAME",
+              "STATE",
+              "SOURCEID",
+              "NAME",
+              "DATAFLOWID",
+              "SOURCEACCOUNTNAME"
+            ],
+            "table_name": "dim_connector"
+          },
+          {
+            "important_columns": [
+              "UPDATEDTIME",
+              "PARENTARTIFACTID",
+              "CREATEDTIME",
+              "PROPERTYID",
+              "TYPE",
+              "PROPERTY",
+              "ALTDISPLAYDESC",
+              "DESCRIPTION"
+            ],
+            "table_name": "dim_property"
+          },
+          {
+            "important_columns": [
+              "SEGMENTID",
+              "UPDATEDTIME",
+              "ISACCOUNTSEGMENT",
+              "NAME",
+              "EVALUATIONCOMPLETEDTIME",
+              "LIFECYCLESTATUS",
+              "CREATEDTIME",
+              "TYPE"
+            ],
+            "table_name": "dim_segment"
+          },
+          {
+            "important_columns": [
+              "DATAFLOWNAME",
+              "UPDATEDTIME",
+              "STATE",
+              "TARGETID",
+              "CREATEDTIME",
+              "CONNECTIONSPECID",
+              "NAME",
+              "INTERVAL"
+            ],
+            "table_name": "dim_target"
+          },
+          {
+            "important_columns": [
+              "SEGMENTID",
+              "DEPENDENTSEGMENTID",
+              "LABELSDEPENDENTSEGMENT",
+              "LABELSSEGMENT"
+            ],
+            "table_name": "hkg_br_base_segment_used_by_dependent_segment"
+          },
+          {
+            "important_columns": [
+              "COLLECTIONID",
+              "BLUEPRINTID",
+              "LABELSBLUEPRINT",
+              "LABELSCOLLECTION"
+            ],
+            "table_name": "hkg_br_blueprint_collection"
+          },
+          {
+            "important_columns": [
+              "BLUEPRINTID",
+              "LABELSBLUEPRINT",
+              "PROPERTY",
+              "LABELSPROPERTY"
+            ],
+            "table_name": "hkg_br_blueprint_property"
+          },
+          {
+            "important_columns": [
+              "COLLECTIONID",
+              "PROPERTY",
+              "LABELSPROPERTY",
+              "LABELSCOLLECTION"
+            ],
+            "table_name": "hkg_br_collection_property"
+          },
+          {
+            "important_columns": [
+              "SEGMENTID",
+              "COLLECTIONID",
+              "LABELSSEGMENT",
+              "LABELSCOLLECTION"
+            ],
+            "table_name": "hkg_br_collection_segment"
+          },
+          {
+            "important_columns": [
+              "__empty_parquet_placeholder"
+            ],
+            "table_name": "hkg_br_property_property"
+          },
+          {
+            "important_columns": [
+              "SEGMENTID",
+              "PROPERTY",
+              "LABELSSEGMENT",
+              "LABELSPROPERTY"
+            ],
+            "table_name": "hkg_br_segment_property"
+          },
+          {
+            "important_columns": [
+              "SEGMENTID",
+              "TARGETID",
+              "LABELSSEGMENT",
+              "LABELSTARGET"
+            ],
+            "table_name": "hkg_br_segment_target"
+          },
+          {
+            "important_columns": [
+              "DATAFLOWNAME",
+              "COLLECTIONID",
+              "DATAFLOWID",
+              "SOURCEID",
+              "LABELSSOURCE",
+              "LABELSCOLLECTION"
+            ],
+            "table_name": "hkg_br_source_collection"
+          },
+          {
+            "important_columns": [
+              "TARGETID",
+              "PROPERTY",
+              "LABELSTARGET",
+              "LABELSPROPERTY"
+            ],
+            "table_name": "hkg_br_target_property"
+          }
+        ],
+        "validation": {
+          "errors": [
+            "Schema introspection table is not available in this tool wrapper."
+          ],
+          "ok": false,
+          "repaired": false,
+          "warnings": [
+            "Use SELECT table_name FROM __schema_tables or DESCRIBE <allowed_table>."
+          ]
+        },
+        "virtual_schema": true
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "invalid_sql",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "How many schemas do I have?",
+      "prompt_id": null,
+      "query_id": "example_011",
+      "raw_sql_candidate": "SELECT COUNT(DISTINCT TABLE_NAME) AS SCHEMA_COUNT FROM information_schema.tables WHERE TABLE_SCHEMA NOT IN ('information_schema', 'pg_catalog')",
+      "repair_attempt_count": 0,
+      "repair_result": "failed",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [
+          "Schema introspection table is not available in this tool wrapper."
+        ],
+        "ok": false,
+        "repaired": false,
+        "warnings": [
+          "Use SELECT table_name FROM __schema_tables or DESCRIBE <allowed_table>."
+        ]
+      },
+      "sqlglot_result": null,
+      "variant": "GUIDED_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": null,
+        "ok": true,
+        "row_count": 5,
+        "rows_preview": {
+          "items": [
+            {
+              "COLLECTIONID": "69c8d9c4e592a9df81deb244",
+              "ROWCOUNT": 128,
+              "UPDATEDTIME": "2026-04-14T21:08:54.000+00:00"
+            },
+            {
+              "COLLECTIONID": "69c8dad4aa7a59818543461a",
+              "ROWCOUNT": 16,
+              "UPDATEDTIME": "2026-04-14T21:08:43.000+00:00"
+            },
+            {
+              "COLLECTIONID": "69c8d6c810c39fb1068f65b5",
+              "ROWCOUNT": 11734,
+              "UPDATEDTIME": "2026-04-14T20:40:04.000+00:00"
+            }
+          ],
+          "total_items": 5,
+          "truncated_items": true
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "api_endpoint_selection_wrong",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "Show recent changes in datasets.",
+      "prompt_id": null,
+      "query_id": "example_013",
+      "raw_sql_candidate": "SELECT UPDATEDTIME, COLLECTIONID, ROWCOUNT FROM dim_collection ORDER BY UPDATEDTIME DESC LIMIT 5;",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "RAW_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": null,
+        "ok": true,
+        "row_count": 10,
+        "rows_preview": {
+          "preview": "{\"items\": [{\"DEFINITION\": \"{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"and\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"=\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getDayOfMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"birthDate\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"person\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"parameterReference\\\",\\\"position\\\":1}}}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getDayOfMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"literal\\\",\\\"literalType\\\":\\\"Timestamp\\\",\\\"value\\\":\\\"today\\\"}]}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"=\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"birthDate\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"person\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"parameterReference\\\",\\\"position\\\":1}}}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"literal\\\",\\\"literalType\\\":\\\"Timestamp\\\",\\\"value\\\":\\\"today\\\"}]}]}]}\"...",
+          "truncated": true
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "api_endpoint_selection_wrong",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "Show recent changes in datasets.",
+      "prompt_id": null,
+      "query_id": "example_013",
+      "raw_sql_candidate": "SELECT * FROM dim_segment ORDER BY UPDATEDTIME DESC LIMIT 10;",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "GUIDED_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": "Unknown column: CREATEDBY. Suggestions: CREATEDBY, CREATEDCLIENTID, CREATEDTIME, UPDATEDBY",
+        "ok": false,
+        "row_count": 0,
+        "rows_preview": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [
+            "Unknown column: CREATEDBY. Suggestions: CREATEDBY, CREATEDCLIENTID, CREATEDTIME, UPDATEDBY"
+          ],
+          "ok": false,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "hallucinated_column",
+      "failure_stage": "invalid_sql",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "Show me all entities created by download",
+      "prompt_id": null,
+      "query_id": "example_014",
+      "raw_sql_candidate": "SELECT * FROM dim_segment WHERE CREATEDBY = 'download';",
+      "repair_attempt_count": 0,
+      "repair_result": "failed",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [
+          "Unknown column: CREATEDBY. Suggestions: CREATEDBY, CREATEDCLIENTID, CREATEDTIME, UPDATEDBY"
+        ],
+        "ok": false,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "RAW_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": null,
+        "ok": true,
+        "row_count": 0,
+        "rows_preview": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "api_endpoint_selection_wrong",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "Show me all entities created by download",
+      "prompt_id": null,
+      "query_id": "example_014",
+      "raw_sql_candidate": "SELECT * FROM dim_segment WHERE DEFINITION LIKE '%download%'",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "GUIDED_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": null,
+        "ok": true,
+        "row_count": 13,
+        "rows_preview": {
+          "preview": "{\"items\": [{\"DEFINITION\": \"{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"and\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"=\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getDayOfMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"birthDate\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"person\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"parameterReference\\\",\\\"position\\\":1}}}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getDayOfMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"literal\\\",\\\"literalType\\\":\\\"Timestamp\\\",\\\"value\\\":\\\"today\\\"}]}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"=\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"birthDate\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"person\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"parameterReference\\\",\\\"position\\\":1}}}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"literal\\\",\\\"literalType\\\":\\\"Timestamp\\\",\\\"value\\\":\\\"today\\\"}]}]}]}\"...",
+          "truncated": true
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "api_endpoint_selection_wrong",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "List all segment definitions.",
+      "prompt_id": null,
+      "query_id": "example_023",
+      "raw_sql_candidate": "SELECT DEFINITION FROM dim_segment;",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "RAW_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": null,
+        "ok": true,
+        "row_count": 13,
+        "rows_preview": {
+          "preview": "{\"items\": [{\"SEGMENTID\": \"2fdfefe1-04d0-46ce-9fbd-7611e311dd26\", \"DEFINITION\": \"{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"and\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"=\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getDayOfMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"birthDate\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"person\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"parameterReference\\\",\\\"position\\\":1}}}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getDayOfMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"literal\\\",\\\"literalType\\\":\\\"Timestamp\\\",\\\"value\\\":\\\"today\\\"}]}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"=\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"birthDate\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"person\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"parameterReference\\\",\\\"position\\\":1}}}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"literal\\\",\\\"li...",
+          "truncated": true
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "api_endpoint_selection_wrong",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "List all segment definitions.",
+      "prompt_id": null,
+      "query_id": "example_023",
+      "raw_sql_candidate": "SELECT SEGMENTID, DEFINITION FROM dim_segment;",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "GUIDED_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": null,
+        "ok": true,
+        "row_count": 10,
+        "rows_preview": {
+          "preview": "{\"items\": [{\"SEGMENTID\": \"2fdfefe1-04d0-46ce-9fbd-7611e311dd26\", \"DEFINITION\": \"{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"and\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"=\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getDayOfMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"birthDate\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"person\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"parameterReference\\\",\\\"position\\\":1}}}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getDayOfMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"literal\\\",\\\"literalType\\\":\\\"Timestamp\\\",\\\"value\\\":\\\"today\\\"}]}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"=\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"birthDate\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"person\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"parameterReference\\\",\\\"position\\\":1}}}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"literal\\\",\\\"li...",
+          "truncated": true
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "api_endpoint_selection_wrong",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "Which segment definitions were updated most recently?",
+      "prompt_id": null,
+      "query_id": "example_024",
+      "raw_sql_candidate": "SELECT SEGMENTID, DEFINITION, UPDATEDTIME FROM dim_segment ORDER BY UPDATEDTIME DESC LIMIT 10;",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "RAW_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": null,
+        "ok": true,
+        "row_count": 10,
+        "rows_preview": {
+          "preview": "{\"items\": [{\"SEGMENTID\": \"2fdfefe1-04d0-46ce-9fbd-7611e311dd26\", \"UPDATEDTIME\": \"2026-04-05T04:33:25.000+00:00\", \"DEFINITION\": \"{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"and\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"=\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getDayOfMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"birthDate\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"person\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"parameterReference\\\",\\\"position\\\":1}}}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getDayOfMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"literal\\\",\\\"literalType\\\":\\\"Timestamp\\\",\\\"value\\\":\\\"today\\\"}]}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"=\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"birthDate\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"person\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"parameterReference\\\",\\\"position\\\":1}}}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getMo...",
+          "truncated": true
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "api_endpoint_selection_wrong",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "Which segment definitions were updated most recently?",
+      "prompt_id": null,
+      "query_id": "example_024",
+      "raw_sql_candidate": "SELECT SEGMENTID, UPDATEDTIME, DEFINITION FROM dim_segment ORDER BY UPDATEDTIME DESC LIMIT 10;",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "GUIDED_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": null,
+        "ok": true,
+        "row_count": 13,
+        "rows_preview": {
+          "items": [
+            {
+              "SEGMENTID": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
+              "UPDATEDTIME": "2026-04-05T04:33:25.000+00:00"
+            },
+            {
+              "SEGMENTID": "574372f1-7b74-489c-b77f-139024b083a5",
+              "UPDATEDTIME": "2026-03-29T07:52:25.000+00:00"
+            },
+            {
+              "SEGMENTID": "7e7b3d71-ae29-4c97-8b24-99905ea6bf68",
+              "UPDATEDTIME": "2026-03-29T07:52:17.000+00:00"
+            }
+          ],
+          "total_items": 13,
+          "truncated_items": true
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "api_endpoint_selection_wrong",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "List all segment evaluation jobs.",
+      "prompt_id": null,
+      "query_id": "example_025",
+      "raw_sql_candidate": "SELECT SEGMENTID, UPDATEDTIME FROM dim_segment;",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "RAW_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": null,
+        "ok": true,
+        "row_count": 13,
+        "rows_preview": {
+          "items": [
+            {
+              "LIFECYCLESTATUS": "published",
+              "NAME": "Person: Birthday Today 001",
+              "SEGMENTID": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
+            },
+            {
+              "LIFECYCLESTATUS": "published",
+              "NAME": "Campaign: 25% Off Purchase Offer Reminder",
+              "SEGMENTID": "574372f1-7b74-489c-b77f-139024b083a5"
+            },
+            {
+              "LIFECYCLESTATUS": "published",
+              "NAME": "Campaign: New Application Credit Card Offer",
+              "SEGMENTID": "7e7b3d71-ae29-4c97-8b24-99905ea6bf68"
+            }
+          ],
+          "total_items": 13,
+          "truncated_items": true
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "no_clear_sql_failure",
+      "failure_stage": "api_endpoint_selection_wrong",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "List all segment evaluation jobs.",
+      "prompt_id": null,
+      "query_id": "example_025",
+      "raw_sql_candidate": "SELECT SEGMENTID, NAME, EVALUATIONCOMPLETEDTIME, LIFECYCLESTATUS FROM dim_segment;",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "GUIDED_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": "Unknown column: INTERVAL.",
+        "ok": false,
+        "row_count": 0,
+        "rows_preview": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [
+            "Unknown column: INTERVAL."
+          ],
+          "ok": false,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "hallucinated_column",
+      "failure_stage": "invalid_sql",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "How many segment jobs are currently processing?",
+      "prompt_id": null,
+      "query_id": "example_026",
+      "raw_sql_candidate": "SELECT COUNT(*) FROM dim_segment WHERE UPDATEDTIME > NOW() - INTERVAL '1 DAY';",
+      "repair_attempt_count": 0,
+      "repair_result": "failed",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [
+          "Unknown column: INTERVAL."
+        ],
+        "ok": false,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "RAW_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": "Unknown column: STATUS. Suggestions: STATUS, LIFECYCLESTATUS, STATE, STARTDATE",
+        "ok": false,
+        "row_count": 0,
+        "rows_preview": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [
+            "Unknown column: STATUS. Suggestions: STATUS, LIFECYCLESTATUS, STATE, STARTDATE"
+          ],
+          "ok": false,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "hallucinated_column",
+      "failure_stage": "invalid_sql",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "Show all segment jobs with status 'QUEUED'.",
+      "prompt_id": null,
+      "query_id": "example_027",
+      "raw_sql_candidate": "SELECT SEGMENTID FROM dim_segment WHERE STATUS = 'QUEUED';",
+      "repair_attempt_count": 0,
+      "repair_result": "failed",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [
+          "Unknown column: STATUS. Suggestions: STATUS, LIFECYCLESTATUS, STATE, STARTDATE"
+        ],
+        "ok": false,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "RAW_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": "Unknown table: dim_dataset. Suggestions: dim_target, dim_segment, dim_campaign, dim_property",
+        "ok": false,
+        "row_count": 0,
+        "rows_preview": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [
+            "Unknown table: dim_dataset. Suggestions: dim_target, dim_segment, dim_campaign, dim_property"
+          ],
+          "ok": false,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "hallucinated_table",
+      "failure_stage": "invalid_sql",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'?",
+      "prompt_id": null,
+      "query_id": "example_033",
+      "raw_sql_candidate": "SELECT DATE_TRUNC('day', UPDATEDTIME) AS day, COUNT(*) AS record_success_count FROM dim_dataset WHERE UPDATEDTIME BETWEEN '2026-03-15' AND '2026-03-31' GROUP BY day;",
+      "repair_attempt_count": 0,
+      "repair_result": "failed",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [
+          "Unknown table: dim_dataset. Suggestions: dim_target, dim_segment, dim_campaign, dim_property"
+        ],
+        "ok": false,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "RAW_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": null,
+      "execution_result": {
+        "error": "Unknown table: timeseries_ingestion. Suggestions: dim_collection, dim_segment, dim_target",
+        "guided_feedback": {
+          "allowed_tables": [
+            "br_campaign_segment",
+            "dim_blueprint",
+            "dim_campaign",
+            "dim_collection",
+            "dim_connector",
+            "dim_property",
+            "dim_segment",
+            "dim_target",
+            "hkg_br_base_segment_used_by_dependent_segment",
+            "hkg_br_blueprint_collection",
+            "hkg_br_blueprint_property",
+            "hkg_br_collection_property",
+            "hkg_br_collection_segment",
+            "hkg_br_property_property",
+            "hkg_br_segment_property",
+            "hkg_br_segment_target",
+            "hkg_br_source_collection",
+            "hkg_br_target_property"
+          ],
+          "closest_table_suggestions": [
+            "hkg_br_collection_segment",
+            "hkg_br_segment_target",
+            "hkg_br_source_collection"
+          ],
+          "hint": "Use only allowed table names. Do not use information_schema/sqlite_master/duckdb_tables.",
+          "unknown_tables": [
+            "timeseries_ingestion. Suggestions: dim_collection, dim_segment, dim_target"
+          ]
+        },
+        "ok": false,
+        "row_count": 0,
+        "rows_preview": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [
+            "Unknown table: timeseries_ingestion. Suggestions: dim_collection, dim_segment, dim_target"
+          ],
+          "ok": false,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "expected_answer_intent": null,
+      "failure_reason": "hallucinated_table",
+      "failure_stage": "invalid_sql",
+      "filters": [],
+      "llm_sql_plan": null,
+      "prompt": "What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'?",
+      "prompt_id": null,
+      "query_id": "example_033",
+      "raw_sql_candidate": "SELECT * FROM timeseries_ingestion WHERE DATE >= '2026-03-15' AND DATE <= '2026-03-31';",
+      "repair_attempt_count": 0,
+      "repair_result": "failed",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [
+          "Unknown table: timeseries_ingestion. Suggestions: dim_collection, dim_segment, dim_target"
+        ],
+        "ok": false,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": null,
+      "variant": "GUIDED_REAL_LLM_TWO_TOOLS_BASELINE"
+    },
+    {
+      "aggregation": "none",
+      "execution_result": null,
+      "expected_answer_intent": "SELECT",
+      "failure_reason": "hallucinated_column",
+      "failure_stage": "sql_repair_failed",
+      "filters": [
+        {
+          "column": "dim_segment.DATAFLOWNAME",
+          "operator": "=",
+          "table": "",
+          "value": "'SMS Opt-In'"
+        },
+        {
+          "column": "dim_segment.STATE",
+          "operator": "=",
+          "table": "",
+          "value": "'ACTIVE'"
+        },
+        {
+          "column": "dim_segment.ISACCOUNTSEGMENT",
+          "operator": "=",
+          "table": "",
+          "value": "'Y'"
+        }
+      ],
+      "llm_sql_plan": {
+        "_usage": {
+          "completion_tokens": 299,
+          "completion_tokens_details": null,
+          "prompt_tokens": 2032,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cached_tokens": 141
+          },
+          "total_tokens": 2331
+        },
+        "aggregation": null,
+        "columns_needed": [
+          "SEGMENTID",
+          "UPDATEDTIME",
+          "ISACCOUNTSEGMENT",
+          "TARGETID"
+        ],
+        "confidence": 0.98,
+        "filters": [
+          {
+            "column": "dim_segment.DATAFLOWNAME",
+            "operator": "=",
+            "value": "'SMS Opt-In'"
+          },
+          {
+            "column": "dim_segment.STATE",
+            "operator": "=",
+            "value": "'ACTIVE'"
+          },
+          {
+            "column": "dim_segment.ISACCOUNTSEGMENT",
+            "operator": "=",
+            "value": "'Y'"
+          }
+        ],
+        "join_needed": true,
+        "join_path_reason": "JOIN dim_segment ON dim_segment.SEGMENTID = dim_target.SEGMENTID WHERE dim_target.DATAFLOWNAME = 'SMS Opt-In'",
+        "limit": null,
+        "order_by": null,
+        "primary_entity": "SMS Opt-In audience",
+        "tables_needed": [
+          "dim_segment",
+          "dim_target"
+        ]
+      },
+      "prompt": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+      "prompt_id": null,
+      "query_id": "example_003",
+      "raw_sql_candidate": "",
+      "repair_attempt_count": 2,
+      "repair_result": "failed",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [
+        "dim_segment",
+        "dim_target"
+      ],
+      "sql_validator_result": {
+        "errors": [
+          "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+          "Unknown column in filters: dim_segment.ISACCOUNTSEGMENT.",
+          "Unknown column in filters: dim_segment.STATE.",
+          "Unsupported filter operator: =.",
+          "Unsupported join path for tables: dim_segment, dim_target."
+        ],
+        "ok": false
+      },
+      "sqlglot_result": {
+        "parse_error": "empty_sql"
+      },
+      "variant": "structured_sql_plan_with_repair_v1"
+    }
+  ],
+  "generated_at": "2026-05-25T20:43:02.263291+00:00",
+  "promotion_allowed": false,
+  "report_type": "pure_llm_sql_generation_failure_analysis",
+  "summary": {
+    "failure_categories": {
+      "hallucinated_column": 6,
+      "hallucinated_table": 3,
+      "invalid_sql_syntax": 2,
+      "no_clear_sql_failure": 21
+    },
+    "hallucinated_journey_table_issue": {
+      "count": 0,
+      "found": false,
+      "likely_cause": "not_observed_in_current_report",
+      "prompt_ids": []
+    },
+    "sql_failure_count": 32
+  }
+}

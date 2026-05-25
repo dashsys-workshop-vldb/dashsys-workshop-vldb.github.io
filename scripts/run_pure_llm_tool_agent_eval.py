@@ -44,6 +44,8 @@ from scripts.load_local_env import load_local_env
 REPORT_STEM = "pure_llm_tool_agent_eval"
 DEFINITION_STEM = "pure_llm_baseline_definition"
 STABILIZATION_STEM = "pure_llm_tool_agent_stabilization"
+STRUCTURED_SQL_PLAN_STEM = "pure_llm_structured_sql_plan_trial"
+SQL_FAILURE_STEM = "pure_llm_sql_generation_failure_analysis"
 STABILIZATION_SET_PATH = ROOT / "data" / "pure_llm_stabilization_set.json"
 
 
@@ -143,6 +145,10 @@ def run_pure_llm_tool_agent_eval(
     if stabilization_set:
         (reports_dir / f"{STABILIZATION_STEM}.json").write_text(json.dumps(payload, indent=2, sort_keys=True, default=str), encoding="utf-8")
         (reports_dir / f"{STABILIZATION_STEM}.md").write_text(_render_stabilization_md(payload), encoding="utf-8")
+    if _has_structured_sql_plan_rows(rows):
+        (reports_dir / f"{STRUCTURED_SQL_PLAN_STEM}.json").write_text(json.dumps(payload, indent=2, sort_keys=True, default=str), encoding="utf-8")
+        (reports_dir / f"{STRUCTURED_SQL_PLAN_STEM}.md").write_text(_render_structured_trial_md(payload), encoding="utf-8")
+    _write_sql_failure_analysis(config, payload)
     return payload
 
 
@@ -352,6 +358,15 @@ def _load_stabilization_set() -> list[dict[str, Any]]:
     return payload if isinstance(payload, list) else []
 
 
+def _load_json(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
 def _stabilization_row(item: dict[str, Any], variant: str, result: dict[str, Any]) -> dict[str, Any]:
     trajectory = result.get("trajectory") if isinstance(result.get("trajectory"), dict) else {}
     trace = result.get("trace_assertions") if isinstance(result.get("trace_assertions"), dict) else trajectory.get("trace_assertions", {})
@@ -423,6 +438,7 @@ def _score_variant_result(harness: EvalHarness, example: Any, variant: str, resu
             "runtime": round(float(trajectory.get("runtime") or 0.0), 4),
             "unsupported_claim_count": result.get("unsupported_claim_count", 0),
             "failure_stage": _failure_stage(result, generated_sql, generated_api),
+            "trace_assertions": result.get("trace_assertions", {}),
             "trajectory": trajectory,
         }
     )
@@ -431,6 +447,8 @@ def _score_variant_result(harness: EvalHarness, example: Any, variant: str, resu
 def _failure_stage(result: dict[str, Any], generated_sql: str | None, generated_api: list[dict[str, Any]]) -> str:
     if result.get("skipped"):
         return "llm_unavailable"
+    if result.get("failure_stage"):
+        return str(result["failure_stage"])
     if result.get("unsupported_claim_count"):
         return "unsupported_claim_added"
     sql_result = result.get("sql_result") if isinstance(result.get("sql_result"), dict) else {}
@@ -466,16 +484,37 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 "estimated_tokens": _avg(system_rows, "estimated_tokens"),
                 "runtime": _avg(system_rows, "runtime"),
                 "unsupported_claims": sum(int(row.get("unsupported_claim_count") or 0) for row in system_rows),
+                "compile_success_rate": _trace_rate(system_rows, "structured_plan_compile_ok"),
+                "sql_validation_pass_rate": _trace_rate(system_rows, "sql_validation_ok"),
             }
         )
     scored = [item for item in per_system if item.get("strict_scoring_status") == "available"]
     best = max(scored, key=lambda item: float(item.get("strict_final_score") or 0.0), default={})
+    raw = next((item for item in per_system if item.get("system") == "RAW_REAL_LLM_TWO_TOOLS_BASELINE"), {})
+    guided = next((item for item in per_system if item.get("system") == "GUIDED_REAL_LLM_TWO_TOOLS_BASELINE"), {})
+    structured = [
+        item
+        for item in per_system
+        if item.get("system") in PURE_LLM_TOOL_AGENT_VARIANTS
+    ]
+    best_structured = max(structured, key=lambda item: float(item.get("strict_final_score") or -999), default={})
+    baseline_score = max(float(raw.get("strict_final_score") or 0.0), float(guided.get("strict_final_score") or 0.0))
+    baseline_sql = max(float(raw.get("sql_score") or 0.0), float(guided.get("sql_score") or 0.0))
+    if best_structured and (
+        float(best_structured.get("strict_final_score") or 0.0) <= baseline_score
+        or float(best_structured.get("sql_score") or 0.0) <= baseline_sql
+    ):
+        recommendation = "pure_llm_still_blocked_by_sql_generation"
+    elif best_structured:
+        recommendation = "pure_llm_sql_grounding_improved_keep_shadow"
+    else:
+        recommendation = "pure_llm_still_too_weak"
     return {
         "systems": per_system,
         "best_variant": best.get("system"),
         "best_strict_score": best.get("strict_final_score"),
         "executed_new_llm_rows": sum(1 for row in rows if row.get("query_id") and row.get("variant") in PURE_LLM_TOOL_AGENT_VARIANTS),
-        "recommendation": "pure_llm_baseline_improved_keep_shadow",
+        "recommendation": recommendation,
     }
 
 
@@ -497,6 +536,7 @@ def _stabilization_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "tool_needed_count": len(tool_needed),
         "tool_called_when_needed_rate": _rate([bool((row.get("trace_assertions") or {}).get("did_llm_choose_tool")) for row in tool_needed]),
         "sql_validation_pass_rate": _rate([bool(trace.get("sql_validation_ok")) for trace in sql_rows]),
+        "compile_success_rate": _rate([bool(trace.get("structured_plan_compile_ok")) for trace in traces if trace.get("structured_plan_compile_ok") is not None]),
         "sql_repair_success_rate": _rate([bool(trace.get("sql_repair_success")) for trace in repair_attempts]),
         "api_endpoint_validation_pass_rate": _rate([bool(trace.get("api_endpoint_validation_ok")) for trace in api_rows]),
         "tool_result_used_rate": _rate([bool(trace.get("tool_result_used_in_answer")) for trace in traces if trace.get("did_llm_choose_tool")]),
@@ -524,6 +564,17 @@ def _rate(values: list[bool]) -> float | None:
 def _avg(rows: list[dict[str, Any]], key: str) -> float:
     values = [float(row[key]) for row in rows if isinstance(row.get(key), (int, float))]
     return round(sum(values) / len(values), 4) if values else 0.0
+
+
+def _trace_rate(rows: list[dict[str, Any]], key: str) -> float | None:
+    values = []
+    for row in rows:
+        trace = row.get("trace_assertions")
+        if not isinstance(trace, dict) and isinstance(row.get("trajectory"), dict):
+            trace = row["trajectory"].get("trace_assertions")
+        if isinstance(trace, dict) and trace.get(key) is not None:
+            values.append(bool(trace.get(key)))
+    return _rate(values)
 
 
 def _render_eval_md(payload: dict[str, Any]) -> str:
@@ -560,6 +611,7 @@ def _render_stabilization_md(payload: dict[str, Any]) -> str:
         f"- Tool-needed count: `{summary.get('tool_needed_count')}`",
         f"- Tool called when needed rate: `{summary.get('tool_called_when_needed_rate')}`",
         f"- SQL validation pass rate: `{summary.get('sql_validation_pass_rate')}`",
+        f"- Compiler success rate: `{summary.get('compile_success_rate')}`",
         f"- SQL repair success rate: `{summary.get('sql_repair_success_rate')}`",
         f"- API endpoint validation pass rate: `{summary.get('api_endpoint_validation_pass_rate')}`",
         f"- Tool result used rate: `{summary.get('tool_result_used_rate')}`",
@@ -570,6 +622,157 @@ def _render_stabilization_md(payload: dict[str, Any]) -> str:
     ]
     for stage, count in sorted((summary.get("failure_stage_distribution") or {}).items()):
         lines.append(f"- `{stage}`: `{count}`")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _render_structured_trial_md(payload: dict[str, Any]) -> str:
+    lines = [
+        "# Pure LLM Structured SQL Plan Trial",
+        "",
+        "Diagnostic-only report. Structured SQL plan variants remain shadow-only.",
+        "",
+        "## Summary",
+        "",
+    ]
+    summary = payload.get("summary", {})
+    if payload.get("stabilization_set"):
+        for key in [
+            "prompts_attempted",
+            "tool_called_when_needed_rate",
+            "compile_success_rate",
+            "sql_validation_pass_rate",
+            "sql_repair_success_rate",
+            "unsupported_claim_count",
+        ]:
+            lines.append(f"- {key}: `{summary.get(key)}`")
+    else:
+        for item in summary.get("systems", []):
+            if "structured_sql_plan" in str(item.get("system")):
+                lines.append(
+                    f"- `{item.get('system')}` rows `{item.get('rows')}` strict `{item.get('strict_final_score')}` SQL `{item.get('sql_score')}` compile `{item.get('compile_success_rate')}` unsupported `{item.get('unsupported_claims')}`"
+                )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _has_structured_sql_plan_rows(rows: list[dict[str, Any]]) -> bool:
+    return any("structured_sql_plan" in str(row.get("variant") or row.get("system") or "") for row in rows)
+
+
+def _write_sql_failure_analysis(config: Config, payload: dict[str, Any]) -> dict[str, Any]:
+    reports_dir = config.outputs_dir / "reports"
+    rows: list[dict[str, Any]] = []
+    stabilization = _load_json(reports_dir / f"{STABILIZATION_STEM}.json")
+    rows.extend(stabilization.get("rows", []) if isinstance(stabilization.get("rows"), list) else [])
+    rows.extend(payload.get("rows", []) if isinstance(payload.get("rows"), list) else [])
+    failures = []
+    for row in rows:
+        failure_stage = str(row.get("failure_stage") or "")
+        trajectory = row.get("trajectory") if isinstance(row.get("trajectory"), dict) else {}
+        sql_step = next((step for step in trajectory.get("steps", []) if step.get("kind") == "sql_call"), {})
+        if not sql_step and "sql" not in failure_stage:
+            continue
+        attempts = sql_step.get("attempts") if isinstance(sql_step.get("attempts"), list) else []
+        last_attempt = attempts[-1] if attempts else {}
+        compiled = last_attempt.get("compile") if isinstance(last_attempt.get("compile"), dict) else {}
+        validation = sql_step.get("validation") if isinstance(sql_step.get("validation"), dict) else {}
+        category = _sql_failure_category(last_attempt, validation, failure_stage)
+        if category == "no_clear_sql_failure" and failure_stage == "no_clear_failure":
+            continue
+        failures.append(
+            redact_secrets(
+                {
+                    "prompt_id": row.get("prompt_id"),
+                    "query_id": row.get("query_id"),
+                    "prompt": row.get("prompt"),
+                    "variant": row.get("variant") or row.get("system"),
+                    "expected_answer_intent": (trajectory.get("steps") or [{}])[0].get("plan", {}).get("answer_intent") if trajectory.get("steps") else None,
+                    "llm_sql_plan": last_attempt.get("structured_sql_plan") or last_attempt.get("candidate"),
+                    "raw_sql_candidate": sql_step.get("sql"),
+                    "selected_tables": compiled.get("selected_tables") or [],
+                    "selected_columns": compiled.get("selected_columns") or [],
+                    "selected_joins": compiled.get("join_path") or [],
+                    "filters": compiled.get("filters") or [],
+                    "aggregation": compiled.get("aggregation"),
+                    "sql_validator_result": validation,
+                    "sqlglot_result": last_attempt.get("ast_summary"),
+                    "execution_result": sql_step.get("result"),
+                    "repair_attempt_count": int(sql_step.get("repair_rounds") or 0),
+                    "repair_result": "success" if validation.get("ok") else "failed",
+                    "failure_stage": failure_stage,
+                    "failure_reason": category,
+                }
+            )
+        )
+    summary = {
+        "sql_failure_count": len(failures),
+        "failure_categories": _count_by(failures, "failure_reason"),
+        "hallucinated_journey_table_issue": _hallucinated_journey_summary(failures),
+    }
+    report = {
+        "report_type": SQL_FAILURE_STEM,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "diagnostic_only": True,
+        "promotion_allowed": False,
+        "summary": summary,
+        "failures": failures,
+    }
+    (reports_dir / f"{SQL_FAILURE_STEM}.json").write_text(json.dumps(report, indent=2, sort_keys=True, default=str), encoding="utf-8")
+    (reports_dir / f"{SQL_FAILURE_STEM}.md").write_text(_render_sql_failure_md(report), encoding="utf-8")
+    return report
+
+
+def _sql_failure_category(attempt: dict[str, Any], validation: dict[str, Any], failure_stage: str) -> str:
+    text = " ".join(str(value) for value in [attempt, validation, failure_stage]).lower()
+    if "unknown table" in text:
+        return "hallucinated_table"
+    if "unknown column" in text:
+        return "hallucinated_column"
+    if "unsupported join" in text:
+        return "wrong_join_path"
+    if "parse" in text or "syntax" in text:
+        return "invalid_sql_syntax"
+    if "sql_plan_unrepairable" in text or "repair_failed" in text:
+        return "repair_failed"
+    if "no_sql" in text or "empty_sql" in text:
+        return "no_sql_generated"
+    return "no_clear_sql_failure"
+
+
+def _count_by(rows: list[dict[str, Any]], key: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in rows:
+        value = str(row.get(key) or "unknown")
+        counts[value] = counts.get(value, 0) + 1
+    return counts
+
+
+def _hallucinated_journey_summary(failures: list[dict[str, Any]]) -> dict[str, Any]:
+    rows = [row for row in failures if "journey" in json.dumps(row).lower() and row.get("failure_reason") == "hallucinated_table"]
+    return {
+        "found": bool(rows),
+        "count": len(rows),
+        "prompt_ids": [row.get("prompt_id") or row.get("query_id") for row in rows],
+        "likely_cause": "business term used as table name instead of alias-map table dim_campaign" if rows else "not_observed_in_current_report",
+    }
+
+
+def _render_sql_failure_md(report: dict[str, Any]) -> str:
+    summary = report.get("summary", {})
+    lines = [
+        "# Pure LLM SQL Generation Failure Analysis",
+        "",
+        "Diagnostic-only analysis for the shadow Pure LLM tool-agent SQL path.",
+        "",
+        f"- SQL failure count: `{summary.get('sql_failure_count')}`",
+        f"- Hallucinated journey table issue: `{summary.get('hallucinated_journey_table_issue', {}).get('found')}`",
+        "",
+        "## Failure Categories",
+        "",
+    ]
+    for key, value in sorted((summary.get("failure_categories") or {}).items()):
+        lines.append(f"- `{key}`: `{value}`")
     lines.append("")
     return "\n".join(lines)
 

@@ -191,6 +191,163 @@ def test_pure_llm_agent_retries_bad_api_endpoint_choice(tiny_project):
     db.close()
 
 
+def _count_plan(table: str = "dim_campaign", column: str = "campaign_id") -> dict:
+    return {
+        "answer_intent": "COUNT",
+        "primary_entity": "campaign",
+        "primary_table": table,
+        "tables_needed": [table],
+        "columns_needed": [column],
+        "join_needed": False,
+        "join_path_reason": "",
+        "filters": [],
+        "aggregation": {"type": "count", "table": table, "column": column},
+        "order_by": [],
+        "limit": 50,
+        "confidence": 0.8,
+    }
+
+
+def test_structured_sql_plan_rejects_unknown_business_term_table(tiny_project):
+    from dashagent.llm_sql_context_builder import build_llm_sql_context
+    from dashagent.llm_sql_plan_compiler import validate_structured_sql_plan
+
+    db, schema = _schema(tiny_project)
+    context = build_llm_sql_context("List journeys.", schema, EndpointCatalog(tiny_project))
+    bad_plan = _count_plan(table="journey", column="id")
+
+    result = validate_structured_sql_plan(bad_plan, schema, context)
+
+    assert result["ok"] is False
+    assert any("Unknown table: journey" in error for error in result["errors"])
+    assert result["alias_suggestions"]["journey"] == "dim_campaign"
+    db.close()
+
+
+def test_structured_sql_plan_compiler_counts_and_rejects_unknown_columns(tiny_project):
+    from dashagent.llm_sql_context_builder import build_llm_sql_context
+    from dashagent.llm_sql_plan_compiler import compile_structured_sql_plan
+
+    db, schema = _schema(tiny_project)
+    context = build_llm_sql_context("How many journeys?", schema, EndpointCatalog(tiny_project))
+    compiled = compile_structured_sql_plan(_count_plan(), schema, context)
+    bad = compile_structured_sql_plan(_count_plan(column="journey_name"), schema, context)
+
+    assert compiled["ok"] is True
+    assert compiled["sql"] == 'SELECT COUNT("campaign_id") AS count FROM "dim_campaign"'
+    assert SQLValidator(schema).validate(compiled["sql"]).ok is True
+    assert bad["ok"] is False
+    assert any("Unknown column" in error for error in bad["errors"])
+    db.close()
+
+
+def test_structured_sql_plan_compiler_accepts_llm_shaped_safe_plan(tiny_project):
+    from dashagent.llm_sql_context_builder import build_llm_sql_context
+    from dashagent.llm_sql_plan_compiler import compile_structured_sql_plan
+
+    db, schema = _schema(tiny_project)
+    context = build_llm_sql_context("How many journeys?", schema, EndpointCatalog(tiny_project))
+    plan = {
+        "answer_intent": "COUNT",
+        "primary_entity": "journeys",
+        "primary_table": "dim_campaign",
+        "tables_needed": [{"table_name": "dim_campaign"}],
+        "columns_needed": [{"column_name": "COUNT(*)"}],
+        "aggregation": [{"function": "COUNT", "columns": ["*"]}],
+        "filters": [],
+    }
+
+    compiled = compile_structured_sql_plan(plan, schema, context)
+
+    assert compiled["ok"] is True
+    assert compiled["sql"] == 'SELECT COUNT(*) AS count FROM "dim_campaign"'
+    assert SQLValidator(schema).validate(compiled["sql"]).ok is True
+    db.close()
+
+
+def test_structured_sql_plan_compiler_selects_with_safe_filter_and_limit(tiny_project):
+    from dashagent.llm_sql_context_builder import build_llm_sql_context
+    from dashagent.llm_sql_plan_compiler import compile_structured_sql_plan
+
+    db, schema = _schema(tiny_project)
+    context = build_llm_sql_context("List published journeys.", schema, EndpointCatalog(tiny_project))
+    plan = {
+        **_count_plan(),
+        "answer_intent": "LIST",
+        "columns_needed": ["name", "status"],
+        "aggregation": {"type": "none", "table": "dim_campaign", "column": ""},
+        "filters": [{"table": "dim_campaign", "column": "status", "operator": "equals", "value_source": "status_term", "value": "published"}],
+        "limit": 25,
+    }
+
+    compiled = compile_structured_sql_plan(plan, schema, context)
+
+    assert compiled["ok"] is True
+    assert 'SELECT "name", "status" FROM "dim_campaign"' in compiled["sql"]
+    assert 'WHERE "dim_campaign"."status" = ' in compiled["sql"]
+    assert compiled["sql"].endswith("LIMIT 25")
+    assert SQLValidator(schema).validate(compiled["sql"]).ok is True
+    db.close()
+
+
+def test_structured_sql_plan_repair_loop_compiles_repaired_plan(tiny_project):
+    from dashagent.llm_sql_context_builder import build_llm_sql_context
+    from dashagent.llm_sql_repair_loop import run_sql_repair_loop
+
+    db, schema = _schema(tiny_project)
+    context = build_llm_sql_context("How many journeys?", schema, EndpointCatalog(tiny_project))
+    client = FakeJsonClient(
+        [
+            json.dumps(_count_plan(table="journeys", column="id")),
+            json.dumps(_count_plan(table="dim_campaign", column="campaign_id")),
+        ]
+    )
+
+    result = run_sql_repair_loop(
+        "How many journeys?",
+        context,
+        db,
+        SQLValidator(schema),
+        llm_client=client,
+        max_repair_rounds=2,
+        structured_sql_plan=True,
+    )
+
+    assert result["ok"] is True
+    assert result["plan_validation_success"] is True
+    assert result["compile_success"] is True
+    assert result["sql_validation_success"] is True
+    assert result["repair_rounds"] == 1
+    assert result["attempts"][0]["executed"] is False
+    assert result["sql"] == 'SELECT COUNT("campaign_id") AS count FROM "dim_campaign"'
+    db.close()
+
+
+def test_structured_sql_plan_unrepairable_returns_safe_failure(tiny_project):
+    from dashagent.llm_sql_context_builder import build_llm_sql_context
+    from dashagent.llm_sql_repair_loop import run_sql_repair_loop
+
+    db, schema = _schema(tiny_project)
+    context = build_llm_sql_context("How many journeys?", schema, EndpointCatalog(tiny_project))
+    client = FakeJsonClient([json.dumps(_count_plan(table="journeys", column="id"))] * 3)
+
+    result = run_sql_repair_loop(
+        "How many journeys?",
+        context,
+        db,
+        SQLValidator(schema),
+        llm_client=client,
+        max_repair_rounds=2,
+        structured_sql_plan=True,
+    )
+
+    assert result["ok"] is False
+    assert result["failure_stage"] == "sql_plan_unrepairable"
+    assert "could not produce a validated SQL query" in result["safe_answer"]
+    assert all(attempt["executed"] is False for attempt in result["attempts"])
+    db.close()
+
+
 def test_stabilization_set_and_report_are_diagnostic_only(tiny_project):
     from scripts.run_pure_llm_tool_agent_eval import run_pure_llm_tool_agent_eval
 
