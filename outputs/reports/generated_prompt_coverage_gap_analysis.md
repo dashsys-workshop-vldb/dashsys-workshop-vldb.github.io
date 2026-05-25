@@ -4,8 +4,8 @@ Diagnostic coverage only; not official strict-score evidence.
 
 - Total prompts: `250`
 - UNKNOWN gaps: `54`
-- Dry-run gaps: `202`
-- Live API gaps: `202`
+- Dry-run gaps: `0`
+- Live API gaps: `132`
 
 ## Recommendations
 

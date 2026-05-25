@@ -7,10 +7,10 @@
 | Query | List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results. |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
 | Final answer | Based on the evidence provided, there is no data available to answer this question. The SQL query returned zero rows, and the API returned usable supporting evidence. |
-| Strict score | 0.6822 |
+| Strict score | 0.6805 |
 | Correctness score | 0.7393 |
 | Answer / SQL / API score | 0.2642 / 0.9 / 1.0 |
-| Tools / tokens / runtime | 3 / 1976 / 0.9307709163986146 |
+| Tools / tokens / runtime | 3 / 1978 / 1.4468769999220967 |
 
 ## Dataflow Graph
 

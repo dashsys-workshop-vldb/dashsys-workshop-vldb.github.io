@@ -115,7 +115,7 @@ def test_token_acquisition_failure_returns_structured_result_without_secret_leak
     clear_adobe_env(monkeypatch)
     credentials = AdobeCredentials(
         client_id="client-id-secret-value",
-        client_secret="client-secret-value",
+        client_secret="fixture-client-secret-value",
         api_key="api-key-secret-value",
         ims_org="org-secret-value",
         sandbox="sandbox-secret-value",
@@ -996,6 +996,11 @@ def test_full_generated_prompt_diagnostic_obeys_live_api_guard(monkeypatch, tiny
     clear_adobe_env(monkeypatch)
     monkeypatch.setenv("CLIENT_ID", "client-id-guard-test")
     monkeypatch.setenv("CLIENT_SECRET", "client-secret-guard-test")
+    loaded_roots = []
+    monkeypatch.setattr(
+        "scripts.run_full_generated_prompt_suite_diagnostic.load_local_env",
+        lambda root: loaded_roots.append(root) or {},
+    )
     reports = tiny_project.outputs_dir / "reports"
     reports.mkdir(parents=True, exist_ok=True)
     (reports / "live_api_readiness_smoke.json").write_text(
@@ -1006,6 +1011,7 @@ def test_full_generated_prompt_diagnostic_obeys_live_api_guard(monkeypatch, tiny
     assert report["status"] == "blocked_by_live_api_guard"
     assert report["live_api_guard"]["reason"] == "no_live_success"
     assert report["executed_prompts"] == 0
+    assert loaded_roots == [tiny_project.project_root]
 
 
 def test_run_dev_eval_strict_guard_blocks_live_mode_without_overwriting(monkeypatch, tiny_project: Config):

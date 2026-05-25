@@ -7,10 +7,10 @@
 | Query | Which files are available for download in batch 69de8a0e0cc6102b5d11f01e? |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
 | Final answer | The available batch file(s) are: dataSetFileId=69de8a0e0cc6102b5d11f01e-DE1, isValid=False, _links={'self': {'href': '[REDACTED]:443/data/foundation/export/files/69de8a0e0cc6102b5d11f01e-DE1'}}. |
-| Strict score | 0.6681 |
+| Strict score | 0.6687 |
 | Correctness score | 0.6916 |
 | Answer / SQL / API score | 0.3833 / None / 1.0 |
-| Tools / tokens / runtime | 1 / 921 / 0.9991896669380367 |
+| Tools / tokens / runtime | 1 / 921 / 0.8219441249966621 |
 
 ## Dataflow Graph
 

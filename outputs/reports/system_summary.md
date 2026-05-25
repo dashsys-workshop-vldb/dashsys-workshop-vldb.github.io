@@ -10,8 +10,10 @@
 - Compact context enabled: `False`
 - Final recommendation: `ready_to_submit_with_official_token_reduction`
 - Live Adobe API readiness: `pass` (smoke `complete`, pipeline `complete`)
-- Live Adobe endpoint resolution: path failures remaining `0`; guarded E2E `pass`; go/no-go `promote_arbitration_policy`
+- Live Adobe endpoint resolution: path failures remaining `0`; guarded E2E `pass`; go/no-go `promote_arbitration_policy_only`
 - Post-permission live verification: `complete`; waiting-status report: `complete`
+- Post-live robustness gate: `promote_arbitration_policy_only`; strict `0.6555`; arbitration safe `True`; generated prompts `250`
+- NL-to-SQL robustness: template dependency `0.1634`; template miss rate `0.6488`; paraphrase consistency `0.9907`; schema-aware fallback `keep_trial_only`
 - LLM semantic routing helper: `do_not_promote` (complete)
 - Semantic router isolated trial: `complete`; promotion decision: `do_not_promote`; packaged runtime affected: `False`
 - Decision-stage feedback loops: stages mapped `20`, semantic-router recommendation `candidate_not_viable_after_feedback_loops`
@@ -43,6 +45,18 @@
 - `outputs/official_token_reduction_promotion_report.json`
 - `outputs/reports/post_permission_live_api_verification.md`
 - `outputs/reports/adobe_access_waiting_status.md`
+- `outputs/reports/post_live_robustness_preflight.md`
+- `outputs/reports/live_api_arbitration_regression_guard.md`
+- `outputs/reports/full_generated_prompt_suite_diagnostic.md`
+- `outputs/reports/nl_sql_robustness_audit.md`
+- `outputs/reports/nl_sql_paraphrase_consistency.md`
+- `outputs/reports/schema_aware_sql_failure_decomposition.md`
+- `outputs/reports/schema_aware_sql_feedback_loop.md`
+- `outputs/reports/llm_agent_trace_decomposition.md`
+- `outputs/reports/controller_rewrite_policy_trial.md`
+- `outputs/reports/multi_llm_backend_robustness.md`
+- `outputs/reports/live_tool_efficiency_audit.md`
+- `outputs/reports/integrated_robustness_gate.md`
 - `outputs/reports/context7_code_alignment_audit.md`
 - `outputs/reports/context7_fix_decision.md`
 - `outputs/reports/score_path_contribution_audit.md`

@@ -72,12 +72,12 @@ Infrastructure validation only; this report is not official strict-score evidenc
 - `catalog_datasets` GET `/data/foundation/catalog/dataSets` smoke_eligible=True discovery_required=False
 - `schema_registry_schema` GET `/data/foundation/schemaregistry/tenant/schemas/{schema_id}` smoke_eligible=False discovery_required=True
 - `schema_registry_schemas` GET `/data/foundation/schemaregistry/tenant/schemas` smoke_eligible=True discovery_required=False
-- `schemas_short` GET `/schemas` smoke_eligible=True discovery_required=False
+- `schemas_short` GET `/data/foundation/schemaregistry/tenant/schemas` smoke_eligible=True discovery_required=False
 - `audit_events` GET `/data/foundation/audit/events` smoke_eligible=True discovery_required=False
-- `audit_events_short` GET `/audit/events` smoke_eligible=True discovery_required=False
-- `unified_tags` GET `/unifiedtags/tags` smoke_eligible=True discovery_required=False
-- `unified_tag_categories` GET `/unifiedtags/tagCategory` smoke_eligible=True discovery_required=False
-- `unified_tag_detail` GET `/unifiedtags/tags/{tag_id}` smoke_eligible=False discovery_required=True
+- `audit_events_short` GET `/data/foundation/audit/events` smoke_eligible=True discovery_required=False
+- `unified_tags` GET `https://experience.adobe.io/unifiedtags/tags` smoke_eligible=True discovery_required=False
+- `unified_tag_categories` GET `https://experience.adobe.io/unifiedtags/tagCategory` smoke_eligible=True discovery_required=False
+- `unified_tag_detail` GET `https://experience.adobe.io/unifiedtags/tags/{tag_id}` smoke_eligible=False discovery_required=True
 - `merge_policies` GET `/data/core/ups/config/mergePolicies` smoke_eligible=True discovery_required=False
 - `segment_jobs` GET `/data/core/ups/segment/jobs` smoke_eligible=True discovery_required=False
 - `catalog_batches` GET `/data/foundation/catalog/batches` smoke_eligible=True discovery_required=False

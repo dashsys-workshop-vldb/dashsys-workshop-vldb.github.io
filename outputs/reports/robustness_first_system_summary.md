@@ -2,7 +2,7 @@
 
 Higher score is not considered meaningful unless robustness and generalization gates pass.
 
-- Current strict score: `0.6553`
+- Current strict score: `0.6555`
 - Template dependency score: `0.1634`
 - Paraphrase robustness: `0.9907`
 - Multi-LLM calls executed: `0`

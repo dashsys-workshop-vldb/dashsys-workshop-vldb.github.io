@@ -7,6 +7,8 @@
 - Answer-quality bottleneck: `True`
 - Dry-run API limitation: `True`
 - Live Adobe API readiness: `pass`; infrastructure validation only: `True`
+- Post-live robustness gate: `promote_arbitration_policy_only`; strict score `0.6555`; generated diagnostic pass `250`/`250`
+- Generalization risk: template dependency `0.1634`; template miss rate `0.6488`; controller trial `backend_answer_only_shadow_candidate`
 - Supportable rewrite status: `safe_for_autonomous_packaged_trial`
 - Endpoint tie-break status: `keep_shadow_only`
 - AST canary status: `keep_shadow_only`

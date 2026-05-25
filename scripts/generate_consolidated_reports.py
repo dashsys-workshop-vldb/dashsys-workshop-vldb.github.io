@@ -81,6 +81,18 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/context7_fix_decision.md/json",
     "outputs/reports/live_api_evidence_pipeline_trial.md/json",
     "outputs/reports/mock_live_api_evidence_pipeline_trial.md/json",
+    "outputs/reports/post_live_robustness_preflight.md/json",
+    "outputs/reports/live_api_arbitration_regression_guard.md/json",
+    "outputs/reports/full_generated_prompt_suite_diagnostic.md/json",
+    "outputs/reports/nl_sql_robustness_audit.md/json",
+    "outputs/reports/nl_sql_paraphrase_consistency.md/json",
+    "outputs/reports/schema_aware_sql_failure_decomposition.md/json",
+    "outputs/reports/schema_aware_sql_feedback_loop.md/json",
+    "outputs/reports/llm_agent_trace_decomposition.md/json",
+    "outputs/reports/controller_rewrite_policy_trial.md/json",
+    "outputs/reports/multi_llm_backend_robustness.md/json",
+    "outputs/reports/live_tool_efficiency_audit.md/json",
+    "outputs/reports/integrated_robustness_gate.md/json",
     "outputs/reports/evidence_usage_audit.md/json",
     "outputs/reports/evidence_aware_answer_rewrite_trial.md/json",
     "outputs/reports/feedback_loop_answer_synthesis_final.md/json",
@@ -228,6 +240,18 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "live_api_post_exact_go_no_go": _load_json(outputs / "reports" / "live_api_post_exact_reproduction_go_no_go.json"),
         "live_api_pipeline_trial": _load_json(outputs / "reports" / "live_api_evidence_pipeline_trial.json"),
         "mock_live_api_pipeline_trial": _load_json(outputs / "reports" / "mock_live_api_evidence_pipeline_trial.json"),
+        "post_live_robustness_preflight": _load_json(outputs / "reports" / "post_live_robustness_preflight.json"),
+        "live_api_arbitration_regression_guard": _load_json(outputs / "reports" / "live_api_arbitration_regression_guard.json"),
+        "full_generated_prompt_suite_diagnostic": _load_json(outputs / "reports" / "full_generated_prompt_suite_diagnostic.json"),
+        "nl_sql_robustness_audit": _load_json(outputs / "reports" / "nl_sql_robustness_audit.json"),
+        "nl_sql_paraphrase_consistency": _load_json(outputs / "reports" / "nl_sql_paraphrase_consistency.json"),
+        "schema_aware_sql_failure_decomposition": _load_json(outputs / "reports" / "schema_aware_sql_failure_decomposition.json"),
+        "schema_aware_sql_feedback_loop": _load_json(outputs / "reports" / "schema_aware_sql_feedback_loop.json"),
+        "llm_agent_trace_decomposition": _load_json(outputs / "reports" / "llm_agent_trace_decomposition.json"),
+        "controller_rewrite_policy_trial": _load_json(outputs / "reports" / "controller_rewrite_policy_trial.json"),
+        "multi_llm_backend_robustness": _load_json(outputs / "reports" / "multi_llm_backend_robustness.json"),
+        "live_tool_efficiency_audit": _load_json(outputs / "reports" / "live_tool_efficiency_audit.json"),
+        "integrated_robustness_gate": _load_json(outputs / "reports" / "integrated_robustness_gate.json"),
         "llm_backend": _load_json(outputs / "llm_sdk_backend_check.json"),
         "llm_baseline": _load_json(outputs / "llm_baseline_eval_report.json"),
         "llm_strict": _load_json(outputs / "llm_strict_baseline_eval.json"),
@@ -373,6 +397,7 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
         ],
         "final_recommendation": sources["winner_readiness"].get("final_recommendation", "ready_to_submit_with_official_token_reduction"),
         "live_adobe_api_readiness": _live_api_readiness_status(sources),
+        "post_live_robustness": _post_live_robustness_status(sources),
         "llm_semantic_routing_helper": _semantic_router_status(sources),
         "decision_stage_methodology": _decision_stage_status(sources),
         "evidence_aware_answer_synthesis": _evidence_answer_status(sources),
@@ -394,6 +419,18 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
             "outputs/official_token_reduction_promotion_report.json",
             "outputs/reports/post_permission_live_api_verification.md",
             "outputs/reports/adobe_access_waiting_status.md",
+            "outputs/reports/post_live_robustness_preflight.md",
+            "outputs/reports/live_api_arbitration_regression_guard.md",
+            "outputs/reports/full_generated_prompt_suite_diagnostic.md",
+            "outputs/reports/nl_sql_robustness_audit.md",
+            "outputs/reports/nl_sql_paraphrase_consistency.md",
+            "outputs/reports/schema_aware_sql_failure_decomposition.md",
+            "outputs/reports/schema_aware_sql_feedback_loop.md",
+            "outputs/reports/llm_agent_trace_decomposition.md",
+            "outputs/reports/controller_rewrite_policy_trial.md",
+            "outputs/reports/multi_llm_backend_robustness.md",
+            "outputs/reports/live_tool_efficiency_audit.md",
+            "outputs/reports/integrated_robustness_gate.md",
             "outputs/reports/context7_code_alignment_audit.md",
             "outputs/reports/context7_fix_decision.md",
             "outputs/reports/score_path_contribution_audit.md",
@@ -502,6 +539,7 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
         "answer_quality_bottleneck": True,
         "dry_run_api_limitation": True,
         "live_adobe_api_readiness": _live_api_readiness_status(sources),
+        "post_live_robustness": _post_live_robustness_status(sources),
         "answer_shape_v2_status": _status_from_report(sources["answer_shape_v2"], "shadow_only"),
         "supportable_rewrite_status": _status_from_report(sources["supportable_rewrite"], "safe_for_autonomous_packaged_trial"),
         "llm_answer_rewrite_status": _status_from_report(sources["llm_answer_rewrite"], "keep_shadow_only"),
@@ -533,6 +571,18 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
             "outputs/endpoint_family_tiebreak_v2_shadow.json",
             "outputs/ast_guided_sql_candidate_canary.json",
             "outputs/reports/live_adobe_api_readiness_audit.json",
+            "outputs/reports/post_live_robustness_preflight.md",
+            "outputs/reports/live_api_arbitration_regression_guard.md",
+            "outputs/reports/full_generated_prompt_suite_diagnostic.md",
+            "outputs/reports/nl_sql_robustness_audit.md",
+            "outputs/reports/nl_sql_paraphrase_consistency.md",
+            "outputs/reports/schema_aware_sql_failure_decomposition.md",
+            "outputs/reports/schema_aware_sql_feedback_loop.md",
+            "outputs/reports/llm_agent_trace_decomposition.md",
+            "outputs/reports/controller_rewrite_policy_trial.md",
+            "outputs/reports/multi_llm_backend_robustness.md",
+            "outputs/reports/live_tool_efficiency_audit.md",
+            "outputs/reports/integrated_robustness_gate.md",
             "outputs/reports/generated_prompt_suite_local_diagnostic.md",
             "outputs/reports/generated_prompt_local_gap_samples.md",
             "outputs/reports/local_deterministic_improvement_candidates.md",
@@ -637,6 +687,7 @@ def build_report_index(
             "outputs/reports/core_tool_correctness_audit.md",
             "outputs/reports/core_tool_correctness_trials.md",
             "outputs/reports/core_tool_correctness_fix_decision.md",
+            "outputs/reports/integrated_robustness_gate.md",
             "outputs/reports/overnight_autonomous_improvement_report.md",
             "outputs/reports/repo_cleanup_result.md",
             "outputs/reports/report_index.md",
@@ -684,13 +735,43 @@ def build_report_index(
             },
             {
                 "path": "outputs/reports/full_generated_prompt_suite_diagnostic.md",
-                "label": "Full 250-prompt generated suite diagnostic only; no official strict score claim.",
+                "label": "Full 250-prompt generated suite diagnostic after live API stabilization; diagnostic-only and not official strict score.",
             },
             {
                 "path": "outputs/reports/generated_prompt_coverage_gap_analysis.md",
                 "label": "Generated prompt coverage gaps; diagnostic-only and not promotion evidence.",
             },
         ],
+        "post_live_robustness": {
+            "preflight_path": "outputs/reports/post_live_robustness_preflight.md",
+            "arbitration_guard_path": "outputs/reports/live_api_arbitration_regression_guard.md",
+            "full_generated_suite_path": "outputs/reports/full_generated_prompt_suite_diagnostic.md",
+            "nl_sql_robustness_path": "outputs/reports/nl_sql_robustness_audit.md",
+            "paraphrase_consistency_path": "outputs/reports/nl_sql_paraphrase_consistency.md",
+            "schema_aware_failure_decomposition_path": "outputs/reports/schema_aware_sql_failure_decomposition.md",
+            "schema_aware_feedback_loop_path": "outputs/reports/schema_aware_sql_feedback_loop.md",
+            "llm_trace_decomposition_path": "outputs/reports/llm_agent_trace_decomposition.md",
+            "controller_rewrite_trial_path": "outputs/reports/controller_rewrite_policy_trial.md",
+            "multi_llm_robustness_path": "outputs/reports/multi_llm_backend_robustness.md",
+            "live_tool_efficiency_path": "outputs/reports/live_tool_efficiency_audit.md",
+            "integrated_gate_path": "outputs/reports/integrated_robustness_gate.md",
+            **_post_live_robustness_status(
+                {
+                    "eval_results_strict": _load_json(config.outputs_dir / "eval_results_strict.json"),
+                    "post_live_robustness_preflight": _load_json(config.outputs_dir / "reports" / "post_live_robustness_preflight.json"),
+                    "live_api_arbitration_regression_guard": _load_json(config.outputs_dir / "reports" / "live_api_arbitration_regression_guard.json"),
+                    "full_generated_prompt_suite_diagnostic": _load_json(config.outputs_dir / "reports" / "full_generated_prompt_suite_diagnostic.json"),
+                    "nl_sql_robustness_audit": _load_json(config.outputs_dir / "reports" / "nl_sql_robustness_audit.json"),
+                    "nl_sql_paraphrase_consistency": _load_json(config.outputs_dir / "reports" / "nl_sql_paraphrase_consistency.json"),
+                    "schema_aware_sql_feedback_loop": _load_json(config.outputs_dir / "reports" / "schema_aware_sql_feedback_loop.json"),
+                    "llm_agent_trace_decomposition": _load_json(config.outputs_dir / "reports" / "llm_agent_trace_decomposition.json"),
+                    "controller_rewrite_policy_trial": _load_json(config.outputs_dir / "reports" / "controller_rewrite_policy_trial.json"),
+                    "multi_llm_backend_robustness": _load_json(config.outputs_dir / "reports" / "multi_llm_backend_robustness.json"),
+                    "live_tool_efficiency_audit": _load_json(config.outputs_dir / "reports" / "live_tool_efficiency_audit.json"),
+                    "integrated_robustness_gate": _load_json(config.outputs_dir / "reports" / "integrated_robustness_gate.json"),
+                }
+            ),
+        },
         "llm_controller_diagnostics": {
             "failure_decomposition_path": "outputs/reports/llm_controller_failure_decomposition.md",
             "rewrite_ablation_path": "outputs/reports/controller_rewrite_ablation.md",
@@ -960,6 +1041,7 @@ def build_report_index(
             "hidden_style": system["hidden_style"]["label"],
             "final_submission_ready": system["final_submission_ready"],
             "live_adobe_api_readiness": system["live_adobe_api_readiness"]["overall_status"],
+            "post_live_robustness": system["post_live_robustness"].get("recommendation"),
             "evidence_aware_answer_synthesis": system["evidence_aware_answer_synthesis"].get("recommendation"),
             "llm_recommendation": llm["recommendation"],
             "sdk_tool_calling_optimization": system["sdk_tool_calling_optimization"].get("decision"),
@@ -996,6 +1078,14 @@ def render_system_summary(payload: dict[str, Any]) -> str:
             f"go/no-go `{payload['live_adobe_api_readiness'].get('go_no_go_recommendation')}`",
             f"- Post-permission live verification: `{payload['live_adobe_api_readiness'].get('post_permission_verification_status')}`; "
             f"waiting-status report: `{payload['live_adobe_api_readiness'].get('adobe_access_waiting_status')}`",
+            f"- Post-live robustness gate: `{payload['post_live_robustness'].get('recommendation')}`; "
+            f"strict `{payload['post_live_robustness'].get('current_strict_score')}`; "
+            f"arbitration safe `{payload['post_live_robustness'].get('arbitration_policy_safe')}`; "
+            f"generated prompts `{payload['post_live_robustness'].get('generated_prompts_executed')}`",
+            f"- NL-to-SQL robustness: template dependency `{payload['post_live_robustness'].get('template_dependency_score')}`; "
+            f"template miss rate `{payload['post_live_robustness'].get('template_miss_rate')}`; "
+            f"paraphrase consistency `{payload['post_live_robustness'].get('paraphrase_consistency_score')}`; "
+            f"schema-aware fallback `{payload['post_live_robustness'].get('schema_aware_decision')}`",
             f"- LLM semantic routing helper: `{payload['llm_semantic_routing_helper']['recommendation']}` "
             f"({payload['llm_semantic_routing_helper']['status']})",
             f"- Semantic router isolated trial: `{payload['llm_semantic_routing_helper'].get('isolated_trial_status')}`; "
@@ -1095,6 +1185,13 @@ def render_accuracy_summary(payload: dict[str, Any]) -> str:
             f"- Dry-run API limitation: `{payload.get('dry_run_api_limitation')}`",
             f"- Live Adobe API readiness: `{payload['live_adobe_api_readiness']['overall_status']}`; "
             f"infrastructure validation only: `{payload['live_adobe_api_readiness']['infrastructure_validation_only']}`",
+            f"- Post-live robustness gate: `{payload['post_live_robustness'].get('recommendation')}`; "
+            f"strict score `{payload['post_live_robustness'].get('current_strict_score')}`; "
+            f"generated diagnostic pass `{payload['post_live_robustness'].get('generated_prompt_runtime_pass_count')}`"
+            f"/`{payload['post_live_robustness'].get('generated_prompts_executed')}`",
+            f"- Generalization risk: template dependency `{payload['post_live_robustness'].get('template_dependency_score')}`; "
+            f"template miss rate `{payload['post_live_robustness'].get('template_miss_rate')}`; "
+            f"controller trial `{payload['post_live_robustness'].get('controller_rewrite_recommendation')}`",
             f"- Supportable rewrite status: `{payload.get('supportable_rewrite_status')}`",
             f"- Endpoint tie-break status: `{payload.get('endpoint_tiebreak_status')}`",
             f"- AST canary status: `{payload.get('ast_canary_status')}`",
@@ -1180,6 +1277,25 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.extend(["", "## Diagnostic Prompt Coverage", ""])
     for item in payload.get("diagnostic_prompt_coverage", []):
         lines.append(f"- `{item['path']}` - {item['label']}")
+    lines.extend(["", "## Post-Live Robustness Gate", ""])
+    robustness = payload.get("post_live_robustness", {})
+    lines.append(f"- Preflight: `{robustness.get('preflight_path')}`")
+    lines.append(f"- Arbitration guard: `{robustness.get('arbitration_guard_path')}`")
+    lines.append(f"- Full generated suite: `{robustness.get('full_generated_suite_path')}`")
+    lines.append(f"- NL-to-SQL robustness: `{robustness.get('nl_sql_robustness_path')}`")
+    lines.append(f"- Paraphrase consistency: `{robustness.get('paraphrase_consistency_path')}`")
+    lines.append(f"- Schema-aware failure decomposition: `{robustness.get('schema_aware_failure_decomposition_path')}`")
+    lines.append(f"- Schema-aware feedback loop: `{robustness.get('schema_aware_feedback_loop_path')}`")
+    lines.append(f"- LLM trace decomposition: `{robustness.get('llm_trace_decomposition_path')}`")
+    lines.append(f"- Controller rewrite trial: `{robustness.get('controller_rewrite_trial_path')}`")
+    lines.append(f"- Multi-LLM robustness: `{robustness.get('multi_llm_robustness_path')}`")
+    lines.append(f"- Live tool efficiency: `{robustness.get('live_tool_efficiency_path')}`")
+    lines.append(f"- Integrated gate: `{robustness.get('integrated_gate_path')}`")
+    lines.append(f"- Recommendation: `{robustness.get('recommendation')}`")
+    lines.append(f"- Current strict score: `{robustness.get('current_strict_score')}`")
+    lines.append(f"- Generated diagnostic prompts executed: `{robustness.get('generated_prompts_executed')}`")
+    lines.append(f"- Template dependency score: `{robustness.get('template_dependency_score')}`")
+    lines.append(f"- Schema-aware fallback decision: `{robustness.get('schema_aware_decision')}`")
     lines.extend(["", "## LLM Controller Diagnostics", ""])
     controller = payload.get("llm_controller_diagnostics", {})
     lines.append(f"- Failure decomposition: `{controller.get('failure_decomposition_path')}`")
@@ -1837,6 +1953,76 @@ def _context7_audit_status(sources: dict[str, Any]) -> dict[str, Any]:
             "outputs/reports/context7_dependency_docs_summary.md",
             "outputs/reports/context7_code_alignment_audit.md",
             "outputs/reports/context7_fix_decision.md",
+        ],
+    }
+
+
+def _post_live_robustness_status(sources: dict[str, Any]) -> dict[str, Any]:
+    preflight = sources.get("post_live_robustness_preflight") or {}
+    arbitration = sources.get("live_api_arbitration_regression_guard") or {}
+    generated = sources.get("full_generated_prompt_suite_diagnostic") or {}
+    nl_sql = sources.get("nl_sql_robustness_audit") or {}
+    paraphrase = sources.get("nl_sql_paraphrase_consistency") or {}
+    schema_feedback = sources.get("schema_aware_sql_feedback_loop") or {}
+    llm_trace = sources.get("llm_agent_trace_decomposition") or {}
+    controller = sources.get("controller_rewrite_policy_trial") or {}
+    multi_llm = sources.get("multi_llm_backend_robustness") or {}
+    tool_efficiency = sources.get("live_tool_efficiency_audit") or {}
+    gate = sources.get("integrated_robustness_gate") or {}
+    strict = _sql_first_metrics(sources)
+    nl_metrics = nl_sql.get("metrics") or {}
+    paraphrase_summary = paraphrase.get("summary") or {}
+    schema_decision = schema_feedback.get("promotion_decision") or {}
+    llm_summary = llm_trace.get("summary") or {}
+    return {
+        "recommendation": gate.get("recommendation", "not_run"),
+        "promotion_allowed": gate.get("promotion_allowed", False),
+        "current_strict_score": _first_number(strict.get("avg_final_score"), preflight.get("current_score")),
+        "previous_baseline_score": preflight.get("previous_baseline_score"),
+        "initial_live_regression_score": preflight.get("initial_live_regression_score"),
+        "arbitration_policy": arbitration.get("policy_under_test", "unavailable"),
+        "arbitration_policy_safe": arbitration.get("policy_safe_to_keep", "unavailable"),
+        "arbitration_critical_violations": arbitration.get("critical_policy_violation_count", "unavailable"),
+        "arbitration_warning_count": arbitration.get("policy_warning_count", "unavailable"),
+        "generated_prompts_total": generated.get("total_prompts"),
+        "generated_prompts_executed": generated.get("executed_prompts"),
+        "generated_prompt_runtime_pass_count": generated.get("runtime_pass_count"),
+        "generated_prompt_validation_fail_count": generated.get("validation_fail_count"),
+        "generated_prompt_unsupported_claim_count": generated.get("unsupported_claim_count"),
+        "generated_prompt_live_api_calls": generated.get("live_api_calls"),
+        "generated_prompt_template_hit_rate": generated.get("template_hit_rate"),
+        "generated_prompt_template_miss_rate": generated.get("template_miss_rate"),
+        "template_dependency_score": nl_metrics.get("template_dependency_score"),
+        "template_hit_rate": nl_metrics.get("template_hit_rate"),
+        "template_miss_rate": nl_metrics.get("template_miss_rate"),
+        "paraphrase_consistency_score": (
+            paraphrase_summary.get("paraphrase_consistency_score")
+            or nl_metrics.get("paraphrase_consistency_score")
+        ),
+        "schema_aware_decision": schema_decision.get("decision", "not_run"),
+        "schema_aware_promotion_allowed": schema_decision.get("promotion_allowed", False),
+        "llm_trace_instrumentation_gap_count": llm_summary.get("instrumentation_gap_count"),
+        "llm_trace_controller_unpromoted": llm_summary.get("controller_remains_unpromoted"),
+        "controller_rewrite_recommendation": controller.get("recommendation", "not_run"),
+        "multi_llm_calls_executed": multi_llm.get("llm_calls_executed", "unavailable"),
+        "tool_efficiency_recommendation": tool_efficiency.get("recommendation", "not_run"),
+        "avg_tool_call_count": _first_number(
+            (tool_efficiency.get("live_mode") or {}).get("avg_tool_call_count"),
+            strict.get("avg_tool_call_count"),
+        ),
+        "source_reports": [
+            "outputs/reports/post_live_robustness_preflight.md",
+            "outputs/reports/live_api_arbitration_regression_guard.md",
+            "outputs/reports/full_generated_prompt_suite_diagnostic.md",
+            "outputs/reports/nl_sql_robustness_audit.md",
+            "outputs/reports/nl_sql_paraphrase_consistency.md",
+            "outputs/reports/schema_aware_sql_failure_decomposition.md",
+            "outputs/reports/schema_aware_sql_feedback_loop.md",
+            "outputs/reports/llm_agent_trace_decomposition.md",
+            "outputs/reports/controller_rewrite_policy_trial.md",
+            "outputs/reports/multi_llm_backend_robustness.md",
+            "outputs/reports/live_tool_efficiency_audit.md",
+            "outputs/reports/integrated_robustness_gate.md",
         ],
     }
 

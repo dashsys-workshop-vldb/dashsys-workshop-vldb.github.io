@@ -19,6 +19,7 @@ from dashagent.executor import AgentExecutor
 from dashagent.live_api_guard import evaluate_live_api_full_run_guard, guard_override_metadata
 from dashagent.trajectory import redact_secrets
 from scripts.run_diagnostic_prompt_suite import _intent_matches, _route_matches, _validation_failure_count, _weak_answer
+from scripts.load_local_env import load_local_env
 
 
 OUTPUT_ROOT_NAME = "generated_prompt_suite_diagnostic"
@@ -74,6 +75,7 @@ def run_full_generated_prompt_suite_diagnostic(
     allow_live_diagnostic_without_success: bool = False,
 ) -> dict[str, Any]:
     config = config or Config.from_env(ROOT)
+    local_env = load_local_env(config.project_root)
     guard = evaluate_live_api_full_run_guard(
         config,
         override=allow_live_diagnostic_without_success,
@@ -129,6 +131,7 @@ def run_full_generated_prompt_suite_diagnostic(
         rows.append(redact_secrets(row))
 
     report = redact_secrets({**_build_report(config, suite, selected, rows, suite_path), **override_meta})
+    report["local_env_loaded"] = bool(local_env)
     gap_report = redact_secrets(_build_gap_report(report))
     if override_meta:
         gap_report.update(override_meta)
@@ -194,6 +197,10 @@ def _row_from_result(
     answer_intent = str(answer_diag.get("answer_intent") or answer_family or "UNKNOWN")
     final_answer = str(result.get("final_answer") or trajectory.get("final_answer") or "")
     dry_run_count = sum(1 for step in api_steps if (step.get("result") or {}).get("dry_run") is True)
+    api_outcomes = [_api_outcome(step) for step in api_steps]
+    live_empty_count = sum(1 for outcome in api_outcomes if outcome == "live_empty")
+    live_success_count = sum(1 for outcome in api_outcomes if outcome == "live_success")
+    api_error_count = sum(1 for outcome in api_outcomes if outcome == "api_error")
     zero_row_sql = any(int((step.get("result") or {}).get("row_count") or 0) == 0 for step in sql_steps)
     validation_failures = _validation_failure_count(trajectory) + sum(
         1 for step in [*sql_steps, *api_steps] if (step.get("validation") or {}).get("ok") is False
@@ -201,6 +208,7 @@ def _row_from_result(
     evidence_state = _evidence_state(sql_steps, api_steps, dry_run_count, zero_row_sql)
     vague = _weak_answer(final_answer)
     evidence_unused = bool(sql_steps or api_steps) and vague
+    template_family = _sql_template(plan)
     route_match = _route_matches(actual_route, expected_route)
     intent_match = _intent_matches(answer_intent, expected_intent)
     row = {
@@ -215,6 +223,7 @@ def _row_from_result(
         "domain_family": item.get("domain_family"),
         "answer_intent": expected_intent,
         "expected_route_label": expected_route,
+        "route_type": actual_route,
         "actual_route": actual_route,
         "route_matches_diagnostic": route_match,
         "domain_type": domain_type,
@@ -222,12 +231,26 @@ def _row_from_result(
         "answer_family": answer_family,
         "actual_answer_intent": answer_intent,
         "answer_intent_matches_diagnostic": intent_match,
-        "sql_template": _sql_template(plan),
+        "sql_template": template_family,
+        "template_hit": template_family not in {"generic_sql", "unavailable", None},
+        "schema_aware_fallback_candidate_available": "not_evaluated_in_runtime_diagnostic",
         "api_mode": _api_mode(actual_route, len(sql_steps), len(api_steps)),
         "sql_calls": len(sql_steps),
         "api_calls": len(api_steps),
+        "endpoint_selected": _api_endpoints(api_steps),
+        "api_outcome": _combined_api_outcome(api_outcomes),
+        "api_outcomes": api_outcomes,
+        "live_success_count": live_success_count,
+        "live_empty_count": live_empty_count,
+        "api_error_count": api_error_count,
+        "parser_status": _parser_status(api_steps),
+        "evidencebus_status": _evidencebus_status(sql_steps, api_steps, answer_diag, evidence_state),
+        "answer_used_sql_evidence": _answer_used_sql_evidence(sql_steps, final_answer, evidence_state),
+        "answer_used_live_api_evidence": _answer_used_live_api_evidence(api_steps, final_answer, evidence_state),
+        "unsupported_claim_count": int(answer_diag.get("unsupported_claims_count") or 0),
         "dry_run_count": dry_run_count,
         "validation_failures": validation_failures,
+        "tool_count": len(sql_steps) + len(api_steps),
         "runtime": round(float(trajectory.get("runtime", elapsed) or elapsed), 4),
         "tokens": trajectory.get("estimated_tokens", "unavailable"),
         "final_answer": final_answer,
@@ -235,7 +258,17 @@ def _row_from_result(
         "zero_row_sql": zero_row_sql,
         "requires_live_api": dry_run_count > 0 or ("API" in actual_route.upper() and len(api_steps) > 0),
         "vague_or_evidence_unused": evidence_unused,
-        "failure_category": _failure_category(validation_failures, route_match, intent_match, evidence_state, zero_row_sql, evidence_unused),
+        "failure_category": _failure_category(
+            validation_failures,
+            route_match,
+            intent_match,
+            evidence_state,
+            zero_row_sql,
+            evidence_unused,
+            live_empty_count,
+            api_error_count,
+            template_family,
+        ),
         "output_dir": _rel(config, out_dir),
     }
     return row
@@ -255,6 +288,8 @@ def _build_report(
     zero_row = [row for row in passed if row.get("zero_row_sql")]
     live_api = [row for row in passed if row.get("requires_live_api")]
     vague = [row for row in passed if row.get("vague_or_evidence_unused")]
+    template_hits = [row for row in passed if row.get("template_hit")]
+    template_misses = [row for row in passed if row.get("template_hit") is False]
     return {
         "report_type": "full_generated_prompt_suite_diagnostic",
         "diagnostic_only": True,
@@ -268,6 +303,15 @@ def _build_report(
         "runtime_pass_count": len(passed),
         "runtime_fail_count": len(failed),
         "validation_fail_count": sum(1 for row in rows if int(row.get("validation_failures") or 0) > 0),
+        "live_api_calls": sum(int(row.get("api_calls") or 0) for row in passed),
+        "live_success_count": sum(int(row.get("live_success_count") or 0) for row in passed),
+        "live_empty_count": sum(int(row.get("live_empty_count") or 0) for row in passed),
+        "api_error_count": sum(int(row.get("api_error_count") or 0) for row in passed),
+        "template_hit_count": len(template_hits),
+        "template_miss_count": len(template_misses),
+        "template_hit_rate": round(len(template_hits) / len(passed), 4) if passed else 0.0,
+        "template_miss_rate": round(len(template_misses) / len(passed), 4) if passed else 0.0,
+        "unsupported_claim_count": sum(int(row.get("unsupported_claim_count") or 0) for row in passed),
         "route_distribution": dict(Counter(row.get("actual_route", "UNKNOWN") for row in passed)),
         "domain_distribution": dict(Counter(row.get("domain_type", "UNKNOWN") for row in passed)),
         "answer_intent_distribution": dict(Counter(row.get("actual_answer_intent", "UNKNOWN") for row in passed)),
@@ -322,7 +366,13 @@ def _render_report_md(report: dict[str, Any]) -> str:
         f"- Runtime pass count: `{report.get('runtime_pass_count')}`",
         f"- Runtime fail count: `{report.get('runtime_fail_count')}`",
         f"- Validation fail count: `{report.get('validation_fail_count')}`",
+        f"- Live API calls: `{report.get('live_api_calls')}`",
+        f"- Live success count: `{report.get('live_success_count')}`",
+        f"- Live empty count: `{report.get('live_empty_count')}`",
         f"- Dry-run count: `{report.get('dry_run_count')}`",
+        f"- Template hit rate: `{report.get('template_hit_rate')}`",
+        f"- Template miss rate: `{report.get('template_miss_rate')}`",
+        f"- Unsupported claim count: `{report.get('unsupported_claim_count')}`",
         f"- Official strict score computed: `{report.get('official_strict_score_computed')}`",
         "",
         "## Route Distribution",
@@ -412,20 +462,97 @@ def _failure_category(
     evidence_state: str,
     zero_row_sql: bool,
     evidence_unused: bool,
+    live_empty_count: int,
+    api_error_count: int,
+    template_family: str | None,
 ) -> str:
     if validation_failures:
-        return "validation_failure"
+        return "no_template_fallback_weak" if template_family in {"generic_sql", "unavailable", None} else "wrong_sql_table"
     if route_match is False:
         return "route_mismatch"
     if intent_match is False:
-        return "answer_intent_mismatch"
+        return "answer_shape_weak"
+    if api_error_count:
+        return "api_endpoint_selection_gap"
     if evidence_state == "dry_run_unavailable":
-        return "requires_live_api"
+        return "api_endpoint_selection_gap"
+    if live_empty_count:
+        return "live_empty_mishandled" if evidence_unused else "no_clear_failure"
     if zero_row_sql:
-        return "zero_row_sql"
+        return "no_template_fallback_weak"
     if evidence_unused:
-        return "answer_vague_or_evidence_unused"
-    return "ok"
+        return "answer_shape_weak"
+    return "no_clear_failure"
+
+
+def _api_endpoints(api_steps: list[dict[str, Any]]) -> list[str]:
+    endpoints: list[str] = []
+    for step in api_steps:
+        result = step.get("result") or {}
+        endpoint = result.get("endpoint") or step.get("url")
+        if endpoint is not None:
+            endpoints.append(str(endpoint))
+    return endpoints
+
+
+def _api_outcome(step: dict[str, Any]) -> str:
+    result = step.get("result") or {}
+    if result.get("dry_run"):
+        return "dry_run"
+    if result.get("ok") is True:
+        preview = result.get("result_preview")
+        return "live_success" if preview not in (None, "", [], {}) else "live_empty"
+    if result:
+        return "api_error"
+    return "skipped"
+
+
+def _combined_api_outcome(outcomes: list[str]) -> str:
+    if not outcomes:
+        return "skipped"
+    for preferred in ["api_error", "live_success", "live_empty", "dry_run"]:
+        if preferred in outcomes:
+            return preferred
+    return outcomes[0]
+
+
+def _parser_status(api_steps: list[dict[str, Any]]) -> str:
+    if not api_steps:
+        return "not_applicable"
+    if any((step.get("result") or {}).get("ok") is True for step in api_steps):
+        return "pass"
+    return "blocked_by_api_outcome"
+
+
+def _evidencebus_status(
+    sql_steps: list[dict[str, Any]],
+    api_steps: list[dict[str, Any]],
+    answer_diag: dict[str, Any],
+    evidence_state: str,
+) -> str:
+    if not (sql_steps or api_steps):
+        return "no_tool_evidence"
+    slots = answer_diag.get("slots_present") or []
+    if slots:
+        return "evidence_forwarded"
+    if evidence_state in {"sql_evidence", "live_api_evidence"}:
+        return "evidence_available_not_reflected_in_answer_slots"
+    return evidence_state
+
+
+def _answer_used_sql_evidence(sql_steps: list[dict[str, Any]], final_answer: str, evidence_state: str) -> bool:
+    if not sql_steps:
+        return False
+    if evidence_state == "sql_evidence":
+        return True
+    return any(str((step.get("result") or {}).get("row_count") or "") in final_answer for step in sql_steps)
+
+
+def _answer_used_live_api_evidence(api_steps: list[dict[str, Any]], final_answer: str, evidence_state: str) -> bool:
+    if not api_steps:
+        return False
+    lowered = final_answer.lower()
+    return evidence_state == "live_api_evidence" and any(marker in lowered for marker in ["api", "live", "schema registry", "platform"])
 
 
 def _gap_examples(rows: list[dict[str, Any]], category: str) -> list[dict[str, Any]]:

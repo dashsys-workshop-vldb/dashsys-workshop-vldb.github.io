@@ -434,6 +434,22 @@ Outputs:
 
 The trial compares baseline `SQL_FIRST_API_VERIFY` against the schema-aware fallback in isolated outputs and keeps the result `keep_trial_only` unless explicitly promoted later. Higher score is not considered meaningful unless robustness and generalization gates pass: strict score must not regress, hidden-style must remain 48/48, paraphrase consistency must improve or stay stable, template dependency must decrease, unsafe SQL and unsupported claims must not increase, and no single hosted LLM backend may become a dependency.
 
+## 6.2 Post-Live Robustness Status
+
+Live Adobe API integration is connected and all runtime-relevant safe GET endpoint blockers are resolved. The latest safe GET matrix is 15 attempted, 10 `live_success`, 5 `live_empty`, 0 `endpoint_path_issue`, and 0 `api_error`.
+
+The initial live strict run regressed from 0.6553 to 0.6247 because live API verification added noise or competed with complete SQL evidence. The promoted conservative arbitration policy keeps SQL primary when SQL fully answers and API is optional, allows API-primary answers only when API evidence is required or SQL cannot answer, and prevents `live_empty` from erasing grounded SQL facts. The latest strict score is 0.6555, hidden-style remains 48/48, and `SQL_FIRST_API_VERIFY` remains the packaged default.
+
+The post-live robustness pass is diagnostic-first:
+
+- `outputs/reports/full_generated_prompt_suite_diagnostic.md/json` covers the 250 generated prompts as diagnostic-only evidence.
+- `outputs/reports/nl_sql_robustness_audit.md/json` and `outputs/reports/nl_sql_paraphrase_consistency.md/json` track template dependency and paraphrase stability.
+- `outputs/reports/schema_aware_sql_feedback_loop.md/json` keeps schema-aware SQL `keep_trial_only`; it is not promoted because strict non-regression and template-dependency gates did not pass.
+- `outputs/reports/llm_agent_trace_decomposition.md/json`, `outputs/reports/controller_rewrite_policy_trial.md/json`, and `outputs/reports/multi_llm_backend_robustness.md/json` show that pure LLM/controller work remains diagnostic-only and SDK-only.
+- `outputs/reports/integrated_robustness_gate.md/json` currently recommends `promote_arbitration_policy_only`.
+
+The main remaining risk is NL-to-SQL generalization rather than Adobe connectivity. Current robustness diagnostics show a template dependency score of 0.1634, a generated-prompt template miss rate of 0.68, and paraphrase consistency of 0.9907. Future improvements should reduce template dependence with gated, validator-backed SQL selection rather than adding public-example-specific templates.
+
 ## 7. Candidate Context Report
 
 Generate a report showing that schema context selection is retrieval, not public-example hardcoding:

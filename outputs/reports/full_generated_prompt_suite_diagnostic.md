@@ -7,7 +7,13 @@ Generated prompts are diagnostic coverage only; this report is not official stri
 - Runtime pass count: `250`
 - Runtime fail count: `0`
 - Validation fail count: `0`
-- Dry-run count: `212`
+- Live API calls: `212`
+- Live success count: `65`
+- Live empty count: `8`
+- Dry-run count: `0`
+- Template hit rate: `0.32`
+- Template miss rate: `0.68`
+- Unsupported claim count: `0`
 - Official strict score computed: `False`
 
 ## Route Distribution
@@ -19,11 +25,11 @@ Generated prompts are diagnostic coverage only; this report is not official stri
 
 ## Top Failure Categories
 
-- `answer_intent_mismatch`: `88`
-- `ok`: `4`
-- `requires_live_api`: `71`
+- `answer_shape_weak`: `88`
+- `api_endpoint_selection_gap`: `57`
+- `no_clear_failure`: `17`
+- `no_template_fallback_weak`: `2`
 - `route_mismatch`: `86`
-- `zero_row_sql`: `1`
 
 ## Coverage Notes
 

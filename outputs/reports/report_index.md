@@ -14,6 +14,7 @@ Start here. Most older generated reports were consolidated or removed.
 - [core_tool_correctness_audit.md](core_tool_correctness_audit.md)
 - [core_tool_correctness_trials.md](core_tool_correctness_trials.md)
 - [core_tool_correctness_fix_decision.md](core_tool_correctness_fix_decision.md)
+- [integrated_robustness_gate.md](integrated_robustness_gate.md)
 - [overnight_autonomous_improvement_report.md](overnight_autonomous_improvement_report.md)
 - [repo_cleanup_result.md](repo_cleanup_result.md)
 - [report_index.md](report_index.md)
@@ -52,8 +53,28 @@ Start here. Most older generated reports were consolidated or removed.
 - `outputs/reports/superpowers_next_steps_preflight.md` - Superpowers-style protected-artifact preflight before any local deterministic improvement.
 - `outputs/reports/local_gap_manual_review.md` - Manual review of high-value local diagnostic gaps; generated labels are advisory only.
 - `outputs/reports/superpowers_fix_decision.md` - Evidence-gated fix decision; no runtime change unless exactly one safe candidate passes.
-- `outputs/reports/full_generated_prompt_suite_diagnostic.md` - Full 250-prompt generated suite diagnostic only; no official strict score claim.
+- `outputs/reports/full_generated_prompt_suite_diagnostic.md` - Full 250-prompt generated suite diagnostic after live API stabilization; diagnostic-only and not official strict score.
 - `outputs/reports/generated_prompt_coverage_gap_analysis.md` - Generated prompt coverage gaps; diagnostic-only and not promotion evidence.
+
+## Post-Live Robustness Gate
+
+- Preflight: `outputs/reports/post_live_robustness_preflight.md`
+- Arbitration guard: `outputs/reports/live_api_arbitration_regression_guard.md`
+- Full generated suite: `outputs/reports/full_generated_prompt_suite_diagnostic.md`
+- NL-to-SQL robustness: `outputs/reports/nl_sql_robustness_audit.md`
+- Paraphrase consistency: `outputs/reports/nl_sql_paraphrase_consistency.md`
+- Schema-aware failure decomposition: `outputs/reports/schema_aware_sql_failure_decomposition.md`
+- Schema-aware feedback loop: `outputs/reports/schema_aware_sql_feedback_loop.md`
+- LLM trace decomposition: `outputs/reports/llm_agent_trace_decomposition.md`
+- Controller rewrite trial: `outputs/reports/controller_rewrite_policy_trial.md`
+- Multi-LLM robustness: `outputs/reports/multi_llm_backend_robustness.md`
+- Live tool efficiency: `outputs/reports/live_tool_efficiency_audit.md`
+- Integrated gate: `outputs/reports/integrated_robustness_gate.md`
+- Recommendation: `promote_arbitration_policy_only`
+- Current strict score: `0.6555`
+- Generated diagnostic prompts executed: `250`
+- Template dependency score: `0.1634`
+- Schema-aware fallback decision: `keep_trial_only`
 
 ## LLM Controller Diagnostics
 
@@ -316,6 +337,18 @@ Regenerated report surfaces:
 - `outputs/reports/context7_fix_decision.md/json`
 - `outputs/reports/live_api_evidence_pipeline_trial.md/json`
 - `outputs/reports/mock_live_api_evidence_pipeline_trial.md/json`
+- `outputs/reports/post_live_robustness_preflight.md/json`
+- `outputs/reports/live_api_arbitration_regression_guard.md/json`
+- `outputs/reports/full_generated_prompt_suite_diagnostic.md/json`
+- `outputs/reports/nl_sql_robustness_audit.md/json`
+- `outputs/reports/nl_sql_paraphrase_consistency.md/json`
+- `outputs/reports/schema_aware_sql_failure_decomposition.md/json`
+- `outputs/reports/schema_aware_sql_feedback_loop.md/json`
+- `outputs/reports/llm_agent_trace_decomposition.md/json`
+- `outputs/reports/controller_rewrite_policy_trial.md/json`
+- `outputs/reports/multi_llm_backend_robustness.md/json`
+- `outputs/reports/live_tool_efficiency_audit.md/json`
+- `outputs/reports/integrated_robustness_gate.md/json`
 - `outputs/reports/evidence_usage_audit.md/json`
 - `outputs/reports/evidence_aware_answer_rewrite_trial.md/json`
 - `outputs/reports/feedback_loop_answer_synthesis_final.md/json`
@@ -397,6 +430,7 @@ Regenerated report surfaces:
 - hidden_style: `48/48`
 - final_submission_ready: `True`
 - live_adobe_api_readiness: `pass`
+- post_live_robustness: `promote_arbitration_policy_only`
 - evidence_aware_answer_synthesis: `keep_trial_only`
 - llm_recommendation: `keep_shadow_only`
 - sdk_tool_calling_optimization: `speed_only_shadow_candidates_no_promotion`
