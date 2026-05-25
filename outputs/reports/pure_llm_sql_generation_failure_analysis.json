@@ -1708,38 +1708,32 @@
       "aggregation": "none",
       "execution_result": null,
       "expected_answer_intent": "SELECT",
-      "failure_reason": "hallucinated_column",
+      "failure_reason": "wrong_join_path",
       "failure_stage": "sql_repair_failed",
       "filters": [
         {
-          "column": "dim_segment.DATAFLOWNAME",
+          "column": "ISACCOUNTSEGMENT",
           "operator": "=",
           "table": "",
-          "value": "'SMS Opt-In'"
+          "value": "Y"
         },
         {
-          "column": "dim_segment.STATE",
+          "column": "DATAFLOWNAME",
           "operator": "=",
           "table": "",
-          "value": "'ACTIVE'"
-        },
-        {
-          "column": "dim_segment.ISACCOUNTSEGMENT",
-          "operator": "=",
-          "table": "",
-          "value": "'Y'"
+          "value": "SMS Opt-In"
         }
       ],
       "llm_sql_plan": {
         "_usage": {
-          "completion_tokens": 299,
+          "completion_tokens": 277,
           "completion_tokens_details": null,
-          "prompt_tokens": 2032,
+          "prompt_tokens": 1972,
           "prompt_tokens_details": {
             "audio_tokens": null,
             "cached_tokens": 141
           },
-          "total_tokens": 2331
+          "total_tokens": 2249
         },
         "aggregation": null,
         "columns_needed": [
@@ -1751,23 +1745,18 @@
         "confidence": 0.98,
         "filters": [
           {
-            "column": "dim_segment.DATAFLOWNAME",
+            "column": "ISACCOUNTSEGMENT",
             "operator": "=",
-            "value": "'SMS Opt-In'"
+            "value": "Y"
           },
           {
-            "column": "dim_segment.STATE",
+            "column": "DATAFLOWNAME",
             "operator": "=",
-            "value": "'ACTIVE'"
-          },
-          {
-            "column": "dim_segment.ISACCOUNTSEGMENT",
-            "operator": "=",
-            "value": "'Y'"
+            "value": "SMS Opt-In"
           }
         ],
         "join_needed": true,
-        "join_path_reason": "JOIN dim_segment ON dim_segment.SEGMENTID = dim_target.SEGMENTID WHERE dim_target.DATAFLOWNAME = 'SMS Opt-In'",
+        "join_path_reason": "To filter audiences connected to 'SMS Opt-In' target, join 'dim_segment' and 'dim_target' tables based on 'SEGMENTID' and 'TARGETID' respectively.",
         "limit": null,
         "order_by": null,
         "primary_entity": "SMS Opt-In audience",
@@ -1790,9 +1779,6 @@
       ],
       "sql_validator_result": {
         "errors": [
-          "Unknown column in filters: dim_segment.DATAFLOWNAME.",
-          "Unknown column in filters: dim_segment.ISACCOUNTSEGMENT.",
-          "Unknown column in filters: dim_segment.STATE.",
           "Unsupported filter operator: =.",
           "Unsupported join path for tables: dim_segment, dim_target."
         ],
@@ -1804,15 +1790,16 @@
       "variant": "structured_sql_plan_with_repair_v1"
     }
   ],
-  "generated_at": "2026-05-25T20:43:02.263291+00:00",
+  "generated_at": "2026-05-25T21:06:51.080388+00:00",
   "promotion_allowed": false,
   "report_type": "pure_llm_sql_generation_failure_analysis",
   "summary": {
     "failure_categories": {
-      "hallucinated_column": 6,
+      "hallucinated_column": 5,
       "hallucinated_table": 3,
       "invalid_sql_syntax": 2,
-      "no_clear_sql_failure": 21
+      "no_clear_sql_failure": 21,
+      "wrong_join_path": 1
     },
     "hallucinated_journey_table_issue": {
       "count": 0,

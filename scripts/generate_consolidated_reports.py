@@ -281,6 +281,7 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "pure_llm_baseline_definition": _load_json(outputs / "reports" / "pure_llm_baseline_definition.json"),
         "pure_llm_tool_agent_eval": _load_json(outputs / "reports" / "pure_llm_tool_agent_eval.json"),
         "pure_llm_tool_agent_stabilization": _load_json(outputs / "reports" / "pure_llm_tool_agent_stabilization.json"),
+        "pure_llm_bounded_sql_score_audit": _load_json(outputs / "reports" / "pure_llm_bounded_sql_score_audit.json"),
         "pure_llm_agent_trace_decomposition": _load_json(outputs / "reports" / "pure_llm_agent_trace_decomposition.json"),
         "pure_llm_multi_backend_eval": _load_json(outputs / "reports" / "pure_llm_multi_backend_eval.json"),
         "pure_llm_promotion_gate": _load_json(outputs / "reports" / "pure_llm_promotion_gate.json"),
@@ -840,6 +841,7 @@ def build_report_index(
             "definition_path": "outputs/reports/pure_llm_baseline_definition.md",
             "eval_path": "outputs/reports/pure_llm_tool_agent_eval.md",
             "stabilization_path": "outputs/reports/pure_llm_tool_agent_stabilization.md",
+            "bounded_sql_score_audit_path": "outputs/reports/pure_llm_bounded_sql_score_audit.md",
             "trace_decomposition_path": "outputs/reports/pure_llm_agent_trace_decomposition.md",
             "multi_backend_path": "outputs/reports/pure_llm_multi_backend_eval.md",
             "promotion_gate_path": "outputs/reports/pure_llm_promotion_gate.md",
@@ -848,6 +850,7 @@ def build_report_index(
                 {
                     "pure_llm_tool_agent_eval": _load_json(config.outputs_dir / "reports" / "pure_llm_tool_agent_eval.json"),
                     "pure_llm_tool_agent_stabilization": _load_json(config.outputs_dir / "reports" / "pure_llm_tool_agent_stabilization.json"),
+                    "pure_llm_bounded_sql_score_audit": _load_json(config.outputs_dir / "reports" / "pure_llm_bounded_sql_score_audit.json"),
                     "pure_llm_promotion_gate": _load_json(config.outputs_dir / "reports" / "pure_llm_promotion_gate.json"),
                     "pure_llm_multi_backend_eval": _load_json(config.outputs_dir / "reports" / "pure_llm_multi_backend_eval.json"),
                 }
@@ -1643,10 +1646,12 @@ def _status_from_report(report: dict[str, Any], default: str) -> str:
 def _pure_llm_tool_agent_status(sources: dict[str, Any]) -> dict[str, Any]:
     eval_report = sources.get("pure_llm_tool_agent_eval") or {}
     stabilization = sources.get("pure_llm_tool_agent_stabilization") or {}
+    bounded_sql_audit = sources.get("pure_llm_bounded_sql_score_audit") or {}
     gate = sources.get("pure_llm_promotion_gate") or {}
     multi = sources.get("pure_llm_multi_backend_eval") or {}
     summary = eval_report.get("summary") or {}
     stabilization_summary = stabilization.get("summary") or {}
+    bounded_summary = bounded_sql_audit.get("summary") or {}
     return {
         "status": "shadow_only",
         "packaged_runtime_affected": False,
@@ -1660,6 +1665,8 @@ def _pure_llm_tool_agent_status(sources: dict[str, Any]) -> dict[str, Any]:
         "stabilization_prompts_attempted": stabilization_summary.get("prompts_attempted"),
         "stabilization_unsupported_claim_count": stabilization_summary.get("unsupported_claim_count"),
         "stabilization_tool_called_when_needed_rate": stabilization_summary.get("tool_called_when_needed_rate"),
+        "bounded_sql_score_audit_root_cause": bounded_summary.get("root_cause"),
+        "bounded_sql_score_failure_categories": bounded_summary.get("failure_categories", {}),
         "available_backend_count": (multi.get("summary") or {}).get("available_backend_count"),
         "executed_backend_count": (multi.get("summary") or {}).get("executed_backend_count"),
     }
