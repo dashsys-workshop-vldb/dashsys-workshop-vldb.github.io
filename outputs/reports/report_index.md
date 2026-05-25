@@ -59,19 +59,27 @@ Start here. Most older generated reports were consolidated or removed.
 ## Post-Live Robustness Gate
 
 - Preflight: `outputs/reports/post_live_robustness_preflight.md`
+- Next robustness preflight: `outputs/reports/next_robustness_improvement_preflight.md`
+- External text-to-SQL/tool-agent research: `outputs/reports/external_text_to_sql_tool_agent_research.md`
 - Arbitration guard: `outputs/reports/live_api_arbitration_regression_guard.md`
 - Full generated suite: `outputs/reports/full_generated_prompt_suite_diagnostic.md`
+- Generated prompt failure clusters: `outputs/reports/generated_prompt_failure_cluster_analysis.md`
+- Targeted answer-shape trial: `outputs/reports/targeted_answer_shape_trial.md`
+- Route mismatch root-cause analysis: `outputs/reports/route_mismatch_root_cause_analysis.md`
+- API endpoint selection gaps: `outputs/reports/api_endpoint_selection_gap_analysis.md`
+- Live API efficiency compression trial: `outputs/reports/live_api_efficiency_compression_trial.md`
 - NL-to-SQL robustness: `outputs/reports/nl_sql_robustness_audit.md`
 - Paraphrase consistency: `outputs/reports/nl_sql_paraphrase_consistency.md`
 - Schema-aware failure decomposition: `outputs/reports/schema_aware_sql_failure_decomposition.md`
 - Schema-aware feedback loop: `outputs/reports/schema_aware_sql_feedback_loop.md`
+- No-template SQL diagnostic: `outputs/reports/no_template_sql_mode_diagnostic.md`
 - LLM trace decomposition: `outputs/reports/llm_agent_trace_decomposition.md`
 - Controller rewrite trial: `outputs/reports/controller_rewrite_policy_trial.md`
 - Multi-LLM robustness: `outputs/reports/multi_llm_backend_robustness.md`
 - Live tool efficiency: `outputs/reports/live_tool_efficiency_audit.md`
 - Integrated gate: `outputs/reports/integrated_robustness_gate.md`
-- Recommendation: `promote_arbitration_policy_only`
-- Current strict score: `0.6555`
+- Recommendation: `blocked_by_robustness_regression`
+- Current strict score: `0.6514`
 - Generated diagnostic prompts executed: `250`
 - Template dependency score: `0.1634`
 - Schema-aware fallback decision: `keep_trial_only`
@@ -338,12 +346,20 @@ Regenerated report surfaces:
 - `outputs/reports/live_api_evidence_pipeline_trial.md/json`
 - `outputs/reports/mock_live_api_evidence_pipeline_trial.md/json`
 - `outputs/reports/post_live_robustness_preflight.md/json`
+- `outputs/reports/next_robustness_improvement_preflight.md/json`
+- `outputs/reports/external_text_to_sql_tool_agent_research.md/json`
 - `outputs/reports/live_api_arbitration_regression_guard.md/json`
 - `outputs/reports/full_generated_prompt_suite_diagnostic.md/json`
+- `outputs/reports/generated_prompt_failure_cluster_analysis.md/json`
+- `outputs/reports/targeted_answer_shape_trial.md/json`
+- `outputs/reports/route_mismatch_root_cause_analysis.md/json`
+- `outputs/reports/api_endpoint_selection_gap_analysis.md/json`
+- `outputs/reports/live_api_efficiency_compression_trial.md/json`
 - `outputs/reports/nl_sql_robustness_audit.md/json`
 - `outputs/reports/nl_sql_paraphrase_consistency.md/json`
 - `outputs/reports/schema_aware_sql_failure_decomposition.md/json`
 - `outputs/reports/schema_aware_sql_feedback_loop.md/json`
+- `outputs/reports/no_template_sql_mode_diagnostic.md/json`
 - `outputs/reports/llm_agent_trace_decomposition.md/json`
 - `outputs/reports/controller_rewrite_policy_trial.md/json`
 - `outputs/reports/multi_llm_backend_robustness.md/json`
@@ -430,7 +446,7 @@ Regenerated report surfaces:
 - hidden_style: `48/48`
 - final_submission_ready: `True`
 - live_adobe_api_readiness: `pass`
-- post_live_robustness: `promote_arbitration_policy_only`
+- post_live_robustness: `blocked_by_robustness_regression`
 - evidence_aware_answer_synthesis: `keep_trial_only`
 - llm_recommendation: `keep_shadow_only`
 - sdk_tool_calling_optimization: `speed_only_shadow_candidates_no_promotion`

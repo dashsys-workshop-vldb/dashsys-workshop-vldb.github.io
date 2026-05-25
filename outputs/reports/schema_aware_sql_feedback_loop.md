@@ -17,6 +17,6 @@ Higher score is not considered meaningful unless robustness and generalization g
 - `template_dependency_decreased`: passed `False`, observed `0.1634`
 - `unsafe_sql_no_increase`: passed `True`, observed `0`
 - `unsupported_claims_no_increase`: passed `True`, observed `not_changed_answer_path`
-- `tool_runtime_no_significant_regression`: passed `True`, observed `{'tool_count_delta': 0.0, 'runtime_delta': -0.0006}`
+- `tool_runtime_no_significant_regression`: passed `True`, observed `{'tool_count_delta': 0.0, 'runtime_delta': -0.0013}`
 - `multi_backend_or_no_llm_robustness`: passed `True`, observed `{'llm_calls_executed': 0, 'available_backend_count': 4}`
 - `coverage_report_available`: passed `True`, observed `285`

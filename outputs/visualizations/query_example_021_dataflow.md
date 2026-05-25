@@ -7,10 +7,10 @@
 | Query | Show the default merge policy for schema class '_xdm.context.profile'. |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
 | Final answer | The default merge policy is Default Timebased. This is based on live merge-policy API evidence. |
-| Strict score | 0.5359 |
+| Strict score | 0.5357 |
 | Correctness score | 0.5579 |
 | Answer / SQL / API score | 0.1157 / None / 1.0 |
-| Tools / tokens / runtime | 1 / 1016 / 0.30785283306613564 |
+| Tools / tokens / runtime | 1 / 1016 / 0.3686260003596544 |
 
 ## Dataflow Graph
 

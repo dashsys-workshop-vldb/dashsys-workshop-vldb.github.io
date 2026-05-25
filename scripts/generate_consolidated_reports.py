@@ -82,12 +82,20 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/live_api_evidence_pipeline_trial.md/json",
     "outputs/reports/mock_live_api_evidence_pipeline_trial.md/json",
     "outputs/reports/post_live_robustness_preflight.md/json",
+    "outputs/reports/next_robustness_improvement_preflight.md/json",
+    "outputs/reports/external_text_to_sql_tool_agent_research.md/json",
     "outputs/reports/live_api_arbitration_regression_guard.md/json",
     "outputs/reports/full_generated_prompt_suite_diagnostic.md/json",
+    "outputs/reports/generated_prompt_failure_cluster_analysis.md/json",
+    "outputs/reports/targeted_answer_shape_trial.md/json",
+    "outputs/reports/route_mismatch_root_cause_analysis.md/json",
+    "outputs/reports/api_endpoint_selection_gap_analysis.md/json",
+    "outputs/reports/live_api_efficiency_compression_trial.md/json",
     "outputs/reports/nl_sql_robustness_audit.md/json",
     "outputs/reports/nl_sql_paraphrase_consistency.md/json",
     "outputs/reports/schema_aware_sql_failure_decomposition.md/json",
     "outputs/reports/schema_aware_sql_feedback_loop.md/json",
+    "outputs/reports/no_template_sql_mode_diagnostic.md/json",
     "outputs/reports/llm_agent_trace_decomposition.md/json",
     "outputs/reports/controller_rewrite_policy_trial.md/json",
     "outputs/reports/multi_llm_backend_robustness.md/json",
@@ -241,12 +249,20 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "live_api_pipeline_trial": _load_json(outputs / "reports" / "live_api_evidence_pipeline_trial.json"),
         "mock_live_api_pipeline_trial": _load_json(outputs / "reports" / "mock_live_api_evidence_pipeline_trial.json"),
         "post_live_robustness_preflight": _load_json(outputs / "reports" / "post_live_robustness_preflight.json"),
+        "next_robustness_improvement_preflight": _load_json(outputs / "reports" / "next_robustness_improvement_preflight.json"),
+        "external_text_to_sql_tool_agent_research": _load_json(outputs / "reports" / "external_text_to_sql_tool_agent_research.json"),
         "live_api_arbitration_regression_guard": _load_json(outputs / "reports" / "live_api_arbitration_regression_guard.json"),
         "full_generated_prompt_suite_diagnostic": _load_json(outputs / "reports" / "full_generated_prompt_suite_diagnostic.json"),
+        "generated_prompt_failure_cluster_analysis": _load_json(outputs / "reports" / "generated_prompt_failure_cluster_analysis.json"),
+        "targeted_answer_shape_trial": _load_json(outputs / "reports" / "targeted_answer_shape_trial.json"),
+        "route_mismatch_root_cause_analysis": _load_json(outputs / "reports" / "route_mismatch_root_cause_analysis.json"),
+        "api_endpoint_selection_gap_analysis": _load_json(outputs / "reports" / "api_endpoint_selection_gap_analysis.json"),
+        "live_api_efficiency_compression_trial": _load_json(outputs / "reports" / "live_api_efficiency_compression_trial.json"),
         "nl_sql_robustness_audit": _load_json(outputs / "reports" / "nl_sql_robustness_audit.json"),
         "nl_sql_paraphrase_consistency": _load_json(outputs / "reports" / "nl_sql_paraphrase_consistency.json"),
         "schema_aware_sql_failure_decomposition": _load_json(outputs / "reports" / "schema_aware_sql_failure_decomposition.json"),
         "schema_aware_sql_feedback_loop": _load_json(outputs / "reports" / "schema_aware_sql_feedback_loop.json"),
+        "no_template_sql_mode_diagnostic": _load_json(outputs / "reports" / "no_template_sql_mode_diagnostic.json"),
         "llm_agent_trace_decomposition": _load_json(outputs / "reports" / "llm_agent_trace_decomposition.json"),
         "controller_rewrite_policy_trial": _load_json(outputs / "reports" / "controller_rewrite_policy_trial.json"),
         "multi_llm_backend_robustness": _load_json(outputs / "reports" / "multi_llm_backend_robustness.json"),
@@ -1280,12 +1296,20 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.extend(["", "## Post-Live Robustness Gate", ""])
     robustness = payload.get("post_live_robustness", {})
     lines.append(f"- Preflight: `{robustness.get('preflight_path')}`")
+    lines.append("- Next robustness preflight: `outputs/reports/next_robustness_improvement_preflight.md`")
+    lines.append("- External text-to-SQL/tool-agent research: `outputs/reports/external_text_to_sql_tool_agent_research.md`")
     lines.append(f"- Arbitration guard: `{robustness.get('arbitration_guard_path')}`")
     lines.append(f"- Full generated suite: `{robustness.get('full_generated_suite_path')}`")
+    lines.append("- Generated prompt failure clusters: `outputs/reports/generated_prompt_failure_cluster_analysis.md`")
+    lines.append("- Targeted answer-shape trial: `outputs/reports/targeted_answer_shape_trial.md`")
+    lines.append("- Route mismatch root-cause analysis: `outputs/reports/route_mismatch_root_cause_analysis.md`")
+    lines.append("- API endpoint selection gaps: `outputs/reports/api_endpoint_selection_gap_analysis.md`")
+    lines.append("- Live API efficiency compression trial: `outputs/reports/live_api_efficiency_compression_trial.md`")
     lines.append(f"- NL-to-SQL robustness: `{robustness.get('nl_sql_robustness_path')}`")
     lines.append(f"- Paraphrase consistency: `{robustness.get('paraphrase_consistency_path')}`")
     lines.append(f"- Schema-aware failure decomposition: `{robustness.get('schema_aware_failure_decomposition_path')}`")
     lines.append(f"- Schema-aware feedback loop: `{robustness.get('schema_aware_feedback_loop_path')}`")
+    lines.append("- No-template SQL diagnostic: `outputs/reports/no_template_sql_mode_diagnostic.md`")
     lines.append(f"- LLM trace decomposition: `{robustness.get('llm_trace_decomposition_path')}`")
     lines.append(f"- Controller rewrite trial: `{robustness.get('controller_rewrite_trial_path')}`")
     lines.append(f"- Multi-LLM robustness: `{robustness.get('multi_llm_robustness_path')}`")
@@ -1961,9 +1985,15 @@ def _post_live_robustness_status(sources: dict[str, Any]) -> dict[str, Any]:
     preflight = sources.get("post_live_robustness_preflight") or {}
     arbitration = sources.get("live_api_arbitration_regression_guard") or {}
     generated = sources.get("full_generated_prompt_suite_diagnostic") or {}
+    clusters = sources.get("generated_prompt_failure_cluster_analysis") or {}
+    answer_shape = sources.get("targeted_answer_shape_trial") or {}
+    route_mismatch = sources.get("route_mismatch_root_cause_analysis") or {}
+    endpoint_selection = sources.get("api_endpoint_selection_gap_analysis") or {}
+    live_efficiency_trial = sources.get("live_api_efficiency_compression_trial") or {}
     nl_sql = sources.get("nl_sql_robustness_audit") or {}
     paraphrase = sources.get("nl_sql_paraphrase_consistency") or {}
     schema_feedback = sources.get("schema_aware_sql_feedback_loop") or {}
+    no_template = sources.get("no_template_sql_mode_diagnostic") or {}
     llm_trace = sources.get("llm_agent_trace_decomposition") or {}
     controller = sources.get("controller_rewrite_policy_trial") or {}
     multi_llm = sources.get("multi_llm_backend_robustness") or {}
@@ -1992,6 +2022,11 @@ def _post_live_robustness_status(sources: dict[str, Any]) -> dict[str, Any]:
         "generated_prompt_live_api_calls": generated.get("live_api_calls"),
         "generated_prompt_template_hit_rate": generated.get("template_hit_rate"),
         "generated_prompt_template_miss_rate": generated.get("template_miss_rate"),
+        "generated_prompt_cluster_counts": clusters.get("cluster_counts"),
+        "answer_shape_trial_recommendation": answer_shape.get("recommendation"),
+        "route_mismatch_count": route_mismatch.get("mismatch_count"),
+        "endpoint_selection_gap_count": endpoint_selection.get("gap_count"),
+        "live_efficiency_trial_recommendation": live_efficiency_trial.get("recommendation"),
         "template_dependency_score": nl_metrics.get("template_dependency_score"),
         "template_hit_rate": nl_metrics.get("template_hit_rate"),
         "template_miss_rate": nl_metrics.get("template_miss_rate"),
@@ -2001,6 +2036,8 @@ def _post_live_robustness_status(sources: dict[str, Any]) -> dict[str, Any]:
         ),
         "schema_aware_decision": schema_decision.get("decision", "not_run"),
         "schema_aware_promotion_allowed": schema_decision.get("promotion_allowed", False),
+        "no_template_sql_validation_pass_rate": no_template.get("sql_validation_pass_rate"),
+        "no_template_sql_execution_pass_rate": no_template.get("sql_execution_pass_rate"),
         "llm_trace_instrumentation_gap_count": llm_summary.get("instrumentation_gap_count"),
         "llm_trace_controller_unpromoted": llm_summary.get("controller_remains_unpromoted"),
         "controller_rewrite_recommendation": controller.get("recommendation", "not_run"),
@@ -2012,12 +2049,20 @@ def _post_live_robustness_status(sources: dict[str, Any]) -> dict[str, Any]:
         ),
         "source_reports": [
             "outputs/reports/post_live_robustness_preflight.md",
+            "outputs/reports/next_robustness_improvement_preflight.md",
+            "outputs/reports/external_text_to_sql_tool_agent_research.md",
             "outputs/reports/live_api_arbitration_regression_guard.md",
             "outputs/reports/full_generated_prompt_suite_diagnostic.md",
+            "outputs/reports/generated_prompt_failure_cluster_analysis.md",
+            "outputs/reports/targeted_answer_shape_trial.md",
+            "outputs/reports/route_mismatch_root_cause_analysis.md",
+            "outputs/reports/api_endpoint_selection_gap_analysis.md",
+            "outputs/reports/live_api_efficiency_compression_trial.md",
             "outputs/reports/nl_sql_robustness_audit.md",
             "outputs/reports/nl_sql_paraphrase_consistency.md",
             "outputs/reports/schema_aware_sql_failure_decomposition.md",
             "outputs/reports/schema_aware_sql_feedback_loop.md",
+            "outputs/reports/no_template_sql_mode_diagnostic.md",
             "outputs/reports/llm_agent_trace_decomposition.md",
             "outputs/reports/controller_rewrite_policy_trial.md",
             "outputs/reports/multi_llm_backend_robustness.md",

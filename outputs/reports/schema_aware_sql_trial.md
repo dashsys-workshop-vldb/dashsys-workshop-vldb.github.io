@@ -5,7 +5,7 @@ Diagnostic-only comparison of baseline `SQL_FIRST_API_VERIFY` and a feature-flag
 - Strict score delta: -0.016
 - SQL score delta: -0.06
 - Answer score delta: -0.0029
-- Rows helped: 0
+- Rows helped: 1
 - Rows hurt: 1
 - Decision: keep_trial_only
 

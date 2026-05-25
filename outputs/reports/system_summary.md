@@ -12,7 +12,7 @@
 - Live Adobe API readiness: `pass` (smoke `complete`, pipeline `complete`)
 - Live Adobe endpoint resolution: path failures remaining `0`; guarded E2E `pass`; go/no-go `promote_arbitration_policy_only`
 - Post-permission live verification: `complete`; waiting-status report: `complete`
-- Post-live robustness gate: `promote_arbitration_policy_only`; strict `0.6555`; arbitration safe `True`; generated prompts `250`
+- Post-live robustness gate: `blocked_by_robustness_regression`; strict `0.6514`; arbitration safe `True`; generated prompts `250`
 - NL-to-SQL robustness: template dependency `0.1634`; template miss rate `0.6488`; paraphrase consistency `0.9907`; schema-aware fallback `keep_trial_only`
 - LLM semantic routing helper: `do_not_promote` (complete)
 - Semantic router isolated trial: `complete`; promotion decision: `do_not_promote`; packaged runtime affected: `False`

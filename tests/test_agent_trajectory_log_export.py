@@ -24,8 +24,8 @@ def test_agent_trajectory_log_export_includes_sql_and_live_api_examples(tiny_pro
     assert "Agent Trajectory Log" in markdown
     assert "execute_sql" in markdown
     assert "call_api" in markdown
-    assert "Authorization: Bearer secret-token-value" not in rendered
-    assert "secret-token-value" not in rendered
+    assert "Authorization: Bearer [test-token-value]" not in rendered
+    assert "[test-token-value]" not in rendered
     assert ".env.local" not in rendered
 
 
@@ -147,7 +147,7 @@ def _write_live_api_trajectory(config):
                         "method": "GET",
                         "url": "/ajo/journey",
                         "params": {"pageSize": "10"},
-                        "headers": {"Authorization": "Bearer secret-token-value"},
+                        "headers": {"Authorization": "Bearer [test-token-value]"},
                         "validation": {"ok": True},
                         "result": {
                             "ok": True,

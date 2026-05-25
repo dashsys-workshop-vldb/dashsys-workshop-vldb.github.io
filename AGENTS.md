@@ -593,18 +593,26 @@ The reports are `outputs/reports/sql_template_coverage_audit.md/json`, `outputs/
 
 Live Adobe API connectivity is working, endpoint-specific request-shape fixes are in place, and the runtime-relevant safe GET matrix is clean: 15 attempted, 10 `live_success`, 5 `live_empty`, 0 `endpoint_path_issue`, and 0 `api_error`. Keep the Schema Registry `Accept` behavior endpoint-specific and do not add global AdobeAPIClient headers.
 
-The initial live strict score regressed from 0.6553 to 0.6247. The conservative SQL-primary arbitration policy recovered the score to 0.6555 by keeping complete SQL answers primary when API use is optional verification, allowing API-primary answers only when required or SQL cannot answer, and treating `live_empty` as a successful empty live response that cannot erase local SQL facts unless the prompt specifically asks for live/platform state. This arbitration policy is the only current promotable post-live change.
+The initial live strict score regressed from 0.6553 to 0.6247. The conservative SQL-primary arbitration policy previously recovered the score to about 0.6555 by keeping complete SQL answers primary when API use is optional verification, allowing API-primary answers only when required or SQL cannot answer, and treating `live_empty` as a successful empty live response that cannot erase local SQL facts unless the prompt specifically asks for live/platform state. Fresh strict evidence is required for every promotion decision; if live runtime or strict score dips on rerun, the integrated gate must block further runtime promotion.
 
 Use these post-live reports before proposing further runtime work:
 
 ```bash
 python3 scripts/run_post_live_robustness_preflight.py
+python3 scripts/run_next_robustness_improvement_preflight.py
+python3 scripts/run_external_text_to_sql_tool_agent_research.py
 python3 scripts/run_live_api_arbitration_regression_guard.py
 python3 scripts/run_full_generated_prompt_suite_diagnostic.py
+python3 scripts/run_generated_prompt_failure_cluster_analysis.py
+python3 scripts/run_targeted_answer_shape_trial.py
+python3 scripts/run_route_mismatch_root_cause_analysis.py
+python3 scripts/run_api_endpoint_selection_gap_analysis.py
+python3 scripts/run_live_api_efficiency_compression_trial.py
 python3 scripts/run_nl_sql_robustness_audit.py
 python3 scripts/run_nl_sql_paraphrase_consistency.py
 python3 scripts/run_schema_aware_sql_failure_decomposition.py
 python3 scripts/run_schema_aware_sql_feedback_loop.py
+python3 scripts/run_no_template_sql_mode_diagnostic.py
 python3 scripts/run_llm_agent_trace_decomposition.py
 python3 scripts/run_controller_rewrite_policy_trial.py
 python3 scripts/run_multi_llm_backend_robustness.py
@@ -612,7 +620,7 @@ python3 scripts/run_live_tool_efficiency_audit.py
 python3 scripts/run_integrated_robustness_gate.py
 ```
 
-The latest integrated gate recommendation is `promote_arbitration_policy_only`. The 250 generated-prompt run is diagnostic-only; it must not be treated as official score evidence. Current robustness risk is NL-to-SQL generalization: generated-prompt template miss rate is 0.68, template dependency score is 0.1634, and paraphrase consistency is 0.9907. Schema-aware SQL remains `keep_trial_only`, pure LLM/controller paths remain diagnostic-only, and `SQL_FIRST_API_VERIFY` remains the packaged default.
+The latest integrated gate recommendation is the source of truth and may change after strict/runtime reruns. The 250 generated-prompt run is diagnostic-only; it must not be treated as official score evidence. Current robustness risk is NL-to-SQL generalization: generated-prompt template miss rate is high, template dependency score is tracked, and paraphrase consistency is tracked. Schema-aware SQL remains `keep_trial_only`, pure LLM/controller paths remain diagnostic-only, and `SQL_FIRST_API_VERIFY` remains the packaged default.
 
 Highest-value remaining improvements are usually:
 

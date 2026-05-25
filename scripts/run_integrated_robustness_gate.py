@@ -48,10 +48,18 @@ def run_integrated_robustness_gate(config: Config | None = None) -> dict[str, An
     multi_llm = _load_json(reports_dir / "multi_llm_backend_robustness.json")
     tool = _load_json(reports_dir / "live_tool_efficiency_audit.json")
     schema = _load_json(reports_dir / "schema_aware_sql_feedback_loop.json")
+    generated = _load_json(reports_dir / "full_generated_prompt_suite_diagnostic.json")
+    clusters = _load_json(reports_dir / "generated_prompt_failure_cluster_analysis.json")
+    answer_shape = _load_json(reports_dir / "targeted_answer_shape_trial.json")
+    route_mismatch = _load_json(reports_dir / "route_mismatch_root_cause_analysis.json")
+    endpoint_selection = _load_json(reports_dir / "api_endpoint_selection_gap_analysis.json")
+    live_efficiency = _load_json(reports_dir / "live_api_efficiency_compression_trial.json")
+    no_template = _load_json(reports_dir / "no_template_sql_mode_diagnostic.json")
     arbitration = _load_json(reports_dir / "live_api_evidence_arbitration_trial.json")
     check = _safe_check(config)
-    gates = _gates(strict, hidden, smoke, robustness, consistency, multi_llm, tool, schema, check)
-    recommendation = _recommendation(gates, arbitration, schema)
+    gates = _gates(strict, hidden, smoke, robustness, consistency, multi_llm, tool, schema, check, generated)
+    gates.update(_diagnostic_gates(clusters, answer_shape, route_mismatch, endpoint_selection, live_efficiency, no_template))
+    recommendation = _recommendation(gates, arbitration, schema, answer_shape, endpoint_selection, live_efficiency)
     report = redact_secrets(
         {
             "report_type": REPORT_STEM,
@@ -68,6 +76,12 @@ def run_integrated_robustness_gate(config: Config | None = None) -> dict[str, An
                 "outputs/reports/schema_aware_sql_feedback_loop.json",
                 "outputs/reports/multi_llm_backend_robustness.json",
                 "outputs/reports/live_tool_efficiency_audit.json",
+                "outputs/reports/generated_prompt_failure_cluster_analysis.json",
+                "outputs/reports/targeted_answer_shape_trial.json",
+                "outputs/reports/route_mismatch_root_cause_analysis.json",
+                "outputs/reports/api_endpoint_selection_gap_analysis.json",
+                "outputs/reports/live_api_efficiency_compression_trial.json",
+                "outputs/reports/no_template_sql_mode_diagnostic.json",
             ],
         }
     )
@@ -86,6 +100,7 @@ def _gates(
     tool: dict[str, Any],
     schema: dict[str, Any],
     check: dict[str, Any],
+    generated: dict[str, Any],
 ) -> dict[str, dict[str, Any]]:
     score = _strict_score(strict)
     endpoint_counts = smoke.get("outcome_counts") or {}
@@ -99,7 +114,14 @@ def _gates(
             "passed": int(endpoint_counts.get("endpoint_path_issue") or 0) == 0 and int(endpoint_counts.get("api_error") or 0) == 0,
             "observed": endpoint_counts,
         },
-        "unsupported_claims_not_increased": {"passed": True, "observed": "no increase detected in current diagnostic reports"},
+        "unsupported_claims_not_increased": {
+            "passed": int(generated.get("unsupported_claim_count") or 0) == 0,
+            "observed": {
+                "generated_prompt_unsupported_claim_count": generated.get("unsupported_claim_count"),
+                "generated_prompt_runtime_pass_count": generated.get("runtime_pass_count"),
+                "generated_prompt_validation_fail_count": generated.get("validation_fail_count"),
+            },
+        },
         "template_dependency_known_not_promoted": {
             "passed": bool(robust_metrics.get("template_dependency_score") is not None),
             "observed": robust_metrics.get("template_dependency_score"),
@@ -127,12 +149,74 @@ def _gates(
     }
 
 
-def _recommendation(gates: dict[str, dict[str, Any]], arbitration: dict[str, Any], schema: dict[str, Any]) -> str:
+def _diagnostic_gates(
+    clusters: dict[str, Any],
+    answer_shape: dict[str, Any],
+    route_mismatch: dict[str, Any],
+    endpoint_selection: dict[str, Any],
+    live_efficiency: dict[str, Any],
+    no_template: dict[str, Any],
+) -> dict[str, dict[str, Any]]:
+    return {
+        "generated_prompt_clusters_recorded": {
+            "passed": bool(clusters.get("cluster_counts")),
+            "observed": clusters.get("cluster_counts"),
+        },
+        "answer_shape_trial_not_promoted_without_gate": {
+            "passed": answer_shape.get("runtime_change_applied") is False,
+            "observed": {
+                "eligible_rows": answer_shape.get("eligible_rows"),
+                "implementation_ready": answer_shape.get("implementation_ready"),
+                "runtime_change_applied": answer_shape.get("runtime_change_applied"),
+            },
+        },
+        "route_mismatch_analysis_recorded": {
+            "passed": route_mismatch.get("mismatch_count") is not None,
+            "observed": {
+                "mismatch_count": route_mismatch.get("mismatch_count"),
+                "likely_cause_counts": route_mismatch.get("likely_cause_counts"),
+            },
+        },
+        "endpoint_selection_analysis_recorded": {
+            "passed": endpoint_selection.get("gap_count") is not None,
+            "observed": {
+                "gap_count": endpoint_selection.get("gap_count"),
+                "gap_type_counts": endpoint_selection.get("gap_type_counts"),
+            },
+        },
+        "live_efficiency_trial_not_promoted_without_strict_delta": {
+            "passed": live_efficiency.get("runtime_change_applied") is False,
+            "observed": {
+                "api_prompt_rows": live_efficiency.get("api_prompt_rows"),
+                "runtime_change_applied": live_efficiency.get("runtime_change_applied"),
+            },
+        },
+        "no_template_mode_not_packaged": {
+            "passed": (no_template.get("promotion_gate") or {}).get("promotable") is False,
+            "observed": no_template.get("promotion_gate"),
+        },
+    }
+
+
+def _recommendation(
+    gates: dict[str, dict[str, Any]],
+    arbitration: dict[str, Any],
+    schema: dict[str, Any],
+    answer_shape: dict[str, Any],
+    endpoint_selection: dict[str, Any],
+    live_efficiency: dict[str, Any],
+) -> str:
     failed = [name for name, gate in gates.items() if not gate.get("passed")]
     if "strict_score_non_regression" in failed or "hidden_style_passes" in failed or "check_submission_ready_passes" in failed:
         return "blocked_by_robustness_regression"
     if "endpoint_matrix_clean" in failed:
         return "blocked_by_live_endpoint_regression"
+    if answer_shape.get("implementation_ready") and answer_shape.get("runtime_change_applied") is True:
+        return "promote_targeted_answer_shape_fix"
+    if endpoint_selection.get("runtime_change_applied") is True:
+        return "promote_endpoint_selection_fix"
+    if live_efficiency.get("runtime_change_applied") is True:
+        return "promote_live_api_efficiency_fix"
     if (schema.get("promotion_decision") or {}).get("decision") != "keep_trial_only":
         return "candidate_for_schema_aware_gated_trial"
     if arbitration.get("promotion_decision") == "promote_arbitration_policy":

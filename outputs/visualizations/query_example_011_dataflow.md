@@ -7,10 +7,10 @@
 | Query | How many schemas do I have? |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
 | Final answer | You have 74 schemas. This count comes from your blueprint query and is confirmed by the API response from Adobe Schema Registry, which shows tenant schemas are available. |
-| Strict score | 0.7854 |
+| Strict score | 0.7851 |
 | Correctness score | 0.8219 |
 | Answer / SQL / API score | 0.5396 / 0.9 / 1.0 |
-| Tools / tokens / runtime | 2 / 1238 / 0.34276608284562826 |
+| Tools / tokens / runtime | 2 / 1225 / 0.47769004199653864 |
 
 ## Dataflow Graph
 

@@ -127,7 +127,7 @@ def test_organizer_smoke_redacts_token_and_credentials(monkeypatch, tiny_project
         "client-secret-value-123456",
         "org-secret-value-123456",
         "sandbox-secret-value-123456",
-        "Bearer token-secret-value-123456",
+        "Bearer [test-token-value]",
     ]:
         assert secret not in rendered
     assert "Authorization" in rendered
@@ -286,7 +286,7 @@ def test_organizer_report_files_are_generated_and_safe(monkeypatch, tiny_project
         "sandbox-secret-value-123456",
     ]:
         assert secret not in rendered
-    assert "abc***" not in rendered
+    assert "[masked-test-prefix]" not in rendered
 
 
 def test_evidence_package_marks_direct_success_repo_failure_as_mismatch(monkeypatch, tiny_project):

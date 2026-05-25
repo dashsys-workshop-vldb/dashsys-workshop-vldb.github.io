@@ -1,6 +1,6 @@
 # Schema-Aware SQL Failure Decomposition
 
-- Strict score delta: `-0.0161`
+- Strict score delta: `-0.016`
 - SQL score delta: `-0.06`
 - Hurt rows: `1`
 - Helped rows: `0`

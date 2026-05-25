@@ -438,15 +438,20 @@ The trial compares baseline `SQL_FIRST_API_VERIFY` against the schema-aware fall
 
 Live Adobe API integration is connected and all runtime-relevant safe GET endpoint blockers are resolved. The latest safe GET matrix is 15 attempted, 10 `live_success`, 5 `live_empty`, 0 `endpoint_path_issue`, and 0 `api_error`.
 
-The initial live strict run regressed from 0.6553 to 0.6247 because live API verification added noise or competed with complete SQL evidence. The promoted conservative arbitration policy keeps SQL primary when SQL fully answers and API is optional, allows API-primary answers only when API evidence is required or SQL cannot answer, and prevents `live_empty` from erasing grounded SQL facts. The latest strict score is 0.6555, hidden-style remains 48/48, and `SQL_FIRST_API_VERIFY` remains the packaged default.
+The initial live strict run regressed from 0.6553 to 0.6247 because live API verification added noise or competed with complete SQL evidence. The promoted conservative arbitration policy keeps SQL primary when SQL fully answers and API is optional, allows API-primary answers only when API evidence is required or SQL cannot answer, and prevents `live_empty` from erasing grounded SQL facts. A prior live strict run recovered to about 0.6555, but the current robustness gate must always use fresh strict/effectiveness evidence; if live runtime or score dips, further runtime promotion is blocked. Hidden-style must remain 48/48 and `SQL_FIRST_API_VERIFY` remains the packaged default.
 
 The post-live robustness pass is diagnostic-first:
 
+- `outputs/reports/next_robustness_improvement_preflight.md/json` snapshots strict, endpoint, generated-prompt, NL-to-SQL, LLM/controller, and efficiency status before any runtime change.
+- `outputs/reports/external_text_to_sql_tool_agent_research.md/json` records external SQLGlot/Vanna/SQLCoder patterns as design guidance only.
 - `outputs/reports/full_generated_prompt_suite_diagnostic.md/json` covers the 250 generated prompts as diagnostic-only evidence.
+- `outputs/reports/generated_prompt_failure_cluster_analysis.md/json`, `outputs/reports/targeted_answer_shape_trial.md/json`, `outputs/reports/route_mismatch_root_cause_analysis.md/json`, and `outputs/reports/api_endpoint_selection_gap_analysis.md/json` isolate answer-shape, route, and endpoint-selection issues without promoting code.
+- `outputs/reports/live_api_efficiency_compression_trial.md/json` estimates safe live API payload/token compression candidates; it does not remove required evidence fields.
 - `outputs/reports/nl_sql_robustness_audit.md/json` and `outputs/reports/nl_sql_paraphrase_consistency.md/json` track template dependency and paraphrase stability.
+- `outputs/reports/no_template_sql_mode_diagnostic.md/json` isolates template-miss fallback behavior without disabling templates in packaged runtime.
 - `outputs/reports/schema_aware_sql_feedback_loop.md/json` keeps schema-aware SQL `keep_trial_only`; it is not promoted because strict non-regression and template-dependency gates did not pass.
 - `outputs/reports/llm_agent_trace_decomposition.md/json`, `outputs/reports/controller_rewrite_policy_trial.md/json`, and `outputs/reports/multi_llm_backend_robustness.md/json` show that pure LLM/controller work remains diagnostic-only and SDK-only.
-- `outputs/reports/integrated_robustness_gate.md/json` currently recommends `promote_arbitration_policy_only`.
+- `outputs/reports/integrated_robustness_gate.md/json` is the source of truth for whether any new runtime change can be promoted.
 
 The main remaining risk is NL-to-SQL generalization rather than Adobe connectivity. Current robustness diagnostics show a template dependency score of 0.1634, a generated-prompt template miss rate of 0.68, and paraphrase consistency of 0.9907. Future improvements should reduce template dependence with gated, validator-backed SQL selection rather than adding public-example-specific templates.
 
