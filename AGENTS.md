@@ -212,6 +212,15 @@ python3 scripts/run_pure_llm_promotion_gate.py
 
 Reports are written under `outputs/reports/pure_llm_*`. They must not change packaged `SQL_FIRST_API_VERIFY`, final submission format, endpoint catalog behavior, SQL/API validators, or generated-prompt scoring. If a backend is unavailable or too slow, record the skipped reason and keep the pure LLM path shadow-only.
 
+Stabilize the full pure-LLM tool-agent on the small curated set before any larger run:
+
+```bash
+python3 scripts/run_pure_llm_tool_agent_eval.py --stabilization-set --variant full_pure_llm_tool_agent_v1
+python3 scripts/run_pure_llm_agent_trace_decomposition.py --stabilization-set
+```
+
+The stabilization report is `outputs/reports/pure_llm_tool_agent_stabilization.md/json`. It is diagnostic-only and should track tool-called-when-needed, SQL validation, API endpoint validation, evidence use, and unsupported-claim counts.
+
 ## Diagnostic Prompt Suite
 
 `scripts/generate_diagnostic_prompt_suite.py` creates `data/generated_prompt_suite.json/md` from `data/data.json` for broad coverage testing. Stable source IDs are assigned by order as `example_001`, `example_002`, and so on when source rows lack IDs.

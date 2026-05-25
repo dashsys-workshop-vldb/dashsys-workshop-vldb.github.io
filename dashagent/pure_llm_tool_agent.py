@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import re
 import time
 from typing import Any
 
 from .api_client import AdobeAPIClient
+from .api_outcome_classifier import classify_api_outcome
 from .db import DuckDBDatabase
 from .endpoint_catalog import EndpointCatalog
 from .llm_api_tool_guard import validate_llm_api_candidate
@@ -138,10 +140,19 @@ def run_pure_llm_tool_agent_variant(
     start = time.perf_counter()
     capabilities = VARIANT_CAPABILITIES.get(variant, VARIANT_CAPABILITIES[FULL_PURE_LLM_TOOL_AGENT_V1])
     context = build_llm_sql_context(prompt, schema_index, endpoint_catalog if capabilities.get("schema_context") else None)
-    plan = _plan(prompt, context, client) if capabilities.get("structured_plan") else _default_plan(prompt, context)
+    raw_plan = _plan(prompt, context, client) if capabilities.get("structured_plan") else _default_plan(prompt, context)
+    plan = _normalize_plan(prompt, context, raw_plan)
     answer_intent = str(plan.get("answer_intent") or context.get("answer_intent") or infer_answer_intent(prompt))
     observations: list[dict[str, Any]] = []
-    steps: list[dict[str, Any]] = [{"kind": "llm_plan", "variant": variant, "plan": plan, "context_summary": _context_summary(context)}]
+    steps: list[dict[str, Any]] = [
+        {
+            "kind": "llm_plan",
+            "variant": variant,
+            "plan": plan,
+            "raw_plan": raw_plan,
+            "context_summary": _context_summary(context),
+        }
+    ]
     sql_result: dict[str, Any] | None = None
     if bool(plan.get("needs_sql", True)):
         repair = run_sql_repair_loop(
@@ -154,16 +165,16 @@ def run_pure_llm_tool_agent_variant(
             max_repair_rounds=2 if capabilities.get("sql_repair") else 0,
         )
         sql_result = repair
-        if repair.get("sql"):
-            steps.append(
-                {
-                    "kind": "sql_call",
-                    "sql": repair.get("sql"),
-                    "validation": repair.get("validation"),
-                    "result": repair.get("execution_result"),
-                    "repair_rounds": repair.get("repair_rounds"),
-                }
-            )
+        steps.append(
+            {
+                "kind": "sql_call",
+                "sql": repair.get("sql"),
+                "validation": repair.get("validation") or _last_validation(repair),
+                "result": repair.get("execution_result"),
+                "repair_rounds": repair.get("repair_rounds"),
+                "attempts": repair.get("attempts", []),
+            }
+        )
         if repair.get("ok"):
             observations.append({"source": "sql", "rows": repair.get("execution_result", {}).get("rows", []), "row_count": repair.get("execution_result", {}).get("row_count")})
     api_result: dict[str, Any] | None = None
@@ -180,6 +191,8 @@ def run_pure_llm_tool_agent_variant(
         final_answer = str(answer_payload.get("answer") or "")
     steps.append({"kind": "final_answer", "answer": final_answer, "answer_guard": answer_payload})
     runtime = time.perf_counter() - start
+    trace_assertions = _trace_assertions(plan, steps, answer_payload)
+    failure_stage = _failure_stage_from_assertions(trace_assertions)
     trajectory = {
         "original_query": prompt,
         "strategy": variant,
@@ -193,6 +206,9 @@ def run_pure_llm_tool_agent_variant(
         "llm_total_tokens": _sum_usage_tokens([plan, sql_result or {}, api_result or {}, answer_payload]),
         "token_source": "measured_usage_or_estimated",
         "unsupported_claim_count": answer_payload.get("unsupported_claim_count", 0),
+        "rejected_unsupported_claim_count": answer_payload.get("rejected_unsupported_claim_count", 0),
+        "trace_assertions": trace_assertions,
+        "failure_stage": failure_stage,
     }
     return redact_secrets(
         {
@@ -208,6 +224,9 @@ def run_pure_llm_tool_agent_variant(
             "runtime": runtime,
             "estimated_tokens": trajectory["estimated_tokens"],
             "unsupported_claim_count": answer_payload.get("unsupported_claim_count", 0),
+            "rejected_unsupported_claim_count": answer_payload.get("rejected_unsupported_claim_count", 0),
+            "trace_assertions": trace_assertions,
+            "failure_stage": failure_stage,
         }
     )
 
@@ -237,6 +256,61 @@ def _default_plan(prompt: str, context: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _normalize_plan(prompt: str, context: dict[str, Any], plan: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(plan or {})
+    actions: list[str] = []
+    normalized.setdefault("answer_intent", context.get("answer_intent") or infer_answer_intent(prompt))
+    endpoint_candidates = [item.get("endpoint_id") for item in context.get("endpoint_candidates", []) if item.get("endpoint_id")]
+    normalized.setdefault("candidate_endpoints", endpoint_candidates[:3])
+    normalized.setdefault("candidate_tables", [item.get("table") for item in context.get("top_tables", [])[:3]])
+    if _explicit_api_request(prompt):
+        if not normalized.get("needs_api"):
+            actions.append("forced_api_for_explicit_api_prompt")
+        normalized["needs_api"] = True
+    if _data_question_needs_tool(prompt) and not normalized.get("needs_sql") and not normalized.get("needs_api"):
+        normalized["needs_sql"] = True
+        actions.append("forced_sql_for_data_question")
+    if normalized.get("needs_api") and not normalized.get("candidate_endpoints") and endpoint_candidates:
+        normalized["candidate_endpoints"] = endpoint_candidates[:3]
+        actions.append("added_catalog_endpoint_candidates")
+    normalized["_normalization_actions"] = actions
+    return normalized
+
+
+def _data_question_needs_tool(prompt: str) -> bool:
+    lowered = prompt.lower()
+    return any(
+        marker in lowered
+        for marker in (
+            "how many",
+            "count",
+            "list",
+            "show",
+            "which",
+            "when",
+            "status",
+            "state",
+            "date",
+            "dataset",
+            "journey",
+            "campaign",
+            "audience",
+            "segment",
+            "destination",
+            "schema",
+            "batch",
+            "api",
+        )
+    )
+
+
+def _explicit_api_request(prompt: str) -> bool:
+    lowered = prompt.lower()
+    return bool(
+        re.search(r"\bapi\b|\bendpoint\b|ups audiences|merge policies|journey api|batch details|adobe", lowered)
+    )
+
+
 def _run_api_step(
     prompt: str,
     context: dict[str, Any],
@@ -252,22 +326,60 @@ def _run_api_step(
     candidate = parse_json_object(response.get("content", ""))
     validator = APIValidator(endpoint_catalog)
     guarded = validate_llm_api_candidate(candidate, endpoint_catalog, validator) if guard else _unguarded_api_candidate(candidate, endpoint_catalog, validator)
+    retry_attempted = False
+    rejected_candidate = None
+    if not guarded.get("ok") and guard:
+        retry_attempted = True
+        rejected_candidate = candidate
+        retry_context = _context_without_unresolved_path_endpoints(context)
+        retry_system = (
+            bundle.system_prompt
+            + " Your previous endpoint choice was rejected. Retry once. "
+            "Choose only an endpoint_id from the supplied catalog candidates; do not invent endpoint IDs or URLs."
+        )
+        retry_response = client.generate(
+            retry_system,
+            build_api_candidate_prompt(prompt, retry_context, plan).user_prompt,
+        )
+        candidate = parse_json_object(retry_response.get("content", ""))
+        guarded = validate_llm_api_candidate(candidate, endpoint_catalog, validator)
     if not guarded.get("ok"):
-        return {"ok": False, "guard": guarded, "step": {"kind": "api_call", "validation": {"ok": False, "errors": [guarded.get("rejection_reason")]}}}
+        return {
+            "ok": False,
+            "guard": guarded,
+            "step": {
+                "kind": "api_call",
+                "endpoint_candidate": candidate.get("endpoint_id"),
+                "rejected_candidate": rejected_candidate,
+                "retry_attempted": retry_attempted,
+                "validation": {"ok": False, "errors": [guarded.get("rejection_reason")]},
+            },
+        }
     call = guarded["validated_api_call"]
     result = api_client.call_api(call["method"], call["url"], call.get("params", {}), call.get("headers", {})) if api_client else {"ok": False, "dry_run": True, "status_code": None, "result_preview": None}
+    outcome = classify_api_outcome(result, method=call["method"], path=call["url"])
     return redact_secrets(
         {
             "ok": bool(result.get("ok")),
             "guard": guarded,
-            "observation": {"source": "api", "state": "live_success" if result.get("ok") and not result.get("dry_run") else "api_unavailable", "result_preview": result.get("result_preview")},
+            "observation": {
+                "source": "api",
+                "state": outcome,
+                "status_code": result.get("status_code"),
+                "endpoint": call["url"],
+                "result_preview": result.get("result_preview"),
+                "parsed_evidence": result.get("parsed_evidence"),
+            },
             "step": {
                 "kind": "api_call",
                 "method": call["method"],
                 "url": call["url"],
                 "params": call.get("params", {}),
+                "endpoint_candidate": candidate.get("endpoint_id"),
+                "retry_attempted": retry_attempted,
+                "rejected_candidate": rejected_candidate,
                 "validation": guarded.get("validation"),
-                "result": {"ok": result.get("ok"), "dry_run": result.get("dry_run"), "status_code": result.get("status_code")},
+                "result": {"ok": result.get("ok"), "dry_run": result.get("dry_run"), "status_code": result.get("status_code"), "outcome": outcome},
             },
         }
     )
@@ -289,6 +401,26 @@ def _context_summary(context: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _context_without_unresolved_path_endpoints(context: dict[str, Any]) -> dict[str, Any]:
+    cloned = dict(context)
+    endpoints = []
+    for endpoint in context.get("endpoint_candidates", []):
+        path = str(endpoint.get("path") or "")
+        if "{" in path or "}" in path:
+            continue
+        endpoints.append(endpoint)
+    cloned["endpoint_candidates"] = endpoints
+    return cloned
+
+
+def _last_validation(repair: dict[str, Any]) -> dict[str, Any] | None:
+    attempts = repair.get("attempts")
+    if isinstance(attempts, list) and attempts:
+        validation = attempts[-1].get("validation")
+        return validation if isinstance(validation, dict) else None
+    return None
+
+
 def _sum_usage_tokens(items: list[dict[str, Any]]) -> int | None:
     total = 0
     seen = False
@@ -298,3 +430,52 @@ def _sum_usage_tokens(items: list[dict[str, Any]]) -> int | None:
             total += int(usage["total_tokens"])
             seen = True
     return total if seen else None
+
+
+def _trace_assertions(plan: dict[str, Any], steps: list[dict[str, Any]], answer_payload: dict[str, Any]) -> dict[str, Any]:
+    sql_step = next((step for step in steps if step.get("kind") == "sql_call"), {})
+    api_step = next((step for step in steps if step.get("kind") == "api_call"), {})
+    sql_validation = sql_step.get("validation") if isinstance(sql_step.get("validation"), dict) else {}
+    api_validation = api_step.get("validation") if isinstance(api_step.get("validation"), dict) else {}
+    sql_result = sql_step.get("result") if isinstance(sql_step.get("result"), dict) else {}
+    api_result = api_step.get("result") if isinstance(api_step.get("result"), dict) else {}
+    selected_tool = None
+    if sql_step:
+        selected_tool = "execute_sql"
+    elif api_step:
+        selected_tool = "call_api"
+    return {
+        "did_llm_plan": bool(plan),
+        "did_llm_choose_tool": bool(sql_step or api_step),
+        "selected_tool": selected_tool,
+        "sql_candidate": sql_step.get("sql"),
+        "sql_validation_ok": bool(sql_validation.get("ok")),
+        "sql_repair_attempted": int(sql_step.get("repair_rounds") or 0) > 0,
+        "sql_repair_success": bool(sql_validation.get("ok")) and int(sql_step.get("repair_rounds") or 0) > 0,
+        "api_endpoint_candidate": api_step.get("endpoint_candidate"),
+        "api_endpoint_repair_attempted": bool(api_step.get("retry_attempted")),
+        "api_endpoint_validation_ok": bool(api_validation.get("ok")),
+        "tool_execution_ok": bool(sql_result.get("ok") or api_result.get("ok")),
+        "tool_result_used_in_answer": bool(answer_payload.get("tool_result_used")),
+        "unsupported_claim_count": int(answer_payload.get("unsupported_claim_count") or 0),
+        "rejected_unsupported_claim_count": int(answer_payload.get("rejected_unsupported_claim_count") or 0),
+        "final_answer": answer_payload.get("answer"),
+    }
+
+
+def _failure_stage_from_assertions(trace: dict[str, Any]) -> str:
+    if not trace.get("did_llm_plan"):
+        return "planning_failed"
+    if not trace.get("did_llm_choose_tool"):
+        return "no_tool_called_when_needed"
+    if trace.get("selected_tool") == "execute_sql" and not trace.get("sql_validation_ok"):
+        return "invalid_sql" if not trace.get("sql_repair_attempted") else "sql_repair_failed"
+    if trace.get("selected_tool") == "call_api" and not trace.get("api_endpoint_validation_ok"):
+        return "api_validation_failed"
+    if not trace.get("tool_execution_ok"):
+        return "tool_execution_failed"
+    if trace.get("unsupported_claim_count"):
+        return "unsupported_claim_added"
+    if not trace.get("tool_result_used_in_answer"):
+        return "tool_result_ignored"
+    return "no_clear_failure"

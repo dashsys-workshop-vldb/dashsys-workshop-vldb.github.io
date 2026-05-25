@@ -126,9 +126,85 @@ def test_evidence_locked_answer_rejects_unsupported_number(tiny_project):
         answer_intent="COUNT",
     )
 
-    assert result["unsupported_claim_count"] >= 1
+    assert result["unsupported_claim_count"] == 0
+    assert result["rejected_unsupported_claim_count"] >= 1
     assert result["fallback_used"] is True
     assert "2" in result["answer"]
+
+
+def test_pure_llm_agent_forces_tool_for_data_question(tiny_project):
+    from dashagent.pure_llm_tool_agent import FULL_PURE_LLM_TOOL_AGENT_V1, run_pure_llm_tool_agent_variant
+
+    db, schema = _schema(tiny_project)
+    client = FakeJsonClient(
+        [
+            json.dumps({"answer_intent": "COUNT", "needs_sql": False, "needs_api": False}),
+            json.dumps({"sql": "SELECT COUNT(*) AS count FROM dim_campaign", "tables_used": ["dim_campaign"]}),
+            json.dumps({"answer": "There are 2 campaigns.", "claims": []}),
+        ]
+    )
+
+    result = run_pure_llm_tool_agent_variant(
+        "How many campaigns are there?",
+        variant=FULL_PURE_LLM_TOOL_AGENT_V1,
+        db=db,
+        schema_index=schema,
+        endpoint_catalog=EndpointCatalog(tiny_project),
+        llm_client=client,
+    )
+
+    assert result["trace_assertions"]["did_llm_plan"] is True
+    assert result["trace_assertions"]["did_llm_choose_tool"] is True
+    assert result["trace_assertions"]["selected_tool"] == "execute_sql"
+    assert result["trace_assertions"]["sql_validation_ok"] is True
+    assert result["trace_assertions"]["tool_execution_ok"] is True
+    db.close()
+
+
+def test_pure_llm_agent_retries_bad_api_endpoint_choice(tiny_project):
+    from dashagent.pure_llm_tool_agent import FULL_PURE_LLM_TOOL_AGENT_V1, run_pure_llm_tool_agent_variant
+
+    db, schema = _schema(tiny_project)
+    client = FakeJsonClient(
+        [
+            json.dumps({"answer_intent": "LIST", "needs_sql": False, "needs_api": True, "candidate_endpoints": ["ups_audiences"]}),
+            json.dumps({"endpoint_id": "not_in_catalog", "method": "GET", "params": {"limit": 5}}),
+            json.dumps({"endpoint_id": "ups_audiences", "method": "GET", "params": {"limit": 5}}),
+            json.dumps({"answer": "The API evidence is unavailable.", "claims": []}),
+        ]
+    )
+
+    result = run_pure_llm_tool_agent_variant(
+        "List audience records from the UPS audiences endpoint.",
+        variant=FULL_PURE_LLM_TOOL_AGENT_V1,
+        db=db,
+        schema_index=schema,
+        endpoint_catalog=EndpointCatalog(tiny_project),
+        api_client=None,
+        llm_client=client,
+    )
+
+    assert result["trace_assertions"]["api_endpoint_candidate"] == "ups_audiences"
+    assert result["trace_assertions"]["api_endpoint_validation_ok"] is True
+    assert result["trace_assertions"]["api_endpoint_repair_attempted"] is True
+    assert result["failure_stage"] == "tool_execution_failed"
+    db.close()
+
+
+def test_stabilization_set_and_report_are_diagnostic_only(tiny_project):
+    from scripts.run_pure_llm_tool_agent_eval import run_pure_llm_tool_agent_eval
+
+    stabilization_path = Path("data/pure_llm_stabilization_set.json")
+    assert stabilization_path.exists()
+    items = json.loads(stabilization_path.read_text())
+    assert 8 <= len(items) <= 10
+    assert {item["category"] for item in items} >= {"sql_count", "api_only_audience", "sql_api_verification"}
+
+    payload = run_pure_llm_tool_agent_eval(tiny_project, execute_real=False, stabilization_set=True)
+
+    assert payload["stabilization_set"] is True
+    assert payload["promotion_allowed"] is False
+    assert (tiny_project.outputs_dir / "reports" / "pure_llm_tool_agent_stabilization.json").exists()
 
 
 def test_pure_llm_reports_are_shadow_only_and_packaged_default_unchanged(tiny_project):

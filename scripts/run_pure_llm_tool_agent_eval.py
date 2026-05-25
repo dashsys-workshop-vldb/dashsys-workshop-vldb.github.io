@@ -43,6 +43,8 @@ from scripts.load_local_env import load_local_env
 
 REPORT_STEM = "pure_llm_tool_agent_eval"
 DEFINITION_STEM = "pure_llm_baseline_definition"
+STABILIZATION_STEM = "pure_llm_tool_agent_stabilization"
+STABILIZATION_SET_PATH = ROOT / "data" / "pure_llm_stabilization_set.json"
 
 
 def main() -> int:
@@ -50,6 +52,7 @@ def main() -> int:
     parser.add_argument("--artifact-only", action="store_true", help="Do not execute new hosted LLM calls; score existing artifacts only.")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--variant", action="append", choices=PURE_LLM_TOOL_AGENT_VARIANTS)
+    parser.add_argument("--stabilization-set", action="store_true", help="Run the small diagnostic Pure LLM stabilization set instead of public/dev strict rows.")
     args = parser.parse_args()
     config = Config.from_env(ROOT)
     load_local_env(config.project_root)
@@ -58,6 +61,7 @@ def main() -> int:
         execute_real=not args.artifact_only,
         max_examples=args.limit,
         variants=args.variant,
+        stabilization_set=args.stabilization_set,
     )
     print(
         json.dumps(
@@ -81,12 +85,13 @@ def run_pure_llm_tool_agent_eval(
     execute_real: bool = True,
     max_examples: int | None = None,
     variants: list[str] | None = None,
+    stabilization_set: bool = False,
 ) -> dict[str, Any]:
     config = config or Config.from_env(ROOT)
     reports_dir = config.outputs_dir / "reports"
     reports_dir.mkdir(parents=True, exist_ok=True)
     _write_definition_report(config)
-    existing_rows = _existing_baseline_rows(config)
+    existing_rows = [] if stabilization_set else _existing_baseline_rows(config)
     rows: list[dict[str, Any]] = list(existing_rows)
     variants_to_run = variants or [FULL_PURE_LLM_TOOL_AGENT_V1]
     client = get_llm_client()
@@ -94,20 +99,26 @@ def run_pure_llm_tool_agent_eval(
     execute_new = bool(execute_real and backend_probe.get("ok"))
     skipped_reason = None if execute_new else str(backend_probe.get("reason") or "llm_backend_unavailable")
     if execute_new:
-        rows.extend(_run_new_variant_rows(config, variants_to_run, max_examples=max_examples, client=client))
+        if stabilization_set:
+            rows.extend(_run_stabilization_rows(config, variants_to_run, max_examples=max_examples, client=client))
+        else:
+            rows.extend(_run_new_variant_rows(config, variants_to_run, max_examples=max_examples, client=client))
     else:
-        for variant in variants_to_run:
-            rows.append(
-                {
-                    "system": variant,
-                    "variant": variant,
-                    "strict_scoring_status": "unavailable",
-                    "skipped": True,
-                    "reason": skipped_reason,
-                    "strict_final_score": None,
-                }
-            )
-    summary = _summary(rows)
+        if stabilization_set:
+            rows.extend(_skipped_stabilization_rows(variants_to_run, max_examples=max_examples, reason=skipped_reason))
+        else:
+            for variant in variants_to_run:
+                rows.append(
+                    {
+                        "system": variant,
+                        "variant": variant,
+                        "strict_scoring_status": "unavailable",
+                        "skipped": True,
+                        "reason": skipped_reason,
+                        "strict_final_score": None,
+                    }
+                )
+    summary = _stabilization_summary(rows) if stabilization_set else _summary(rows)
     payload = redact_secrets(
         {
             "report_type": REPORT_STEM,
@@ -117,6 +128,7 @@ def run_pure_llm_tool_agent_eval(
             "promotion_allowed": False,
             "packaged_runtime_changed": False,
             "packaged_default_strategy": "SQL_FIRST_API_VERIFY",
+            "stabilization_set": stabilization_set,
             "execute_real_requested": execute_real,
             "new_llm_calls_executed": execute_new,
             "backend_probe": backend_probe,
@@ -128,6 +140,9 @@ def run_pure_llm_tool_agent_eval(
     )
     (reports_dir / f"{REPORT_STEM}.json").write_text(json.dumps(payload, indent=2, sort_keys=True, default=str), encoding="utf-8")
     (reports_dir / f"{REPORT_STEM}.md").write_text(_render_eval_md(payload), encoding="utf-8")
+    if stabilization_set:
+        (reports_dir / f"{STABILIZATION_STEM}.json").write_text(json.dumps(payload, indent=2, sort_keys=True, default=str), encoding="utf-8")
+        (reports_dir / f"{STABILIZATION_STEM}.md").write_text(_render_stabilization_md(payload), encoding="utf-8")
     return payload
 
 
@@ -268,6 +283,101 @@ def _run_new_variant_rows(config: Config, variants: list[str], *, max_examples: 
     return rows
 
 
+def _run_stabilization_rows(config: Config, variants: list[str], *, max_examples: int | None, client: Any) -> list[dict[str, Any]]:
+    prompts = _load_stabilization_set()
+    if max_examples:
+        prompts = prompts[:max_examples]
+    db = DuckDBDatabase(config)
+    schema = SchemaIndex.build(db)
+    catalog = EndpointCatalog(config)
+    api_client = AdobeAPIClient(config)
+    rows = []
+    for item in prompts:
+        for variant in variants:
+            result = run_pure_llm_tool_agent_variant(
+                item["prompt"],
+                variant=variant,
+                db=db,
+                schema_index=schema,
+                endpoint_catalog=catalog,
+                api_client=api_client,
+                llm_client=client,
+            )
+            rows.append(_stabilization_row(item, variant, result))
+    db.close()
+    return rows
+
+
+def _skipped_stabilization_rows(variants: list[str], *, max_examples: int | None, reason: str | None) -> list[dict[str, Any]]:
+    prompts = _load_stabilization_set()
+    if max_examples:
+        prompts = prompts[:max_examples]
+    rows = []
+    for item in prompts:
+        for variant in variants:
+            rows.append(
+                {
+                    "prompt_id": item.get("prompt_id"),
+                    "prompt": item.get("prompt"),
+                    "category": item.get("category"),
+                    "expected_tool_family": item.get("expected_tool_family"),
+                    "system": variant,
+                    "variant": variant,
+                    "strict_scoring_status": "not_applicable_stabilization",
+                    "stabilization_row": True,
+                    "skipped": True,
+                    "reason": reason,
+                    "failure_stage": "llm_unavailable",
+                    "trace_assertions": {
+                        "did_llm_plan": False,
+                        "did_llm_choose_tool": False,
+                        "selected_tool": None,
+                        "sql_validation_ok": False,
+                        "sql_repair_attempted": False,
+                        "sql_repair_success": False,
+                        "api_endpoint_validation_ok": False,
+                        "tool_execution_ok": False,
+                        "tool_result_used_in_answer": False,
+                        "unsupported_claim_count": 0,
+                    },
+                }
+            )
+    return rows
+
+
+def _load_stabilization_set() -> list[dict[str, Any]]:
+    if not STABILIZATION_SET_PATH.exists():
+        return []
+    payload = json.loads(STABILIZATION_SET_PATH.read_text(encoding="utf-8"))
+    return payload if isinstance(payload, list) else []
+
+
+def _stabilization_row(item: dict[str, Any], variant: str, result: dict[str, Any]) -> dict[str, Any]:
+    trajectory = result.get("trajectory") if isinstance(result.get("trajectory"), dict) else {}
+    trace = result.get("trace_assertions") if isinstance(result.get("trace_assertions"), dict) else trajectory.get("trace_assertions", {})
+    return redact_secrets(
+        {
+            "prompt_id": item.get("prompt_id"),
+            "prompt": item.get("prompt"),
+            "category": item.get("category"),
+            "expected_tool_family": item.get("expected_tool_family"),
+            "system": variant,
+            "variant": variant,
+            "strict_scoring_status": "not_applicable_stabilization",
+            "stabilization_row": True,
+            "final_answer": result.get("final_answer"),
+            "unsupported_claim_count": result.get("unsupported_claim_count", 0),
+            "rejected_unsupported_claim_count": result.get("rejected_unsupported_claim_count", 0),
+            "tool_calls": trajectory.get("tool_call_count", 0),
+            "estimated_tokens": trajectory.get("estimated_tokens", estimate_tokens(trajectory)),
+            "runtime": round(float(trajectory.get("runtime") or 0.0), 4),
+            "failure_stage": result.get("failure_stage") or trajectory.get("failure_stage") or "no_clear_failure",
+            "trace_assertions": trace,
+            "trajectory": trajectory,
+        }
+    )
+
+
 def _score_variant_result(harness: EvalHarness, example: Any, variant: str, result: dict[str, Any]) -> dict[str, Any]:
     trajectory = result.get("trajectory") if isinstance(result.get("trajectory"), dict) else {}
     generated_sql = first_generated_sql(trajectory)
@@ -369,6 +479,48 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _stabilization_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    attempted = [row for row in rows if row.get("stabilization_row")]
+    tool_needed = [
+        row for row in attempted if row.get("expected_tool_family") in {"sql", "api", "sql_api"}
+    ]
+    traces = [row.get("trace_assertions") if isinstance(row.get("trace_assertions"), dict) else {} for row in attempted]
+    sql_rows = [trace for trace in traces if trace.get("selected_tool") == "execute_sql" or trace.get("sql_candidate")]
+    api_rows = [trace for trace in traces if trace.get("selected_tool") == "call_api" or trace.get("api_endpoint_candidate")]
+    repair_attempts = [trace for trace in traces if trace.get("sql_repair_attempted")]
+    failure_counts: dict[str, int] = {}
+    for row in attempted:
+        stage = str(row.get("failure_stage") or "no_clear_failure")
+        failure_counts[stage] = failure_counts.get(stage, 0) + 1
+    return {
+        "prompts_attempted": len(attempted),
+        "tool_needed_count": len(tool_needed),
+        "tool_called_when_needed_rate": _rate([bool((row.get("trace_assertions") or {}).get("did_llm_choose_tool")) for row in tool_needed]),
+        "sql_validation_pass_rate": _rate([bool(trace.get("sql_validation_ok")) for trace in sql_rows]),
+        "sql_repair_success_rate": _rate([bool(trace.get("sql_repair_success")) for trace in repair_attempts]),
+        "api_endpoint_validation_pass_rate": _rate([bool(trace.get("api_endpoint_validation_ok")) for trace in api_rows]),
+        "tool_result_used_rate": _rate([bool(trace.get("tool_result_used_in_answer")) for trace in traces if trace.get("did_llm_choose_tool")]),
+        "unsupported_claim_count": sum(int(row.get("unsupported_claim_count") or 0) for row in attempted),
+        "rejected_unsupported_claim_count": sum(int(row.get("rejected_unsupported_claim_count") or 0) for row in attempted),
+        "failure_stage_distribution": failure_counts,
+        "examples_still_failing": [
+            {
+                "prompt_id": row.get("prompt_id"),
+                "category": row.get("category"),
+                "failure_stage": row.get("failure_stage"),
+            }
+            for row in attempted
+            if row.get("failure_stage") not in {"no_clear_failure"}
+        ][:20],
+    }
+
+
+def _rate(values: list[bool]) -> float | None:
+    if not values:
+        return None
+    return round(sum(1 for value in values if value) / len(values), 4)
+
+
 def _avg(rows: list[dict[str, Any]], key: str) -> float:
     values = [float(row[key]) for row in rows if isinstance(row.get(key), (int, float))]
     return round(sum(values) / len(values), 4) if values else 0.0
@@ -393,6 +545,31 @@ def _render_eval_md(payload: dict[str, Any]) -> str:
         lines.append(
             f"| `{item.get('system')}` | {item.get('rows', 0)} | {item.get('strict_final_score', 'n/a')} | {item.get('sql_score', 'n/a')} | {item.get('api_score', 'n/a')} | {item.get('answer_score', 'n/a')} | {item.get('unsupported_claims', 'n/a')} |"
         )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _render_stabilization_md(payload: dict[str, Any]) -> str:
+    summary = payload.get("summary", {})
+    lines = [
+        "# Pure LLM Tool Agent Stabilization",
+        "",
+        "Diagnostic-only stabilization report. Packaged `SQL_FIRST_API_VERIFY` runtime is unchanged.",
+        "",
+        f"- Prompts attempted: `{summary.get('prompts_attempted')}`",
+        f"- Tool-needed count: `{summary.get('tool_needed_count')}`",
+        f"- Tool called when needed rate: `{summary.get('tool_called_when_needed_rate')}`",
+        f"- SQL validation pass rate: `{summary.get('sql_validation_pass_rate')}`",
+        f"- SQL repair success rate: `{summary.get('sql_repair_success_rate')}`",
+        f"- API endpoint validation pass rate: `{summary.get('api_endpoint_validation_pass_rate')}`",
+        f"- Tool result used rate: `{summary.get('tool_result_used_rate')}`",
+        f"- Unsupported claim count: `{summary.get('unsupported_claim_count')}`",
+        "",
+        "## Failure Stages",
+        "",
+    ]
+    for stage, count in sorted((summary.get("failure_stage_distribution") or {}).items()):
+        lines.append(f"- `{stage}`: `{count}`")
     lines.append("")
     return "\n".join(lines)
 

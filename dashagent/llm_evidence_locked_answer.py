@@ -31,19 +31,23 @@ def evidence_locked_answer(
     response = client.generate(bundle.system_prompt, bundle.user_prompt)
     parsed = parse_json_object(response.get("content", ""))
     proposed = str(parsed.get("answer") or response.get("content") or "").strip()
-    unsupported = _unsupported_claims(proposed, supported_values)
-    fallback_used = bool(unsupported) or not proposed
+    proposed_unsupported = _unsupported_claims(proposed, supported_values)
+    fallback_used = bool(proposed_unsupported) or not proposed
     answer = _fallback_answer(prompt, observations, answer_intent) if fallback_used else proposed
+    final_unsupported = _unsupported_claims(answer, supported_values)
     return redact_secrets(
         {
             "answer": answer,
             "claims": parsed.get("claims", []),
-            "unsupported_claim_count": len(unsupported),
-            "unsupported_claims": unsupported,
+            "unsupported_claim_count": len(final_unsupported),
+            "unsupported_claims": final_unsupported,
+            "rejected_unsupported_claim_count": len(proposed_unsupported),
+            "rejected_unsupported_claims": proposed_unsupported,
             "fallback_used": fallback_used,
             "skipped": False,
             "llm_usage": response.get("usage", {}),
             "supported_values": sorted(supported_values)[:40],
+            "tool_result_used": bool(observations and answer and "does not contain enough supported data" not in answer),
         }
     )
 
@@ -74,7 +78,15 @@ def _supported_values(observations: list[dict[str, Any]]) -> set[str]:
                 values.add(text.lower())
             return
         if isinstance(value, dict):
-            for nested in value.values():
+            if value.get("state") == "live_empty":
+                for phrase in ("returned no", "no records", "no matching records", "live_empty"):
+                    values.add(phrase)
+                    values.add(phrase.lower())
+            for key, nested in value.items():
+                key_text = str(key)
+                if key_text:
+                    values.add(key_text)
+                    values.add(key_text.lower())
                 walk(nested)
         elif isinstance(value, list):
             for nested in value:
@@ -86,12 +98,21 @@ def _supported_values(observations: list[dict[str, Any]]) -> set[str]:
 
 def _fallback_answer(prompt: str, observations: list[dict[str, Any]], answer_intent: str | None) -> str:
     rows = []
+    api_states = []
     for observation in observations:
         if isinstance(observation.get("rows"), list):
             rows.extend(row for row in observation["rows"] if isinstance(row, dict))
         result = observation.get("execution_result")
         if isinstance(result, dict) and isinstance(result.get("rows"), list):
             rows.extend(row for row in result["rows"] if isinstance(row, dict))
+        if observation.get("source") == "api":
+            api_states.append(
+                {
+                    "state": observation.get("state"),
+                    "status_code": observation.get("status_code"),
+                    "endpoint": observation.get("endpoint"),
+                }
+            )
     if answer_intent == "COUNT":
         for row in rows:
             for key in ("count", "COUNT(*)", "cnt", "total"):
@@ -100,7 +121,18 @@ def _fallback_answer(prompt: str, observations: list[dict[str, Any]], answer_int
     if rows:
         compact = []
         for row in rows[:3]:
-            selected = {key: row[key] for key in row if key.lower() in {"count", "name", "id", "status", "state"}}
+            selected = {key.lower(): row[key] for key in row if key.lower() in {"count", "name", "id", "status", "state"}}
             compact.append(selected or row)
         return f"The available evidence is: {compact}."
+    if api_states:
+        first = api_states[0]
+        state = first.get("state") or "api_result"
+        status = first.get("status_code")
+        if state == "live_empty":
+            return "The validated API call returned no records for this request context; this does not establish broader absence."
+        if state == "live_success":
+            return "The validated API call succeeded, but the compact observation does not expose specific fields needed for a more detailed answer."
+        if status:
+            return f"The API evidence state is {state} with HTTP status {status}; no payload facts are available for a stronger answer."
+        return f"The API evidence state is {state}; no payload facts are available for a stronger answer."
     return "The available tool evidence does not contain enough supported data to answer."

@@ -35,7 +35,9 @@ def build_sql_candidate_prompt(prompt: str, context: dict[str, Any], plan: dict[
         system_prompt=(
             "Generate one read-only DuckDB SQL candidate. Return JSON only with keys: "
             '"sql", "tables_used", "columns_used", "join_reason", "aggregation", "filters", "confidence". '
-            "Use only tables/columns in the supplied context."
+            "The sql value is required and must be a SELECT query. Do not answer in prose. "
+            "Use only tables/columns in the supplied context. For list/status/date tasks, select concrete columns "
+            "from the most relevant table and add a conservative LIMIT. For count tasks, return a COUNT expression."
         ),
         user_prompt=json.dumps(
             {"prompt": prompt, "plan": plan or {}, "schema_context": compact_preview(context, 9000)},
@@ -54,7 +56,8 @@ def build_sql_repair_prompt(
     return PromptBundle(
         system_prompt=(
             "Repair invalid read-only DuckDB SQL. Return JSON only with the same SQL candidate schema. "
-            "Use only supplied tables and columns. Do not explain outside JSON."
+            "The sql value is required and must be a SELECT query. Use only supplied tables and columns. "
+            "Do not explain outside JSON."
         ),
         user_prompt=json.dumps(
             {
@@ -73,7 +76,8 @@ def build_api_candidate_prompt(prompt: str, context: dict[str, Any], plan: dict[
     return PromptBundle(
         system_prompt=(
             "Choose one Adobe API endpoint from the catalog candidates. Return JSON only with keys: "
-            '"endpoint_id", "method", "params", "reason". Use method GET unless the catalog explicitly says otherwise.'
+            '"endpoint_id", "method", "params", "reason". Use method GET unless the catalog explicitly says otherwise. '
+            "Do not choose endpoints with unresolved path parameters such as {id} unless the prompt supplies that exact value."
         ),
         user_prompt=json.dumps(
             {"prompt": prompt, "plan": plan or {}, "endpoint_candidates": context.get("endpoint_candidates", [])},

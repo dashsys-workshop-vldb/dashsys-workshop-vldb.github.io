@@ -280,6 +280,7 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "multi_llm_backend_robustness": _load_json(outputs / "reports" / "multi_llm_backend_robustness.json"),
         "pure_llm_baseline_definition": _load_json(outputs / "reports" / "pure_llm_baseline_definition.json"),
         "pure_llm_tool_agent_eval": _load_json(outputs / "reports" / "pure_llm_tool_agent_eval.json"),
+        "pure_llm_tool_agent_stabilization": _load_json(outputs / "reports" / "pure_llm_tool_agent_stabilization.json"),
         "pure_llm_agent_trace_decomposition": _load_json(outputs / "reports" / "pure_llm_agent_trace_decomposition.json"),
         "pure_llm_multi_backend_eval": _load_json(outputs / "reports" / "pure_llm_multi_backend_eval.json"),
         "pure_llm_promotion_gate": _load_json(outputs / "reports" / "pure_llm_promotion_gate.json"),
@@ -552,6 +553,7 @@ def build_llm_baseline_summary(config: Config, sources: dict[str, Any]) -> dict[
             "outputs/reports/tool_calling_policy_optimizer.md",
             "outputs/reports/pure_llm_baseline_definition.md",
             "outputs/reports/pure_llm_tool_agent_eval.md",
+            "outputs/reports/pure_llm_tool_agent_stabilization.md",
             "outputs/reports/pure_llm_agent_trace_decomposition.md",
             "outputs/reports/pure_llm_multi_backend_eval.md",
             "outputs/reports/pure_llm_promotion_gate.md",
@@ -837,6 +839,7 @@ def build_report_index(
         "pure_llm_tool_agent": {
             "definition_path": "outputs/reports/pure_llm_baseline_definition.md",
             "eval_path": "outputs/reports/pure_llm_tool_agent_eval.md",
+            "stabilization_path": "outputs/reports/pure_llm_tool_agent_stabilization.md",
             "trace_decomposition_path": "outputs/reports/pure_llm_agent_trace_decomposition.md",
             "multi_backend_path": "outputs/reports/pure_llm_multi_backend_eval.md",
             "promotion_gate_path": "outputs/reports/pure_llm_promotion_gate.md",
@@ -844,6 +847,7 @@ def build_report_index(
             **_pure_llm_tool_agent_status(
                 {
                     "pure_llm_tool_agent_eval": _load_json(config.outputs_dir / "reports" / "pure_llm_tool_agent_eval.json"),
+                    "pure_llm_tool_agent_stabilization": _load_json(config.outputs_dir / "reports" / "pure_llm_tool_agent_stabilization.json"),
                     "pure_llm_promotion_gate": _load_json(config.outputs_dir / "reports" / "pure_llm_promotion_gate.json"),
                     "pure_llm_multi_backend_eval": _load_json(config.outputs_dir / "reports" / "pure_llm_multi_backend_eval.json"),
                 }
@@ -1638,9 +1642,11 @@ def _status_from_report(report: dict[str, Any], default: str) -> str:
 
 def _pure_llm_tool_agent_status(sources: dict[str, Any]) -> dict[str, Any]:
     eval_report = sources.get("pure_llm_tool_agent_eval") or {}
+    stabilization = sources.get("pure_llm_tool_agent_stabilization") or {}
     gate = sources.get("pure_llm_promotion_gate") or {}
     multi = sources.get("pure_llm_multi_backend_eval") or {}
     summary = eval_report.get("summary") or {}
+    stabilization_summary = stabilization.get("summary") or {}
     return {
         "status": "shadow_only",
         "packaged_runtime_affected": False,
@@ -1651,6 +1657,9 @@ def _pure_llm_tool_agent_status(sources: dict[str, Any]) -> dict[str, Any]:
         "skipped_reason": eval_report.get("skipped_reason"),
         "promotion_gate_recommendation": gate.get("recommendation"),
         "promotion_allowed": gate.get("promotion_allowed", False),
+        "stabilization_prompts_attempted": stabilization_summary.get("prompts_attempted"),
+        "stabilization_unsupported_claim_count": stabilization_summary.get("unsupported_claim_count"),
+        "stabilization_tool_called_when_needed_rate": stabilization_summary.get("tool_called_when_needed_rate"),
         "available_backend_count": (multi.get("summary") or {}).get("available_backend_count"),
         "executed_backend_count": (multi.get("summary") or {}).get("executed_backend_count"),
     }

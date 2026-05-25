@@ -36,11 +36,14 @@ def run_pure_llm_promotion_gate(config: Config | None = None) -> dict[str, Any]:
         for item in systems
         if str(item.get("system")) != "LLM_CONTROLLER_OPTIMIZED_AGENT"
     ]
-    best = max(
-        [item for item in pure_systems if isinstance(item.get("strict_final_score"), (int, float))],
+    scored_pure = [item for item in pure_systems if isinstance(item.get("strict_final_score"), (int, float))]
+    best_overall = max(
+        scored_pure,
         key=lambda item: item.get("strict_final_score", 0),
         default={},
     )
+    clean_pure = [item for item in scored_pure if int(item.get("unsupported_claims") or 0) == 0]
+    best = max(clean_pure, key=lambda item: item.get("strict_final_score", 0), default=best_overall)
     best_score = best.get("strict_final_score")
     sql_score = best.get("sql_score")
     unsupported = best.get("unsupported_claims", 0)
@@ -57,6 +60,8 @@ def run_pure_llm_promotion_gate(config: Config | None = None) -> dict[str, Any]:
             "packaged_default_strategy": "SQL_FIRST_API_VERIFY",
             "best_variant": best.get("system"),
             "best_strict_score": best_score,
+            "best_overall_pure_variant": best_overall.get("system"),
+            "best_overall_pure_strict_score": best_overall.get("strict_final_score"),
             "best_sql_score": sql_score,
             "unsupported_claim_count": unsupported,
             "beats_current_guided_pure_llm": beats_current_pure,
@@ -92,7 +97,7 @@ def _recommendation(
     if not beats_current_pure:
         return "pure_llm_still_too_weak"
     if not beats_controller:
-        return "pure_llm_baseline_improved_keep_shadow"
+        return "pure_llm_improved_keep_shadow"
     if not beats_full:
         return "controller_still_preferred"
     return "candidate_for_limited_promotion_review"

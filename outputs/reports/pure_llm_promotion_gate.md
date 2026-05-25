@@ -1,6 +1,6 @@
 # Pure LLM Promotion Gate
 
-- Recommendation: `blocked_by_unsupported_claims`
+- Recommendation: `blocked_by_sql_generation`
 - Promotion allowed: `False`
-- Best variant: `GUIDED_REAL_LLM_TWO_TOOLS_BASELINE`
-- Best strict score: `0.2244`
+- Best variant: `full_pure_llm_tool_agent_v1`
+- Best strict score: `0.0563`

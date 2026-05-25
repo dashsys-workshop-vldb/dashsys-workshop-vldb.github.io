@@ -171,6 +171,15 @@ python3 scripts/run_pure_llm_promotion_gate.py
 
 The scaffold adds structured planning, compact schema retrieval, SQL validation/repair, API endpoint guarding, and evidence-locked answer checks around the same two organizer tools: `execute_sql` and `call_api`. It remains a baseline, not packaged runtime. Reports are written to `outputs/reports/pure_llm_*` and must keep `promotion_allowed=false` unless a future strict/hidden/robustness/safety gate explicitly approves review. `SQL_FIRST_API_VERIFY` remains the packaged default.
 
+Before any larger pure-LLM evaluation, use the bounded stabilization set:
+
+```bash
+python3 scripts/run_pure_llm_tool_agent_eval.py --stabilization-set --variant full_pure_llm_tool_agent_v1
+python3 scripts/run_pure_llm_agent_trace_decomposition.py --stabilization-set
+```
+
+This writes `outputs/reports/pure_llm_tool_agent_stabilization.md/json` and checks step-level tool planning, SQL validation, API endpoint validation, evidence use, and unsupported claims without promoting the baseline.
+
 ## 3.2 LLM Semantic Routing Helper
 
 `dashagent/semantic_routing_helper.py` is an optional SDK-based routing-hint helper for low-confidence or ambiguous prompts. It is default-off with `ENABLE_LLM_SEMANTIC_ROUTER=false` and shadow-only by default with `LLM_SEMANTIC_ROUTER_SHADOW_ONLY=true`.

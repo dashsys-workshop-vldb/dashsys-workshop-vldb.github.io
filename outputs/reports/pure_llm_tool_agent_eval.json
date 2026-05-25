@@ -6,7 +6,7 @@
   },
   "diagnostic_only": true,
   "execute_real_requested": true,
-  "generated_at": "2026-05-25T18:57:24.193326+00:00",
+  "generated_at": "2026-05-25T19:41:35.996910+00:00",
   "new_llm_calls_executed": true,
   "official_score_claim": false,
   "packaged_default_strategy": "SQL_FIRST_API_VERIFY",
@@ -64865,29 +64865,31 @@
     },
     {
       "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
-      "answer_score": 0.2176,
+      "answer_score": 0.2388,
       "api_reason": "No gold API supplied; API dimension unscored in strict mode.",
       "api_score": null,
-      "estimated_tokens": 746,
-      "failure_stage": "unsupported_claim_added",
+      "estimated_tokens": 1224,
+      "failure_stage": "no_clear_failure",
       "prompt": "When was the journey 'Birthday Message' published?",
       "query_id": "example_000",
-      "runtime": 12.0578,
+      "runtime": 10.6024,
       "sql_reason": "No generated SQL while gold SQL exists.",
       "sql_score": 0.0,
-      "strict_correctness": 0.0933,
-      "strict_final_score": 0.0343,
+      "strict_correctness": 0.1023,
+      "strict_final_score": 0.0443,
       "strict_scoring_status": "available",
       "system": "full_pure_llm_tool_agent_v1",
       "tool_calls": 1,
       "trajectory": {
         "baseline_variant": "full_pure_llm_tool_agent_v1",
-        "estimated_tokens": 746,
-        "final_answer": "The available tool evidence does not contain enough supported data to answer.",
+        "estimated_tokens": 1224,
+        "failure_stage": "no_clear_failure",
+        "final_answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
         "llm_total_tokens": 1833,
         "original_query": "When was the journey 'Birthday Message' published?",
         "pure_llm_tool_agent": true,
-        "runtime": 12.057843250222504,
+        "rejected_unsupported_claim_count": 2,
+        "runtime": 10.602443458046764,
         "steps": [
           {
             "context_summary": {
@@ -64908,6 +64910,52 @@
             },
             "kind": "llm_plan",
             "plan": {
+              "_normalization_actions": [],
+              "_usage": {
+                "completion_tokens": 287,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1546,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1833
+              },
+              "answer_intent": "DATE",
+              "answer_shape": {
+                "publication_date": null
+              },
+              "api_task": {
+                "score": 2,
+                "task": "journey_list"
+              },
+              "candidate_endpoints": [
+                {
+                  "endpoint_id": "journey_list",
+                  "method": "GET",
+                  "path": "/ajo/journey",
+                  "score": 2
+                },
+                {
+                  "endpoint_id": "schema_registry_schema",
+                  "method": "GET",
+                  "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}",
+                  "score": 1
+                },
+                {
+                  "endpoint_id": "unified_tag_detail",
+                  "method": "GET",
+                  "path": "https://experience.adobe.io/unifiedtags/tags/{tag_id}",
+                  "score": 1
+                }
+              ],
+              "candidate_tables": [],
+              "needs_api": true,
+              "needs_sql": false,
+              "reason": "The prompt is asking for a specific date ('Birthday Message') but the available endpoints do not provide direct date information. The journey 'Birthday Message' is likely a campaign segment, and the API endpoint 'journey_list' can be used to fetch the campaign details, but it does not provide the publication date.",
+              "sql_task": null
+            },
+            "raw_plan": {
               "_usage": {
                 "completion_tokens": 287,
                 "completion_tokens_details": null,
@@ -64955,18 +65003,297 @@
             "variant": "full_pure_llm_tool_agent_v1"
           },
           {
+            "endpoint_candidate": "journey_list",
             "kind": "api_call",
             "method": "GET",
             "params": {
               "limit": 50,
               "start": 0
             },
+            "rejected_candidate": null,
             "result": {
               "dry_run": false,
               "ok": true,
+              "outcome": "live_empty",
               "status_code": 200
             },
+            "retry_attempted": false,
             "url": "/ajo/journey",
+            "validation": {
+              "errors": [],
+              "ok": true,
+              "repaired": false,
+              "warnings": []
+            }
+          },
+          {
+            "answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
+            "answer_guard": {
+              "answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
+              "claims": [
+                {
+                  "claim": "The journey 'Birthday Message' was published on a specific date.",
+                  "evidence_field": "metadata.lastModifiedAt",
+                  "evidence_source": "api"
+                }
+              ],
+              "fallback_used": true,
+              "llm_usage": {
+                "completion_tokens": 138,
+                "completion_tokens_details": null,
+                "prompt_tokens": 332,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 470
+              },
+              "rejected_unsupported_claim_count": 2,
+              "rejected_unsupported_claims": [
+                {
+                  "claim_type": "entity",
+                  "value": "Birthday Message"
+                },
+                {
+                  "claim_type": "no_result",
+                  "value": "not found"
+                }
+              ],
+              "skipped": false,
+              "supported_values": [
+                "/ajo/journey",
+                "0",
+                "100",
+                "200",
+                "False",
+                "GET",
+                "True",
+                "api",
+                "counts",
+                "dry_run",
+                "endpoint",
+                "endpoint_family",
+                "endpoint_id",
+                "error_category",
+                "errors",
+                "evidence_state",
+                "false",
+                "filter",
+                "generic_fallback",
+                "get",
+                "ids",
+                "important_fields",
+                "items",
+                "journey_list",
+                "live_empty",
+                "live_evidence_available",
+                "metadata.lastModifiedAt>2026-05-18",
+                "metadata.lastmodifiedat>2026-05-18",
+                "method",
+                "names",
+                "no matching records",
+                "no records",
+                "ok",
+                "page",
+                "pageSize",
+                "pagesize",
+                "pagination",
+                "parsed_evidence",
+                "parser_mode",
+                "path"
+              ],
+              "tool_result_used": true,
+              "unsupported_claim_count": 0,
+              "unsupported_claims": []
+            },
+            "kind": "final_answer"
+          }
+        ],
+        "strategy": "full_pure_llm_tool_agent_v1",
+        "token_source": "measured_usage_or_estimated",
+        "tool_call_count": 1,
+        "trace_assertions": {
+          "api_endpoint_candidate": "journey_list",
+          "api_endpoint_repair_attempted": false,
+          "api_endpoint_validation_ok": true,
+          "did_llm_choose_tool": true,
+          "did_llm_plan": true,
+          "final_answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
+          "rejected_unsupported_claim_count": 2,
+          "selected_tool": "call_api",
+          "sql_candidate": null,
+          "sql_repair_attempted": false,
+          "sql_repair_success": false,
+          "sql_validation_ok": false,
+          "tool_execution_ok": true,
+          "tool_result_used_in_answer": true,
+          "unsupported_claim_count": 0
+        },
+        "unsupported_claim_count": 0
+      },
+      "unscored_dimension_count": 1,
+      "unsupported_claim_count": 0,
+      "variant": "full_pure_llm_tool_agent_v1"
+    },
+    {
+      "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+      "answer_score": 0.1739,
+      "api_reason": "No generated API call while gold API exists.",
+      "api_score": 0.0,
+      "estimated_tokens": 1046,
+      "failure_stage": "no_clear_failure",
+      "prompt": "Give me inactive journeys",
+      "query_id": "example_001",
+      "runtime": 5.5511,
+      "sql_reason": "Strict SQL mismatch.",
+      "sql_score": 0.0,
+      "strict_correctness": 0.0522,
+      "strict_final_score": 0.0124,
+      "strict_scoring_status": "available",
+      "system": "full_pure_llm_tool_agent_v1",
+      "tool_calls": 1,
+      "trajectory": {
+        "baseline_variant": "full_pure_llm_tool_agent_v1",
+        "estimated_tokens": 1046,
+        "failure_stage": "tool_result_ignored",
+        "final_answer": "The available tool evidence does not contain enough supported data to answer.",
+        "llm_total_tokens": 1529,
+        "original_query": "Give me inactive journeys",
+        "pure_llm_tool_agent": true,
+        "rejected_unsupported_claim_count": 2,
+        "runtime": 5.551108833402395,
+        "steps": [
+          {
+            "context_summary": {
+              "answer_intent": "STATUS",
+              "endpoint_candidates": [
+                "journey_list"
+              ],
+              "top_tables": [
+                "dim_campaign",
+                "dim_connector",
+                "dim_blueprint",
+                "dim_collection",
+                "dim_segment",
+                "dim_target"
+              ]
+            },
+            "kind": "llm_plan",
+            "plan": {
+              "_normalization_actions": [],
+              "_usage": {
+                "completion_tokens": 139,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1390,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1529
+              },
+              "answer_intent": "QUERY_INACTIVE_JOURNEYS",
+              "answer_shape": "inactive_journeys",
+              "api_task": null,
+              "candidate_endpoints": [],
+              "candidate_tables": [
+                "dim_campaign"
+              ],
+              "needs_api": false,
+              "needs_sql": true,
+              "reason": "The prompt asks for inactive journeys, which can be queried from the 'dim_campaign' table. The schema and endpoint context do not provide direct endpoints for querying inactive journeys, but an SQL query can be constructed based on the available columns.",
+              "sql_task": "SELECT * FROM dim_campaign WHERE STATE = 'inactive' LIMIT 50;"
+            },
+            "raw_plan": {
+              "_usage": {
+                "completion_tokens": 139,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1390,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1529
+              },
+              "answer_intent": "QUERY_INACTIVE_JOURNEYS",
+              "answer_shape": "inactive_journeys",
+              "api_task": null,
+              "candidate_endpoints": [],
+              "candidate_tables": [
+                "dim_campaign"
+              ],
+              "needs_api": false,
+              "needs_sql": true,
+              "reason": "The prompt asks for inactive journeys, which can be queried from the 'dim_campaign' table. The schema and endpoint context do not provide direct endpoints for querying inactive journeys, but an SQL query can be constructed based on the available columns.",
+              "sql_task": "SELECT * FROM dim_campaign WHERE STATE = 'inactive' LIMIT 50;"
+            },
+            "variant": "full_pure_llm_tool_agent_v1"
+          },
+          {
+            "attempts": [
+              {
+                "ast_summary": {
+                  "closest_column_suggestions": {},
+                  "closest_table_suggestions": {},
+                  "destructive_sql_detected": false,
+                  "enabled": true,
+                  "normalized_sql": "SELECT * FROM dim_campaign WHERE STATE = 'inactive' LIMIT 50",
+                  "parsed_ok": true,
+                  "selected_columns": [
+                    "STATE"
+                  ],
+                  "selected_tables": [
+                    "dim_campaign"
+                  ],
+                  "unknown_columns": [],
+                  "unknown_tables": []
+                },
+                "candidate": {
+                  "_usage": {
+                    "completion_tokens": 73,
+                    "completion_tokens_details": null,
+                    "prompt_tokens": 1647,
+                    "prompt_tokens_details": {
+                      "audio_tokens": null,
+                      "cached_tokens": 3
+                    },
+                    "total_tokens": 1720
+                  },
+                  "aggregation": null,
+                  "columns_used": [
+                    "STATE"
+                  ],
+                  "confidence": 1,
+                  "filters": [
+                    "STATE = 'inactive'"
+                  ],
+                  "join_reason": null,
+                  "sql": "SELECT * FROM dim_campaign WHERE STATE = 'inactive' LIMIT 50;",
+                  "tables_used": [
+                    "dim_campaign"
+                  ]
+                },
+                "executed": true,
+                "execution_ok": true,
+                "round": 0,
+                "sql": "SELECT * FROM dim_campaign WHERE STATE = 'inactive' LIMIT 50;",
+                "validation": {
+                  "errors": [],
+                  "ok": true,
+                  "repaired": false,
+                  "warnings": []
+                }
+              }
+            ],
+            "kind": "sql_call",
+            "repair_rounds": 0,
+            "result": {
+              "error": null,
+              "limited": false,
+              "ok": true,
+              "row_count": 0,
+              "rows": []
+            },
+            "sql": "SELECT * FROM dim_campaign WHERE STATE = 'inactive' LIMIT 50;",
             "validation": {
               "errors": [],
               "ok": true,
@@ -64980,46 +65307,44 @@
               "answer": "The available tool evidence does not contain enough supported data to answer.",
               "claims": [
                 {
-                  "claim": "The journey 'Birthday Message' was published on 2023-04-15",
-                  "evidence_field": "metadata.lastModifiedAt",
-                  "evidence_source": "api"
+                  "claim": "There are no inactive journeys",
+                  "evidence_field": "items",
+                  "evidence_source": "sql"
                 }
               ],
               "fallback_used": true,
               "llm_usage": {
-                "completion_tokens": 94,
+                "completion_tokens": 60,
                 "completion_tokens_details": null,
-                "prompt_tokens": 205,
+                "prompt_tokens": 147,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 299
+                "total_tokens": 207
               },
+              "rejected_unsupported_claim_count": 2,
+              "rejected_unsupported_claims": [
+                {
+                  "claim_type": "status",
+                  "value": "inactive"
+                },
+                {
+                  "claim_type": "no_result",
+                  "value": "no inactive journeys found"
+                }
+              ],
               "skipped": false,
               "supported_values": [
                 "0",
-                "100",
-                "api",
-                "live_success",
-                "metadata.lastModifiedAt>2026-05-18",
-                "metadata.lastmodifiedat>2026-05-18"
+                "row_count",
+                "rows",
+                "source",
+                "sql"
               ],
-              "unsupported_claim_count": 3,
-              "unsupported_claims": [
-                {
-                  "claim_type": "timestamp",
-                  "value": "2023-04-15"
-                },
-                {
-                  "claim_type": "entity",
-                  "value": "Birthday Message"
-                },
-                {
-                  "claim_type": "status",
-                  "value": "published"
-                }
-              ]
+              "tool_result_used": false,
+              "unsupported_claim_count": 0,
+              "unsupported_claims": []
             },
             "kind": "final_answer"
           }
@@ -65027,18 +65352,1124 @@
         "strategy": "full_pure_llm_tool_agent_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
-        "unsupported_claim_count": 3
+        "trace_assertions": {
+          "api_endpoint_candidate": null,
+          "api_endpoint_repair_attempted": false,
+          "api_endpoint_validation_ok": false,
+          "did_llm_choose_tool": true,
+          "did_llm_plan": true,
+          "final_answer": "The available tool evidence does not contain enough supported data to answer.",
+          "rejected_unsupported_claim_count": 2,
+          "selected_tool": "execute_sql",
+          "sql_candidate": "SELECT * FROM dim_campaign WHERE STATE = 'inactive' LIMIT 50;",
+          "sql_repair_attempted": false,
+          "sql_repair_success": false,
+          "sql_validation_ok": true,
+          "tool_execution_ok": true,
+          "tool_result_used_in_answer": false,
+          "unsupported_claim_count": 0
+        },
+        "unsupported_claim_count": 0
+      },
+      "unscored_dimension_count": 0,
+      "unsupported_claim_count": 0,
+      "variant": "full_pure_llm_tool_agent_v1"
+    },
+    {
+      "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+      "answer_score": 0.0261,
+      "api_reason": "Strict API method/path/required-param/call-count score: 0.8300.",
+      "api_score": 0.83,
+      "estimated_tokens": 1873,
+      "failure_stage": "invalid_sql",
+      "prompt": "List all journeys",
+      "query_id": "example_002",
+      "runtime": 10.5291,
+      "sql_reason": "Strict SQL mismatch.",
+      "sql_score": 0.0,
+      "strict_correctness": 0.2568,
+      "strict_final_score": 0.1811,
+      "strict_scoring_status": "available",
+      "system": "full_pure_llm_tool_agent_v1",
+      "tool_calls": 2,
+      "trajectory": {
+        "baseline_variant": "full_pure_llm_tool_agent_v1",
+        "estimated_tokens": 1873,
+        "failure_stage": "sql_repair_failed",
+        "final_answer": "0 journeys found",
+        "llm_total_tokens": 1746,
+        "original_query": "List all journeys",
+        "pure_llm_tool_agent": true,
+        "rejected_unsupported_claim_count": 0,
+        "runtime": 10.529147875029594,
+        "steps": [
+          {
+            "context_summary": {
+              "answer_intent": "LIST",
+              "endpoint_candidates": [
+                "journey_list",
+                "catalog_batches",
+                "catalog_datasets",
+                "export_batch_failed",
+                "export_batch_files",
+                "flowservice_flows",
+                "merge_policies",
+                "schema_registry_schemas"
+              ],
+              "top_tables": [
+                "dim_campaign",
+                "dim_connector",
+                "dim_blueprint",
+                "dim_collection",
+                "dim_segment",
+                "dim_target"
+              ]
+            },
+            "kind": "llm_plan",
+            "plan": {
+              "_normalization_actions": [],
+              "_usage": {
+                "completion_tokens": 165,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1581,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1746
+              },
+              "answer_intent": "LIST",
+              "answer_shape": "A list of journeys",
+              "api_task": {
+                "endpoint": "/ajo/journey",
+                "task_type": "GET"
+              },
+              "candidate_endpoints": [
+                {
+                  "endpoint_id": "journey_list",
+                  "method": "GET",
+                  "path": "/ajo/journey",
+                  "score": 2
+                }
+              ],
+              "candidate_tables": [],
+              "needs_api": true,
+              "needs_sql": true,
+              "reason": "The prompt is to list all journeys, and both SQL and API endpoints are available for this task.",
+              "sql_task": {
+                "query": "SELECT * FROM journey_table",
+                "task_type": "SELECT"
+              }
+            },
+            "raw_plan": {
+              "_usage": {
+                "completion_tokens": 165,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1581,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1746
+              },
+              "answer_intent": "LIST",
+              "answer_shape": "A list of journeys",
+              "api_task": {
+                "endpoint": "/ajo/journey",
+                "task_type": "GET"
+              },
+              "candidate_endpoints": [
+                {
+                  "endpoint_id": "journey_list",
+                  "method": "GET",
+                  "path": "/ajo/journey",
+                  "score": 2
+                }
+              ],
+              "candidate_tables": [],
+              "needs_api": true,
+              "needs_sql": true,
+              "reason": "The prompt is to list all journeys, and both SQL and API endpoints are available for this task.",
+              "sql_task": {
+                "query": "SELECT * FROM journey_table",
+                "task_type": "SELECT"
+              }
+            },
+            "variant": "full_pure_llm_tool_agent_v1"
+          },
+          {
+            "attempts": [
+              {
+                "ast_summary": {
+                  "closest_column_suggestions": {
+                    "journey_id": [],
+                    "journey_name": []
+                  },
+                  "closest_table_suggestions": {
+                    "journey_table": [
+                      "hkg_br_source_collection"
+                    ]
+                  },
+                  "destructive_sql_detected": false,
+                  "enabled": true,
+                  "normalized_sql": "SELECT journey_id, journey_name FROM journey_table LIMIT 50",
+                  "parsed_ok": true,
+                  "selected_columns": [
+                    "journey_id",
+                    "journey_name"
+                  ],
+                  "selected_tables": [
+                    "journey_table"
+                  ],
+                  "unknown_columns": [
+                    "journey_id",
+                    "journey_name"
+                  ],
+                  "unknown_tables": [
+                    "journey_table"
+                  ]
+                },
+                "candidate": {
+                  "_usage": {
+                    "completion_tokens": 92,
+                    "completion_tokens_details": null,
+                    "prompt_tokens": 1860,
+                    "prompt_tokens_details": {
+                      "audio_tokens": null,
+                      "cached_tokens": 3
+                    },
+                    "total_tokens": 1952
+                  },
+                  "aggregation": "No aggregation used in the query",
+                  "columns_used": [
+                    "journey_id",
+                    "journey_name"
+                  ],
+                  "confidence": 1,
+                  "filters": "No filters applied to the query",
+                  "join_reason": "No joins used in the query",
+                  "sql": "SELECT journey_id, journey_name FROM journey_table LIMIT 50",
+                  "tables_used": [
+                    "journey_table"
+                  ]
+                },
+                "executed": false,
+                "round": 0,
+                "sql": "SELECT journey_id, journey_name FROM journey_table LIMIT 50",
+                "validation": {
+                  "errors": [
+                    "Unknown table: journey_table. Suggestions: hkg_br_source_collection"
+                  ],
+                  "ok": false,
+                  "repaired": false,
+                  "warnings": []
+                }
+              },
+              {
+                "ast_summary": {
+                  "closest_column_suggestions": {
+                    "journey_id": [],
+                    "journey_name": []
+                  },
+                  "closest_table_suggestions": {
+                    "journey_table": [
+                      "hkg_br_source_collection"
+                    ]
+                  },
+                  "destructive_sql_detected": false,
+                  "enabled": true,
+                  "normalized_sql": "SELECT journey_id, journey_name FROM journey_table LIMIT 50",
+                  "parsed_ok": true,
+                  "selected_columns": [
+                    "journey_id",
+                    "journey_name"
+                  ],
+                  "selected_tables": [
+                    "journey_table"
+                  ],
+                  "unknown_columns": [
+                    "journey_id",
+                    "journey_name"
+                  ],
+                  "unknown_tables": [
+                    "journey_table"
+                  ]
+                },
+                "candidate": {
+                  "_usage": {
+                    "completion_tokens": 22,
+                    "completion_tokens_details": null,
+                    "prompt_tokens": 1603,
+                    "prompt_tokens_details": {
+                      "audio_tokens": null,
+                      "cached_tokens": 3
+                    },
+                    "total_tokens": 1625
+                  },
+                  "sql": "SELECT journey_id, journey_name FROM journey_table LIMIT 50"
+                },
+                "executed": false,
+                "round": 1,
+                "sql": "SELECT journey_id, journey_name FROM journey_table LIMIT 50",
+                "validation": {
+                  "errors": [
+                    "Unknown table: journey_table. Suggestions: hkg_br_source_collection"
+                  ],
+                  "ok": false,
+                  "repaired": false,
+                  "warnings": []
+                }
+              },
+              {
+                "ast_summary": {
+                  "closest_column_suggestions": {
+                    "journey_id": [],
+                    "journey_name": []
+                  },
+                  "closest_table_suggestions": {
+                    "journey_table": [
+                      "hkg_br_source_collection"
+                    ]
+                  },
+                  "destructive_sql_detected": false,
+                  "enabled": true,
+                  "normalized_sql": "SELECT journey_id, journey_name FROM journey_table LIMIT 50",
+                  "parsed_ok": true,
+                  "selected_columns": [
+                    "journey_id",
+                    "journey_name"
+                  ],
+                  "selected_tables": [
+                    "journey_table"
+                  ],
+                  "unknown_columns": [
+                    "journey_id",
+                    "journey_name"
+                  ],
+                  "unknown_tables": [
+                    "journey_table"
+                  ]
+                },
+                "candidate": {
+                  "_usage": {
+                    "completion_tokens": 22,
+                    "completion_tokens_details": null,
+                    "prompt_tokens": 1603,
+                    "prompt_tokens_details": {
+                      "audio_tokens": null,
+                      "cached_tokens": 1602
+                    },
+                    "total_tokens": 1625
+                  },
+                  "sql": "SELECT journey_id, journey_name FROM journey_table LIMIT 50"
+                },
+                "executed": false,
+                "round": 2,
+                "sql": "SELECT journey_id, journey_name FROM journey_table LIMIT 50",
+                "validation": {
+                  "errors": [
+                    "Unknown table: journey_table. Suggestions: hkg_br_source_collection"
+                  ],
+                  "ok": false,
+                  "repaired": false,
+                  "warnings": []
+                }
+              }
+            ],
+            "kind": "sql_call",
+            "repair_rounds": 2,
+            "result": null,
+            "sql": "SELECT journey_id, journey_name FROM journey_table LIMIT 50",
+            "validation": {
+              "errors": [
+                "Unknown table: journey_table. Suggestions: hkg_br_source_collection"
+              ],
+              "ok": false,
+              "repaired": false,
+              "warnings": []
+            }
+          },
+          {
+            "endpoint_candidate": "journey_list",
+            "kind": "api_call",
+            "method": "GET",
+            "params": {
+              "limit": 50,
+              "start": 0
+            },
+            "rejected_candidate": null,
+            "result": {
+              "dry_run": false,
+              "ok": true,
+              "outcome": "live_empty",
+              "status_code": 200
+            },
+            "retry_attempted": false,
+            "url": "/ajo/journey",
+            "validation": {
+              "errors": [],
+              "ok": true,
+              "repaired": false,
+              "warnings": []
+            }
+          },
+          {
+            "answer": "0 journeys found",
+            "answer_guard": {
+              "answer": "0 journeys found",
+              "claims": [
+                {
+                  "claim": "No journeys are available",
+                  "evidence_field": "pagination.totalCount",
+                  "evidence_source": "api"
+                }
+              ],
+              "fallback_used": false,
+              "llm_usage": {
+                "completion_tokens": 60,
+                "completion_tokens_details": null,
+                "prompt_tokens": 326,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 386
+              },
+              "rejected_unsupported_claim_count": 0,
+              "rejected_unsupported_claims": [],
+              "skipped": false,
+              "supported_values": [
+                "/ajo/journey",
+                "0",
+                "100",
+                "200",
+                "False",
+                "GET",
+                "True",
+                "api",
+                "counts",
+                "dry_run",
+                "endpoint",
+                "endpoint_family",
+                "endpoint_id",
+                "error_category",
+                "errors",
+                "evidence_state",
+                "false",
+                "filter",
+                "generic_fallback",
+                "get",
+                "ids",
+                "important_fields",
+                "items",
+                "journey_list",
+                "live_empty",
+                "live_evidence_available",
+                "metadata.lastModifiedAt>2026-05-18",
+                "metadata.lastmodifiedat>2026-05-18",
+                "method",
+                "names",
+                "no matching records",
+                "no records",
+                "ok",
+                "page",
+                "pageSize",
+                "pagesize",
+                "pagination",
+                "parsed_evidence",
+                "parser_mode",
+                "path"
+              ],
+              "tool_result_used": true,
+              "unsupported_claim_count": 0,
+              "unsupported_claims": []
+            },
+            "kind": "final_answer"
+          }
+        ],
+        "strategy": "full_pure_llm_tool_agent_v1",
+        "token_source": "measured_usage_or_estimated",
+        "tool_call_count": 2,
+        "trace_assertions": {
+          "api_endpoint_candidate": "journey_list",
+          "api_endpoint_repair_attempted": false,
+          "api_endpoint_validation_ok": true,
+          "did_llm_choose_tool": true,
+          "did_llm_plan": true,
+          "final_answer": "0 journeys found",
+          "rejected_unsupported_claim_count": 0,
+          "selected_tool": "execute_sql",
+          "sql_candidate": "SELECT journey_id, journey_name FROM journey_table LIMIT 50",
+          "sql_repair_attempted": true,
+          "sql_repair_success": false,
+          "sql_validation_ok": false,
+          "tool_execution_ok": true,
+          "tool_result_used_in_answer": true,
+          "unsupported_claim_count": 0
+        },
+        "unsupported_claim_count": 0
+      },
+      "unscored_dimension_count": 0,
+      "unsupported_claim_count": 0,
+      "variant": "full_pure_llm_tool_agent_v1"
+    },
+    {
+      "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+      "answer_score": 0.2553,
+      "api_reason": "No generated API call while gold API exists.",
+      "api_score": 0.0,
+      "estimated_tokens": 2275,
+      "failure_stage": "invalid_sql",
+      "prompt": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+      "query_id": "example_003",
+      "runtime": 13.9835,
+      "sql_reason": "Strict SQL mismatch.",
+      "sql_score": 0.0,
+      "strict_correctness": 0.0766,
+      "strict_final_score": -0.0015,
+      "strict_scoring_status": "available",
+      "system": "full_pure_llm_tool_agent_v1",
+      "tool_calls": 1,
+      "trajectory": {
+        "baseline_variant": "full_pure_llm_tool_agent_v1",
+        "estimated_tokens": 2275,
+        "failure_stage": "sql_repair_failed",
+        "final_answer": "The available tool evidence does not contain enough supported data to answer.",
+        "llm_total_tokens": 1904,
+        "original_query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+        "pure_llm_tool_agent": true,
+        "rejected_unsupported_claim_count": 2,
+        "runtime": 13.98346891719848,
+        "steps": [
+          {
+            "context_summary": {
+              "answer_intent": "COUNT",
+              "endpoint_candidates": [
+                "ups_audiences",
+                "merge_policies",
+                "segment_jobs",
+                "export_batch_files",
+                "flowservice_flows",
+                "schemas_short",
+                "segment_definitions",
+                "audit_events"
+              ],
+              "top_tables": [
+                "dim_segment",
+                "dim_target",
+                "hkg_br_base_segment_used_by_dependent_segment",
+                "dim_campaign",
+                "dim_connector",
+                "dim_blueprint"
+              ]
+            },
+            "kind": "llm_plan",
+            "plan": {
+              "_normalization_actions": [],
+              "_usage": {
+                "completion_tokens": 250,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1654,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1904
+              },
+              "answer_intent": "SELECT",
+              "answer_shape": {
+                "columns": [
+                  "SEGMENTID",
+                  "UPDATEDTIME",
+                  "ISACCOUNTSEGMENT"
+                ]
+              },
+              "api_task": null,
+              "candidate_endpoints": [],
+              "candidate_tables": [
+                {
+                  "columns": {
+                    "items": [
+                      "SEGMENTID",
+                      "UPDATEDTIME",
+                      "ISACCOUNTSEGMENT"
+                    ],
+                    "total_items": 14,
+                    "truncated_items": true
+                  },
+                  "is_bridge": false,
+                  "score": 18.1,
+                  "table": "dim_segment"
+                }
+              ],
+              "needs_api": false,
+              "needs_sql": true,
+              "reason": "The task requires selecting specific columns from the 'dim_segment' table based on the target 'SMS Opt-In'. The audience details and their usage in other segments are requested.",
+              "sql_task": "SELECT SEGMENTID, UPDATEDTIME, ISACCOUNTSEGMENT FROM dim_segment WHERE DATAFLOWNAME = 'SMS Opt-In' AND STATE = 'ACTIVE' AND ISACCOUNTSEGMENT = 'Y' LIMIT 1000"
+            },
+            "raw_plan": {
+              "_usage": {
+                "completion_tokens": 250,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1654,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1904
+              },
+              "answer_intent": "SELECT",
+              "answer_shape": {
+                "columns": [
+                  "SEGMENTID",
+                  "UPDATEDTIME",
+                  "ISACCOUNTSEGMENT"
+                ]
+              },
+              "api_task": null,
+              "candidate_endpoints": [],
+              "candidate_tables": [
+                {
+                  "columns": {
+                    "items": [
+                      "SEGMENTID",
+                      "UPDATEDTIME",
+                      "ISACCOUNTSEGMENT"
+                    ],
+                    "total_items": 14,
+                    "truncated_items": true
+                  },
+                  "is_bridge": false,
+                  "score": 18.1,
+                  "table": "dim_segment"
+                }
+              ],
+              "needs_api": false,
+              "needs_sql": true,
+              "reason": "The task requires selecting specific columns from the 'dim_segment' table based on the target 'SMS Opt-In'. The audience details and their usage in other segments are requested.",
+              "sql_task": "SELECT SEGMENTID, UPDATEDTIME, ISACCOUNTSEGMENT FROM dim_segment WHERE DATAFLOWNAME = 'SMS Opt-In' AND STATE = 'ACTIVE' AND ISACCOUNTSEGMENT = 'Y' LIMIT 1000"
+            },
+            "variant": "full_pure_llm_tool_agent_v1"
+          },
+          {
+            "attempts": [
+              {
+                "ast_summary": {
+                  "closest_column_suggestions": {
+                    "DATAFLOWNAME": [
+                      "DATAFLOWNAME",
+                      "NAME",
+                      "DATAFLOWID",
+                      "SANDBOXNAME"
+                    ],
+                    "STATE": [
+                      "STATE",
+                      "STATUS",
+                      "LIFECYCLESTATUS",
+                      "STARTDATE"
+                    ]
+                  },
+                  "closest_table_suggestions": {},
+                  "destructive_sql_detected": false,
+                  "enabled": true,
+                  "normalized_sql": "SELECT SEGMENTID, UPDATEDTIME, ISACCOUNTSEGMENT FROM dim_segment WHERE DATAFLOWNAME = 'SMS Opt-In' AND STATE = 'ACTIVE' AND ISACCOUNTSEGMENT = 'Y' LIMIT 1000",
+                  "parsed_ok": true,
+                  "selected_columns": [
+                    "SEGMENTID",
+                    "UPDATEDTIME",
+                    "ISACCOUNTSEGMENT",
+                    "DATAFLOWNAME",
+                    "STATE"
+                  ],
+                  "selected_tables": [
+                    "dim_segment"
+                  ],
+                  "unknown_columns": [
+                    "DATAFLOWNAME",
+                    "STATE"
+                  ],
+                  "unknown_tables": []
+                },
+                "candidate": {
+                  "_usage": {
+                    "completion_tokens": 262,
+                    "completion_tokens_details": null,
+                    "prompt_tokens": 2018,
+                    "prompt_tokens_details": {
+                      "audio_tokens": null,
+                      "cached_tokens": 3
+                    },
+                    "total_tokens": 2280
+                  },
+                  "aggregation": null,
+                  "columns_used": [
+                    "SEGMENTID",
+                    "UPDATEDTIME",
+                    "ISACCOUNTSEGMENT"
+                  ],
+                  "confidence": 100.0,
+                  "filters": [
+                    {
+                      "column": "DATAFLOWNAME",
+                      "value": "'SMS Opt-In'"
+                    },
+                    {
+                      "column": "STATE",
+                      "value": "'ACTIVE'"
+                    },
+                    {
+                      "column": "ISACCOUNTSEGMENT",
+                      "value": "'Y'"
+                    }
+                  ],
+                  "join_reason": null,
+                  "sql": "SELECT SEGMENTID, UPDATEDTIME, ISACCOUNTSEGMENT FROM dim_segment WHERE DATAFLOWNAME = 'SMS Opt-In' AND STATE = 'ACTIVE' AND ISACCOUNTSEGMENT = 'Y' LIMIT 1000",
+                  "tables_used": [
+                    {
+                      "table": "dim_segment"
+                    }
+                  ]
+                },
+                "executed": false,
+                "round": 0,
+                "sql": "SELECT SEGMENTID, UPDATEDTIME, ISACCOUNTSEGMENT FROM dim_segment WHERE DATAFLOWNAME = 'SMS Opt-In' AND STATE = 'ACTIVE' AND ISACCOUNTSEGMENT = 'Y' LIMIT 1000",
+                "validation": {
+                  "errors": [
+                    "Unknown column: DATAFLOWNAME. Suggestions: DATAFLOWNAME, NAME, DATAFLOWID, SANDBOXNAME",
+                    "Unknown column: STATE. Suggestions: STATE, STATUS, LIFECYCLESTATUS, STARTDATE"
+                  ],
+                  "ok": false,
+                  "repaired": false,
+                  "warnings": []
+                }
+              },
+              {
+                "ast_summary": {
+                  "closest_column_suggestions": {
+                    "dataFlowName": [],
+                    "state": []
+                  },
+                  "closest_table_suggestions": {},
+                  "destructive_sql_detected": false,
+                  "enabled": true,
+                  "normalized_sql": "SELECT segmentId, updatedTime, isAccountSegment FROM dim_segment WHERE dataFlowName = 'SMS Opt-In' AND state = 'ACTIVE' AND isAccountSegment = 'Y'",
+                  "parsed_ok": true,
+                  "selected_columns": [
+                    "segmentId",
+                    "updatedTime",
+                    "isAccountSegment",
+                    "dataFlowName",
+                    "state"
+                  ],
+                  "selected_tables": [
+                    "dim_segment"
+                  ],
+                  "unknown_columns": [
+                    "dataFlowName",
+                    "state"
+                  ],
+                  "unknown_tables": []
+                },
+                "candidate": {
+                  "_usage": {
+                    "completion_tokens": 45,
+                    "completion_tokens_details": null,
+                    "prompt_tokens": 1742,
+                    "prompt_tokens_details": {
+                      "audio_tokens": null,
+                      "cached_tokens": 3
+                    },
+                    "total_tokens": 1787
+                  },
+                  "sql": "SELECT segmentId, updatedTime, isAccountSegment FROM dim_segment WHERE dataFlowName = 'SMS Opt-In' AND state = 'ACTIVE' AND isAccountSegment = 'Y'"
+                },
+                "executed": false,
+                "round": 1,
+                "sql": "SELECT segmentId, updatedTime, isAccountSegment FROM dim_segment WHERE dataFlowName = 'SMS Opt-In' AND state = 'ACTIVE' AND isAccountSegment = 'Y'",
+                "validation": {
+                  "errors": [
+                    "Unknown column: dataFlowName.",
+                    "Unknown column: state."
+                  ],
+                  "ok": false,
+                  "repaired": false,
+                  "warnings": []
+                }
+              },
+              {
+                "ast_summary": {
+                  "closest_column_suggestions": {
+                    "dataFlowName": [],
+                    "state": []
+                  },
+                  "closest_table_suggestions": {},
+                  "destructive_sql_detected": false,
+                  "enabled": true,
+                  "normalized_sql": "SELECT segmentId, updatedTime, isAccountSegment FROM dim_segment WHERE dataFlowName = 'SMS Opt-In' AND state = 'ACTIVE' AND isAccountSegment = 'Y'",
+                  "parsed_ok": true,
+                  "selected_columns": [
+                    "segmentId",
+                    "updatedTime",
+                    "isAccountSegment",
+                    "dataFlowName",
+                    "state"
+                  ],
+                  "selected_tables": [
+                    "dim_segment"
+                  ],
+                  "unknown_columns": [
+                    "dataFlowName",
+                    "state"
+                  ],
+                  "unknown_tables": []
+                },
+                "candidate": {
+                  "_usage": {
+                    "completion_tokens": 45,
+                    "completion_tokens_details": null,
+                    "prompt_tokens": 1699,
+                    "prompt_tokens_details": {
+                      "audio_tokens": null,
+                      "cached_tokens": 111
+                    },
+                    "total_tokens": 1744
+                  },
+                  "sql": "SELECT segmentId, updatedTime, isAccountSegment FROM dim_segment WHERE dataFlowName = 'SMS Opt-In' AND state = 'ACTIVE' AND isAccountSegment = 'Y'"
+                },
+                "executed": false,
+                "round": 2,
+                "sql": "SELECT segmentId, updatedTime, isAccountSegment FROM dim_segment WHERE dataFlowName = 'SMS Opt-In' AND state = 'ACTIVE' AND isAccountSegment = 'Y'",
+                "validation": {
+                  "errors": [
+                    "Unknown column: dataFlowName.",
+                    "Unknown column: state."
+                  ],
+                  "ok": false,
+                  "repaired": false,
+                  "warnings": []
+                }
+              }
+            ],
+            "kind": "sql_call",
+            "repair_rounds": 2,
+            "result": null,
+            "sql": "SELECT segmentId, updatedTime, isAccountSegment FROM dim_segment WHERE dataFlowName = 'SMS Opt-In' AND state = 'ACTIVE' AND isAccountSegment = 'Y'",
+            "validation": {
+              "errors": [
+                "Unknown column: dataFlowName.",
+                "Unknown column: state."
+              ],
+              "ok": false,
+              "repaired": false,
+              "warnings": []
+            }
+          },
+          {
+            "answer": "The available tool evidence does not contain enough supported data to answer.",
+            "answer_guard": {
+              "answer": "The available tool evidence does not contain enough supported data to answer.",
+              "claims": [
+                {
+                  "claim": "No segment audiences connected to the destination named 'SMS Opt-In' were found.",
+                  "evidence_field": "items",
+                  "evidence_source": "tool observation"
+                },
+                {
+                  "claim": "The total number of items found is 0.",
+                  "evidence_field": "total_items",
+                  "evidence_source": "tool observation"
+                },
+                {
+                  "claim": "The observation was not truncated.",
+                  "evidence_field": "truncated_items",
+                  "evidence_source": "tool observation"
+                }
+              ],
+              "fallback_used": true,
+              "llm_usage": {
+                "completion_tokens": 170,
+                "completion_tokens_details": null,
+                "prompt_tokens": 162,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 332
+              },
+              "rejected_unsupported_claim_count": 2,
+              "rejected_unsupported_claims": [
+                {
+                  "claim_type": "entity",
+                  "value": "SMS Opt-In"
+                },
+                {
+                  "claim_type": "no_result",
+                  "value": "no segment audiences connected to the destination named 'sms opt-in' were found"
+                }
+              ],
+              "skipped": false,
+              "supported_values": [],
+              "tool_result_used": false,
+              "unsupported_claim_count": 0,
+              "unsupported_claims": []
+            },
+            "kind": "final_answer"
+          }
+        ],
+        "strategy": "full_pure_llm_tool_agent_v1",
+        "token_source": "measured_usage_or_estimated",
+        "tool_call_count": 1,
+        "trace_assertions": {
+          "api_endpoint_candidate": null,
+          "api_endpoint_repair_attempted": false,
+          "api_endpoint_validation_ok": false,
+          "did_llm_choose_tool": true,
+          "did_llm_plan": true,
+          "final_answer": "The available tool evidence does not contain enough supported data to answer.",
+          "rejected_unsupported_claim_count": 2,
+          "selected_tool": "execute_sql",
+          "sql_candidate": "SELECT segmentId, updatedTime, isAccountSegment FROM dim_segment WHERE dataFlowName = 'SMS Opt-In' AND state = 'ACTIVE' AND isAccountSegment = 'Y'",
+          "sql_repair_attempted": true,
+          "sql_repair_success": false,
+          "sql_validation_ok": false,
+          "tool_execution_ok": false,
+          "tool_result_used_in_answer": false,
+          "unsupported_claim_count": 0
+        },
+        "unsupported_claim_count": 0
+      },
+      "unscored_dimension_count": 0,
+      "unsupported_claim_count": 0,
+      "variant": "full_pure_llm_tool_agent_v1"
+    },
+    {
+      "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+      "answer_score": 0.2131,
+      "api_reason": "No gold API supplied; API dimension unscored in strict mode.",
+      "api_score": null,
+      "estimated_tokens": 908,
+      "failure_stage": "no_clear_failure",
+      "prompt": "Show me the IDs of failed dataflow runs",
+      "query_id": "example_004",
+      "runtime": 7.7696,
+      "sql_reason": "No generated SQL while gold SQL exists.",
+      "sql_score": 0.0,
+      "strict_correctness": 0.0913,
+      "strict_final_score": 0.0454,
+      "strict_scoring_status": "available",
+      "system": "full_pure_llm_tool_agent_v1",
+      "tool_calls": 1,
+      "trajectory": {
+        "baseline_variant": "full_pure_llm_tool_agent_v1",
+        "estimated_tokens": 908,
+        "failure_stage": "api_validation_failed",
+        "final_answer": "The available tool evidence does not contain enough supported data to answer.",
+        "llm_total_tokens": 1810,
+        "original_query": "Show me the IDs of failed dataflow runs",
+        "pure_llm_tool_agent": true,
+        "rejected_unsupported_claim_count": 1,
+        "runtime": 7.769592666998506,
+        "steps": [
+          {
+            "context_summary": {
+              "answer_intent": "LIST",
+              "endpoint_candidates": [
+                "flowservice_runs",
+                "audit_events",
+                "export_batch_failed",
+                "flowservice_flows"
+              ],
+              "top_tables": [
+                "dim_campaign",
+                "dim_connector",
+                "dim_blueprint",
+                "dim_collection",
+                "dim_segment",
+                "dim_target"
+              ]
+            },
+            "kind": "llm_plan",
+            "plan": {
+              "_normalization_actions": [],
+              "_usage": {
+                "completion_tokens": 224,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1586,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1810
+              },
+              "answer_intent": "LIST",
+              "answer_shape": {
+                "items": [
+                  {
+                    "DATAFLOWNAME": "string"
+                  }
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              },
+              "api_task": {
+                "endpoint": "export_batch_failed",
+                "method": "GET",
+                "path": "/data/foundation/export/batches/{batch_id}/failed"
+              },
+              "candidate_endpoints": [
+                {
+                  "domains": [
+                    "DATASET_SCHEMA",
+                    "STATUS_MONITORING",
+                    "UNKNOWN"
+                  ],
+                  "endpoint_id": "export_batch_failed",
+                  "method": "GET",
+                  "path": "/data/foundation/export/batches/{batch_id}/failed"
+                }
+              ],
+              "candidate_tables": [],
+              "needs_api": true,
+              "needs_sql": false,
+              "reason": "The prompt asks for IDs of failed dataflow runs, and the API endpoint 'export_batch_failed' is suitable for this purpose.",
+              "sql_task": null
+            },
+            "raw_plan": {
+              "_usage": {
+                "completion_tokens": 224,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1586,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1810
+              },
+              "answer_intent": "LIST",
+              "answer_shape": {
+                "items": [
+                  {
+                    "DATAFLOWNAME": "string"
+                  }
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              },
+              "api_task": {
+                "endpoint": "export_batch_failed",
+                "method": "GET",
+                "path": "/data/foundation/export/batches/{batch_id}/failed"
+              },
+              "candidate_endpoints": [
+                {
+                  "domains": [
+                    "DATASET_SCHEMA",
+                    "STATUS_MONITORING",
+                    "UNKNOWN"
+                  ],
+                  "endpoint_id": "export_batch_failed",
+                  "method": "GET",
+                  "path": "/data/foundation/export/batches/{batch_id}/failed"
+                }
+              ],
+              "candidate_tables": [],
+              "needs_api": true,
+              "needs_sql": false,
+              "reason": "The prompt asks for IDs of failed dataflow runs, and the API endpoint 'export_batch_failed' is suitable for this purpose.",
+              "sql_task": null
+            },
+            "variant": "full_pure_llm_tool_agent_v1"
+          },
+          {
+            "endpoint_candidate": "export_batch_failed",
+            "kind": "api_call",
+            "rejected_candidate": {
+              "endpoint_id": "export_batch_failed",
+              "method": "GET",
+              "params": {
+                "batch_id": "{batch_id}"
+              },
+              "reason": "The prompt asks for the IDs of failed dataflow runs, and the endpoint 'export_batch_failed' is suitable for this purpose as it returns failed dataflow runs."
+            },
+            "retry_attempted": true,
+            "validation": {
+              "errors": [
+                "Endpoint has unresolved path parameters and needs discovered IDs before use."
+              ],
+              "ok": false
+            }
+          },
+          {
+            "answer": "The available tool evidence does not contain enough supported data to answer.",
+            "answer_guard": {
+              "answer": "The available tool evidence does not contain enough supported data to answer.",
+              "claims": [
+                {
+                  "claim": "There are no failed dataflow runs.",
+                  "evidence_field": "items",
+                  "evidence_source": "items"
+                }
+              ],
+              "fallback_used": true,
+              "llm_usage": {
+                "completion_tokens": 119,
+                "completion_tokens_details": null,
+                "prompt_tokens": 125,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 244
+              },
+              "rejected_unsupported_claim_count": 1,
+              "rejected_unsupported_claims": [
+                {
+                  "claim_type": "status",
+                  "value": "failed"
+                }
+              ],
+              "skipped": false,
+              "supported_values": [],
+              "tool_result_used": false,
+              "unsupported_claim_count": 0,
+              "unsupported_claims": []
+            },
+            "kind": "final_answer"
+          }
+        ],
+        "strategy": "full_pure_llm_tool_agent_v1",
+        "token_source": "measured_usage_or_estimated",
+        "tool_call_count": 1,
+        "trace_assertions": {
+          "api_endpoint_candidate": "export_batch_failed",
+          "api_endpoint_repair_attempted": true,
+          "api_endpoint_validation_ok": false,
+          "did_llm_choose_tool": true,
+          "did_llm_plan": true,
+          "final_answer": "The available tool evidence does not contain enough supported data to answer.",
+          "rejected_unsupported_claim_count": 1,
+          "selected_tool": "call_api",
+          "sql_candidate": null,
+          "sql_repair_attempted": false,
+          "sql_repair_success": false,
+          "sql_validation_ok": false,
+          "tool_execution_ok": false,
+          "tool_result_used_in_answer": false,
+          "unsupported_claim_count": 0
+        },
+        "unsupported_claim_count": 0
       },
       "unscored_dimension_count": 1,
-      "unsupported_claim_count": 3,
+      "unsupported_claim_count": 0,
       "variant": "full_pure_llm_tool_agent_v1"
     }
   ],
   "skipped_reason": null,
+  "stabilization_set": false,
   "summary": {
     "best_strict_score": 0.6328,
     "best_variant": "LLM_CONTROLLER_OPTIMIZED_AGENT",
-    "executed_new_llm_rows": 1,
+    "executed_new_llm_rows": 5,
     "recommendation": "pure_llm_baseline_improved_keep_shadow",
     "systems": [
       {
@@ -65084,18 +66515,18 @@
         "unsupported_claims": 1
       },
       {
-        "answer_score": 0.2176,
-        "api_score": 0.0,
-        "estimated_tokens": 746.0,
-        "rows": 1,
-        "runtime": 12.0578,
+        "answer_score": 0.1814,
+        "api_score": 0.2767,
+        "estimated_tokens": 1465.2,
+        "rows": 5,
+        "runtime": 9.6871,
         "sql_score": 0.0,
-        "strict_correctness": 0.0933,
-        "strict_final_score": 0.0343,
+        "strict_correctness": 0.1158,
+        "strict_final_score": 0.0563,
         "strict_scoring_status": "available",
         "system": "full_pure_llm_tool_agent_v1",
-        "tool_calls": 1.0,
-        "unsupported_claims": 3
+        "tool_calls": 1.2,
+        "unsupported_claims": 0
       }
     ]
   },

@@ -108,7 +108,7 @@ Start here. Most older generated reports were consolidated or removed.
 - External pattern alignment: `outputs/reports/pure_llm_external_pattern_alignment.md`
 - Best variant: `LLM_CONTROLLER_OPTIMIZED_AGENT`
 - Best strict score: `0.6328`
-- New full-agent rows executed: `1`
+- New full-agent rows executed: `5`
 - Promotion allowed: `False`
 
 ## System-Wide SDK LLM Audit

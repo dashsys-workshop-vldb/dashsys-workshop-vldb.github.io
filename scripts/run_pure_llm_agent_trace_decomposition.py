@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import argparse
 import sys
 from collections import Counter
 from datetime import datetime, timezone
@@ -19,17 +20,21 @@ REPORT_STEM = "pure_llm_agent_trace_decomposition"
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--stabilization-set", action="store_true", help="Decompose the Pure LLM stabilization report.")
+    args = parser.parse_args()
     config = Config.from_env(ROOT)
-    payload = run_pure_llm_agent_trace_decomposition(config)
+    payload = run_pure_llm_agent_trace_decomposition(config, stabilization_set=args.stabilization_set)
     print(json.dumps({"json": str(config.outputs_dir / "reports" / f"{REPORT_STEM}.json"), "rows": payload["summary"]["rows"]}, indent=2))
     return 0
 
 
-def run_pure_llm_agent_trace_decomposition(config: Config | None = None) -> dict[str, Any]:
+def run_pure_llm_agent_trace_decomposition(config: Config | None = None, *, stabilization_set: bool = False) -> dict[str, Any]:
     config = config or Config.from_env(ROOT)
     reports_dir = config.outputs_dir / "reports"
     reports_dir.mkdir(parents=True, exist_ok=True)
-    eval_payload = _load_json(reports_dir / "pure_llm_tool_agent_eval.json")
+    source = "pure_llm_tool_agent_stabilization.json" if stabilization_set else "pure_llm_tool_agent_eval.json"
+    eval_payload = _load_json(reports_dir / source)
     rows = [_decompose(row) for row in eval_payload.get("rows", [])]
     stages = Counter(row["failure_stage"] for row in rows)
     payload = redact_secrets(
@@ -38,7 +43,8 @@ def run_pure_llm_agent_trace_decomposition(config: Config | None = None) -> dict
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "diagnostic_only": True,
             "promotion_allowed": False,
-            "source_report": "outputs/reports/pure_llm_tool_agent_eval.json",
+            "stabilization_set": stabilization_set,
+            "source_report": f"outputs/reports/{source}",
             "summary": {"rows": len(rows), "failure_distribution": dict(stages)},
             "rows": rows,
         }
@@ -53,18 +59,32 @@ def _decompose(row: dict[str, Any]) -> dict[str, Any]:
     steps = trajectory.get("steps") if isinstance(trajectory.get("steps"), list) else []
     sql_steps = [step for step in steps if step.get("kind") == "sql_call"]
     api_steps = [step for step in steps if step.get("kind") == "api_call"]
+    trace = row.get("trace_assertions") if isinstance(row.get("trace_assertions"), dict) else trajectory.get("trace_assertions", {})
     return {
         "query_id": row.get("query_id"),
+        "prompt_id": row.get("prompt_id"),
+        "category": row.get("category"),
         "prompt": row.get("prompt"),
         "baseline_variant": row.get("variant") or row.get("system"),
         "llm_plan": next((step.get("plan") for step in steps if step.get("kind") == "llm_plan"), None),
+        "did_llm_plan": trace.get("did_llm_plan"),
+        "did_llm_choose_tool": trace.get("did_llm_choose_tool"),
+        "selected_tool": trace.get("selected_tool"),
         "tool_calls_attempted": len(sql_steps) + len(api_steps),
         "execute_sql_call_content": sql_steps[0].get("sql") if sql_steps else None,
+        "sql_candidate": trace.get("sql_candidate"),
+        "sql_validation_ok": trace.get("sql_validation_ok"),
+        "sql_repair_attempted": trace.get("sql_repair_attempted"),
+        "sql_repair_success": trace.get("sql_repair_success"),
         "sql_validation_result": sql_steps[0].get("validation") if sql_steps else None,
         "sql_execution_result": sql_steps[0].get("result") if sql_steps else None,
         "call_api_endpoint_selected": api_steps[0].get("url") if api_steps else None,
+        "api_endpoint_candidate": trace.get("api_endpoint_candidate"),
+        "api_endpoint_validation_ok": trace.get("api_endpoint_validation_ok"),
         "api_validation_result": api_steps[0].get("validation") if api_steps else None,
         "api_execution_result": api_steps[0].get("result") if api_steps else None,
+        "tool_execution_ok": trace.get("tool_execution_ok"),
+        "tool_result_used_in_answer": trace.get("tool_result_used_in_answer"),
         "final_answer": row.get("trajectory", {}).get("final_answer") if isinstance(row.get("trajectory"), dict) else None,
         "strict_score_components": {
             "strict_final_score": row.get("strict_final_score"),

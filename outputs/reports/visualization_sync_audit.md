@@ -1,6 +1,6 @@
 # Visualization Sync Audit
 
-- Generated at: `2026-05-25T18:57:37Z`
+- Generated at: `2026-05-25T19:43:12Z`
 - Packaged strategy: `SQL_FIRST_API_VERIFY`
 - Final submission ready: `True`
 - live_success_count: `10`
@@ -21,8 +21,8 @@
 
 ## Source Reports
 
-- `outputs/reports/report_index.json` exists=`True` sha256=`48c1d6d90b7427839c70b96758e9a813f6bca70e90ce03237ca8a09d923830ca`
-- `outputs/reports/report_index.md` exists=`True` sha256=`02eb612000df0e78e3e1fdfb8923a8596dd73461f45160a4b8124a881690b678`
+- `outputs/reports/report_index.json` exists=`True` sha256=`9302753e295ae99c8b7f2c7949421f583fddf5129912f7f94909f76111e2f3eb`
+- `outputs/reports/report_index.md` exists=`True` sha256=`839d057549c849a38e13a25a0f9e697aba1331b633e5b96c0bd61c7f8014b214`
 - `outputs/reports/system_summary.json` exists=`True` sha256=`3a3155dab6c9cfc5960e69076e2c2375f729263d9476806ce161d4d794ef0dec`
 - `outputs/reports/system_summary.md` exists=`True` sha256=`1c3462c5d44de75fd8ee063d20e2aec2ea636c5d544d6e51e6fe292e7ac13ffd`
 - `outputs/reports/workflow_decision_map.json` exists=`True` sha256=`d128a33719927e98e0fcfaf5035941f3ad90f279ce860bd15134b5214f3d5778`
