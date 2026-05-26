@@ -1,6 +1,6 @@
 # Pure LLM Promotion Gate
 
-- Recommendation: `pure_llm_still_blocked_by_sql_generation`
+- Recommendation: `pure_llm_still_too_weak`
 - Promotion allowed: `False`
-- Best variant: `structured_sql_plan_with_repair_v1`
-- Best strict score: `0.0842`
+- Best variant: `api_only_only_when_sql_unavailable_v1`
+- Best strict score: `0.0222`

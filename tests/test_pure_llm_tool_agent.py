@@ -132,6 +132,22 @@ def test_evidence_locked_answer_rejects_unsupported_number(tiny_project):
     assert "2" in result["answer"]
 
 
+def test_evidence_locked_answer_supports_time_component_inside_evidence_timestamp(tiny_project):
+    from dashagent.llm_evidence_locked_answer import evidence_locked_answer
+
+    timestamp = "2026-03-31T06:07:32.838462639Z"
+    client = FakeJsonClient([json.dumps({"answer": f"The timestamp is {timestamp}.", "claims": []})])
+
+    result = evidence_locked_answer(
+        "When was the journey published?",
+        [{"source": "sql", "rows": [{"updatedtime": timestamp}], "row_count": 1}],
+        llm_client=client,
+        answer_intent="DATE",
+    )
+
+    assert result["unsupported_claim_count"] == 0
+
+
 def test_pure_llm_agent_forces_tool_for_data_question(tiny_project):
     from dashagent.pure_llm_tool_agent import FULL_PURE_LLM_TOOL_AGENT_V1, run_pure_llm_tool_agent_variant
 
@@ -287,6 +303,69 @@ def test_structured_sql_plan_compiler_selects_with_safe_filter_and_limit(tiny_pr
     assert 'WHERE "dim_campaign"."status" = ' in compiled["sql"]
     assert compiled["sql"].endswith("LIMIT 25")
     assert SQLValidator(schema).validate(compiled["sql"]).ok is True
+    db.close()
+
+
+def test_structured_sql_plan_compiler_normalizes_safe_llm_aliases(tiny_project):
+    from dashagent.llm_sql_context_builder import build_llm_sql_context
+    from dashagent.llm_sql_plan_compiler import compile_structured_sql_plan
+
+    db, schema = _schema(tiny_project)
+    context = build_llm_sql_context("When was the campaign named Birthday Message updated?", schema, EndpointCatalog(tiny_project))
+    plan = {
+        **_count_plan(),
+        "answer_intent": "DATE",
+        "columns_needed": ["name"],
+        "aggregation": {"type": "none", "table": "dim_campaign", "column": ""},
+        "filters": [{"table": "dim_campaign", "column": "campaign_name", "operator": "=", "value": "Birthday Message"}],
+        "limit": 1,
+    }
+
+    compiled = compile_structured_sql_plan(plan, schema, context)
+
+    assert compiled["ok"] is True
+    assert '"name" = ' in compiled["sql"]
+    assert SQLValidator(schema).validate(compiled["sql"]).ok is True
+    db.close()
+
+
+def test_structured_sql_repair_loop_unwraps_nested_repair_plan(tiny_project):
+    from dashagent.llm_sql_context_builder import build_llm_sql_context
+    from dashagent.llm_sql_repair_loop import run_sql_repair_loop
+
+    db, schema = _schema(tiny_project)
+    context = build_llm_sql_context("List campaigns.", schema, EndpointCatalog(tiny_project))
+    wrapped_plan = {
+        "primary_plan": {
+            "answer_intent": "LIST",
+            "primary_entity": "campaign",
+            "primary_table": "dim_campaign",
+            "tables_needed": ["dim_campaign"],
+            "columns_needed": ["campaign_id", "name"],
+            "join_needed": False,
+            "join_path_reason": "",
+            "filters": [],
+            "aggregation": {"type": "none", "table": "dim_campaign", "column": ""},
+            "order_by": [],
+            "limit": 50,
+            "confidence": 0.8,
+        }
+    }
+    client = FakeJsonClient([json.dumps(wrapped_plan)])
+
+    result = run_sql_repair_loop(
+        "List campaigns.",
+        context,
+        db,
+        SQLValidator(schema),
+        llm_client=client,
+        max_repair_rounds=2,
+        structured_sql_plan=True,
+    )
+
+    assert result["ok"] is True
+    assert result["repair_rounds"] == 0
+    assert "dim_campaign" in result["sql"]
     db.close()
 
 

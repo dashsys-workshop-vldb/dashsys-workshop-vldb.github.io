@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from .answer_claims import extract_claims
@@ -76,6 +77,10 @@ def _supported_values(observations: list[dict[str, Any]]) -> set[str]:
             if text:
                 values.add(text)
                 values.add(text.lower())
+                for match in re.finditer(r"\b\d{1,2}:\d{2}(?::\d{2})?\b", text):
+                    time_value = match.group(0)
+                    values.add(time_value)
+                    values.add(time_value.lower())
             return
         if isinstance(value, dict):
             if value.get("state") == "live_empty":

@@ -1706,100 +1706,355 @@
     },
     {
       "aggregation": "none",
-      "execution_result": null,
-      "expected_answer_intent": "SELECT",
-      "failure_reason": "wrong_join_path",
-      "failure_stage": "sql_repair_failed",
+      "execution_result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "row_count": 1,
+        "rows": [
+          {
+            "UPDATEDTIME": "2026-03-31T06:07:32.838462639Z"
+          }
+        ]
+      },
+      "expected_answer_intent": "DATE",
+      "failure_reason": "invalid_sql_syntax",
+      "failure_stage": "no_clear_failure",
       "filters": [
         {
-          "column": "ISACCOUNTSEGMENT",
-          "operator": "=",
-          "table": "",
-          "value": "Y"
-        },
-        {
-          "column": "DATAFLOWNAME",
-          "operator": "=",
-          "table": "",
-          "value": "SMS Opt-In"
+          "column": "CAMPAIGNNAME",
+          "operator": "equals",
+          "table": "dim_campaign",
+          "value": "Birthday Message"
         }
       ],
       "llm_sql_plan": {
         "_usage": {
-          "completion_tokens": 277,
+          "completion_tokens": 135,
           "completion_tokens_details": null,
-          "prompt_tokens": 1972,
+          "prompt_tokens": 2376,
           "prompt_tokens_details": {
             "audio_tokens": null,
-            "cached_tokens": 141
+            "cached_tokens": 3
           },
-          "total_tokens": 2249
+          "total_tokens": 2511
         },
         "aggregation": null,
+        "answer_intent": "DATE",
         "columns_needed": [
-          "SEGMENTID",
-          "UPDATEDTIME",
-          "ISACCOUNTSEGMENT",
-          "TARGETID"
+          "UPDATEDTIME"
         ],
         "confidence": 0.98,
         "filters": [
           {
-            "column": "ISACCOUNTSEGMENT",
+            "column": "CAMPAIGNNAME",
             "operator": "=",
-            "value": "Y"
-          },
-          {
-            "column": "DATAFLOWNAME",
-            "operator": "=",
-            "value": "SMS Opt-In"
+            "value": "Birthday Message"
           }
         ],
-        "join_needed": true,
-        "join_path_reason": "To filter audiences connected to 'SMS Opt-In' target, join 'dim_segment' and 'dim_target' tables based on 'SEGMENTID' and 'TARGETID' respectively.",
+        "join_needed": false,
+        "join_path_reason": null,
         "limit": null,
         "order_by": null,
-        "primary_entity": "SMS Opt-In audience",
+        "primary_entity": "Birthday Message",
+        "primary_table": "dim_campaign",
         "tables_needed": [
-          "dim_segment",
-          "dim_target"
+          "dim_campaign"
         ]
       },
-      "prompt": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+      "prompt": "When was the journey 'Birthday Message' published?",
       "prompt_id": null,
-      "query_id": "example_003",
+      "query_id": "example_000",
+      "raw_sql_candidate": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [
+        "UPDATEDTIME"
+      ],
+      "selected_joins": [],
+      "selected_tables": [
+        "dim_campaign"
+      ],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": {
+        "closest_column_suggestions": {},
+        "closest_table_suggestions": {},
+        "destructive_sql_detected": false,
+        "enabled": true,
+        "normalized_sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
+        "parsed_ok": true,
+        "selected_columns": [
+          "UPDATEDTIME",
+          "dim_campaign.NAME"
+        ],
+        "selected_tables": [
+          "dim_campaign"
+        ],
+        "unknown_columns": [],
+        "unknown_tables": []
+      },
+      "variant": "api_only_only_when_sql_unavailable_v1"
+    },
+    {
+      "aggregation": "none",
+      "execution_result": null,
+      "expected_answer_intent": "STATUS",
+      "failure_reason": "invalid_sql_syntax",
+      "failure_stage": "sql_repair_failed",
+      "filters": [],
+      "llm_sql_plan": {
+        "_usage": {
+          "completion_tokens": 512,
+          "completion_tokens_details": null,
+          "prompt_tokens": 1741,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cached_tokens": 99
+          },
+          "total_tokens": 2253
+        }
+      },
+      "prompt": "Give me inactive journeys",
+      "prompt_id": null,
+      "query_id": "example_001",
       "raw_sql_candidate": "",
       "repair_attempt_count": 2,
       "repair_result": "failed",
       "selected_columns": [],
       "selected_joins": [],
-      "selected_tables": [
-        "dim_segment",
-        "dim_target"
-      ],
+      "selected_tables": [],
       "sql_validator_result": {
         "errors": [
-          "Unsupported filter operator: =.",
-          "Unsupported join path for tables: dim_segment, dim_target."
+          "SQL plan must include primary_table or tables_needed."
         ],
         "ok": false
       },
       "sqlglot_result": {
         "parse_error": "empty_sql"
       },
-      "variant": "structured_sql_plan_with_repair_v1"
+      "variant": "api_only_only_when_sql_unavailable_v1"
+    },
+    {
+      "aggregation": "none",
+      "execution_result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "row_count": 0,
+        "rows": []
+      },
+      "expected_answer_intent": "LIST",
+      "failure_reason": "invalid_sql_syntax",
+      "failure_stage": "no_clear_failure",
+      "filters": [
+        {
+          "column": "CAMPAIGNID",
+          "operator": "equals",
+          "table": "dim_campaign",
+          "value": null
+        }
+      ],
+      "llm_sql_plan": {
+        "_usage": {
+          "completion_tokens": 151,
+          "completion_tokens_details": null,
+          "prompt_tokens": 2344,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cached_tokens": 3
+          },
+          "total_tokens": 2495
+        },
+        "aggregation": null,
+        "answer_intent": "LIST",
+        "columns_needed": [
+          "CAMPAIGNID",
+          "UPDATEDTIME",
+          "STARTDATE",
+          "IMSORGID"
+        ],
+        "confidence": 2,
+        "filters": [
+          {
+            "column": "CAMPAIGNID",
+            "operator": "=",
+            "value": null
+          }
+        ],
+        "join_needed": false,
+        "join_path_reason": null,
+        "limit": 50,
+        "order_by": null,
+        "primary_entity": "journeys",
+        "primary_table": "dim_campaign",
+        "tables_needed": [
+          "dim_campaign"
+        ]
+      },
+      "prompt": "List all journeys",
+      "prompt_id": null,
+      "query_id": "example_002",
+      "raw_sql_candidate": "SELECT \"CAMPAIGNID\", \"UPDATEDTIME\", \"STARTDATE\", \"IMSORGID\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"CAMPAIGNID\" = NULL LIMIT 50",
+      "repair_attempt_count": 0,
+      "repair_result": "success",
+      "selected_columns": [
+        "CAMPAIGNID",
+        "UPDATEDTIME",
+        "STARTDATE",
+        "IMSORGID"
+      ],
+      "selected_joins": [],
+      "selected_tables": [
+        "dim_campaign"
+      ],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": {
+        "closest_column_suggestions": {},
+        "closest_table_suggestions": {},
+        "destructive_sql_detected": false,
+        "enabled": true,
+        "normalized_sql": "SELECT \"CAMPAIGNID\", \"UPDATEDTIME\", \"STARTDATE\", \"IMSORGID\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"CAMPAIGNID\" = NULL LIMIT 50",
+        "parsed_ok": true,
+        "selected_columns": [
+          "CAMPAIGNID",
+          "UPDATEDTIME",
+          "STARTDATE",
+          "IMSORGID",
+          "dim_campaign.CAMPAIGNID"
+        ],
+        "selected_tables": [
+          "dim_campaign"
+        ],
+        "unknown_columns": [],
+        "unknown_tables": []
+      },
+      "variant": "api_only_only_when_sql_unavailable_v1"
+    },
+    {
+      "aggregation": "none",
+      "execution_result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "row_count": 0,
+        "rows": []
+      },
+      "expected_answer_intent": "SELECT",
+      "failure_reason": "invalid_sql_syntax",
+      "failure_stage": "tool_result_ignored",
+      "filters": [
+        {
+          "column": "ISACCOUNTSEGMENT",
+          "operator": "equals",
+          "table": "dim_segment",
+          "value": "Y"
+        },
+        {
+          "column": "UPDATEDTIME",
+          "operator": "equals",
+          "table": "dim_segment",
+          "value": null
+        }
+      ],
+      "llm_sql_plan": {
+        "_usage": {
+          "completion_tokens": 206,
+          "completion_tokens_details": null,
+          "prompt_tokens": 1935,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cached_tokens": 141
+          },
+          "total_tokens": 2141
+        },
+        "aggregation": null,
+        "columns_needed": [
+          "SEGMENTID",
+          "UPDATEDTIME",
+          "ISACCOUNTSEGMENT"
+        ],
+        "confidence": 0.98,
+        "filters": [
+          {
+            "column": "ISACCOUNTSEGMENT",
+            "value": "Y"
+          },
+          {
+            "column": "UPDATEDTIME",
+            "value": null
+          }
+        ],
+        "join_needed": false,
+        "limit": null,
+        "order_by": null,
+        "primary_entity": "SMS Opt-In",
+        "tables_needed": [
+          "dim_segment"
+        ]
+      },
+      "prompt": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+      "prompt_id": null,
+      "query_id": "example_003",
+      "raw_sql_candidate": "SELECT \"SEGMENTID\", \"UPDATEDTIME\", \"ISACCOUNTSEGMENT\" FROM \"dim_segment\" WHERE \"dim_segment\".\"ISACCOUNTSEGMENT\" = 'Y' AND \"dim_segment\".\"UPDATEDTIME\" = NULL LIMIT 50",
+      "repair_attempt_count": 2,
+      "repair_result": "success",
+      "selected_columns": [
+        "SEGMENTID",
+        "UPDATEDTIME",
+        "ISACCOUNTSEGMENT"
+      ],
+      "selected_joins": [],
+      "selected_tables": [
+        "dim_segment"
+      ],
+      "sql_validator_result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "sqlglot_result": {
+        "closest_column_suggestions": {},
+        "closest_table_suggestions": {},
+        "destructive_sql_detected": false,
+        "enabled": true,
+        "normalized_sql": "SELECT \"SEGMENTID\", \"UPDATEDTIME\", \"ISACCOUNTSEGMENT\" FROM \"dim_segment\" WHERE \"dim_segment\".\"ISACCOUNTSEGMENT\" = 'Y' AND \"dim_segment\".\"UPDATEDTIME\" = NULL LIMIT 50",
+        "parsed_ok": true,
+        "selected_columns": [
+          "SEGMENTID",
+          "UPDATEDTIME",
+          "ISACCOUNTSEGMENT",
+          "dim_segment.ISACCOUNTSEGMENT",
+          "dim_segment.UPDATEDTIME"
+        ],
+        "selected_tables": [
+          "dim_segment"
+        ],
+        "unknown_columns": [],
+        "unknown_tables": []
+      },
+      "variant": "api_only_only_when_sql_unavailable_v1"
     }
   ],
-  "generated_at": "2026-05-25T21:06:51.080388+00:00",
+  "generated_at": "2026-05-25T22:16:57.942214+00:00",
   "promotion_allowed": false,
   "report_type": "pure_llm_sql_generation_failure_analysis",
   "summary": {
     "failure_categories": {
       "hallucinated_column": 5,
       "hallucinated_table": 3,
-      "invalid_sql_syntax": 2,
-      "no_clear_sql_failure": 21,
-      "wrong_join_path": 1
+      "invalid_sql_syntax": 6,
+      "no_clear_sql_failure": 21
     },
     "hallucinated_journey_table_issue": {
       "count": 0,
@@ -1807,6 +2062,6 @@
       "likely_cause": "not_observed_in_current_report",
       "prompt_ids": []
     },
-    "sql_failure_count": 32
+    "sql_failure_count": 35
   }
 }

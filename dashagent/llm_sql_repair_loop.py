@@ -109,7 +109,7 @@ def _run_structured_plan_repair_loop(
 ) -> dict[str, Any]:
     attempts: list[dict[str, Any]] = []
     bundle = build_structured_sql_plan_prompt(prompt, schema_context, plan)
-    candidate_plan = _call_json(client, bundle.system_prompt, bundle.user_prompt)
+    candidate_plan = _normalize_structured_plan_candidate(_call_json(client, bundle.system_prompt, bundle.user_prompt))
     for round_index in range(max_repair_rounds + 1):
         compiled = compile_structured_sql_plan(candidate_plan, sql_validator.schema_index, schema_context)
         sql = str(compiled.get("sql") or "")
@@ -159,7 +159,7 @@ def _run_structured_plan_repair_loop(
         if validation and not validation.ok:
             errors.extend(validation.errors)
         repair = build_structured_sql_plan_repair_prompt(prompt, schema_context, candidate_plan, errors)
-        candidate_plan = _call_json(client, repair.system_prompt, repair.user_prompt)
+        candidate_plan = _normalize_structured_plan_candidate(_call_json(client, repair.system_prompt, repair.user_prompt))
     return redact_secrets(
         {
             "ok": False,
@@ -183,6 +183,21 @@ def _call_json(client: LLMClient, system_prompt: str, user_prompt: str) -> dict[
     parsed = parse_json_object(response.get("content", ""))
     parsed["_usage"] = response.get("usage", {})
     return parsed
+
+
+def _normalize_structured_plan_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(candidate, dict):
+        return {}
+    if candidate.get("primary_table") or candidate.get("tables_needed"):
+        return candidate
+    for key in ("structured_sql_plan", "sql_plan", "plan", "primary_plan"):
+        nested = candidate.get(key)
+        if isinstance(nested, dict) and (nested.get("primary_table") or nested.get("tables_needed")):
+            normalized = dict(nested)
+            if "_usage" not in normalized and "_usage" in candidate:
+                normalized["_usage"] = candidate["_usage"]
+            return normalized
+    return candidate
 
 
 def _compact_sql_result(result: dict[str, Any]) -> dict[str, Any]:

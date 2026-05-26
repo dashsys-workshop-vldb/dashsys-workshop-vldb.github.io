@@ -6,7 +6,7 @@
   },
   "diagnostic_only": true,
   "execute_real_requested": true,
-  "generated_at": "2026-05-25T21:06:50.496805+00:00",
+  "generated_at": "2026-05-25T22:16:57.467397+00:00",
   "new_llm_calls_executed": true,
   "official_score_claim": false,
   "packaged_default_strategy": "SQL_FIRST_API_VERIFY",
@@ -64865,50 +64865,50 @@
     },
     {
       "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
-      "answer_score": 0.2388,
+      "answer_score": 0.0052,
       "api_reason": "No gold API supplied; API dimension unscored in strict mode.",
       "api_score": null,
-      "estimated_tokens": 1181,
+      "estimated_tokens": 3378,
       "failure_stage": "no_clear_failure",
       "prompt": "When was the journey 'Birthday Message' published?",
       "query_id": "example_000",
-      "runtime": 16.4589,
-      "sql_reason": "No generated SQL while gold SQL exists.",
+      "runtime": 17.0056,
+      "sql_reason": "Strict SQL mismatch.",
       "sql_score": 0.0,
-      "strict_correctness": 0.1023,
-      "strict_final_score": 0.0251,
+      "strict_correctness": 0.0022,
+      "strict_final_score": -0.0951,
       "strict_scoring_status": "available",
-      "system": "structured_sql_plan_with_repair_v1",
+      "system": "api_only_only_when_sql_unavailable_v1",
       "tool_calls": 1,
       "trace_assertions": {
-        "api_endpoint_candidate": "journey_list",
+        "api_endpoint_candidate": null,
         "api_endpoint_repair_attempted": false,
-        "api_endpoint_validation_ok": true,
+        "api_endpoint_validation_ok": false,
         "did_llm_choose_tool": true,
         "did_llm_plan": true,
-        "final_answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
-        "rejected_unsupported_claim_count": 2,
-        "selected_tool": "call_api",
-        "sql_candidate": null,
+        "final_answer": "2026-03-31T06:07:32.838462639Z",
+        "rejected_unsupported_claim_count": 0,
+        "selected_tool": "execute_sql",
+        "sql_candidate": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
         "sql_repair_attempted": false,
         "sql_repair_success": false,
-        "sql_validation_ok": false,
-        "structured_plan_compile_ok": null,
-        "structured_plan_validation_ok": null,
+        "sql_validation_ok": true,
+        "structured_plan_compile_ok": true,
+        "structured_plan_validation_ok": true,
         "tool_execution_ok": true,
         "tool_result_used_in_answer": true,
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "structured_sql_plan_with_repair_v1",
-        "estimated_tokens": 1181,
+        "baseline_variant": "api_only_only_when_sql_unavailable_v1",
+        "estimated_tokens": 3378,
         "failure_stage": "no_clear_failure",
-        "final_answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
+        "final_answer": "2026-03-31T06:07:32.838462639Z",
         "llm_total_tokens": 1814,
         "original_query": "When was the journey 'Birthday Message' published?",
         "pure_llm_tool_agent": true,
-        "rejected_unsupported_claim_count": 2,
-        "runtime": 16.45893191639334,
+        "rejected_unsupported_claim_count": 0,
+        "runtime": 17.005595915950835,
         "steps": [
           {
             "context_summary": {
@@ -64929,7 +64929,9 @@
             },
             "kind": "llm_plan",
             "plan": {
-              "_normalization_actions": [],
+              "_normalization_actions": [
+                "tool_choice_execute_sql"
+              ],
               "_usage": {
                 "completion_tokens": 268,
                 "completion_tokens_details": null,
@@ -64970,11 +64972,61 @@
                   "score": 1
                 }
               ],
-              "candidate_tables": [],
-              "needs_api": true,
-              "needs_sql": false,
+              "candidate_tables": [
+                "dim_campaign"
+              ],
+              "evidence_source_plan": {
+                "api_endpoints_that_may_answer": [],
+                "api_reason": null,
+                "confidence": 0.98,
+                "local_tables_that_may_answer": [
+                  "dim_campaign"
+                ],
+                "needs_live_api": false,
+                "needs_local_sql": true,
+                "preferred_first_tool": "execute_sql",
+                "question_type": "when_was_a_journey_published",
+                "sql_reason": "The journey 'Birthday Message' is stored in the 'dim_campaign' table, which can be queried to find the publication date."
+              },
+              "needs_api": false,
+              "needs_sql": true,
               "reason": "The question is asking for a specific date ('Birthday Message') but the available endpoints do not provide direct date information.",
-              "sql_task": null
+              "sql_task": null,
+              "tool_choice_validation": {
+                "endpoint_catalog_may_have_misled_model": false,
+                "evidence_source_that_should_have_been_considered": "local_sql_required",
+                "final_tool_choice": "execute_sql",
+                "high_confidence_sql_required": true,
+                "ignored_schema_context": false,
+                "local_schema_has_relevant_tables": true,
+                "ok": true,
+                "plan": {
+                  "api_endpoints_that_may_answer": [],
+                  "api_reason": null,
+                  "confidence": 0.98,
+                  "local_tables_that_may_answer": [
+                    "dim_campaign"
+                  ],
+                  "needs_live_api": false,
+                  "needs_local_sql": true,
+                  "preferred_first_tool": "execute_sql",
+                  "question_type": "when_was_a_journey_published",
+                  "sql_reason": "The journey 'Birthday Message' is stored in the 'dim_campaign' table, which can be queried to find the publication date."
+                },
+                "rejection_reason": null,
+                "top_relevant_api_endpoints": [
+                  "journey_list",
+                  "schema_registry_schema",
+                  "unified_tag_detail"
+                ],
+                "top_relevant_sql_tables": [
+                  "dim_campaign",
+                  "dim_connector",
+                  "dim_blueprint",
+                  "dim_collection",
+                  "dim_segment"
+                ]
+              }
             },
             "raw_plan": {
               "_usage": {
@@ -65023,25 +65075,342 @@
               "reason": "The question is asking for a specific date ('Birthday Message') but the available endpoints do not provide direct date information.",
               "sql_task": null
             },
-            "variant": "structured_sql_plan_with_repair_v1"
+            "variant": "api_only_only_when_sql_unavailable_v1"
           },
           {
-            "endpoint_candidate": "journey_list",
-            "kind": "api_call",
-            "method": "GET",
-            "params": {
-              "limit": 50,
-              "start": 0
+            "_usage": {
+              "final": {
+                "completion_tokens": 116,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1619,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1735
+              },
+              "initial": {
+                "completion_tokens": 116,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1619,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1735
+              }
             },
-            "rejected_candidate": null,
-            "result": {
-              "dry_run": false,
+            "final_plan": {
+              "api_endpoints_that_may_answer": [],
+              "api_reason": null,
+              "confidence": 0.98,
+              "local_tables_that_may_answer": [
+                "dim_campaign"
+              ],
+              "needs_live_api": false,
+              "needs_local_sql": true,
+              "preferred_first_tool": "execute_sql",
+              "question_type": "when_was_a_journey_published",
+              "sql_reason": "The journey 'Birthday Message' is stored in the 'dim_campaign' table, which can be queried to find the publication date."
+            },
+            "final_tool_choice": "execute_sql",
+            "initial_plan": {
+              "api_endpoints_that_may_answer": [],
+              "api_reason": null,
+              "confidence": 0.98,
+              "local_tables_that_may_answer": [
+                "dim_campaign"
+              ],
+              "needs_live_api": false,
+              "needs_local_sql": true,
+              "preferred_first_tool": "execute_sql",
+              "question_type": "when_was_a_journey_published",
+              "sql_reason": "The journey 'Birthday Message' is stored in the 'dim_campaign' table, which can be queried to find the publication date."
+            },
+            "initial_validation": {
+              "endpoint_catalog_may_have_misled_model": false,
+              "evidence_source_that_should_have_been_considered": "local_sql_required",
+              "final_tool_choice": "execute_sql",
+              "high_confidence_sql_required": true,
+              "ignored_schema_context": false,
+              "local_schema_has_relevant_tables": true,
               "ok": true,
-              "outcome": "live_empty",
-              "status_code": 200
+              "plan": {
+                "api_endpoints_that_may_answer": [],
+                "api_reason": null,
+                "confidence": 0.98,
+                "local_tables_that_may_answer": [
+                  "dim_campaign"
+                ],
+                "needs_live_api": false,
+                "needs_local_sql": true,
+                "preferred_first_tool": "execute_sql",
+                "question_type": "when_was_a_journey_published",
+                "sql_reason": "The journey 'Birthday Message' is stored in the 'dim_campaign' table, which can be queried to find the publication date."
+              },
+              "rejection_reason": null,
+              "top_relevant_api_endpoints": [
+                "journey_list",
+                "schema_registry_schema",
+                "unified_tag_detail"
+              ],
+              "top_relevant_sql_tables": [
+                "dim_campaign",
+                "dim_connector",
+                "dim_blueprint",
+                "dim_collection",
+                "dim_segment"
+              ]
             },
-            "retry_attempted": false,
-            "url": "/ajo/journey",
+            "kind": "evidence_source_plan",
+            "ok": true,
+            "rejection_reason": null,
+            "retry_used": false,
+            "root_cause": "no_clear_tool_choice_failure",
+            "tool_choice_validation_ok": true,
+            "tool_plan_after_evidence_source": {
+              "_normalization_actions": [
+                "tool_choice_execute_sql"
+              ],
+              "_usage": {
+                "completion_tokens": 268,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1546,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1814
+              },
+              "answer_intent": "DATE",
+              "answer_shape": {
+                "answer_type": "DATE",
+                "answer_value": null
+              },
+              "api_task": {
+                "selected_endpoint": "journey_list",
+                "selected_method": "GET",
+                "selected_path": "/ajo/journey"
+              },
+              "candidate_endpoints": [
+                {
+                  "endpoint_id": "journey_list",
+                  "method": "GET",
+                  "path": "/ajo/journey",
+                  "score": 2
+                },
+                {
+                  "endpoint_id": "schema_registry_schema",
+                  "method": "GET",
+                  "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}",
+                  "score": 1
+                },
+                {
+                  "endpoint_id": "unified_tag_detail",
+                  "method": "GET",
+                  "path": "https://experience.adobe.io/unifiedtags/tags/{tag_id}",
+                  "score": 1
+                }
+              ],
+              "candidate_tables": [
+                "dim_campaign"
+              ],
+              "evidence_source_plan": {
+                "api_endpoints_that_may_answer": [],
+                "api_reason": null,
+                "confidence": 0.98,
+                "local_tables_that_may_answer": [
+                  "dim_campaign"
+                ],
+                "needs_live_api": false,
+                "needs_local_sql": true,
+                "preferred_first_tool": "execute_sql",
+                "question_type": "when_was_a_journey_published",
+                "sql_reason": "The journey 'Birthday Message' is stored in the 'dim_campaign' table, which can be queried to find the publication date."
+              },
+              "needs_api": false,
+              "needs_sql": true,
+              "reason": "The question is asking for a specific date ('Birthday Message') but the available endpoints do not provide direct date information.",
+              "sql_task": null,
+              "tool_choice_validation": {
+                "endpoint_catalog_may_have_misled_model": false,
+                "evidence_source_that_should_have_been_considered": "local_sql_required",
+                "final_tool_choice": "execute_sql",
+                "high_confidence_sql_required": true,
+                "ignored_schema_context": false,
+                "local_schema_has_relevant_tables": true,
+                "ok": true,
+                "plan": {
+                  "api_endpoints_that_may_answer": [],
+                  "api_reason": null,
+                  "confidence": 0.98,
+                  "local_tables_that_may_answer": [
+                    "dim_campaign"
+                  ],
+                  "needs_live_api": false,
+                  "needs_local_sql": true,
+                  "preferred_first_tool": "execute_sql",
+                  "question_type": "when_was_a_journey_published",
+                  "sql_reason": "The journey 'Birthday Message' is stored in the 'dim_campaign' table, which can be queried to find the publication date."
+                },
+                "rejection_reason": null,
+                "top_relevant_api_endpoints": [
+                  "journey_list",
+                  "schema_registry_schema",
+                  "unified_tag_detail"
+                ],
+                "top_relevant_sql_tables": [
+                  "dim_campaign",
+                  "dim_connector",
+                  "dim_blueprint",
+                  "dim_collection",
+                  "dim_segment"
+                ]
+              }
+            },
+            "validation": {
+              "endpoint_catalog_may_have_misled_model": false,
+              "evidence_source_that_should_have_been_considered": "local_sql_required",
+              "final_tool_choice": "execute_sql",
+              "high_confidence_sql_required": true,
+              "ignored_schema_context": false,
+              "local_schema_has_relevant_tables": true,
+              "ok": true,
+              "plan": {
+                "api_endpoints_that_may_answer": [],
+                "api_reason": null,
+                "confidence": 0.98,
+                "local_tables_that_may_answer": [
+                  "dim_campaign"
+                ],
+                "needs_live_api": false,
+                "needs_local_sql": true,
+                "preferred_first_tool": "execute_sql",
+                "question_type": "when_was_a_journey_published",
+                "sql_reason": "The journey 'Birthday Message' is stored in the 'dim_campaign' table, which can be queried to find the publication date."
+              },
+              "rejection_reason": null,
+              "top_relevant_api_endpoints": [
+                "journey_list",
+                "schema_registry_schema",
+                "unified_tag_detail"
+              ],
+              "top_relevant_sql_tables": [
+                "dim_campaign",
+                "dim_connector",
+                "dim_blueprint",
+                "dim_collection",
+                "dim_segment"
+              ]
+            }
+          },
+          {
+            "attempts": [
+              {
+                "ast_summary": {
+                  "closest_column_suggestions": {},
+                  "closest_table_suggestions": {},
+                  "destructive_sql_detected": false,
+                  "enabled": true,
+                  "normalized_sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
+                  "parsed_ok": true,
+                  "selected_columns": [
+                    "UPDATEDTIME",
+                    "dim_campaign.NAME"
+                  ],
+                  "selected_tables": [
+                    "dim_campaign"
+                  ],
+                  "unknown_columns": [],
+                  "unknown_tables": []
+                },
+                "compile": {
+                  "aggregation": "none",
+                  "errors": [],
+                  "filters": [
+                    {
+                      "column": "CAMPAIGNNAME",
+                      "operator": "equals",
+                      "table": "dim_campaign",
+                      "value": "Birthday Message"
+                    }
+                  ],
+                  "join_path": [],
+                  "ok": true,
+                  "selected_columns": [
+                    "UPDATEDTIME"
+                  ],
+                  "selected_tables": [
+                    "dim_campaign"
+                  ],
+                  "sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
+                  "warnings": []
+                },
+                "executed": true,
+                "execution_ok": true,
+                "plan_validation": {
+                  "errors": [],
+                  "ok": true,
+                  "warnings": []
+                },
+                "round": 0,
+                "sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
+                "structured_sql_plan": {
+                  "_usage": {
+                    "completion_tokens": 135,
+                    "completion_tokens_details": null,
+                    "prompt_tokens": 2376,
+                    "prompt_tokens_details": {
+                      "audio_tokens": null,
+                      "cached_tokens": 3
+                    },
+                    "total_tokens": 2511
+                  },
+                  "aggregation": null,
+                  "answer_intent": "DATE",
+                  "columns_needed": [
+                    "UPDATEDTIME"
+                  ],
+                  "confidence": 0.98,
+                  "filters": [
+                    {
+                      "column": "CAMPAIGNNAME",
+                      "operator": "=",
+                      "value": "Birthday Message"
+                    }
+                  ],
+                  "join_needed": false,
+                  "join_path_reason": null,
+                  "limit": null,
+                  "order_by": null,
+                  "primary_entity": "Birthday Message",
+                  "primary_table": "dim_campaign",
+                  "tables_needed": [
+                    "dim_campaign"
+                  ]
+                },
+                "validation": {
+                  "errors": [],
+                  "ok": true,
+                  "repaired": false,
+                  "warnings": []
+                }
+              }
+            ],
+            "kind": "sql_call",
+            "repair_rounds": 0,
+            "result": {
+              "error": null,
+              "limited": false,
+              "ok": true,
+              "row_count": 1,
+              "rows": [
+                {
+                  "UPDATEDTIME": "2026-03-31T06:07:32.838462639Z"
+                }
+              ]
+            },
+            "sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
             "validation": {
               "errors": [],
               "ok": true,
@@ -65050,80 +65419,41 @@
             }
           },
           {
-            "answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
+            "answer": "2026-03-31T06:07:32.838462639Z",
             "answer_guard": {
-              "answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
+              "answer": "2026-03-31T06:07:32.838462639Z",
               "claims": [
                 {
-                  "claim": "The journey 'Birthday Message' was published on a specific date.",
-                  "evidence_field": "metadata.lastModifiedAt",
-                  "evidence_source": "api"
+                  "claim": "The journey 'Birthday Message' was published on 2026-03-31T06:07:32.838462639Z",
+                  "evidence_field": "items",
+                  "evidence_source": "sql"
                 }
               ],
-              "fallback_used": true,
+              "fallback_used": false,
               "llm_usage": {
-                "completion_tokens": 138,
+                "completion_tokens": 121,
                 "completion_tokens_details": null,
-                "prompt_tokens": 332,
+                "prompt_tokens": 217,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 470
+                "total_tokens": 338
               },
-              "rejected_unsupported_claim_count": 2,
-              "rejected_unsupported_claims": [
-                {
-                  "claim_type": "entity",
-                  "value": "Birthday Message"
-                },
-                {
-                  "claim_type": "no_result",
-                  "value": "not found"
-                }
-              ],
+              "rejected_unsupported_claim_count": 0,
+              "rejected_unsupported_claims": [],
               "skipped": false,
               "supported_values": [
-                "/ajo/journey",
-                "0",
-                "100",
-                "200",
-                "False",
-                "GET",
-                "True",
-                "api",
-                "counts",
-                "dry_run",
-                "endpoint",
-                "endpoint_family",
-                "endpoint_id",
-                "error_category",
-                "errors",
-                "evidence_state",
-                "false",
-                "filter",
-                "generic_fallback",
-                "get",
-                "ids",
-                "important_fields",
-                "items",
-                "journey_list",
-                "live_empty",
-                "live_evidence_available",
-                "metadata.lastModifiedAt>2026-05-18",
-                "metadata.lastmodifiedat>2026-05-18",
-                "method",
-                "names",
-                "no matching records",
-                "no records",
-                "ok",
-                "page",
-                "pageSize",
-                "pagesize",
-                "pagination",
-                "parsed_evidence",
-                "parser_mode",
-                "path"
+                "07:32",
+                "1",
+                "2026-03-31T06:07:32.838462639Z",
+                "2026-03-31t06:07:32.838462639z",
+                "UPDATEDTIME",
+                "row_count",
+                "rows",
+                "source",
+                "sql",
+                "updatedtime"
               ],
               "tool_result_used": true,
               "unsupported_claim_count": 0,
@@ -65132,24 +65462,24 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "structured_sql_plan_with_repair_v1",
+        "strategy": "api_only_only_when_sql_unavailable_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
-          "api_endpoint_candidate": "journey_list",
+          "api_endpoint_candidate": null,
           "api_endpoint_repair_attempted": false,
-          "api_endpoint_validation_ok": true,
+          "api_endpoint_validation_ok": false,
           "did_llm_choose_tool": true,
           "did_llm_plan": true,
-          "final_answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
-          "rejected_unsupported_claim_count": 2,
-          "selected_tool": "call_api",
-          "sql_candidate": null,
+          "final_answer": "2026-03-31T06:07:32.838462639Z",
+          "rejected_unsupported_claim_count": 0,
+          "selected_tool": "execute_sql",
+          "sql_candidate": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
           "sql_repair_attempted": false,
           "sql_repair_success": false,
-          "sql_validation_ok": false,
-          "structured_plan_compile_ok": null,
-          "structured_plan_validation_ok": null,
+          "sql_validation_ok": true,
+          "structured_plan_compile_ok": true,
+          "structured_plan_validation_ok": true,
           "tool_execution_ok": true,
           "tool_result_used_in_answer": true,
           "unsupported_claim_count": 0
@@ -65158,642 +65488,24 @@
       },
       "unscored_dimension_count": 1,
       "unsupported_claim_count": 0,
-      "variant": "structured_sql_plan_with_repair_v1"
+      "variant": "api_only_only_when_sql_unavailable_v1"
     },
     {
       "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
-      "answer_score": 0.1795,
-      "api_reason": "Strict API method/path/required-param/call-count score: 0.8300.",
-      "api_score": 0.83,
-      "estimated_tokens": 1128,
-      "failure_stage": "no_clear_failure",
-      "prompt": "Give me inactive journeys",
-      "query_id": "example_001",
-      "runtime": 11.2376,
-      "sql_reason": "No generated SQL while gold SQL exists.",
-      "sql_score": 0.0,
-      "strict_correctness": 0.3028,
-      "strict_final_score": 0.2435,
-      "strict_scoring_status": "available",
-      "system": "structured_sql_plan_with_repair_v1",
-      "tool_calls": 1,
-      "trace_assertions": {
-        "api_endpoint_candidate": "journey_list",
-        "api_endpoint_repair_attempted": false,
-        "api_endpoint_validation_ok": true,
-        "did_llm_choose_tool": true,
-        "did_llm_plan": true,
-        "final_answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
-        "rejected_unsupported_claim_count": 2,
-        "selected_tool": "call_api",
-        "sql_candidate": null,
-        "sql_repair_attempted": false,
-        "sql_repair_success": false,
-        "sql_validation_ok": false,
-        "structured_plan_compile_ok": null,
-        "structured_plan_validation_ok": null,
-        "tool_execution_ok": true,
-        "tool_result_used_in_answer": true,
-        "unsupported_claim_count": 0
-      },
-      "trajectory": {
-        "baseline_variant": "structured_sql_plan_with_repair_v1",
-        "estimated_tokens": 1128,
-        "failure_stage": "no_clear_failure",
-        "final_answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
-        "llm_total_tokens": 1674,
-        "original_query": "Give me inactive journeys",
-        "pure_llm_tool_agent": true,
-        "rejected_unsupported_claim_count": 2,
-        "runtime": 11.237571958918124,
-        "steps": [
-          {
-            "context_summary": {
-              "answer_intent": "STATUS",
-              "endpoint_candidates": [
-                "journey_list"
-              ],
-              "top_tables": [
-                "dim_campaign",
-                "dim_connector",
-                "dim_blueprint",
-                "dim_collection",
-                "dim_segment",
-                "dim_target"
-              ]
-            },
-            "kind": "llm_plan",
-            "plan": {
-              "_normalization_actions": [],
-              "_usage": {
-                "completion_tokens": 270,
-                "completion_tokens_details": null,
-                "prompt_tokens": 1404,
-                "prompt_tokens_details": {
-                  "audio_tokens": null,
-                  "cached_tokens": 3
-                },
-                "total_tokens": 1674
-              },
-              "answer_intent": "STATUS",
-              "answer_shape": {
-                "items": [
-                  {
-                    "column": "UPDATEDTIME",
-                    "value": "inactive"
-                  }
-                ],
-                "total_items": 1
-              },
-              "api_task": {
-                "domains": [
-                  "JOURNEY_CAMPAIGN",
-                  "STATUS_MONITORING"
-                ],
-                "endpoint": "/ajo/journey",
-                "method": "GET",
-                "params": {
-                  "limit": 50,
-                  "start": 0
-                },
-                "task": "Get inactive journeys"
-              },
-              "candidate_endpoints": [
-                {
-                  "common_params": {
-                    "limit": 50,
-                    "start": 0
-                  },
-                  "domains": [
-                    "JOURNEY_CAMPAIGN",
-                    "STATUS_MONITORING"
-                  ],
-                  "endpoint_id": "journey_list",
-                  "method": "GET",
-                  "path": "/ajo/journey",
-                  "score": 2
-                }
-              ],
-              "candidate_tables": [],
-              "needs_api": true,
-              "needs_sql": false,
-              "reason": "The request is to find inactive journeys, which can be achieved through an API call.",
-              "sql_task": null
-            },
-            "raw_plan": {
-              "_usage": {
-                "completion_tokens": 270,
-                "completion_tokens_details": null,
-                "prompt_tokens": 1404,
-                "prompt_tokens_details": {
-                  "audio_tokens": null,
-                  "cached_tokens": 3
-                },
-                "total_tokens": 1674
-              },
-              "answer_intent": "STATUS",
-              "answer_shape": {
-                "items": [
-                  {
-                    "column": "UPDATEDTIME",
-                    "value": "inactive"
-                  }
-                ],
-                "total_items": 1
-              },
-              "api_task": {
-                "domains": [
-                  "JOURNEY_CAMPAIGN",
-                  "STATUS_MONITORING"
-                ],
-                "endpoint": "/ajo/journey",
-                "method": "GET",
-                "params": {
-                  "limit": 50,
-                  "start": 0
-                },
-                "task": "Get inactive journeys"
-              },
-              "candidate_endpoints": [
-                {
-                  "common_params": {
-                    "limit": 50,
-                    "start": 0
-                  },
-                  "domains": [
-                    "JOURNEY_CAMPAIGN",
-                    "STATUS_MONITORING"
-                  ],
-                  "endpoint_id": "journey_list",
-                  "method": "GET",
-                  "path": "/ajo/journey",
-                  "score": 2
-                }
-              ],
-              "candidate_tables": [],
-              "needs_api": true,
-              "needs_sql": false,
-              "reason": "The request is to find inactive journeys, which can be achieved through an API call.",
-              "sql_task": null
-            },
-            "variant": "structured_sql_plan_with_repair_v1"
-          },
-          {
-            "endpoint_candidate": "journey_list",
-            "kind": "api_call",
-            "method": "GET",
-            "params": {
-              "limit": 50,
-              "start": 0
-            },
-            "rejected_candidate": null,
-            "result": {
-              "dry_run": false,
-              "ok": true,
-              "outcome": "live_empty",
-              "status_code": 200
-            },
-            "retry_attempted": false,
-            "url": "/ajo/journey",
-            "validation": {
-              "errors": [],
-              "ok": true,
-              "repaired": false,
-              "warnings": []
-            }
-          },
-          {
-            "answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
-            "answer_guard": {
-              "answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
-              "claims": [
-                {
-                  "claim": "There are no inactive journeys",
-                  "evidence_field": "result_preview.pagination.totalCount",
-                  "evidence_source": "api"
-                }
-              ],
-              "fallback_used": true,
-              "llm_usage": {
-                "completion_tokens": 65,
-                "completion_tokens_details": null,
-                "prompt_tokens": 327,
-                "prompt_tokens_details": {
-                  "audio_tokens": null,
-                  "cached_tokens": 3
-                },
-                "total_tokens": 392
-              },
-              "rejected_unsupported_claim_count": 2,
-              "rejected_unsupported_claims": [
-                {
-                  "claim_type": "status",
-                  "value": "inactive"
-                },
-                {
-                  "claim_type": "no_result",
-                  "value": "not found"
-                }
-              ],
-              "skipped": false,
-              "supported_values": [
-                "/ajo/journey",
-                "0",
-                "100",
-                "200",
-                "False",
-                "GET",
-                "True",
-                "api",
-                "counts",
-                "dry_run",
-                "endpoint",
-                "endpoint_family",
-                "endpoint_id",
-                "error_category",
-                "errors",
-                "evidence_state",
-                "false",
-                "filter",
-                "generic_fallback",
-                "get",
-                "ids",
-                "important_fields",
-                "items",
-                "journey_list",
-                "live_empty",
-                "live_evidence_available",
-                "metadata.lastModifiedAt>2026-05-18",
-                "metadata.lastmodifiedat>2026-05-18",
-                "method",
-                "names",
-                "no matching records",
-                "no records",
-                "ok",
-                "page",
-                "pageSize",
-                "pagesize",
-                "pagination",
-                "parsed_evidence",
-                "parser_mode",
-                "path"
-              ],
-              "tool_result_used": true,
-              "unsupported_claim_count": 0,
-              "unsupported_claims": []
-            },
-            "kind": "final_answer"
-          }
-        ],
-        "strategy": "structured_sql_plan_with_repair_v1",
-        "token_source": "measured_usage_or_estimated",
-        "tool_call_count": 1,
-        "trace_assertions": {
-          "api_endpoint_candidate": "journey_list",
-          "api_endpoint_repair_attempted": false,
-          "api_endpoint_validation_ok": true,
-          "did_llm_choose_tool": true,
-          "did_llm_plan": true,
-          "final_answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
-          "rejected_unsupported_claim_count": 2,
-          "selected_tool": "call_api",
-          "sql_candidate": null,
-          "sql_repair_attempted": false,
-          "sql_repair_success": false,
-          "sql_validation_ok": false,
-          "structured_plan_compile_ok": null,
-          "structured_plan_validation_ok": null,
-          "tool_execution_ok": true,
-          "tool_result_used_in_answer": true,
-          "unsupported_claim_count": 0
-        },
-        "unsupported_claim_count": 0
-      },
-      "unscored_dimension_count": 0,
-      "unsupported_claim_count": 0,
-      "variant": "structured_sql_plan_with_repair_v1"
-    },
-    {
-      "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
-      "answer_score": 0.0261,
-      "api_reason": "Strict API method/path/required-param/call-count score: 0.8300.",
-      "api_score": 0.83,
-      "estimated_tokens": 1063,
-      "failure_stage": "no_clear_failure",
-      "prompt": "List all journeys",
-      "query_id": "example_002",
-      "runtime": 14.0478,
-      "sql_reason": "No generated SQL while gold SQL exists.",
-      "sql_score": 0.0,
-      "strict_correctness": 0.2568,
-      "strict_final_score": 0.1886,
-      "strict_scoring_status": "available",
-      "system": "structured_sql_plan_with_repair_v1",
-      "tool_calls": 1,
-      "trace_assertions": {
-        "api_endpoint_candidate": "journey_list",
-        "api_endpoint_repair_attempted": false,
-        "api_endpoint_validation_ok": true,
-        "did_llm_choose_tool": true,
-        "did_llm_plan": true,
-        "final_answer": "0 journeys found",
-        "rejected_unsupported_claim_count": 0,
-        "selected_tool": "call_api",
-        "sql_candidate": null,
-        "sql_repair_attempted": false,
-        "sql_repair_success": false,
-        "sql_validation_ok": false,
-        "structured_plan_compile_ok": null,
-        "structured_plan_validation_ok": null,
-        "tool_execution_ok": true,
-        "tool_result_used_in_answer": true,
-        "unsupported_claim_count": 0
-      },
-      "trajectory": {
-        "baseline_variant": "structured_sql_plan_with_repair_v1",
-        "estimated_tokens": 1063,
-        "failure_stage": "no_clear_failure",
-        "final_answer": "0 journeys found",
-        "llm_total_tokens": 1848,
-        "original_query": "List all journeys",
-        "pure_llm_tool_agent": true,
-        "rejected_unsupported_claim_count": 0,
-        "runtime": 14.047770124860108,
-        "steps": [
-          {
-            "context_summary": {
-              "answer_intent": "LIST",
-              "endpoint_candidates": [
-                "journey_list",
-                "catalog_batches",
-                "catalog_datasets",
-                "export_batch_failed",
-                "export_batch_files",
-                "flowservice_flows",
-                "merge_policies",
-                "schema_registry_schemas"
-              ],
-              "top_tables": [
-                "dim_campaign",
-                "dim_connector",
-                "dim_blueprint",
-                "dim_collection",
-                "dim_segment",
-                "dim_target"
-              ]
-            },
-            "kind": "llm_plan",
-            "plan": {
-              "_normalization_actions": [],
-              "_usage": {
-                "completion_tokens": 253,
-                "completion_tokens_details": null,
-                "prompt_tokens": 1595,
-                "prompt_tokens_details": {
-                  "audio_tokens": null,
-                  "cached_tokens": 3
-                },
-                "total_tokens": 1848
-              },
-              "answer_intent": "LIST",
-              "answer_shape": {
-                "journeys": [
-                  {
-                    "column": "CAMPAIGNID",
-                    "value": null
-                  },
-                  {
-                    "column": "UPDATEDTIME",
-                    "value": null
-                  },
-                  {
-                    "column": "STARTDATE",
-                    "value": null
-                  },
-                  {
-                    "column": "IMSORGID",
-                    "value": null
-                  }
-                ]
-              },
-              "api_task": {
-                "endpoint": "/ajo/journey",
-                "method": "GET",
-                "path": "/ajo/journey",
-                "score": 2,
-                "task": "GET"
-              },
-              "candidate_endpoints": [
-                {
-                  "endpoint_id": "journey_list",
-                  "method": "GET",
-                  "path": "/ajo/journey",
-                  "score": 2
-                }
-              ],
-              "candidate_tables": [],
-              "needs_api": true,
-              "needs_sql": false,
-              "reason": "The user request is to list all journeys, and the available API endpoint '/ajo/journey' is suitable for this purpose.",
-              "sql_task": null
-            },
-            "raw_plan": {
-              "_usage": {
-                "completion_tokens": 253,
-                "completion_tokens_details": null,
-                "prompt_tokens": 1595,
-                "prompt_tokens_details": {
-                  "audio_tokens": null,
-                  "cached_tokens": 3
-                },
-                "total_tokens": 1848
-              },
-              "answer_intent": "LIST",
-              "answer_shape": {
-                "journeys": [
-                  {
-                    "column": "CAMPAIGNID",
-                    "value": null
-                  },
-                  {
-                    "column": "UPDATEDTIME",
-                    "value": null
-                  },
-                  {
-                    "column": "STARTDATE",
-                    "value": null
-                  },
-                  {
-                    "column": "IMSORGID",
-                    "value": null
-                  }
-                ]
-              },
-              "api_task": {
-                "endpoint": "/ajo/journey",
-                "method": "GET",
-                "path": "/ajo/journey",
-                "score": 2,
-                "task": "GET"
-              },
-              "candidate_endpoints": [
-                {
-                  "endpoint_id": "journey_list",
-                  "method": "GET",
-                  "path": "/ajo/journey",
-                  "score": 2
-                }
-              ],
-              "candidate_tables": [],
-              "needs_api": true,
-              "needs_sql": false,
-              "reason": "The user request is to list all journeys, and the available API endpoint '/ajo/journey' is suitable for this purpose.",
-              "sql_task": null
-            },
-            "variant": "structured_sql_plan_with_repair_v1"
-          },
-          {
-            "endpoint_candidate": "journey_list",
-            "kind": "api_call",
-            "method": "GET",
-            "params": {
-              "limit": 50,
-              "start": 0
-            },
-            "rejected_candidate": null,
-            "result": {
-              "dry_run": false,
-              "ok": true,
-              "outcome": "live_empty",
-              "status_code": 200
-            },
-            "retry_attempted": false,
-            "url": "/ajo/journey",
-            "validation": {
-              "errors": [],
-              "ok": true,
-              "repaired": false,
-              "warnings": []
-            }
-          },
-          {
-            "answer": "0 journeys found",
-            "answer_guard": {
-              "answer": "0 journeys found",
-              "claims": [
-                {
-                  "claim": "No journeys are available",
-                  "evidence_field": "pagination.totalCount",
-                  "evidence_source": "api"
-                }
-              ],
-              "fallback_used": false,
-              "llm_usage": {
-                "completion_tokens": 60,
-                "completion_tokens_details": null,
-                "prompt_tokens": 326,
-                "prompt_tokens_details": {
-                  "audio_tokens": null,
-                  "cached_tokens": 3
-                },
-                "total_tokens": 386
-              },
-              "rejected_unsupported_claim_count": 0,
-              "rejected_unsupported_claims": [],
-              "skipped": false,
-              "supported_values": [
-                "/ajo/journey",
-                "0",
-                "100",
-                "200",
-                "False",
-                "GET",
-                "True",
-                "api",
-                "counts",
-                "dry_run",
-                "endpoint",
-                "endpoint_family",
-                "endpoint_id",
-                "error_category",
-                "errors",
-                "evidence_state",
-                "false",
-                "filter",
-                "generic_fallback",
-                "get",
-                "ids",
-                "important_fields",
-                "items",
-                "journey_list",
-                "live_empty",
-                "live_evidence_available",
-                "metadata.lastModifiedAt>2026-05-18",
-                "metadata.lastmodifiedat>2026-05-18",
-                "method",
-                "names",
-                "no matching records",
-                "no records",
-                "ok",
-                "page",
-                "pageSize",
-                "pagesize",
-                "pagination",
-                "parsed_evidence",
-                "parser_mode",
-                "path"
-              ],
-              "tool_result_used": true,
-              "unsupported_claim_count": 0,
-              "unsupported_claims": []
-            },
-            "kind": "final_answer"
-          }
-        ],
-        "strategy": "structured_sql_plan_with_repair_v1",
-        "token_source": "measured_usage_or_estimated",
-        "tool_call_count": 1,
-        "trace_assertions": {
-          "api_endpoint_candidate": "journey_list",
-          "api_endpoint_repair_attempted": false,
-          "api_endpoint_validation_ok": true,
-          "did_llm_choose_tool": true,
-          "did_llm_plan": true,
-          "final_answer": "0 journeys found",
-          "rejected_unsupported_claim_count": 0,
-          "selected_tool": "call_api",
-          "sql_candidate": null,
-          "sql_repair_attempted": false,
-          "sql_repair_success": false,
-          "sql_validation_ok": false,
-          "structured_plan_compile_ok": null,
-          "structured_plan_validation_ok": null,
-          "tool_execution_ok": true,
-          "tool_result_used_in_answer": true,
-          "unsupported_claim_count": 0
-        },
-        "unsupported_claim_count": 0
-      },
-      "unscored_dimension_count": 0,
-      "unsupported_claim_count": 0,
-      "variant": "structured_sql_plan_with_repair_v1"
-    },
-    {
-      "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
-      "answer_score": 0.2553,
+      "answer_score": 0.1739,
       "api_reason": "No generated API call while gold API exists.",
       "api_score": 0.0,
-      "estimated_tokens": 2482,
+      "estimated_tokens": 3518,
       "failure_stage": "sql_repair_failed",
-      "prompt": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
-      "query_id": "example_003",
-      "runtime": 45.1541,
+      "prompt": "Give me inactive journeys",
+      "query_id": "example_001",
+      "runtime": 41.7073,
       "sql_reason": "No generated SQL while gold SQL exists.",
       "sql_score": 0.0,
-      "strict_correctness": 0.0766,
-      "strict_final_score": -0.0234,
+      "strict_correctness": 0.0522,
+      "strict_final_score": -0.0478,
       "strict_scoring_status": "available",
-      "system": "structured_sql_plan_with_repair_v1",
+      "system": "api_only_only_when_sql_unavailable_v1",
       "tool_calls": 1,
       "trace_assertions": {
         "api_endpoint_candidate": null,
@@ -65815,125 +65527,412 @@
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "structured_sql_plan_with_repair_v1",
-        "estimated_tokens": 2482,
+        "baseline_variant": "api_only_only_when_sql_unavailable_v1",
+        "estimated_tokens": 3518,
         "failure_stage": "sql_repair_failed",
         "final_answer": "The available tool evidence does not contain enough supported data to answer.",
-        "llm_total_tokens": 1904,
-        "original_query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+        "llm_total_tokens": 1674,
+        "original_query": "Give me inactive journeys",
         "pure_llm_tool_agent": true,
         "rejected_unsupported_claim_count": 2,
-        "runtime": 45.15408624988049,
+        "runtime": 41.70729779219255,
         "steps": [
           {
             "context_summary": {
-              "answer_intent": "COUNT",
+              "answer_intent": "STATUS",
               "endpoint_candidates": [
-                "ups_audiences",
-                "merge_policies",
-                "segment_jobs",
-                "export_batch_files",
-                "flowservice_flows",
-                "schemas_short",
-                "segment_definitions",
-                "audit_events"
+                "journey_list"
               ],
               "top_tables": [
-                "dim_segment",
-                "dim_target",
-                "hkg_br_base_segment_used_by_dependent_segment",
                 "dim_campaign",
                 "dim_connector",
-                "dim_blueprint"
+                "dim_blueprint",
+                "dim_collection",
+                "dim_segment",
+                "dim_target"
               ]
             },
             "kind": "llm_plan",
             "plan": {
-              "_normalization_actions": [],
+              "_normalization_actions": [
+                "forced_sql_after_high_confidence_tool_choice_rejection",
+                "tool_choice_execute_sql"
+              ],
               "_usage": {
-                "completion_tokens": 250,
+                "completion_tokens": 270,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1654,
+                "prompt_tokens": 1404,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1904
+                "total_tokens": 1674
               },
-              "answer_intent": "SELECT",
+              "answer_intent": "STATUS",
               "answer_shape": {
-                "columns": [
-                  "SEGMENTID",
-                  "UPDATEDTIME",
-                  "ISACCOUNTSEGMENT"
-                ]
+                "items": [
+                  {
+                    "column": "UPDATEDTIME",
+                    "value": "inactive"
+                  }
+                ],
+                "total_items": 1
               },
-              "api_task": null,
-              "candidate_endpoints": [],
-              "candidate_tables": [
+              "api_task": {
+                "domains": [
+                  "JOURNEY_CAMPAIGN",
+                  "STATUS_MONITORING"
+                ],
+                "endpoint": "/ajo/journey",
+                "method": "GET",
+                "params": {
+                  "limit": 50,
+                  "start": 0
+                },
+                "task": "Get inactive journeys"
+              },
+              "candidate_endpoints": [
                 {
-                  "columns": {
-                    "items": [
-                      "SEGMENTID",
-                      "UPDATEDTIME",
-                      "ISACCOUNTSEGMENT"
-                    ],
-                    "total_items": 14,
-                    "truncated_items": true
+                  "common_params": {
+                    "limit": 50,
+                    "start": 0
                   },
-                  "is_bridge": false,
-                  "score": 18.1,
-                  "table": "dim_segment"
+                  "domains": [
+                    "JOURNEY_CAMPAIGN",
+                    "STATUS_MONITORING"
+                  ],
+                  "endpoint_id": "journey_list",
+                  "method": "GET",
+                  "path": "/ajo/journey",
+                  "score": 2
                 }
               ],
+              "candidate_tables": [],
+              "evidence_source_plan": {
+                "api_endpoints_that_may_answer": [],
+                "api_reason": "",
+                "confidence": 0.0,
+                "local_tables_that_may_answer": [],
+                "needs_live_api": false,
+                "needs_local_sql": false,
+                "preferred_first_tool": "none",
+                "question_type": "unknown",
+                "sql_reason": ""
+              },
               "needs_api": false,
               "needs_sql": true,
-              "reason": "The task requires selecting specific columns from the 'dim_segment' table based on the target 'SMS Opt-In'. The audience details and their usage in other segments are requested.",
-              "sql_task": "SELECT SEGMENTID, UPDATEDTIME, ISACCOUNTSEGMENT FROM dim_segment WHERE DATAFLOWNAME = 'SMS Opt-In' AND STATE = 'ACTIVE' AND ISACCOUNTSEGMENT = 'Y' LIMIT 1000"
+              "reason": "The request is to find inactive journeys, which can be achieved through an API call.",
+              "sql_task": null,
+              "tool_choice_validation": {
+                "endpoint_catalog_may_have_misled_model": false,
+                "evidence_source_that_should_have_been_considered": "local_sql_required",
+                "final_tool_choice": "none",
+                "high_confidence_sql_required": false,
+                "ignored_schema_context": true,
+                "local_schema_has_relevant_tables": true,
+                "ok": false,
+                "plan": {
+                  "api_endpoints_that_may_answer": [],
+                  "api_reason": "",
+                  "confidence": 0.0,
+                  "local_tables_that_may_answer": [],
+                  "needs_live_api": false,
+                  "needs_local_sql": false,
+                  "preferred_first_tool": "none",
+                  "question_type": "unknown",
+                  "sql_reason": ""
+                },
+                "rejection_reason": "tool_required",
+                "top_relevant_api_endpoints": [
+                  "journey_list"
+                ],
+                "top_relevant_sql_tables": [
+                  "dim_campaign",
+                  "dim_connector",
+                  "dim_blueprint",
+                  "dim_collection",
+                  "dim_segment"
+                ]
+              }
             },
             "raw_plan": {
               "_usage": {
-                "completion_tokens": 250,
+                "completion_tokens": 270,
                 "completion_tokens_details": null,
-                "prompt_tokens": 1654,
+                "prompt_tokens": 1404,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1904
+                "total_tokens": 1674
               },
-              "answer_intent": "SELECT",
+              "answer_intent": "STATUS",
               "answer_shape": {
-                "columns": [
-                  "SEGMENTID",
-                  "UPDATEDTIME",
-                  "ISACCOUNTSEGMENT"
-                ]
+                "items": [
+                  {
+                    "column": "UPDATEDTIME",
+                    "value": "inactive"
+                  }
+                ],
+                "total_items": 1
               },
-              "api_task": null,
-              "candidate_endpoints": [],
-              "candidate_tables": [
+              "api_task": {
+                "domains": [
+                  "JOURNEY_CAMPAIGN",
+                  "STATUS_MONITORING"
+                ],
+                "endpoint": "/ajo/journey",
+                "method": "GET",
+                "params": {
+                  "limit": 50,
+                  "start": 0
+                },
+                "task": "Get inactive journeys"
+              },
+              "candidate_endpoints": [
                 {
-                  "columns": {
-                    "items": [
-                      "SEGMENTID",
-                      "UPDATEDTIME",
-                      "ISACCOUNTSEGMENT"
-                    ],
-                    "total_items": 14,
-                    "truncated_items": true
+                  "common_params": {
+                    "limit": 50,
+                    "start": 0
                   },
-                  "is_bridge": false,
-                  "score": 18.1,
-                  "table": "dim_segment"
+                  "domains": [
+                    "JOURNEY_CAMPAIGN",
+                    "STATUS_MONITORING"
+                  ],
+                  "endpoint_id": "journey_list",
+                  "method": "GET",
+                  "path": "/ajo/journey",
+                  "score": 2
                 }
               ],
+              "candidate_tables": [],
+              "needs_api": true,
+              "needs_sql": false,
+              "reason": "The request is to find inactive journeys, which can be achieved through an API call.",
+              "sql_task": null
+            },
+            "variant": "api_only_only_when_sql_unavailable_v1"
+          },
+          {
+            "_usage": {
+              "final": {
+                "completion_tokens": 512,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1794,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 2306
+              },
+              "initial": {
+                "completion_tokens": 113,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1477,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1590
+              }
+            },
+            "final_plan": {
+              "api_endpoints_that_may_answer": [],
+              "api_reason": "",
+              "confidence": 0.0,
+              "local_tables_that_may_answer": [],
+              "needs_live_api": false,
+              "needs_local_sql": false,
+              "preferred_first_tool": "none",
+              "question_type": "unknown",
+              "sql_reason": ""
+            },
+            "final_tool_choice": "none",
+            "initial_plan": {
+              "api_endpoints_that_may_answer": [
+                "/ajo/journey"
+              ],
+              "api_reason": "The endpoint '/ajo/journey' can be used to fetch inactive journeys.",
+              "confidence": 1.0,
+              "local_tables_that_may_answer": [],
+              "needs_live_api": true,
+              "needs_local_sql": false,
+              "preferred_first_tool": "call_api",
+              "question_type": "get inactive journeys",
+              "sql_reason": "No local snapshot entities found to answer the question."
+            },
+            "initial_validation": {
+              "endpoint_catalog_may_have_misled_model": true,
+              "evidence_source_that_should_have_been_considered": "local_sql_required",
+              "final_tool_choice": "call_api",
+              "high_confidence_sql_required": true,
+              "ignored_schema_context": true,
+              "local_schema_has_relevant_tables": true,
+              "ok": false,
+              "plan": {
+                "api_endpoints_that_may_answer": [
+                  "/ajo/journey"
+                ],
+                "api_reason": "The endpoint '/ajo/journey' can be used to fetch inactive journeys.",
+                "confidence": 1.0,
+                "local_tables_that_may_answer": [],
+                "needs_live_api": true,
+                "needs_local_sql": false,
+                "preferred_first_tool": "call_api",
+                "question_type": "get inactive journeys",
+                "sql_reason": "No local snapshot entities found to answer the question."
+              },
+              "rejection_reason": "sql_likely_required_api_chosen",
+              "top_relevant_api_endpoints": [
+                "journey_list"
+              ],
+              "top_relevant_sql_tables": [
+                "dim_campaign",
+                "dim_connector",
+                "dim_blueprint",
+                "dim_collection",
+                "dim_segment"
+              ]
+            },
+            "kind": "evidence_source_plan",
+            "ok": false,
+            "rejection_reason": "tool_required",
+            "retry_used": true,
+            "root_cause": "prompt_intent_misread",
+            "tool_choice_validation_ok": false,
+            "tool_plan_after_evidence_source": {
+              "_normalization_actions": [
+                "forced_sql_after_high_confidence_tool_choice_rejection",
+                "tool_choice_execute_sql"
+              ],
+              "_usage": {
+                "completion_tokens": 270,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1404,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1674
+              },
+              "answer_intent": "STATUS",
+              "answer_shape": {
+                "items": [
+                  {
+                    "column": "UPDATEDTIME",
+                    "value": "inactive"
+                  }
+                ],
+                "total_items": 1
+              },
+              "api_task": {
+                "domains": [
+                  "JOURNEY_CAMPAIGN",
+                  "STATUS_MONITORING"
+                ],
+                "endpoint": "/ajo/journey",
+                "method": "GET",
+                "params": {
+                  "limit": 50,
+                  "start": 0
+                },
+                "task": "Get inactive journeys"
+              },
+              "candidate_endpoints": [
+                {
+                  "common_params": {
+                    "limit": 50,
+                    "start": 0
+                  },
+                  "domains": [
+                    "JOURNEY_CAMPAIGN",
+                    "STATUS_MONITORING"
+                  ],
+                  "endpoint_id": "journey_list",
+                  "method": "GET",
+                  "path": "/ajo/journey",
+                  "score": 2
+                }
+              ],
+              "candidate_tables": [],
+              "evidence_source_plan": {
+                "api_endpoints_that_may_answer": [],
+                "api_reason": "",
+                "confidence": 0.0,
+                "local_tables_that_may_answer": [],
+                "needs_live_api": false,
+                "needs_local_sql": false,
+                "preferred_first_tool": "none",
+                "question_type": "unknown",
+                "sql_reason": ""
+              },
               "needs_api": false,
               "needs_sql": true,
-              "reason": "The task requires selecting specific columns from the 'dim_segment' table based on the target 'SMS Opt-In'. The audience details and their usage in other segments are requested.",
-              "sql_task": "SELECT SEGMENTID, UPDATEDTIME, ISACCOUNTSEGMENT FROM dim_segment WHERE DATAFLOWNAME = 'SMS Opt-In' AND STATE = 'ACTIVE' AND ISACCOUNTSEGMENT = 'Y' LIMIT 1000"
+              "reason": "The request is to find inactive journeys, which can be achieved through an API call.",
+              "sql_task": null,
+              "tool_choice_validation": {
+                "endpoint_catalog_may_have_misled_model": false,
+                "evidence_source_that_should_have_been_considered": "local_sql_required",
+                "final_tool_choice": "none",
+                "high_confidence_sql_required": false,
+                "ignored_schema_context": true,
+                "local_schema_has_relevant_tables": true,
+                "ok": false,
+                "plan": {
+                  "api_endpoints_that_may_answer": [],
+                  "api_reason": "",
+                  "confidence": 0.0,
+                  "local_tables_that_may_answer": [],
+                  "needs_live_api": false,
+                  "needs_local_sql": false,
+                  "preferred_first_tool": "none",
+                  "question_type": "unknown",
+                  "sql_reason": ""
+                },
+                "rejection_reason": "tool_required",
+                "top_relevant_api_endpoints": [
+                  "journey_list"
+                ],
+                "top_relevant_sql_tables": [
+                  "dim_campaign",
+                  "dim_connector",
+                  "dim_blueprint",
+                  "dim_collection",
+                  "dim_segment"
+                ]
+              }
             },
-            "variant": "structured_sql_plan_with_repair_v1"
+            "validation": {
+              "endpoint_catalog_may_have_misled_model": false,
+              "evidence_source_that_should_have_been_considered": "local_sql_required",
+              "final_tool_choice": "none",
+              "high_confidence_sql_required": false,
+              "ignored_schema_context": true,
+              "local_schema_has_relevant_tables": true,
+              "ok": false,
+              "plan": {
+                "api_endpoints_that_may_answer": [],
+                "api_reason": "",
+                "confidence": 0.0,
+                "local_tables_that_may_answer": [],
+                "needs_live_api": false,
+                "needs_local_sql": false,
+                "preferred_first_tool": "none",
+                "question_type": "unknown",
+                "sql_reason": ""
+              },
+              "rejection_reason": "tool_required",
+              "top_relevant_api_endpoints": [
+                "journey_list"
+              ],
+              "top_relevant_sql_tables": [
+                "dim_campaign",
+                "dim_connector",
+                "dim_blueprint",
+                "dim_collection",
+                "dim_segment"
+              ]
+            }
           },
           {
             "attempts": [
@@ -65945,30 +65944,22 @@
                   "aggregation": "none",
                   "alias_suggestions": {},
                   "errors": [
-                    "Unknown column in columns_needed: dim_segment.TARGETID.",
-                    "Unknown column in filters: dim_segment.DATAFLOWNAME.",
-                    "Unsupported filter operator: =.",
-                    "Unsupported join path for tables: dim_segment, dim_target."
+                    "Unknown column in columns_needed: dim_campaign.BLUEPRINTID.",
+                    "Unsupported join path for tables: dim_campaign, dim_blueprint."
                   ],
                   "filters": [
                     {
-                      "column": "ISACCOUNTSEGMENT",
-                      "operator": "=",
-                      "table": "dim_segment",
-                      "value": "Y"
-                    },
-                    {
-                      "column": "DATAFLOWNAME",
-                      "operator": "=",
-                      "table": "dim_segment",
-                      "value": "SMS Opt-In"
+                      "column": "UPDATEDTIME",
+                      "operator": "equals",
+                      "table": "dim_campaign",
+                      "value": "inactive"
                     }
                   ],
                   "join_path": [],
                   "ok": false,
                   "selected_tables": [
-                    "dim_segment",
-                    "dim_target"
+                    "dim_campaign",
+                    "dim_blueprint"
                   ],
                   "sql": "",
                   "warnings": []
@@ -65976,10 +65967,8 @@
                 "executed": false,
                 "plan_validation": {
                   "errors": [
-                    "Unknown column in columns_needed: dim_segment.TARGETID.",
-                    "Unknown column in filters: dim_segment.DATAFLOWNAME.",
-                    "Unsupported filter operator: =.",
-                    "Unsupported join path for tables: dim_segment, dim_target."
+                    "Unknown column in columns_needed: dim_campaign.BLUEPRINTID.",
+                    "Unsupported join path for tables: dim_campaign, dim_blueprint."
                   ],
                   "ok": false,
                   "warnings": []
@@ -65988,53 +65977,49 @@
                 "sql": "",
                 "structured_sql_plan": {
                   "_usage": {
-                    "completion_tokens": 223,
+                    "completion_tokens": 172,
                     "completion_tokens_details": null,
-                    "prompt_tokens": 2039,
+                    "prompt_tokens": 2148,
                     "prompt_tokens_details": {
                       "audio_tokens": null,
                       "cached_tokens": 3
                     },
-                    "total_tokens": 2262
+                    "total_tokens": 2320
                   },
                   "aggregation": null,
-                  "answer_intent": "SELECT",
+                  "answer_intent": "STATUS",
                   "columns_needed": [
-                    "SEGMENTID",
                     "UPDATEDTIME",
-                    "ISACCOUNTSEGMENT",
-                    "TARGETID"
+                    "BLUEPRINTID"
                   ],
                   "confidence": 0.98,
                   "filters": [
                     {
-                      "column": "ISACCOUNTSEGMENT",
+                      "column": "UPDATEDTIME",
                       "operator": "=",
-                      "value": "Y"
-                    },
-                    {
-                      "column": "DATAFLOWNAME",
-                      "operator": "=",
-                      "value": "SMS Opt-In"
+                      "value": "inactive"
                     }
                   ],
                   "join_needed": true,
-                  "join_path_reason": "To filter audiences connected to 'SMS Opt-In' target, join 'dim_segment' and 'dim_target' tables based on 'SEGMENTID' and 'TARGETID' respectively.",
-                  "limit": null,
-                  "order_by": null,
-                  "primary_entity": "SMS Opt-In audience",
-                  "primary_table": "dim_segment",
+                  "join_path_reason": "Curated: Campaign to blueprint bridge.",
+                  "limit": 50,
+                  "order_by": [
+                    {
+                      "column": "UPDATEDTIME",
+                      "order": "ASC"
+                    }
+                  ],
+                  "primary_entity": "inactive journeys",
+                  "primary_table": "dim_campaign",
                   "tables_needed": [
-                    "dim_segment",
-                    "dim_target"
+                    "dim_campaign",
+                    "dim_blueprint"
                   ]
                 },
                 "validation": {
                   "errors": [
-                    "Unknown column in columns_needed: dim_segment.TARGETID.",
-                    "Unknown column in filters: dim_segment.DATAFLOWNAME.",
-                    "Unsupported filter operator: =.",
-                    "Unsupported join path for tables: dim_segment, dim_target."
+                    "Unknown column in columns_needed: dim_campaign.BLUEPRINTID.",
+                    "Unsupported join path for tables: dim_campaign, dim_blueprint."
                   ],
                   "ok": false
                 }
@@ -66047,28 +66032,22 @@
                   "aggregation": "none",
                   "alias_suggestions": {},
                   "errors": [
-                    "Unsupported filter operator: =.",
-                    "Unsupported join path for tables: dim_segment, dim_target."
+                    "Unknown column in columns_needed: dim_campaign.BLUEPRINTID.",
+                    "Unsupported join path for tables: dim_campaign, dim_blueprint."
                   ],
                   "filters": [
                     {
-                      "column": "ISACCOUNTSEGMENT",
-                      "operator": "=",
-                      "table": "",
-                      "value": "Y"
-                    },
-                    {
-                      "column": "DATAFLOWNAME",
-                      "operator": "=",
-                      "table": "",
-                      "value": "SMS Opt-In"
+                      "column": "UPDATEDTIME",
+                      "operator": "equals",
+                      "table": "dim_campaign",
+                      "value": "inactive"
                     }
                   ],
                   "join_path": [],
                   "ok": false,
                   "selected_tables": [
-                    "dim_segment",
-                    "dim_target"
+                    "dim_campaign",
+                    "dim_blueprint"
                   ],
                   "sql": "",
                   "warnings": []
@@ -66076,8 +66055,8 @@
                 "executed": false,
                 "plan_validation": {
                   "errors": [
-                    "Unsupported filter operator: =.",
-                    "Unsupported join path for tables: dim_segment, dim_target."
+                    "Unknown column in columns_needed: dim_campaign.BLUEPRINTID.",
+                    "Unsupported join path for tables: dim_campaign, dim_blueprint."
                   ],
                   "ok": false,
                   "warnings": []
@@ -66086,49 +66065,54 @@
                 "sql": "",
                 "structured_sql_plan": {
                   "_usage": {
-                    "completion_tokens": 277,
+                    "completion_tokens": 219,
                     "completion_tokens_details": null,
-                    "prompt_tokens": 2016,
+                    "prompt_tokens": 1694,
                     "prompt_tokens_details": {
                       "audio_tokens": null,
                       "cached_tokens": 3
                     },
-                    "total_tokens": 2293
+                    "total_tokens": 1913
                   },
                   "aggregation": null,
                   "columns_needed": [
-                    "SEGMENTID",
                     "UPDATEDTIME",
-                    "ISACCOUNTSEGMENT",
-                    "TARGETID"
+                    "BLUEPRINTID"
                   ],
                   "confidence": 0.98,
+                  "error": "Unknown column in columns_needed: dim_campaign.BLUEPRINTID.",
                   "filters": [
                     {
-                      "column": "ISACCOUNTSEGMENT",
+                      "column": "UPDATEDTIME",
                       "operator": "=",
-                      "value": "Y"
-                    },
-                    {
-                      "column": "DATAFLOWNAME",
-                      "operator": "=",
-                      "value": "SMS Opt-In"
+                      "value": "inactive"
                     }
                   ],
                   "join_needed": true,
-                  "join_path_reason": "To filter audiences connected to 'SMS Opt-In' target, join 'dim_segment' and 'dim_target' tables based on 'SEGMENTID' and 'TARGETID' respectively.",
-                  "limit": null,
-                  "order_by": null,
-                  "primary_entity": "SMS Opt-In audience",
+                  "join_path": {
+                    "left_column": "CAMPAIGNID",
+                    "left_table": "dim_campaign",
+                    "right_column": "BLUEPRINTID",
+                    "right_table": "dim_blueprint"
+                  },
+                  "join_path_reason": "Curated: Campaign to blueprint bridge.",
+                  "limit": 50,
+                  "order_by": [
+                    {
+                      "column": "UPDATEDTIME",
+                      "order": "ASC"
+                    }
+                  ],
+                  "primary_table": "dim_campaign",
                   "tables_needed": [
-                    "dim_segment",
-                    "dim_target"
+                    "dim_campaign",
+                    "dim_blueprint"
                   ]
                 },
                 "validation": {
                   "errors": [
-                    "Unsupported filter operator: =.",
-                    "Unsupported join path for tables: dim_segment, dim_target."
+                    "Unknown column in columns_needed: dim_campaign.BLUEPRINTID.",
+                    "Unsupported join path for tables: dim_campaign, dim_blueprint."
                   ],
                   "ok": false
                 }
@@ -66141,37 +66125,19 @@
                   "aggregation": "none",
                   "alias_suggestions": {},
                   "errors": [
-                    "Unsupported filter operator: =.",
-                    "Unsupported join path for tables: dim_segment, dim_target."
+                    "SQL plan must include primary_table or tables_needed."
                   ],
-                  "filters": [
-                    {
-                      "column": "ISACCOUNTSEGMENT",
-                      "operator": "=",
-                      "table": "",
-                      "value": "Y"
-                    },
-                    {
-                      "column": "DATAFLOWNAME",
-                      "operator": "=",
-                      "table": "",
-                      "value": "SMS Opt-In"
-                    }
-                  ],
+                  "filters": [],
                   "join_path": [],
                   "ok": false,
-                  "selected_tables": [
-                    "dim_segment",
-                    "dim_target"
-                  ],
+                  "selected_tables": [],
                   "sql": "",
                   "warnings": []
                 },
                 "executed": false,
                 "plan_validation": {
                   "errors": [
-                    "Unsupported filter operator: =.",
-                    "Unsupported join path for tables: dim_segment, dim_target."
+                    "SQL plan must include primary_table or tables_needed."
                   ],
                   "ok": false,
                   "warnings": []
@@ -66180,49 +66146,19 @@
                 "sql": "",
                 "structured_sql_plan": {
                   "_usage": {
-                    "completion_tokens": 277,
+                    "completion_tokens": 512,
                     "completion_tokens_details": null,
-                    "prompt_tokens": 1972,
+                    "prompt_tokens": 1741,
                     "prompt_tokens_details": {
                       "audio_tokens": null,
-                      "cached_tokens": 141
+                      "cached_tokens": 99
                     },
-                    "total_tokens": 2249
-                  },
-                  "aggregation": null,
-                  "columns_needed": [
-                    "SEGMENTID",
-                    "UPDATEDTIME",
-                    "ISACCOUNTSEGMENT",
-                    "TARGETID"
-                  ],
-                  "confidence": 0.98,
-                  "filters": [
-                    {
-                      "column": "ISACCOUNTSEGMENT",
-                      "operator": "=",
-                      "value": "Y"
-                    },
-                    {
-                      "column": "DATAFLOWNAME",
-                      "operator": "=",
-                      "value": "SMS Opt-In"
-                    }
-                  ],
-                  "join_needed": true,
-                  "join_path_reason": "To filter audiences connected to 'SMS Opt-In' target, join 'dim_segment' and 'dim_target' tables based on 'SEGMENTID' and 'TARGETID' respectively.",
-                  "limit": null,
-                  "order_by": null,
-                  "primary_entity": "SMS Opt-In audience",
-                  "tables_needed": [
-                    "dim_segment",
-                    "dim_target"
-                  ]
+                    "total_tokens": 2253
+                  }
                 },
                 "validation": {
                   "errors": [
-                    "Unsupported filter operator: =.",
-                    "Unsupported join path for tables: dim_segment, dim_target."
+                    "SQL plan must include primary_table or tables_needed."
                   ],
                   "ok": false
                 }
@@ -66234,8 +66170,7 @@
             "sql": "",
             "validation": {
               "errors": [
-                "Unsupported filter operator: =.",
-                "Unsupported join path for tables: dim_segment, dim_target."
+                "SQL plan must include primary_table or tables_needed."
               ],
               "ok": false
             }
@@ -66246,41 +66181,31 @@
               "answer": "The available tool evidence does not contain enough supported data to answer.",
               "claims": [
                 {
-                  "claim": "No segment audiences connected to the destination named 'SMS Opt-In' were found.",
+                  "claim": "There are no inactive journeys",
                   "evidence_field": "items",
-                  "evidence_source": "tool observation"
-                },
-                {
-                  "claim": "The total number of items found is 0.",
-                  "evidence_field": "total_items",
-                  "evidence_source": "tool observation"
-                },
-                {
-                  "claim": "The observation was not truncated.",
-                  "evidence_field": "truncated_items",
-                  "evidence_source": "tool observation"
+                  "evidence_source": "inactive journeys"
                 }
               ],
               "fallback_used": true,
               "llm_usage": {
-                "completion_tokens": 170,
+                "completion_tokens": 61,
                 "completion_tokens_details": null,
-                "prompt_tokens": 162,
+                "prompt_tokens": 120,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 332
+                "total_tokens": 181
               },
               "rejected_unsupported_claim_count": 2,
               "rejected_unsupported_claims": [
                 {
-                  "claim_type": "entity",
-                  "value": "SMS Opt-In"
+                  "claim_type": "status",
+                  "value": "inactive"
                 },
                 {
                   "claim_type": "no_result",
-                  "value": "no segment audiences connected to the destination named 'sms opt-in' were found"
+                  "value": "no inactive journeys found"
                 }
               ],
               "skipped": false,
@@ -66292,7 +66217,7 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "structured_sql_plan_with_repair_v1",
+        "strategy": "api_only_only_when_sql_unavailable_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
@@ -66318,24 +66243,1502 @@
       },
       "unscored_dimension_count": 0,
       "unsupported_claim_count": 0,
-      "variant": "structured_sql_plan_with_repair_v1"
+      "variant": "api_only_only_when_sql_unavailable_v1"
+    },
+    {
+      "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+      "answer_score": 0.1009,
+      "api_reason": "No generated API call while gold API exists.",
+      "api_score": 0.0,
+      "estimated_tokens": 3171,
+      "failure_stage": "no_clear_failure",
+      "prompt": "List all journeys",
+      "query_id": "example_002",
+      "runtime": 27.335,
+      "sql_reason": "Strict SQL mismatch.",
+      "sql_score": 0.0,
+      "strict_correctness": 0.0303,
+      "strict_final_score": -0.0697,
+      "strict_scoring_status": "available",
+      "system": "api_only_only_when_sql_unavailable_v1",
+      "tool_calls": 1,
+      "trace_assertions": {
+        "api_endpoint_candidate": null,
+        "api_endpoint_repair_attempted": false,
+        "api_endpoint_validation_ok": false,
+        "did_llm_choose_tool": true,
+        "did_llm_plan": true,
+        "final_answer": "The request was to list all journeys, but the observation indicates that the data is truncated or the dataset is empty.",
+        "rejected_unsupported_claim_count": 0,
+        "selected_tool": "execute_sql",
+        "sql_candidate": "SELECT \"CAMPAIGNID\", \"UPDATEDTIME\", \"STARTDATE\", \"IMSORGID\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"CAMPAIGNID\" = NULL LIMIT 50",
+        "sql_repair_attempted": false,
+        "sql_repair_success": false,
+        "sql_validation_ok": true,
+        "structured_plan_compile_ok": true,
+        "structured_plan_validation_ok": true,
+        "tool_execution_ok": true,
+        "tool_result_used_in_answer": true,
+        "unsupported_claim_count": 0
+      },
+      "trajectory": {
+        "baseline_variant": "api_only_only_when_sql_unavailable_v1",
+        "estimated_tokens": 3171,
+        "failure_stage": "no_clear_failure",
+        "final_answer": "The request was to list all journeys, but the observation indicates that the data is truncated or the dataset is empty.",
+        "llm_total_tokens": 1848,
+        "original_query": "List all journeys",
+        "pure_llm_tool_agent": true,
+        "rejected_unsupported_claim_count": 0,
+        "runtime": 27.33503874996677,
+        "steps": [
+          {
+            "context_summary": {
+              "answer_intent": "LIST",
+              "endpoint_candidates": [
+                "journey_list",
+                "catalog_batches",
+                "catalog_datasets",
+                "export_batch_failed",
+                "export_batch_files",
+                "flowservice_flows",
+                "merge_policies",
+                "schema_registry_schemas"
+              ],
+              "top_tables": [
+                "dim_campaign",
+                "dim_connector",
+                "dim_blueprint",
+                "dim_collection",
+                "dim_segment",
+                "dim_target"
+              ]
+            },
+            "kind": "llm_plan",
+            "plan": {
+              "_normalization_actions": [
+                "forced_sql_after_high_confidence_tool_choice_rejection",
+                "tool_choice_execute_sql"
+              ],
+              "_usage": {
+                "completion_tokens": 253,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1595,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1848
+              },
+              "answer_intent": "LIST",
+              "answer_shape": {
+                "journeys": [
+                  {
+                    "column": "CAMPAIGNID",
+                    "value": null
+                  },
+                  {
+                    "column": "UPDATEDTIME",
+                    "value": null
+                  },
+                  {
+                    "column": "STARTDATE",
+                    "value": null
+                  },
+                  {
+                    "column": "IMSORGID",
+                    "value": null
+                  }
+                ]
+              },
+              "api_task": {
+                "endpoint": "/ajo/journey",
+                "method": "GET",
+                "path": "/ajo/journey",
+                "score": 2,
+                "task": "GET"
+              },
+              "candidate_endpoints": [
+                {
+                  "endpoint_id": "journey_list",
+                  "method": "GET",
+                  "path": "/ajo/journey",
+                  "score": 2
+                }
+              ],
+              "candidate_tables": [],
+              "evidence_source_plan": {
+                "api_endpoints_that_may_answer": [],
+                "api_reason": "",
+                "confidence": 0.0,
+                "local_tables_that_may_answer": [],
+                "needs_live_api": false,
+                "needs_local_sql": false,
+                "preferred_first_tool": "none",
+                "question_type": "unknown",
+                "sql_reason": ""
+              },
+              "needs_api": false,
+              "needs_sql": true,
+              "reason": "The user request is to list all journeys, and the available API endpoint '/ajo/journey' is suitable for this purpose.",
+              "sql_task": null,
+              "tool_choice_validation": {
+                "endpoint_catalog_may_have_misled_model": false,
+                "evidence_source_that_should_have_been_considered": "local_sql_required",
+                "final_tool_choice": "none",
+                "high_confidence_sql_required": false,
+                "ignored_schema_context": true,
+                "local_schema_has_relevant_tables": true,
+                "ok": false,
+                "plan": {
+                  "api_endpoints_that_may_answer": [],
+                  "api_reason": "",
+                  "confidence": 0.0,
+                  "local_tables_that_may_answer": [],
+                  "needs_live_api": false,
+                  "needs_local_sql": false,
+                  "preferred_first_tool": "none",
+                  "question_type": "unknown",
+                  "sql_reason": ""
+                },
+                "rejection_reason": "tool_required",
+                "top_relevant_api_endpoints": [
+                  "journey_list",
+                  "catalog_batches",
+                  "catalog_datasets",
+                  "export_batch_failed",
+                  "export_batch_files"
+                ],
+                "top_relevant_sql_tables": [
+                  "dim_campaign",
+                  "dim_connector",
+                  "dim_blueprint",
+                  "dim_collection",
+                  "dim_segment"
+                ]
+              }
+            },
+            "raw_plan": {
+              "_usage": {
+                "completion_tokens": 253,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1595,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1848
+              },
+              "answer_intent": "LIST",
+              "answer_shape": {
+                "journeys": [
+                  {
+                    "column": "CAMPAIGNID",
+                    "value": null
+                  },
+                  {
+                    "column": "UPDATEDTIME",
+                    "value": null
+                  },
+                  {
+                    "column": "STARTDATE",
+                    "value": null
+                  },
+                  {
+                    "column": "IMSORGID",
+                    "value": null
+                  }
+                ]
+              },
+              "api_task": {
+                "endpoint": "/ajo/journey",
+                "method": "GET",
+                "path": "/ajo/journey",
+                "score": 2,
+                "task": "GET"
+              },
+              "candidate_endpoints": [
+                {
+                  "endpoint_id": "journey_list",
+                  "method": "GET",
+                  "path": "/ajo/journey",
+                  "score": 2
+                }
+              ],
+              "candidate_tables": [],
+              "needs_api": true,
+              "needs_sql": false,
+              "reason": "The user request is to list all journeys, and the available API endpoint '/ajo/journey' is suitable for this purpose.",
+              "sql_task": null
+            },
+            "variant": "api_only_only_when_sql_unavailable_v1"
+          },
+          {
+            "_usage": {
+              "final": {
+                "completion_tokens": 512,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1995,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 2507
+              },
+              "initial": {
+                "completion_tokens": 183,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1668,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1851
+              }
+            },
+            "final_plan": {
+              "api_endpoints_that_may_answer": [],
+              "api_reason": "",
+              "confidence": 0.0,
+              "local_tables_that_may_answer": [],
+              "needs_live_api": false,
+              "needs_local_sql": false,
+              "preferred_first_tool": "none",
+              "question_type": "unknown",
+              "sql_reason": ""
+            },
+            "final_tool_choice": "none",
+            "initial_plan": {
+              "api_endpoints_that_may_answer": [
+                "journey_list"
+              ],
+              "api_reason": "Explicitly needs a live API call for journeys.",
+              "confidence": 1.0,
+              "local_tables_that_may_answer": [],
+              "needs_live_api": true,
+              "needs_local_sql": false,
+              "preferred_first_tool": "call_api",
+              "question_type": "list_journeys",
+              "sql_reason": "No local snapshot entities found for journeys."
+            },
+            "initial_validation": {
+              "endpoint_catalog_may_have_misled_model": true,
+              "evidence_source_that_should_have_been_considered": "local_sql_required",
+              "final_tool_choice": "call_api",
+              "high_confidence_sql_required": true,
+              "ignored_schema_context": true,
+              "local_schema_has_relevant_tables": true,
+              "ok": false,
+              "plan": {
+                "api_endpoints_that_may_answer": [
+                  "journey_list"
+                ],
+                "api_reason": "Explicitly needs a live API call for journeys.",
+                "confidence": 1.0,
+                "local_tables_that_may_answer": [],
+                "needs_live_api": true,
+                "needs_local_sql": false,
+                "preferred_first_tool": "call_api",
+                "question_type": "list_journeys",
+                "sql_reason": "No local snapshot entities found for journeys."
+              },
+              "rejection_reason": "sql_likely_required_api_chosen",
+              "top_relevant_api_endpoints": [
+                "journey_list",
+                "catalog_batches",
+                "catalog_datasets",
+                "export_batch_failed",
+                "export_batch_files"
+              ],
+              "top_relevant_sql_tables": [
+                "dim_campaign",
+                "dim_connector",
+                "dim_blueprint",
+                "dim_collection",
+                "dim_segment"
+              ]
+            },
+            "kind": "evidence_source_plan",
+            "ok": false,
+            "rejection_reason": "tool_required",
+            "retry_used": true,
+            "root_cause": "prompt_intent_misread",
+            "tool_choice_validation_ok": false,
+            "tool_plan_after_evidence_source": {
+              "_normalization_actions": [
+                "forced_sql_after_high_confidence_tool_choice_rejection",
+                "tool_choice_execute_sql"
+              ],
+              "_usage": {
+                "completion_tokens": 253,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1595,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1848
+              },
+              "answer_intent": "LIST",
+              "answer_shape": {
+                "journeys": [
+                  {
+                    "column": "CAMPAIGNID",
+                    "value": null
+                  },
+                  {
+                    "column": "UPDATEDTIME",
+                    "value": null
+                  },
+                  {
+                    "column": "STARTDATE",
+                    "value": null
+                  },
+                  {
+                    "column": "IMSORGID",
+                    "value": null
+                  }
+                ]
+              },
+              "api_task": {
+                "endpoint": "/ajo/journey",
+                "method": "GET",
+                "path": "/ajo/journey",
+                "score": 2,
+                "task": "GET"
+              },
+              "candidate_endpoints": [
+                {
+                  "endpoint_id": "journey_list",
+                  "method": "GET",
+                  "path": "/ajo/journey",
+                  "score": 2
+                }
+              ],
+              "candidate_tables": [],
+              "evidence_source_plan": {
+                "api_endpoints_that_may_answer": [],
+                "api_reason": "",
+                "confidence": 0.0,
+                "local_tables_that_may_answer": [],
+                "needs_live_api": false,
+                "needs_local_sql": false,
+                "preferred_first_tool": "none",
+                "question_type": "unknown",
+                "sql_reason": ""
+              },
+              "needs_api": false,
+              "needs_sql": true,
+              "reason": "The user request is to list all journeys, and the available API endpoint '/ajo/journey' is suitable for this purpose.",
+              "sql_task": null,
+              "tool_choice_validation": {
+                "endpoint_catalog_may_have_misled_model": false,
+                "evidence_source_that_should_have_been_considered": "local_sql_required",
+                "final_tool_choice": "none",
+                "high_confidence_sql_required": false,
+                "ignored_schema_context": true,
+                "local_schema_has_relevant_tables": true,
+                "ok": false,
+                "plan": {
+                  "api_endpoints_that_may_answer": [],
+                  "api_reason": "",
+                  "confidence": 0.0,
+                  "local_tables_that_may_answer": [],
+                  "needs_live_api": false,
+                  "needs_local_sql": false,
+                  "preferred_first_tool": "none",
+                  "question_type": "unknown",
+                  "sql_reason": ""
+                },
+                "rejection_reason": "tool_required",
+                "top_relevant_api_endpoints": [
+                  "journey_list",
+                  "catalog_batches",
+                  "catalog_datasets",
+                  "export_batch_failed",
+                  "export_batch_files"
+                ],
+                "top_relevant_sql_tables": [
+                  "dim_campaign",
+                  "dim_connector",
+                  "dim_blueprint",
+                  "dim_collection",
+                  "dim_segment"
+                ]
+              }
+            },
+            "validation": {
+              "endpoint_catalog_may_have_misled_model": false,
+              "evidence_source_that_should_have_been_considered": "local_sql_required",
+              "final_tool_choice": "none",
+              "high_confidence_sql_required": false,
+              "ignored_schema_context": true,
+              "local_schema_has_relevant_tables": true,
+              "ok": false,
+              "plan": {
+                "api_endpoints_that_may_answer": [],
+                "api_reason": "",
+                "confidence": 0.0,
+                "local_tables_that_may_answer": [],
+                "needs_live_api": false,
+                "needs_local_sql": false,
+                "preferred_first_tool": "none",
+                "question_type": "unknown",
+                "sql_reason": ""
+              },
+              "rejection_reason": "tool_required",
+              "top_relevant_api_endpoints": [
+                "journey_list",
+                "catalog_batches",
+                "catalog_datasets",
+                "export_batch_failed",
+                "export_batch_files"
+              ],
+              "top_relevant_sql_tables": [
+                "dim_campaign",
+                "dim_connector",
+                "dim_blueprint",
+                "dim_collection",
+                "dim_segment"
+              ]
+            }
+          },
+          {
+            "attempts": [
+              {
+                "ast_summary": {
+                  "closest_column_suggestions": {},
+                  "closest_table_suggestions": {},
+                  "destructive_sql_detected": false,
+                  "enabled": true,
+                  "normalized_sql": "SELECT \"CAMPAIGNID\", \"UPDATEDTIME\", \"STARTDATE\", \"IMSORGID\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"CAMPAIGNID\" = NULL LIMIT 50",
+                  "parsed_ok": true,
+                  "selected_columns": [
+                    "CAMPAIGNID",
+                    "UPDATEDTIME",
+                    "STARTDATE",
+                    "IMSORGID",
+                    "dim_campaign.CAMPAIGNID"
+                  ],
+                  "selected_tables": [
+                    "dim_campaign"
+                  ],
+                  "unknown_columns": [],
+                  "unknown_tables": []
+                },
+                "compile": {
+                  "aggregation": "none",
+                  "errors": [],
+                  "filters": [
+                    {
+                      "column": "CAMPAIGNID",
+                      "operator": "equals",
+                      "table": "dim_campaign",
+                      "value": null
+                    }
+                  ],
+                  "join_path": [],
+                  "ok": true,
+                  "selected_columns": [
+                    "CAMPAIGNID",
+                    "UPDATEDTIME",
+                    "STARTDATE",
+                    "IMSORGID"
+                  ],
+                  "selected_tables": [
+                    "dim_campaign"
+                  ],
+                  "sql": "SELECT \"CAMPAIGNID\", \"UPDATEDTIME\", \"STARTDATE\", \"IMSORGID\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"CAMPAIGNID\" = NULL LIMIT 50",
+                  "warnings": []
+                },
+                "executed": true,
+                "execution_ok": true,
+                "plan_validation": {
+                  "errors": [],
+                  "ok": true,
+                  "warnings": []
+                },
+                "round": 0,
+                "sql": "SELECT \"CAMPAIGNID\", \"UPDATEDTIME\", \"STARTDATE\", \"IMSORGID\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"CAMPAIGNID\" = NULL LIMIT 50",
+                "structured_sql_plan": {
+                  "_usage": {
+                    "completion_tokens": 151,
+                    "completion_tokens_details": null,
+                    "prompt_tokens": 2344,
+                    "prompt_tokens_details": {
+                      "audio_tokens": null,
+                      "cached_tokens": 3
+                    },
+                    "total_tokens": 2495
+                  },
+                  "aggregation": null,
+                  "answer_intent": "LIST",
+                  "columns_needed": [
+                    "CAMPAIGNID",
+                    "UPDATEDTIME",
+                    "STARTDATE",
+                    "IMSORGID"
+                  ],
+                  "confidence": 2,
+                  "filters": [
+                    {
+                      "column": "CAMPAIGNID",
+                      "operator": "=",
+                      "value": null
+                    }
+                  ],
+                  "join_needed": false,
+                  "join_path_reason": null,
+                  "limit": 50,
+                  "order_by": null,
+                  "primary_entity": "journeys",
+                  "primary_table": "dim_campaign",
+                  "tables_needed": [
+                    "dim_campaign"
+                  ]
+                },
+                "validation": {
+                  "errors": [],
+                  "ok": true,
+                  "repaired": false,
+                  "warnings": []
+                }
+              }
+            ],
+            "kind": "sql_call",
+            "repair_rounds": 0,
+            "result": {
+              "error": null,
+              "limited": false,
+              "ok": true,
+              "row_count": 0,
+              "rows": []
+            },
+            "sql": "SELECT \"CAMPAIGNID\", \"UPDATEDTIME\", \"STARTDATE\", \"IMSORGID\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"CAMPAIGNID\" = NULL LIMIT 50",
+            "validation": {
+              "errors": [],
+              "ok": true,
+              "repaired": false,
+              "warnings": []
+            }
+          },
+          {
+            "answer": "The request was to list all journeys, but the observation indicates that the data is truncated or the dataset is empty.",
+            "answer_guard": {
+              "answer": "The request was to list all journeys, but the observation indicates that the data is truncated or the dataset is empty.",
+              "claims": [
+                {
+                  "claim": "There are no journeys available.",
+                  "evidence_field": "row_count",
+                  "evidence_source": "sql"
+                }
+              ],
+              "fallback_used": false,
+              "llm_usage": {
+                "completion_tokens": 114,
+                "completion_tokens_details": null,
+                "prompt_tokens": 140,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 254
+              },
+              "rejected_unsupported_claim_count": 0,
+              "rejected_unsupported_claims": [],
+              "skipped": false,
+              "supported_values": [
+                "0",
+                "row_count",
+                "rows",
+                "source",
+                "sql"
+              ],
+              "tool_result_used": true,
+              "unsupported_claim_count": 0,
+              "unsupported_claims": []
+            },
+            "kind": "final_answer"
+          }
+        ],
+        "strategy": "api_only_only_when_sql_unavailable_v1",
+        "token_source": "measured_usage_or_estimated",
+        "tool_call_count": 1,
+        "trace_assertions": {
+          "api_endpoint_candidate": null,
+          "api_endpoint_repair_attempted": false,
+          "api_endpoint_validation_ok": false,
+          "did_llm_choose_tool": true,
+          "did_llm_plan": true,
+          "final_answer": "The request was to list all journeys, but the observation indicates that the data is truncated or the dataset is empty.",
+          "rejected_unsupported_claim_count": 0,
+          "selected_tool": "execute_sql",
+          "sql_candidate": "SELECT \"CAMPAIGNID\", \"UPDATEDTIME\", \"STARTDATE\", \"IMSORGID\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"CAMPAIGNID\" = NULL LIMIT 50",
+          "sql_repair_attempted": false,
+          "sql_repair_success": false,
+          "sql_validation_ok": true,
+          "structured_plan_compile_ok": true,
+          "structured_plan_validation_ok": true,
+          "tool_execution_ok": true,
+          "tool_result_used_in_answer": true,
+          "unsupported_claim_count": 0
+        },
+        "unsupported_claim_count": 0
+      },
+      "unscored_dimension_count": 0,
+      "unsupported_claim_count": 0,
+      "variant": "api_only_only_when_sql_unavailable_v1"
+    },
+    {
+      "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+      "answer_score": 0.2553,
+      "api_reason": "No generated API call while gold API exists.",
+      "api_score": 0.0,
+      "estimated_tokens": 4362,
+      "failure_stage": "tool_result_ignored",
+      "prompt": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+      "query_id": "example_003",
+      "runtime": 38.765,
+      "sql_reason": "Strict semantic result match.",
+      "sql_score": 0.9,
+      "strict_correctness": 0.4366,
+      "strict_final_score": 0.3366,
+      "strict_scoring_status": "available",
+      "system": "api_only_only_when_sql_unavailable_v1",
+      "tool_calls": 1,
+      "trace_assertions": {
+        "api_endpoint_candidate": null,
+        "api_endpoint_repair_attempted": false,
+        "api_endpoint_validation_ok": false,
+        "did_llm_choose_tool": true,
+        "did_llm_plan": true,
+        "final_answer": "The available tool evidence does not contain enough supported data to answer.",
+        "rejected_unsupported_claim_count": 2,
+        "selected_tool": "execute_sql",
+        "sql_candidate": "SELECT \"SEGMENTID\", \"UPDATEDTIME\", \"ISACCOUNTSEGMENT\" FROM \"dim_segment\" WHERE \"dim_segment\".\"ISACCOUNTSEGMENT\" = 'Y' AND \"dim_segment\".\"UPDATEDTIME\" = NULL LIMIT 50",
+        "sql_repair_attempted": true,
+        "sql_repair_success": true,
+        "sql_validation_ok": true,
+        "structured_plan_compile_ok": true,
+        "structured_plan_validation_ok": true,
+        "tool_execution_ok": true,
+        "tool_result_used_in_answer": false,
+        "unsupported_claim_count": 0
+      },
+      "trajectory": {
+        "baseline_variant": "api_only_only_when_sql_unavailable_v1",
+        "estimated_tokens": 4362,
+        "failure_stage": "tool_result_ignored",
+        "final_answer": "The available tool evidence does not contain enough supported data to answer.",
+        "llm_total_tokens": 1904,
+        "original_query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+        "pure_llm_tool_agent": true,
+        "rejected_unsupported_claim_count": 2,
+        "runtime": 38.76503483392298,
+        "steps": [
+          {
+            "context_summary": {
+              "answer_intent": "COUNT",
+              "endpoint_candidates": [
+                "ups_audiences",
+                "merge_policies",
+                "segment_jobs",
+                "export_batch_files",
+                "flowservice_flows",
+                "schemas_short",
+                "segment_definitions",
+                "audit_events"
+              ],
+              "top_tables": [
+                "dim_segment",
+                "dim_target",
+                "hkg_br_base_segment_used_by_dependent_segment",
+                "dim_campaign",
+                "dim_connector",
+                "dim_blueprint"
+              ]
+            },
+            "kind": "llm_plan",
+            "plan": {
+              "_normalization_actions": [
+                "forced_sql_after_high_confidence_tool_choice_rejection",
+                "tool_choice_execute_sql"
+              ],
+              "_usage": {
+                "completion_tokens": 250,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1654,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1904
+              },
+              "answer_intent": "SELECT",
+              "answer_shape": {
+                "columns": [
+                  "SEGMENTID",
+                  "UPDATEDTIME",
+                  "ISACCOUNTSEGMENT"
+                ]
+              },
+              "api_task": null,
+              "candidate_endpoints": [],
+              "candidate_tables": [
+                {
+                  "columns": {
+                    "items": [
+                      "SEGMENTID",
+                      "UPDATEDTIME",
+                      "ISACCOUNTSEGMENT"
+                    ],
+                    "total_items": 14,
+                    "truncated_items": true
+                  },
+                  "is_bridge": false,
+                  "score": 18.1,
+                  "table": "dim_segment"
+                }
+              ],
+              "evidence_source_plan": {
+                "api_endpoints_that_may_answer": [],
+                "api_reason": "",
+                "confidence": 0.0,
+                "local_tables_that_may_answer": [],
+                "needs_live_api": false,
+                "needs_local_sql": false,
+                "preferred_first_tool": "none",
+                "question_type": "unknown",
+                "sql_reason": ""
+              },
+              "needs_api": false,
+              "needs_sql": true,
+              "reason": "The task requires selecting specific columns from the 'dim_segment' table based on the target 'SMS Opt-In'. The audience details and their usage in other segments are requested.",
+              "sql_task": "SELECT SEGMENTID, UPDATEDTIME, ISACCOUNTSEGMENT FROM dim_segment WHERE DATAFLOWNAME = 'SMS Opt-In' AND STATE = 'ACTIVE' AND ISACCOUNTSEGMENT = 'Y' LIMIT 1000",
+              "tool_choice_validation": {
+                "endpoint_catalog_may_have_misled_model": false,
+                "evidence_source_that_should_have_been_considered": "local_sql_required",
+                "final_tool_choice": "none",
+                "high_confidence_sql_required": false,
+                "ignored_schema_context": true,
+                "local_schema_has_relevant_tables": true,
+                "ok": false,
+                "plan": {
+                  "api_endpoints_that_may_answer": [],
+                  "api_reason": "",
+                  "confidence": 0.0,
+                  "local_tables_that_may_answer": [],
+                  "needs_live_api": false,
+                  "needs_local_sql": false,
+                  "preferred_first_tool": "none",
+                  "question_type": "unknown",
+                  "sql_reason": ""
+                },
+                "rejection_reason": "tool_required",
+                "top_relevant_api_endpoints": [
+                  "ups_audiences",
+                  "merge_policies",
+                  "segment_jobs",
+                  "export_batch_files",
+                  "flowservice_flows"
+                ],
+                "top_relevant_sql_tables": [
+                  "dim_segment",
+                  "dim_target",
+                  "hkg_br_base_segment_used_by_dependent_segment",
+                  "dim_campaign",
+                  "dim_connector"
+                ]
+              }
+            },
+            "raw_plan": {
+              "_usage": {
+                "completion_tokens": 250,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1654,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1904
+              },
+              "answer_intent": "SELECT",
+              "answer_shape": {
+                "columns": [
+                  "SEGMENTID",
+                  "UPDATEDTIME",
+                  "ISACCOUNTSEGMENT"
+                ]
+              },
+              "api_task": null,
+              "candidate_endpoints": [],
+              "candidate_tables": [
+                {
+                  "columns": {
+                    "items": [
+                      "SEGMENTID",
+                      "UPDATEDTIME",
+                      "ISACCOUNTSEGMENT"
+                    ],
+                    "total_items": 14,
+                    "truncated_items": true
+                  },
+                  "is_bridge": false,
+                  "score": 18.1,
+                  "table": "dim_segment"
+                }
+              ],
+              "needs_api": false,
+              "needs_sql": true,
+              "reason": "The task requires selecting specific columns from the 'dim_segment' table based on the target 'SMS Opt-In'. The audience details and their usage in other segments are requested.",
+              "sql_task": "SELECT SEGMENTID, UPDATEDTIME, ISACCOUNTSEGMENT FROM dim_segment WHERE DATAFLOWNAME = 'SMS Opt-In' AND STATE = 'ACTIVE' AND ISACCOUNTSEGMENT = 'Y' LIMIT 1000"
+            },
+            "variant": "api_only_only_when_sql_unavailable_v1"
+          },
+          {
+            "_usage": {
+              "final": {
+                "completion_tokens": 512,
+                "completion_tokens_details": null,
+                "prompt_tokens": 2073,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 2585
+              },
+              "initial": {
+                "completion_tokens": 139,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1727,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1866
+              }
+            },
+            "final_plan": {
+              "api_endpoints_that_may_answer": [],
+              "api_reason": "",
+              "confidence": 0.0,
+              "local_tables_that_may_answer": [],
+              "needs_live_api": false,
+              "needs_local_sql": false,
+              "preferred_first_tool": "none",
+              "question_type": "unknown",
+              "sql_reason": ""
+            },
+            "final_tool_choice": "none",
+            "initial_plan": {
+              "api_endpoints_that_may_answer": [
+                "ups_audiences"
+              ],
+              "api_reason": "The API is needed to fetch the required audience information.",
+              "confidence": 1.0,
+              "local_tables_that_may_answer": [],
+              "needs_live_api": true,
+              "needs_local_sql": false,
+              "preferred_first_tool": "call_api",
+              "question_type": "list_segment_audiences",
+              "sql_reason": "No local snapshot entities can answer the question."
+            },
+            "initial_validation": {
+              "endpoint_catalog_may_have_misled_model": true,
+              "evidence_source_that_should_have_been_considered": "local_sql_required",
+              "final_tool_choice": "call_api",
+              "high_confidence_sql_required": true,
+              "ignored_schema_context": true,
+              "local_schema_has_relevant_tables": true,
+              "ok": false,
+              "plan": {
+                "api_endpoints_that_may_answer": [
+                  "ups_audiences"
+                ],
+                "api_reason": "The API is needed to fetch the required audience information.",
+                "confidence": 1.0,
+                "local_tables_that_may_answer": [],
+                "needs_live_api": true,
+                "needs_local_sql": false,
+                "preferred_first_tool": "call_api",
+                "question_type": "list_segment_audiences",
+                "sql_reason": "No local snapshot entities can answer the question."
+              },
+              "rejection_reason": "sql_likely_required_api_chosen",
+              "top_relevant_api_endpoints": [
+                "ups_audiences",
+                "merge_policies",
+                "segment_jobs",
+                "export_batch_files",
+                "flowservice_flows"
+              ],
+              "top_relevant_sql_tables": [
+                "dim_segment",
+                "dim_target",
+                "hkg_br_base_segment_used_by_dependent_segment",
+                "dim_campaign",
+                "dim_connector"
+              ]
+            },
+            "kind": "evidence_source_plan",
+            "ok": false,
+            "rejection_reason": "tool_required",
+            "retry_used": true,
+            "root_cause": "prompt_intent_misread",
+            "tool_choice_validation_ok": false,
+            "tool_plan_after_evidence_source": {
+              "_normalization_actions": [
+                "forced_sql_after_high_confidence_tool_choice_rejection",
+                "tool_choice_execute_sql"
+              ],
+              "_usage": {
+                "completion_tokens": 250,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1654,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1904
+              },
+              "answer_intent": "SELECT",
+              "answer_shape": {
+                "columns": [
+                  "SEGMENTID",
+                  "UPDATEDTIME",
+                  "ISACCOUNTSEGMENT"
+                ]
+              },
+              "api_task": null,
+              "candidate_endpoints": [],
+              "candidate_tables": [
+                {
+                  "columns": {
+                    "items": [
+                      "SEGMENTID",
+                      "UPDATEDTIME",
+                      "ISACCOUNTSEGMENT"
+                    ],
+                    "total_items": 14,
+                    "truncated_items": true
+                  },
+                  "is_bridge": false,
+                  "score": 18.1,
+                  "table": "dim_segment"
+                }
+              ],
+              "evidence_source_plan": {
+                "api_endpoints_that_may_answer": [],
+                "api_reason": "",
+                "confidence": 0.0,
+                "local_tables_that_may_answer": [],
+                "needs_live_api": false,
+                "needs_local_sql": false,
+                "preferred_first_tool": "none",
+                "question_type": "unknown",
+                "sql_reason": ""
+              },
+              "needs_api": false,
+              "needs_sql": true,
+              "reason": "The task requires selecting specific columns from the 'dim_segment' table based on the target 'SMS Opt-In'. The audience details and their usage in other segments are requested.",
+              "sql_task": "SELECT SEGMENTID, UPDATEDTIME, ISACCOUNTSEGMENT FROM dim_segment WHERE DATAFLOWNAME = 'SMS Opt-In' AND STATE = 'ACTIVE' AND ISACCOUNTSEGMENT = 'Y' LIMIT 1000",
+              "tool_choice_validation": {
+                "endpoint_catalog_may_have_misled_model": false,
+                "evidence_source_that_should_have_been_considered": "local_sql_required",
+                "final_tool_choice": "none",
+                "high_confidence_sql_required": false,
+                "ignored_schema_context": true,
+                "local_schema_has_relevant_tables": true,
+                "ok": false,
+                "plan": {
+                  "api_endpoints_that_may_answer": [],
+                  "api_reason": "",
+                  "confidence": 0.0,
+                  "local_tables_that_may_answer": [],
+                  "needs_live_api": false,
+                  "needs_local_sql": false,
+                  "preferred_first_tool": "none",
+                  "question_type": "unknown",
+                  "sql_reason": ""
+                },
+                "rejection_reason": "tool_required",
+                "top_relevant_api_endpoints": [
+                  "ups_audiences",
+                  "merge_policies",
+                  "segment_jobs",
+                  "export_batch_files",
+                  "flowservice_flows"
+                ],
+                "top_relevant_sql_tables": [
+                  "dim_segment",
+                  "dim_target",
+                  "hkg_br_base_segment_used_by_dependent_segment",
+                  "dim_campaign",
+                  "dim_connector"
+                ]
+              }
+            },
+            "validation": {
+              "endpoint_catalog_may_have_misled_model": false,
+              "evidence_source_that_should_have_been_considered": "local_sql_required",
+              "final_tool_choice": "none",
+              "high_confidence_sql_required": false,
+              "ignored_schema_context": true,
+              "local_schema_has_relevant_tables": true,
+              "ok": false,
+              "plan": {
+                "api_endpoints_that_may_answer": [],
+                "api_reason": "",
+                "confidence": 0.0,
+                "local_tables_that_may_answer": [],
+                "needs_live_api": false,
+                "needs_local_sql": false,
+                "preferred_first_tool": "none",
+                "question_type": "unknown",
+                "sql_reason": ""
+              },
+              "rejection_reason": "tool_required",
+              "top_relevant_api_endpoints": [
+                "ups_audiences",
+                "merge_policies",
+                "segment_jobs",
+                "export_batch_files",
+                "flowservice_flows"
+              ],
+              "top_relevant_sql_tables": [
+                "dim_segment",
+                "dim_target",
+                "hkg_br_base_segment_used_by_dependent_segment",
+                "dim_campaign",
+                "dim_connector"
+              ]
+            }
+          },
+          {
+            "attempts": [
+              {
+                "ast_summary": {
+                  "parse_error": "empty_sql"
+                },
+                "compile": {
+                  "aggregation": "none",
+                  "alias_suggestions": {},
+                  "errors": [
+                    "Bridge table cannot be primary answer table: dim_target.",
+                    "Unknown column in columns_needed: dim_target.ISACCOUNTSEGMENT.",
+                    "Unknown column in columns_needed: dim_target.SEGMENTID.",
+                    "Unknown column in filters: dim_target.ISACCOUNTSEGMENT.",
+                    "Unsupported join path for tables: dim_target, dim_segment."
+                  ],
+                  "filters": [
+                    {
+                      "column": "DATAFLOWNAME",
+                      "operator": "equals",
+                      "table": "dim_target",
+                      "value": "'SMS Opt-In'"
+                    },
+                    {
+                      "column": "STATE",
+                      "operator": "equals",
+                      "table": "dim_target",
+                      "value": "ACTIVE"
+                    },
+                    {
+                      "column": "ISACCOUNTSEGMENT",
+                      "operator": "equals",
+                      "table": "dim_target",
+                      "value": "Y"
+                    }
+                  ],
+                  "join_path": [],
+                  "ok": false,
+                  "selected_tables": [
+                    "dim_target",
+                    "dim_segment"
+                  ],
+                  "sql": "",
+                  "warnings": []
+                },
+                "executed": false,
+                "plan_validation": {
+                  "errors": [
+                    "Bridge table cannot be primary answer table: dim_target.",
+                    "Unknown column in columns_needed: dim_target.ISACCOUNTSEGMENT.",
+                    "Unknown column in columns_needed: dim_target.SEGMENTID.",
+                    "Unknown column in filters: dim_target.ISACCOUNTSEGMENT.",
+                    "Unsupported join path for tables: dim_target, dim_segment."
+                  ],
+                  "ok": false,
+                  "warnings": []
+                },
+                "round": 0,
+                "sql": "",
+                "structured_sql_plan": {
+                  "_usage": {
+                    "completion_tokens": 194,
+                    "completion_tokens_details": null,
+                    "prompt_tokens": 2411,
+                    "prompt_tokens_details": {
+                      "audio_tokens": null,
+                      "cached_tokens": 3
+                    },
+                    "total_tokens": 2605
+                  },
+                  "aggregation": null,
+                  "answer_intent": "SELECT",
+                  "columns_needed": [
+                    "SEGMENTID",
+                    "UPDATEDTIME",
+                    "ISACCOUNTSEGMENT"
+                  ],
+                  "confidence": 0.98,
+                  "filters": [
+                    {
+                      "column": "DATAFLOWNAME",
+                      "value": "'SMS Opt-In'"
+                    },
+                    {
+                      "column": "STATE",
+                      "value": "ACTIVE"
+                    },
+                    {
+                      "column": "ISACCOUNTSEGMENT",
+                      "value": "Y"
+                    }
+                  ],
+                  "join_needed": true,
+                  "join_path_reason": "Curated: Segment to target bridge.",
+                  "limit": null,
+                  "order_by": null,
+                  "primary_entity": "SMS Opt-In",
+                  "primary_table": "dim_target",
+                  "tables_needed": [
+                    "dim_target",
+                    "dim_segment"
+                  ]
+                },
+                "validation": {
+                  "errors": [
+                    "Bridge table cannot be primary answer table: dim_target.",
+                    "Unknown column in columns_needed: dim_target.ISACCOUNTSEGMENT.",
+                    "Unknown column in columns_needed: dim_target.SEGMENTID.",
+                    "Unknown column in filters: dim_target.ISACCOUNTSEGMENT.",
+                    "Unsupported join path for tables: dim_target, dim_segment."
+                  ],
+                  "ok": false
+                }
+              },
+              {
+                "ast_summary": {
+                  "parse_error": "empty_sql"
+                },
+                "compile": {
+                  "aggregation": "none",
+                  "alias_suggestions": {},
+                  "errors": [
+                    "Unsupported join path for tables: dim_target, dim_segment."
+                  ],
+                  "filters": [
+                    {
+                      "column": "DATAFLOWNAME",
+                      "operator": "equals",
+                      "table": "",
+                      "value": "'SMS Opt-In'"
+                    },
+                    {
+                      "column": "STATE",
+                      "operator": "equals",
+                      "table": "",
+                      "value": "ACTIVE"
+                    },
+                    {
+                      "column": "ISACCOUNTSEGMENT",
+                      "operator": "equals",
+                      "table": "",
+                      "value": "Y"
+                    }
+                  ],
+                  "join_path": [],
+                  "ok": false,
+                  "selected_tables": [
+                    "dim_target",
+                    "dim_segment"
+                  ],
+                  "sql": "",
+                  "warnings": []
+                },
+                "executed": false,
+                "plan_validation": {
+                  "errors": [
+                    "Unsupported join path for tables: dim_target, dim_segment."
+                  ],
+                  "ok": false,
+                  "warnings": []
+                },
+                "round": 1,
+                "sql": "",
+                "structured_sql_plan": {
+                  "_usage": {
+                    "completion_tokens": 248,
+                    "completion_tokens_details": null,
+                    "prompt_tokens": 2009,
+                    "prompt_tokens_details": {
+                      "audio_tokens": null,
+                      "cached_tokens": 3
+                    },
+                    "total_tokens": 2257
+                  },
+                  "aggregation": null,
+                  "columns_needed": [
+                    "SEGMENTID",
+                    "UPDATEDTIME",
+                    "ISACCOUNTSEGMENT"
+                  ],
+                  "confidence": 0.98,
+                  "filters": [
+                    {
+                      "column": "DATAFLOWNAME",
+                      "value": "'SMS Opt-In'"
+                    },
+                    {
+                      "column": "STATE",
+                      "value": "ACTIVE"
+                    },
+                    {
+                      "column": "ISACCOUNTSEGMENT",
+                      "value": "Y"
+                    }
+                  ],
+                  "join_needed": true,
+                  "join_path_reason": "Curated: Segment to target bridge.",
+                  "limit": null,
+                  "order_by": null,
+                  "primary_entity": "SMS Opt-In",
+                  "tables_needed": [
+                    "dim_target",
+                    "dim_segment"
+                  ]
+                },
+                "validation": {
+                  "errors": [
+                    "Unsupported join path for tables: dim_target, dim_segment."
+                  ],
+                  "ok": false
+                }
+              },
+              {
+                "ast_summary": {
+                  "closest_column_suggestions": {},
+                  "closest_table_suggestions": {},
+                  "destructive_sql_detected": false,
+                  "enabled": true,
+                  "normalized_sql": "SELECT \"SEGMENTID\", \"UPDATEDTIME\", \"ISACCOUNTSEGMENT\" FROM \"dim_segment\" WHERE \"dim_segment\".\"ISACCOUNTSEGMENT\" = 'Y' AND \"dim_segment\".\"UPDATEDTIME\" = NULL LIMIT 50",
+                  "parsed_ok": true,
+                  "selected_columns": [
+                    "SEGMENTID",
+                    "UPDATEDTIME",
+                    "ISACCOUNTSEGMENT",
+                    "dim_segment.ISACCOUNTSEGMENT",
+                    "dim_segment.UPDATEDTIME"
+                  ],
+                  "selected_tables": [
+                    "dim_segment"
+                  ],
+                  "unknown_columns": [],
+                  "unknown_tables": []
+                },
+                "compile": {
+                  "aggregation": "none",
+                  "errors": [],
+                  "filters": [
+                    {
+                      "column": "ISACCOUNTSEGMENT",
+                      "operator": "equals",
+                      "table": "dim_segment",
+                      "value": "Y"
+                    },
+                    {
+                      "column": "UPDATEDTIME",
+                      "operator": "equals",
+                      "table": "dim_segment",
+                      "value": null
+                    }
+                  ],
+                  "join_path": [],
+                  "ok": true,
+                  "selected_columns": [
+                    "SEGMENTID",
+                    "UPDATEDTIME",
+                    "ISACCOUNTSEGMENT"
+                  ],
+                  "selected_tables": [
+                    "dim_segment"
+                  ],
+                  "sql": "SELECT \"SEGMENTID\", \"UPDATEDTIME\", \"ISACCOUNTSEGMENT\" FROM \"dim_segment\" WHERE \"dim_segment\".\"ISACCOUNTSEGMENT\" = 'Y' AND \"dim_segment\".\"UPDATEDTIME\" = NULL LIMIT 50",
+                  "warnings": []
+                },
+                "executed": true,
+                "execution_ok": true,
+                "plan_validation": {
+                  "errors": [],
+                  "ok": true,
+                  "warnings": []
+                },
+                "round": 2,
+                "sql": "SELECT \"SEGMENTID\", \"UPDATEDTIME\", \"ISACCOUNTSEGMENT\" FROM \"dim_segment\" WHERE \"dim_segment\".\"ISACCOUNTSEGMENT\" = 'Y' AND \"dim_segment\".\"UPDATEDTIME\" = NULL LIMIT 50",
+                "structured_sql_plan": {
+                  "_usage": {
+                    "completion_tokens": 206,
+                    "completion_tokens_details": null,
+                    "prompt_tokens": 1935,
+                    "prompt_tokens_details": {
+                      "audio_tokens": null,
+                      "cached_tokens": 141
+                    },
+                    "total_tokens": 2141
+                  },
+                  "aggregation": null,
+                  "columns_needed": [
+                    "SEGMENTID",
+                    "UPDATEDTIME",
+                    "ISACCOUNTSEGMENT"
+                  ],
+                  "confidence": 0.98,
+                  "filters": [
+                    {
+                      "column": "ISACCOUNTSEGMENT",
+                      "value": "Y"
+                    },
+                    {
+                      "column": "UPDATEDTIME",
+                      "value": null
+                    }
+                  ],
+                  "join_needed": false,
+                  "limit": null,
+                  "order_by": null,
+                  "primary_entity": "SMS Opt-In",
+                  "tables_needed": [
+                    "dim_segment"
+                  ]
+                },
+                "validation": {
+                  "errors": [],
+                  "ok": true,
+                  "repaired": false,
+                  "warnings": []
+                }
+              }
+            ],
+            "kind": "sql_call",
+            "repair_rounds": 2,
+            "result": {
+              "error": null,
+              "limited": false,
+              "ok": true,
+              "row_count": 0,
+              "rows": []
+            },
+            "sql": "SELECT \"SEGMENTID\", \"UPDATEDTIME\", \"ISACCOUNTSEGMENT\" FROM \"dim_segment\" WHERE \"dim_segment\".\"ISACCOUNTSEGMENT\" = 'Y' AND \"dim_segment\".\"UPDATEDTIME\" = NULL LIMIT 50",
+            "validation": {
+              "errors": [],
+              "ok": true,
+              "repaired": false,
+              "warnings": []
+            }
+          },
+          {
+            "answer": "The available tool evidence does not contain enough supported data to answer.",
+            "answer_guard": {
+              "answer": "The available tool evidence does not contain enough supported data to answer.",
+              "claims": [
+                {
+                  "claim": "There are no segment audiences connected to the destination named 'SMS Opt-In'.",
+                  "evidence_field": "items",
+                  "evidence_source": "sql"
+                }
+              ],
+              "fallback_used": true,
+              "llm_usage": {
+                "completion_tokens": 178,
+                "completion_tokens_details": null,
+                "prompt_tokens": 183,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 361
+              },
+              "rejected_unsupported_claim_count": 2,
+              "rejected_unsupported_claims": [
+                {
+                  "claim_type": "entity",
+                  "value": "SMS Opt-In"
+                },
+                {
+                  "claim_type": "no_result",
+                  "value": "zero rows"
+                }
+              ],
+              "skipped": false,
+              "supported_values": [
+                "0",
+                "row_count",
+                "rows",
+                "source",
+                "sql"
+              ],
+              "tool_result_used": false,
+              "unsupported_claim_count": 0,
+              "unsupported_claims": []
+            },
+            "kind": "final_answer"
+          }
+        ],
+        "strategy": "api_only_only_when_sql_unavailable_v1",
+        "token_source": "measured_usage_or_estimated",
+        "tool_call_count": 1,
+        "trace_assertions": {
+          "api_endpoint_candidate": null,
+          "api_endpoint_repair_attempted": false,
+          "api_endpoint_validation_ok": false,
+          "did_llm_choose_tool": true,
+          "did_llm_plan": true,
+          "final_answer": "The available tool evidence does not contain enough supported data to answer.",
+          "rejected_unsupported_claim_count": 2,
+          "selected_tool": "execute_sql",
+          "sql_candidate": "SELECT \"SEGMENTID\", \"UPDATEDTIME\", \"ISACCOUNTSEGMENT\" FROM \"dim_segment\" WHERE \"dim_segment\".\"ISACCOUNTSEGMENT\" = 'Y' AND \"dim_segment\".\"UPDATEDTIME\" = NULL LIMIT 50",
+          "sql_repair_attempted": true,
+          "sql_repair_success": true,
+          "sql_validation_ok": true,
+          "structured_plan_compile_ok": true,
+          "structured_plan_validation_ok": true,
+          "tool_execution_ok": true,
+          "tool_result_used_in_answer": false,
+          "unsupported_claim_count": 0
+        },
+        "unsupported_claim_count": 0
+      },
+      "unscored_dimension_count": 0,
+      "unsupported_claim_count": 0,
+      "variant": "api_only_only_when_sql_unavailable_v1"
     },
     {
       "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
       "answer_score": 0.2029,
       "api_reason": "No gold API supplied; API dimension unscored in strict mode.",
       "api_score": null,
-      "estimated_tokens": 2065,
+      "estimated_tokens": 3250,
       "failure_stage": "no_clear_failure",
       "prompt": "Show me the IDs of failed dataflow runs",
       "query_id": "example_004",
-      "runtime": 22.074,
+      "runtime": 28.9871,
       "sql_reason": "No generated SQL while gold SQL exists.",
       "sql_score": 0.0,
       "strict_correctness": 0.087,
       "strict_final_score": -0.013,
       "strict_scoring_status": "available",
-      "system": "structured_sql_plan_with_repair_v1",
+      "system": "api_only_only_when_sql_unavailable_v1",
       "tool_calls": 1,
       "trace_assertions": {
         "api_endpoint_candidate": "flowservice_runs",
@@ -66357,15 +67760,15 @@
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "structured_sql_plan_with_repair_v1",
-        "estimated_tokens": 2065,
+        "baseline_variant": "api_only_only_when_sql_unavailable_v1",
+        "estimated_tokens": 3250,
         "failure_stage": "no_clear_failure",
         "final_answer": "The IDs of failed dataflow runs are as follows:",
         "llm_total_tokens": 1860,
         "original_query": "Show me the IDs of failed dataflow runs",
         "pure_llm_tool_agent": true,
         "rejected_unsupported_claim_count": 0,
-        "runtime": 22.073993708007038,
+        "runtime": 28.987102624960244,
         "steps": [
           {
             "context_summary": {
@@ -66387,7 +67790,9 @@
             },
             "kind": "llm_plan",
             "plan": {
-              "_normalization_actions": [],
+              "_normalization_actions": [
+                "tool_choice_validation_rejected:unresolved_api_path_param"
+              ],
               "_usage": {
                 "completion_tokens": 260,
                 "completion_tokens_details": null,
@@ -66489,7 +67894,190 @@
               "reason": "The user request is to show IDs of failed dataflow runs, which can be achieved through an API call.",
               "sql_task": null
             },
-            "variant": "structured_sql_plan_with_repair_v1"
+            "variant": "api_only_only_when_sql_unavailable_v1"
+          },
+          {
+            "_usage": {
+              "final": {
+                "completion_tokens": 420,
+                "completion_tokens_details": null,
+                "prompt_tokens": 2017,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 2437
+              },
+              "initial": {
+                "completion_tokens": 119,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1673,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1792
+              }
+            },
+            "final_plan": {
+              "api_endpoints_that_may_answer": [
+                "export_batch_failed"
+              ],
+              "api_reason": "The API endpoint 'export_batch_failed' can be used to fetch failed dataflow runs.",
+              "confidence": 1.0,
+              "local_tables_that_may_answer": [],
+              "needs_live_api": true,
+              "needs_local_sql": false,
+              "preferred_first_tool": "execute_sql",
+              "question_type": "show_failed_dataflow_runs",
+              "sql_reason": "No local snapshot entities found that can answer the question."
+            },
+            "final_tool_choice": "execute_sql",
+            "initial_plan": {
+              "api_endpoints_that_may_answer": [
+                "export_batch_failed"
+              ],
+              "api_reason": "The API endpoint 'export_batch_failed' can be used to fetch failed dataflow runs.",
+              "confidence": 1.0,
+              "local_tables_that_may_answer": [],
+              "needs_live_api": true,
+              "needs_local_sql": false,
+              "preferred_first_tool": "call_api",
+              "question_type": "show_failed_dataflow_runs",
+              "sql_reason": "No local snapshot entities found that can answer the question."
+            },
+            "initial_validation": {
+              "endpoint_catalog_may_have_misled_model": true,
+              "evidence_source_that_should_have_been_considered": "unclear",
+              "final_tool_choice": "call_api",
+              "high_confidence_sql_required": false,
+              "ignored_schema_context": true,
+              "local_schema_has_relevant_tables": true,
+              "ok": false,
+              "plan": {
+                "api_endpoints_that_may_answer": [
+                  "export_batch_failed"
+                ],
+                "api_reason": "The API endpoint 'export_batch_failed' can be used to fetch failed dataflow runs.",
+                "confidence": 1.0,
+                "local_tables_that_may_answer": [],
+                "needs_live_api": true,
+                "needs_local_sql": false,
+                "preferred_first_tool": "call_api",
+                "question_type": "show_failed_dataflow_runs",
+                "sql_reason": "No local snapshot entities found that can answer the question."
+              },
+              "rejection_reason": "unresolved_api_path_param",
+              "top_relevant_api_endpoints": [
+                "flowservice_runs",
+                "audit_events",
+                "export_batch_failed",
+                "flowservice_flows"
+              ],
+              "top_relevant_sql_tables": [
+                "dim_campaign",
+                "dim_connector",
+                "dim_blueprint",
+                "dim_collection",
+                "dim_segment"
+              ]
+            },
+            "kind": "evidence_source_plan",
+            "ok": false,
+            "rejection_reason": "unresolved_api_path_param",
+            "retry_used": true,
+            "root_cause": "endpoint_catalog_overselected",
+            "tool_choice_validation_ok": false,
+            "tool_plan_after_evidence_source": {
+              "_normalization_actions": [
+                "tool_choice_validation_rejected:unresolved_api_path_param"
+              ],
+              "_usage": {
+                "completion_tokens": 260,
+                "completion_tokens_details": null,
+                "prompt_tokens": 1600,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 3
+                },
+                "total_tokens": 1860
+              },
+              "answer_intent": "LIST",
+              "answer_shape": {
+                "items": [
+                  {
+                    "DATAFLOWNAME": null,
+                    "STATE": null,
+                    "UPDATEDTIME": null
+                  }
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              },
+              "api_task": {
+                "method": "GET",
+                "parameters": {
+                  "batch_id": null
+                },
+                "path": "/data/foundation/export/batches/{batch_id}/failed",
+                "score": 1,
+                "task": "export_batch_failed"
+              },
+              "candidate_endpoints": [
+                {
+                  "domains": [
+                    "DATASET_SCHEMA",
+                    "STATUS_MONITORING",
+                    "UNKNOWN"
+                  ],
+                  "endpoint_id": "export_batch_failed",
+                  "method": "GET",
+                  "path": "/data/foundation/export/batches/{batch_id}/failed",
+                  "score": 1
+                }
+              ],
+              "candidate_tables": [],
+              "needs_api": true,
+              "needs_sql": false,
+              "reason": "The user request is to show IDs of failed dataflow runs, which can be achieved through an API call.",
+              "sql_task": null
+            },
+            "validation": {
+              "endpoint_catalog_may_have_misled_model": false,
+              "evidence_source_that_should_have_been_considered": "unclear",
+              "final_tool_choice": "execute_sql",
+              "high_confidence_sql_required": false,
+              "ignored_schema_context": true,
+              "local_schema_has_relevant_tables": true,
+              "ok": false,
+              "plan": {
+                "api_endpoints_that_may_answer": [
+                  "export_batch_failed"
+                ],
+                "api_reason": "The API endpoint 'export_batch_failed' can be used to fetch failed dataflow runs.",
+                "confidence": 1.0,
+                "local_tables_that_may_answer": [],
+                "needs_live_api": true,
+                "needs_local_sql": false,
+                "preferred_first_tool": "execute_sql",
+                "question_type": "show_failed_dataflow_runs",
+                "sql_reason": "No local snapshot entities found that can answer the question."
+              },
+              "rejection_reason": "unresolved_api_path_param",
+              "top_relevant_api_endpoints": [
+                "flowservice_runs",
+                "audit_events",
+                "export_batch_failed",
+                "flowservice_flows"
+              ],
+              "top_relevant_sql_tables": [
+                "dim_campaign",
+                "dim_connector",
+                "dim_blueprint",
+                "dim_collection",
+                "dim_segment"
+              ]
+            }
           },
           {
             "endpoint_candidate": "flowservice_runs",
@@ -66504,7 +68092,7 @@
               "params": {
                 "batch_id": null
               },
-              "reason": "This endpoint is suitable for listing failed dataflow runs by providing a batch ID, which is not required for the request but is a common practice for filtering data."
+              "reason": "This endpoint is suitable for listing failed dataflow runs by providing a batch_id parameter, which is not required for the request but can be used to filter results."
             },
             "result": {
               "dry_run": false,
@@ -66527,76 +68115,76 @@
               "answer": "The IDs of failed dataflow runs are as follows:",
               "claims": [
                 {
-                  "claim": "The ID of the failed dataflow run is a1f62e88-138d-4e6b-bf6b-b058775e649e",
-                  "evidence_field": "items",
+                  "claim": "The ID of the failed dataflow run is 289b373f-5d0d-4f6c-b570-0cc4caca11d0",
+                  "evidence_field": "parsed_evidence.errors.items",
                   "evidence_source": "api"
                 },
                 {
-                  "claim": "The ID of the failed dataflow run is 6799ddfe-2c35-440f-aa86-9bbc270ea6aa",
-                  "evidence_field": "items",
+                  "claim": "The ID of the failed dataflow run is b806fc55-f524-4822-ae1d-a2d28b7e6647",
+                  "evidence_field": "parsed_evidence.errors.items",
                   "evidence_source": "api"
                 },
                 {
-                  "claim": "The ID of the failed dataflow run is 91e95a01-b455-4231-b5c9-6d0402d25918",
-                  "evidence_field": "items",
+                  "claim": "The ID of the failed dataflow run is c77bb7a7-47cf-4deb-9b9a-a3ca2c034945",
+                  "evidence_field": "parsed_evidence.errors.items",
                   "evidence_source": "api"
                 }
               ],
               "fallback_used": false,
               "llm_usage": {
-                "completion_tokens": 290,
+                "completion_tokens": 313,
                 "completion_tokens_details": null,
-                "prompt_tokens": 785,
+                "prompt_tokens": 782,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1075
+                "total_tokens": 1095
               },
               "rejected_unsupported_claim_count": 0,
               "rejected_unsupported_claims": [],
               "skipped": false,
               "supported_values": [
-                "\"d9030e3a-0000-0200-0000-6a14ade10000\"",
-                "\"d9032637-0000-0200-0000-6a14adb80000\"",
-                "\"d9032b3b-0000-0200-0000-6a14adf70000\"",
-                "\"d903563c-0000-0200-0000-6a14ae120000\"",
-                "\"d9035a38-0000-0200-0000-6a14adc20000\"",
-                "\"d9035a5d-0000-0200-0000-6a14b0a30000\"",
-                "\"d903689a-0000-0200-0000-6a14b1160000\"",
-                "\"d90374cd-0000-0200-0000-6a14b1300000\"",
-                "\"d9037ed1-0000-0200-0000-6a14b1320000\"",
-                "\"d90383f9-0000-0200-0000-6a14b1470000\"",
-                "\"d903943a-0000-0200-0000-6a14aded0000\"",
-                "\"d903a0d5-0000-0200-0000-6a14b1340000\"",
-                "\"d903d438-0000-0200-0000-6a14add00000\"",
-                "\"d903d839-0000-0200-0000-6a14addd0000\"",
-                "\"d903ea3c-0000-0200-0000-6a14ae1e0000\"",
-                "\"d903efa5-0000-0200-0000-6a14b11c0000\"",
-                "\"da030fbb-0000-0200-0000-6a14b88c0000\"",
-                "\"da03167c-0000-0200-0000-6a14b4b40000\"",
-                "\"da0316b8-0000-0200-0000-6a14b84b0000\"",
-                "\"da03237b-0000-0200-0000-6a14b4980000\"",
-                "\"da03257d-0000-0200-0000-6a14b4c80000\"",
-                "\"da0334bb-0000-0200-0000-6a14b8900000\"",
-                "\"da033775-0000-0200-0000-6a14b4210000\"",
-                "\"da033eb5-0000-0200-0000-6a14b8150000\"",
-                "\"da033eb6-0000-0200-0000-6a14b82b0000\"",
-                "\"da0346b8-0000-0200-0000-6a14b84f0000\"",
-                "\"da03477f-0000-0200-0000-6a14b4f40000\"",
-                "\"da034d7c-0000-0200-0000-6a14b4b80000\"",
-                "\"da035350-0000-0200-0000-6a14b19c0000\"",
-                "\"da035936-0000-0200-0000-6a14b1650000\"",
-                "\"da03597e-0000-0200-0000-6a14b4dd0000\"",
-                "\"da035fba-0000-0200-0000-6a14b8800000\"",
-                "\"da03707b-0000-0200-0000-6a14b4a20000\"",
-                "\"da0372b8-0000-0200-0000-6a14b8530000\"",
-                "\"da03767a-0000-0200-0000-6a14b48a0000\"",
-                "\"da0389b7-0000-0200-0000-6a14b8410000\"",
-                "\"da038cb5-0000-0200-0000-6a14b81b0000\"",
-                "\"da038e53-0000-0200-0000-6a14b1c20000\"",
-                "\"da038faf-0000-0200-0000-6a14b7b80000\"",
-                "\"da03969b-0000-0200-0000-6a14b60e0000\""
+                "\"db030428-0000-0200-0000-6a14bf540000\"",
+                "\"db030aac-0000-0200-0000-6a14ca340000\"",
+                "\"db030ca7-0000-0200-0000-6a14c9d90000\"",
+                "\"db031459-0000-0200-0000-6a14c2fd0000\"",
+                "\"db031956-0000-0200-0000-6a14c2bc0000\"",
+                "\"db031a2c-0000-0200-0000-6a14bfb00000\"",
+                "\"db031b82-0000-0200-0000-6a14c6990000\"",
+                "\"db031f83-0000-0200-0000-6a14c6ad0000\"",
+                "\"db0328a7-0000-0200-0000-6a14c9db0000\"",
+                "\"db032c7e-0000-0200-0000-6a14c6340000\"",
+                "\"db033ca4-0000-0200-0000-6a14c9ac0000\"",
+                "\"db034e7e-0000-0200-0000-6a14c6380000\"",
+                "\"db03538b-0000-0200-0000-6a14c76d0000\"",
+                "\"db035956-0000-0200-0000-6a14c2c20000\"",
+                "\"db035b7f-0000-0200-0000-6a14c6500000\"",
+                "\"db035e55-0000-0200-0000-6a14c2b30000\"",
+                "\"db035f7e-0000-0200-0000-6a14c63a0000\"",
+                "\"db035fab-0000-0200-0000-6a14ca2a0000\"",
+                "\"db03622a-0000-0200-0000-6a14bf850000\"",
+                "\"db0363ab-0000-0200-0000-6a14ca2a0000\"",
+                "\"db0365a8-0000-0200-0000-6a14c9ef0000\"",
+                "\"db036e5a-0000-0200-0000-6a14c31b0000\"",
+                "\"db0375a9-0000-0200-0000-6a14ca040000\"",
+                "\"db037757-0000-0200-0000-6a14c2d60000\"",
+                "\"db037e28-0000-0200-0000-6a14bf5b0000\"",
+                "\"db039559-0000-0200-0000-6a14c3090000\"",
+                "\"db039a81-0000-0200-0000-6a14c68f0000\"",
+                "\"db039d81-0000-0200-0000-6a14c68f0000\"",
+                "\"db03a22a-0000-0200-0000-6a14bf8d0000\"",
+                "\"db03a479-0000-0200-0000-6a14c5ba0000\"",
+                "\"db03aa27-0000-0200-0000-6a14bf500000\"",
+                "\"db03b02c-0000-0200-0000-6a14bfbc0000\"",
+                "\"db03bc7f-0000-0200-0000-6a14c65a0000\"",
+                "\"db03c09e-0000-0200-0000-6a14c9480000\"",
+                "\"db03c158-0000-0200-0000-6a14c2f40000\"",
+                "\"db03c15a-0000-0200-0000-6a14c3210000\"",
+                "\"db03d32a-0000-0200-0000-6a14bf930000\"",
+                "\"db03d929-0000-0200-0000-6a14bf790000\"",
+                "\"db03da7e-0000-0200-0000-6a14c6460000\"",
+                "\"db03dca7-0000-0200-0000-6a14c9e70000\""
               ],
               "tool_result_used": true,
               "unsupported_claim_count": 0,
@@ -66605,7 +68193,7 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "structured_sql_plan_with_repair_v1",
+        "strategy": "api_only_only_when_sql_unavailable_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
@@ -66631,7 +68219,7 @@
       },
       "unscored_dimension_count": 1,
       "unsupported_claim_count": 0,
-      "variant": "structured_sql_plan_with_repair_v1"
+      "variant": "api_only_only_when_sql_unavailable_v1"
     }
   ],
   "skipped_reason": null,
@@ -66691,18 +68279,18 @@
         "unsupported_claims": 1
       },
       {
-        "answer_score": 0.1805,
-        "api_score": 0.5533,
-        "compile_success_rate": 0.0,
-        "estimated_tokens": 1583.8,
+        "answer_score": 0.1476,
+        "api_score": 0.0,
+        "compile_success_rate": 0.75,
+        "estimated_tokens": 3535.8,
         "rows": 5,
-        "runtime": 21.7945,
-        "sql_score": 0.0,
-        "sql_validation_pass_rate": 0.0,
-        "strict_correctness": 0.1651,
-        "strict_final_score": 0.0842,
+        "runtime": 30.76,
+        "sql_score": 0.18,
+        "sql_validation_pass_rate": 0.6,
+        "strict_correctness": 0.1217,
+        "strict_final_score": 0.0222,
         "strict_scoring_status": "available",
-        "system": "structured_sql_plan_with_repair_v1",
+        "system": "api_only_only_when_sql_unavailable_v1",
         "tool_calls": 1.0,
         "unsupported_claims": 0
       }
@@ -66818,6 +68406,51 @@
       "description": "Structured SQL plan with deterministic tool-evidence answer fallback only.",
       "status": "shadow_diagnostic",
       "variant": "structured_sql_plan_backend_answer_only"
+    },
+    {
+      "capabilities": {
+        "api_guard": true,
+        "evidence_locked_answer": true,
+        "evidence_source_planner": true,
+        "schema_context": true,
+        "sql_repair": true,
+        "structured_plan": true,
+        "structured_sql_plan": true
+      },
+      "description": "Adds LLM evidence-source planning plus validator/retry before structured SQL/API tool use.",
+      "status": "shadow_diagnostic",
+      "variant": "structured_sql_plan_with_tool_choice_guard_v1"
+    },
+    {
+      "capabilities": {
+        "api_guard": true,
+        "evidence_locked_answer": true,
+        "evidence_source_planner": true,
+        "force_sql_when_high_confidence": true,
+        "schema_context": true,
+        "sql_repair": true,
+        "structured_plan": true,
+        "structured_sql_plan": true
+      },
+      "description": "Runs SQL first when the tool-choice validator has high confidence local SQL is required.",
+      "status": "shadow_diagnostic",
+      "variant": "sql_first_when_validator_high_confidence_v1"
+    },
+    {
+      "capabilities": {
+        "api_guard": true,
+        "api_only_requires_sql_unavailable": true,
+        "evidence_locked_answer": true,
+        "evidence_source_planner": true,
+        "force_sql_when_high_confidence": true,
+        "schema_context": true,
+        "sql_repair": true,
+        "structured_plan": true,
+        "structured_sql_plan": true
+      },
+      "description": "Allows API-only planning only when local schema evidence is unavailable or live API is explicit.",
+      "status": "shadow_diagnostic",
+      "variant": "api_only_only_when_sql_unavailable_v1"
     }
   ]
 }

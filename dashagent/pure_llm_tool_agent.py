@@ -8,6 +8,7 @@ from .api_client import AdobeAPIClient
 from .api_outcome_classifier import classify_api_outcome
 from .db import DuckDBDatabase
 from .endpoint_catalog import EndpointCatalog
+from .llm_evidence_source_planner import plan_validate_and_repair_evidence_source
 from .llm_api_tool_guard import validate_llm_api_candidate
 from .llm_client import LLMClient, get_llm_client
 from .llm_evidence_locked_answer import evidence_locked_answer
@@ -27,6 +28,9 @@ FULL_PURE_LLM_TOOL_AGENT_V1 = "full_pure_llm_tool_agent_v1"
 STRUCTURED_SQL_PLAN_AGENT_V1 = "structured_sql_plan_agent_v1"
 STRUCTURED_SQL_PLAN_WITH_REPAIR_V1 = "structured_sql_plan_with_repair_v1"
 STRUCTURED_SQL_PLAN_BACKEND_ANSWER_ONLY = "structured_sql_plan_backend_answer_only"
+STRUCTURED_SQL_PLAN_WITH_TOOL_CHOICE_GUARD_V1 = "structured_sql_plan_with_tool_choice_guard_v1"
+SQL_FIRST_WHEN_VALIDATOR_HIGH_CONFIDENCE_V1 = "sql_first_when_validator_high_confidence_v1"
+API_ONLY_ONLY_WHEN_SQL_UNAVAILABLE_V1 = "api_only_only_when_sql_unavailable_v1"
 
 PURE_LLM_TOOL_AGENT_VARIANTS = [
     STRUCTURED_PLAN_THEN_TOOLS,
@@ -37,6 +41,9 @@ PURE_LLM_TOOL_AGENT_VARIANTS = [
     STRUCTURED_SQL_PLAN_AGENT_V1,
     STRUCTURED_SQL_PLAN_WITH_REPAIR_V1,
     STRUCTURED_SQL_PLAN_BACKEND_ANSWER_ONLY,
+    STRUCTURED_SQL_PLAN_WITH_TOOL_CHOICE_GUARD_V1,
+    SQL_FIRST_WHEN_VALIDATOR_HIGH_CONFIDENCE_V1,
+    API_ONLY_ONLY_WHEN_SQL_UNAVAILABLE_V1,
 ]
 
 
@@ -101,6 +108,36 @@ VARIANT_CAPABILITIES = {
         "evidence_locked_answer": True,
         "backend_answer_only": True,
     },
+    STRUCTURED_SQL_PLAN_WITH_TOOL_CHOICE_GUARD_V1: {
+        "structured_plan": True,
+        "schema_context": True,
+        "sql_repair": True,
+        "structured_sql_plan": True,
+        "api_guard": True,
+        "evidence_locked_answer": True,
+        "evidence_source_planner": True,
+    },
+    SQL_FIRST_WHEN_VALIDATOR_HIGH_CONFIDENCE_V1: {
+        "structured_plan": True,
+        "schema_context": True,
+        "sql_repair": True,
+        "structured_sql_plan": True,
+        "api_guard": True,
+        "evidence_locked_answer": True,
+        "evidence_source_planner": True,
+        "force_sql_when_high_confidence": True,
+    },
+    API_ONLY_ONLY_WHEN_SQL_UNAVAILABLE_V1: {
+        "structured_plan": True,
+        "schema_context": True,
+        "sql_repair": True,
+        "structured_sql_plan": True,
+        "api_guard": True,
+        "evidence_locked_answer": True,
+        "evidence_source_planner": True,
+        "force_sql_when_high_confidence": True,
+        "api_only_requires_sql_unavailable": True,
+    },
 }
 
 
@@ -164,6 +201,24 @@ def pure_llm_baseline_definitions() -> list[dict[str, Any]]:
             "capabilities": VARIANT_CAPABILITIES[STRUCTURED_SQL_PLAN_BACKEND_ANSWER_ONLY],
             "status": "shadow_diagnostic",
         },
+        {
+            "variant": STRUCTURED_SQL_PLAN_WITH_TOOL_CHOICE_GUARD_V1,
+            "description": "Adds LLM evidence-source planning plus validator/retry before structured SQL/API tool use.",
+            "capabilities": VARIANT_CAPABILITIES[STRUCTURED_SQL_PLAN_WITH_TOOL_CHOICE_GUARD_V1],
+            "status": "shadow_diagnostic",
+        },
+        {
+            "variant": SQL_FIRST_WHEN_VALIDATOR_HIGH_CONFIDENCE_V1,
+            "description": "Runs SQL first when the tool-choice validator has high confidence local SQL is required.",
+            "capabilities": VARIANT_CAPABILITIES[SQL_FIRST_WHEN_VALIDATOR_HIGH_CONFIDENCE_V1],
+            "status": "shadow_diagnostic",
+        },
+        {
+            "variant": API_ONLY_ONLY_WHEN_SQL_UNAVAILABLE_V1,
+            "description": "Allows API-only planning only when local schema evidence is unavailable or live API is explicit.",
+            "capabilities": VARIANT_CAPABILITIES[API_ONLY_ONLY_WHEN_SQL_UNAVAILABLE_V1],
+            "status": "shadow_diagnostic",
+        },
     ]
 
 
@@ -191,6 +246,10 @@ def run_pure_llm_tool_agent_variant(
     context = build_llm_sql_context(prompt, schema_index, endpoint_catalog if capabilities.get("schema_context") else None)
     raw_plan = _plan(prompt, context, client) if capabilities.get("structured_plan") else _default_plan(prompt, context)
     plan = _normalize_plan(prompt, context, raw_plan)
+    evidence_source_result: dict[str, Any] | None = None
+    if capabilities.get("evidence_source_planner"):
+        evidence_source_result = plan_validate_and_repair_evidence_source(prompt, context, endpoint_catalog, client)
+        plan = _apply_evidence_source_choice(plan, evidence_source_result, capabilities)
     answer_intent = str(plan.get("answer_intent") or context.get("answer_intent") or infer_answer_intent(prompt))
     observations: list[dict[str, Any]] = []
     steps: list[dict[str, Any]] = [
@@ -202,6 +261,8 @@ def run_pure_llm_tool_agent_variant(
             "context_summary": _context_summary(context),
         }
     ]
+    if evidence_source_result:
+        steps.append({"kind": "evidence_source_plan", **evidence_source_result, "tool_plan_after_evidence_source": plan})
     sql_result: dict[str, Any] | None = None
     if bool(plan.get("needs_sql", True)):
         repair = run_sql_repair_loop(
@@ -326,6 +387,59 @@ def _normalize_plan(prompt: str, context: dict[str, Any], plan: dict[str, Any]) 
         actions.append("added_catalog_endpoint_candidates")
     normalized["_normalization_actions"] = actions
     return normalized
+
+
+def _apply_evidence_source_choice(
+    plan: dict[str, Any],
+    evidence_source_result: dict[str, Any],
+    capabilities: dict[str, Any],
+) -> dict[str, Any]:
+    updated = dict(plan)
+    actions = list(updated.get("_normalization_actions") or [])
+    validation = evidence_source_result.get("validation") if isinstance(evidence_source_result.get("validation"), dict) else {}
+    initial_validation = evidence_source_result.get("initial_validation") if isinstance(evidence_source_result.get("initial_validation"), dict) else {}
+    evidence_plan = evidence_source_result.get("final_plan") if isinstance(evidence_source_result.get("final_plan"), dict) else {}
+    final_choice = str(validation.get("final_tool_choice") or evidence_plan.get("preferred_first_tool") or "").strip()
+    high_confidence_sql_required = bool(
+        validation.get("high_confidence_sql_required")
+        or initial_validation.get("high_confidence_sql_required")
+        or (
+            validation.get("rejection_reason") == "tool_required"
+            and validation.get("local_schema_has_relevant_tables")
+            and capabilities.get("api_only_requires_sql_unavailable")
+        )
+    )
+    if not validation.get("ok") and capabilities.get("force_sql_when_high_confidence") and high_confidence_sql_required:
+        final_choice = "execute_sql"
+        actions.append("forced_sql_after_high_confidence_tool_choice_rejection")
+    elif not validation.get("ok"):
+        actions.append(f"tool_choice_validation_rejected:{validation.get('rejection_reason')}")
+        updated["_normalization_actions"] = actions
+        return updated
+    if final_choice == "execute_sql":
+        updated["needs_sql"] = True
+        updated["needs_api"] = False
+        actions.append("tool_choice_execute_sql")
+    elif final_choice == "both":
+        updated["needs_sql"] = True
+        updated["needs_api"] = True
+        actions.append("tool_choice_sql_and_api")
+    elif final_choice == "call_api":
+        updated["needs_sql"] = False
+        updated["needs_api"] = True
+        actions.append("tool_choice_call_api")
+    elif final_choice == "none":
+        updated["needs_sql"] = False
+        updated["needs_api"] = False
+        actions.append("tool_choice_none")
+    if evidence_plan.get("local_tables_that_may_answer"):
+        updated["candidate_tables"] = evidence_plan.get("local_tables_that_may_answer")
+    if evidence_plan.get("api_endpoints_that_may_answer"):
+        updated["candidate_endpoints"] = evidence_plan.get("api_endpoints_that_may_answer")
+    updated["_normalization_actions"] = actions
+    updated["evidence_source_plan"] = evidence_plan
+    updated["tool_choice_validation"] = validation
+    return updated
 
 
 def _data_question_needs_tool(prompt: str) -> bool:

@@ -187,7 +187,7 @@ def _column_refs(plan: dict[str, Any]) -> list[tuple[str, str, str]]:
 def _column_exists(schema_index: SchemaIndex, table: str, column: str) -> bool:
     if column == "*":
         return True
-    return schema_index.column_exists(table, column)
+    return schema_index.column_exists(table, column) or bool(_column_alias(schema_index, table, column))
 
 
 def _actual_column(schema_index: SchemaIndex, table: str, column: str) -> str:
@@ -195,7 +195,33 @@ def _actual_column(schema_index: SchemaIndex, table: str, column: str) -> str:
     for candidate in schema_index.columns_for(table):
         if normalize_name(candidate) == wanted:
             return candidate
+    alias = _column_alias(schema_index, table, column)
+    if alias:
+        return alias
     return column
+
+
+def _column_alias(schema_index: SchemaIndex, table: str, column: str) -> str | None:
+    normalized = normalize_name(column)
+    available = {normalize_name(candidate): candidate for candidate in schema_index.columns_for(table)}
+    if not available:
+        return None
+    table_stem = normalize_name(table)
+    for prefix in ("dim", "fact", "hkg", "br", "base"):
+        if table_stem.startswith(prefix):
+            table_stem = table_stem[len(prefix):]
+    if normalized == f"{table_stem}name" and "name" in available:
+        return available["name"]
+    domain_aliases = {
+        "dim_campaign": {"campaignname": "name"},
+        "dim_segment": {"audienceid": "segmentid", "audiencename": "name", "totalprofiles": "totalmembers"},
+        "dim_connector": {"dataflowname": "dataflowname", "dataflowid": "dataflowid"},
+        "dim_target": {"destinationname": "name", "targetname": "name"},
+    }
+    target = domain_aliases.get(table, {}).get(normalized)
+    if target and target in available:
+        return available[target]
+    return None
 
 
 def _select_sql(plan: dict[str, Any], primary_table: str, schema_index: SchemaIndex) -> tuple[str, list[str]]:
@@ -396,7 +422,7 @@ def _normalize_filters(filters: list[Any], primary_table: str, tables: list[str]
             normalized.append(item)
             continue
         column = _name_from(item.get("column") or item.get("column_name"))
-        operator = str(item.get("operator") or "").strip().lower()
+        operator = _normalize_operator(item.get("operator"))
         if not operator and "value" in item and column:
             operator = "equals"
         normalized.append(
@@ -408,6 +434,19 @@ def _normalize_filters(filters: list[Any], primary_table: str, tables: list[str]
             }
         )
     return normalized
+
+
+def _normalize_operator(value: Any) -> str:
+    operator = str(value or "").strip().lower()
+    if operator in {"=", "==", "eq", "is"}:
+        return "equals"
+    if operator in {"like", "ilike"}:
+        return "contains"
+    if operator in {">=", "after", "on_or_after"}:
+        return "gte"
+    if operator in {"<=", "before", "on_or_before"}:
+        return "lte"
+    return operator
 
 
 def _looks_like_id_column(column: str) -> bool:

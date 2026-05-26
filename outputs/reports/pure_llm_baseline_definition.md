@@ -11,3 +11,6 @@ All variants are diagnostic/shadow-only.
 - `structured_sql_plan_agent_v1`: LLM emits structured SQL plan JSON; deterministic compiler emits validated SQL without repair.
 - `structured_sql_plan_with_repair_v1`: Structured SQL plan JSON plus deterministic compiler and up to two plan repair rounds.
 - `structured_sql_plan_backend_answer_only`: Structured SQL plan with deterministic tool-evidence answer fallback only.
+- `structured_sql_plan_with_tool_choice_guard_v1`: Adds LLM evidence-source planning plus validator/retry before structured SQL/API tool use.
+- `sql_first_when_validator_high_confidence_v1`: Runs SQL first when the tool-choice validator has high confidence local SQL is required.
+- `api_only_only_when_sql_unavailable_v1`: Allows API-only planning only when local schema evidence is unavailable or live API is explicit.
