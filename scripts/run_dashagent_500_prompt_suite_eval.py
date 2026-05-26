@@ -186,6 +186,10 @@ def run_suite_eval(
         "synthetic_sql_results_used": True,
         "runtime_used_category_tags_for_decision": True,
         "agent_executor_used": False,
+        "grading_type": "heuristic_internal_gold",
+        "organizer_equivalent": False,
+        "answer_grading_method": "required_fact_substring_and_forbidden_claim_checks",
+        "process_grading_method": "observable_trace_checkpoint_and_tool_usage_matching",
         "suite": str(suite_path),
         "gold": str(gold_path),
         "seed": seed,
@@ -255,6 +259,8 @@ def _run_real_agent_suite_eval(
         if mode == "latest_applied_real_trial":
             unavailable_modes[mode] = {
                 "mode": mode,
+                "available": False,
+                "excluded_from_comparison": True,
                 "unavailable": True,
                 "latest_applied_real_trial_unavailable": True,
                 "blockers": REAL_APPLIED_TRIAL_BLOCKERS,
@@ -308,9 +314,14 @@ def _run_real_agent_suite_eval(
                     **grade,
                     "trajectory_path": str(prompt_dir / "trajectory.json"),
                     "latest_code_paths_enabled": extracted["latest_code_paths_enabled"],
+                    "final_answer": str(agent_result.get("final_answer") or ""),
                     "route_action": extracted["route_action"],
                     "sql_used": extracted["sql_used"],
                     "api_used": extracted["api_used"],
+                    "sql_call_count": extracted["sql_calls"],
+                    "api_call_count": extracted["api_calls"],
+                    "sql_tables": extracted["sql_tables"],
+                    "api_families": extracted["api_families"],
                     "estimated_total_tokens": extracted["estimated_total_tokens"],
                     "runtime_ms": runtime_ms,
                     "api_calls_saved": 0,
@@ -339,13 +350,36 @@ def _run_real_agent_suite_eval(
         )
         mode_summaries[mode] = summary
 
-    comparison = _compare_modes(mode_summaries, mode_rows)
+    if "latest_applied_real_trial" not in mode_summaries:
+        unavailable_modes["latest_applied_real_trial"] = {
+            "mode": "latest_applied_real_trial",
+            "available": False,
+            "excluded_from_comparison": True,
+            "unavailable": True,
+            "not_requested": True,
+            "latest_applied_real_trial_unavailable": True,
+            "blockers": REAL_APPLIED_TRIAL_BLOCKERS,
+            "prompt_count": 0,
+            "real_agent_execution": False,
+            "applied_trial_behavior_changed": False,
+        }
+
     shadow_comparison = _compare_specific_modes(
         "packaged_baseline_real",
         "latest_shadow_real",
         mode_summaries,
         mode_rows,
     )
+    if shadow_comparison and "latest_shadow_real" in mode_summaries:
+        mode_summaries["latest_shadow_real"].update(
+            {
+                "behavior_changed": bool(shadow_comparison.get("tool_behavior_changed_count") or shadow_comparison.get("final_answer_changed_count")),
+                "tool_behavior_changed_count": shadow_comparison.get("tool_behavior_changed_count"),
+                "final_answer_changed_count": shadow_comparison.get("final_answer_changed_count"),
+                "trace_observability_improved": shadow_comparison.get("trace_observability_improved"),
+            }
+        )
+    comparison = _compare_modes(mode_summaries, mode_rows)
     report = {
         "eval_engine": "real_agent",
         "simulated_trace_only": False,
@@ -353,6 +387,10 @@ def _run_real_agent_suite_eval(
         "synthetic_sql_results_used": False,
         "runtime_used_category_tags_for_decision": False,
         "agent_executor_used": any(summary.get("agent_executor_used") for summary in mode_summaries.values()),
+        "grading_type": "heuristic_internal_gold",
+        "organizer_equivalent": False,
+        "answer_grading_method": "required_fact_substring_and_forbidden_claim_checks",
+        "process_grading_method": "observable_trace_checkpoint_and_tool_usage_matching",
         "suite": str(suite_path),
         "gold": str(gold_path),
         "seed": seed,
@@ -428,7 +466,7 @@ def _make_executor(config: Any, executor_factory: Callable[..., Any] | None) -> 
 
 
 def _empty_unavailable_summary(mode: str, payload: dict[str, Any]) -> dict[str, Any]:
-    summary = {key: 0.0 for key in [
+    nullable_metrics = [
         "final_answer_correctness",
         "required_facts_coverage",
         "route_accuracy",
@@ -438,31 +476,37 @@ def _empty_unavailable_summary(mode: str, payload: dict[str, Any]) -> dict[str, 
         "sql_table_accuracy",
         "api_endpoint_family_accuracy",
         "expected_observable_trace_score",
+        "trace_observability_score",
+        "behavior_score",
+        "combined_diagnostic_score",
         "answer_grounding_score",
         "estimated_total_tokens",
         "runtime_ms",
-    ]}
+        "overall_score",
+        "unsupported_claims",
+        "tool_overuse",
+        "tool_underuse",
+        "no_tool_false_positive",
+        "no_tool_false_negative",
+        "sql_calls",
+        "api_calls",
+        "api_calls_saved",
+        "api_calls_added",
+        "anti_hallucination_initial_fail",
+        "anti_hallucination_revision_attempted",
+        "anti_hallucination_revision_success",
+        "post_sql_advisor_invoked",
+        "post_sql_advisor_verified",
+        "post_sql_advisor_blocked",
+        "wall_time_seconds",
+    ]
+    summary = {key: None for key in nullable_metrics}
     summary.update(
         {
             "mode": mode,
             "prompt_count": 0,
-            "overall_score": None,
-            "unsupported_claims": 0,
-            "tool_overuse": 0,
-            "tool_underuse": 0,
-            "no_tool_false_positive": 0,
-            "no_tool_false_negative": 0,
-            "sql_calls": 0,
-            "api_calls": 0,
-            "api_calls_saved": 0,
-            "api_calls_added": 0,
-            "anti_hallucination_initial_fail": 0,
-            "anti_hallucination_revision_attempted": 0,
-            "anti_hallucination_revision_success": 0,
-            "post_sql_advisor_invoked": 0,
-            "post_sql_advisor_verified": 0,
-            "post_sql_advisor_blocked": 0,
-            "wall_time_seconds": 0.0,
+            "available": False,
+            "excluded_from_comparison": True,
             "per_category": {},
             "latest_code_paths_enabled": {},
             "old_generated_diagnostic_path_used": False,
@@ -510,6 +554,7 @@ def _grade_real_agent_result(
     evidence_need_accuracy = _evidence_need_accuracy(evidence_need, sql_used, api_used, route_action)
     objective_score = _objective_feature_score(extracted["observable_trace"], gold)
     trace_stage_score = _real_trace_stage_score(extracted["checkpoint_names"], gold)
+    trace_observability_score = round((objective_score + trace_stage_score) / 2.0, 4)
     observable_trace_score = round((objective_score + trace_stage_score + route_accuracy + evidence_need_accuracy + sql_accuracy + api_accuracy) / 6.0, 4)
     unsupported_claims = int(extracted.get("unsupported_claims") or 0)
     forbidden_violation = _forbidden_claims_violation(str(agent_result.get("final_answer") or ""), gold)
@@ -518,6 +563,21 @@ def _grade_real_agent_result(
     correctness = round((fact_coverage + answer_grounding_score + sql_accuracy + api_accuracy) / 4.0, 4)
     tool_overuse = int((not sql_required and sql_used) or (not api_required and not api_optional and api_used))
     tool_underuse = int((sql_required and not sql_used) or (api_required and not api_used))
+    no_tool_false_positive = route_action in {"LLM_DIRECT", "LLM_SAFE_DIRECT"} and (sql_required or api_required)
+    no_tool_false_negative = route_action not in {"LLM_DIRECT", "LLM_SAFE_DIRECT"} and evidence_need == "none"
+    no_tool_safety_score = 0.0 if no_tool_false_positive or no_tool_false_negative else 1.0
+    behavior_score = round(
+        (
+            correctness
+            + sql_accuracy
+            + api_accuracy
+            + api_endpoint_family_accuracy
+            + answer_grounding_score
+            + no_tool_safety_score
+        )
+        / 6.0,
+        4,
+    )
 
     overall_score = round(
         0.35 * correctness
@@ -529,6 +589,9 @@ def _grade_real_agent_result(
     )
     grade = {
         "overall_score": overall_score,
+        "combined_diagnostic_score": overall_score,
+        "behavior_score": behavior_score,
+        "trace_observability_score": trace_observability_score,
         "final_answer_correctness": correctness,
         "required_facts_coverage": fact_coverage,
         "forbidden_claims_violation": forbidden_violation,
@@ -542,8 +605,8 @@ def _grade_real_agent_result(
         "tool_overuse": tool_overuse,
         "tool_underuse": tool_underuse,
         "unsupported_claims": unsupported_claims,
-        "no_tool_false_positive": route_action in {"LLM_DIRECT", "LLM_SAFE_DIRECT"} and (sql_required or api_required),
-        "no_tool_false_negative": route_action not in {"LLM_DIRECT", "LLM_SAFE_DIRECT"} and evidence_need == "none",
+        "no_tool_false_positive": no_tool_false_positive,
+        "no_tool_false_negative": no_tool_false_negative,
         "live_empty_interpretation_correct": _live_empty_interpretation_correct(agent_result),
         "api_error_interpretation_correct": _api_error_interpretation_correct(agent_result),
         "answer_grounding_score": answer_grounding_score,
@@ -1053,6 +1116,9 @@ def _grade_runtime_trace(trace: dict[str, Any], gold: dict[str, Any]) -> dict[st
     correctness = round((required_fact_coverage + observable_trace_score) / 2.0, 4)
     tool_overuse = int((not sql_required and sql_used) or (not api_required and not api_optional and api_used))
     tool_underuse = int((sql_required and not sql_used) or (api_required and not api_used))
+    no_tool_safety_score = 0.0 if no_tool_false_positive or no_tool_false_negative else 1.0
+    behavior_score = round((correctness + sql_accuracy + api_accuracy + api_accuracy + answer_grounding_score + no_tool_safety_score) / 6.0, 4)
+    trace_observability_score = objective_score
 
     overall_score = round(
         0.35 * correctness
@@ -1064,6 +1130,9 @@ def _grade_runtime_trace(trace: dict[str, Any], gold: dict[str, Any]) -> dict[st
     )
     return {
         "overall_score": overall_score,
+        "combined_diagnostic_score": overall_score,
+        "behavior_score": behavior_score,
+        "trace_observability_score": trace_observability_score,
         "final_answer_correctness": correctness,
         "required_facts_coverage": required_fact_coverage,
         "forbidden_claims_violation": unsupported_claims > 0,
@@ -1088,6 +1157,9 @@ def _grade_runtime_trace(trace: dict[str, Any], gold: dict[str, Any]) -> dict[st
 def _summarize_mode(mode: str, rows: list[dict[str, Any]], elapsed: float) -> dict[str, Any]:
     count = len(rows) or 1
     avg_keys = [
+        "behavior_score",
+        "trace_observability_score",
+        "combined_diagnostic_score",
         "final_answer_correctness",
         "required_facts_coverage",
         "route_accuracy",
@@ -1105,15 +1177,10 @@ def _summarize_mode(mode: str, rows: list[dict[str, Any]], elapsed: float) -> di
     summary.update(
         {
             "mode": mode,
+            "available": True,
+            "excluded_from_comparison": False,
             "prompt_count": len(rows),
-            "overall_score": round(
-                0.35 * summary["final_answer_correctness"]
-                + 0.25 * summary["expected_observable_trace_score"]
-                + 0.15 * summary["route_accuracy"]
-                + 0.15 * summary["expected_evidence_need_accuracy"]
-                + 0.10 * summary["answer_grounding_score"],
-                4,
-            ),
+            "overall_score": summary.get("combined_diagnostic_score"),
             "unsupported_claims": sum(int(row.get("unsupported_claims") or 0) for row in rows),
             "tool_overuse": sum(int(row.get("tool_overuse") or 0) for row in rows),
             "tool_underuse": sum(int(row.get("tool_underuse") or 0) for row in rows),
@@ -1142,24 +1209,26 @@ def _summarize_mode(mode: str, rows: list[dict[str, Any]], elapsed: float) -> di
 
 def _compare_modes(mode_summaries: dict[str, Any], mode_rows: dict[str, list[dict[str, Any]]]) -> dict[str, Any]:
     baseline_mode = "packaged_baseline" if "packaged_baseline" in mode_summaries else "packaged_baseline_real"
-    latest_mode = (
-        "latest_applied_real_trial"
-        if "latest_applied_real_trial" in mode_summaries
-        else "latest_shadow_real"
-        if "latest_shadow_real" in mode_summaries
-        else "latest_applied_trial"
-        if "latest_applied_trial" in mode_summaries
-        else "latest_full_trial"
-    )
+    latest_mode = _comparison_candidate_mode(mode_summaries)
     baseline = mode_summaries.get(baseline_mode, {})
     latest = mode_summaries.get(latest_mode, {})
+    unavailable = mode_summaries.get("latest_applied_real_trial", {})
     if not baseline or not latest:
+        if unavailable.get("excluded_from_comparison"):
+            return {
+                "baseline_mode": baseline.get("mode") if baseline else baseline_mode,
+                "latest_mode": "latest_applied_real_trial",
+                "latest_unavailable": True,
+                "excluded_from_comparison": True,
+                "blockers": unavailable.get("blockers", []),
+            }
         return {}
-    if latest.get("unavailable"):
+    if latest.get("excluded_from_comparison"):
         return {
             "baseline_mode": baseline.get("mode"),
             "latest_mode": latest.get("mode"),
             "latest_unavailable": True,
+            "excluded_from_comparison": True,
             "blockers": latest.get("blockers", []),
         }
     baseline_rows = {row["prompt_id"]: row for row in mode_rows.get(baseline_mode, [])}
@@ -1180,7 +1249,12 @@ def _compare_modes(mode_summaries: dict[str, Any], mode_rows: dict[str, list[dic
     return {
         "baseline_mode": baseline.get("mode"),
         "latest_mode": latest.get("mode"),
+        "latest_unavailable": bool(unavailable.get("excluded_from_comparison")),
+        "unavailable_mode": unavailable.get("mode") if unavailable.get("excluded_from_comparison") else None,
+        "unavailable_blockers": unavailable.get("blockers", []) if unavailable.get("excluded_from_comparison") else [],
         "overall_score_delta": round(float(latest.get("overall_score") or 0.0) - float(baseline.get("overall_score") or 0.0), 4),
+        "behavior_score_delta": round(float(latest.get("behavior_score") or 0.0) - float(baseline.get("behavior_score") or 0.0), 4),
+        "trace_observability_delta": round(float(latest.get("trace_observability_score") or 0.0) - float(baseline.get("trace_observability_score") or 0.0), 4),
         "route_accuracy_delta": round(float(latest.get("route_accuracy") or 0.0) - float(baseline.get("route_accuracy") or 0.0), 4),
         "observable_trace_delta": round(float(latest.get("expected_observable_trace_score") or 0.0) - float(baseline.get("expected_observable_trace_score") or 0.0), 4),
         "api_call_delta": int(latest.get("api_calls") or 0) - int(baseline.get("api_calls") or 0),
@@ -1193,6 +1267,17 @@ def _compare_modes(mode_summaries: dict[str, Any], mode_rows: dict[str, list[dic
     }
 
 
+def _comparison_candidate_mode(mode_summaries: dict[str, Any]) -> str:
+    applied = mode_summaries.get("latest_applied_real_trial")
+    if applied and not applied.get("excluded_from_comparison"):
+        return "latest_applied_real_trial"
+    if "latest_shadow_real" in mode_summaries:
+        return "latest_shadow_real"
+    if "latest_applied_trial" in mode_summaries:
+        return "latest_applied_trial"
+    return "latest_full_trial"
+
+
 def _compare_specific_modes(
     baseline_mode: str,
     candidate_mode: str,
@@ -1201,7 +1286,7 @@ def _compare_specific_modes(
 ) -> dict[str, Any]:
     baseline = mode_summaries.get(baseline_mode)
     candidate = mode_summaries.get(candidate_mode)
-    if not baseline or not candidate or candidate.get("unavailable"):
+    if not baseline or not candidate or candidate.get("excluded_from_comparison"):
         return {}
     baseline_rows = {row["prompt_id"]: row for row in mode_rows.get(baseline_mode, [])}
     candidate_rows = {row["prompt_id"]: row for row in mode_rows.get(candidate_mode, [])}
@@ -1216,10 +1301,26 @@ def _compare_specific_modes(
             helped.append({"prompt_id": prompt_id, "delta": delta})
         elif delta < -0.05:
             hurt.append({"prompt_id": prompt_id, "delta": delta})
+    final_answer_changed = sum(
+        1
+        for prompt_id, candidate_row in candidate_rows.items()
+        if prompt_id in baseline_rows and str(candidate_row.get("final_answer") or "") != str(baseline_rows[prompt_id].get("final_answer") or "")
+    )
+    tool_behavior_changed = sum(
+        1
+        for prompt_id, candidate_row in candidate_rows.items()
+        if prompt_id in baseline_rows and _tool_behavior_signature(candidate_row) != _tool_behavior_signature(baseline_rows[prompt_id])
+    )
+    unsupported_delta = sum(int(row.get("unsupported_claims") or 0) for row in candidate_rows.values()) - sum(int(row.get("unsupported_claims") or 0) for row in baseline_rows.values())
+    behavior_delta = round(float(candidate.get("behavior_score") or 0.0) - float(baseline.get("behavior_score") or 0.0), 4)
+    trace_delta = round(float(candidate.get("trace_observability_score") or 0.0) - float(baseline.get("trace_observability_score") or 0.0), 4)
     return {
         "baseline_mode": baseline_mode,
         "candidate_mode": candidate_mode,
         "overall_score_delta": round(float(candidate.get("overall_score") or 0.0) - float(baseline.get("overall_score") or 0.0), 4),
+        "behavior_score_delta": behavior_delta,
+        "trace_observability_delta": trace_delta,
+        "trace_observability_improved": trace_delta > 0,
         "route_accuracy_delta": round(float(candidate.get("route_accuracy") or 0.0) - float(baseline.get("route_accuracy") or 0.0), 4),
         "observable_trace_delta": round(float(candidate.get("expected_observable_trace_score") or 0.0) - float(baseline.get("expected_observable_trace_score") or 0.0), 4),
         "api_call_delta": int(candidate.get("api_calls") or 0) - int(baseline.get("api_calls") or 0),
@@ -1230,18 +1331,34 @@ def _compare_specific_modes(
         "rows_hurt_count": len(hurt),
         "rows_helped_examples": sorted(helped, key=lambda item: item["delta"], reverse=True)[:20],
         "rows_hurt_examples": sorted(hurt, key=lambda item: item["delta"])[:20],
+        "final_answer_changed_count": final_answer_changed,
+        "tool_behavior_changed_count": tool_behavior_changed,
+        "unsupported_claim_delta": unsupported_delta,
+        "rows_with_shadow_only_trace_delta": sum(
+            1
+            for prompt_id, candidate_row in candidate_rows.items()
+            if prompt_id in baseline_rows
+            and _tool_behavior_signature(candidate_row) == _tool_behavior_signature(baseline_rows[prompt_id])
+            and str(candidate_row.get("final_answer") or "") == str(baseline_rows[prompt_id].get("final_answer") or "")
+            and float(candidate_row.get("trace_observability_score") or 0.0) > float(baseline_rows[prompt_id].get("trace_observability_score") or 0.0)
+        ),
     }
+
+
+def _tool_behavior_signature(row: dict[str, Any]) -> tuple[Any, ...]:
+    return (
+        int(row.get("sql_call_count") or row.get("sql_used") or 0),
+        int(row.get("api_call_count") or row.get("api_used") or 0),
+        tuple(sorted(str(item) for item in row.get("sql_tables") or [])),
+        tuple(sorted(str(item) for item in row.get("api_families") or [])),
+        int(row.get("unsupported_claims") or 0),
+    )
 
 
 def _write_gate_report(report: dict[str, Any], reports_dir: Path, *, suffix: str = "") -> dict[str, Any]:
     baseline = report["modes"].get("packaged_baseline") or report["modes"].get("packaged_baseline_real") or {}
-    latest = (
-        report["modes"].get("latest_applied_real_trial")
-        or report["modes"].get("latest_shadow_real")
-        or report["modes"].get("latest_applied_trial")
-        or report["modes"].get("latest_full_trial")
-        or {}
-    )
+    applied = report["modes"].get("latest_applied_real_trial") or (report.get("unavailable_modes") or {}).get("latest_applied_real_trial") or {}
+    latest = report["modes"].get(_comparison_candidate_mode(report["modes"])) or {}
     latest_score = latest.get("overall_score")
     baseline_score = baseline.get("overall_score")
     strict_like_improves = bool(
@@ -1251,7 +1368,8 @@ def _write_gate_report(report: dict[str, Any], reports_dir: Path, *, suffix: str
         and baseline_score is not None
         and float(latest_score) >= float(baseline_score)
     )
-    unsupported_zero = all(mode.get("unsupported_claims", 0) == 0 for mode in report["modes"].values())
+    comparable_modes = [mode for mode in report["modes"].values() if not mode.get("excluded_from_comparison")]
+    unsupported_zero = all((mode.get("unsupported_claims") or 0) == 0 for mode in comparable_modes)
     false_no_tool_safe = latest.get("no_tool_false_positive", 0) == 0 if latest else False
     runtime_cost_ok = (
         float(latest.get("estimated_total_tokens", 0) or 0)
@@ -1261,8 +1379,8 @@ def _write_gate_report(report: dict[str, Any], reports_dir: Path, *, suffix: str
     )
     latest_paths_ok = report.get("latest_code_paths_explicitly_evaluated") and not report.get("old_generated_diagnostic_path_used")
     recommendation = "keep_shadow_only"
-    if latest.get("unavailable"):
-        recommendation = "improve_post_sql_policy_before_promotion"
+    if applied.get("excluded_from_comparison"):
+        recommendation = "latest_applied_real_trial_unavailable_keep_shadow"
     elif report.get("simulated_trace_only"):
         recommendation = "keep_shadow_only"
     elif not latest_paths_ok:
@@ -1284,16 +1402,23 @@ def _write_gate_report(report: dict[str, Any], reports_dir: Path, *, suffix: str
         "simulated_trace_only": report.get("simulated_trace_only", False),
         "real_agent_execution": report.get("real_agent_execution", False),
         "baseline_score": baseline_score,
-        "latest_trial_score": latest_score,
-        "route_trace_accuracy": latest.get("expected_observable_trace_score"),
+        "packaged_baseline_real_score": baseline_score if baseline.get("mode") == "packaged_baseline_real" else None,
+        "latest_shadow_real_score": (report["modes"].get("latest_shadow_real") or {}).get("overall_score"),
+        "latest_shadow_real_behavior_score": (report["modes"].get("latest_shadow_real") or {}).get("behavior_score"),
+        "latest_shadow_real_trace_observability_score": (report["modes"].get("latest_shadow_real") or {}).get("trace_observability_score"),
+        "latest_shadow_real_trace_observability_delta": (report.get("shadow_comparison") or {}).get("trace_observability_delta"),
+        "latest_trial_score": None if applied.get("excluded_from_comparison") else latest_score,
+        "route_trace_accuracy": None if applied.get("excluded_from_comparison") else latest.get("expected_observable_trace_score"),
         "unsupported_claims_zero": unsupported_zero,
         "no_tool_false_positive": latest.get("no_tool_false_positive"),
         "api_calls_saved": latest.get("api_calls_saved"),
         "api_calls_added": latest.get("api_calls_added"),
-        "runtime_cost_acceptable": runtime_cost_ok,
+        "runtime_cost_acceptable": None if applied.get("excluded_from_comparison") else runtime_cost_ok,
         "latest_code_paths_explicitly_evaluated": latest_paths_ok,
+        "latest_applied_real_trial_available": not bool(applied.get("excluded_from_comparison")),
+        "applied_behavior_changed": False,
         "recommendation": recommendation,
-        "blockers": latest.get("blockers", []),
+        "blockers": applied.get("blockers", []) or latest.get("blockers", []),
     }
     (reports_dir / f"dashagent_500_prompt_suite_gate{suffix}.json").write_text(json.dumps(gate, indent=2, sort_keys=True), encoding="utf-8")
     (reports_dir / f"dashagent_500_prompt_suite_gate{suffix}.md").write_text(_gate_md(gate), encoding="utf-8")
@@ -1429,6 +1554,10 @@ def _eval_report_md(report: dict[str, Any]) -> str:
         f"- synthetic_sql_results_used: {str(report.get('synthetic_sql_results_used')).lower()}",
         f"- runtime_used_category_tags_for_decision: {str(report.get('runtime_used_category_tags_for_decision')).lower()}",
         f"- agent_executor_used: {str(report.get('agent_executor_used')).lower()}",
+        f"- grading_type: {report.get('grading_type')}",
+        f"- organizer_equivalent: {str(report.get('organizer_equivalent')).lower()}",
+        f"- answer_grading_method: {report.get('answer_grading_method')}",
+        f"- process_grading_method: {report.get('process_grading_method')}",
         f"- prompt_count: {report['prompt_count']}",
         f"- latest_code_paths_explicitly_evaluated: {str(report['latest_code_paths_explicitly_evaluated']).lower()}",
         f"- old_generated_diagnostic_path_used: {str(report['old_generated_diagnostic_path_used']).lower()}",
@@ -1437,10 +1566,24 @@ def _eval_report_md(report: dict[str, Any]) -> str:
     ]
     for mode in report["mode_order"]:
         summary = report["modes"][mode]
+        if summary.get("excluded_from_comparison"):
+            lines.extend(
+                [
+                    f"### {mode}",
+                    "- available: false",
+                    "- status: unavailable, not run, excluded from metric comparison",
+                    f"- blockers: {summary.get('blockers', [])}",
+                    "",
+                ]
+            )
+            continue
         lines.extend(
             [
                 f"### {mode}",
-                f"- overall_score: {summary['overall_score']}",
+                f"- behavior_score: {summary['behavior_score']}",
+                f"- trace_observability_score: {summary['trace_observability_score']}",
+                f"- combined_diagnostic_score: {summary['combined_diagnostic_score']}",
+                f"- overall_score_alias: {summary['overall_score']}",
                 f"- route_accuracy: {summary['route_accuracy']}",
                 f"- observable_trace_score: {summary['expected_observable_trace_score']}",
                 f"- sql_accuracy: {summary['sql_required_used_accuracy']}",
@@ -1482,10 +1625,12 @@ def _write_runner_audit(report: dict[str, Any], reports_dir: Path) -> dict[str, 
             report.get("mode_summary", {}).get("latest_shadow_real", {}).get("shadow_modules_executed")
         ),
         "latest_applied_real_trial_available": not bool(
-            report.get("mode_summary", {}).get("latest_applied_real_trial", {}).get("unavailable")
-        )
-        if "latest_applied_real_trial" in report.get("mode_summary", {})
-        else False,
+            (
+                report.get("mode_summary", {}).get("latest_applied_real_trial")
+                or report.get("unavailable_modes", {}).get("latest_applied_real_trial")
+                or {"excluded_from_comparison": True}
+            ).get("excluded_from_comparison")
+        ),
         "notes": [
             "Simulated trace mode is retained only as a diagnostic compatibility engine.",
             "Real-agent mode uses AgentExecutor.run and writes actual per-prompt trajectory.json files.",

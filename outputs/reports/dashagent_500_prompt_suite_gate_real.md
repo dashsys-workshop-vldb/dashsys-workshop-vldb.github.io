@@ -8,13 +8,20 @@
 - simulated_trace_only: False
 - real_agent_execution: True
 - baseline_score: 0.6995
+- packaged_baseline_real_score: 0.6995
+- latest_shadow_real_score: 0.7203
+- latest_shadow_real_behavior_score: 0.8045
+- latest_shadow_real_trace_observability_score: 0.4993
+- latest_shadow_real_trace_observability_delta: 0.2498
 - latest_trial_score: None
-- route_trace_accuracy: 0.0
+- route_trace_accuracy: None
 - unsupported_claims_zero: True
 - no_tool_false_positive: 0
 - api_calls_saved: 0
 - api_calls_added: 0
-- runtime_cost_acceptable: False
+- runtime_cost_acceptable: None
 - latest_code_paths_explicitly_evaluated: True
-- recommendation: improve_post_sql_policy_before_promotion
+- latest_applied_real_trial_available: False
+- applied_behavior_changed: False
+- recommendation: latest_applied_real_trial_unavailable_keep_shadow
 - blockers: ['Semantic route decisions are integrated as shadow checkpoints only.', 'Staged evidence policy is integrated as shadow checkpoints only.', 'Post-SQL API decision policy records keep/drop/add advice but does not alter actual API execution.', 'No non-shadow promotion gate has approved applying these decisions to packaged execution.']
