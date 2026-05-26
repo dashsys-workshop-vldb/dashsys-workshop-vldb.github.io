@@ -28,7 +28,7 @@
 - Repo cleanup: `validated`; deleted paths: `5`; runtime behavior changed: `False`
 - DASHSys Project Skill audit: `pass`; runtime behavior changed: `False`
 - Context7 docs audit: `complete`; runtime change applied: `False`
-- Weak-model scaffold diagnostics: recommendation `weak_model_scaffold_still_sql_limited`; generated prompts `50/50`; unsupported claims `0`; paraphrase consistency `0.8431`; no-template SQL validation `1.0`; best strict variant `weak_scaffold_api_recovery_v1` (`0.2871`); best SQL variant `weak_scaffold_balanced_sql_api_v2` (SQL `0.12`, strict `0.2739`); shadow-only `True`
+- Weak-model scaffold diagnostics: recommendation `weak_harness_answer_regression`; generated prompts `50/50`; unsupported claims `0`; paraphrase consistency `0.8431`; no-template SQL validation `1.0`; bounded harness trial preserved SQL/API/answer non-regression (`limit10 strict 0.2597`, SQL `0.18`, API `0.8517`, answer `0.2361`) but full public/dev harness remained below prior weak scaffold answer quality (`strict 0.2732`, SQL `0.12`, API `0.6241`, answer `0.2188`); shadow-only `True`
 
 ## Workflow
 
@@ -66,6 +66,12 @@
 - `outputs/reports/weak_model_sql_bottleneck_analysis.md`
 - `outputs/reports/weak_model_sql_external_technique_mapping.md`
 - `outputs/reports/weak_model_sql_improvement_trials_public_dev_full.md`
+- `outputs/reports/weak_model_answer_grounding_regression_analysis.md`
+- `outputs/reports/harness_engineering_design_map.md`
+- `outputs/reports/weak_model_harness_assertion_catalog.md`
+- `outputs/reports/weak_model_answer_grounding_harness.md`
+- `outputs/reports/weak_harness_engineering_eval_public_dev_full.md`
+- `outputs/reports/weak_model_sql_improvement_trials_public_dev_limit_10.md`
 - `outputs/reports/weak_model_robustness_gate.md`
 - `outputs/reports/score_path_contribution_audit.md`
 - `outputs/reports/score_focused_core_improvement_trials.md`

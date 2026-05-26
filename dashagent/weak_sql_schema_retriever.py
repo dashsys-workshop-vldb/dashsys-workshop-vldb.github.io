@@ -14,7 +14,7 @@ DOMAIN_TABLE_ALIASES = {
     "SCHEMA": ("dim_blueprint",),
     "DESTINATION": ("dim_target",),
     "CONNECTOR": ("dim_connector",),
-    "FIELD": ("dim_property", "hkg_br_blueprint_property"),
+    "FIELD": ("dim_property", "hkg_br_segment_property", "hkg_br_blueprint_property"),
     "TAG": (),
     "AUDIT": (),
 }
@@ -27,6 +27,7 @@ def retrieve_weak_sql_schema_context(
     *,
     max_tables: int = 6,
     max_columns_per_table: int = 18,
+    max_join_hints: int = 12,
 ) -> dict[str, Any]:
     """Retrieve compact schema context for weak-model SQL slot compilation.
 
@@ -83,7 +84,7 @@ def retrieve_weak_sql_schema_context(
     }
     value_links = _value_links(nlp, ranked_tables, column_roles)
     aggregation_candidates = _aggregation_candidates(slots, ranked_tables, column_roles)
-    join_candidates = _join_candidates(prompt_lower, ranked_tables, schema_index)
+    join_candidates = _join_candidates(prompt_lower, ranked_tables, schema_index, max_join_hints=max_join_hints)
 
     return redact_secrets(
         {
@@ -197,7 +198,7 @@ def _aggregation_candidates(slots: dict[str, Any], tables: list[str], roles_by_t
     return candidates
 
 
-def _join_candidates(prompt_lower: str, tables: list[str], schema_index: SchemaIndex) -> list[dict[str, Any]]:
+def _join_candidates(prompt_lower: str, tables: list[str], schema_index: SchemaIndex, *, max_join_hints: int = 12) -> list[dict[str, Any]]:
     selected = set(tables)
     relationship_terms = ("connected", "linked", "mapped", "associated", "related", "relationship", "destination", "target")
     include_neighbors = any(term in prompt_lower for term in relationship_terms)
@@ -206,7 +207,7 @@ def _join_candidates(prompt_lower: str, tables: list[str], schema_index: SchemaI
         if hint.left_table in selected or hint.right_table in selected or include_neighbors:
             if hint.left_table in schema_index.tables and hint.right_table in schema_index.tables:
                 candidates.append(hint.to_dict())
-        if len(candidates) >= 12:
+        if len(candidates) >= max_join_hints:
             break
     return candidates
 

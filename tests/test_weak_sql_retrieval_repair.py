@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from dashagent.config import Config
 from dashagent.db import DuckDBDatabase
 from dashagent.endpoint_catalog import EndpointCatalog
@@ -101,6 +103,36 @@ def test_enhanced_compiler_repairs_published_date_filter_without_suppressing_api
     db.close()
 
 
+def test_enhanced_compiler_uses_segment_property_bridge_for_field_lookup(tiny_project):
+    from dashagent.semantic_slot_compiler import compile_semantic_slots
+
+    db, schema = _schema(tiny_project)
+    if not schema.table_exists("hkg_br_segment_property") or not schema.table_exists("dim_segment"):
+        db.close()
+        pytest.skip("Tiny fixture does not include segment-property bridge tables.")
+    prompt = "show me the field for Person: Birthday Today 001"
+    slots = normalize_semantic_slots({}, prompt=prompt)
+    slots["evidence_need"] = "sql_only"
+    compiled = compile_semantic_slots(
+        slots,
+        schema,
+        EndpointCatalog(tiny_project),
+        SQLValidator(schema),
+        prompt=prompt,
+        enhanced_sql=True,
+        repair_rounds=1,
+    )
+
+    assert compiled["sql_candidates"]
+    sql = compiled["sql_candidates"][0]["sql"]
+    assert "hkg_br_segment_property" in sql
+    assert "dim_segment" in sql
+    assert "PROPERTY" in sql
+    assert "Person: Birthday Today 001" in sql
+    assert compiled["sql_candidates"][0]["sql_unit_tests"]["passed"] is True
+    db.close()
+
+
 def test_weak_slot_intent_ignores_count_word_inside_quoted_schema_name():
     slots = normalize_semantic_slots({}, prompt="List all datasets that use the schema 'hkg_adls_profile_count_history'.")
 
@@ -112,3 +144,6 @@ def test_sql_improvement_variants_are_shadow_only():
 
     assert "weak_scaffold_sql_retrieval_repair_v1" in WEAK_MODEL_VARIANTS
     assert "weak_scaffold_balanced_sql_api_v2" in WEAK_MODEL_VARIANTS
+    assert "weak_scaffold_balanced_sql_api_answer_v3" in WEAK_MODEL_VARIANTS
+    assert "weak_scaffold_sql_lift_api_recovery_v3" in WEAK_MODEL_VARIANTS
+    assert "weak_scaffold_answer_fallback_v3" in WEAK_MODEL_VARIANTS

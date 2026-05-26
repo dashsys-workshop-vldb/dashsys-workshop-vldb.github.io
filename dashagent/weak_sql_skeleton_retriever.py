@@ -23,12 +23,13 @@ SQL_SKELETONS: list[dict[str, Any]] = [
         "common_mistakes": ["do not select non-aggregated columns with count"],
     },
     {
-        "skeleton_id": "list_entity",
+        "skeleton_id": "list_entities",
         "intent": "LIST",
         "when_to_use": "list names, ids, or display values for local entities",
         "semantic_slots_required": ["entity_table", "id_or_name_columns"],
         "sql_shape": "SELECT T.id_col, T.name_col FROM entity_table T ... LIMIT 50",
         "common_mistakes": ["include requested id/name columns", "avoid metadata-only columns"],
+        "unit_tests": ["intent_test", "column_role_test", "overbroad_test"],
     },
     {
         "skeleton_id": "status_list",
@@ -69,6 +70,25 @@ SQL_SKELETONS: list[dict[str, Any]] = [
         "semantic_slots_required": ["entity_table", "name_column"],
         "sql_shape": "SELECT requested_columns FROM entity_table T WHERE T.name_col = ... LIMIT 50",
         "common_mistakes": ["if no rows return, say no matching SQL records"],
+        "unit_tests": ["filter_test", "answer_shape_test"],
+    },
+    {
+        "skeleton_id": "group_by_count",
+        "intent": "COUNT",
+        "when_to_use": "counts grouped by status, type, day, or another categorical field",
+        "semantic_slots_required": ["entity_table", "group_column", "aggregate_column"],
+        "sql_shape": "SELECT T.group_col, COUNT(DISTINCT T.id_col) AS count FROM entity_table T GROUP BY T.group_col",
+        "common_mistakes": ["do not omit GROUP BY when prompt asks per/by each category", "do not group by a high-cardinality id column"],
+        "unit_tests": ["group_by_test", "aggregation_test"],
+    },
+    {
+        "skeleton_id": "recent_items",
+        "intent": "LIST",
+        "when_to_use": "most recent/latest/newest entity list questions",
+        "semantic_slots_required": ["entity_table", "timestamp_column"],
+        "sql_shape": "SELECT requested_columns FROM entity_table T ORDER BY T.timestamp_col DESC LIMIT 50",
+        "common_mistakes": ["use updated/created timestamp based on prompt wording", "include a stable id/name column"],
+        "unit_tests": ["timestamp_test", "answer_shape_test"],
     },
 ]
 

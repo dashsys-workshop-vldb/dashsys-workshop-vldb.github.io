@@ -116,7 +116,7 @@ Each card separates **status** from **runtime path** so experimental work is not
 | **Output** | `SQL/API execution plan` | Data emitted downstream. |
 | **Downstream effect** | `Grounds with local SQL first, then verifies with API where needed.` | Why the technique exists. |
 | **Affects** | `accuracy` | Accuracy, efficiency, safety, or observability. |
-| **Measured impact** | `answer_score_delta=0.3207, api_score_delta=0.9791, correctness_delta=0.0, runtime_delta=0.6133, sql_score_delta=0.9333, strict_score_delta=0.0, token_delta=799.3429, tool_call_d...` | Unavailable means no source report measured a delta. |
+| **Measured impact** | `answer_score_delta=0.3207, api_score_delta=0.9791, correctness_delta=0.0, runtime_delta=2.4725, sql_score_delta=0.9333, strict_score_delta=0.0, token_delta=799.3429, tool_call_d...` | Unavailable means no source report measured a delta. |
 
 **Why this status:** Best current strict score and correctness among packaged strategies.
 
@@ -270,7 +270,7 @@ Each card separates **status** from **runtime path** so experimental work is not
 | **Output** | `supportable answer candidates` | Data emitted downstream. |
 | **Downstream effect** | `Creates evidence-cited dry-run-safe answer rewrites.` | Why the technique exists. |
 | **Affects** | `accuracy, safety` | Accuracy, efficiency, safety, or observability. |
-| **Measured impact** | `strict_score_delta=-0.0028` | Unavailable means no source report measured a delta. |
+| **Measured impact** | `strict_score_delta=0.0032` | Unavailable means no source report measured a delta. |
 
 **Why this status:** Safe rows feed isolated trials; not final promoted behavior.
 
@@ -620,7 +620,7 @@ Each card separates **status** from **runtime path** so experimental work is not
 | **Output** | `safe/unsafe rewrite labels` | Data emitted downstream. |
 | **Downstream effect** | `Validates claim citations, dry-run unavailable wording, and SQL/API hash invariance.` | Why the technique exists. |
 | **Affects** | `accuracy, safety, observability` | Accuracy, efficiency, safety, or observability. |
-| **Measured impact** | `strict_score_delta=-0.0086` | Unavailable means no source report measured a delta. |
+| **Measured impact** | `strict_score_delta=-0.0026` | Unavailable means no source report measured a delta. |
 
 **Why this status:** Safe rows feed isolated trials only.
 

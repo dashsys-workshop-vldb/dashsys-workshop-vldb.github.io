@@ -7,7 +7,17 @@ from .schema_index import normalize_name
 from .trajectory import redact_secrets
 
 
-CRITICAL_TESTS = {"intent_test", "table_test", "column_role_test", "filter_test", "join_test", "aggregation_test", "timestamp_test", "overbroad_test"}
+CRITICAL_TESTS = {
+    "intent_test",
+    "table_test",
+    "column_role_test",
+    "filter_test",
+    "join_test",
+    "aggregation_test",
+    "timestamp_test",
+    "overbroad_test",
+    "group_by_test",
+}
 
 
 def run_sql_semantic_unit_tests(
@@ -29,20 +39,20 @@ def run_sql_semantic_unit_tests(
     failed: list[str] = []
     hints: list[str] = []
 
-    if not _intent_ok(intent, columns, aggregation):
+    if not _intent_ok(intent, columns, aggregation) and not _acceptable_field_bridge(domain, primary_table, prompt):
         failed.append("intent_test")
         hints.append(f"Use SQL shape that matches intent {intent}.")
 
     expected_table = domain_to_table(domain)
     retrieved_tables = schema_context.get("retrieved_tables") if isinstance(schema_context.get("retrieved_tables"), list) else []
-    if expected_table and primary_table != expected_table:
+    if expected_table and primary_table != expected_table and not _acceptable_field_bridge(domain, primary_table, prompt):
         failed.append("table_test")
         hints.append(f"Use primary_table {expected_table} for domain {domain}.")
-    elif retrieved_tables and primary_table not in retrieved_tables:
+    elif retrieved_tables and primary_table not in retrieved_tables and not _acceptable_field_bridge(domain, primary_table, prompt):
         failed.append("table_test")
         hints.append(f"Use one of retrieved tables: {', '.join(str(t) for t in retrieved_tables[:3])}.")
 
-    if not _column_roles_ok(intent, primary_table, columns, schema_context):
+    if not _column_roles_ok(intent, primary_table, columns, schema_context) and not _acceptable_field_bridge(domain, primary_table, prompt):
         failed.append("column_role_test")
         hints.append("Select columns with roles requested by the prompt: id/name/status/timestamp as applicable.")
 
@@ -73,13 +83,21 @@ def run_sql_semantic_unit_tests(
     if quoted and not filters:
         failed.append("overbroad_test")
         hints.append("Entity-specific prompts need a filter to avoid broad SQL.")
+    if _needs_group_by(prompt, intent) and not _has_group_by(sql_plan, compiled_sql):
+        failed.append("group_by_test")
+        hints.append("Add GROUP BY for grouped count prompts.")
+    if not _answer_shape_ok(intent, columns, aggregation):
+        failed.append("answer_shape_test")
+        hints.append("Select columns or aggregation that can render the requested answer shape.")
 
     unique_failed = sorted(set(failed))
+    critical_failures = sorted(test for test in unique_failed if test in CRITICAL_TESTS)
     semantic_score = round(max(0.0, 1.0 - 0.14 * len(unique_failed)), 4)
     return redact_secrets(
         {
-            "passed": not any(test in CRITICAL_TESTS for test in unique_failed),
+            "passed": not critical_failures,
             "failed_tests": unique_failed,
+            "critical_failures": critical_failures,
             "repair_hints": list(dict.fromkeys(hints)),
             "semantic_score": semantic_score,
         }
@@ -173,3 +191,29 @@ def _is_status(column: str) -> bool:
 
 def _is_timestamp(column: str) -> bool:
     return any(marker in normalize_name(column) for marker in ("time", "date", "created", "updated", "deployed", "published", "modified"))
+
+
+def _needs_group_by(prompt: str, intent: str) -> bool:
+    lowered = prompt.lower()
+    return intent == "COUNT" and any(marker in lowered for marker in (" group by ", " by status", " by type", " per ", " for each "))
+
+
+def _has_group_by(plan: dict[str, Any], compiled_sql: str) -> bool:
+    return bool(plan.get("group_by") or " group by " in str(compiled_sql).lower())
+
+
+def _answer_shape_ok(intent: str, columns: list[str], aggregation: dict[str, Any]) -> bool:
+    if intent == "COUNT":
+        return str(aggregation.get("type") or "none").lower() in {"count", "count_distinct"}
+    if intent in {"LIST", "STATUS", "DATE", "DETAIL", "RELATIONSHIP"}:
+        return bool(columns)
+    return True
+
+
+def _acceptable_field_bridge(domain: str, primary_table: str, prompt: str) -> bool:
+    if domain != "FIELD":
+        return False
+    if primary_table != "hkg_br_segment_property":
+        return False
+    lowered = prompt.lower()
+    return "field" in lowered and any(marker in lowered for marker in ("segment", "audience", "person:"))

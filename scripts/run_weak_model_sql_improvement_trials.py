@@ -24,6 +24,9 @@ TRIAL_VARIANTS = [
     "weak_scaffold_sql_unit_tested_v1",
     "weak_scaffold_sql_retrieval_repair_v1",
     "weak_scaffold_balanced_sql_api_v2",
+    "weak_scaffold_balanced_sql_api_answer_v3",
+    "weak_scaffold_sql_lift_api_recovery_v3",
+    "weak_scaffold_answer_fallback_v3",
 ]
 REFERENCE = {
     "raw_weak_strict": 0.1596,

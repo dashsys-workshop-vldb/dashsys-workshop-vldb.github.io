@@ -24,4 +24,13 @@ Measure how much DashAgent scaffolding lifts weak-model correctness, tool validi
 - `weak_scaffold_sql_unit_tested_v1`
 - `weak_scaffold_sql_retrieval_repair_v1`
 - `weak_scaffold_balanced_sql_api_v2`
+- `weak_scaffold_balanced_sql_api_answer_v3`
+- `weak_scaffold_sql_lift_api_recovery_v3`
+- `weak_scaffold_answer_fallback_v3`
+- `weak_harness_slots_only_v1`
+- `weak_harness_schema_retrieval_v1`
+- `weak_harness_unit_tested_sql_v1`
+- `weak_harness_repair_loop_v1`
+- `weak_harness_balanced_sql_api_answer_v1`
+- `weak_harness_full_v1`
 - `full_dashagent_current`

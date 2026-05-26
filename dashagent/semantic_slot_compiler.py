@@ -111,6 +111,13 @@ def _compile_candidate(
         primary = str(plan.get("primary_table") or "")
         compile_context["allowed_primary_tables"] = [primary]
     compiled = compile_structured_sql_plan(plan, schema_index, compile_context)
+    alias_sql = _weak_field_lookup_alias_sql(plan, schema_index) if enhanced_sql else ""
+    if alias_sql and compiled.get("ok"):
+        compiled = {
+            **compiled,
+            "sql": alias_sql,
+            "warnings": list(compiled.get("warnings") or []) + ["weak_field_lookup_alias_sql_applied"],
+        }
     validation = sql_validator.validate(str(compiled.get("sql") or "")) if compiled.get("ok") else None
     unit_tests = (
         run_sql_semantic_unit_tests(prompt, slots, plan, str(compiled.get("sql") or ""), schema_context or {})
@@ -164,7 +171,11 @@ def _slots_to_plan(slots: dict[str, Any], schema_index: SchemaIndex) -> dict[str
 def _enhanced_slots_to_plan(slots: dict[str, Any], schema_index: SchemaIndex, schema_context: dict[str, Any]) -> dict[str, Any]:
     domain = str(slots.get("domain") or "UNKNOWN").upper()
     retrieved_tables = [table for table in schema_context.get("retrieved_tables") or [] if schema_index.table_exists(str(table))]
-    table = (domain_to_table(domain) if domain_to_table(domain) in retrieved_tables else None) or (retrieved_tables[0] if retrieved_tables else domain_to_table(domain)) or _first_table(schema_index)
+    prompt_lower = _slot_prompt(slots).lower()
+    if _is_segment_field_lookup(prompt_lower, schema_index):
+        table = "hkg_br_segment_property"
+    else:
+        table = (domain_to_table(domain) if domain_to_table(domain) in retrieved_tables else None) or (retrieved_tables[0] if retrieved_tables else domain_to_table(domain)) or _first_table(schema_index)
     intent = str(slots.get("intent") or "DETAIL").upper()
     tables_needed = _tables_needed_for_enhanced_plan(intent, table, slots, schema_context, schema_index)
     columns = _enhanced_columns_for_intent(intent, table, schema_index, slots, schema_context)
@@ -186,6 +197,11 @@ def _enhanced_slots_to_plan(slots: dict[str, Any], schema_index: SchemaIndex, sc
 
 def _tables_needed_for_enhanced_plan(intent: str, table: str, slots: dict[str, Any], schema_context: dict[str, Any], schema_index: SchemaIndex) -> list[str]:
     tables = [table]
+    prompt_lower = _slot_prompt(slots).lower()
+    if table == "hkg_br_segment_property" and _is_segment_field_lookup(prompt_lower, schema_index):
+        if schema_index.table_exists("dim_segment"):
+            tables.append("dim_segment")
+        return tables
     if intent != "RELATIONSHIP":
         return tables
     nlp = slots.get("nlp_context") if isinstance(slots.get("nlp_context"), dict) else {}
@@ -214,6 +230,8 @@ def _tables_needed_for_enhanced_plan(intent: str, table: str, slots: dict[str, A
 
 def _enhanced_columns_for_intent(intent: str, table: str, schema_index: SchemaIndex, slots: dict[str, Any], schema_context: dict[str, Any]) -> list[str]:
     roles = ((schema_context.get("column_roles") or {}).get(table) or {}) if isinstance(schema_context.get("column_roles"), dict) else {}
+    if table == "hkg_br_segment_property" and "PROPERTY" in schema_index.columns_for(table):
+        return ["PROPERTY"]
     if intent == "COUNT":
         return [_first_role(roles, "id") or _id_column(table, schema_index) or "*"]
     if intent == "DATE":
@@ -246,7 +264,8 @@ def _enhanced_aggregation(slots: dict[str, Any], table: str, schema_context: dic
 def _enhanced_filters(slots: dict[str, Any], table: str, schema_index: SchemaIndex, schema_context: dict[str, Any], *, tables_needed: list[str] | None = None) -> list[dict[str, Any]]:
     nlp = slots.get("nlp_context") if isinstance(slots.get("nlp_context"), dict) else {}
     intent = str(slots.get("intent") or "").upper()
-    prompt_lower = str(nlp.get("original_prompt") or "").lower()
+    prompt = str(nlp.get("original_prompt") or "")
+    prompt_lower = prompt.lower()
     tables_needed = tables_needed or [table]
     date_terms = {str(item).lower() for item in nlp.get("date_terms") or []}
     compiled = []
@@ -269,6 +288,10 @@ def _enhanced_filters(slots: dict[str, Any], table: str, schema_index: SchemaInd
         elif operator not in {"equals", "contains", "gte", "lte", "in"}:
             operator = "equals"
         compiled.append({"table": filter_table, "column": column, "operator": operator, "value": value})
+    if table == "hkg_br_segment_property" and "dim_segment" in tables_needed and not any(item.get("table") == "dim_segment" and normalize_name(str(item.get("column") or "")) == "name" for item in compiled):
+        entity = _field_lookup_entity(prompt)
+        if entity and schema_index.column_exists("dim_segment", "NAME"):
+            compiled.append({"table": "dim_segment", "column": "NAME", "operator": "equals", "value": entity})
     return compiled
 
 
@@ -301,11 +324,78 @@ def _repair_plan_from_feedback(plan: dict[str, Any], slots: dict[str, Any], sche
 def _filter_table_for_value(primary_table: str, tables_needed: list[str], prompt_lower: str, semantic: str, value: str) -> str:
     if semantic != "name":
         return primary_table
+    if primary_table == "hkg_br_segment_property" and "dim_segment" in tables_needed:
+        return "dim_segment"
     if "dim_target" in tables_needed and ("destination" in prompt_lower or "target" in prompt_lower):
         return "dim_target"
     if "dim_blueprint" in tables_needed and ("schema" in prompt_lower or "blueprint" in prompt_lower):
         return "dim_blueprint"
     return primary_table
+
+
+def _slot_prompt(slots: dict[str, Any]) -> str:
+    nlp = slots.get("nlp_context") if isinstance(slots.get("nlp_context"), dict) else {}
+    return str(nlp.get("original_prompt") or "")
+
+
+def _is_segment_field_lookup(prompt_lower: str, schema_index: SchemaIndex) -> bool:
+    if "field" not in prompt_lower and "property" not in prompt_lower:
+        return False
+    if not schema_index.table_exists("hkg_br_segment_property"):
+        return False
+    return any(marker in prompt_lower for marker in ("segment", "audience", "person:"))
+
+
+def _field_lookup_entity(prompt: str) -> str:
+    import re
+
+    quoted = re.findall(r"'([^']+)'|\"([^\"]+)\"", prompt)
+    if quoted:
+        return next((left or right for left, right in quoted if (left or right)), "")
+    match = re.search(r"\bfield\s+for\s+(.+?)(?:[?.]|$)", prompt, flags=re.IGNORECASE)
+    return match.group(1).strip() if match else ""
+
+
+def _weak_field_lookup_alias_sql(plan: dict[str, Any], schema_index: SchemaIndex) -> str:
+    if str(plan.get("primary_table") or "") != "hkg_br_segment_property":
+        return ""
+    tables = {str(table) for table in plan.get("tables_needed") or []}
+    if "dim_segment" not in tables:
+        return ""
+    required = [
+        ("hkg_br_segment_property", "PROPERTY"),
+        ("hkg_br_segment_property", "SEGMENTID"),
+        ("dim_segment", "SEGMENTID"),
+        ("dim_segment", "NAME"),
+    ]
+    if any(not schema_index.column_exists(table, column) for table, column in required):
+        return ""
+    entity = ""
+    for item in plan.get("filters") or []:
+        if str(item.get("table") or "") == "dim_segment" and normalize_name(str(item.get("column") or "")) == "name":
+            entity = str(item.get("value") or "").strip()
+            break
+    if not entity or _unsafe_literal(entity):
+        return ""
+    try:
+        limit = int(plan.get("limit") or 50)
+    except (TypeError, ValueError):
+        limit = 50
+    limit = max(1, min(limit, 50))
+    return (
+        'SELECT sp."PROPERTY" FROM "hkg_br_segment_property" AS sp '
+        'JOIN "dim_segment" AS ds ON sp."SEGMENTID" = ds."SEGMENTID" '
+        f'WHERE ds."NAME" = {_sql_literal(entity)} LIMIT {limit}'
+    )
+
+
+def _unsafe_literal(value: str) -> bool:
+    lowered = value.lower()
+    return any(token in lowered for token in (";", "--", "/*", "*/", " drop ", " delete ", " update ", " insert "))
+
+
+def _sql_literal(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
 
 
 def _columns_for_intent(intent: str, table: str, schema_index: SchemaIndex, slots: dict[str, Any]) -> list[str]:

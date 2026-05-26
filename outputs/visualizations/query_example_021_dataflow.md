@@ -10,7 +10,7 @@
 | Strict score | 0.5388 |
 | Correctness score | 0.5579 |
 | Answer / SQL / API score | 0.1157 / None / 1.0 |
-| Tools / tokens / runtime | 1 / 650 / 0.3314867499284446 |
+| Tools / tokens / runtime | 1 / 650 / 0.3256207499653101 |
 
 ## Dataflow Graph
 

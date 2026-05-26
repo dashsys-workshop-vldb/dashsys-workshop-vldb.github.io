@@ -57,6 +57,15 @@ WEAK_MODEL_VARIANTS = [
     "weak_scaffold_sql_unit_tested_v1",
     "weak_scaffold_sql_retrieval_repair_v1",
     "weak_scaffold_balanced_sql_api_v2",
+    "weak_scaffold_balanced_sql_api_answer_v3",
+    "weak_scaffold_sql_lift_api_recovery_v3",
+    "weak_scaffold_answer_fallback_v3",
+    "weak_harness_slots_only_v1",
+    "weak_harness_schema_retrieval_v1",
+    "weak_harness_unit_tested_sql_v1",
+    "weak_harness_repair_loop_v1",
+    "weak_harness_balanced_sql_api_answer_v1",
+    "weak_harness_full_v1",
     "full_dashagent_current",
 ]
 
@@ -66,6 +75,14 @@ BALANCED_VARIANTS = {
     "weak_scaffold_answer_grounded_v1",
     "weak_scaffold_balanced_full_v1",
     "weak_scaffold_balanced_sql_api_v2",
+    "weak_scaffold_balanced_sql_api_answer_v3",
+    "weak_scaffold_sql_lift_api_recovery_v3",
+    "weak_scaffold_answer_fallback_v3",
+    "weak_harness_schema_retrieval_v1",
+    "weak_harness_unit_tested_sql_v1",
+    "weak_harness_repair_loop_v1",
+    "weak_harness_balanced_sql_api_answer_v1",
+    "weak_harness_full_v1",
 }
 
 SQL_ENHANCED_VARIANTS = {
@@ -73,11 +90,33 @@ SQL_ENHANCED_VARIANTS = {
     "weak_scaffold_sql_unit_tested_v1",
     "weak_scaffold_sql_retrieval_repair_v1",
     "weak_scaffold_balanced_sql_api_v2",
+    "weak_scaffold_balanced_sql_api_answer_v3",
+    "weak_scaffold_sql_lift_api_recovery_v3",
+    "weak_scaffold_answer_fallback_v3",
+    "weak_harness_schema_retrieval_v1",
+    "weak_harness_unit_tested_sql_v1",
+    "weak_harness_repair_loop_v1",
+    "weak_harness_balanced_sql_api_answer_v1",
+    "weak_harness_full_v1",
 }
 
 SQL_REPAIR_VARIANTS = {
     "weak_scaffold_sql_retrieval_repair_v1",
     "weak_scaffold_balanced_sql_api_v2",
+    "weak_scaffold_balanced_sql_api_answer_v3",
+    "weak_scaffold_sql_lift_api_recovery_v3",
+    "weak_scaffold_answer_fallback_v3",
+    "weak_harness_repair_loop_v1",
+    "weak_harness_balanced_sql_api_answer_v1",
+    "weak_harness_full_v1",
+}
+
+ANSWER_GROUNDING_V3_VARIANTS = {
+    "weak_scaffold_balanced_sql_api_answer_v3",
+    "weak_scaffold_sql_lift_api_recovery_v3",
+    "weak_scaffold_answer_fallback_v3",
+    "weak_harness_balanced_sql_api_answer_v1",
+    "weak_harness_full_v1",
 }
 
 
@@ -124,6 +163,7 @@ def run_weak_model_lift_eval(
         "weak_full_dashagent_scaffold",
         "weak_scaffold_api_recovery_v1",
         "weak_scaffold_balanced_sql_api_v2",
+        "weak_scaffold_balanced_sql_api_answer_v3",
         "full_dashagent_current",
     ]
     rows = _stabilization_rows(config, variants, max_examples=max_examples, execute_real=execute_real) if stabilization_set else _public_rows(config, variants, max_examples=max_examples, execute_real=execute_real)
@@ -217,7 +257,7 @@ def _run_scaffold_variant(prompt: str, variant: str, db: DuckDBDatabase, schema:
 
     start = time.perf_counter()
     slots = weak_model_semantic_slots(prompt, client if variant not in {"weak_semantic_slots_only", "semantic_slot_weak_llm"} else None)
-    if variant in {"weak_semantic_slots_only", "semantic_slot_weak_llm"}:
+    if variant in {"weak_semantic_slots_only", "semantic_slot_weak_llm", "weak_harness_slots_only_v1"}:
         answer = f"Semantic slots: intent={slots['intent']}, domain={slots['domain']}, evidence_need={slots['evidence_need']}."
         trajectory = {"strategy": variant, "steps": [{"kind": "semantic_slots", "slots": slots}], "final_answer": answer, "tool_call_count": 0, "runtime": time.perf_counter() - start}
         trajectory["estimated_tokens"] = estimate_tokens(trajectory)
@@ -256,6 +296,7 @@ def _run_scaffold_variant(prompt: str, variant: str, db: DuckDBDatabase, schema:
         answer_intent=slots.get("intent", "DETAIL"),
         evidence_need=str(slots.get("evidence_need") or "sql_first"),
         api_endpoint_id=api_endpoint_id,
+        grounding_mode=_grounding_mode_for_variant(variant),
     )
     answer = grounded["answer"] if variant in {"evidence_guarded_weak_agent", "weak_full_dashagent_scaffold"} | BALANCED_VARIANTS else (grounded["answer"] if sql_result else "The scaffold could not produce executable evidence.")
     steps = [
@@ -280,6 +321,18 @@ def _run_scaffold_variant(prompt: str, variant: str, db: DuckDBDatabase, schema:
     trajectory = {"strategy": variant, "steps": steps, "final_answer": answer, "tool_call_count": sum(1 for step in steps if step["kind"] in {"sql_call", "api_call"}), "runtime": time.perf_counter() - start}
     trajectory["estimated_tokens"] = estimate_tokens(trajectory)
     return {"final_answer": answer, "trajectory": trajectory, "unsupported_claim_count": grounded.get("unsupported_claim_count", 0), "failure_stage": None if sql_result or api_results else "no_executable_tool_evidence"}
+
+
+def _grounding_mode_for_variant(variant: str) -> str:
+    if variant == "weak_scaffold_balanced_sql_api_answer_v3":
+        return "balanced_sql_api_answer_v3"
+    if variant == "weak_scaffold_sql_lift_api_recovery_v3":
+        return "sql_lift_api_recovery_v3"
+    if variant == "weak_scaffold_answer_fallback_v3":
+        return "answer_fallback_v3"
+    if variant in {"weak_harness_balanced_sql_api_answer_v1", "weak_harness_full_v1"}:
+        return "answer_fallback_v3"
+    return "default"
 
 
 def _compact_api_result(call: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
