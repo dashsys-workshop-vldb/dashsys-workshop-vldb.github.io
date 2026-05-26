@@ -121,6 +121,8 @@ def extract_objective_prompt_features(prompt: str) -> ObjectivePromptFeatures:
         flags.append("CONCRETE_ENTITY")
     if _has_phrase(norm, ("current", "live", "platform", "api", "adobe")):
         flags.append("LIVE_OR_CURRENT")
+    if _has_phrase(norm, ("schema registry", "schemaregistry")):
+        flags.append("EXPLICIT_API_FAMILY")
     if domain and not cue and not (retr or count or status or date or fields or rel):
         flags.append("DOMAIN_ONLY")
 

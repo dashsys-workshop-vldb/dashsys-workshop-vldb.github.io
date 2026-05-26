@@ -106,6 +106,23 @@ def test_high_call_api_policy_for_live_prompt_bypasses_llm() -> None:
     assert policy.confidence == "HIGH"
 
 
+def test_explicit_schema_registry_prompt_preserves_api_after_sql() -> None:
+    features = extract_objective_prompt_features("Schema registry maybe maybe maybe.")
+    card = build_post_sql_decision_card(
+        features,
+        "SCHEMA_DATASET",
+        {"ok": True, "rows": [{"collection_id": "s1", "collection_name": "Profile"}], "row_count": 1},
+        [PlanStep(action="api", purpose="schema list", method="GET", url="/data/foundation/schemaregistry/tenant/schemas", family="schema_registry_schemas")],
+        EndpointCatalog(),
+    )
+
+    policy = decide_post_sql_api_policy(card)
+
+    assert "EXPLICIT_API_FAMILY" in card["prompt_features"]
+    assert policy.suggestion == "CALL_API"
+    assert policy.confidence == "HIGH"
+
+
 def test_medium_post_sql_policy_calls_llm_advisor() -> None:
     features = extract_objective_prompt_features("Show schema status")
     card = build_post_sql_decision_card(
