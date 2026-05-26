@@ -19,6 +19,7 @@ class PostSQLAPIAdvice:
     needed_roles: list[str] = field(default_factory=list)
     codes: list[str] = field(default_factory=list)
     source: str = "LLM_ADVISOR"
+    llm_call_attempted: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
@@ -47,8 +48,10 @@ def advise_post_sql_api(
         except Exception:
             return _from_policy(policy, source="DETERMINISTIC_FALLBACK", codes=["LLM_BACKEND_UNAVAILABLE"])
     messages = _messages_for_card(card)
+    attempted_llm_call = False
     for attempt in range(2):
         try:
+            attempted_llm_call = True
             raw = _call_client(client, messages)
             return parse_post_sql_api_advice(raw)
         except Exception as exc:
@@ -58,7 +61,7 @@ def advise_post_sql_api(
                     "content": f"Return corrected JSON only. Previous parse failed: {type(exc).__name__}.",
                 }
             ]
-    return _from_policy(policy, source="DETERMINISTIC_FALLBACK", codes=["INVALID_JSON"])
+    return _from_policy(policy, source="DETERMINISTIC_FALLBACK", codes=["INVALID_JSON"], llm_call_attempted=attempted_llm_call)
 
 
 def parse_post_sql_api_advice(raw: str | dict[str, Any]) -> PostSQLAPIAdvice:
@@ -75,6 +78,7 @@ def parse_post_sql_api_advice(raw: str | dict[str, Any]) -> PostSQLAPIAdvice:
         conf=max(0.0, min(1.0, float(payload.get("conf") or 0.0))),
         needed_roles=[str(item) for item in needed_roles][:8],
         codes=[str(item) for item in codes][:8],
+        llm_call_attempted=True,
     )
 
 
@@ -90,6 +94,13 @@ def _messages_for_card(card: dict[str, Any]) -> list[dict[str, str]]:
 
 
 def _call_client(client: Any, messages: list[dict[str, str]]) -> str:
+    if hasattr(client, "generate_messages"):
+        result = client.generate_messages(messages)
+        if isinstance(result, dict) and result.get("ok") and result.get("content"):
+            return str(result.get("content") or "")
+        if isinstance(result, dict):
+            raise RuntimeError(str(result.get("error") or result.get("reason") or "llm advisor returned no content"))
+        raise RuntimeError("llm advisor returned unsupported SDK response")
     if hasattr(client, "complete"):
         return str(client.complete(messages))
     if hasattr(client, "chat"):
@@ -99,7 +110,7 @@ def _call_client(client: Any, messages: list[dict[str, str]]) -> str:
     raise TypeError("unsupported post-sql advisor client")
 
 
-def _from_policy(policy: dict[str, Any], *, source: str, codes: list[str] | None = None) -> PostSQLAPIAdvice:
+def _from_policy(policy: dict[str, Any], *, source: str, codes: list[str] | None = None, llm_call_attempted: bool = False) -> PostSQLAPIAdvice:
     mode = str(policy.get("suggestion") or "CAVEAT_ONLY").upper()
     if mode == "AMBIGUOUS":
         mode = "CAVEAT_ONLY"
@@ -112,4 +123,5 @@ def _from_policy(policy: dict[str, Any], *, source: str, codes: list[str] | None
         needed_roles=[],
         codes=[*(policy.get("codes") or []), *(codes or [])],
         source=source,
+        llm_call_attempted=llm_call_attempted,
     )

@@ -1,0 +1,1575 @@
+{
+  "answer_time": 0.004570959135890007,
+  "api_call_count": 1,
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "correctness_role": "keeps later normalization from changing the user-facing question",
+      "duration_ms": 0.0,
+      "effect": "preserves the original query for reproducibility",
+      "efficiency_role": "starts one trace without extra tool calls",
+      "output": {
+        "query": "Answer from SQL first for audience; do not let optional API suppress direct SQL evidence. Apply SQL first and verify only when needed for the workflow readout.",
+        "query_id": "da500_0319",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "stage": "input",
+      "technique": "raw user query capture",
+      "timestamp": "2026-05-26T21:45:25.839016+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_00_prompt_router",
+      "correctness_role": "routes data questions to evidence tools instead of unsupported direct answers",
+      "duration_ms": 0.0,
+      "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
+      "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
+      "input_summary": {
+        "query": "Answer from SQL first for audience; do not let optional API suppress direct SQL evidence. Apply SQL first and verify only when needed for the workflow readout."
+      },
+      "output": {
+        "confidence": 0.88,
+        "matched_rules": {
+          "items": [
+            "sql_plus_api:api"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "mode": "SQL_PLUS_API",
+        "reason": "Live/status keyword(s) require SQL grounding plus API verification: api.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": true,
+        "requires_database": true,
+        "risk": "medium",
+        "truncated_fields": 1
+      },
+      "stage": "prompt routing",
+      "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
+      "timestamp": "2026-05-26T21:45:25.839052+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_simple_prompt_gate",
+      "correctness_role": "prevents direct answers for data questions that need SQL/API evidence",
+      "duration_ms": 0.0,
+      "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
+      "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
+      "input_summary": {
+        "query": "Answer from SQL first for audience; do not let optional API suppress direct SQL evidence. Apply SQL first and verify only when needed for the workflow readout."
+      },
+      "output": {
+        "confidence": 0.88,
+        "is_simple": false,
+        "reason": "Live/status keyword(s) require SQL grounding plus API verification: api.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      },
+      "stage": "input routing",
+      "technique": "simple prompt gate",
+      "timestamp": "2026-05-26T21:45:25.839070+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_objective_prompt_features",
+      "correctness_role": "keeps semantic pre-routing separate from SQL/API planning and answer generation",
+      "duration_ms": 0.0,
+      "effect": "records fact-only prompt cues for semantic routing diagnostics",
+      "efficiency_role": "uses compact symbolic features before any optional LLM classification",
+      "input_summary": {
+        "query": "Answer from SQL first for audience; do not let optional API suppress direct SQL evidence. Apply SQL first and verify only when needed for the workflow readout."
+      },
+      "output": {
+        "cap": {
+          "items": [
+            "SQL_SEGMENT"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "count": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "date": {
+          "items": [
+            "WHEN"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "domain": {
+          "items": [
+            "AUDIENCE"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "entity": {
+          "items": [
+            "ID_LIKE"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "norm": "answer from sql first for audience; do not let optional api suppress direct sql evidence. apply sql first and verify only when needed for the workflow readout.",
+        "p": "Answer from SQL first for audience; do not let optional API suppress direct SQL evidence. Apply SQL first and verify only when needed for the workflow readout.",
+        "status": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "truncated_fields": 5
+      },
+      "stage": "semantic routing shadow",
+      "technique": "objective prompt feature extraction",
+      "timestamp": "2026-05-26T21:45:25.839139+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_semantic_intent_decision",
+      "correctness_role": "keeps no-tool candidates explicit for verifier review",
+      "duration_ms": 0.0,
+      "effect": "records semantic intent decision without generating SQL, API calls, or answers",
+      "efficiency_role": "measures whether conceptual false positives could avoid tools in a future gate",
+      "input_summary": {
+        "feature_codes": {
+          "cap": {
+            "items": [
+              "SQL_SEGMENT"
+            ],
+            "total_items": 4,
+            "truncated_items": true
+          },
+          "count": {
+            "items": [],
+            "total_items": 0,
+            "truncated_items": false
+          },
+          "date": {
+            "items": [
+              "WHEN"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "domain": {
+            "items": [
+              "AUDIENCE"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "entity": {
+            "items": [
+              "ID_LIKE"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "norm": "answer from sql first for audience; do not let optional api suppress direct sql evidence. apply sql first and verify only when needed for the workflow readout.",
+          "p": "Answer from SQL first for audience; do not let optional API suppress direct SQL evidence. Apply SQL first and verify only when needed for the workflow readout.",
+          "status": {
+            "items": [],
+            "total_items": 0,
+            "truncated_items": false
+          },
+          "truncated_fields": 5
+        }
+      },
+      "output": {
+        "api": true,
+        "codes": {
+          "items": [
+            "FALLBACK"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "conf": 0.82,
+        "intent": "MIXED",
+        "need": "SQL_API",
+        "no_tool": false,
+        "sql": true
+      },
+      "stage": "semantic routing shadow",
+      "technique": "compact SemanticIntentDecision classification",
+      "timestamp": "2026-05-26T21:45:25.839307+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_routing_anti_hallucination_gate",
+      "correctness_role": "prevents LLM semantic hints from overriding objective data cues",
+      "duration_ms": 0.0,
+      "effect": "blocks unsupported no-tool or capability claims and records one-revision fallback state",
+      "efficiency_role": "limits revision feedback to compact codes and keeps packaged execution unchanged",
+      "input_summary": {
+        "semantic_intent": {
+          "api": true,
+          "codes": {
+            "items": [
+              "FALLBACK"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "conf": 0.82,
+          "intent": "MIXED",
+          "need": "SQL_API",
+          "no_tool": false,
+          "sql": true
+        }
+      },
+      "output": {
+        "final_decision": {
+          "api": true,
+          "codes": {
+            "items": [
+              "FALLBACK"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "conf": 0.82,
+          "intent": "MIXED",
+          "need": "SQL_API",
+          "no_tool": false,
+          "sql": true
+        },
+        "final_gate": {
+          "ok": true,
+          "support": {
+            "caps": true,
+            "intent": true,
+            "need": true
+          }
+        },
+        "initial_decision": {
+          "api": true,
+          "codes": {
+            "items": [
+              "FALLBACK"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "conf": 0.82,
+          "intent": "MIXED",
+          "need": "SQL_API",
+          "no_tool": false,
+          "sql": true
+        },
+        "initial_gate": {
+          "ok": true,
+          "support": {
+            "caps": true,
+            "intent": true,
+            "need": true
+          }
+        },
+        "revision_attempted": false,
+        "revision_success": false,
+        "revision_token_estimate": 0
+      },
+      "stage": "semantic routing shadow",
+      "technique": "objective support check for semantic intent",
+      "timestamp": "2026-05-26T21:45:25.839310+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_no_tool_safety_verifier",
+      "correctness_role": "blocks concrete data prompts from direct LLM handling",
+      "duration_ms": 0.0,
+      "effect": "allows or blocks only no-tool decisions and never chooses SQL/API routes",
+      "efficiency_role": "estimates safe no-tool savings without changing packaged behavior",
+      "input_summary": {
+        "semantic_intent": {
+          "api": true,
+          "codes": {
+            "items": [
+              "FALLBACK"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "conf": 0.82,
+          "intent": "MIXED",
+          "need": "SQL_API",
+          "no_tool": false,
+          "sql": true
+        }
+      },
+      "output": {
+        "action": "BLOCK_NO_TOOL",
+        "allow_no_tool": false,
+        "block": {
+          "items": [
+            "DATE"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "capability_match_score": 1.0,
+        "clear_safe_api_family": false,
+        "evidence_need_score": 0.37,
+        "has_concrete_data_signal": true,
+        "no_tool_safety_score": 0.63
+      },
+      "stage": "semantic routing shadow",
+      "technique": "negative no-tool safety guardrail",
+      "timestamp": "2026-05-26T21:45:25.839311+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_semantic_route_decision_ladder",
+      "correctness_role": "never applies semantic routing to the packaged plan in shadow mode",
+      "duration_ms": 0.0,
+      "effect": "records the shadow action that would be considered by a future promotion gate",
+      "efficiency_role": "estimates tool-call and context-token tradeoffs",
+      "input_summary": {
+        "shadow_only": false
+      },
+      "output": {
+        "action": "EVIDENCE_PIPELINE",
+        "context_token_cost": 321,
+        "low_low_case": false,
+        "promotion_allowed": false,
+        "shadow_only": false,
+        "tier_used": 0
+      },
+      "stage": "semantic routing shadow",
+      "technique": "uncertainty escalation ladder",
+      "timestamp": "2026-05-26T21:45:25.839314+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_real_behavior_applied_trial",
+      "correctness_role": "falls back to SQL_FIRST_API_VERIFY unless all no-tool safety checks pass",
+      "duration_ms": 0.0,
+      "effect": "applies a semantic no-tool shortcut only in explicit real benchmark trial modes",
+      "efficiency_role": "measures real tool-call savings for conceptual false-positive routes",
+      "input_summary": {
+        "trial_mode": "combined_safe_applied_real_trial"
+      },
+      "output": {
+        "applied": false,
+        "blockers": {
+          "items": [
+            "DATE"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "decision": "EVIDENCE_PIPELINE",
+        "decision_family": "SEMANTIC_NO_TOOL",
+        "fallback": true,
+        "record": true,
+        "shadow_only": false,
+        "trial_mode": "combined_safe_applied_real_trial",
+        "truncated_fields": 2
+      },
+      "stage": "isolated applied trial",
+      "technique": "semantic no-tool applied trial",
+      "timestamp": "2026-05-26T21:45:25.839365+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_02_query_normalization",
+      "correctness_role": "improves template and route matching across wording variants",
+      "duration_ms": 0.0,
+      "effect": "creates matching-friendly text while preserving the original query",
+      "efficiency_role": "reduces repeated fuzzy matching work downstream",
+      "input_summary": {
+        "query": "Answer from SQL first for audience; do not let optional API suppress direct SQL evidence. Apply SQL first and verify only when needed for the workflow readout."
+      },
+      "output": {
+        "matching_text": "answer from sql first for audience; do not let optional api suppress direct sql evidence. apply sql first and verify only when needed for the workflow readout.",
+        "normalized_query": "Answer from SQL first for audience; do not let optional API suppress direct SQL evidence. Apply SQL first and verify only when needed for the workflow readout."
+      },
+      "stage": "normalization",
+      "technique": "data cleaning / query normalization",
+      "timestamp": "2026-05-26T21:45:25.839420+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_03_query_tokens",
+      "correctness_role": "grounds names, IDs, dates, metrics, and statuses before planning",
+      "duration_ms": 0.0,
+      "effect": "extracts reusable query fields for routing, planning, and answers",
+      "efficiency_role": "avoids reparsing the query in later modules",
+      "input_summary": {
+        "normalized_query": "Answer from SQL first for audience; do not let optional API suppress direct SQL evidence. Apply SQL first and verify only when needed for the workflow readout."
+      },
+      "output": {
+        "domains": {
+          "items": [
+            "destination_dataflow"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "stage": "tokenization",
+      "technique": "domain-aware tokenization/entity extraction",
+      "timestamp": "2026-05-26T21:45:25.839478+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_04_relevance_scoring",
+      "correctness_role": "keeps high-signal tables and endpoints near the planner",
+      "duration_ms": 0.0,
+      "effect": "selects a smaller, more relevant schema/API context",
+      "efficiency_role": "reduces metadata and prompt tokens when compact metadata is enabled",
+      "input_summary": {
+        "tokens": {
+          "domains": {
+            "items": [
+              "destination_dataflow"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          }
+        }
+      },
+      "output": {
+        "top_answer_families": {
+          "items": [
+            "segment_destination"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "top_apis": {
+          "items": [
+            "segment_definitions"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_join_hints": {
+          "items": [
+            "dim_segment.SEGMENTID->hkg_br_segment_target.SEGMENTID"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_tables": {
+          "items": [
+            "dim_segment"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "context selection",
+      "technique": "attention-style relevance scoring",
+      "timestamp": "2026-05-26T21:45:25.839564+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_query_decomposition",
+      "correctness_role": "helps SQL/API planning preserve requested constraints",
+      "duration_ms": 0.0,
+      "effect": "breaks complex prompts into entities, filters, joins, and answer-shape constraints",
+      "efficiency_role": "skips simple queries and uses no LLM/tool calls",
+      "input_summary": {
+        "query": "Answer from SQL first for audience; do not let optional API suppress direct SQL evidence. Apply SQL first and verify only when needed for the workflow readout.",
+        "tokens": {
+          "domains": {
+            "items": [
+              "destination_dataflow"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          }
+        }
+      },
+      "output": {
+        "active": true,
+        "expected_answer_shape": "short_fact",
+        "sub_questions": {
+          "items": [
+            "Break complex request into SQL planning constraints."
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "query understanding",
+      "technique": "DIN-SQL-style deterministic query decomposition",
+      "timestamp": "2026-05-26T21:45:25.839581+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_05_query_analysis",
+      "correctness_role": "aligns routing, metadata, planning, and reporting decisions",
+      "duration_ms": 0.0,
+      "effect": "computes shared query understanding once",
+      "efficiency_role": "avoids repeated template and routing analysis",
+      "input_summary": {
+        "domain_type": "SEGMENT_AUDIENCE",
+        "route_type": "SQL_THEN_API"
+      },
+      "output": {
+        "answer_family": "generic",
+        "api_templates": {
+          "items": [
+            "gold_pattern_fallback"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "confidence": 0.65,
+        "domain_type": "SEGMENT_AUDIENCE",
+        "route_type": "SQL_THEN_API",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "stage": "routing",
+      "technique": "branch prediction / QueryAnalysis",
+      "timestamp": "2026-05-26T21:45:25.839586+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_06_lookup_path",
+      "correctness_role": "guides relationship-heavy SQL/API selection",
+      "duration_ms": 0.0,
+      "effect": "predicts the relevant table/join/API path",
+      "efficiency_role": "filters unrelated schema and endpoint candidates",
+      "input_summary": {
+        "answer_family": "generic",
+        "domain_type": "SEGMENT_AUDIENCE"
+      },
+      "output": {
+        "api_families": {
+          "items": [
+            "audience_by_destination_id"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "api_mode": "optional",
+        "family": "segment_destination",
+        "join_path": {
+          "items": [
+            "dim_segment.segmentid = hkg_br_segment_target.segmentid"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "required_ids": {
+          "items": [
+            "segment_id"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "tables": {
+          "items": [
+            "dim_segment"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "path prediction",
+      "technique": "TLB-style lookup path prediction",
+      "timestamp": "2026-05-26T21:45:25.839589+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_07_context_card",
+      "correctness_role": "keeps required tables, columns, joins, and API candidates visible",
+      "duration_ms": 0.0,
+      "effect": "packs family-relevant context into metadata.json and the filled prompt",
+      "efficiency_role": "limits context size for non-baseline strategies",
+      "input_summary": {
+        "broad_context": false,
+        "lookup_path": "segment_destination"
+      },
+      "output": {
+        "estimated_metadata_tokens": 945,
+        "prompt_tokens": 1600,
+        "selected_apis": {
+          "items": [
+            "flowservice_flows"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "selected_card_name": "segment_destination",
+        "selected_columns": {
+          "dim_segment": {
+            "items": [
+              "EVALUATIONCOMPLETEDTIME"
+            ],
+            "total_items": 7,
+            "truncated_items": true
+          },
+          "dim_target": {
+            "items": [
+              "CONNECTIONSPECID"
+            ],
+            "total_items": 7,
+            "truncated_items": true
+          },
+          "hkg_br_segment_target": {
+            "items": [
+              "SEGMENTID"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          }
+        },
+        "selected_tables": {
+          "items": [
+            "dim_segment"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "metadata packing",
+      "technique": "huge-page-style compact context card",
+      "timestamp": "2026-05-26T21:45:25.841260+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_08_candidate_plans",
+      "correctness_role": "prefers validated, family-matched plans",
+      "duration_ms": 0.0,
+      "effect": "selects one plan before execution",
+      "efficiency_role": "does not execute losing candidate plans",
+      "input_summary": {
+        "base_step_count": 2,
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "output": {
+        "candidate_plan_names": {
+          "items": [
+            "generic_sql_first"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "reason_selected": "highest pre-execution validation/relevance/cost score",
+        "scores": {
+          "generic_sql_first": 13.7642,
+          "lookup_path": 11.8743
+        },
+        "selected_plan": "generic_sql_first"
+      },
+      "stage": "planning",
+      "technique": "pre-execution plan ensemble",
+      "timestamp": "2026-05-26T21:45:25.841521+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_09_plan_optimization",
+      "correctness_role": "drops unresolved placeholder calls unless explicitly warned",
+      "duration_ms": 0.0,
+      "effect": "removes duplicate, skippable, or unsafe calls before validation",
+      "efficiency_role": "enforces a bounded plan before execution",
+      "input_summary": {
+        "original_step_count": 2
+      },
+      "output": {
+        "call_budget_applied": false,
+        "optimized_step_count": 2,
+        "optimizer_actions": {
+          "items": [
+            "ensemble selected generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "original_step_count": 2,
+        "removed_api_skip_calls": 0,
+        "removed_duplicate_calls": 0,
+        "unresolved_placeholders_removed": 0
+      },
+      "stage": "optimization",
+      "technique": "compiler-style plan optimization",
+      "timestamp": "2026-05-26T21:45:25.841528+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_10_evidence_policy",
+      "correctness_role": "keeps API calls for API-only/live families",
+      "duration_ms": 0.0,
+      "effect": "decides when API evidence is required, optional, or unnecessary",
+      "efficiency_role": "skips or caps API calls when SQL evidence is enough",
+      "input_summary": {
+        "answer_family": "generic",
+        "route_type": "SQL_THEN_API"
+      },
+      "output": {
+        "allowed_api_families": {
+          "items": [
+            "gold_pattern_fallback"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "max_api_calls": 1,
+        "mode": "API_OPTIONAL",
+        "reason": "Weak gold-pattern fallback is allowed as one verification call."
+      },
+      "stage": "evidence policy",
+      "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
+      "timestamp": "2026-05-26T21:45:25.841530+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_11_call_budget",
+      "correctness_role": "preserves required grounding steps",
+      "duration_ms": 0.0,
+      "effect": "keeps tool calls within per-family limits",
+      "efficiency_role": "prevents accidental extra SQL/API calls",
+      "input_summary": {
+        "planned_steps": {
+          "items": [
+            {
+              "action": "sql",
+              "purpose": "Ground names/IDs in local snapshot before API verification.",
+              "sql": "SELECT \"SEGMENTID\", \"UPDATEDTIME\", \"ISACCOUNTSEGMENT\", \"NAME\", \"EVALUATIONCOMPLE [truncated]"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "final_planned_calls": 2,
+        "max_api_calls": 1,
+        "max_sql_calls": 1,
+        "max_total_tool_calls": 2,
+        "planned_api_calls": 1,
+        "planned_sql_calls": 1
+      },
+      "stage": "efficiency control",
+      "technique": "tool-call budgeting",
+      "timestamp": "2026-05-26T21:45:25.841543+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_match_scores",
+      "correctness_role": "does not choose final answer or bypass SQL/API validators",
+      "duration_ms": 0.0,
+      "effect": "estimates whether SQL, API, both, or neither are plausible evidence sources",
+      "efficiency_role": "identifies potential staged acquisition savings without changing the plan",
+      "input_summary": {
+        "answer_family": "generic",
+        "route_type": "SQL_THEN_API"
+      },
+      "output": {
+        "api_match": 0.95,
+        "api_match_codes": {
+          "items": [
+            "API_DOMAIN_MATCH"
+          ],
+          "total_items": 5,
+          "truncated_items": true
+        },
+        "concrete_data_signal": true,
+        "live_api_signal": true,
+        "sql_match": 1.0,
+        "sql_match_codes": {
+          "items": [
+            "SQL_DOMAIN_MATCH"
+          ],
+          "total_items": 5,
+          "truncated_items": true
+        }
+      },
+      "stage": "staged evidence policy shadow",
+      "technique": "objective SQL/API evidence match scorer",
+      "timestamp": "2026-05-26T21:45:25.841621+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_initial_evidence_branch_policy",
+      "correctness_role": "keeps current SQL_FIRST_API_VERIFY execution unchanged in shadow mode",
+      "duration_ms": 0.0,
+      "effect": "records the first evidence branch a future trial would acquire",
+      "efficiency_role": "measures where upfront SQL+API planning may be avoidable",
+      "input_summary": {
+        "score": {
+          "api_match": 0.95,
+          "api_match_codes": {
+            "items": [
+              "API_DOMAIN_MATCH"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "concrete_data_signal": true,
+          "live_api_signal": true,
+          "sql_match": 1.0,
+          "sql_match_codes": {
+            "items": [
+              "SQL_DOMAIN_MATCH"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          }
+        }
+      },
+      "output": {
+        "first_branch": "SQL",
+        "policy_codes": {
+          "items": [
+            "SQL_HIGH_API_HIGH"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "second_branch_policy": "API_AFTER_SQL_IF_NEEDED",
+        "shadow_only": false
+      },
+      "stage": "staged evidence policy shadow",
+      "technique": "SQL-first/API-first staged branch policy",
+      "timestamp": "2026-05-26T21:45:25.841630+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_gated_sql_candidate_selection",
+      "correctness_role": "selects only validator- and AST-passing SQL candidates",
+      "duration_ms": 0.0,
+      "effect": "validates hard-case SQL candidates before execution without executing losing candidates",
+      "efficiency_role": "executes only one selected candidate in packaged SQL_FIRST_API_VERIFY mode",
+      "input_summary": {
+        "trigger_reasons": {
+          "items": [
+            "complex_query_decomposition"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "candidate_count": 1,
+        "cost_estimate": 1
+      },
+      "output": {
+        "preview": "{\"active\": true, \"hard_case_triggered\": true, \"trigger_reasons\": {\"items\": [\"complex_query_decomposition\"], \"total_items\": 1, \"truncated_items\": [truncated]",
+        "truncated": true
+      },
+      "stage": "planning",
+      "technique": "hard-case gated SQL candidate validation",
+      "timestamp": "2026-05-26T21:45:25.842901+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_post_sql_decision_card",
+      "correctness_role": "uses role/bucket summaries rather than raw large result payloads",
+      "duration_ms": 0.0,
+      "effect": "summarizes SQL result quality and safe API candidates before API execution",
+      "efficiency_role": "provides compact input for deterministic or LLM API advice",
+      "input_summary": {
+        "api_step": {
+          "action": "api",
+          "family": "gold_pattern_fallback",
+          "method": "GET",
+          "params": {
+            "limit": "5",
+            "property": "inheritedAttributes.properties.isDestinationFlow==true",
+            "sort": "updatedTime:desc"
+          },
+          "purpose": "API parameter template: gold_pattern_fallback.",
+          "url": "/data/foundation/flowservice/flows"
+        },
+        "sql_result_seen": true
+      },
+      "output": {
+        "allowed_outputs": {
+          "mode": {
+            "items": [
+              "CALL_API"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          }
+        },
+        "answer_intent": "GENERIC",
+        "api_candidates": {
+          "items": [
+            {
+              "can_fill_roles": {
+                "items": [
+                  "id",
+                  "name",
+                  "status"
+                ],
+                "total_items": 4,
+                "truncated_items": true
+              },
+              "endpoint_id": "flowservice_flows",
+              "family": "gold_pattern_fallback",
+              "live_health": "UNKNOWN",
+              "method": "GET",
+              "requires_path_param": false,
+              "safe_get": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "prompt_features": {
+          "items": [
+            "WHEN"
+          ],
+          "total_items": 11,
+          "truncated_items": true
+        },
+        "sql_state": {
+          "direct_answer": true,
+          "execution": "SUCCESS",
+          "partial_answer": false,
+          "returned_roles": {
+            "items": [
+              "id"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "row_count_bucket": "MANY",
+          "validation": "PASS",
+          "zero_rows": false
+        },
+        "task": "POST_SQL_API_DECISION"
+      },
+      "stage": "post-SQL API decision shadow",
+      "technique": "compact post-SQL decision card",
+      "timestamp": "2026-05-26T21:45:25.846254+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_post_sql_deterministic_policy",
+      "correctness_role": "does not execute or suppress API calls in shadow mode",
+      "duration_ms": 0.0,
+      "effect": "bypasses LLM advice for high-confidence call/skip decisions",
+      "efficiency_role": "estimates where ambiguous-only LLM advice would save calls",
+      "input_summary": {
+        "card_task": "POST_SQL_API_DECISION"
+      },
+      "output": {
+        "api_evidence_signal": 0.85,
+        "codes": {
+          "items": [
+            "EXPLICIT_LIVE_OR_API_INTENT"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "confidence": "HIGH",
+        "suggestion": "CALL_API"
+      },
+      "stage": "post-SQL API decision shadow",
+      "technique": "confidence-banded deterministic post-SQL policy",
+      "timestamp": "2026-05-26T21:45:25.846259+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_post_sql_llm_advisor",
+      "correctness_role": "never creates endpoints, params, user answers, or bypasses validators",
+      "duration_ms": 0.0,
+      "effect": "records advisory CALL_API/SKIP_API/CAVEAT_ONLY choice when enabled or deterministic fallback otherwise",
+      "efficiency_role": "invokes LLM only for medium/low/ambiguous policy bands",
+      "input_summary": {
+        "advisor_enabled": false,
+        "policy_confidence": "HIGH"
+      },
+      "output": {
+        "codes": {
+          "items": [
+            "EXPLICIT_LIVE_OR_API_INTENT"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "conf": 1.0,
+        "llm_call_attempted": false,
+        "mode": "CALL_API",
+        "source": "DETERMINISTIC_BYPASS"
+      },
+      "stage": "post-SQL API decision shadow",
+      "technique": "medium/low-confidence LLM API advisor",
+      "timestamp": "2026-05-26T21:45:25.846267+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_post_sql_api_call_verifier",
+      "correctness_role": "blocks unknown endpoints, unresolved path params, and API-required skips",
+      "duration_ms": 0.0,
+      "effect": "verifies endpoint legality and records what would be kept, dropped, or caveated",
+      "efficiency_role": "estimates API call savings/additions without changing execution",
+      "input_summary": {
+        "advisor_source": "DETERMINISTIC_BYPASS"
+      },
+      "output": {
+        "codes": {
+          "items": [
+            "VERIFIED_CALL_API"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "final_action": "CALL_API",
+        "selected_api_families": {
+          "items": [
+            "gold_pattern_fallback"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "shadow_only": false,
+        "source": "DETERMINISTIC_HIGH_CONF"
+      },
+      "stage": "post-SQL API decision shadow",
+      "technique": "thin verifier for post-SQL API advice",
+      "timestamp": "2026-05-26T21:45:25.846272+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_real_behavior_applied_trial",
+      "correctness_role": "preserves API-required and live/API prompts while testing optional API suppression",
+      "duration_ms": 0.0,
+      "effect": "applies deterministic post-SQL API keep/drop decisions only in explicit real benchmark trial modes",
+      "efficiency_role": "measures actual API call savings in trajectory tool results",
+      "input_summary": {
+        "api_step": {
+          "action": "api",
+          "family": "gold_pattern_fallback",
+          "method": "GET",
+          "params": {
+            "limit": "5",
+            "property": "inheritedAttributes.properties.isDestinationFlow==true",
+            "sort": "updatedTime:desc"
+          },
+          "purpose": "API parameter template: gold_pattern_fallback.",
+          "url": "/data/foundation/flowservice/flows"
+        },
+        "trial_mode": "combined_safe_applied_real_trial"
+      },
+      "output": {
+        "applied": false,
+        "blockers": {
+          "items": [
+            "POLICY_DID_NOT_SUGGEST_SKIP"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "decision": "KEEP_BASELINE_API",
+        "decision_family": "POST_SQL_API",
+        "fallback": true,
+        "record": true,
+        "shadow_only": false,
+        "trial_mode": "combined_safe_applied_real_trial",
+        "truncated_fields": 6
+      },
+      "stage": "isolated applied trial",
+      "technique": "post-SQL API decision applied trial",
+      "timestamp": "2026-05-26T21:45:25.846294+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_12_validation",
+      "correctness_role": "blocks unsafe SQL and unknown/unresolved API calls",
+      "duration_ms": 0.0,
+      "effect": "records whether planned SQL/API calls were safe to execute",
+      "efficiency_role": "prevents wasted execution on invalid calls",
+      "input_summary": {
+        "optimized_steps": {
+          "items": [
+            {
+              "action": "sql",
+              "purpose": "Ground names/IDs in local snapshot before API verification.",
+              "sql": "SELECT \"SEGMENTID\", \"UPDATEDTIME\", \"ISACCOUNTSEGMENT\", \"NAME\", \"EVALUATIONCOMPLE [truncated]"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "api_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "validation",
+      "technique": "SQL/API safety validation",
+      "timestamp": "2026-05-26T21:45:25.846655+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_sql_ast_validation",
+      "correctness_role": "detects unsafe SQL and schema mismatches with parser-backed structure",
+      "duration_ms": 0.0,
+      "effect": "adds AST-level table and column extraction after existing SQL validation",
+      "efficiency_role": "provides precise feedback without extra SQL tool calls",
+      "input_summary": {
+        "sql_call_count": 1
+      },
+      "output": {
+        "destructive_sql_detected": false,
+        "parsed_ok": true,
+        "selected_columns": {
+          "items": [
+            "CREATEDTIME"
+          ],
+          "total_items": 8,
+          "truncated_items": true
+        },
+        "selected_tables": {
+          "items": [
+            "dim_segment"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "summaries": {
+          "items": [
+            {
+              "destructive_sql_detected": false,
+              "enabled": true,
+              "normalized_sql": "SELECT \"SEGMENTID\", \"UPDATEDTIME\", \"ISACCOUNTSEGMENT\", \"NAME\", \"EVALUATIONCOMPLE [truncated]",
+              "parsed_ok": true,
+              "selected_columns": {
+                "items": [
+                  "SEGMENTID",
+                  "UPDATEDTIME",
+                  "ISACCOUNTSEGMENT"
+                ],
+                "total_items": 8,
+                "truncated_items": true
+              },
+              "selected_tables": {
+                "items": [
+                  "dim_segment"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              }
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "validation",
+      "technique": "SQLGlot AST-based SQL validation and extraction",
+      "timestamp": "2026-05-26T21:45:25.846663+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_13_tool_execution",
+      "correctness_role": "records row counts, dry-run state, and API status for final answer grounding",
+      "duration_ms": 0.0,
+      "effect": "captures the actual SQL/API evidence gathered by the backend",
+      "efficiency_role": "makes tool-call count and result previews explicit",
+      "input_summary": {
+        "validated_step_count": 2
+      },
+      "output": {
+        "preview": "{\"sql_calls_executed\": 1, \"api_calls_executed\": 1, \"dry_run_status\": true, \"row_counts\": {\"items\": [13], \"total_items\": 1, \"truncated_items\": fa [truncated]",
+        "truncated": true
+      },
+      "stage": "execution",
+      "technique": "SQL/API tool execution",
+      "timestamp": "2026-05-26T21:45:25.846691+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_14_evidence_bus",
+      "correctness_role": "passes exact IDs, names, counts, timestamps, and statuses without text guessing",
+      "duration_ms": 0.0,
+      "effect": "forwards structured facts to API params and answer slots",
+      "efficiency_role": "avoids repeated lookup or reparsing work",
+      "input_summary": {
+        "tool_result_count": 2
+      },
+      "output": {
+        "evidence": {
+          "counts": {
+            "items": [
+              false
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "ids": {
+            "segment_id": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
+          },
+          "names": {
+            "items": [
+              "Person: Birthday Today 001"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "statuses": {
+            "items": [
+              "published"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "timestamps": {
+            "items": [
+              "2026-04-05T04:33:25.000+00:00"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          }
+        }
+      },
+      "stage": "evidence forwarding",
+      "technique": "operand forwarding / EvidenceBus",
+      "timestamp": "2026-05-26T21:45:25.846695+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_15_answer_slots",
+      "correctness_role": "makes final response generation evidence-grounded",
+      "duration_ms": 0.0,
+      "effect": "turns raw tool results into typed evidence fields",
+      "efficiency_role": "keeps answer context compact",
+      "input_summary": {
+        "tool_result_count": 2
+      },
+      "output": {
+        "answer_intent": "WHEN",
+        "discrepancy_flags": {
+          "sql_api_discrepancy": false
+        },
+        "dry_run_flags": {
+          "dry_run": true
+        },
+        "missing_slots": {
+          "items": [
+            "dry_run_caveat"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "slots": {
+          "answer_family": "generic",
+          "api_error": false,
+          "discrepancy": false,
+          "dry_run": true,
+          "entity_ids": {
+            "items": [
+              "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "entity_names": {
+            "items": [
+              "Person: Birthday Today 001"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "sql_row_count": 13,
+          "truncated_fields": 5
+        }
+      },
+      "stage": "answer synthesis",
+      "technique": "structured answer slot extraction",
+      "timestamp": "2026-05-26T21:45:25.851032+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_16_answer_verification",
+      "correctness_role": "blocks unsupported numbers, entities, timestamps, statuses, and dry-run API confirmation",
+      "duration_ms": 0.0,
+      "effect": "checks final-answer claims against SQL/API evidence",
+      "efficiency_role": "rewrites safely without extra tool calls",
+      "input_summary": {
+        "claim_count": 4,
+        "slots_present": {
+          "items": [
+            "entity_names"
+          ],
+          "total_items": 8,
+          "truncated_items": true
+        }
+      },
+      "output": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "rewrite_applied": true,
+        "supported_claims_count": 4,
+        "unsupported_claims_count": 0,
+        "verifier_passed": true
+      },
+      "stage": "answer verification",
+      "technique": "claim verification / groundedness checking",
+      "timestamp": "2026-05-26T21:45:25.851039+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_17_answer_reranking",
+      "correctness_role": "prefers verifier-passing and intent-matched answers",
+      "duration_ms": 0.0,
+      "effect": "selects the safest answer from same-evidence candidates",
+      "efficiency_role": "uses no additional SQL/API/LLM calls",
+      "input_summary": {
+        "answer_family": "generic"
+      },
+      "output": {
+        "candidate_count": 0,
+        "selected_candidate_type": "safe_rewrite",
+        "selection_reason": "best verifier-passing answer"
+      },
+      "stage": "answer selection",
+      "technique": "deterministic answer reranking",
+      "timestamp": "2026-05-26T21:45:25.851041+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "correctness_role": "final answer remains tied to evidence and caveats",
+      "duration_ms": 0.0,
+      "effect": "returns the final concise answer to the agent harness",
+      "efficiency_role": "keeps response concise",
+      "input_summary": {
+        "verifier_passed": true
+      },
+      "output": {
+        "answer_length": 91,
+        "final_answer": "Person: Birthday Today 001 has timestamp 2026-04-05T04:33:25.000+00:00 in the SQL evidence.",
+        "final_token_estimate": 32
+      },
+      "stage": "final response",
+      "technique": "concise grounded final response",
+      "timestamp": "2026-05-26T21:45:25.851071+00:00"
+    },
+    {
+      "active": true,
+      "checkpoint_id": "checkpoint_official_token_reduction",
+      "correctness_impact_expected": false,
+      "estimated_tokens_after": 993,
+      "estimated_tokens_before": 1418,
+      "expected_savings": 425,
+      "packaged_execution_changed": false,
+      "reduced_fields": [
+        "steps[0].candidate_apis",
+        "steps[0].candidate_tables",
+        "steps[1].decomposition",
+        "steps[2].metadata_path",
+        "steps[3].rationale",
+        "steps[3].steps",
+        "steps[5].result.rows"
+      ]
+    }
+  ],
+  "domain_type": "SEGMENT_AUDIENCE",
+  "errors": [],
+  "estimated_tokens": 993,
+  "execution_time": 0.0020358338952064514,
+  "final_answer": "Person: Birthday Today 001 has timestamp 2026-04-05T04:33:25.000+00:00 in the SQL evidence.",
+  "original_query": "Answer from SQL first for audience; do not let optional API suppress direct SQL evidence. Apply SQL first and verify only when needed for the workflow readout.",
+  "planning_time": 0.0016414588317275047,
+  "preprocessing_time": 0.0018952498212456703,
+  "query_id": "da500_0319",
+  "route_type": "SQL_THEN_API",
+  "runtime": 0.029459749814122915,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences"
+        },
+        {
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions"
+        },
+        {
+          "id": "merge_policies",
+          "method": "GET",
+          "path": "/data/core/ups/config/mergePolicies"
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_connector",
+        "dim_segment"
+      ],
+      "confidence": 0.6499999999999999,
+      "domain_type": "SEGMENT_AUDIENCE",
+      "kind": "route",
+      "reason": "Keyword routing using SEGMENT_AUDIENCE:1, DESTINATION_DATAFLOW:1.",
+      "route_type": "SQL_THEN_API"
+    },
+    {
+      "decomposition": {
+        "expected_answer_shape": "short_fact",
+        "sub_question_count": 1
+      },
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "segment_definitions",
+          "segment_jobs"
+        ],
+        "lookup_paths": [
+          "segment_destination"
+        ],
+        "tables": [
+          "dim_segment",
+          "dim_target"
+        ]
+      },
+      "tokens": {
+        "domains": [
+          "destination_dataflow",
+          "segment_audience"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 945,
+      "kind": "metadata",
+      "metadata_path": "metadata.json",
+      "prompt_tokens": 1600
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_OPTIONAL. Weak gold-pattern fallback is allowed a [truncated]",
+      "steps": [
+        {
+          "action": "sql",
+          "sql_recorded_in_sql_call": true
+        },
+        {
+          "action": "api",
+          "family": "gold_pattern_fallback",
+          "method": "GET",
+          "params": {
+            "limit": "5",
+            "property": "inheritedAttributes.properties.isDestinationFlow==true",
+            "sort": "updatedTime:desc"
+          },
+          "url": "/data/foundation/flowservice/flows"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 13.7642,
+          "lookup_path": 11.8743
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 2,
+          "lookup_path": 1
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "row_count": 13,
+        "rows": {
+          "items": [
+            {
+              "CREATEDTIME": "2026-04-05T04:33:25.000+00:00",
+              "ISACCOUNTSEGMENT": false,
+              "LABELSSEGMENT": "[]",
+              "LIFECYCLESTATUS": "published",
+              "NAME": "Person: Birthday Today 001",
+              "SEGMENTID": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
+              "UPDATEDTIME": "2026-04-05T04:33:25.000+00:00"
+            }
+          ],
+          "total_items": 13,
+          "truncated_items": true
+        }
+      },
+      "sql": "SELECT \"SEGMENTID\", \"UPDATEDTIME\", \"ISACCOUNTSEGMENT\", \"NAME\", \"EVALUATIONCOMPLETEDTIME\", \"LABELSSEGMENT\", \"LIFECYCLESTATUS\", \"CREATEDTIME\" FROM \"dim_segment\" LIMIT 50",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "5",
+        "property": "inheritedAttributes.properties.isDestinationFlow==true",
+        "sort": "updatedTime:desc"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/flowservice/flows",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "5",
+          "property": "inheritedAttributes.properties.isDestinationFlow==true",
+          "sort": "updatedTime:desc"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/foundation/flowservice/flows"
+      },
+      "url": "/data/foundation/flowservice/flows",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "answer_family": "generic",
+      "answer_intent": "WHEN",
+      "completeness_missing_fields": [
+        "dry_run_caveat"
+      ],
+      "kind": "answer_diagnostics",
+      "rewrite_applied": true,
+      "selected_candidate_type": "safe_rewrite",
+      "slots_present": [
+        "entity_names",
+        "entity_ids",
+        "counts",
+        "statuses",
+        "timestamps",
+        "sql_row_count",
+        "dry_run",
+        "first_rows"
+      ],
+      "unsupported_claims_count": 0,
+      "verifier_passed": true
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 0.004570959135890007,
+    "execution_time": 0.0020358338952064514,
+    "planning_time": 0.0016414588317275047,
+    "preprocessing_time": 0.0018952498212456703
+  },
+  "tool_call_count": 2
+}

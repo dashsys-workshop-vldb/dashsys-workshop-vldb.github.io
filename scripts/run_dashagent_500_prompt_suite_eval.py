@@ -45,8 +45,20 @@ REAL_MODES = {
     "packaged_baseline_real",
     "latest_shadow_real",
     "latest_applied_real_trial",
+    "semantic_no_tool_applied_real_trial",
+    "staged_evidence_applied_real_trial",
+    "post_sql_deterministic_applied_real_trial",
+    "post_sql_llm_advisor_applied_real_trial",
+    "combined_safe_applied_real_trial",
 }
 RECOGNIZED_MODES = SIMULATED_MODES | REAL_MODES
+REAL_BEHAVIOR_APPLIED_MODES = {
+    "semantic_no_tool_applied_real_trial",
+    "staged_evidence_applied_real_trial",
+    "post_sql_deterministic_applied_real_trial",
+    "post_sql_llm_advisor_applied_real_trial",
+    "combined_safe_applied_real_trial",
+}
 REAL_APPLIED_TRIAL_BLOCKERS = [
     "Semantic route decisions are integrated as shadow checkpoints only.",
     "Staged evidence policy is integrated as shadow checkpoints only.",
@@ -173,6 +185,8 @@ def run_suite_eval(
                 {
                     "prompt_id": prompt_id,
                     "category": runtime_row.get("category"),
+                    "domain_family": runtime_row.get("domain_family"),
+                    "expected_evidence_need": gold_row.get("expected_evidence_need"),
                     **grade,
                     "trajectory_path": str(prompt_dir / "trajectory.json"),
                     "latest_code_paths_enabled": runtime_trace["latest_code_paths_enabled"],
@@ -190,6 +204,11 @@ def run_suite_eval(
         mode_summaries,
         mode_rows,
     )
+    mode_comparisons = {
+        mode: _compare_specific_modes("packaged_baseline_real", mode, mode_summaries, mode_rows)
+        for mode in mode_summaries
+        if mode != "packaged_baseline_real"
+    }
     report = {
         "eval_engine": "simulated_trace",
         "simulated_trace_only": True,
@@ -282,6 +301,20 @@ def _run_real_agent_suite_eval(
             mode_summaries[mode] = _empty_unavailable_summary(mode, unavailable_modes[mode])
             mode_rows[mode] = []
             continue
+        if mode == "post_sql_llm_advisor_applied_real_trial" and not _llm_backend_available():
+            unavailable_modes[mode] = {
+                "mode": mode,
+                "available": False,
+                "excluded_from_comparison": True,
+                "unavailable": True,
+                "blockers": ["LLM backend unavailable or not explicitly configured for post-SQL advisor applied trial."],
+                "prompt_count": 0,
+                "real_agent_execution": False,
+                "applied_trial_behavior_changed": False,
+            }
+            mode_summaries[mode] = _empty_unavailable_summary(mode, unavailable_modes[mode])
+            mode_rows[mode] = []
+            continue
 
         rows: list[dict[str, Any]] = []
         config = _config_for_real_mode(mode)
@@ -335,8 +368,15 @@ def _run_real_agent_suite_eval(
                     "api_families": extracted["api_families"],
                     "estimated_total_tokens": extracted["estimated_total_tokens"],
                     "runtime_ms": runtime_ms,
-                    "api_calls_saved": 0,
-                    "api_calls_added": 0,
+                    "api_calls_saved": extracted["api_calls_saved"],
+                    "api_calls_added": extracted["api_calls_added"],
+                    "feature_flags_used": extracted["feature_flags_used"],
+                    "behavior_changed": extracted["behavior_changed"],
+                    "applied_decision_count": extracted["applied_decision_count"],
+                    "skipped_decision_count": extracted["skipped_decision_count"],
+                    "fallback_count": extracted["fallback_count"],
+                    "blocker_count": extracted["blocker_count"],
+                    "applied_decision_records": extracted["applied_decision_records"],
                     "anti_hallucination_initial_fail": extracted["anti_hallucination_initial_fail"],
                     "anti_hallucination_revision_attempted": extracted["anti_hallucination_revision_attempted"],
                     "anti_hallucination_revision_success": extracted["anti_hallucination_revision_success"],
@@ -400,6 +440,11 @@ def _run_real_agent_suite_eval(
             }
         )
     comparison = _compare_modes(mode_summaries, mode_rows)
+    mode_comparisons = {
+        mode: _compare_specific_modes("packaged_baseline_real", mode, mode_summaries, mode_rows)
+        for mode in mode_summaries
+        if mode != "packaged_baseline_real"
+    }
     report = {
         "eval_engine": "real_agent",
         "simulated_trace_only": False,
@@ -421,8 +466,12 @@ def _run_real_agent_suite_eval(
         "mode_order": selected_modes,
         "comparison": comparison,
         "shadow_comparison": shadow_comparison,
+        "mode_comparisons": mode_comparisons,
         "unavailable_modes": unavailable_modes,
-        "latest_code_paths_explicitly_evaluated": bool(mode_summaries.get("latest_shadow_real", {}).get("shadow_modules_executed")),
+        "latest_code_paths_explicitly_evaluated": bool(
+            mode_summaries.get("latest_shadow_real", {}).get("shadow_modules_executed")
+            or any(mode in REAL_BEHAVIOR_APPLIED_MODES for mode in mode_summaries)
+        ),
         "old_generated_diagnostic_path_used": False,
         "runtime_gold_visible": False,
         "runtime_input_fields": ["prompt_id", "prompt"],
@@ -437,6 +486,9 @@ def _run_real_agent_suite_eval(
     report_md.write_text(_eval_report_md(report), encoding="utf-8")
     gate = _write_gate_report(report, reports_dir, suffix="_real")
     report["gate"] = gate
+    if any(mode in REAL_BEHAVIOR_APPLIED_MODES for mode in mode_summaries):
+        behavior_reports = _write_real_behavior_change_reports(report, mode_rows, reports_dir)
+        report["real_behavior_change_reports"] = behavior_reports
     report_json.write_text(json.dumps(report, indent=2, sort_keys=True, default=str), encoding="utf-8")
     _write_runner_audit(report, reports_dir)
     return report
@@ -471,6 +523,62 @@ def _config_for_real_mode(mode: str) -> Any:
             post_sql_api_decision_shadow_only=True,
             post_sql_llm_advisor_enabled=False,
         )
+    if mode == "semantic_no_tool_applied_real_trial":
+        return replace(
+            DEFAULT_CONFIG,
+            enable_objective_prompt_features=True,
+            enable_semantic_intent_classifier=True,
+            enable_semantic_route_decision_ladder=True,
+            semantic_route_shadow_only=False,
+            enable_semantic_no_tool_applied_trial=True,
+            real_behavior_trial_mode=mode,
+        )
+    if mode == "staged_evidence_applied_real_trial":
+        return replace(
+            DEFAULT_CONFIG,
+            enable_staged_evidence_policy=True,
+            staged_evidence_policy_shadow_only=False,
+            enable_post_sql_api_decision=True,
+            post_sql_api_decision_shadow_only=False,
+            enable_staged_evidence_applied_trial=True,
+            real_behavior_trial_mode=mode,
+        )
+    if mode == "post_sql_deterministic_applied_real_trial":
+        return replace(
+            DEFAULT_CONFIG,
+            enable_post_sql_api_decision=True,
+            post_sql_api_decision_shadow_only=False,
+            enable_post_sql_deterministic_applied_trial=True,
+            post_sql_llm_advisor_enabled=False,
+            real_behavior_trial_mode=mode,
+        )
+    if mode == "post_sql_llm_advisor_applied_real_trial":
+        return replace(
+            DEFAULT_CONFIG,
+            enable_post_sql_api_decision=True,
+            post_sql_api_decision_shadow_only=False,
+            enable_post_sql_llm_advisor_applied_trial=True,
+            post_sql_llm_advisor_enabled=True,
+            real_behavior_trial_mode=mode,
+        )
+    if mode == "combined_safe_applied_real_trial":
+        return replace(
+            DEFAULT_CONFIG,
+            enable_objective_prompt_features=True,
+            enable_semantic_intent_classifier=True,
+            enable_semantic_route_decision_ladder=True,
+            semantic_route_shadow_only=False,
+            enable_staged_evidence_policy=True,
+            staged_evidence_policy_shadow_only=False,
+            enable_post_sql_api_decision=True,
+            post_sql_api_decision_shadow_only=False,
+            enable_semantic_no_tool_applied_trial=True,
+            enable_staged_evidence_applied_trial=True,
+            enable_post_sql_deterministic_applied_trial=True,
+            enable_combined_safe_applied_trial=True,
+            post_sql_llm_advisor_enabled=False,
+            real_behavior_trial_mode=mode,
+        )
     return DEFAULT_CONFIG
 
 
@@ -483,6 +591,16 @@ def _make_executor(config: Any, executor_factory: Callable[..., Any] | None) -> 
     from dashagent.executor import AgentExecutor
 
     return AgentExecutor(config=config)
+
+
+def _llm_backend_available() -> bool:
+    try:
+        from dashagent.llm_client import get_llm_client
+
+        client = get_llm_client()
+        return bool(client.available())
+    except Exception:
+        return False
 
 
 def _empty_unavailable_summary(mode: str, payload: dict[str, Any]) -> dict[str, Any]:
@@ -506,12 +624,17 @@ def _empty_unavailable_summary(mode: str, payload: dict[str, Any]) -> dict[str, 
         "unsupported_claims",
         "tool_overuse",
         "tool_underuse",
+        "api_required_underuse",
         "no_tool_false_positive",
         "no_tool_false_negative",
         "sql_calls",
         "api_calls",
         "api_calls_saved",
         "api_calls_added",
+        "applied_decision_count",
+        "skipped_decision_count",
+        "fallback_count",
+        "blocker_count",
         "anti_hallucination_initial_fail",
         "anti_hallucination_revision_attempted",
         "anti_hallucination_revision_success",
@@ -536,6 +659,9 @@ def _empty_unavailable_summary(mode: str, payload: dict[str, Any]) -> dict[str, 
             "excluded_from_comparison": True,
             "per_category": {},
             "latest_code_paths_enabled": {},
+            "feature_flags_used": {},
+            "behavior_changed": False,
+            "applied_decision_records": [],
             "post_sql_advisor_source_counts": {},
             "old_generated_diagnostic_path_used": False,
             "rows_helped": [],
@@ -678,8 +804,17 @@ def _extract_real_runtime(agent_result: dict[str, Any], catalog: EndpointCatalog
     verifier_source = _normalize_post_sql_source(_checkpoint_output_source(verifier_checkpoint))
     advisor_source = _post_sql_advisor_source(advisor_output)
     advisor_checkpoint_present = advisor_checkpoint is not None
-    actual_llm_advisor_call = _post_sql_actual_llm_advisor_call(advisor_source)
+    actual_llm_advisor_call = bool(advisor_output.get("llm_call_attempted")) or _post_sql_actual_llm_advisor_call(advisor_source)
     llm_advice_blocked = actual_llm_advisor_call and verifier_source == "LLM_ADVISOR_BLOCKED"
+    applied_records = [
+        _checkpoint_output(checkpoint)
+        for name, checkpoint in zip(checkpoint_names, checkpoints, strict=False)
+        if name == "checkpoint_real_behavior_applied_trial"
+    ]
+    applied_decision_count = sum(1 for record in applied_records if record.get("applied"))
+    skipped_decision_count = sum(1 for record in applied_records if record and not record.get("applied"))
+    fallback_count = sum(1 for record in applied_records if record.get("fallback"))
+    blocker_count = sum(len(record.get("blockers") or []) for record in applied_records)
     return {
         "sql_used": bool(sql_calls),
         "api_used": bool(api_calls),
@@ -696,6 +831,15 @@ def _extract_real_runtime(agent_result: dict[str, Any], catalog: EndpointCatalog
         "estimated_total_tokens": estimated_tokens,
         "runtime_ms": runtime_ms,
         "trajectory_timing": timing,
+        "feature_flags_used": _trial_feature_flags_from_records(applied_records),
+        "behavior_changed": applied_decision_count > 0,
+        "applied_decision_count": applied_decision_count,
+        "skipped_decision_count": skipped_decision_count,
+        "fallback_count": fallback_count,
+        "blocker_count": blocker_count,
+        "applied_decision_records": applied_records[:8],
+        "api_calls_saved": sum(1 for record in applied_records if record.get("applied") and record.get("decision") == "SKIP_API"),
+        "api_calls_added": sum(1 for record in applied_records if record.get("applied") and record.get("decision") == "CALL_API"),
         "anti_hallucination_initial_fail": _checkpoint_has_gate_initial_fail(checkpoint_by_name.get("checkpoint_routing_anti_hallucination_gate")),
         "anti_hallucination_revision_attempted": _checkpoint_output_bool(checkpoint_by_name.get("checkpoint_routing_anti_hallucination_gate"), "revision_attempted"),
         "anti_hallucination_revision_success": _checkpoint_output_bool(checkpoint_by_name.get("checkpoint_routing_anti_hallucination_gate"), "revision_success"),
@@ -767,6 +911,29 @@ def _latest_flags_from_checkpoints(checkpoint_names: list[str]) -> dict[str, boo
         "post_sql_api_call_verifier": "checkpoint_post_sql_api_call_verifier" in names,
         "evidence_bus_answer_verifier_token_reduction": "checkpoint_16_answer_verification" in names,
     }
+
+
+def _trial_feature_flags_from_records(records: list[dict[str, Any]]) -> dict[str, bool]:
+    flags = {
+        "semantic_no_tool_applied": False,
+        "staged_evidence_applied": False,
+        "post_sql_deterministic_applied": False,
+        "post_sql_llm_advisor_applied": False,
+        "combined_safe_applied": False,
+    }
+    for record in records:
+        mode = str(record.get("trial_mode") or "")
+        if mode == "semantic_no_tool_applied_real_trial":
+            flags["semantic_no_tool_applied"] = True
+        elif mode == "staged_evidence_applied_real_trial":
+            flags["staged_evidence_applied"] = True
+        elif mode == "post_sql_deterministic_applied_real_trial":
+            flags["post_sql_deterministic_applied"] = True
+        elif mode == "post_sql_llm_advisor_applied_real_trial":
+            flags["post_sql_llm_advisor_applied"] = True
+        elif mode == "combined_safe_applied_real_trial":
+            flags["combined_safe_applied"] = True
+    return flags
 
 
 def _estimate_real_tokens(agent_result: dict[str, Any]) -> int:
@@ -1242,6 +1409,7 @@ def _grade_runtime_trace(trace: dict[str, Any], gold: dict[str, Any]) -> dict[st
         "unsupported_claims": unsupported_claims,
         "no_tool_false_positive": no_tool_false_positive,
         "no_tool_false_negative": no_tool_false_negative,
+        "api_required_underuse": bool(api_required and not api_used),
         "live_empty_interpretation_correct": True,
         "api_error_interpretation_correct": True,
         "answer_grounding_score": answer_grounding_score,
@@ -1280,12 +1448,25 @@ def _summarize_mode(mode: str, rows: list[dict[str, Any]], elapsed: float) -> di
             "unsupported_claims": sum(int(row.get("unsupported_claims") or 0) for row in rows),
             "tool_overuse": sum(int(row.get("tool_overuse") or 0) for row in rows),
             "tool_underuse": sum(int(row.get("tool_underuse") or 0) for row in rows),
+            "api_required_underuse": sum(
+                1
+                for row in rows
+                if str(row.get("expected_evidence_need") or "") in {"api", "sql_then_api", "api_then_sql", "mixed"}
+                and float(row.get("api_required_used_accuracy") or 0.0) == 0.0
+            ),
             "no_tool_false_positive": sum(1 for row in rows if row.get("no_tool_false_positive")),
             "no_tool_false_negative": sum(1 for row in rows if row.get("no_tool_false_negative")),
-            "sql_calls": sum(1 for row in rows if row.get("sql_used")),
-            "api_calls": sum(1 for row in rows if row.get("api_used")),
+            "sql_calls": sum(int(row.get("sql_call_count") or int(bool(row.get("sql_used")))) for row in rows),
+            "api_calls": sum(int(row.get("api_call_count") or int(bool(row.get("api_used")))) for row in rows),
             "api_calls_saved": sum(int(row.get("api_calls_saved") or 0) for row in rows),
             "api_calls_added": sum(int(row.get("api_calls_added") or 0) for row in rows),
+            "applied_decision_count": sum(int(row.get("applied_decision_count") or 0) for row in rows),
+            "skipped_decision_count": sum(int(row.get("skipped_decision_count") or 0) for row in rows),
+            "fallback_count": sum(int(row.get("fallback_count") or 0) for row in rows),
+            "blocker_count": sum(int(row.get("blocker_count") or 0) for row in rows),
+            "behavior_changed": any(bool(row.get("behavior_changed")) for row in rows),
+            "feature_flags_used": _aggregate_feature_flags_used(rows),
+            "applied_decision_records": [record for row in rows for record in (row.get("applied_decision_records") or [])][:25],
             "anti_hallucination_initial_fail": sum(1 for row in rows if row.get("anti_hallucination_initial_fail")),
             "anti_hallucination_revision_attempted": sum(1 for row in rows if row.get("anti_hallucination_revision_attempted")),
             "anti_hallucination_revision_success": sum(1 for row in rows if row.get("anti_hallucination_revision_success")),
@@ -1302,6 +1483,8 @@ def _summarize_mode(mode: str, rows: list[dict[str, Any]], elapsed: float) -> di
             "post_sql_advisor_blocked": sum(1 for row in rows if row.get("post_sql_llm_advice_blocked")),
             "wall_time_seconds": round(elapsed, 4),
             "per_category": _group_average(rows, "category", "overall_score"),
+            "per_domain": _group_average(rows, "domain_family", "overall_score"),
+            "per_evidence_need": _group_average(rows, "expected_evidence_need", "overall_score"),
             "latest_code_paths_enabled": _aggregate_latest_flags(rows),
             "old_generated_diagnostic_path_used": False,
             "rows_helped": [],
@@ -1396,14 +1579,16 @@ def _compare_specific_modes(
     candidate_rows = {row["prompt_id"]: row for row in mode_rows.get(candidate_mode, [])}
     helped: list[dict[str, Any]] = []
     hurt: list[dict[str, Any]] = []
+    common_count = 0
     for prompt_id, candidate_row in candidate_rows.items():
         base_row = baseline_rows.get(prompt_id)
         if not base_row:
             continue
-        delta = round(float(candidate_row.get("overall_score") or 0.0) - float(base_row.get("overall_score") or 0.0), 4)
-        if delta > 0.05:
+        common_count += 1
+        delta = round(float(candidate_row.get("behavior_score") or 0.0) - float(base_row.get("behavior_score") or 0.0), 4)
+        if delta > 0.005:
             helped.append({"prompt_id": prompt_id, "delta": delta})
-        elif delta < -0.05:
+        elif delta < -0.005:
             hurt.append({"prompt_id": prompt_id, "delta": delta})
     final_answer_changed = sum(
         1
@@ -1433,6 +1618,7 @@ def _compare_specific_modes(
         "runtime_ms_delta": round(float(candidate.get("runtime_ms") or 0.0) - float(baseline.get("runtime_ms") or 0.0), 4),
         "rows_helped_count": len(helped),
         "rows_hurt_count": len(hurt),
+        "rows_neutral_count": max(0, common_count - len(helped) - len(hurt)),
         "rows_helped_examples": sorted(helped, key=lambda item: item["delta"], reverse=True)[:20],
         "rows_hurt_examples": sorted(hurt, key=lambda item: item["delta"])[:20],
         "final_answer_changed_count": final_answer_changed,
@@ -1644,6 +1830,15 @@ def _aggregate_latest_flags(rows: list[dict[str, Any]]) -> dict[str, bool]:
     return flags
 
 
+def _aggregate_feature_flags_used(rows: list[dict[str, Any]]) -> dict[str, bool]:
+    flags: dict[str, bool] = {}
+    for row in rows:
+        row_flags = row.get("feature_flags_used") if isinstance(row.get("feature_flags_used"), dict) else {}
+        for key, value in row_flags.items():
+            flags[key] = flags.get(key, False) or bool(value)
+    return flags
+
+
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -1766,6 +1961,288 @@ def _write_runner_audit(report: dict[str, Any], reports_dir: Path) -> dict[str, 
     json_path.write_text(json.dumps(audit, indent=2, sort_keys=True), encoding="utf-8")
     md_path.write_text(_runner_audit_md(audit), encoding="utf-8")
     return audit
+
+
+def _write_real_behavior_change_reports(report: dict[str, Any], mode_rows: dict[str, list[dict[str, Any]]], reports_dir: Path) -> dict[str, Any]:
+    baseline = report.get("mode_summary", {}).get("packaged_baseline_real", {})
+    applied_modes = [
+        mode
+        for mode in report.get("mode_order", [])
+        if mode in REAL_BEHAVIOR_APPLIED_MODES or mode == "latest_shadow_real"
+    ]
+    mode_results: dict[str, Any] = {}
+    error_rows: dict[str, Any] = {}
+    gate_modes: dict[str, Any] = {}
+    for mode in applied_modes:
+        summary = report.get("mode_summary", {}).get(mode) or report.get("unavailable_modes", {}).get(mode) or {}
+        comparison = (report.get("mode_comparisons") or {}).get(mode) or {}
+        mode_results[mode] = {
+            "available": not bool(summary.get("excluded_from_comparison")),
+            "behavior_score": summary.get("behavior_score"),
+            "trace_observability_score": summary.get("trace_observability_score"),
+            "combined_diagnostic_score": summary.get("combined_diagnostic_score"),
+            "final_answer_correctness": summary.get("final_answer_correctness"),
+            "required_facts_coverage": summary.get("required_facts_coverage"),
+            "answer_grounding_score": summary.get("answer_grounding_score"),
+            "route_accuracy": summary.get("route_accuracy"),
+            "evidence_need_accuracy": summary.get("expected_evidence_need_accuracy"),
+            "sql_required_used_accuracy": summary.get("sql_required_used_accuracy"),
+            "api_required_used_accuracy": summary.get("api_required_used_accuracy"),
+            "sql_table_accuracy": summary.get("sql_table_accuracy"),
+            "api_endpoint_family_accuracy": summary.get("api_endpoint_family_accuracy"),
+            "unsupported_claims": summary.get("unsupported_claims"),
+            "no_tool_false_positive": summary.get("no_tool_false_positive"),
+            "no_tool_false_negative": summary.get("no_tool_false_negative"),
+            "api_required_underuse": summary.get("api_required_underuse"),
+            "tool_overuse": summary.get("tool_overuse"),
+            "tool_underuse": summary.get("tool_underuse"),
+            "sql_calls": summary.get("sql_calls"),
+            "api_calls": summary.get("api_calls"),
+            "api_calls_saved": summary.get("api_calls_saved"),
+            "api_calls_added": summary.get("api_calls_added"),
+            "average_tokens": summary.get("estimated_total_tokens"),
+            "average_runtime": summary.get("runtime_ms"),
+            "applied_decision_count": summary.get("applied_decision_count"),
+            "skipped_decision_count": summary.get("skipped_decision_count"),
+            "fallback_count": summary.get("fallback_count"),
+            "blocker_count": summary.get("blocker_count"),
+            "final_answer_changed_count_vs_baseline": comparison.get("final_answer_changed_count"),
+            "tool_behavior_changed_count_vs_baseline": comparison.get("tool_behavior_changed_count"),
+            "behavior_score_delta": comparison.get("behavior_score_delta"),
+            "trace_observability_delta": comparison.get("trace_observability_delta"),
+            "sql_call_delta": comparison.get("sql_call_delta"),
+            "api_call_delta": comparison.get("api_call_delta"),
+            "token_delta": comparison.get("token_delta"),
+            "runtime_ms_delta": comparison.get("runtime_ms_delta"),
+            "rows_helped": comparison.get("rows_helped_count"),
+            "rows_hurt": comparison.get("rows_hurt_count"),
+            "rows_neutral": comparison.get("rows_neutral_count"),
+            "per_category": summary.get("per_category", {}),
+            "per_domain": summary.get("per_domain", {}),
+            "per_evidence_need": summary.get("per_evidence_need", {}),
+            "feature_flags_used": summary.get("feature_flags_used", {}),
+            "blockers": summary.get("blockers", []),
+        }
+        error_rows[mode] = _classify_behavior_change_rows(mode, mode_rows.get("packaged_baseline_real", []), mode_rows.get(mode, []))
+        gate_modes[mode] = _real_behavior_gate_for_mode(mode, baseline, summary, comparison)
+
+    experiment = {
+        "eval_engine": report.get("eval_engine"),
+        "grading_type": report.get("grading_type"),
+        "organizer_equivalent": report.get("organizer_equivalent"),
+        "runtime_input_fields": report.get("runtime_input_fields"),
+        "gold_hidden_from_runtime": not report.get("runtime_gold_visible", True),
+        "category_tags_used_only_after_execution": report.get("category_domain_tags_used_only_for_grading"),
+        "oracle_sql_hidden_from_runtime": True,
+        "expected_trace_hidden_from_runtime": True,
+        "prompt_count": report.get("prompt_count"),
+        "baseline": {
+            "behavior_score": baseline.get("behavior_score"),
+            "trace_observability_score": baseline.get("trace_observability_score"),
+            "combined_diagnostic_score": baseline.get("combined_diagnostic_score"),
+            "final_answer_correctness": baseline.get("final_answer_correctness"),
+            "sql_calls": baseline.get("sql_calls"),
+            "api_calls": baseline.get("api_calls"),
+            "unsupported_claims": baseline.get("unsupported_claims"),
+        },
+        "modes": mode_results,
+    }
+    error_analysis = {
+        "prompt_count": report.get("prompt_count"),
+        "mode_error_analysis": error_rows,
+        "summary": {
+            mode: {
+                "helped_categories": rows.get("helped_category_counts", {}),
+                "hurt_categories": rows.get("hurt_category_counts", {}),
+                "helped_count": rows.get("helped_count", 0),
+                "hurt_count": rows.get("hurt_count", 0),
+            }
+            for mode, rows in error_rows.items()
+        },
+    }
+    gate = {
+        "diagnostic_internal_only": True,
+        "organizer_equivalent": False,
+        "packaged_runtime_changed": False,
+        "final_submission_format_changed": False,
+        "modes": gate_modes,
+        "recommendation": _overall_real_behavior_recommendation(gate_modes),
+    }
+    (reports_dir / "real_behavior_change_experiment.json").write_text(json.dumps(experiment, indent=2, sort_keys=True, default=str), encoding="utf-8")
+    (reports_dir / "real_behavior_change_experiment.md").write_text(_real_behavior_experiment_md(experiment), encoding="utf-8")
+    (reports_dir / "real_behavior_change_error_analysis.json").write_text(json.dumps(error_analysis, indent=2, sort_keys=True, default=str), encoding="utf-8")
+    (reports_dir / "real_behavior_change_error_analysis.md").write_text(_real_behavior_error_md(error_analysis), encoding="utf-8")
+    (reports_dir / "real_behavior_change_gate.json").write_text(json.dumps(gate, indent=2, sort_keys=True, default=str), encoding="utf-8")
+    (reports_dir / "real_behavior_change_gate.md").write_text(_real_behavior_gate_md(gate), encoding="utf-8")
+    return {
+        "experiment": str(reports_dir / "real_behavior_change_experiment.json"),
+        "error_analysis": str(reports_dir / "real_behavior_change_error_analysis.json"),
+        "gate": str(reports_dir / "real_behavior_change_gate.json"),
+    }
+
+
+def _classify_behavior_change_rows(mode: str, baseline_rows: list[dict[str, Any]], candidate_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    baseline_by_id = {row["prompt_id"]: row for row in baseline_rows}
+    helped: list[dict[str, Any]] = []
+    hurt: list[dict[str, Any]] = []
+    helped_counts: Counter[str] = Counter()
+    hurt_counts: Counter[str] = Counter()
+    for row in candidate_rows:
+        base = baseline_by_id.get(row["prompt_id"])
+        if not base:
+            continue
+        delta = round(float(row.get("behavior_score") or 0.0) - float(base.get("behavior_score") or 0.0), 4)
+        if delta > 0.005:
+            category = _help_category(base, row)
+            helped_counts[category] += 1
+            helped.append({"prompt_id": row["prompt_id"], "delta": delta, "category": category})
+        elif delta < -0.005:
+            category = _hurt_category(base, row)
+            hurt_counts[category] += 1
+            hurt.append({"prompt_id": row["prompt_id"], "delta": delta, "category": category})
+    return {
+        "mode": mode,
+        "helped_count": len(helped),
+        "hurt_count": len(hurt),
+        "neutral_count": max(0, len(candidate_rows) - len(helped) - len(hurt)),
+        "helped_category_counts": dict(sorted(helped_counts.items())),
+        "hurt_category_counts": dict(sorted(hurt_counts.items())),
+        "helped_examples": sorted(helped, key=lambda item: item["delta"], reverse=True)[:20],
+        "hurt_examples": sorted(hurt, key=lambda item: item["delta"])[:20],
+    }
+
+
+def _help_category(base: dict[str, Any], row: dict[str, Any]) -> str:
+    if row.get("api_call_count", 0) < base.get("api_call_count", 0) and row.get("final_answer_correctness") >= base.get("final_answer_correctness"):
+        return "api_call_saved_without_answer_loss"
+    if row.get("sql_call_count", 0) + row.get("api_call_count", 0) < base.get("sql_call_count", 0) + base.get("api_call_count", 0):
+        return "conceptual_false_positive_tool_call_avoided"
+    if row.get("answer_grounding_score", 0) > base.get("answer_grounding_score", 0):
+        return "final_answer_improved"
+    return "trace_process_or_behavior_alignment_improved"
+
+
+def _hurt_category(base: dict[str, Any], row: dict[str, Any]) -> str:
+    if row.get("no_tool_false_positive"):
+        return "wrong_no_tool_skip"
+    if row.get("api_required_underuse"):
+        return "api_required_skipped"
+    if row.get("api_call_count", 0) < base.get("api_call_count", 0) and row.get("api_required_used_accuracy", 1.0) < base.get("api_required_used_accuracy", 1.0):
+        return "api_skipped_despite_missing_fields"
+    if row.get("api_call_count", 0) > base.get("api_call_count", 0):
+        return "api_called_unnecessarily"
+    if row.get("final_answer_correctness", 0) < base.get("final_answer_correctness", 0):
+        return "final_answer_omitted_evidence"
+    return "no_clear_failure"
+
+
+def _real_behavior_gate_for_mode(mode: str, baseline: dict[str, Any], summary: dict[str, Any], comparison: dict[str, Any]) -> dict[str, Any]:
+    if summary.get("excluded_from_comparison"):
+        return {"passed": False, "recommendation": "blocked_by_llm_backend_unavailable", "blockers": summary.get("blockers", [])}
+    behavior_delta = float(comparison.get("behavior_score_delta") or 0.0)
+    answer_delta = round(float(summary.get("final_answer_correctness") or 0.0) - float(baseline.get("final_answer_correctness") or 0.0), 4)
+    runtime_delta = float(comparison.get("runtime_ms_delta") or 0.0)
+    blockers: list[str] = []
+    if behavior_delta < -0.005:
+        blockers.append("behavior_regression")
+    if answer_delta < -0.005:
+        blockers.append("final_answer_regression")
+    if int(summary.get("unsupported_claims") or 0) != 0:
+        blockers.append("unsupported_claims")
+    if int(summary.get("no_tool_false_positive") or 0) != 0:
+        blockers.append("no_tool_false_positive")
+    if int(summary.get("api_required_underuse") or 0) != 0:
+        blockers.append("api_required_underuse")
+    if runtime_delta > max(50.0, float(baseline.get("runtime_ms") or 0.0) * 0.25):
+        blockers.append("runtime_cost")
+    if blockers:
+        recommendation = "blocked_by_behavior_regression" if "behavior_regression" in blockers else "keep_shadow_only"
+        if "no_tool_false_positive" in blockers:
+            recommendation = "blocked_by_no_tool_false_positive"
+        elif "api_required_underuse" in blockers:
+            recommendation = "blocked_by_api_underuse"
+        elif "runtime_cost" in blockers:
+            recommendation = "blocked_by_runtime_cost"
+        return {"passed": False, "recommendation": recommendation, "blockers": blockers}
+    recommendation_by_mode = {
+        "semantic_no_tool_applied_real_trial": "semantic_no_tool_candidate_for_targeted_promotion",
+        "staged_evidence_applied_real_trial": "staged_evidence_candidate_for_targeted_promotion",
+        "post_sql_deterministic_applied_real_trial": "post_sql_deterministic_candidate_for_targeted_promotion",
+        "combined_safe_applied_real_trial": "combined_safe_candidate_for_targeted_promotion",
+    }
+    return {
+        "passed": behavior_delta >= 0.0 and answer_delta >= 0.0,
+        "recommendation": recommendation_by_mode.get(mode, "keep_shadow_only"),
+        "blockers": [],
+        "behavior_score_delta": behavior_delta,
+        "final_answer_correctness_delta": answer_delta,
+    }
+
+
+def _overall_real_behavior_recommendation(mode_gates: dict[str, Any]) -> str:
+    priority = [
+        "combined_safe_applied_real_trial",
+        "post_sql_deterministic_applied_real_trial",
+        "staged_evidence_applied_real_trial",
+        "semantic_no_tool_applied_real_trial",
+    ]
+    for mode in priority:
+        gate = mode_gates.get(mode) or {}
+        if gate.get("passed"):
+            return str(gate.get("recommendation"))
+    blockers = [blocker for gate in mode_gates.values() for blocker in gate.get("blockers", [])]
+    if "no_tool_false_positive" in blockers:
+        return "blocked_by_no_tool_false_positive"
+    if "api_required_underuse" in blockers:
+        return "blocked_by_api_underuse"
+    if "runtime_cost" in blockers:
+        return "blocked_by_runtime_cost"
+    if "behavior_regression" in blockers:
+        return "blocked_by_behavior_regression"
+    return "keep_shadow_only"
+
+
+def _real_behavior_experiment_md(experiment: dict[str, Any]) -> str:
+    lines = ["# Real Behavior Change Experiment", "", f"- prompt_count: {experiment.get('prompt_count')}", f"- grading_type: {experiment.get('grading_type')}", f"- organizer_equivalent: {experiment.get('organizer_equivalent')}", ""]
+    lines.append("## Modes")
+    for mode, summary in experiment.get("modes", {}).items():
+        lines.extend([
+            f"### {mode}",
+            f"- available: {summary.get('available')}",
+            f"- behavior_score: {summary.get('behavior_score')}",
+            f"- trace_observability_score: {summary.get('trace_observability_score')}",
+            f"- combined_diagnostic_score: {summary.get('combined_diagnostic_score')}",
+            f"- final_answer_correctness: {summary.get('final_answer_correctness')}",
+            f"- sql_calls: {summary.get('sql_calls')}",
+            f"- api_calls: {summary.get('api_calls')}",
+            f"- api_calls_saved: {summary.get('api_calls_saved')}",
+            f"- unsupported_claims: {summary.get('unsupported_claims')}",
+            f"- behavior_score_delta: {summary.get('behavior_score_delta')}",
+            f"- rows_helped/hurt/neutral: {summary.get('rows_helped')}/{summary.get('rows_hurt')}/{summary.get('rows_neutral')}",
+            "",
+        ])
+    return "\n".join(lines)
+
+
+def _real_behavior_error_md(error_analysis: dict[str, Any]) -> str:
+    lines = ["# Real Behavior Change Error Analysis", ""]
+    for mode, summary in error_analysis.get("summary", {}).items():
+        lines.extend([
+            f"## {mode}",
+            f"- helped_count: {summary.get('helped_count')}",
+            f"- hurt_count: {summary.get('hurt_count')}",
+            f"- helped_categories: {summary.get('helped_categories')}",
+            f"- hurt_categories: {summary.get('hurt_categories')}",
+            "",
+        ])
+    return "\n".join(lines)
+
+
+def _real_behavior_gate_md(gate: dict[str, Any]) -> str:
+    lines = ["# Real Behavior Change Gate", "", f"- recommendation: {gate.get('recommendation')}", f"- packaged_runtime_changed: {gate.get('packaged_runtime_changed')}", f"- final_submission_format_changed: {gate.get('final_submission_format_changed')}", ""]
+    for mode, payload in gate.get("modes", {}).items():
+        lines.extend([f"## {mode}", f"- passed: {payload.get('passed')}", f"- recommendation: {payload.get('recommendation')}", f"- blockers: {payload.get('blockers', [])}", ""])
+    return "\n".join(lines)
 
 
 def _runner_audit_md(audit: dict[str, Any]) -> str:

@@ -104,6 +104,12 @@ class Config:
     enable_post_sql_api_decision: bool = False
     post_sql_api_decision_shadow_only: bool = True
     post_sql_llm_advisor_enabled: bool = False
+    real_behavior_trial_mode: str = ""
+    enable_semantic_no_tool_applied_trial: bool = False
+    enable_staged_evidence_applied_trial: bool = False
+    enable_post_sql_deterministic_applied_trial: bool = False
+    enable_post_sql_llm_advisor_applied_trial: bool = False
+    enable_combined_safe_applied_trial: bool = False
     value_retrieval_max_tables: int = 6
     value_retrieval_max_columns: int = 18
     value_retrieval_max_rows_per_column: int = 500
@@ -183,6 +189,12 @@ class Config:
             enable_post_sql_api_decision=_bool_from_env("ENABLE_POST_SQL_API_DECISION", False),
             post_sql_api_decision_shadow_only=_bool_from_env("POST_SQL_API_DECISION_SHADOW_ONLY", True),
             post_sql_llm_advisor_enabled=_bool_from_env("POST_SQL_LLM_ADVISOR_ENABLED", False),
+            real_behavior_trial_mode=os.getenv("REAL_BEHAVIOR_TRIAL_MODE", ""),
+            enable_semantic_no_tool_applied_trial=_bool_from_env("ENABLE_SEMANTIC_NO_TOOL_APPLIED_TRIAL", False),
+            enable_staged_evidence_applied_trial=_bool_from_env("ENABLE_STAGED_EVIDENCE_APPLIED_TRIAL", False),
+            enable_post_sql_deterministic_applied_trial=_bool_from_env("ENABLE_POST_SQL_DETERMINISTIC_APPLIED_TRIAL", False),
+            enable_post_sql_llm_advisor_applied_trial=_bool_from_env("ENABLE_POST_SQL_LLM_ADVISOR_APPLIED_TRIAL", False),
+            enable_combined_safe_applied_trial=_bool_from_env("ENABLE_COMBINED_SAFE_APPLIED_TRIAL", False),
             value_retrieval_max_tables=int(os.getenv("VALUE_RETRIEVAL_MAX_TABLES", "6")),
             value_retrieval_max_columns=int(os.getenv("VALUE_RETRIEVAL_MAX_COLUMNS", "18")),
             value_retrieval_max_rows_per_column=int(os.getenv("VALUE_RETRIEVAL_MAX_ROWS_PER_COLUMN", "500")),

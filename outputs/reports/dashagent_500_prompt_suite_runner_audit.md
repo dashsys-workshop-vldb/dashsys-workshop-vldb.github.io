@@ -11,13 +11,13 @@
 - runtime_input_fields: ['prompt_id', 'prompt']
 - oracle_sql_hidden_from_runtime: True
 - expected_trace_hidden_from_runtime: True
-- latest_code_paths_truly_executed: True
-- latest_code_paths_shadow_logged_only: True
+- latest_code_paths_truly_executed: False
+- latest_code_paths_shadow_logged_only: False
 - post_sql_advisor_metric_semantics: {'checkpoint_presence_is_not_invocation': True, 'deterministic_fallback_is_not_llm_blocked': True, 'blocked_count_requires_actual_llm_advice': True}
-- latest_shadow_real_post_sql_advisor_checkpoint_present_count: 327
-- latest_shadow_real_post_sql_llm_advisor_actual_call_count: 0
-- latest_shadow_real_post_sql_llm_advice_blocked_count: 0
-- latest_shadow_real_post_sql_deterministic_fallback_count: 101
+- latest_shadow_real_post_sql_advisor_checkpoint_present_count: None
+- latest_shadow_real_post_sql_llm_advisor_actual_call_count: None
+- latest_shadow_real_post_sql_llm_advice_blocked_count: None
+- latest_shadow_real_post_sql_deterministic_fallback_count: None
 - latest_applied_real_trial_available: False
 - notes:
   - Simulated trace mode is retained only as a diagnostic compatibility engine.

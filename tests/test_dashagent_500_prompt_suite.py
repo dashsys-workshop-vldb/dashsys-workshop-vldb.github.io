@@ -148,7 +148,16 @@ def test_eval_runner_recognizes_latest_modes_and_isolates_real_agent_runtime(tmp
         "latest_applied_trial",
         "latest_full_trial",
     } <= SIMULATED_MODES <= RECOGNIZED_MODES
-    assert {"packaged_baseline_real", "latest_shadow_real", "latest_applied_real_trial"} <= REAL_MODES <= RECOGNIZED_MODES
+    assert {
+        "packaged_baseline_real",
+        "latest_shadow_real",
+        "latest_applied_real_trial",
+        "semantic_no_tool_applied_real_trial",
+        "staged_evidence_applied_real_trial",
+        "post_sql_deterministic_applied_real_trial",
+        "post_sql_llm_advisor_applied_real_trial",
+        "combined_safe_applied_real_trial",
+    } <= REAL_MODES <= RECOGNIZED_MODES
 
     fake_executor = _FakeExecutor()
 
@@ -187,6 +196,56 @@ def test_eval_runner_recognizes_latest_modes_and_isolates_real_agent_runtime(tmp
     assert set(grade_record["runtime_input"]) == {"prompt_id", "prompt"}
     assert grade_record["gold_visible_to_runtime"] is False
     assert grade_record["category_tags_domain_visible_to_runtime"] is False
+
+
+def test_real_applied_modes_enable_isolated_trial_flags_and_prompt_only_runtime(tmp_path: Path) -> None:
+    out = tmp_path / "benchmarks"
+    report_dir = tmp_path / "reports"
+    eval_dir = tmp_path / "eval"
+    generate_suite(out_dir=out, report_dir=report_dir, seed=20260525)
+    configs = []
+    fake_executor = _FakeExecutor()
+
+    def factory(config=None):
+        configs.append(config)
+        return fake_executor
+
+    result = run_suite_eval(
+        suite_path=out / "dashagent_500_prompt_suite.jsonl",
+        gold_path=out / "dashagent_500_prompt_suite_gold.jsonl",
+        output_dir=eval_dir,
+        report_dir=report_dir,
+        modes=[
+            "packaged_baseline_real",
+            "semantic_no_tool_applied_real_trial",
+            "staged_evidence_applied_real_trial",
+            "post_sql_deterministic_applied_real_trial",
+        ],
+        limit=1,
+        seed=20260525,
+        clean=True,
+        engine="real_agent",
+        executor_factory=factory,
+    )
+
+    assert set(result["modes"]) == {
+        "packaged_baseline_real",
+        "semantic_no_tool_applied_real_trial",
+        "staged_evidence_applied_real_trial",
+        "post_sql_deterministic_applied_real_trial",
+    }
+    semantic_cfg = configs[1]
+    staged_cfg = configs[2]
+    post_sql_cfg = configs[3]
+    assert semantic_cfg.enable_semantic_no_tool_applied_trial is True
+    assert semantic_cfg.semantic_route_shadow_only is False
+    assert staged_cfg.enable_staged_evidence_applied_trial is True
+    assert staged_cfg.staged_evidence_policy_shadow_only is False
+    assert post_sql_cfg.enable_post_sql_deterministic_applied_trial is True
+    assert post_sql_cfg.post_sql_api_decision_shadow_only is False
+    assert result["runtime_input_fields"] == ["prompt_id", "prompt"]
+    for call in fake_executor.calls:
+        assert set(call) == {"query", "strategy", "query_id", "output_dir"}
 
 
 def test_simulated_eval_is_explicitly_marked_and_separate(tmp_path: Path) -> None:

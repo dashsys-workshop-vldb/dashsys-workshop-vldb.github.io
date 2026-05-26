@@ -119,6 +119,8 @@ def extract_objective_prompt_features(prompt: str) -> ObjectivePromptFeatures:
         flags.append("MIXED_CONCEPT_AND_RETRIEVAL")
     if entity:
         flags.append("CONCRETE_ENTITY")
+    if _has_phrase(norm, ("current", "live", "platform", "api", "adobe")):
+        flags.append("LIVE_OR_CURRENT")
     if domain and not cue and not (retr or count or status or date or fields or rel):
         flags.append("DOMAIN_ONLY")
 

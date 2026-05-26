@@ -25,6 +25,16 @@ class FakeAdvisorClient:
         return self.responses.pop(0)
 
 
+class FakeSDKAdvisorClient:
+    def __init__(self, content: str) -> None:
+        self.content = content
+        self.calls = 0
+
+    def generate_messages(self, messages: list[dict[str, str]]) -> dict[str, object]:
+        self.calls += 1
+        return {"ok": True, "content": self.content}
+
+
 def test_evidence_match_scores_sql_and_api_examples() -> None:
     local = score_evidence_match(extract_objective_prompt_features("List schemas"))
     live = score_evidence_match(extract_objective_prompt_features("List current Adobe tags"))
@@ -114,6 +124,29 @@ def test_medium_post_sql_policy_calls_llm_advisor() -> None:
 
     assert policy.confidence in {"MEDIUM", "LOW"}
     assert client.calls == 1
+    assert advice.llm_call_attempted is True
+    assert advice.mode == "CALL_API"
+
+
+def test_post_sql_llm_advisor_uses_sdk_generate_messages_client() -> None:
+    features = extract_objective_prompt_features("Show schema status")
+    card = build_post_sql_decision_card(
+        features,
+        "STATUS",
+        {"ok": True, "rows": [{"id": "s1"}], "row_count": 1},
+        [PlanStep(action="api", purpose="schema list", method="GET", url="/data/foundation/schemaregistry/tenant/schemas", family="schema_registry_schemas")],
+        EndpointCatalog(),
+    )
+    policy = decide_post_sql_api_policy(card)
+    client = FakeSDKAdvisorClient(
+        '{"mode":"CALL_API","endpoint_id":"schema_registry_schemas","conf":0.76,"needed_roles":["status"],"codes":["SDK_PATH"]}'
+    )
+
+    advice = advise_post_sql_api(card, policy, llm_client=client)
+
+    assert client.calls == 1
+    assert advice.source == "LLM_ADVISOR"
+    assert advice.llm_call_attempted is True
     assert advice.mode == "CALL_API"
 
 
@@ -133,6 +166,7 @@ def test_post_sql_advisor_skips_llm_for_high_confidence() -> None:
 
     assert client.calls == 0
     assert advice.source == "DETERMINISTIC_BYPASS"
+    assert advice.llm_call_attempted is False
 
 
 def test_post_sql_api_verifier_blocks_unknown_and_unresolved_endpoint() -> None:
@@ -223,6 +257,7 @@ def test_invalid_llm_json_falls_back_to_deterministic_policy() -> None:
 
     assert client.calls == 2
     assert advice.source == "DETERMINISTIC_FALLBACK"
+    assert advice.llm_call_attempted is True
 
 
 def test_staged_evidence_config_defaults_shadow_only(monkeypatch) -> None:

@@ -40,13 +40,13 @@
 - post_sql_verifier_blocked_count: 0
 - post_sql_advisor_source_counts: {'DETERMINISTIC_BYPASS': 0, 'DETERMINISTIC_FALLBACK': 0, 'DETERMINISTIC_HIGH_CONF': 0, 'DISABLED': 0, 'INVALID_JSON': 0, 'LLM_ADVISOR': 0, 'LLM_ADVISOR_BLOCKED': 0, 'LLM_ADVISOR_VERIFIED': 0, 'LLM_BACKEND_UNAVAILABLE': 0}
 
-### latest_shadow_real
+### semantic_no_tool_applied_real_trial
 - behavior_score: 0.8045
-- trace_observability_score: 0.4993
-- combined_diagnostic_score: 0.7203
-- overall_score_alias: 0.7203
+- trace_observability_score: 0.3745
+- combined_diagnostic_score: 0.7099
+- overall_score_alias: 0.7099
 - route_accuracy: 0.752
-- observable_trace_score: 0.6812
+- observable_trace_score: 0.6396
 - sql_accuracy: 0.84
 - api_accuracy: 0.772
 - unsupported_claims: 0
@@ -57,10 +57,110 @@
 - anti_hallucination_initial_fail: 0
 - anti_hallucination_revision_success: 0
 - post_sql_advisor_note: checkpoints are observability; actual LLM calls are counted separately
-- post_sql_advisor_checkpoint_present_count: 327
+- post_sql_advisor_checkpoint_present_count: 0
 - post_sql_llm_advisor_actual_call_count: 0
-- post_sql_deterministic_fallback_count: 101
+- post_sql_deterministic_fallback_count: 0
 - post_sql_llm_advice_blocked_count: 0
 - post_sql_verifier_verified_count: 0
 - post_sql_verifier_blocked_count: 0
-- post_sql_advisor_source_counts: {'DETERMINISTIC_BYPASS': 226, 'DETERMINISTIC_FALLBACK': 101, 'DETERMINISTIC_HIGH_CONF': 0, 'DISABLED': 0, 'INVALID_JSON': 0, 'LLM_ADVISOR': 0, 'LLM_ADVISOR_BLOCKED': 0, 'LLM_ADVISOR_VERIFIED': 0, 'LLM_BACKEND_UNAVAILABLE': 0}
+- post_sql_advisor_source_counts: {'DETERMINISTIC_BYPASS': 0, 'DETERMINISTIC_FALLBACK': 0, 'DETERMINISTIC_HIGH_CONF': 0, 'DISABLED': 0, 'INVALID_JSON': 0, 'LLM_ADVISOR': 0, 'LLM_ADVISOR_BLOCKED': 0, 'LLM_ADVISOR_VERIFIED': 0, 'LLM_BACKEND_UNAVAILABLE': 0}
+
+### staged_evidence_applied_real_trial
+- behavior_score: 0.8178
+- trace_observability_score: 0.3743
+- combined_diagnostic_score: 0.7278
+- overall_score_alias: 0.7278
+- route_accuracy: 0.775
+- observable_trace_score: 0.6588
+- sql_accuracy: 0.84
+- api_accuracy: 0.839
+- unsupported_claims: 0
+- no_tool_false_positive: 0
+- no_tool_false_negative: 69
+- api_calls_saved: 71
+- api_calls_added: 0
+- anti_hallucination_initial_fail: 0
+- anti_hallucination_revision_success: 0
+- post_sql_advisor_note: checkpoints are observability; actual LLM calls are counted separately
+- post_sql_advisor_checkpoint_present_count: 327
+- post_sql_llm_advisor_actual_call_count: 0
+- post_sql_deterministic_fallback_count: 45
+- post_sql_llm_advice_blocked_count: 0
+- post_sql_verifier_verified_count: 0
+- post_sql_verifier_blocked_count: 0
+- post_sql_advisor_source_counts: {'DETERMINISTIC_BYPASS': 282, 'DETERMINISTIC_FALLBACK': 45, 'DETERMINISTIC_HIGH_CONF': 0, 'DISABLED': 0, 'INVALID_JSON': 0, 'LLM_ADVISOR': 0, 'LLM_ADVISOR_BLOCKED': 0, 'LLM_ADVISOR_VERIFIED': 0, 'LLM_BACKEND_UNAVAILABLE': 0}
+
+### post_sql_deterministic_applied_real_trial
+- behavior_score: 0.8178
+- trace_observability_score: 0.2495
+- combined_diagnostic_score: 0.7175
+- overall_score_alias: 0.7175
+- route_accuracy: 0.775
+- observable_trace_score: 0.6172
+- sql_accuracy: 0.84
+- api_accuracy: 0.839
+- unsupported_claims: 0
+- no_tool_false_positive: 0
+- no_tool_false_negative: 69
+- api_calls_saved: 71
+- api_calls_added: 0
+- anti_hallucination_initial_fail: 0
+- anti_hallucination_revision_success: 0
+- post_sql_advisor_note: checkpoints are observability; actual LLM calls are counted separately
+- post_sql_advisor_checkpoint_present_count: 327
+- post_sql_llm_advisor_actual_call_count: 0
+- post_sql_deterministic_fallback_count: 45
+- post_sql_llm_advice_blocked_count: 0
+- post_sql_verifier_verified_count: 0
+- post_sql_verifier_blocked_count: 0
+- post_sql_advisor_source_counts: {'DETERMINISTIC_BYPASS': 282, 'DETERMINISTIC_FALLBACK': 45, 'DETERMINISTIC_HIGH_CONF': 0, 'DISABLED': 0, 'INVALID_JSON': 0, 'LLM_ADVISOR': 0, 'LLM_ADVISOR_BLOCKED': 0, 'LLM_ADVISOR_VERIFIED': 0, 'LLM_BACKEND_UNAVAILABLE': 0}
+
+### post_sql_llm_advisor_applied_real_trial
+- behavior_score: 0.8178
+- trace_observability_score: 0.2495
+- combined_diagnostic_score: 0.7175
+- overall_score_alias: 0.7175
+- route_accuracy: 0.775
+- observable_trace_score: 0.6172
+- sql_accuracy: 0.84
+- api_accuracy: 0.839
+- unsupported_claims: 0
+- no_tool_false_positive: 0
+- no_tool_false_negative: 69
+- api_calls_saved: 71
+- api_calls_added: 0
+- anti_hallucination_initial_fail: 0
+- anti_hallucination_revision_success: 0
+- post_sql_advisor_note: checkpoints are observability; actual LLM calls are counted separately
+- post_sql_advisor_checkpoint_present_count: 327
+- post_sql_llm_advisor_actual_call_count: 45
+- post_sql_deterministic_fallback_count: 45
+- post_sql_llm_advice_blocked_count: 0
+- post_sql_verifier_verified_count: 0
+- post_sql_verifier_blocked_count: 0
+- post_sql_advisor_source_counts: {'DETERMINISTIC_BYPASS': 282, 'DETERMINISTIC_FALLBACK': 45, 'DETERMINISTIC_HIGH_CONF': 0, 'DISABLED': 0, 'INVALID_JSON': 0, 'LLM_ADVISOR': 0, 'LLM_ADVISOR_BLOCKED': 0, 'LLM_ADVISOR_VERIFIED': 0, 'LLM_BACKEND_UNAVAILABLE': 0}
+
+### combined_safe_applied_real_trial
+- behavior_score: 0.8178
+- trace_observability_score: 0.4993
+- combined_diagnostic_score: 0.7382
+- overall_score_alias: 0.7382
+- route_accuracy: 0.775
+- observable_trace_score: 0.7004
+- sql_accuracy: 0.84
+- api_accuracy: 0.839
+- unsupported_claims: 0
+- no_tool_false_positive: 0
+- no_tool_false_negative: 69
+- api_calls_saved: 71
+- api_calls_added: 0
+- anti_hallucination_initial_fail: 0
+- anti_hallucination_revision_success: 0
+- post_sql_advisor_note: checkpoints are observability; actual LLM calls are counted separately
+- post_sql_advisor_checkpoint_present_count: 327
+- post_sql_llm_advisor_actual_call_count: 0
+- post_sql_deterministic_fallback_count: 45
+- post_sql_llm_advice_blocked_count: 0
+- post_sql_verifier_verified_count: 0
+- post_sql_verifier_blocked_count: 0
+- post_sql_advisor_source_counts: {'DETERMINISTIC_BYPASS': 282, 'DETERMINISTIC_FALLBACK': 45, 'DETERMINISTIC_HIGH_CONF': 0, 'DISABLED': 0, 'INVALID_JSON': 0, 'LLM_ADVISOR': 0, 'LLM_ADVISOR_BLOCKED': 0, 'LLM_ADVISOR_VERIFIED': 0, 'LLM_BACKEND_UNAVAILABLE': 0}

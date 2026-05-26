@@ -4,7 +4,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 
-LIVE_CODES = {"CURRENT", "LIVE", "PLATFORM", "API"}
+LIVE_CODES = {"CURRENT", "LIVE", "PLATFORM", "API", "LIVE_OR_CURRENT"}
 LIVE_DOMAINS = {"TAG", "AUDIT", "MERGE_POLICY"}
 
 

@@ -57,7 +57,7 @@ from .prompt_semantic_ir import extract_objective_prompt_features
 from .routing_anti_hallucination_gate import run_routing_gate_with_revision
 from .semantic_intent_classifier import classify_semantic_intent
 from .semantic_intent_context_builder import build_semantic_intent_context, estimate_context_tokens
-from .semantic_route_decision_ladder import run_semantic_route_decision_ladder
+from .semantic_route_decision_ladder import run_semantic_route_decision_ladder, validate_llm_safe_direct_answer
 from .no_tool_safety_verifier import verify_no_tool_safety
 from .post_sql_api_call_verifier import verify_post_sql_api_advice
 from .post_sql_decision_card import build_post_sql_decision_card
@@ -150,7 +150,29 @@ class AgentExecutor:
             correctness_role="prevents direct answers for data questions that need SQL/API evidence",
             efficiency_role="can skip the data pipeline only for safe conceptual prompts",
         )
-        self._add_semantic_route_harness_checkpoints(query, checkpoint_logger)
+        semantic_ladder = self._add_semantic_route_harness_checkpoints(query, checkpoint_logger)
+        semantic_trial_decision = self._semantic_no_tool_applied_decision(semantic_ladder)
+        if semantic_trial_decision.get("record"):
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_real_behavior_applied_trial",
+                stage="isolated applied trial",
+                technique="semantic no-tool applied trial",
+                input_summary={"trial_mode": self.config.real_behavior_trial_mode},
+                output=semantic_trial_decision,
+                effect="applies a semantic no-tool shortcut only in explicit real benchmark trial modes",
+                correctness_role="falls back to SQL_FIRST_API_VERIFY unless all no-tool safety checks pass",
+                efficiency_role="measures real tool-call savings for conceptual false-positive routes",
+            )
+        if semantic_trial_decision.get("applied"):
+            return self._return_semantic_no_tool_applied_result(
+                query=query,
+                qid=qid,
+                strategy=strategy,
+                out_dir=out_dir,
+                prompt_route=prompt_route,
+                checkpoint_logger=checkpoint_logger,
+                trial_decision=semantic_trial_decision,
+            )
         if prompt_route.mode == LLM_DIRECT:
             metadata = {
                 "query_id": qid,
@@ -639,7 +661,29 @@ class AgentExecutor:
                 tool_results.append({"type": "sql", "step": step.to_dict(), "validation": validation.to_dict(), "payload": result})
                 evidence_bus.observe_sql(step, result)
             elif step.action == "api" and step.method and step.url:
-                self._add_post_sql_api_decision_checkpoints(query, analysis, tool_results, step, checkpoint_logger)
+                post_sql_decision = self._add_post_sql_api_decision_checkpoints(query, analysis, tool_results, step, checkpoint_logger)
+                applied_api_decision = self._post_sql_api_applied_decision(post_sql_decision)
+                if applied_api_decision.get("record"):
+                    checkpoint_logger.add_checkpoint(
+                        "checkpoint_real_behavior_applied_trial",
+                        stage="isolated applied trial",
+                        technique="post-SQL API decision applied trial",
+                        input_summary={"trial_mode": self.config.real_behavior_trial_mode, "api_step": step.to_dict()},
+                        output=applied_api_decision,
+                        effect="applies deterministic post-SQL API keep/drop decisions only in explicit real benchmark trial modes",
+                        correctness_role="preserves API-required and live/API prompts while testing optional API suppression",
+                        efficiency_role="measures actual API call savings in trajectory tool results",
+                    )
+                if applied_api_decision.get("applied") and applied_api_decision.get("decision") == "SKIP_API":
+                    validation_summaries.append(
+                        {
+                            "type": "api",
+                            "ok": True,
+                            "warnings": ["API skipped by isolated post-SQL applied trial."],
+                            "errors": [],
+                        }
+                    )
+                    continue
                 if self.config.enable_sql_only_api_skip_guard:
                     skip_decision = should_skip_api_with_sql_evidence(
                         query=query,
@@ -948,9 +992,9 @@ class AgentExecutor:
             "compact_context": compact_context,
             }
 
-    def _add_semantic_route_harness_checkpoints(self, query: str, checkpoint_logger: CheckpointLogger) -> None:
+    def _add_semantic_route_harness_checkpoints(self, query: str, checkpoint_logger: CheckpointLogger) -> Any | None:
         if not self.config.enable_objective_prompt_features:
-            return
+            return None
         try:
             features = extract_objective_prompt_features(query)
             checkpoint_logger.add_checkpoint(
@@ -964,7 +1008,7 @@ class AgentExecutor:
                 efficiency_role="uses compact symbolic features before any optional LLM classification",
             )
             if not (self.config.enable_semantic_intent_classifier or self.config.enable_semantic_route_decision_ladder):
-                return
+                return None
             if self.config.enable_semantic_route_decision_ladder:
                 ladder = run_semantic_route_decision_ladder(
                     query,
@@ -1019,7 +1063,7 @@ class AgentExecutor:
                     correctness_role="never applies semantic routing to the packaged plan in shadow mode",
                     efficiency_role="estimates tool-call and context-token tradeoffs",
                 )
-                return
+                return ladder
             context = build_semantic_intent_context(features, tier=0)
             decision = classify_semantic_intent(context, use_llm=True)
             gate = run_routing_gate_with_revision(features, decision) if self.config.enable_routing_anti_hallucination_gate else None
@@ -1066,6 +1110,103 @@ class AgentExecutor:
                 error=f"{type(exc).__name__}: {exc}",
                 warnings=["semantic routing harness shadow checkpoint failed; packaged runtime path continued"],
             )
+        return None
+
+    def _semantic_no_tool_applied_decision(self, ladder: Any | None) -> dict[str, Any]:
+        enabled = bool(
+            self.config.enable_semantic_no_tool_applied_trial
+            or self.config.enable_combined_safe_applied_trial
+        )
+        if not enabled:
+            return {"record": False, "applied": False}
+        payload = ladder.to_dict() if hasattr(ladder, "to_dict") else {}
+        action = str(payload.get("action") or "")
+        safety = payload.get("no_tool_safety") if isinstance(payload.get("no_tool_safety"), dict) else {}
+        decision = payload.get("semantic_intent_decision") if isinstance(payload.get("semantic_intent_decision"), dict) else {}
+        blocked = list(safety.get("block") or [])
+        allowed = (
+            action in {"LLM_DIRECT", "LLM_SAFE_DIRECT"}
+            and bool(decision.get("no_tool"))
+            and bool(safety.get("allow_no_tool"))
+            and not blocked
+            and float(decision.get("conf") or 0.0) >= 0.8
+        )
+        return {
+            "record": True,
+            "trial_mode": self.config.real_behavior_trial_mode or "semantic_no_tool_applied_real_trial",
+            "decision_family": "SEMANTIC_NO_TOOL",
+            "decision": action or "FALLBACK",
+            "applied": allowed,
+            "fallback": not allowed,
+            "blockers": [] if allowed else blocked or ["SEMANTIC_NO_TOOL_SAFETY_NOT_SATISFIED"],
+            "semantic_confidence": round(float(decision.get("conf") or 0.0), 4),
+            "evidence_need_score": safety.get("evidence_need_score"),
+            "shadow_only": False,
+        }
+
+    def _return_semantic_no_tool_applied_result(
+        self,
+        *,
+        query: str,
+        qid: str,
+        strategy: str,
+        out_dir: Path,
+        prompt_route: Any,
+        checkpoint_logger: CheckpointLogger,
+        trial_decision: dict[str, Any],
+    ) -> dict[str, Any]:
+        final_answer = _conceptual_no_tool_answer(query)
+        safe_check = validate_llm_safe_direct_answer(final_answer)
+        if not safe_check.get("ok"):
+            trial_decision["applied"] = False
+            trial_decision["fallback"] = True
+            trial_decision["blockers"] = list(safe_check.get("blocked_claims") or [])
+            final_answer = "This is a conceptual question; no concrete local records or live platform state were used."
+        metadata = {
+            "query_id": qid,
+            "query": query,
+            "strategy": strategy,
+            "prompt_route": prompt_route.to_dict(),
+            "real_behavior_trial": trial_decision,
+            "note": "Isolated semantic no-tool applied trial; packaged SQL_FIRST_API_VERIFY default is unchanged.",
+        }
+        self.metadata_selector.save(metadata, out_dir)
+        filled_prompt = render_system_prompt(self.config, metadata)
+        (out_dir / "filled_system_prompt.txt").write_text(filled_prompt, encoding="utf-8")
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_18_final_answer",
+            stage="final response",
+            technique="semantic no-tool applied trial answer",
+            output={"final_answer": final_answer, "answer_length": len(final_answer), "final_token_estimate": estimate_tokens(final_answer)},
+            effect="returns a no-tool conceptual answer only after semantic safety gates pass",
+            correctness_role="does not invent SQL/API evidence, counts, IDs, statuses, or timestamps",
+            efficiency_role="uses zero SQL/API calls for the isolated trial row",
+        )
+        trajectory = TrajectoryLogger(
+            query_id=qid,
+            original_query=query,
+            strategy=strategy,
+            route_type="LLM_SAFE_DIRECT",
+            domain_type="CONCEPTUAL",
+            max_preview_chars=self.config.max_preview_chars,
+        )
+        trajectory.add_step("prompt_router", prompt_route.to_dict())
+        trajectory.add_step("metadata", {"estimated_tokens": estimate_tokens(metadata), "prompt_tokens": estimate_tokens(filled_prompt), "metadata_path": str(out_dir / "metadata.json")})
+        trajectory.add_step("real_behavior_applied_trial", trial_decision)
+        trajectory.set_checkpoints(checkpoint_logger.to_list())
+        trajectory_payload = trajectory.save(out_dir / "trajectory.json", final_answer)
+        return {
+            "query_id": qid,
+            "query": query,
+            "strategy": strategy,
+            "output_dir": str(out_dir),
+            "metadata": metadata,
+            "plan": {"strategy": strategy, "rationale": "semantic no-tool applied trial", "steps": []},
+            "tool_results": [],
+            "final_answer": final_answer,
+            "checkpoints": checkpoint_logger.to_list(),
+            "trajectory": trajectory_payload,
+        }
 
     def _add_staged_evidence_policy_checkpoints(self, query: str, analysis: Any, plan: Plan, checkpoint_logger: CheckpointLogger) -> None:
         if not self.config.enable_staged_evidence_policy:
@@ -1118,9 +1259,9 @@ class AgentExecutor:
         tool_results: list[dict[str, Any]],
         api_step: PlanStep,
         checkpoint_logger: CheckpointLogger,
-    ) -> None:
+    ) -> dict[str, Any] | None:
         if not (self.config.enable_post_sql_api_decision or self.config.enable_staged_evidence_policy):
-            return
+            return None
         try:
             sql_result = _latest_sql_payload(tool_results)
             features = extract_objective_prompt_features(query)
@@ -1174,6 +1315,14 @@ class AgentExecutor:
                 correctness_role="blocks unknown endpoints, unresolved path params, and API-required skips",
                 efficiency_role="estimates API call savings/additions without changing execution",
             )
+            return {
+                "card": card,
+                "policy": policy.to_dict(),
+                "advisor": advisor.to_dict(),
+                "verified": verified.to_dict(),
+                "api_required": api_required,
+                "api_step": api_step.to_dict(),
+            }
         except Exception as exc:
             checkpoint_logger.add_error_checkpoint(
                 "checkpoint_post_sql_api_call_verifier",
@@ -1183,6 +1332,82 @@ class AgentExecutor:
                 error=f"{type(exc).__name__}: {exc}",
                 warnings=["post-SQL API decision shadow checkpoint failed; packaged runtime path continued"],
             )
+            return {"error": f"{type(exc).__name__}: {exc}", "api_step": api_step.to_dict()}
+
+    def _post_sql_api_applied_decision(self, post_sql_decision: dict[str, Any] | None) -> dict[str, Any]:
+        enabled = bool(
+            self.config.enable_staged_evidence_applied_trial
+            or self.config.enable_post_sql_deterministic_applied_trial
+            or self.config.enable_post_sql_llm_advisor_applied_trial
+            or self.config.enable_combined_safe_applied_trial
+        )
+        if not enabled:
+            return {"record": False, "applied": False}
+        if not post_sql_decision or post_sql_decision.get("error"):
+            return {
+                "record": True,
+                "trial_mode": self.config.real_behavior_trial_mode,
+                "decision_family": "POST_SQL_API",
+                "decision": "FALLBACK",
+                "applied": False,
+                "fallback": True,
+                "blockers": [post_sql_decision.get("error") if post_sql_decision else "NO_POST_SQL_DECISION"],
+                "shadow_only": False,
+            }
+        policy = post_sql_decision.get("policy") if isinstance(post_sql_decision.get("policy"), dict) else {}
+        advisor = post_sql_decision.get("advisor") if isinstance(post_sql_decision.get("advisor"), dict) else {}
+        verified = post_sql_decision.get("verified") if isinstance(post_sql_decision.get("verified"), dict) else {}
+        card = post_sql_decision.get("card") if isinstance(post_sql_decision.get("card"), dict) else {}
+        sql_state = card.get("sql_state") if isinstance(card.get("sql_state"), dict) else {}
+        api_required = bool(post_sql_decision.get("api_required"))
+        advisor_source = str(advisor.get("source") or verified.get("source") or "")
+        actual_llm_advice = advisor_source in {"LLM_ADVISOR", "LLM_ADVISOR_VERIFIED", "LLM_ADVISOR_BLOCKED"}
+        llm_skip = (
+            self.config.enable_post_sql_llm_advisor_applied_trial
+            and actual_llm_advice
+            and verified.get("source") == "LLM_ADVISOR_VERIFIED"
+            and verified.get("final_action") == "SKIP_API"
+            and not api_required
+        )
+        high_conf_skip = (
+            policy.get("suggestion") == "SKIP_API"
+            and policy.get("confidence") == "HIGH"
+            and verified.get("final_action") == "SKIP_API"
+            and not api_required
+            and bool(sql_state.get("direct_answer"))
+        )
+        applied_skip = bool(high_conf_skip or llm_skip)
+        blockers: list[str] = []
+        if api_required:
+            blockers.append("API_REQUIRED")
+        if policy.get("confidence") != "HIGH" and not self.config.enable_post_sql_llm_advisor_applied_trial:
+            blockers.append("NOT_HIGH_CONFIDENCE")
+        if policy.get("suggestion") != "SKIP_API":
+            blockers.append("POLICY_DID_NOT_SUGGEST_SKIP")
+        if verified.get("final_action") != "SKIP_API":
+            blockers.append("VERIFIER_DID_NOT_APPROVE_SKIP")
+        if not sql_state.get("direct_answer") and not llm_skip:
+            blockers.append("SQL_NOT_DIRECT_ANSWER")
+        if self.config.enable_post_sql_llm_advisor_applied_trial and not actual_llm_advice:
+            blockers.append("NO_ACTUAL_LLM_ADVICE")
+        if self.config.enable_post_sql_llm_advisor_applied_trial and actual_llm_advice and verified.get("source") == "LLM_ADVISOR_BLOCKED":
+            blockers.append("LLM_ADVICE_BLOCKED")
+        return {
+            "record": True,
+            "trial_mode": self.config.real_behavior_trial_mode or "post_sql_deterministic_applied_real_trial",
+            "decision_family": "POST_SQL_API",
+            "decision": "SKIP_API" if applied_skip else "KEEP_BASELINE_API",
+            "applied": applied_skip,
+            "fallback": not applied_skip,
+            "blockers": [] if applied_skip else blockers,
+            "policy": policy,
+            "advisor": advisor,
+            "verified": verified,
+            "api_required": api_required,
+            "sql_direct_answer": bool(sql_state.get("direct_answer")),
+            "actual_llm_advice": actual_llm_advice,
+            "shadow_only": False,
+        }
 
     def _create_llm_sql_plan(
         self,
@@ -1417,6 +1642,28 @@ def count_actions(actions: list[str], needles: list[str]) -> int:
 
 def count_tool_plan_steps(steps: list[Any]) -> int:
     return sum(1 for step in steps if getattr(step, "action", None) in {"sql", "api"})
+
+
+def _conceptual_no_tool_answer(query: str) -> str:
+    lowered = query.lower()
+    definitions = {
+        "schema": "A schema is a blueprint for how data is structured: it defines fields, types, and constraints so systems can interpret records consistently.",
+        "merge polic": "A merge policy defines how profile fragments from multiple sources are combined when building a unified customer profile.",
+        "segment": "A segment is a rule-defined audience group used to select profiles that meet specific traits, behaviors, or eligibility conditions.",
+        "audience": "An audience is a group of profiles selected for activation, personalization, or analysis based on shared criteria.",
+        "tag": "A tag is a label used to organize, categorize, and find platform objects without changing the underlying object data.",
+        "dataset": "A dataset is a collection of records stored under a defined structure for ingestion, querying, or downstream activation.",
+        "journey": "A journey is an orchestration that moves customers through messaging or activation steps based on events and conditions.",
+        "campaign": "A campaign is a coordinated marketing effort that delivers messages or experiences to a selected audience.",
+        "dataflow": "A dataflow describes how data moves between a source, processing step, and destination.",
+        "flow": "A flow describes how data moves between a source, processing step, and destination.",
+        "batch": "A batch is a grouped data ingestion or processing unit handled as one operation.",
+        "audit": "An audit event is a record of an action or system event used for observability, governance, and troubleshooting.",
+    }
+    for needle, answer in definitions.items():
+        if needle in lowered:
+            return answer
+    return "This is a conceptual question about the platform. It can be answered without concrete local records or live API state."
 
 
 def _latest_sql_payload(tool_results: list[dict[str, Any]]) -> dict[str, Any] | None:

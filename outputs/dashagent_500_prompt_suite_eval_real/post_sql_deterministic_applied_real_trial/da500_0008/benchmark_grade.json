@@ -1,0 +1,524 @@
+{
+  "agent_executor_used": true,
+  "category_tags_domain_visible_to_runtime": false,
+  "engine": "real_agent",
+  "expected_trace_visible_to_runtime": false,
+  "extracted_runtime": {
+    "anti_hallucination_initial_fail": false,
+    "anti_hallucination_revision_attempted": false,
+    "anti_hallucination_revision_success": false,
+    "api_calls": 0,
+    "api_calls_added": 0,
+    "api_calls_saved": 0,
+    "api_families": [],
+    "api_used": false,
+    "applied_decision_count": 0,
+    "applied_decision_records": [],
+    "behavior_changed": false,
+    "blocker_count": 0,
+    "checkpoint_names": [
+      "checkpoint_01_raw_query",
+      "checkpoint_00_prompt_router",
+      "checkpoint_simple_prompt_gate",
+      "checkpoint_objective_prompt_features",
+      "checkpoint_02_query_normalization",
+      "checkpoint_03_query_tokens",
+      "checkpoint_04_relevance_scoring",
+      "checkpoint_05_query_analysis",
+      "checkpoint_06_lookup_path",
+      "checkpoint_07_context_card",
+      "checkpoint_08_candidate_plans",
+      "checkpoint_09_plan_optimization",
+      "checkpoint_10_evidence_policy",
+      "checkpoint_11_call_budget",
+      "checkpoint_12_validation",
+      "checkpoint_sql_ast_validation",
+      "checkpoint_13_tool_execution",
+      "checkpoint_14_evidence_bus",
+      "checkpoint_15_answer_slots",
+      "checkpoint_16_answer_verification",
+      "checkpoint_17_answer_reranking",
+      "checkpoint_18_final_answer"
+    ],
+    "estimated_total_tokens": 761,
+    "fallback_count": 0,
+    "feature_flags_used": {
+      "combined_safe_applied": false,
+      "post_sql_deterministic_applied": false,
+      "post_sql_llm_advisor_applied": false,
+      "semantic_no_tool_applied": false,
+      "staged_evidence_applied": false
+    },
+    "latest_code_paths_enabled": {
+      "compact_json_llm_context": false,
+      "evidence_bus_answer_verifier_token_reduction": true,
+      "no_tool_safety_verifier": false,
+      "objective_prompt_features": true,
+      "post_sql_api_call_verifier": false,
+      "post_sql_deterministic_policy": false,
+      "post_sql_llm_advisor": false,
+      "routing_anti_hallucination_gate": false,
+      "routing_feedback_revision": false,
+      "semantic_intent_classifier": false,
+      "semantic_route_decision_ladder": false,
+      "staged_evidence_policy": false
+    },
+    "missing_checkpoints": [
+      "checkpoint_semantic_route_decision_ladder",
+      "checkpoint_initial_evidence_branch_policy",
+      "checkpoint_post_sql_api_call_verifier"
+    ],
+    "observable_trace": {
+      "checkpoint_00_prompt_router": {
+        "confidence": 0.88,
+        "matched_rules": {
+          "items": [
+            "sql_plus_api:live"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "mode": "SQL_PLUS_API",
+        "reason": "Live/status keyword(s) require SQL grounding plus API verification: live.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": true,
+        "requires_database": true,
+        "risk": "medium",
+        "truncated_fields": 1
+      },
+      "checkpoint_01_raw_query": {
+        "query": "Describe the role of a dataflow for a data team. Keep the answer conceptual for the delivery handoff.",
+        "query_id": "da500_0008",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "checkpoint_02_query_normalization": {
+        "matching_text": "describe the role of a dataflow for a data team. keep the answer conceptual for the delivery handoff.",
+        "normalized_query": "Describe the role of a dataflow for a data team. Keep the answer conceptual for the delivery handoff."
+      },
+      "checkpoint_03_query_tokens": {
+        "domains": {
+          "items": [
+            "destination_dataflow",
+            "journey_campaign"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_04_relevance_scoring": {
+        "top_answer_families": {
+          "items": [
+            "generic"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "top_apis": {
+          "items": [
+            "audit_events",
+            "audit_events_short",
+            "export_batch_failed"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_join_hints": {
+          "items": [
+            "dim_connector.SOURCEID->hkg_br_source_collection.SOURCEID",
+            "dim_target.TARGETID->hkg_br_segment_target.TARGETID",
+            "dim_target.TARGETID->hkg_br_target_property.TARGETID"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_tables": {
+          "items": [
+            "dim_connector",
+            "dim_target"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_05_query_analysis": {
+        "answer_family": "generic",
+        "confidence": 0.8,
+        "domain_type": "DESTINATION_DATAFLOW",
+        "route_type": "SQL_THEN_API",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "checkpoint_06_lookup_path": {
+        "api_families": {
+          "items": [
+            "destination_flows",
+            "recent_destination_flows",
+            "failed_dataflow_flows"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "api_mode": "optional",
+        "family": "destination_dataflow",
+        "required_ids": {
+          "items": [
+            "target_id",
+            "dataflow_id"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "tables": {
+          "items": [
+            "dim_target",
+            "dim_connector"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_07_context_card": {
+        "estimated_metadata_tokens": 665,
+        "prompt_tokens": 1289,
+        "selected_apis": {
+          "items": [
+            "audit_events",
+            "audit_events_short",
+            "export_batch_failed"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "selected_card_name": "destination_dataflow",
+        "selected_columns": {
+          "dim_connector": {
+            "items": [
+              "CONNECTIONSPECNAME",
+              "CREATEDTIME",
+              "DATAFLOWID"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "dim_target": {
+            "items": [
+              "CREATEDTIME",
+              "DATAFLOWNAME",
+              "NAME"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          }
+        },
+        "selected_tables": {
+          "items": [
+            "dim_target",
+            "dim_connector"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_08_candidate_plans": {
+        "candidate_plan_names": {
+          "items": [
+            "generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "reason_selected": "highest pre-execution validation/relevance/cost score",
+        "scores": {
+          "generic_sql_first": 11.8765
+        },
+        "selected_plan": "generic_sql_first"
+      },
+      "checkpoint_09_plan_optimization": {
+        "call_budget_applied": false,
+        "optimized_step_count": 1,
+        "optimizer_actions": {
+          "items": [
+            "ensemble selected generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "original_step_count": 1,
+        "removed_api_skip_calls": 0,
+        "removed_duplicate_calls": 0,
+        "unresolved_placeholders_removed": 0
+      },
+      "checkpoint_10_evidence_policy": {
+        "max_api_calls": 0,
+        "mode": "API_SKIP",
+        "reason": "No API template matched and SQL/local evidence is preferred."
+      },
+      "checkpoint_11_call_budget": {
+        "final_planned_calls": 1,
+        "max_api_calls": 0,
+        "max_sql_calls": 1,
+        "max_total_tool_calls": 1,
+        "planned_api_calls": 0,
+        "planned_sql_calls": 1
+      },
+      "checkpoint_12_validation": {
+        "sql_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_13_tool_execution": {
+        "api_calls_executed": 0,
+        "dry_run_status": false,
+        "row_counts": {
+          "items": [
+            0
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_calls_executed": 1,
+        "sql_results": {
+          "items": [
+            {
+              "ok": true,
+              "result_preview": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "row_count": 0
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_14_evidence_bus": {
+        "evidence": {}
+      },
+      "checkpoint_15_answer_slots": {
+        "answer_intent": "STATUS",
+        "discrepancy_flags": {
+          "sql_api_discrepancy": false
+        },
+        "dry_run_flags": {
+          "dry_run": false
+        },
+        "missing_slots": {
+          "items": [
+            "status"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "slots": {
+          "answer_family": "generic",
+          "api_error": false,
+          "counts": {
+            "items": [
+              "0"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "discrepancy": false,
+          "dry_run": false,
+          "slots_present": {
+            "items": [
+              "counts"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "sql_row_count": 0
+        }
+      },
+      "checkpoint_16_answer_verification": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "rewrite_applied": false,
+        "supported_claims_count": 1,
+        "unsupported_claims_count": 0,
+        "verifier_passed": true
+      },
+      "checkpoint_17_answer_reranking": {
+        "candidate_count": 0,
+        "selected_candidate_type": "base",
+        "selection_reason": "best verifier-passing answer"
+      },
+      "checkpoint_18_final_answer": {
+        "answer_length": 45,
+        "final_answer": "The database query returned no matching rows.",
+        "final_token_estimate": 8
+      },
+      "checkpoint_objective_prompt_features": {
+        "cap": {
+          "items": [
+            "SQL_FLOW",
+            "API_FLOW_SERVICE"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "count": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "cue": {
+          "items": [
+            "EXPLAIN"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "domain": {
+          "items": [
+            "DATAFLOW",
+            "FLOW"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "entity": {
+          "items": [
+            "ID_LIKE"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "norm": "describe the role of a dataflow for a data team. keep the answer conceptual for the delivery handoff.",
+        "p": "Describe the role of a dataflow for a data team. Keep the answer conceptual for the delivery handoff.",
+        "status": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "truncated_fields": 5
+      },
+      "checkpoint_simple_prompt_gate": {
+        "confidence": 0.88,
+        "is_simple": false,
+        "reason": "Live/status keyword(s) require SQL grounding plus API verification: live.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      },
+      "checkpoint_sql_ast_validation": {
+        "destructive_sql_detected": false,
+        "parsed_ok": true,
+        "selected_columns": {
+          "items": [
+            "CONNECTIONSPECID",
+            "DATAFLOWNAME",
+            "NAME"
+          ],
+          "total_items": 5,
+          "truncated_items": true
+        },
+        "selected_tables": {
+          "items": [
+            "dim_target"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "summaries": {
+          "items": [
+            {
+              "destructive_sql_detected": false,
+              "enabled": true,
+              "normalized_sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS TEXT)) LIKE LOWER('%live%') LIMIT 50",
+              "parsed_ok": true,
+              "selected_columns": {
+                "items": [
+                  "DATAFLOWNAME",
+                  "STATE",
+                  "TARGETID"
+                ],
+                "total_items": 5,
+                "truncated_items": true
+              },
+              "selected_tables": {
+                "items": [
+                  "dim_target"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              }
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      }
+    },
+    "post_sql_advisor_blocked": false,
+    "post_sql_advisor_checkpoint_present": false,
+    "post_sql_advisor_disabled_or_fallback": false,
+    "post_sql_advisor_invoked": false,
+    "post_sql_advisor_source": "UNKNOWN",
+    "post_sql_advisor_verified": false,
+    "post_sql_deterministic_fallback": false,
+    "post_sql_llm_advice_blocked": false,
+    "post_sql_llm_advisor_actual_call": false,
+    "post_sql_verifier_blocked": false,
+    "post_sql_verifier_source": "UNKNOWN",
+    "post_sql_verifier_verified": false,
+    "route_action": "SQL_ONLY",
+    "runtime_ms": 26.621249970048666,
+    "skipped_decision_count": 0,
+    "sql_calls": 1,
+    "sql_tables": [
+      "dim_target"
+    ],
+    "sql_used": true,
+    "trajectory_timing": {},
+    "unsupported_claims": 0
+  },
+  "gold_visible_to_runtime": false,
+  "grade": {
+    "answer_grounding_score": 1.0,
+    "api_endpoint_family_accuracy": 1.0,
+    "api_error_interpretation_correct": true,
+    "api_required_used_accuracy": 1.0,
+    "behavior_score": 0.6875,
+    "combined_diagnostic_score": 0.4021,
+    "expected_evidence_need_accuracy": 0.0,
+    "expected_observable_trace_score": 0.3333,
+    "final_answer_correctness": 0.625,
+    "forbidden_claims_violation": false,
+    "live_empty_interpretation_correct": true,
+    "no_tool_false_negative": true,
+    "no_tool_false_positive": false,
+    "overall_score": 0.4021,
+    "required_facts_coverage": 0.0,
+    "route_accuracy": 0.0,
+    "sql_required_used_accuracy": 0.5,
+    "sql_table_accuracy": 1.0,
+    "tool_overuse": 1,
+    "tool_underuse": 0,
+    "trace_observability_score": 0.25,
+    "unsupported_claims": 0
+  },
+  "mode": "post_sql_deterministic_applied_real_trial",
+  "oracle_visible_to_runtime": false,
+  "prompt_id": "da500_0008",
+  "runtime_input": {
+    "prompt": "Describe the role of a dataflow for a data team. Keep the answer conceptual for the delivery handoff.",
+    "prompt_id": "da500_0008"
+  },
+  "synthetic_sql_results_used": false,
+  "trajectory_path": "/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/dashagent_500_prompt_suite_eval_real/post_sql_deterministic_applied_real_trial/da500_0008/trajectory.json"
+}
