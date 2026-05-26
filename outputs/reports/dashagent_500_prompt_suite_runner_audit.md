@@ -13,8 +13,15 @@
 - expected_trace_hidden_from_runtime: True
 - latest_code_paths_truly_executed: True
 - latest_code_paths_shadow_logged_only: True
+- post_sql_advisor_metric_semantics: {'checkpoint_presence_is_not_invocation': True, 'deterministic_fallback_is_not_llm_blocked': True, 'blocked_count_requires_actual_llm_advice': True}
+- latest_shadow_real_post_sql_advisor_checkpoint_present_count: 327
+- latest_shadow_real_post_sql_llm_advisor_actual_call_count: 0
+- latest_shadow_real_post_sql_llm_advice_blocked_count: 0
+- latest_shadow_real_post_sql_deterministic_fallback_count: 101
 - latest_applied_real_trial_available: False
 - notes:
   - Simulated trace mode is retained only as a diagnostic compatibility engine.
   - Real-agent mode uses AgentExecutor.run and writes actual per-prompt trajectory.json files.
   - Gold, oracle SQL, expected traces, category, domain, and tags are grading inputs only in real-agent mode.
+  - Post-SQL advisor checkpoints are observability records; actual LLM advisor calls are counted separately.
+  - DETERMINISTIC_FALLBACK is not counted as blocked LLM advice.

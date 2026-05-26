@@ -180,6 +180,33 @@ def test_post_sql_api_required_cannot_be_skipped() -> None:
     assert "API_REQUIRED_SKIP_BLOCKED" in result.codes
 
 
+def test_post_sql_deterministic_fallback_is_not_labeled_llm_blocked() -> None:
+    card = {"api_candidates": [], "prompt_features": ["RETR"], "answer_intent": "LIST"}
+
+    result = verify_post_sql_api_advice(
+        {"mode": "CAVEAT_ONLY", "endpoint_id": None, "needed_roles": [], "source": "DETERMINISTIC_FALLBACK"},
+        card,
+        EndpointCatalog(),
+    )
+
+    assert result.final_action == "CAVEAT_ONLY"
+    assert result.source == "DETERMINISTIC_FALLBACK"
+
+
+def test_post_sql_actual_llm_unknown_endpoint_is_labeled_blocked() -> None:
+    card = {"api_candidates": [], "prompt_features": ["RETR"], "answer_intent": "DETAIL"}
+
+    result = verify_post_sql_api_advice(
+        {"mode": "CALL_API", "endpoint_id": "not_real", "needed_roles": ["detail"], "source": "LLM_ADVISOR"},
+        card,
+        EndpointCatalog(),
+    )
+
+    assert result.final_action == "SKIP_API"
+    assert result.source == "LLM_ADVISOR_BLOCKED"
+    assert "UNKNOWN_ENDPOINT" in result.codes
+
+
 def test_invalid_llm_json_falls_back_to_deterministic_policy() -> None:
     features = extract_objective_prompt_features("Show schema status")
     card = build_post_sql_decision_card(

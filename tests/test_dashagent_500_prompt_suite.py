@@ -94,7 +94,23 @@ class _FakeExecutor:
                 [
                     {"name": "checkpoint_semantic_route_decision_ladder", "output": {"action": "LLM_SAFE_DIRECT", "shadow_only": True}},
                     {"name": "checkpoint_initial_evidence_branch_policy", "output": {"first_branch": "NO_TOOL", "shadow_only": True}},
-                    {"name": "checkpoint_post_sql_api_call_verifier", "output": {"final_action": "SKIP_API", "shadow_only": True}},
+                    {
+                        "name": "checkpoint_post_sql_llm_advisor",
+                        "output": {
+                            "mode": "CAVEAT_ONLY",
+                            "source": "DETERMINISTIC_FALLBACK",
+                            "codes": ["POST_SQL_LLM_ADVISOR_DISABLED"],
+                            "shadow_only": True,
+                        },
+                    },
+                    {
+                        "name": "checkpoint_post_sql_api_call_verifier",
+                        "output": {
+                            "final_action": "CAVEAT_ONLY",
+                            "source": "DETERMINISTIC_FALLBACK",
+                            "shadow_only": True,
+                        },
+                    },
                 ]
             )
         trajectory = {
@@ -282,3 +298,33 @@ def test_shadow_real_separates_behavior_from_trace_observability(tmp_path: Path)
     assert comparison["behavior_score_delta"] == 0.0
     assert comparison["trace_observability_delta"] > 0
     assert comparison["trace_observability_improved"] is True
+
+
+def test_shadow_real_advisor_checkpoint_does_not_count_as_llm_invocation(tmp_path: Path) -> None:
+    out = tmp_path / "benchmarks"
+    report_dir = tmp_path / "reports"
+    eval_dir = tmp_path / "eval"
+    generate_suite(out_dir=out, report_dir=report_dir, seed=20260525)
+
+    result = run_suite_eval(
+        suite_path=out / "dashagent_500_prompt_suite.jsonl",
+        gold_path=out / "dashagent_500_prompt_suite_gold.jsonl",
+        output_dir=eval_dir,
+        report_dir=report_dir,
+        modes=["latest_shadow_real"],
+        limit=2,
+        seed=20260525,
+        clean=True,
+        engine="real_agent",
+        executor_factory=lambda config=None: _FakeExecutor(shadow=True),
+    )
+
+    shadow = result["mode_summary"]["latest_shadow_real"]
+    assert shadow["post_sql_advisor_checkpoint_present_count"] == 2
+    assert shadow["post_sql_llm_advisor_actual_call_count"] == 0
+    assert shadow["post_sql_advisor_invoked"] == 0
+    assert shadow["post_sql_llm_advice_blocked_count"] == 0
+    assert shadow["post_sql_advisor_blocked"] == 0
+    assert shadow["post_sql_deterministic_fallback_count"] == 2
+    assert shadow["post_sql_advisor_disabled_or_fallback_count"] == 2
+    assert shadow["post_sql_advisor_source_counts"]["DETERMINISTIC_FALLBACK"] == 2

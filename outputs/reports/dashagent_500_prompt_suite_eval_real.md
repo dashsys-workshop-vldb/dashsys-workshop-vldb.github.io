@@ -31,9 +31,14 @@
 - api_calls_added: 0
 - anti_hallucination_initial_fail: 0
 - anti_hallucination_revision_success: 0
-- post_sql_advisor_invoked: 0
-- post_sql_advisor_verified: 0
-- post_sql_advisor_blocked: 0
+- post_sql_advisor_note: checkpoints are observability; actual LLM calls are counted separately
+- post_sql_advisor_checkpoint_present_count: 0
+- post_sql_llm_advisor_actual_call_count: 0
+- post_sql_deterministic_fallback_count: 0
+- post_sql_llm_advice_blocked_count: 0
+- post_sql_verifier_verified_count: 0
+- post_sql_verifier_blocked_count: 0
+- post_sql_advisor_source_counts: {'DETERMINISTIC_BYPASS': 0, 'DETERMINISTIC_FALLBACK': 0, 'DETERMINISTIC_HIGH_CONF': 0, 'DISABLED': 0, 'INVALID_JSON': 0, 'LLM_ADVISOR': 0, 'LLM_ADVISOR_BLOCKED': 0, 'LLM_ADVISOR_VERIFIED': 0, 'LLM_BACKEND_UNAVAILABLE': 0}
 
 ### latest_shadow_real
 - behavior_score: 0.8045
@@ -51,6 +56,11 @@
 - api_calls_added: 0
 - anti_hallucination_initial_fail: 0
 - anti_hallucination_revision_success: 0
-- post_sql_advisor_invoked: 327
-- post_sql_advisor_verified: 0
-- post_sql_advisor_blocked: 101
+- post_sql_advisor_note: checkpoints are observability; actual LLM calls are counted separately
+- post_sql_advisor_checkpoint_present_count: 327
+- post_sql_llm_advisor_actual_call_count: 0
+- post_sql_deterministic_fallback_count: 101
+- post_sql_llm_advice_blocked_count: 0
+- post_sql_verifier_verified_count: 0
+- post_sql_verifier_blocked_count: 0
+- post_sql_advisor_source_counts: {'DETERMINISTIC_BYPASS': 226, 'DETERMINISTIC_FALLBACK': 101, 'DETERMINISTIC_HIGH_CONF': 0, 'DISABLED': 0, 'INVALID_JSON': 0, 'LLM_ADVISOR': 0, 'LLM_ADVISOR_BLOCKED': 0, 'LLM_ADVISOR_VERIFIED': 0, 'LLM_BACKEND_UNAVAILABLE': 0}

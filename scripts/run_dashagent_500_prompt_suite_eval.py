@@ -55,6 +55,17 @@ REAL_APPLIED_TRIAL_BLOCKERS = [
 ]
 
 EVIDENCE_ROUTES = {"EVIDENCE_PIPELINE", "SQL_ONLY", "API_ONLY", "SQL_THEN_API", "SQL_PRIMARY_API_VERIFY"}
+POST_SQL_ADVISOR_SOURCE_KEYS = [
+    "DETERMINISTIC_BYPASS",
+    "DETERMINISTIC_HIGH_CONF",
+    "DETERMINISTIC_FALLBACK",
+    "LLM_ADVISOR",
+    "LLM_ADVISOR_VERIFIED",
+    "LLM_ADVISOR_BLOCKED",
+    "LLM_BACKEND_UNAVAILABLE",
+    "INVALID_JSON",
+    "DISABLED",
+]
 
 
 class _AdviceClient:
@@ -329,6 +340,15 @@ def _run_real_agent_suite_eval(
                     "anti_hallucination_initial_fail": extracted["anti_hallucination_initial_fail"],
                     "anti_hallucination_revision_attempted": extracted["anti_hallucination_revision_attempted"],
                     "anti_hallucination_revision_success": extracted["anti_hallucination_revision_success"],
+                    "post_sql_advisor_checkpoint_present": extracted["post_sql_advisor_checkpoint_present"],
+                    "post_sql_llm_advisor_actual_call": extracted["post_sql_llm_advisor_actual_call"],
+                    "post_sql_advisor_source": extracted["post_sql_advisor_source"],
+                    "post_sql_verifier_source": extracted["post_sql_verifier_source"],
+                    "post_sql_verifier_verified": extracted["post_sql_verifier_verified"],
+                    "post_sql_verifier_blocked": extracted["post_sql_verifier_blocked"],
+                    "post_sql_llm_advice_blocked": extracted["post_sql_llm_advice_blocked"],
+                    "post_sql_advisor_disabled_or_fallback": extracted["post_sql_advisor_disabled_or_fallback"],
+                    "post_sql_deterministic_fallback": extracted["post_sql_deterministic_fallback"],
                     "post_sql_advisor_invoked": extracted["post_sql_advisor_invoked"],
                     "post_sql_advisor_verified": extracted["post_sql_advisor_verified"],
                     "post_sql_advisor_blocked": extracted["post_sql_advisor_blocked"],
@@ -495,6 +515,13 @@ def _empty_unavailable_summary(mode: str, payload: dict[str, Any]) -> dict[str, 
         "anti_hallucination_initial_fail",
         "anti_hallucination_revision_attempted",
         "anti_hallucination_revision_success",
+        "post_sql_advisor_checkpoint_present_count",
+        "post_sql_llm_advisor_actual_call_count",
+        "post_sql_verifier_verified_count",
+        "post_sql_verifier_blocked_count",
+        "post_sql_llm_advice_blocked_count",
+        "post_sql_advisor_disabled_or_fallback_count",
+        "post_sql_deterministic_fallback_count",
         "post_sql_advisor_invoked",
         "post_sql_advisor_verified",
         "post_sql_advisor_blocked",
@@ -509,6 +536,7 @@ def _empty_unavailable_summary(mode: str, payload: dict[str, Any]) -> dict[str, 
             "excluded_from_comparison": True,
             "per_category": {},
             "latest_code_paths_enabled": {},
+            "post_sql_advisor_source_counts": {},
             "old_generated_diagnostic_path_used": False,
             "rows_helped": [],
             "rows_hurt": [],
@@ -644,6 +672,14 @@ def _extract_real_runtime(agent_result: dict[str, Any], catalog: EndpointCatalog
         ]
         if name not in checkpoint_by_name
     ]
+    advisor_checkpoint = checkpoint_by_name.get("checkpoint_post_sql_llm_advisor")
+    verifier_checkpoint = checkpoint_by_name.get("checkpoint_post_sql_api_call_verifier")
+    advisor_output = _checkpoint_output(advisor_checkpoint)
+    verifier_source = _normalize_post_sql_source(_checkpoint_output_source(verifier_checkpoint))
+    advisor_source = _post_sql_advisor_source(advisor_output)
+    advisor_checkpoint_present = advisor_checkpoint is not None
+    actual_llm_advisor_call = _post_sql_actual_llm_advisor_call(advisor_source)
+    llm_advice_blocked = actual_llm_advisor_call and verifier_source == "LLM_ADVISOR_BLOCKED"
     return {
         "sql_used": bool(sql_calls),
         "api_used": bool(api_calls),
@@ -663,9 +699,18 @@ def _extract_real_runtime(agent_result: dict[str, Any], catalog: EndpointCatalog
         "anti_hallucination_initial_fail": _checkpoint_has_gate_initial_fail(checkpoint_by_name.get("checkpoint_routing_anti_hallucination_gate")),
         "anti_hallucination_revision_attempted": _checkpoint_output_bool(checkpoint_by_name.get("checkpoint_routing_anti_hallucination_gate"), "revision_attempted"),
         "anti_hallucination_revision_success": _checkpoint_output_bool(checkpoint_by_name.get("checkpoint_routing_anti_hallucination_gate"), "revision_success"),
-        "post_sql_advisor_invoked": "checkpoint_post_sql_llm_advisor" in checkpoint_by_name,
-        "post_sql_advisor_verified": _checkpoint_output_source(checkpoint_by_name.get("checkpoint_post_sql_api_call_verifier")) in {"LLM_ADVISOR", "LLM_ADVISOR_VERIFIED"},
-        "post_sql_advisor_blocked": _checkpoint_output_source(checkpoint_by_name.get("checkpoint_post_sql_api_call_verifier")) == "LLM_ADVISOR_BLOCKED",
+        "post_sql_advisor_checkpoint_present": advisor_checkpoint_present,
+        "post_sql_llm_advisor_actual_call": actual_llm_advisor_call,
+        "post_sql_advisor_source": advisor_source,
+        "post_sql_verifier_source": verifier_source,
+        "post_sql_verifier_verified": _post_sql_verifier_verified(verifier_checkpoint),
+        "post_sql_verifier_blocked": verifier_source == "LLM_ADVISOR_BLOCKED",
+        "post_sql_llm_advice_blocked": llm_advice_blocked,
+        "post_sql_advisor_disabled_or_fallback": advisor_source in {"DISABLED", "DETERMINISTIC_FALLBACK", "LLM_BACKEND_UNAVAILABLE", "INVALID_JSON"},
+        "post_sql_deterministic_fallback": advisor_source == "DETERMINISTIC_FALLBACK",
+        "post_sql_advisor_invoked": actual_llm_advisor_call,
+        "post_sql_advisor_verified": actual_llm_advisor_call and verifier_source in {"LLM_ADVISOR", "LLM_ADVISOR_VERIFIED"},
+        "post_sql_advisor_blocked": llm_advice_blocked,
     }
 
 
@@ -746,6 +791,36 @@ def _checkpoint_output_bool(checkpoint: dict[str, Any] | None, key: str) -> bool
 
 def _checkpoint_output_source(checkpoint: dict[str, Any] | None) -> str:
     return str(_checkpoint_output(checkpoint).get("source") or "")
+
+
+def _normalize_post_sql_source(source: str) -> str:
+    if source == "DETERMINISTIC_BYPASS":
+        return "DETERMINISTIC_HIGH_CONF"
+    if source in {"LLM_ADVISOR", "LLM_ADVISOR_VERIFIED"}:
+        return source
+    if source in {"LLM_ADVISOR_BLOCKED", "DETERMINISTIC_HIGH_CONF", "DETERMINISTIC_FALLBACK", "LLM_BACKEND_UNAVAILABLE", "INVALID_JSON", "DISABLED"}:
+        return source
+    return source or "UNKNOWN"
+
+
+def _post_sql_advisor_source(advisor_output: dict[str, Any]) -> str:
+    codes = {str(item) for item in advisor_output.get("codes") or []}
+    if "INVALID_JSON" in codes:
+        return "INVALID_JSON"
+    if "LLM_BACKEND_UNAVAILABLE" in codes:
+        return "LLM_BACKEND_UNAVAILABLE"
+    return str(advisor_output.get("source") or "UNKNOWN")
+
+
+def _post_sql_actual_llm_advisor_call(source: str) -> bool:
+    return source in {"LLM_ADVISOR", "LLM_ADVISOR_VERIFIED", "LLM_ADVISOR_BLOCKED", "INVALID_JSON"}
+
+
+def _post_sql_verifier_verified(checkpoint: dict[str, Any] | None) -> bool:
+    output = _checkpoint_output(checkpoint)
+    source = _normalize_post_sql_source(str(output.get("source") or ""))
+    codes = {str(item) for item in output.get("codes") or []}
+    return source != "LLM_ADVISOR_BLOCKED" and any(code.startswith("VERIFIED_") for code in codes)
 
 
 def _checkpoint_has_gate_initial_fail(checkpoint: dict[str, Any] | None) -> bool:
@@ -928,9 +1003,18 @@ def _run_runtime_trace(row: dict[str, Any], mode: str, catalog: EndpointCatalog)
             "anti_hallucination_initial_fail": not gate_run.initial_gate.ok,
             "anti_hallucination_revision_attempted": gate_run.revision_attempted,
             "anti_hallucination_revision_success": gate_run.revision_success,
+            "post_sql_advisor_checkpoint_present": True,
+            "post_sql_llm_advisor_actual_call": post_sql_payload["advisor_invoked"],
+            "post_sql_advisor_source": post_sql_payload["advisor_source"],
+            "post_sql_verifier_source": post_sql_payload["verifier_source"],
+            "post_sql_verifier_verified": post_sql_payload["verifier_verified"],
+            "post_sql_verifier_blocked": post_sql_payload["verifier_blocked"],
+            "post_sql_llm_advice_blocked": post_sql_payload["llm_advice_blocked"],
+            "post_sql_advisor_disabled_or_fallback": post_sql_payload["advisor_disabled_or_fallback"],
+            "post_sql_deterministic_fallback": post_sql_payload["deterministic_fallback"],
             "post_sql_advisor_invoked": post_sql_payload["advisor_invoked"],
             "post_sql_advisor_verified": post_sql_payload["advisor_verified"],
-            "post_sql_advisor_blocked": post_sql_payload["advisor_blocked"],
+            "post_sql_advisor_blocked": post_sql_payload["llm_advice_blocked"],
             "api_calls_saved": int(tool_plan["api_saved"]),
             "api_calls_added": int(tool_plan["api_added"]),
         },
@@ -1022,6 +1106,9 @@ def _post_sql_policy_trace(row: dict[str, Any], feature_payload: dict[str, Any],
         advisor_verified = advisor_invoked and verifier.get("source") in {"LLM_ADVISOR", "LLM_ADVISOR_VERIFIED"}
         advisor_blocked = advisor_invoked and verifier.get("source") == "LLM_ADVISOR_BLOCKED"
     elapsed_ms = (time.perf_counter() - start) * 1000
+    advisor_source = _post_sql_advisor_source(advisor)
+    verifier_source = _normalize_post_sql_source(str(verifier.get("source") or ""))
+    llm_advice_blocked = advisor_invoked and verifier_source == "LLM_ADVISOR_BLOCKED"
     return {
         "card": card,
         "deterministic_policy": policy_payload,
@@ -1029,7 +1116,14 @@ def _post_sql_policy_trace(row: dict[str, Any], feature_payload: dict[str, Any],
         "verifier": verifier,
         "advisor_invoked": advisor_invoked,
         "advisor_verified": advisor_verified,
-        "advisor_blocked": advisor_blocked,
+        "advisor_blocked": llm_advice_blocked,
+        "advisor_source": advisor_source,
+        "verifier_source": verifier_source,
+        "verifier_verified": verifier_source != "LLM_ADVISOR_BLOCKED" and any(str(code).startswith("VERIFIED_") for code in verifier.get("codes") or []),
+        "verifier_blocked": verifier_source == "LLM_ADVISOR_BLOCKED",
+        "llm_advice_blocked": llm_advice_blocked,
+        "advisor_disabled_or_fallback": advisor_source in {"DISABLED", "DETERMINISTIC_FALLBACK", "LLM_BACKEND_UNAVAILABLE", "INVALID_JSON"},
+        "deterministic_fallback": advisor_source == "DETERMINISTIC_FALLBACK",
         "token_estimate": max(1, len(json.dumps(card, sort_keys=True)) // 4),
         "runtime_ms": elapsed_ms,
     }
@@ -1174,6 +1268,8 @@ def _summarize_mode(mode: str, rows: list[dict[str, Any]], elapsed: float) -> di
         "runtime_ms",
     ]
     summary = {key: round(sum(float(row.get(key) or 0.0) for row in rows) / count, 4) for key in avg_keys}
+    source_counts = Counter({key: 0 for key in POST_SQL_ADVISOR_SOURCE_KEYS})
+    source_counts.update(str(row.get("post_sql_advisor_source") or "MISSING") for row in rows if row.get("post_sql_advisor_checkpoint_present"))
     summary.update(
         {
             "mode": mode,
@@ -1193,9 +1289,17 @@ def _summarize_mode(mode: str, rows: list[dict[str, Any]], elapsed: float) -> di
             "anti_hallucination_initial_fail": sum(1 for row in rows if row.get("anti_hallucination_initial_fail")),
             "anti_hallucination_revision_attempted": sum(1 for row in rows if row.get("anti_hallucination_revision_attempted")),
             "anti_hallucination_revision_success": sum(1 for row in rows if row.get("anti_hallucination_revision_success")),
-            "post_sql_advisor_invoked": sum(1 for row in rows if row.get("post_sql_advisor_invoked")),
+            "post_sql_advisor_checkpoint_present_count": sum(1 for row in rows if row.get("post_sql_advisor_checkpoint_present")),
+            "post_sql_llm_advisor_actual_call_count": sum(1 for row in rows if row.get("post_sql_llm_advisor_actual_call")),
+            "post_sql_advisor_source_counts": dict(sorted(source_counts.items())),
+            "post_sql_verifier_verified_count": sum(1 for row in rows if row.get("post_sql_verifier_verified")),
+            "post_sql_verifier_blocked_count": sum(1 for row in rows if row.get("post_sql_verifier_blocked")),
+            "post_sql_llm_advice_blocked_count": sum(1 for row in rows if row.get("post_sql_llm_advice_blocked")),
+            "post_sql_advisor_disabled_or_fallback_count": sum(1 for row in rows if row.get("post_sql_advisor_disabled_or_fallback")),
+            "post_sql_deterministic_fallback_count": sum(1 for row in rows if row.get("post_sql_deterministic_fallback")),
+            "post_sql_advisor_invoked": sum(1 for row in rows if row.get("post_sql_llm_advisor_actual_call")),
             "post_sql_advisor_verified": sum(1 for row in rows if row.get("post_sql_advisor_verified")),
-            "post_sql_advisor_blocked": sum(1 for row in rows if row.get("post_sql_advisor_blocked")),
+            "post_sql_advisor_blocked": sum(1 for row in rows if row.get("post_sql_llm_advice_blocked")),
             "wall_time_seconds": round(elapsed, 4),
             "per_category": _group_average(rows, "category", "overall_score"),
             "latest_code_paths_enabled": _aggregate_latest_flags(rows),
@@ -1407,6 +1511,10 @@ def _write_gate_report(report: dict[str, Any], reports_dir: Path, *, suffix: str
         "latest_shadow_real_behavior_score": (report["modes"].get("latest_shadow_real") or {}).get("behavior_score"),
         "latest_shadow_real_trace_observability_score": (report["modes"].get("latest_shadow_real") or {}).get("trace_observability_score"),
         "latest_shadow_real_trace_observability_delta": (report.get("shadow_comparison") or {}).get("trace_observability_delta"),
+        "latest_shadow_real_post_sql_advisor_checkpoint_present_count": (report["modes"].get("latest_shadow_real") or {}).get("post_sql_advisor_checkpoint_present_count"),
+        "latest_shadow_real_post_sql_llm_advisor_actual_call_count": (report["modes"].get("latest_shadow_real") or {}).get("post_sql_llm_advisor_actual_call_count"),
+        "latest_shadow_real_post_sql_llm_advice_blocked_count": (report["modes"].get("latest_shadow_real") or {}).get("post_sql_llm_advice_blocked_count"),
+        "latest_shadow_real_post_sql_deterministic_fallback_count": (report["modes"].get("latest_shadow_real") or {}).get("post_sql_deterministic_fallback_count"),
         "latest_trial_score": None if applied.get("excluded_from_comparison") else latest_score,
         "route_trace_accuracy": None if applied.get("excluded_from_comparison") else latest.get("expected_observable_trace_score"),
         "unsupported_claims_zero": unsupported_zero,
@@ -1595,9 +1703,14 @@ def _eval_report_md(report: dict[str, Any]) -> str:
                 f"- api_calls_added: {summary['api_calls_added']}",
                 f"- anti_hallucination_initial_fail: {summary['anti_hallucination_initial_fail']}",
                 f"- anti_hallucination_revision_success: {summary['anti_hallucination_revision_success']}",
-                f"- post_sql_advisor_invoked: {summary['post_sql_advisor_invoked']}",
-                f"- post_sql_advisor_verified: {summary['post_sql_advisor_verified']}",
-                f"- post_sql_advisor_blocked: {summary['post_sql_advisor_blocked']}",
+                "- post_sql_advisor_note: checkpoints are observability; actual LLM calls are counted separately",
+                f"- post_sql_advisor_checkpoint_present_count: {summary['post_sql_advisor_checkpoint_present_count']}",
+                f"- post_sql_llm_advisor_actual_call_count: {summary['post_sql_llm_advisor_actual_call_count']}",
+                f"- post_sql_deterministic_fallback_count: {summary['post_sql_deterministic_fallback_count']}",
+                f"- post_sql_llm_advice_blocked_count: {summary['post_sql_llm_advice_blocked_count']}",
+                f"- post_sql_verifier_verified_count: {summary['post_sql_verifier_verified_count']}",
+                f"- post_sql_verifier_blocked_count: {summary['post_sql_verifier_blocked_count']}",
+                f"- post_sql_advisor_source_counts: {summary['post_sql_advisor_source_counts']}",
                 "",
             ]
         )
@@ -1624,6 +1737,15 @@ def _write_runner_audit(report: dict[str, Any], reports_dir: Path) -> dict[str, 
         "latest_code_paths_shadow_logged_only": bool(
             report.get("mode_summary", {}).get("latest_shadow_real", {}).get("shadow_modules_executed")
         ),
+        "post_sql_advisor_metric_semantics": {
+            "checkpoint_presence_is_not_invocation": True,
+            "deterministic_fallback_is_not_llm_blocked": True,
+            "blocked_count_requires_actual_llm_advice": True,
+        },
+        "latest_shadow_real_post_sql_advisor_checkpoint_present_count": report.get("mode_summary", {}).get("latest_shadow_real", {}).get("post_sql_advisor_checkpoint_present_count"),
+        "latest_shadow_real_post_sql_llm_advisor_actual_call_count": report.get("mode_summary", {}).get("latest_shadow_real", {}).get("post_sql_llm_advisor_actual_call_count"),
+        "latest_shadow_real_post_sql_llm_advice_blocked_count": report.get("mode_summary", {}).get("latest_shadow_real", {}).get("post_sql_llm_advice_blocked_count"),
+        "latest_shadow_real_post_sql_deterministic_fallback_count": report.get("mode_summary", {}).get("latest_shadow_real", {}).get("post_sql_deterministic_fallback_count"),
         "latest_applied_real_trial_available": not bool(
             (
                 report.get("mode_summary", {}).get("latest_applied_real_trial")
@@ -1635,6 +1757,8 @@ def _write_runner_audit(report: dict[str, Any], reports_dir: Path) -> dict[str, 
             "Simulated trace mode is retained only as a diagnostic compatibility engine.",
             "Real-agent mode uses AgentExecutor.run and writes actual per-prompt trajectory.json files.",
             "Gold, oracle SQL, expected traces, category, domain, and tags are grading inputs only in real-agent mode.",
+            "Post-SQL advisor checkpoints are observability records; actual LLM advisor calls are counted separately.",
+            "DETERMINISTIC_FALLBACK is not counted as blocked LLM advice.",
         ],
     }
     json_path = reports_dir / "dashagent_500_prompt_suite_runner_audit.json"

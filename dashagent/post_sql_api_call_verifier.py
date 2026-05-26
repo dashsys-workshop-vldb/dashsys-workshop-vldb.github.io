@@ -41,7 +41,7 @@ def verify_post_sql_api_advice(
         if selected is None:
             endpoint = endpoint_catalog.by_id(str(endpoint_id)) if endpoint_id else None
             if endpoint is None:
-                return _blocked("SKIP_API", ["UNKNOWN_ENDPOINT"], endpoint_id)
+                return _blocked("SKIP_API", ["UNKNOWN_ENDPOINT"], endpoint_id, payload)
             selected = {
                 "endpoint_id": endpoint.id,
                 "family": endpoint.id,
@@ -51,26 +51,26 @@ def verify_post_sql_api_advice(
                 "can_fill_roles": [],
             }
         if not budget_available:
-            return _blocked("SKIP_API", ["API_BUDGET_UNAVAILABLE"], selected.get("family"))
+            return _blocked("SKIP_API", ["API_BUDGET_UNAVAILABLE"], selected.get("family"), payload)
         if selected.get("method") != "GET" or not selected.get("safe_get"):
-            return _blocked("SKIP_API", ["UNSAFE_METHOD"], selected.get("family"))
+            return _blocked("SKIP_API", ["UNSAFE_METHOD"], selected.get("family"), payload)
         if selected.get("requires_path_param"):
-            return _blocked("SKIP_API", ["UNRESOLVED_PATH_PARAM"], selected.get("family"))
+            return _blocked("SKIP_API", ["UNRESOLVED_PATH_PARAM"], selected.get("family"), payload)
         needed_roles = set(str(item) for item in payload.get("needed_roles") or [])
         can_fill = set(str(item) for item in selected.get("can_fill_roles") or [])
         live_or_api_intent = bool(prompt_features & {"CURRENT", "LIVE", "PLATFORM", "API", "TAG", "AUDIT", "MERGE_POLICY"})
         if needed_roles and not (needed_roles & can_fill) and not live_or_api_intent:
-            return _blocked("SKIP_API", ["ROLE_MISMATCH"], selected.get("family"))
+            return _blocked("SKIP_API", ["ROLE_MISMATCH"], selected.get("family"), payload)
         return VerifiedPostSQLAPIAction("CALL_API", _source(payload), [str(selected.get("family") or selected.get("endpoint_id"))], [], ["VERIFIED_CALL_API"])
 
     if mode == "SKIP_API":
         safe_candidate = _first_safe_candidate(candidates)
         if api_required and safe_candidate:
-            return VerifiedPostSQLAPIAction("CALL_API", "LLM_ADVISOR_BLOCKED", [str(safe_candidate.get("family") or safe_candidate.get("endpoint_id"))], [], ["API_REQUIRED_SKIP_BLOCKED"])
+            return VerifiedPostSQLAPIAction("CALL_API", _blocked_source(payload), [str(safe_candidate.get("family") or safe_candidate.get("endpoint_id"))], [], ["API_REQUIRED_SKIP_BLOCKED"])
         if _explicit_live_or_api(prompt_features) and safe_candidate:
-            return VerifiedPostSQLAPIAction("CALL_API", "LLM_ADVISOR_BLOCKED", [str(safe_candidate.get("family") or safe_candidate.get("endpoint_id"))], [], ["LIVE_API_SKIP_BLOCKED"])
+            return VerifiedPostSQLAPIAction("CALL_API", _blocked_source(payload), [str(safe_candidate.get("family") or safe_candidate.get("endpoint_id"))], [], ["LIVE_API_SKIP_BLOCKED"])
         if sql_state.get("execution") == "ERROR" and safe_candidate:
-            return VerifiedPostSQLAPIAction("CALL_API", "LLM_ADVISOR_BLOCKED", [str(safe_candidate.get("family") or safe_candidate.get("endpoint_id"))], [], ["SQL_ERROR_SKIP_BLOCKED"])
+            return VerifiedPostSQLAPIAction("CALL_API", _blocked_source(payload), [str(safe_candidate.get("family") or safe_candidate.get("endpoint_id"))], [], ["SQL_ERROR_SKIP_BLOCKED"])
         return VerifiedPostSQLAPIAction("SKIP_API", _source(payload), [], [], ["VERIFIED_SKIP_API"])
 
     codes.append("VERIFIED_CAVEAT_ONLY")
@@ -88,9 +88,9 @@ def _explicit_live_or_api(prompt_features: set[str]) -> bool:
     return bool(prompt_features & {"CURRENT", "LIVE", "PLATFORM", "API", "TAG", "AUDIT", "MERGE_POLICY"})
 
 
-def _blocked(action: str, codes: list[str], family: Any = None) -> VerifiedPostSQLAPIAction:
+def _blocked(action: str, codes: list[str], family: Any = None, payload: dict[str, Any] | None = None) -> VerifiedPostSQLAPIAction:
     blocked = [str(family)] if family else []
-    return VerifiedPostSQLAPIAction(action, "LLM_ADVISOR_BLOCKED", [], blocked, codes)
+    return VerifiedPostSQLAPIAction(action, _blocked_source(payload or {}), [], blocked, codes)
 
 
 def _source(payload: dict[str, Any]) -> str:
@@ -98,5 +98,16 @@ def _source(payload: dict[str, Any]) -> str:
     if source == "DETERMINISTIC_BYPASS":
         return "DETERMINISTIC_HIGH_CONF"
     if source == "DETERMINISTIC_FALLBACK":
-        return "LLM_ADVISOR_BLOCKED"
-    return "LLM_ADVISOR_VERIFIED"
+        return "DETERMINISTIC_FALLBACK"
+    if source in {"LLM_ADVISOR", "LLM_ADVISOR_VERIFIED"}:
+        return "LLM_ADVISOR_VERIFIED"
+    return source
+
+
+def _blocked_source(payload: dict[str, Any]) -> str:
+    return "LLM_ADVISOR_BLOCKED" if _is_actual_llm_advice(payload) else _source(payload)
+
+
+def _is_actual_llm_advice(payload: dict[str, Any]) -> bool:
+    source = str(payload.get("source") or "LLM_ADVISOR")
+    return source in {"LLM_ADVISOR", "LLM_ADVISOR_VERIFIED", "LLM_ADVISOR_BLOCKED"}

@@ -13,6 +13,10 @@
 - latest_shadow_real_behavior_score: 0.8045
 - latest_shadow_real_trace_observability_score: 0.4993
 - latest_shadow_real_trace_observability_delta: 0.2498
+- latest_shadow_real_post_sql_advisor_checkpoint_present_count: 327
+- latest_shadow_real_post_sql_llm_advisor_actual_call_count: 0
+- latest_shadow_real_post_sql_llm_advice_blocked_count: 0
+- latest_shadow_real_post_sql_deterministic_fallback_count: 101
 - latest_trial_score: None
 - route_trace_accuracy: None
 - unsupported_claims_zero: True
