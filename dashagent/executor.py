@@ -35,6 +35,7 @@ from .config import Config, DEFAULT_CONFIG
 from .core_tool_policy import compact_api_outcome
 from .db import DuckDBDatabase
 from .endpoint_catalog import EndpointCatalog
+from .evidence_match_scorer import score_evidence_match
 from .evidence_bus import EvidenceBus
 from .evidence_policy import API_SKIP
 from .gated_sql_candidates import hard_case_triggers, select_gated_sql_candidate
@@ -52,7 +53,18 @@ from .router import QueryRouter
 from .schema_context_voter import vote_schema_contexts
 from .schema_index import SchemaIndex
 from .semantic_routing_helper import apply_semantic_routing_hint, run_semantic_routing_helper
+from .prompt_semantic_ir import extract_objective_prompt_features
+from .routing_anti_hallucination_gate import run_routing_gate_with_revision
+from .semantic_intent_classifier import classify_semantic_intent
+from .semantic_intent_context_builder import build_semantic_intent_context, estimate_context_tokens
+from .semantic_route_decision_ladder import run_semantic_route_decision_ladder
+from .no_tool_safety_verifier import verify_no_tool_safety
+from .post_sql_api_call_verifier import verify_post_sql_api_advice
+from .post_sql_decision_card import build_post_sql_decision_card
+from .post_sql_deterministic_policy import decide_post_sql_api_policy
+from .post_sql_llm_advisor import advise_post_sql_api
 from .simple_prompt_gate import decide_simple_prompt
+from .staged_evidence_policy import decide_initial_evidence_branch
 from .sql_only_api_skip_guard import should_skip_api_with_sql_evidence
 from .prompt_router import LLM_DIRECT, route_prompt
 from .trajectory import TrajectoryLogger, estimate_tokens
@@ -138,6 +150,7 @@ class AgentExecutor:
             correctness_role="prevents direct answers for data questions that need SQL/API evidence",
             efficiency_role="can skip the data pipeline only for safe conceptual prompts",
         )
+        self._add_semantic_route_harness_checkpoints(query, checkpoint_logger)
         if prompt_route.mode == LLM_DIRECT:
             metadata = {
                 "query_id": qid,
@@ -510,6 +523,7 @@ class AgentExecutor:
             correctness_role="preserves required grounding steps",
             efficiency_role="prevents accidental extra SQL/API calls",
         )
+        self._add_staged_evidence_policy_checkpoints(query, analysis, plan, checkpoint_logger)
         if self.config.enable_gated_sql_candidates:
             pre_validation_failed = any(
                 step.action == "sql" and step.sql and not self.sql_validator.validate(step.sql).ok
@@ -625,6 +639,7 @@ class AgentExecutor:
                 tool_results.append({"type": "sql", "step": step.to_dict(), "validation": validation.to_dict(), "payload": result})
                 evidence_bus.observe_sql(step, result)
             elif step.action == "api" and step.method and step.url:
+                self._add_post_sql_api_decision_checkpoints(query, analysis, tool_results, step, checkpoint_logger)
                 if self.config.enable_sql_only_api_skip_guard:
                     skip_decision = should_skip_api_with_sql_evidence(
                         query=query,
@@ -931,7 +946,243 @@ class AgentExecutor:
             "packaged_execution_changed": False,
             "repair_execution_enabled": self.config.enable_gated_risk_cluster_repair_execution,
             "compact_context": compact_context,
-        }
+            }
+
+    def _add_semantic_route_harness_checkpoints(self, query: str, checkpoint_logger: CheckpointLogger) -> None:
+        if not self.config.enable_objective_prompt_features:
+            return
+        try:
+            features = extract_objective_prompt_features(query)
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_objective_prompt_features",
+                stage="semantic routing shadow",
+                technique="objective prompt feature extraction",
+                input_summary={"query": query},
+                output=features.to_dict(),
+                effect="records fact-only prompt cues for semantic routing diagnostics",
+                correctness_role="keeps semantic pre-routing separate from SQL/API planning and answer generation",
+                efficiency_role="uses compact symbolic features before any optional LLM classification",
+            )
+            if not (self.config.enable_semantic_intent_classifier or self.config.enable_semantic_route_decision_ladder):
+                return
+            if self.config.enable_semantic_route_decision_ladder:
+                ladder = run_semantic_route_decision_ladder(
+                    query,
+                    tier2_diagnostic=self.config.semantic_route_tier2_diagnostic,
+                    shadow_only=self.config.semantic_route_shadow_only,
+                )
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_semantic_intent_decision",
+                    stage="semantic routing shadow",
+                    technique="compact SemanticIntentDecision classification",
+                    input_summary={"feature_codes": features.to_dict()},
+                    output=ladder.semantic_intent_decision,
+                    effect="records semantic intent decision without generating SQL, API calls, or answers",
+                    correctness_role="keeps no-tool candidates explicit for verifier review",
+                    efficiency_role="measures whether conceptual false positives could avoid tools in a future gate",
+                )
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_routing_anti_hallucination_gate",
+                    stage="semantic routing shadow",
+                    technique="objective support check for semantic intent",
+                    input_summary={"semantic_intent": ladder.semantic_intent_decision},
+                    output=ladder.routing_anti_hallucination_gate,
+                    effect="blocks unsupported no-tool or capability claims and records one-revision fallback state",
+                    correctness_role="prevents LLM semantic hints from overriding objective data cues",
+                    efficiency_role="limits revision feedback to compact codes and keeps packaged execution unchanged",
+                )
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_no_tool_safety_verifier",
+                    stage="semantic routing shadow",
+                    technique="negative no-tool safety guardrail",
+                    input_summary={"semantic_intent": ladder.semantic_intent_decision},
+                    output=ladder.no_tool_safety,
+                    effect="allows or blocks only no-tool decisions and never chooses SQL/API routes",
+                    correctness_role="blocks concrete data prompts from direct LLM handling",
+                    efficiency_role="estimates safe no-tool savings without changing packaged behavior",
+                )
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_semantic_route_decision_ladder",
+                    stage="semantic routing shadow",
+                    technique="uncertainty escalation ladder",
+                    input_summary={"shadow_only": self.config.semantic_route_shadow_only},
+                    output={
+                        "action": ladder.action,
+                        "tier_used": ladder.tier_used,
+                        "low_low_case": ladder.low_low_case,
+                        "context_token_cost": ladder.context_token_cost,
+                        "safe_api_probe": ladder.safe_api_probe,
+                        "shadow_only": ladder.shadow_only,
+                        "promotion_allowed": ladder.promotion_allowed,
+                    },
+                    effect="records the shadow action that would be considered by a future promotion gate",
+                    correctness_role="never applies semantic routing to the packaged plan in shadow mode",
+                    efficiency_role="estimates tool-call and context-token tradeoffs",
+                )
+                return
+            context = build_semantic_intent_context(features, tier=0)
+            decision = classify_semantic_intent(context, use_llm=True)
+            gate = run_routing_gate_with_revision(features, decision) if self.config.enable_routing_anti_hallucination_gate else None
+            decision_for_safety = gate.final_decision if gate else decision
+            safety = verify_no_tool_safety(features, decision)
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_semantic_intent_decision",
+                stage="semantic routing shadow",
+                technique="compact SemanticIntentDecision classification",
+                input_summary={"context_token_cost": estimate_context_tokens(context)},
+                output=decision.to_dict(),
+                effect="records semantic intent decision without generating SQL, API calls, or answers",
+                correctness_role="keeps no-tool candidates explicit for verifier review",
+                efficiency_role="measures classifier behavior without changing packaged routing",
+            )
+            if gate is not None:
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_routing_anti_hallucination_gate",
+                    stage="semantic routing shadow",
+                    technique="objective support check for semantic intent",
+                    input_summary={"semantic_intent": decision.to_dict()},
+                    output=gate.to_dict(),
+                    effect="validates semantic intent support without choosing final SQL/API route",
+                    correctness_role="blocks unsupported no-tool or capability claims before safety verification",
+                    efficiency_role="records compact feedback/fallback only in shadow mode",
+                )
+                safety = verify_no_tool_safety(features, decision_for_safety)
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_no_tool_safety_verifier",
+                stage="semantic routing shadow",
+                technique="negative no-tool safety guardrail",
+                input_summary={"semantic_intent": decision_for_safety.to_dict()},
+                output=safety.to_dict(),
+                effect="allows or blocks only no-tool decisions and never chooses SQL/API routes",
+                correctness_role="blocks concrete data prompts from direct LLM handling",
+                efficiency_role="estimates safe no-tool savings without changing packaged behavior",
+            )
+        except Exception as exc:
+            checkpoint_logger.add_error_checkpoint(
+                "checkpoint_semantic_route_decision_ladder",
+                stage="semantic routing shadow",
+                technique="semantic routing harness failure capture",
+                input_summary={"query": query},
+                error=f"{type(exc).__name__}: {exc}",
+                warnings=["semantic routing harness shadow checkpoint failed; packaged runtime path continued"],
+            )
+
+    def _add_staged_evidence_policy_checkpoints(self, query: str, analysis: Any, plan: Plan, checkpoint_logger: CheckpointLogger) -> None:
+        if not self.config.enable_staged_evidence_policy:
+            return
+        try:
+            features = extract_objective_prompt_features(query)
+            sql_available = any(step.action == "sql" and bool(step.sql) for step in plan.steps)
+            api_available = any(step.action == "api" and bool(step.url) for step in plan.steps)
+            scores = score_evidence_match(
+                features,
+                relevance_result=getattr(analysis, "relevance", None),
+                sql_candidate_available=sql_available,
+                api_candidate_available=api_available,
+            )
+            branch = decide_initial_evidence_branch(scores, analysis)
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_evidence_match_scores",
+                stage="staged evidence policy shadow",
+                technique="objective SQL/API evidence match scorer",
+                input_summary={"route_type": getattr(analysis, "route_type", None), "answer_family": getattr(analysis, "answer_family", None)},
+                output=scores.to_dict(),
+                effect="estimates whether SQL, API, both, or neither are plausible evidence sources",
+                correctness_role="does not choose final answer or bypass SQL/API validators",
+                efficiency_role="identifies potential staged acquisition savings without changing the plan",
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_initial_evidence_branch_policy",
+                stage="staged evidence policy shadow",
+                technique="SQL-first/API-first staged branch policy",
+                input_summary={"score": scores.to_dict()},
+                output={**branch.to_dict(), "shadow_only": self.config.staged_evidence_policy_shadow_only},
+                effect="records the first evidence branch a future trial would acquire",
+                correctness_role="keeps current SQL_FIRST_API_VERIFY execution unchanged in shadow mode",
+                efficiency_role="measures where upfront SQL+API planning may be avoidable",
+            )
+        except Exception as exc:
+            checkpoint_logger.add_error_checkpoint(
+                "checkpoint_initial_evidence_branch_policy",
+                stage="staged evidence policy shadow",
+                technique="staged evidence policy failure capture",
+                input_summary={"query": query},
+                error=f"{type(exc).__name__}: {exc}",
+                warnings=["staged evidence policy shadow checkpoint failed; packaged runtime path continued"],
+            )
+
+    def _add_post_sql_api_decision_checkpoints(
+        self,
+        query: str,
+        analysis: Any,
+        tool_results: list[dict[str, Any]],
+        api_step: PlanStep,
+        checkpoint_logger: CheckpointLogger,
+    ) -> None:
+        if not (self.config.enable_post_sql_api_decision or self.config.enable_staged_evidence_policy):
+            return
+        try:
+            sql_result = _latest_sql_payload(tool_results)
+            features = extract_objective_prompt_features(query)
+            answer_intent = str(getattr(analysis, "answer_family", "") or "UNKNOWN").upper()
+            card = build_post_sql_decision_card(features, answer_intent, sql_result, [api_step], self.endpoint_catalog)
+            policy = decide_post_sql_api_policy(card)
+            advisor = advise_post_sql_api(
+                card,
+                policy,
+                enabled=self.config.post_sql_llm_advisor_enabled,
+            )
+            api_required = str(getattr(getattr(analysis, "api_need_decision", None), "need", "") or "").upper() == "API_REQUIRED"
+            verified = verify_post_sql_api_advice(advisor, card, self.endpoint_catalog, api_required=api_required)
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_post_sql_decision_card",
+                stage="post-SQL API decision shadow",
+                technique="compact post-SQL decision card",
+                input_summary={"api_step": api_step.to_dict(), "sql_result_seen": sql_result is not None},
+                output=card,
+                effect="summarizes SQL result quality and safe API candidates before API execution",
+                correctness_role="uses role/bucket summaries rather than raw large result payloads",
+                efficiency_role="provides compact input for deterministic or LLM API advice",
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_post_sql_deterministic_policy",
+                stage="post-SQL API decision shadow",
+                technique="confidence-banded deterministic post-SQL policy",
+                input_summary={"card_task": card.get("task")},
+                output=policy.to_dict(),
+                effect="bypasses LLM advice for high-confidence call/skip decisions",
+                correctness_role="does not execute or suppress API calls in shadow mode",
+                efficiency_role="estimates where ambiguous-only LLM advice would save calls",
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_post_sql_llm_advisor",
+                stage="post-SQL API decision shadow",
+                technique="medium/low-confidence LLM API advisor",
+                input_summary={"advisor_enabled": self.config.post_sql_llm_advisor_enabled, "policy_confidence": policy.confidence},
+                output=advisor.to_dict(),
+                effect="records advisory CALL_API/SKIP_API/CAVEAT_ONLY choice when enabled or deterministic fallback otherwise",
+                correctness_role="never creates endpoints, params, user answers, or bypasses validators",
+                efficiency_role="invokes LLM only for medium/low/ambiguous policy bands",
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_post_sql_api_call_verifier",
+                stage="post-SQL API decision shadow",
+                technique="thin verifier for post-SQL API advice",
+                input_summary={"advisor_source": advisor.source},
+                output={**verified.to_dict(), "shadow_only": self.config.post_sql_api_decision_shadow_only},
+                effect="verifies endpoint legality and records what would be kept, dropped, or caveated",
+                correctness_role="blocks unknown endpoints, unresolved path params, and API-required skips",
+                efficiency_role="estimates API call savings/additions without changing execution",
+            )
+        except Exception as exc:
+            checkpoint_logger.add_error_checkpoint(
+                "checkpoint_post_sql_api_call_verifier",
+                stage="post-SQL API decision shadow",
+                technique="post-SQL decision failure capture",
+                input_summary={"query": query, "api_step": api_step.to_dict()},
+                error=f"{type(exc).__name__}: {exc}",
+                warnings=["post-SQL API decision shadow checkpoint failed; packaged runtime path continued"],
+            )
 
     def _create_llm_sql_plan(
         self,
@@ -1166,6 +1417,13 @@ def count_actions(actions: list[str], needles: list[str]) -> int:
 
 def count_tool_plan_steps(steps: list[Any]) -> int:
     return sum(1 for step in steps if getattr(step, "action", None) in {"sql", "api"})
+
+
+def _latest_sql_payload(tool_results: list[dict[str, Any]]) -> dict[str, Any] | None:
+    for result in reversed(tool_results):
+        if result.get("type") == "sql" and isinstance(result.get("payload"), dict):
+            return result["payload"]
+    return None
 
 
 def tool_results_execution_summary(tool_results: list[dict[str, Any]]) -> dict[str, Any]:

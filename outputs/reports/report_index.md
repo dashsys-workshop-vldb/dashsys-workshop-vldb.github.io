@@ -18,6 +18,12 @@ Start here. Most older generated reports were consolidated or removed.
 - [overnight_autonomous_improvement_report.md](overnight_autonomous_improvement_report.md)
 - [repo_cleanup_result.md](repo_cleanup_result.md)
 - [report_index.md](report_index.md)
+- [semantic_routing_harness_preflight.md](semantic_routing_harness_preflight.md)
+- [semantic_route_decision_ladder_trial.md](semantic_route_decision_ladder_trial.md)
+- [semantic_route_promotion_gate.md](semantic_route_promotion_gate.md)
+- [staged_evidence_policy_trial.md](staged_evidence_policy_trial.md)
+- [post_sql_api_decision_trial.md](post_sql_api_decision_trial.md)
+- [semantic_routing_and_staged_evidence_policy.md](semantic_routing_and_staged_evidence_policy.md)
 
 ## Key Source-Of-Truth Reports
 

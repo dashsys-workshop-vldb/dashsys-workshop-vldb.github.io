@@ -206,13 +206,19 @@ The harness engineering pass adds typed weak-model state/schema/assertion layers
 
 The helper may suggest validated domain, route, intent, synonym, table, and API-family hints only. It must never produce final answers, SQL/API results, or tool calls, and it must never bypass SQL/API validators. Non-shadow use is isolated-trial only and must not affect packaged submission unless a later explicit strict/safety promotion approves it.
 
+The shadow-only Semantic Routing Harness adds a stricter pre-stage for conceptual false-positive diagnostics: objective prompt feature extraction, compact semantic intent context, `SemanticIntentDecision`, an anti-hallucination support gate, negative no-tool safety verification, and an uncertainty decision ladder. The paired staged-evidence diagnostics add SQL/API evidence match scoring, SQL-first/API-first branch policy, compact post-SQL API decision cards, confidence-banded deterministic API policy, optional LLM API advice for ambiguous cases, and a thin verifier. These components are default-off beyond objective feature checkpoints, store compact code payloads, and do not alter packaged `SQL_FIRST_API_VERIFY`.
+
 Run the shadow diagnostic with:
 
 ```bash
 python3 scripts/run_llm_semantic_router_shadow_eval.py --limit 50
+python3 scripts/run_semantic_route_decision_ladder_trial.py
+python3 scripts/run_semantic_route_promotion_gate.py
+python3 scripts/run_staged_evidence_policy_trial.py
+python3 scripts/run_post_sql_api_decision_trial.py
 ```
 
-The report is written to `outputs/reports/llm_semantic_router_shadow_eval.md/json`.
+The reports are written to `outputs/reports/llm_semantic_router_shadow_eval.md/json`, `outputs/reports/semantic_route_decision_ladder_trial.md/json`, `outputs/reports/semantic_route_promotion_gate.md/json`, `outputs/reports/staged_evidence_policy_trial.md/json`, `outputs/reports/post_sql_api_decision_trial.md/json`, and `outputs/reports/semantic_routing_and_staged_evidence_policy.md/json`.
 
 ## 3.3 Diagnostic Prompt Suite
 
