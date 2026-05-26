@@ -53,6 +53,10 @@ WEAK_MODEL_VARIANTS = [
     "weak_scaffold_api_recovery_v1",
     "weak_scaffold_answer_grounded_v1",
     "weak_scaffold_balanced_full_v1",
+    "weak_scaffold_sql_retrieval_v1",
+    "weak_scaffold_sql_unit_tested_v1",
+    "weak_scaffold_sql_retrieval_repair_v1",
+    "weak_scaffold_balanced_sql_api_v2",
     "full_dashagent_current",
 ]
 
@@ -61,6 +65,19 @@ BALANCED_VARIANTS = {
     "weak_scaffold_api_recovery_v1",
     "weak_scaffold_answer_grounded_v1",
     "weak_scaffold_balanced_full_v1",
+    "weak_scaffold_balanced_sql_api_v2",
+}
+
+SQL_ENHANCED_VARIANTS = {
+    "weak_scaffold_sql_retrieval_v1",
+    "weak_scaffold_sql_unit_tested_v1",
+    "weak_scaffold_sql_retrieval_repair_v1",
+    "weak_scaffold_balanced_sql_api_v2",
+}
+
+SQL_REPAIR_VARIANTS = {
+    "weak_scaffold_sql_retrieval_repair_v1",
+    "weak_scaffold_balanced_sql_api_v2",
 }
 
 
@@ -105,6 +122,8 @@ def run_weak_model_lift_eval(
         "slot_to_sql_compiled_agent",
         "evidence_guarded_weak_agent",
         "weak_full_dashagent_scaffold",
+        "weak_scaffold_api_recovery_v1",
+        "weak_scaffold_balanced_sql_api_v2",
         "full_dashagent_current",
     ]
     rows = _stabilization_rows(config, variants, max_examples=max_examples, execute_real=execute_real) if stabilization_set else _public_rows(config, variants, max_examples=max_examples, execute_real=execute_real)
@@ -206,7 +225,15 @@ def _run_scaffold_variant(prompt: str, variant: str, db: DuckDBDatabase, schema:
     if variant in BALANCED_VARIANTS:
         slots = dict(slots)
         slots["evidence_need"] = classify_balanced_evidence_need(prompt, slots)
-    compiled = compile_semantic_slots(slots, schema, catalog, SQLValidator(schema), prompt=prompt)
+    compiled = compile_semantic_slots(
+        slots,
+        schema,
+        catalog,
+        SQLValidator(schema),
+        prompt=prompt,
+        enhanced_sql=variant in SQL_ENHANCED_VARIANTS,
+        repair_rounds=1 if variant in SQL_REPAIR_VARIANTS else 0,
+    )
     sql_result: dict[str, Any] | None = None
     sql = ""
     if compiled.get("sql_candidates"):

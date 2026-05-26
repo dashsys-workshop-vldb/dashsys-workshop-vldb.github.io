@@ -23,6 +23,7 @@
 - Correctness + efficiency evaluation: `speed_only_patch_needs_validation`; best candidate `compact_tool_schema`; runtime change applied `False`
 - SDK tool-calling efficiency promotion: `promoted_speed_only_patch`; promotion accepted `True`; runtime change applied `True`
 - Core tool policy optimizer: `promoted_core_tool_efficiency_policy`; strict after projected `0.6553`; runtime change expected `True`
+- Weak-model scaffold: `weak_model_scaffold_still_sql_limited`; best strict variant `weak_scaffold_api_recovery_v1` (`0.2871`); best SQL variant `weak_scaffold_balanced_sql_api_v2` improved SQL to `0.12` but strict fell to `0.2739`; generated diagnostic `50/50`, unsupported claims `0`; shadow-only `True`
 
 ## Why Changes Remain Shadow-Only
 

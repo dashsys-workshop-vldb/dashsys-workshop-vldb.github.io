@@ -39,7 +39,8 @@ def validate_structured_sql_plan(
                 errors.append(f"Unknown table: {table}.")
 
     primary_table = _name_from(plan.get("primary_table"))
-    if primary_table and schema_index.table_exists(primary_table) and primary_table in schema_index.bridge_tables:
+    allowed_primary_tables = set(context.get("allowed_primary_tables") or []) if isinstance(context.get("allowed_primary_tables"), list) else set()
+    if primary_table and schema_index.table_exists(primary_table) and primary_table in schema_index.bridge_tables and primary_table not in allowed_primary_tables:
         errors.append(f"Bridge table cannot be primary answer table: {primary_table}.")
 
     for table, column, source in _column_refs(plan):
@@ -96,7 +97,7 @@ def compile_structured_sql_plan(
     tables = validation["selected_tables"]
     primary_table = _name_from(plan.get("primary_table")) or tables[0]
     aggregation = _normalize_aggregation(plan, primary_table)
-    select_sql, selected_columns = _select_sql(plan, primary_table, schema_index)
+    select_sql, selected_columns = _select_sql(plan, primary_table, schema_index, qualify=len(tables) > 1)
     sql_parts = [f"SELECT {select_sql}", f"FROM {_quote_identifier(primary_table)}"]
     join_path = _compile_joins(primary_table, [t for t in tables if t != primary_table], schema_index)
     if not join_path["ok"]:
@@ -224,7 +225,7 @@ def _column_alias(schema_index: SchemaIndex, table: str, column: str) -> str | N
     return None
 
 
-def _select_sql(plan: dict[str, Any], primary_table: str, schema_index: SchemaIndex) -> tuple[str, list[str]]:
+def _select_sql(plan: dict[str, Any], primary_table: str, schema_index: SchemaIndex, *, qualify: bool = False) -> tuple[str, list[str]]:
     aggregation = _normalize_aggregation(plan, primary_table)
     agg_type = aggregation["type"]
     if agg_type in {"count", "count_distinct", "max", "min"}:
@@ -244,6 +245,8 @@ def _select_sql(plan: dict[str, Any], primary_table: str, schema_index: SchemaIn
     if not columns:
         columns = schema_index.columns_for(primary_table)[:5]
     actual_columns = [_actual_column(schema_index, primary_table, column) for column in columns]
+    if qualify:
+        return ", ".join(f"{_quote_identifier(primary_table)}.{_quote_identifier(column)}" for column in actual_columns), actual_columns
     return ", ".join(_quote_identifier(column) for column in actual_columns), actual_columns
 
 

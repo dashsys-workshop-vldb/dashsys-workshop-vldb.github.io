@@ -28,6 +28,7 @@
 - Repo cleanup: `validated`; deleted paths: `5`; runtime behavior changed: `False`
 - DASHSys Project Skill audit: `pass`; runtime behavior changed: `False`
 - Context7 docs audit: `complete`; runtime change applied: `False`
+- Weak-model scaffold diagnostics: recommendation `weak_model_scaffold_still_sql_limited`; generated prompts `50/50`; unsupported claims `0`; paraphrase consistency `0.8431`; no-template SQL validation `1.0`; best strict variant `weak_scaffold_api_recovery_v1` (`0.2871`); best SQL variant `weak_scaffold_balanced_sql_api_v2` (SQL `0.12`, strict `0.2739`); shadow-only `True`
 
 ## Workflow
 
@@ -59,6 +60,13 @@
 - `outputs/reports/integrated_robustness_gate.md`
 - `outputs/reports/context7_code_alignment_audit.md`
 - `outputs/reports/context7_fix_decision.md`
+- `outputs/reports/weak_model_generated_prompt_diagnostic.md`
+- `outputs/reports/weak_model_paraphrase_consistency.md`
+- `outputs/reports/weak_model_no_template_diagnostic.md`
+- `outputs/reports/weak_model_sql_bottleneck_analysis.md`
+- `outputs/reports/weak_model_sql_external_technique_mapping.md`
+- `outputs/reports/weak_model_sql_improvement_trials_public_dev_full.md`
+- `outputs/reports/weak_model_robustness_gate.md`
 - `outputs/reports/score_path_contribution_audit.md`
 - `outputs/reports/score_focused_core_improvement_trials.md`
 - `outputs/reports/score_focused_core_fix_decision.md`

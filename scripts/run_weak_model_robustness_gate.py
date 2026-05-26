@@ -32,6 +32,11 @@ def run_weak_model_robustness_gate(config: Config | None = None) -> dict[str, An
     strict = _load_json(config.outputs_dir / "eval_results_strict.json")
     generated = _load_json(reports / "full_generated_prompt_suite_diagnostic.json")
     paraphrase = _load_json(reports / "nl_sql_paraphrase_consistency.json")
+    weak_generated = _load_json(reports / "weak_model_generated_prompt_diagnostic.json")
+    weak_paraphrase = _load_json(reports / "weak_model_paraphrase_consistency.json")
+    weak_no_template = _load_json(reports / "weak_model_no_template_diagnostic.json")
+    weak_sql_bottleneck = _load_json(reports / "weak_model_sql_bottleneck_analysis.json")
+    weak_sql_trials = _load_json(reports / "weak_model_sql_improvement_trials_public_dev_full.json") or _load_json(reports / "weak_model_sql_improvement_trials.json")
     endpoint = _load_json(reports / "live_api_safe_get_endpoint_matrix.json") or _load_json(reports / "live_api_readiness_smoke.json")
     hidden = _load_json(reports / "hidden_style_eval.json") or _load_json(config.outputs_dir / "hidden_style_eval.json")
 
@@ -43,6 +48,11 @@ def run_weak_model_robustness_gate(config: Config | None = None) -> dict[str, An
     full_current = _full_current(strict, modes)
     previous_scaffold = _previous_scaffold_reference(reports / "weak_model_api_nonregression_analysis.json")
     generated_summary = _generated_summary(generated)
+    weak_generated_summary = _weak_generated_summary(weak_generated)
+    weak_paraphrase_summary = _weak_paraphrase_summary(weak_paraphrase)
+    weak_no_template_summary = _weak_no_template_summary(weak_no_template)
+    weak_sql_bottleneck_summary = _weak_sql_bottleneck_summary(weak_sql_bottleneck)
+    weak_sql_trials_summary = _weak_sql_trials_summary(weak_sql_trials)
     endpoint_summary = _endpoint_summary(endpoint)
     hidden_pass = _hidden_pass(hidden)
 
@@ -54,7 +64,16 @@ def run_weak_model_robustness_gate(config: Config | None = None) -> dict[str, An
         "answer_grounding_improves_over_previous_scaffold": previous_scaffold == {} or _num(best.get("answer_score")) > _num(previous_scaffold.get("answer_score")),
         "unsupported_claims_zero": int(best.get("unsupported_claims") or 0) == 0,
         "generated_prompt_runtime_pass_high": generated_summary.get("runtime_pass_count") in {None, generated_summary.get("total_count")} or _num(generated_summary.get("runtime_pass_rate")) >= 0.95,
+        "weak_generated_prompt_runtime_pass_high": weak_generated_summary == {} or _num(weak_generated_summary.get("runtime_pass_rate")) >= 0.95,
+        "weak_generated_prompt_validation_clean": weak_generated_summary == {} or int(weak_generated_summary.get("validation_failures") or 0) == 0,
+        "weak_generated_prompt_unsupported_claims_zero": weak_generated_summary == {} or int(weak_generated_summary.get("unsupported_claim_count") or 0) == 0,
         "paraphrase_consistency_available_or_nonregressed": paraphrase == {} or _num(_paraphrase_summary(paraphrase).get("paraphrase_consistency")) >= 0.0,
+        "weak_paraphrase_consistency_acceptable": weak_paraphrase_summary == {} or _num(weak_paraphrase_summary.get("consistency_score")) >= 0.75,
+        "weak_no_template_unsupported_claims_zero": weak_no_template_summary == {} or int(weak_no_template_summary.get("unsupported_claim_count") or 0) == 0,
+        "weak_no_template_validation_acceptable": weak_no_template_summary == {} or _none_or_at_least(weak_no_template_summary.get("sql_validation_pass_rate"), 0.8),
+        "weak_sql_trial_sql_improved": weak_sql_trials_summary == {} or bool(weak_sql_trials_summary.get("sql_improved_over_current")),
+        "weak_sql_trial_api_nonregression": weak_sql_trials_summary == {} or bool(weak_sql_trials_summary.get("best_sql_variant_api_nonregression")),
+        "weak_sql_trial_answer_nonregression": weak_sql_trials_summary == {} or bool(weak_sql_trials_summary.get("best_sql_variant_answer_nonregression")),
         "endpoint_matrix_clean": endpoint_summary.get("failures", 0) == 0,
         "hidden_style_passes": hidden_pass is not False,
         "token_runtime_cost_acceptable": _token_runtime_cost_acceptable(best, raw, guided),
@@ -62,7 +81,7 @@ def run_weak_model_robustness_gate(config: Config | None = None) -> dict[str, An
         "packaged_runtime_unchanged": bool(lift.get("packaged_runtime_changed")) is False,
     }
     gate_passed = all(gates.values())
-    recommendation = _recommendation(gates, summary)
+    recommendation = _recommendation(gates, summary, weak_sql_bottleneck_summary, best)
     report = redact_secrets(
         {
             "report_type": REPORT_STEM,
@@ -82,7 +101,12 @@ def run_weak_model_robustness_gate(config: Config | None = None) -> dict[str, An
             "answer_grounding_lift": summary.get("answer_grounding_lift"),
             "efficiency_lift": summary.get("efficiency_lift"),
             "generated_prompt_diagnostic": generated_summary,
+            "weak_model_generated_prompt_diagnostic": weak_generated_summary,
             "paraphrase_consistency": _paraphrase_summary(paraphrase),
+            "weak_model_paraphrase_consistency": weak_paraphrase_summary,
+            "weak_model_no_template_diagnostic": weak_no_template_summary,
+            "weak_model_sql_bottleneck": weak_sql_bottleneck_summary,
+            "weak_model_sql_improvement_trials": weak_sql_trials_summary,
             "endpoint_matrix": endpoint_summary,
             "hidden_style_pass": hidden_pass,
             "gates": gates,
@@ -184,6 +208,95 @@ def _paraphrase_summary(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _weak_generated_summary(payload: dict[str, Any]) -> dict[str, Any]:
+    if not payload:
+        return {}
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else payload
+    return {
+        "executed_prompts": summary.get("executed_prompts"),
+        "runtime_pass_count": summary.get("runtime_pass_count"),
+        "runtime_pass_rate": summary.get("runtime_pass_rate"),
+        "validation_failures": summary.get("validation_failures"),
+        "unsupported_claim_count": summary.get("unsupported_claim_count"),
+        "sql_selected_count": summary.get("sql_selected_count"),
+        "api_selected_count": summary.get("api_selected_count"),
+        "sql_validation_pass_rate": summary.get("sql_validation_pass_rate"),
+        "api_validation_pass_rate": summary.get("api_validation_pass_rate"),
+        "top_failure_categories": summary.get("top_failure_categories"),
+        "stable_subset": summary.get("stable_subset"),
+    }
+
+
+def _weak_paraphrase_summary(payload: dict[str, Any]) -> dict[str, Any]:
+    if not payload:
+        return {}
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else payload
+    return {
+        "group_count": summary.get("group_count"),
+        "consistency_score": summary.get("consistency_score"),
+        "slot_stability": summary.get("slot_stability"),
+        "sql_table_stability": summary.get("sql_table_stability"),
+        "api_endpoint_stability": summary.get("api_endpoint_stability"),
+        "answer_grounding_stability": summary.get("answer_grounding_stability"),
+        "worst_unstable_groups": summary.get("worst_unstable_groups"),
+    }
+
+
+def _weak_no_template_summary(payload: dict[str, Any]) -> dict[str, Any]:
+    if not payload:
+        return {}
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else payload
+    return {
+        "rows": summary.get("rows"),
+        "fixed_template_used_count": summary.get("fixed_template_used_count"),
+        "sql_validation_pass_rate": summary.get("sql_validation_pass_rate"),
+        "sql_execution_pass_rate": summary.get("sql_execution_pass_rate"),
+        "api_validation_pass_rate": summary.get("api_validation_pass_rate"),
+        "unsupported_claim_count": summary.get("unsupported_claim_count"),
+        "template_dependency_assessment": summary.get("template_dependency_assessment"),
+        "failure_stage_distribution": summary.get("failure_stage_distribution"),
+    }
+
+
+def _weak_sql_bottleneck_summary(payload: dict[str, Any]) -> dict[str, Any]:
+    if not payload:
+        return {}
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else payload
+    return {
+        "rows": summary.get("rows"),
+        "average_sql_score": summary.get("average_sql_score"),
+        "low_sql_score_rows": summary.get("low_sql_score_rows"),
+        "dominant_sql_bottleneck": summary.get("dominant_sql_bottleneck"),
+        "failure_distribution": summary.get("failure_distribution"),
+        "fix_layer_recommendation": summary.get("fix_layer_recommendation"),
+        "safe_next_sql_improvement_candidate": summary.get("safe_next_sql_improvement_candidate"),
+    }
+
+
+def _weak_sql_trials_summary(payload: dict[str, Any]) -> dict[str, Any]:
+    if not payload:
+        return {}
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else payload
+    return {
+        "run_label": summary.get("run_label"),
+        "best_variant": summary.get("best_variant"),
+        "best_strict": summary.get("best_strict"),
+        "best_sql": summary.get("best_sql"),
+        "best_api": summary.get("best_api"),
+        "best_answer": summary.get("best_answer"),
+        "best_sql_variant": summary.get("best_sql_variant"),
+        "best_sql_variant_strict": summary.get("best_sql_variant_strict"),
+        "max_sql_score": summary.get("max_sql_score"),
+        "best_sql_variant_api": summary.get("best_sql_variant_api"),
+        "best_sql_variant_answer": summary.get("best_sql_variant_answer"),
+        "sql_improved_over_current": summary.get("sql_improved_over_current"),
+        "best_sql_variant_strict_nonregression": summary.get("best_sql_variant_strict_nonregression"),
+        "best_sql_variant_api_nonregression": summary.get("best_sql_variant_api_nonregression"),
+        "best_sql_variant_answer_nonregression": summary.get("best_sql_variant_answer_nonregression"),
+        "unsupported_claims_zero": summary.get("unsupported_claims_zero"),
+    }
+
+
 def _endpoint_summary(payload: dict[str, Any]) -> dict[str, Any]:
     summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else payload
     after = summary.get("after_safe_get_totals") if isinstance(summary.get("after_safe_get_totals"), dict) else {}
@@ -214,11 +327,19 @@ def _hidden_pass(payload: dict[str, Any]) -> bool | None:
     return None
 
 
-def _recommendation(gates: dict[str, bool], summary: dict[str, Any]) -> str:
+def _recommendation(gates: dict[str, bool], summary: dict[str, Any], weak_sql_bottleneck: dict[str, Any], best: dict[str, Any]) -> str:
     if not gates["unsupported_claims_zero"]:
         return "weak_model_blocked_by_answer_grounding"
+    if not gates["weak_generated_prompt_runtime_pass_high"] or not gates["weak_generated_prompt_validation_clean"] or not gates["weak_generated_prompt_unsupported_claims_zero"]:
+        return "weak_model_scaffold_not_general_enough"
+    if not gates["weak_paraphrase_consistency_acceptable"] or not gates["weak_no_template_validation_acceptable"] or not gates["weak_no_template_unsupported_claims_zero"]:
+        return "weak_model_scaffold_not_general_enough"
+    if gates.get("weak_sql_trial_sql_improved") and gates.get("weak_sql_trial_api_nonregression") and gates.get("weak_sql_trial_answer_nonregression") and gates.get("strict_score_beats_guided_weak"):
+        return "weak_model_scaffold_sql_improved_keep_shadow"
+    if gates.get("weak_sql_trial_sql_improved") and (not gates.get("weak_sql_trial_answer_nonregression") or not gates.get("weak_sql_trial_api_nonregression")):
+        return "weak_model_scaffold_still_sql_limited"
     if not gates["strict_score_improves_over_raw_weak"]:
-        return "current_deterministic_system_still_preferred"
+        return "current_full_system_still_preferred"
     if not gates["sql_score_improves_over_raw_weak"]:
         return "weak_model_still_blocked_by_sql"
     if not gates["api_score_not_regressed_vs_raw_or_guided_weak"]:
@@ -227,11 +348,13 @@ def _recommendation(gates: dict[str, bool], summary: dict[str, Any]) -> str:
         return "weak_model_scaffold_candidate_needs_answer_fix"
     if not gates["strict_score_beats_guided_weak"]:
         return "weak_model_still_below_guided"
+    if _num(best.get("sql_score")) < 0.12 or _num(weak_sql_bottleneck.get("low_sql_score_rows")) > 0:
+        return "weak_model_scaffold_needs_sql_improvement"
     if all(gates.values()):
         return "weak_model_scaffold_improved_keep_shadow"
     if gates["strict_score_improves_over_raw_weak"] and gates["sql_score_improves_over_raw_weak"]:
         return "weak_model_scaffold_candidate_needs_answer_fix"
-    return summary.get("recommendation") or "current_deterministic_system_still_preferred"
+    return summary.get("recommendation") or "current_full_system_still_preferred"
 
 
 def _num(value: Any) -> float:
@@ -249,6 +372,12 @@ def _token_runtime_cost_acceptable(best: dict[str, Any], raw: dict[str, Any], gu
     return (baseline_tokens == 0 or best_tokens <= baseline_tokens) and (baseline_runtime == 0 or best_runtime <= baseline_runtime)
 
 
+def _none_or_at_least(value: Any, threshold: float) -> bool:
+    if value is None:
+        return True
+    return _num(value) >= threshold
+
+
 def _render_md(report: dict[str, Any]) -> str:
     gates = "\n".join(f"- `{name}`: `{value}`" for name, value in report["gates"].items())
     return (
@@ -259,6 +388,11 @@ def _render_md(report: dict[str, Any]) -> str:
         f"- Small-model lift score: `{report.get('small_model_lift_score')}`\n"
         f"- SQL lift: `{report.get('sql_lift')}`\n"
         f"- Unsupported claims in best scaffold: `{report.get('best_scaffold', {}).get('unsupported_claims')}`\n\n"
+        f"- Weak generated prompts: `{(report.get('weak_model_generated_prompt_diagnostic') or {}).get('runtime_pass_count')}` / `{(report.get('weak_model_generated_prompt_diagnostic') or {}).get('executed_prompts')}`\n"
+        f"- Weak paraphrase consistency: `{(report.get('weak_model_paraphrase_consistency') or {}).get('consistency_score')}`\n"
+        f"- Weak no-template SQL validation: `{(report.get('weak_model_no_template_diagnostic') or {}).get('sql_validation_pass_rate')}`\n"
+        f"- Weak SQL bottleneck: `{(report.get('weak_model_sql_bottleneck') or {}).get('dominant_sql_bottleneck')}`\n\n"
+        f"- Weak SQL trial best SQL variant: `{(report.get('weak_model_sql_improvement_trials') or {}).get('best_sql_variant')}` / SQL `{(report.get('weak_model_sql_improvement_trials') or {}).get('max_sql_score')}`\n\n"
         "## Gates\n\n"
         f"{gates}\n"
     )

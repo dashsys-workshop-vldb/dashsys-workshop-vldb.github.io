@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from .llm_client import LLMClient
@@ -54,7 +55,7 @@ def weak_model_semantic_slots(prompt: str, llm_client: LLMClient | None = None) 
 def normalize_semantic_slots(raw: dict[str, Any] | None, *, prompt: str) -> dict[str, Any]:
     nlp = normalize_prompt_semantics(prompt)
     raw = raw if isinstance(raw, dict) else {}
-    intent = str(raw.get("intent") or nlp["canonical_intent"] or "UNKNOWN").upper()
+    intent = str(raw.get("intent") or _weak_slot_intent(prompt, str(nlp["canonical_intent"] or "UNKNOWN")) or "UNKNOWN").upper()
     domain = str(raw.get("domain") or nlp["canonical_domain"] or "UNKNOWN").upper()
     evidence_need = str(raw.get("evidence_need") or _default_evidence_need(prompt, domain) or "unknown").lower()
     aggregation = str(raw.get("aggregation") or ("count" if intent == "COUNT" else "none")).lower()
@@ -66,7 +67,7 @@ def normalize_semantic_slots(raw: dict[str, Any] | None, *, prompt: str) -> dict
         evidence_need = _default_evidence_need(prompt, domain)
     if aggregation not in VALID_AGGREGATIONS:
         aggregation = "none"
-    filters = _normalize_filters(raw.get("filters"), nlp["canonical_filters"])
+    filters = _drop_column_name_filters(_normalize_filters(raw.get("filters"), nlp["canonical_filters"]), prompt)
     quoted = _string_list(raw.get("quoted_entities")) or list(nlp.get("quoted_entities") or [])
     entity_terms = _string_list(raw.get("entity_terms")) or quoted
     relationship = raw.get("relationship") if isinstance(raw.get("relationship"), dict) else {}
@@ -97,6 +98,22 @@ def _default_evidence_need(prompt: str, domain: str) -> str:
     if domain != "UNKNOWN":
         return "sql_first"
     return "unknown"
+
+
+def _weak_slot_intent(prompt: str, fallback: str) -> str:
+    lowered = _without_quoted(prompt).lower()
+    explicit_count = any(term in lowered for term in ("how many", "number of", "count the", "count of", "total number"))
+    explicit_list = any(term in lowered for term in ("list ", "show ", "give me", "export ", "which "))
+    relationship = any(term in lowered for term in ("connected", "linked", "mapped", "associated", "related", " use the schema", " using the schema"))
+    if explicit_count:
+        return "COUNT"
+    if relationship and explicit_list:
+        return "RELATIONSHIP"
+    if explicit_list:
+        return "LIST"
+    if "details" in lowered or "detail" in lowered or "provide more" in lowered:
+        return "DETAIL"
+    return fallback
 
 
 def classify_balanced_evidence_need(prompt: str, slots: dict[str, Any]) -> str:
@@ -153,6 +170,22 @@ def _normalize_filters(raw_filters: Any, fallback: list[dict[str, Any]]) -> list
     return normalized[:8]
 
 
+def _drop_column_name_filters(filters: list[dict[str, Any]], prompt: str) -> list[dict[str, Any]]:
+    lowered = str(prompt or "").lower()
+    column_words = {"modified", "updated", "created", "published", "deployed", "status", "state", "name", "id"}
+    cleaned = []
+    for item in filters:
+        value = str(item.get("value") or "").strip().lower()
+        if (
+            item.get("semantic_field") == "name"
+            and value in column_words
+            and ("column" in lowered or "field" in lowered)
+        ):
+            continue
+        cleaned.append(item)
+    return cleaned
+
+
 def _string_list(value: Any) -> list[str]:
     if not isinstance(value, list):
         return []
@@ -164,3 +197,7 @@ def _confidence(value: Any) -> float:
         return round(min(1.0, max(0.0, float(value))), 4)
     except Exception:
         return 0.5
+
+
+def _without_quoted(prompt: str) -> str:
+    return re.sub(r"'[^']+'|\"[^\"]+\"", " ", str(prompt or ""))

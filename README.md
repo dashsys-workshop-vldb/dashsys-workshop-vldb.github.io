@@ -180,6 +180,19 @@ python3 scripts/run_pure_llm_agent_trace_decomposition.py --stabilization-set
 
 This writes `outputs/reports/pure_llm_tool_agent_stabilization.md/json` and checks step-level tool planning, SQL validation, API endpoint validation, evidence use, and unsupported claims without promoting the baseline.
 
+## 3.1.2 Weak-Model Scaffold Diagnostics
+
+The weak-model scaffold remains shadow-only. It measures how much DashAgent's validated scaffold lifts weak/small LLM backends without changing packaged `SQL_FIRST_API_VERIFY`.
+
+```bash
+python3 scripts/run_weak_model_lift_eval.py --full-public-dev
+python3 scripts/run_weak_model_sql_improvement_trials.py --limit 5
+python3 scripts/run_weak_model_sql_improvement_trials.py --limit 10
+python3 scripts/run_weak_model_robustness_gate.py
+```
+
+The SQL-improvement trial adds weak-only schema retrieval, generic SQL skeleton retrieval, semantic SQL unit tests, and one bounded semantic repair path. Reports are written to `outputs/reports/weak_model_sql_improvement_trials*.md/json` and `outputs/reports/weak_model_sql_external_technique_mapping.md/json`. These diagnostics must keep unsupported claims at `0`, preserve API non-regression, and never promote the weak scaffold to packaged runtime.
+
 ## 3.2 LLM Semantic Routing Helper
 
 `dashagent/semantic_routing_helper.py` is an optional SDK-based routing-hint helper for low-confidence or ambiguous prompts. It is default-off with `ENABLE_LLM_SEMANTIC_ROUTER=false` and shadow-only by default with `LLM_SEMANTIC_ROUTER_SHADOW_ONLY=true`.

@@ -4,6 +4,7 @@ from typing import Any
 
 from .nlp_generalization_layer import normalize_prompt_semantics
 from .trajectory import redact_secrets
+from .weak_model_semantic_slots import _weak_slot_intent
 
 
 def verify_semantic_slots(prompt: str, slots: dict[str, Any]) -> dict[str, Any]:
@@ -14,9 +15,10 @@ def verify_semantic_slots(prompt: str, slots: dict[str, Any]) -> dict[str, Any]:
     intent = str(slots.get("intent") or "UNKNOWN").upper()
     domain = str(slots.get("domain") or "UNKNOWN").upper()
     evidence_need = str(slots.get("evidence_need") or "unknown").lower()
-    if nlp["canonical_intent"] != "UNKNOWN" and intent != nlp["canonical_intent"]:
+    prompt_intent = _weak_slot_intent(prompt, str(nlp["canonical_intent"] or "UNKNOWN"))
+    if prompt_intent != "UNKNOWN" and intent != prompt_intent:
         warnings.append("intent_adjusted_to_prompt")
-        corrected["intent"] = nlp["canonical_intent"]
+        corrected["intent"] = prompt_intent
     if nlp["canonical_domain"] != "UNKNOWN" and domain == "UNKNOWN":
         warnings.append("domain_adjusted_to_prompt")
         corrected["domain"] = nlp["canonical_domain"]

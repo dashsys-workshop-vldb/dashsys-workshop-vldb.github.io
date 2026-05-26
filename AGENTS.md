@@ -221,6 +221,21 @@ python3 scripts/run_pure_llm_agent_trace_decomposition.py --stabilization-set
 
 The stabilization report is `outputs/reports/pure_llm_tool_agent_stabilization.md/json`. It is diagnostic-only and should track tool-called-when-needed, SQL validation, API endpoint validation, evidence use, and unsupported-claim counts.
 
+## Weak-Model Scaffold Diagnostics
+
+Weak-model scaffold work is shadow-only. It may add schema retrieval, generic SQL skeleton retrieval, semantic SQL unit tests, bounded semantic repair, API evidence recovery, and answer grounding for weak/small LLM backends, but it must not change packaged `SQL_FIRST_API_VERIFY`, final submission format, endpoint catalog behavior, or SQL/API validators.
+
+Use:
+
+```bash
+python3 scripts/run_weak_model_lift_eval.py --full-public-dev
+python3 scripts/run_weak_model_sql_improvement_trials.py --limit 5
+python3 scripts/run_weak_model_sql_improvement_trials.py --limit 10
+python3 scripts/run_weak_model_robustness_gate.py
+```
+
+Reports are written to `outputs/reports/weak_model_sql_improvement_trials*.md/json` and `outputs/reports/weak_model_sql_external_technique_mapping.md/json`. Generated prompts remain diagnostic-only, unsupported claims must remain `0`, API non-regression must be checked, and the weak scaffold must remain `promotion_allowed=false`.
+
 ## Diagnostic Prompt Suite
 
 `scripts/generate_diagnostic_prompt_suite.py` creates `data/generated_prompt_suite.json/md` from `data/data.json` for broad coverage testing. Stable source IDs are assigned by order as `example_001`, `example_002`, and so on when source rows lack IDs.

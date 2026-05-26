@@ -111,6 +111,21 @@ Start here. Most older generated reports were consolidated or removed.
 - New full-agent rows executed: `5`
 - Promotion allowed: `False`
 
+## Weak Model Scaffold Diagnostics
+
+- Generated prompt diagnostic: `outputs/reports/weak_model_generated_prompt_diagnostic.md`
+- Paraphrase consistency: `outputs/reports/weak_model_paraphrase_consistency.md`
+- No-template diagnostic: `outputs/reports/weak_model_no_template_diagnostic.md`
+- SQL bottleneck analysis: `outputs/reports/weak_model_sql_bottleneck_analysis.md`
+- External technique mapping: `outputs/reports/weak_model_sql_external_technique_mapping.md`
+- SQL improvement trials: `outputs/reports/weak_model_sql_improvement_trials_public_dev_full.md`
+- Gate: `outputs/reports/weak_model_robustness_gate.md`
+- Best scaffold remains shadow-only.
+- Best strict variant: `weak_scaffold_api_recovery_v1` (`0.2871`)
+- Best SQL variant: `weak_scaffold_balanced_sql_api_v2` (SQL `0.12`, strict `0.2739`)
+- Current recommendation: `weak_model_scaffold_still_sql_limited`
+- Main bottleneck: SQL improved but answer/strict tradeoff remains.
+
 ## System-Wide SDK LLM Audit
 
 - `outputs/reports/sdk_usage_audit.md`
