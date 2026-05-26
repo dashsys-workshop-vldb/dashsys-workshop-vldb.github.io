@@ -220,6 +220,26 @@ python3 scripts/run_post_sql_api_decision_trial.py
 
 The reports are written to `outputs/reports/llm_semantic_router_shadow_eval.md/json`, `outputs/reports/semantic_route_decision_ladder_trial.md/json`, `outputs/reports/semantic_route_promotion_gate.md/json`, `outputs/reports/staged_evidence_policy_trial.md/json`, `outputs/reports/post_sql_api_decision_trial.md/json`, and `outputs/reports/semantic_routing_and_staged_evidence_policy.md/json`.
 
+The internal 500-prompt benchmark suite is the current robustness/generalization benchmark for this shadow-only semantic routing and staged-evidence work. It separates runtime prompts from gold answers/oracle traces and must not be treated as organizer score:
+
+```bash
+python3 scripts/generate_dashagent_500_prompt_suite.py --seed 20260525
+python3 scripts/validate_dashagent_500_prompt_suite.py
+python3 scripts/run_dashagent_500_prompt_suite_eval.py \
+  --suite data/benchmarks/dashagent_500_prompt_suite.jsonl \
+  --gold data/benchmarks/dashagent_500_prompt_suite_gold.jsonl \
+  --mode packaged_baseline \
+  --mode semantic_routing_shadow \
+  --mode staged_evidence_shadow \
+  --mode post_sql_api_decision_shadow \
+  --mode latest_applied_trial \
+  --full \
+  --seed 20260525 \
+  --clean
+```
+
+Benchmark files are written to `data/benchmarks/dashagent_500_prompt_suite*.jsonl/json`. Reports are written to `outputs/reports/dashagent_500_prompt_suite_report.md/json`, `outputs/reports/dashagent_500_prompt_suite_validation.md/json`, `outputs/reports/dashagent_500_prompt_suite_eval.md/json`, and `outputs/reports/dashagent_500_prompt_suite_gate.md/json`. Per-prompt diagnostic trajectories are under `outputs/dashagent_500_prompt_suite_eval/`.
+
 ## 3.3 Diagnostic Prompt Suite
 
 The generated diagnostic prompt suite broadens coverage testing from `data/data.json` without changing official scoring or packaged behavior.

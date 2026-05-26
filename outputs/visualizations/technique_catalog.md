@@ -11,7 +11,7 @@ Every technique below is tied to source artifacts. Missing measurements are mark
 | metadata_selector | Query understanding / routing | context selection | promoted_default | unavailable | unavailable | unavailable | Needed to keep prompt context compact and deterministic. |
 | query_analysis | Query understanding / routing | query analysis | promoted_default | unavailable | unavailable | unavailable | Core deterministic intent layer. |
 | prompt_router | Query understanding / routing | routing | promoted_default | unavailable | unavailable | unavailable | Promoted as routing safety layer. |
-| SQL_FIRST_API_VERIFY | Planning / execution | strategy | promoted_default | 0.0 | 0.0 | 797.9429 | Best current strict score and correctness among packaged strategies. |
+| SQL_FIRST_API_VERIFY | Planning / execution | strategy | promoted_default | 0.0 | 0.0 | 799.2286 | Best current strict score and correctness among packaged strategies. |
 | SQL templates | Planning / execution | SQL planning | promoted_default | unavailable | unavailable | unavailable | Reusable templates are part of current SQL score. |
 | API templates | Planning / execution | API planning | promoted_default | unavailable | unavailable | unavailable | Reusable endpoint templates drive current API score. |
 | planner | Planning / execution | planning | promoted_default | unavailable | unavailable | unavailable | Core packaged execution path. |
@@ -22,7 +22,7 @@ Every technique below is tied to source artifacts. Missing measurements are mark
 | candidate generation | Planning / execution | candidate search | shadow_only | unavailable | unavailable | unavailable | No broad runtime promotion; used for diagnostics/trials. |
 | execution-based candidate selector | Planning / execution | candidate search | shadow_only | unavailable | unavailable | unavailable | Kept isolated unless trial gates pass. |
 | answer-shape v2 | Planning / execution | answer synthesis | default_off | 0.0006 | 0.0006 | unavailable | Not a packaged default; isolated trial was below 0.75 target. |
-| supportable answer rewriter | Planning / execution | answer synthesis | shadow_only | -0.0069 | unavailable | unavailable | Safe rows feed isolated trials; not final promoted behavior. |
+| supportable answer rewriter | Planning / execution | answer synthesis | shadow_only | -0.003 | unavailable | unavailable | Safe rows feed isolated trials; not final promoted behavior. |
 | SQL-only API-skip guard | Planning / execution | pre-execution guard | default_off | unavailable | unavailable | unavailable | Not promoted; conservative guard available behind flag only. |
 | official-token reduction | Evidence / context / optimization | context optimization | promoted_default | unavailable | unavailable | unavailable | Promoted because strict score tied/improved safely with large token reduction. |
 | local knowledge index | Evidence / context / optimization | evidence retrieval | diagnostic_only | 0.0 | unavailable | unavailable | Coverage exists, but score impact is currently 0. |
@@ -47,7 +47,7 @@ Every technique below is tied to source artifacts. Missing measurements are mark
 | secret scan | Safety / robustness / evaluation | packaging gate | diagnostic_only | unavailable | unavailable | unavailable | Required readiness gate. |
 | trajectory checkpoints | Safety / robustness / evaluation | observability | promoted_default | unavailable | unavailable | unavailable | Core observability surface used by these visualizations. |
 | OpenRouter LLM rewrite search | Safety / robustness / evaluation | isolated candidate search | shadow_only | unavailable | unavailable | unavailable | Kept shadow-only; safe rows = 0. |
-| supportable dry-run rewrite validation | Safety / robustness / evaluation | answer candidate safety | shadow_only | -0.0127 | unavailable | unavailable | Safe rows feed isolated trials only. |
+| supportable dry-run rewrite validation | Safety / robustness / evaluation | answer candidate safety | shadow_only | -0.0088 | unavailable | unavailable | Safe rows feed isolated trials only. |
 | autonomous packaged trials | Safety / robustness / evaluation | isolated trial | shadow_only | 0.0067 | 0.0067 | -3.6571 | Best isolated score improved but target 0.75 was not reached. |
 
 ## Evidence / context / optimization
@@ -416,11 +416,11 @@ Every technique below is tied to source artifacts. Missing measurements are mark
 | Checkpoints | checkpoint_planning, checkpoint_execution |
 | Strict Δ | 0.0 |
 | Correctness Δ | 0.0 |
-| Answer Δ | 0.3337 |
+| Answer Δ | 0.3207 |
 | SQL Δ | 0.9333 |
 | API Δ | 0.9791 |
-| Token Δ | 797.9429 |
-| Runtime Δ | 1.3502 |
+| Token Δ | 799.2286 |
+| Runtime Δ | 0.5676 |
 | Tool Δ | 1.4571 |
 | Hidden-style impact | Hidden-style 48/48 in current report. |
 | Safety notes | Preferred packaged strategy. |
@@ -689,7 +689,7 @@ Every technique below is tied to source artifacts. Missing measurements are mark
 | State | shadow_only |
 | Files/modules | dashagent/supportable_answer_rewriter.py |
 | Checkpoints | supportable_answer_rewrite_eval |
-| Strict Δ | -0.0069 |
+| Strict Δ | -0.003 |
 | Correctness Δ | unavailable |
 | Answer Δ | unavailable |
 | SQL Δ | unavailable |
@@ -1141,7 +1141,7 @@ Every technique below is tied to source artifacts. Missing measurements are mark
 | State | shadow_only |
 | Files/modules | dashagent/supportable_answer_rewriter.py |
 | Checkpoints | supportable_answer_rewrite_eval |
-| Strict Δ | -0.0127 |
+| Strict Δ | -0.0088 |
 | Correctness Δ | unavailable |
 | Answer Δ | unavailable |
 | SQL Δ | unavailable |

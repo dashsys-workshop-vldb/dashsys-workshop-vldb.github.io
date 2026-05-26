@@ -1,0 +1,492 @@
+{
+  "final_answer": "Diagnostic answer uses observable benchmark trace. SQL evidence is required or selected. API evidence is required or selected.",
+  "gold_visible_to_runtime": false,
+  "grade": {
+    "answer_grounding_score": 1.0,
+    "api_endpoint_family_accuracy": 1.0,
+    "api_error_interpretation_correct": true,
+    "api_required_used_accuracy": 1.0,
+    "expected_evidence_need_accuracy": 0.75,
+    "expected_observable_trace_score": 0.8,
+    "final_answer_correctness": 0.8063,
+    "forbidden_claims_violation": false,
+    "live_empty_interpretation_correct": true,
+    "no_tool_false_negative": false,
+    "no_tool_false_positive": false,
+    "overall_score": 0.8072,
+    "required_facts_coverage": 0.8125,
+    "route_accuracy": 0.75,
+    "sql_required_used_accuracy": 0.5,
+    "sql_table_accuracy": 1.0,
+    "tool_overuse": 1,
+    "tool_underuse": 0,
+    "unsupported_claims": 0
+  },
+  "latest_code_paths_enabled": {
+    "compact_json_llm_context": true,
+    "evidence_bus_answer_verifier_token_reduction": true,
+    "no_tool_safety_verifier": true,
+    "objective_prompt_features": true,
+    "post_sql_api_call_verifier": true,
+    "post_sql_deterministic_policy": true,
+    "post_sql_llm_advisor": false,
+    "routing_anti_hallucination_gate": true,
+    "routing_feedback_revision": false,
+    "semantic_intent_classifier": true,
+    "semantic_route_decision_ladder": true,
+    "staged_evidence_policy": true
+  },
+  "mode": "latest_applied_trial",
+  "observable_trace": {
+    "checkpoint_evidence_bus_answer_verifier_token_reduction": {
+      "answer_verifier_observed": true,
+      "evidence_bus_observed": true,
+      "token_reduction_behavior_observed": true,
+      "unsupported_claims": 0
+    },
+    "checkpoint_evidence_match_scores": {
+      "api_match": 0.85,
+      "api_match_codes": [
+        "API_DOMAIN_MATCH",
+        "API_CAPABILITY_MATCH",
+        "LIVE_API_SIGNAL",
+        "API_CANDIDATE_AVAILABLE"
+      ],
+      "concrete_data_signal": true,
+      "live_api_signal": true,
+      "sql_match": 0.6,
+      "sql_match_codes": [
+        "SQL_DOMAIN_MATCH",
+        "SQL_CAPABILITY_MATCH"
+      ]
+    },
+    "checkpoint_initial_evidence_branch_policy": {
+      "first_branch": "SQL",
+      "policy_codes": [
+        "BOTH_LOW_CONCRETE_SIGNAL"
+      ],
+      "second_branch_policy": "API_AFTER_SQL_IF_NEEDED"
+    },
+    "checkpoint_no_tool_safety_verifier": {
+      "action": "BLOCK_NO_TOOL",
+      "allow_no_tool": false,
+      "block": [
+        "ENTITY_LOOKUP",
+        "LOW_CONF"
+      ],
+      "capability_match_score": 0.75,
+      "clear_safe_api_family": false,
+      "evidence_need_score": 0.2,
+      "has_concrete_data_signal": true,
+      "no_tool_safety_score": 0.55
+    },
+    "checkpoint_objective_prompt_features": {
+      "cap": [
+        "SQL_SEGMENT",
+        "API_UPS_AUDIENCES",
+        "API_SEGMENT_DEFINITIONS"
+      ],
+      "count": [],
+      "cue": [],
+      "date": [],
+      "domain": [
+        "SEGMENT"
+      ],
+      "entity": [
+        "ID_LIKE",
+        "NUMBER"
+      ],
+      "fields": [],
+      "flags": [
+        "CONCRETE_ENTITY",
+        "DOMAIN_ONLY"
+      ],
+      "norm": "check the live api for segment metadata. api case 12.",
+      "p": "Check the live API for segment metadata. API case 12.",
+      "rel": [],
+      "retr": [],
+      "status": []
+    },
+    "checkpoint_post_sql_api_call_verifier": {
+      "blocked_families": [],
+      "codes": [
+        "VERIFIED_CAVEAT_ONLY"
+      ],
+      "final_action": "CAVEAT_ONLY",
+      "selected_api_families": [],
+      "source": "LLM_ADVISOR_BLOCKED"
+    },
+    "checkpoint_post_sql_decision_card": {
+      "allowed_outputs": {
+        "mode": [
+          "CALL_API",
+          "SKIP_API",
+          "CAVEAT_ONLY"
+        ]
+      },
+      "answer_intent": "LIST",
+      "api_candidates": [
+        {
+          "can_fill_roles": [
+            "id",
+            "name",
+            "detail"
+          ],
+          "endpoint_id": "segment_definitions",
+          "family": "segment_definitions",
+          "live_health": "UNKNOWN",
+          "method": "GET",
+          "requires_path_param": false,
+          "safe_get": true
+        }
+      ],
+      "prompt_features": [
+        "SEGMENT",
+        "ID_LIKE",
+        "NUMBER",
+        "SQL_SEGMENT",
+        "API_UPS_AUDIENCES",
+        "API_SEGMENT_DEFINITIONS",
+        "CONCRETE_ENTITY",
+        "DOMAIN_ONLY"
+      ],
+      "sql_state": {
+        "direct_answer": false,
+        "execution": "SUCCESS",
+        "missing_roles": [
+          "id",
+          "name"
+        ],
+        "partial_answer": false,
+        "returned_roles": [],
+        "row_count_bucket": "ZERO",
+        "validation": "PASS",
+        "zero_rows": true
+      },
+      "task": "POST_SQL_API_DECISION"
+    },
+    "checkpoint_post_sql_deterministic_policy": {
+      "api_evidence_signal": 0.55,
+      "codes": [
+        "SQL_PARTIAL_API_MAY_FILL"
+      ],
+      "confidence": "MEDIUM",
+      "suggestion": "AMBIGUOUS"
+    },
+    "checkpoint_post_sql_llm_advisor": {
+      "codes": [
+        "SQL_PARTIAL_API_MAY_FILL"
+      ],
+      "conf": 0.0,
+      "endpoint_id": null,
+      "mode": "CAVEAT_ONLY",
+      "needed_roles": [],
+      "source": "DETERMINISTIC_FALLBACK"
+    },
+    "checkpoint_routing_anti_hallucination_gate": {
+      "fallback_action": null,
+      "feedback": {},
+      "final_decision": {
+        "api": false,
+        "codes": [
+          "FALLBACK"
+        ],
+        "conf": 0.5,
+        "intent": "AMBIG",
+        "need": "UNKNOWN",
+        "no_tool": false,
+        "sql": false
+      },
+      "final_gate": {
+        "block": [],
+        "ok": true,
+        "support": {
+          "caps": true,
+          "intent": true,
+          "need": true
+        },
+        "unsupported_codes": []
+      },
+      "initial_decision": {
+        "api": false,
+        "codes": [
+          "FALLBACK"
+        ],
+        "conf": 0.5,
+        "intent": "AMBIG",
+        "need": "UNKNOWN",
+        "no_tool": false,
+        "sql": false
+      },
+      "initial_gate": {
+        "block": [],
+        "ok": true,
+        "support": {
+          "caps": true,
+          "intent": true,
+          "need": true
+        },
+        "unsupported_codes": []
+      },
+      "revision_attempted": false,
+      "revision_success": false,
+      "revision_token_estimate": 0
+    },
+    "checkpoint_semantic_intent_context": {
+      "capability_count": 1,
+      "task": "SEMANTIC_INTENT_DECISION",
+      "token_estimate": 216
+    },
+    "checkpoint_semantic_intent_decision": {
+      "api": false,
+      "codes": [
+        "FALLBACK"
+      ],
+      "conf": 0.5,
+      "intent": "AMBIG",
+      "need": "UNKNOWN",
+      "no_tool": false,
+      "sql": false
+    },
+    "checkpoint_semantic_route_decision_ladder": {
+      "action": "EVIDENCE_PIPELINE",
+      "ladder_result": {
+        "action": "EVIDENCE_PIPELINE",
+        "average_tier_used": 1.0,
+        "checkpoints": {
+          "checkpoint_no_tool_safety_verifier": {
+            "action": "BLOCK_NO_TOOL",
+            "allow_no_tool": false,
+            "block": [
+              "ENTITY_LOOKUP",
+              "LOW_CONF"
+            ],
+            "capability_match_score": 0.75,
+            "clear_safe_api_family": false,
+            "evidence_need_score": 0.2,
+            "has_concrete_data_signal": true,
+            "no_tool_safety_score": 0.55
+          },
+          "checkpoint_objective_prompt_features": {
+            "cap": [
+              "SQL_SEGMENT",
+              "API_UPS_AUDIENCES",
+              "API_SEGMENT_DEFINITIONS"
+            ],
+            "count": [],
+            "cue": [],
+            "date": [],
+            "domain": [
+              "SEGMENT"
+            ],
+            "entity": [
+              "ID_LIKE",
+              "NUMBER"
+            ],
+            "fields": [],
+            "flags": [
+              "CONCRETE_ENTITY",
+              "DOMAIN_ONLY"
+            ],
+            "norm": "check the live api for segment metadata. api case 12.",
+            "p": "Check the live API for segment metadata. API case 12.",
+            "rel": [],
+            "retr": [],
+            "status": []
+          },
+          "checkpoint_routing_anti_hallucination_gate": {
+            "fallback_action": null,
+            "feedback": {},
+            "final_decision": {
+              "api": false,
+              "codes": [
+                "FALLBACK"
+              ],
+              "conf": 0.5,
+              "intent": "AMBIG",
+              "need": "UNKNOWN",
+              "no_tool": false,
+              "sql": false
+            },
+            "final_gate": {
+              "block": [],
+              "ok": true,
+              "support": {
+                "caps": true,
+                "intent": true,
+                "need": true
+              },
+              "unsupported_codes": []
+            },
+            "initial_decision": {
+              "api": false,
+              "codes": [
+                "FALLBACK"
+              ],
+              "conf": 0.5,
+              "intent": "AMBIG",
+              "need": "UNKNOWN",
+              "no_tool": false,
+              "sql": false
+            },
+            "initial_gate": {
+              "block": [],
+              "ok": true,
+              "support": {
+                "caps": true,
+                "intent": true,
+                "need": true
+              },
+              "unsupported_codes": []
+            },
+            "revision_attempted": false,
+            "revision_success": false,
+            "revision_token_estimate": 0
+          },
+          "checkpoint_semantic_intent_decision": {
+            "api": false,
+            "codes": [
+              "FALLBACK"
+            ],
+            "conf": 0.5,
+            "intent": "AMBIG",
+            "need": "UNKNOWN",
+            "no_tool": false,
+            "sql": false
+          },
+          "checkpoint_semantic_route_decision_ladder": {
+            "action": "EVIDENCE_PIPELINE",
+            "shadow_only": false,
+            "tier_used": 1
+          }
+        },
+        "context_token_cost": 432,
+        "features": {
+          "cap": [
+            "SQL_SEGMENT",
+            "API_UPS_AUDIENCES",
+            "API_SEGMENT_DEFINITIONS"
+          ],
+          "count": [],
+          "cue": [],
+          "date": [],
+          "domain": [
+            "SEGMENT"
+          ],
+          "entity": [
+            "ID_LIKE",
+            "NUMBER"
+          ],
+          "fields": [],
+          "flags": [
+            "CONCRETE_ENTITY",
+            "DOMAIN_ONLY"
+          ],
+          "norm": "check the live api for segment metadata. api case 12.",
+          "p": "Check the live API for segment metadata. API case 12.",
+          "rel": [],
+          "retr": [],
+          "status": []
+        },
+        "low_low_case": true,
+        "no_tool_safety": {
+          "action": "BLOCK_NO_TOOL",
+          "allow_no_tool": false,
+          "block": [
+            "ENTITY_LOOKUP",
+            "LOW_CONF"
+          ],
+          "capability_match_score": 0.75,
+          "clear_safe_api_family": false,
+          "evidence_need_score": 0.2,
+          "has_concrete_data_signal": true,
+          "no_tool_safety_score": 0.55
+        },
+        "promotion_allowed": false,
+        "routing_anti_hallucination_gate": {
+          "fallback_action": null,
+          "feedback": {},
+          "final_decision": {
+            "api": false,
+            "codes": [
+              "FALLBACK"
+            ],
+            "conf": 0.5,
+            "intent": "AMBIG",
+            "need": "UNKNOWN",
+            "no_tool": false,
+            "sql": false
+          },
+          "final_gate": {
+            "block": [],
+            "ok": true,
+            "support": {
+              "caps": true,
+              "intent": true,
+              "need": true
+            },
+            "unsupported_codes": []
+          },
+          "initial_decision": {
+            "api": false,
+            "codes": [
+              "FALLBACK"
+            ],
+            "conf": 0.5,
+            "intent": "AMBIG",
+            "need": "UNKNOWN",
+            "no_tool": false,
+            "sql": false
+          },
+          "initial_gate": {
+            "block": [],
+            "ok": true,
+            "support": {
+              "caps": true,
+              "intent": true,
+              "need": true
+            },
+            "unsupported_codes": []
+          },
+          "revision_attempted": false,
+          "revision_success": false,
+          "revision_token_estimate": 0
+        },
+        "safe_api_probe": {},
+        "semantic_intent_decision": {
+          "api": false,
+          "codes": [
+            "FALLBACK"
+          ],
+          "conf": 0.5,
+          "intent": "AMBIG",
+          "need": "UNKNOWN",
+          "no_tool": false,
+          "sql": false
+        },
+        "shadow_only": false,
+        "tier_used": 1
+      },
+      "shadow_only": false
+    }
+  },
+  "old_generated_diagnostic_path_used": false,
+  "prompt_id": "da500_0192",
+  "runtime_prompt": {
+    "category": "api_only_live_platform",
+    "difficulty": "hard",
+    "domain_family": "SEGMENT",
+    "prompt": "Check the live API for segment metadata. API case 12.",
+    "prompt_id": "da500_0192",
+    "split": "stress_generated",
+    "tags": [
+      "api_required",
+      "safe_get"
+    ]
+  },
+  "tool_counts": {
+    "api_calls": 1,
+    "sql_calls": 1,
+    "total_tool_calls": 2
+  }
+}

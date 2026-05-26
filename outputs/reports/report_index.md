@@ -24,6 +24,10 @@ Start here. Most older generated reports were consolidated or removed.
 - [staged_evidence_policy_trial.md](staged_evidence_policy_trial.md)
 - [post_sql_api_decision_trial.md](post_sql_api_decision_trial.md)
 - [semantic_routing_and_staged_evidence_policy.md](semantic_routing_and_staged_evidence_policy.md)
+- [dashagent_500_prompt_suite_report.md](dashagent_500_prompt_suite_report.md)
+- [dashagent_500_prompt_suite_validation.md](dashagent_500_prompt_suite_validation.md)
+- [dashagent_500_prompt_suite_eval.md](dashagent_500_prompt_suite_eval.md)
+- [dashagent_500_prompt_suite_gate.md](dashagent_500_prompt_suite_gate.md)
 
 ## Key Source-Of-Truth Reports
 
@@ -61,6 +65,16 @@ Start here. Most older generated reports were consolidated or removed.
 - `outputs/reports/superpowers_fix_decision.md` - Evidence-gated fix decision; no runtime change unless exactly one safe candidate passes.
 - `outputs/reports/full_generated_prompt_suite_diagnostic.md` - Full 250-prompt generated suite diagnostic after live API stabilization; diagnostic-only and not official strict score.
 - `outputs/reports/generated_prompt_coverage_gap_analysis.md` - Generated prompt coverage gaps; diagnostic-only and not promotion evidence.
+
+## DashAgent 500-Prompt Benchmark
+
+- `data/benchmarks/dashagent_500_prompt_suite.jsonl` - Runtime-visible internal diagnostic prompts only.
+- `data/benchmarks/dashagent_500_prompt_suite_gold.jsonl` - Gold answers, oracle SQL/API expectations, and observable trace rubrics; never loaded by runtime.
+- `data/benchmarks/dashagent_500_prompt_suite_manifest.json` - Suite manifest, category counts, semantic signatures, and dedup stats.
+- `outputs/reports/dashagent_500_prompt_suite_report.md` - Suite generation summary and examples.
+- `outputs/reports/dashagent_500_prompt_suite_validation.md` - Gold/runtime separation and validation result.
+- `outputs/reports/dashagent_500_prompt_suite_eval.md` - Full 500-row mode comparison for packaged baseline and latest semantic/staged trial paths.
+- `outputs/reports/dashagent_500_prompt_suite_gate.md` - Diagnostic gate recommendation; does not promote packaged runtime.
 
 ## Post-Live Robustness Gate
 
