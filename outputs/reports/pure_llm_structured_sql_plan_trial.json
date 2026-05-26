@@ -6,7 +6,7 @@
   },
   "diagnostic_only": true,
   "execute_real_requested": true,
-  "generated_at": "2026-05-25T22:14:10.744119+00:00",
+  "generated_at": "2026-05-26T05:37:39.736844+00:00",
   "new_llm_calls_executed": true,
   "official_score_claim": false,
   "packaged_default_strategy": "SQL_FIRST_API_VERIFY",
@@ -64865,20 +64865,20 @@
     },
     {
       "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
-      "answer_score": 0.0052,
+      "answer_score": 0.2176,
       "api_reason": "No gold API supplied; API dimension unscored in strict mode.",
       "api_score": null,
-      "estimated_tokens": 3378,
-      "failure_stage": "no_clear_failure",
+      "estimated_tokens": 4798,
+      "failure_stage": "tool_execution_failed",
       "prompt": "When was the journey 'Birthday Message' published?",
       "query_id": "example_000",
-      "runtime": 11.334,
+      "runtime": 12.8885,
       "sql_reason": "Strict SQL mismatch.",
       "sql_score": 0.0,
-      "strict_correctness": 0.0022,
-      "strict_final_score": -0.0762,
+      "strict_correctness": 0.0933,
+      "strict_final_score": -0.0022,
       "strict_scoring_status": "available",
-      "system": "structured_sql_plan_with_tool_choice_guard_v1",
+      "system": "structured_sql_plan_semantic_repair_v1",
       "tool_calls": 1,
       "trace_assertions": {
         "api_endpoint_candidate": null,
@@ -64886,29 +64886,35 @@
         "api_endpoint_validation_ok": false,
         "did_llm_choose_tool": true,
         "did_llm_plan": true,
-        "final_answer": "2026-03-31T06:07:32.838462639Z",
-        "rejected_unsupported_claim_count": 0,
+        "fallback_to_sql_result_answer": false,
+        "final_answer": "The available tool evidence does not contain enough supported data to answer.",
+        "rejected_unsupported_claim_count": 2,
         "selected_tool": "execute_sql",
+        "semantic_repair_attempted": true,
+        "semantic_repair_success": false,
+        "semantic_score": 0.8,
+        "semantic_verification_ok": false,
         "sql_candidate": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
-        "sql_repair_attempted": false,
-        "sql_repair_success": false,
+        "sql_repair_attempted": true,
+        "sql_repair_success": true,
+        "sql_result_grounded": false,
         "sql_validation_ok": true,
         "structured_plan_compile_ok": true,
         "structured_plan_validation_ok": true,
-        "tool_execution_ok": true,
-        "tool_result_used_in_answer": true,
+        "tool_execution_ok": false,
+        "tool_result_used_in_answer": false,
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "structured_sql_plan_with_tool_choice_guard_v1",
-        "estimated_tokens": 3378,
-        "failure_stage": "no_clear_failure",
-        "final_answer": "2026-03-31T06:07:32.838462639Z",
+        "baseline_variant": "structured_sql_plan_semantic_repair_v1",
+        "estimated_tokens": 4798,
+        "failure_stage": "tool_execution_failed",
+        "final_answer": "The available tool evidence does not contain enough supported data to answer.",
         "llm_total_tokens": 1814,
         "original_query": "When was the journey 'Birthday Message' published?",
         "pure_llm_tool_agent": true,
-        "rejected_unsupported_claim_count": 0,
-        "runtime": 11.333981582894921,
+        "rejected_unsupported_claim_count": 2,
+        "runtime": 12.888511124998331,
         "steps": [
           {
             "context_summary": {
@@ -65075,7 +65081,7 @@
               "reason": "The question is asking for a specific date ('Birthday Message') but the available endpoints do not provide direct date information.",
               "sql_task": null
             },
-            "variant": "structured_sql_plan_with_tool_choice_guard_v1"
+            "variant": "structured_sql_plan_semantic_repair_v1"
           },
           {
             "_usage": {
@@ -65346,14 +65352,48 @@
                   "sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
                   "warnings": []
                 },
-                "executed": true,
-                "execution_ok": true,
+                "executed": false,
                 "plan_validation": {
                   "errors": [],
                   "ok": true,
                   "warnings": []
                 },
                 "round": 0,
+                "semantic_verification": {
+                  "errors": [
+                    "Published/deployed DATE prompt should select a published timestamp such as LASTDEPLOYEDTIME."
+                  ],
+                  "evidence_source_plan": {
+                    "api_endpoints_that_may_answer": [],
+                    "api_reason": null,
+                    "confidence": 0.98,
+                    "local_tables_that_may_answer": [
+                      "dim_campaign"
+                    ],
+                    "needs_live_api": false,
+                    "needs_local_sql": true,
+                    "preferred_first_tool": "execute_sql",
+                    "question_type": "when_was_a_journey_published",
+                    "sql_reason": "The journey 'Birthday Message' is stored in the 'dim_campaign' table, which can be queried to find the publication date."
+                  },
+                  "expected_table": "dim_campaign",
+                  "ok": false,
+                  "repair_hint": "use primary_table dim_campaign | fix semantic errors: Published/deployed DATE prompt should select a published timestamp such as LASTDEPLOYEDTIME.",
+                  "selected_aggregation": "none",
+                  "selected_columns": [
+                    "UPDATEDTIME"
+                  ],
+                  "selected_filters": [
+                    {
+                      "column": "CAMPAIGNNAME",
+                      "operator": "=",
+                      "value": "Birthday Message"
+                    }
+                  ],
+                  "selected_table": "dim_campaign",
+                  "semantic_score": 0.8,
+                  "warnings": []
+                },
                 "sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
                 "structured_sql_plan": {
                   "_usage": {
@@ -65395,21 +65435,247 @@
                   "repaired": false,
                   "warnings": []
                 }
+              },
+              {
+                "ast_summary": {
+                  "closest_column_suggestions": {},
+                  "closest_table_suggestions": {},
+                  "destructive_sql_detected": false,
+                  "enabled": true,
+                  "normalized_sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
+                  "parsed_ok": true,
+                  "selected_columns": [
+                    "UPDATEDTIME",
+                    "dim_campaign.NAME"
+                  ],
+                  "selected_tables": [
+                    "dim_campaign"
+                  ],
+                  "unknown_columns": [],
+                  "unknown_tables": []
+                },
+                "compile": {
+                  "aggregation": "none",
+                  "errors": [],
+                  "filters": [
+                    {
+                      "column": "CAMPAIGNNAME",
+                      "operator": "equals",
+                      "table": "dim_campaign",
+                      "value": "Birthday Message"
+                    }
+                  ],
+                  "join_path": [],
+                  "ok": true,
+                  "selected_columns": [
+                    "UPDATEDTIME"
+                  ],
+                  "selected_tables": [
+                    "dim_campaign"
+                  ],
+                  "sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
+                  "warnings": []
+                },
+                "executed": false,
+                "plan_validation": {
+                  "errors": [],
+                  "ok": true,
+                  "warnings": []
+                },
+                "round": 1,
+                "semantic_verification": {
+                  "errors": [
+                    "Published/deployed DATE prompt should select a published timestamp such as LASTDEPLOYEDTIME."
+                  ],
+                  "evidence_source_plan": {
+                    "api_endpoints_that_may_answer": [],
+                    "api_reason": null,
+                    "confidence": 0.98,
+                    "local_tables_that_may_answer": [
+                      "dim_campaign"
+                    ],
+                    "needs_live_api": false,
+                    "needs_local_sql": true,
+                    "preferred_first_tool": "execute_sql",
+                    "question_type": "when_was_a_journey_published",
+                    "sql_reason": "The journey 'Birthday Message' is stored in the 'dim_campaign' table, which can be queried to find the publication date."
+                  },
+                  "expected_table": "dim_campaign",
+                  "ok": false,
+                  "repair_hint": "use primary_table dim_campaign | fix semantic errors: Published/deployed DATE prompt should select a published timestamp such as LASTDEPLOYEDTIME.",
+                  "selected_aggregation": "none",
+                  "selected_columns": [
+                    "UPDATEDTIME"
+                  ],
+                  "selected_filters": [
+                    {
+                      "column": "CAMPAIGNNAME",
+                      "operator": "=",
+                      "value": "Birthday Message"
+                    }
+                  ],
+                  "selected_table": "dim_campaign",
+                  "semantic_score": 0.8,
+                  "warnings": []
+                },
+                "sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
+                "structured_sql_plan": {
+                  "_usage": {
+                    "completion_tokens": 95,
+                    "completion_tokens_details": null,
+                    "prompt_tokens": 1827,
+                    "prompt_tokens_details": {
+                      "audio_tokens": null,
+                      "cached_tokens": 3
+                    },
+                    "total_tokens": 1922
+                  },
+                  "aggregation": null,
+                  "columns_needed": [
+                    "UPDATEDTIME"
+                  ],
+                  "filters": [
+                    {
+                      "column": "CAMPAIGNNAME",
+                      "operator": "=",
+                      "value": "Birthday Message"
+                    }
+                  ],
+                  "join_needed": false,
+                  "join_path_reason": null,
+                  "limit": null,
+                  "order_by": null,
+                  "primary_table": "dim_campaign"
+                },
+                "validation": {
+                  "errors": [],
+                  "ok": true,
+                  "repaired": false,
+                  "warnings": []
+                }
+              },
+              {
+                "ast_summary": {
+                  "closest_column_suggestions": {},
+                  "closest_table_suggestions": {},
+                  "destructive_sql_detected": false,
+                  "enabled": true,
+                  "normalized_sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
+                  "parsed_ok": true,
+                  "selected_columns": [
+                    "UPDATEDTIME",
+                    "dim_campaign.NAME"
+                  ],
+                  "selected_tables": [
+                    "dim_campaign"
+                  ],
+                  "unknown_columns": [],
+                  "unknown_tables": []
+                },
+                "compile": {
+                  "aggregation": "none",
+                  "errors": [],
+                  "filters": [
+                    {
+                      "column": "CAMPAIGNNAME",
+                      "operator": "equals",
+                      "table": "dim_campaign",
+                      "value": "Birthday Message"
+                    }
+                  ],
+                  "join_path": [],
+                  "ok": true,
+                  "selected_columns": [
+                    "UPDATEDTIME"
+                  ],
+                  "selected_tables": [
+                    "dim_campaign"
+                  ],
+                  "sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
+                  "warnings": []
+                },
+                "executed": false,
+                "plan_validation": {
+                  "errors": [],
+                  "ok": true,
+                  "warnings": []
+                },
+                "round": 2,
+                "semantic_verification": {
+                  "errors": [
+                    "Published/deployed DATE prompt should select a published timestamp such as LASTDEPLOYEDTIME."
+                  ],
+                  "evidence_source_plan": {
+                    "api_endpoints_that_may_answer": [],
+                    "api_reason": null,
+                    "confidence": 0.98,
+                    "local_tables_that_may_answer": [
+                      "dim_campaign"
+                    ],
+                    "needs_live_api": false,
+                    "needs_local_sql": true,
+                    "preferred_first_tool": "execute_sql",
+                    "question_type": "when_was_a_journey_published",
+                    "sql_reason": "The journey 'Birthday Message' is stored in the 'dim_campaign' table, which can be queried to find the publication date."
+                  },
+                  "expected_table": "dim_campaign",
+                  "ok": false,
+                  "repair_hint": "use primary_table dim_campaign | fix semantic errors: Published/deployed DATE prompt should select a published timestamp such as LASTDEPLOYEDTIME.",
+                  "selected_aggregation": "none",
+                  "selected_columns": [
+                    "UPDATEDTIME"
+                  ],
+                  "selected_filters": [
+                    {
+                      "column": "CAMPAIGNNAME",
+                      "operator": "=",
+                      "value": "Birthday Message"
+                    }
+                  ],
+                  "selected_table": "dim_campaign",
+                  "semantic_score": 0.8,
+                  "warnings": []
+                },
+                "sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
+                "structured_sql_plan": {
+                  "_usage": {
+                    "completion_tokens": 165,
+                    "completion_tokens_details": null,
+                    "prompt_tokens": 1786,
+                    "prompt_tokens_details": {
+                      "audio_tokens": null,
+                      "cached_tokens": 104
+                    },
+                    "total_tokens": 1951
+                  },
+                  "aggregation": null,
+                  "columns_needed": [
+                    "UPDATEDTIME"
+                  ],
+                  "filters": [
+                    {
+                      "column": "CAMPAIGNNAME",
+                      "operator": "=",
+                      "value": "Birthday Message"
+                    }
+                  ],
+                  "join_needed": false,
+                  "join_path_reason": null,
+                  "limit": null,
+                  "order_by": null,
+                  "primary_table": "dim_campaign"
+                },
+                "validation": {
+                  "errors": [],
+                  "ok": true,
+                  "repaired": false,
+                  "warnings": []
+                }
               }
             ],
             "kind": "sql_call",
-            "repair_rounds": 0,
-            "result": {
-              "error": null,
-              "limited": false,
-              "ok": true,
-              "row_count": 1,
-              "rows": [
-                {
-                  "UPDATEDTIME": "2026-03-31T06:07:32.838462639Z"
-                }
-              ]
-            },
+            "repair_rounds": 2,
+            "result": null,
             "sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
             "validation": {
               "errors": [],
@@ -65419,50 +65685,42 @@
             }
           },
           {
-            "answer": "2026-03-31T06:07:32.838462639Z",
+            "answer": "The available tool evidence does not contain enough supported data to answer.",
             "answer_guard": {
-              "answer": "2026-03-31T06:07:32.838462639Z",
-              "claims": [
-                {
-                  "claim": "The journey 'Birthday Message' was published on 2026-03-31T06:07:32.838462639Z",
-                  "evidence_field": "items",
-                  "evidence_source": "sql"
-                }
-              ],
-              "fallback_used": false,
+              "answer": "The available tool evidence does not contain enough supported data to answer.",
+              "claims": [],
+              "fallback_used": true,
               "llm_usage": {
-                "completion_tokens": 121,
+                "completion_tokens": 51,
                 "completion_tokens_details": null,
-                "prompt_tokens": 217,
+                "prompt_tokens": 125,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 338
+                "total_tokens": 176
               },
-              "rejected_unsupported_claim_count": 0,
-              "rejected_unsupported_claims": [],
-              "skipped": false,
-              "supported_values": [
-                "07:32",
-                "1",
-                "2026-03-31T06:07:32.838462639Z",
-                "2026-03-31t06:07:32.838462639z",
-                "UPDATEDTIME",
-                "row_count",
-                "rows",
-                "source",
-                "sql",
-                "updatedtime"
+              "rejected_unsupported_claim_count": 2,
+              "rejected_unsupported_claims": [
+                {
+                  "claim_type": "entity",
+                  "value": "Birthday Message"
+                },
+                {
+                  "claim_type": "no_result",
+                  "value": "no items found"
+                }
               ],
-              "tool_result_used": true,
+              "skipped": false,
+              "supported_values": [],
+              "tool_result_used": false,
               "unsupported_claim_count": 0,
               "unsupported_claims": []
             },
             "kind": "final_answer"
           }
         ],
-        "strategy": "structured_sql_plan_with_tool_choice_guard_v1",
+        "strategy": "structured_sql_plan_semantic_repair_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
@@ -65471,24 +65729,30 @@
           "api_endpoint_validation_ok": false,
           "did_llm_choose_tool": true,
           "did_llm_plan": true,
-          "final_answer": "2026-03-31T06:07:32.838462639Z",
-          "rejected_unsupported_claim_count": 0,
+          "fallback_to_sql_result_answer": false,
+          "final_answer": "The available tool evidence does not contain enough supported data to answer.",
+          "rejected_unsupported_claim_count": 2,
           "selected_tool": "execute_sql",
+          "semantic_repair_attempted": true,
+          "semantic_repair_success": false,
+          "semantic_score": 0.8,
+          "semantic_verification_ok": false,
           "sql_candidate": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
-          "sql_repair_attempted": false,
-          "sql_repair_success": false,
+          "sql_repair_attempted": true,
+          "sql_repair_success": true,
+          "sql_result_grounded": false,
           "sql_validation_ok": true,
           "structured_plan_compile_ok": true,
           "structured_plan_validation_ok": true,
-          "tool_execution_ok": true,
-          "tool_result_used_in_answer": true,
+          "tool_execution_ok": false,
+          "tool_result_used_in_answer": false,
           "unsupported_claim_count": 0
         },
         "unsupported_claim_count": 0
       },
       "unscored_dimension_count": 1,
       "unsupported_claim_count": 0,
-      "variant": "structured_sql_plan_with_tool_choice_guard_v1"
+      "variant": "structured_sql_plan_semantic_repair_v1"
     },
     {
       "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
@@ -65499,13 +65763,13 @@
       "failure_stage": "no_clear_failure",
       "prompt": "Give me inactive journeys",
       "query_id": "example_001",
-      "runtime": 19.639,
+      "runtime": 16.909,
       "sql_reason": "No generated SQL while gold SQL exists.",
       "sql_score": 0.0,
       "strict_correctness": 0.3028,
-      "strict_final_score": 0.2068,
+      "strict_final_score": 0.2159,
       "strict_scoring_status": "available",
-      "system": "structured_sql_plan_with_tool_choice_guard_v1",
+      "system": "structured_sql_plan_semantic_repair_v1",
       "tool_calls": 1,
       "trace_assertions": {
         "api_endpoint_candidate": "journey_list",
@@ -65513,12 +65777,18 @@
         "api_endpoint_validation_ok": true,
         "did_llm_choose_tool": true,
         "did_llm_plan": true,
+        "fallback_to_sql_result_answer": false,
         "final_answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
         "rejected_unsupported_claim_count": 2,
         "selected_tool": "call_api",
+        "semantic_repair_attempted": false,
+        "semantic_repair_success": false,
+        "semantic_score": null,
+        "semantic_verification_ok": null,
         "sql_candidate": null,
         "sql_repair_attempted": false,
         "sql_repair_success": false,
+        "sql_result_grounded": false,
         "sql_validation_ok": false,
         "structured_plan_compile_ok": null,
         "structured_plan_validation_ok": null,
@@ -65527,7 +65797,7 @@
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "structured_sql_plan_with_tool_choice_guard_v1",
+        "baseline_variant": "structured_sql_plan_semantic_repair_v1",
         "estimated_tokens": 2174,
         "failure_stage": "no_clear_failure",
         "final_answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
@@ -65535,7 +65805,7 @@
         "original_query": "Give me inactive journeys",
         "pure_llm_tool_agent": true,
         "rejected_unsupported_claim_count": 2,
-        "runtime": 19.638999083079398,
+        "runtime": 16.908966708928347,
         "steps": [
           {
             "context_summary": {
@@ -65668,7 +65938,7 @@
               "reason": "The request is to find inactive journeys, which can be achieved through an API call.",
               "sql_task": null
             },
-            "variant": "structured_sql_plan_with_tool_choice_guard_v1"
+            "variant": "structured_sql_plan_semantic_repair_v1"
           },
           {
             "_usage": {
@@ -65933,8 +66203,8 @@
                 "journey_list",
                 "live_empty",
                 "live_evidence_available",
-                "metadata.lastModifiedAt>2026-05-18",
-                "metadata.lastmodifiedat>2026-05-18",
+                "metadata.lastModifiedAt>2026-05-19",
+                "metadata.lastmodifiedat>2026-05-19",
                 "method",
                 "names",
                 "no matching records",
@@ -65955,7 +66225,7 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "structured_sql_plan_with_tool_choice_guard_v1",
+        "strategy": "structured_sql_plan_semantic_repair_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
@@ -65964,12 +66234,18 @@
           "api_endpoint_validation_ok": true,
           "did_llm_choose_tool": true,
           "did_llm_plan": true,
+          "fallback_to_sql_result_answer": false,
           "final_answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
           "rejected_unsupported_claim_count": 2,
           "selected_tool": "call_api",
+          "semantic_repair_attempted": false,
+          "semantic_repair_success": false,
+          "semantic_score": null,
+          "semantic_verification_ok": null,
           "sql_candidate": null,
           "sql_repair_attempted": false,
           "sql_repair_success": false,
+          "sql_result_grounded": false,
           "sql_validation_ok": false,
           "structured_plan_compile_ok": null,
           "structured_plan_validation_ok": null,
@@ -65981,7 +66257,7 @@
       },
       "unscored_dimension_count": 0,
       "unsupported_claim_count": 0,
-      "variant": "structured_sql_plan_with_tool_choice_guard_v1"
+      "variant": "structured_sql_plan_semantic_repair_v1"
     },
     {
       "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
@@ -65992,13 +66268,13 @@
       "failure_stage": "no_clear_failure",
       "prompt": "List all journeys",
       "query_id": "example_002",
-      "runtime": 20.4778,
+      "runtime": 14.6038,
       "sql_reason": "No generated SQL while gold SQL exists.",
       "sql_score": 0.0,
       "strict_correctness": 0.2568,
-      "strict_final_score": 0.1584,
+      "strict_final_score": 0.178,
       "strict_scoring_status": "available",
-      "system": "structured_sql_plan_with_tool_choice_guard_v1",
+      "system": "structured_sql_plan_semantic_repair_v1",
       "tool_calls": 1,
       "trace_assertions": {
         "api_endpoint_candidate": "journey_list",
@@ -66006,12 +66282,18 @@
         "api_endpoint_validation_ok": true,
         "did_llm_choose_tool": true,
         "did_llm_plan": true,
+        "fallback_to_sql_result_answer": false,
         "final_answer": "0 journeys found",
         "rejected_unsupported_claim_count": 0,
         "selected_tool": "call_api",
+        "semantic_repair_attempted": false,
+        "semantic_repair_success": false,
+        "semantic_score": null,
+        "semantic_verification_ok": null,
         "sql_candidate": null,
         "sql_repair_attempted": false,
         "sql_repair_success": false,
+        "sql_result_grounded": false,
         "sql_validation_ok": false,
         "structured_plan_compile_ok": null,
         "structured_plan_validation_ok": null,
@@ -66020,7 +66302,7 @@
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "structured_sql_plan_with_tool_choice_guard_v1",
+        "baseline_variant": "structured_sql_plan_semantic_repair_v1",
         "estimated_tokens": 2120,
         "failure_stage": "no_clear_failure",
         "final_answer": "0 journeys found",
@@ -66028,7 +66310,7 @@
         "original_query": "List all journeys",
         "pure_llm_tool_agent": true,
         "rejected_unsupported_claim_count": 0,
-        "runtime": 20.477796083781868,
+        "runtime": 14.603778833989054,
         "steps": [
           {
             "context_summary": {
@@ -66162,7 +66444,7 @@
               "reason": "The user request is to list all journeys, and the available API endpoint '/ajo/journey' is suitable for this purpose.",
               "sql_task": null
             },
-            "variant": "structured_sql_plan_with_tool_choice_guard_v1"
+            "variant": "structured_sql_plan_semantic_repair_v1"
           },
           {
             "_usage": {
@@ -66423,8 +66705,8 @@
                 "journey_list",
                 "live_empty",
                 "live_evidence_available",
-                "metadata.lastModifiedAt>2026-05-18",
-                "metadata.lastmodifiedat>2026-05-18",
+                "metadata.lastModifiedAt>2026-05-19",
+                "metadata.lastmodifiedat>2026-05-19",
                 "method",
                 "names",
                 "no matching records",
@@ -66445,7 +66727,7 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "structured_sql_plan_with_tool_choice_guard_v1",
+        "strategy": "structured_sql_plan_semantic_repair_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
@@ -66454,12 +66736,18 @@
           "api_endpoint_validation_ok": true,
           "did_llm_choose_tool": true,
           "did_llm_plan": true,
+          "fallback_to_sql_result_answer": false,
           "final_answer": "0 journeys found",
           "rejected_unsupported_claim_count": 0,
           "selected_tool": "call_api",
+          "semantic_repair_attempted": false,
+          "semantic_repair_success": false,
+          "semantic_score": null,
+          "semantic_verification_ok": null,
           "sql_candidate": null,
           "sql_repair_attempted": false,
           "sql_repair_success": false,
+          "sql_result_grounded": false,
           "sql_validation_ok": false,
           "structured_plan_compile_ok": null,
           "structured_plan_validation_ok": null,
@@ -66471,24 +66759,24 @@
       },
       "unscored_dimension_count": 0,
       "unsupported_claim_count": 0,
-      "variant": "structured_sql_plan_with_tool_choice_guard_v1"
+      "variant": "structured_sql_plan_semantic_repair_v1"
     },
     {
       "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
       "answer_score": 0.2553,
       "api_reason": "No generated API call while gold API exists.",
       "api_score": 0.0,
-      "estimated_tokens": 3988,
+      "estimated_tokens": 4075,
       "failure_stage": "sql_repair_failed",
       "prompt": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
       "query_id": "example_003",
-      "runtime": 38.5463,
+      "runtime": 27.3092,
       "sql_reason": "No generated SQL while gold SQL exists.",
       "sql_score": 0.0,
       "strict_correctness": 0.0766,
       "strict_final_score": -0.0234,
       "strict_scoring_status": "available",
-      "system": "structured_sql_plan_with_tool_choice_guard_v1",
+      "system": "structured_sql_plan_semantic_repair_v1",
       "tool_calls": 1,
       "trace_assertions": {
         "api_endpoint_candidate": null,
@@ -66496,12 +66784,18 @@
         "api_endpoint_validation_ok": false,
         "did_llm_choose_tool": true,
         "did_llm_plan": true,
+        "fallback_to_sql_result_answer": false,
         "final_answer": "The available tool evidence does not contain enough supported data to answer.",
         "rejected_unsupported_claim_count": 2,
         "selected_tool": "execute_sql",
+        "semantic_repair_attempted": false,
+        "semantic_repair_success": true,
+        "semantic_score": null,
+        "semantic_verification_ok": true,
         "sql_candidate": "",
         "sql_repair_attempted": true,
         "sql_repair_success": false,
+        "sql_result_grounded": false,
         "sql_validation_ok": false,
         "structured_plan_compile_ok": false,
         "structured_plan_validation_ok": false,
@@ -66510,15 +66804,15 @@
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "structured_sql_plan_with_tool_choice_guard_v1",
-        "estimated_tokens": 3988,
+        "baseline_variant": "structured_sql_plan_semantic_repair_v1",
+        "estimated_tokens": 4075,
         "failure_stage": "sql_repair_failed",
         "final_answer": "The available tool evidence does not contain enough supported data to answer.",
         "llm_total_tokens": 1904,
         "original_query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
         "pure_llm_tool_agent": true,
         "rejected_unsupported_claim_count": 2,
-        "runtime": 38.54625962488353,
+        "runtime": 27.309189166873693,
         "steps": [
           {
             "context_summary": {
@@ -66630,7 +66924,7 @@
               "reason": "The task requires selecting specific columns from the 'dim_segment' table based on the target 'SMS Opt-In'. The audience details and their usage in other segments are requested.",
               "sql_task": "SELECT SEGMENTID, UPDATEDTIME, ISACCOUNTSEGMENT FROM dim_segment WHERE DATAFLOWNAME = 'SMS Opt-In' AND STATE = 'ACTIVE' AND ISACCOUNTSEGMENT = 'Y' LIMIT 1000"
             },
-            "variant": "structured_sql_plan_with_tool_choice_guard_v1"
+            "variant": "structured_sql_plan_semantic_repair_v1"
           },
           {
             "_usage": {
@@ -66862,6 +67156,13 @@
                   "warnings": []
                 },
                 "round": 0,
+                "semantic_verification": {
+                  "errors": [],
+                  "ok": true,
+                  "repair_hint": "",
+                  "semantic_score": null,
+                  "warnings": []
+                },
                 "sql": "",
                 "structured_sql_plan": {
                   "_usage": {
@@ -66976,6 +67277,13 @@
                   "warnings": []
                 },
                 "round": 1,
+                "semantic_verification": {
+                  "errors": [],
+                  "ok": true,
+                  "repair_hint": "",
+                  "semantic_score": null,
+                  "warnings": []
+                },
                 "sql": "",
                 "structured_sql_plan": {
                   "_usage": {
@@ -67087,6 +67395,13 @@
                   "warnings": []
                 },
                 "round": 2,
+                "semantic_verification": {
+                  "errors": [],
+                  "ok": true,
+                  "repair_hint": "",
+                  "semantic_score": null,
+                  "warnings": []
+                },
                 "sql": "",
                 "structured_sql_plan": {
                   "_usage": {
@@ -67211,7 +67526,7 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "structured_sql_plan_with_tool_choice_guard_v1",
+        "strategy": "structured_sql_plan_semantic_repair_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
@@ -67220,12 +67535,18 @@
           "api_endpoint_validation_ok": false,
           "did_llm_choose_tool": true,
           "did_llm_plan": true,
+          "fallback_to_sql_result_answer": false,
           "final_answer": "The available tool evidence does not contain enough supported data to answer.",
           "rejected_unsupported_claim_count": 2,
           "selected_tool": "execute_sql",
+          "semantic_repair_attempted": false,
+          "semantic_repair_success": true,
+          "semantic_score": null,
+          "semantic_verification_ok": true,
           "sql_candidate": "",
           "sql_repair_attempted": true,
           "sql_repair_success": false,
+          "sql_result_grounded": false,
           "sql_validation_ok": false,
           "structured_plan_compile_ok": false,
           "structured_plan_validation_ok": false,
@@ -67237,24 +67558,24 @@
       },
       "unscored_dimension_count": 0,
       "unsupported_claim_count": 0,
-      "variant": "structured_sql_plan_with_tool_choice_guard_v1"
+      "variant": "structured_sql_plan_semantic_repair_v1"
     },
     {
       "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
       "answer_score": 0.2029,
       "api_reason": "No gold API supplied; API dimension unscored in strict mode.",
       "api_score": null,
-      "estimated_tokens": 3227,
+      "estimated_tokens": 3040,
       "failure_stage": "no_clear_failure",
       "prompt": "Show me the IDs of failed dataflow runs",
       "query_id": "example_004",
-      "runtime": 27.7094,
+      "runtime": 16.2043,
       "sql_reason": "No generated SQL while gold SQL exists.",
       "sql_score": 0.0,
       "strict_correctness": 0.087,
-      "strict_final_score": -0.013,
+      "strict_final_score": -0.0049,
       "strict_scoring_status": "available",
-      "system": "structured_sql_plan_with_tool_choice_guard_v1",
+      "system": "structured_sql_plan_semantic_repair_v1",
       "tool_calls": 1,
       "trace_assertions": {
         "api_endpoint_candidate": "flowservice_runs",
@@ -67262,12 +67583,18 @@
         "api_endpoint_validation_ok": true,
         "did_llm_choose_tool": true,
         "did_llm_plan": true,
+        "fallback_to_sql_result_answer": false,
         "final_answer": "The IDs of failed dataflow runs are as follows:",
         "rejected_unsupported_claim_count": 0,
         "selected_tool": "call_api",
+        "semantic_repair_attempted": false,
+        "semantic_repair_success": false,
+        "semantic_score": null,
+        "semantic_verification_ok": null,
         "sql_candidate": null,
         "sql_repair_attempted": false,
         "sql_repair_success": false,
+        "sql_result_grounded": false,
         "sql_validation_ok": false,
         "structured_plan_compile_ok": null,
         "structured_plan_validation_ok": null,
@@ -67276,15 +67603,15 @@
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "structured_sql_plan_with_tool_choice_guard_v1",
-        "estimated_tokens": 3227,
+        "baseline_variant": "structured_sql_plan_semantic_repair_v1",
+        "estimated_tokens": 3040,
         "failure_stage": "no_clear_failure",
         "final_answer": "The IDs of failed dataflow runs are as follows:",
         "llm_total_tokens": 1860,
         "original_query": "Show me the IDs of failed dataflow runs",
         "pure_llm_tool_agent": true,
         "rejected_unsupported_claim_count": 0,
-        "runtime": 27.709420958999544,
+        "runtime": 16.20431570801884,
         "steps": [
           {
             "context_summary": {
@@ -67410,19 +67737,19 @@
               "reason": "The user request is to show IDs of failed dataflow runs, which can be achieved through an API call.",
               "sql_task": null
             },
-            "variant": "structured_sql_plan_with_tool_choice_guard_v1"
+            "variant": "structured_sql_plan_semantic_repair_v1"
           },
           {
             "_usage": {
               "final": {
-                "completion_tokens": 420,
+                "completion_tokens": 405,
                 "completion_tokens_details": null,
-                "prompt_tokens": 2017,
+                "prompt_tokens": 2020,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 2437
+                "total_tokens": 2425
               },
               "initial": {
                 "completion_tokens": 119,
@@ -67464,9 +67791,9 @@
             },
             "initial_validation": {
               "endpoint_catalog_may_have_misled_model": true,
-              "evidence_source_that_should_have_been_considered": "unclear",
+              "evidence_source_that_should_have_been_considered": "local_sql_required",
               "final_tool_choice": "call_api",
-              "high_confidence_sql_required": false,
+              "high_confidence_sql_required": true,
               "ignored_schema_context": true,
               "local_schema_has_relevant_tables": true,
               "ok": false,
@@ -67483,7 +67810,7 @@
                 "question_type": "show_failed_dataflow_runs",
                 "sql_reason": "No local snapshot entities found that can answer the question."
               },
-              "rejection_reason": "unresolved_api_path_param",
+              "rejection_reason": "sql_likely_required_api_chosen",
               "top_relevant_api_endpoints": [
                 "flowservice_runs",
                 "audit_events",
@@ -67631,76 +67958,65 @@
               "answer": "The IDs of failed dataflow runs are as follows:",
               "claims": [
                 {
-                  "claim": "The ID of the failed dataflow run is c4a45f68-efda-4b61-910d-d7fbebbe84ee",
-                  "evidence_field": "items",
-                  "evidence_source": "api"
-                },
-                {
-                  "claim": "The ID of the failed dataflow run is 3ace7206-14de-44f1-a542-d2a0a2c655cd",
-                  "evidence_field": "items",
-                  "evidence_source": "api"
-                },
-                {
-                  "claim": "The ID of the failed dataflow run is 7eb4876b-a638-47d2-8105-2b216600c87f",
                   "evidence_field": "items",
                   "evidence_source": "api"
                 }
               ],
               "fallback_used": false,
               "llm_usage": {
-                "completion_tokens": 285,
+                "completion_tokens": 74,
                 "completion_tokens_details": null,
-                "prompt_tokens": 780,
+                "prompt_tokens": 787,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 1065
+                "total_tokens": 861
               },
               "rejected_unsupported_claim_count": 0,
               "rejected_unsupported_claims": [],
               "skipped": false,
               "supported_values": [
-                "\"da031be6-0000-0200-0000-6a14bc1f0000\"",
-                "\"da0363e5-0000-0200-0000-6a14bc110000\"",
-                "\"da0366e5-0000-0200-0000-6a14bc110000\"",
-                "\"da036ae3-0000-0200-0000-6a14bbda0000\"",
-                "\"da03bbe4-0000-0200-0000-6a14bbfd0000\"",
-                "\"da03c8e3-0000-0200-0000-6a14bbe20000\"",
-                "\"da03e4e4-0000-0200-0000-6a14bc030000\"",
-                "\"db030428-0000-0200-0000-6a14bf540000\"",
-                "\"db031459-0000-0200-0000-6a14c2fd0000\"",
-                "\"db031956-0000-0200-0000-6a14c2bc0000\"",
-                "\"db031a2c-0000-0200-0000-6a14bfb00000\"",
-                "\"db031b82-0000-0200-0000-6a14c6990000\"",
-                "\"db031f83-0000-0200-0000-6a14c6ad0000\"",
-                "\"db032526-0000-0200-0000-6a14bf290000\"",
-                "\"db032c7e-0000-0200-0000-6a14c6340000\"",
-                "\"db033ca4-0000-0200-0000-6a14c9ac0000\"",
-                "\"db034e7e-0000-0200-0000-6a14c6380000\"",
-                "\"db03538b-0000-0200-0000-6a14c76d0000\"",
-                "\"db035956-0000-0200-0000-6a14c2c20000\"",
-                "\"db035b7f-0000-0200-0000-6a14c6500000\"",
-                "\"db035e55-0000-0200-0000-6a14c2b30000\"",
-                "\"db035f7e-0000-0200-0000-6a14c63a0000\"",
-                "\"db03622a-0000-0200-0000-6a14bf850000\"",
-                "\"db036e5a-0000-0200-0000-6a14c31b0000\"",
-                "\"db037757-0000-0200-0000-6a14c2d60000\"",
-                "\"db037e28-0000-0200-0000-6a14bf5b0000\"",
-                "\"db039559-0000-0200-0000-6a14c3090000\"",
-                "\"db039a81-0000-0200-0000-6a14c68f0000\"",
-                "\"db039c26-0000-0200-0000-6a14bf330000\"",
-                "\"db039d81-0000-0200-0000-6a14c68f0000\"",
-                "\"db039e20-0000-0200-0000-6a14beb30000\"",
-                "\"db03a22a-0000-0200-0000-6a14bf8d0000\"",
-                "\"db03a479-0000-0200-0000-6a14c5ba0000\"",
-                "\"db03aa27-0000-0200-0000-6a14bf500000\"",
-                "\"db03b02c-0000-0200-0000-6a14bfbc0000\"",
-                "\"db03bc7f-0000-0200-0000-6a14c65a0000\"",
-                "\"db03c09e-0000-0200-0000-6a14c9480000\"",
-                "\"db03c158-0000-0200-0000-6a14c2f40000\"",
-                "\"db03c15a-0000-0200-0000-6a14c3210000\"",
-                "\"db03d32a-0000-0200-0000-6a14bf930000\""
+                "\"ec030804-0000-0200-0000-6a15254b0000\"",
+                "\"ec03091f-0000-0200-0000-6a1528a10000\"",
+                "\"ec030955-0000-0200-0000-6a152fa70000\"",
+                "\"ec030d3d-0000-0200-0000-6a152cb10000\"",
+                "\"ec031904-0000-0200-0000-6a15254d0000\"",
+                "\"ec031d20-0000-0200-0000-6a1528cb0000\"",
+                "\"ec033122-0000-0200-0000-6a1529180000\"",
+                "\"ec033757-0000-0200-0000-6a152ff90000\"",
+                "\"ec034657-0000-0200-0000-6a152ffb0000\"",
+                "\"ec034b06-0000-0200-0000-6a1525770000\"",
+                "\"ec034b3a-0000-0200-0000-6a152c3a0000\"",
+                "\"ec034f1f-0000-0200-0000-6a1528ad0000\"",
+                "\"ec035056-0000-0200-0000-6a152fd20000\"",
+                "\"ec03523c-0000-0200-0000-6a152c970000\"",
+                "\"ec035a55-0000-0200-0000-6a152fb30000\"",
+                "\"ec035c55-0000-0200-0000-6a152fb30000\"",
+                "\"ec036108-0000-0200-0000-6a1525aa0000\"",
+                "\"ec036356-0000-0200-0000-6a152fd40000\"",
+                "\"ec036522-0000-0200-0000-6a15291a0000\"",
+                "\"ec036720-0000-0200-0000-6a1528d60000\"",
+                "\"ec036857-0000-0200-0000-6a1530010000\"",
+                "\"ec036c58-0000-0200-0000-6a1530300000\"",
+                "\"ec036f3a-0000-0200-0000-6a152c3e0000\"",
+                "\"ec03703b-0000-0200-0000-6a152c740000\"",
+                "\"ec037120-0000-0200-0000-6a1528d80000\"",
+                "\"ec037c59-0000-0200-0000-6a15304d0000\"",
+                "\"ec03891b-0000-0200-0000-6a15282c0000\"",
+                "\"ec038958-0000-0200-0000-6a1530340000\"",
+                "\"ec038d37-0000-0200-0000-6a152bc70000\"",
+                "\"ec03913a-0000-0200-0000-6a152c440000\"",
+                "\"ec03921f-0000-0200-0000-6a1528b50000\"",
+                "\"ec039505-0000-0200-0000-6a1525690000\"",
+                "\"ec03963b-0000-0200-0000-6a152c780000\"",
+                "\"ec03a421-0000-0200-0000-6a1529100000\"",
+                "\"ec03a63a-0000-0200-0000-6a152c460000\"",
+                "\"ec03ac06-0000-0200-0000-6a1525810000\"",
+                "\"ec03b352-0000-0200-0000-6a152f540000\"",
+                "\"ec03b93b-0000-0200-0000-6a152c7f0000\"",
+                "\"ec03ce1f-0000-0200-0000-6a1528bf0000\"",
+                "\"ec03d203-0000-0200-0000-6a1525460000\""
               ],
               "tool_result_used": true,
               "unsupported_claim_count": 0,
@@ -67709,7 +68025,7 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "structured_sql_plan_with_tool_choice_guard_v1",
+        "strategy": "structured_sql_plan_semantic_repair_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
@@ -67718,12 +68034,18 @@
           "api_endpoint_validation_ok": true,
           "did_llm_choose_tool": true,
           "did_llm_plan": true,
+          "fallback_to_sql_result_answer": false,
           "final_answer": "The IDs of failed dataflow runs are as follows:",
           "rejected_unsupported_claim_count": 0,
           "selected_tool": "call_api",
+          "semantic_repair_attempted": false,
+          "semantic_repair_success": false,
+          "semantic_score": null,
+          "semantic_verification_ok": null,
           "sql_candidate": null,
           "sql_repair_attempted": false,
           "sql_repair_success": false,
+          "sql_result_grounded": false,
           "sql_validation_ok": false,
           "structured_plan_compile_ok": null,
           "structured_plan_validation_ok": null,
@@ -67735,7 +68057,7 @@
       },
       "unscored_dimension_count": 1,
       "unsupported_claim_count": 0,
-      "variant": "structured_sql_plan_with_tool_choice_guard_v1"
+      "variant": "structured_sql_plan_semantic_repair_v1"
     }
   ],
   "skipped_reason": null,
@@ -67795,18 +68117,18 @@
         "unsupported_claims": 1
       },
       {
-        "answer_score": 0.1338,
+        "answer_score": 0.1763,
         "api_score": 0.5533,
         "compile_success_rate": 0.5,
-        "estimated_tokens": 2977.4,
+        "estimated_tokens": 3241.4,
         "rows": 5,
-        "runtime": 23.5413,
+        "runtime": 17.583,
         "sql_score": 0.0,
         "sql_validation_pass_rate": 0.2,
-        "strict_correctness": 0.1451,
-        "strict_final_score": 0.0505,
+        "strict_correctness": 0.1633,
+        "strict_final_score": 0.0727,
         "strict_scoring_status": "available",
-        "system": "structured_sql_plan_with_tool_choice_guard_v1",
+        "system": "structured_sql_plan_semantic_repair_v1",
         "tool_calls": 1.0,
         "unsupported_claims": 0
       }
@@ -67967,6 +68289,70 @@
       "description": "Allows API-only planning only when local schema evidence is unavailable or live API is explicit.",
       "status": "shadow_diagnostic",
       "variant": "api_only_only_when_sql_unavailable_v1"
+    },
+    {
+      "capabilities": {
+        "api_guard": true,
+        "evidence_locked_answer": true,
+        "evidence_source_planner": true,
+        "schema_context": true,
+        "semantic_sql_verify": true,
+        "sql_repair": false,
+        "structured_plan": true,
+        "structured_sql_plan": true
+      },
+      "description": "Adds semantic SQL-plan verification before execution; failed semantic plans do not execute.",
+      "status": "shadow_diagnostic",
+      "variant": "structured_sql_plan_semantic_verified_v1"
+    },
+    {
+      "capabilities": {
+        "api_guard": true,
+        "evidence_locked_answer": true,
+        "evidence_source_planner": true,
+        "schema_context": true,
+        "semantic_sql_verify": true,
+        "sql_repair": true,
+        "structured_plan": true,
+        "structured_sql_plan": true
+      },
+      "description": "Adds semantic SQL-plan verification plus repair feedback before execution.",
+      "status": "shadow_diagnostic",
+      "variant": "structured_sql_plan_semantic_repair_v1"
+    },
+    {
+      "capabilities": {
+        "api_guard": true,
+        "evidence_locked_answer": true,
+        "evidence_source_planner": true,
+        "schema_context": true,
+        "semantic_sql_verify": true,
+        "sql_repair": true,
+        "sql_result_answer_grounder": true,
+        "structured_plan": true,
+        "structured_sql_plan": true
+      },
+      "description": "Adds deterministic SQL-result answer grounding fallback after semantic SQL repair.",
+      "status": "shadow_diagnostic",
+      "variant": "sql_grounded_answer_v1"
+    },
+    {
+      "capabilities": {
+        "api_guard": true,
+        "api_only_requires_sql_unavailable": true,
+        "evidence_locked_answer": true,
+        "evidence_source_planner": true,
+        "force_sql_when_high_confidence": true,
+        "schema_context": true,
+        "semantic_sql_verify": true,
+        "sql_repair": true,
+        "sql_result_answer_grounder": true,
+        "structured_plan": true,
+        "structured_sql_plan": true
+      },
+      "description": "Conservative SQL-first semantic variant; API-only is allowed only when SQL is not strongly grounded or live API is explicit.",
+      "status": "shadow_diagnostic",
+      "variant": "conservative_sql_first_semantic_v1"
     }
   ]
 }

@@ -1706,20 +1706,10 @@
     },
     {
       "aggregation": "none",
-      "execution_result": {
-        "error": null,
-        "limited": false,
-        "ok": true,
-        "row_count": 1,
-        "rows": [
-          {
-            "UPDATEDTIME": "2026-03-31T06:07:32.838462639Z"
-          }
-        ]
-      },
+      "execution_result": null,
       "expected_answer_intent": "DATE",
       "failure_reason": "invalid_sql_syntax",
-      "failure_stage": "no_clear_failure",
+      "failure_stage": "tool_execution_failed",
       "filters": [
         {
           "column": "CAMPAIGNNAME",
@@ -1730,21 +1720,19 @@
       ],
       "llm_sql_plan": {
         "_usage": {
-          "completion_tokens": 135,
+          "completion_tokens": 165,
           "completion_tokens_details": null,
-          "prompt_tokens": 2376,
+          "prompt_tokens": 1786,
           "prompt_tokens_details": {
             "audio_tokens": null,
-            "cached_tokens": 3
+            "cached_tokens": 104
           },
-          "total_tokens": 2511
+          "total_tokens": 1951
         },
         "aggregation": null,
-        "answer_intent": "DATE",
         "columns_needed": [
           "UPDATEDTIME"
         ],
-        "confidence": 0.98,
         "filters": [
           {
             "column": "CAMPAIGNNAME",
@@ -1756,17 +1744,13 @@
         "join_path_reason": null,
         "limit": null,
         "order_by": null,
-        "primary_entity": "Birthday Message",
-        "primary_table": "dim_campaign",
-        "tables_needed": [
-          "dim_campaign"
-        ]
+        "primary_table": "dim_campaign"
       },
       "prompt": "When was the journey 'Birthday Message' published?",
       "prompt_id": null,
       "query_id": "example_000",
       "raw_sql_candidate": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
-      "repair_attempt_count": 0,
+      "repair_attempt_count": 2,
       "repair_result": "success",
       "selected_columns": [
         "UPDATEDTIME"
@@ -1798,7 +1782,7 @@
         "unknown_columns": [],
         "unknown_tables": []
       },
-      "variant": "api_only_only_when_sql_unavailable_v1"
+      "variant": "conservative_sql_first_semantic_v1"
     },
     {
       "aggregation": "none",
@@ -1837,20 +1821,14 @@
       "sqlglot_result": {
         "parse_error": "empty_sql"
       },
-      "variant": "api_only_only_when_sql_unavailable_v1"
+      "variant": "conservative_sql_first_semantic_v1"
     },
     {
       "aggregation": "none",
-      "execution_result": {
-        "error": null,
-        "limited": false,
-        "ok": true,
-        "row_count": 0,
-        "rows": []
-      },
+      "execution_result": null,
       "expected_answer_intent": "LIST",
       "failure_reason": "invalid_sql_syntax",
-      "failure_stage": "no_clear_failure",
+      "failure_stage": "tool_execution_failed",
       "filters": [
         {
           "column": "CAMPAIGNID",
@@ -1861,17 +1839,16 @@
       ],
       "llm_sql_plan": {
         "_usage": {
-          "completion_tokens": 151,
+          "completion_tokens": 197,
           "completion_tokens_details": null,
-          "prompt_tokens": 2344,
+          "prompt_tokens": 1869,
           "prompt_tokens_details": {
             "audio_tokens": null,
-            "cached_tokens": 3
+            "cached_tokens": 98
           },
-          "total_tokens": 2495
+          "total_tokens": 2066
         },
         "aggregation": null,
-        "answer_intent": "LIST",
         "columns_needed": [
           "CAMPAIGNID",
           "UPDATEDTIME",
@@ -1887,10 +1864,8 @@
           }
         ],
         "join_needed": false,
-        "join_path_reason": null,
         "limit": 50,
         "order_by": null,
-        "primary_entity": "journeys",
         "primary_table": "dim_campaign",
         "tables_needed": [
           "dim_campaign"
@@ -1900,7 +1875,7 @@
       "prompt_id": null,
       "query_id": "example_002",
       "raw_sql_candidate": "SELECT \"CAMPAIGNID\", \"UPDATEDTIME\", \"STARTDATE\", \"IMSORGID\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"CAMPAIGNID\" = NULL LIMIT 50",
-      "repair_attempt_count": 0,
+      "repair_attempt_count": 2,
       "repair_result": "success",
       "selected_columns": [
         "CAMPAIGNID",
@@ -1938,20 +1913,14 @@
         "unknown_columns": [],
         "unknown_tables": []
       },
-      "variant": "api_only_only_when_sql_unavailable_v1"
+      "variant": "conservative_sql_first_semantic_v1"
     },
     {
       "aggregation": "none",
-      "execution_result": {
-        "error": null,
-        "limited": false,
-        "ok": true,
-        "row_count": 0,
-        "rows": []
-      },
+      "execution_result": null,
       "expected_answer_intent": "SELECT",
       "failure_reason": "invalid_sql_syntax",
-      "failure_stage": "tool_result_ignored",
+      "failure_stage": "tool_execution_failed",
       "filters": [
         {
           "column": "ISACCOUNTSEGMENT",
@@ -2043,16 +2012,88 @@
         "unknown_columns": [],
         "unknown_tables": []
       },
-      "variant": "api_only_only_when_sql_unavailable_v1"
+      "variant": "conservative_sql_first_semantic_v1"
+    },
+    {
+      "aggregation": "none",
+      "execution_result": null,
+      "expected_answer_intent": "LIST",
+      "failure_reason": "hallucinated_table",
+      "failure_stage": "sql_repair_failed",
+      "filters": [
+        {
+          "column": "STATE",
+          "operator": "equals",
+          "table": "export_batch_failed",
+          "value": "failed"
+        }
+      ],
+      "llm_sql_plan": {
+        "_usage": {
+          "completion_tokens": 207,
+          "completion_tokens_details": null,
+          "prompt_tokens": 1835,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cached_tokens": 104
+          },
+          "total_tokens": 2042
+        },
+        "aggregation": null,
+        "columns_needed": [
+          "DATAFLOWNAME",
+          "UPDATEDTIME",
+          "STATE"
+        ],
+        "filters": [
+          {
+            "column": "STATE",
+            "operator": "=",
+            "value": "failed"
+          }
+        ],
+        "join_needed": false,
+        "join_path_reason": null,
+        "limit": null,
+        "order_by": [
+          {
+            "column": "UPDATEDTIME",
+            "order": "ASC"
+          }
+        ],
+        "primary_table": "export_batch_failed",
+        "tables_needed": [
+          "export_batch_failed"
+        ]
+      },
+      "prompt": "Show me the IDs of failed dataflow runs",
+      "prompt_id": null,
+      "query_id": "example_004",
+      "raw_sql_candidate": "",
+      "repair_attempt_count": 2,
+      "repair_result": "failed",
+      "selected_columns": [],
+      "selected_joins": [],
+      "selected_tables": [],
+      "sql_validator_result": {
+        "errors": [
+          "Unknown table: export_batch_failed."
+        ],
+        "ok": false
+      },
+      "sqlglot_result": {
+        "parse_error": "empty_sql"
+      },
+      "variant": "conservative_sql_first_semantic_v1"
     }
   ],
-  "generated_at": "2026-05-25T22:16:57.942214+00:00",
+  "generated_at": "2026-05-26T05:43:34.816260+00:00",
   "promotion_allowed": false,
   "report_type": "pure_llm_sql_generation_failure_analysis",
   "summary": {
     "failure_categories": {
       "hallucinated_column": 5,
-      "hallucinated_table": 3,
+      "hallucinated_table": 4,
       "invalid_sql_syntax": 6,
       "no_clear_sql_failure": 21
     },
@@ -2062,6 +2103,6 @@
       "likely_cause": "not_observed_in_current_report",
       "prompt_ids": []
     },
-    "sql_failure_count": 35
+    "sql_failure_count": 36
   }
 }

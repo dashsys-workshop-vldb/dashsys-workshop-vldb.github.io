@@ -5,6 +5,7 @@ from typing import Any
 from .db import DuckDBDatabase
 from .llm_client import LLMClient, get_llm_client
 from .llm_sql_plan_compiler import compile_structured_sql_plan
+from .llm_sql_semantic_verifier import verify_sql_plan_semantics
 from .llm_tool_agent_prompts import (
     build_sql_candidate_prompt,
     build_sql_repair_prompt,
@@ -26,6 +27,7 @@ def run_sql_repair_loop(
     plan: dict[str, Any] | None = None,
     max_repair_rounds: int = 2,
     structured_sql_plan: bool = False,
+    semantic_verify: bool = False,
 ) -> dict[str, Any]:
     client = llm_client or get_llm_client()
     if not client.available():
@@ -46,6 +48,7 @@ def run_sql_repair_loop(
             client,
             plan=plan,
             max_repair_rounds=max_repair_rounds,
+            semantic_verify=semantic_verify,
         )
 
     attempts: list[dict[str, Any]] = []
@@ -106,6 +109,7 @@ def _run_structured_plan_repair_loop(
     *,
     plan: dict[str, Any] | None,
     max_repair_rounds: int,
+    semantic_verify: bool,
 ) -> dict[str, Any]:
     attempts: list[dict[str, Any]] = []
     bundle = build_structured_sql_plan_prompt(prompt, schema_context, plan)
@@ -115,6 +119,17 @@ def _run_structured_plan_repair_loop(
         sql = str(compiled.get("sql") or "")
         validation = sql_validator.validate(sql) if compiled.get("ok") and sql else None
         ast = sql_validator.ast_summary(sql) if sql else {"parse_error": "empty_sql"}
+        semantic = (
+            verify_sql_plan_semantics(
+                prompt,
+                plan.get("evidence_source_plan") if isinstance(plan, dict) else {},
+                candidate_plan,
+                schema_context,
+                str(candidate_plan.get("answer_intent") or (plan or {}).get("answer_intent") or schema_context.get("answer_intent") or ""),
+            )
+            if semantic_verify and compiled.get("ok")
+            else {"ok": True, "errors": [], "warnings": [], "semantic_score": None, "repair_hint": ""}
+        )
         attempt = {
             "round": round_index,
             "structured_sql_plan": candidate_plan,
@@ -123,13 +138,14 @@ def _run_structured_plan_repair_loop(
                 "errors": compiled.get("errors", []),
                 "warnings": compiled.get("warnings", []),
             },
+            "semantic_verification": semantic,
             "compile": compiled,
             "sql": sql,
             "validation": validation.to_dict() if validation else {"ok": False, "errors": compiled.get("errors", [])},
             "ast_summary": ast,
             "executed": False,
         }
-        if compiled.get("ok") and validation and validation.ok:
+        if compiled.get("ok") and validation and validation.ok and semantic.get("ok"):
             execution = db.execute_sql(sql)
             attempt["executed"] = True
             attempt["execution_ok"] = bool(execution.get("ok"))
@@ -148,6 +164,9 @@ def _run_structured_plan_repair_loop(
                     "plan_validation_success": True,
                     "compile_success": True,
                     "sql_validation_success": True,
+                    "semantic_repair_attempted": bool(semantic_verify and round_index > 0),
+                    "semantic_repair_success": bool(semantic_verify and round_index > 0),
+                    "final_semantic_score": semantic.get("semantic_score"),
                     "execution_success": bool(execution.get("ok")),
                     "failure_stage": None if execution.get("ok") else "sql_execution_failed",
                 }
@@ -158,6 +177,10 @@ def _run_structured_plan_repair_loop(
         errors = list(compiled.get("errors", []))
         if validation and not validation.ok:
             errors.extend(validation.errors)
+        if semantic_verify and not semantic.get("ok"):
+            errors.extend(semantic.get("errors", []))
+            if semantic.get("repair_hint"):
+                errors.append(f"Semantic repair hint: {semantic['repair_hint']}")
         repair = build_structured_sql_plan_repair_prompt(prompt, schema_context, candidate_plan, errors)
         candidate_plan = _normalize_structured_plan_candidate(_call_json(client, repair.system_prompt, repair.user_prompt))
     return redact_secrets(
@@ -170,12 +193,21 @@ def _run_structured_plan_repair_loop(
             "plan_validation_success": False,
             "compile_success": False,
             "sql_validation_success": False,
+            "semantic_repair_attempted": any(
+                not (attempt.get("semantic_verification") or {}).get("ok", True) for attempt in attempts
+            ),
+            "semantic_repair_success": False,
+            "final_semantic_score": (attempts[-1].get("semantic_verification") or {}).get("semantic_score") if attempts else None,
             "execution_success": False,
             "failure_stage": "sql_plan_unrepairable",
             "safe_answer": "I could not produce a validated SQL query from the available schema.",
             "error": "; ".join(attempts[-1].get("validation", {}).get("errors", [])) if attempts else "no_sql_plan_candidate",
         }
     )
+
+
+def _semantic_repair_attempted(attempts: list[dict[str, Any]]) -> bool:
+    return any(not (attempt.get("semantic_verification") or {}).get("ok", True) for attempt in attempts[:-1])
 
 
 def _call_json(client: LLMClient, system_prompt: str, user_prompt: str) -> dict[str, Any]:

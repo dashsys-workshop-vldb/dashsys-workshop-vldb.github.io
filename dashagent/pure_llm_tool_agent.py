@@ -14,6 +14,7 @@ from .llm_client import LLMClient, get_llm_client
 from .llm_evidence_locked_answer import evidence_locked_answer
 from .llm_sql_context_builder import build_llm_sql_context, infer_answer_intent
 from .llm_sql_repair_loop import run_sql_repair_loop
+from .llm_sql_result_answer_grounder import ground_sql_result_answer
 from .llm_tool_agent_prompts import build_api_candidate_prompt, build_planning_prompt, parse_json_object
 from .schema_index import SchemaIndex
 from .trajectory import estimate_tokens, redact_secrets
@@ -31,6 +32,10 @@ STRUCTURED_SQL_PLAN_BACKEND_ANSWER_ONLY = "structured_sql_plan_backend_answer_on
 STRUCTURED_SQL_PLAN_WITH_TOOL_CHOICE_GUARD_V1 = "structured_sql_plan_with_tool_choice_guard_v1"
 SQL_FIRST_WHEN_VALIDATOR_HIGH_CONFIDENCE_V1 = "sql_first_when_validator_high_confidence_v1"
 API_ONLY_ONLY_WHEN_SQL_UNAVAILABLE_V1 = "api_only_only_when_sql_unavailable_v1"
+STRUCTURED_SQL_PLAN_SEMANTIC_VERIFIED_V1 = "structured_sql_plan_semantic_verified_v1"
+STRUCTURED_SQL_PLAN_SEMANTIC_REPAIR_V1 = "structured_sql_plan_semantic_repair_v1"
+SQL_GROUNDED_ANSWER_V1 = "sql_grounded_answer_v1"
+CONSERVATIVE_SQL_FIRST_SEMANTIC_V1 = "conservative_sql_first_semantic_v1"
 
 PURE_LLM_TOOL_AGENT_VARIANTS = [
     STRUCTURED_PLAN_THEN_TOOLS,
@@ -44,6 +49,10 @@ PURE_LLM_TOOL_AGENT_VARIANTS = [
     STRUCTURED_SQL_PLAN_WITH_TOOL_CHOICE_GUARD_V1,
     SQL_FIRST_WHEN_VALIDATOR_HIGH_CONFIDENCE_V1,
     API_ONLY_ONLY_WHEN_SQL_UNAVAILABLE_V1,
+    STRUCTURED_SQL_PLAN_SEMANTIC_VERIFIED_V1,
+    STRUCTURED_SQL_PLAN_SEMANTIC_REPAIR_V1,
+    SQL_GROUNDED_ANSWER_V1,
+    CONSERVATIVE_SQL_FIRST_SEMANTIC_V1,
 ]
 
 
@@ -138,6 +147,50 @@ VARIANT_CAPABILITIES = {
         "force_sql_when_high_confidence": True,
         "api_only_requires_sql_unavailable": True,
     },
+    STRUCTURED_SQL_PLAN_SEMANTIC_VERIFIED_V1: {
+        "structured_plan": True,
+        "schema_context": True,
+        "sql_repair": False,
+        "structured_sql_plan": True,
+        "api_guard": True,
+        "evidence_locked_answer": True,
+        "evidence_source_planner": True,
+        "semantic_sql_verify": True,
+    },
+    STRUCTURED_SQL_PLAN_SEMANTIC_REPAIR_V1: {
+        "structured_plan": True,
+        "schema_context": True,
+        "sql_repair": True,
+        "structured_sql_plan": True,
+        "api_guard": True,
+        "evidence_locked_answer": True,
+        "evidence_source_planner": True,
+        "semantic_sql_verify": True,
+    },
+    SQL_GROUNDED_ANSWER_V1: {
+        "structured_plan": True,
+        "schema_context": True,
+        "sql_repair": True,
+        "structured_sql_plan": True,
+        "api_guard": True,
+        "evidence_locked_answer": True,
+        "evidence_source_planner": True,
+        "semantic_sql_verify": True,
+        "sql_result_answer_grounder": True,
+    },
+    CONSERVATIVE_SQL_FIRST_SEMANTIC_V1: {
+        "structured_plan": True,
+        "schema_context": True,
+        "sql_repair": True,
+        "structured_sql_plan": True,
+        "api_guard": True,
+        "evidence_locked_answer": True,
+        "evidence_source_planner": True,
+        "semantic_sql_verify": True,
+        "sql_result_answer_grounder": True,
+        "force_sql_when_high_confidence": True,
+        "api_only_requires_sql_unavailable": True,
+    },
 }
 
 
@@ -219,6 +272,30 @@ def pure_llm_baseline_definitions() -> list[dict[str, Any]]:
             "capabilities": VARIANT_CAPABILITIES[API_ONLY_ONLY_WHEN_SQL_UNAVAILABLE_V1],
             "status": "shadow_diagnostic",
         },
+        {
+            "variant": STRUCTURED_SQL_PLAN_SEMANTIC_VERIFIED_V1,
+            "description": "Adds semantic SQL-plan verification before execution; failed semantic plans do not execute.",
+            "capabilities": VARIANT_CAPABILITIES[STRUCTURED_SQL_PLAN_SEMANTIC_VERIFIED_V1],
+            "status": "shadow_diagnostic",
+        },
+        {
+            "variant": STRUCTURED_SQL_PLAN_SEMANTIC_REPAIR_V1,
+            "description": "Adds semantic SQL-plan verification plus repair feedback before execution.",
+            "capabilities": VARIANT_CAPABILITIES[STRUCTURED_SQL_PLAN_SEMANTIC_REPAIR_V1],
+            "status": "shadow_diagnostic",
+        },
+        {
+            "variant": SQL_GROUNDED_ANSWER_V1,
+            "description": "Adds deterministic SQL-result answer grounding fallback after semantic SQL repair.",
+            "capabilities": VARIANT_CAPABILITIES[SQL_GROUNDED_ANSWER_V1],
+            "status": "shadow_diagnostic",
+        },
+        {
+            "variant": CONSERVATIVE_SQL_FIRST_SEMANTIC_V1,
+            "description": "Conservative SQL-first semantic variant; API-only is allowed only when SQL is not strongly grounded or live API is explicit.",
+            "capabilities": VARIANT_CAPABILITIES[CONSERVATIVE_SQL_FIRST_SEMANTIC_V1],
+            "status": "shadow_diagnostic",
+        },
     ]
 
 
@@ -274,6 +351,7 @@ def run_pure_llm_tool_agent_variant(
             plan=plan,
             max_repair_rounds=2 if capabilities.get("sql_repair") else 0,
             structured_sql_plan=bool(capabilities.get("structured_sql_plan")),
+            semantic_verify=bool(capabilities.get("semantic_sql_verify")),
         )
         sql_result = repair
         steps.append(
@@ -301,6 +379,18 @@ def run_pure_llm_tool_agent_variant(
     else:
         answer_payload = evidence_locked_answer(prompt, observations, llm_client=answer_client, answer_intent=answer_intent)
         final_answer = str(answer_payload.get("answer") or "")
+    if capabilities.get("sql_result_answer_grounder") and sql_result and isinstance(sql_result.get("execution_result"), dict):
+        grounded = ground_sql_result_answer(prompt, final_answer, sql_result["execution_result"], answer_intent=answer_intent)
+        if grounded.get("fallback_to_sql_result_answer"):
+            final_answer = str(grounded.get("answer") or final_answer)
+            answer_payload = {
+                **answer_payload,
+                "answer": final_answer,
+                "unsupported_claim_count": grounded.get("unsupported_claim_count", 0),
+                "unsupported_claims": grounded.get("unsupported_claims", []),
+                "tool_result_used": grounded.get("sql_result_used_in_answer", True),
+                "sql_result_grounding": grounded,
+            }
     steps.append({"kind": "final_answer", "answer": final_answer, "answer_guard": answer_payload})
     runtime = time.perf_counter() - start
     trace_assertions = _trace_assertions(plan, steps, answer_payload)
@@ -619,6 +709,7 @@ def _trace_assertions(plan: dict[str, Any], steps: list[dict[str, Any]], answer_
     final_attempt = attempts[-1] if attempts else {}
     compile_result = final_attempt.get("compile") if isinstance(final_attempt.get("compile"), dict) else {}
     plan_validation = final_attempt.get("plan_validation") if isinstance(final_attempt.get("plan_validation"), dict) else {}
+    semantic = final_attempt.get("semantic_verification") if isinstance(final_attempt.get("semantic_verification"), dict) else {}
     selected_tool = None
     if sql_step:
         selected_tool = "execute_sql"
@@ -632,6 +723,12 @@ def _trace_assertions(plan: dict[str, Any], steps: list[dict[str, Any]], answer_
         "sql_validation_ok": bool(sql_validation.get("ok")),
         "structured_plan_compile_ok": bool(compile_result.get("ok")) if compile_result else None,
         "structured_plan_validation_ok": bool(plan_validation.get("ok")) if plan_validation else None,
+        "semantic_verification_ok": bool(semantic.get("ok")) if semantic else None,
+        "semantic_score": semantic.get("semantic_score") if semantic else None,
+        "semantic_repair_attempted": bool((sql_step.get("attempts") or []) and any(not (attempt.get("semantic_verification") or {}).get("ok", True) for attempt in (sql_step.get("attempts") or [])[:-1])),
+        "semantic_repair_success": bool(semantic.get("ok")) if semantic else False,
+        "sql_result_grounded": bool((answer_payload.get("sql_result_grounding") or {}).get("sql_result_used_in_answer")),
+        "fallback_to_sql_result_answer": bool((answer_payload.get("sql_result_grounding") or {}).get("fallback_to_sql_result_answer")),
         "sql_repair_attempted": int(sql_step.get("repair_rounds") or 0) > 0,
         "sql_repair_success": bool(sql_validation.get("ok")) and int(sql_step.get("repair_rounds") or 0) > 0,
         "api_endpoint_candidate": api_step.get("endpoint_candidate"),

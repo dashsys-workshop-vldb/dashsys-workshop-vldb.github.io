@@ -14,3 +14,7 @@ All variants are diagnostic/shadow-only.
 - `structured_sql_plan_with_tool_choice_guard_v1`: Adds LLM evidence-source planning plus validator/retry before structured SQL/API tool use.
 - `sql_first_when_validator_high_confidence_v1`: Runs SQL first when the tool-choice validator has high confidence local SQL is required.
 - `api_only_only_when_sql_unavailable_v1`: Allows API-only planning only when local schema evidence is unavailable or live API is explicit.
+- `structured_sql_plan_semantic_verified_v1`: Adds semantic SQL-plan verification before execution; failed semantic plans do not execute.
+- `structured_sql_plan_semantic_repair_v1`: Adds semantic SQL-plan verification plus repair feedback before execution.
+- `sql_grounded_answer_v1`: Adds deterministic SQL-result answer grounding fallback after semantic SQL repair.
+- `conservative_sql_first_semantic_v1`: Conservative SQL-first semantic variant; API-only is allowed only when SQL is not strongly grounded or live API is explicit.

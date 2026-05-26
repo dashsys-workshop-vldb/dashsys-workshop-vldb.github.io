@@ -84,6 +84,7 @@ def validate_tool_choice_plan(
     data_question = _data_question(prompt)
     endpoint_path_issue = _unresolved_endpoint(api_ids, endpoint_catalog)
     ignored_schema = bool(schema_grounded and local_tables and not plan.get("local_tables_that_may_answer"))
+    sql_strongly_answerable = bool(schema_grounded and local_tables and not live_requested)
 
     if data_question and preferred == "none" and not needs_sql and not needs_api:
         return _result(
@@ -97,19 +98,7 @@ def validate_tool_choice_plan(
             ignored_schema=ignored_schema,
         )
 
-    if endpoint_path_issue:
-        return _result(
-            ok=False,
-            prompt=prompt,
-            plan=plan,
-            schema_context=schema_context,
-            preferred=preferred,
-            reason="unresolved_api_path_param",
-            evidence_source="unclear",
-            ignored_schema=ignored_schema,
-        )
-
-    if preferred == "call_api" and schema_grounded and local_tables and not live_requested and not needs_sql:
+    if preferred == "call_api" and sql_strongly_answerable and not needs_sql:
         return _result(
             ok=False,
             prompt=prompt,
@@ -120,6 +109,18 @@ def validate_tool_choice_plan(
             evidence_source="local_sql_required",
             ignored_schema=ignored_schema,
             high_confidence_sql_required=True,
+        )
+
+    if endpoint_path_issue:
+        return _result(
+            ok=False,
+            prompt=prompt,
+            plan=plan,
+            schema_context=schema_context,
+            preferred=preferred,
+            reason="unresolved_api_path_param",
+            evidence_source="unclear",
+            ignored_schema=ignored_schema,
         )
 
     if preferred == "execute_sql" and not local_tables:
