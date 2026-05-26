@@ -119,7 +119,7 @@ def extract_objective_prompt_features(prompt: str) -> ObjectivePromptFeatures:
         flags.append("MIXED_CONCEPT_AND_RETRIEVAL")
     if entity:
         flags.append("CONCRETE_ENTITY")
-    if _has_phrase(norm, ("current", "live", "platform", "api", "adobe")):
+    if _has_phrase(norm, ("current", "live", "platform", "api", "adobe", "sandbox")):
         flags.append("LIVE_OR_CURRENT")
     if _has_phrase(norm, ("schema registry", "schemaregistry")):
         flags.append("EXPLICIT_API_FAMILY")

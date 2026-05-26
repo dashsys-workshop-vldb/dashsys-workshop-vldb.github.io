@@ -50,6 +50,50 @@ def _sql_then_optional_api_plan(query, routing, metadata, strategy, analysis=Non
     )
 
 
+def _sql_then_journey_api_plan(query, routing, metadata, strategy, analysis=None):
+    return Plan(
+        strategy=strategy,
+        rationale="unit SQL direct answer plus journey API",
+        steps=[
+            PlanStep(
+                action="sql",
+                purpose="unit journey SQL direct answer",
+                sql="SELECT campaign_id AS id, name, status FROM dim_campaign ORDER BY campaign_id",
+            ),
+            PlanStep(
+                action="api",
+                purpose="unit journey API",
+                method="GET",
+                url="/ajo/journey",
+                params={"pageSize": "10"},
+                family="journey_list",
+            ),
+        ],
+    )
+
+
+def _sql_then_destination_flow_api_plan(query, routing, metadata, strategy, analysis=None):
+    return Plan(
+        strategy=strategy,
+        rationale="unit SQL direct answer plus destination flow API",
+        steps=[
+            PlanStep(
+                action="sql",
+                purpose="unit destination SQL direct answer",
+                sql="SELECT campaign_id AS id, name, status FROM dim_campaign ORDER BY campaign_id LIMIT 1",
+            ),
+            PlanStep(
+                action="api",
+                purpose="unit flowservice API",
+                method="GET",
+                url="/data/foundation/flowservice/flows",
+                params={"limit": "50", "sort": "updatedTime:desc"},
+                family="recent_destination_flows",
+            ),
+        ],
+    )
+
+
 def test_semantic_no_tool_applied_trial_skips_tools_for_conceptual_prompt(tiny_project):
     cfg = replace(
         tiny_project,
@@ -110,6 +154,64 @@ def test_post_sql_deterministic_applied_trial_preserves_live_api_prompt(tiny_pro
     executor.planner.create_plan = _sql_then_optional_api_plan
 
     result = executor.run("List current Adobe schemas", strategy="SQL_FIRST_API_VERIFY", query_id="post_sql_keep_api_unit")
+
+    assert [row["type"] for row in result["tool_results"]] == ["sql", "api"]
+    assert client.calls == 1
+
+
+def test_post_sql_deterministic_applied_trial_preserves_journey_list_api(tiny_project):
+    cfg = replace(
+        tiny_project,
+        enable_post_sql_api_decision=True,
+        post_sql_api_decision_shadow_only=False,
+        enable_post_sql_deterministic_applied_trial=True,
+        real_behavior_trial_mode="post_sql_deterministic_applied_real_trial",
+    )
+    client = CountingAPIClient()
+    executor = AgentExecutor(cfg, api_client=client)
+    executor.planner.create_plan = _sql_then_journey_api_plan
+
+    result = executor.run("List all journeys", strategy="SQL_FIRST_API_VERIFY", query_id="post_sql_keep_journey_api_unit")
+
+    assert [row["type"] for row in result["tool_results"]] == ["sql", "api"]
+    assert client.calls == 1
+
+
+def test_post_sql_deterministic_applied_trial_preserves_status_journey_api(tiny_project):
+    cfg = replace(
+        tiny_project,
+        enable_post_sql_api_decision=True,
+        post_sql_api_decision_shadow_only=False,
+        enable_post_sql_deterministic_applied_trial=True,
+        real_behavior_trial_mode="post_sql_deterministic_applied_real_trial",
+    )
+    client = CountingAPIClient()
+    executor = AgentExecutor(cfg, api_client=client)
+    executor.planner.create_plan = _sql_then_journey_api_plan
+
+    result = executor.run("Give me inactive journeys", strategy="SQL_FIRST_API_VERIFY", query_id="post_sql_keep_status_api_unit")
+
+    assert [row["type"] for row in result["tool_results"]] == ["sql", "api"]
+    assert client.calls == 1
+
+
+def test_post_sql_deterministic_applied_trial_preserves_sandbox_destination_flow_api(tiny_project):
+    cfg = replace(
+        tiny_project,
+        enable_post_sql_api_decision=True,
+        post_sql_api_decision_shadow_only=False,
+        enable_post_sql_deterministic_applied_trial=True,
+        real_behavior_trial_mode="post_sql_deterministic_applied_real_trial",
+    )
+    client = CountingAPIClient()
+    executor = AgentExecutor(cfg, api_client=client)
+    executor.planner.create_plan = _sql_then_destination_flow_api_plan
+
+    result = executor.run(
+        "Export all destinations in the prod sandbox sorted by most recently modified",
+        strategy="SQL_FIRST_API_VERIFY",
+        query_id="post_sql_keep_sandbox_flow_api_unit",
+    )
 
     assert [row["type"] for row in result["tool_results"]] == ["sql", "api"]
     assert client.calls == 1

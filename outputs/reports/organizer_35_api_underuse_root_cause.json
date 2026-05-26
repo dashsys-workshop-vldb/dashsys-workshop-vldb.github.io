@@ -1,0 +1,933 @@
+{
+  "created_at": "2026-05-26T22:46:55.228008+00:00",
+  "fix_verification": {
+    "general_guard": "strict API preservation guard for objective retrieval/status/live/API-family signals against safe matching API candidates",
+    "post_fix_api_required_underuse": 0,
+    "post_fix_baseline_api_score": 0.9791,
+    "post_fix_combined_api_score": 0.9791,
+    "post_fix_combined_final_score": 0.6584,
+    "prompt_id_hardcoding_used": false,
+    "remaining_blocker": "none on organizer 35 strict applied comparison"
+  },
+  "report_type": "organizer_35_api_underuse_root_cause",
+  "rows": [
+    {
+      "api_characterization": {
+        "api_need_mode": "API_OPTIONAL",
+        "endpoint_family_required_by_gold": true,
+        "live_current_platform_status_required": true,
+        "needed_for_answer_fields": "mixed; SQL answer looked complete, but organizer strict API dimension expected endpoint evidence",
+        "needed_for_strict_api_score_only": true,
+        "sql_looked_complete_but_api_was_still_required_by_strict_rubric": true
+      },
+      "applied_decision_records": [
+        {
+          "applied": false,
+          "blockers": {
+            "items": [
+              "RETR"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "decision": "EVIDENCE_PIPELINE",
+          "decision_family": "SEMANTIC_NO_TOOL",
+          "fallback": true,
+          "record": true,
+          "shadow_only": false,
+          "trial_mode": "COMBINED_SAFE_APPLIED_TRIAL",
+          "truncated_fields": 2
+        },
+        {
+          "applied": true,
+          "decision": "SKIP_API",
+          "decision_family": "POST_SQL_API",
+          "fallback": false,
+          "policy": {
+            "api_evidence_signal": 0.35,
+            "codes": {
+              "items": [
+                "SQL_DIRECT_ANSWER"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "confidence": "HIGH",
+            "suggestion": "SKIP_API"
+          },
+          "record": true,
+          "shadow_only": false,
+          "trial_mode": "COMBINED_SAFE_APPLIED_TRIAL",
+          "truncated_fields": 6
+        }
+      ],
+      "baseline": {
+        "api_calls": [
+          {
+            "method": "GET",
+            "params": {
+              "filter": "status!=live"
+            },
+            "path": "/ajo/journey"
+          }
+        ],
+        "final_answer": "There are 2 inactive campaigns: Birthday Message (last updated 2026-03-31) and Gold Tier Welcome Email (last updated 2026-03-31). The API returned usable supporting evidence.",
+        "plan": {
+          "kind": "plan",
+          "optimizer_actions": [
+            "ensemble selected generic_sql_first"
+          ],
+          "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve [truncated]",
+          "steps": [
+            {
+              "action": "sql",
+              "family": "journey_campaign_inactive",
+              "sql_recorded_in_sql_call": true
+            },
+            {
+              "action": "api",
+              "family": "journey_inactive",
+              "method": "GET",
+              "params": {
+                "filter": "status!=live"
+              },
+              "url": "/ajo/journey"
+            }
+          ],
+          "strategy": "SQL_FIRST_API_VERIFY"
+        },
+        "scores": {
+          "answer_score": 0.4764,
+          "api_score": 1.0,
+          "final_score": 0.769,
+          "sql_score": 0.9
+        },
+        "sql_calls": [
+          {
+            "kind": "sql_call",
+            "result": {
+              "error": null,
+              "limited": false,
+              "ok": true,
+              "row_count": 2,
+              "rows": {
+                "items": [
+                  {
+                    "campaign_id": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+                    "campaign_name": "Birthday Message",
+                    "campaign_state": "updated",
+                    "updated_time": "2026-03-31T06:07:32.838462639Z"
+                  }
+                ],
+                "total_items": 2,
+                "truncated_items": true
+              }
+            },
+            "sql": "SELECT J.\"CAMPAIGNID\" AS campaign_id, J.\"NAME\" AS campaign_name, J.\"STATE\" AS campaign_state, J.\"UPDATEDTIME\" AS updated_time FROM \"dim_campaign\" AS J WHERE LOWER(CAST(J.\"STATE\" AS VARCHAR)) NOT IN ('deployed', 'redeployed') LIMIT 50",
+            "validation": {
+              "errors": [],
+              "ok": true,
+              "repaired": false,
+              "warnings": []
+            }
+          }
+        ]
+      },
+      "classification": [
+        "sql_complete_but_api_gold_required",
+        "live_status_signal_missed"
+      ],
+      "combined_safe": {
+        "api_calls": [],
+        "final_answer": "There are 2 inactive campaigns: Birthday Message (last updated 2026-03-31) and Gold Tier Welcome Email (last updated 2026-03-31). API evidence was not requested.",
+        "plan": {
+          "kind": "plan",
+          "optimizer_actions": [
+            "ensemble selected generic_sql_first"
+          ],
+          "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve [truncated]",
+          "steps": [
+            {
+              "action": "sql",
+              "family": "journey_campaign_inactive",
+              "sql_recorded_in_sql_call": true
+            },
+            {
+              "action": "api",
+              "family": "journey_inactive",
+              "method": "GET",
+              "params": {
+                "filter": "status!=live"
+              },
+              "url": "/ajo/journey"
+            }
+          ],
+          "strategy": "SQL_FIRST_API_VERIFY"
+        },
+        "scores": {
+          "answer_score": 0.5586,
+          "api_score": 0.0,
+          "final_score": 0.5093,
+          "sql_score": 0.9
+        },
+        "sql_calls": [
+          {
+            "kind": "sql_call",
+            "result": {
+              "error": null,
+              "limited": false,
+              "ok": true,
+              "row_count": 2,
+              "rows": {
+                "items": [
+                  {
+                    "campaign_id": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+                    "campaign_name": "Birthday Message",
+                    "campaign_state": "updated",
+                    "updated_time": "2026-03-31T06:07:32.838462639Z"
+                  }
+                ],
+                "total_items": 2,
+                "truncated_items": true
+              }
+            },
+            "sql": "SELECT J.\"CAMPAIGNID\" AS campaign_id, J.\"NAME\" AS campaign_name, J.\"STATE\" AS campaign_state, J.\"UPDATEDTIME\" AS updated_time FROM \"dim_campaign\" AS J WHERE LOWER(CAST(J.\"STATE\" AS VARCHAR)) NOT IN ('deployed', 'redeployed') LIMIT 50",
+            "validation": {
+              "errors": [],
+              "ok": true,
+              "repaired": false,
+              "warnings": []
+            }
+          }
+        ]
+      },
+      "exact_skip_reason": "post-SQL deterministic policy returned HIGH/SKIP_API from SQL_DIRECT_ANSWER and verifier accepted VERIFIED_SKIP_API",
+      "gold_answer_present": true,
+      "gold_api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "filter": "status!=live"
+          },
+          "path": "/ajo/journey"
+        }
+      ],
+      "gold_sql_present": true,
+      "post_sql_decision_card": {
+        "allowed_outputs": {
+          "mode": {
+            "items": [
+              "CALL_API"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          }
+        },
+        "answer_intent": "INACTIVE_JOURNEYS",
+        "api_candidates": {
+          "items": [
+            {
+              "can_fill_roles": {
+                "items": [
+                  "id",
+                  "name"
+                ],
+                "total_items": 2,
+                "truncated_items": false
+              },
+              "endpoint_id": "journey_list",
+              "family": "journey_inactive",
+              "live_health": "UNKNOWN",
+              "method": "GET",
+              "requires_path_param": false,
+              "safe_get": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "prompt_features": {
+          "items": [
+            "RETURN"
+          ],
+          "total_items": 7,
+          "truncated_items": true
+        },
+        "sql_state": {
+          "direct_answer": true,
+          "execution": "SUCCESS",
+          "partial_answer": false,
+          "returned_roles": {
+            "items": [
+              "id"
+            ],
+            "total_items": 4,
+            "truncated_items": true
+          },
+          "row_count_bucket": "MANY",
+          "validation": "PASS",
+          "zero_rows": false
+        },
+        "task": "POST_SQL_API_DECISION"
+      },
+      "post_sql_deterministic_policy": {
+        "api_evidence_signal": 0.35,
+        "codes": {
+          "items": [
+            "SQL_DIRECT_ANSWER"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "confidence": "HIGH",
+        "suggestion": "SKIP_API"
+      },
+      "post_sql_verifier": {
+        "codes": {
+          "items": [
+            "VERIFIED_SKIP_API"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "final_action": "SKIP_API",
+        "shadow_only": false,
+        "source": "DETERMINISTIC_HIGH_CONF"
+      },
+      "prompt": "Give me inactive journeys",
+      "query_id": "example_001",
+      "staged_evidence_decision": {
+        "first_branch": "SQL",
+        "policy_codes": {
+          "items": [
+            "SQL_HIGH_API_LOW"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "second_branch_policy": "NONE",
+        "shadow_only": false
+      }
+    },
+    {
+      "api_characterization": {
+        "api_need_mode": "API_OPTIONAL",
+        "endpoint_family_required_by_gold": true,
+        "live_current_platform_status_required": false,
+        "needed_for_answer_fields": "mixed; SQL answer looked complete, but organizer strict API dimension expected endpoint evidence",
+        "needed_for_strict_api_score_only": true,
+        "sql_looked_complete_but_api_was_still_required_by_strict_rubric": true
+      },
+      "applied_decision_records": [
+        {
+          "applied": false,
+          "blockers": {
+            "items": [
+              "RETR"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "decision": "EVIDENCE_PIPELINE",
+          "decision_family": "SEMANTIC_NO_TOOL",
+          "fallback": true,
+          "record": true,
+          "shadow_only": false,
+          "trial_mode": "COMBINED_SAFE_APPLIED_TRIAL",
+          "truncated_fields": 2
+        },
+        {
+          "applied": true,
+          "decision": "SKIP_API",
+          "decision_family": "POST_SQL_API",
+          "fallback": false,
+          "policy": {
+            "api_evidence_signal": 0.35,
+            "codes": {
+              "items": [
+                "SQL_DIRECT_ANSWER"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "confidence": "HIGH",
+            "suggestion": "SKIP_API"
+          },
+          "record": true,
+          "shadow_only": false,
+          "trial_mode": "COMBINED_SAFE_APPLIED_TRIAL",
+          "truncated_fields": 6
+        }
+      ],
+      "baseline": {
+        "api_calls": [
+          {
+            "method": "GET",
+            "params": {
+              "pageSize": "10"
+            },
+            "path": "/ajo/journey"
+          }
+        ],
+        "final_answer": "Based on the available evidence, there are 2 journeys found in the database: Birthday Message and Gold Tier Welcome Email. The API returned usable supporting evidence.",
+        "plan": {
+          "kind": "plan",
+          "optimizer_actions": [
+            "ensemble selected generic_sql_first"
+          ],
+          "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve [truncated]",
+          "steps": [
+            {
+              "action": "sql",
+              "family": "journey_campaign_list",
+              "sql_recorded_in_sql_call": true
+            },
+            {
+              "action": "api",
+              "family": "journey_list",
+              "method": "GET",
+              "params": {
+                "pageSize": "10"
+              },
+              "url": "/ajo/journey"
+            }
+          ],
+          "strategy": "SQL_FIRST_API_VERIFY"
+        },
+        "scores": {
+          "answer_score": 0.194,
+          "api_score": 1.0,
+          "final_score": 0.6858,
+          "sql_score": 0.9
+        },
+        "sql_calls": [
+          {
+            "kind": "sql_call",
+            "result": {
+              "error": null,
+              "limited": true,
+              "ok": true,
+              "row_count": 2,
+              "rows": {
+                "items": [
+                  {
+                    "CAMPAIGNID": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+                    "CAMPAIGNNAME": "Birthday Message"
+                  }
+                ],
+                "total_items": 2,
+                "truncated_items": true
+              }
+            },
+            "sql": "SELECT CAMPAIGN.\"NAME\" AS CAMPAIGNNAME, CAMPAIGN.\"CAMPAIGNID\" AS CAMPAIGNID FROM \"dim_campaign\" AS CAMPAIGN",
+            "validation": {
+              "errors": [],
+              "ok": true,
+              "repaired": false,
+              "warnings": []
+            }
+          }
+        ]
+      },
+      "classification": [
+        "sql_complete_but_api_gold_required"
+      ],
+      "combined_safe": {
+        "api_calls": [],
+        "final_answer": "Based on the available evidence, there are 2 journeys found in the database: Birthday Message and Gold Tier Welcome Email. API evidence was not requested.",
+        "plan": {
+          "kind": "plan",
+          "optimizer_actions": [
+            "ensemble selected generic_sql_first"
+          ],
+          "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve [truncated]",
+          "steps": [
+            {
+              "action": "sql",
+              "family": "journey_campaign_list",
+              "sql_recorded_in_sql_call": true
+            },
+            {
+              "action": "api",
+              "family": "journey_list",
+              "method": "GET",
+              "params": {
+                "pageSize": "10"
+              },
+              "url": "/ajo/journey"
+            }
+          ],
+          "strategy": "SQL_FIRST_API_VERIFY"
+        },
+        "scores": {
+          "answer_score": 0.4355,
+          "api_score": 0.0,
+          "final_score": 0.4734,
+          "sql_score": 0.9
+        },
+        "sql_calls": [
+          {
+            "kind": "sql_call",
+            "result": {
+              "error": null,
+              "limited": true,
+              "ok": true,
+              "row_count": 2,
+              "rows": {
+                "items": [
+                  {
+                    "CAMPAIGNID": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+                    "CAMPAIGNNAME": "Birthday Message"
+                  }
+                ],
+                "total_items": 2,
+                "truncated_items": true
+              }
+            },
+            "sql": "SELECT CAMPAIGN.\"NAME\" AS CAMPAIGNNAME, CAMPAIGN.\"CAMPAIGNID\" AS CAMPAIGNID FROM \"dim_campaign\" AS CAMPAIGN",
+            "validation": {
+              "errors": [],
+              "ok": true,
+              "repaired": false,
+              "warnings": []
+            }
+          }
+        ]
+      },
+      "exact_skip_reason": "post-SQL deterministic policy returned HIGH/SKIP_API from SQL_DIRECT_ANSWER and verifier accepted VERIFIED_SKIP_API",
+      "gold_answer_present": true,
+      "gold_api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "pageSize": "10"
+          },
+          "path": "/ajo/journey"
+        }
+      ],
+      "gold_sql_present": true,
+      "post_sql_decision_card": {
+        "allowed_outputs": {
+          "mode": {
+            "items": [
+              "CALL_API"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          }
+        },
+        "answer_intent": "LIST_JOURNEYS",
+        "api_candidates": {
+          "items": [
+            {
+              "can_fill_roles": {
+                "items": [
+                  "id",
+                  "name"
+                ],
+                "total_items": 2,
+                "truncated_items": false
+              },
+              "endpoint_id": "journey_list",
+              "family": "journey_list",
+              "live_health": "UNKNOWN",
+              "method": "GET",
+              "requires_path_param": false,
+              "safe_get": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "prompt_features": {
+          "items": [
+            "LIST"
+          ],
+          "total_items": 6,
+          "truncated_items": true
+        },
+        "sql_state": {
+          "direct_answer": true,
+          "execution": "SUCCESS",
+          "partial_answer": false,
+          "returned_roles": {
+            "items": [
+              "id"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "row_count_bucket": "MANY",
+          "validation": "PASS",
+          "zero_rows": false
+        },
+        "task": "POST_SQL_API_DECISION"
+      },
+      "post_sql_deterministic_policy": {
+        "api_evidence_signal": 0.35,
+        "codes": {
+          "items": [
+            "SQL_DIRECT_ANSWER"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "confidence": "HIGH",
+        "suggestion": "SKIP_API"
+      },
+      "post_sql_verifier": {
+        "codes": {
+          "items": [
+            "VERIFIED_SKIP_API"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "final_action": "SKIP_API",
+        "shadow_only": false,
+        "source": "DETERMINISTIC_HIGH_CONF"
+      },
+      "prompt": "List all journeys",
+      "query_id": "example_002",
+      "staged_evidence_decision": {
+        "first_branch": "SQL",
+        "policy_codes": {
+          "items": [
+            "SQL_HIGH_API_LOW"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "second_branch_policy": "NONE",
+        "shadow_only": false
+      }
+    },
+    {
+      "api_characterization": {
+        "api_need_mode": "API_OPTIONAL",
+        "endpoint_family_required_by_gold": true,
+        "live_current_platform_status_required": true,
+        "needed_for_answer_fields": "mixed; SQL answer looked complete, but organizer strict API dimension expected endpoint evidence",
+        "needed_for_strict_api_score_only": true,
+        "sql_looked_complete_but_api_was_still_required_by_strict_rubric": true
+      },
+      "applied_decision_records": [
+        {
+          "applied": false,
+          "blockers": {
+            "items": [
+              "RETR"
+            ],
+            "total_items": 4,
+            "truncated_items": true
+          },
+          "decision": "EVIDENCE_PIPELINE",
+          "decision_family": "SEMANTIC_NO_TOOL",
+          "fallback": true,
+          "record": true,
+          "shadow_only": false,
+          "trial_mode": "COMBINED_SAFE_APPLIED_TRIAL",
+          "truncated_fields": 2
+        },
+        {
+          "applied": true,
+          "decision": "SKIP_API",
+          "decision_family": "POST_SQL_API",
+          "fallback": false,
+          "policy": {
+            "api_evidence_signal": 0.35,
+            "codes": {
+              "items": [
+                "SQL_DIRECT_ANSWER"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "confidence": "HIGH",
+            "suggestion": "SKIP_API"
+          },
+          "record": true,
+          "shadow_only": false,
+          "trial_mode": "COMBINED_SAFE_APPLIED_TRIAL",
+          "truncated_fields": 6
+        }
+      ],
+      "baseline": {
+        "api_calls": [
+          {
+            "method": "GET",
+            "params": {
+              "limit": "50",
+              "property": "inheritedAttributes.properties.isDestinationFlow==true",
+              "sort": "updatedTime:desc"
+            },
+            "path": "/data/foundation/flowservice/flows"
+          }
+        ],
+        "final_answer": "Based on the evidence provided, 1 destination was found. The most recent is \"Activate segments to S3 Feed\" (amazon-s3 target) with a modification timestamp of 2026-04-14 16:15:03.000 UTC. Live API evidence is needed to validate the requested sandbox. The API returned usable supporting evidence.",
+        "plan": {
+          "kind": "plan",
+          "optimizer_actions": [
+            "ensemble selected generic_sql_first"
+          ],
+          "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve [truncated]",
+          "steps": [
+            {
+              "action": "sql",
+              "family": "destination_export_recent",
+              "sql_recorded_in_sql_call": true
+            },
+            {
+              "action": "api",
+              "family": "recent_destination_flows",
+              "method": "GET",
+              "params": {
+                "limit": "50",
+                "property": "inheritedAttributes.properties.isDestinationFlow==true",
+                "sort": "updatedTime:desc"
+              },
+              "url": "/data/foundation/flowservice/flows"
+            }
+          ],
+          "strategy": "SQL_FIRST_API_VERIFY"
+        },
+        "scores": {
+          "answer_score": 0.5882,
+          "api_score": 1.0,
+          "final_score": 0.8391,
+          "sql_score": 1.0
+        },
+        "sql_calls": [
+          {
+            "kind": "sql_call",
+            "result": {
+              "error": null,
+              "limited": false,
+              "ok": true,
+              "row_count": 1,
+              "rows": {
+                "items": [
+                  {
+                    "DESCRIPTION": "This operation creates a dataflow S3 Feed",
+                    "STATE": "enabled",
+                    "connection_spec_id": "4890fc95-5a1f-4983-94bb-e060c08e3f81",
+                    "created_time": "2026-03-29T07:54:13.000+00:00",
+                    "dataflow_name": "Activate segments to S3 Feed",
+                    "modified": "2026-04-14T16:15:03.000+00:00",
+                    "target_id": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+                    "target_name": "amazon-s3",
+                    "truncated_fields": 2
+                  }
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              }
+            },
+            "sql": "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS target_name, D.\"DESCRIPTION\", D.\"STATE\", D.\"CONNECTIONSPECID\" AS connection_spec_id, D.\"CREATEDTIME\" AS created_time, D.\"UPDATEDTIME\" AS modified, D.\"INTERVAL\", D.\"FREQUENCY\" FROM \"dim_target\" AS D ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50",
+            "validation": {
+              "errors": [],
+              "ok": true,
+              "repaired": false,
+              "warnings": []
+            }
+          }
+        ]
+      },
+      "classification": [
+        "sql_complete_but_api_gold_required",
+        "endpoint_family_required_missed"
+      ],
+      "combined_safe": {
+        "api_calls": [],
+        "final_answer": "Based on the evidence provided, 1 destination was found. The most recent is \"Activate segments to S3 Feed\" (amazon-s3 target) with a modification timestamp of 2026-04-14 16:15:03.000 UTC. Live API evidence is needed to validate the requested sandbox. API evidence was not requested.",
+        "plan": {
+          "kind": "plan",
+          "optimizer_actions": [
+            "ensemble selected generic_sql_first"
+          ],
+          "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve [truncated]",
+          "steps": [
+            {
+              "action": "sql",
+              "family": "destination_export_recent",
+              "sql_recorded_in_sql_call": true
+            },
+            {
+              "action": "api",
+              "family": "recent_destination_flows",
+              "method": "GET",
+              "params": {
+                "limit": "50",
+                "property": "inheritedAttributes.properties.isDestinationFlow==true",
+                "sort": "updatedTime:desc"
+              },
+              "url": "/data/foundation/flowservice/flows"
+            }
+          ],
+          "strategy": "SQL_FIRST_API_VERIFY"
+        },
+        "scores": {
+          "answer_score": 0.8326,
+          "api_score": 0.0,
+          "final_score": 0.629,
+          "sql_score": 1.0
+        },
+        "sql_calls": [
+          {
+            "kind": "sql_call",
+            "result": {
+              "error": null,
+              "limited": false,
+              "ok": true,
+              "row_count": 1,
+              "rows": {
+                "items": [
+                  {
+                    "DESCRIPTION": "This operation creates a dataflow S3 Feed",
+                    "STATE": "enabled",
+                    "connection_spec_id": "4890fc95-5a1f-4983-94bb-e060c08e3f81",
+                    "created_time": "2026-03-29T07:54:13.000+00:00",
+                    "dataflow_name": "Activate segments to S3 Feed",
+                    "modified": "2026-04-14T16:15:03.000+00:00",
+                    "target_id": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+                    "target_name": "amazon-s3",
+                    "truncated_fields": 2
+                  }
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              }
+            },
+            "sql": "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS target_name, D.\"DESCRIPTION\", D.\"STATE\", D.\"CONNECTIONSPECID\" AS connection_spec_id, D.\"CREATEDTIME\" AS created_time, D.\"UPDATEDTIME\" AS modified, D.\"INTERVAL\", D.\"FREQUENCY\" FROM \"dim_target\" AS D ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50",
+            "validation": {
+              "errors": [],
+              "ok": true,
+              "repaired": false,
+              "warnings": []
+            }
+          }
+        ]
+      },
+      "exact_skip_reason": "post-SQL deterministic policy returned HIGH/SKIP_API from SQL_DIRECT_ANSWER and verifier accepted VERIFIED_SKIP_API",
+      "gold_answer_present": true,
+      "gold_api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "50",
+            "property": "inheritedAttributes.properties.isDestinationFlow==true",
+            "sort": "updatedTime:desc"
+          },
+          "path": "/data/foundation/flowservice/flows"
+        }
+      ],
+      "gold_sql_present": true,
+      "post_sql_decision_card": {
+        "allowed_outputs": {
+          "mode": {
+            "items": [
+              "CALL_API"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          }
+        },
+        "answer_intent": "DESTINATION_EXPORT",
+        "api_candidates": {
+          "items": [
+            {
+              "can_fill_roles": {
+                "items": [
+                  "id",
+                  "name",
+                  "status"
+                ],
+                "total_items": 4,
+                "truncated_items": true
+              },
+              "endpoint_id": "flowservice_flows",
+              "family": "recent_destination_flows",
+              "live_health": "UNKNOWN",
+              "method": "GET",
+              "requires_path_param": false,
+              "safe_get": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "prompt_features": {
+          "items": [
+            "LIST"
+          ],
+          "total_items": 10,
+          "truncated_items": true
+        },
+        "sql_state": {
+          "direct_answer": true,
+          "execution": "SUCCESS",
+          "partial_answer": false,
+          "returned_roles": {
+            "items": [
+              "id"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "row_count_bucket": "ONE",
+          "validation": "PASS",
+          "zero_rows": false
+        },
+        "task": "POST_SQL_API_DECISION"
+      },
+      "post_sql_deterministic_policy": {
+        "api_evidence_signal": 0.35,
+        "codes": {
+          "items": [
+            "SQL_DIRECT_ANSWER"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "confidence": "HIGH",
+        "suggestion": "SKIP_API"
+      },
+      "post_sql_verifier": {
+        "codes": {
+          "items": [
+            "VERIFIED_SKIP_API"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "final_action": "SKIP_API",
+        "shadow_only": false,
+        "source": "DETERMINISTIC_HIGH_CONF"
+      },
+      "prompt": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
+      "query_id": "example_005",
+      "staged_evidence_decision": {
+        "first_branch": "SQL",
+        "policy_codes": {
+          "items": [
+            "SQL_HIGH_API_LOW"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "second_branch_policy": "NONE",
+        "shadow_only": false
+      }
+    }
+  ],
+  "source_strict_eval": "outputs/eval_results_strict.json",
+  "summary": {
+    "root_cause": "The applied post-SQL policy treated SQL direct_answer as sufficient for API_OPTIONAL plans. Organizer strict gold still scores API for safe API-sensitive object families, so journey and flowservice API calls were dropped even though strict API evidence was expected.",
+    "runtime_fix_requirements": [
+      "no prompt-id rules",
+      "preserve safe API for API_REQUIRED",
+      "preserve safe API for objective live/status/API-sensitive family signals",
+      "allow SQL-direct skip only for genuinely optional non-live API candidates"
+    ]
+  }
+}

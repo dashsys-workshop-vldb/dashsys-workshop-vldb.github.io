@@ -7,10 +7,10 @@
 | Query | What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'? |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
 | Final answer | Based on live observability API evidence, timeseries.ingestion.dataset.recordsuccess.count values include: 2026-03-29 timeseries.ingestion.dataset.recordsuccess.count: 152120.0, 2026-03-30 timeseries.ingestion.dataset.recordsuccess.count: 16231.0, 2026-03-31 timeseries.ingestion.dataset.recordsuccess.count: 2701.0, 2026-03-16 timeseries.ingestion.dataset.recordsuccess.count: 0.0, 2026-03-17 timeseries.ingestion.dataset.recordsuccess.count: 0.0, 2026-03-18 timeseries.ingestion.dataset.recordsuccess.count: 0.0, 2026-03-19 timeseries.ingestion.dataset.recordsuccess.count: 0.0, and 2026-03-20 timeseries.ingestion.dataset.recordsuccess.count: 0.0. Other returned daily values were 0. |
-| Strict score | 0.5487 |
+| Strict score | 0.5477 |
 | Correctness score | 0.5712 |
 | Answer / SQL / API score | 0.1424 / None / 1.0 |
-| Tools / tokens / runtime | 1 / 1039 / 0.3935186672024429 |
+| Tools / tokens / runtime | 1 / 1039 / 0.6985897496342659 |
 
 ## Dataflow Graph
 

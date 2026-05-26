@@ -4,6 +4,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from .endpoint_catalog import EndpointCatalog
+from .post_sql_deterministic_policy import api_preservation_codes
 from .post_sql_llm_advisor import PostSQLAPIAdvice
 
 
@@ -71,6 +72,15 @@ def verify_post_sql_api_advice(
             return VerifiedPostSQLAPIAction("CALL_API", _blocked_source(payload), [str(safe_candidate.get("family") or safe_candidate.get("endpoint_id"))], [], ["LIVE_API_SKIP_BLOCKED"])
         if sql_state.get("execution") == "ERROR" and safe_candidate:
             return VerifiedPostSQLAPIAction("CALL_API", _blocked_source(payload), [str(safe_candidate.get("family") or safe_candidate.get("endpoint_id"))], [], ["SQL_ERROR_SKIP_BLOCKED"])
+        preservation_codes = api_preservation_codes(prompt_features, candidates)
+        if preservation_codes and safe_candidate:
+            return VerifiedPostSQLAPIAction(
+                "CALL_API",
+                _blocked_source(payload),
+                [str(safe_candidate.get("family") or safe_candidate.get("endpoint_id"))],
+                [],
+                ["STRICT_API_PRESERVATION_SKIP_BLOCKED", *preservation_codes],
+            )
         return VerifiedPostSQLAPIAction("SKIP_API", _source(payload), [], [], ["VERIFIED_SKIP_API"])
 
     codes.append("VERIFIED_CAVEAT_ONLY")
