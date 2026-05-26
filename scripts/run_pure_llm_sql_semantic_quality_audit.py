@@ -39,7 +39,13 @@ def run_pure_llm_sql_semantic_quality_audit(config: Config | None = None) -> dic
     reports_dir = config.outputs_dir / "reports"
     reports_dir.mkdir(parents=True, exist_ok=True)
     bounded = _load_json(reports_dir / "pure_llm_bounded_sql_score_audit.json")
-    rows = [_semantic_row(row) for row in bounded.get("rows", [])]
+    previous = _load_json(reports_dir / f"{REPORT_STEM}.json")
+    previous_by_id = {
+        str(row.get("query_id")): row
+        for row in previous.get("rows", [])
+        if isinstance(row, dict) and row.get("query_id")
+    }
+    rows = [_semantic_row(row, previous_by_id.get(str(row.get("query_id")))) for row in bounded.get("rows", [])]
     payload = redact_secrets(
         {
             "report_type": REPORT_STEM,
@@ -54,6 +60,8 @@ def run_pure_llm_sql_semantic_quality_audit(config: Config | None = None) -> dic
                 "failure_categories": _count_by(rows, "failure_category"),
                 "selected_tools": _count_by(rows, "selected_tool"),
                 "answer_used_sql_result": sum(1 for row in rows if row.get("answer_used_sql_result")),
+                "sql_evidence_object_available": sum(1 for row in rows if row.get("sql_evidence_object_available")),
+                "sql_evidence_used_in_answer": sum(1 for row in rows if row.get("sql_evidence_used_in_answer")),
             },
             "rows": rows,
         }
@@ -63,7 +71,7 @@ def run_pure_llm_sql_semantic_quality_audit(config: Config | None = None) -> dic
     return payload
 
 
-def _semantic_row(row: dict[str, Any]) -> dict[str, Any]:
+def _semantic_row(row: dict[str, Any], previous: dict[str, Any] | None = None) -> dict[str, Any]:
     plan = row.get("structured_sql_plan") if isinstance(row.get("structured_sql_plan"), dict) else {}
     selected_filters = plan.get("filters") if isinstance(plan.get("filters"), list) else []
     failure = _semantic_failure_category(row)
@@ -85,8 +93,16 @@ def _semantic_row(row: dict[str, Any]) -> dict[str, Any]:
         "answer_used_sql_result": row.get("final_answer_used_sql_result"),
         "sql_score": row.get("strict_sql_score"),
         "answer_score": row.get("strict_answer_score"),
+        "previous_failure_category": (previous or {}).get("failure_category"),
+        "selected_candidate_count": row.get("selected_candidate_count"),
+        "selected_candidate_id": row.get("selected_candidate_id"),
+        "selected_candidate_reason": row.get("selected_candidate_reason"),
+        "sql_evidence_object_available": row.get("sql_evidence_object_available"),
+        "sql_evidence_used_in_answer": row.get("sql_evidence_used_in_answer"),
+        "fallback_to_sql_evidence_answer": row.get("fallback_to_sql_evidence_answer"),
         "failure_category": failure,
         "root_cause": _root_cause(row, failure),
+        "remaining_problem": _root_cause(row, failure),
     }
 
 
@@ -144,6 +160,8 @@ def _render_md(payload: dict[str, Any]) -> str:
         "",
         f"- Rows audited: `{summary.get('rows')}`",
         f"- Answer used SQL result rows: `{summary.get('answer_used_sql_result')}`",
+        f"- SQL evidence object available rows: `{summary.get('sql_evidence_object_available')}`",
+        f"- SQL evidence used in answer rows: `{summary.get('sql_evidence_used_in_answer')}`",
         "",
         "## Failure Categories",
     ]
@@ -155,7 +173,10 @@ def _render_md(payload: dict[str, Any]) -> str:
             [
                 f"### {row.get('query_id')}",
                 f"- Prompt: {row.get('prompt')}",
+                f"- Previous failure category: `{row.get('previous_failure_category')}`",
                 f"- Failure category: `{row.get('failure_category')}`",
+                f"- Selected candidate: `{row.get('selected_candidate_id')}` / count `{row.get('selected_candidate_count')}`",
+                f"- SQL evidence object available / used: `{row.get('sql_evidence_object_available')}` / `{row.get('sql_evidence_used_in_answer')}`",
                 f"- SQL score / answer score: `{row.get('sql_score')}` / `{row.get('answer_score')}`",
                 f"- Root cause: {row.get('root_cause')}",
                 "",

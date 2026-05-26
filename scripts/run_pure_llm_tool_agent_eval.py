@@ -648,7 +648,8 @@ def _render_structured_trial_md(payload: dict[str, Any]) -> str:
             lines.append(f"- {key}: `{summary.get(key)}`")
     else:
         for item in summary.get("systems", []):
-            if "structured_sql_plan" in str(item.get("system")):
+            system = str(item.get("system"))
+            if "structured_sql_plan" in system or "multi_candidate_sql" in system:
                 lines.append(
                     f"- `{item.get('system')}` rows `{item.get('rows')}` strict `{item.get('strict_final_score')}` SQL `{item.get('sql_score')}` compile `{item.get('compile_success_rate')}` unsupported `{item.get('unsupported_claims')}`"
                 )
@@ -657,7 +658,11 @@ def _render_structured_trial_md(payload: dict[str, Any]) -> str:
 
 
 def _has_structured_sql_plan_rows(rows: list[dict[str, Any]]) -> bool:
-    return any("structured_sql_plan" in str(row.get("variant") or row.get("system") or "") for row in rows)
+    return any(
+        "structured_sql_plan" in str(row.get("variant") or row.get("system") or "")
+        or "multi_candidate_sql" in str(row.get("variant") or row.get("system") or "")
+        for row in rows
+    )
 
 
 def _write_sql_failure_analysis(config: Config, payload: dict[str, Any]) -> dict[str, Any]:

@@ -18,3 +18,7 @@ All variants are diagnostic/shadow-only.
 - `structured_sql_plan_semantic_repair_v1`: Adds semantic SQL-plan verification plus repair feedback before execution.
 - `sql_grounded_answer_v1`: Adds deterministic SQL-result answer grounding fallback after semantic SQL repair.
 - `conservative_sql_first_semantic_v1`: Conservative SQL-first semantic variant; API-only is allowed only when SQL is not strongly grounded or live API is explicit.
+- `multi_candidate_sql_plan_v1`: LLM emits three structured SQL plans; deterministic semantic ranking selects one.
+- `multi_candidate_sql_plan_with_probe_v1`: Multi-candidate SQL planning with a safe one-row execution probe before selection.
+- `multi_candidate_sql_grounded_answer_v1`: Multi-candidate SQL planning plus compact SQL execution evidence in answer grounding.
+- `conservative_sql_first_multi_candidate_v1`: Conservative SQL-first multi-candidate variant; API-only remains limited to explicit live/API needs or SQL-impossible prompts.

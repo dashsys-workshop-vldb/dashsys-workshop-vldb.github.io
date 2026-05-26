@@ -5,8 +5,10 @@ from typing import Any
 from .db import DuckDBDatabase
 from .llm_client import LLMClient, get_llm_client
 from .llm_sql_plan_compiler import compile_structured_sql_plan
+from .llm_sql_candidate_ranker import normalize_multi_candidate_plans, rank_sql_plan_candidates
 from .llm_sql_semantic_verifier import verify_sql_plan_semantics
 from .llm_tool_agent_prompts import (
+    build_multi_candidate_structured_sql_plan_prompt,
     build_sql_candidate_prompt,
     build_sql_repair_prompt,
     build_structured_sql_plan_prompt,
@@ -28,6 +30,8 @@ def run_sql_repair_loop(
     max_repair_rounds: int = 2,
     structured_sql_plan: bool = False,
     semantic_verify: bool = False,
+    multi_candidate_sql_plan: bool = False,
+    execution_probe: bool = False,
 ) -> dict[str, Any]:
     client = llm_client or get_llm_client()
     if not client.available():
@@ -40,6 +44,17 @@ def run_sql_repair_loop(
         }
 
     if structured_sql_plan:
+        if multi_candidate_sql_plan:
+            return _run_multi_candidate_structured_plan_loop(
+                prompt,
+                schema_context,
+                db,
+                sql_validator,
+                client,
+                plan=plan,
+                semantic_verify=semantic_verify,
+                execution_probe=execution_probe,
+            )
         return _run_structured_plan_repair_loop(
             prompt,
             schema_context,
@@ -202,6 +217,117 @@ def _run_structured_plan_repair_loop(
             "failure_stage": "sql_plan_unrepairable",
             "safe_answer": "I could not produce a validated SQL query from the available schema.",
             "error": "; ".join(attempts[-1].get("validation", {}).get("errors", [])) if attempts else "no_sql_plan_candidate",
+        }
+    )
+
+
+def _run_multi_candidate_structured_plan_loop(
+    prompt: str,
+    schema_context: dict[str, Any],
+    db: DuckDBDatabase,
+    sql_validator: SQLValidator,
+    client: LLMClient,
+    *,
+    plan: dict[str, Any] | None,
+    semantic_verify: bool,
+    execution_probe: bool,
+) -> dict[str, Any]:
+    bundle = build_multi_candidate_structured_sql_plan_prompt(prompt, schema_context, plan)
+    raw = _call_json(client, bundle.system_prompt, bundle.user_prompt)
+    candidates = normalize_multi_candidate_plans(raw)
+    retry_used = False
+    if not candidates:
+        retry_used = True
+        correction = client.generate(
+            bundle.system_prompt + " Correct your previous output and return valid JSON with exactly three candidates.",
+            bundle.user_prompt,
+        )
+        raw = parse_json_object(correction.get("content", ""))
+        raw["_usage"] = correction.get("usage", {})
+        candidates = normalize_multi_candidate_plans(raw)
+    ranked = rank_sql_plan_candidates(
+        prompt,
+        str((plan or {}).get("answer_intent") or schema_context.get("answer_intent") or ""),
+        schema_context,
+        candidates,
+        sql_validator.schema_index,
+        sql_validator,
+        db=db,
+        execution_probe=execution_probe,
+        evidence_source_plan=(plan or {}).get("evidence_source_plan") if isinstance(plan, dict) else None,
+    )
+    attempts: list[dict[str, Any]] = []
+    for item in ranked.get("ranking", []):
+        compiled = item.get("compiled") if isinstance(item.get("compiled"), dict) else {}
+        sql = str(compiled.get("sql") or "")
+        validation_dict = item.get("validation") if isinstance(item.get("validation"), dict) else {}
+        attempt = {
+            "round": 0,
+            "candidate_id": item.get("candidate_id"),
+            "structured_sql_plan": item.get("candidate"),
+            "plan_validation": {"ok": bool(compiled.get("ok")), "errors": compiled.get("errors", []), "warnings": compiled.get("warnings", [])},
+            "semantic_verification": item.get("semantic_verification"),
+            "compile": compiled,
+            "sql": sql,
+            "validation": validation_dict,
+            "ast_summary": sql_validator.ast_summary(sql) if sql else {"parse_error": "empty_sql"},
+            "probe": item.get("probe"),
+            "executed": False,
+        }
+        if not item.get("accepted") or not sql:
+            attempts.append(redact_secrets(attempt))
+            continue
+        execution = db.execute_sql(sql)
+        attempt["executed"] = True
+        attempt["execution_ok"] = bool(execution.get("ok"))
+        attempts.append(redact_secrets(attempt))
+        if execution.get("ok"):
+            return redact_secrets(
+                {
+                    "ok": True,
+                    "sql": sql,
+                    "structured_sql_plan": item.get("candidate"),
+                    "compiled_sql": compiled,
+                    "validation": validation_dict,
+                    "ast_summary": attempt["ast_summary"],
+                    "execution_result": _compact_sql_result(execution),
+                    "repair_rounds": 0,
+                    "attempts": attempts,
+                    "candidate_count": len(candidates),
+                    "selected_candidate_id": item.get("candidate_id"),
+                    "candidate_ranking": ranked,
+                    "multi_candidate_retry_used": retry_used,
+                    "plan_validation_success": True,
+                    "compile_success": True,
+                    "sql_validation_success": bool(validation_dict.get("ok")),
+                    "semantic_repair_attempted": False,
+                    "semantic_repair_success": False,
+                    "final_semantic_score": (item.get("semantic_verification") or {}).get("semantic_score"),
+                    "execution_success": True,
+                    "failure_stage": None,
+                }
+            )
+    return redact_secrets(
+        {
+            "ok": False,
+            "sql": attempts[0]["sql"] if attempts else "",
+            "structured_sql_plan": attempts[0].get("structured_sql_plan") if attempts else {},
+            "repair_rounds": 0,
+            "attempts": attempts,
+            "candidate_count": len(candidates),
+            "selected_candidate_id": None,
+            "candidate_ranking": ranked,
+            "multi_candidate_retry_used": retry_used,
+            "plan_validation_success": False,
+            "compile_success": False,
+            "sql_validation_success": False,
+            "semantic_repair_attempted": False,
+            "semantic_repair_success": False,
+            "final_semantic_score": None,
+            "execution_success": False,
+            "failure_stage": "sql_plan_unrepairable",
+            "safe_answer": "I could not produce a validated SQL query from the available schema.",
+            "error": "no multi-candidate SQL plan compiled, validated, semantically matched, and executed",
         }
     )
 

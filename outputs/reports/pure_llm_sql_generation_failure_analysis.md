@@ -7,7 +7,7 @@ Diagnostic-only analysis for the shadow Pure LLM tool-agent SQL path.
 
 ## Failure Categories
 
-- `hallucinated_column`: `5`
+- `hallucinated_column`: `6`
 - `hallucinated_table`: `4`
-- `invalid_sql_syntax`: `6`
+- `invalid_sql_syntax`: `5`
 - `no_clear_sql_failure`: `21`

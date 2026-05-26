@@ -65,6 +65,29 @@ def build_structured_sql_plan_prompt(prompt: str, context: dict[str, Any], plan:
     )
 
 
+def build_multi_candidate_structured_sql_plan_prompt(
+    prompt: str,
+    context: dict[str, Any],
+    plan: dict[str, Any] | None = None,
+) -> PromptBundle:
+    return PromptBundle(
+        system_prompt=(
+            "Create exactly three structured SQL plan candidates. Return JSON only with key \"candidates\". "
+            "Each candidate must include: candidate_id, answer_intent, primary_table, tables_needed, "
+            "columns_needed, filters, aggregation, order_by, limit, reason, confidence. Do not output raw SQL. "
+            "Use actual table and column names from the supplied schema context only. Do not invent tables named "
+            "journey, audience, dataset, schema, destination, connector, or dataflow. "
+            "Vary candidates only where the prompt is ambiguous: timestamp column, table choice, count/list/status/date "
+            "shape, or join vs no join."
+        ),
+        user_prompt=json.dumps(
+            {"prompt": prompt, "tool_plan": plan or {}, "schema_context": compact_preview(context, 9000)},
+            indent=2,
+            default=str,
+        ),
+    )
+
+
 def build_sql_repair_prompt(
     prompt: str,
     context: dict[str, Any],

@@ -16,6 +16,10 @@ from dashagent.eval_harness import EvalHarness, first_generated_sql, generated_a
 from dashagent.pure_llm_tool_agent import (
     API_ONLY_ONLY_WHEN_SQL_UNAVAILABLE_V1,
     CONSERVATIVE_SQL_FIRST_SEMANTIC_V1,
+    CONSERVATIVE_SQL_FIRST_MULTI_CANDIDATE_V1,
+    MULTI_CANDIDATE_SQL_GROUNDED_ANSWER_V1,
+    MULTI_CANDIDATE_SQL_PLAN_V1,
+    MULTI_CANDIDATE_SQL_PLAN_WITH_PROBE_V1,
     SQL_GROUNDED_ANSWER_V1,
     STRUCTURED_SQL_PLAN_WITH_REPAIR_V1,
     STRUCTURED_SQL_PLAN_SEMANTIC_REPAIR_V1,
@@ -38,6 +42,10 @@ AUDITED_VARIANTS = {
     STRUCTURED_SQL_PLAN_SEMANTIC_REPAIR_V1,
     SQL_GROUNDED_ANSWER_V1,
     CONSERVATIVE_SQL_FIRST_SEMANTIC_V1,
+    MULTI_CANDIDATE_SQL_PLAN_V1,
+    MULTI_CANDIDATE_SQL_PLAN_WITH_PROBE_V1,
+    MULTI_CANDIDATE_SQL_GROUNDED_ANSWER_V1,
+    CONSERVATIVE_SQL_FIRST_MULTI_CANDIDATE_V1,
 }
 
 
@@ -103,6 +111,7 @@ def _audit_row(row: dict[str, Any], example: Any, harness: EvalHarness, sql_vali
     evidence_step = next((step for step in steps if step.get("kind") == "evidence_source_plan"), {})
     sql_step = next((step for step in steps if step.get("kind") == "sql_call"), {})
     api_step = next((step for step in steps if step.get("kind") == "api_call"), {})
+    trace = row.get("trace_assertions") if isinstance(row.get("trace_assertions"), dict) else {}
     generated_sql = first_generated_sql(trajectory)
     generated_api = generated_api_calls(trajectory)
     gold_sql = example.gold_sql if example else None
@@ -151,6 +160,9 @@ def _audit_row(row: dict[str, Any], example: Any, harness: EvalHarness, sql_vali
             "did_llm_call_api": bool(api_step),
             **tool_choice,
             "structured_sql_plan": _structured_plan(sql_step),
+            "selected_candidate_id": sql_step.get("selected_candidate_id"),
+            "selected_candidate_count": sql_step.get("candidate_count"),
+            "selected_candidate_reason": (_structured_plan(sql_step) or {}).get("reason"),
             "compiled_sql": compiled_sql,
             "generated_sql": generated_sql,
             "sql_validation_result": sql_validation,
@@ -161,6 +173,9 @@ def _audit_row(row: dict[str, Any], example: Any, harness: EvalHarness, sql_vali
             "api_endpoint_selected": api_step.get("endpoint_candidate") or api_step.get("url"),
             "final_answer": row.get("final_answer") or trajectory.get("final_answer"),
             "final_answer_used_sql_result": bool((row.get("trace_assertions") or {}).get("tool_result_used_in_answer")) if sql_step else False,
+            "sql_evidence_object_available": bool(trace.get("sql_evidence_object_available")),
+            "sql_evidence_used_in_answer": bool(trace.get("sql_evidence_used_in_answer")),
+            "fallback_to_sql_evidence_answer": bool(trace.get("fallback_to_sql_evidence_answer")),
             "strict_sql_score": sql_score,
             "strict_sql_reason": sql_reason,
             "strict_api_score": api_score,

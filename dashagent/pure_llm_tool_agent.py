@@ -13,6 +13,7 @@ from .llm_api_tool_guard import validate_llm_api_candidate
 from .llm_client import LLMClient, get_llm_client
 from .llm_evidence_locked_answer import evidence_locked_answer
 from .llm_sql_context_builder import build_llm_sql_context, infer_answer_intent
+from .llm_sql_execution_evidence_bridge import build_sql_execution_evidence
 from .llm_sql_repair_loop import run_sql_repair_loop
 from .llm_sql_result_answer_grounder import ground_sql_result_answer
 from .llm_tool_agent_prompts import build_api_candidate_prompt, build_planning_prompt, parse_json_object
@@ -36,6 +37,10 @@ STRUCTURED_SQL_PLAN_SEMANTIC_VERIFIED_V1 = "structured_sql_plan_semantic_verifie
 STRUCTURED_SQL_PLAN_SEMANTIC_REPAIR_V1 = "structured_sql_plan_semantic_repair_v1"
 SQL_GROUNDED_ANSWER_V1 = "sql_grounded_answer_v1"
 CONSERVATIVE_SQL_FIRST_SEMANTIC_V1 = "conservative_sql_first_semantic_v1"
+MULTI_CANDIDATE_SQL_PLAN_V1 = "multi_candidate_sql_plan_v1"
+MULTI_CANDIDATE_SQL_PLAN_WITH_PROBE_V1 = "multi_candidate_sql_plan_with_probe_v1"
+MULTI_CANDIDATE_SQL_GROUNDED_ANSWER_V1 = "multi_candidate_sql_grounded_answer_v1"
+CONSERVATIVE_SQL_FIRST_MULTI_CANDIDATE_V1 = "conservative_sql_first_multi_candidate_v1"
 
 PURE_LLM_TOOL_AGENT_VARIANTS = [
     STRUCTURED_PLAN_THEN_TOOLS,
@@ -53,6 +58,10 @@ PURE_LLM_TOOL_AGENT_VARIANTS = [
     STRUCTURED_SQL_PLAN_SEMANTIC_REPAIR_V1,
     SQL_GROUNDED_ANSWER_V1,
     CONSERVATIVE_SQL_FIRST_SEMANTIC_V1,
+    MULTI_CANDIDATE_SQL_PLAN_V1,
+    MULTI_CANDIDATE_SQL_PLAN_WITH_PROBE_V1,
+    MULTI_CANDIDATE_SQL_GROUNDED_ANSWER_V1,
+    CONSERVATIVE_SQL_FIRST_MULTI_CANDIDATE_V1,
 ]
 
 
@@ -191,6 +200,59 @@ VARIANT_CAPABILITIES = {
         "force_sql_when_high_confidence": True,
         "api_only_requires_sql_unavailable": True,
     },
+    MULTI_CANDIDATE_SQL_PLAN_V1: {
+        "structured_plan": True,
+        "schema_context": True,
+        "sql_repair": False,
+        "structured_sql_plan": True,
+        "multi_candidate_sql_plan": True,
+        "api_guard": True,
+        "evidence_locked_answer": True,
+        "evidence_source_planner": True,
+        "semantic_sql_verify": True,
+    },
+    MULTI_CANDIDATE_SQL_PLAN_WITH_PROBE_V1: {
+        "structured_plan": True,
+        "schema_context": True,
+        "sql_repair": False,
+        "structured_sql_plan": True,
+        "multi_candidate_sql_plan": True,
+        "execution_probe": True,
+        "api_guard": True,
+        "evidence_locked_answer": True,
+        "evidence_source_planner": True,
+        "semantic_sql_verify": True,
+    },
+    MULTI_CANDIDATE_SQL_GROUNDED_ANSWER_V1: {
+        "structured_plan": True,
+        "schema_context": True,
+        "sql_repair": False,
+        "structured_sql_plan": True,
+        "multi_candidate_sql_plan": True,
+        "execution_probe": True,
+        "api_guard": True,
+        "evidence_locked_answer": True,
+        "evidence_source_planner": True,
+        "semantic_sql_verify": True,
+        "sql_result_answer_grounder": True,
+        "sql_execution_evidence_bridge": True,
+    },
+    CONSERVATIVE_SQL_FIRST_MULTI_CANDIDATE_V1: {
+        "structured_plan": True,
+        "schema_context": True,
+        "sql_repair": False,
+        "structured_sql_plan": True,
+        "multi_candidate_sql_plan": True,
+        "execution_probe": True,
+        "api_guard": True,
+        "evidence_locked_answer": True,
+        "evidence_source_planner": True,
+        "semantic_sql_verify": True,
+        "sql_result_answer_grounder": True,
+        "sql_execution_evidence_bridge": True,
+        "force_sql_when_high_confidence": True,
+        "api_only_requires_sql_unavailable": True,
+    },
 }
 
 
@@ -296,6 +358,30 @@ def pure_llm_baseline_definitions() -> list[dict[str, Any]]:
             "capabilities": VARIANT_CAPABILITIES[CONSERVATIVE_SQL_FIRST_SEMANTIC_V1],
             "status": "shadow_diagnostic",
         },
+        {
+            "variant": MULTI_CANDIDATE_SQL_PLAN_V1,
+            "description": "LLM emits three structured SQL plans; deterministic semantic ranking selects one.",
+            "capabilities": VARIANT_CAPABILITIES[MULTI_CANDIDATE_SQL_PLAN_V1],
+            "status": "shadow_diagnostic",
+        },
+        {
+            "variant": MULTI_CANDIDATE_SQL_PLAN_WITH_PROBE_V1,
+            "description": "Multi-candidate SQL planning with a safe one-row execution probe before selection.",
+            "capabilities": VARIANT_CAPABILITIES[MULTI_CANDIDATE_SQL_PLAN_WITH_PROBE_V1],
+            "status": "shadow_diagnostic",
+        },
+        {
+            "variant": MULTI_CANDIDATE_SQL_GROUNDED_ANSWER_V1,
+            "description": "Multi-candidate SQL planning plus compact SQL execution evidence in answer grounding.",
+            "capabilities": VARIANT_CAPABILITIES[MULTI_CANDIDATE_SQL_GROUNDED_ANSWER_V1],
+            "status": "shadow_diagnostic",
+        },
+        {
+            "variant": CONSERVATIVE_SQL_FIRST_MULTI_CANDIDATE_V1,
+            "description": "Conservative SQL-first multi-candidate variant; API-only remains limited to explicit live/API needs or SQL-impossible prompts.",
+            "capabilities": VARIANT_CAPABILITIES[CONSERVATIVE_SQL_FIRST_MULTI_CANDIDATE_V1],
+            "status": "shadow_diagnostic",
+        },
     ]
 
 
@@ -341,6 +427,7 @@ def run_pure_llm_tool_agent_variant(
     if evidence_source_result:
         steps.append({"kind": "evidence_source_plan", **evidence_source_result, "tool_plan_after_evidence_source": plan})
     sql_result: dict[str, Any] | None = None
+    sql_evidence: dict[str, Any] | None = None
     if bool(plan.get("needs_sql", True)):
         repair = run_sql_repair_loop(
             prompt,
@@ -352,20 +439,35 @@ def run_pure_llm_tool_agent_variant(
             max_repair_rounds=2 if capabilities.get("sql_repair") else 0,
             structured_sql_plan=bool(capabilities.get("structured_sql_plan")),
             semantic_verify=bool(capabilities.get("semantic_sql_verify")),
+            multi_candidate_sql_plan=bool(capabilities.get("multi_candidate_sql_plan")),
+            execution_probe=bool(capabilities.get("execution_probe")),
         )
         sql_result = repair
+        if repair.get("ok") and isinstance(repair.get("execution_result"), dict):
+            sql_evidence = build_sql_execution_evidence(str(repair.get("sql") or ""), repair["execution_result"])
         steps.append(
             {
                 "kind": "sql_call",
                 "sql": repair.get("sql"),
                 "validation": repair.get("validation") or _last_validation(repair),
                 "result": repair.get("execution_result"),
+                "sql_evidence": sql_evidence,
+                "selected_candidate_id": repair.get("selected_candidate_id"),
+                "candidate_count": repair.get("candidate_count"),
+                "candidate_ranking": repair.get("candidate_ranking"),
                 "repair_rounds": repair.get("repair_rounds"),
                 "attempts": repair.get("attempts", []),
             }
         )
         if repair.get("ok"):
-            observations.append({"source": "sql", "rows": repair.get("execution_result", {}).get("rows", []), "row_count": repair.get("execution_result", {}).get("row_count")})
+            observations.append(
+                {
+                    "source": "sql",
+                    "rows": repair.get("execution_result", {}).get("rows", []),
+                    "row_count": repair.get("execution_result", {}).get("row_count"),
+                    "sql_evidence": sql_evidence,
+                }
+            )
     api_result: dict[str, Any] | None = None
     if bool(plan.get("needs_api", False)):
         api_result = _run_api_step(prompt, context, plan, endpoint_catalog, api_client, client, guard=bool(capabilities.get("api_guard")))
@@ -380,7 +482,13 @@ def run_pure_llm_tool_agent_variant(
         answer_payload = evidence_locked_answer(prompt, observations, llm_client=answer_client, answer_intent=answer_intent)
         final_answer = str(answer_payload.get("answer") or "")
     if capabilities.get("sql_result_answer_grounder") and sql_result and isinstance(sql_result.get("execution_result"), dict):
-        grounded = ground_sql_result_answer(prompt, final_answer, sql_result["execution_result"], answer_intent=answer_intent)
+        grounded = ground_sql_result_answer(
+            prompt,
+            final_answer,
+            sql_result["execution_result"],
+            answer_intent=answer_intent,
+            sql_evidence=sql_evidence,
+        )
         if grounded.get("fallback_to_sql_result_answer"):
             final_answer = str(grounded.get("answer") or final_answer)
             answer_payload = {
@@ -710,6 +818,7 @@ def _trace_assertions(plan: dict[str, Any], steps: list[dict[str, Any]], answer_
     compile_result = final_attempt.get("compile") if isinstance(final_attempt.get("compile"), dict) else {}
     plan_validation = final_attempt.get("plan_validation") if isinstance(final_attempt.get("plan_validation"), dict) else {}
     semantic = final_attempt.get("semantic_verification") if isinstance(final_attempt.get("semantic_verification"), dict) else {}
+    grounding = answer_payload.get("sql_result_grounding") if isinstance(answer_payload.get("sql_result_grounding"), dict) else {}
     selected_tool = None
     if sql_step:
         selected_tool = "execute_sql"
@@ -727,8 +836,13 @@ def _trace_assertions(plan: dict[str, Any], steps: list[dict[str, Any]], answer_
         "semantic_score": semantic.get("semantic_score") if semantic else None,
         "semantic_repair_attempted": bool((sql_step.get("attempts") or []) and any(not (attempt.get("semantic_verification") or {}).get("ok", True) for attempt in (sql_step.get("attempts") or [])[:-1])),
         "semantic_repair_success": bool(semantic.get("ok")) if semantic else False,
-        "sql_result_grounded": bool((answer_payload.get("sql_result_grounding") or {}).get("sql_result_used_in_answer")),
-        "fallback_to_sql_result_answer": bool((answer_payload.get("sql_result_grounding") or {}).get("fallback_to_sql_result_answer")),
+        "selected_candidate_id": sql_step.get("selected_candidate_id"),
+        "candidate_count": sql_step.get("candidate_count"),
+        "sql_evidence_object_available": bool(sql_step.get("sql_evidence")),
+        "sql_evidence_used_in_answer": bool(grounding.get("sql_evidence_used_in_answer")),
+        "fallback_to_sql_evidence_answer": bool(grounding.get("fallback_to_sql_evidence_answer")),
+        "sql_result_grounded": bool(grounding.get("sql_result_used_in_answer")),
+        "fallback_to_sql_result_answer": bool(grounding.get("fallback_to_sql_result_answer")),
         "sql_repair_attempted": int(sql_step.get("repair_rounds") or 0) > 0,
         "sql_repair_success": bool(sql_validation.get("ok")) and int(sql_step.get("repair_rounds") or 0) > 0,
         "api_endpoint_candidate": api_step.get("endpoint_candidate"),

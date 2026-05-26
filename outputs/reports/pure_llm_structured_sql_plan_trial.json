@@ -6,7 +6,7 @@
   },
   "diagnostic_only": true,
   "execute_real_requested": true,
-  "generated_at": "2026-05-26T05:37:39.736844+00:00",
+  "generated_at": "2026-05-26T06:27:57.032253+00:00",
   "new_llm_calls_executed": true,
   "official_score_claim": false,
   "packaged_default_strategy": "SQL_FIRST_API_VERIFY",
@@ -64868,53 +64868,58 @@
       "answer_score": 0.2176,
       "api_reason": "No gold API supplied; API dimension unscored in strict mode.",
       "api_score": null,
-      "estimated_tokens": 4798,
-      "failure_stage": "tool_execution_failed",
+      "estimated_tokens": 4766,
+      "failure_stage": "invalid_sql",
       "prompt": "When was the journey 'Birthday Message' published?",
       "query_id": "example_000",
-      "runtime": 12.8885,
-      "sql_reason": "Strict SQL mismatch.",
+      "runtime": 14.9975,
+      "sql_reason": "No generated SQL while gold SQL exists.",
       "sql_score": 0.0,
       "strict_correctness": 0.0933,
-      "strict_final_score": -0.0022,
+      "strict_final_score": -0.0067,
       "strict_scoring_status": "available",
-      "system": "structured_sql_plan_semantic_repair_v1",
+      "system": "multi_candidate_sql_grounded_answer_v1",
       "tool_calls": 1,
       "trace_assertions": {
         "api_endpoint_candidate": null,
         "api_endpoint_repair_attempted": false,
         "api_endpoint_validation_ok": false,
+        "candidate_count": 3,
         "did_llm_choose_tool": true,
         "did_llm_plan": true,
+        "fallback_to_sql_evidence_answer": false,
         "fallback_to_sql_result_answer": false,
         "final_answer": "The available tool evidence does not contain enough supported data to answer.",
         "rejected_unsupported_claim_count": 2,
+        "selected_candidate_id": null,
         "selected_tool": "execute_sql",
         "semantic_repair_attempted": true,
         "semantic_repair_success": false,
-        "semantic_score": 0.8,
+        "semantic_score": 0.0,
         "semantic_verification_ok": false,
-        "sql_candidate": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
-        "sql_repair_attempted": true,
-        "sql_repair_success": true,
+        "sql_candidate": "",
+        "sql_evidence_object_available": false,
+        "sql_evidence_used_in_answer": false,
+        "sql_repair_attempted": false,
+        "sql_repair_success": false,
         "sql_result_grounded": false,
-        "sql_validation_ok": true,
-        "structured_plan_compile_ok": true,
-        "structured_plan_validation_ok": true,
+        "sql_validation_ok": false,
+        "structured_plan_compile_ok": false,
+        "structured_plan_validation_ok": false,
         "tool_execution_ok": false,
         "tool_result_used_in_answer": false,
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "structured_sql_plan_semantic_repair_v1",
-        "estimated_tokens": 4798,
-        "failure_stage": "tool_execution_failed",
+        "baseline_variant": "multi_candidate_sql_grounded_answer_v1",
+        "estimated_tokens": 4766,
+        "failure_stage": "invalid_sql",
         "final_answer": "The available tool evidence does not contain enough supported data to answer.",
         "llm_total_tokens": 1814,
         "original_query": "When was the journey 'Birthday Message' published?",
         "pure_llm_tool_agent": true,
         "rejected_unsupported_claim_count": 2,
-        "runtime": 12.888511124998331,
+        "runtime": 14.997511457651854,
         "steps": [
           {
             "context_summary": {
@@ -65081,7 +65086,7 @@
               "reason": "The question is asking for a specific date ('Birthday Message') but the available endpoints do not provide direct date information.",
               "sql_task": null
             },
-            "variant": "structured_sql_plan_semantic_repair_v1"
+            "variant": "multi_candidate_sql_grounded_answer_v1"
           },
           {
             "_usage": {
@@ -65314,374 +65319,462 @@
             "attempts": [
               {
                 "ast_summary": {
-                  "closest_column_suggestions": {},
-                  "closest_table_suggestions": {},
-                  "destructive_sql_detected": false,
-                  "enabled": true,
-                  "normalized_sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
-                  "parsed_ok": true,
-                  "selected_columns": [
-                    "UPDATEDTIME",
-                    "dim_campaign.NAME"
-                  ],
-                  "selected_tables": [
-                    "dim_campaign"
-                  ],
-                  "unknown_columns": [],
-                  "unknown_tables": []
+                  "parse_error": "empty_sql"
                 },
+                "candidate_id": "1",
                 "compile": {
                   "aggregation": "none",
-                  "errors": [],
+                  "alias_suggestions": {},
+                  "errors": [
+                    "Filter must be an object."
+                  ],
                   "filters": [
-                    {
-                      "column": "CAMPAIGNNAME",
-                      "operator": "equals",
-                      "table": "dim_campaign",
-                      "value": "Birthday Message"
-                    }
+                    "CAMPAIGNNAME = 'Birthday Message'"
                   ],
                   "join_path": [],
-                  "ok": true,
-                  "selected_columns": [
-                    "UPDATEDTIME"
-                  ],
+                  "ok": false,
                   "selected_tables": [
                     "dim_campaign"
                   ],
-                  "sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
+                  "sql": "",
                   "warnings": []
                 },
                 "executed": false,
                 "plan_validation": {
-                  "errors": [],
-                  "ok": true,
+                  "errors": [
+                    "Filter must be an object."
+                  ],
+                  "ok": false,
                   "warnings": []
                 },
+                "probe": {},
                 "round": 0,
                 "semantic_verification": {
                   "errors": [
-                    "Published/deployed DATE prompt should select a published timestamp such as LASTDEPLOYEDTIME."
+                    "Filter must be an object."
                   ],
-                  "evidence_source_plan": {
-                    "api_endpoints_that_may_answer": [],
-                    "api_reason": null,
-                    "confidence": 0.98,
-                    "local_tables_that_may_answer": [
-                      "dim_campaign"
-                    ],
-                    "needs_live_api": false,
-                    "needs_local_sql": true,
-                    "preferred_first_tool": "execute_sql",
-                    "question_type": "when_was_a_journey_published",
-                    "sql_reason": "The journey 'Birthday Message' is stored in the 'dim_campaign' table, which can be queried to find the publication date."
-                  },
-                  "expected_table": "dim_campaign",
                   "ok": false,
-                  "repair_hint": "use primary_table dim_campaign | fix semantic errors: Published/deployed DATE prompt should select a published timestamp such as LASTDEPLOYEDTIME.",
-                  "selected_aggregation": "none",
-                  "selected_columns": [
-                    "UPDATEDTIME"
-                  ],
-                  "selected_filters": [
-                    {
-                      "column": "CAMPAIGNNAME",
-                      "operator": "=",
-                      "value": "Birthday Message"
-                    }
-                  ],
-                  "selected_table": "dim_campaign",
-                  "semantic_score": 0.8,
+                  "semantic_score": 0.0,
                   "warnings": []
                 },
-                "sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
+                "sql": "",
                 "structured_sql_plan": {
-                  "_usage": {
-                    "completion_tokens": 135,
-                    "completion_tokens_details": null,
-                    "prompt_tokens": 2376,
-                    "prompt_tokens_details": {
-                      "audio_tokens": null,
-                      "cached_tokens": 3
-                    },
-                    "total_tokens": 2511
-                  },
                   "aggregation": null,
                   "answer_intent": "DATE",
+                  "candidate_id": 1,
                   "columns_needed": [
-                    "UPDATEDTIME"
+                    "STARTDATE"
                   ],
                   "confidence": 0.98,
                   "filters": [
-                    {
-                      "column": "CAMPAIGNNAME",
-                      "operator": "=",
-                      "value": "Birthday Message"
-                    }
+                    "CAMPAIGNNAME = 'Birthday Message'"
                   ],
-                  "join_needed": false,
-                  "join_path_reason": null,
                   "limit": null,
-                  "order_by": null,
-                  "primary_entity": "Birthday Message",
+                  "order_by": [
+                    "STARTDATE"
+                  ],
                   "primary_table": "dim_campaign",
+                  "reason": "The journey 'Birthday Message' is stored in the 'dim_campaign' table, which can be queried to find the publication date.",
                   "tables_needed": [
                     "dim_campaign"
                   ]
                 },
                 "validation": {
-                  "errors": [],
-                  "ok": true,
-                  "repaired": false,
-                  "warnings": []
+                  "errors": [
+                    "Filter must be an object."
+                  ],
+                  "ok": false
                 }
               },
               {
                 "ast_summary": {
-                  "closest_column_suggestions": {},
-                  "closest_table_suggestions": {},
-                  "destructive_sql_detected": false,
-                  "enabled": true,
-                  "normalized_sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
-                  "parsed_ok": true,
-                  "selected_columns": [
-                    "UPDATEDTIME",
-                    "dim_campaign.NAME"
-                  ],
-                  "selected_tables": [
-                    "dim_campaign"
-                  ],
-                  "unknown_columns": [],
-                  "unknown_tables": []
+                  "parse_error": "empty_sql"
                 },
+                "candidate_id": "2",
                 "compile": {
                   "aggregation": "none",
-                  "errors": [],
+                  "alias_suggestions": {},
+                  "errors": [
+                    "Filter must be an object."
+                  ],
                   "filters": [
-                    {
-                      "column": "CAMPAIGNNAME",
-                      "operator": "equals",
-                      "table": "dim_campaign",
-                      "value": "Birthday Message"
-                    }
+                    "CAMPAIGNNAME = 'Birthday Message'"
                   ],
                   "join_path": [],
-                  "ok": true,
-                  "selected_columns": [
-                    "UPDATEDTIME"
-                  ],
+                  "ok": false,
                   "selected_tables": [
                     "dim_campaign"
                   ],
-                  "sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
+                  "sql": "",
                   "warnings": []
                 },
                 "executed": false,
                 "plan_validation": {
-                  "errors": [],
-                  "ok": true,
+                  "errors": [
+                    "Filter must be an object."
+                  ],
+                  "ok": false,
                   "warnings": []
                 },
-                "round": 1,
+                "probe": {},
+                "round": 0,
                 "semantic_verification": {
                   "errors": [
-                    "Published/deployed DATE prompt should select a published timestamp such as LASTDEPLOYEDTIME."
+                    "Filter must be an object."
                   ],
-                  "evidence_source_plan": {
-                    "api_endpoints_that_may_answer": [],
-                    "api_reason": null,
-                    "confidence": 0.98,
-                    "local_tables_that_may_answer": [
-                      "dim_campaign"
-                    ],
-                    "needs_live_api": false,
-                    "needs_local_sql": true,
-                    "preferred_first_tool": "execute_sql",
-                    "question_type": "when_was_a_journey_published",
-                    "sql_reason": "The journey 'Birthday Message' is stored in the 'dim_campaign' table, which can be queried to find the publication date."
-                  },
-                  "expected_table": "dim_campaign",
                   "ok": false,
-                  "repair_hint": "use primary_table dim_campaign | fix semantic errors: Published/deployed DATE prompt should select a published timestamp such as LASTDEPLOYEDTIME.",
-                  "selected_aggregation": "none",
-                  "selected_columns": [
-                    "UPDATEDTIME"
-                  ],
-                  "selected_filters": [
-                    {
-                      "column": "CAMPAIGNNAME",
-                      "operator": "=",
-                      "value": "Birthday Message"
-                    }
-                  ],
-                  "selected_table": "dim_campaign",
-                  "semantic_score": 0.8,
+                  "semantic_score": 0.0,
                   "warnings": []
                 },
-                "sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
+                "sql": "",
                 "structured_sql_plan": {
-                  "_usage": {
-                    "completion_tokens": 95,
-                    "completion_tokens_details": null,
-                    "prompt_tokens": 1827,
-                    "prompt_tokens_details": {
-                      "audio_tokens": null,
-                      "cached_tokens": 3
-                    },
-                    "total_tokens": 1922
-                  },
                   "aggregation": null,
+                  "answer_intent": "DATE",
+                  "candidate_id": 2,
                   "columns_needed": [
-                    "UPDATEDTIME"
+                    "STARTDATE"
                   ],
+                  "confidence": 0.98,
                   "filters": [
-                    {
-                      "column": "CAMPAIGNNAME",
-                      "operator": "=",
-                      "value": "Birthday Message"
-                    }
+                    "CAMPAIGNNAME = 'Birthday Message'"
                   ],
-                  "join_needed": false,
-                  "join_path_reason": null,
                   "limit": null,
-                  "order_by": null,
-                  "primary_table": "dim_campaign"
+                  "order_by": [
+                    "STARTDATE"
+                  ],
+                  "primary_table": "dim_campaign",
+                  "reason": "The journey 'Birthday Message' is stored in the 'dim_campaign' table, which can be queried to find the publication date.",
+                  "tables_needed": [
+                    "dim_campaign"
+                  ]
                 },
                 "validation": {
-                  "errors": [],
-                  "ok": true,
-                  "repaired": false,
-                  "warnings": []
+                  "errors": [
+                    "Filter must be an object."
+                  ],
+                  "ok": false
                 }
               },
               {
                 "ast_summary": {
-                  "closest_column_suggestions": {},
-                  "closest_table_suggestions": {},
-                  "destructive_sql_detected": false,
-                  "enabled": true,
-                  "normalized_sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
-                  "parsed_ok": true,
-                  "selected_columns": [
-                    "UPDATEDTIME",
-                    "dim_campaign.NAME"
-                  ],
-                  "selected_tables": [
-                    "dim_campaign"
-                  ],
-                  "unknown_columns": [],
-                  "unknown_tables": []
+                  "parse_error": "empty_sql"
                 },
+                "candidate_id": "3",
                 "compile": {
                   "aggregation": "none",
-                  "errors": [],
+                  "alias_suggestions": {},
+                  "errors": [
+                    "Filter must be an object."
+                  ],
                   "filters": [
-                    {
-                      "column": "CAMPAIGNNAME",
-                      "operator": "equals",
-                      "table": "dim_campaign",
-                      "value": "Birthday Message"
-                    }
+                    "CAMPAIGNNAME = 'Birthday Message'"
                   ],
                   "join_path": [],
-                  "ok": true,
-                  "selected_columns": [
-                    "UPDATEDTIME"
-                  ],
+                  "ok": false,
                   "selected_tables": [
                     "dim_campaign"
                   ],
-                  "sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
+                  "sql": "",
                   "warnings": []
                 },
                 "executed": false,
                 "plan_validation": {
-                  "errors": [],
-                  "ok": true,
+                  "errors": [
+                    "Filter must be an object."
+                  ],
+                  "ok": false,
                   "warnings": []
                 },
-                "round": 2,
+                "probe": {},
+                "round": 0,
                 "semantic_verification": {
                   "errors": [
-                    "Published/deployed DATE prompt should select a published timestamp such as LASTDEPLOYEDTIME."
+                    "Filter must be an object."
                   ],
-                  "evidence_source_plan": {
-                    "api_endpoints_that_may_answer": [],
-                    "api_reason": null,
-                    "confidence": 0.98,
-                    "local_tables_that_may_answer": [
-                      "dim_campaign"
-                    ],
-                    "needs_live_api": false,
-                    "needs_local_sql": true,
-                    "preferred_first_tool": "execute_sql",
-                    "question_type": "when_was_a_journey_published",
-                    "sql_reason": "The journey 'Birthday Message' is stored in the 'dim_campaign' table, which can be queried to find the publication date."
-                  },
-                  "expected_table": "dim_campaign",
                   "ok": false,
-                  "repair_hint": "use primary_table dim_campaign | fix semantic errors: Published/deployed DATE prompt should select a published timestamp such as LASTDEPLOYEDTIME.",
-                  "selected_aggregation": "none",
-                  "selected_columns": [
-                    "UPDATEDTIME"
-                  ],
-                  "selected_filters": [
-                    {
-                      "column": "CAMPAIGNNAME",
-                      "operator": "=",
-                      "value": "Birthday Message"
-                    }
-                  ],
-                  "selected_table": "dim_campaign",
-                  "semantic_score": 0.8,
+                  "semantic_score": 0.0,
                   "warnings": []
                 },
-                "sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
+                "sql": "",
                 "structured_sql_plan": {
-                  "_usage": {
-                    "completion_tokens": 165,
-                    "completion_tokens_details": null,
-                    "prompt_tokens": 1786,
-                    "prompt_tokens_details": {
-                      "audio_tokens": null,
-                      "cached_tokens": 104
-                    },
-                    "total_tokens": 1951
-                  },
                   "aggregation": null,
+                  "answer_intent": "DATE",
+                  "candidate_id": 3,
                   "columns_needed": [
-                    "UPDATEDTIME"
+                    "STARTDATE"
                   ],
+                  "confidence": 0.98,
                   "filters": [
-                    {
-                      "column": "CAMPAIGNNAME",
-                      "operator": "=",
-                      "value": "Birthday Message"
-                    }
+                    "CAMPAIGNNAME = 'Birthday Message'"
                   ],
-                  "join_needed": false,
-                  "join_path_reason": null,
                   "limit": null,
-                  "order_by": null,
-                  "primary_table": "dim_campaign"
+                  "order_by": [
+                    "STARTDATE"
+                  ],
+                  "primary_table": "dim_campaign",
+                  "reason": "The journey 'Birthday Message' is stored in the 'dim_campaign' table, which can be queried to find the publication date.",
+                  "tables_needed": [
+                    "dim_campaign"
+                  ]
                 },
                 "validation": {
-                  "errors": [],
-                  "ok": true,
-                  "repaired": false,
-                  "warnings": []
+                  "errors": [
+                    "Filter must be an object."
+                  ],
+                  "ok": false
                 }
               }
             ],
+            "candidate_count": 3,
+            "candidate_ranking": {
+              "ranking": [
+                {
+                  "accepted": false,
+                  "candidate": {
+                    "aggregation": null,
+                    "answer_intent": "DATE",
+                    "candidate_id": 1,
+                    "columns_needed": [
+                      "STARTDATE"
+                    ],
+                    "confidence": 0.98,
+                    "filters": [
+                      "CAMPAIGNNAME = 'Birthday Message'"
+                    ],
+                    "limit": null,
+                    "order_by": [
+                      "STARTDATE"
+                    ],
+                    "primary_table": "dim_campaign",
+                    "reason": "The journey 'Birthday Message' is stored in the 'dim_campaign' table, which can be queried to find the publication date.",
+                    "tables_needed": [
+                      "dim_campaign"
+                    ]
+                  },
+                  "candidate_id": "1",
+                  "compiled": {
+                    "aggregation": "none",
+                    "alias_suggestions": {},
+                    "errors": [
+                      "Filter must be an object."
+                    ],
+                    "filters": [
+                      "CAMPAIGNNAME = 'Birthday Message'"
+                    ],
+                    "join_path": [],
+                    "ok": false,
+                    "selected_tables": [
+                      "dim_campaign"
+                    ],
+                    "sql": "",
+                    "warnings": []
+                  },
+                  "probe": {},
+                  "ranking_features": {
+                    "answer_intent_match": true,
+                    "column_coverage": true,
+                    "compile_ok": false,
+                    "entity_table_match": false,
+                    "filter_coverage": false,
+                    "probe_ok": null,
+                    "semantic_ok": false,
+                    "semantic_score": 0.0,
+                    "sql_validation_ok": false,
+                    "timestamp_semantic_match": false
+                  },
+                  "rejection_reasons": [
+                    "Filter must be an object."
+                  ],
+                  "score": -98.304,
+                  "semantic_verification": {
+                    "errors": [
+                      "Filter must be an object."
+                    ],
+                    "ok": false,
+                    "semantic_score": 0.0,
+                    "warnings": []
+                  },
+                  "validation": {
+                    "errors": [
+                      "Filter must be an object."
+                    ],
+                    "ok": false
+                  }
+                },
+                {
+                  "accepted": false,
+                  "candidate": {
+                    "aggregation": null,
+                    "answer_intent": "DATE",
+                    "candidate_id": 2,
+                    "columns_needed": [
+                      "STARTDATE"
+                    ],
+                    "confidence": 0.98,
+                    "filters": [
+                      "CAMPAIGNNAME = 'Birthday Message'"
+                    ],
+                    "limit": null,
+                    "order_by": [
+                      "STARTDATE"
+                    ],
+                    "primary_table": "dim_campaign",
+                    "reason": "The journey 'Birthday Message' is stored in the 'dim_campaign' table, which can be queried to find the publication date.",
+                    "tables_needed": [
+                      "dim_campaign"
+                    ]
+                  },
+                  "candidate_id": "2",
+                  "compiled": {
+                    "aggregation": "none",
+                    "alias_suggestions": {},
+                    "errors": [
+                      "Filter must be an object."
+                    ],
+                    "filters": [
+                      "CAMPAIGNNAME = 'Birthday Message'"
+                    ],
+                    "join_path": [],
+                    "ok": false,
+                    "selected_tables": [
+                      "dim_campaign"
+                    ],
+                    "sql": "",
+                    "warnings": []
+                  },
+                  "probe": {},
+                  "ranking_features": {
+                    "answer_intent_match": true,
+                    "column_coverage": true,
+                    "compile_ok": false,
+                    "entity_table_match": false,
+                    "filter_coverage": false,
+                    "probe_ok": null,
+                    "semantic_ok": false,
+                    "semantic_score": 0.0,
+                    "sql_validation_ok": false,
+                    "timestamp_semantic_match": false
+                  },
+                  "rejection_reasons": [
+                    "Filter must be an object."
+                  ],
+                  "score": -98.304,
+                  "semantic_verification": {
+                    "errors": [
+                      "Filter must be an object."
+                    ],
+                    "ok": false,
+                    "semantic_score": 0.0,
+                    "warnings": []
+                  },
+                  "validation": {
+                    "errors": [
+                      "Filter must be an object."
+                    ],
+                    "ok": false
+                  }
+                },
+                {
+                  "accepted": false,
+                  "candidate": {
+                    "aggregation": null,
+                    "answer_intent": "DATE",
+                    "candidate_id": 3,
+                    "columns_needed": [
+                      "STARTDATE"
+                    ],
+                    "confidence": 0.98,
+                    "filters": [
+                      "CAMPAIGNNAME = 'Birthday Message'"
+                    ],
+                    "limit": null,
+                    "order_by": [
+                      "STARTDATE"
+                    ],
+                    "primary_table": "dim_campaign",
+                    "reason": "The journey 'Birthday Message' is stored in the 'dim_campaign' table, which can be queried to find the publication date.",
+                    "tables_needed": [
+                      "dim_campaign"
+                    ]
+                  },
+                  "candidate_id": "3",
+                  "compiled": {
+                    "aggregation": "none",
+                    "alias_suggestions": {},
+                    "errors": [
+                      "Filter must be an object."
+                    ],
+                    "filters": [
+                      "CAMPAIGNNAME = 'Birthday Message'"
+                    ],
+                    "join_path": [],
+                    "ok": false,
+                    "selected_tables": [
+                      "dim_campaign"
+                    ],
+                    "sql": "",
+                    "warnings": []
+                  },
+                  "probe": {},
+                  "ranking_features": {
+                    "answer_intent_match": true,
+                    "column_coverage": true,
+                    "compile_ok": false,
+                    "entity_table_match": false,
+                    "filter_coverage": false,
+                    "probe_ok": null,
+                    "semantic_ok": false,
+                    "semantic_score": 0.0,
+                    "sql_validation_ok": false,
+                    "timestamp_semantic_match": false
+                  },
+                  "rejection_reasons": [
+                    "Filter must be an object."
+                  ],
+                  "score": -98.304,
+                  "semantic_verification": {
+                    "errors": [
+                      "Filter must be an object."
+                    ],
+                    "ok": false,
+                    "semantic_score": 0.0,
+                    "warnings": []
+                  },
+                  "validation": {
+                    "errors": [
+                      "Filter must be an object."
+                    ],
+                    "ok": false
+                  }
+                }
+              ],
+              "ranking_features": {},
+              "rejection_reasons": {
+                "1": [
+                  "Filter must be an object."
+                ],
+                "2": [
+                  "Filter must be an object."
+                ],
+                "3": [
+                  "Filter must be an object."
+                ]
+              },
+              "selected_candidate": null,
+              "selected_candidate_id": null,
+              "selected_sql": ""
+            },
             "kind": "sql_call",
-            "repair_rounds": 2,
+            "repair_rounds": 0,
             "result": null,
-            "sql": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
+            "selected_candidate_id": null,
+            "sql": "",
+            "sql_evidence": null,
             "validation": {
-              "errors": [],
-              "ok": true,
-              "repaired": false,
-              "warnings": []
+              "errors": [
+                "Filter must be an object."
+              ],
+              "ok": false
             }
           },
           {
@@ -65720,30 +65813,35 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "structured_sql_plan_semantic_repair_v1",
+        "strategy": "multi_candidate_sql_grounded_answer_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
           "api_endpoint_candidate": null,
           "api_endpoint_repair_attempted": false,
           "api_endpoint_validation_ok": false,
+          "candidate_count": 3,
           "did_llm_choose_tool": true,
           "did_llm_plan": true,
+          "fallback_to_sql_evidence_answer": false,
           "fallback_to_sql_result_answer": false,
           "final_answer": "The available tool evidence does not contain enough supported data to answer.",
           "rejected_unsupported_claim_count": 2,
+          "selected_candidate_id": null,
           "selected_tool": "execute_sql",
           "semantic_repair_attempted": true,
           "semantic_repair_success": false,
-          "semantic_score": 0.8,
+          "semantic_score": 0.0,
           "semantic_verification_ok": false,
-          "sql_candidate": "SELECT \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"dim_campaign\".\"NAME\" = 'Birthday Message' LIMIT 50",
-          "sql_repair_attempted": true,
-          "sql_repair_success": true,
+          "sql_candidate": "",
+          "sql_evidence_object_available": false,
+          "sql_evidence_used_in_answer": false,
+          "sql_repair_attempted": false,
+          "sql_repair_success": false,
           "sql_result_grounded": false,
-          "sql_validation_ok": true,
-          "structured_plan_compile_ok": true,
-          "structured_plan_validation_ok": true,
+          "sql_validation_ok": false,
+          "structured_plan_compile_ok": false,
+          "structured_plan_validation_ok": false,
           "tool_execution_ok": false,
           "tool_result_used_in_answer": false,
           "unsupported_claim_count": 0
@@ -65752,40 +65850,45 @@
       },
       "unscored_dimension_count": 1,
       "unsupported_claim_count": 0,
-      "variant": "structured_sql_plan_semantic_repair_v1"
+      "variant": "multi_candidate_sql_grounded_answer_v1"
     },
     {
       "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
       "answer_score": 0.1795,
       "api_reason": "Strict API method/path/required-param/call-count score: 0.8300.",
       "api_score": 0.83,
-      "estimated_tokens": 2174,
+      "estimated_tokens": 3265,
       "failure_stage": "no_clear_failure",
       "prompt": "Give me inactive journeys",
       "query_id": "example_001",
-      "runtime": 16.909,
+      "runtime": 20.9535,
       "sql_reason": "No generated SQL while gold SQL exists.",
       "sql_score": 0.0,
       "strict_correctness": 0.3028,
-      "strict_final_score": 0.2159,
+      "strict_final_score": 0.2028,
       "strict_scoring_status": "available",
-      "system": "structured_sql_plan_semantic_repair_v1",
+      "system": "multi_candidate_sql_grounded_answer_v1",
       "tool_calls": 1,
       "trace_assertions": {
         "api_endpoint_candidate": "journey_list",
         "api_endpoint_repair_attempted": false,
         "api_endpoint_validation_ok": true,
+        "candidate_count": null,
         "did_llm_choose_tool": true,
         "did_llm_plan": true,
+        "fallback_to_sql_evidence_answer": false,
         "fallback_to_sql_result_answer": false,
         "final_answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
         "rejected_unsupported_claim_count": 2,
+        "selected_candidate_id": null,
         "selected_tool": "call_api",
         "semantic_repair_attempted": false,
         "semantic_repair_success": false,
         "semantic_score": null,
         "semantic_verification_ok": null,
         "sql_candidate": null,
+        "sql_evidence_object_available": false,
+        "sql_evidence_used_in_answer": false,
         "sql_repair_attempted": false,
         "sql_repair_success": false,
         "sql_result_grounded": false,
@@ -65797,15 +65900,15 @@
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "structured_sql_plan_semantic_repair_v1",
-        "estimated_tokens": 2174,
+        "baseline_variant": "multi_candidate_sql_grounded_answer_v1",
+        "estimated_tokens": 3265,
         "failure_stage": "no_clear_failure",
         "final_answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
         "llm_total_tokens": 1674,
         "original_query": "Give me inactive journeys",
         "pure_llm_tool_agent": true,
         "rejected_unsupported_claim_count": 2,
-        "runtime": 16.908966708928347,
+        "runtime": 20.95351487537846,
         "steps": [
           {
             "context_summary": {
@@ -65938,19 +66041,19 @@
               "reason": "The request is to find inactive journeys, which can be achieved through an API call.",
               "sql_task": null
             },
-            "variant": "structured_sql_plan_semantic_repair_v1"
+            "variant": "multi_candidate_sql_grounded_answer_v1"
           },
           {
             "_usage": {
               "final": {
-                "completion_tokens": 512,
+                "completion_tokens": 666,
                 "completion_tokens_details": null,
                 "prompt_tokens": 1794,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 2306
+                "total_tokens": 2460
               },
               "initial": {
                 "completion_tokens": 113,
@@ -65966,13 +66069,100 @@
             "final_plan": {
               "api_endpoints_that_may_answer": [],
               "api_reason": "",
+              "bad_plan": {
+                "api_endpoints_that_may_answer": [
+                  "/ajo/journey"
+                ],
+                "api_reason": "The endpoint '/ajo/journey' can be used to fetch inactive journeys.",
+                "confidence": 1.0,
+                "local_tables_that_may_answer": [],
+                "needs_live_api": true,
+                "needs_local_sql": false,
+                "preferred_first_tool": "call_api",
+                "question_type": "get inactive journeys",
+                "sql_reason": "No local snapshot entities found to answer the question."
+              },
               "confidence": 0.0,
               "local_tables_that_may_answer": [],
               "needs_live_api": false,
               "needs_local_sql": false,
               "preferred_first_tool": "none",
               "question_type": "unknown",
-              "sql_reason": ""
+              "schema_context": {
+                "answer_intent": "STATUS",
+                "business_term_aliases": {
+                  "audience": "dim_segment",
+                  "audiences": "dim_segment",
+                  "campaign": "dim_campaign",
+                  "campaigns": "dim_campaign",
+                  "journey": "dim_campaign",
+                  "journeys": "dim_campaign",
+                  "segment": "dim_segment",
+                  "segments": "dim_segment",
+                  "truncated_fields": 17
+                },
+                "columns_by_table": {},
+                "endpoint_candidates": {
+                  "items": [
+                    {
+                      "common_params": {
+                        "limit": 50,
+                        "start": 0
+                      },
+                      "domains": {
+                        "items": [
+                          "JOURNEY_CAMPAIGN",
+                          "STATUS_MONITORING"
+                        ],
+                        "total_items": 2,
+                        "truncated_items": false
+                      },
+                      "endpoint_id": "journey_list",
+                      "method": "GET",
+                      "path": "/ajo/journey",
+                      "score": 2
+                    }
+                  ],
+                  "total_items": 1,
+                  "truncated_items": false
+                },
+                "join_hints": {},
+                "primary_id_columns": {},
+                "top_tables": {
+                  "items": [],
+                  "total_items": 0,
+                  "truncated_items": false
+                },
+                "truncated_fields": 2
+              },
+              "sql_reason": "",
+              "validation": {
+                "endpoint_catalog_may_have_misled_model": true,
+                "evidence_source_that_should_have_been_considered": "local_sql_required",
+                "final_tool_choice": "call_api",
+                "high_confidence_sql_required": true,
+                "ignored_schema_context": true,
+                "local_schema_has_relevant_tables": true,
+                "ok": false,
+                "plan": {
+                  "api_endpoints_that_may_answer": [
+                    "/ajo/journey"
+                  ],
+                  "api_reason": "The endpoint '/ajo/journey' can be used to fetch inactive journeys.",
+                  "confidence": 1.0,
+                  "local_tables_that_may_answer": [],
+                  "needs_live_api": true,
+                  "needs_local_sql": false,
+                  "preferred_first_tool": "call_api",
+                  "question_type": "get inactive journeys",
+                  "sql_reason": "No local snapshot entities found to answer the question."
+                },
+                "rejection_reason": "sql_likely_required_api_chosen",
+                "top_relevant_api_endpoints": [
+                  "journey_list"
+                ],
+                "top_relevant_sql_tables": []
+              }
             },
             "final_tool_choice": "none",
             "initial_plan": {
@@ -66097,13 +66287,100 @@
               "plan": {
                 "api_endpoints_that_may_answer": [],
                 "api_reason": "",
+                "bad_plan": {
+                  "api_endpoints_that_may_answer": [
+                    "/ajo/journey"
+                  ],
+                  "api_reason": "The endpoint '/ajo/journey' can be used to fetch inactive journeys.",
+                  "confidence": 1.0,
+                  "local_tables_that_may_answer": [],
+                  "needs_live_api": true,
+                  "needs_local_sql": false,
+                  "preferred_first_tool": "call_api",
+                  "question_type": "get inactive journeys",
+                  "sql_reason": "No local snapshot entities found to answer the question."
+                },
                 "confidence": 0.0,
                 "local_tables_that_may_answer": [],
                 "needs_live_api": false,
                 "needs_local_sql": false,
                 "preferred_first_tool": "none",
                 "question_type": "unknown",
-                "sql_reason": ""
+                "schema_context": {
+                  "answer_intent": "STATUS",
+                  "business_term_aliases": {
+                    "audience": "dim_segment",
+                    "audiences": "dim_segment",
+                    "campaign": "dim_campaign",
+                    "campaigns": "dim_campaign",
+                    "journey": "dim_campaign",
+                    "journeys": "dim_campaign",
+                    "segment": "dim_segment",
+                    "segments": "dim_segment",
+                    "truncated_fields": 17
+                  },
+                  "columns_by_table": {},
+                  "endpoint_candidates": {
+                    "items": [
+                      {
+                        "common_params": {
+                          "limit": 50,
+                          "start": 0
+                        },
+                        "domains": {
+                          "items": [
+                            "JOURNEY_CAMPAIGN",
+                            "STATUS_MONITORING"
+                          ],
+                          "total_items": 2,
+                          "truncated_items": false
+                        },
+                        "endpoint_id": "journey_list",
+                        "method": "GET",
+                        "path": "/ajo/journey",
+                        "score": 2
+                      }
+                    ],
+                    "total_items": 1,
+                    "truncated_items": false
+                  },
+                  "join_hints": {},
+                  "primary_id_columns": {},
+                  "top_tables": {
+                    "items": [],
+                    "total_items": 0,
+                    "truncated_items": false
+                  },
+                  "truncated_fields": 2
+                },
+                "sql_reason": "",
+                "validation": {
+                  "endpoint_catalog_may_have_misled_model": true,
+                  "evidence_source_that_should_have_been_considered": "local_sql_required",
+                  "final_tool_choice": "call_api",
+                  "high_confidence_sql_required": true,
+                  "ignored_schema_context": true,
+                  "local_schema_has_relevant_tables": true,
+                  "ok": false,
+                  "plan": {
+                    "api_endpoints_that_may_answer": [
+                      "/ajo/journey"
+                    ],
+                    "api_reason": "The endpoint '/ajo/journey' can be used to fetch inactive journeys.",
+                    "confidence": 1.0,
+                    "local_tables_that_may_answer": [],
+                    "needs_live_api": true,
+                    "needs_local_sql": false,
+                    "preferred_first_tool": "call_api",
+                    "question_type": "get inactive journeys",
+                    "sql_reason": "No local snapshot entities found to answer the question."
+                  },
+                  "rejection_reason": "sql_likely_required_api_chosen",
+                  "top_relevant_api_endpoints": [
+                    "journey_list"
+                  ],
+                  "top_relevant_sql_tables": []
+                }
               },
               "rejection_reason": "tool_required",
               "top_relevant_api_endpoints": [
@@ -66225,24 +66502,29 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "structured_sql_plan_semantic_repair_v1",
+        "strategy": "multi_candidate_sql_grounded_answer_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
           "api_endpoint_candidate": "journey_list",
           "api_endpoint_repair_attempted": false,
           "api_endpoint_validation_ok": true,
+          "candidate_count": null,
           "did_llm_choose_tool": true,
           "did_llm_plan": true,
+          "fallback_to_sql_evidence_answer": false,
           "fallback_to_sql_result_answer": false,
           "final_answer": "The validated API call returned no records for this request context; this does not establish broader absence.",
           "rejected_unsupported_claim_count": 2,
+          "selected_candidate_id": null,
           "selected_tool": "call_api",
           "semantic_repair_attempted": false,
           "semantic_repair_success": false,
           "semantic_score": null,
           "semantic_verification_ok": null,
           "sql_candidate": null,
+          "sql_evidence_object_available": false,
+          "sql_evidence_used_in_answer": false,
           "sql_repair_attempted": false,
           "sql_repair_success": false,
           "sql_result_grounded": false,
@@ -66257,40 +66539,45 @@
       },
       "unscored_dimension_count": 0,
       "unsupported_claim_count": 0,
-      "variant": "structured_sql_plan_semantic_repair_v1"
+      "variant": "multi_candidate_sql_grounded_answer_v1"
     },
     {
       "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
       "answer_score": 0.0261,
       "api_reason": "Strict API method/path/required-param/call-count score: 0.8300.",
       "api_score": 0.83,
-      "estimated_tokens": 2120,
+      "estimated_tokens": 2119,
       "failure_stage": "no_clear_failure",
       "prompt": "List all journeys",
       "query_id": "example_002",
-      "runtime": 14.6038,
+      "runtime": 21.1404,
       "sql_reason": "No generated SQL while gold SQL exists.",
       "sql_score": 0.0,
       "strict_correctness": 0.2568,
-      "strict_final_score": 0.178,
+      "strict_final_score": 0.1568,
       "strict_scoring_status": "available",
-      "system": "structured_sql_plan_semantic_repair_v1",
+      "system": "multi_candidate_sql_grounded_answer_v1",
       "tool_calls": 1,
       "trace_assertions": {
         "api_endpoint_candidate": "journey_list",
         "api_endpoint_repair_attempted": false,
         "api_endpoint_validation_ok": true,
+        "candidate_count": null,
         "did_llm_choose_tool": true,
         "did_llm_plan": true,
+        "fallback_to_sql_evidence_answer": false,
         "fallback_to_sql_result_answer": false,
         "final_answer": "0 journeys found",
         "rejected_unsupported_claim_count": 0,
+        "selected_candidate_id": null,
         "selected_tool": "call_api",
         "semantic_repair_attempted": false,
         "semantic_repair_success": false,
         "semantic_score": null,
         "semantic_verification_ok": null,
         "sql_candidate": null,
+        "sql_evidence_object_available": false,
+        "sql_evidence_used_in_answer": false,
         "sql_repair_attempted": false,
         "sql_repair_success": false,
         "sql_result_grounded": false,
@@ -66302,15 +66589,15 @@
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "structured_sql_plan_semantic_repair_v1",
-        "estimated_tokens": 2120,
+        "baseline_variant": "multi_candidate_sql_grounded_answer_v1",
+        "estimated_tokens": 2119,
         "failure_stage": "no_clear_failure",
         "final_answer": "0 journeys found",
         "llm_total_tokens": 1848,
         "original_query": "List all journeys",
         "pure_llm_tool_agent": true,
         "rejected_unsupported_claim_count": 0,
-        "runtime": 14.603778833989054,
+        "runtime": 21.140413417015225,
         "steps": [
           {
             "context_summary": {
@@ -66444,19 +66731,19 @@
               "reason": "The user request is to list all journeys, and the available API endpoint '/ajo/journey' is suitable for this purpose.",
               "sql_task": null
             },
-            "variant": "structured_sql_plan_semantic_repair_v1"
+            "variant": "multi_candidate_sql_grounded_answer_v1"
           },
           {
             "_usage": {
               "final": {
-                "completion_tokens": 512,
+                "completion_tokens": 768,
                 "completion_tokens_details": null,
                 "prompt_tokens": 1995,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 2507
+                "total_tokens": 2763
               },
               "initial": {
                 "completion_tokens": 183,
@@ -66727,24 +67014,29 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "structured_sql_plan_semantic_repair_v1",
+        "strategy": "multi_candidate_sql_grounded_answer_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
           "api_endpoint_candidate": "journey_list",
           "api_endpoint_repair_attempted": false,
           "api_endpoint_validation_ok": true,
+          "candidate_count": null,
           "did_llm_choose_tool": true,
           "did_llm_plan": true,
+          "fallback_to_sql_evidence_answer": false,
           "fallback_to_sql_result_answer": false,
           "final_answer": "0 journeys found",
           "rejected_unsupported_claim_count": 0,
+          "selected_candidate_id": null,
           "selected_tool": "call_api",
           "semantic_repair_attempted": false,
           "semantic_repair_success": false,
           "semantic_score": null,
           "semantic_verification_ok": null,
           "sql_candidate": null,
+          "sql_evidence_object_available": false,
+          "sql_evidence_used_in_answer": false,
           "sql_repair_attempted": false,
           "sql_repair_success": false,
           "sql_result_grounded": false,
@@ -66759,41 +67051,46 @@
       },
       "unscored_dimension_count": 0,
       "unsupported_claim_count": 0,
-      "variant": "structured_sql_plan_semantic_repair_v1"
+      "variant": "multi_candidate_sql_grounded_answer_v1"
     },
     {
       "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
       "answer_score": 0.2553,
       "api_reason": "No generated API call while gold API exists.",
       "api_score": 0.0,
-      "estimated_tokens": 4075,
-      "failure_stage": "sql_repair_failed",
+      "estimated_tokens": 5242,
+      "failure_stage": "invalid_sql",
       "prompt": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
       "query_id": "example_003",
-      "runtime": 27.3092,
+      "runtime": 27.7659,
       "sql_reason": "No generated SQL while gold SQL exists.",
       "sql_score": 0.0,
       "strict_correctness": 0.0766,
       "strict_final_score": -0.0234,
       "strict_scoring_status": "available",
-      "system": "structured_sql_plan_semantic_repair_v1",
+      "system": "multi_candidate_sql_grounded_answer_v1",
       "tool_calls": 1,
       "trace_assertions": {
         "api_endpoint_candidate": null,
         "api_endpoint_repair_attempted": false,
         "api_endpoint_validation_ok": false,
+        "candidate_count": 3,
         "did_llm_choose_tool": true,
         "did_llm_plan": true,
+        "fallback_to_sql_evidence_answer": false,
         "fallback_to_sql_result_answer": false,
         "final_answer": "The available tool evidence does not contain enough supported data to answer.",
         "rejected_unsupported_claim_count": 2,
+        "selected_candidate_id": null,
         "selected_tool": "execute_sql",
-        "semantic_repair_attempted": false,
-        "semantic_repair_success": true,
-        "semantic_score": null,
-        "semantic_verification_ok": true,
+        "semantic_repair_attempted": true,
+        "semantic_repair_success": false,
+        "semantic_score": 0.0,
+        "semantic_verification_ok": false,
         "sql_candidate": "",
-        "sql_repair_attempted": true,
+        "sql_evidence_object_available": false,
+        "sql_evidence_used_in_answer": false,
+        "sql_repair_attempted": false,
         "sql_repair_success": false,
         "sql_result_grounded": false,
         "sql_validation_ok": false,
@@ -66804,15 +67101,15 @@
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "structured_sql_plan_semantic_repair_v1",
-        "estimated_tokens": 4075,
-        "failure_stage": "sql_repair_failed",
+        "baseline_variant": "multi_candidate_sql_grounded_answer_v1",
+        "estimated_tokens": 5242,
+        "failure_stage": "invalid_sql",
         "final_answer": "The available tool evidence does not contain enough supported data to answer.",
         "llm_total_tokens": 1904,
         "original_query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
         "pure_llm_tool_agent": true,
         "rejected_unsupported_claim_count": 2,
-        "runtime": 27.309189166873693,
+        "runtime": 27.765875958371907,
         "steps": [
           {
             "context_summary": {
@@ -66924,19 +67221,19 @@
               "reason": "The task requires selecting specific columns from the 'dim_segment' table based on the target 'SMS Opt-In'. The audience details and their usage in other segments are requested.",
               "sql_task": "SELECT SEGMENTID, UPDATEDTIME, ISACCOUNTSEGMENT FROM dim_segment WHERE DATAFLOWNAME = 'SMS Opt-In' AND STATE = 'ACTIVE' AND ISACCOUNTSEGMENT = 'Y' LIMIT 1000"
             },
-            "variant": "structured_sql_plan_semantic_repair_v1"
+            "variant": "multi_candidate_sql_grounded_answer_v1"
           },
           {
             "_usage": {
               "final": {
-                "completion_tokens": 512,
+                "completion_tokens": 768,
                 "completion_tokens_details": null,
                 "prompt_tokens": 2073,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 2585
+                "total_tokens": 2841
               },
               "initial": {
                 "completion_tokens": 139,
@@ -67104,31 +67401,29 @@
                 "ast_summary": {
                   "parse_error": "empty_sql"
                 },
+                "candidate_id": "1",
                 "compile": {
                   "aggregation": "none",
                   "alias_suggestions": {},
                   "errors": [
-                    "Unknown column in columns_needed: dim_segment.TARGETID.",
-                    "Unknown column in filters: dim_segment.dim_segment.DATAFLOWNAME.",
-                    "Unknown column in filters: dim_segment.dim_segment.ISACCOUNTSEGMENT.",
-                    "Unknown column in filters: dim_segment.dim_segment.STATE.",
-                    "Unsupported join path for tables: dim_segment, dim_target."
+                    "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                    "Unknown column in filters: dim_segment.STATE."
                   ],
                   "filters": [
                     {
-                      "column": "dim_segment.DATAFLOWNAME",
+                      "column": "DATAFLOWNAME",
                       "operator": "equals",
                       "table": "dim_segment",
                       "value": "'SMS Opt-In'"
                     },
                     {
-                      "column": "dim_segment.STATE",
+                      "column": "STATE",
                       "operator": "equals",
                       "table": "dim_segment",
                       "value": "'ACTIVE'"
                     },
                     {
-                      "column": "dim_segment.ISACCOUNTSEGMENT",
+                      "column": "ISACCOUNTSEGMENT",
                       "operator": "equals",
                       "table": "dim_segment",
                       "value": "'Y'"
@@ -67137,8 +67432,7 @@
                   "join_path": [],
                   "ok": false,
                   "selected_tables": [
-                    "dim_segment",
-                    "dim_target"
+                    "dim_segment"
                   ],
                   "sql": "",
                   "warnings": []
@@ -67146,79 +67440,60 @@
                 "executed": false,
                 "plan_validation": {
                   "errors": [
-                    "Unknown column in columns_needed: dim_segment.TARGETID.",
-                    "Unknown column in filters: dim_segment.dim_segment.DATAFLOWNAME.",
-                    "Unknown column in filters: dim_segment.dim_segment.ISACCOUNTSEGMENT.",
-                    "Unknown column in filters: dim_segment.dim_segment.STATE.",
-                    "Unsupported join path for tables: dim_segment, dim_target."
+                    "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                    "Unknown column in filters: dim_segment.STATE."
                   ],
                   "ok": false,
                   "warnings": []
                 },
+                "probe": {},
                 "round": 0,
                 "semantic_verification": {
-                  "errors": [],
-                  "ok": true,
-                  "repair_hint": "",
-                  "semantic_score": null,
+                  "errors": [
+                    "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                    "Unknown column in filters: dim_segment.STATE."
+                  ],
+                  "ok": false,
+                  "semantic_score": 0.0,
                   "warnings": []
                 },
                 "sql": "",
                 "structured_sql_plan": {
-                  "_usage": {
-                    "completion_tokens": 245,
-                    "completion_tokens_details": null,
-                    "prompt_tokens": 2052,
-                    "prompt_tokens_details": {
-                      "audio_tokens": null,
-                      "cached_tokens": 3
-                    },
-                    "total_tokens": 2297
-                  },
                   "aggregation": null,
                   "answer_intent": "SELECT",
+                  "candidate_id": 1,
                   "columns_needed": [
                     "SEGMENTID",
                     "UPDATEDTIME",
-                    "ISACCOUNTSEGMENT",
-                    "TARGETID"
+                    "ISACCOUNTSEGMENT"
                   ],
-                  "confidence": 0.98,
+                  "confidence": 100,
                   "filters": [
                     {
-                      "column": "dim_segment.DATAFLOWNAME",
-                      "operator": "=",
+                      "column": "DATAFLOWNAME",
                       "value": "'SMS Opt-In'"
                     },
                     {
-                      "column": "dim_segment.STATE",
-                      "operator": "=",
+                      "column": "STATE",
                       "value": "'ACTIVE'"
                     },
                     {
-                      "column": "dim_segment.ISACCOUNTSEGMENT",
-                      "operator": "=",
+                      "column": "ISACCOUNTSEGMENT",
                       "value": "'Y'"
                     }
                   ],
-                  "join_needed": true,
-                  "join_path_reason": "JOIN dim_segment ON dim_segment.SEGMENTID = dim_target.SEGMENTID WHERE dim_target.DATAFLOWNAME = 'SMS Opt-In'",
                   "limit": null,
                   "order_by": null,
-                  "primary_entity": "SMS Opt-In audience",
                   "primary_table": "dim_segment",
+                  "reason": "Selecting segment details where the target is 'SMS Opt-In' and the segment is an account segment.",
                   "tables_needed": [
-                    "dim_segment",
-                    "dim_target"
+                    "dim_segment"
                   ]
                 },
                 "validation": {
                   "errors": [
-                    "Unknown column in columns_needed: dim_segment.TARGETID.",
-                    "Unknown column in filters: dim_segment.dim_segment.DATAFLOWNAME.",
-                    "Unknown column in filters: dim_segment.dim_segment.ISACCOUNTSEGMENT.",
-                    "Unknown column in filters: dim_segment.dim_segment.STATE.",
-                    "Unsupported join path for tables: dim_segment, dim_target."
+                    "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                    "Unknown column in filters: dim_segment.STATE."
                   ],
                   "ok": false
                 }
@@ -67227,40 +67502,38 @@
                 "ast_summary": {
                   "parse_error": "empty_sql"
                 },
+                "candidate_id": "2",
                 "compile": {
                   "aggregation": "none",
                   "alias_suggestions": {},
                   "errors": [
                     "Unknown column in filters: dim_segment.DATAFLOWNAME.",
-                    "Unknown column in filters: dim_segment.ISACCOUNTSEGMENT.",
-                    "Unknown column in filters: dim_segment.STATE.",
-                    "Unsupported join path for tables: dim_segment, dim_target."
+                    "Unknown column in filters: dim_segment.STATE."
                   ],
                   "filters": [
                     {
-                      "column": "dim_segment.DATAFLOWNAME",
+                      "column": "DATAFLOWNAME",
                       "operator": "equals",
-                      "table": "",
+                      "table": "dim_segment",
                       "value": "'SMS Opt-In'"
                     },
                     {
-                      "column": "dim_segment.STATE",
+                      "column": "STATE",
                       "operator": "equals",
-                      "table": "",
+                      "table": "dim_segment",
                       "value": "'ACTIVE'"
                     },
                     {
-                      "column": "dim_segment.ISACCOUNTSEGMENT",
+                      "column": "ISACCOUNTSEGMENT",
                       "operator": "equals",
-                      "table": "",
+                      "table": "dim_segment",
                       "value": "'Y'"
                     }
                   ],
                   "join_path": [],
                   "ok": false,
                   "selected_tables": [
-                    "dim_segment",
-                    "dim_target"
+                    "dim_segment"
                   ],
                   "sql": "",
                   "warnings": []
@@ -67269,74 +67542,59 @@
                 "plan_validation": {
                   "errors": [
                     "Unknown column in filters: dim_segment.DATAFLOWNAME.",
-                    "Unknown column in filters: dim_segment.ISACCOUNTSEGMENT.",
-                    "Unknown column in filters: dim_segment.STATE.",
-                    "Unsupported join path for tables: dim_segment, dim_target."
+                    "Unknown column in filters: dim_segment.STATE."
                   ],
                   "ok": false,
                   "warnings": []
                 },
-                "round": 1,
+                "probe": {},
+                "round": 0,
                 "semantic_verification": {
-                  "errors": [],
-                  "ok": true,
-                  "repair_hint": "",
-                  "semantic_score": null,
+                  "errors": [
+                    "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                    "Unknown column in filters: dim_segment.STATE."
+                  ],
+                  "ok": false,
+                  "semantic_score": 0.0,
                   "warnings": []
                 },
                 "sql": "",
                 "structured_sql_plan": {
-                  "_usage": {
-                    "completion_tokens": 299,
-                    "completion_tokens_details": null,
-                    "prompt_tokens": 2061,
-                    "prompt_tokens_details": {
-                      "audio_tokens": null,
-                      "cached_tokens": 3
-                    },
-                    "total_tokens": 2360
-                  },
                   "aggregation": null,
+                  "answer_intent": "SELECT",
+                  "candidate_id": 2,
                   "columns_needed": [
                     "SEGMENTID",
                     "UPDATEDTIME",
-                    "ISACCOUNTSEGMENT",
-                    "TARGETID"
+                    "ISACCOUNTSEGMENT"
                   ],
-                  "confidence": 0.98,
+                  "confidence": 100,
                   "filters": [
                     {
-                      "column": "dim_segment.DATAFLOWNAME",
-                      "operator": "=",
+                      "column": "DATAFLOWNAME",
                       "value": "'SMS Opt-In'"
                     },
                     {
-                      "column": "dim_segment.STATE",
-                      "operator": "=",
+                      "column": "STATE",
                       "value": "'ACTIVE'"
                     },
                     {
-                      "column": "dim_segment.ISACCOUNTSEGMENT",
-                      "operator": "=",
+                      "column": "ISACCOUNTSEGMENT",
                       "value": "'Y'"
                     }
                   ],
-                  "join_needed": true,
-                  "join_path_reason": "JOIN dim_segment ON dim_segment.SEGMENTID = dim_target.SEGMENTID WHERE dim_target.DATAFLOWNAME = 'SMS Opt-In'",
                   "limit": null,
                   "order_by": null,
-                  "primary_entity": "SMS Opt-In audience",
+                  "primary_table": "dim_segment",
+                  "reason": "Selecting segment details where the target is 'SMS Opt-In' and the segment is an account segment.",
                   "tables_needed": [
-                    "dim_segment",
-                    "dim_target"
+                    "dim_segment"
                   ]
                 },
                 "validation": {
                   "errors": [
                     "Unknown column in filters: dim_segment.DATAFLOWNAME.",
-                    "Unknown column in filters: dim_segment.ISACCOUNTSEGMENT.",
-                    "Unknown column in filters: dim_segment.STATE.",
-                    "Unsupported join path for tables: dim_segment, dim_target."
+                    "Unknown column in filters: dim_segment.STATE."
                   ],
                   "ok": false
                 }
@@ -67345,40 +67603,38 @@
                 "ast_summary": {
                   "parse_error": "empty_sql"
                 },
+                "candidate_id": "3",
                 "compile": {
                   "aggregation": "none",
                   "alias_suggestions": {},
                   "errors": [
                     "Unknown column in filters: dim_segment.DATAFLOWNAME.",
-                    "Unknown column in filters: dim_segment.ISACCOUNTSEGMENT.",
-                    "Unknown column in filters: dim_segment.STATE.",
-                    "Unsupported join path for tables: dim_segment, dim_target."
+                    "Unknown column in filters: dim_segment.STATE."
                   ],
                   "filters": [
                     {
-                      "column": "dim_segment.DATAFLOWNAME",
+                      "column": "DATAFLOWNAME",
                       "operator": "equals",
-                      "table": "",
+                      "table": "dim_segment",
                       "value": "'SMS Opt-In'"
                     },
                     {
-                      "column": "dim_segment.STATE",
+                      "column": "STATE",
                       "operator": "equals",
-                      "table": "",
+                      "table": "dim_segment",
                       "value": "'ACTIVE'"
                     },
                     {
-                      "column": "dim_segment.ISACCOUNTSEGMENT",
+                      "column": "ISACCOUNTSEGMENT",
                       "operator": "equals",
-                      "table": "",
+                      "table": "dim_segment",
                       "value": "'Y'"
                     }
                   ],
                   "join_path": [],
                   "ok": false,
                   "selected_tables": [
-                    "dim_segment",
-                    "dim_target"
+                    "dim_segment"
                   ],
                   "sql": "",
                   "warnings": []
@@ -67387,89 +67643,412 @@
                 "plan_validation": {
                   "errors": [
                     "Unknown column in filters: dim_segment.DATAFLOWNAME.",
-                    "Unknown column in filters: dim_segment.ISACCOUNTSEGMENT.",
-                    "Unknown column in filters: dim_segment.STATE.",
-                    "Unsupported join path for tables: dim_segment, dim_target."
+                    "Unknown column in filters: dim_segment.STATE."
                   ],
                   "ok": false,
                   "warnings": []
                 },
-                "round": 2,
+                "probe": {},
+                "round": 0,
                 "semantic_verification": {
-                  "errors": [],
-                  "ok": true,
-                  "repair_hint": "",
-                  "semantic_score": null,
+                  "errors": [
+                    "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                    "Unknown column in filters: dim_segment.STATE."
+                  ],
+                  "ok": false,
+                  "semantic_score": 0.0,
                   "warnings": []
                 },
                 "sql": "",
                 "structured_sql_plan": {
-                  "_usage": {
-                    "completion_tokens": 299,
-                    "completion_tokens_details": null,
-                    "prompt_tokens": 2024,
-                    "prompt_tokens_details": {
-                      "audio_tokens": null,
-                      "cached_tokens": 141
-                    },
-                    "total_tokens": 2323
-                  },
                   "aggregation": null,
+                  "answer_intent": "SELECT",
+                  "candidate_id": 3,
                   "columns_needed": [
                     "SEGMENTID",
                     "UPDATEDTIME",
-                    "ISACCOUNTSEGMENT",
-                    "TARGETID"
+                    "ISACCOUNTSEGMENT"
                   ],
-                  "confidence": 0.98,
+                  "confidence": 100,
                   "filters": [
                     {
-                      "column": "dim_segment.DATAFLOWNAME",
-                      "operator": "=",
+                      "column": "DATAFLOWNAME",
                       "value": "'SMS Opt-In'"
                     },
                     {
-                      "column": "dim_segment.STATE",
-                      "operator": "=",
+                      "column": "STATE",
                       "value": "'ACTIVE'"
                     },
                     {
-                      "column": "dim_segment.ISACCOUNTSEGMENT",
-                      "operator": "=",
+                      "column": "ISACCOUNTSEGMENT",
                       "value": "'Y'"
                     }
                   ],
-                  "join_needed": true,
-                  "join_path_reason": "JOIN dim_segment ON dim_segment.SEGMENTID = dim_target.SEGMENTID WHERE dim_target.DATAFLOWNAME = 'SMS Opt-In'",
                   "limit": null,
                   "order_by": null,
-                  "primary_entity": "SMS Opt-In audience",
+                  "primary_table": "dim_segment",
+                  "reason": "Selecting segment details where the target is 'SMS Opt-In' and the segment is an account segment.",
                   "tables_needed": [
-                    "dim_segment",
-                    "dim_target"
+                    "dim_segment"
                   ]
                 },
                 "validation": {
                   "errors": [
                     "Unknown column in filters: dim_segment.DATAFLOWNAME.",
-                    "Unknown column in filters: dim_segment.ISACCOUNTSEGMENT.",
-                    "Unknown column in filters: dim_segment.STATE.",
-                    "Unsupported join path for tables: dim_segment, dim_target."
+                    "Unknown column in filters: dim_segment.STATE."
                   ],
                   "ok": false
                 }
               }
             ],
+            "candidate_count": 3,
+            "candidate_ranking": {
+              "ranking": [
+                {
+                  "accepted": false,
+                  "candidate": {
+                    "aggregation": null,
+                    "answer_intent": "SELECT",
+                    "candidate_id": 1,
+                    "columns_needed": [
+                      "SEGMENTID",
+                      "UPDATEDTIME",
+                      "ISACCOUNTSEGMENT"
+                    ],
+                    "confidence": 100,
+                    "filters": [
+                      {
+                        "column": "DATAFLOWNAME",
+                        "value": "'SMS Opt-In'"
+                      },
+                      {
+                        "column": "STATE",
+                        "value": "'ACTIVE'"
+                      },
+                      {
+                        "column": "ISACCOUNTSEGMENT",
+                        "value": "'Y'"
+                      }
+                    ],
+                    "limit": null,
+                    "order_by": null,
+                    "primary_table": "dim_segment",
+                    "reason": "Selecting segment details where the target is 'SMS Opt-In' and the segment is an account segment.",
+                    "tables_needed": [
+                      "dim_segment"
+                    ]
+                  },
+                  "candidate_id": "1",
+                  "compiled": {
+                    "aggregation": "none",
+                    "alias_suggestions": {},
+                    "errors": [
+                      "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                      "Unknown column in filters: dim_segment.STATE."
+                    ],
+                    "filters": [
+                      {
+                        "column": "DATAFLOWNAME",
+                        "operator": "equals",
+                        "table": "dim_segment",
+                        "value": "'SMS Opt-In'"
+                      },
+                      {
+                        "column": "STATE",
+                        "operator": "equals",
+                        "table": "dim_segment",
+                        "value": "'ACTIVE'"
+                      },
+                      {
+                        "column": "ISACCOUNTSEGMENT",
+                        "operator": "equals",
+                        "table": "dim_segment",
+                        "value": "'Y'"
+                      }
+                    ],
+                    "join_path": [],
+                    "ok": false,
+                    "selected_tables": [
+                      "dim_segment"
+                    ],
+                    "sql": "",
+                    "warnings": []
+                  },
+                  "probe": {},
+                  "ranking_features": {
+                    "answer_intent_match": true,
+                    "column_coverage": true,
+                    "compile_ok": false,
+                    "entity_table_match": false,
+                    "filter_coverage": false,
+                    "probe_ok": null,
+                    "semantic_ok": false,
+                    "semantic_score": 0.0,
+                    "sql_validation_ok": false,
+                    "timestamp_semantic_match": true
+                  },
+                  "rejection_reasons": [
+                    "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                    "Unknown column in filters: dim_segment.STATE."
+                  ],
+                  "score": -97.3,
+                  "semantic_verification": {
+                    "errors": [
+                      "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                      "Unknown column in filters: dim_segment.STATE."
+                    ],
+                    "ok": false,
+                    "semantic_score": 0.0,
+                    "warnings": []
+                  },
+                  "validation": {
+                    "errors": [
+                      "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                      "Unknown column in filters: dim_segment.STATE."
+                    ],
+                    "ok": false
+                  }
+                },
+                {
+                  "accepted": false,
+                  "candidate": {
+                    "aggregation": null,
+                    "answer_intent": "SELECT",
+                    "candidate_id": 2,
+                    "columns_needed": [
+                      "SEGMENTID",
+                      "UPDATEDTIME",
+                      "ISACCOUNTSEGMENT"
+                    ],
+                    "confidence": 100,
+                    "filters": [
+                      {
+                        "column": "DATAFLOWNAME",
+                        "value": "'SMS Opt-In'"
+                      },
+                      {
+                        "column": "STATE",
+                        "value": "'ACTIVE'"
+                      },
+                      {
+                        "column": "ISACCOUNTSEGMENT",
+                        "value": "'Y'"
+                      }
+                    ],
+                    "limit": null,
+                    "order_by": null,
+                    "primary_table": "dim_segment",
+                    "reason": "Selecting segment details where the target is 'SMS Opt-In' and the segment is an account segment.",
+                    "tables_needed": [
+                      "dim_segment"
+                    ]
+                  },
+                  "candidate_id": "2",
+                  "compiled": {
+                    "aggregation": "none",
+                    "alias_suggestions": {},
+                    "errors": [
+                      "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                      "Unknown column in filters: dim_segment.STATE."
+                    ],
+                    "filters": [
+                      {
+                        "column": "DATAFLOWNAME",
+                        "operator": "equals",
+                        "table": "dim_segment",
+                        "value": "'SMS Opt-In'"
+                      },
+                      {
+                        "column": "STATE",
+                        "operator": "equals",
+                        "table": "dim_segment",
+                        "value": "'ACTIVE'"
+                      },
+                      {
+                        "column": "ISACCOUNTSEGMENT",
+                        "operator": "equals",
+                        "table": "dim_segment",
+                        "value": "'Y'"
+                      }
+                    ],
+                    "join_path": [],
+                    "ok": false,
+                    "selected_tables": [
+                      "dim_segment"
+                    ],
+                    "sql": "",
+                    "warnings": []
+                  },
+                  "probe": {},
+                  "ranking_features": {
+                    "answer_intent_match": true,
+                    "column_coverage": true,
+                    "compile_ok": false,
+                    "entity_table_match": false,
+                    "filter_coverage": false,
+                    "probe_ok": null,
+                    "semantic_ok": false,
+                    "semantic_score": 0.0,
+                    "sql_validation_ok": false,
+                    "timestamp_semantic_match": true
+                  },
+                  "rejection_reasons": [
+                    "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                    "Unknown column in filters: dim_segment.STATE."
+                  ],
+                  "score": -97.3,
+                  "semantic_verification": {
+                    "errors": [
+                      "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                      "Unknown column in filters: dim_segment.STATE."
+                    ],
+                    "ok": false,
+                    "semantic_score": 0.0,
+                    "warnings": []
+                  },
+                  "validation": {
+                    "errors": [
+                      "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                      "Unknown column in filters: dim_segment.STATE."
+                    ],
+                    "ok": false
+                  }
+                },
+                {
+                  "accepted": false,
+                  "candidate": {
+                    "aggregation": null,
+                    "answer_intent": "SELECT",
+                    "candidate_id": 3,
+                    "columns_needed": [
+                      "SEGMENTID",
+                      "UPDATEDTIME",
+                      "ISACCOUNTSEGMENT"
+                    ],
+                    "confidence": 100,
+                    "filters": [
+                      {
+                        "column": "DATAFLOWNAME",
+                        "value": "'SMS Opt-In'"
+                      },
+                      {
+                        "column": "STATE",
+                        "value": "'ACTIVE'"
+                      },
+                      {
+                        "column": "ISACCOUNTSEGMENT",
+                        "value": "'Y'"
+                      }
+                    ],
+                    "limit": null,
+                    "order_by": null,
+                    "primary_table": "dim_segment",
+                    "reason": "Selecting segment details where the target is 'SMS Opt-In' and the segment is an account segment.",
+                    "tables_needed": [
+                      "dim_segment"
+                    ]
+                  },
+                  "candidate_id": "3",
+                  "compiled": {
+                    "aggregation": "none",
+                    "alias_suggestions": {},
+                    "errors": [
+                      "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                      "Unknown column in filters: dim_segment.STATE."
+                    ],
+                    "filters": [
+                      {
+                        "column": "DATAFLOWNAME",
+                        "operator": "equals",
+                        "table": "dim_segment",
+                        "value": "'SMS Opt-In'"
+                      },
+                      {
+                        "column": "STATE",
+                        "operator": "equals",
+                        "table": "dim_segment",
+                        "value": "'ACTIVE'"
+                      },
+                      {
+                        "column": "ISACCOUNTSEGMENT",
+                        "operator": "equals",
+                        "table": "dim_segment",
+                        "value": "'Y'"
+                      }
+                    ],
+                    "join_path": [],
+                    "ok": false,
+                    "selected_tables": [
+                      "dim_segment"
+                    ],
+                    "sql": "",
+                    "warnings": []
+                  },
+                  "probe": {},
+                  "ranking_features": {
+                    "answer_intent_match": true,
+                    "column_coverage": true,
+                    "compile_ok": false,
+                    "entity_table_match": false,
+                    "filter_coverage": false,
+                    "probe_ok": null,
+                    "semantic_ok": false,
+                    "semantic_score": 0.0,
+                    "sql_validation_ok": false,
+                    "timestamp_semantic_match": true
+                  },
+                  "rejection_reasons": [
+                    "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                    "Unknown column in filters: dim_segment.STATE."
+                  ],
+                  "score": -97.3,
+                  "semantic_verification": {
+                    "errors": [
+                      "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                      "Unknown column in filters: dim_segment.STATE."
+                    ],
+                    "ok": false,
+                    "semantic_score": 0.0,
+                    "warnings": []
+                  },
+                  "validation": {
+                    "errors": [
+                      "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                      "Unknown column in filters: dim_segment.STATE."
+                    ],
+                    "ok": false
+                  }
+                }
+              ],
+              "ranking_features": {},
+              "rejection_reasons": {
+                "1": [
+                  "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                  "Unknown column in filters: dim_segment.STATE."
+                ],
+                "2": [
+                  "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                  "Unknown column in filters: dim_segment.STATE."
+                ],
+                "3": [
+                  "Unknown column in filters: dim_segment.DATAFLOWNAME.",
+                  "Unknown column in filters: dim_segment.STATE."
+                ]
+              },
+              "selected_candidate": null,
+              "selected_candidate_id": null,
+              "selected_sql": ""
+            },
             "kind": "sql_call",
-            "repair_rounds": 2,
+            "repair_rounds": 0,
             "result": null,
+            "selected_candidate_id": null,
             "sql": "",
+            "sql_evidence": null,
             "validation": {
               "errors": [
                 "Unknown column in filters: dim_segment.DATAFLOWNAME.",
-                "Unknown column in filters: dim_segment.ISACCOUNTSEGMENT.",
-                "Unknown column in filters: dim_segment.STATE.",
-                "Unsupported join path for tables: dim_segment, dim_target."
+                "Unknown column in filters: dim_segment.STATE."
               ],
               "ok": false
             }
@@ -67526,25 +68105,30 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "structured_sql_plan_semantic_repair_v1",
+        "strategy": "multi_candidate_sql_grounded_answer_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
           "api_endpoint_candidate": null,
           "api_endpoint_repair_attempted": false,
           "api_endpoint_validation_ok": false,
+          "candidate_count": 3,
           "did_llm_choose_tool": true,
           "did_llm_plan": true,
+          "fallback_to_sql_evidence_answer": false,
           "fallback_to_sql_result_answer": false,
           "final_answer": "The available tool evidence does not contain enough supported data to answer.",
           "rejected_unsupported_claim_count": 2,
+          "selected_candidate_id": null,
           "selected_tool": "execute_sql",
-          "semantic_repair_attempted": false,
-          "semantic_repair_success": true,
-          "semantic_score": null,
-          "semantic_verification_ok": true,
+          "semantic_repair_attempted": true,
+          "semantic_repair_success": false,
+          "semantic_score": 0.0,
+          "semantic_verification_ok": false,
           "sql_candidate": "",
-          "sql_repair_attempted": true,
+          "sql_evidence_object_available": false,
+          "sql_evidence_used_in_answer": false,
+          "sql_repair_attempted": false,
           "sql_repair_success": false,
           "sql_result_grounded": false,
           "sql_validation_ok": false,
@@ -67558,40 +68142,45 @@
       },
       "unscored_dimension_count": 0,
       "unsupported_claim_count": 0,
-      "variant": "structured_sql_plan_semantic_repair_v1"
+      "variant": "multi_candidate_sql_grounded_answer_v1"
     },
     {
       "answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
       "answer_score": 0.2029,
       "api_reason": "No gold API supplied; API dimension unscored in strict mode.",
       "api_score": null,
-      "estimated_tokens": 3040,
+      "estimated_tokens": 3047,
       "failure_stage": "no_clear_failure",
       "prompt": "Show me the IDs of failed dataflow runs",
       "query_id": "example_004",
-      "runtime": 16.2043,
+      "runtime": 17.9536,
       "sql_reason": "No generated SQL while gold SQL exists.",
       "sql_score": 0.0,
       "strict_correctness": 0.087,
-      "strict_final_score": -0.0049,
+      "strict_final_score": -0.0108,
       "strict_scoring_status": "available",
-      "system": "structured_sql_plan_semantic_repair_v1",
+      "system": "multi_candidate_sql_grounded_answer_v1",
       "tool_calls": 1,
       "trace_assertions": {
         "api_endpoint_candidate": "flowservice_runs",
         "api_endpoint_repair_attempted": true,
         "api_endpoint_validation_ok": true,
+        "candidate_count": null,
         "did_llm_choose_tool": true,
         "did_llm_plan": true,
+        "fallback_to_sql_evidence_answer": false,
         "fallback_to_sql_result_answer": false,
         "final_answer": "The IDs of failed dataflow runs are as follows:",
         "rejected_unsupported_claim_count": 0,
+        "selected_candidate_id": null,
         "selected_tool": "call_api",
         "semantic_repair_attempted": false,
         "semantic_repair_success": false,
         "semantic_score": null,
         "semantic_verification_ok": null,
         "sql_candidate": null,
+        "sql_evidence_object_available": false,
+        "sql_evidence_used_in_answer": false,
         "sql_repair_attempted": false,
         "sql_repair_success": false,
         "sql_result_grounded": false,
@@ -67603,15 +68192,15 @@
         "unsupported_claim_count": 0
       },
       "trajectory": {
-        "baseline_variant": "structured_sql_plan_semantic_repair_v1",
-        "estimated_tokens": 3040,
+        "baseline_variant": "multi_candidate_sql_grounded_answer_v1",
+        "estimated_tokens": 3047,
         "failure_stage": "no_clear_failure",
         "final_answer": "The IDs of failed dataflow runs are as follows:",
         "llm_total_tokens": 1860,
         "original_query": "Show me the IDs of failed dataflow runs",
         "pure_llm_tool_agent": true,
         "rejected_unsupported_claim_count": 0,
-        "runtime": 16.20431570801884,
+        "runtime": 17.953551459126174,
         "steps": [
           {
             "context_summary": {
@@ -67737,7 +68326,7 @@
               "reason": "The user request is to show IDs of failed dataflow runs, which can be achieved through an API call.",
               "sql_task": null
             },
-            "variant": "structured_sql_plan_semantic_repair_v1"
+            "variant": "multi_candidate_sql_grounded_answer_v1"
           },
           {
             "_usage": {
@@ -67966,57 +68555,57 @@
               "llm_usage": {
                 "completion_tokens": 74,
                 "completion_tokens_details": null,
-                "prompt_tokens": 787,
+                "prompt_tokens": 788,
                 "prompt_tokens_details": {
                   "audio_tokens": null,
                   "cached_tokens": 3
                 },
-                "total_tokens": 861
+                "total_tokens": 862
               },
               "rejected_unsupported_claim_count": 0,
               "rejected_unsupported_claims": [],
               "skipped": false,
               "supported_values": [
-                "\"ec030804-0000-0200-0000-6a15254b0000\"",
-                "\"ec03091f-0000-0200-0000-6a1528a10000\"",
-                "\"ec030955-0000-0200-0000-6a152fa70000\"",
-                "\"ec030d3d-0000-0200-0000-6a152cb10000\"",
-                "\"ec031904-0000-0200-0000-6a15254d0000\"",
-                "\"ec031d20-0000-0200-0000-6a1528cb0000\"",
-                "\"ec033122-0000-0200-0000-6a1529180000\"",
+                "\"ec0300fb-0000-0200-0000-6a1536a90000\"",
+                "\"ec0301fd-0000-0200-0000-6a1536d70000\"",
+                "\"ec030976-0000-0200-0000-6a15333e0000\"",
+                "\"ec0309fd-0000-0200-0000-6a1536d70000\"",
+                "\"ec031aff-0000-0200-0000-6a15370b0000\"",
+                "\"ec031b78-0000-0200-0000-6a1533720000\"",
+                "\"ec031efc-0000-0200-0000-6a1536c70000\"",
+                "\"ec032176-0000-0200-0000-6a1533410000\"",
+                "\"ec032d7a-0000-0200-0000-6a1533ab0000\"",
                 "\"ec033757-0000-0200-0000-6a152ff90000\"",
                 "\"ec034657-0000-0200-0000-6a152ffb0000\"",
-                "\"ec034b06-0000-0200-0000-6a1525770000\"",
-                "\"ec034b3a-0000-0200-0000-6a152c3a0000\"",
-                "\"ec034f1f-0000-0200-0000-6a1528ad0000\"",
-                "\"ec035056-0000-0200-0000-6a152fd20000\"",
-                "\"ec03523c-0000-0200-0000-6a152c970000\"",
-                "\"ec035a55-0000-0200-0000-6a152fb30000\"",
-                "\"ec035c55-0000-0200-0000-6a152fb30000\"",
-                "\"ec036108-0000-0200-0000-6a1525aa0000\"",
-                "\"ec036356-0000-0200-0000-6a152fd40000\"",
-                "\"ec036522-0000-0200-0000-6a15291a0000\"",
-                "\"ec036720-0000-0200-0000-6a1528d60000\"",
+                "\"ec035177-0000-0200-0000-6a15335c0000\"",
+                "\"ec035f77-0000-0200-0000-6a15335e0000\"",
                 "\"ec036857-0000-0200-0000-6a1530010000\"",
                 "\"ec036c58-0000-0200-0000-6a1530300000\"",
-                "\"ec036f3a-0000-0200-0000-6a152c3e0000\"",
-                "\"ec03703b-0000-0200-0000-6a152c740000\"",
-                "\"ec037120-0000-0200-0000-6a1528d80000\"",
+                "\"ec036e78-0000-0200-0000-6a15337a0000\"",
+                "\"ec0373fb-0000-0200-0000-6a1536b70000\"",
                 "\"ec037c59-0000-0200-0000-6a15304d0000\"",
-                "\"ec03891b-0000-0200-0000-6a15282c0000\"",
                 "\"ec038958-0000-0200-0000-6a1530340000\"",
-                "\"ec038d37-0000-0200-0000-6a152bc70000\"",
-                "\"ec03913a-0000-0200-0000-6a152c440000\"",
-                "\"ec03921f-0000-0200-0000-6a1528b50000\"",
-                "\"ec039505-0000-0200-0000-6a1525690000\"",
-                "\"ec03963b-0000-0200-0000-6a152c780000\"",
-                "\"ec03a421-0000-0200-0000-6a1529100000\"",
-                "\"ec03a63a-0000-0200-0000-6a152c460000\"",
-                "\"ec03ac06-0000-0200-0000-6a1525810000\"",
-                "\"ec03b352-0000-0200-0000-6a152f540000\"",
-                "\"ec03b93b-0000-0200-0000-6a152c7f0000\"",
-                "\"ec03ce1f-0000-0200-0000-6a1528bf0000\"",
-                "\"ec03d203-0000-0200-0000-6a1525460000\""
+                "\"ec0390fd-0000-0200-0000-6a1536e00000\"",
+                "\"ec03a075-0000-0200-0000-6a1533360000\"",
+                "\"ec03a370-0000-0200-0000-6a1532c40000\"",
+                "\"ec03a6ff-0000-0200-0000-6a1537190000\"",
+                "\"ec03ad78-0000-0200-0000-6a1533820000\"",
+                "\"ec03ca77-0000-0200-0000-6a15336a0000\"",
+                "\"ec03d679-0000-0200-0000-6a1533a50000\"",
+                "\"ec03d6f7-0000-0200-0000-6a1536400000\"",
+                "\"ec03da57-0000-0200-0000-6a1530180000\"",
+                "\"ec03dcff-0000-0200-0000-6a15371f0000\"",
+                "\"ec03e3fb-0000-0200-0000-6a1536c10000\"",
+                "\"ec03f179-0000-0200-0000-6a1533a70000\"",
+                "\"ec03f456-0000-0200-0000-6a152fed0000\"",
+                "\"ed030c26-0000-0200-0000-6a153a3d0000\"",
+                "\"ed031028-0000-0200-0000-6a153a780000\"",
+                "\"ed031b27-0000-0200-0000-6a153a580000\"",
+                "\"ed033403-0000-0200-0000-6a15376c0000\"",
+                "\"ed034027-0000-0200-0000-6a153a5c0000\"",
+                "\"ed03492b-0000-0200-0000-6a153aca0000\"",
+                "\"ed035e2f-0000-0200-0000-6a153b380000\"",
+                "\"ed036c28-0000-0200-0000-6a153a830000\""
               ],
               "tool_result_used": true,
               "unsupported_claim_count": 0,
@@ -68025,24 +68614,29 @@
             "kind": "final_answer"
           }
         ],
-        "strategy": "structured_sql_plan_semantic_repair_v1",
+        "strategy": "multi_candidate_sql_grounded_answer_v1",
         "token_source": "measured_usage_or_estimated",
         "tool_call_count": 1,
         "trace_assertions": {
           "api_endpoint_candidate": "flowservice_runs",
           "api_endpoint_repair_attempted": true,
           "api_endpoint_validation_ok": true,
+          "candidate_count": null,
           "did_llm_choose_tool": true,
           "did_llm_plan": true,
+          "fallback_to_sql_evidence_answer": false,
           "fallback_to_sql_result_answer": false,
           "final_answer": "The IDs of failed dataflow runs are as follows:",
           "rejected_unsupported_claim_count": 0,
+          "selected_candidate_id": null,
           "selected_tool": "call_api",
           "semantic_repair_attempted": false,
           "semantic_repair_success": false,
           "semantic_score": null,
           "semantic_verification_ok": null,
           "sql_candidate": null,
+          "sql_evidence_object_available": false,
+          "sql_evidence_used_in_answer": false,
           "sql_repair_attempted": false,
           "sql_repair_success": false,
           "sql_result_grounded": false,
@@ -68057,7 +68651,7 @@
       },
       "unscored_dimension_count": 1,
       "unsupported_claim_count": 0,
-      "variant": "structured_sql_plan_semantic_repair_v1"
+      "variant": "multi_candidate_sql_grounded_answer_v1"
     }
   ],
   "skipped_reason": null,
@@ -68119,16 +68713,16 @@
       {
         "answer_score": 0.1763,
         "api_score": 0.5533,
-        "compile_success_rate": 0.5,
-        "estimated_tokens": 3241.4,
+        "compile_success_rate": 0.0,
+        "estimated_tokens": 3687.8,
         "rows": 5,
-        "runtime": 17.583,
+        "runtime": 20.5622,
         "sql_score": 0.0,
-        "sql_validation_pass_rate": 0.2,
+        "sql_validation_pass_rate": 0.0,
         "strict_correctness": 0.1633,
-        "strict_final_score": 0.0727,
+        "strict_final_score": 0.0637,
         "strict_scoring_status": "available",
-        "system": "structured_sql_plan_semantic_repair_v1",
+        "system": "multi_candidate_sql_grounded_answer_v1",
         "tool_calls": 1.0,
         "unsupported_claims": 0
       }
@@ -68353,6 +68947,79 @@
       "description": "Conservative SQL-first semantic variant; API-only is allowed only when SQL is not strongly grounded or live API is explicit.",
       "status": "shadow_diagnostic",
       "variant": "conservative_sql_first_semantic_v1"
+    },
+    {
+      "capabilities": {
+        "api_guard": true,
+        "evidence_locked_answer": true,
+        "evidence_source_planner": true,
+        "multi_candidate_sql_plan": true,
+        "schema_context": true,
+        "semantic_sql_verify": true,
+        "sql_repair": false,
+        "structured_plan": true,
+        "structured_sql_plan": true
+      },
+      "description": "LLM emits three structured SQL plans; deterministic semantic ranking selects one.",
+      "status": "shadow_diagnostic",
+      "variant": "multi_candidate_sql_plan_v1"
+    },
+    {
+      "capabilities": {
+        "api_guard": true,
+        "evidence_locked_answer": true,
+        "evidence_source_planner": true,
+        "execution_probe": true,
+        "multi_candidate_sql_plan": true,
+        "schema_context": true,
+        "semantic_sql_verify": true,
+        "sql_repair": false,
+        "structured_plan": true,
+        "structured_sql_plan": true
+      },
+      "description": "Multi-candidate SQL planning with a safe one-row execution probe before selection.",
+      "status": "shadow_diagnostic",
+      "variant": "multi_candidate_sql_plan_with_probe_v1"
+    },
+    {
+      "capabilities": {
+        "api_guard": true,
+        "evidence_locked_answer": true,
+        "evidence_source_planner": true,
+        "execution_probe": true,
+        "multi_candidate_sql_plan": true,
+        "schema_context": true,
+        "semantic_sql_verify": true,
+        "sql_execution_evidence_bridge": true,
+        "sql_repair": false,
+        "sql_result_answer_grounder": true,
+        "structured_plan": true,
+        "structured_sql_plan": true
+      },
+      "description": "Multi-candidate SQL planning plus compact SQL execution evidence in answer grounding.",
+      "status": "shadow_diagnostic",
+      "variant": "multi_candidate_sql_grounded_answer_v1"
+    },
+    {
+      "capabilities": {
+        "api_guard": true,
+        "api_only_requires_sql_unavailable": true,
+        "evidence_locked_answer": true,
+        "evidence_source_planner": true,
+        "execution_probe": true,
+        "force_sql_when_high_confidence": true,
+        "multi_candidate_sql_plan": true,
+        "schema_context": true,
+        "semantic_sql_verify": true,
+        "sql_execution_evidence_bridge": true,
+        "sql_repair": false,
+        "sql_result_answer_grounder": true,
+        "structured_plan": true,
+        "structured_sql_plan": true
+      },
+      "description": "Conservative SQL-first multi-candidate variant; API-only remains limited to explicit live/API needs or SQL-impossible prompts.",
+      "status": "shadow_diagnostic",
+      "variant": "conservative_sql_first_multi_candidate_v1"
     }
   ]
 }
