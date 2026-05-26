@@ -232,6 +232,8 @@ python3 scripts/run_weak_model_lift_eval.py --full-public-dev
 python3 scripts/run_weak_model_sql_improvement_trials.py --limit 5
 python3 scripts/run_weak_model_sql_improvement_trials.py --limit 10
 python3 scripts/run_weak_model_answer_grounding_regression_analysis.py --limit 10
+python3 scripts/run_weak_harness_answer_regression_analysis.py --full-public-dev
+python3 scripts/run_weak_harness_efficiency_analysis.py --full-public-dev
 python3 scripts/run_weak_harness_engineering_eval.py --limit 5
 python3 scripts/run_weak_harness_engineering_eval.py --limit 10
 python3 scripts/run_weak_model_robustness_gate.py
@@ -239,7 +241,7 @@ python3 scripts/run_weak_model_robustness_gate.py
 
 Reports are written to `outputs/reports/weak_model_sql_improvement_trials*.md/json`, `outputs/reports/weak_model_answer_grounding_regression_analysis.md/json`, and `outputs/reports/weak_model_sql_external_technique_mapping.md/json`. Generated prompts remain diagnostic-only, unsupported claims must remain `0`, API non-regression must be checked, and the weak scaffold must remain `promotion_allowed=false`.
 
-Harness engineering reports are written to `outputs/reports/harness_engineering_design_map.md/json`, `outputs/reports/weak_model_harness_assertion_catalog.md/json`, `outputs/reports/weak_model_answer_grounding_harness.md/json`, and `outputs/reports/weak_harness_engineering_eval*.md/json`. These typed state/schema/assertion layers are shadow-only and must not promote weak harness behavior unless a later explicit strict, hidden-style, endpoint, answer-grounding, and submission-readiness gate approves review.
+Harness engineering reports are written to `outputs/reports/harness_engineering_design_map.md/json`, `outputs/reports/weak_model_harness_assertion_catalog.md/json`, `outputs/reports/weak_model_answer_grounding_harness.md/json`, `outputs/reports/weak_harness_answer_regression_analysis.md/json`, `outputs/reports/weak_harness_efficiency_analysis.md/json`, and `outputs/reports/weak_harness_engineering_eval*.md/json`. These typed state/schema/assertion layers are shadow-only and must not promote weak harness behavior unless a later explicit strict, hidden-style, endpoint, answer-grounding, efficiency, and submission-readiness gate approves review.
 
 ## Diagnostic Prompt Suite
 

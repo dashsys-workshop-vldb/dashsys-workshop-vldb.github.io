@@ -66,6 +66,15 @@ WEAK_MODEL_VARIANTS = [
     "weak_harness_repair_loop_v1",
     "weak_harness_balanced_sql_api_answer_v1",
     "weak_harness_full_v1",
+    "weak_harness_answer_v1_style_preserve",
+    "weak_harness_answer_evidence_bullets",
+    "weak_harness_answer_slot_template",
+    "weak_harness_answer_api_primary_when_api_scores_better",
+    "weak_harness_compact_context_v1",
+    "weak_harness_skip_repair_when_unit_pass_v1",
+    "weak_harness_compact_trace_v1",
+    "weak_harness_answer_grounding_compact_v1",
+    "weak_harness_answer_and_efficiency_v2",
     "full_dashagent_current",
 ]
 
@@ -83,6 +92,15 @@ BALANCED_VARIANTS = {
     "weak_harness_repair_loop_v1",
     "weak_harness_balanced_sql_api_answer_v1",
     "weak_harness_full_v1",
+    "weak_harness_answer_v1_style_preserve",
+    "weak_harness_answer_evidence_bullets",
+    "weak_harness_answer_slot_template",
+    "weak_harness_answer_api_primary_when_api_scores_better",
+    "weak_harness_compact_context_v1",
+    "weak_harness_skip_repair_when_unit_pass_v1",
+    "weak_harness_compact_trace_v1",
+    "weak_harness_answer_grounding_compact_v1",
+    "weak_harness_answer_and_efficiency_v2",
 }
 
 SQL_ENHANCED_VARIANTS = {
@@ -98,6 +116,15 @@ SQL_ENHANCED_VARIANTS = {
     "weak_harness_repair_loop_v1",
     "weak_harness_balanced_sql_api_answer_v1",
     "weak_harness_full_v1",
+    "weak_harness_answer_v1_style_preserve",
+    "weak_harness_answer_evidence_bullets",
+    "weak_harness_answer_slot_template",
+    "weak_harness_answer_api_primary_when_api_scores_better",
+    "weak_harness_compact_context_v1",
+    "weak_harness_skip_repair_when_unit_pass_v1",
+    "weak_harness_compact_trace_v1",
+    "weak_harness_answer_grounding_compact_v1",
+    "weak_harness_answer_and_efficiency_v2",
 }
 
 SQL_REPAIR_VARIANTS = {
@@ -109,6 +136,15 @@ SQL_REPAIR_VARIANTS = {
     "weak_harness_repair_loop_v1",
     "weak_harness_balanced_sql_api_answer_v1",
     "weak_harness_full_v1",
+    "weak_harness_answer_v1_style_preserve",
+    "weak_harness_answer_evidence_bullets",
+    "weak_harness_answer_slot_template",
+    "weak_harness_answer_api_primary_when_api_scores_better",
+    "weak_harness_compact_context_v1",
+    "weak_harness_skip_repair_when_unit_pass_v1",
+    "weak_harness_compact_trace_v1",
+    "weak_harness_answer_grounding_compact_v1",
+    "weak_harness_answer_and_efficiency_v2",
 }
 
 ANSWER_GROUNDING_V3_VARIANTS = {
@@ -117,6 +153,12 @@ ANSWER_GROUNDING_V3_VARIANTS = {
     "weak_scaffold_answer_fallback_v3",
     "weak_harness_balanced_sql_api_answer_v1",
     "weak_harness_full_v1",
+    "weak_harness_answer_v1_style_preserve",
+    "weak_harness_answer_evidence_bullets",
+    "weak_harness_answer_slot_template",
+    "weak_harness_answer_api_primary_when_api_scores_better",
+    "weak_harness_answer_grounding_compact_v1",
+    "weak_harness_answer_and_efficiency_v2",
 }
 
 
@@ -273,6 +315,7 @@ def _run_scaffold_variant(prompt: str, variant: str, db: DuckDBDatabase, schema:
         prompt=prompt,
         enhanced_sql=variant in SQL_ENHANCED_VARIANTS,
         repair_rounds=1 if variant in SQL_REPAIR_VARIANTS else 0,
+        retrieval_limits=_retrieval_limits_for_variant(variant),
     )
     sql_result: dict[str, Any] | None = None
     sql = ""
@@ -281,8 +324,9 @@ def _run_scaffold_variant(prompt: str, variant: str, db: DuckDBDatabase, schema:
         sql_result = db.execute_sql(sql)
     api_results: list[tuple[dict[str, Any], dict[str, Any]]] = []
     should_run_api = bool(compiled.get("api_candidates")) and (variant in BALANCED_VARIANTS or not sql_result)
+    max_api_calls = _max_api_calls_for_variant(variant)
     if should_run_api:
-        for call in list(compiled.get("api_candidates") or [])[:2]:
+        for call in list(compiled.get("api_candidates") or [])[:max_api_calls]:
             result = api_client.call_api(call["method"], call["path"], call.get("params", {}), {})
             api_results.append((call, result))
     api_result = api_results[0][1] if api_results else None
@@ -299,12 +343,15 @@ def _run_scaffold_variant(prompt: str, variant: str, db: DuckDBDatabase, schema:
         grounding_mode=_grounding_mode_for_variant(variant),
     )
     answer = grounded["answer"] if variant in {"evidence_guarded_weak_agent", "weak_full_dashagent_scaffold"} | BALANCED_VARIANTS else (grounded["answer"] if sql_result else "The scaffold could not produce executable evidence.")
+    trajectory_compact = _compact_trace_enabled(variant)
+    compiled_for_trace = _compact_compiled_trace(compiled) if trajectory_compact else compiled
+    grounded_for_trace = _compact_grounding_trace(grounded) if trajectory_compact or variant == "weak_harness_answer_grounding_compact_v1" else grounded
     steps = [
         {"kind": "semantic_slots", "slots": slots},
-        {"kind": "slot_compiler", "compiled": compiled},
+        {"kind": "slot_compiler", "compiled": compiled_for_trace},
     ]
     if sql:
-        steps.append({"kind": "sql_call", "sql": sql, "validation": compiled["sql_candidates"][0].get("validation"), "result": sql_result})
+        steps.append({"kind": "sql_call", "sql": sql, "validation": compiled["sql_candidates"][0].get("validation"), "result": _compact_sql_result(sql_result) if trajectory_compact else sql_result})
     for call, result in api_results:
         steps.append(
             {
@@ -317,7 +364,7 @@ def _run_scaffold_variant(prompt: str, variant: str, db: DuckDBDatabase, schema:
                 "result": _compact_api_result(call, result),
             }
         )
-    steps.append({"kind": "final_answer", "answer": answer, "grounding": grounded})
+    steps.append({"kind": "final_answer", "answer": answer, "grounding": grounded_for_trace})
     trajectory = {"strategy": variant, "steps": steps, "final_answer": answer, "tool_call_count": sum(1 for step in steps if step["kind"] in {"sql_call", "api_call"}), "runtime": time.perf_counter() - start}
     trajectory["estimated_tokens"] = estimate_tokens(trajectory)
     return {"final_answer": answer, "trajectory": trajectory, "unsupported_claim_count": grounded.get("unsupported_claim_count", 0), "failure_stage": None if sql_result or api_results else "no_executable_tool_evidence"}
@@ -332,7 +379,152 @@ def _grounding_mode_for_variant(variant: str) -> str:
         return "answer_fallback_v3"
     if variant in {"weak_harness_balanced_sql_api_answer_v1", "weak_harness_full_v1"}:
         return "answer_fallback_v3"
+    if variant == "weak_harness_answer_v1_style_preserve":
+        return "harness_answer_v1_style_preserve"
+    if variant == "weak_harness_answer_evidence_bullets":
+        return "harness_answer_evidence_bullets"
+    if variant == "weak_harness_answer_slot_template":
+        return "harness_answer_slot_template"
+    if variant == "weak_harness_answer_api_primary_when_api_scores_better":
+        return "harness_answer_api_primary_when_api_scores_better"
+    if variant == "weak_harness_answer_grounding_compact_v1":
+        return "harness_answer_grounding_compact"
+    if variant == "weak_harness_answer_and_efficiency_v2":
+        return "harness_answer_v1_style_preserve"
     return "default"
+
+
+def _retrieval_limits_for_variant(variant: str) -> dict[str, int] | None:
+    if variant in {
+        "weak_harness_compact_context_v1",
+    }:
+        return {"max_tables": 4, "max_columns_per_table": 12, "max_join_hints": 4, "max_skeletons": 2}
+    return None
+
+
+def _max_api_calls_for_variant(variant: str) -> int:
+    if variant in {
+        "weak_harness_compact_context_v1",
+        "weak_harness_compact_trace_v1",
+        "weak_harness_answer_grounding_compact_v1",
+    }:
+        return 1
+    return 2
+
+
+def _compact_trace_enabled(variant: str) -> bool:
+    return variant in {
+        "weak_harness_compact_trace_v1",
+        "weak_harness_answer_grounding_compact_v1",
+        "weak_harness_answer_and_efficiency_v2",
+    }
+
+
+def _compact_compiled_trace(compiled: dict[str, Any]) -> dict[str, Any]:
+    compact_candidates = []
+    for candidate in list(compiled.get("sql_candidates") or [])[:1]:
+        compact_candidates.append(
+            {
+                "sql": candidate.get("sql"),
+                "validation": candidate.get("validation"),
+                "sql_unit_tests": candidate.get("sql_unit_tests"),
+                "repair_attempts": candidate.get("repair_attempts"),
+                "repair_success": candidate.get("repair_success"),
+            }
+        )
+    return {
+        "ok": compiled.get("ok"),
+        "slots": compiled.get("slots"),
+        "sql_candidates": compact_candidates,
+        "api_candidates": list(compiled.get("api_candidates") or [])[:1],
+        "evidence_policy": compiled.get("evidence_policy"),
+        "compiler_warnings": compiled.get("compiler_warnings"),
+        "compiler_errors": compiled.get("compiler_errors"),
+        "enhanced_sql": compiled.get("enhanced_sql"),
+        "schema_context": _compact_schema_context(compiled.get("schema_context")),
+        "sql_skeletons": [
+            {
+                "skeleton_id": item.get("skeleton_id"),
+                "intent": item.get("intent"),
+                "unit_tests": item.get("unit_tests"),
+            }
+            for item in list(compiled.get("sql_skeletons") or [])[:2]
+            if isinstance(item, dict)
+        ],
+    }
+
+
+def _compact_schema_context(schema_context: Any) -> dict[str, Any] | None:
+    if not isinstance(schema_context, dict):
+        return None
+    return {
+        "retrieved_tables": schema_context.get("retrieved_tables"),
+        "column_roles": schema_context.get("column_roles"),
+        "value_links": schema_context.get("value_links"),
+        "join_candidate_count": len(schema_context.get("join_candidates") or []),
+        "confidence": schema_context.get("confidence"),
+    }
+
+
+def _compact_sql_result(sql_result: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not isinstance(sql_result, dict):
+        return sql_result
+    return {
+        "ok": sql_result.get("ok"),
+        "row_count": sql_result.get("row_count"),
+        "rows": list(sql_result.get("rows") or [])[:2],
+        "error": sql_result.get("error"),
+    }
+
+
+def _compact_grounding_trace(grounded: dict[str, Any]) -> dict[str, Any]:
+    sql = grounded.get("sql_evidence") if isinstance(grounded.get("sql_evidence"), dict) else None
+    api = grounded.get("api_evidence") if isinstance(grounded.get("api_evidence"), dict) else None
+    return {
+        "answer": grounded.get("answer"),
+        "answer_used_sql": grounded.get("answer_used_sql"),
+        "answer_used_api": grounded.get("answer_used_api"),
+        "fallback_used": grounded.get("fallback_used"),
+        "unsupported_claim_count": grounded.get("unsupported_claim_count"),
+        "sql_evidence": _compact_sql_evidence(sql),
+        "api_evidence": _compact_api_evidence(api),
+        "sql_evidence_object_available": grounded.get("sql_evidence_object_available"),
+        "api_evidence_object_available": grounded.get("api_evidence_object_available"),
+        "sql_api_arbitration_mode": grounded.get("sql_api_arbitration_mode"),
+        "grounding_mode": grounded.get("grounding_mode"),
+    }
+
+
+def _compact_sql_evidence(evidence: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not isinstance(evidence, dict):
+        return None
+    return {
+        "sql_executed": evidence.get("sql_executed"),
+        "row_count": evidence.get("row_count"),
+        "count_value": evidence.get("count_value"),
+        "key_ids": list(evidence.get("key_ids") or [])[:3],
+        "key_names": list(evidence.get("key_names") or [])[:3],
+        "status_values": list(evidence.get("status_values") or [])[:3],
+        "timestamp_values": list(evidence.get("timestamp_values") or [])[:3],
+        "zero_rows": evidence.get("zero_rows"),
+    }
+
+
+def _compact_api_evidence(evidence: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not isinstance(evidence, dict):
+        return None
+    return {
+        "endpoint_id": evidence.get("endpoint_id"),
+        "live_success": evidence.get("live_success"),
+        "live_empty": evidence.get("live_empty"),
+        "api_error": evidence.get("api_error"),
+        "dry_run": evidence.get("dry_run"),
+        "ids": list(evidence.get("ids") or [])[:3],
+        "names": list(evidence.get("names") or [])[:3],
+        "statuses": list(evidence.get("statuses") or [])[:3],
+        "timestamps": list(evidence.get("timestamps") or [])[:3],
+        "counts": list(evidence.get("counts") or [])[:3],
+    }
 
 
 def _compact_api_result(call: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:

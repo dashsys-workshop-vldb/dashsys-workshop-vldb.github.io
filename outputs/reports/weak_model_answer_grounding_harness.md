@@ -1,7 +1,7 @@
 # Weak Model Answer Grounding Harness
 
-- Best variant: `weak_harness_full_v1`
-- Best answer score: `0.2188`
+- Best variant: `weak_harness_answer_and_efficiency_v2`
+- Best answer score: `0.2194`
 - Answer non-regression: `False`
 
 - SQL evidence is rendered when it directly answers the prompt.

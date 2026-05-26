@@ -189,6 +189,8 @@ python3 scripts/run_weak_model_lift_eval.py --full-public-dev
 python3 scripts/run_weak_model_sql_improvement_trials.py --limit 5
 python3 scripts/run_weak_model_sql_improvement_trials.py --limit 10
 python3 scripts/run_weak_model_answer_grounding_regression_analysis.py --limit 10
+python3 scripts/run_weak_harness_answer_regression_analysis.py --full-public-dev
+python3 scripts/run_weak_harness_efficiency_analysis.py --full-public-dev
 python3 scripts/run_weak_harness_engineering_eval.py --limit 5
 python3 scripts/run_weak_harness_engineering_eval.py --limit 10
 python3 scripts/run_weak_model_robustness_gate.py
@@ -196,7 +198,7 @@ python3 scripts/run_weak_model_robustness_gate.py
 
 The SQL-improvement trial adds weak-only schema retrieval, generic SQL skeleton retrieval, semantic SQL unit tests, one bounded semantic repair path, and v3 SQL/API answer-grounding diagnostics. Reports are written to `outputs/reports/weak_model_sql_improvement_trials*.md/json`, `outputs/reports/weak_model_answer_grounding_regression_analysis.md/json`, and `outputs/reports/weak_model_sql_external_technique_mapping.md/json`. These diagnostics must keep unsupported claims at `0`, preserve API non-regression, and never promote the weak scaffold to packaged runtime.
 
-The harness engineering pass adds typed weak-model state/schema/assertion layers, SQL candidate ranking, and slot-repair feedback around the existing weak scaffold. Reports are written to `outputs/reports/harness_engineering_design_map.md/json`, `outputs/reports/weak_model_harness_assertion_catalog.md/json`, `outputs/reports/weak_model_answer_grounding_harness.md/json`, and `outputs/reports/weak_harness_engineering_eval*.md/json`. The current full public/dev harness result remains shadow-only because SQL improves but answer non-regression does not pass.
+The harness engineering pass adds typed weak-model state/schema/assertion layers, SQL candidate ranking, slot-repair feedback, answer-regression diagnostics, and token/runtime analysis around the existing weak scaffold. Reports are written to `outputs/reports/harness_engineering_design_map.md/json`, `outputs/reports/weak_model_harness_assertion_catalog.md/json`, `outputs/reports/weak_model_answer_grounding_harness.md/json`, `outputs/reports/weak_harness_answer_regression_analysis.md/json`, `outputs/reports/weak_harness_efficiency_analysis.md/json`, and `outputs/reports/weak_harness_engineering_eval*.md/json`. The current full public/dev harness result remains shadow-only with recommendation `weak_harness_balanced_improved_keep_shadow`; it preserves SQL lift and API non-regression, treats the small answer delta as negligible only with strict improvement, and does not promote packaged runtime behavior.
 
 ## 3.2 LLM Semantic Routing Helper
 

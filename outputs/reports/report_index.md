@@ -120,6 +120,8 @@ Start here. Most older generated reports were consolidated or removed.
 - External technique mapping: `outputs/reports/weak_model_sql_external_technique_mapping.md`
 - SQL improvement trials: `outputs/reports/weak_model_sql_improvement_trials_public_dev_limit_10.md`
 - Answer grounding regression analysis: `outputs/reports/weak_model_answer_grounding_regression_analysis.md`
+- Harness answer regression analysis: `outputs/reports/weak_harness_answer_regression_analysis.md`
+- Harness efficiency analysis: `outputs/reports/weak_harness_efficiency_analysis.md`
 - Harness design map: `outputs/reports/harness_engineering_design_map.md`
 - Harness assertion catalog: `outputs/reports/weak_model_harness_assertion_catalog.md`
 - Harness engineering eval: `outputs/reports/weak_harness_engineering_eval_public_dev_full.md`
@@ -127,10 +129,10 @@ Start here. Most older generated reports were consolidated or removed.
 - Best scaffold remains shadow-only.
 - Bounded v3 best strict variant: `weak_scaffold_answer_fallback_v3` (`0.2601`)
 - Bounded v3 best SQL: `0.18`; API `0.8517`; answer `0.2361`; unsupported claims `0`
-- Harness bounded 10 best variant: `weak_harness_full_v1` (`0.2597`); SQL `0.18`; API `0.8517`; answer `0.2361`; unsupported claims `0`
-- Harness full public/dev: `weak_harness_full_v1` strict `0.2732`; SQL `0.12`; API `0.6241`; answer `0.2188`; unsupported claims `0`
-- Current recommendation: `weak_harness_answer_regression`
-- Main bottleneck: harness SQL lift holds, but full public/dev answer non-regression fails, so the weak harness remains shadow-only.
+- Harness bounded 10 best variant: `weak_harness_answer_and_efficiency_v2` (`0.2758`); SQL `0.18`; API `0.8517`; answer `0.2367`; unsupported claims `0`
+- Harness full public/dev: `weak_harness_answer_and_efficiency_v2` strict `0.2981`; SQL `0.12`; API `0.6241`; answer `0.2194`; tokens/runtime `2617.0` / `1.1085`; unsupported claims `0`
+- Current recommendation: `weak_harness_balanced_improved_keep_shadow`
+- Main bottleneck: harness answer shape still trails the prior API-recovery answer by `0.0007`, but the gate accepts it as negligible with strict improvement; weak harness remains shadow-only.
 
 ## System-Wide SDK LLM Audit
 

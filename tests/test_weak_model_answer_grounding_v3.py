@@ -118,3 +118,53 @@ def test_v3_keeps_named_sql_context_when_date_column_is_empty():
     assert "no matching records" in grounded["answer"]
     assert grounded["answer_used_sql"] is True
     assert grounded["answer_used_api"] is True
+
+
+def test_harness_answer_evidence_bullets_render_sql_and_api_without_suppression():
+    grounded = ground_weak_model_answer(
+        "List live audiences for the Gold segment and verify in the platform.",
+        model_answer="",
+        sql_result={"ok": True, "rows": [{"SEGMENTID": "seg-1", "NAME": "Gold"}], "row_count": 1, "error": None},
+        api_result={
+            "ok": True,
+            "parsed_evidence": {
+                "evidence_state": "live_evidence",
+                "ids": ["aud-1"],
+                "names": ["Gold Audience"],
+                "statuses": ["published"],
+            },
+        },
+        answer_intent="LIST",
+        evidence_need="sql_then_api",
+        api_endpoint_id="ups_audiences",
+        grounding_mode="harness_answer_evidence_bullets",
+    )
+
+    assert "- Direct answer:" in grounded["answer"]
+    assert "- SQL evidence:" in grounded["answer"]
+    assert "- API evidence:" in grounded["answer"]
+    assert "Gold" in grounded["answer"]
+    assert "Gold Audience" in grounded["answer"]
+    assert grounded["answer_used_sql"] is True
+    assert grounded["answer_used_api"] is True
+    assert grounded["unsupported_claim_count"] == 0
+
+
+def test_harness_answer_slot_template_is_richer_than_sparse_fallback():
+    grounded = ground_weak_model_answer(
+        "When was the journey 'Birthday Message' published?",
+        model_answer="",
+        sql_result={"ok": True, "rows": [{"NAME": "Birthday Message", "LASTDEPLOYEDTIME": "2026-01-03"}], "row_count": 1, "error": None},
+        api_result={"ok": True, "parsed_evidence": {"evidence_state": "live_empty", "live_empty": True}},
+        answer_intent="DATE",
+        evidence_need="sql_primary_api_verify",
+        api_endpoint_id="journey_list",
+        grounding_mode="harness_answer_slot_template",
+    )
+
+    assert "Birthday Message" in grounded["answer"]
+    assert "2026-01-03" in grounded["answer"]
+    assert "API endpoint journey_list returned no matching records" in grounded["answer"]
+    assert "SQL returned no matching records." not in grounded["answer"]
+    assert grounded["answer_used_sql"] is True
+    assert grounded["answer_used_api"] is True

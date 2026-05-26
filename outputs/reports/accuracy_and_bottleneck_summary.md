@@ -23,7 +23,7 @@
 - Correctness + efficiency evaluation: `speed_only_patch_needs_validation`; best candidate `compact_tool_schema`; runtime change applied `False`
 - SDK tool-calling efficiency promotion: `promoted_speed_only_patch`; promotion accepted `True`; runtime change applied `True`
 - Core tool policy optimizer: `promoted_core_tool_efficiency_policy`; strict after projected `0.6553`; runtime change expected `True`
-- Weak-model scaffold: `weak_harness_answer_regression`; bounded harness trial improved SQL with API/answer non-regression (`limit10 strict 0.2597`, SQL `0.18`, API `0.8517`, answer `0.2361`, unsupported claims `0`), but full public/dev harness answer non-regression failed (`strict 0.2732`, SQL `0.12`, API `0.6241`, answer `0.2188`); shadow-only `True`
+- Weak-model scaffold: `weak_harness_balanced_improved_keep_shadow`; bounded harness trial improved SQL with answer safety (`limit10 strict 0.2758`, SQL `0.18`, API `0.8517`, answer `0.2367`, unsupported claims `0`), and full public/dev `weak_harness_answer_and_efficiency_v2` improved strict (`0.2981`) while preserving SQL lift (`0.12`), API non-regression (`0.6241`), unsupported claims `0`, and token/runtime cost (`2617.0` / `1.1085`); answer remains slightly below the prior weak scaffold (`-0.0007`) and is accepted only as negligible with strict improvement; shadow-only `True`
 
 ## Why Changes Remain Shadow-Only
 

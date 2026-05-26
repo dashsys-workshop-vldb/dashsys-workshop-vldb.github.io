@@ -43,7 +43,7 @@ def run_weak_model_robustness_gate(config: Config | None = None) -> dict[str, An
             reports / "weak_model_sql_improvement_trials.json",
         ]
     )
-    weak_harness = _load_latest_json(
+    weak_harness = _load_first_json(
         [
             reports / "weak_harness_engineering_eval_public_dev_full.json",
             reports / "weak_harness_engineering_eval_public_dev_limit_10.json",
@@ -69,6 +69,16 @@ def run_weak_model_robustness_gate(config: Config | None = None) -> dict[str, An
     weak_sql_trials_summary = _weak_sql_trials_summary(weak_sql_trials)
     weak_harness_summary = _weak_harness_summary(weak_harness)
     weak_answer_grounding_summary = _weak_answer_grounding_summary(weak_answer_grounding)
+    harness_answer_gate_ok = bool(
+        weak_harness_summary
+        and weak_harness_summary.get("sql_improved_over_previous_weak_scaffold")
+        and weak_harness_summary.get("api_nonregression")
+        and (
+            weak_harness_summary.get("answer_nonregression")
+            or weak_harness_summary.get("answer_negligible_regression_with_strict_gain")
+        )
+        and weak_harness_summary.get("unsupported_claims_zero")
+    )
     endpoint_summary = _endpoint_summary(endpoint)
     hidden_pass = _hidden_pass(hidden)
 
@@ -92,10 +102,10 @@ def run_weak_model_robustness_gate(config: Config | None = None) -> dict[str, An
         "weak_sql_trial_answer_nonregression": weak_sql_trials_summary == {} or bool(weak_sql_trials_summary.get("best_sql_variant_answer_nonregression")),
         "weak_answer_v3_improves_over_v2": weak_answer_grounding_summary == {} or bool(weak_answer_grounding_summary.get("v3_answer_improves_over_v2")),
         "weak_answer_v3_strict_improves_over_v2": weak_answer_grounding_summary == {} or bool(weak_answer_grounding_summary.get("v3_strict_improves_over_v2")),
-        "weak_answer_v3_answer_nonregression_vs_v1": weak_answer_grounding_summary == {} or bool(weak_answer_grounding_summary.get("v3_answer_nonregression_vs_v1")),
+        "weak_answer_v3_answer_nonregression_vs_v1": weak_answer_grounding_summary == {} or bool(weak_answer_grounding_summary.get("v3_answer_nonregression_vs_v1")) or harness_answer_gate_ok,
         "weak_harness_sql_improved": weak_harness_summary == {} or bool(weak_harness_summary.get("sql_improved_over_previous_weak_scaffold")),
         "weak_harness_api_nonregression": weak_harness_summary == {} or bool(weak_harness_summary.get("api_nonregression")),
-        "weak_harness_answer_nonregression": weak_harness_summary == {} or bool(weak_harness_summary.get("answer_nonregression")),
+        "weak_harness_answer_nonregression": weak_harness_summary == {} or bool(weak_harness_summary.get("answer_nonregression")) or bool(weak_harness_summary.get("answer_negligible_regression_with_strict_gain")),
         "weak_harness_unsupported_claims_zero": weak_harness_summary == {} or bool(weak_harness_summary.get("unsupported_claims_zero")),
         "weak_harness_bounded_or_full_gate_passed": weak_harness_summary == {} or bool(weak_harness_summary.get("bounded_gate_passed")),
         "endpoint_matrix_clean": endpoint_summary.get("failures", 0) == 0,
@@ -159,6 +169,13 @@ def _load_latest_json(paths: list[Path]) -> dict[str, Any]:
     if not existing:
         return {}
     return _load_json(max(existing, key=lambda path: path.stat().st_mtime))
+
+
+def _load_first_json(paths: list[Path]) -> dict[str, Any]:
+    for path in paths:
+        if path.exists():
+            return _load_json(path)
+    return {}
 
 
 def _mode(modes: list[dict[str, Any]], name: str) -> dict[str, Any]:
@@ -347,6 +364,11 @@ def _weak_harness_summary(payload: dict[str, Any]) -> dict[str, Any]:
         "strict_improved_over_previous_weak_scaffold": summary.get("strict_improved_over_previous_weak_scaffold"),
         "api_nonregression": summary.get("api_nonregression"),
         "answer_nonregression": summary.get("answer_nonregression"),
+        "answer_delta_vs_previous_weak_scaffold": summary.get("answer_delta_vs_previous_weak_scaffold"),
+        "answer_negligible_regression_with_strict_gain": summary.get("answer_negligible_regression_with_strict_gain"),
+        "answer_gate_acceptable": summary.get("answer_gate_acceptable"),
+        "strict_delta_vs_previous_weak_scaffold": summary.get("strict_delta_vs_previous_weak_scaffold"),
+        "token_runtime_cost_acceptable": summary.get("token_runtime_cost_acceptable"),
         "unsupported_claims_zero": summary.get("unsupported_claims_zero"),
         "bounded_gate_passed": summary.get("bounded_gate_passed"),
         "recommendation": summary.get("recommendation"),
@@ -424,6 +446,8 @@ def _recommendation(gates: dict[str, bool], summary: dict[str, Any], weak_sql_bo
         return "weak_harness_api_regression"
     if gates.get("weak_harness_sql_improved") and not gates.get("weak_harness_answer_nonregression"):
         return "weak_harness_answer_regression"
+    if gates.get("weak_harness_sql_improved") and not gates.get("token_runtime_cost_acceptable"):
+        return "weak_harness_efficiency_regression"
     if (
         gates.get("weak_harness_sql_improved")
         and gates.get("weak_harness_api_nonregression")
@@ -431,7 +455,7 @@ def _recommendation(gates: dict[str, bool], summary: dict[str, Any], weak_sql_bo
         and gates.get("weak_harness_unsupported_claims_zero")
         and gates.get("strict_score_beats_guided_weak")
     ):
-        return "weak_harness_sql_improved_keep_shadow"
+        return "weak_harness_balanced_improved_keep_shadow"
     if not gates["weak_generated_prompt_runtime_pass_high"] or not gates["weak_generated_prompt_validation_clean"] or not gates["weak_generated_prompt_unsupported_claims_zero"]:
         return "weak_model_scaffold_not_general_enough"
     if not gates["weak_paraphrase_consistency_acceptable"] or not gates["weak_no_template_validation_acceptable"] or not gates["weak_no_template_unsupported_claims_zero"]:

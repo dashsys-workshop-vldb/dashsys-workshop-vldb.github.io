@@ -24,6 +24,7 @@ def compile_semantic_slots(
     prompt: str | None = None,
     enhanced_sql: bool = False,
     repair_rounds: int = 0,
+    retrieval_limits: dict[str, int] | None = None,
 ) -> dict[str, Any]:
     prompt = prompt or _prompt_from_slots(slots)
     verification = verify_semantic_slots(prompt, slots)
@@ -37,8 +38,16 @@ def compile_semantic_slots(
     evidence_need = str(effective_slots.get("evidence_need") or "").lower()
     if evidence_need in {"sql_first", "sql_then_api", "sql_only", "api_then_sql", "sql_primary_api_verify", "api_primary_sql_context"}:
         if enhanced_sql:
-            schema_context = retrieve_weak_sql_schema_context(prompt, schema_index, effective_slots)
-            sql_skeletons = retrieve_sql_skeletons(effective_slots)
+            limits = retrieval_limits if isinstance(retrieval_limits, dict) else {}
+            schema_context = retrieve_weak_sql_schema_context(
+                prompt,
+                schema_index,
+                effective_slots,
+                max_tables=int(limits.get("max_tables", 6)),
+                max_columns_per_table=int(limits.get("max_columns_per_table", 18)),
+                max_join_hints=int(limits.get("max_join_hints", 12)),
+            )
+            sql_skeletons = retrieve_sql_skeletons(effective_slots, limit=int(limits.get("max_skeletons", 3)))
             plan = _enhanced_slots_to_plan(effective_slots, schema_index, schema_context)
         else:
             plan = _slots_to_plan(effective_slots, schema_index)

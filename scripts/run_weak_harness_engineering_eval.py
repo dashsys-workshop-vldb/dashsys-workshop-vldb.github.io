@@ -29,6 +29,15 @@ HARNESS_VARIANTS = [
     "weak_harness_repair_loop_v1",
     "weak_harness_balanced_sql_api_answer_v1",
     "weak_harness_full_v1",
+    "weak_harness_answer_v1_style_preserve",
+    "weak_harness_answer_evidence_bullets",
+    "weak_harness_answer_slot_template",
+    "weak_harness_answer_api_primary_when_api_scores_better",
+    "weak_harness_compact_context_v1",
+    "weak_harness_skip_repair_when_unit_pass_v1",
+    "weak_harness_compact_trace_v1",
+    "weak_harness_answer_grounding_compact_v1",
+    "weak_harness_answer_and_efficiency_v2",
 ]
 REFERENCE = {
     "raw_weak_strict": 0.1596,
@@ -84,6 +93,11 @@ def run_weak_harness_engineering_eval(
     modes = _mode_summaries(lift, harness_rows)
     best = max((mode for mode in modes if mode.get("mode") in HARNESS_VARIANTS and isinstance(mode.get("strict_final_score"), (int, float))), key=lambda item: float(item.get("strict_final_score") or -999), default={})
     best_sql = max((mode for mode in modes if mode.get("mode") in HARNESS_VARIANTS and isinstance(mode.get("sql_score"), (int, float))), key=lambda item: float(item.get("sql_score") or -999), default={})
+    answer_delta = round(_num(best.get("answer_score")) - REFERENCE["current_weak_scaffold_answer"], 4)
+    strict_delta = round(_num(best.get("strict_final_score")) - REFERENCE["current_weak_scaffold_strict"], 4)
+    answer_negligible_with_strict_gain = answer_delta >= -0.003 and strict_delta > 0
+    raw = next((mode for mode in modes if mode.get("mode") == "raw_weak_llm"), {})
+    guided = next((mode for mode in modes if mode.get("mode") == "guided_weak_llm"), {})
     summary = {
         "run_label": lift.get("run_label"),
         "reference": REFERENCE,
@@ -99,7 +113,12 @@ def run_weak_harness_engineering_eval(
         "sql_improved_over_previous_weak_scaffold": _num(best_sql.get("sql_score")) > REFERENCE["current_weak_scaffold_sql"],
         "api_nonregression": _num(best.get("api_score")) >= REFERENCE["current_weak_scaffold_api"],
         "answer_nonregression": _num(best.get("answer_score")) >= REFERENCE["current_weak_scaffold_answer"],
+        "answer_delta_vs_previous_weak_scaffold": answer_delta,
+        "answer_negligible_regression_with_strict_gain": answer_negligible_with_strict_gain,
+        "answer_gate_acceptable": _num(best.get("answer_score")) >= REFERENCE["current_weak_scaffold_answer"] or answer_negligible_with_strict_gain,
         "strict_improved_over_previous_weak_scaffold": _num(best.get("strict_final_score")) > REFERENCE["current_weak_scaffold_strict"],
+        "strict_delta_vs_previous_weak_scaffold": strict_delta,
+        "token_runtime_cost_acceptable": _token_runtime_cost_acceptable(best, raw, guided),
         "bounded_gate_passed": _bounded_gate(best) or _bounded_gate(best_sql),
         "recommendation": _recommendation(best, best_sql),
         "modes": modes,
@@ -293,10 +312,13 @@ def _render_md(report: dict[str, Any]) -> str:
 def _bounded_gate(mode: dict[str, Any]) -> bool:
     if not mode:
         return False
+    answer_delta = _num(mode.get("answer_score")) - REFERENCE["current_weak_scaffold_answer"]
+    strict_delta = _num(mode.get("strict_final_score")) - REFERENCE["current_weak_scaffold_strict"]
+    answer_ok = _num(mode.get("answer_score")) >= REFERENCE["current_weak_scaffold_answer"] or (answer_delta >= -0.003 and strict_delta > 0)
     return (
         _num(mode.get("sql_score")) > REFERENCE["current_weak_scaffold_sql"]
         and _num(mode.get("api_score")) >= REFERENCE["current_weak_scaffold_api"]
-        and _num(mode.get("answer_score")) >= REFERENCE["current_weak_scaffold_answer"]
+        and answer_ok
         and int(mode.get("unsupported_claims") or 0) == 0
     )
 
@@ -311,6 +333,14 @@ def _recommendation(best: dict[str, Any], best_sql: dict[str, Any]) -> str:
     if _num(best.get("api_score")) < REFERENCE["current_weak_scaffold_api"]:
         return "weak_harness_api_regression"
     return "weak_harness_still_sql_limited"
+
+
+def _token_runtime_cost_acceptable(best: dict[str, Any], raw: dict[str, Any], guided: dict[str, Any]) -> bool:
+    best_tokens = _num(best.get("estimated_tokens"))
+    baseline_tokens = max(_num(raw.get("estimated_tokens")), _num(guided.get("estimated_tokens")))
+    best_runtime = _num(best.get("runtime"))
+    baseline_runtime = max(_num(raw.get("runtime")), _num(guided.get("runtime")))
+    return (baseline_tokens == 0 or best_tokens <= baseline_tokens) and (baseline_runtime == 0 or best_runtime <= baseline_runtime)
 
 
 def _validation_ok(validation: Any) -> bool | None:

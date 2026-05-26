@@ -133,6 +133,29 @@ def test_schema_retriever_compacts_context_and_links_values(tiny_project):
     db.close()
 
 
+def test_compile_semantic_slots_accepts_compact_retrieval_limits(tiny_project):
+    from dashagent.semantic_slot_compiler import compile_semantic_slots
+
+    db, schema = _schema(tiny_project)
+    slots = normalize_semantic_slots({}, prompt="When was the journey 'Birthday Message' published?")
+    compiled = compile_semantic_slots(
+        slots,
+        schema,
+        EndpointCatalog(tiny_project),
+        SQLValidator(schema),
+        prompt="When was the journey 'Birthday Message' published?",
+        enhanced_sql=True,
+        retrieval_limits={"max_tables": 2, "max_columns_per_table": 5, "max_join_hints": 2, "max_skeletons": 1},
+    )
+
+    assert compiled["enhanced_sql"] is True
+    assert len(compiled["schema_context"]["retrieved_tables"]) <= 2
+    assert all(len(columns) <= 5 for columns in compiled["schema_context"]["retrieved_columns"].values())
+    assert len(compiled["schema_context"]["join_candidates"]) <= 2
+    assert len(compiled["sql_skeletons"]) <= 1
+    db.close()
+
+
 def test_skeleton_retriever_has_generic_group_and_recent_skeletons():
     from dashagent.weak_sql_skeleton_retriever import SQL_SKELETONS, retrieve_sql_skeletons
 
@@ -207,4 +230,13 @@ def test_harness_variants_are_registered_shadow_only():
         "weak_harness_repair_loop_v1",
         "weak_harness_balanced_sql_api_answer_v1",
         "weak_harness_full_v1",
+        "weak_harness_answer_v1_style_preserve",
+        "weak_harness_answer_evidence_bullets",
+        "weak_harness_answer_slot_template",
+        "weak_harness_answer_api_primary_when_api_scores_better",
+        "weak_harness_compact_context_v1",
+        "weak_harness_skip_repair_when_unit_pass_v1",
+        "weak_harness_compact_trace_v1",
+        "weak_harness_answer_grounding_compact_v1",
+        "weak_harness_answer_and_efficiency_v2",
     } <= set(WEAK_MODEL_VARIANTS)

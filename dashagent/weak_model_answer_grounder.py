@@ -28,35 +28,35 @@ def ground_weak_model_answer(
     answer = str(model_answer or "").strip()
     fallback_used = False
     arbitration = _arbitration_mode(evidence_need, sql_evidence, api_evidence)
-    v3_mode = str(grounding_mode or "").lower() in {
+    mode = str(grounding_mode or "").lower()
+    v3_mode = mode in {
         "balanced_sql_api_answer_v3",
         "sql_lift_api_recovery_v3",
         "answer_fallback_v3",
+        "harness_answer_v1_style_preserve",
+        "harness_answer_evidence_bullets",
+        "harness_answer_slot_template",
+        "harness_answer_api_primary_when_api_scores_better",
+        "harness_answer_grounding_compact",
     }
+    deterministic = _deterministic_answer_for_mode(
+        prompt,
+        sql_evidence,
+        api_evidence,
+        answer_intent,
+        arbitration,
+        mode,
+    )
     if sql_evidence and sql_evidence.get("sql_executed"):
-        deterministic = (
-            _combined_answer_v3(prompt, sql_evidence, api_evidence, answer_intent, arbitration)
-            if v3_mode
-            else _combined_answer(prompt, sql_evidence, api_evidence, answer_intent, arbitration)
-        )
         if not _answer_uses_sql(answer, sql_evidence) or (_api_required(evidence_need) and not _answer_uses_api(answer, api_evidence)):
             answer = deterministic
             fallback_used = True
     elif api_evidence:
-        deterministic = _answer_from_api_evidence_v3(api_evidence) if v3_mode else _answer_from_api_evidence(api_evidence)
         if not answer or not _answer_uses_api(answer, api_evidence):
             answer = deterministic
             fallback_used = True
     if _unsupported_claim_count(answer, sql_evidence) > 0:
-        answer = (
-            _combined_answer_v3(prompt, sql_evidence, api_evidence, answer_intent, arbitration)
-            if v3_mode and sql_evidence
-            else _combined_answer(prompt, sql_evidence, api_evidence, answer_intent, arbitration)
-            if sql_evidence
-            else _answer_from_api_evidence_v3(api_evidence)
-            if v3_mode
-            else _answer_from_api_evidence(api_evidence)
-        )
+        answer = deterministic
         fallback_used = True
     answer_used_sql = bool(sql_evidence and _answer_uses_sql(answer, sql_evidence))
     answer_used_api = bool(api_evidence and _answer_uses_api(answer, api_evidence))
@@ -162,6 +162,119 @@ def _combined_answer_v3(
     if api_part:
         parts.append(api_part)
     return " ".join(parts).strip() or sql_part or "The available evidence is insufficient to answer."
+
+
+def _deterministic_answer_for_mode(
+    prompt: str,
+    sql_evidence: dict[str, Any] | None,
+    api_evidence: dict[str, Any] | None,
+    intent: str,
+    arbitration: str,
+    mode: str,
+) -> str:
+    if mode == "harness_answer_evidence_bullets":
+        return _answer_evidence_bullets(prompt, sql_evidence, api_evidence, intent, arbitration)
+    if mode == "harness_answer_slot_template":
+        return _answer_slot_template(prompt, sql_evidence, api_evidence, intent, arbitration)
+    if mode == "harness_answer_v1_style_preserve":
+        return _answer_v1_style_preserve(prompt, sql_evidence, api_evidence, intent, arbitration)
+    if mode == "harness_answer_api_primary_when_api_scores_better":
+        return _answer_api_primary_when_useful(prompt, sql_evidence, api_evidence, intent, arbitration)
+    if mode == "harness_answer_grounding_compact":
+        return _answer_grounding_compact(prompt, sql_evidence, api_evidence, intent, arbitration)
+    if mode in {"balanced_sql_api_answer_v3", "sql_lift_api_recovery_v3", "answer_fallback_v3"}:
+        if sql_evidence:
+            return _combined_answer_v3(prompt, sql_evidence, api_evidence, intent, arbitration)
+        return _answer_from_api_evidence_v3(api_evidence)
+    if sql_evidence:
+        return _combined_answer(prompt, sql_evidence, api_evidence, intent, arbitration)
+    return _answer_from_api_evidence(api_evidence)
+
+
+def _answer_evidence_bullets(
+    prompt: str,
+    sql_evidence: dict[str, Any] | None,
+    api_evidence: dict[str, Any] | None,
+    intent: str,
+    arbitration: str,
+) -> str:
+    direct = _answer_slot_template(prompt, sql_evidence, api_evidence, intent, arbitration)
+    sql_part = _answer_from_sql_v3(prompt, sql_evidence, _effective_intent(prompt, intent)) if sql_evidence else ""
+    api_part = _answer_from_api_evidence_v3(api_evidence) if api_evidence else ""
+    lines = [f"- Direct answer: {direct}"]
+    if sql_part:
+        lines.append(f"- SQL evidence: {sql_part}")
+    if api_part:
+        lines.append(f"- API evidence: {api_part}")
+    return "\n".join(lines)
+
+
+def _answer_slot_template(
+    prompt: str,
+    sql_evidence: dict[str, Any] | None,
+    api_evidence: dict[str, Any] | None,
+    intent: str,
+    arbitration: str,
+) -> str:
+    effective_intent = _effective_intent(prompt, intent)
+    parts: list[str] = []
+    sql_part = _answer_from_sql_v3(prompt, sql_evidence, effective_intent) if sql_evidence else ""
+    api_part = _answer_from_api_evidence_v3(api_evidence) if api_evidence else ""
+    if arbitration == "api_primary_sql_context":
+        if api_part:
+            parts.append(api_part)
+        if sql_part and _sql_evidence_directly_answers(prompt, sql_evidence or {}, effective_intent):
+            parts.append(sql_part)
+    else:
+        if sql_part:
+            parts.append(sql_part)
+        if api_part:
+            parts.append(api_part)
+    return " ".join(parts).strip() or "The available evidence is insufficient to answer."
+
+
+def _answer_v1_style_preserve(
+    prompt: str,
+    sql_evidence: dict[str, Any] | None,
+    api_evidence: dict[str, Any] | None,
+    intent: str,
+    arbitration: str,
+) -> str:
+    api_part = _answer_from_api_evidence(api_evidence) if api_evidence else ""
+    sql_part = _answer_from_sql_v3(prompt, sql_evidence, _effective_intent(prompt, intent)) if sql_evidence else ""
+    sql_useful = bool(sql_evidence and _sql_evidence_directly_answers(prompt, sql_evidence, intent))
+    if arbitration == "api_primary_sql_context" and api_part:
+        return " ".join(part for part in [api_part, sql_part if sql_useful else ""] if part).strip()
+    if api_part and not sql_useful:
+        return api_part
+    return " ".join(part for part in [sql_part, api_part] if part).strip() or "The available evidence is insufficient to answer."
+
+
+def _answer_api_primary_when_useful(
+    prompt: str,
+    sql_evidence: dict[str, Any] | None,
+    api_evidence: dict[str, Any] | None,
+    intent: str,
+    arbitration: str,
+) -> str:
+    text = prompt.lower()
+    api_primary = arbitration == "api_primary_sql_context" or any(marker in text for marker in ("live", "api", "platform", "endpoint", "adobe"))
+    api_part = _answer_from_api_evidence_v3(api_evidence) if api_evidence else ""
+    sql_part = _answer_from_sql_v3(prompt, sql_evidence, _effective_intent(prompt, intent)) if sql_evidence else ""
+    if api_primary and api_part:
+        return " ".join(part for part in [api_part, sql_part if _sql_evidence_directly_answers(prompt, sql_evidence or {}, intent) else ""] if part).strip()
+    return " ".join(part for part in [sql_part, api_part] if part).strip() or "The available evidence is insufficient to answer."
+
+
+def _answer_grounding_compact(
+    prompt: str,
+    sql_evidence: dict[str, Any] | None,
+    api_evidence: dict[str, Any] | None,
+    intent: str,
+    arbitration: str,
+) -> str:
+    answer = _answer_slot_template(prompt, sql_evidence, api_evidence, intent, arbitration)
+    return " ".join(answer.split())
 
 
 def _answer_from_api_evidence(api_evidence: dict[str, Any] | None) -> str:

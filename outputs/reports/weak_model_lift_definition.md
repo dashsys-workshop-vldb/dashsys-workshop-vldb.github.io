@@ -33,4 +33,13 @@ Measure how much DashAgent scaffolding lifts weak-model correctness, tool validi
 - `weak_harness_repair_loop_v1`
 - `weak_harness_balanced_sql_api_answer_v1`
 - `weak_harness_full_v1`
+- `weak_harness_answer_v1_style_preserve`
+- `weak_harness_answer_evidence_bullets`
+- `weak_harness_answer_slot_template`
+- `weak_harness_answer_api_primary_when_api_scores_better`
+- `weak_harness_compact_context_v1`
+- `weak_harness_skip_repair_when_unit_pass_v1`
+- `weak_harness_compact_trace_v1`
+- `weak_harness_answer_grounding_compact_v1`
+- `weak_harness_answer_and_efficiency_v2`
 - `full_dashagent_current`
