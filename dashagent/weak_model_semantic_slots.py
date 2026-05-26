@@ -11,7 +11,18 @@ from .trajectory import redact_secrets
 
 VALID_INTENTS = {"COUNT", "LIST", "STATUS", "DATE", "DETAIL", "RELATIONSHIP", "YES_NO", "UNKNOWN"}
 VALID_DOMAINS = {"JOURNEY", "SEGMENT", "DATASET", "SCHEMA", "DESTINATION", "CONNECTOR", "FIELD", "TAG", "AUDIT", "UNKNOWN"}
-VALID_EVIDENCE_NEEDS = {"sql_first", "api_first", "sql_then_api", "api_only", "unknown"}
+VALID_EVIDENCE_NEEDS = {
+    "sql_first",
+    "api_first",
+    "sql_then_api",
+    "api_only",
+    "sql_only",
+    "api_then_sql",
+    "sql_primary_api_verify",
+    "api_primary_sql_context",
+    "no_tool_needed",
+    "unknown",
+}
 VALID_AGGREGATIONS = {"none", "count", "count_distinct", "max", "min"}
 
 
@@ -86,6 +97,41 @@ def _default_evidence_need(prompt: str, domain: str) -> str:
     if domain != "UNKNOWN":
         return "sql_first"
     return "unknown"
+
+
+def classify_balanced_evidence_need(prompt: str, slots: dict[str, Any]) -> str:
+    """Classify evidence need for shadow weak-model scaffolds.
+
+    This is intentionally coarse and domain-family based. It is not a packaged
+    router and does not use query IDs or gold labels.
+    """
+    lowered = str(prompt or "").lower()
+    domain = str(slots.get("domain") or "").upper()
+    intent = str(slots.get("intent") or "").upper()
+    explicit_api = any(term in lowered for term in (" api", "live ", "platform", "current adobe", "adobe api"))
+    explicit_local = any(term in lowered for term in ("local", "snapshot", "database", "db "))
+    relationship = intent == "RELATIONSHIP" or any(term in lowered for term in ("connected", "linked", "mapped", "associated", "related"))
+    if intent == "UNKNOWN" and domain == "UNKNOWN":
+        return "unknown"
+    if explicit_api:
+        return "api_primary_sql_context" if domain != "UNKNOWN" else "api_only"
+    if relationship:
+        return "sql_then_api"
+    if explicit_local:
+        return "sql_only"
+    if _domain_has_safe_api_family(domain, lowered):
+        return "sql_primary_api_verify"
+    if domain != "UNKNOWN":
+        return "sql_only"
+    return "unknown"
+
+
+def _domain_has_safe_api_family(domain: str, lowered_prompt: str) -> bool:
+    if domain in {"JOURNEY", "SEGMENT", "DATASET", "SCHEMA", "DESTINATION", "CONNECTOR", "TAG", "AUDIT"}:
+        return True
+    if "merge polic" in lowered_prompt or "batch" in lowered_prompt:
+        return True
+    return False
 
 
 def _normalize_filters(raw_filters: Any, fallback: list[dict[str, Any]]) -> list[dict[str, Any]]:

@@ -4,10 +4,10 @@ Metrics below are copied from current reports. Missing values are `unavailable`.
 
 | Technique | Status | Promoted? | Strict Δ | Correctness Δ | Answer Δ | SQL Δ | API Δ | Token Δ | Runtime Δ | Tool Δ | Hidden-style impact | Recommendation |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| SQL_FIRST_API_VERIFY packaged strategy | promoted_default | True | 0.0 | 0.0 | 0.3207 | 0.9333 | 0.9791 | 799.4571 | 0.4736 | 1.4571 | 48/48 hidden-style in current report | current safe default |
+| SQL_FIRST_API_VERIFY packaged strategy | promoted_default | True | 0.0 | 0.0 | 0.3207 | 0.9333 | 0.9791 | 799.3429 | 0.6133 | 1.4571 | 48/48 hidden-style in current report | current safe default |
 | official-token reduction | promoted_default | True | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | 48/48 maintained | promoted_keep_enabled |
-| supportable answer rewrite | shadow_only | False | -0.0033 | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | no packaged effect | safe_for_autonomous_packaged_trial |
-| evidence-aware answer candidates | shadow_only | False | -0.0091 | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | no packaged effect | safe_for_autonomous_packaged_trial |
+| supportable answer rewrite | shadow_only | False | -0.0028 | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | no packaged effect | safe_for_autonomous_packaged_trial |
+| evidence-aware answer candidates | shadow_only | False | -0.0086 | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | no packaged effect | safe_for_autonomous_packaged_trial |
 | autonomous packaged trial bundle | shadow_only | False | 0.0067 | 0.0067 | unavailable | unavailable | unavailable | -3.6571 | -0.001 | 0.0 | hidden-style gate passed | continue_iteration_target_not_reached |
 | answer-shape v2 | default_off | False | 0.0006 | 0.0006 | -0.1162 | unavailable | unavailable | unavailable | unavailable | unavailable | hidden-style gate passed | safe_for_answer_shape_v2_trial |
 | endpoint/schema rule canary | shadow_only | False | 0.0 | 0.0 | unavailable | unavailable | 0.0 | 0.0 | 0.0 | 0.0 | hidden-style gate passed | keep_shadow_only |

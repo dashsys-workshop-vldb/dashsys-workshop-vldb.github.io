@@ -30,7 +30,8 @@ from dashagent.semantic_slot_compiler import compile_semantic_slots
 from dashagent.trajectory import estimate_tokens, redact_secrets
 from dashagent.validators import SQLValidator
 from dashagent.weak_model_answer_grounder import ground_weak_model_answer
-from dashagent.weak_model_semantic_slots import weak_model_semantic_slots
+from dashagent.weak_model_api_evidence_bridge import build_api_evidence
+from dashagent.weak_model_semantic_slots import classify_balanced_evidence_need, weak_model_semantic_slots
 from scripts.load_local_env import load_local_env
 
 REPORT_STEM = "weak_model_lift_eval"
@@ -48,8 +49,19 @@ WEAK_MODEL_VARIANTS = [
     "weak_slots_to_sql_api_compiler",
     "evidence_guarded_weak_agent",
     "weak_full_dashagent_scaffold",
+    "weak_scaffold_balanced_sql_api_v1",
+    "weak_scaffold_api_recovery_v1",
+    "weak_scaffold_answer_grounded_v1",
+    "weak_scaffold_balanced_full_v1",
     "full_dashagent_current",
 ]
+
+BALANCED_VARIANTS = {
+    "weak_scaffold_balanced_sql_api_v1",
+    "weak_scaffold_api_recovery_v1",
+    "weak_scaffold_answer_grounded_v1",
+    "weak_scaffold_balanced_full_v1",
+}
 
 
 def main() -> int:
@@ -191,26 +203,41 @@ def _run_scaffold_variant(prompt: str, variant: str, db: DuckDBDatabase, schema:
         trajectory = {"strategy": variant, "steps": [{"kind": "semantic_slots", "slots": slots}], "final_answer": answer, "tool_call_count": 0, "runtime": time.perf_counter() - start}
         trajectory["estimated_tokens"] = estimate_tokens(trajectory)
         return {"final_answer": answer, "trajectory": trajectory, "unsupported_claim_count": 0, "failure_stage": "slots_only_no_tool_execution"}
+    if variant in BALANCED_VARIANTS:
+        slots = dict(slots)
+        slots["evidence_need"] = classify_balanced_evidence_need(prompt, slots)
     compiled = compile_semantic_slots(slots, schema, catalog, SQLValidator(schema), prompt=prompt)
     sql_result: dict[str, Any] | None = None
     sql = ""
     if compiled.get("sql_candidates"):
         sql = compiled["sql_candidates"][0]["sql"]
         sql_result = db.execute_sql(sql)
-    api_result = None
-    if not sql_result and compiled.get("api_candidates"):
-        call = compiled["api_candidates"][0]
-        api_result = api_client.call_api(call["method"], call["path"], call.get("params", {}), {})
+    api_results: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    should_run_api = bool(compiled.get("api_candidates")) and (variant in BALANCED_VARIANTS or not sql_result)
+    if should_run_api:
+        for call in list(compiled.get("api_candidates") or [])[:2]:
+            result = api_client.call_api(call["method"], call["path"], call.get("params", {}), {})
+            api_results.append((call, result))
+    api_result = api_results[0][1] if api_results else None
+    api_endpoint_id = api_results[0][0].get("endpoint_id", "") if api_results else ""
     model_answer = ""
-    grounded = ground_weak_model_answer(prompt, model_answer=model_answer, sql_result=sql_result, api_result=api_result, answer_intent=slots.get("intent", "DETAIL"))
-    answer = grounded["answer"] if variant in {"evidence_guarded_weak_agent", "weak_full_dashagent_scaffold"} else (grounded["answer"] if sql_result else "The scaffold could not produce executable evidence.")
+    grounded = ground_weak_model_answer(
+        prompt,
+        model_answer=model_answer,
+        sql_result=sql_result,
+        api_result=api_result,
+        answer_intent=slots.get("intent", "DETAIL"),
+        evidence_need=str(slots.get("evidence_need") or "sql_first"),
+        api_endpoint_id=api_endpoint_id,
+    )
+    answer = grounded["answer"] if variant in {"evidence_guarded_weak_agent", "weak_full_dashagent_scaffold"} | BALANCED_VARIANTS else (grounded["answer"] if sql_result else "The scaffold could not produce executable evidence.")
     steps = [
         {"kind": "semantic_slots", "slots": slots},
         {"kind": "slot_compiler", "compiled": compiled},
     ]
     if sql:
         steps.append({"kind": "sql_call", "sql": sql, "validation": compiled["sql_candidates"][0].get("validation"), "result": sql_result})
-    if api_result:
+    for call, result in api_results:
         steps.append(
             {
                 "kind": "api_call",
@@ -219,13 +246,26 @@ def _run_scaffold_variant(prompt: str, variant: str, db: DuckDBDatabase, schema:
                 "path": call["path"],
                 "params": call.get("params", {}),
                 "validation": call.get("validation"),
-                "result": api_result,
+                "result": _compact_api_result(call, result),
             }
         )
     steps.append({"kind": "final_answer", "answer": answer, "grounding": grounded})
     trajectory = {"strategy": variant, "steps": steps, "final_answer": answer, "tool_call_count": sum(1 for step in steps if step["kind"] in {"sql_call", "api_call"}), "runtime": time.perf_counter() - start}
     trajectory["estimated_tokens"] = estimate_tokens(trajectory)
-    return {"final_answer": answer, "trajectory": trajectory, "unsupported_claim_count": grounded.get("unsupported_claim_count", 0), "failure_stage": None if sql_result or api_result else "no_executable_tool_evidence"}
+    return {"final_answer": answer, "trajectory": trajectory, "unsupported_claim_count": grounded.get("unsupported_claim_count", 0), "failure_stage": None if sql_result or api_results else "no_executable_tool_evidence"}
+
+
+def _compact_api_result(call: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
+    evidence = build_api_evidence(str(call.get("endpoint_id") or ""), result)
+    return {
+        "ok": bool(result.get("ok")),
+        "dry_run": bool(result.get("dry_run")),
+        "status_code": result.get("status_code"),
+        "endpoint_id": call.get("endpoint_id"),
+        "endpoint": result.get("endpoint") or call.get("path"),
+        "api_evidence": evidence,
+        "error": result.get("error") if result.get("error") else None,
+    }
 
 
 def _score_row(harness: EvalHarness, example: Any, mode: str, trajectory: dict[str, Any], answer: str, *, unsupported: int = 0) -> dict[str, Any]:

@@ -39,6 +39,7 @@ def normalize_prompt_semantics(prompt: str) -> dict[str, Any]:
     for status in status_terms:
         filters.append({"semantic_field": "status", "operator": "equals", "value": status, "value_source": "status_term"})
     return {
+        "original_prompt": text,
         "canonical_intent": intent,
         "canonical_domain": domain,
         "canonical_entities": quoted,

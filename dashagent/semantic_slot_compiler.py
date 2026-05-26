@@ -8,6 +8,7 @@ from .nlp_generalization_layer import domain_to_table, timestamp_semantic_marker
 from .schema_index import SchemaIndex, normalize_name
 from .trajectory import redact_secrets
 from .validators import APIValidator, SQLValidator
+from .weak_model_api_selector import select_weak_model_api_candidates
 from .weak_model_slot_verifier import verify_semantic_slots
 
 
@@ -26,7 +27,8 @@ def compile_semantic_slots(
     errors: list[str] = []
     sql_candidates: list[dict[str, Any]] = []
     api_candidates: list[dict[str, Any]] = []
-    if str(effective_slots.get("evidence_need") or "").lower() in {"sql_first", "sql_then_api"}:
+    evidence_need = str(effective_slots.get("evidence_need") or "").lower()
+    if evidence_need in {"sql_first", "sql_then_api", "sql_only", "api_then_sql", "sql_primary_api_verify", "api_primary_sql_context"}:
         plan = _slots_to_plan(effective_slots, schema_index)
         compiled = compile_structured_sql_plan(plan, schema_index, {"business_term_aliases": {}})
         validation = sql_validator.validate(str(compiled.get("sql") or "")) if compiled.get("ok") else None
@@ -43,8 +45,8 @@ def compile_semantic_slots(
             errors.extend(compiled.get("errors", []))
             if validation and not validation.ok:
                 errors.extend(validation.errors)
-    if str(effective_slots.get("evidence_need") or "").lower() in {"api_first", "api_only", "sql_then_api"}:
-        api_candidates.extend(_api_candidates(effective_slots, endpoint_catalog))
+    if evidence_need in {"api_first", "api_only", "sql_then_api", "api_then_sql", "sql_primary_api_verify", "api_primary_sql_context"}:
+        api_candidates.extend(_api_candidates(effective_slots, endpoint_catalog, prompt=prompt))
     return redact_secrets(
         {
             "ok": bool(sql_candidates or api_candidates) and not (verification.get("errors") and not sql_candidates),
@@ -123,21 +125,9 @@ def _filters(slots: dict[str, Any], table: str, schema_index: SchemaIndex) -> li
     return compiled
 
 
-def _api_candidates(slots: dict[str, Any], endpoint_catalog: EndpointCatalog) -> list[dict[str, Any]]:
-    validator = APIValidator(endpoint_catalog)
-    domain = str(slots.get("domain") or "").lower()
-    candidates = []
-    for endpoint in endpoint_catalog.endpoints:
-        text = f"{endpoint.id} {endpoint.path} {endpoint.use_when} {' '.join(endpoint.domains)}".lower()
-        if domain and domain != "unknown" and domain not in text:
-            if not (domain == "segment" and "audience" in text):
-                continue
-        if "{" in endpoint.path or "}" in endpoint.path:
-            continue
-        validation = validator.validate(endpoint.method, endpoint.path, {}, {})
-        if validation.ok:
-            candidates.append({"endpoint_id": endpoint.id, "method": endpoint.method, "path": endpoint.path, "params": {}, "validation": validation.to_dict()})
-    return candidates[:3]
+def _api_candidates(slots: dict[str, Any], endpoint_catalog: EndpointCatalog, *, prompt: str | None = None) -> list[dict[str, Any]]:
+    selected = select_weak_model_api_candidates(slots, endpoint_catalog, prompt=prompt)
+    return list(selected.get("candidates") or [])[:3]
 
 
 def _semantic_column(table: str, schema_index: SchemaIndex, semantic: str) -> str | None:
@@ -165,6 +155,8 @@ def _timestamp_column(table: str, schema_index: SchemaIndex, slots: dict[str, An
 def _role_column(table: str, schema_index: SchemaIndex, markers: tuple[str, ...]) -> str | None:
     for column in schema_index.columns_for(table):
         normalized = normalize_name(column)
+        if _metadata_column(normalized):
+            continue
         if any(marker in normalized for marker in markers):
             return column
     return None
@@ -173,9 +165,15 @@ def _role_column(table: str, schema_index: SchemaIndex, markers: tuple[str, ...]
 def _id_column(table: str, schema_index: SchemaIndex) -> str | None:
     for column in schema_index.columns_for(table):
         normalized = normalize_name(column)
+        if _metadata_column(normalized):
+            continue
         if normalized == "id" or normalized.endswith("id"):
             return column
     return None
+
+
+def _metadata_column(normalized: str) -> bool:
+    return any(marker in normalized for marker in ("sandbox", "imsorg", "orgid", "acpsystemmetadata"))
 
 
 def _first_table(schema_index: SchemaIndex) -> str:

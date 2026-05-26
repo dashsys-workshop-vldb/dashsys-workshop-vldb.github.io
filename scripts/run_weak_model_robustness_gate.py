@@ -38,21 +38,26 @@ def run_weak_model_robustness_gate(config: Config | None = None) -> dict[str, An
     summary = lift.get("summary", {}) if isinstance(lift.get("summary"), dict) else {}
     modes = summary.get("modes", []) if isinstance(summary.get("modes"), list) else []
     raw = _mode(modes, "raw_weak_llm")
+    guided = _mode(modes, "guided_weak_llm")
     best = _mode(modes, str(summary.get("best_scaffold_mode") or ""))
     full_current = _full_current(strict, modes)
+    previous_scaffold = _previous_scaffold_reference(reports / "weak_model_api_nonregression_analysis.json")
     generated_summary = _generated_summary(generated)
     endpoint_summary = _endpoint_summary(endpoint)
     hidden_pass = _hidden_pass(hidden)
 
     gates = {
         "strict_score_improves_over_raw_weak": _num(best.get("strict_final_score")) > _num(raw.get("strict_final_score")),
+        "strict_score_beats_guided_weak": _num(best.get("strict_final_score")) > _num(guided.get("strict_final_score")),
         "sql_score_improves_over_raw_weak": _num(best.get("sql_score")) > _num(raw.get("sql_score")),
-        "api_score_not_regressed_vs_raw_weak": _num(best.get("api_score")) >= _num(raw.get("api_score")),
+        "api_score_not_regressed_vs_raw_or_guided_weak": _num(best.get("api_score")) >= max(_num(raw.get("api_score")), _num(guided.get("api_score"))),
+        "answer_grounding_improves_over_previous_scaffold": previous_scaffold == {} or _num(best.get("answer_score")) > _num(previous_scaffold.get("answer_score")),
         "unsupported_claims_zero": int(best.get("unsupported_claims") or 0) == 0,
         "generated_prompt_runtime_pass_high": generated_summary.get("runtime_pass_count") in {None, generated_summary.get("total_count")} or _num(generated_summary.get("runtime_pass_rate")) >= 0.95,
         "paraphrase_consistency_available_or_nonregressed": paraphrase == {} or _num(_paraphrase_summary(paraphrase).get("paraphrase_consistency")) >= 0.0,
         "endpoint_matrix_clean": endpoint_summary.get("failures", 0) == 0,
         "hidden_style_passes": hidden_pass is not False,
+        "token_runtime_cost_acceptable": _token_runtime_cost_acceptable(best, raw, guided),
         "final_submission_format_unchanged": True,
         "packaged_runtime_unchanged": bool(lift.get("packaged_runtime_changed")) is False,
     }
@@ -67,7 +72,9 @@ def run_weak_model_robustness_gate(config: Config | None = None) -> dict[str, An
             "packaged_runtime_changed": False,
             "packaged_default_strategy": "SQL_FIRST_API_VERIFY",
             "raw_weak_llm": raw,
+            "guided_weak_llm": guided,
             "best_scaffold": best,
+            "previous_scaffold_reference": previous_scaffold,
             "full_dashagent_current": full_current,
             "small_model_lift_score": summary.get("small_model_lift_score"),
             "sql_lift": summary.get("sql_lift"),
@@ -119,6 +126,24 @@ def _full_current(strict: dict[str, Any], modes: list[dict[str, Any]]) -> dict[s
         "tool_calls": sql_first.get("avg_tool_call_count"),
         "estimated_tokens": sql_first.get("avg_estimated_tokens"),
         "runtime": sql_first.get("avg_runtime"),
+    }
+
+
+def _previous_scaffold_reference(path: Path) -> dict[str, Any]:
+    payload = _load_json(path)
+    rows = payload.get("rows") if isinstance(payload.get("rows"), list) else []
+    values = []
+    for row in rows:
+        scaffold = row.get("best_scaffold") if isinstance(row.get("best_scaffold"), dict) else {}
+        if isinstance(scaffold.get("answer_score"), (int, float)):
+            values.append(scaffold)
+    if not values:
+        return {}
+    return {
+        "source": str(path),
+        "answer_score": round(sum(float(item.get("answer_score") or 0.0) for item in values) / len(values), 4),
+        "api_score": round(sum(_num(item.get("api_score")) for item in values) / len(values), 4),
+        "sql_score": round(sum(_num(item.get("sql_score")) for item in values) / len(values), 4),
     }
 
 
@@ -182,8 +207,8 @@ def _hidden_pass(payload: dict[str, Any]) -> bool | None:
         return True
     result = payload.get("result") or payload.get("summary") or payload
     if isinstance(result, dict):
-        passed = result.get("passed") or result.get("pass_count")
-        total = result.get("total") or result.get("total_count")
+        passed = result.get("passed") or result.get("pass_count") or result.get("passed_cases")
+        total = result.get("total") or result.get("total_count") or result.get("total_cases")
         if passed is not None and total is not None:
             return int(passed) == int(total)
     return None
@@ -196,10 +221,16 @@ def _recommendation(gates: dict[str, bool], summary: dict[str, Any]) -> str:
         return "current_deterministic_system_still_preferred"
     if not gates["sql_score_improves_over_raw_weak"]:
         return "weak_model_still_blocked_by_sql"
+    if not gates["api_score_not_regressed_vs_raw_or_guided_weak"]:
+        return "weak_model_blocked_by_api_nonregression"
+    if not gates["answer_grounding_improves_over_previous_scaffold"]:
+        return "weak_model_scaffold_candidate_needs_answer_fix"
+    if not gates["strict_score_beats_guided_weak"]:
+        return "weak_model_still_below_guided"
     if all(gates.values()):
         return "weak_model_scaffold_improved_keep_shadow"
     if gates["strict_score_improves_over_raw_weak"] and gates["sql_score_improves_over_raw_weak"]:
-        return "weak_model_scaffold_candidate"
+        return "weak_model_scaffold_candidate_needs_answer_fix"
     return summary.get("recommendation") or "current_deterministic_system_still_preferred"
 
 
@@ -208,6 +239,14 @@ def _num(value: Any) -> float:
         return float(value)
     except Exception:
         return 0.0
+
+
+def _token_runtime_cost_acceptable(best: dict[str, Any], raw: dict[str, Any], guided: dict[str, Any]) -> bool:
+    best_tokens = _num(best.get("estimated_tokens"))
+    baseline_tokens = max(_num(raw.get("estimated_tokens")), _num(guided.get("estimated_tokens")))
+    best_runtime = _num(best.get("runtime"))
+    baseline_runtime = max(_num(raw.get("runtime")), _num(guided.get("runtime")))
+    return (baseline_tokens == 0 or best_tokens <= baseline_tokens) and (baseline_runtime == 0 or best_runtime <= baseline_runtime)
 
 
 def _render_md(report: dict[str, Any]) -> str:

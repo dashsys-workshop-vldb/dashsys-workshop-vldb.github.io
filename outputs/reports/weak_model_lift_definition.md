@@ -16,4 +16,8 @@ Measure how much DashAgent scaffolding lifts weak-model correctness, tool validi
 - `weak_slots_to_sql_api_compiler`
 - `evidence_guarded_weak_agent`
 - `weak_full_dashagent_scaffold`
+- `weak_scaffold_balanced_sql_api_v1`
+- `weak_scaffold_api_recovery_v1`
+- `weak_scaffold_answer_grounded_v1`
+- `weak_scaffold_balanced_full_v1`
 - `full_dashagent_current`
