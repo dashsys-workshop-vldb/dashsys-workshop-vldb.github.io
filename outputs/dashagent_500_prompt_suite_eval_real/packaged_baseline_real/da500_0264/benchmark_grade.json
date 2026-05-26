@@ -1,0 +1,590 @@
+{
+  "agent_executor_used": true,
+  "category_tags_domain_visible_to_runtime": false,
+  "engine": "real_agent",
+  "expected_trace_visible_to_runtime": false,
+  "extracted_runtime": {
+    "anti_hallucination_initial_fail": false,
+    "anti_hallucination_revision_attempted": false,
+    "anti_hallucination_revision_success": false,
+    "api_calls": 1,
+    "api_families": [
+      "flowservice_flows"
+    ],
+    "api_used": true,
+    "checkpoint_names": [
+      "checkpoint_01_raw_query",
+      "checkpoint_00_prompt_router",
+      "checkpoint_simple_prompt_gate",
+      "checkpoint_objective_prompt_features",
+      "checkpoint_02_query_normalization",
+      "checkpoint_03_query_tokens",
+      "checkpoint_04_relevance_scoring",
+      "checkpoint_value_entity_retrieval",
+      "checkpoint_05_query_analysis",
+      "checkpoint_06_lookup_path",
+      "checkpoint_07_context_card",
+      "checkpoint_08_candidate_plans",
+      "checkpoint_09_plan_optimization",
+      "checkpoint_10_evidence_policy",
+      "checkpoint_11_call_budget",
+      "checkpoint_12_validation",
+      "checkpoint_sql_ast_validation",
+      "checkpoint_13_tool_execution",
+      "checkpoint_14_evidence_bus",
+      "checkpoint_15_answer_slots",
+      "checkpoint_16_answer_verification",
+      "checkpoint_17_answer_reranking",
+      "checkpoint_18_final_answer"
+    ],
+    "estimated_total_tokens": 1123,
+    "latest_code_paths_enabled": {
+      "compact_json_llm_context": false,
+      "evidence_bus_answer_verifier_token_reduction": true,
+      "no_tool_safety_verifier": false,
+      "objective_prompt_features": true,
+      "post_sql_api_call_verifier": false,
+      "post_sql_deterministic_policy": false,
+      "post_sql_llm_advisor": false,
+      "routing_anti_hallucination_gate": false,
+      "routing_feedback_revision": false,
+      "semantic_intent_classifier": false,
+      "semantic_route_decision_ladder": false,
+      "staged_evidence_policy": false
+    },
+    "missing_checkpoints": [
+      "checkpoint_semantic_route_decision_ladder",
+      "checkpoint_initial_evidence_branch_policy",
+      "checkpoint_post_sql_api_call_verifier"
+    ],
+    "observable_trace": {
+      "checkpoint_00_prompt_router": {
+        "confidence": 0.9,
+        "matched_rules": {
+          "items": [
+            "api_only:platform"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "mode": "API_ONLY",
+        "reason": "API/platform family keyword(s): platform.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": true,
+        "requires_database": false,
+        "risk": "medium",
+        "truncated_fields": 1
+      },
+      "checkpoint_01_raw_query": {
+        "query": "Return live platform state for segment. Use only safe read-only platform evidence for the audience snapshot.",
+        "query_id": "da500_0264",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "checkpoint_02_query_normalization": {
+        "matching_text": "return live platform state for segment. use only safe read-only platform evidence for the audience snapshot.",
+        "normalized_query": "Return live platform state for segment. Use only safe read-only platform evidence for the audience snapshot."
+      },
+      "checkpoint_03_query_tokens": {
+        "domains": {
+          "items": [
+            "journey_campaign",
+            "segment_audience"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "statuses": {
+          "items": [
+            "live"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_04_relevance_scoring": {
+        "top_answer_families": {
+          "items": [
+            "segment_destination"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "top_apis": {
+          "items": [
+            "journey_list",
+            "merge_policies",
+            "segment_definitions"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_join_hints": {
+          "items": [
+            "br_campaign_segment.SEGMENTID->dim_segment.SEGMENTID",
+            "br_campaign_segment.SEGMENTID->hkg_br_base_segment_used_by_dependent_segment.SEGMENTID",
+            "br_campaign_segment.SEGMENTID->hkg_br_collection_segment.SEGMENTID"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_tables": {
+          "items": [
+            "dim_segment",
+            "hkg_br_segment_target",
+            "dim_target"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_05_query_analysis": {
+        "answer_family": "generic",
+        "api_templates": {
+          "items": [
+            "gold_pattern_fallback"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "confidence": 0.8,
+        "domain_type": "SEGMENT_AUDIENCE",
+        "route_type": "SQL_THEN_API",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "checkpoint_06_lookup_path": {
+        "api_families": {
+          "items": [
+            "audience_by_destination_id",
+            "destination_flows"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "api_mode": "optional",
+        "family": "segment_destination",
+        "join_path": {
+          "items": [
+            "dim_segment.segmentid = hkg_br_segment_target.segmentid",
+            "hkg_br_segment_target.targetid = dim_target.targetid"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "required_ids": {
+          "items": [
+            "segment_id",
+            "destination_id",
+            "target_id"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "tables": {
+          "items": [
+            "dim_segment",
+            "hkg_br_segment_target",
+            "dim_target"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_07_context_card": {
+        "estimated_metadata_tokens": 968,
+        "prompt_tokens": 1629,
+        "selected_apis": {
+          "items": [
+            "flowservice_flows"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "selected_card_name": "segment_destination",
+        "selected_columns": {
+          "dim_segment": {
+            "items": [
+              "SEGMENTID",
+              "CREATEDTIME",
+              "EVALUATIONCOMPLETEDTIME"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "dim_target": {
+            "items": [
+              "STATE",
+              "CONNECTIONSPECID",
+              "CREATEDTIME"
+            ],
+            "total_items": 7,
+            "truncated_items": true
+          },
+          "hkg_br_segment_target": {
+            "items": [
+              "SEGMENTID",
+              "TARGETID",
+              "LABELSSEGMENT"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          }
+        },
+        "selected_tables": {
+          "items": [
+            "dim_segment",
+            "hkg_br_segment_target",
+            "dim_target"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_08_candidate_plans": {
+        "candidate_plan_names": {
+          "items": [
+            "generic_sql_first",
+            "lookup_path"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "reason_selected": "highest pre-execution validation/relevance/cost score",
+        "scores": {
+          "generic_sql_first": 13.7656,
+          "lookup_path": 11.8757
+        },
+        "selected_plan": "generic_sql_first"
+      },
+      "checkpoint_09_plan_optimization": {
+        "call_budget_applied": false,
+        "optimized_step_count": 2,
+        "optimizer_actions": {
+          "items": [
+            "ensemble selected generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "original_step_count": 2,
+        "removed_api_skip_calls": 0,
+        "removed_duplicate_calls": 0,
+        "unresolved_placeholders_removed": 0
+      },
+      "checkpoint_10_evidence_policy": {
+        "allowed_api_families": {
+          "items": [
+            "gold_pattern_fallback"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "max_api_calls": 1,
+        "mode": "API_OPTIONAL",
+        "reason": "Weak gold-pattern fallback is allowed as one verification call."
+      },
+      "checkpoint_11_call_budget": {
+        "final_planned_calls": 2,
+        "max_api_calls": 1,
+        "max_sql_calls": 1,
+        "max_total_tool_calls": 2,
+        "planned_api_calls": 1,
+        "planned_sql_calls": 1
+      },
+      "checkpoint_12_validation": {
+        "api_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_13_tool_execution": {
+        "api_calls_executed": 1,
+        "api_results": {
+          "items": [
+            {
+              "dry_run": true,
+              "method": "GET",
+              "ok": false,
+              "result_preview": {
+                "caveat": "Adobe credentials unavailable; API call not executed.",
+                "dry_run": true,
+                "endpoint_family": "/data/foundation/flowservice/flows",
+                "error_category": "dry_run_unavailable",
+                "evidence_state": "dry_run_unavailable",
+                "live_success": false,
+                "ok": false,
+                "usable_evidence": false
+              },
+              "url": "/data/foundation/flowservice/flows"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "dry_run_status": true,
+        "row_counts": {
+          "items": [
+            0
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_calls_executed": 1,
+        "sql_results": {
+          "items": [
+            {
+              "ok": true,
+              "result_preview": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "row_count": 0
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_14_evidence_bus": {
+        "evidence": {}
+      },
+      "checkpoint_15_answer_slots": {
+        "answer_intent": "STATUS",
+        "discrepancy_flags": {
+          "sql_api_discrepancy": false
+        },
+        "dry_run_flags": {
+          "dry_run": true
+        },
+        "missing_slots": {
+          "items": [
+            "status"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "slots": {
+          "answer_family": "generic",
+          "api_error": false,
+          "counts": {
+            "items": [
+              "0"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "discrepancy": false,
+          "dry_run": true,
+          "slots_present": {
+            "items": [
+              "counts",
+              "dry_run"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "sql_row_count": 0
+        }
+      },
+      "checkpoint_16_answer_verification": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "rewrite_applied": false,
+        "supported_claims_count": 1,
+        "unsupported_claims_count": 0,
+        "verifier_passed": true
+      },
+      "checkpoint_17_answer_reranking": {
+        "candidate_count": 0,
+        "selected_candidate_type": "base",
+        "selection_reason": "best verifier-passing answer"
+      },
+      "checkpoint_18_final_answer": {
+        "answer_length": 127,
+        "final_answer": "The database query returned no matching rows. Live API verification was not executed because Adobe credentials are unavailable.",
+        "final_token_estimate": 20
+      },
+      "checkpoint_objective_prompt_features": {
+        "count": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "domain": {
+          "items": [
+            "SEGMENT",
+            "AUDIENCE"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "fields": {
+          "items": [
+            "STATUS"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "norm": "return live platform state for segment. use only safe read only platform evidence for the audience snapshot.",
+        "p": "Return live platform state for segment. Use only safe read-only platform evidence for the audience snapshot.",
+        "rel": {
+          "items": [
+            "USES"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "retr": {
+          "items": [
+            "RETURN"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "status": {
+          "items": [
+            "STATUS"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "truncated_fields": 5
+      },
+      "checkpoint_simple_prompt_gate": {
+        "confidence": 0.9,
+        "is_simple": false,
+        "reason": "API/platform family keyword(s): platform.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      },
+      "checkpoint_sql_ast_validation": {
+        "destructive_sql_detected": false,
+        "parsed_ok": true,
+        "selected_columns": {
+          "items": [
+            "LIFECYCLESTATUS",
+            "MERGEPOLICYID",
+            "NAME"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "selected_tables": {
+          "items": [
+            "dim_segment"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "summaries": {
+          "items": [
+            {
+              "destructive_sql_detected": false,
+              "enabled": true,
+              "normalized_sql": "SELECT \"SEGMENTID\", \"NAME\", \"LIFECYCLESTATUS\", \"MERGEPOLICYID\" FROM \"dim_segment\" WHERE LOWER(CAST(\"LIFECYCLESTATUS\" AS TEXT)) LIKE LOWER('%live%') LIMIT 50",
+              "parsed_ok": true,
+              "selected_columns": {
+                "items": [
+                  "SEGMENTID",
+                  "NAME",
+                  "LIFECYCLESTATUS"
+                ],
+                "total_items": 4,
+                "truncated_items": true
+              },
+              "selected_tables": {
+                "items": [
+                  "dim_segment"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              }
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_value_entity_retrieval": {
+        "active": true,
+        "cache_hit": true,
+        "cache_key": "ff8c5b63cad79a6d",
+        "cache_key_algorithm": "sha256",
+        "cache_path": "[REDACTED]/outputs/cache/value_index_ff8c5b63cad79a6d.json",
+        "cache_reproducible": true,
+        "match_count": 0,
+        "query_value_count": 1,
+        "truncated_fields": 8
+      }
+    },
+    "post_sql_advisor_blocked": false,
+    "post_sql_advisor_invoked": false,
+    "post_sql_advisor_verified": false,
+    "route_action": "SQL_THEN_API",
+    "runtime_ms": 35.50150012597442,
+    "sql_calls": 1,
+    "sql_tables": [
+      "dim_segment"
+    ],
+    "sql_used": true,
+    "trajectory_timing": {},
+    "unsupported_claims": 0
+  },
+  "gold_visible_to_runtime": false,
+  "grade": {
+    "answer_grounding_score": 1.0,
+    "api_endpoint_family_accuracy": 0.0,
+    "api_error_interpretation_correct": true,
+    "api_required_used_accuracy": 1.0,
+    "expected_evidence_need_accuracy": 0.75,
+    "expected_observable_trace_score": 0.5833,
+    "final_answer_correctness": 0.625,
+    "forbidden_claims_violation": false,
+    "live_empty_interpretation_correct": true,
+    "no_tool_false_negative": false,
+    "no_tool_false_positive": false,
+    "overall_score": 0.6896,
+    "required_facts_coverage": 0.0,
+    "route_accuracy": 0.75,
+    "sql_required_used_accuracy": 0.5,
+    "sql_table_accuracy": 1.0,
+    "tool_overuse": 1,
+    "tool_underuse": 0,
+    "unsupported_claims": 0
+  },
+  "mode": "packaged_baseline_real",
+  "oracle_visible_to_runtime": false,
+  "prompt_id": "da500_0264",
+  "runtime_input": {
+    "prompt": "Return live platform state for segment. Use only safe read-only platform evidence for the audience snapshot.",
+    "prompt_id": "da500_0264"
+  },
+  "synthetic_sql_results_used": false,
+  "trajectory_path": "/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/dashagent_500_prompt_suite_eval_real/packaged_baseline_real/da500_0264/trajectory.json"
+}

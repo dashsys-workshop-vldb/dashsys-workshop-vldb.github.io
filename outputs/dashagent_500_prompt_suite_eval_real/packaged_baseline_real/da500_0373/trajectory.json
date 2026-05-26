@@ -1,0 +1,911 @@
+{
+  "answer_time": 0.0017647501081228256,
+  "api_call_count": 0,
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "correctness_role": "keeps later normalization from changing the user-facing question",
+      "duration_ms": 0.0,
+      "effect": "preserves the original query for reproducibility",
+      "efficiency_role": "starts one trace without extra tool calls",
+      "output": {
+        "query": "Explain what a dataset is and list current dataset objects if the live endpoint supports it. Include both the concept and requested evidence for [truncated]",
+        "query_id": "da500_0373",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "stage": "input",
+      "technique": "raw user query capture",
+      "timestamp": "2026-05-26T20:32:25.030940+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_00_prompt_router",
+      "correctness_role": "routes data questions to evidence tools instead of unsupported direct answers",
+      "duration_ms": 0.0,
+      "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
+      "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
+      "input_summary": {
+        "query": "Explain what a dataset is and list current dataset objects if the live endpoint supports it. Include both the concept and requested evidence for [truncated]"
+      },
+      "output": {
+        "confidence": 0.88,
+        "matched_rules": {
+          "items": [
+            "sql_plus_api:current"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "mode": "SQL_PLUS_API",
+        "reason": "Live/status keyword(s) require SQL grounding plus API verification: current, live.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": true,
+        "requires_database": true,
+        "risk": "medium",
+        "truncated_fields": 1
+      },
+      "stage": "prompt routing",
+      "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
+      "timestamp": "2026-05-26T20:32:25.030977+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_simple_prompt_gate",
+      "correctness_role": "prevents direct answers for data questions that need SQL/API evidence",
+      "duration_ms": 0.0,
+      "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
+      "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
+      "input_summary": {
+        "query": "Explain what a dataset is and list current dataset objects if the live endpoint supports it. Include both the concept and requested evidence for [truncated]"
+      },
+      "output": {
+        "confidence": 0.88,
+        "is_simple": false,
+        "reason": "Live/status keyword(s) require SQL grounding plus API verification: current, live.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      },
+      "stage": "input routing",
+      "technique": "simple prompt gate",
+      "timestamp": "2026-05-26T20:32:25.031005+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_objective_prompt_features",
+      "correctness_role": "keeps semantic pre-routing separate from SQL/API planning and answer generation",
+      "duration_ms": 0.0,
+      "effect": "records fact-only prompt cues for semantic routing diagnostics",
+      "efficiency_role": "uses compact symbolic features before any optional LLM classification",
+      "input_summary": {
+        "query": "Explain what a dataset is and list current dataset objects if the live endpoint supports it. Include both the concept and requested evidence for [truncated]"
+      },
+      "output": {
+        "count": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "cue": {
+          "items": [
+            "EXPLAIN"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "domain": {
+          "items": [
+            "DATASET"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "entity": {
+          "items": [
+            "ID_LIKE"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "norm": "explain what a dataset is and list current dataset objects if the live endpoint supports it. include both the concept and requested evidence for [truncated]",
+        "p": "Explain what a dataset is and list current dataset objects if the live endpoint supports it. Include both the concept and requested evidence for [truncated]",
+        "retr": {
+          "items": [
+            "LIST"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "status": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "truncated_fields": 5
+      },
+      "stage": "semantic routing shadow",
+      "technique": "objective prompt feature extraction",
+      "timestamp": "2026-05-26T20:32:25.031093+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_02_query_normalization",
+      "correctness_role": "improves template and route matching across wording variants",
+      "duration_ms": 0.0,
+      "effect": "creates matching-friendly text while preserving the original query",
+      "efficiency_role": "reduces repeated fuzzy matching work downstream",
+      "input_summary": {
+        "query": "Explain what a dataset is and list current dataset objects if the live endpoint supports it. Include both the concept and requested evidence for [truncated]"
+      },
+      "output": {
+        "matching_text": "explain what a dataset is and list current dataset objects if the live endpoint supports it. include both the concept and requested evidence for [truncated]",
+        "normalized_query": "Explain what a dataset is and list current dataset objects if the live endpoint supports it. Include both the concept and requested evidence for [truncated]"
+      },
+      "stage": "normalization",
+      "technique": "data cleaning / query normalization",
+      "timestamp": "2026-05-26T20:32:25.031162+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_03_query_tokens",
+      "correctness_role": "grounds names, IDs, dates, metrics, and statuses before planning",
+      "duration_ms": 0.0,
+      "effect": "extracts reusable query fields for routing, planning, and answers",
+      "efficiency_role": "avoids reparsing the query in later modules",
+      "input_summary": {
+        "normalized_query": "Explain what a dataset is and list current dataset objects if the live endpoint supports it. Include both the concept and requested evidence for [truncated]"
+      },
+      "output": {
+        "domains": {
+          "items": [
+            "journey_campaign"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "statuses": {
+          "items": [
+            "live"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "tokenization",
+      "technique": "domain-aware tokenization/entity extraction",
+      "timestamp": "2026-05-26T20:32:25.031235+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_04_relevance_scoring",
+      "correctness_role": "keeps high-signal tables and endpoints near the planner",
+      "duration_ms": 0.0,
+      "effect": "selects a smaller, more relevant schema/API context",
+      "efficiency_role": "reduces metadata and prompt tokens when compact metadata is enabled",
+      "input_summary": {
+        "tokens": {
+          "domains": {
+            "items": [
+              "journey_campaign"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "statuses": {
+            "items": [
+              "live"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      },
+      "output": {
+        "top_answer_families": {
+          "items": [
+            "schema_dataset"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "top_apis": {
+          "items": [
+            "catalog_datasets"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_join_hints": {
+          "items": [
+            "dim_blueprint.BLUEPRINTID->hkg_br_blueprint_collection.BLUEPRINTID"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_tables": {
+          "items": [
+            "dim_blueprint"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "context selection",
+      "technique": "attention-style relevance scoring",
+      "timestamp": "2026-05-26T20:32:25.032467+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_value_entity_retrieval",
+      "correctness_role": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
+      "duration_ms": 0.0,
+      "effect": "grounds query entities against sampled local DB values before planning",
+      "efficiency_role": "uses a cached bounded value index with per-query scan and wall-time budgets",
+      "input_summary": {
+        "query_values": {
+          "items": [
+            {
+              "kind": "status",
+              "text": "live"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "budget_exceeded": false,
+        "match_count": 0,
+        "retrieval_ms": 9.526
+      },
+      "output": {
+        "active": true,
+        "cache_hit": true,
+        "cache_key": "9c6f3a8deea3757e",
+        "cache_key_algorithm": "sha256",
+        "cache_path": "[REDACTED]/outputs/cache/value_index_9c6f3a8deea3757e.json",
+        "cache_reproducible": true,
+        "match_count": 0,
+        "query_value_count": 1,
+        "truncated_fields": 8
+      },
+      "stage": "query understanding",
+      "technique": "CHESS-style value/entity retrieval",
+      "timestamp": "2026-05-26T20:32:25.033504+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_05_query_analysis",
+      "correctness_role": "aligns routing, metadata, planning, and reporting decisions",
+      "duration_ms": 0.0,
+      "effect": "computes shared query understanding once",
+      "efficiency_role": "avoids repeated template and routing analysis",
+      "input_summary": {
+        "domain_type": "JOURNEY_CAMPAIGN",
+        "route_type": "SQL_THEN_API"
+      },
+      "output": {
+        "answer_family": "schema_dataset",
+        "confidence": 0.95,
+        "domain_type": "JOURNEY_CAMPAIGN",
+        "fast_path": "blueprint_collection_list",
+        "route_type": "SQL_THEN_API",
+        "sql_template": "blueprint_collection_list",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "stage": "routing",
+      "technique": "branch prediction / QueryAnalysis",
+      "timestamp": "2026-05-26T20:32:25.033520+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_06_lookup_path",
+      "correctness_role": "guides relationship-heavy SQL/API selection",
+      "duration_ms": 0.0,
+      "effect": "predicts the relevant table/join/API path",
+      "efficiency_role": "filters unrelated schema and endpoint candidates",
+      "input_summary": {
+        "answer_family": "schema_dataset",
+        "domain_type": "JOURNEY_CAMPAIGN"
+      },
+      "output": {
+        "api_families": {
+          "items": [
+            "datasets_by_schema"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "api_mode": "required",
+        "family": "schema_dataset",
+        "join_path": {
+          "items": [
+            "dim_blueprint.blueprintid = hkg_br_blueprint_collection.blueprintid"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "required_ids": {
+          "items": [
+            "schema_id"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "tables": {
+          "items": [
+            "dim_blueprint"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "path prediction",
+      "technique": "TLB-style lookup path prediction",
+      "timestamp": "2026-05-26T20:32:25.033528+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_07_context_card",
+      "correctness_role": "keeps required tables, columns, joins, and API candidates visible",
+      "duration_ms": 0.0,
+      "effect": "packs family-relevant context into metadata.json and the filled prompt",
+      "efficiency_role": "limits context size for non-baseline strategies",
+      "input_summary": {
+        "broad_context": false,
+        "lookup_path": "schema_dataset"
+      },
+      "output": {
+        "estimated_metadata_tokens": 1021,
+        "prompt_tokens": 1699,
+        "selected_apis": {
+          "items": [
+            "catalog_datasets"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "selected_card_name": "schema_dataset",
+        "selected_columns": {
+          "dim_blueprint": {
+            "items": [
+              "BLUEPRINTID"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "dim_collection": {
+            "items": [
+              "COLLECTIONID"
+            ],
+            "total_items": 4,
+            "truncated_items": true
+          },
+          "hkg_br_blueprint_collection": {
+            "items": [
+              "BLUEPRINTID"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          }
+        },
+        "selected_tables": {
+          "items": [
+            "dim_blueprint"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "metadata packing",
+      "technique": "huge-page-style compact context card",
+      "timestamp": "2026-05-26T20:32:25.035306+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_08_candidate_plans",
+      "correctness_role": "prefers validated, family-matched plans",
+      "duration_ms": 0.0,
+      "effect": "selects one plan before execution",
+      "efficiency_role": "does not execute losing candidate plans",
+      "input_summary": {
+        "base_step_count": 1,
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "output": {
+        "candidate_plan_names": {
+          "items": [
+            "generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "reason_selected": "highest pre-execution validation/relevance/cost score",
+        "scores": {
+          "generic_sql_first": 12.3616
+        },
+        "selected_plan": "generic_sql_first"
+      },
+      "stage": "planning",
+      "technique": "pre-execution plan ensemble",
+      "timestamp": "2026-05-26T20:32:25.035480+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_09_plan_optimization",
+      "correctness_role": "drops unresolved placeholder calls unless explicitly warned",
+      "duration_ms": 0.0,
+      "effect": "removes duplicate, skippable, or unsafe calls before validation",
+      "efficiency_role": "enforces a bounded plan before execution",
+      "input_summary": {
+        "original_step_count": 1
+      },
+      "output": {
+        "call_budget_applied": false,
+        "optimized_step_count": 1,
+        "optimizer_actions": {
+          "items": [
+            "ensemble selected generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "original_step_count": 1,
+        "removed_api_skip_calls": 0,
+        "removed_duplicate_calls": 0,
+        "unresolved_placeholders_removed": 0
+      },
+      "stage": "optimization",
+      "technique": "compiler-style plan optimization",
+      "timestamp": "2026-05-26T20:32:25.035488+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_10_evidence_policy",
+      "correctness_role": "keeps API calls for API-only/live families",
+      "duration_ms": 0.0,
+      "effect": "decides when API evidence is required, optional, or unnecessary",
+      "efficiency_role": "skips or caps API calls when SQL evidence is enough",
+      "input_summary": {
+        "answer_family": "schema_dataset",
+        "route_type": "SQL_THEN_API"
+      },
+      "output": {
+        "max_api_calls": 0,
+        "mode": "API_SKIP",
+        "reason": "No API template matched and SQL/local evidence is preferred."
+      },
+      "stage": "evidence policy",
+      "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
+      "timestamp": "2026-05-26T20:32:25.035490+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_11_call_budget",
+      "correctness_role": "preserves required grounding steps",
+      "duration_ms": 0.0,
+      "effect": "keeps tool calls within per-family limits",
+      "efficiency_role": "prevents accidental extra SQL/API calls",
+      "input_summary": {
+        "planned_steps": {
+          "items": [
+            {
+              "action": "sql",
+              "family": "blueprint_collection_list",
+              "purpose": "Fast-path SQL grounding.",
+              "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name F [truncated]"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "final_planned_calls": 1,
+        "max_api_calls": 0,
+        "max_sql_calls": 1,
+        "max_total_tool_calls": 1,
+        "planned_api_calls": 0,
+        "planned_sql_calls": 1
+      },
+      "stage": "efficiency control",
+      "technique": "tool-call budgeting",
+      "timestamp": "2026-05-26T20:32:25.035500+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_12_validation",
+      "correctness_role": "blocks unsafe SQL and unknown/unresolved API calls",
+      "duration_ms": 0.0,
+      "effect": "records whether planned SQL/API calls were safe to execute",
+      "efficiency_role": "prevents wasted execution on invalid calls",
+      "input_summary": {
+        "optimized_steps": {
+          "items": [
+            {
+              "action": "sql",
+              "family": "blueprint_collection_list",
+              "purpose": "Fast-path SQL grounding.",
+              "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name F [truncated]"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "sql_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "validation",
+      "technique": "SQL/API safety validation",
+      "timestamp": "2026-05-26T20:32:25.037986+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_sql_ast_validation",
+      "correctness_role": "detects unsafe SQL and schema mismatches with parser-backed structure",
+      "duration_ms": 0.0,
+      "effect": "adds AST-level table and column extraction after existing SQL validation",
+      "efficiency_role": "provides precise feedback without extra SQL tool calls",
+      "input_summary": {
+        "sql_call_count": 1
+      },
+      "output": {
+        "preview": "{\"summaries\": {\"items\": [{\"enabled\": true, \"parsed_ok\": true, \"selected_tables\": {\"items\": [\"hkg_br_blueprint_collection\", \"dim_collection\", \"di [truncated]",
+        "truncated": true
+      },
+      "stage": "validation",
+      "technique": "SQLGlot AST-based SQL validation and extraction",
+      "timestamp": "2026-05-26T20:32:25.037995+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_13_tool_execution",
+      "correctness_role": "records row counts, dry-run state, and API status for final answer grounding",
+      "duration_ms": 0.0,
+      "effect": "captures the actual SQL/API evidence gathered by the backend",
+      "efficiency_role": "makes tool-call count and result previews explicit",
+      "input_summary": {
+        "validated_step_count": 1
+      },
+      "output": {
+        "api_calls_executed": 0,
+        "dry_run_status": false,
+        "row_counts": {
+          "items": [
+            27
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_calls_executed": 1,
+        "sql_results": {
+          "items": [
+            {
+              "ok": true,
+              "result_preview": {
+                "items": [
+                  {
+                    "collection_id": "69c8d7f391a3acd741e7cab8",
+                    "collection_name": "AJO Live Activities Feedback Event Dataset"
+                  },
+                  {
+                    "collection_id": "69c8dad4aa7a59818543461a",
+                    "collection_name": "hkg_adls_profile_count_history"
+                  },
+                  {
+                    "collection_id": "69c8d9e7cba5deaa7974b00b",
+                    "collection_name": "weRetail: Customer Actions"
+                  }
+                ],
+                "total_items": 3,
+                "truncated_items": false
+              },
+              "row_count": 27
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "execution",
+      "technique": "SQL/API tool execution",
+      "timestamp": "2026-05-26T20:32:25.038003+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_14_evidence_bus",
+      "correctness_role": "passes exact IDs, names, counts, timestamps, and statuses without text guessing",
+      "duration_ms": 0.0,
+      "effect": "forwards structured facts to API params and answer slots",
+      "efficiency_role": "avoids repeated lookup or reparsing work",
+      "input_summary": {
+        "tool_result_count": 1
+      },
+      "output": {
+        "evidence": {
+          "ids": {
+            "collection_id": "69c8d7f391a3acd741e7cab8"
+          }
+        }
+      },
+      "stage": "evidence forwarding",
+      "technique": "operand forwarding / EvidenceBus",
+      "timestamp": "2026-05-26T20:32:25.038007+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_15_answer_slots",
+      "correctness_role": "makes final response generation evidence-grounded",
+      "duration_ms": 0.0,
+      "effect": "turns raw tool results into typed evidence fields",
+      "efficiency_role": "keeps answer context compact",
+      "input_summary": {
+        "tool_result_count": 1
+      },
+      "output": {
+        "answer_intent": "LIST",
+        "discrepancy_flags": {
+          "sql_api_discrepancy": false
+        },
+        "dry_run_flags": {
+          "dry_run": false
+        },
+        "slots": {
+          "answer_family": "schema_dataset",
+          "api_error": false,
+          "counts": {
+            "items": [
+              "27"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "discrepancy": false,
+          "dry_run": false,
+          "entity_names": {
+            "items": [
+              "AJO Live Activities Feedback Event Dataset"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names"
+            ],
+            "total_items": 4,
+            "truncated_items": true
+          },
+          "sql_row_count": 27
+        }
+      },
+      "stage": "answer synthesis",
+      "technique": "structured answer slot extraction",
+      "timestamp": "2026-05-26T20:32:25.039611+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_16_answer_verification",
+      "correctness_role": "blocks unsupported numbers, entities, timestamps, statuses, and dry-run API confirmation",
+      "duration_ms": 0.0,
+      "effect": "checks final-answer claims against SQL/API evidence",
+      "efficiency_role": "rewrites safely without extra tool calls",
+      "input_summary": {
+        "claim_count": 1,
+        "slots_present": {
+          "items": [
+            "entity_names"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        }
+      },
+      "output": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "rewrite_applied": false,
+        "supported_claims_count": 1,
+        "unsupported_claims_count": 0,
+        "verifier_passed": true
+      },
+      "stage": "answer verification",
+      "technique": "claim verification / groundedness checking",
+      "timestamp": "2026-05-26T20:32:25.039620+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_17_answer_reranking",
+      "correctness_role": "prefers verifier-passing and intent-matched answers",
+      "duration_ms": 0.0,
+      "effect": "selects the safest answer from same-evidence candidates",
+      "efficiency_role": "uses no additional SQL/API/LLM calls",
+      "input_summary": {
+        "answer_family": "schema_dataset"
+      },
+      "output": {
+        "candidate_count": 0,
+        "selected_candidate_type": "base",
+        "selection_reason": "best verifier-passing answer"
+      },
+      "stage": "answer selection",
+      "technique": "deterministic answer reranking",
+      "timestamp": "2026-05-26T20:32:25.039622+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "correctness_role": "final answer remains tied to evidence and caveats",
+      "duration_ms": 0.0,
+      "effect": "returns the final concise answer to the agent harness",
+      "efficiency_role": "keeps response concise",
+      "input_summary": {
+        "verifier_passed": true
+      },
+      "output": {
+        "answer_length": 409,
+        "final_answer": "Based on the evidence provided, matching datasets are: AJO Live Activities Feedback Event Dataset, hkg_adls_profile_count_history, weRetail: Cus [truncated]",
+        "final_token_estimate": 89
+      },
+      "stage": "final response",
+      "technique": "concise grounded final response",
+      "timestamp": "2026-05-26T20:32:25.039673+00:00"
+    },
+    {
+      "active": true,
+      "checkpoint_id": "checkpoint_official_token_reduction",
+      "correctness_impact_expected": false,
+      "estimated_tokens_after": 696,
+      "estimated_tokens_before": 913,
+      "expected_savings": 217,
+      "packaged_execution_changed": false,
+      "reduced_fields": [
+        "steps[0].candidate_tables",
+        "steps[2].metadata_path",
+        "steps[3].rationale",
+        "steps[3].steps",
+        "steps[5].result.rows"
+      ]
+    }
+  ],
+  "domain_type": "JOURNEY_CAMPAIGN",
+  "errors": [],
+  "estimated_tokens": 696,
+  "execution_time": 0.0010189581662416458,
+  "final_answer": "Based on the evidence provided, matching datasets are: AJO Live Activities Feedback Event Dataset, hkg_adls_profile_count_history, weRetail: Customer Actions, AJO STO Summary Dataset, AJO Entity Dataset, ODE DecisionEvents - external-benchmarking decisioning, AJO Inbound Activity Event Dataset, AJO Consent Service Dataset, Journey Inbound, and AJO ExD Decision Event Dataset. API evidence was not requested.",
+  "original_query": "Explain what a dataset is and list current dataset objects if the live endpoint supports it. Include both the concept and requested evidence for the review inspection.",
+  "planning_time": 0.0002065417356789112,
+  "preprocessing_time": 0.004214041866362095,
+  "query_id": "da500_0373",
+  "route_type": "SQL_THEN_API",
+  "runtime": 0.015446833334863186,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "journey_list",
+          "method": "GET",
+          "path": "/ajo/journey"
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign"
+      ],
+      "confidence": 0.7999999999999999,
+      "domain_type": "JOURNEY_CAMPAIGN",
+      "kind": "route",
+      "reason": "Keyword routing using JOURNEY_CAMPAIGN:1, DATASET_SCHEMA:1, STATUS_MONITORING:1.",
+      "route_type": "SQL_THEN_API"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "catalog_datasets",
+          "export_batch_failed"
+        ],
+        "lookup_paths": [
+          "schema_dataset",
+          "audit"
+        ],
+        "tables": [
+          "dim_blueprint",
+          "dim_collection"
+        ]
+      },
+      "tokens": {
+        "domains": [
+          "journey_campaign",
+          "schema_dataset"
+        ],
+        "statuses": [
+          "live"
+        ]
+      },
+      "value_retrieval": {
+        "budget_exceeded": false,
+        "match_count": 0,
+        "matches": [],
+        "retrieval_ms": 9.526
+      }
+    },
+    {
+      "estimated_tokens": 1021,
+      "kind": "metadata",
+      "metadata_path": "metadata.json",
+      "prompt_tokens": 1699
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_SKIP. No API template matched and SQL/local evide [truncated]",
+      "steps": [
+        {
+          "action": "sql",
+          "family": "blueprint_collection_list",
+          "sql_recorded_in_sql_call": true
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 12.3616
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 1
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "row_count": 27,
+        "rows": {
+          "items": [
+            {
+              "collection_id": "69c8d7f391a3acd741e7cab8",
+              "collection_name": "AJO Live Activities Feedback Event Dataset"
+            }
+          ],
+          "total_items": 27,
+          "truncated_items": true
+        }
+      },
+      "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_collection\" AS BC JOIN \"dim_collection\" AS C ON BC.\"COLLECTIONID\" = C.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS B ON BC.\"BLUEPRINTID\" = B.\"BLUEPRINTID\" LIMIT 50",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "answer_family": "schema_dataset",
+      "answer_intent": "LIST",
+      "completeness_missing_fields": [],
+      "kind": "answer_diagnostics",
+      "rewrite_applied": false,
+      "selected_candidate_type": "base",
+      "slots_present": [
+        "entity_names",
+        "counts",
+        "sql_row_count",
+        "first_rows"
+      ],
+      "unsupported_claims_count": 0,
+      "verifier_passed": true
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 0.0017647501081228256,
+    "execution_time": 0.0010189581662416458,
+    "planning_time": 0.0002065417356789112,
+    "preprocessing_time": 0.004214041866362095
+  },
+  "tool_call_count": 1
+}

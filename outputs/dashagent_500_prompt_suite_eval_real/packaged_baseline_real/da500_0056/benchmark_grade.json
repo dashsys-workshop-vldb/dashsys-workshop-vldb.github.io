@@ -1,0 +1,537 @@
+{
+  "agent_executor_used": true,
+  "category_tags_domain_visible_to_runtime": false,
+  "engine": "real_agent",
+  "expected_trace_visible_to_runtime": false,
+  "extracted_runtime": {
+    "anti_hallucination_initial_fail": false,
+    "anti_hallucination_revision_attempted": false,
+    "anti_hallucination_revision_success": false,
+    "api_calls": 0,
+    "api_families": [],
+    "api_used": false,
+    "checkpoint_names": [
+      "checkpoint_01_raw_query",
+      "checkpoint_00_prompt_router",
+      "checkpoint_simple_prompt_gate",
+      "checkpoint_objective_prompt_features",
+      "checkpoint_02_query_normalization",
+      "checkpoint_03_query_tokens",
+      "checkpoint_04_relevance_scoring",
+      "checkpoint_05_query_analysis",
+      "checkpoint_06_lookup_path",
+      "checkpoint_07_context_card",
+      "checkpoint_08_candidate_plans",
+      "checkpoint_09_plan_optimization",
+      "checkpoint_10_evidence_policy",
+      "checkpoint_11_call_budget",
+      "checkpoint_12_validation",
+      "checkpoint_sql_ast_validation",
+      "checkpoint_13_tool_execution",
+      "checkpoint_14_evidence_bus",
+      "checkpoint_15_answer_slots",
+      "checkpoint_16_answer_verification",
+      "checkpoint_17_answer_reranking",
+      "checkpoint_18_final_answer"
+    ],
+    "estimated_total_tokens": 845,
+    "latest_code_paths_enabled": {
+      "compact_json_llm_context": false,
+      "evidence_bus_answer_verifier_token_reduction": true,
+      "no_tool_safety_verifier": false,
+      "objective_prompt_features": true,
+      "post_sql_api_call_verifier": false,
+      "post_sql_deterministic_policy": false,
+      "post_sql_llm_advisor": false,
+      "routing_anti_hallucination_gate": false,
+      "routing_feedback_revision": false,
+      "semantic_intent_classifier": false,
+      "semantic_route_decision_ladder": false,
+      "staged_evidence_policy": false
+    },
+    "missing_checkpoints": [
+      "checkpoint_semantic_route_decision_ladder",
+      "checkpoint_initial_evidence_branch_policy",
+      "checkpoint_post_sql_api_call_verifier"
+    ],
+    "observable_trace": {
+      "checkpoint_00_prompt_router": {
+        "confidence": 0.9,
+        "matched_rules": {
+          "items": [
+            "api_only:platform"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "mode": "API_ONLY",
+        "reason": "API/platform family keyword(s): platform.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": true,
+        "requires_database": false,
+        "risk": "medium",
+        "truncated_fields": 1
+      },
+      "checkpoint_01_raw_query": {
+        "query": "What is a dataflow in Adobe Experience Platform? Keep the answer conceptual for the validation brief.",
+        "query_id": "da500_0056",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "checkpoint_02_query_normalization": {
+        "matching_text": "what is a dataflow in adobe experience platform? keep the answer conceptual for the validation brief.",
+        "normalized_query": "What is a dataflow in Adobe Experience Platform? Keep the answer conceptual for the validation brief."
+      },
+      "checkpoint_03_query_tokens": {
+        "domains": {
+          "items": [
+            "destination_dataflow"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_04_relevance_scoring": {
+        "top_answer_families": {
+          "items": [
+            "generic"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "top_apis": {
+          "items": [
+            "unified_tag_detail",
+            "audit_events",
+            "export_batch_files"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_join_hints": {
+          "items": [
+            "dim_connector.SOURCEID->hkg_br_source_collection.SOURCEID",
+            "dim_target.TARGETID->hkg_br_segment_target.TARGETID",
+            "dim_target.TARGETID->hkg_br_target_property.TARGETID"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_tables": {
+          "items": [
+            "dim_connector",
+            "dim_target"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_05_query_analysis": {
+        "answer_family": "generic",
+        "confidence": 0.5,
+        "domain_type": "DESTINATION_DATAFLOW",
+        "route_type": "SQL_THEN_API",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "checkpoint_06_lookup_path": {
+        "api_families": {
+          "items": [
+            "destination_flows",
+            "recent_destination_flows",
+            "failed_dataflow_flows"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "api_mode": "optional",
+        "family": "destination_dataflow",
+        "required_ids": {
+          "items": [
+            "target_id",
+            "dataflow_id"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "tables": {
+          "items": [
+            "dim_target",
+            "dim_connector"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_07_context_card": {
+        "estimated_metadata_tokens": 707,
+        "prompt_tokens": 1335,
+        "selected_apis": {
+          "items": [
+            "unified_tag_detail",
+            "audit_events",
+            "export_batch_files"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "selected_card_name": "destination_dataflow",
+        "selected_columns": {
+          "dim_connector": {
+            "items": [
+              "CONNECTIONSPECNAME",
+              "CREATEDTIME",
+              "DATAFLOWID"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "dim_target": {
+            "items": [
+              "CREATEDTIME",
+              "DATAFLOWNAME",
+              "NAME"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          }
+        },
+        "selected_tables": {
+          "items": [
+            "dim_target",
+            "dim_connector"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_08_candidate_plans": {
+        "candidate_plan_names": {
+          "items": [
+            "generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "reason_selected": "highest pre-execution validation/relevance/cost score",
+        "scores": {
+          "generic_sql_first": 11.8774
+        },
+        "selected_plan": "generic_sql_first"
+      },
+      "checkpoint_09_plan_optimization": {
+        "call_budget_applied": false,
+        "optimized_step_count": 1,
+        "optimizer_actions": {
+          "items": [
+            "ensemble selected generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "original_step_count": 1,
+        "removed_api_skip_calls": 0,
+        "removed_duplicate_calls": 0,
+        "unresolved_placeholders_removed": 0
+      },
+      "checkpoint_10_evidence_policy": {
+        "max_api_calls": 0,
+        "mode": "API_SKIP",
+        "reason": "No API template matched and SQL/local evidence is preferred."
+      },
+      "checkpoint_11_call_budget": {
+        "final_planned_calls": 1,
+        "max_api_calls": 0,
+        "max_sql_calls": 1,
+        "max_total_tool_calls": 1,
+        "planned_api_calls": 0,
+        "planned_sql_calls": 1
+      },
+      "checkpoint_12_validation": {
+        "sql_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_13_tool_execution": {
+        "api_calls_executed": 0,
+        "dry_run_status": false,
+        "row_counts": {
+          "items": [
+            1
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_calls_executed": 1,
+        "sql_results": {
+          "items": [
+            {
+              "ok": true,
+              "result_preview": {
+                "items": [
+                  {
+                    "CONNECTIONSPECID": "4890fc95-5a1f-4983-94bb-e060c08e3f81",
+                    "CREATEDTIME": "2026-03-29T07:54:13.000+00:00",
+                    "DATAFLOWNAME": "Activate segments to S3 Feed",
+                    "LABELSTARGET": "[]",
+                    "NAME": "amazon-s3",
+                    "STATE": "enabled",
+                    "TARGETID": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+                    "UPDATEDTIME": "2026-04-14T16:15:03.000+00:00"
+                  }
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              },
+              "row_count": 1
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_14_evidence_bus": {
+        "evidence": {
+          "ids": {
+            "target_id": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
+          },
+          "names": {
+            "items": [
+              "amazon-s3"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "statuses": {
+            "items": [
+              "enabled"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "timestamps": {
+            "items": [
+              "2026-04-14T16:15:03.000+00:00",
+              "2026-03-29T07:54:13.000+00:00"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          }
+        }
+      },
+      "checkpoint_15_answer_slots": {
+        "answer_intent": "DETAIL",
+        "discrepancy_flags": {
+          "sql_api_discrepancy": false
+        },
+        "dry_run_flags": {
+          "dry_run": false
+        },
+        "slots": {
+          "answer_family": "generic",
+          "api_error": false,
+          "discrepancy": false,
+          "dry_run": false,
+          "entity_ids": {
+            "items": [
+              "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+              "4890fc95-5a1f-4983-94bb-e060c08e3f81"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "entity_names": {
+            "items": [
+              "amazon-s3"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names",
+              "entity_ids",
+              "counts"
+            ],
+            "total_items": 7,
+            "truncated_items": true
+          },
+          "sql_row_count": 1,
+          "truncated_fields": 5
+        }
+      },
+      "checkpoint_16_answer_verification": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "rewrite_applied": false,
+        "supported_claims_count": 8,
+        "unsupported_claims_count": 0,
+        "verifier_passed": true
+      },
+      "checkpoint_17_answer_reranking": {
+        "candidate_count": 0,
+        "selected_candidate_type": "base",
+        "selection_reason": "best verifier-passing answer"
+      },
+      "checkpoint_18_final_answer": {
+        "answer_length": 250,
+        "final_answer": "The database returned 1 matching row(s): {DATAFLOWNAME=Activate segments to S3 Feed, UPDATEDTIME=2026-04-14T16:15:03.000+00:00, LABELSTARGET=[], STATE=enabled, TARGETID=139bece0-5266-46bd-8ed3-fc1dd5eb5dd4, CREATEDTIME=2026-03-29T07:54:13.000+00:00}.",
+        "final_token_estimate": 100
+      },
+      "checkpoint_objective_prompt_features": {
+        "cap": {
+          "items": [
+            "SQL_FLOW",
+            "API_FLOW_SERVICE"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "count": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "cue": {
+          "items": [
+            "DEF"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "domain": {
+          "items": [
+            "DATAFLOW",
+            "FLOW"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "entity": {
+          "items": [
+            "ID_LIKE"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "norm": "what is a dataflow in adobe experience platform? keep the answer conceptual for the validation brief.",
+        "p": "What is a dataflow in Adobe Experience Platform? Keep the answer conceptual for the validation brief.",
+        "status": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "truncated_fields": 5
+      },
+      "checkpoint_simple_prompt_gate": {
+        "confidence": 0.9,
+        "is_simple": false,
+        "reason": "API/platform family keyword(s): platform.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      },
+      "checkpoint_sql_ast_validation": {
+        "destructive_sql_detected": false,
+        "parsed_ok": true,
+        "selected_columns": {
+          "items": [
+            "CONNECTIONSPECID",
+            "CREATEDTIME",
+            "DATAFLOWNAME"
+          ],
+          "total_items": 8,
+          "truncated_items": true
+        },
+        "selected_tables": {
+          "items": [
+            "dim_target"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "summaries": {
+          "items": [
+            {
+              "destructive_sql_detected": false,
+              "enabled": true,
+              "normalized_sql": "SELECT \"DATAFLOWNAME\", \"UPDATEDTIME\", \"LABELSTARGET\", \"STATE\", \"TARGETID\", \"CREATEDTIME\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" LIMIT 50",
+              "parsed_ok": true,
+              "selected_columns": {
+                "items": [
+                  "DATAFLOWNAME",
+                  "UPDATEDTIME",
+                  "LABELSTARGET"
+                ],
+                "total_items": 8,
+                "truncated_items": true
+              },
+              "selected_tables": {
+                "items": [
+                  "dim_target"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              }
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      }
+    },
+    "post_sql_advisor_blocked": false,
+    "post_sql_advisor_invoked": false,
+    "post_sql_advisor_verified": false,
+    "route_action": "SQL_ONLY",
+    "runtime_ms": 30.00141680240631,
+    "sql_calls": 1,
+    "sql_tables": [
+      "dim_target"
+    ],
+    "sql_used": true,
+    "trajectory_timing": {},
+    "unsupported_claims": 0
+  },
+  "gold_visible_to_runtime": false,
+  "grade": {
+    "answer_grounding_score": 1.0,
+    "api_endpoint_family_accuracy": 1.0,
+    "api_error_interpretation_correct": true,
+    "api_required_used_accuracy": 1.0,
+    "expected_evidence_need_accuracy": 0.0,
+    "expected_observable_trace_score": 0.3333,
+    "final_answer_correctness": 0.625,
+    "forbidden_claims_violation": false,
+    "live_empty_interpretation_correct": true,
+    "no_tool_false_negative": true,
+    "no_tool_false_positive": false,
+    "overall_score": 0.4021,
+    "required_facts_coverage": 0.0,
+    "route_accuracy": 0.0,
+    "sql_required_used_accuracy": 0.5,
+    "sql_table_accuracy": 1.0,
+    "tool_overuse": 1,
+    "tool_underuse": 0,
+    "unsupported_claims": 0
+  },
+  "mode": "packaged_baseline_real",
+  "oracle_visible_to_runtime": false,
+  "prompt_id": "da500_0056",
+  "runtime_input": {
+    "prompt": "What is a dataflow in Adobe Experience Platform? Keep the answer conceptual for the validation brief.",
+    "prompt_id": "da500_0056"
+  },
+  "synthetic_sql_results_used": false,
+  "trajectory_path": "/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/dashagent_500_prompt_suite_eval_real/packaged_baseline_real/da500_0056/trajectory.json"
+}

@@ -14,6 +14,8 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from dashagent.config import DEFAULT_CONFIG
+from dashagent.db import DuckDBDatabase, is_read_only_sql
+from dashagent.endpoint_catalog import EndpointCatalog
 from dashagent.prompt_semantic_ir import normalize_prompt_text
 from scripts.generate_dashagent_500_prompt_suite import CATEGORY_TARGETS, RUNTIME_GOLD_FORBIDDEN
 
@@ -93,6 +95,9 @@ def validate_suite(
     signature_counts = _semantic_signature_counts(gold_rows)
     expected_trace_missing = [row.get("prompt_id") for row in gold_rows if not row.get("expected_observable_trace")]
     oracle_gaps = _oracle_gaps(gold_rows)
+    oracle_sql_checks = _validate_oracle_sql(gold_rows)
+    endpoint_checks = _validate_expected_endpoints(gold_rows)
+    synthetic_artifacts = _synthetic_prompt_artifacts(runtime_rows)
 
     if len(runtime_rows) != 500:
         errors.append(f"runtime_count_expected_500_actual_{len(runtime_rows)}")
@@ -114,6 +119,10 @@ def validate_suite(
         errors.append("expected_observable_trace_missing")
     if oracle_gaps:
         errors.append("oracle_evidence_gaps")
+    if oracle_sql_checks["oracle_sql_reexecution_failures"]:
+        errors.append("oracle_sql_reexecution_failures")
+    if endpoint_checks["endpoint_catalog_validation_failures"]:
+        errors.append("endpoint_catalog_validation_failures")
     if dict(category_counts) != CATEGORY_TARGETS:
         errors.append("category_distribution_mismatch")
     if any(count > 1 for count in signature_counts.values()):
@@ -136,8 +145,15 @@ def validate_suite(
         if (tool_calls.get("api_required") or tool_calls.get("api_optional")) and not (row.get("oracle_evidence") or {}).get("oracle_api_endpoint"):
             errors.append(f"api_expected_without_oracle_endpoint:{row.get('prompt_id')}")
         if row.get("gold_answer_type") == "conceptual_rubric":
-            text = json.dumps(row, sort_keys=True).lower()
-            if re.search(r"\b\d{4}-\d{2}-\d{2}\b|[0-9a-f]{8}-[0-9a-f]{4}-", text):
+            text = json.dumps(
+                {
+                    "gold_answer": row.get("gold_answer"),
+                    "acceptable_answer_variants": row.get("acceptable_answer_variants"),
+                    "required_facts": row.get("required_facts"),
+                },
+                sort_keys=True,
+            ).lower()
+            if re.search(r"\b\d{4}-\d{2}-\d{2}\b|[0-9a-f]{8}-[0-9a-f]{4}-|\b[a-z0-9]{12,}\b", text):
                 errors.append(f"conceptual_concrete_claim_risk:{row.get('prompt_id')}")
 
     summary = {
@@ -164,6 +180,10 @@ def validate_suite(
         "expected_trace_missing_count": len(expected_trace_missing),
         "oracle_gap_count": len(oracle_gaps),
         "oracle_gaps": oracle_gaps[:20],
+        **oracle_sql_checks,
+        **endpoint_checks,
+        "synthetic_prompt_artifact_count": len(synthetic_artifacts),
+        "synthetic_prompt_artifacts": synthetic_artifacts[:30],
         "errors": errors,
         "warnings": warnings,
         "diagnostic_internal_only": True,
@@ -247,6 +267,93 @@ def _oracle_gaps(gold_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return gaps
 
 
+def _validate_oracle_sql(gold_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    checked = 0
+    failures: list[dict[str, Any]] = []
+    db: DuckDBDatabase | None = None
+    try:
+        db = DuckDBDatabase()
+    except Exception as exc:
+        return {
+            "oracle_sql_reexecution_checked": 0,
+            "oracle_sql_reexecution_failures": [{"prompt_id": None, "error": f"duckdb_init_failed:{type(exc).__name__}"}],
+            "oracle_sql_read_only_failures": [],
+            "oracle_sql_expected_table_failures": [],
+        }
+
+    read_only_failures: list[dict[str, Any]] = []
+    table_failures: list[dict[str, Any]] = []
+    try:
+        for row in gold_rows:
+            evidence = row.get("oracle_evidence") if isinstance(row.get("oracle_evidence"), dict) else {}
+            oracle_sql = evidence.get("oracle_sql")
+            if not oracle_sql:
+                continue
+            prompt_id = row.get("prompt_id")
+            checked += 1
+            ok, error = is_read_only_sql(str(oracle_sql))
+            if not ok:
+                read_only_failures.append({"prompt_id": prompt_id, "error": error})
+                continue
+            expected_tables = ((row.get("expected_tool_calls") or {}).get("expected_sql_tables") or [])
+            normalized_sql = str(oracle_sql).lower()
+            missing_tables = [table for table in expected_tables if str(table).lower() not in normalized_sql]
+            if missing_tables:
+                table_failures.append({"prompt_id": prompt_id, "missing_tables": missing_tables})
+            result = db.execute_sql(str(oracle_sql), max_rows=5)
+            if not result.get("ok"):
+                failures.append({"prompt_id": prompt_id, "error": result.get("error")})
+    finally:
+        if db is not None:
+            db.close()
+    return {
+        "oracle_sql_reexecution_checked": checked,
+        "oracle_sql_reexecution_failures": failures[:50],
+        "oracle_sql_read_only_failures": read_only_failures[:50],
+        "oracle_sql_expected_table_failures": table_failures[:50],
+    }
+
+
+def _validate_expected_endpoints(gold_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    catalog = EndpointCatalog()
+    failures: list[dict[str, Any]] = []
+    checked = 0
+    for row in gold_rows:
+        expected_tools = row.get("expected_tool_calls") if isinstance(row.get("expected_tool_calls"), dict) else {}
+        endpoint_ids = set(expected_tools.get("expected_api_families") or [])
+        evidence = row.get("oracle_evidence") if isinstance(row.get("oracle_evidence"), dict) else {}
+        if evidence.get("oracle_api_endpoint"):
+            endpoint_ids.add(str(evidence["oracle_api_endpoint"]))
+        for endpoint_id in sorted(endpoint_ids):
+            checked += 1
+            endpoint = catalog.by_id(endpoint_id)
+            if endpoint is None:
+                failures.append({"prompt_id": row.get("prompt_id"), "endpoint_id": endpoint_id, "error": "missing_from_endpoint_catalog"})
+                continue
+            if endpoint.method.upper() != "GET":
+                failures.append({"prompt_id": row.get("prompt_id"), "endpoint_id": endpoint_id, "error": "non_get_endpoint"})
+            if endpoint.path_params and row.get("gold_answer_type") != "caveat":
+                failures.append({"prompt_id": row.get("prompt_id"), "endpoint_id": endpoint_id, "error": "requires_path_param_without_caveat"})
+    return {
+        "endpoint_catalog_validation_checked": checked,
+        "endpoint_catalog_validation_failures": failures[:50],
+    }
+
+
+def _synthetic_prompt_artifacts(runtime_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    pattern = re.compile(
+        r"\b(?:concept|sql|api|policy|mixed|ambiguous|stress)\s+case\s+\d+\b|"
+        r"\b(?:case|trigger)\s+\d+\b",
+        re.IGNORECASE,
+    )
+    artifacts: list[dict[str, Any]] = []
+    for row in runtime_rows:
+        prompt = str(row.get("prompt") or "")
+        if pattern.search(prompt):
+            artifacts.append({"prompt_id": row.get("prompt_id"), "prompt": prompt})
+    return artifacts
+
+
 def _validation_md(summary: dict[str, Any]) -> str:
     lines = [
         "# DashAgent 500-Prompt Suite Validation",
@@ -258,6 +365,10 @@ def _validation_md(summary: dict[str, Any]) -> str:
         f"- private_chain_of_thought_count: {summary['private_chain_of_thought_count']}",
         f"- secret_hit_count: {summary['secret_hit_count']}",
         f"- duplicate_prompt_count: {summary['duplicate_prompt_count']}",
+        f"- oracle_sql_reexecution_checked: {summary['oracle_sql_reexecution_checked']}",
+        f"- oracle_sql_reexecution_failures: {len(summary['oracle_sql_reexecution_failures'])}",
+        f"- endpoint_catalog_validation_failures: {len(summary['endpoint_catalog_validation_failures'])}",
+        f"- synthetic_prompt_artifact_count: {summary['synthetic_prompt_artifact_count']}",
         f"- semantic_signature_duplicate_count: {summary['semantic_signature_duplicate_count']}",
         "",
         "## Category Counts",

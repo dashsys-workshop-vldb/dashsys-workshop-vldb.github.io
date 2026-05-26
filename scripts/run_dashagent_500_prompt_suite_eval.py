@@ -4,12 +4,14 @@ from __future__ import annotations
 import argparse
 import json
 import random
+import re
 import shutil
 import sys
 import time
 from collections import Counter, defaultdict
+from dataclasses import replace
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -31,7 +33,7 @@ from dashagent.semantic_route_decision_ladder import run_semantic_route_decision
 from dashagent.staged_evidence_policy import decide_initial_evidence_branch
 
 
-RECOGNIZED_MODES = {
+SIMULATED_MODES = {
     "packaged_baseline",
     "semantic_routing_shadow",
     "staged_evidence_shadow",
@@ -39,6 +41,18 @@ RECOGNIZED_MODES = {
     "latest_applied_trial",
     "latest_full_trial",
 }
+REAL_MODES = {
+    "packaged_baseline_real",
+    "latest_shadow_real",
+    "latest_applied_real_trial",
+}
+RECOGNIZED_MODES = SIMULATED_MODES | REAL_MODES
+REAL_APPLIED_TRIAL_BLOCKERS = [
+    "Semantic route decisions are integrated as shadow checkpoints only.",
+    "Staged evidence policy is integrated as shadow checkpoints only.",
+    "Post-SQL API decision policy records keep/drop/add advice but does not alter actual API execution.",
+    "No non-shadow promotion gate has approved applying these decisions to packaged execution.",
+]
 
 EVIDENCE_ROUTES = {"EVIDENCE_PIPELINE", "SQL_ONLY", "API_ONLY", "SQL_THEN_API", "SQL_PRIMARY_API_VERIFY"}
 
@@ -70,17 +84,37 @@ def run_suite_eval(
     clean: bool = False,
     output_dir: Path | str | None = None,
     report_dir: Path | str | None = None,
+    engine: str = "real_agent",
+    executor_factory: Callable[..., Any] | None = None,
 ) -> dict[str, Any]:
     suite_input = suite_path if suite_path is not None else suite
     gold_input = gold_path if gold_path is not None else gold
     suite_path = Path(suite_input) if suite_input is not None else DEFAULT_CONFIG.data_dir / "benchmarks" / "dashagent_500_prompt_suite.jsonl"
     gold_path = Path(gold_input) if gold_input is not None else DEFAULT_CONFIG.data_dir / "benchmarks" / "dashagent_500_prompt_suite_gold.jsonl"
-    selected_modes = modes or ["packaged_baseline"]
+    if engine not in {"real_agent", "simulated_trace"}:
+        raise ValueError(f"Unknown eval engine: {engine}")
+    selected_modes = modes or (["packaged_baseline_real"] if engine == "real_agent" else ["packaged_baseline"])
+    if engine == "real_agent":
+        return _run_real_agent_suite_eval(
+            suite_path=suite_path,
+            gold_path=gold_path,
+            modes=selected_modes,
+            limit=limit,
+            full=full,
+            seed=seed,
+            clean=clean,
+            output_dir=output_dir,
+            report_dir=report_dir,
+            executor_factory=executor_factory,
+        )
     unknown = [mode for mode in selected_modes if mode not in RECOGNIZED_MODES]
     if unknown:
         raise ValueError(f"Unknown benchmark modes: {unknown}")
+    non_simulated = [mode for mode in selected_modes if mode not in SIMULATED_MODES]
+    if non_simulated:
+        raise ValueError(f"Modes require --engine real_agent: {non_simulated}")
 
-    eval_dir = Path(output_dir) if output_dir is not None else DEFAULT_CONFIG.outputs_dir / "dashagent_500_prompt_suite_eval"
+    eval_dir = Path(output_dir) if output_dir is not None else DEFAULT_CONFIG.outputs_dir / "dashagent_500_prompt_suite_eval_simulated"
     reports_dir = Path(report_dir) if report_dir is not None else DEFAULT_CONFIG.outputs_dir / "reports"
     reports_dir.mkdir(parents=True, exist_ok=True)
     if clean and eval_dir.exists():
@@ -139,7 +173,19 @@ def run_suite_eval(
         mode_summaries[mode] = _summarize_mode(mode, rows, elapsed)
 
     comparison = _compare_modes(mode_summaries, mode_rows)
+    shadow_comparison = _compare_specific_modes(
+        "packaged_baseline_real",
+        "latest_shadow_real",
+        mode_summaries,
+        mode_rows,
+    )
     report = {
+        "eval_engine": "simulated_trace",
+        "simulated_trace_only": True,
+        "real_agent_execution": False,
+        "synthetic_sql_results_used": True,
+        "runtime_used_category_tags_for_decision": True,
+        "agent_executor_used": False,
         "suite": str(suite_path),
         "gold": str(gold_path),
         "seed": seed,
@@ -149,6 +195,7 @@ def run_suite_eval(
         "mode_summary": mode_summaries,
         "mode_order": selected_modes,
         "comparison": comparison,
+        "shadow_comparison": shadow_comparison,
         "latest_code_paths_explicitly_evaluated": True,
         "old_generated_diagnostic_path_used": False,
         "runtime_gold_visible": False,
@@ -156,15 +203,556 @@ def run_suite_eval(
         "organizer_score_replacement": False,
         "output_dir": str(eval_dir),
     }
-    report_json = reports_dir / "dashagent_500_prompt_suite_eval.json"
-    report_md = reports_dir / "dashagent_500_prompt_suite_eval.md"
+    report_json = reports_dir / "dashagent_500_prompt_suite_eval_simulated.json"
+    report_md = reports_dir / "dashagent_500_prompt_suite_eval_simulated.md"
     report_json.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
     report_md.write_text(_eval_report_md(report), encoding="utf-8")
 
-    gate = _write_gate_report(report, reports_dir)
+    gate = _write_gate_report(report, reports_dir, suffix="_simulated")
     report["gate"] = gate
     report_json.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
+    _write_runner_audit(report, reports_dir)
     return report
+
+
+def _run_real_agent_suite_eval(
+    *,
+    suite_path: Path,
+    gold_path: Path,
+    modes: list[str],
+    limit: int | None,
+    full: bool,
+    seed: int,
+    clean: bool,
+    output_dir: Path | str | None,
+    report_dir: Path | str | None,
+    executor_factory: Callable[..., Any] | None,
+) -> dict[str, Any]:
+    selected_modes = modes or ["packaged_baseline_real"]
+    unknown = [mode for mode in selected_modes if mode not in RECOGNIZED_MODES]
+    if unknown:
+        raise ValueError(f"Unknown benchmark modes: {unknown}")
+    non_real = [mode for mode in selected_modes if mode not in REAL_MODES]
+    if non_real:
+        raise ValueError(f"Modes require --engine simulated_trace: {non_real}")
+
+    eval_dir = Path(output_dir) if output_dir is not None else DEFAULT_CONFIG.outputs_dir / "dashagent_500_prompt_suite_eval_real"
+    reports_dir = Path(report_dir) if report_dir is not None else DEFAULT_CONFIG.outputs_dir / "reports"
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    if clean and eval_dir.exists():
+        shutil.rmtree(eval_dir)
+    eval_dir.mkdir(parents=True, exist_ok=True)
+
+    runtime_rows = _read_jsonl(suite_path)
+    gold_by_id = {row["prompt_id"]: row for row in _read_jsonl(gold_path)}
+    ordered_rows = _select_rows(runtime_rows, seed=seed, limit=limit, full=full)
+    catalog = EndpointCatalog()
+    mode_summaries: dict[str, Any] = {}
+    mode_rows: dict[str, list[dict[str, Any]]] = {}
+    unavailable_modes: dict[str, Any] = {}
+
+    for mode in selected_modes:
+        if mode == "latest_applied_real_trial":
+            unavailable_modes[mode] = {
+                "mode": mode,
+                "unavailable": True,
+                "latest_applied_real_trial_unavailable": True,
+                "blockers": REAL_APPLIED_TRIAL_BLOCKERS,
+                "prompt_count": 0,
+                "real_agent_execution": False,
+                "applied_trial_behavior_changed": False,
+            }
+            mode_summaries[mode] = _empty_unavailable_summary(mode, unavailable_modes[mode])
+            mode_rows[mode] = []
+            continue
+
+        rows: list[dict[str, Any]] = []
+        config = _config_for_real_mode(mode)
+        executor = _make_executor(config, executor_factory)
+        start = time.perf_counter()
+        for runtime_row in ordered_rows:
+            prompt_id = str(runtime_row["prompt_id"])
+            runtime_input = _runtime_input(runtime_row)
+            prompt_dir = eval_dir / mode / prompt_id
+            prompt_dir.mkdir(parents=True, exist_ok=True)
+            run_start = time.perf_counter()
+            agent_result = executor.run(
+                runtime_input["prompt"],
+                strategy="SQL_FIRST_API_VERIFY",
+                query_id=runtime_input["prompt_id"],
+                output_dir=prompt_dir,
+            )
+            runtime_ms = (time.perf_counter() - run_start) * 1000
+            gold_row = gold_by_id[prompt_id]
+            grade, extracted = _grade_real_agent_result(agent_result, gold_row, catalog, runtime_ms=runtime_ms)
+            benchmark_record = {
+                "prompt_id": prompt_id,
+                "mode": mode,
+                "engine": "real_agent",
+                "runtime_input": runtime_input,
+                "gold_visible_to_runtime": False,
+                "category_tags_domain_visible_to_runtime": False,
+                "oracle_visible_to_runtime": False,
+                "expected_trace_visible_to_runtime": False,
+                "agent_executor_used": True,
+                "synthetic_sql_results_used": False,
+                "trajectory_path": str(prompt_dir / "trajectory.json"),
+                "grade": grade,
+                "extracted_runtime": extracted,
+            }
+            (prompt_dir / "benchmark_grade.json").write_text(json.dumps(benchmark_record, indent=2, sort_keys=True, default=str), encoding="utf-8")
+            rows.append(
+                {
+                    "prompt_id": prompt_id,
+                    "category": runtime_row.get("category"),
+                    **grade,
+                    "trajectory_path": str(prompt_dir / "trajectory.json"),
+                    "latest_code_paths_enabled": extracted["latest_code_paths_enabled"],
+                    "route_action": extracted["route_action"],
+                    "sql_used": extracted["sql_used"],
+                    "api_used": extracted["api_used"],
+                    "estimated_total_tokens": extracted["estimated_total_tokens"],
+                    "runtime_ms": runtime_ms,
+                    "api_calls_saved": 0,
+                    "api_calls_added": 0,
+                    "anti_hallucination_initial_fail": extracted["anti_hallucination_initial_fail"],
+                    "anti_hallucination_revision_attempted": extracted["anti_hallucination_revision_attempted"],
+                    "anti_hallucination_revision_success": extracted["anti_hallucination_revision_success"],
+                    "post_sql_advisor_invoked": extracted["post_sql_advisor_invoked"],
+                    "post_sql_advisor_verified": extracted["post_sql_advisor_verified"],
+                    "post_sql_advisor_blocked": extracted["post_sql_advisor_blocked"],
+                    "missing_checkpoints": extracted["missing_checkpoints"],
+                }
+            )
+        elapsed = time.perf_counter() - start
+        mode_rows[mode] = rows
+        summary = _summarize_mode(mode, rows, elapsed)
+        summary.update(
+            {
+                "real_agent_execution": True,
+                "agent_executor_used": True,
+                "synthetic_sql_results_used": False,
+                "runtime_used_category_tags_for_decision": False,
+                "shadow_modules_executed": mode == "latest_shadow_real" and bool(summary["latest_code_paths_enabled"].get("semantic_route_decision_ladder")),
+                "packaged_behavior_changed": False,
+            }
+        )
+        mode_summaries[mode] = summary
+
+    comparison = _compare_modes(mode_summaries, mode_rows)
+    shadow_comparison = _compare_specific_modes(
+        "packaged_baseline_real",
+        "latest_shadow_real",
+        mode_summaries,
+        mode_rows,
+    )
+    report = {
+        "eval_engine": "real_agent",
+        "simulated_trace_only": False,
+        "real_agent_execution": True,
+        "synthetic_sql_results_used": False,
+        "runtime_used_category_tags_for_decision": False,
+        "agent_executor_used": any(summary.get("agent_executor_used") for summary in mode_summaries.values()),
+        "suite": str(suite_path),
+        "gold": str(gold_path),
+        "seed": seed,
+        "prompt_count": len(ordered_rows),
+        "full_requested": full,
+        "modes": mode_summaries,
+        "mode_summary": mode_summaries,
+        "mode_order": selected_modes,
+        "comparison": comparison,
+        "shadow_comparison": shadow_comparison,
+        "unavailable_modes": unavailable_modes,
+        "latest_code_paths_explicitly_evaluated": bool(mode_summaries.get("latest_shadow_real", {}).get("shadow_modules_executed")),
+        "old_generated_diagnostic_path_used": False,
+        "runtime_gold_visible": False,
+        "runtime_input_fields": ["prompt_id", "prompt"],
+        "category_domain_tags_used_only_for_grading": True,
+        "diagnostic_internal_only": True,
+        "organizer_score_replacement": False,
+        "output_dir": str(eval_dir),
+    }
+    report_json = reports_dir / "dashagent_500_prompt_suite_eval_real.json"
+    report_md = reports_dir / "dashagent_500_prompt_suite_eval_real.md"
+    report_json.write_text(json.dumps(report, indent=2, sort_keys=True, default=str), encoding="utf-8")
+    report_md.write_text(_eval_report_md(report), encoding="utf-8")
+    gate = _write_gate_report(report, reports_dir, suffix="_real")
+    report["gate"] = gate
+    report_json.write_text(json.dumps(report, indent=2, sort_keys=True, default=str), encoding="utf-8")
+    _write_runner_audit(report, reports_dir)
+    return report
+
+
+def _select_rows(runtime_rows: list[dict[str, Any]], *, seed: int, limit: int | None, full: bool) -> list[dict[str, Any]]:
+    rng = random.Random(seed)
+    ordered_rows = list(runtime_rows)
+    rng.shuffle(ordered_rows)
+    if not full:
+        return ordered_rows[: limit or 25]
+    if limit is not None:
+        return ordered_rows[:limit]
+    return ordered_rows
+
+
+def _runtime_input(row: dict[str, Any]) -> dict[str, str]:
+    return {"prompt_id": str(row["prompt_id"]), "prompt": str(row["prompt"])}
+
+
+def _config_for_real_mode(mode: str) -> Any:
+    if mode == "latest_shadow_real":
+        return replace(
+            DEFAULT_CONFIG,
+            enable_objective_prompt_features=True,
+            enable_semantic_intent_classifier=True,
+            enable_semantic_route_decision_ladder=True,
+            semantic_route_shadow_only=True,
+            enable_staged_evidence_policy=True,
+            staged_evidence_policy_shadow_only=True,
+            enable_post_sql_api_decision=True,
+            post_sql_api_decision_shadow_only=True,
+            post_sql_llm_advisor_enabled=False,
+        )
+    return DEFAULT_CONFIG
+
+
+def _make_executor(config: Any, executor_factory: Callable[..., Any] | None) -> Any:
+    if executor_factory is not None:
+        try:
+            return executor_factory(config=config)
+        except TypeError:
+            return executor_factory(config)
+    from dashagent.executor import AgentExecutor
+
+    return AgentExecutor(config=config)
+
+
+def _empty_unavailable_summary(mode: str, payload: dict[str, Any]) -> dict[str, Any]:
+    summary = {key: 0.0 for key in [
+        "final_answer_correctness",
+        "required_facts_coverage",
+        "route_accuracy",
+        "expected_evidence_need_accuracy",
+        "sql_required_used_accuracy",
+        "api_required_used_accuracy",
+        "sql_table_accuracy",
+        "api_endpoint_family_accuracy",
+        "expected_observable_trace_score",
+        "answer_grounding_score",
+        "estimated_total_tokens",
+        "runtime_ms",
+    ]}
+    summary.update(
+        {
+            "mode": mode,
+            "prompt_count": 0,
+            "overall_score": None,
+            "unsupported_claims": 0,
+            "tool_overuse": 0,
+            "tool_underuse": 0,
+            "no_tool_false_positive": 0,
+            "no_tool_false_negative": 0,
+            "sql_calls": 0,
+            "api_calls": 0,
+            "api_calls_saved": 0,
+            "api_calls_added": 0,
+            "anti_hallucination_initial_fail": 0,
+            "anti_hallucination_revision_attempted": 0,
+            "anti_hallucination_revision_success": 0,
+            "post_sql_advisor_invoked": 0,
+            "post_sql_advisor_verified": 0,
+            "post_sql_advisor_blocked": 0,
+            "wall_time_seconds": 0.0,
+            "per_category": {},
+            "latest_code_paths_enabled": {},
+            "old_generated_diagnostic_path_used": False,
+            "rows_helped": [],
+            "rows_hurt": [],
+            **payload,
+        }
+    )
+    return summary
+
+
+def _grade_real_agent_result(
+    agent_result: dict[str, Any],
+    gold: dict[str, Any],
+    catalog: EndpointCatalog,
+    *,
+    runtime_ms: float,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    extracted = _extract_real_runtime(agent_result, catalog, runtime_ms=runtime_ms)
+    expected_tools = gold.get("expected_tool_calls") or {}
+    sql_required = bool(expected_tools.get("sql_required"))
+    api_required = bool(expected_tools.get("api_required"))
+    api_optional = bool(expected_tools.get("api_optional"))
+    sql_used = extracted["sql_used"]
+    api_used = extracted["api_used"]
+    route_action = extracted["route_action"]
+    evidence_need = str(gold.get("expected_evidence_need") or "unknown")
+
+    sql_accuracy = 1.0 if sql_used == sql_required or (sql_used and sql_required) else 0.0
+    if not sql_required and sql_used:
+        sql_accuracy = 0.5
+    api_accuracy = 1.0
+    if api_required and not api_used:
+        api_accuracy = 0.0
+    elif not api_required and not api_optional and api_used:
+        api_accuracy = 0.5
+    elif api_optional:
+        api_accuracy = 1.0
+
+    expected_sql_tables = set(expected_tools.get("expected_sql_tables") or [])
+    expected_api_families = set(expected_tools.get("expected_api_families") or [])
+    sql_table_accuracy = 1.0 if not expected_sql_tables else round(len(expected_sql_tables & set(extracted["sql_tables"])) / len(expected_sql_tables), 4)
+    api_endpoint_family_accuracy = 1.0 if not expected_api_families else round(len(expected_api_families & set(extracted["api_families"])) / len(expected_api_families), 4)
+    route_accuracy = _route_accuracy(route_action, str(gold.get("expected_route") or ""), sql_used, api_used)
+    evidence_need_accuracy = _evidence_need_accuracy(evidence_need, sql_used, api_used, route_action)
+    objective_score = _objective_feature_score(extracted["observable_trace"], gold)
+    trace_stage_score = _real_trace_stage_score(extracted["checkpoint_names"], gold)
+    observable_trace_score = round((objective_score + trace_stage_score + route_accuracy + evidence_need_accuracy + sql_accuracy + api_accuracy) / 6.0, 4)
+    unsupported_claims = int(extracted.get("unsupported_claims") or 0)
+    forbidden_violation = _forbidden_claims_violation(str(agent_result.get("final_answer") or ""), gold)
+    fact_coverage = _required_fact_coverage(str(agent_result.get("final_answer") or ""), gold)
+    answer_grounding_score = 1.0 if unsupported_claims == 0 and not forbidden_violation else 0.0
+    correctness = round((fact_coverage + answer_grounding_score + sql_accuracy + api_accuracy) / 4.0, 4)
+    tool_overuse = int((not sql_required and sql_used) or (not api_required and not api_optional and api_used))
+    tool_underuse = int((sql_required and not sql_used) or (api_required and not api_used))
+
+    overall_score = round(
+        0.35 * correctness
+        + 0.25 * observable_trace_score
+        + 0.15 * route_accuracy
+        + 0.15 * evidence_need_accuracy
+        + 0.10 * answer_grounding_score,
+        4,
+    )
+    grade = {
+        "overall_score": overall_score,
+        "final_answer_correctness": correctness,
+        "required_facts_coverage": fact_coverage,
+        "forbidden_claims_violation": forbidden_violation,
+        "route_accuracy": route_accuracy,
+        "expected_evidence_need_accuracy": evidence_need_accuracy,
+        "sql_required_used_accuracy": sql_accuracy,
+        "api_required_used_accuracy": api_accuracy,
+        "sql_table_accuracy": sql_table_accuracy,
+        "api_endpoint_family_accuracy": api_endpoint_family_accuracy,
+        "expected_observable_trace_score": observable_trace_score,
+        "tool_overuse": tool_overuse,
+        "tool_underuse": tool_underuse,
+        "unsupported_claims": unsupported_claims,
+        "no_tool_false_positive": route_action in {"LLM_DIRECT", "LLM_SAFE_DIRECT"} and (sql_required or api_required),
+        "no_tool_false_negative": route_action not in {"LLM_DIRECT", "LLM_SAFE_DIRECT"} and evidence_need == "none",
+        "live_empty_interpretation_correct": _live_empty_interpretation_correct(agent_result),
+        "api_error_interpretation_correct": _api_error_interpretation_correct(agent_result),
+        "answer_grounding_score": answer_grounding_score,
+    }
+    return grade, extracted
+
+
+def _extract_real_runtime(agent_result: dict[str, Any], catalog: EndpointCatalog, *, runtime_ms: float) -> dict[str, Any]:
+    tool_results = agent_result.get("tool_results") if isinstance(agent_result.get("tool_results"), list) else []
+    trajectory = agent_result.get("trajectory") if isinstance(agent_result.get("trajectory"), dict) else {}
+    checkpoints = agent_result.get("checkpoints") if isinstance(agent_result.get("checkpoints"), list) else trajectory.get("checkpoints", [])
+    checkpoint_names = [str(item.get("name") or item.get("checkpoint_id") or item.get("checkpoint") or "") for item in checkpoints if isinstance(item, dict)]
+    checkpoint_by_name = {name: item for name, item in zip(checkpoint_names, checkpoints, strict=False)}
+    sql_calls = [item for item in tool_results if isinstance(item, dict) and item.get("type") == "sql"]
+    api_calls = [item for item in tool_results if isinstance(item, dict) and item.get("type") == "api"]
+    sql_strings = [str((item.get("step") or {}).get("sql") or "") for item in sql_calls]
+    api_steps = [(item.get("step") or {}) for item in api_calls]
+    sql_tables = sorted({table for sql in sql_strings for table in _extract_sql_tables(sql)})
+    api_families = sorted({family for step in api_steps for family in _extract_api_families(step, catalog)})
+    route_action = _route_action_from_actual_tools(bool(sql_calls), bool(api_calls))
+    unsupported_claims = _extract_unsupported_claims(checkpoints)
+    latest_flags = _latest_flags_from_checkpoints(checkpoint_names)
+    timing = trajectory.get("timing") if isinstance(trajectory.get("timing"), dict) else {}
+    estimated_tokens = _estimate_real_tokens(agent_result)
+    missing_checkpoints = [
+        name
+        for name in [
+            "checkpoint_objective_prompt_features",
+            "checkpoint_semantic_route_decision_ladder",
+            "checkpoint_initial_evidence_branch_policy",
+            "checkpoint_post_sql_api_call_verifier",
+            "checkpoint_13_tool_execution",
+            "checkpoint_15_answer_slots",
+            "checkpoint_16_answer_verification",
+        ]
+        if name not in checkpoint_by_name
+    ]
+    return {
+        "sql_used": bool(sql_calls),
+        "api_used": bool(api_calls),
+        "sql_calls": len(sql_calls),
+        "api_calls": len(api_calls),
+        "sql_tables": sql_tables,
+        "api_families": api_families,
+        "route_action": route_action,
+        "unsupported_claims": unsupported_claims,
+        "checkpoint_names": checkpoint_names,
+        "missing_checkpoints": missing_checkpoints,
+        "observable_trace": {name: (checkpoint_by_name.get(name) or {}).get("output", {}) for name in checkpoint_names},
+        "latest_code_paths_enabled": latest_flags,
+        "estimated_total_tokens": estimated_tokens,
+        "runtime_ms": runtime_ms,
+        "trajectory_timing": timing,
+        "anti_hallucination_initial_fail": _checkpoint_has_gate_initial_fail(checkpoint_by_name.get("checkpoint_routing_anti_hallucination_gate")),
+        "anti_hallucination_revision_attempted": _checkpoint_output_bool(checkpoint_by_name.get("checkpoint_routing_anti_hallucination_gate"), "revision_attempted"),
+        "anti_hallucination_revision_success": _checkpoint_output_bool(checkpoint_by_name.get("checkpoint_routing_anti_hallucination_gate"), "revision_success"),
+        "post_sql_advisor_invoked": "checkpoint_post_sql_llm_advisor" in checkpoint_by_name,
+        "post_sql_advisor_verified": _checkpoint_output_source(checkpoint_by_name.get("checkpoint_post_sql_api_call_verifier")) in {"LLM_ADVISOR", "LLM_ADVISOR_VERIFIED"},
+        "post_sql_advisor_blocked": _checkpoint_output_source(checkpoint_by_name.get("checkpoint_post_sql_api_call_verifier")) == "LLM_ADVISOR_BLOCKED",
+    }
+
+
+def _route_action_from_actual_tools(sql_used: bool, api_used: bool) -> str:
+    if sql_used and api_used:
+        return "SQL_THEN_API"
+    if sql_used:
+        return "SQL_ONLY"
+    if api_used:
+        return "API_ONLY"
+    return "LLM_SAFE_DIRECT"
+
+
+def _extract_sql_tables(sql: str) -> list[str]:
+    tables: list[str] = []
+    for match in re.finditer(r"\b(?:FROM|JOIN)\s+([\"`]?)([A-Za-z_][\w$]*)\1", sql, flags=re.IGNORECASE):
+        tables.append(match.group(2))
+    return tables
+
+
+def _extract_api_families(step: dict[str, Any], catalog: EndpointCatalog) -> list[str]:
+    method = str(step.get("method") or "GET")
+    url = str(step.get("url") or "")
+    endpoint = catalog.match(method, url) if url else None
+    endpoint_id = endpoint.id if endpoint else str(step.get("family") or step.get("endpoint_id") or "")
+    return [endpoint_id] if endpoint_id else []
+
+
+def _extract_unsupported_claims(checkpoints: list[dict[str, Any]]) -> int:
+    for checkpoint in checkpoints:
+        if not isinstance(checkpoint, dict):
+            continue
+        name = str(checkpoint.get("name") or checkpoint.get("checkpoint") or "")
+        if name != "checkpoint_16_answer_verification":
+            continue
+        output = checkpoint.get("output") if isinstance(checkpoint.get("output"), dict) else {}
+        return int(output.get("unsupported_claims_count") or output.get("unsupported_claims") or 0)
+    return 0
+
+
+def _latest_flags_from_checkpoints(checkpoint_names: list[str]) -> dict[str, bool]:
+    names = set(checkpoint_names)
+    return {
+        "objective_prompt_features": "checkpoint_objective_prompt_features" in names,
+        "compact_json_llm_context": "checkpoint_semantic_intent_decision" in names,
+        "semantic_intent_classifier": "checkpoint_semantic_intent_decision" in names,
+        "routing_anti_hallucination_gate": "checkpoint_routing_anti_hallucination_gate" in names,
+        "routing_feedback_revision": "checkpoint_routing_anti_hallucination_gate" in names,
+        "no_tool_safety_verifier": "checkpoint_no_tool_safety_verifier" in names,
+        "semantic_route_decision_ladder": "checkpoint_semantic_route_decision_ladder" in names,
+        "staged_evidence_policy": "checkpoint_initial_evidence_branch_policy" in names,
+        "post_sql_deterministic_policy": "checkpoint_post_sql_deterministic_policy" in names,
+        "post_sql_llm_advisor": "checkpoint_post_sql_llm_advisor" in names,
+        "post_sql_api_call_verifier": "checkpoint_post_sql_api_call_verifier" in names,
+        "evidence_bus_answer_verifier_token_reduction": "checkpoint_16_answer_verification" in names,
+    }
+
+
+def _estimate_real_tokens(agent_result: dict[str, Any]) -> int:
+    payload = {
+        "metadata": agent_result.get("metadata"),
+        "plan": agent_result.get("plan"),
+        "final_answer": agent_result.get("final_answer"),
+    }
+    return max(1, len(json.dumps(payload, sort_keys=True, default=str)) // 4)
+
+
+def _checkpoint_output(checkpoint: dict[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(checkpoint, dict):
+        return {}
+    output = checkpoint.get("output")
+    return output if isinstance(output, dict) else {}
+
+
+def _checkpoint_output_bool(checkpoint: dict[str, Any] | None, key: str) -> bool:
+    return bool(_checkpoint_output(checkpoint).get(key))
+
+
+def _checkpoint_output_source(checkpoint: dict[str, Any] | None) -> str:
+    return str(_checkpoint_output(checkpoint).get("source") or "")
+
+
+def _checkpoint_has_gate_initial_fail(checkpoint: dict[str, Any] | None) -> bool:
+    output = _checkpoint_output(checkpoint)
+    initial = output.get("initial_gate")
+    if isinstance(initial, dict):
+        return not bool(initial.get("ok", True))
+    return bool(output.get("initial_fail"))
+
+
+def _real_trace_stage_score(checkpoint_names: list[str], gold: dict[str, Any]) -> float:
+    expected_stages = [step.get("stage") for step in gold.get("expected_observable_trace") or [] if step.get("stage") != "objective_features"]
+    if not expected_stages:
+        return 1.0
+    names = set(checkpoint_names)
+    stage_to_checkpoint = {
+        "semantic_routing": "checkpoint_semantic_route_decision_ladder",
+        "evidence_policy": "checkpoint_initial_evidence_branch_policy",
+        "tool_execution": "checkpoint_13_tool_execution",
+        "answer_grounding": "checkpoint_15_answer_slots",
+        "verification": "checkpoint_16_answer_verification",
+    }
+    matched = 0
+    for stage in expected_stages:
+        checkpoint = stage_to_checkpoint.get(str(stage))
+        if checkpoint is None or checkpoint in names:
+            matched += 1
+    return round(matched / len(expected_stages), 4)
+
+
+def _required_fact_coverage(answer: str, gold: dict[str, Any]) -> float:
+    facts = [str(fact).strip().lower() for fact in gold.get("required_facts") or [] if str(fact).strip()]
+    if not facts:
+        return 1.0
+    normalized = answer.lower()
+    hits = sum(1 for fact in facts if fact in normalized)
+    return round(hits / len(facts), 4)
+
+
+def _forbidden_claims_violation(answer: str, gold: dict[str, Any]) -> bool:
+    normalized = answer.lower()
+    for claim in gold.get("forbidden_claims") or []:
+        claim_text = str(claim).strip().lower()
+        if claim_text and claim_text in normalized:
+            return True
+    return False
+
+
+def _live_empty_interpretation_correct(agent_result: dict[str, Any]) -> bool:
+    text = str(agent_result.get("final_answer") or "").lower()
+    api_payloads = [
+        item.get("payload") for item in agent_result.get("tool_results", [])
+        if isinstance(item, dict) and item.get("type") == "api"
+    ]
+    live_empty = any(isinstance(payload, dict) and payload.get("evidence_state") == "live_empty" for payload in api_payloads)
+    if not live_empty:
+        return True
+    return "no matching" in text or "returned no" in text or "empty" in text
+
+
+def _api_error_interpretation_correct(agent_result: dict[str, Any]) -> bool:
+    text = str(agent_result.get("final_answer") or "").lower()
+    api_payloads = [
+        item.get("payload") for item in agent_result.get("tool_results", [])
+        if isinstance(item, dict) and item.get("type") == "api"
+    ]
+    api_error = any(isinstance(payload, dict) and payload.get("ok") is False for payload in api_payloads)
+    if not api_error:
+        return True
+    return "unavailable" in text or "error" in text or "could not" in text or "failed" in text
 
 
 def _run_runtime_trace(row: dict[str, Any], mode: str, catalog: EndpointCatalog) -> dict[str, Any]:
@@ -553,12 +1141,29 @@ def _summarize_mode(mode: str, rows: list[dict[str, Any]], elapsed: float) -> di
 
 
 def _compare_modes(mode_summaries: dict[str, Any], mode_rows: dict[str, list[dict[str, Any]]]) -> dict[str, Any]:
-    baseline = mode_summaries.get("packaged_baseline", {})
-    latest = mode_summaries.get("latest_applied_trial") or mode_summaries.get("latest_full_trial") or {}
+    baseline_mode = "packaged_baseline" if "packaged_baseline" in mode_summaries else "packaged_baseline_real"
+    latest_mode = (
+        "latest_applied_real_trial"
+        if "latest_applied_real_trial" in mode_summaries
+        else "latest_shadow_real"
+        if "latest_shadow_real" in mode_summaries
+        else "latest_applied_trial"
+        if "latest_applied_trial" in mode_summaries
+        else "latest_full_trial"
+    )
+    baseline = mode_summaries.get(baseline_mode, {})
+    latest = mode_summaries.get(latest_mode, {})
     if not baseline or not latest:
         return {}
-    baseline_rows = {row["prompt_id"]: row for row in mode_rows.get("packaged_baseline", [])}
-    latest_rows = {row["prompt_id"]: row for row in mode_rows.get("latest_applied_trial") or mode_rows.get("latest_full_trial") or []}
+    if latest.get("unavailable"):
+        return {
+            "baseline_mode": baseline.get("mode"),
+            "latest_mode": latest.get("mode"),
+            "latest_unavailable": True,
+            "blockers": latest.get("blockers", []),
+        }
+    baseline_rows = {row["prompt_id"]: row for row in mode_rows.get(baseline_mode, [])}
+    latest_rows = {row["prompt_id"]: row for row in mode_rows.get(latest_mode, [])}
     helped: list[dict[str, Any]] = []
     hurt: list[dict[str, Any]] = []
     for prompt_id, latest_row in latest_rows.items():
@@ -588,16 +1193,79 @@ def _compare_modes(mode_summaries: dict[str, Any], mode_rows: dict[str, list[dic
     }
 
 
-def _write_gate_report(report: dict[str, Any], reports_dir: Path) -> dict[str, Any]:
-    baseline = report["modes"].get("packaged_baseline", {})
-    latest = report["modes"].get("latest_applied_trial") or report["modes"].get("latest_full_trial") or {}
-    strict_like_improves = bool(latest and baseline and latest.get("overall_score", 0) >= baseline.get("overall_score", 0))
+def _compare_specific_modes(
+    baseline_mode: str,
+    candidate_mode: str,
+    mode_summaries: dict[str, Any],
+    mode_rows: dict[str, list[dict[str, Any]]],
+) -> dict[str, Any]:
+    baseline = mode_summaries.get(baseline_mode)
+    candidate = mode_summaries.get(candidate_mode)
+    if not baseline or not candidate or candidate.get("unavailable"):
+        return {}
+    baseline_rows = {row["prompt_id"]: row for row in mode_rows.get(baseline_mode, [])}
+    candidate_rows = {row["prompt_id"]: row for row in mode_rows.get(candidate_mode, [])}
+    helped: list[dict[str, Any]] = []
+    hurt: list[dict[str, Any]] = []
+    for prompt_id, candidate_row in candidate_rows.items():
+        base_row = baseline_rows.get(prompt_id)
+        if not base_row:
+            continue
+        delta = round(float(candidate_row.get("overall_score") or 0.0) - float(base_row.get("overall_score") or 0.0), 4)
+        if delta > 0.05:
+            helped.append({"prompt_id": prompt_id, "delta": delta})
+        elif delta < -0.05:
+            hurt.append({"prompt_id": prompt_id, "delta": delta})
+    return {
+        "baseline_mode": baseline_mode,
+        "candidate_mode": candidate_mode,
+        "overall_score_delta": round(float(candidate.get("overall_score") or 0.0) - float(baseline.get("overall_score") or 0.0), 4),
+        "route_accuracy_delta": round(float(candidate.get("route_accuracy") or 0.0) - float(baseline.get("route_accuracy") or 0.0), 4),
+        "observable_trace_delta": round(float(candidate.get("expected_observable_trace_score") or 0.0) - float(baseline.get("expected_observable_trace_score") or 0.0), 4),
+        "api_call_delta": int(candidate.get("api_calls") or 0) - int(baseline.get("api_calls") or 0),
+        "sql_call_delta": int(candidate.get("sql_calls") or 0) - int(baseline.get("sql_calls") or 0),
+        "token_delta": round(float(candidate.get("estimated_total_tokens") or 0.0) - float(baseline.get("estimated_total_tokens") or 0.0), 4),
+        "runtime_ms_delta": round(float(candidate.get("runtime_ms") or 0.0) - float(baseline.get("runtime_ms") or 0.0), 4),
+        "rows_helped_count": len(helped),
+        "rows_hurt_count": len(hurt),
+        "rows_helped_examples": sorted(helped, key=lambda item: item["delta"], reverse=True)[:20],
+        "rows_hurt_examples": sorted(hurt, key=lambda item: item["delta"])[:20],
+    }
+
+
+def _write_gate_report(report: dict[str, Any], reports_dir: Path, *, suffix: str = "") -> dict[str, Any]:
+    baseline = report["modes"].get("packaged_baseline") or report["modes"].get("packaged_baseline_real") or {}
+    latest = (
+        report["modes"].get("latest_applied_real_trial")
+        or report["modes"].get("latest_shadow_real")
+        or report["modes"].get("latest_applied_trial")
+        or report["modes"].get("latest_full_trial")
+        or {}
+    )
+    latest_score = latest.get("overall_score")
+    baseline_score = baseline.get("overall_score")
+    strict_like_improves = bool(
+        latest
+        and baseline
+        and latest_score is not None
+        and baseline_score is not None
+        and float(latest_score) >= float(baseline_score)
+    )
     unsupported_zero = all(mode.get("unsupported_claims", 0) == 0 for mode in report["modes"].values())
     false_no_tool_safe = latest.get("no_tool_false_positive", 0) == 0 if latest else False
-    runtime_cost_ok = latest.get("estimated_total_tokens", 0) <= max(1.0, baseline.get("estimated_total_tokens", 1)) * 1.25 if latest and baseline else False
+    runtime_cost_ok = (
+        float(latest.get("estimated_total_tokens", 0) or 0)
+        <= max(1.0, float(baseline.get("estimated_total_tokens", 1) or 1)) * 1.25
+        if latest and baseline and latest_score is not None
+        else False
+    )
     latest_paths_ok = report.get("latest_code_paths_explicitly_evaluated") and not report.get("old_generated_diagnostic_path_used")
     recommendation = "keep_shadow_only"
-    if not latest_paths_ok:
+    if latest.get("unavailable"):
+        recommendation = "improve_post_sql_policy_before_promotion"
+    elif report.get("simulated_trace_only"):
+        recommendation = "keep_shadow_only"
+    elif not latest_paths_ok:
         recommendation = "improve_semantic_routing_before_promotion"
     elif not false_no_tool_safe:
         recommendation = "blocked_by_false_no_tool_risk"
@@ -612,8 +1280,11 @@ def _write_gate_report(report: dict[str, Any], reports_dir: Path) -> dict[str, A
         "diagnostic_gate_only": True,
         "packaged_runtime_changed": False,
         "final_submission_format_changed": False,
-        "baseline_score": baseline.get("overall_score"),
-        "latest_trial_score": latest.get("overall_score"),
+        "eval_engine": report.get("eval_engine"),
+        "simulated_trace_only": report.get("simulated_trace_only", False),
+        "real_agent_execution": report.get("real_agent_execution", False),
+        "baseline_score": baseline_score,
+        "latest_trial_score": latest_score,
         "route_trace_accuracy": latest.get("expected_observable_trace_score"),
         "unsupported_claims_zero": unsupported_zero,
         "no_tool_false_positive": latest.get("no_tool_false_positive"),
@@ -622,9 +1293,10 @@ def _write_gate_report(report: dict[str, Any], reports_dir: Path) -> dict[str, A
         "runtime_cost_acceptable": runtime_cost_ok,
         "latest_code_paths_explicitly_evaluated": latest_paths_ok,
         "recommendation": recommendation,
+        "blockers": latest.get("blockers", []),
     }
-    (reports_dir / "dashagent_500_prompt_suite_gate.json").write_text(json.dumps(gate, indent=2, sort_keys=True), encoding="utf-8")
-    (reports_dir / "dashagent_500_prompt_suite_gate.md").write_text(_gate_md(gate), encoding="utf-8")
+    (reports_dir / f"dashagent_500_prompt_suite_gate{suffix}.json").write_text(json.dumps(gate, indent=2, sort_keys=True), encoding="utf-8")
+    (reports_dir / f"dashagent_500_prompt_suite_gate{suffix}.md").write_text(_gate_md(gate), encoding="utf-8")
     return gate
 
 
@@ -751,6 +1423,12 @@ def _eval_report_md(report: dict[str, Any]) -> str:
     lines = [
         "# DashAgent 500-Prompt Suite Eval",
         "",
+        f"- eval_engine: {report.get('eval_engine')}",
+        f"- real_agent_execution: {str(report.get('real_agent_execution')).lower()}",
+        f"- simulated_trace_only: {str(report.get('simulated_trace_only')).lower()}",
+        f"- synthetic_sql_results_used: {str(report.get('synthetic_sql_results_used')).lower()}",
+        f"- runtime_used_category_tags_for_decision: {str(report.get('runtime_used_category_tags_for_decision')).lower()}",
+        f"- agent_executor_used: {str(report.get('agent_executor_used')).lower()}",
         f"- prompt_count: {report['prompt_count']}",
         f"- latest_code_paths_explicitly_evaluated: {str(report['latest_code_paths_explicitly_evaluated']).lower()}",
         f"- old_generated_diagnostic_path_used: {str(report['old_generated_diagnostic_path_used']).lower()}",
@@ -783,6 +1461,56 @@ def _eval_report_md(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _write_runner_audit(report: dict[str, Any], reports_dir: Path) -> dict[str, Any]:
+    audit = {
+        "old_synthetic_eval_issue_found": True,
+        "old_synthetic_eval_issue_fixed": True,
+        "eval_engine": report.get("eval_engine"),
+        "simulated_trace_only": report.get("simulated_trace_only", False),
+        "synthetic_sql_result_used": report.get("synthetic_sql_results_used", False),
+        "category_tags_influenced_runtime": report.get("runtime_used_category_tags_for_decision", False),
+        "agent_executor_used": report.get("agent_executor_used", False),
+        "gold_hidden_from_runtime": not report.get("runtime_gold_visible", True),
+        "runtime_input_fields": report.get("runtime_input_fields", ["prompt", "metadata_fields_in_simulated_mode"]),
+        "oracle_sql_hidden_from_runtime": not report.get("simulated_trace_only", False),
+        "expected_trace_hidden_from_runtime": not report.get("simulated_trace_only", False),
+        "latest_code_paths_truly_executed": bool(
+            report.get("eval_engine") == "real_agent"
+            and report.get("mode_summary", {}).get("latest_shadow_real", {}).get("shadow_modules_executed")
+        ),
+        "latest_code_paths_shadow_logged_only": bool(
+            report.get("mode_summary", {}).get("latest_shadow_real", {}).get("shadow_modules_executed")
+        ),
+        "latest_applied_real_trial_available": not bool(
+            report.get("mode_summary", {}).get("latest_applied_real_trial", {}).get("unavailable")
+        )
+        if "latest_applied_real_trial" in report.get("mode_summary", {})
+        else False,
+        "notes": [
+            "Simulated trace mode is retained only as a diagnostic compatibility engine.",
+            "Real-agent mode uses AgentExecutor.run and writes actual per-prompt trajectory.json files.",
+            "Gold, oracle SQL, expected traces, category, domain, and tags are grading inputs only in real-agent mode.",
+        ],
+    }
+    json_path = reports_dir / "dashagent_500_prompt_suite_runner_audit.json"
+    md_path = reports_dir / "dashagent_500_prompt_suite_runner_audit.md"
+    json_path.write_text(json.dumps(audit, indent=2, sort_keys=True), encoding="utf-8")
+    md_path.write_text(_runner_audit_md(audit), encoding="utf-8")
+    return audit
+
+
+def _runner_audit_md(audit: dict[str, Any]) -> str:
+    lines = ["# DashAgent 500-Prompt Suite Runner Audit", ""]
+    for key, value in audit.items():
+        if key == "notes":
+            lines.append("- notes:")
+            for note in value:
+                lines.append(f"  - {note}")
+        else:
+            lines.append(f"- {key}: {value}")
+    return "\n".join(lines) + "\n"
+
+
 def _gate_md(gate: dict[str, Any]) -> str:
     lines = ["# DashAgent 500-Prompt Suite Gate", ""]
     for key, value in gate.items():
@@ -794,12 +1522,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run the internal DashAgent 500-prompt benchmark suite.")
     parser.add_argument("--suite", type=Path, default=DEFAULT_CONFIG.data_dir / "benchmarks" / "dashagent_500_prompt_suite.jsonl")
     parser.add_argument("--gold", type=Path, default=DEFAULT_CONFIG.data_dir / "benchmarks" / "dashagent_500_prompt_suite_gold.jsonl")
+    parser.add_argument("--engine", choices=["real_agent", "simulated_trace"], default="real_agent")
     parser.add_argument("--mode", action="append", choices=sorted(RECOGNIZED_MODES), required=True)
     parser.add_argument("--limit", type=int)
     parser.add_argument("--full", action="store_true")
     parser.add_argument("--seed", type=int, default=20260525)
     parser.add_argument("--clean", action="store_true")
-    parser.add_argument("--output-dir", type=Path, default=DEFAULT_CONFIG.outputs_dir / "dashagent_500_prompt_suite_eval")
+    parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--report-dir", type=Path, default=DEFAULT_CONFIG.outputs_dir / "reports")
     args = parser.parse_args()
     report = run_suite_eval(
@@ -812,6 +1541,7 @@ def main() -> None:
         clean=args.clean,
         output_dir=args.output_dir,
         report_dir=args.report_dir,
+        engine=args.engine,
     )
     print(json.dumps({"ok": True, "prompt_count": report["prompt_count"], "modes": list(report["modes"])}, sort_keys=True))
 

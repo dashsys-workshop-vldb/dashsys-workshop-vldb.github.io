@@ -1,0 +1,753 @@
+{
+  "agent_executor_used": true,
+  "category_tags_domain_visible_to_runtime": false,
+  "engine": "real_agent",
+  "expected_trace_visible_to_runtime": false,
+  "extracted_runtime": {
+    "anti_hallucination_initial_fail": false,
+    "anti_hallucination_revision_attempted": false,
+    "anti_hallucination_revision_success": false,
+    "api_calls": 1,
+    "api_families": [
+      "catalog_datasets"
+    ],
+    "api_used": true,
+    "checkpoint_names": [
+      "checkpoint_01_raw_query",
+      "checkpoint_00_prompt_router",
+      "checkpoint_simple_prompt_gate",
+      "checkpoint_objective_prompt_features",
+      "checkpoint_semantic_intent_decision",
+      "checkpoint_routing_anti_hallucination_gate",
+      "checkpoint_no_tool_safety_verifier",
+      "checkpoint_semantic_route_decision_ladder",
+      "checkpoint_02_query_normalization",
+      "checkpoint_03_query_tokens",
+      "checkpoint_04_relevance_scoring",
+      "checkpoint_05_query_analysis",
+      "checkpoint_06_lookup_path",
+      "checkpoint_07_context_card",
+      "checkpoint_08_candidate_plans",
+      "checkpoint_09_plan_optimization",
+      "checkpoint_10_evidence_policy",
+      "checkpoint_11_call_budget",
+      "checkpoint_evidence_match_scores",
+      "checkpoint_initial_evidence_branch_policy",
+      "checkpoint_post_sql_decision_card",
+      "checkpoint_post_sql_deterministic_policy",
+      "checkpoint_post_sql_llm_advisor",
+      "checkpoint_post_sql_api_call_verifier",
+      "checkpoint_12_validation",
+      "checkpoint_sql_ast_validation",
+      "checkpoint_13_tool_execution",
+      "checkpoint_14_evidence_bus",
+      "checkpoint_15_answer_slots",
+      "checkpoint_16_answer_verification",
+      "checkpoint_17_answer_reranking",
+      "checkpoint_18_final_answer"
+    ],
+    "estimated_total_tokens": 1179,
+    "latest_code_paths_enabled": {
+      "compact_json_llm_context": true,
+      "evidence_bus_answer_verifier_token_reduction": true,
+      "no_tool_safety_verifier": true,
+      "objective_prompt_features": true,
+      "post_sql_api_call_verifier": true,
+      "post_sql_deterministic_policy": true,
+      "post_sql_llm_advisor": true,
+      "routing_anti_hallucination_gate": true,
+      "routing_feedback_revision": true,
+      "semantic_intent_classifier": true,
+      "semantic_route_decision_ladder": true,
+      "staged_evidence_policy": true
+    },
+    "missing_checkpoints": [],
+    "observable_trace": {
+      "checkpoint_00_prompt_router": {
+        "confidence": 0.84,
+        "matched_rules": {
+          "items": [
+            "local_db:dataset",
+            "local_db:how many",
+            "local_db:local snapshot"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "mode": "LOCAL_DB_ONLY",
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: dataset, how many, local snapshot, schema.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": false,
+        "requires_database": true,
+        "risk": "low",
+        "truncated_fields": 1
+      },
+      "checkpoint_01_raw_query": {
+        "query": "How many local snapshot relationships connect schemas and datasets? Use only local snapshot evidence for the monitoring triage.",
+        "query_id": "da500_0138",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "checkpoint_02_query_normalization": {
+        "matching_text": "how many local snapshot relationships connect schema and dataset? use only local snapshot evidence for the monitoring triage.",
+        "normalized_query": "How many local snapshot relationships connect schemas and datasets? Use only local snapshot evidence for the monitoring triage.",
+        "rewrites": {
+          "items": [
+            "important_plurals->singular"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_03_query_tokens": {
+        "domains": {
+          "items": [
+            "schema_dataset"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_04_relevance_scoring": {
+        "top_answer_families": {
+          "items": [
+            "schema_dataset"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "top_apis": {
+          "items": [
+            "audit_events",
+            "audit_events_short",
+            "export_batch_failed"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_join_hints": {
+          "items": [
+            "dim_blueprint.BLUEPRINTID->hkg_br_blueprint_collection.BLUEPRINTID",
+            "dim_collection.COLLECTIONID->hkg_br_blueprint_collection.COLLECTIONID",
+            "dim_blueprint.BLUEPRINTID->hkg_br_blueprint_property.BLUEPRINTID"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_tables": {
+          "items": [
+            "dim_blueprint",
+            "dim_collection",
+            "hkg_br_blueprint_collection"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_05_query_analysis": {
+        "answer_family": "schema_dataset",
+        "api_templates": {
+          "items": [
+            "datasets_by_schema"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "confidence": 0.95,
+        "domain_type": "DATASET_SCHEMA",
+        "fast_path": "blueprint_collection_count+datasets_by_schema",
+        "route_type": "SQL_ONLY",
+        "sql_template": "blueprint_collection_count",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "checkpoint_06_lookup_path": {
+        "api_families": {
+          "items": [
+            "datasets_by_schema",
+            "schema_registry_by_id",
+            "schema_by_name"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "api_mode": "required",
+        "family": "schema_dataset",
+        "join_path": {
+          "items": [
+            "dim_blueprint.blueprintid = hkg_br_blueprint_collection.blueprintid",
+            "hkg_br_blueprint_collection.collectionid = dim_collection.collectionid"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "required_ids": {
+          "items": [
+            "schema_id",
+            "blueprint_id",
+            "collection_id"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "tables": {
+          "items": [
+            "dim_blueprint",
+            "hkg_br_blueprint_collection",
+            "dim_collection"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_07_context_card": {
+        "estimated_metadata_tokens": 893,
+        "prompt_tokens": 1550,
+        "selected_apis": {
+          "items": [
+            "catalog_datasets"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "selected_card_name": "schema_dataset",
+        "selected_columns": {
+          "dim_blueprint": {
+            "items": [
+              "BLUEPRINTID",
+              "NAME",
+              "CLASS"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "dim_collection": {
+            "items": [
+              "COLLECTIONID",
+              "NAME",
+              "ROWCOUNT"
+            ],
+            "total_items": 4,
+            "truncated_items": true
+          },
+          "hkg_br_blueprint_collection": {
+            "items": [
+              "BLUEPRINTID",
+              "COLLECTIONID"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          }
+        },
+        "selected_tables": {
+          "items": [
+            "dim_blueprint",
+            "hkg_br_blueprint_collection",
+            "dim_collection"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_08_candidate_plans": {
+        "candidate_plan_names": {
+          "items": [
+            "generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "reason_selected": "highest pre-execution validation/relevance/cost score",
+        "scores": {
+          "generic_sql_first": 14.2472
+        },
+        "selected_plan": "generic_sql_first"
+      },
+      "checkpoint_09_plan_optimization": {
+        "call_budget_applied": false,
+        "optimized_step_count": 2,
+        "optimizer_actions": {
+          "items": [
+            "ensemble selected generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "original_step_count": 2,
+        "removed_api_skip_calls": 0,
+        "removed_duplicate_calls": 0,
+        "unresolved_placeholders_removed": 0
+      },
+      "checkpoint_10_evidence_policy": {
+        "allowed_api_families": {
+          "items": [
+            "datasets_by_schema"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "max_api_calls": 2,
+        "mode": "API_REQUIRED",
+        "reason": "Query family requires Adobe API evidence."
+      },
+      "checkpoint_11_call_budget": {
+        "final_planned_calls": 2,
+        "max_api_calls": 2,
+        "max_sql_calls": 1,
+        "max_total_tool_calls": 3,
+        "planned_api_calls": 1,
+        "planned_sql_calls": 1
+      },
+      "checkpoint_12_validation": {
+        "api_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_13_tool_execution": {
+        "preview": "{\"sql_calls_executed\": 1, \"api_calls_executed\": 1, \"dry_run_status\": true, \"row_counts\": {\"items\": [26], \"total_items\": 1, \"truncated_items\": false}, \"sql_results\": {\"items\": [{\"result_preview\": {\"items\": [{\"blueprint_id\": \"b591e935cfb3d52d3dc0c9e551e927d067b35d4b4b8af8bf\", \"blueprint_name\": \"Journey Inbound External Segment Profile Schema\", \"collection_count\": 2}, {\"blueprint_id\": \"76c67653e0972afbe5736e7955f3ab52eef458496ba3376d\", \"blueprint_name\": \"Adhoc XDM Schema for dataset hkg_adls_segment_profile_history_48082438-53cd-4303-b5a8-132acdf83a88\", \"collection_count\": 1}, {\"blueprint_id\": \"224d6998a3ce6b09d3c8641c4a01d7b2d20435ae0fa3ac19\", \"blueprint_name\": \"AJO Inbound Activity Event Schema\", \"collection_count\": 1}], \"total_items\": 3, \"truncated_items\": false}, \"ok\": true, \"row_count\": 26}], \"total_items\": 1, \"truncated_items\": false}, \"api_results\": {\"items\": [{\"result_preview\": {\"ok\": false, \"dry_run\": true, \"live_success\": false, \"evidence_state\": \"dry_run_unavailable\", \"error_ca...",
+        "truncated": true
+      },
+      "checkpoint_14_evidence_bus": {
+        "evidence": {
+          "counts": {
+            "items": [
+              2,
+              1,
+              1
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "ids": {
+            "schema_id": "b591e935cfb3d52d3dc0c9e551e927d067b35d4b4b8af8bf"
+          }
+        }
+      },
+      "checkpoint_15_answer_slots": {
+        "answer_intent": "COUNT",
+        "discrepancy_flags": {
+          "sql_api_discrepancy": false
+        },
+        "dry_run_flags": {
+          "dry_run": true
+        },
+        "missing_slots": {
+          "items": [
+            "count_shape"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "slots": {
+          "answer_family": "schema_dataset",
+          "api_error": false,
+          "counts": {
+            "items": [
+              "26",
+              "2",
+              "1"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "discrepancy": false,
+          "dry_run": true,
+          "entity_names": {
+            "items": [
+              "Journey Inbound External Segment Profile Schema",
+              "Adhoc XDM Schema for dataset hkg_adls_segment_profile_history_48082438-53cd-4303-b5a8-132acdf83a88",
+              "AJO Inbound Activity Event Schema"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names",
+              "counts",
+              "sql_row_count"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "sql_row_count": 26
+        }
+      },
+      "checkpoint_16_answer_verification": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "rewrite_applied": false,
+        "supported_claims_count": 2,
+        "unsupported_claims_count": 0,
+        "verifier_passed": true
+      },
+      "checkpoint_17_answer_reranking": {
+        "candidate_count": 0,
+        "selected_candidate_type": "base",
+        "selection_reason": "best verifier-passing answer"
+      },
+      "checkpoint_18_final_answer": {
+        "answer_length": 236,
+        "final_answer": "Based on the evidence provided, 2 datasets have been ingested using the same schema. These datasets use \"Journey Inbound External Segment Profile Schema\". Live API verification was not executed because Adobe credentials are unavailable.",
+        "final_token_estimate": 43
+      },
+      "checkpoint_evidence_match_scores": {
+        "api_match": 0.7,
+        "api_match_codes": {
+          "items": [
+            "API_DOMAIN_MATCH",
+            "API_CAPABILITY_MATCH",
+            "API_CANDIDATE_AVAILABLE"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "concrete_data_signal": true,
+        "live_api_signal": false,
+        "sql_match": 1.0,
+        "sql_match_codes": {
+          "items": [
+            "SQL_DOMAIN_MATCH",
+            "SQL_CAPABILITY_MATCH",
+            "CONCRETE_DATA_SIGNAL"
+          ],
+          "total_items": 5,
+          "truncated_items": true
+        }
+      },
+      "checkpoint_initial_evidence_branch_policy": {
+        "first_branch": "SQL",
+        "policy_codes": {
+          "items": [
+            "SQL_HIGH_API_HIGH"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "second_branch_policy": "API_AFTER_SQL_IF_NEEDED",
+        "shadow_only": true
+      },
+      "checkpoint_no_tool_safety_verifier": {
+        "action": "BLOCK_NO_TOOL",
+        "allow_no_tool": false,
+        "block": {
+          "items": [
+            "COUNT",
+            "REL",
+            "ENTITY_LOOKUP"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "capability_match_score": 1.0,
+        "clear_safe_api_family": false,
+        "evidence_need_score": 0.67,
+        "has_concrete_data_signal": true,
+        "no_tool_safety_score": 0.33
+      },
+      "checkpoint_objective_prompt_features": {
+        "cap": {
+          "items": [
+            "SQL_SCHEMA",
+            "API_SCHEMA_REGISTRY",
+            "SQL_DATASET"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "count": {
+          "items": [
+            "HOW_MANY"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "domain": {
+          "items": [
+            "SCHEMA",
+            "DATASET"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "entity": {
+          "items": [
+            "ID_LIKE"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "norm": "how many local snapshot relationships connect schemas and datasets? use only local snapshot evidence for the monitoring triage.",
+        "p": "How many local snapshot relationships connect schemas and datasets? Use only local snapshot evidence for the monitoring triage.",
+        "rel": {
+          "items": [
+            "USES"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "status": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "truncated_fields": 5
+      },
+      "checkpoint_post_sql_api_call_verifier": {
+        "codes": {
+          "items": [
+            "VERIFIED_SKIP_API"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "final_action": "SKIP_API",
+        "shadow_only": true,
+        "source": "DETERMINISTIC_HIGH_CONF"
+      },
+      "checkpoint_post_sql_decision_card": {
+        "allowed_outputs": {
+          "mode": {
+            "items": [
+              "CALL_API",
+              "SKIP_API",
+              "CAVEAT_ONLY"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          }
+        },
+        "answer_intent": "SCHEMA_DATASET",
+        "api_candidates": {
+          "items": [
+            {
+              "can_fill_roles": {
+                "items": [
+                  "id",
+                  "name",
+                  "detail"
+                ],
+                "total_items": 3,
+                "truncated_items": false
+              },
+              "endpoint_id": "catalog_datasets",
+              "family": "datasets_by_schema",
+              "live_health": "UNKNOWN",
+              "method": "GET",
+              "requires_path_param": false,
+              "safe_get": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "prompt_features": {
+          "items": [
+            "HOW_MANY",
+            "USES",
+            "SCHEMA"
+          ],
+          "total_items": 10,
+          "truncated_items": true
+        },
+        "sql_state": {
+          "direct_answer": true,
+          "execution": "SUCCESS",
+          "partial_answer": false,
+          "returned_roles": {
+            "items": [
+              "id",
+              "name",
+              "count"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "row_count_bucket": "MANY",
+          "validation": "PASS",
+          "zero_rows": false
+        },
+        "task": "POST_SQL_API_DECISION"
+      },
+      "checkpoint_post_sql_deterministic_policy": {
+        "api_evidence_signal": 0.35,
+        "codes": {
+          "items": [
+            "SQL_DIRECT_ANSWER"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "confidence": "HIGH",
+        "suggestion": "SKIP_API"
+      },
+      "checkpoint_post_sql_llm_advisor": {
+        "codes": {
+          "items": [
+            "SQL_DIRECT_ANSWER"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "conf": 1.0,
+        "mode": "SKIP_API",
+        "source": "DETERMINISTIC_BYPASS"
+      },
+      "checkpoint_routing_anti_hallucination_gate": {
+        "final_decision": {
+          "api": true,
+          "codes": {
+            "items": [
+              "FALLBACK"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "conf": 0.82,
+          "intent": "MIXED",
+          "need": "SQL_API",
+          "no_tool": false,
+          "sql": true
+        },
+        "final_gate": {
+          "ok": true,
+          "support": {
+            "caps": true,
+            "intent": true,
+            "need": true
+          }
+        },
+        "initial_decision": {
+          "api": true,
+          "codes": {
+            "items": [
+              "FALLBACK"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "conf": 0.82,
+          "intent": "MIXED",
+          "need": "SQL_API",
+          "no_tool": false,
+          "sql": true
+        },
+        "initial_gate": {
+          "ok": true,
+          "support": {
+            "caps": true,
+            "intent": true,
+            "need": true
+          }
+        },
+        "revision_attempted": false,
+        "revision_success": false,
+        "revision_token_estimate": 0
+      },
+      "checkpoint_semantic_intent_decision": {
+        "api": true,
+        "codes": {
+          "items": [
+            "FALLBACK"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "conf": 0.82,
+        "intent": "MIXED",
+        "need": "SQL_API",
+        "no_tool": false,
+        "sql": true
+      },
+      "checkpoint_semantic_route_decision_ladder": {
+        "action": "EVIDENCE_PIPELINE",
+        "context_token_cost": 281,
+        "low_low_case": false,
+        "promotion_allowed": false,
+        "shadow_only": true,
+        "tier_used": 0
+      },
+      "checkpoint_simple_prompt_gate": {
+        "confidence": 0.84,
+        "is_simple": false,
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: dataset, how many, local snapshot, schema.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      },
+      "checkpoint_sql_ast_validation": {
+        "preview": "{\"summaries\": {\"items\": [{\"enabled\": true, \"parsed_ok\": true, \"selected_tables\": {\"items\": [\"dim_blueprint\", \"hkg_br_blueprint_collection\", \"dim_collection\"], \"total_items\": 3, \"truncated_items\": false}, \"selected_columns\": {\"items\": [\"B.BLUEPRINTID\", \"B.NAME\", \"BC.BLUEPRINTID\"], \"total_items\": 6, \"truncated_items\": true}, \"unknown_columns\": {\"items\": [\"collection_count\"], \"total_items\": 1, \"truncated_items\": false}, \"destructive_sql_detected\": false, \"closest_column_suggestions\": {}, \"normalized_sql\": \"SELECT B.\\\"BLUEPRINTID\\\" AS blueprint_id, B.\\\"NAME\\\" AS blueprint_name, COUNT(DISTINCT C.\\\"COLLECTIONID\\\") AS collection_count FROM \\\"dim_blueprint\\\" AS B JOIN \\\"hkg_br_blueprint_collection\\\" AS BC ON B.\\\"BLUEPRINTID\\\" = BC.\\\"BLUEPRINTID\\\" JOIN \\\"dim_collection\\\" AS C ON BC.\\\"COLLECTIONID\\\" = C.\\\"COLLECTIONID\\\" GROUP BY B.\\\"BLUEPRINTID\\\", B.\\\"NAME\\\" ORDER BY collection_count DESC LIMIT 50\"}], \"total_items\": 1, \"truncated_items\": false}, \"parsed_ok\": true, \"selected_tables\": {\"items\": [\"...",
+        "truncated": true
+      }
+    },
+    "post_sql_advisor_blocked": false,
+    "post_sql_advisor_invoked": true,
+    "post_sql_advisor_verified": false,
+    "route_action": "SQL_THEN_API",
+    "runtime_ms": 48.354999627918005,
+    "sql_calls": 1,
+    "sql_tables": [
+      "dim_blueprint",
+      "dim_collection",
+      "hkg_br_blueprint_collection"
+    ],
+    "sql_used": true,
+    "trajectory_timing": {},
+    "unsupported_claims": 0
+  },
+  "gold_visible_to_runtime": false,
+  "grade": {
+    "answer_grounding_score": 1.0,
+    "api_endpoint_family_accuracy": 1.0,
+    "api_error_interpretation_correct": true,
+    "api_required_used_accuracy": 0.5,
+    "expected_evidence_need_accuracy": 0.75,
+    "expected_observable_trace_score": 0.6667,
+    "final_answer_correctness": 0.625,
+    "forbidden_claims_violation": false,
+    "live_empty_interpretation_correct": true,
+    "no_tool_false_negative": false,
+    "no_tool_false_positive": false,
+    "overall_score": 0.7104,
+    "required_facts_coverage": 0.0,
+    "route_accuracy": 0.75,
+    "sql_required_used_accuracy": 1.0,
+    "sql_table_accuracy": 1.0,
+    "tool_overuse": 1,
+    "tool_underuse": 0,
+    "unsupported_claims": 0
+  },
+  "mode": "latest_shadow_real",
+  "oracle_visible_to_runtime": false,
+  "prompt_id": "da500_0138",
+  "runtime_input": {
+    "prompt": "How many local snapshot relationships connect schemas and datasets? Use only local snapshot evidence for the monitoring triage.",
+    "prompt_id": "da500_0138"
+  },
+  "synthetic_sql_results_used": false,
+  "trajectory_path": "/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/dashagent_500_prompt_suite_eval_real/latest_shadow_real/da500_0138/trajectory.json"
+}

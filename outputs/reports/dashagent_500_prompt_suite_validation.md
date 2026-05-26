@@ -7,6 +7,10 @@
 - private_chain_of_thought_count: 0
 - secret_hit_count: 0
 - duplicate_prompt_count: 0
+- oracle_sql_reexecution_checked: 278
+- oracle_sql_reexecution_failures: 0
+- endpoint_catalog_validation_failures: 0
+- synthetic_prompt_artifact_count: 0
 - semantic_signature_duplicate_count: 0
 
 ## Category Counts
