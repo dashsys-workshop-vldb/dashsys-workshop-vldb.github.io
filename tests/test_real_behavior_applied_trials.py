@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from types import SimpleNamespace
 
 from dashagent.executor import AgentExecutor
+from dashagent.checkpoints import CheckpointLogger
+from dashagent.evidence_policy import API_REQUIRED, ApiNeedDecision
 from dashagent.planner import Plan, PlanStep
 
 
@@ -110,3 +113,48 @@ def test_post_sql_deterministic_applied_trial_preserves_live_api_prompt(tiny_pro
 
     assert [row["type"] for row in result["tool_results"]] == ["sql", "api"]
     assert client.calls == 1
+
+
+def test_post_sql_api_required_uses_api_need_mode(tiny_project):
+    cfg = replace(
+        tiny_project,
+        enable_post_sql_api_decision=True,
+        enable_post_sql_deterministic_applied_trial=True,
+        real_behavior_trial_mode="post_sql_deterministic_applied_real_trial",
+    )
+    executor = AgentExecutor(cfg)
+    analysis = SimpleNamespace(
+        answer_family="list",
+        api_need_decision=ApiNeedDecision(API_REQUIRED, "unit required API", 1, ["schema_list"]),
+    )
+    tool_results = [
+        {
+            "type": "sql",
+            "payload": {
+                "ok": True,
+                "row_count": 1,
+                "rows": [{"id": "schema-1", "name": "Schema One"}],
+            },
+        }
+    ]
+    api_step = PlanStep(
+        action="api",
+        purpose="unit required API",
+        method="GET",
+        url="/data/foundation/schemaregistry/tenant/schemas",
+        params={},
+    )
+
+    decision = executor._add_post_sql_api_decision_checkpoints(  # noqa: SLF001
+        "List current Adobe schemas",
+        analysis,
+        tool_results,
+        api_step,
+        CheckpointLogger(),
+    )
+
+    assert decision is not None
+    assert decision["api_required"] is True
+    applied = executor._post_sql_api_applied_decision(decision)  # noqa: SLF001
+    assert applied["applied"] is False
+    assert "API_REQUIRED" in applied["blockers"]

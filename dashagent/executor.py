@@ -41,7 +41,7 @@ from .evidence_policy import API_SKIP
 from .gated_sql_candidates import hard_case_triggers, select_gated_sql_candidate
 from .metadata_selector import MetadataSelector
 from .plan_ensemble import select_plan_candidate
-from .planner import ALL_STRATEGIES, LLM_SQL_STRATEGIES, Plan, PlanStep, STRATEGIES, StrategyPlanner
+from .planner import ALL_STRATEGIES, LLM_SQL_STRATEGIES, Plan, PlanStep, STRATEGIES, StrategyPlanner, execution_base_strategy
 from .query_normalizer import normalize_query
 from .query_tokens import extract_query_tokens
 from .llm_sql_generator import generate_sql_with_llm, repair_sql_with_llm
@@ -115,6 +115,7 @@ class AgentExecutor:
     ) -> dict[str, Any]:
         if strategy not in ALL_STRATEGIES:
             raise ValueError(f"Unknown strategy {strategy}. Expected one of {ALL_STRATEGIES}.")
+        execution_strategy = execution_base_strategy(strategy)
         qid = query_id or slugify(query)
         out_dir = output_dir or (self.config.outputs_dir / qid / strategy.lower())
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -250,14 +251,14 @@ class AgentExecutor:
             efficiency_role="avoids reparsing the query in later modules",
         )
         routing = self.router.route(normalization["matching_text"])
-        analysis_key = query_analysis_cache_key(query, strategy, self.config, self.cache_fingerprint)
+        analysis_key = query_analysis_cache_key(query, execution_strategy, self.config, self.cache_fingerprint)
         analysis = get_query_analysis_cache(analysis_key)
         if analysis is None:
             analysis = analyze_query(
                 query,
                 routing,
                 self.schema_index,
-                strategy=strategy,
+                strategy=execution_strategy,
                 config=self.config,
                 endpoint_catalog=self.endpoint_catalog,
                 normalized=normalization,
@@ -456,14 +457,14 @@ class AgentExecutor:
         preprocessing_time = time.perf_counter() - preprocessing_start
 
         planning_start = time.perf_counter()
-        plan_strategy = "SQL_FIRST_API_VERIFY" if strategy in LLM_SQL_STRATEGIES else strategy
+        plan_strategy = "SQL_FIRST_API_VERIFY" if strategy in LLM_SQL_STRATEGIES else execution_strategy
         if strategy in LLM_SQL_STRATEGIES:
             plan = self._create_llm_sql_plan(query, routing, metadata, strategy, analysis, checkpoint_logger)
         else:
             plan = self.planner.create_plan(query, routing, metadata, plan_strategy, analysis=analysis)
         original_planned_step_count = len(plan.steps)
         ensemble_metadata = None
-        if strategy == "SQL_FIRST_API_VERIFY":
+        if plan_strategy == "SQL_FIRST_API_VERIFY":
             selection = select_plan_candidate(
                 query=query,
                 routing=routing,
@@ -527,7 +528,7 @@ class AgentExecutor:
             efficiency_role="skips or caps API calls when SQL evidence is enough",
         )
         api_families = [step.family for step in plan.steps if step.action == "api" and step.family]
-        budget = budget_for_strategy(strategy, api_families, analysis.api_need_decision.max_api_calls)
+        budget = budget_for_strategy(plan_strategy, api_families, analysis.api_need_decision.max_api_calls)
         checkpoint_logger.add_checkpoint(
             "checkpoint_11_call_budget",
             stage="efficiency control",
@@ -896,7 +897,7 @@ class AgentExecutor:
         trajectory.set_timing("answer_time", time.perf_counter() - answer_start)
         trajectory.set_checkpoints(checkpoint_logger.to_list())
         trajectory_payload = trajectory.finish(final_answer)
-        if self.config.enable_official_token_reduction and strategy == "SQL_FIRST_API_VERIFY":
+        if self.config.enable_official_token_reduction and plan_strategy == "SQL_FIRST_API_VERIFY":
             trajectory_payload, _ = apply_token_reduction_to_trajectory(trajectory_payload)
         trajectory_path = out_dir / "trajectory.json"
         trajectory_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1273,7 +1274,15 @@ class AgentExecutor:
                 policy,
                 enabled=self.config.post_sql_llm_advisor_enabled,
             )
-            api_required = str(getattr(getattr(analysis, "api_need_decision", None), "need", "") or "").upper() == "API_REQUIRED"
+            api_need_decision = getattr(analysis, "api_need_decision", None)
+            api_required = (
+                str(
+                    getattr(api_need_decision, "mode", None)
+                    or getattr(api_need_decision, "need", "")
+                    or ""
+                ).upper()
+                == "API_REQUIRED"
+            )
             verified = verify_post_sql_api_advice(advisor, card, self.endpoint_catalog, api_required=api_required)
             checkpoint_logger.add_checkpoint(
                 "checkpoint_post_sql_decision_card",

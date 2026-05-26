@@ -4,7 +4,7 @@ import csv
 import json
 import re
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
@@ -15,7 +15,7 @@ from .config import Config, DEFAULT_CONFIG
 from .db import DuckDBDatabase
 from .endpoint_catalog import normalize_api_path
 from .executor import AgentExecutor
-from .planner import STRATEGIES
+from .planner import APPLIED_TRIAL_STRATEGIES, STRATEGIES
 
 
 @dataclass
@@ -75,11 +75,13 @@ class EvalHarness:
             return self._write_empty_results(strategies)
 
         rows: list[dict[str, Any]] = []
+        strategy_executors: dict[str, AgentExecutor] = {}
         for example in examples:
             for strategy in strategies:
                 start = time.perf_counter()
                 output_dir = self.config.outputs_dir / "eval" / example.query_id / strategy.lower()
-                result = self.executor.run(
+                executor = self._executor_for_strategy(strategy, strategy_executors)
+                result = executor.run(
                     example.query,
                     strategy=strategy,
                     query_id=example.query_id,
@@ -152,6 +154,20 @@ class EvalHarness:
         self._write_outputs(payload, strict=strict)
         return payload
 
+    def _executor_for_strategy(self, strategy: str, cache: dict[str, AgentExecutor]) -> AgentExecutor:
+        if strategy not in APPLIED_TRIAL_STRATEGIES:
+            return self.executor
+        if strategy not in cache:
+            trial_config = config_for_applied_trial_strategy(self.config, strategy)
+            cache[strategy] = AgentExecutor(
+                trial_config,
+                db=self.executor.db,
+                schema_index=self.executor.schema_index,
+                endpoint_catalog=self.executor.endpoint_catalog,
+                api_client=self.executor.api_client,
+            )
+        return cache[strategy]
+
     def _write_empty_results(self, strategies: list[str]) -> dict[str, Any]:
         payload = {
             "examples": 0,
@@ -187,11 +203,11 @@ class EvalHarness:
         rows = payload.get("rows", [])
         with csv_path.open("w", encoding="utf-8", newline="") as handle:
             if rows:
-                writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+                writer = csv.DictWriter(handle, fieldnames=list(rows[0]), lineterminator="\n")
                 writer.writeheader()
                 writer.writerows(rows)
             else:
-                writer = csv.DictWriter(handle, fieldnames=["message"])
+                writer = csv.DictWriter(handle, fieldnames=["message"], lineterminator="\n")
                 writer.writeheader()
                 writer.writerow({"message": payload["summary"]["message"]})
         (self.config.outputs_dir / f"strategy_comparison{suffix}.md").write_text(
@@ -728,3 +744,46 @@ def render_strategy_comparison(payload: dict[str, Any]) -> str:
         lines.append(f"- {item}")
     lines.append("")
     return "\n".join(lines)
+
+
+def config_for_applied_trial_strategy(config: Config, strategy: str) -> Config:
+    if strategy == "STAGED_EVIDENCE_APPLIED_TRIAL":
+        return replace(
+            config,
+            enable_staged_evidence_policy=True,
+            staged_evidence_policy_shadow_only=False,
+            enable_post_sql_api_decision=True,
+            post_sql_api_decision_shadow_only=False,
+            enable_staged_evidence_applied_trial=True,
+            post_sql_llm_advisor_enabled=False,
+            real_behavior_trial_mode=strategy,
+        )
+    if strategy == "POST_SQL_DETERMINISTIC_APPLIED_TRIAL":
+        return replace(
+            config,
+            enable_post_sql_api_decision=True,
+            post_sql_api_decision_shadow_only=False,
+            enable_post_sql_deterministic_applied_trial=True,
+            post_sql_llm_advisor_enabled=False,
+            real_behavior_trial_mode=strategy,
+        )
+    if strategy == "COMBINED_SAFE_APPLIED_TRIAL":
+        return replace(
+            config,
+            enable_objective_prompt_features=True,
+            enable_semantic_intent_classifier=True,
+            enable_semantic_route_decision_ladder=True,
+            semantic_route_shadow_only=False,
+            enable_staged_evidence_policy=True,
+            staged_evidence_policy_shadow_only=False,
+            enable_post_sql_api_decision=True,
+            post_sql_api_decision_shadow_only=False,
+            enable_semantic_no_tool_applied_trial=True,
+            enable_staged_evidence_applied_trial=True,
+            enable_post_sql_deterministic_applied_trial=True,
+            enable_combined_safe_applied_trial=True,
+            post_sql_llm_advisor_enabled=False,
+            enable_post_sql_llm_advisor_applied_trial=False,
+            real_behavior_trial_mode=strategy,
+        )
+    return config
