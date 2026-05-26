@@ -88,6 +88,92 @@ def build_multi_candidate_structured_sql_plan_prompt(
     )
 
 
+def build_retrieved_schema_sql_candidates_prompt(
+    prompt: str,
+    retrieval_context: dict[str, Any],
+    examples: list[dict[str, Any]],
+    plan: dict[str, Any] | None = None,
+) -> PromptBundle:
+    return PromptBundle(
+        system_prompt=(
+            "Create exactly three structured SQL plan candidates using the retrieved schema context and SQL skeletons. "
+            "Return JSON only with key \"candidates\". Each candidate must include: candidate_id, answer_intent, "
+            "primary_table, tables_needed, columns_needed, filters, aggregation, order_by, limit, reason, confidence. "
+            "Do not output raw SQL. Use actual table and column names from retrieved_tables/retrieved_columns only. "
+            "Do not invent business-term tables such as journey, audience, schema, dataset, destination, or connector. "
+            "Use value_links for quoted entity filters. Use timestamp semantics: published/deployed/launched/released "
+            "prefer deployed/published timestamp columns; updated/modified prefer updated columns; created prefers created columns."
+        ),
+        user_prompt=json.dumps(
+            {
+                "prompt": prompt,
+                "tool_plan": plan or {},
+                "retrieval_context": compact_preview(retrieval_context, 9000),
+                "sql_skeleton_examples": examples[:4],
+            },
+            indent=2,
+            default=str,
+        ),
+    )
+
+
+def build_sql_review_prompt(
+    prompt: str,
+    candidate_plan: dict[str, Any],
+    compiled_sql: str,
+    validation: dict[str, Any],
+    probe: dict[str, Any],
+    retrieval_context: dict[str, Any],
+) -> PromptBundle:
+    return PromptBundle(
+        system_prompt=(
+            "Review whether a structured SQL candidate semantically matches the prompt. Return JSON only with keys: "
+            '"semantically_matches_prompt", "likely_wrong_table", "likely_wrong_columns", '
+            '"likely_missing_filter", "likely_wrong_aggregation", "repair_suggestion". '
+            "Focus on table/entity match, requested columns, filters, aggregation, timestamp semantics, and validation/probe feedback."
+        ),
+        user_prompt=json.dumps(
+            {
+                "prompt": prompt,
+                "candidate_plan": candidate_plan,
+                "compiled_sql": compiled_sql,
+                "validation": validation,
+                "probe": probe,
+                "retrieval_context": compact_preview(retrieval_context, 9000),
+            },
+            indent=2,
+            default=str,
+        ),
+    )
+
+
+def build_retrieved_sql_plan_repair_prompt(
+    prompt: str,
+    retrieval_context: dict[str, Any],
+    bad_plan: dict[str, Any],
+    review: dict[str, Any],
+    errors: list[str],
+) -> PromptBundle:
+    return PromptBundle(
+        system_prompt=(
+            "Return corrected structured SQL plan JSON only. Use actual tables and columns from the retrieved schema context. "
+            "Fix only the listed validation, compiler, probe, or semantic-review problems. Do not output raw SQL. "
+            "Do not switch to API. Do not invent tables or columns."
+        ),
+        user_prompt=json.dumps(
+            {
+                "prompt": prompt,
+                "bad_plan": bad_plan,
+                "review": review,
+                "errors": errors,
+                "retrieval_context": compact_preview(retrieval_context, 9000),
+            },
+            indent=2,
+            default=str,
+        ),
+    )
+
+
 def build_sql_repair_prompt(
     prompt: str,
     context: dict[str, Any],

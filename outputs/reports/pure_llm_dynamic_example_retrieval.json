@@ -1,0 +1,280 @@
+{
+  "diagnostic_only": true,
+  "examples": [
+    {
+      "examples": [
+        {
+          "natural_language_pattern": "count entities, optionally filtered by status or name",
+          "schema_roles": [
+            "entity_table",
+            "id_column",
+            "status_column"
+          ],
+          "sql_skeleton": "SELECT COUNT(DISTINCT \"IMSORGID\") AS count FROM \"dim_campaign\" WHERE \"STATE\" = ?",
+          "when_not_to_use": "Do not use for list, date, or status questions unless the prompt asks for a count.",
+          "when_to_use": "Use for how many, number of, count, or total questions over one entity table."
+        },
+        {
+          "natural_language_pattern": "lookup published or deployed timestamp by named entity",
+          "schema_roles": [
+            "entity_table",
+            "name_column",
+            "published_timestamp_column"
+          ],
+          "sql_skeleton": "SELECT \"SANDBOXNAME\", \"LASTDEPLOYEDTIME\" FROM \"dim_campaign\" WHERE \"SANDBOXNAME\" = ? LIMIT ?",
+          "when_not_to_use": "Do not use for generic updated or modified wording.",
+          "when_to_use": "Use when the prompt asks when something was published, deployed, launched, or released."
+        },
+        {
+          "natural_language_pattern": "list entity IDs and names",
+          "schema_roles": [
+            "entity_table",
+            "id_column",
+            "name_column"
+          ],
+          "sql_skeleton": "SELECT \"IMSORGID\", \"SANDBOXNAME\" FROM \"dim_campaign\" LIMIT ?",
+          "when_not_to_use": "Do not use when the prompt asks only for a scalar count.",
+          "when_to_use": "Use for list, show, which, names, or IDs questions."
+        },
+        {
+          "natural_language_pattern": "lookup created timestamp by named entity",
+          "schema_roles": [
+            "entity_table",
+            "name_column",
+            "created_timestamp_column"
+          ],
+          "sql_skeleton": "SELECT \"SANDBOXNAME\", \"CREATEDTIME\" FROM \"dim_campaign\" WHERE \"SANDBOXNAME\" = ? LIMIT ?",
+          "when_not_to_use": "Do not use for published, deployed, or updated wording.",
+          "when_to_use": "Use when the prompt asks when something was created or first added."
+        }
+      ],
+      "prompt_pattern": "How many journeys are published?",
+      "retrieved_tables": [
+        "dim_campaign",
+        "dim_property",
+        "dim_connector",
+        "dim_blueprint"
+      ],
+      "value_links": []
+    },
+    {
+      "examples": [
+        {
+          "natural_language_pattern": "lookup entity status by quoted or named entity",
+          "schema_roles": [
+            "entity_table",
+            "name_column",
+            "status_column"
+          ],
+          "sql_skeleton": "SELECT \"SANDBOXNAME\", \"STATE\" FROM \"dim_campaign\" WHERE \"SANDBOXNAME\" = ? LIMIT ?",
+          "when_not_to_use": "Do not use if no status-like column exists.",
+          "when_to_use": "Use for status or state questions about a named entity."
+        },
+        {
+          "natural_language_pattern": "lookup published or deployed timestamp by named entity",
+          "schema_roles": [
+            "entity_table",
+            "name_column",
+            "published_timestamp_column"
+          ],
+          "sql_skeleton": "SELECT \"SANDBOXNAME\", \"LASTDEPLOYEDTIME\" FROM \"dim_campaign\" WHERE \"SANDBOXNAME\" = ? LIMIT ?",
+          "when_not_to_use": "Do not use for generic updated or modified wording.",
+          "when_to_use": "Use when the prompt asks when something was published, deployed, launched, or released."
+        },
+        {
+          "natural_language_pattern": "count entities, optionally filtered by status or name",
+          "schema_roles": [
+            "entity_table",
+            "id_column",
+            "status_column"
+          ],
+          "sql_skeleton": "SELECT COUNT(DISTINCT \"IMSORGID\") AS count FROM \"dim_campaign\" WHERE \"STATE\" = ?",
+          "when_not_to_use": "Do not use for list, date, or status questions unless the prompt asks for a count.",
+          "when_to_use": "Use for how many, number of, count, or total questions over one entity table."
+        },
+        {
+          "natural_language_pattern": "list entity IDs and names",
+          "schema_roles": [
+            "entity_table",
+            "id_column",
+            "name_column"
+          ],
+          "sql_skeleton": "SELECT \"IMSORGID\", \"SANDBOXNAME\" FROM \"dim_campaign\" LIMIT ?",
+          "when_not_to_use": "Do not use when the prompt asks only for a scalar count.",
+          "when_to_use": "Use for list, show, which, names, or IDs questions."
+        }
+      ],
+      "prompt_pattern": "When was the journey 'Welcome Journey' published?",
+      "retrieved_tables": [
+        "dim_campaign",
+        "dim_connector",
+        "dim_blueprint",
+        "dim_collection"
+      ],
+      "value_links": [
+        {
+          "candidate_columns": [
+            {
+              "column": "SANDBOXNAME",
+              "role": "name",
+              "table": "dim_campaign"
+            },
+            {
+              "column": "NAME",
+              "role": "name",
+              "table": "dim_campaign"
+            },
+            {
+              "column": "DATAFLOWNAME",
+              "role": "name",
+              "table": "dim_connector"
+            },
+            {
+              "column": "CONNECTIONSPECNAME",
+              "role": "name",
+              "table": "dim_connector"
+            },
+            {
+              "column": "NAME",
+              "role": "name",
+              "table": "dim_connector"
+            },
+            {
+              "column": "SOURCEACCOUNTNAME",
+              "role": "name",
+              "table": "dim_connector"
+            },
+            {
+              "column": "NAME",
+              "role": "name",
+              "table": "dim_blueprint"
+            },
+            {
+              "column": "NAME",
+              "role": "name",
+              "table": "dim_collection"
+            }
+          ],
+          "source": "quoted_prompt_text",
+          "value": "Welcome Journey"
+        }
+      ]
+    },
+    {
+      "examples": [
+        {
+          "natural_language_pattern": "list entity IDs and names",
+          "schema_roles": [
+            "entity_table",
+            "id_column",
+            "name_column"
+          ],
+          "sql_skeleton": "SELECT \"COLLECTIONID\", \"NAME\" FROM \"dim_collection\" LIMIT ?",
+          "when_not_to_use": "Do not use when the prompt asks only for a scalar count.",
+          "when_to_use": "Use for list, show, which, names, or IDs questions."
+        },
+        {
+          "natural_language_pattern": "count entities, optionally filtered by status or name",
+          "schema_roles": [
+            "entity_table",
+            "id_column",
+            "status_column"
+          ],
+          "sql_skeleton": "SELECT COUNT(DISTINCT \"COLLECTIONID\") AS count FROM \"dim_collection\" WHERE \"STATE\" = ?",
+          "when_not_to_use": "Do not use for list, date, or status questions unless the prompt asks for a count.",
+          "when_to_use": "Use for how many, number of, count, or total questions over one entity table."
+        },
+        {
+          "natural_language_pattern": "lookup created timestamp by named entity",
+          "schema_roles": [
+            "entity_table",
+            "name_column",
+            "created_timestamp_column"
+          ],
+          "sql_skeleton": "SELECT \"NAME\", \"CREATEDTIME\" FROM \"dim_collection\" WHERE \"NAME\" = ? LIMIT ?",
+          "when_not_to_use": "Do not use for published, deployed, or updated wording.",
+          "when_to_use": "Use when the prompt asks when something was created or first added."
+        },
+        {
+          "natural_language_pattern": "lookup entity status by quoted or named entity",
+          "schema_roles": [
+            "entity_table",
+            "name_column",
+            "status_column"
+          ],
+          "sql_skeleton": "SELECT \"NAME\", \"STATE\" FROM \"dim_collection\" WHERE \"NAME\" = ? LIMIT ?",
+          "when_not_to_use": "Do not use if no status-like column exists.",
+          "when_to_use": "Use for status or state questions about a named entity."
+        }
+      ],
+      "prompt_pattern": "List dataset names and IDs.",
+      "retrieved_tables": [
+        "dim_collection",
+        "dim_campaign",
+        "dim_connector",
+        "dim_blueprint"
+      ],
+      "value_links": []
+    },
+    {
+      "examples": [
+        {
+          "natural_language_pattern": "lookup entity status by quoted or named entity",
+          "schema_roles": [
+            "entity_table",
+            "name_column",
+            "status_column"
+          ],
+          "sql_skeleton": "SELECT \"DATAFLOWNAME\", \"STATE\" FROM \"dim_target\" WHERE \"DATAFLOWNAME\" = ? LIMIT ?",
+          "when_not_to_use": "Do not use if no status-like column exists.",
+          "when_to_use": "Use for status or state questions about a named entity."
+        },
+        {
+          "natural_language_pattern": "count entities, optionally filtered by status or name",
+          "schema_roles": [
+            "entity_table",
+            "id_column",
+            "status_column"
+          ],
+          "sql_skeleton": "SELECT COUNT(DISTINCT \"TARGETID\") AS count FROM \"dim_target\" WHERE \"STATE\" = ?",
+          "when_not_to_use": "Do not use for list, date, or status questions unless the prompt asks for a count.",
+          "when_to_use": "Use for how many, number of, count, or total questions over one entity table."
+        },
+        {
+          "natural_language_pattern": "list entity IDs and names",
+          "schema_roles": [
+            "entity_table",
+            "id_column",
+            "name_column"
+          ],
+          "sql_skeleton": "SELECT \"TARGETID\", \"DATAFLOWNAME\" FROM \"dim_target\" LIMIT ?",
+          "when_not_to_use": "Do not use when the prompt asks only for a scalar count.",
+          "when_to_use": "Use for list, show, which, names, or IDs questions."
+        },
+        {
+          "natural_language_pattern": "lookup published or deployed timestamp by named entity",
+          "schema_roles": [
+            "entity_table",
+            "name_column",
+            "published_timestamp_column"
+          ],
+          "sql_skeleton": "SELECT \"DATAFLOWNAME\", \"LASTDEPLOYEDTIME\" FROM \"dim_target\" WHERE \"DATAFLOWNAME\" = ? LIMIT ?",
+          "when_not_to_use": "Do not use for generic updated or modified wording.",
+          "when_to_use": "Use when the prompt asks when something was published, deployed, launched, or released."
+        }
+      ],
+      "prompt_pattern": "What is the status of active destinations?",
+      "retrieved_tables": [
+        "dim_target",
+        "dim_segment",
+        "dim_campaign",
+        "dim_collection"
+      ],
+      "value_links": []
+    }
+  ],
+  "generated_at": "2026-05-26T08:04:24.751574+00:00",
+  "gold_leakage_policy": "skeletons_only_no_query_id_no_gold_answers",
+  "promotion_allowed": false,
+  "report_type": "pure_llm_dynamic_example_retrieval"
+}

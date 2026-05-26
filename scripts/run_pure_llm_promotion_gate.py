@@ -31,6 +31,13 @@ def run_pure_llm_promotion_gate(config: Config | None = None) -> dict[str, Any]:
     reports_dir.mkdir(parents=True, exist_ok=True)
     eval_payload = _load_json(reports_dir / "pure_llm_tool_agent_eval.json")
     systems = (eval_payload.get("summary") or {}).get("systems", [])
+    executed_new_rows = int((eval_payload.get("summary") or {}).get("executed_new_llm_rows") or 0)
+    unscored_new_variants = [
+        item
+        for item in systems
+        if str(item.get("system") or "").endswith("_v1")
+        and not isinstance(item.get("strict_final_score"), (int, float))
+    ]
     pure_systems = [
         item
         for item in systems
@@ -50,7 +57,11 @@ def run_pure_llm_promotion_gate(config: Config | None = None) -> dict[str, Any]:
     beats_current_pure = isinstance(best_score, (int, float)) and best_score > 0.2244
     beats_controller = isinstance(best_score, (int, float)) and best_score > 0.6328
     beats_full = isinstance(best_score, (int, float)) and best_score > FULL_SYSTEM_REFERENCE
-    recommendation = _recommendation(best_score, beats_current_pure, beats_controller, beats_full, unsupported, sql_score)
+    recommendation = (
+        "pure_llm_stabilization_needed"
+        if executed_new_rows == 0 and unscored_new_variants
+        else _recommendation(best_score, beats_current_pure, beats_controller, beats_full, unsupported, sql_score)
+    )
     payload = redact_secrets(
         {
             "report_type": REPORT_STEM,
@@ -64,6 +75,8 @@ def run_pure_llm_promotion_gate(config: Config | None = None) -> dict[str, Any]:
             "best_overall_pure_strict_score": best_overall.get("strict_final_score"),
             "best_sql_score": sql_score,
             "unsupported_claim_count": unsupported,
+            "executed_new_llm_rows": executed_new_rows,
+            "unscored_new_variants": [item.get("system") for item in unscored_new_variants],
             "beats_current_guided_pure_llm": beats_current_pure,
             "beats_controller": beats_controller,
             "beats_full_system": beats_full,

@@ -1,6 +1,6 @@
 # Pure LLM Promotion Gate
 
-- Recommendation: `pure_llm_still_blocked_by_sql_generation`
+- Recommendation: `pure_llm_stabilization_needed`
 - Promotion allowed: `False`
-- Best variant: `conservative_sql_first_multi_candidate_v1`
-- Best strict score: `-0.0177`
+- Best variant: `GUIDED_REAL_LLM_TWO_TOOLS_BASELINE`
+- Best strict score: `0.2244`

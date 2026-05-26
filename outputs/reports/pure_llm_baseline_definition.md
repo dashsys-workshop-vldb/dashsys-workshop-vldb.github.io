@@ -22,3 +22,8 @@ All variants are diagnostic/shadow-only.
 - `multi_candidate_sql_plan_with_probe_v1`: Multi-candidate SQL planning with a safe one-row execution probe before selection.
 - `multi_candidate_sql_grounded_answer_v1`: Multi-candidate SQL planning plus compact SQL execution evidence in answer grounding.
 - `conservative_sql_first_multi_candidate_v1`: Conservative SQL-first multi-candidate variant; API-only remains limited to explicit live/API needs or SQL-impossible prompts.
+- `retrieved_schema_sql_agent_v1`: Pure LLM text-to-SQL with Vanna-style schema retrieval, generic SQL skeleton examples, and deterministic compilation.
+- `reviewed_sql_repair_agent_v1`: Adds LLM SQL review and structured-plan repair feedback to the retrieved-schema SQL agent.
+- `execution_guided_sql_agent_v1`: Adds safe one-row execution probes before selected SQL execution.
+- `evidence_grounded_sql_agent_v1`: Adds compact executed-SQL evidence bridging and answer grounding fallback.
+- `full_retrieval_repair_grounded_pure_llm_v1`: Combines retrieval, generic examples, SQL review/repair, execution probes, and evidence-grounded answer synthesis.

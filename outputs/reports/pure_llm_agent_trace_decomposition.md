@@ -2,5 +2,4 @@
 
 Diagnostic-only trace-level failure report.
 
-- `api_validation_failed`: `1`
-- `no_clear_failure`: `9`
+- `llm_unavailable`: `10`

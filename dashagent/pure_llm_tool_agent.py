@@ -17,6 +17,7 @@ from .llm_sql_execution_evidence_bridge import build_sql_execution_evidence
 from .llm_sql_repair_loop import run_sql_repair_loop
 from .llm_sql_result_answer_grounder import ground_sql_result_answer
 from .llm_tool_agent_prompts import build_api_candidate_prompt, build_planning_prompt, parse_json_object
+from .pure_llm_text_to_sql_pipeline import run_pure_llm_text_to_sql_pipeline
 from .schema_index import SchemaIndex
 from .trajectory import estimate_tokens, redact_secrets
 from .validators import APIValidator, SQLValidator
@@ -41,6 +42,11 @@ MULTI_CANDIDATE_SQL_PLAN_V1 = "multi_candidate_sql_plan_v1"
 MULTI_CANDIDATE_SQL_PLAN_WITH_PROBE_V1 = "multi_candidate_sql_plan_with_probe_v1"
 MULTI_CANDIDATE_SQL_GROUNDED_ANSWER_V1 = "multi_candidate_sql_grounded_answer_v1"
 CONSERVATIVE_SQL_FIRST_MULTI_CANDIDATE_V1 = "conservative_sql_first_multi_candidate_v1"
+RETRIEVED_SCHEMA_SQL_AGENT_V1 = "retrieved_schema_sql_agent_v1"
+REVIEWED_SQL_REPAIR_AGENT_V1 = "reviewed_sql_repair_agent_v1"
+EXECUTION_GUIDED_SQL_AGENT_V1 = "execution_guided_sql_agent_v1"
+EVIDENCE_GROUNDED_SQL_AGENT_V1 = "evidence_grounded_sql_agent_v1"
+FULL_RETRIEVAL_REPAIR_GROUNDED_PURE_LLM_V1 = "full_retrieval_repair_grounded_pure_llm_v1"
 
 PURE_LLM_TOOL_AGENT_VARIANTS = [
     STRUCTURED_PLAN_THEN_TOOLS,
@@ -62,6 +68,11 @@ PURE_LLM_TOOL_AGENT_VARIANTS = [
     MULTI_CANDIDATE_SQL_PLAN_WITH_PROBE_V1,
     MULTI_CANDIDATE_SQL_GROUNDED_ANSWER_V1,
     CONSERVATIVE_SQL_FIRST_MULTI_CANDIDATE_V1,
+    RETRIEVED_SCHEMA_SQL_AGENT_V1,
+    REVIEWED_SQL_REPAIR_AGENT_V1,
+    EXECUTION_GUIDED_SQL_AGENT_V1,
+    EVIDENCE_GROUNDED_SQL_AGENT_V1,
+    FULL_RETRIEVAL_REPAIR_GROUNDED_PURE_LLM_V1,
 ]
 
 
@@ -253,6 +264,66 @@ VARIANT_CAPABILITIES = {
         "force_sql_when_high_confidence": True,
         "api_only_requires_sql_unavailable": True,
     },
+    RETRIEVED_SCHEMA_SQL_AGENT_V1: {
+        "structured_plan": True,
+        "schema_context": True,
+        "retrieval_text_to_sql_pipeline": True,
+        "api_guard": True,
+        "evidence_locked_answer": True,
+        "evidence_source_planner": True,
+        "semantic_sql_verify": True,
+    },
+    REVIEWED_SQL_REPAIR_AGENT_V1: {
+        "structured_plan": True,
+        "schema_context": True,
+        "retrieval_text_to_sql_pipeline": True,
+        "review_repair": True,
+        "api_guard": True,
+        "evidence_locked_answer": True,
+        "evidence_source_planner": True,
+        "semantic_sql_verify": True,
+    },
+    EXECUTION_GUIDED_SQL_AGENT_V1: {
+        "structured_plan": True,
+        "schema_context": True,
+        "retrieval_text_to_sql_pipeline": True,
+        "review_repair": True,
+        "execution_probe": True,
+        "api_guard": True,
+        "evidence_locked_answer": True,
+        "evidence_source_planner": True,
+        "semantic_sql_verify": True,
+    },
+    EVIDENCE_GROUNDED_SQL_AGENT_V1: {
+        "structured_plan": True,
+        "schema_context": True,
+        "retrieval_text_to_sql_pipeline": True,
+        "review_repair": True,
+        "execution_probe": True,
+        "evidence_grounding": True,
+        "sql_result_answer_grounder": True,
+        "sql_execution_evidence_bridge": True,
+        "api_guard": True,
+        "evidence_locked_answer": True,
+        "evidence_source_planner": True,
+        "semantic_sql_verify": True,
+    },
+    FULL_RETRIEVAL_REPAIR_GROUNDED_PURE_LLM_V1: {
+        "structured_plan": True,
+        "schema_context": True,
+        "retrieval_text_to_sql_pipeline": True,
+        "review_repair": True,
+        "execution_probe": True,
+        "evidence_grounding": True,
+        "sql_result_answer_grounder": True,
+        "sql_execution_evidence_bridge": True,
+        "api_guard": True,
+        "evidence_locked_answer": True,
+        "evidence_source_planner": True,
+        "semantic_sql_verify": True,
+        "force_sql_when_high_confidence": True,
+        "api_only_requires_sql_unavailable": True,
+    },
 }
 
 
@@ -382,6 +453,36 @@ def pure_llm_baseline_definitions() -> list[dict[str, Any]]:
             "capabilities": VARIANT_CAPABILITIES[CONSERVATIVE_SQL_FIRST_MULTI_CANDIDATE_V1],
             "status": "shadow_diagnostic",
         },
+        {
+            "variant": RETRIEVED_SCHEMA_SQL_AGENT_V1,
+            "description": "Pure LLM text-to-SQL with Vanna-style schema retrieval, generic SQL skeleton examples, and deterministic compilation.",
+            "capabilities": VARIANT_CAPABILITIES[RETRIEVED_SCHEMA_SQL_AGENT_V1],
+            "status": "shadow_diagnostic",
+        },
+        {
+            "variant": REVIEWED_SQL_REPAIR_AGENT_V1,
+            "description": "Adds LLM SQL review and structured-plan repair feedback to the retrieved-schema SQL agent.",
+            "capabilities": VARIANT_CAPABILITIES[REVIEWED_SQL_REPAIR_AGENT_V1],
+            "status": "shadow_diagnostic",
+        },
+        {
+            "variant": EXECUTION_GUIDED_SQL_AGENT_V1,
+            "description": "Adds safe one-row execution probes before selected SQL execution.",
+            "capabilities": VARIANT_CAPABILITIES[EXECUTION_GUIDED_SQL_AGENT_V1],
+            "status": "shadow_diagnostic",
+        },
+        {
+            "variant": EVIDENCE_GROUNDED_SQL_AGENT_V1,
+            "description": "Adds compact executed-SQL evidence bridging and answer grounding fallback.",
+            "capabilities": VARIANT_CAPABILITIES[EVIDENCE_GROUNDED_SQL_AGENT_V1],
+            "status": "shadow_diagnostic",
+        },
+        {
+            "variant": FULL_RETRIEVAL_REPAIR_GROUNDED_PURE_LLM_V1,
+            "description": "Combines retrieval, generic examples, SQL review/repair, execution probes, and evidence-grounded answer synthesis.",
+            "capabilities": VARIANT_CAPABILITIES[FULL_RETRIEVAL_REPAIR_GROUNDED_PURE_LLM_V1],
+            "status": "shadow_diagnostic",
+        },
     ]
 
 
@@ -429,21 +530,37 @@ def run_pure_llm_tool_agent_variant(
     sql_result: dict[str, Any] | None = None
     sql_evidence: dict[str, Any] | None = None
     if bool(plan.get("needs_sql", True)):
-        repair = run_sql_repair_loop(
-            prompt,
-            context,
-            db,
-            SQLValidator(schema_index),
-            llm_client=client,
-            plan=plan,
-            max_repair_rounds=2 if capabilities.get("sql_repair") else 0,
-            structured_sql_plan=bool(capabilities.get("structured_sql_plan")),
-            semantic_verify=bool(capabilities.get("semantic_sql_verify")),
-            multi_candidate_sql_plan=bool(capabilities.get("multi_candidate_sql_plan")),
-            execution_probe=bool(capabilities.get("execution_probe")),
-        )
+        if capabilities.get("retrieval_text_to_sql_pipeline"):
+            repair = run_pure_llm_text_to_sql_pipeline(
+                prompt,
+                db,
+                schema_index,
+                endpoint_catalog,
+                SQLValidator(schema_index),
+                llm_client=client,
+                plan=plan,
+                review_repair=bool(capabilities.get("review_repair")),
+                execution_probe=bool(capabilities.get("execution_probe")),
+                evidence_grounding=bool(capabilities.get("evidence_grounding")),
+            )
+        else:
+            repair = run_sql_repair_loop(
+                prompt,
+                context,
+                db,
+                SQLValidator(schema_index),
+                llm_client=client,
+                plan=plan,
+                max_repair_rounds=2 if capabilities.get("sql_repair") else 0,
+                structured_sql_plan=bool(capabilities.get("structured_sql_plan")),
+                semantic_verify=bool(capabilities.get("semantic_sql_verify")),
+                multi_candidate_sql_plan=bool(capabilities.get("multi_candidate_sql_plan")),
+                execution_probe=bool(capabilities.get("execution_probe")),
+            )
         sql_result = repair
-        if repair.get("ok") and isinstance(repair.get("execution_result"), dict):
+        if repair.get("sql_evidence") and isinstance(repair.get("sql_evidence"), dict):
+            sql_evidence = repair["sql_evidence"]
+        elif repair.get("ok") and isinstance(repair.get("execution_result"), dict):
             sql_evidence = build_sql_execution_evidence(str(repair.get("sql") or ""), repair["execution_result"])
         steps.append(
             {
@@ -455,6 +572,9 @@ def run_pure_llm_tool_agent_variant(
                 "selected_candidate_id": repair.get("selected_candidate_id"),
                 "candidate_count": repair.get("candidate_count"),
                 "candidate_ranking": repair.get("candidate_ranking"),
+                "retrieval_context": repair.get("retrieval_context"),
+                "dynamic_examples": repair.get("dynamic_examples"),
+                "repair_attempts": repair.get("repair_attempts"),
                 "repair_rounds": repair.get("repair_rounds"),
                 "attempts": repair.get("attempts", []),
             }
