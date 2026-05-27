@@ -75,9 +75,12 @@ def test_robust_candidate_strategy_is_explicit_and_not_default(tiny_project: Con
     assert cfg.enable_safe_api_probe is True
     assert cfg.enable_staged_evidence_policy is True
     assert cfg.enable_post_sql_deterministic_policy is True
+    assert cfg.enable_post_sql_llm_semantic_decision is True
     assert cfg.enable_evidence_quality_classifier is True
     assert cfg.enable_answer_slot_renderer is True
     assert cfg.enable_evidence_grounded_answer_builder is True
+    assert cfg.enable_evidence_grounded_llm_answer_generator is True
+    assert cfg.enable_evidence_grounded_final_answer_verifier is True
     assert cfg.enable_score_provenance_guard is True
     assert cfg.enable_runtime_leakage_guard is True
     assert cfg.enable_hardcode_fake_score_guard is True
@@ -169,6 +172,46 @@ def test_robust_candidate_semantic_role_parse_blocks_schema_retrieval_no_tool(ti
     assert semantic_parse["target"]["grounding"] == "SUPPORTED_DATA_OBJECT"
     assert semantic_parse["target"]["instance_level"] is True
     assert consistency["allow_no_tool"] is False
+    assert "checkpoint_final_answer_claim_extractor" in {
+        checkpoint["checkpoint_id"] for checkpoint in result["checkpoints"]
+    }
+    assert "checkpoint_evidence_grounded_final_answer_verifier" in {
+        checkpoint["checkpoint_id"] for checkpoint in result["checkpoints"]
+    }
+    assert "checkpoint_minimal_correction_feedback_semantic" in {
+        checkpoint["checkpoint_id"] for checkpoint in result["checkpoints"]
+    }
+    assert "checkpoint_semantic_revision_result" in {
+        checkpoint["checkpoint_id"] for checkpoint in result["checkpoints"]
+    }
+    progressive = next(
+        checkpoint["output"]
+        for checkpoint in result["checkpoints"]
+        if checkpoint["checkpoint_id"] == "checkpoint_progressive_evidence_policy"
+    )
+    assert progressive["entry_action"] == "EVIDENCE_PIPELINE"
+    assert progressive["requires_evidence_pipeline"] is True
+
+
+def test_robust_candidate_progressive_pipeline_blocks_no_tool_for_status_lookup(tiny_project: Config) -> None:
+    result = AgentExecutor(tiny_project).run(
+        "Show inactive journeys.",
+        strategy=ROBUST,
+        query_id="robust_progressive_status_lookup",
+    )
+
+    assert any(row["type"] in {"sql", "api"} for row in result["tool_results"])
+    progressive = next(
+        checkpoint["output"]
+        for checkpoint in result["checkpoints"]
+        if checkpoint["checkpoint_id"] == "checkpoint_progressive_evidence_policy"
+    )
+    assert progressive["entry_action"] == "EVIDENCE_PIPELINE"
+    assert progressive["allowed_early_exit"] is False
+    risk_codes = progressive["risk_codes"]
+    if isinstance(risk_codes, dict):
+        risk_codes = risk_codes.get("items", [])
+    assert "STATUS_OR_FILTER_REQUIRES_EVIDENCE" in risk_codes
 
 
 def test_robust_candidate_does_not_no_tool_mixed_prompt(tiny_project: Config) -> None:
@@ -190,6 +233,29 @@ def test_robust_candidate_safe_api_probe_runs_one_safe_get(tiny_project: Config)
     assert "{ " not in client.calls[0][1]
     assert [row["type"] for row in result["tool_results"]] == ["api"]
     assert any(checkpoint["checkpoint_id"] == "checkpoint_safe_api_probe" for checkpoint in result["checkpoints"])
+    progressive = next(
+        checkpoint["output"]
+        for checkpoint in result["checkpoints"]
+        if checkpoint["checkpoint_id"] == "checkpoint_progressive_evidence_policy"
+    )
+    assert progressive["entry_action"] == "SAFE_API_PROBE"
+    assert progressive["allowed_early_exit"] is True
+
+
+def test_robust_candidate_ambiguous_api_family_enters_evidence_pipeline(tiny_project: Config) -> None:
+    result = AgentExecutor(tiny_project).run(
+        "List current schemas and datasets in the sandbox.",
+        strategy=ROBUST,
+        query_id="robust_progressive_ambiguous_family",
+    )
+
+    progressive = next(
+        checkpoint["output"]
+        for checkpoint in result["checkpoints"]
+        if checkpoint["checkpoint_id"] == "checkpoint_progressive_evidence_policy"
+    )
+    assert progressive["entry_action"] == "EVIDENCE_PIPELINE"
+    assert progressive["allowed_early_exit"] is False
 
 
 def test_robust_candidate_post_sql_policy_skips_optional_api_after_direct_sql(tiny_project: Config) -> None:
@@ -202,6 +268,8 @@ def test_robust_candidate_post_sql_policy_skips_optional_api_after_direct_sql(ti
     assert [row["type"] for row in result["tool_results"]] == ["sql"]
     assert client.calls == []
     assert any(checkpoint["checkpoint_id"] == "checkpoint_post_sql_deterministic_policy" for checkpoint in result["checkpoints"])
+    assert any(checkpoint["checkpoint_id"] == "checkpoint_post_sql_semantic_decision_card" for checkpoint in result["checkpoints"])
+    assert any(checkpoint["checkpoint_id"] == "checkpoint_post_sql_execution_verifier" for checkpoint in result["checkpoints"])
 
 
 def test_evidence_quality_classifier_distinguishes_empty_and_error() -> None:

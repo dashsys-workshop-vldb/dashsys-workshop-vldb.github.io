@@ -56,6 +56,64 @@ def test_500_runner_promotion_candidate_mode_is_real_deterministic_only() -> Non
     assert cfg.real_behavior_trial_mode == mode
 
 
+def test_robust_generalized_ablation_strategies_are_explicit_only(tiny_project) -> None:
+    strategies = [
+        "ROBUST_ABLATION_NO_SEMANTIC_ROUTING",
+        "ROBUST_ABLATION_SEMANTIC_ROUTING_ONLY",
+        "ROBUST_ABLATION_STAGED_EVIDENCE_ONLY",
+        "ROBUST_ABLATION_ANSWER_GROUNDING_ONLY",
+        "ROBUST_ABLATION_LLM_ANSWER_NO_VERIFIER",
+        "ROBUST_ABLATION_LLM_ANSWER_WITH_VERIFIER",
+        "ROBUST_ABLATION_SEMANTIC_ROLE_PARSE_ONLY",
+        "ROBUST_ABLATION_NO_LLM_COMPONENTS",
+        "ROBUST_ABLATION_FULL_CANDIDATE_NO_LLM_ANSWER",
+        "ROBUST_ABLATION_FULL_CANDIDATE_NO_SAFE_API_PROBE",
+        "ROBUST_ABLATION_FULL_CANDIDATE_NO_STAGED_POLICY",
+        "ROBUST_ABLATION_FULL_CANDIDATE_NO_SEMANTIC_PARSE",
+    ]
+
+    for strategy in strategies:
+        assert strategy in ALL_STRATEGIES
+        assert strategy in APPLIED_TRIAL_STRATEGIES
+        assert strategy not in STRATEGIES
+        assert execution_base_strategy(strategy) == "SQL_FIRST_API_VERIFY"
+
+    no_semantic = config_for_applied_trial_strategy(tiny_project, "ROBUST_ABLATION_NO_SEMANTIC_ROUTING")
+    assert no_semantic.enable_semantic_route_decision_ladder is False
+    assert no_semantic.enable_staged_evidence_policy is True
+    assert no_semantic.enable_evidence_grounded_llm_answer_generator is True
+
+    no_verifier = config_for_applied_trial_strategy(tiny_project, "ROBUST_ABLATION_LLM_ANSWER_NO_VERIFIER")
+    assert no_verifier.enable_evidence_grounded_llm_answer_generator is True
+    assert no_verifier.enable_evidence_grounded_final_answer_verifier is False
+
+    with_verifier = config_for_applied_trial_strategy(tiny_project, "ROBUST_ABLATION_LLM_ANSWER_WITH_VERIFIER")
+    assert with_verifier.enable_evidence_grounded_final_answer_verifier is True
+
+
+def test_500_runner_robust_ablation_modes_are_real_modes() -> None:
+    modes = {
+        "ablation_no_semantic_routing_real",
+        "ablation_semantic_routing_only_real",
+        "ablation_staged_evidence_only_real",
+        "ablation_answer_grounding_only_real",
+        "ablation_llm_answer_no_verifier_real",
+        "ablation_llm_answer_with_verifier_real",
+        "ablation_semantic_role_parse_only_real",
+        "ablation_no_llm_components_real",
+        "ablation_full_candidate_no_llm_answer_real",
+        "ablation_full_candidate_no_safe_api_probe_real",
+        "ablation_full_candidate_no_staged_policy_real",
+        "ablation_full_candidate_no_semantic_parse_real",
+    }
+
+    assert modes <= REAL_MODES
+    no_parse = _config_for_real_mode("ablation_full_candidate_no_semantic_parse_real")
+    assert no_parse.enable_semantic_parse is False
+    no_answer = _config_for_real_mode("ablation_full_candidate_no_llm_answer_real")
+    assert no_answer.enable_evidence_grounded_llm_answer_generator is False
+
+
 def test_eval_harness_runs_applied_trial_alias_without_changing_default(tiny_project) -> None:
     harness = EvalHarness(tiny_project)
 

@@ -93,6 +93,7 @@ class Config:
     llm_semantic_router_max_tokens: int = 512
     llm_semantic_router_trial_policy: str = "broad"
     enable_objective_prompt_features: bool = True
+    enable_semantic_parse: bool = True
     enable_semantic_intent_classifier: bool = False
     enable_routing_anti_hallucination_gate: bool = True
     enable_no_tool_safety_verifier: bool = True
@@ -105,11 +106,14 @@ class Config:
     staged_evidence_policy_shadow_only: bool = True
     enable_post_sql_api_decision: bool = False
     enable_post_sql_deterministic_policy: bool = False
+    enable_post_sql_llm_semantic_decision: bool = False
     post_sql_api_decision_shadow_only: bool = True
     post_sql_llm_advisor_enabled: bool = False
     enable_evidence_quality_classifier: bool = False
     enable_answer_slot_renderer: bool = False
     enable_evidence_grounded_answer_builder: bool = False
+    enable_evidence_grounded_llm_answer_generator: bool = False
+    enable_evidence_grounded_final_answer_verifier: bool = False
     enable_score_provenance_guard: bool = False
     enable_runtime_leakage_guard: bool = False
     enable_hardcode_fake_score_guard: bool = False
@@ -190,6 +194,7 @@ class Config:
             llm_semantic_router_max_tokens=int(os.getenv("LLM_SEMANTIC_ROUTER_MAX_TOKENS", "512")),
             llm_semantic_router_trial_policy=os.getenv("LLM_SEMANTIC_ROUTER_TRIAL_POLICY", "broad"),
             enable_objective_prompt_features=_bool_from_env("ENABLE_OBJECTIVE_PROMPT_FEATURES", True),
+            enable_semantic_parse=_bool_from_env("ENABLE_SEMANTIC_PARSE", True),
             enable_semantic_intent_classifier=_bool_from_env("ENABLE_SEMANTIC_INTENT_CLASSIFIER", False),
             enable_routing_anti_hallucination_gate=_bool_from_env("ENABLE_ROUTING_ANTI_HALLUCINATION_GATE", True),
             enable_no_tool_safety_verifier=_bool_from_env("ENABLE_NO_TOOL_SAFETY_VERIFIER", True),
@@ -202,11 +207,14 @@ class Config:
             staged_evidence_policy_shadow_only=_bool_from_env("STAGED_EVIDENCE_POLICY_SHADOW_ONLY", True),
             enable_post_sql_api_decision=_bool_from_env("ENABLE_POST_SQL_API_DECISION", False),
             enable_post_sql_deterministic_policy=_bool_from_env("ENABLE_POST_SQL_DETERMINISTIC_POLICY", False),
+            enable_post_sql_llm_semantic_decision=_bool_from_env("ENABLE_POST_SQL_LLM_SEMANTIC_DECISION", False),
             post_sql_api_decision_shadow_only=_bool_from_env("POST_SQL_API_DECISION_SHADOW_ONLY", True),
             post_sql_llm_advisor_enabled=_bool_from_env("POST_SQL_LLM_ADVISOR_ENABLED", False),
             enable_evidence_quality_classifier=_bool_from_env("ENABLE_EVIDENCE_QUALITY_CLASSIFIER", False),
             enable_answer_slot_renderer=_bool_from_env("ENABLE_ANSWER_SLOT_RENDERER", False),
             enable_evidence_grounded_answer_builder=_bool_from_env("ENABLE_EVIDENCE_GROUNDED_ANSWER_BUILDER", False),
+            enable_evidence_grounded_llm_answer_generator=_bool_from_env("ENABLE_EVIDENCE_GROUNDED_LLM_ANSWER_GENERATOR", False),
+            enable_evidence_grounded_final_answer_verifier=_bool_from_env("ENABLE_EVIDENCE_GROUNDED_FINAL_ANSWER_VERIFIER", False),
             enable_score_provenance_guard=_bool_from_env("ENABLE_SCORE_PROVENANCE_GUARD", False),
             enable_runtime_leakage_guard=_bool_from_env("ENABLE_RUNTIME_LEAKAGE_GUARD", False),
             enable_hardcode_fake_score_guard=_bool_from_env("ENABLE_HARDCODE_FAKE_SCORE_GUARD", False),
@@ -236,12 +244,27 @@ DEFAULT_CONFIG = Config.from_env()
 
 
 ROBUST_GENERALIZED_HARNESS_CANDIDATE = "ROBUST_GENERALIZED_HARNESS_CANDIDATE"
+ROBUST_ABLATION_STRATEGIES = [
+    "ROBUST_ABLATION_NO_SEMANTIC_ROUTING",
+    "ROBUST_ABLATION_SEMANTIC_ROUTING_ONLY",
+    "ROBUST_ABLATION_STAGED_EVIDENCE_ONLY",
+    "ROBUST_ABLATION_ANSWER_GROUNDING_ONLY",
+    "ROBUST_ABLATION_LLM_ANSWER_NO_VERIFIER",
+    "ROBUST_ABLATION_LLM_ANSWER_WITH_VERIFIER",
+    "ROBUST_ABLATION_SEMANTIC_ROLE_PARSE_ONLY",
+    "ROBUST_ABLATION_NO_LLM_COMPONENTS",
+    "ROBUST_ABLATION_FULL_CANDIDATE_NO_LLM_ANSWER",
+    "ROBUST_ABLATION_FULL_CANDIDATE_NO_SAFE_API_PROBE",
+    "ROBUST_ABLATION_FULL_CANDIDATE_NO_STAGED_POLICY",
+    "ROBUST_ABLATION_FULL_CANDIDATE_NO_SEMANTIC_PARSE",
+]
 
 
 def robust_generalized_candidate_config(config: Config) -> Config:
     return replace(
         config,
         enable_objective_prompt_features=True,
+        enable_semantic_parse=True,
         enable_semantic_intent_classifier=True,
         enable_routing_anti_hallucination_gate=True,
         enable_no_tool_safety_verifier=True,
@@ -252,10 +275,13 @@ def robust_generalized_candidate_config(config: Config) -> Config:
         staged_evidence_policy_shadow_only=False,
         enable_post_sql_api_decision=True,
         enable_post_sql_deterministic_policy=True,
+        enable_post_sql_llm_semantic_decision=True,
         post_sql_api_decision_shadow_only=False,
         enable_evidence_quality_classifier=True,
         enable_answer_slot_renderer=True,
         enable_evidence_grounded_answer_builder=True,
+        enable_evidence_grounded_llm_answer_generator=True,
+        enable_evidence_grounded_final_answer_verifier=True,
         enable_score_provenance_guard=True,
         enable_runtime_leakage_guard=True,
         enable_hardcode_fake_score_guard=True,
@@ -270,3 +296,176 @@ def robust_generalized_candidate_config(config: Config) -> Config:
         post_sql_llm_advisor_enabled=False,
         real_behavior_trial_mode=ROBUST_GENERALIZED_HARNESS_CANDIDATE,
     )
+
+
+def robust_generalized_ablation_config(config: Config, strategy_or_mode: str) -> Config:
+    key = _robust_ablation_key(strategy_or_mode)
+    base = replace(
+        config,
+        enable_score_provenance_guard=True,
+        enable_runtime_leakage_guard=True,
+        enable_hardcode_fake_score_guard=True,
+        enable_robust_generalized_candidate=True,
+        candidate_shadow_only=False,
+        post_sql_llm_advisor_enabled=False,
+        enable_post_sql_llm_advisor_applied_trial=False,
+        real_behavior_trial_mode=strategy_or_mode,
+    )
+    if key == "no_semantic_routing":
+        return replace(
+            base,
+            enable_objective_prompt_features=True,
+            enable_semantic_parse=False,
+            enable_semantic_intent_classifier=False,
+            enable_semantic_route_decision_ladder=False,
+            enable_safe_api_probe=False,
+            enable_semantic_no_tool_applied_trial=False,
+            enable_staged_evidence_policy=True,
+            staged_evidence_policy_shadow_only=False,
+            enable_post_sql_api_decision=True,
+            enable_post_sql_deterministic_policy=True,
+            enable_post_sql_llm_semantic_decision=True,
+            post_sql_api_decision_shadow_only=False,
+            enable_staged_evidence_applied_trial=True,
+            enable_post_sql_deterministic_applied_trial=True,
+            enable_combined_safe_applied_trial=True,
+            enable_evidence_quality_classifier=True,
+            enable_answer_slot_renderer=True,
+            enable_evidence_grounded_answer_builder=True,
+            enable_evidence_grounded_llm_answer_generator=True,
+            enable_evidence_grounded_final_answer_verifier=True,
+        )
+    if key == "semantic_routing_only":
+        return replace(
+            base,
+            enable_objective_prompt_features=True,
+            enable_semantic_parse=True,
+            enable_semantic_intent_classifier=True,
+            enable_semantic_route_decision_ladder=True,
+            semantic_route_shadow_only=False,
+            enable_safe_api_probe=True,
+            enable_semantic_no_tool_applied_trial=True,
+            enable_staged_evidence_policy=False,
+            enable_post_sql_api_decision=False,
+            enable_post_sql_llm_semantic_decision=False,
+            enable_staged_evidence_applied_trial=False,
+            enable_post_sql_deterministic_applied_trial=False,
+            enable_combined_safe_applied_trial=False,
+            enable_evidence_quality_classifier=False,
+            enable_answer_slot_renderer=False,
+            enable_evidence_grounded_answer_builder=False,
+            enable_evidence_grounded_llm_answer_generator=False,
+            enable_evidence_grounded_final_answer_verifier=False,
+        )
+    if key == "staged_evidence_only":
+        return replace(
+            base,
+            enable_objective_prompt_features=False,
+            enable_semantic_parse=False,
+            enable_semantic_intent_classifier=False,
+            enable_semantic_route_decision_ladder=False,
+            enable_safe_api_probe=False,
+            enable_semantic_no_tool_applied_trial=False,
+            enable_staged_evidence_policy=True,
+            staged_evidence_policy_shadow_only=False,
+            enable_post_sql_api_decision=True,
+            enable_post_sql_deterministic_policy=True,
+            enable_post_sql_llm_semantic_decision=False,
+            post_sql_api_decision_shadow_only=False,
+            enable_staged_evidence_applied_trial=True,
+            enable_post_sql_deterministic_applied_trial=True,
+            enable_combined_safe_applied_trial=True,
+            enable_evidence_grounded_llm_answer_generator=False,
+            enable_evidence_grounded_final_answer_verifier=False,
+        )
+    if key == "answer_grounding_only":
+        return replace(
+            base,
+            enable_objective_prompt_features=False,
+            enable_semantic_parse=False,
+            enable_semantic_intent_classifier=False,
+            enable_semantic_route_decision_ladder=False,
+            enable_safe_api_probe=False,
+            enable_staged_evidence_policy=False,
+            enable_post_sql_api_decision=False,
+            enable_post_sql_llm_semantic_decision=False,
+            enable_evidence_quality_classifier=True,
+            enable_answer_slot_renderer=True,
+            enable_evidence_grounded_answer_builder=True,
+            enable_evidence_grounded_llm_answer_generator=True,
+            enable_evidence_grounded_final_answer_verifier=True,
+        )
+    if key == "llm_answer_no_verifier":
+        return replace(
+            robust_generalized_ablation_config(config, "ROBUST_ABLATION_ANSWER_GROUNDING_ONLY"),
+            real_behavior_trial_mode=strategy_or_mode,
+            enable_evidence_grounded_llm_answer_generator=True,
+            enable_evidence_grounded_final_answer_verifier=False,
+        )
+    if key == "llm_answer_with_verifier":
+        return replace(
+            robust_generalized_ablation_config(config, "ROBUST_ABLATION_ANSWER_GROUNDING_ONLY"),
+            real_behavior_trial_mode=strategy_or_mode,
+            enable_evidence_grounded_llm_answer_generator=True,
+            enable_evidence_grounded_final_answer_verifier=True,
+        )
+    if key == "semantic_role_parse_only":
+        return replace(
+            robust_generalized_ablation_config(config, "ROBUST_ABLATION_SEMANTIC_ROUTING_ONLY"),
+            real_behavior_trial_mode=strategy_or_mode,
+            enable_semantic_intent_classifier=False,
+            enable_safe_api_probe=False,
+            enable_evidence_grounded_llm_answer_generator=False,
+        )
+    if key == "no_llm_components":
+        return replace(
+            robust_generalized_candidate_config(config),
+            real_behavior_trial_mode=strategy_or_mode,
+            enable_semantic_intent_classifier=False,
+            enable_evidence_grounded_llm_answer_generator=False,
+            enable_evidence_grounded_final_answer_verifier=False,
+            post_sql_llm_advisor_enabled=False,
+            enable_post_sql_llm_semantic_decision=False,
+        )
+    if key == "full_candidate_no_llm_answer":
+        return replace(
+            robust_generalized_candidate_config(config),
+            real_behavior_trial_mode=strategy_or_mode,
+            enable_evidence_grounded_llm_answer_generator=False,
+            enable_evidence_grounded_final_answer_verifier=False,
+        )
+    if key == "full_candidate_no_safe_api_probe":
+        return replace(
+            robust_generalized_candidate_config(config),
+            real_behavior_trial_mode=strategy_or_mode,
+            enable_safe_api_probe=False,
+        )
+    if key == "full_candidate_no_staged_policy":
+        return replace(
+            robust_generalized_candidate_config(config),
+            real_behavior_trial_mode=strategy_or_mode,
+            enable_staged_evidence_policy=False,
+            enable_post_sql_api_decision=False,
+            enable_post_sql_deterministic_policy=False,
+            enable_post_sql_llm_semantic_decision=False,
+            enable_staged_evidence_applied_trial=False,
+            enable_post_sql_deterministic_applied_trial=False,
+            enable_combined_safe_applied_trial=False,
+        )
+    if key == "full_candidate_no_semantic_parse":
+        return replace(
+            robust_generalized_candidate_config(config),
+            real_behavior_trial_mode=strategy_or_mode,
+            enable_semantic_parse=False,
+        )
+    return robust_generalized_candidate_config(config)
+
+
+def _robust_ablation_key(strategy_or_mode: str) -> str:
+    normalized = str(strategy_or_mode).lower()
+    for prefix in ("robust_ablation_", "ablation_"):
+        normalized = normalized.replace(prefix, "")
+    normalized = normalized.replace("_real", "")
+    if normalized.startswith("full_candidate_"):
+        return normalized
+    return normalized

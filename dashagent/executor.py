@@ -38,6 +38,7 @@ from .endpoint_catalog import EndpointCatalog
 from .evidence_match_scorer import score_evidence_match
 from .evidence_bus import EvidenceBus
 from .evidence_grounded_answer_builder import build_evidence_grounded_answer
+from .evidence_grounded_llm_answer_generator import generate_evidence_grounded_llm_answer
 from .evidence_policy import API_SKIP
 from .evidence_quality_classifier import classify_evidence_quality
 from .gated_sql_candidates import hard_case_triggers, select_gated_sql_candidate
@@ -70,11 +71,14 @@ from .routing_anti_hallucination_gate import run_routing_gate_with_revision
 from .semantic_intent_classifier import classify_semantic_intent
 from .semantic_intent_context_builder import build_semantic_intent_context, estimate_context_tokens
 from .semantic_route_decision_ladder import run_semantic_route_decision_ladder, validate_llm_safe_direct_answer
+from .semantic_parser import parse_prompt_semantics
 from .no_tool_safety_verifier import verify_no_tool_safety
 from .post_sql_api_call_verifier import verify_post_sql_api_advice
 from .post_sql_decision_card import build_post_sql_decision_card
 from .post_sql_deterministic_policy import decide_post_sql_api_policy
 from .post_sql_llm_advisor import advise_post_sql_api
+from .post_sql_llm_decision import run_post_sql_llm_first_decision
+from .post_sql_semantic_decision_card import build_post_sql_semantic_decision_card
 from .simple_prompt_gate import decide_simple_prompt
 from .staged_evidence_policy import decide_initial_evidence_branch
 from .sql_only_api_skip_guard import should_skip_api_with_sql_evidence
@@ -942,6 +946,29 @@ class AgentExecutor:
                 correctness_role="uses exact available values and scoped caveats without inventing missing roles",
                 efficiency_role="uses no extra SQL/API/LLM calls",
             )
+            if self.config.enable_evidence_grounded_llm_answer_generator:
+                generated = generate_evidence_grounded_llm_answer(
+                    query,
+                    deterministic_answer=grounded.answer,
+                    slots=slots,
+                    answer_card=grounded,
+                    evidence_bus=evidence_bus,
+                    use_llm=self.config.enable_evidence_grounded_llm_answer_generator,
+                    verify_final_answer=self.config.enable_evidence_grounded_final_answer_verifier,
+                )
+                answer_result = AnswerResult(
+                    answer=generated.final_answer,
+                    diagnostics={
+                        **answer_result.diagnostics,
+                        "evidence_grounded_answer_builder": grounded.to_dict(),
+                        "evidence_grounded_llm_answer_generator": generated.to_dict(),
+                        "selected_candidate_type": "evidence_grounded_llm_answer_generator",
+                        "selection_reason": (
+                            "ROBUST_GENERALIZED_HARNESS_CANDIDATE allowed free wording only after "
+                            "EvidenceBus/AnswerSlots factual-boundary verification."
+                        ),
+                    },
+                )
         final_answer = answer_result.answer
         intent = classify_answer_intent(query, slots)
         claims = extract_claims(final_answer)
@@ -975,6 +1002,96 @@ class AgentExecutor:
                     correctness_role="makes omitted or unavailable roles explicit",
                     efficiency_role="avoids LLM answer rewriting in the candidate path",
                 )
+        llm_answer_payload = answer_result.diagnostics.get("evidence_grounded_llm_answer_generator")
+        if isinstance(llm_answer_payload, dict):
+            verifier_payload = llm_answer_payload.get("verification") if isinstance(llm_answer_payload.get("verification"), dict) else {}
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_final_answer_claim_extractor",
+                stage="answer verification",
+                technique="final-answer factual claim extraction",
+                input_summary={"final_answer_length": len(final_answer)},
+                output=verifier_payload.get("claim_extractor", {}),
+                effect="extracts only hard factual claim candidates from free-form answer wording",
+                correctness_role="keeps style flexible while making factual boundaries explicit",
+                efficiency_role="uses deterministic text scanning with no tool calls",
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_final_answer_claim_matcher",
+                stage="answer verification",
+                technique="allowed-fact deterministic claim matching",
+                input_summary={"allowed_fact_index_fields": list((verifier_payload.get("allowed_fact_index") or {}).keys())},
+                output=verifier_payload.get("claim_matcher", {}),
+                effect="matches hard claims against EvidenceBus and AnswerSlots allowed facts",
+                correctness_role="blocks invented counts, IDs, statuses, dates, relationships, and over-broad no-data claims",
+                efficiency_role="uses local normalized indexes without extra tools",
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_evidence_grounded_final_answer_verifier",
+                stage="answer verification",
+                technique="flexible wording bounded-fact final-answer verifier",
+                input_summary={"llm_backend_used": llm_answer_payload.get("llm_backend_used")},
+                output={
+                    "ok": verifier_payload.get("ok"),
+                    "action": verifier_payload.get("action"),
+                    "unsupported_claims": verifier_payload.get("unsupported_claims", [])[:5],
+                    "over_specified_claims": verifier_payload.get("over_specified_claims", [])[:5],
+                    "needs_caveat_claims": verifier_payload.get("needs_caveat_claims", [])[:5],
+                    "fallback_used": llm_answer_payload.get("fallback_used"),
+                    "rewrite_attempted": llm_answer_payload.get("rewrite_attempted"),
+                    "rewrite_success": llm_answer_payload.get("rewrite_success"),
+                },
+                effect="accepts natural wording only when factual claims stay inside allowed evidence",
+                correctness_role="prevents factual overreach without enforcing deterministic template text",
+                efficiency_role="falls back locally when no safe LLM answer is available",
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_llm_answer_rewrite_feedback",
+                stage="answer verification",
+                technique="compact rewrite feedback for failed grounded answer verification",
+                input_summary={"rewrite_attempted": llm_answer_payload.get("rewrite_attempted")},
+                output=llm_answer_payload.get("feedback", {}),
+                effect="records blocked claims and allowed facts for one bounded rewrite attempt",
+                correctness_role="keeps rewrite feedback fact-only and excludes gold/category/oracle metadata",
+                efficiency_role="uses at most one rewrite attempt before deterministic fallback",
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_final_answer_minimal_correction_feedback",
+                stage="answer verification",
+                technique="minimal correction feedback for final-answer rewrite",
+                input_summary={"rewrite_attempted": llm_answer_payload.get("rewrite_attempted")},
+                output=llm_answer_payload.get("feedback", {}),
+                effect="sends only blocked claims and relevant allowed facts to the rewrite LLM",
+                correctness_role="keeps free wording while preventing factual overreach",
+                efficiency_role="avoids resending full evidence cards on rewrite",
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_final_answer_rewrite_result",
+                stage="answer verification",
+                technique="single final-answer rewrite result",
+                input_summary={"first_pass_ok": llm_answer_payload.get("first_pass_ok")},
+                output={
+                    "rewrite_attempted": llm_answer_payload.get("rewrite_attempted"),
+                    "rewrite_success": llm_answer_payload.get("rewrite_success"),
+                    "unsupported_after_revision": len(verifier_payload.get("unsupported_claims", []) or []),
+                },
+                effect="records whether one rewrite fixed verifier conflicts",
+                correctness_role="does not keep unsupported rewritten answers",
+                efficiency_role="limits correction to one rewrite",
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_final_answer_fallback_if_any",
+                stage="answer verification",
+                technique="deterministic final-answer fallback",
+                input_summary={"fallback_used": llm_answer_payload.get("fallback_used")},
+                output={
+                    "fallback_used": llm_answer_payload.get("fallback_used"),
+                    "fallback_reason": "verifier_failed_after_rewrite" if llm_answer_payload.get("fallback_used") else None,
+                    "semantic_certainty_claimed": False,
+                },
+                effect="falls back to deterministic AnswerSlotRenderer when bounded LLM wording fails",
+                correctness_role="preserves unsupported-claims target",
+                efficiency_role="uses no extra tool calls",
+            )
         checkpoint_logger.add_checkpoint(
             "checkpoint_16_answer_verification",
             stage="answer verification",
@@ -1140,6 +1257,7 @@ class AgentExecutor:
             if self.config.enable_semantic_route_decision_ladder:
                 ladder = run_semantic_route_decision_ladder(
                     query,
+                    enable_semantic_parse=self.config.enable_semantic_parse,
                     tier2_diagnostic=self.config.semantic_route_tier2_diagnostic,
                     shadow_only=self.config.semantic_route_shadow_only,
                 )
@@ -1174,6 +1292,36 @@ class AgentExecutor:
                     efficiency_role="limits revision feedback to compact codes and keeps packaged execution unchanged",
                 )
                 checkpoint_logger.add_checkpoint(
+                    "checkpoint_minimal_correction_feedback_semantic",
+                    stage="semantic routing shadow",
+                    technique="minimal semantic correction feedback",
+                    input_summary={"semantic_intent": ladder.semantic_intent_decision},
+                    output=ladder.checkpoints.get("checkpoint_minimal_correction_feedback_semantic", {}),
+                    effect="records compact conflict deltas for one LLM semantic revision",
+                    correctness_role="gate reports conflicts without replacing the LLM semantic decision",
+                    efficiency_role="keeps revision payload compact",
+                )
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_semantic_revision_result",
+                    stage="semantic routing shadow",
+                    technique="single semantic decision revision result",
+                    input_summary={"gate_revision_attempted": ladder.routing_anti_hallucination_gate.get("revision_attempted")},
+                    output=ladder.checkpoints.get("checkpoint_semantic_revision_result", {}),
+                    effect="records whether LLM revision fixed semantic conflicts",
+                    correctness_role="falls back only after conflict persists",
+                    efficiency_role="limits semantic revision attempts to one",
+                )
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_semantic_fallback_if_any",
+                    stage="semantic routing shadow",
+                    technique="risk-minimizing semantic fallback marker",
+                    input_summary={"action": ladder.action},
+                    output=ladder.checkpoints.get("checkpoint_semantic_fallback_if_any", {}),
+                    effect="records fallback only when semantic conflicts remain after revision",
+                    correctness_role="does not claim deterministic semantic certainty",
+                    efficiency_role="uses no extra tools",
+                )
+                checkpoint_logger.add_checkpoint(
                     "checkpoint_semantic_consistency_verifier",
                     stage="semantic routing shadow",
                     technique="semantic parse and route consistency verifier",
@@ -1182,6 +1330,16 @@ class AgentExecutor:
                     effect="allows no-tool only when semantic roles are conceptual, meta-language, or out-of-domain",
                     correctness_role="blocks real instance-level data requests without treating every cue word as retrieval",
                     efficiency_role="keeps safe conceptual prompts from entering the evidence pipeline",
+                )
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_progressive_evidence_policy",
+                    stage="semantic routing candidate",
+                    technique="progressive evidence early-exit policy",
+                    input_summary={"semantic_action": ladder.action},
+                    output=ladder.checkpoints.get("checkpoint_progressive_evidence_policy", {}),
+                    effect="restricts early semantic routing to safe no-tool or single-endpoint API probe exits",
+                    correctness_role="forces ambiguous and data-like prompts into evidence acquisition before post-evidence decisions",
+                    efficiency_role="keeps low-risk conceptual/API-only exits available while avoiding high-risk branch decisions",
                 )
                 checkpoint_logger.add_checkpoint(
                     "checkpoint_no_tool_safety_verifier",
@@ -1590,11 +1748,6 @@ class AgentExecutor:
             answer_intent = str(getattr(analysis, "answer_family", "") or "UNKNOWN").upper()
             card = build_post_sql_decision_card(features, answer_intent, sql_result, [api_step], self.endpoint_catalog)
             policy = decide_post_sql_api_policy(card)
-            advisor = advise_post_sql_api(
-                card,
-                policy,
-                enabled=self.config.post_sql_llm_advisor_enabled,
-            )
             api_need_decision = getattr(analysis, "api_need_decision", None)
             api_required = (
                 str(
@@ -1604,7 +1757,39 @@ class AgentExecutor:
                 ).upper()
                 == "API_REQUIRED"
             )
+            advisor = advise_post_sql_api(
+                card,
+                policy,
+                enabled=self.config.post_sql_llm_advisor_enabled,
+            )
             verified = verify_post_sql_api_advice(advisor, card, self.endpoint_catalog, api_required=api_required)
+            semantic_decision: dict[str, Any] | None = None
+            semantic_card: dict[str, Any] | None = None
+            if self.config.enable_post_sql_llm_semantic_decision:
+                semantic_parse = parse_prompt_semantics(query, features, use_llm=False)
+                semantic_card = build_post_sql_semantic_decision_card(
+                    user_prompt=query,
+                    semantic_parse=semantic_parse,
+                    features=features,
+                    answer_intent=answer_intent,
+                    sql_result=sql_result,
+                    api_steps=[api_step],
+                    endpoint_catalog=self.endpoint_catalog,
+                    api_need_prior="API_REQUIRED" if api_required else "API_OPTIONAL",
+                )
+                semantic_decision = run_post_sql_llm_first_decision(
+                    semantic_card,
+                    enabled=self.config.enable_post_sql_llm_semantic_decision,
+                )
+                semantic_verified = semantic_decision.get("execution_verifier") if isinstance(semantic_decision.get("execution_verifier"), dict) else None
+                if semantic_verified:
+                    verified = type(verified)(
+                        final_action=str(semantic_verified.get("final_action") or verified.final_action),
+                        source=str(semantic_verified.get("source") or verified.source),
+                        selected_api_families=list(semantic_verified.get("selected_api_families") or []),
+                        blocked_families=list(semantic_verified.get("blocked_families") or []),
+                        codes=list(semantic_verified.get("codes") or []),
+                    )
             checkpoint_logger.add_checkpoint(
                 "checkpoint_post_sql_decision_card",
                 stage="post-SQL API decision shadow",
@@ -1645,11 +1830,74 @@ class AgentExecutor:
                 correctness_role="blocks unknown endpoints, unresolved path params, and API-required skips",
                 efficiency_role="estimates API call savings/additions without changing execution",
             )
+            if semantic_card is not None and semantic_decision is not None:
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_post_sql_semantic_decision_card",
+                    stage="post-SQL API semantic decision",
+                    technique="compact LLM-first post-SQL semantic decision card",
+                    input_summary={"api_step": api_step.to_dict(), "sql_result_seen": sql_result is not None},
+                    output=semantic_card,
+                    effect="provides compact SQL state, scope, API candidate, and constraints to the LLM decision",
+                    correctness_role="omits raw large SQL/API payloads and evaluator metadata",
+                    efficiency_role="bounds the LLM decision payload",
+                )
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_post_sql_llm_decision_v1",
+                    stage="post-SQL API semantic decision",
+                    technique="LLM-first post-SQL API decision",
+                    input_summary={"llm_backend_available": semantic_decision.get("llm_backend_available")},
+                    output=semantic_decision.get("first_decision") or {},
+                    effect="records the initial LLM CALL_API/SKIP_API/CAVEAT_ONLY decision",
+                    correctness_role="LLM decides semantics; gates only detect conflicts",
+                    efficiency_role="can suppress optional API only after verifier acceptance",
+                )
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_post_sql_minimal_correction_feedback",
+                    stage="post-SQL API semantic decision",
+                    technique="minimal compiler-style correction feedback",
+                    input_summary={"first_pass_ok": semantic_decision.get("first_pass_ok")},
+                    output=semantic_decision.get("feedback") or {},
+                    effect="sends only conflict deltas and narrowed output choices for one revision",
+                    correctness_role="does not replace the LLM semantic decision with deterministic policy",
+                    efficiency_role="keeps revision payload compact",
+                )
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_post_sql_llm_decision_v2",
+                    stage="post-SQL API semantic decision",
+                    technique="single LLM post-SQL revision",
+                    input_summary={"revision_attempted": semantic_decision.get("revision_attempted")},
+                    output=semantic_decision.get("second_decision") or {},
+                    effect="records the one allowed LLM correction after gate feedback",
+                    correctness_role="lets LLM revise before fallback",
+                    efficiency_role="bounds post-SQL LLM calls to at most two",
+                )
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_post_sql_risk_minimizing_fallback",
+                    stage="post-SQL API semantic decision",
+                    technique="risk-minimizing fallback after failed LLM revision",
+                    input_summary={"revision_success": semantic_decision.get("revision_success")},
+                    output=semantic_decision.get("fallback") or {},
+                    effect="preserves evidence or caveats unsafe API only when LLM revision fails",
+                    correctness_role="does not claim deterministic semantic certainty",
+                    efficiency_role="uses local risk rules only after LLM failure",
+                )
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_post_sql_execution_verifier",
+                    stage="post-SQL API semantic decision",
+                    technique="thin execution contract verifier",
+                    input_summary={"decision_source": (semantic_decision.get("execution_verifier") or {}).get("source")},
+                    output=semantic_decision.get("execution_verifier") or {},
+                    effect="checks endpoint existence, safe GET, path params, role gain, and budget before execution",
+                    correctness_role="blocks unsafe or unexecutable API calls without re-scoring semantic intent",
+                    efficiency_role="prevents invalid API execution",
+                )
             return {
                 "card": card,
+                "semantic_card": semantic_card or {},
                 "policy": policy.to_dict(),
                 "advisor": advisor.to_dict(),
                 "verified": verified.to_dict(),
+                "semantic_decision": semantic_decision or {},
                 "api_required": api_required,
                 "api_step": api_step.to_dict(),
             }

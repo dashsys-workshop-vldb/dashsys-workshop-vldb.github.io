@@ -348,8 +348,10 @@ def test_routing_anti_hallucination_gate_blocks_wrong_no_tool_and_builds_feedbac
     assert "UNSUPPORTED_NO_TOOL" in result.block
     assert result.to_dict()["support"] == {"intent": False, "need": False, "caps": True}
     assert "final_route" not in result.to_dict()
-    assert feedback["task"] == "Return corrected SemanticIntentDecision JSON only."
-    assert feedback["gate"]["allowed_fix"]
+    assert feedback["task"] == "REVISE_SEMANTIC_DECISION"
+    assert feedback["conflicts"]
+    assert feedback["allowed_outputs"]
+    assert "NO_TOOL" in feedback["forbidden_outputs"]
 
 
 def test_routing_gate_unknown_capability_blocks() -> None:

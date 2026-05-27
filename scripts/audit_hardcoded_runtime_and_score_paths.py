@@ -77,11 +77,30 @@ def classify_hit(*, path: Path, line: str, term: str, line_number: int) -> dict[
         classification = "legacy_simulated_diagnostic"
     elif lower_path.startswith("scripts/") and _is_eval_or_audit_script(lower_path):
         classification = "safe_eval_only_after_execution"
-    elif lower_path in {"dashagent/score_provenance.py", "dashagent/eval_harness.py"}:
+    elif lower_path in {
+        "dashagent/score_provenance.py",
+        "dashagent/eval_harness.py",
+        "dashagent/runtime_leakage_guard.py",
+        "dashagent/evidence_allowed_fact_index.py",
+        "dashagent/minimal_correction_feedback.py",
+    }:
         classification = "safe_eval_only_after_execution"
+    elif lower_path == "dashagent/config.py" and "fake_score_guard" in lower_line:
+        classification = "safe_runtime_guard"
     elif lower_path.startswith("dashagent/") and any(token in lower_path for token in ("failure_analysis.py", "dataflow_visualizer.py")):
         classification = "safe_eval_only_after_execution"
-    elif lower_path.startswith("dashagent/") and lower_term in {"gold", "query_id"} and _looks_like_leakage_guard(lower_line):
+    elif lower_path.startswith("dashagent/") and lower_term in {
+        "gold",
+        "oracle",
+        "expected_trace",
+        "expected_tool_calls",
+        "required_facts",
+        "forbidden_claims",
+        "category",
+        "tags",
+        "query_id",
+        "prompt_id",
+    } and _looks_like_leakage_guard(lower_line):
         classification = "safe_runtime_guard"
     elif lower_path.startswith("dashagent/") and lower_term == "gold" and any(
         token in lower_path
@@ -249,6 +268,8 @@ def _looks_like_leakage_guard(line: str) -> bool:
             "forbidden",
             "reject",
             "rejected",
+            "prevents",
+            "excludes",
             "non-gold",
             "no_gold",
             "leakage",

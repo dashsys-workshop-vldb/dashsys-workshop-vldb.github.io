@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any, Callable
 
+from .minimal_correction_feedback import build_minimal_correction_feedback
 from .prompt_semantic_ir import ObjectivePromptFeatures
 from .semantic_intent_classifier import SemanticIntentDecision
 
@@ -87,23 +88,36 @@ def build_routing_gate_feedback(
     features: ObjectivePromptFeatures | dict[str, Any],
 ) -> dict[str, Any]:
     feature_payload = features.to_dict() if isinstance(features, ObjectivePromptFeatures) else dict(features)
-    allowed_fix = ["set no_tool=false when data cues exist", "use only supported capability codes"]
-    if feature_payload.get("retr") or feature_payload.get("count") or feature_payload.get("fields"):
-        allowed_fix.append("choose DATA with SQL/API need if evidence is requested")
-    if feature_payload.get("cue") and not _has_concrete_signal(feature_payload):
-        allowed_fix.append("choose CONCEPT/NONE only when no concrete data cues exist")
-    feedback = {
-        "prev": previous.to_dict(),
-        "gate": {
-            "block": gate.block,
-            "unsupported_codes": gate.unsupported_codes,
-            "feature_conflicts": _feature_conflicts(feature_payload, gate),
-            "allowed_fix": allowed_fix,
-            "must_not": ["do not write SQL", "do not create API params", "do not answer user", "do not include prose"],
+    conflicts: list[dict[str, Any]] = []
+    for code in gate.block:
+        conflicts.append(
+            {
+                "code": _routing_conflict_code(code),
+                "given": _given_for_routing_conflict(code, previous),
+                "required": _required_for_routing_conflict(code, feature_payload),
+            }
+        )
+    for code in gate.unsupported_codes:
+        conflicts.append({"code": "UNKNOWN_CAPABILITY_CODE", "given": code, "required": "known capability code"})
+    allowed_outputs = ["EVIDENCE_NEEDED", "SQL", "API", "SQL_API"]
+    forbidden_outputs = ["NO_TOOL"] if any(code in gate.block for code in ("UNSUPPORTED_NO_TOOL", "MIXED_REQUIRES_EVIDENCE")) else []
+    return build_minimal_correction_feedback(
+        task="REVISE_SEMANTIC_DECISION",
+        previous_decision=previous.to_dict(),
+        conflicts=conflicts,
+        must_reconsider=_semantic_must_reconsider(feature_payload, gate),
+        allowed_outputs=allowed_outputs,
+        forbidden_outputs=forbidden_outputs,
+        output_schema={
+            "intent": "CONCEPT|DATA|LIVE_API|MIXED|AMBIG|UNSUPPORTED",
+            "need": "NONE|SQL|API|SQL_API|UNKNOWN",
+            "no_tool": "boolean",
+            "sql": "boolean",
+            "api": "boolean",
+            "conf": "0.0-1.0",
+            "codes": ["short codes"],
         },
-        "task": "Return corrected SemanticIntentDecision JSON only.",
-    }
-    return feedback
+    ).to_dict()
 
 
 def run_routing_gate_with_revision(
@@ -152,6 +166,48 @@ def _feature_conflicts(features: dict[str, Any], gate: RoutingGateResult) -> lis
     if "MIXED_REQUIRES_EVIDENCE" in gate.block:
         conflicts.append("MIXED_CONCEPT_AND_RETRIEVAL")
     return _dedupe(conflicts)
+
+
+def _routing_conflict_code(code: str) -> str:
+    return {
+        "UNSUPPORTED_NO_TOOL": "NO_TOOL_CONFLICTS_WITH_EVIDENCE_CUES",
+        "MIXED_REQUIRES_EVIDENCE": "NO_TOOL_CONFLICTS_WITH_MIXED_PROMPT",
+        "UNSUPPORTED_EVIDENCE_NEED": "EVIDENCE_NEED_WITHOUT_OBJECTIVE_SUPPORT",
+        "UNKNOWN_CAPABILITY_CODE": "UNKNOWN_CAPABILITY_CODE",
+    }.get(code, code)
+
+
+def _given_for_routing_conflict(code: str, previous: SemanticIntentDecision) -> str:
+    if code in {"UNSUPPORTED_NO_TOOL", "MIXED_REQUIRES_EVIDENCE"}:
+        return f"no_tool={str(previous.no_tool).lower()}, need={previous.need}"
+    if code == "UNSUPPORTED_EVIDENCE_NEED":
+        return f"need={previous.need}"
+    return ",".join(previous.codes[:4])
+
+
+def _required_for_routing_conflict(code: str, features: dict[str, Any]) -> str:
+    if code == "UNSUPPORTED_NO_TOOL":
+        return "evidence_needed_when_concrete_data_cues_exist"
+    if code == "MIXED_REQUIRES_EVIDENCE":
+        return "mixed conceptual+retrieval prompt cannot be pure no-tool"
+    if code == "UNSUPPORTED_EVIDENCE_NEED":
+        return "evidence need must have objective feature support"
+    return "use supported route/capability codes only"
+
+
+def _semantic_must_reconsider(features: dict[str, Any], gate: RoutingGateResult) -> list[str]:
+    fields: list[str] = []
+    if "UNSUPPORTED_NO_TOOL" in gate.block:
+        fields.extend(["target_grounding", "instance_level", "evidence_need"])
+    if "MIXED_REQUIRES_EVIDENCE" in gate.block:
+        fields.append("mixed_prompt_evidence_need")
+    if "UNSUPPORTED_EVIDENCE_NEED" in gate.block:
+        fields.append("objective_evidence_support")
+    if gate.unsupported_codes:
+        fields.append("capability_codes")
+    if features.get("flags"):
+        fields.append("objective_feature_conflicts")
+    return _dedupe(fields)
 
 
 def _fallback_action(features: ObjectivePromptFeatures | dict[str, Any]) -> str:

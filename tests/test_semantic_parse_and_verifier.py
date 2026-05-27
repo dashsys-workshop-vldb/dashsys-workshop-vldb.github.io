@@ -6,6 +6,7 @@ from dashagent.semantic_intent_classifier import SemanticIntentDecision
 from dashagent.semantic_parse import SemanticParse
 from dashagent.semantic_parser import parse_prompt_semantics
 from dashagent.semantic_route_decision_ladder import run_semantic_route_decision_ladder
+from dashagent.progressive_evidence_policy import decide_progressive_evidence_entry
 
 
 def _decision(no_tool: bool, need: str = "NONE", conf: float = 0.9) -> SemanticIntentDecision:
@@ -138,6 +139,102 @@ def test_keyword_decoys_do_not_force_evidence_pipeline() -> None:
         assert parsed.target.grounding in {"CONCEPTUAL_OBJECT", "META_LANGUAGE", "OUT_OF_DOMAIN"}
         assert parsed.evidence_need == "NONE"
         assert verified.allow_no_tool is True
+
+
+def test_progressive_policy_allows_only_safe_conceptual_no_tool_exit() -> None:
+    prompt = "List three reasons why schemas matter."
+    features = extract_objective_prompt_features(prompt)
+    parsed = parse_prompt_semantics(prompt, features, use_llm=False)
+    decision = _decision(True, conf=0.92)
+    consistency = verify_semantic_consistency(features, parsed, decision)
+
+    progressive = decide_progressive_evidence_entry(
+        features=features,
+        semantic_parse=parsed,
+        semantic_decision=decision,
+        semantic_consistency=consistency,
+        no_tool_safety={"allow_no_tool": True, "block": []},
+    )
+
+    assert progressive.entry_action in {"LLM_DIRECT", "LLM_SAFE_DIRECT"}
+    assert progressive.allowed_early_exit is True
+    assert progressive.requires_evidence_pipeline is False
+    assert "SAFE_CONCEPTUAL_NO_TOOL" in progressive.reason_codes
+
+
+def test_progressive_policy_forces_supported_data_prompts_to_evidence_pipeline() -> None:
+    prompts = [
+        "Show inactive journeys.",
+        "List current schemas in the sandbox.",
+        "How many datasets are in the local snapshot?",
+        "Explain merge policy and list current merge policies.",
+    ]
+    for prompt in prompts:
+        features = extract_objective_prompt_features(prompt)
+        parsed = parse_prompt_semantics(prompt, features, use_llm=False)
+        decision = _decision(True, conf=0.95)
+        consistency = verify_semantic_consistency(features, parsed, decision)
+
+        progressive = decide_progressive_evidence_entry(
+            features=features,
+            semantic_parse=parsed,
+            semantic_decision=decision,
+            semantic_consistency=consistency,
+            no_tool_safety={"allow_no_tool": False, "block": consistency.block_codes},
+        )
+
+        assert progressive.entry_action == "EVIDENCE_PIPELINE"
+        assert progressive.allowed_early_exit is False
+        assert progressive.requires_evidence_pipeline is True
+        assert progressive.risk_codes
+
+
+def test_progressive_policy_tightens_safe_api_probe() -> None:
+    merge_prompt = "List current merge policies from the API."
+    merge_features = extract_objective_prompt_features(merge_prompt)
+    merge_parse = parse_prompt_semantics(merge_prompt, merge_features, use_llm=False)
+    merge_decision = _decision(False, need="API", conf=0.9)
+    merge_consistency = verify_semantic_consistency(merge_features, merge_parse, merge_decision)
+
+    merge_progressive = decide_progressive_evidence_entry(
+        features=merge_features,
+        semantic_parse=merge_parse,
+        semantic_decision=merge_decision,
+        semantic_consistency=merge_consistency,
+        no_tool_safety={"allow_no_tool": False, "clear_safe_api_family": True},
+        safe_api_probe={"endpoint_id": "merge_policies", "method": "GET", "path": "/data/core/ups/config/mergePolicies", "unresolved_path_params": False},
+    )
+
+    assert merge_progressive.entry_action == "SAFE_API_PROBE"
+    assert merge_progressive.allowed_early_exit is True
+
+    ambiguous_prompt = "List current schemas and datasets in the sandbox."
+    ambiguous_features = extract_objective_prompt_features(ambiguous_prompt)
+    ambiguous_parse = parse_prompt_semantics(ambiguous_prompt, ambiguous_features, use_llm=False)
+    ambiguous_decision = _decision(False, need="SQL_API", conf=0.78)
+    ambiguous_consistency = verify_semantic_consistency(ambiguous_features, ambiguous_parse, ambiguous_decision)
+
+    ambiguous_progressive = decide_progressive_evidence_entry(
+        features=ambiguous_features,
+        semantic_parse=ambiguous_parse,
+        semantic_decision=ambiguous_decision,
+        semantic_consistency=ambiguous_consistency,
+        no_tool_safety={"allow_no_tool": False, "clear_safe_api_family": False},
+        safe_api_probe={"endpoint_id": "schema_registry_schemas", "method": "GET", "path": "/data/foundation/schemaregistry/tenant/schemas", "unresolved_path_params": False},
+    )
+
+    assert ambiguous_progressive.entry_action == "EVIDENCE_PIPELINE"
+    assert ambiguous_progressive.allowed_early_exit is False
+    assert "API_FAMILY_NOT_UNIQUE" in ambiguous_progressive.risk_codes or "API_FAMILY_CONFIDENCE_NOT_HIGH" in ambiguous_progressive.risk_codes
+
+
+def test_semantic_ladder_reports_progressive_evidence_policy() -> None:
+    ladder = run_semantic_route_decision_ladder("Show inactive journeys.", shadow_only=False)
+
+    assert ladder.action == "EVIDENCE_PIPELINE"
+    progressive = ladder.checkpoints["checkpoint_progressive_evidence_policy"]
+    assert progressive["entry_action"] == "EVIDENCE_PIPELINE"
+    assert progressive["requires_evidence_pipeline"] is True
 
 
 def test_semantic_parse_json_round_trip_schema() -> None:

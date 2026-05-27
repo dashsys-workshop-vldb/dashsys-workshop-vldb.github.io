@@ -5,6 +5,8 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, Callable
 
 from .no_tool_safety_verifier import verify_no_tool_safety
+from .minimal_correction_feedback import build_minimal_correction_feedback
+from .progressive_evidence_policy import decide_progressive_evidence_entry
 from .prompt_semantic_ir import ObjectivePromptFeatures, extract_objective_prompt_features
 from .routing_anti_hallucination_gate import RoutingGateRunResult, run_routing_gate_with_revision
 from .semantic_consistency_verifier import SemanticConsistencyResult, verify_semantic_consistency
@@ -65,11 +67,16 @@ def run_semantic_route_decision_ladder(
     *,
     classifier: Callable[[dict[str, Any]], SemanticIntentDecision] | None = None,
     llm_client: Any | None = None,
+    enable_semantic_parse: bool = True,
     tier2_diagnostic: bool = False,
     shadow_only: bool = True,
 ) -> SemanticRouteDecision:
     features = extract_objective_prompt_features(prompt)
-    semantic_parse = parse_prompt_semantics(prompt, features, llm_client=llm_client, use_llm=llm_client is not None)
+    semantic_parse = (
+        parse_prompt_semantics(prompt, features, llm_client=llm_client, use_llm=llm_client is not None)
+        if enable_semantic_parse
+        else SemanticParse(source="SEMANTIC_PARSE_DISABLED", no_tool_safe=False, evidence_need="UNKNOWN")
+    )
     tier0_context = build_semantic_intent_context(features, tier=0)
     decision0 = _classify(tier0_context, classifier, llm_client)
     decision0 = _align_decision_to_semantic_parse(decision0, semantic_parse)
@@ -97,11 +104,6 @@ def run_semantic_route_decision_ladder(
             safe_api_probe=_safe_api_probe(features),
             shadow_only=shadow_only,
         )
-    if consistency0.fallback_action == "LLM_SAFE_DIRECT":
-        return _decision("LLM_SAFE_DIRECT", 0, features, semantic_parse, decision0, gate0, consistency0, safety0, token_cost, shadow_only=shadow_only)
-    if consistency0.fallback_action == "EVIDENCE_PIPELINE" or safety0.evidence_need_score >= 0.75:
-        return _decision("EVIDENCE_PIPELINE", 0, features, semantic_parse, decision0, gate0, consistency0, safety0, token_cost, shadow_only=shadow_only)
-
     low_low = decision0.conf < 0.75 and safety0.evidence_need_score < 0.75
     if low_low:
         tier = 2 if tier2_diagnostic else 1
@@ -135,6 +137,11 @@ def run_semantic_route_decision_ladder(
         if consistency1.fallback_action == "EVIDENCE_PIPELINE" or safety1.has_concrete_data_signal:
             return _decision("EVIDENCE_PIPELINE", tier, features, semantic_parse, decision1, gate1, consistency1, safety1, token_cost, low_low=True, shadow_only=shadow_only)
         return _decision("LLM_SAFE_DIRECT", tier, features, semantic_parse, decision1, gate1, consistency1, safety1, token_cost, low_low=True, shadow_only=shadow_only)
+
+    if consistency0.fallback_action == "LLM_SAFE_DIRECT":
+        return _decision("LLM_SAFE_DIRECT", 0, features, semantic_parse, decision0, gate0, consistency0, safety0, token_cost, shadow_only=shadow_only)
+    if consistency0.fallback_action == "EVIDENCE_PIPELINE" or safety0.evidence_need_score >= 0.75:
+        return _decision("EVIDENCE_PIPELINE", 0, features, semantic_parse, decision0, gate0, consistency0, safety0, token_cost, shadow_only=shadow_only)
 
     if safety0.clear_safe_api_family and not safety0.has_concrete_data_signal:
         return _decision(
@@ -188,6 +195,8 @@ def _classify(
 
 
 def _align_decision_to_semantic_parse(decision: SemanticIntentDecision, semantic_parse: SemanticParse) -> SemanticIntentDecision:
+    if not _decision_is_low_authority(decision):
+        return decision
     if semantic_parse.no_tool_safe and semantic_parse.evidence_need == "NONE":
         intent = "UNSUPPORTED" if semantic_parse.target.grounding == "OUT_OF_DOMAIN" else "CONCEPT"
         return SemanticIntentDecision(
@@ -212,6 +221,15 @@ def _align_decision_to_semantic_parse(decision: SemanticIntentDecision, semantic
     return decision
 
 
+def _decision_is_low_authority(decision: SemanticIntentDecision) -> bool:
+    return bool(
+        decision.conf < 0.55
+        or decision.intent == "AMBIG"
+        or decision.need == "UNKNOWN"
+        or set(decision.codes) & {"FALLBACK", "INVALID_JSON"}
+    )
+
+
 def _decision(
     action: str,
     tier: int,
@@ -232,10 +250,23 @@ def _decision(
     feature_payload = features.to_dict()
     safety_payload = safety.to_dict()
     consistency_payload = semantic_consistency.to_dict()
+    semantic_feedback = _semantic_minimal_feedback(decision, semantic_parse, consistency_payload)
     safety_payload["allow_no_tool"] = bool(consistency_payload.get("allow_no_tool"))
     safety_payload["block"] = list(consistency_payload.get("block_codes") or [])
     safety_payload["semantic_consistency_codes"] = list(consistency_payload.get("consistency_codes") or [])
     safety_payload["action"] = "ALLOW_NO_TOOL" if consistency_payload.get("allow_no_tool") else "BLOCK_NO_TOOL"
+    candidate_probe = safe_api_probe or (_safe_api_probe(features) if action == "SAFE_API_PROBE" else {})
+    progressive = decide_progressive_evidence_entry(
+        features=features,
+        semantic_parse=semantic_parse,
+        semantic_decision=decision,
+        semantic_consistency=semantic_consistency,
+        no_tool_safety=safety_payload,
+        safe_api_probe=candidate_probe,
+    )
+    progressive_payload = progressive.to_dict()
+    action = progressive.entry_action
+    safe_api_probe_payload = progressive.safe_api_probe if action == "SAFE_API_PROBE" else {}
     parse_payload = semantic_parse.to_dict()
     return SemanticRouteDecision(
         action=action,
@@ -249,7 +280,7 @@ def _decision(
         context_token_cost=token_cost,
         average_tier_used=float(tier),
         low_low_case=low_low,
-        safe_api_probe=safe_api_probe or {},
+        safe_api_probe=safe_api_probe_payload,
         shadow_only=shadow_only,
         promotion_allowed=False,
         checkpoints={
@@ -257,11 +288,76 @@ def _decision(
             "checkpoint_semantic_parse": parse_payload,
             "checkpoint_semantic_intent_decision": decision.to_dict(),
             "checkpoint_routing_anti_hallucination_gate": gate.to_dict(),
+            "checkpoint_minimal_correction_feedback_semantic": semantic_feedback,
+            "checkpoint_semantic_revision_result": {
+                "revision_attempted": bool(gate.revision_attempted),
+                "revision_success": bool(gate.revision_success),
+                "final_decision": decision.to_dict(),
+                "source": "LLM_DECISION" if not _decision_is_low_authority(decision) else "LOW_AUTHORITY_OR_FALLBACK_DECISION",
+            },
+            "checkpoint_semantic_fallback_if_any": {
+                "fallback_action": consistency_payload.get("fallback_action") if not consistency_payload.get("ok") else None,
+                "semantic_certainty_claimed": False,
+            },
             "checkpoint_semantic_consistency_verifier": consistency_payload,
             "checkpoint_no_tool_safety_verifier": safety_payload,
+            "checkpoint_progressive_evidence_policy": progressive_payload,
             "checkpoint_semantic_route_decision_ladder": {"action": action, "tier_used": tier, "shadow_only": shadow_only},
         },
     )
+
+
+def _semantic_minimal_feedback(
+    decision: SemanticIntentDecision,
+    semantic_parse: SemanticParse,
+    consistency_payload: dict[str, Any],
+) -> dict[str, Any]:
+    block_codes = list(consistency_payload.get("block_codes") or [])
+    if not block_codes:
+        return {
+            "task": "REVISE_SEMANTIC_DECISION",
+            "revision_required": False,
+            "conflicts": [],
+            "feedback_token_estimate": 0,
+        }
+    target = semantic_parse.target
+    conflicts: list[dict[str, Any]] = []
+    for code in block_codes:
+        if code in {"SUPPORTED_DATA_OBJECT", "INSTANCE_LEVEL", "DATA_OPERATION", "EVIDENCE_NEEDED"}:
+            conflicts.append(
+                {
+                    "code": "NO_TOOL_CONFLICTS_WITH_INSTANCE_REQUEST",
+                    "given": f"no_tool={str(decision.no_tool).lower()}",
+                    "required": f"target.grounding={target.grounding}, instance_level={str(target.instance_level).lower()}, evidence_need={semantic_parse.evidence_need}",
+                }
+            )
+        elif code == "LIVE_OR_API_STATE":
+            conflicts.append({"code": "NO_TOOL_CONFLICTS_WITH_LIVE_OR_API_STATE", "given": "no_tool=true", "required": "live/current/API/platform evidence"})
+        elif code == "EXPLICIT_API_FAMILY":
+            conflicts.append({"code": "NO_TOOL_CONFLICTS_WITH_EXPLICIT_API_FAMILY", "given": "no_tool=true", "required": "API family evidence"})
+        else:
+            conflicts.append({"code": code, "given": "semantic decision", "required": "consistent SemanticParse"})
+    feedback = build_minimal_correction_feedback(
+        task="REVISE_SEMANTIC_DECISION",
+        previous_decision=decision.to_dict(),
+        conflicts=conflicts,
+        must_reconsider=["target_grounding", "instance_level", "evidence_need"],
+        allowed_outputs=["EVIDENCE_NEEDED", "SQL", "API", "SQL_API"],
+        forbidden_outputs=["NO_TOOL"],
+        output_schema={
+            "intent": "CONCEPT|DATA|LIVE_API|MIXED|AMBIG|UNSUPPORTED",
+            "need": "NONE|SQL|API|SQL_API|UNKNOWN",
+            "no_tool": "boolean",
+            "sql": "boolean",
+            "api": "boolean",
+            "conf": "0.0-1.0",
+            "codes": ["short codes"],
+        },
+    )
+    payload = feedback.to_dict()
+    payload["revision_required"] = True
+    payload["feedback_token_estimate"] = feedback.token_estimate
+    return payload
 
 
 def _safe_api_probe(features: ObjectivePromptFeatures) -> dict[str, Any]:

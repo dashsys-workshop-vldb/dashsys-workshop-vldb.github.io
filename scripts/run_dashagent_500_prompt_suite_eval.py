@@ -17,7 +17,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from dashagent.config import DEFAULT_CONFIG, robust_generalized_candidate_config
+from dashagent.config import DEFAULT_CONFIG, robust_generalized_ablation_config, robust_generalized_candidate_config
 from dashagent.endpoint_catalog import EndpointCatalog
 from dashagent.evidence_match_scorer import score_evidence_match
 from dashagent.no_tool_safety_verifier import verify_no_tool_safety
@@ -52,6 +52,18 @@ REAL_MODES = {
     "combined_safe_applied_real_trial",
     "combined_safe_deterministic_promotion_candidate_real",
     "robust_generalized_harness_candidate_real",
+    "ablation_no_semantic_routing_real",
+    "ablation_semantic_routing_only_real",
+    "ablation_staged_evidence_only_real",
+    "ablation_answer_grounding_only_real",
+    "ablation_llm_answer_no_verifier_real",
+    "ablation_llm_answer_with_verifier_real",
+    "ablation_semantic_role_parse_only_real",
+    "ablation_no_llm_components_real",
+    "ablation_full_candidate_no_llm_answer_real",
+    "ablation_full_candidate_no_safe_api_probe_real",
+    "ablation_full_candidate_no_staged_policy_real",
+    "ablation_full_candidate_no_semantic_parse_real",
 }
 RECOGNIZED_MODES = SIMULATED_MODES | REAL_MODES
 REAL_BEHAVIOR_APPLIED_MODES = {
@@ -62,6 +74,18 @@ REAL_BEHAVIOR_APPLIED_MODES = {
     "combined_safe_applied_real_trial",
     "combined_safe_deterministic_promotion_candidate_real",
     "robust_generalized_harness_candidate_real",
+    "ablation_no_semantic_routing_real",
+    "ablation_semantic_routing_only_real",
+    "ablation_staged_evidence_only_real",
+    "ablation_answer_grounding_only_real",
+    "ablation_llm_answer_no_verifier_real",
+    "ablation_llm_answer_with_verifier_real",
+    "ablation_semantic_role_parse_only_real",
+    "ablation_no_llm_components_real",
+    "ablation_full_candidate_no_llm_answer_real",
+    "ablation_full_candidate_no_safe_api_probe_real",
+    "ablation_full_candidate_no_staged_policy_real",
+    "ablation_full_candidate_no_semantic_parse_real",
 }
 REAL_APPLIED_TRIAL_BLOCKERS = [
     "Semantic route decisions are integrated as shadow checkpoints only.",
@@ -603,6 +627,8 @@ def _config_for_real_mode(mode: str) -> Any:
             robust_generalized_candidate_config(DEFAULT_CONFIG),
             real_behavior_trial_mode=mode,
         )
+    if mode.startswith("ablation_") and mode.endswith("_real"):
+        return robust_generalized_ablation_config(DEFAULT_CONFIG, mode)
     return DEFAULT_CONFIG
 
 

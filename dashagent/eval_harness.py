@@ -11,7 +11,7 @@ from typing import Any
 from urllib.parse import parse_qsl, urlparse
 
 from .api_templates import parse_api_call_string
-from .config import Config, DEFAULT_CONFIG, robust_generalized_candidate_config
+from .config import Config, DEFAULT_CONFIG, ROBUST_ABLATION_STRATEGIES, robust_generalized_ablation_config, robust_generalized_candidate_config
 from .db import DuckDBDatabase
 from .endpoint_catalog import normalize_api_path
 from .executor import AgentExecutor
@@ -803,4 +803,6 @@ def config_for_applied_trial_strategy(config: Config, strategy: str) -> Config:
         )
     if strategy == "ROBUST_GENERALIZED_HARNESS_CANDIDATE":
         return robust_generalized_candidate_config(config)
+    if strategy in ROBUST_ABLATION_STRATEGIES:
+        return robust_generalized_ablation_config(config, strategy)
     return config
