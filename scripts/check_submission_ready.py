@@ -12,8 +12,10 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from dashagent.config import Config
+from dashagent.planner import PACKAGED_DEFAULT_STRATEGY
 
 
+EXPECTED_PACKAGED_STRATEGY = PACKAGED_DEFAULT_STRATEGY
 REQUIRED_QUERY_FILES = ["metadata.json", "filled_system_prompt.txt", "trajectory.json"]
 SECRET_PATTERNS = [
     re.compile(r"Bearer\s+[A-Za-z0-9._-]{12,}", re.IGNORECASE),
@@ -48,13 +50,17 @@ def check_submission_ready(config: Config) -> dict[str, Any]:
         "secret_scan": {"ok": True, "hits": []},
         "unresolved_api_path_placeholders": [],
         "unresolved_api_params_without_warning": [],
+        "expected_packaged_strategy": EXPECTED_PACKAGED_STRATEGY,
         "default_strategy_is_sql_first_api_verify": False,
+        "default_strategy_is_expected_packaged_strategy": False,
+        "all_query_outputs_use_expected_packaged_strategy": False,
     }
 
     manifest = {}
     if manifest_path.exists():
         manifest = load_json(manifest_path, checks, "manifest")
         checks["default_strategy_is_sql_first_api_verify"] = manifest.get("preferred_strategy") == "SQL_FIRST_API_VERIFY"
+        checks["default_strategy_is_expected_packaged_strategy"] = manifest.get("preferred_strategy") == EXPECTED_PACKAGED_STRATEGY
 
     if final_dir.exists():
         query_dirs = sorted(
@@ -84,6 +90,9 @@ def check_submission_ready(config: Config) -> dict[str, Any]:
     ]
     checks["missing_query_files"] = missing_query_files
     checks["query_output_count"] = len(checks["query_outputs"])
+    checks["all_query_outputs_use_expected_packaged_strategy"] = bool(checks["query_outputs"]) and all(
+        item.get("strategy") == EXPECTED_PACKAGED_STRATEGY for item in checks["query_outputs"]
+    )
     checks["ok"] = all(
         [
             checks["source_code_zip_exists"],
@@ -100,7 +109,8 @@ def check_submission_ready(config: Config) -> dict[str, Any]:
             checks["secret_scan"]["ok"],
             not checks["unresolved_api_path_placeholders"],
             not checks["unresolved_api_params_without_warning"],
-            checks["default_strategy_is_sql_first_api_verify"],
+            checks["default_strategy_is_expected_packaged_strategy"],
+            checks["all_query_outputs_use_expected_packaged_strategy"],
             not missing_query_files,
             all(item.get("required_trajectory_fields", False) for item in checks["query_outputs"]),
         ]

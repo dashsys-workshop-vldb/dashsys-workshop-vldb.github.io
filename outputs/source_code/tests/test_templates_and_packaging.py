@@ -11,6 +11,7 @@ from dashagent.config import Config
 from dashagent.db import DuckDBDatabase
 from dashagent.endpoint_catalog import EndpointCatalog
 from dashagent.eval_harness import score_api
+from dashagent.planner import PACKAGED_DEFAULT_STRATEGY
 from dashagent.schema_index import SchemaIndex
 from dashagent.sql_templates import find_sql_template
 from dashagent.validators import APIValidator
@@ -79,7 +80,20 @@ def test_every_api_template_validates_against_catalog(tiny_project):
     for query in queries:
         for template in find_api_templates(query, tiny_project):
             result = validator.validate(template.method, template.path, template.params)
-            assert result.ok, (query, template.to_dict(), result.errors)
+            if result.ok:
+                continue
+            template_payload = template.to_dict()
+            warnings = template_payload.get("warnings") or []
+            assert any("unresolved_parameter" in warning for warning in warnings), (
+                query,
+                template_payload,
+                result.errors,
+            )
+            assert any("unresolved parameter" in error.lower() for error in result.errors), (
+                query,
+                template_payload,
+                result.errors,
+            )
             assert "{" not in template.path and "}" not in template.path
 
 
@@ -260,9 +274,9 @@ def test_submission_readiness_checker_accepts_valid_packaged_outputs(tiny_projec
     (qdir / "filled_system_prompt.txt").write_text("filled", encoding="utf-8")
     (qdir / "trajectory.json").write_text(
         json.dumps(
-            {
-                "query_id": "tiny_001",
-                "strategy": "SQL_FIRST_API_VERIFY",
+                {
+                    "query_id": "tiny_001",
+                    "strategy": PACKAGED_DEFAULT_STRATEGY,
                 "final_answer": "done",
                 "tool_call_count": 0,
                 "runtime": 0.01,
@@ -273,7 +287,7 @@ def test_submission_readiness_checker_accepts_valid_packaged_outputs(tiny_projec
         encoding="utf-8",
     )
     (tiny_project.outputs_dir / "final_submission_manifest.json").write_text(
-        json.dumps({"preferred_strategy": "SQL_FIRST_API_VERIFY"}),
+        json.dumps({"preferred_strategy": PACKAGED_DEFAULT_STRATEGY}),
         encoding="utf-8",
     )
     for name in [

@@ -7,10 +7,10 @@
 | Query | When was the journey 'Birthday Message' published? |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
 | Final answer | The journey "Birthday Message" has not been published. The database shows a null published_time for this journey, and the API returned usable supporting evidence. |
-| Strict score | 0.6975 |
+| Strict score | 0.6968 |
 | Correctness score | 0.7305 |
 | Answer / SQL / API score | 0.5044 / 0.9 / None |
-| Tools / tokens / runtime | 2 / 810 / 0.3516922499984503 |
+| Tools / tokens / runtime | 2 / 810 / 0.5661999168805778 |
 
 ## Dataflow Graph
 

@@ -41,7 +41,16 @@ from .evidence_policy import API_SKIP
 from .gated_sql_candidates import hard_case_triggers, select_gated_sql_candidate
 from .metadata_selector import MetadataSelector
 from .plan_ensemble import select_plan_candidate
-from .planner import ALL_STRATEGIES, LLM_SQL_STRATEGIES, Plan, PlanStep, STRATEGIES, StrategyPlanner, execution_base_strategy
+from .planner import (
+    ALL_STRATEGIES,
+    LLM_SQL_STRATEGIES,
+    PACKAGED_DEFAULT_STRATEGY,
+    Plan,
+    PlanStep,
+    STRATEGIES,
+    StrategyPlanner,
+    execution_base_strategy,
+)
 from .query_normalizer import normalize_query
 from .query_tokens import extract_query_tokens
 from .llm_sql_generator import generate_sql_with_llm, repair_sql_with_llm
@@ -109,7 +118,7 @@ class AgentExecutor:
         self,
         query: str,
         *,
-        strategy: str = "SQL_FIRST_API_VERIFY",
+        strategy: str = PACKAGED_DEFAULT_STRATEGY,
         query_id: str | None = None,
         output_dir: Path | None = None,
     ) -> dict[str, Any]:

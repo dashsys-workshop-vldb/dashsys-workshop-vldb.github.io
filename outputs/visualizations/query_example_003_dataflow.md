@@ -7,10 +7,10 @@
 | Query | List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results. |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
 | Final answer | Based on the evidence provided, there is no data available to answer this question. The SQL query returned zero rows, and the API returned usable supporting evidence. |
-| Strict score | 0.6854 |
+| Strict score | 0.6886 |
 | Correctness score | 0.7393 |
 | Answer / SQL / API score | 0.2642 / 0.9 / 1.0 |
-| Tools / tokens / runtime | 3 / 1681 / 0.7017527092248201 |
+| Tools / tokens / runtime | 3 / 1390 / 0.47339195804670453 |
 
 ## Dataflow Graph
 
@@ -50,7 +50,7 @@ flowchart LR
 | 15 | checkpoint_10_evidence_policy | evidence policy | API_REQUIRED/API_OPTIONAL/API_SKIP policy | route_type=SQL_ONLY; answer_family=segment_destination | reason=Known multi-call verification family. | decides when API evidence is required, optional, or unnecessary | yes | yes | no |
 | 16 | checkpoint_11_call_budget | efficiency control | tool-call budgeting | preview={"planned_steps": {"items": [{"action": "sql", "purpose":...; truncated=True | planned_sql_calls=1; planned_api_calls=2; final_planned_calls=3; max_total_tool_calls=3 | keeps tool calls within per-family limits | yes | yes | no |
 | 17 | checkpoint_gated_sql_candidate_selection | planning | hard-case gated SQL candidate validation | trigger_reasons=2 item(s) | preview={"active": true, "hard_case_triggered": true, "trigger_re...; truncated=True | validates hard-case SQL candidates before execution without executing losing candidates | yes | yes | yes |
-| 18 | checkpoint_12_validation | validation | SQL/API safety validation | preview={"optimized_steps": {"items": [{"action": "sql", "purpose...; truncated=True | api_validation_status=2 item(s); sql_validation_status=1 item(s) | records whether planned SQL/API calls were safe to execute | yes | yes | yes |
+| 18 | checkpoint_12_validation | validation | SQL/API safety validation | preview={"optimized_steps": {"items": [{"action": "sql", "purpose...; truncated=True | preview={"sql_validation_status": {"items": [{"errors": {"items":...; truncated=True | records whether planned SQL/API calls were safe to execute | yes | yes | yes |
 | 19 | checkpoint_sql_ast_validation | validation | SQLGlot AST-based SQL validation and extraction | sql_call_count=1 | preview={"summaries": {"items": [{"enabled": true, "parsed_ok": t...; truncated=True | adds AST-level table and column extraction after existing SQL validation | yes | yes | yes |
 | 20 | checkpoint_13_tool_execution | execution | SQL/API tool execution | validated_step_count=3 | preview={"sql_calls_executed": 1, "api_calls_executed": 2, "dry_r...; truncated=True | captures the actual SQL/API evidence gathered by the backend | yes | yes | no |
 | 21 | checkpoint_14_evidence_bus | evidence forwarding | operand forwarding / EvidenceBus | tool_result_count=3 | evidence=9 field(s) | forwards structured facts to API params and answer slots | yes | yes | no |
@@ -65,7 +65,7 @@ flowchart LR
 | Evidence | Used/status | Source | Preview |
 | --- | --- | --- | --- |
 | SQL evidence | no | SELECT A."SEGMENTID" AS segment_id, A."NAME" AS segment_name, A."TOTALMEMBERS" AS total_profiles, A."CREATEDTIME" AS created_time, A."UPDATEDTIME" AS updated_time FROM "dim_segment" AS A JOIN "hkg_br_segment_target" AS AD ON A."SEGMENTID" = AD."SEGMENTID" JOIN "dim_target" AS D ON AD."TARGETID" = D."TARGETID" WHERE D."DATAFLOWNAME" = 'SMS Opt-In' OR D."NAME" = 'SMS Opt-In' ORDER BY A."NAME" | n/a - no SQL rows preview recorded |
-| API evidence | yes | GET /data/core/ups/audiences | {"preview": "{\"status\": 400, \"errors\": {\"400\": {\"items\": {\"items\": {\"items\": [{\"code\": \"NEBULA-100058-400\", \"message\": \"Unknown operator: ==<\", \"value\": \"==<\"}], \"total_items\": 1, \"truncated_items\": false}, \"total_items\": 1, \"truncated_items\": false}, \"total_items\": 1, \"tr...", "truncated": true} |
+| API evidence | yes | GET /data/core/ups/audiences | n/a - no API result preview recorded |
 | Local Parquet evidence | yes | unavailable | query=List all segment audiences connected to the destination n...; query_id=example_003 |
 | Dry-run label | no | API dry-run result label | At least one SQL/API result provided evidence for answer construction. |
 | Unsupported claims replaced | no | supportable_answer_rewrite_eval | unavailable |

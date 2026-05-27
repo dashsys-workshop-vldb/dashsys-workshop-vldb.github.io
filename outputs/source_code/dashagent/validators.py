@@ -5,6 +5,7 @@ import re
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+from .core_tool_policy import clone_validation_result, normalize_sql_for_validation_cache
 from .db import is_read_only_sql, strip_sql_comments
 from .endpoint_catalog import EndpointCatalog
 from .schema_index import SchemaIndex, normalize_name
@@ -27,14 +28,24 @@ class SQLValidator:
         self.schema_index = schema_index
         self.enable_ast_validation = enable_ast_validation
         self._ast_cache: dict[str, dict[str, Any]] = {}
+        self._validation_cache: dict[str, ValidationResult] = {}
+        self._validation_cache_hits = 0
+        self._validation_cache_misses = 0
 
     def validate(self, sql: str) -> ValidationResult:
+        cache_key = normalize_sql_for_validation_cache(sql)
+        if cache_key in self._validation_cache:
+            self._validation_cache_hits += 1
+            return clone_validation_result(self._validation_cache[cache_key])
+        self._validation_cache_misses += 1
         errors: list[str] = []
         warnings: list[str] = []
         ok, error = is_read_only_sql(sql)
         if not ok and error:
             errors.append(error)
-            return ValidationResult(False, errors, warnings)
+            result = ValidationResult(False, errors, warnings)
+            self._validation_cache[cache_key] = clone_validation_result(result)
+            return result
 
         cleaned = strip_sql_comments(sql).strip().rstrip(";")
         tables, aliases = extract_tables_and_aliases(cleaned)
@@ -55,7 +66,9 @@ class SQLValidator:
                 warnings.append(f"SQLGlot parse warning: {ast.get('parse_error')}")
 
         if errors:
-            return ValidationResult(False, errors, warnings)
+            result = ValidationResult(False, errors, warnings)
+            self._validation_cache[cache_key] = clone_validation_result(result)
+            return result
 
         for alias, column in extract_qualified_columns(cleaned):
             table = aliases.get(alias, alias)
@@ -73,7 +86,21 @@ class SQLValidator:
             if not matching_tables:
                 errors.append(self._unknown_column_error(column, ast))
 
-        return ValidationResult(not errors, sorted(set(errors)), warnings)
+        result = ValidationResult(not errors, sorted(set(errors)), warnings)
+        self._validation_cache[cache_key] = clone_validation_result(result)
+        return result
+
+    def validation_cache_stats(self) -> dict[str, int]:
+        return {
+            "entries": len(self._validation_cache),
+            "hits": self._validation_cache_hits,
+            "misses": self._validation_cache_misses,
+            "unsafe_cached_as_safe": sum(
+                1
+                for sql, result in self._validation_cache.items()
+                if result.ok and not is_read_only_sql(sql)[0]
+            ),
+        }
 
     def ast_summary(self, sql: str) -> dict[str, Any]:
         if not self.enable_ast_validation:
@@ -115,6 +142,8 @@ class APIValidator:
                 json.dumps(params)
             except TypeError:
                 errors.append("API params are not JSON-serializable.")
+            if params_have_unresolved_placeholder(params):
+                errors.append("API params contain unresolved parameter placeholders.")
         if headers:
             for key in headers:
                 if key.lower() in {"authorization", "x-api-key"}:
@@ -195,6 +224,16 @@ def extract_tables_and_aliases(sql: str) -> tuple[list[str], dict[str, str]]:
         if alias:
             aliases[alias] = table
     return list(dict.fromkeys(tables)), aliases
+
+
+def params_have_unresolved_placeholder(value: Any) -> bool:
+    if isinstance(value, dict):
+        return any(params_have_unresolved_placeholder(item) for item in value.values())
+    if isinstance(value, list):
+        return any(params_have_unresolved_placeholder(item) for item in value)
+    if isinstance(value, str):
+        return bool(re.search(r"<[^>]+>|\{[a-zA-Z0-9_]+\}", value))
+    return False
 
 
 def extract_qualified_columns(sql: str) -> list[tuple[str, str]]:

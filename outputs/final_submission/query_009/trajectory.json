@@ -1,5 +1,5 @@
 {
-  "answer_time": 0.0042059579864144325,
+  "answer_time": 0.012385000009089708,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -9,13 +9,13 @@
       "effect": "preserves the original query for reproducibility",
       "efficiency_role": "starts one trace without extra tool calls",
       "output": {
-        "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
+        "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destinat [truncated]",
         "query_id": "example_005",
         "strategy": "SQL_FIRST_API_VERIFY"
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-11T16:09:45.650038+00:00"
+      "timestamp": "2026-05-27T13:54:33.556120+00:00"
     },
     {
       "checkpoint_id": "checkpoint_00_prompt_router",
@@ -24,7 +24,7 @@
       "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
       "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
       "input_summary": {
-        "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation."
+        "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destinat [truncated]"
       },
       "output": {
         "confidence": 0.9,
@@ -45,7 +45,7 @@
       },
       "stage": "prompt routing",
       "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-11T16:09:45.650141+00:00"
+      "timestamp": "2026-05-27T13:54:33.556161+00:00"
     },
     {
       "checkpoint_id": "checkpoint_simple_prompt_gate",
@@ -54,7 +54,7 @@
       "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
       "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
       "input_summary": {
-        "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation."
+        "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destinat [truncated]"
       },
       "output": {
         "confidence": 0.9,
@@ -64,7 +64,63 @@
       },
       "stage": "input routing",
       "technique": "simple prompt gate",
-      "timestamp": "2026-05-11T16:09:45.650199+00:00"
+      "timestamp": "2026-05-27T13:54:33.556182+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_objective_prompt_features",
+      "correctness_role": "keeps semantic pre-routing separate from SQL/API planning and answer generation",
+      "duration_ms": 0.0,
+      "effect": "records fact-only prompt cues for semantic routing diagnostics",
+      "efficiency_role": "uses compact symbolic features before any optional LLM classification",
+      "input_summary": {
+        "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destinat [truncated]"
+      },
+      "output": {
+        "count": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "date": {
+          "items": [
+            "UPDATED"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "domain": {
+          "items": [
+            "DESTINATION"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "norm": "export a list of all destinations in the b2b prod sandbox, sorted by most recently modified, including all columns associated with each destinat [truncated]",
+        "p": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destinat [truncated]",
+        "rel": {
+          "items": [
+            "ASSOCIATED"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "retr": {
+          "items": [
+            "LIST"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "status": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "truncated_fields": 5
+      },
+      "stage": "semantic routing shadow",
+      "technique": "objective prompt feature extraction",
+      "timestamp": "2026-05-27T13:54:33.556259+00:00"
     },
     {
       "checkpoint_id": "checkpoint_02_query_normalization",
@@ -73,11 +129,11 @@
       "effect": "creates matching-friendly text while preserving the original query",
       "efficiency_role": "reduces repeated fuzzy matching work downstream",
       "input_summary": {
-        "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation."
+        "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destinat [truncated]"
       },
       "output": {
-        "matching_text": "export a list of all destination in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
-        "normalized_query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
+        "matching_text": "export a list of all destination in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destinati [truncated]",
+        "normalized_query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destinat [truncated]",
         "rewrites": {
           "items": [
             "important_plurals->singular"
@@ -88,7 +144,7 @@
       },
       "stage": "normalization",
       "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-11T16:09:45.650355+00:00"
+      "timestamp": "2026-05-27T13:54:33.556318+00:00"
     },
     {
       "checkpoint_id": "checkpoint_03_query_tokens",
@@ -97,7 +153,7 @@
       "effect": "extracts reusable query fields for routing, planning, and answers",
       "efficiency_role": "avoids reparsing the query in later modules",
       "input_summary": {
-        "normalized_query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation."
+        "normalized_query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destinat [truncated]"
       },
       "output": {
         "domains": {
@@ -117,7 +173,7 @@
       },
       "stage": "tokenization",
       "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-11T16:09:45.650527+00:00"
+      "timestamp": "2026-05-27T13:54:33.556384+00:00"
     },
     {
       "checkpoint_id": "checkpoint_04_relevance_scoring",
@@ -175,7 +231,7 @@
       },
       "stage": "context selection",
       "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-11T16:09:45.652408+00:00"
+      "timestamp": "2026-05-27T13:54:33.557152+00:00"
     },
     {
       "checkpoint_id": "checkpoint_value_entity_retrieval",
@@ -213,7 +269,7 @@
       },
       "stage": "query understanding",
       "technique": "CHESS-style value/entity retrieval",
-      "timestamp": "2026-05-11T16:09:45.653256+00:00"
+      "timestamp": "2026-05-27T13:54:33.557488+00:00"
     },
     {
       "checkpoint_id": "checkpoint_query_decomposition",
@@ -222,7 +278,7 @@
       "effect": "breaks complex prompts into entities, filters, joins, and answer-shape constraints",
       "efficiency_role": "skips simple queries and uses no LLM/tool calls",
       "input_summary": {
-        "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
+        "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destinat [truncated]",
         "tokens": {
           "domains": {
             "items": [
@@ -267,7 +323,7 @@
       },
       "stage": "query understanding",
       "technique": "DIN-SQL-style deterministic query decomposition",
-      "timestamp": "2026-05-11T16:09:45.653304+00:00"
+      "timestamp": "2026-05-27T13:54:33.557506+00:00"
     },
     {
       "checkpoint_id": "checkpoint_05_query_analysis",
@@ -297,7 +353,7 @@
       },
       "stage": "routing",
       "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-11T16:09:45.653313+00:00"
+      "timestamp": "2026-05-27T13:54:33.557510+00:00"
     },
     {
       "checkpoint_id": "checkpoint_06_lookup_path",
@@ -336,7 +392,7 @@
       },
       "stage": "path prediction",
       "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-11T16:09:45.653320+00:00"
+      "timestamp": "2026-05-27T13:54:33.557512+00:00"
     },
     {
       "checkpoint_id": "checkpoint_07_context_card",
@@ -378,7 +434,7 @@
       },
       "stage": "metadata packing",
       "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-11T16:09:45.657417+00:00"
+      "timestamp": "2026-05-27T13:54:33.558942+00:00"
     },
     {
       "checkpoint_id": "checkpoint_08_candidate_plans",
@@ -406,7 +462,7 @@
       },
       "stage": "planning",
       "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-11T16:09:45.658806+00:00"
+      "timestamp": "2026-05-27T13:54:33.559192+00:00"
     },
     {
       "checkpoint_id": "checkpoint_09_plan_optimization",
@@ -434,7 +490,7 @@
       },
       "stage": "optimization",
       "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-11T16:09:45.658835+00:00"
+      "timestamp": "2026-05-27T13:54:33.559199+00:00"
     },
     {
       "checkpoint_id": "checkpoint_10_evidence_policy",
@@ -460,7 +516,7 @@
       },
       "stage": "evidence policy",
       "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-11T16:09:45.658843+00:00"
+      "timestamp": "2026-05-27T13:54:33.559202+00:00"
     },
     {
       "checkpoint_id": "checkpoint_11_call_budget",
@@ -475,7 +531,7 @@
               "action": "sql",
               "family": "destination_export_recent",
               "purpose": "Fast-path SQL grounding.",
-              "sql": "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS target_name, D.\"DESCRIP [truncated]"
+              "sql": "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS [truncated]"
             }
           ],
           "total_items": 2,
@@ -492,7 +548,7 @@
       },
       "stage": "efficiency control",
       "technique": "tool-call budgeting",
-      "timestamp": "2026-05-11T16:09:45.658888+00:00"
+      "timestamp": "2026-05-27T13:54:33.559216+00:00"
     },
     {
       "checkpoint_id": "checkpoint_gated_sql_candidate_selection",
@@ -514,12 +570,12 @@
         "cost_estimate": 1
       },
       "output": {
-        "preview": "{\"active\": true, \"hard_case_triggered\": true, \"trigger_reasons\": {\"items\": [\"complex_query_decomposition\"], \"total_items\": 1, \"truncated_items\": false}, \"candidate_count\": 1, \"candidate_sql_sources\": {\"items\": [\"destination_ [truncated]",
+        "preview": "{\"active\": true, \"hard_case_triggered\": true, \"trigger_reasons\": {\"items\": [\"complex_query_decomposition\"], \"total_items\": 1, \"truncated_items\": [truncated]",
         "truncated": true
       },
       "stage": "planning",
       "technique": "hard-case gated SQL candidate validation",
-      "timestamp": "2026-05-11T16:09:45.665695+00:00"
+      "timestamp": "2026-05-27T13:54:33.561461+00:00"
     },
     {
       "checkpoint_id": "checkpoint_12_validation",
@@ -534,7 +590,7 @@
               "action": "sql",
               "family": "destination_export_recent",
               "purpose": "Fast-path SQL grounding.",
-              "sql": "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS target_name, D.\"DESCRIP [truncated]"
+              "sql": "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS [truncated]"
             }
           ],
           "total_items": 2,
@@ -573,7 +629,7 @@
       },
       "stage": "validation",
       "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-11T16:09:45.672538+00:00"
+      "timestamp": "2026-05-27T13:54:34.391808+00:00"
     },
     {
       "checkpoint_id": "checkpoint_sql_ast_validation",
@@ -606,7 +662,7 @@
             {
               "destructive_sql_detected": false,
               "enabled": true,
-              "normalized_sql": "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS target_name, D.\"DESCRIP [truncated]",
+              "normalized_sql": "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS [truncated]",
               "parsed_ok": true,
               "selected_columns": {
                 "items": [
@@ -632,7 +688,7 @@
       },
       "stage": "validation",
       "technique": "SQLGlot AST-based SQL validation and extraction",
-      "timestamp": "2026-05-11T16:09:45.672571+00:00"
+      "timestamp": "2026-05-27T13:54:34.391849+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -644,12 +700,12 @@
         "validated_step_count": 2
       },
       "output": {
-        "preview": "{\"sql_calls_executed\": 1, \"api_calls_executed\": 1, \"dry_run_status\": true, \"row_counts\": {\"items\": [1], \"total_items\": 1, \"truncated_items\": false}, \"sql_results\": {\"items\": [{\"result_preview\": {\"items\": [{\"target_id\": \"139b [truncated]",
+        "preview": "{\"sql_calls_executed\": 1, \"api_calls_executed\": 1, \"dry_run_status\": false, \"row_counts\": {\"items\": [1], \"total_items\": 1, \"truncated_items\": fa [truncated]",
         "truncated": true
       },
       "stage": "execution",
       "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-11T16:09:45.672590+00:00"
+      "timestamp": "2026-05-27T13:54:34.392117+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -662,8 +718,46 @@
       },
       "output": {
         "evidence": {
+          "api_ids": {
+            "items": [
+              "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "api_names": {
+            "items": [
+              "Activate segments to S3 Feed"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "api_statuses": {
+            "items": [
+              "enabled"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "counts": {
+            "items": [
+              {
+                "items": 1
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
           "ids": {
+            "id": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
             "target_id": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
+          },
+          "names": {
+            "items": [
+              "Activate segments to S3 Feed"
+            ],
+            "total_items": 1,
+            "truncated_items": false
           },
           "statuses": {
             "items": [
@@ -676,14 +770,15 @@
             "items": [
               "2026-03-29T07:54:13.000+00:00"
             ],
-            "total_items": 2,
+            "total_items": 3,
             "truncated_items": false
-          }
+          },
+          "truncated_fields": 6
         }
       },
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-11T16:09:45.672598+00:00"
+      "timestamp": "2026-05-27T13:54:34.392127+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -700,41 +795,35 @@
           "sql_api_discrepancy": false
         },
         "dry_run_flags": {
-          "dry_run": true
+          "dry_run": false
         },
         "slots": {
           "answer_family": "destination_export",
           "api_error": false,
+          "api_item_count": 1,
           "discrepancy": false,
-          "dry_run": true,
-          "entity_ids": {
-            "items": [
-              "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          },
+          "dry_run": false,
           "entity_names": {
             "items": [
               "modified"
             ],
-            "total_items": 2,
+            "total_items": 3,
             "truncated_items": false
           },
           "slots_present": {
             "items": [
               "entity_names"
             ],
-            "total_items": 8,
+            "total_items": 14,
             "truncated_items": true
           },
           "sql_row_count": 1,
-          "truncated_fields": 5
+          "truncated_fields": 10
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-11T16:09:45.676257+00:00"
+      "timestamp": "2026-05-27T13:54:34.403897+00:00"
     },
     {
       "checkpoint_id": "checkpoint_16_answer_verification",
@@ -743,12 +832,12 @@
       "effect": "checks final-answer claims against SQL/API evidence",
       "efficiency_role": "rewrites safely without extra tool calls",
       "input_summary": {
-        "claim_count": 4,
+        "claim_count": 5,
         "slots_present": {
           "items": [
             "entity_names"
           ],
-          "total_items": 8,
+          "total_items": 14,
           "truncated_items": true
         }
       },
@@ -759,13 +848,13 @@
           "truncated_items": false
         },
         "rewrite_applied": false,
-        "supported_claims_count": 4,
+        "supported_claims_count": 5,
         "unsupported_claims_count": 0,
         "verifier_passed": true
       },
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-11T16:09:45.676284+00:00"
+      "timestamp": "2026-05-27T13:54:34.403915+00:00"
     },
     {
       "checkpoint_id": "checkpoint_17_answer_reranking",
@@ -783,7 +872,7 @@
       },
       "stage": "answer selection",
       "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-11T16:09:45.676291+00:00"
+      "timestamp": "2026-05-27T13:54:34.403920+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -795,39 +884,42 @@
         "verifier_passed": true
       },
       "output": {
-        "answer_length": 332,
-        "final_answer": "Based on the evidence provided, 1 destination was found. The most recent is \"Activate segments to S3 Feed\" (amazon-s3 target) with a modification timestamp of 2026-04-14 16:15:03.000 UTC. Live API evidence is needed to valid [truncated]",
-        "final_token_estimate": 75
+        "answer_length": 295,
+        "final_answer": "Based on the evidence provided, 1 destination was found. The most recent is \"Activate segments to S3 Feed\" (amazon-s3 target) with a modificatio [truncated]",
+        "final_token_estimate": 70
       },
       "stage": "final response",
       "technique": "concise grounded final response",
-      "timestamp": "2026-05-11T16:09:45.676428+00:00"
+      "timestamp": "2026-05-27T13:54:34.404037+00:00"
     },
     {
       "active": true,
       "checkpoint_id": "checkpoint_official_token_reduction",
       "correctness_impact_expected": false,
-      "estimated_tokens_after": 1319,
-      "estimated_tokens_before": 1365,
-      "expected_savings": 46,
+      "estimated_tokens_after": 1333,
+      "estimated_tokens_before": 1531,
+      "expected_savings": 198,
       "packaged_execution_changed": false,
       "reduced_fields": [
         "steps[0].candidate_tables",
-        "steps[2].metadata_path"
+        "steps[1].decomposition",
+        "steps[2].metadata_path",
+        "steps[3].rationale",
+        "steps[3].steps"
       ]
     }
   ],
   "domain_type": "DESTINATION_DATAFLOW",
   "errors": [],
-  "estimated_tokens": 1319,
-  "execution_time": 0.0023443750105798244,
-  "final_answer": "Based on the evidence provided, 1 destination was found. The most recent is \"Activate segments to S3 Feed\" (amazon-s3 target) with a modification timestamp of 2026-04-14 16:15:03.000 UTC. Live API evidence is needed to validate the requested sandbox. Live API verification was not executed because Adobe credentials are unavailable.",
+  "estimated_tokens": 1333,
+  "execution_time": 0.8286398341879249,
+  "final_answer": "Based on the evidence provided, 1 destination was found. The most recent is \"Activate segments to S3 Feed\" (amazon-s3 target) with a modification timestamp of 2026-04-14 16:15:03.000 UTC. Live API evidence is needed to validate the requested sandbox. The API returned usable supporting evidence.",
   "original_query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
-  "planning_time": 0.008277625078335404,
-  "preprocessing_time": 0.007223707856610417,
+  "planning_time": 0.002517916727811098,
+  "preprocessing_time": 0.0026825000531971455,
   "query_id": "example_005",
   "route_type": "SQL_THEN_API",
-  "runtime": 0.04328545811586082,
+  "runtime": 0.8659107079729438,
   "sql_call_count": 1,
   "steps": [
     {
@@ -851,9 +943,7 @@
       "candidate_tables": [
         "br_campaign_segment",
         "dim_connector",
-        "dim_target",
-        "hkg_br_base_segment_used_by_dependent_segment",
-        "hkg_br_blueprint_collection"
+        "dim_target"
       ],
       "confidence": 0.6499999999999999,
       "domain_type": "DESTINATION_DATAFLOW",
@@ -864,10 +954,7 @@
     {
       "decomposition": {
         "expected_answer_shape": "table_or_list",
-        "sub_questions": [
-          "Ground named entities and identifiers.",
-          "Apply requested ordering."
-        ]
+        "sub_question_count": 2
       },
       "kind": "nlp",
       "relevance": {
@@ -913,13 +1000,12 @@
       "optimizer_actions": [
         "ensemble selected generic_sql_first"
       ],
-      "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve the answer. Fast path: destination_export_recent+recent_destination_flows.",
+      "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve [truncated]",
       "steps": [
         {
           "action": "sql",
           "family": "destination_export_recent",
-          "purpose": "Fast-path SQL grounding.",
-          "sql": "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS target_name, D.\"DESCRIPTION\", D.\"STATE\", D.\"CONNECTIONSPECID\" AS connection_spec_id, D.\"CREATEDTIME\" AS created_time, D.\"UPDATEDTIME\" AS modified, D.\"INTERVAL\", D.\"FREQUENCY\" FROM \"dim_target\" AS D ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50"
+          "sql_recorded_in_sql_call": true
         },
         {
           "action": "api",
@@ -930,7 +1016,6 @@
             "property": "inheritedAttributes.properties.isDestinationFlow==true",
             "sort": "updatedTime:desc"
           },
-          "purpose": "API parameter template: recent_destination_flows.",
           "url": "/data/foundation/flowservice/flows"
         }
       ],
@@ -991,18 +1076,41 @@
         "sort": "updatedTime:desc"
       },
       "result": {
-        "dry_run": true,
+        "dry_run": false,
         "endpoint": "/data/foundation/flowservice/flows",
-        "error": "Adobe credentials unavailable; API call not executed.",
+        "error": null,
         "method": "GET",
-        "ok": false,
+        "ok": true,
         "params": {
           "limit": "50",
           "property": "inheritedAttributes.properties.isDestinationFlow==true",
           "sort": "updatedTime:desc"
         },
-        "result_preview": null,
-        "url": "https://platform.adobe.io/data/foundation/flowservice/flows"
+        "result_preview": {
+          "items": {
+            "items": {
+              "items": [
+                {
+                  "createdAt": 1774770853226,
+                  "createdBy": "CCBE21E6693750D80A495FBC@techacct.adobe.com",
+                  "createdClient": "6c4ddfb5459c477ba86b3790550fa592",
+                  "id": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+                  "name": "Activate segments to S3 Feed",
+                  "state": "enabled",
+                  "truncated_fields": 1,
+                  "updatedAt": 1779811385747,
+                  "updatedBy": "acp_foundation_connectors@AdobeID"
+                }
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "total_items": 1,
+            "truncated_items": false
+          }
+        },
+        "truncated_fields": 3,
+        "url": "[REDACTED]/data/foundation/flowservice/flows"
       },
       "url": "/data/foundation/flowservice/flows",
       "validation": {
@@ -1026,8 +1134,14 @@
         "statuses",
         "timestamps",
         "sql_row_count",
-        "dry_run",
-        "first_rows"
+        "api_item_count",
+        "live_api_evidence_available",
+        "api_evidence_state",
+        "answer_slot_source",
+        "api_pagination",
+        "api_parser_modes",
+        "first_rows",
+        "api_items"
       ],
       "unsupported_claims_count": 0,
       "verifier_passed": true
@@ -1035,10 +1149,10 @@
   ],
   "strategy": "SQL_FIRST_API_VERIFY",
   "timings": {
-    "answer_time": 0.0042059579864144325,
-    "execution_time": 0.0023443750105798244,
-    "planning_time": 0.008277625078335404,
-    "preprocessing_time": 0.007223707856610417
+    "answer_time": 0.012385000009089708,
+    "execution_time": 0.8286398341879249,
+    "planning_time": 0.002517916727811098,
+    "preprocessing_time": 0.0026825000531971455
   },
   "tool_call_count": 2
 }

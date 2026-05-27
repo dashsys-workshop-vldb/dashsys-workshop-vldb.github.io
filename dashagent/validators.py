@@ -142,6 +142,8 @@ class APIValidator:
                 json.dumps(params)
             except TypeError:
                 errors.append("API params are not JSON-serializable.")
+            if params_have_unresolved_placeholder(params):
+                errors.append("API params contain unresolved parameter placeholders.")
         if headers:
             for key in headers:
                 if key.lower() in {"authorization", "x-api-key"}:
@@ -222,6 +224,16 @@ def extract_tables_and_aliases(sql: str) -> tuple[list[str], dict[str, str]]:
         if alias:
             aliases[alias] = table
     return list(dict.fromkeys(tables)), aliases
+
+
+def params_have_unresolved_placeholder(value: Any) -> bool:
+    if isinstance(value, dict):
+        return any(params_have_unresolved_placeholder(item) for item in value.values())
+    if isinstance(value, list):
+        return any(params_have_unresolved_placeholder(item) for item in value)
+    if isinstance(value, str):
+        return bool(re.search(r"<[^>]+>|\{[a-zA-Z0-9_]+\}", value))
+    return False
 
 
 def extract_qualified_columns(sql: str) -> list[tuple[str, str]]:

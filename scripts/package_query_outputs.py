@@ -14,6 +14,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from dashagent.config import Config
+from dashagent.planner import PACKAGED_DEFAULT_STRATEGY, execution_base_strategy
 from dashagent.token_reduction_policy import apply_token_reduction_to_trajectory
 from dashagent.trajectory import redact_secrets
 
@@ -54,6 +55,9 @@ NON_SUBMISSION_OUTPUT_DIRS = {
     "mock_live_api_evidence_pipeline_trial",
     "evidence_aware_answer_rewrite_trial",
     "endpoint_family_tiebreak_v2_shadow",
+    "dashagent_500_prompt_suite_eval_real",
+    "generated_prompt_suite_diagnostic",
+    "score_focused_core_improvement_trials",
     "final_submission",
     "tmp",
     "source_code",
@@ -73,7 +77,7 @@ def package_query_outputs(config: Config) -> dict[str, Any]:
         _quarantine_existing_final_submission(config.outputs_dir, final_dir)
     final_dir.mkdir(parents=True)
 
-    preferred_strategy = os.getenv("DASHAGENT_SUBMISSION_STRATEGY", "SQL_FIRST_API_VERIFY")
+    preferred_strategy = os.getenv("DASHAGENT_SUBMISSION_STRATEGY", PACKAGED_DEFAULT_STRATEGY)
     query_dirs = select_submission_query_dirs(
         discover_query_output_dirs(config.outputs_dir),
         preferred_strategy=preferred_strategy,
@@ -143,20 +147,24 @@ def discover_query_output_dirs(outputs_dir: Path) -> list[Path]:
         dirnames[:] = [
             name
             for name in dirnames
-            if name not in NON_SUBMISSION_OUTPUT_DIRS
-            and not name.startswith("probe")
-            and not name.startswith("score075_")
+            if not _is_non_submission_path_part(name)
         ]
         if "trajectory.json" not in filenames:
             continue
-        if any(
-            part in NON_SUBMISSION_OUTPUT_DIRS or part.startswith("probe") or part.startswith("score075_")
-            for part in directory.parts
-        ):
+        if any(_is_non_submission_path_part(part) for part in directory.parts):
             continue
         if all((directory / filename).exists() for filename in REQUIRED_QUERY_FILES):
             candidates.append(directory)
     return sorted(candidates, key=lambda path: str(path))
+
+
+def _is_non_submission_path_part(part: str) -> bool:
+    return (
+        part in NON_SUBMISSION_OUTPUT_DIRS
+        or part.startswith("probe")
+        or part.startswith("score075_")
+        or part.startswith("da500_")
+    )
 
 
 def select_submission_query_dirs(
@@ -199,7 +207,7 @@ def _copy_reduced_trajectory_if_needed(source: Path, target: Path) -> None:
     except Exception:
         shutil.copy2(source, target)
         return
-    if trajectory.get("strategy") != "SQL_FIRST_API_VERIFY":
+    if execution_base_strategy(str(trajectory.get("strategy") or "")) != "SQL_FIRST_API_VERIFY":
         shutil.copy2(source, target)
         return
     checkpoints = trajectory.get("checkpoints") or []

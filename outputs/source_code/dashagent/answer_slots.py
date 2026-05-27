@@ -205,6 +205,9 @@ def extract_answer_slots(query: str, tool_results: list[dict[str, Any]]) -> Answ
             important = evidence.get("important_fields") or {}
             if isinstance(important, dict):
                 collect_mapping(slots, important)
+                for value_item in important.get("values", []) if isinstance(important.get("values"), list) else []:
+                    if isinstance(value_item, dict):
+                        collect_mapping(slots, value_item)
             for item in items[:10]:
                 collect_mapping(slots, item)
             if evidence.get("errors"):
@@ -212,10 +215,8 @@ def extract_answer_slots(query: str, tool_results: list[dict[str, Any]]) -> Answ
                 if any(error != "dry_run" for error in evidence.get("errors", [])):
                     slots.api_error = True
 
-    if saw_live_api and slots.sql_row_count is not None and slots.api_item_count is not None:
-        slots.discrepancy = slots.sql_row_count == 0 and slots.api_item_count > 0
-    if sql_counts and live_api_counts and sql_counts[0] > 0 and live_api_counts[0] > 0 and sql_counts[0] != live_api_counts[0]:
-        slots.discrepancy = True
+    if sql_counts and live_api_counts and query_requests_discrepancy_check(slots.query):
+        slots.discrepancy = sql_counts[0] != live_api_counts[0]
 
     slots.entity_names = dedupe(slots.entity_names)
     slots.entity_ids = dedupe(slots.entity_ids)
@@ -225,6 +226,11 @@ def extract_answer_slots(query: str, tool_results: list[dict[str, Any]]) -> Answ
     slots.api_errors = dedupe(slots.api_errors)
     slots.api_parser_modes = dedupe(slots.api_parser_modes)
     return slots
+
+
+def query_requests_discrepancy_check(query: str) -> bool:
+    lowered = query.lower()
+    return any(token in lowered for token in ["discrepancy", "disagree", "mismatch", "conflict", "compare sql", "sql and api"])
 
 
 def _only_synthetic_dry_run_errors(value: Any) -> bool:
@@ -278,7 +284,7 @@ def collect_mapping(slots: AnswerSlots, mapping: dict[str, Any]) -> None:
             slots.statuses.append(text)
         if key_norm in {normalize_key(key) for key in TIME_KEYS} or re.match(r"20\d{2}-\d{2}-\d{2}", text):
             slots.timestamps.append(text)
-        if key_norm in {normalize_key(key) for key in COUNT_KEYS} and re.search(r"\d", text):
+        if looks_like_count_key(key_norm) and re.search(r"\d", text):
             slots.counts.append(value)
             slots.evidence_numbers.add(re.sub(r"[^\d.]", "", text) or text)
 
@@ -321,6 +327,17 @@ def looks_like_id(text: str) -> bool:
     return bool(
         re.fullmatch(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", text, flags=re.I)
         or re.fullmatch(r"01[A-Z0-9]{20,}", text)
+    )
+
+
+def looks_like_count_key(key_norm: str) -> bool:
+    count_keys = {normalize_key(key) for key in COUNT_KEYS}
+    return (
+        key_norm in count_keys
+        or key_norm.endswith("count")
+        or key_norm.endswith("counts")
+        or key_norm.startswith("num")
+        or key_norm.startswith("numberof")
     )
 
 

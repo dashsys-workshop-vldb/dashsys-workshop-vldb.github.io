@@ -38,6 +38,11 @@ def main() -> int:
         action="store_true",
         help="Explicitly allow diagnostic-only live strict eval when smoke has no live_success.",
     )
+    parser.add_argument(
+        "--dataset",
+        type=Path,
+        help="Optional organizer-style dataset JSON to evaluate instead of the default data/data.json.",
+    )
     args = parser.parse_args()
 
     load_local_env(ROOT)
@@ -68,7 +73,20 @@ def main() -> int:
     write_answer_style_patterns(config)
     harness = EvalHarness(config)
     selected = parse_strategies(args.strategy, args.strategies)
-    result = harness.run(strategies=selected or STRATEGIES, include_live_api_metrics=args.live_api, strict=args.strict)
+    examples = harness.load_examples(args.dataset) if args.dataset else None
+    result = harness.run(
+        strategies=selected or STRATEGIES,
+        examples=examples,
+        include_live_api_metrics=args.live_api,
+        strict=args.strict,
+    )
+    if args.dataset:
+        result["dataset_path"] = str(args.dataset)
+        suffix = "_strict" if args.strict else ""
+        (config.outputs_dir / f"eval_results{suffix}.json").write_text(
+            json.dumps(result, indent=2, sort_keys=True, default=str),
+            encoding="utf-8",
+        )
     if guard and guard.get("override_used"):
         _record_override_outputs(original_config, config, result, guard, strict=args.strict)
     print(
@@ -78,6 +96,7 @@ def main() -> int:
                 "strategies": result["strategies"],
                 "summary": result["summary"],
                 "strict": result.get("strict", False),
+                "dataset_path": str(args.dataset) if args.dataset else None,
                 "live_api_metrics": result.get("live_api_metrics"),
                 "strategy_comparison": str(config.outputs_dir / ("strategy_comparison_strict.md" if args.strict else "strategy_comparison.md")),
                 "live_api_guard": guard,

@@ -15,9 +15,10 @@ from .query_normalizer import normalize_query
 from .query_tokens import extract_query_tokens
 from .simple_prompt_gate import decide_simple_prompt
 from .trajectory import compact_preview, estimate_tokens
+from .planner import PACKAGED_DEFAULT_STRATEGY
 
 
-DEFAULT_AGENT_STRATEGY = "SQL_FIRST_API_VERIFY"
+DEFAULT_AGENT_STRATEGY = PACKAGED_DEFAULT_STRATEGY
 
 
 def analyze_query_tool(query: str, *, config: Config | None = None) -> dict[str, Any]:

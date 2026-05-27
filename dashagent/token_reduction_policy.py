@@ -224,6 +224,8 @@ def _compact_plan_steps(value: Any) -> Any:
         step = {key: item.get(key) for key in ["action", "family", "method", "url", "params"] if item.get(key) not in (None, "", [], {})}
         if item.get("sql"):
             step["sql_recorded_in_sql_call"] = True
+        if item.get("warnings"):
+            step["warnings"] = _dedupe_short_list(item.get("warnings"), DEFAULT_TOKEN_REDUCTION_POLICY.max_list_items)
         compacted.append(step)
     return compacted
 

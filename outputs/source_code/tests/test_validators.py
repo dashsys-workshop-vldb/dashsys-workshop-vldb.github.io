@@ -28,6 +28,21 @@ def test_api_validator_rejects_unknown_endpoint(tiny_project):
     assert "Unknown" in result.errors[0]
 
 
+def test_api_validator_rejects_unresolved_query_params(tiny_project):
+    catalog = EndpointCatalog(tiny_project)
+    validator = APIValidator(catalog)
+
+    result = validator.validate(
+        "GET",
+        "/data/core/ups/audiences",
+        {"property": "destinationId==<destination_id>", "limit": "5"},
+        {},
+    )
+
+    assert result.ok is False
+    assert any("unresolved parameter" in error.lower() for error in result.errors)
+
+
 def test_endpoint_catalog_loads(tiny_project):
     catalog = EndpointCatalog(tiny_project)
     assert catalog.match("GET", "/ajo/journey") is not None

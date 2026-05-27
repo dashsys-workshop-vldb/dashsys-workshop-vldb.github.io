@@ -174,7 +174,6 @@ def test_sql_primary_storyboard_is_sql_backed_and_visual_first():
     assert "&quot;schemas&quot; = records in dim_blueprint" in text
     assert "Plan split" in text
     assert "main answer path: SQL count" in text
-    assert "side check: dry-run API verification" in text
     assert "Main answer path" in text
     assert "SQL count → evidence → final answer" in text
     assert "table + column + count operation" in text
@@ -184,11 +183,24 @@ def test_sql_primary_storyboard_is_sql_backed_and_visual_first():
     assert data["grounded_fact_summary"] == "user has 74 schemas"
     assert "Grounded fact" in text
     assert "user has 74 schemas" in text
-    assert data["final_answer"] == "You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable."
-    assert "Final answer<br/>You have 74 schemas.<br/>Dry-run note: live API verification unavailable." in text
-    assert data["api_branch_summary"] == "dry-run verification only; not answer source"
-    assert "dry-run verification only" in text
-    assert "not answer source" in text
+    if "dry-run" in data["api_branch_summary"].lower() or "unavailable" in data["api_branch_summary"].lower():
+        assert data["final_answer"] == "You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable."
+        assert "side check: dry-run API verification" in text
+        assert "Final answer<br/>You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable." in text
+        assert data["api_branch_summary"] == "dry-run verification only; not answer source"
+        assert "dry-run verification only" in text
+        assert "not answer source" in text
+    else:
+        live_schema_answer = (
+            "You have 74 schemas. This count comes from your blueprint query and is confirmed by the API response "
+            "from Adobe Schema Registry, which shows tenant schemas are available."
+        )
+        assert data["final_answer"] == live_schema_answer
+        assert "side check: live API verification" in text
+        assert "Final answer<br/>You have 74 schemas. This count comes from your blueprint query" in text
+        assert data["api_branch_summary"] == "Live/API evidence available."
+        assert "live API verification" in text
+        assert "supporting live evidence" in text
     assert "SQL is the answer source" in text
     assert "SQL evidence = 74 schemas" in text
     assert "SQL Execution + Evidence" in text

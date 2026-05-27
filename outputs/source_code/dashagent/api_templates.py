@@ -8,7 +8,7 @@ from typing import Any
 from urllib.parse import parse_qsl, quote, urlparse
 
 from .config import Config, DEFAULT_CONFIG
-from .endpoint_catalog import normalize_api_path
+from .endpoint_catalog import SCHEMA_REGISTRY_LIST_ACCEPT, UNIFIED_TAGS_BASE_URL, normalize_api_path
 
 
 @dataclass(frozen=True)
@@ -18,6 +18,7 @@ class APITemplate:
     params: dict[str, Any] = field(default_factory=dict)
     family: str = "generic"
     warnings: list[str] = field(default_factory=list)
+    headers: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -26,6 +27,7 @@ class APITemplate:
             "params": self.params,
             "family": self.family,
             "warnings": self.warnings,
+            "headers": self.headers,
         }
 
 
@@ -152,12 +154,12 @@ def _audit_templates(query: str, lowered: str) -> list[APITemplate]:
         return [
             APITemplate(
                 "GET",
-                "/audit/events",
+                "/data/foundation/audit/events",
                 {"property": "assetType==dataset", "orderBy": "-timestamp", "limit": "50"},
                 "dataset_audit_changes",
             )
         ]
-    return [APITemplate("GET", "/audit/events", {"limit": "20"}, "audit_events")]
+    return [APITemplate("GET", "/data/foundation/audit/events", {"limit": "20"}, "audit_events")]
 
 
 def _schema_dataset_templates(query: str, lowered: str) -> list[APITemplate]:
@@ -167,7 +169,7 @@ def _schema_dataset_templates(query: str, lowered: str) -> list[APITemplate]:
             templates.append(
                 APITemplate(
                     "GET",
-                    "/audit/events",
+                    "/data/foundation/audit/events",
                     {"property": "assetType==dataset", "orderBy": "-timestamp", "limit": "50"},
                     "dataset_audit_changes",
                 )
@@ -197,12 +199,29 @@ def _schema_dataset_templates(query: str, lowered: str) -> list[APITemplate]:
                     "/data/foundation/schemaregistry/tenant/schemas",
                     {"limit": "25", "filter": "class==ExperienceEvent;isProfileEnabled==true"},
                     "profile_enabled_experience_event_schemas",
+                    headers={"Accept": SCHEMA_REGISTRY_LIST_ACCEPT},
                 )
             )
         elif term:
-            templates.append(APITemplate("GET", "/schemas", {"limit": "5", "filter": f"name=={term}"}, "schema_by_name"))
+            templates.append(
+                APITemplate(
+                    "GET",
+                    "/data/foundation/schemaregistry/tenant/schemas",
+                    {"filter": f"name=={term}"},
+                    "schema_by_name",
+                    headers={"Accept": SCHEMA_REGISTRY_LIST_ACCEPT},
+                )
+            )
         else:
-            templates.append(APITemplate("GET", "/schemas", {"limit": "25"}, "schema_list"))
+            templates.append(
+                APITemplate(
+                    "GET",
+                    "/data/foundation/schemaregistry/tenant/schemas",
+                    {"limit": "25"},
+                    "schema_list",
+                    headers={"Accept": SCHEMA_REGISTRY_LIST_ACCEPT},
+                )
+            )
     return templates
 
 
@@ -211,20 +230,20 @@ def _tag_templates(query: str, lowered: str) -> list[APITemplate]:
         return []
     if "category" in lowered:
         return [
-            APITemplate("GET", "/unifiedtags/tagCategory", {"limit": "100"}, "tag_categories"),
+            APITemplate("GET", f"{UNIFIED_TAGS_BASE_URL}/unifiedtags/tagCategory", {"limit": "100"}, "tag_categories"),
             APITemplate(
                 "GET",
-                "/unifiedtags/tags",
-                {"limit": "100", "tagCategoryId": "Uncategorized-87891E4066602D250A495F91@AdobeOrg"},
+                f"{UNIFIED_TAGS_BASE_URL}/unifiedtags/tags",
+                {"limit": "100", "tagCategoryId": "Uncategorized"},
                 "tags_by_uncategorized_category",
             ),
         ]
     if "named" in lowered or quoted_term(query):
         tag_id = extract_uuid(query) or "51175a7f-aa60-4533-bef1-717b3cef7818"
-        return [APITemplate("GET", f"/unifiedtags/tags/{tag_id}", {}, "tag_details_by_id")]
+        return [APITemplate("GET", f"{UNIFIED_TAGS_BASE_URL}/unifiedtags/tags/{tag_id}", {}, "tag_details_by_id")]
     if "how many" in lowered or "count" in lowered:
-        return [APITemplate("GET", "/unifiedtags/tags", {"limit": "20"}, "tag_count")]
-    return [APITemplate("GET", "/unifiedtags/tags", {"limit": "25"}, "tag_list")]
+        return [APITemplate("GET", f"{UNIFIED_TAGS_BASE_URL}/unifiedtags/tags", {"limit": "20"}, "tag_count")]
+    return [APITemplate("GET", f"{UNIFIED_TAGS_BASE_URL}/unifiedtags/tags", {"limit": "25"}, "tag_list")]
 
 
 def _merge_policy_templates(query: str, lowered: str) -> list[APITemplate]:

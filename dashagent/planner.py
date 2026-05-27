@@ -21,6 +21,8 @@ from .schema_aware_sql_generator import (
 from .sql_templates import SQLTemplate, find_sql_template
 
 
+PACKAGED_DEFAULT_STRATEGY = "SQL_FIRST_API_VERIFY"
+
 STRATEGIES = [
     "SQL_ONLY_BASELINE",
     "LLM_FREE_AGENT_BASELINE",

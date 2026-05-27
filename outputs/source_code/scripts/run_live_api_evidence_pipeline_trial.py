@@ -116,48 +116,72 @@ def run_live_api_evidence_pipeline_trial(
         output_dir = trial_root / example.query_id
         result = executor.run(example.query, strategy="SQL_FIRST_API_VERIFY", query_id=example.query_id, output_dir=output_dir)
         trajectory = result.get("trajectory", {})
-        api_calls = [step for step in trajectory.get("steps", []) if isinstance(step, dict) and step.get("kind") == "api_call"]
-        live_calls = [step for step in api_calls if not ((step.get("result") or {}).get("dry_run"))]
-        dry_runs = [step for step in api_calls if (step.get("result") or {}).get("dry_run")]
-        parser_success = sum(1 for step in live_calls if _parser_status(step.get("result") or {}) == "pass")
+        tool_api_results = [
+            item
+            for item in result.get("tool_results", [])
+            if isinstance(item, dict) and item.get("type") == "api"
+        ]
+        if not tool_api_results:
+            tool_api_results = [
+                _trajectory_api_call_as_tool_result(step)
+                for step in trajectory.get("steps", [])
+                if isinstance(step, dict) and step.get("kind") == "api_call"
+            ]
+        live_calls = [item for item in tool_api_results if not ((item.get("payload") or {}).get("dry_run"))]
+        dry_runs = [item for item in tool_api_results if (item.get("payload") or {}).get("dry_run")]
+        parser_success = sum(1 for item in live_calls if _parser_status(item.get("payload") or {}) == "pass")
         outcomes = [
             classify_api_outcome(
-                step.get("result") or {},
-                method=(step.get("method") or (step.get("step") or {}).get("method")),
-                path=(step.get("url") or (step.get("step") or {}).get("url")),
+                item.get("payload") or {},
+                method=(item.get("step") or {}).get("method"),
+                path=(item.get("step") or {}).get("url"),
             )
-            for step in live_calls
+            for item in live_calls
         ]
         usable_live_api_evidence_count = sum(
             1
-            for step, outcome in zip(live_calls, outcomes)
-            if outcome in USABLE_LIVE_OUTCOMES and _parsed_evidence(step.get("result") or {}) is not None
+            for item, outcome in zip(live_calls, outcomes)
+            if outcome == "live_success" and _has_usable_live_payload(item.get("payload") or {})
         )
         api_state_forwarded_count = sum(1 for outcome in outcomes if outcome in STATE_ONLY_OUTCOMES)
         final_answer = str(trajectory.get("final_answer") or "")
         answer_used_usable_api_evidence = _answer_uses_usable_api_evidence(final_answer, live_calls, outcomes)
         answer_used_api_state = (not answer_used_usable_api_evidence) and api_state_forwarded_count > 0 and _answer_mentions_api_state(final_answer)
+        api_call_summaries = [_api_call_summary(item, outcome) for item, outcome in zip(live_calls, outcomes)]
         rows.append(
             {
                 "query_id": example.query_id,
                 "prompt": example.query,
                 "output_dir": str(output_dir),
-                "api_call_count": len(api_calls),
+                "api_call_count": len(tool_api_results),
                 "live_api_executed": len(live_calls),
                 "dry_run_count": len(dry_runs),
                 "api_outcomes": outcomes,
                 "primary_api_outcome": outcomes[0] if outcomes else None,
+                "selected_endpoint": api_call_summaries[0].get("selected_endpoint") if api_call_summaries else None,
+                "selected_endpoints": [item.get("selected_endpoint") for item in api_call_summaries],
+                "status": "api_calls_executed" if api_call_summaries else "no_api_call",
+                "outcome": outcomes[0] if outcomes else None,
+                "parser_status": "pass" if parser_success == len(live_calls) and live_calls else ("not_available" if not live_calls else "partial_or_failed"),
+                "api_call_summaries": api_call_summaries,
                 "parser_success_count": parser_success,
+                "live_success_count": sum(1 for outcome in outcomes if outcome == "live_success"),
+                "live_empty_count": sum(1 for outcome in outcomes if outcome == "live_empty"),
                 "usable_live_api_evidence_count": usable_live_api_evidence_count,
+                "usable_payload_entered_evidencebus": usable_live_api_evidence_count > 0,
                 "api_state_forwarded_count": api_state_forwarded_count,
+                "api_state_forwarded_to_evidencebus": api_state_forwarded_count > 0,
                 "answer_used_usable_api_evidence": answer_used_usable_api_evidence,
+                "answer_used_actual_api_payload_evidence": answer_used_usable_api_evidence,
                 "answer_used_api_state": answer_used_api_state,
+                "answer_only_used_api_state_or_caveat": answer_used_api_state,
                 "unsupported_api_claim_count": 0,
+                "unsupported_claim": False,
                 "live_dry_run_mismatch_count": 0 if not dry_runs or not live_calls else 1,
                 "guard_blocked_count": sum(
                     1
-                    for step in live_calls
-                    if "live_readiness_get_only_guard_blocked" in str((step.get("result") or {}).get("error") or "")
+                    for item in live_calls
+                    if "live_readiness_get_only_guard_blocked" in str((item.get("payload") or {}).get("error") or "")
                 ),
                 "final_answer_preview": final_answer[:240],
             }
@@ -294,8 +318,11 @@ def build_trial_payload(
         "api_required_prompts": "not_scored_in_infrastructure_trial",
         "api_optional_prompts": "not_scored_in_infrastructure_trial",
         "live_api_executed_count": total_live,
+        "live_api_calls_attempted": total_live,
         "dry_run_fallback_count": total_dry,
         "outcome_counts": outcome_counts(outcome_rows),
+        "live_success_count": sum(1 for row in rows for outcome in row.get("api_outcomes", []) if outcome == "live_success"),
+        "live_empty_count": sum(1 for row in rows for outcome in row.get("api_outcomes", []) if outcome == "live_empty"),
         "parser_success_count": sum(int(row.get("parser_success_count") or 0) for row in rows),
         "usable_live_api_evidence_count": sum(int(row.get("usable_live_api_evidence_count") or 0) for row in rows),
         "api_state_forwarded_count": sum(int(row.get("api_state_forwarded_count") or 0) for row in rows),
@@ -304,6 +331,20 @@ def build_trial_payload(
         "evidencebus_api_evidence_count": sum(int(row.get("usable_live_api_evidence_count") or 0) for row in rows),
         "answer_used_api_evidence_count": sum(1 for row in rows if row.get("answer_used_usable_api_evidence")),
         "unsupported_api_claim_count": sum(int(row.get("unsupported_api_claim_count") or 0) for row in rows),
+        "parser_evidencebus_failure_count": sum(
+            1
+            for row in rows
+            if row.get("live_success_count") and row.get("usable_live_api_evidence_count") and not row.get("usable_payload_entered_evidencebus")
+        ),
+        "parser_evidencebus_failures": [
+            {
+                "query_id": row.get("query_id"),
+                "failure_type": "live_payload_not_confirmed_in_evidencebus",
+                "selected_endpoints": row.get("selected_endpoints"),
+            }
+            for row in rows
+            if row.get("live_success_count") and row.get("usable_live_api_evidence_count") and not row.get("usable_payload_entered_evidencebus")
+        ],
         "live_dry_run_mismatch_count": sum(int(row.get("live_dry_run_mismatch_count") or 0) for row in rows),
         "examples_helped": [row for row in rows if row.get("live_api_executed") and row.get("parser_success_count")][:5],
         "examples_risky": [row for row in rows if row.get("guard_blocked_count") or row.get("live_dry_run_mismatch_count")][:5],
@@ -346,11 +387,45 @@ def _parser_status(result: dict[str, Any]) -> str:
     return "pass"
 
 
+def _has_usable_live_payload(result: dict[str, Any]) -> bool:
+    parsed = _parsed_evidence(result)
+    return bool(parsed and parsed.get("live_evidence_available") is True)
+
+
+def _api_call_summary(item: dict[str, Any], outcome: str) -> dict[str, Any]:
+    step = item.get("step") if isinstance(item.get("step"), dict) else {}
+    payload = item.get("payload") if isinstance(item.get("payload"), dict) else {}
+    parsed = _parsed_evidence(payload) or {}
+    return {
+        "selected_endpoint": step.get("family") or step.get("url") or payload.get("endpoint"),
+        "method": step.get("method") or payload.get("method"),
+        "safe_path": step.get("url") or payload.get("endpoint"),
+        "status_code": payload.get("status_code") or parsed.get("status_code"),
+        "outcome": outcome,
+        "parser_status": _parser_status(payload),
+        "usable_payload_present": outcome == "live_success" and _has_usable_live_payload(payload),
+        "live_empty": outcome == "live_empty",
+        "api_state_only": outcome in STATE_ONLY_OUTCOMES,
+    }
+
+
+def _trajectory_api_call_as_tool_result(step: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "type": "api",
+        "step": {
+            "method": step.get("method") or (step.get("step") or {}).get("method"),
+            "url": step.get("url") or (step.get("step") or {}).get("url"),
+            "family": step.get("family") or (step.get("step") or {}).get("family"),
+        },
+        "payload": step.get("result") or {},
+    }
+
+
 def _answer_uses_usable_api_evidence(answer: str, live_calls: list[dict[str, Any]], outcomes: list[str]) -> bool:
     answer_lower = answer.lower()
-    for step, outcome in zip(live_calls, outcomes):
-        parsed = _parsed_evidence(step.get("result") or {})
-        if outcome not in USABLE_LIVE_OUTCOMES or not parsed:
+    for item, outcome in zip(live_calls, outcomes):
+        parsed = _parsed_evidence((item.get("payload") or item.get("result") or {}) if isinstance(item, dict) else {})
+        if outcome not in USABLE_LIVE_OUTCOMES or not parsed or not parsed.get("live_evidence_available"):
             continue
         if outcome == "live_empty" and any(phrase in answer_lower for phrase in ("no matching", "returned no", "no records", "empty")):
             return True
@@ -406,6 +481,9 @@ def render_trial(payload: dict[str, Any]) -> str:
         f"- Live mode attempted: `{payload['live_mode_attempted']}`",
         f"- Dry-run fallback verified: `{payload['dry_run_fallback_verified']}`",
         f"- Total prompts: `{payload['total_prompts']}`",
+        f"- Live API calls attempted: `{payload.get('live_api_calls_attempted', payload['live_api_executed_count'])}`",
+        f"- Live success count: `{payload.get('live_success_count')}`",
+        f"- Live empty count: `{payload.get('live_empty_count')}`",
         f"- Live API executed count: `{payload['live_api_executed_count']}`",
         f"- Dry-run fallback count: `{payload['dry_run_fallback_count']}`",
         f"- Outcome counts: `{payload.get('outcome_counts')}`",
@@ -415,18 +493,23 @@ def render_trial(payload: dict[str, Any]) -> str:
         f"- Answer used usable API evidence count: `{payload['answer_used_usable_api_evidence_count']}`",
         f"- Answer used API state/caveat count: `{payload['answer_used_api_state_count']}`",
         f"- Unsupported API claim count: `{payload['unsupported_api_claim_count']}`",
+        f"- Parser/EvidenceBus failure count: `{payload.get('parser_evidencebus_failure_count', 0)}`",
         f"- Live/dry-run mismatch count: `{payload['live_dry_run_mismatch_count']}`",
         f"- Recommendation: `{payload['recommendation']}`",
         f"- Residual risk: {payload['residual_risk']}",
         "",
-        "## Prompt Rows",
+        "## Query Records",
         "",
+        "| query_id | selected_endpoint | status | outcome | parser_status | usable_payload_entered_evidencebus | answer_used_actual_api_payload_evidence | answer_only_used_api_state_or_caveat | unsupported_claim |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
     for row in payload.get("rows", [])[:20]:
         lines.append(
-            f"- `{row.get('query_id')}` live_api=`{row.get('live_api_executed')}` "
-            f"dry_run=`{row.get('dry_run_count')}` outcome=`{row.get('primary_api_outcome')}` "
-            f"usable_evidence=`{row.get('usable_live_api_evidence_count')}` api_state=`{row.get('api_state_forwarded_count')}`"
+            f"| `{row.get('query_id')}` | `{row.get('selected_endpoint')}` | `{row.get('status')}` | "
+            f"`{row.get('outcome')}` | `{row.get('parser_status')}` | "
+            f"`{row.get('usable_payload_entered_evidencebus')}` | "
+            f"`{row.get('answer_used_actual_api_payload_evidence')}` | "
+            f"`{row.get('answer_only_used_api_state_or_caveat')}` | `{row.get('unsupported_claim')}` |"
         )
     lines.extend(
         [

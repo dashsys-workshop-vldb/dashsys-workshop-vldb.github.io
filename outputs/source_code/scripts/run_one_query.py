@@ -12,13 +12,13 @@ if str(ROOT) not in sys.path:
 
 from dashagent.config import Config
 from dashagent.executor import AgentExecutor
-from dashagent.planner import STRATEGIES
+from dashagent.planner import ALL_STRATEGIES, PACKAGED_DEFAULT_STRATEGY
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run one DASHSys query through one strategy.")
     parser.add_argument("query", help="Natural-language query to answer.")
-    parser.add_argument("--strategy", choices=STRATEGIES, default="SQL_FIRST_API_VERIFY")
+    parser.add_argument("--strategy", choices=ALL_STRATEGIES, default=PACKAGED_DEFAULT_STRATEGY)
     parser.add_argument("--query-id", default=None)
     args = parser.parse_args()
 

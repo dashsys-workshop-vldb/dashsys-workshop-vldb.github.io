@@ -125,7 +125,9 @@ def parse_merge_policies(raw: Any) -> dict[str, Any]:
 
 def parse_observability(raw: Any) -> dict[str, Any]:
     evidence = parse_items(raw, ["series", "items", "metrics", "results", "entities", "data"])
-    values = extract_observability_values(evidence["items"])
+    values = extract_observability_values_from_raw(raw)
+    if not values:
+        values = extract_observability_values(evidence["items"])
     evidence["important_fields"] = {"values": values[:5]} if values else evidence["important_fields"]
     return evidence
 
@@ -236,6 +238,43 @@ def extract_observability_values(items: list[dict[str, Any]]) -> list[dict[str, 
             if normalized:
                 values.append(normalized)
     return values
+
+
+def extract_observability_values_from_raw(raw: Any) -> list[dict[str, Any]]:
+    values: list[dict[str, Any]] = []
+
+    def visit(obj: Any, metric_name: Any = None) -> None:
+        if isinstance(obj, list):
+            for item in obj:
+                visit(item, metric_name)
+            return
+        if not isinstance(obj, dict):
+            return
+        current_metric = obj.get("metric") or obj.get("name") or metric_name
+        dps = obj.get("dps")
+        if isinstance(dps, dict):
+            for timestamp, value in dps.items():
+                if timestamp == "truncated_fields":
+                    continue
+                values.append({"metric": current_metric, "timestamp": timestamp, "value": value})
+        for key in ["metricResponses", "datapoints", "points", "values", "data", "series", "items", "results"]:
+            child = obj.get(key)
+            if isinstance(child, (dict, list)):
+                visit(child, current_metric)
+        for child in obj.values():
+            if isinstance(child, (dict, list)) and child is not dps:
+                visit(child, current_metric)
+
+    visit(raw)
+    deduped: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for item in values:
+        key = (str(item.get("metric")), str(item.get("timestamp")), str(item.get("value")))
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(item)
+    return deduped
 
 
 def normalize_observability_point(point: dict[str, Any], metric_name: Any = None) -> dict[str, Any]:

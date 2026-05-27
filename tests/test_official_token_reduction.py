@@ -45,12 +45,23 @@ def test_official_token_reduction_flag_defaults_and_env(monkeypatch, tiny_projec
 
 def test_token_reduction_policy_preserves_required_and_score_critical_fields():
     trajectory = _sample_verbose_trajectory()
+    trajectory["steps"][1]["steps"].append(
+        {
+            "action": "api",
+            "family": "audience_by_destination_id",
+            "method": "GET",
+            "url": "/data/core/ups/audiences",
+            "params": {"property": "destinationId==<destination_id>"},
+            "warnings": ["unresolved_parameter: destination_id"],
+        }
+    )
 
     reduced, summary = apply_token_reduction_to_trajectory(trajectory)
 
     assert reduced["final_answer"] == trajectory["final_answer"]
     assert first_generated_sql(reduced) == first_generated_sql(trajectory)
     assert generated_api_calls(reduced) == generated_api_calls(trajectory)
+    assert reduced["steps"][1]["steps"][1]["warnings"] == ["unresolved_parameter: destination_id"]
     assert reduced["steps"][2]["result"]["dry_run"] is True
     assert reduced["steps"][2]["validation"]["ok"] is True
     for field in ["final_answer", "tool_call_count", "runtime", "estimated_tokens"]:

@@ -124,7 +124,8 @@ def run_live_api_readiness_smoke(
     ]
     rows = []
     for endpoint in endpoints:
-        validation = validator.validate(endpoint.method, endpoint.path, endpoint.common_params, {})
+        headers = dict(getattr(endpoint, "common_headers", {}) or {})
+        validation = validator.validate(endpoint.method, endpoint.path, endpoint.common_params, headers)
         if not validation.ok:
             result = {
                 "ok": False,
@@ -148,7 +149,7 @@ def run_live_api_readiness_smoke(
                 )
             )
             continue
-        result = client.call_api(endpoint.method, endpoint.path, endpoint.common_params, {})
+        result = client.call_api(endpoint.method, endpoint.path, endpoint.common_params, headers)
         evidence_status = evidence_pipeline_status(endpoint, result)
         rows.append(
             smoke_endpoint_row(

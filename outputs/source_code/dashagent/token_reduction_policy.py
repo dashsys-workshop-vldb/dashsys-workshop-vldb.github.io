@@ -11,10 +11,11 @@ from .trajectory import estimate_tokens
 @dataclass(frozen=True)
 class TokenReductionPolicy:
     max_preview_rows: int = 1
-    max_cell_chars: int = 120
-    max_text_chars: int = 240
+    max_cell_chars: int = 96
+    max_text_chars: int = 160
     max_list_items: int = 3
     max_checkpoint_fields: int = 12
+    max_reason_chars: int = 96
 
 
 DEFAULT_TOKEN_REDUCTION_POLICY = TokenReductionPolicy()
@@ -62,23 +63,19 @@ def compact_step_payload(
     kind = compacted.get("kind")
     if kind == "route":
         _replace_if_changed(compacted, "candidate_apis", _compact_candidate_apis(compacted.get("candidate_apis"), policy), f"{path}.candidate_apis", fields)
-        _replace_if_changed(compacted, "candidate_tables", _limit_list(compacted.get("candidate_tables"), policy.max_list_items + 2), f"{path}.candidate_tables", fields)
-        _replace_if_changed(compacted, "reason", summarize_reducible_text(compacted.get("reason"), 120), f"{path}.reason", fields)
+        _replace_if_changed(compacted, "candidate_tables", _limit_list(compacted.get("candidate_tables"), policy.max_list_items), f"{path}.candidate_tables", fields)
+        _replace_if_changed(compacted, "reason", summarize_reducible_text(compacted.get("reason"), policy.max_reason_chars), f"{path}.reason", fields)
     elif kind == "nlp":
-        value_retrieval = compacted.get("value_retrieval")
-        if isinstance(value_retrieval, dict):
-            matches = value_retrieval.get("matches")
-            if isinstance(matches, list) and len(matches) > 2:
-                value_retrieval["matches"] = matches[:2]
-                fields.append(f"{path}.value_retrieval.matches")
+        _compact_nlp_step(compacted, policy, path, fields)
     elif kind == "metadata":
         metadata_path = compacted.get("metadata_path")
         if isinstance(metadata_path, str) and len(metadata_path) > 32:
             compacted["metadata_path"] = "metadata.json"
             fields.append(f"{path}.metadata_path")
     elif kind == "plan":
-        _replace_if_changed(compacted, "rationale", summarize_reducible_text(compacted.get("rationale"), policy.max_text_chars), f"{path}.rationale", fields)
-        _replace_if_changed(compacted, "optimizer_actions", _dedupe_short_list(compacted.get("optimizer_actions"), policy.max_list_items), f"{path}.optimizer_actions", fields)
+        _replace_if_changed(compacted, "rationale", summarize_reducible_text(compacted.get("rationale"), policy.max_reason_chars), f"{path}.rationale", fields)
+        _replace_if_changed(compacted, "optimizer_actions", _dedupe_short_list(compacted.get("optimizer_actions"), 2), f"{path}.optimizer_actions", fields)
+        _replace_if_changed(compacted, "steps", _compact_plan_steps(compacted.get("steps")), f"{path}.steps", fields)
     elif kind == "optimizer":
         ensemble = compacted.get("plan_ensemble")
         if isinstance(ensemble, dict):
@@ -162,6 +159,77 @@ def _compact_candidate_apis(value: Any, policy: TokenReductionPolicy) -> Any:
     return compacted
 
 
+def _compact_nlp_step(step: dict[str, Any], policy: TokenReductionPolicy, path: str, fields: list[str]) -> None:
+    decomposition = step.get("decomposition")
+    if isinstance(decomposition, dict):
+        compacted = {
+            "expected_answer_shape": decomposition.get("expected_answer_shape"),
+            "sub_question_count": len(decomposition.get("sub_questions") or []),
+        }
+        compacted = {key: value for key, value in compacted.items() if value not in (None, "", [], {})}
+        _replace_if_changed(step, "decomposition", compacted, f"{path}.decomposition", fields)
+
+    relevance = step.get("relevance")
+    if isinstance(relevance, dict):
+        compacted_relevance = {
+            key: _limit_list(value, policy.max_list_items)
+            for key, value in relevance.items()
+            if value not in (None, "", [], {})
+        }
+        _replace_if_changed(step, "relevance", compacted_relevance, f"{path}.relevance", fields)
+
+    tokens = step.get("tokens")
+    if isinstance(tokens, dict):
+        compacted_tokens = {
+            key: _limit_list(value, policy.max_list_items)
+            for key, value in tokens.items()
+            if value not in (None, "", [], {})
+        }
+        _replace_if_changed(step, "tokens", compacted_tokens, f"{path}.tokens", fields)
+
+    value_retrieval = step.get("value_retrieval")
+    if isinstance(value_retrieval, dict):
+        compacted_vr: dict[str, Any] = {}
+        for key in ["match_count", "budget_exceeded", "retrieval_ms"]:
+            if key in value_retrieval:
+                compacted_vr[key] = value_retrieval.get(key)
+        matches = value_retrieval.get("matches")
+        if isinstance(matches, list):
+            compacted_vr["matches"] = [_compact_value_match(match) for match in matches[:1] if isinstance(match, dict)]
+        _replace_if_changed(step, "value_retrieval", compacted_vr, f"{path}.value_retrieval", fields)
+
+
+def _compact_value_match(match: dict[str, Any]) -> dict[str, Any]:
+    keep = [
+        "kind",
+        "mention",
+        "matched_table",
+        "matched_column",
+        "matched_value",
+        "match_type",
+        "confidence",
+        "used_for",
+    ]
+    return {key: summarize_reducible_text(match.get(key), 96) for key in keep if match.get(key) not in (None, "", [], {})}
+
+
+def _compact_plan_steps(value: Any) -> Any:
+    if not isinstance(value, list):
+        return value
+    compacted = []
+    for item in value:
+        if not isinstance(item, dict):
+            compacted.append(item)
+            continue
+        step = {key: item.get(key) for key in ["action", "family", "method", "url", "params"] if item.get(key) not in (None, "", [], {})}
+        if item.get("sql"):
+            step["sql_recorded_in_sql_call"] = True
+        if item.get("warnings"):
+            step["warnings"] = _dedupe_short_list(item.get("warnings"), DEFAULT_TOKEN_REDUCTION_POLICY.max_list_items)
+        compacted.append(step)
+    return compacted
+
+
 def _serialized_official_estimated_tokens(trajectory: dict[str, Any]) -> int:
     canonical_trajectory = json.loads(json.dumps(trajectory, sort_keys=True, default=str))
     return official_estimated_tokens(canonical_trajectory)
@@ -210,7 +278,7 @@ def _compact_tool_result(value: Any, policy: TokenReductionPolicy, path: str, fi
         if new_preview != value.get("result_preview"):
             value["result_preview"] = new_preview
             fields.append(f"{path}.result_preview")
-    for key in ["message", "detail", "description"]:
+    for key in ["message", "detail", "description", "preview"]:
         if key in value:
             new_value = summarize_reducible_text(value.get(key), policy.max_text_chars)
             if new_value != value.get(key):

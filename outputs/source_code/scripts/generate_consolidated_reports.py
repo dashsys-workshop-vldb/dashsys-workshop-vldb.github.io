@@ -42,6 +42,9 @@ POST_CHANGE_VALIDATION_COMMANDS = [
     "python3 scripts/run_correctness_efficiency_scorecard.py",
     "python3 scripts/run_sdk_tool_calling_efficiency_promotion.py --validation-complete",
     "python3 scripts/run_tool_calling_policy_optimizer.py",
+    "python3 scripts/run_core_tool_optimization_audit.py",
+    "python3 scripts/run_core_tool_policy_optimizer.py",
+    "python3 scripts/audit_repo_cleanup_candidates.py",
     "python3 scripts/run_confidence_calibration_audit.py",
     "python3 scripts/run_token_efficiency_audit.py",
     "python3 scripts/check_llm_sdk_backend.py",
@@ -78,6 +81,32 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/context7_fix_decision.md/json",
     "outputs/reports/live_api_evidence_pipeline_trial.md/json",
     "outputs/reports/mock_live_api_evidence_pipeline_trial.md/json",
+    "outputs/reports/post_live_robustness_preflight.md/json",
+    "outputs/reports/next_robustness_improvement_preflight.md/json",
+    "outputs/reports/external_text_to_sql_tool_agent_research.md/json",
+    "outputs/reports/live_api_arbitration_regression_guard.md/json",
+    "outputs/reports/strict_score_drift_analysis.md/json",
+    "outputs/reports/efficiency_recovery_preflight.md/json",
+    "outputs/reports/strict_efficiency_component_analysis.md/json",
+    "outputs/reports/live_efficiency_recovery_trials.md/json",
+    "outputs/reports/full_generated_prompt_suite_diagnostic.md/json",
+    "outputs/reports/generated_unsupported_claims_audit.md/json",
+    "outputs/reports/generated_unsupported_claim_fix_trial.md/json",
+    "outputs/reports/generated_prompt_failure_cluster_analysis.md/json",
+    "outputs/reports/targeted_answer_shape_trial.md/json",
+    "outputs/reports/route_mismatch_root_cause_analysis.md/json",
+    "outputs/reports/api_endpoint_selection_gap_analysis.md/json",
+    "outputs/reports/live_api_efficiency_compression_trial.md/json",
+    "outputs/reports/nl_sql_robustness_audit.md/json",
+    "outputs/reports/nl_sql_paraphrase_consistency.md/json",
+    "outputs/reports/schema_aware_sql_failure_decomposition.md/json",
+    "outputs/reports/schema_aware_sql_feedback_loop.md/json",
+    "outputs/reports/no_template_sql_mode_diagnostic.md/json",
+    "outputs/reports/llm_agent_trace_decomposition.md/json",
+    "outputs/reports/controller_rewrite_policy_trial.md/json",
+    "outputs/reports/multi_llm_backend_robustness.md/json",
+    "outputs/reports/live_tool_efficiency_audit.md/json",
+    "outputs/reports/integrated_robustness_gate.md/json",
     "outputs/reports/evidence_usage_audit.md/json",
     "outputs/reports/evidence_aware_answer_rewrite_trial.md/json",
     "outputs/reports/feedback_loop_answer_synthesis_final.md/json",
@@ -113,6 +142,18 @@ REPORT_REGENERATION_TARGETS = [
     "outputs/reports/tool_calling_policy_search_results.md/json",
     "outputs/reports/tool_calling_compiled_policy_candidate.md/json",
     "outputs/reports/tool_calling_policy_promotion_decision.md/json",
+    "outputs/reports/core_tool_optimization_audit.md/json",
+    "outputs/reports/core_tool_optimization_search_space.md/json",
+    "outputs/reports/core_tool_policy_optimizer.md/json",
+    "outputs/reports/core_tool_policy_search_results.md/json",
+    "outputs/reports/execute_sql_optimization_candidates.md/json",
+    "outputs/reports/call_api_optimization_candidates.md/json",
+    "outputs/reports/core_tool_compiled_policy_candidate.md/json",
+    "outputs/reports/core_tool_policy_promotion_decision.md/json",
+    "outputs/reports/repo_cleanup_preflight.md/json",
+    "outputs/reports/repo_cleanup_candidate_inventory.md/json",
+    "outputs/reports/repo_cleanup_deletion_plan.md/json",
+    "outputs/reports/repo_cleanup_result.md/json",
     "outputs/reports/dashsys_project_skill_audit.md/json",
     "outputs/reports/confidence_calibration_audit.md/json",
     "outputs/reports/token_efficiency_audit.md/json",
@@ -207,8 +248,46 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "live_api_full_run_blocker": _load_json(outputs / "reports" / "live_api_full_run_blocker.json"),
         "post_permission_live_api_verification": _load_json(outputs / "reports" / "post_permission_live_api_verification.json"),
         "adobe_access_waiting_status": _load_json(outputs / "reports" / "adobe_access_waiting_status.json"),
+        "live_api_safe_get_endpoint_matrix": _load_json(outputs / "reports" / "live_api_safe_get_endpoint_matrix.json"),
+        "live_api_remaining_endpoint_resolution": _load_json(outputs / "reports" / "live_api_remaining_endpoint_resolution_summary.json"),
+        "guarded_dash_agent_live_e2e_trial": _load_json(outputs / "reports" / "guarded_dash_agent_live_e2e_trial.json"),
+        "live_api_post_exact_go_no_go": _load_json(outputs / "reports" / "live_api_post_exact_reproduction_go_no_go.json"),
         "live_api_pipeline_trial": _load_json(outputs / "reports" / "live_api_evidence_pipeline_trial.json"),
         "mock_live_api_pipeline_trial": _load_json(outputs / "reports" / "mock_live_api_evidence_pipeline_trial.json"),
+        "post_live_robustness_preflight": _load_json(outputs / "reports" / "post_live_robustness_preflight.json"),
+        "next_robustness_improvement_preflight": _load_json(outputs / "reports" / "next_robustness_improvement_preflight.json"),
+        "external_text_to_sql_tool_agent_research": _load_json(outputs / "reports" / "external_text_to_sql_tool_agent_research.json"),
+        "live_api_arbitration_regression_guard": _load_json(outputs / "reports" / "live_api_arbitration_regression_guard.json"),
+        "strict_score_drift_analysis": _load_json(outputs / "reports" / "strict_score_drift_analysis.json"),
+        "efficiency_recovery_preflight": _load_json(outputs / "reports" / "efficiency_recovery_preflight.json"),
+        "strict_efficiency_component_analysis": _load_json(outputs / "reports" / "strict_efficiency_component_analysis.json"),
+        "live_efficiency_recovery_trials": _load_json(outputs / "reports" / "live_efficiency_recovery_trials.json"),
+        "full_generated_prompt_suite_diagnostic": _load_json(outputs / "reports" / "full_generated_prompt_suite_diagnostic.json"),
+        "generated_unsupported_claims_audit": _load_json(outputs / "reports" / "generated_unsupported_claims_audit.json"),
+        "generated_unsupported_claim_fix_trial": _load_json(outputs / "reports" / "generated_unsupported_claim_fix_trial.json"),
+        "generated_prompt_failure_cluster_analysis": _load_json(outputs / "reports" / "generated_prompt_failure_cluster_analysis.json"),
+        "targeted_answer_shape_trial": _load_json(outputs / "reports" / "targeted_answer_shape_trial.json"),
+        "route_mismatch_root_cause_analysis": _load_json(outputs / "reports" / "route_mismatch_root_cause_analysis.json"),
+        "api_endpoint_selection_gap_analysis": _load_json(outputs / "reports" / "api_endpoint_selection_gap_analysis.json"),
+        "live_api_efficiency_compression_trial": _load_json(outputs / "reports" / "live_api_efficiency_compression_trial.json"),
+        "nl_sql_robustness_audit": _load_json(outputs / "reports" / "nl_sql_robustness_audit.json"),
+        "nl_sql_paraphrase_consistency": _load_json(outputs / "reports" / "nl_sql_paraphrase_consistency.json"),
+        "schema_aware_sql_failure_decomposition": _load_json(outputs / "reports" / "schema_aware_sql_failure_decomposition.json"),
+        "schema_aware_sql_feedback_loop": _load_json(outputs / "reports" / "schema_aware_sql_feedback_loop.json"),
+        "no_template_sql_mode_diagnostic": _load_json(outputs / "reports" / "no_template_sql_mode_diagnostic.json"),
+        "llm_agent_trace_decomposition": _load_json(outputs / "reports" / "llm_agent_trace_decomposition.json"),
+        "controller_rewrite_policy_trial": _load_json(outputs / "reports" / "controller_rewrite_policy_trial.json"),
+        "multi_llm_backend_robustness": _load_json(outputs / "reports" / "multi_llm_backend_robustness.json"),
+        "pure_llm_baseline_definition": _load_json(outputs / "reports" / "pure_llm_baseline_definition.json"),
+        "pure_llm_tool_agent_eval": _load_json(outputs / "reports" / "pure_llm_tool_agent_eval.json"),
+        "pure_llm_tool_agent_stabilization": _load_json(outputs / "reports" / "pure_llm_tool_agent_stabilization.json"),
+        "pure_llm_bounded_sql_score_audit": _load_json(outputs / "reports" / "pure_llm_bounded_sql_score_audit.json"),
+        "pure_llm_agent_trace_decomposition": _load_json(outputs / "reports" / "pure_llm_agent_trace_decomposition.json"),
+        "pure_llm_multi_backend_eval": _load_json(outputs / "reports" / "pure_llm_multi_backend_eval.json"),
+        "pure_llm_promotion_gate": _load_json(outputs / "reports" / "pure_llm_promotion_gate.json"),
+        "pure_llm_external_pattern_alignment": _load_json(outputs / "reports" / "pure_llm_external_pattern_alignment.json"),
+        "live_tool_efficiency_audit": _load_json(outputs / "reports" / "live_tool_efficiency_audit.json"),
+        "integrated_robustness_gate": _load_json(outputs / "reports" / "integrated_robustness_gate.json"),
         "llm_backend": _load_json(outputs / "llm_sdk_backend_check.json"),
         "llm_baseline": _load_json(outputs / "llm_baseline_eval_report.json"),
         "llm_strict": _load_json(outputs / "llm_strict_baseline_eval.json"),
@@ -273,6 +352,18 @@ def _load_sources(config: Config) -> dict[str, Any]:
         "tool_calling_policy_search_results": _load_json(outputs / "reports" / "tool_calling_policy_search_results.json"),
         "tool_calling_compiled_policy_candidate": _load_json(outputs / "reports" / "tool_calling_compiled_policy_candidate.json"),
         "tool_calling_policy_promotion_decision": _load_json(outputs / "reports" / "tool_calling_policy_promotion_decision.json"),
+        "core_tool_optimization_audit": _load_json(outputs / "reports" / "core_tool_optimization_audit.json"),
+        "core_tool_optimization_search_space": _load_json(outputs / "reports" / "core_tool_optimization_search_space.json"),
+        "core_tool_policy_optimizer": _load_json(outputs / "reports" / "core_tool_policy_optimizer.json"),
+        "core_tool_policy_search_results": _load_json(outputs / "reports" / "core_tool_policy_search_results.json"),
+        "execute_sql_optimization_candidates": _load_json(outputs / "reports" / "execute_sql_optimization_candidates.json"),
+        "call_api_optimization_candidates": _load_json(outputs / "reports" / "call_api_optimization_candidates.json"),
+        "core_tool_compiled_policy_candidate": _load_json(outputs / "reports" / "core_tool_compiled_policy_candidate.json"),
+        "core_tool_policy_promotion_decision": _load_json(outputs / "reports" / "core_tool_policy_promotion_decision.json"),
+        "repo_cleanup_preflight": _load_json(outputs / "reports" / "repo_cleanup_preflight.json"),
+        "repo_cleanup_candidate_inventory": _load_json(outputs / "reports" / "repo_cleanup_candidate_inventory.json"),
+        "repo_cleanup_deletion_plan": _load_json(outputs / "reports" / "repo_cleanup_deletion_plan.json"),
+        "repo_cleanup_result": _load_json(outputs / "reports" / "repo_cleanup_result.json"),
         "dashsys_project_skill_audit": _load_json(outputs / "reports" / "dashsys_project_skill_audit.json"),
         "confidence_calibration_audit": _load_json(outputs / "reports" / "confidence_calibration_audit.json"),
         "token_efficiency_audit": _load_json(outputs / "reports" / "token_efficiency_audit.json"),
@@ -342,6 +433,7 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
         ],
         "final_recommendation": sources["winner_readiness"].get("final_recommendation", "ready_to_submit_with_official_token_reduction"),
         "live_adobe_api_readiness": _live_api_readiness_status(sources),
+        "post_live_robustness": _post_live_robustness_status(sources),
         "llm_semantic_routing_helper": _semantic_router_status(sources),
         "decision_stage_methodology": _decision_stage_status(sources),
         "evidence_aware_answer_synthesis": _evidence_answer_status(sources),
@@ -352,6 +444,8 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
         "correctness_efficiency_evaluation": _correctness_efficiency_status(sources),
         "sdk_tool_calling_efficiency_promotion": _sdk_tool_calling_efficiency_promotion_status(sources),
         "tool_calling_policy_optimizer": _tool_calling_policy_optimizer_status(sources),
+        "core_tool_policy_optimizer": _core_tool_policy_optimizer_status(sources),
+        "repo_cleanup": _repo_cleanup_status(sources),
         "dashsys_project_skill": _dashsys_project_skill_status(sources),
         "context7_documentation_grounded_audit": _context7_audit_status(sources),
         "source_reports": [
@@ -361,6 +455,18 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
             "outputs/official_token_reduction_promotion_report.json",
             "outputs/reports/post_permission_live_api_verification.md",
             "outputs/reports/adobe_access_waiting_status.md",
+            "outputs/reports/post_live_robustness_preflight.md",
+            "outputs/reports/live_api_arbitration_regression_guard.md",
+            "outputs/reports/full_generated_prompt_suite_diagnostic.md",
+            "outputs/reports/nl_sql_robustness_audit.md",
+            "outputs/reports/nl_sql_paraphrase_consistency.md",
+            "outputs/reports/schema_aware_sql_failure_decomposition.md",
+            "outputs/reports/schema_aware_sql_feedback_loop.md",
+            "outputs/reports/llm_agent_trace_decomposition.md",
+            "outputs/reports/controller_rewrite_policy_trial.md",
+            "outputs/reports/multi_llm_backend_robustness.md",
+            "outputs/reports/live_tool_efficiency_audit.md",
+            "outputs/reports/integrated_robustness_gate.md",
             "outputs/reports/context7_code_alignment_audit.md",
             "outputs/reports/context7_fix_decision.md",
             "outputs/reports/score_path_contribution_audit.md",
@@ -389,6 +495,11 @@ def build_system_summary(config: Config, sources: dict[str, Any]) -> dict[str, A
             "outputs/reports/tool_calling_policy_search_results.md",
             "outputs/reports/tool_calling_compiled_policy_candidate.md",
             "outputs/reports/tool_calling_policy_promotion_decision.md",
+            "outputs/reports/core_tool_optimization_audit.md",
+            "outputs/reports/core_tool_policy_optimizer.md",
+            "outputs/reports/core_tool_compiled_policy_candidate.md",
+            "outputs/reports/core_tool_policy_promotion_decision.md",
+            "outputs/reports/repo_cleanup_result.md",
             "outputs/reports/dashsys_project_skill_audit.md",
         ],
     }
@@ -413,6 +524,7 @@ def build_llm_baseline_summary(config: Config, sources: dict[str, Any]) -> dict[
         "strict_scoring_status": baseline.get("strict_scoring_status", strict.get("summary", {}).get("strict_scoring_status")),
         "best_llm_baseline": best,
         "best_llm_baseline_score": best.get("strict_score") or best.get("strict_final_score"),
+        "pure_llm_tool_agent": _pure_llm_tool_agent_status(sources),
         "sql_first_api_verify_score": deterministic.get("avg_final_score") or _sql_first_metrics(sources).get("avg_final_score"),
         "comparison_against_deterministic": strict.get("comparison_against_deterministic") or baseline.get("comparison_against_deterministic"),
         "recommendation": baseline.get("recommendation") or strict.get("summary", {}).get("recommendation") or "keep_shadow_only",
@@ -427,6 +539,7 @@ def build_llm_baseline_summary(config: Config, sources: dict[str, Any]) -> dict[
         "correctness_efficiency_evaluation": _correctness_efficiency_status(sources),
         "sdk_tool_calling_efficiency_promotion": _sdk_tool_calling_efficiency_promotion_status(sources),
         "tool_calling_policy_optimizer": _tool_calling_policy_optimizer_status(sources),
+        "core_tool_policy_optimizer": _core_tool_policy_optimizer_status(sources),
         "source_reports": [
             "outputs/llm_sdk_backend_check.json",
             "outputs/llm_baseline_eval_report.json",
@@ -439,9 +552,20 @@ def build_llm_baseline_summary(config: Config, sources: dict[str, Any]) -> dict[
             "outputs/reports/correctness_efficiency_fix_decision.md",
             "outputs/reports/sdk_tool_calling_efficiency_promotion_decision.md",
             "outputs/reports/tool_calling_policy_optimizer.md",
+            "outputs/reports/pure_llm_baseline_definition.md",
+            "outputs/reports/pure_llm_tool_agent_eval.md",
+            "outputs/reports/pure_llm_tool_agent_stabilization.md",
+            "outputs/reports/pure_llm_agent_trace_decomposition.md",
+            "outputs/reports/pure_llm_multi_backend_eval.md",
+            "outputs/reports/pure_llm_promotion_gate.md",
+            "outputs/reports/pure_llm_external_pattern_alignment.md",
             "outputs/reports/tool_calling_policy_search_results.md",
             "outputs/reports/tool_calling_compiled_policy_candidate.md",
             "outputs/reports/tool_calling_policy_promotion_decision.md",
+            "outputs/reports/core_tool_optimization_audit.md",
+            "outputs/reports/core_tool_policy_optimizer.md",
+            "outputs/reports/core_tool_compiled_policy_candidate.md",
+            "outputs/reports/core_tool_policy_promotion_decision.md",
         ],
     }
 
@@ -459,6 +583,7 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
         "answer_quality_bottleneck": True,
         "dry_run_api_limitation": True,
         "live_adobe_api_readiness": _live_api_readiness_status(sources),
+        "post_live_robustness": _post_live_robustness_status(sources),
         "answer_shape_v2_status": _status_from_report(sources["answer_shape_v2"], "shadow_only"),
         "supportable_rewrite_status": _status_from_report(sources["supportable_rewrite"], "safe_for_autonomous_packaged_trial"),
         "llm_answer_rewrite_status": _status_from_report(sources["llm_answer_rewrite"], "keep_shadow_only"),
@@ -481,6 +606,7 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
         "correctness_efficiency_evaluation": _correctness_efficiency_status(sources),
         "sdk_tool_calling_efficiency_promotion": _sdk_tool_calling_efficiency_promotion_status(sources),
         "tool_calling_policy_optimizer": _tool_calling_policy_optimizer_status(sources),
+        "core_tool_policy_optimizer": _core_tool_policy_optimizer_status(sources),
         "source_reports": [
             "outputs/autonomous_score_push_report.json",
             "outputs/autonomous_packaged_trial.json",
@@ -489,6 +615,18 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
             "outputs/endpoint_family_tiebreak_v2_shadow.json",
             "outputs/ast_guided_sql_candidate_canary.json",
             "outputs/reports/live_adobe_api_readiness_audit.json",
+            "outputs/reports/post_live_robustness_preflight.md",
+            "outputs/reports/live_api_arbitration_regression_guard.md",
+            "outputs/reports/full_generated_prompt_suite_diagnostic.md",
+            "outputs/reports/nl_sql_robustness_audit.md",
+            "outputs/reports/nl_sql_paraphrase_consistency.md",
+            "outputs/reports/schema_aware_sql_failure_decomposition.md",
+            "outputs/reports/schema_aware_sql_feedback_loop.md",
+            "outputs/reports/llm_agent_trace_decomposition.md",
+            "outputs/reports/controller_rewrite_policy_trial.md",
+            "outputs/reports/multi_llm_backend_robustness.md",
+            "outputs/reports/live_tool_efficiency_audit.md",
+            "outputs/reports/integrated_robustness_gate.md",
             "outputs/reports/generated_prompt_suite_local_diagnostic.md",
             "outputs/reports/generated_prompt_local_gap_samples.md",
             "outputs/reports/local_deterministic_improvement_candidates.md",
@@ -522,6 +660,10 @@ def build_accuracy_and_bottleneck_summary(config: Config, sources: dict[str, Any
             "outputs/reports/tool_calling_policy_search_results.md",
             "outputs/reports/tool_calling_compiled_policy_candidate.md",
             "outputs/reports/tool_calling_policy_promotion_decision.md",
+            "outputs/reports/core_tool_optimization_audit.md",
+            "outputs/reports/core_tool_policy_optimizer.md",
+            "outputs/reports/core_tool_compiled_policy_candidate.md",
+            "outputs/reports/core_tool_policy_promotion_decision.md",
         ],
     }
 
@@ -583,7 +725,15 @@ def build_report_index(
             "outputs/reports/llm_baseline_summary.md",
             "outputs/reports/accuracy_and_bottleneck_summary.md",
             "outputs/reports/visualization_summary.md",
+            "outputs/reports/core_tool_optimization_audit.md",
+            "outputs/reports/core_tool_policy_optimizer.md",
+            "outputs/reports/core_tool_compiled_policy_candidate.md",
+            "outputs/reports/core_tool_correctness_audit.md",
+            "outputs/reports/core_tool_correctness_trials.md",
+            "outputs/reports/core_tool_correctness_fix_decision.md",
+            "outputs/reports/integrated_robustness_gate.md",
             "outputs/reports/overnight_autonomous_improvement_report.md",
+            "outputs/reports/repo_cleanup_result.md",
             "outputs/reports/report_index.md",
         ],
         "key_source_of_truth_reports": [
@@ -629,13 +779,55 @@ def build_report_index(
             },
             {
                 "path": "outputs/reports/full_generated_prompt_suite_diagnostic.md",
-                "label": "Full 250-prompt generated suite diagnostic only; no official strict score claim.",
+                "label": "Full 250-prompt generated suite diagnostic after live API stabilization; diagnostic-only and not official strict score.",
             },
             {
                 "path": "outputs/reports/generated_prompt_coverage_gap_analysis.md",
                 "label": "Generated prompt coverage gaps; diagnostic-only and not promotion evidence.",
             },
         ],
+        "post_live_robustness": {
+            "preflight_path": "outputs/reports/post_live_robustness_preflight.md",
+            "arbitration_guard_path": "outputs/reports/live_api_arbitration_regression_guard.md",
+            "strict_score_drift_path": "outputs/reports/strict_score_drift_analysis.md",
+            "efficiency_recovery_preflight_path": "outputs/reports/efficiency_recovery_preflight.md",
+            "strict_efficiency_component_analysis_path": "outputs/reports/strict_efficiency_component_analysis.md",
+            "live_efficiency_recovery_trials_path": "outputs/reports/live_efficiency_recovery_trials.md",
+            "full_generated_suite_path": "outputs/reports/full_generated_prompt_suite_diagnostic.md",
+            "unsupported_claims_audit_path": "outputs/reports/generated_unsupported_claims_audit.md",
+            "unsupported_claim_fix_trial_path": "outputs/reports/generated_unsupported_claim_fix_trial.md",
+            "nl_sql_robustness_path": "outputs/reports/nl_sql_robustness_audit.md",
+            "paraphrase_consistency_path": "outputs/reports/nl_sql_paraphrase_consistency.md",
+            "schema_aware_failure_decomposition_path": "outputs/reports/schema_aware_sql_failure_decomposition.md",
+            "schema_aware_feedback_loop_path": "outputs/reports/schema_aware_sql_feedback_loop.md",
+            "llm_trace_decomposition_path": "outputs/reports/llm_agent_trace_decomposition.md",
+            "controller_rewrite_trial_path": "outputs/reports/controller_rewrite_policy_trial.md",
+            "multi_llm_robustness_path": "outputs/reports/multi_llm_backend_robustness.md",
+            "live_tool_efficiency_path": "outputs/reports/live_tool_efficiency_audit.md",
+            "integrated_gate_path": "outputs/reports/integrated_robustness_gate.md",
+            **_post_live_robustness_status(
+                {
+                    "eval_results_strict": _load_json(config.outputs_dir / "eval_results_strict.json"),
+                    "post_live_robustness_preflight": _load_json(config.outputs_dir / "reports" / "post_live_robustness_preflight.json"),
+                    "live_api_arbitration_regression_guard": _load_json(config.outputs_dir / "reports" / "live_api_arbitration_regression_guard.json"),
+                    "strict_score_drift_analysis": _load_json(config.outputs_dir / "reports" / "strict_score_drift_analysis.json"),
+                    "efficiency_recovery_preflight": _load_json(config.outputs_dir / "reports" / "efficiency_recovery_preflight.json"),
+                    "strict_efficiency_component_analysis": _load_json(config.outputs_dir / "reports" / "strict_efficiency_component_analysis.json"),
+                    "live_efficiency_recovery_trials": _load_json(config.outputs_dir / "reports" / "live_efficiency_recovery_trials.json"),
+                    "full_generated_prompt_suite_diagnostic": _load_json(config.outputs_dir / "reports" / "full_generated_prompt_suite_diagnostic.json"),
+                    "generated_unsupported_claims_audit": _load_json(config.outputs_dir / "reports" / "generated_unsupported_claims_audit.json"),
+                    "generated_unsupported_claim_fix_trial": _load_json(config.outputs_dir / "reports" / "generated_unsupported_claim_fix_trial.json"),
+                    "nl_sql_robustness_audit": _load_json(config.outputs_dir / "reports" / "nl_sql_robustness_audit.json"),
+                    "nl_sql_paraphrase_consistency": _load_json(config.outputs_dir / "reports" / "nl_sql_paraphrase_consistency.json"),
+                    "schema_aware_sql_feedback_loop": _load_json(config.outputs_dir / "reports" / "schema_aware_sql_feedback_loop.json"),
+                    "llm_agent_trace_decomposition": _load_json(config.outputs_dir / "reports" / "llm_agent_trace_decomposition.json"),
+                    "controller_rewrite_policy_trial": _load_json(config.outputs_dir / "reports" / "controller_rewrite_policy_trial.json"),
+                    "multi_llm_backend_robustness": _load_json(config.outputs_dir / "reports" / "multi_llm_backend_robustness.json"),
+                    "live_tool_efficiency_audit": _load_json(config.outputs_dir / "reports" / "live_tool_efficiency_audit.json"),
+                    "integrated_robustness_gate": _load_json(config.outputs_dir / "reports" / "integrated_robustness_gate.json"),
+                }
+            ),
+        },
         "llm_controller_diagnostics": {
             "failure_decomposition_path": "outputs/reports/llm_controller_failure_decomposition.md",
             "rewrite_ablation_path": "outputs/reports/controller_rewrite_ablation.md",
@@ -644,6 +836,25 @@ def build_report_index(
             "recommendation": _load_json(config.outputs_dir / "reports" / "controller_rewrite_ablation.json")
             .get("summary", {})
             .get("recommendation", "unavailable"),
+        },
+        "pure_llm_tool_agent": {
+            "definition_path": "outputs/reports/pure_llm_baseline_definition.md",
+            "eval_path": "outputs/reports/pure_llm_tool_agent_eval.md",
+            "stabilization_path": "outputs/reports/pure_llm_tool_agent_stabilization.md",
+            "bounded_sql_score_audit_path": "outputs/reports/pure_llm_bounded_sql_score_audit.md",
+            "trace_decomposition_path": "outputs/reports/pure_llm_agent_trace_decomposition.md",
+            "multi_backend_path": "outputs/reports/pure_llm_multi_backend_eval.md",
+            "promotion_gate_path": "outputs/reports/pure_llm_promotion_gate.md",
+            "external_pattern_alignment_path": "outputs/reports/pure_llm_external_pattern_alignment.md",
+            **_pure_llm_tool_agent_status(
+                {
+                    "pure_llm_tool_agent_eval": _load_json(config.outputs_dir / "reports" / "pure_llm_tool_agent_eval.json"),
+                    "pure_llm_tool_agent_stabilization": _load_json(config.outputs_dir / "reports" / "pure_llm_tool_agent_stabilization.json"),
+                    "pure_llm_bounded_sql_score_audit": _load_json(config.outputs_dir / "reports" / "pure_llm_bounded_sql_score_audit.json"),
+                    "pure_llm_promotion_gate": _load_json(config.outputs_dir / "reports" / "pure_llm_promotion_gate.json"),
+                    "pure_llm_multi_backend_eval": _load_json(config.outputs_dir / "reports" / "pure_llm_multi_backend_eval.json"),
+                }
+            ),
         },
         "sdk_usage_audit": {
             "path": "outputs/reports/sdk_usage_audit.md",
@@ -688,6 +899,28 @@ def build_report_index(
                     "sdk_tool_calling_promotion_preflight": _load_json(config.outputs_dir / "reports" / "sdk_tool_calling_promotion_preflight.json"),
                     "sdk_tool_calling_promotion_plan": _load_json(config.outputs_dir / "reports" / "sdk_tool_calling_promotion_plan.json"),
                     "sdk_tool_calling_efficiency_promotion_decision": _load_json(config.outputs_dir / "reports" / "sdk_tool_calling_efficiency_promotion_decision.json"),
+                }
+            ),
+        },
+        "core_tool_policy_optimizer": {
+            "audit_path": "outputs/reports/core_tool_optimization_audit.md",
+            "search_space_path": "outputs/reports/core_tool_optimization_search_space.md",
+            "optimizer_path": "outputs/reports/core_tool_policy_optimizer.md",
+            "search_results_path": "outputs/reports/core_tool_policy_search_results.md",
+            "execute_sql_candidates_path": "outputs/reports/execute_sql_optimization_candidates.md",
+            "call_api_candidates_path": "outputs/reports/call_api_optimization_candidates.md",
+            "compiled_candidate_path": "outputs/reports/core_tool_compiled_policy_candidate.md",
+            "promotion_decision_path": "outputs/reports/core_tool_policy_promotion_decision.md",
+            **_core_tool_policy_optimizer_status(
+                {
+                    "core_tool_optimization_audit": _load_json(config.outputs_dir / "reports" / "core_tool_optimization_audit.json"),
+                    "core_tool_optimization_search_space": _load_json(config.outputs_dir / "reports" / "core_tool_optimization_search_space.json"),
+                    "core_tool_policy_optimizer": _load_json(config.outputs_dir / "reports" / "core_tool_policy_optimizer.json"),
+                    "core_tool_policy_search_results": _load_json(config.outputs_dir / "reports" / "core_tool_policy_search_results.json"),
+                    "execute_sql_optimization_candidates": _load_json(config.outputs_dir / "reports" / "execute_sql_optimization_candidates.json"),
+                    "call_api_optimization_candidates": _load_json(config.outputs_dir / "reports" / "call_api_optimization_candidates.json"),
+                    "core_tool_compiled_policy_candidate": _load_json(config.outputs_dir / "reports" / "core_tool_compiled_policy_candidate.json"),
+                    "core_tool_policy_promotion_decision": _load_json(config.outputs_dir / "reports" / "core_tool_policy_promotion_decision.json"),
                 }
             ),
         },
@@ -773,6 +1006,10 @@ def build_report_index(
             "adobe_access_waiting_status_path": "outputs/reports/adobe_access_waiting_status.md",
             "pipeline_trial_path": "outputs/reports/live_api_evidence_pipeline_trial.md",
             "mock_pipeline_trial_path": "outputs/reports/mock_live_api_evidence_pipeline_trial.md",
+            "safe_get_endpoint_matrix_path": "outputs/reports/live_api_safe_get_endpoint_matrix.md",
+            "remaining_endpoint_resolution_path": "outputs/reports/live_api_remaining_endpoint_resolution_summary.md",
+            "guarded_live_e2e_trial_path": "outputs/reports/guarded_dash_agent_live_e2e_trial.md",
+            "post_exact_go_no_go_path": "outputs/reports/live_api_post_exact_reproduction_go_no_go.md",
             **_live_api_readiness_status(
                 {
                     "live_adobe_api_readiness": _load_json(config.outputs_dir / "reports" / "live_adobe_api_readiness_audit.json"),
@@ -784,6 +1021,10 @@ def build_report_index(
                     "live_api_full_run_blocker": _load_json(config.outputs_dir / "reports" / "live_api_full_run_blocker.json"),
                     "post_permission_live_api_verification": _load_json(config.outputs_dir / "reports" / "post_permission_live_api_verification.json"),
                     "adobe_access_waiting_status": _load_json(config.outputs_dir / "reports" / "adobe_access_waiting_status.json"),
+                    "live_api_safe_get_endpoint_matrix": _load_json(config.outputs_dir / "reports" / "live_api_safe_get_endpoint_matrix.json"),
+                    "live_api_remaining_endpoint_resolution": _load_json(config.outputs_dir / "reports" / "live_api_remaining_endpoint_resolution_summary.json"),
+                    "guarded_dash_agent_live_e2e_trial": _load_json(config.outputs_dir / "reports" / "guarded_dash_agent_live_e2e_trial.json"),
+                    "live_api_post_exact_go_no_go": _load_json(config.outputs_dir / "reports" / "live_api_post_exact_reproduction_go_no_go.json"),
                     "live_api_pipeline_trial": _load_json(config.outputs_dir / "reports" / "live_api_evidence_pipeline_trial.json"),
                     "mock_live_api_pipeline_trial": _load_json(config.outputs_dir / "reports" / "mock_live_api_evidence_pipeline_trial.json"),
                 }
@@ -847,6 +1088,10 @@ def build_report_index(
         "cleanup_reports": [
             "outputs/reports/cleanup_audit.md",
             "outputs/reports/cleanup_final_report.md",
+            "outputs/reports/repo_cleanup_preflight.md",
+            "outputs/reports/repo_cleanup_candidate_inventory.md",
+            "outputs/reports/repo_cleanup_deletion_plan.md",
+            "outputs/reports/repo_cleanup_result.md",
         ],
         "post_change_validation": {
             "required_commands": list(POST_CHANGE_VALIDATION_COMMANDS),
@@ -871,11 +1116,14 @@ def build_report_index(
             "hidden_style": system["hidden_style"]["label"],
             "final_submission_ready": system["final_submission_ready"],
             "live_adobe_api_readiness": system["live_adobe_api_readiness"]["overall_status"],
+            "post_live_robustness": system["post_live_robustness"].get("recommendation"),
             "evidence_aware_answer_synthesis": system["evidence_aware_answer_synthesis"].get("recommendation"),
             "llm_recommendation": llm["recommendation"],
             "sdk_tool_calling_optimization": system["sdk_tool_calling_optimization"].get("decision"),
             "correctness_efficiency_evaluation": system["correctness_efficiency_evaluation"].get("decision"),
             "sdk_tool_calling_efficiency_promotion": system["sdk_tool_calling_efficiency_promotion"].get("decision"),
+            "core_tool_policy_optimizer": system["core_tool_policy_optimizer"].get("decision"),
+            "repo_cleanup": system["repo_cleanup"].get("status"),
             "dashsys_project_skill": system["dashsys_project_skill"].get("overall_status"),
             "context7_docs_audit": system["context7_documentation_grounded_audit"].get("status"),
             "target_0_75_reached": accuracy["target_0_75_reached"],
@@ -899,8 +1147,20 @@ def render_system_summary(payload: dict[str, Any]) -> str:
             f"- Final recommendation: `{payload['final_recommendation']}`",
             f"- Live Adobe API readiness: `{payload['live_adobe_api_readiness']['overall_status']}` "
             f"(smoke `{payload['live_adobe_api_readiness']['smoke_status']}`, pipeline `{payload['live_adobe_api_readiness']['pipeline_trial_status']}`)",
+            f"- Live Adobe endpoint resolution: path failures remaining "
+            f"`{payload['live_adobe_api_readiness'].get('endpoint_path_failures_remaining')}`; "
+            f"guarded E2E `{payload['live_adobe_api_readiness'].get('guarded_live_e2e_status')}`; "
+            f"go/no-go `{payload['live_adobe_api_readiness'].get('go_no_go_recommendation')}`",
             f"- Post-permission live verification: `{payload['live_adobe_api_readiness'].get('post_permission_verification_status')}`; "
             f"waiting-status report: `{payload['live_adobe_api_readiness'].get('adobe_access_waiting_status')}`",
+            f"- Post-live robustness gate: `{payload['post_live_robustness'].get('recommendation')}`; "
+            f"strict `{payload['post_live_robustness'].get('current_strict_score')}`; "
+            f"arbitration safe `{payload['post_live_robustness'].get('arbitration_policy_safe')}`; "
+            f"generated prompts `{payload['post_live_robustness'].get('generated_prompts_executed')}`",
+            f"- NL-to-SQL robustness: template dependency `{payload['post_live_robustness'].get('template_dependency_score')}`; "
+            f"template miss rate `{payload['post_live_robustness'].get('template_miss_rate')}`; "
+            f"paraphrase consistency `{payload['post_live_robustness'].get('paraphrase_consistency_score')}`; "
+            f"schema-aware fallback `{payload['post_live_robustness'].get('schema_aware_decision')}`",
             f"- LLM semantic routing helper: `{payload['llm_semantic_routing_helper']['recommendation']}` "
             f"({payload['llm_semantic_routing_helper']['status']})",
             f"- Semantic router isolated trial: `{payload['llm_semantic_routing_helper'].get('isolated_trial_status')}`; "
@@ -929,6 +1189,12 @@ def render_system_summary(payload: dict[str, Any]) -> str:
             f"- SDK tool-calling efficiency promotion: `{payload['sdk_tool_calling_efficiency_promotion'].get('decision')}`; "
             f"promotion accepted: `{payload['sdk_tool_calling_efficiency_promotion'].get('promotion_accepted')}`; "
             f"direct HTTP hits: `{payload['sdk_tool_calling_efficiency_promotion'].get('direct_http_hits')}`",
+            f"- Core tool policy optimizer: `{payload['core_tool_policy_optimizer'].get('decision')}`; "
+            f"compiled recommendation: `{payload['core_tool_policy_optimizer'].get('compiled_recommendation')}`; "
+            f"runtime change expected: `{payload['core_tool_policy_optimizer'].get('runtime_change_expected_in_repo')}`",
+            f"- Repo cleanup: `{payload['repo_cleanup'].get('status')}`; "
+            f"deleted paths: `{payload['repo_cleanup'].get('deleted_path_count')}`; "
+            f"runtime behavior changed: `{payload['repo_cleanup'].get('runtime_behavior_changed')}`",
             f"- DASHSys Project Skill audit: `{payload['dashsys_project_skill'].get('overall_status')}`; "
             f"runtime behavior changed: `{payload['dashsys_project_skill'].get('runtime_behavior_changed')}`",
             f"- Context7 docs audit: `{payload['context7_documentation_grounded_audit'].get('status')}`; "
@@ -959,6 +1225,10 @@ def render_llm_summary(payload: dict[str, Any]) -> str:
             f"- Tool calling supported: `{payload.get('tool_calling_supported')}`",
             f"- Best LLM baseline: `{best.get('system', 'unavailable')}`",
             f"- Best LLM baseline score: `{payload.get('best_llm_baseline_score')}`",
+            f"- Pure LLM tool-agent pass: best `{payload.get('pure_llm_tool_agent', {}).get('best_variant')}`; "
+            f"score `{payload.get('pure_llm_tool_agent', {}).get('best_strict_score')}`; "
+            f"new rows `{payload.get('pure_llm_tool_agent', {}).get('executed_new_llm_rows')}`; "
+            f"gate `{payload.get('pure_llm_tool_agent', {}).get('promotion_gate_recommendation')}`",
             f"- SQL_FIRST_API_VERIFY score: `{payload.get('sql_first_api_verify_score')}`",
             f"- Recommendation: `{payload.get('recommendation')}`",
             f"- LLM semantic routing helper: `{payload['llm_semantic_routing_helper']['recommendation']}` "
@@ -994,6 +1264,13 @@ def render_accuracy_summary(payload: dict[str, Any]) -> str:
             f"- Dry-run API limitation: `{payload.get('dry_run_api_limitation')}`",
             f"- Live Adobe API readiness: `{payload['live_adobe_api_readiness']['overall_status']}`; "
             f"infrastructure validation only: `{payload['live_adobe_api_readiness']['infrastructure_validation_only']}`",
+            f"- Post-live robustness gate: `{payload['post_live_robustness'].get('recommendation')}`; "
+            f"strict score `{payload['post_live_robustness'].get('current_strict_score')}`; "
+            f"generated diagnostic pass `{payload['post_live_robustness'].get('generated_prompt_runtime_pass_count')}`"
+            f"/`{payload['post_live_robustness'].get('generated_prompts_executed')}`",
+            f"- Generalization risk: template dependency `{payload['post_live_robustness'].get('template_dependency_score')}`; "
+            f"template miss rate `{payload['post_live_robustness'].get('template_miss_rate')}`; "
+            f"controller trial `{payload['post_live_robustness'].get('controller_rewrite_recommendation')}`",
             f"- Supportable rewrite status: `{payload.get('supportable_rewrite_status')}`",
             f"- Endpoint tie-break status: `{payload.get('endpoint_tiebreak_status')}`",
             f"- AST canary status: `{payload.get('ast_canary_status')}`",
@@ -1022,6 +1299,9 @@ def render_accuracy_summary(payload: dict[str, Any]) -> str:
             f"- SDK tool-calling efficiency promotion: `{payload['sdk_tool_calling_efficiency_promotion'].get('decision')}`; "
             f"promotion accepted `{payload['sdk_tool_calling_efficiency_promotion'].get('promotion_accepted')}`; "
             f"runtime change applied `{payload['sdk_tool_calling_efficiency_promotion'].get('runtime_change_applied')}`",
+            f"- Core tool policy optimizer: `{payload['core_tool_policy_optimizer'].get('decision')}`; "
+            f"strict after projected `{payload['core_tool_policy_optimizer'].get('strict_score_after_projected')}`; "
+            f"runtime change expected `{payload['core_tool_policy_optimizer'].get('runtime_change_expected_in_repo')}`",
             "",
             "## Why Changes Remain Shadow-Only",
             "",
@@ -1076,6 +1356,39 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.extend(["", "## Diagnostic Prompt Coverage", ""])
     for item in payload.get("diagnostic_prompt_coverage", []):
         lines.append(f"- `{item['path']}` - {item['label']}")
+    lines.extend(["", "## Post-Live Robustness Gate", ""])
+    robustness = payload.get("post_live_robustness", {})
+    lines.append(f"- Preflight: `{robustness.get('preflight_path')}`")
+    lines.append("- Next robustness preflight: `outputs/reports/next_robustness_improvement_preflight.md`")
+    lines.append("- External text-to-SQL/tool-agent research: `outputs/reports/external_text_to_sql_tool_agent_research.md`")
+    lines.append(f"- Arbitration guard: `{robustness.get('arbitration_guard_path')}`")
+    lines.append(f"- Strict score drift analysis: `{robustness.get('strict_score_drift_path')}`")
+    lines.append(f"- Efficiency recovery preflight: `{robustness.get('efficiency_recovery_preflight_path')}`")
+    lines.append(f"- Strict efficiency component analysis: `{robustness.get('strict_efficiency_component_analysis_path')}`")
+    lines.append(f"- Live efficiency recovery trials: `{robustness.get('live_efficiency_recovery_trials_path')}`")
+    lines.append(f"- Full generated suite: `{robustness.get('full_generated_suite_path')}`")
+    lines.append(f"- Generated unsupported claims audit: `{robustness.get('unsupported_claims_audit_path')}`")
+    lines.append(f"- Generated unsupported claim fix trial: `{robustness.get('unsupported_claim_fix_trial_path')}`")
+    lines.append("- Generated prompt failure clusters: `outputs/reports/generated_prompt_failure_cluster_analysis.md`")
+    lines.append("- Targeted answer-shape trial: `outputs/reports/targeted_answer_shape_trial.md`")
+    lines.append("- Route mismatch root-cause analysis: `outputs/reports/route_mismatch_root_cause_analysis.md`")
+    lines.append("- API endpoint selection gaps: `outputs/reports/api_endpoint_selection_gap_analysis.md`")
+    lines.append("- Live API efficiency compression trial: `outputs/reports/live_api_efficiency_compression_trial.md`")
+    lines.append(f"- NL-to-SQL robustness: `{robustness.get('nl_sql_robustness_path')}`")
+    lines.append(f"- Paraphrase consistency: `{robustness.get('paraphrase_consistency_path')}`")
+    lines.append(f"- Schema-aware failure decomposition: `{robustness.get('schema_aware_failure_decomposition_path')}`")
+    lines.append(f"- Schema-aware feedback loop: `{robustness.get('schema_aware_feedback_loop_path')}`")
+    lines.append("- No-template SQL diagnostic: `outputs/reports/no_template_sql_mode_diagnostic.md`")
+    lines.append(f"- LLM trace decomposition: `{robustness.get('llm_trace_decomposition_path')}`")
+    lines.append(f"- Controller rewrite trial: `{robustness.get('controller_rewrite_trial_path')}`")
+    lines.append(f"- Multi-LLM robustness: `{robustness.get('multi_llm_robustness_path')}`")
+    lines.append(f"- Live tool efficiency: `{robustness.get('live_tool_efficiency_path')}`")
+    lines.append(f"- Integrated gate: `{robustness.get('integrated_gate_path')}`")
+    lines.append(f"- Recommendation: `{robustness.get('recommendation')}`")
+    lines.append(f"- Current strict score: `{robustness.get('current_strict_score')}`")
+    lines.append(f"- Generated diagnostic prompts executed: `{robustness.get('generated_prompts_executed')}`")
+    lines.append(f"- Template dependency score: `{robustness.get('template_dependency_score')}`")
+    lines.append(f"- Schema-aware fallback decision: `{robustness.get('schema_aware_decision')}`")
     lines.extend(["", "## LLM Controller Diagnostics", ""])
     controller = payload.get("llm_controller_diagnostics", {})
     lines.append(f"- Failure decomposition: `{controller.get('failure_decomposition_path')}`")
@@ -1083,6 +1396,18 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.append(f"- Controller status: `{controller.get('controller_status')}`")
     lines.append(f"- Automatic promotion: `{controller.get('automatic_promotion')}`")
     lines.append(f"- Recommendation: `{controller.get('recommendation')}`")
+    pure = payload.get("pure_llm_tool_agent", {})
+    lines.extend(["", "## Pure LLM Tool-Agent Baseline", ""])
+    lines.append(f"- Definition: `{pure.get('definition_path')}`")
+    lines.append(f"- Eval: `{pure.get('eval_path')}`")
+    lines.append(f"- Trace decomposition: `{pure.get('trace_decomposition_path')}`")
+    lines.append(f"- Multi-backend eval: `{pure.get('multi_backend_path')}`")
+    lines.append(f"- Promotion gate: `{pure.get('promotion_gate_path')}`")
+    lines.append(f"- External pattern alignment: `{pure.get('external_pattern_alignment_path')}`")
+    lines.append(f"- Best variant: `{pure.get('best_variant')}`")
+    lines.append(f"- Best strict score: `{pure.get('best_strict_score')}`")
+    lines.append(f"- New full-agent rows executed: `{pure.get('executed_new_llm_rows')}`")
+    lines.append(f"- Promotion allowed: `{pure.get('promotion_allowed')}`")
     lines.extend(["", "## System-Wide SDK LLM Audit", ""])
     audit = payload.get("sdk_usage_audit", {})
     lines.append(f"- `{audit.get('path')}`")
@@ -1119,6 +1444,19 @@ def render_report_index(payload: dict[str, Any]) -> str:
     lines.append(f"- Promotion accepted: `{sdk_promo.get('promotion_accepted')}`")
     lines.append(f"- Direct HTTP hits: `{sdk_promo.get('direct_http_hits')}`")
     lines.append("- This is a speed-only SDK/tool-call patch; SQL_FIRST_API_VERIFY remains the packaged default.")
+    lines.extend(["", "## Core Tool Policy Optimizer", ""])
+    core = payload.get("core_tool_policy_optimizer", {})
+    lines.append(f"- Tool audit: `{core.get('audit_path')}`")
+    lines.append(f"- Search space: `{core.get('search_space_path')}`")
+    lines.append(f"- Optimizer: `{core.get('optimizer_path')}`")
+    lines.append(f"- Search results: `{core.get('search_results_path')}`")
+    lines.append(f"- execute_sql candidates: `{core.get('execute_sql_candidates_path')}`")
+    lines.append(f"- call_api candidates: `{core.get('call_api_candidates_path')}`")
+    lines.append(f"- Compiled candidate: `{core.get('compiled_candidate_path')}`")
+    lines.append(f"- Promotion decision: `{core.get('promotion_decision_path')}`")
+    lines.append(f"- Decision: `{core.get('decision')}`")
+    lines.append(f"- Runtime change expected in repo: `{core.get('runtime_change_expected_in_repo')}`")
+    lines.append("- This optimizer is restricted to execute_sql/call_api internals; SQL_FIRST_API_VERIFY remains packaged default.")
     lines.extend(["", "## DASHSys Project Skill", ""])
     dashsys_skill = payload.get("dashsys_project_skill", {})
     lines.append(f"- Skill: `{dashsys_skill.get('skill_path')}`")
@@ -1303,6 +1641,35 @@ def _status_from_report(report: dict[str, Any], default: str) -> str:
         or ("shadow_only" if report.get("shadow_only") else None)
         or default
     )
+
+
+def _pure_llm_tool_agent_status(sources: dict[str, Any]) -> dict[str, Any]:
+    eval_report = sources.get("pure_llm_tool_agent_eval") or {}
+    stabilization = sources.get("pure_llm_tool_agent_stabilization") or {}
+    bounded_sql_audit = sources.get("pure_llm_bounded_sql_score_audit") or {}
+    gate = sources.get("pure_llm_promotion_gate") or {}
+    multi = sources.get("pure_llm_multi_backend_eval") or {}
+    summary = eval_report.get("summary") or {}
+    stabilization_summary = stabilization.get("summary") or {}
+    bounded_summary = bounded_sql_audit.get("summary") or {}
+    return {
+        "status": "shadow_only",
+        "packaged_runtime_affected": False,
+        "best_variant": summary.get("best_variant") or gate.get("best_variant"),
+        "best_strict_score": summary.get("best_strict_score") or gate.get("best_strict_score"),
+        "executed_new_llm_rows": summary.get("executed_new_llm_rows"),
+        "new_llm_calls_executed": eval_report.get("new_llm_calls_executed"),
+        "skipped_reason": eval_report.get("skipped_reason"),
+        "promotion_gate_recommendation": gate.get("recommendation"),
+        "promotion_allowed": gate.get("promotion_allowed", False),
+        "stabilization_prompts_attempted": stabilization_summary.get("prompts_attempted"),
+        "stabilization_unsupported_claim_count": stabilization_summary.get("unsupported_claim_count"),
+        "stabilization_tool_called_when_needed_rate": stabilization_summary.get("tool_called_when_needed_rate"),
+        "bounded_sql_score_audit_root_cause": bounded_summary.get("root_cause"),
+        "bounded_sql_score_failure_categories": bounded_summary.get("failure_categories", {}),
+        "available_backend_count": (multi.get("summary") or {}).get("available_backend_count"),
+        "executed_backend_count": (multi.get("summary") or {}).get("executed_backend_count"),
+    }
 
 
 def _semantic_router_status(sources: dict[str, Any]) -> dict[str, Any]:
@@ -1598,6 +1965,62 @@ def _tool_calling_policy_optimizer_status(sources: dict[str, Any]) -> dict[str, 
     }
 
 
+def _core_tool_policy_optimizer_status(sources: dict[str, Any]) -> dict[str, Any]:
+    audit = sources.get("core_tool_optimization_audit") or {}
+    search_space = sources.get("core_tool_optimization_search_space") or {}
+    optimizer = sources.get("core_tool_policy_optimizer") or {}
+    search = sources.get("core_tool_policy_search_results") or {}
+    sql_candidates = sources.get("execute_sql_optimization_candidates") or {}
+    api_candidates = sources.get("call_api_optimization_candidates") or {}
+    candidate = sources.get("core_tool_compiled_policy_candidate") or {}
+    decision = sources.get("core_tool_policy_promotion_decision") or {}
+    return {
+        "audit_status": "complete" if audit.get("report_type") == "core_tool_optimization_audit" else "not_run",
+        "search_space_status": "complete" if search_space.get("report_type") == "core_tool_optimization_search_space" else "not_run",
+        "optimizer_status": "complete" if optimizer.get("report_type") == "core_tool_policy_optimizer" else "not_run",
+        "search_status": "complete" if search.get("report_type") == "core_tool_policy_search_results" else "not_run",
+        "execute_sql_candidate_status": "complete"
+        if sql_candidates.get("report_type") == "execute_sql_optimization_candidates"
+        else "not_run",
+        "call_api_candidate_status": "complete"
+        if api_candidates.get("report_type") == "call_api_optimization_candidates"
+        else "not_run",
+        "compiled_candidate_status": "complete"
+        if candidate.get("report_type") == "core_tool_compiled_policy_candidate"
+        else "not_run",
+        "promotion_decision_status": "complete"
+        if decision.get("report_type") == "core_tool_policy_promotion_decision"
+        else "not_run",
+        "decision": decision.get("decision", "not_run"),
+        "compiled_recommendation": candidate.get("recommendation", "not_run"),
+        "included_rules": candidate.get("included_rules", []),
+        "policy_count": search_space.get("policy_count") or optimizer.get("policy_count"),
+        "pareto_frontier_count": search.get("pareto_frontier_count"),
+        "runtime_change_expected_in_repo": bool(decision.get("runtime_change_expected_in_repo", False)),
+        "runtime_change_applied_by_script": bool(decision.get("runtime_change_applied_by_script", False)),
+        "strict_score_before": decision.get("strict_score_before"),
+        "strict_score_after_projected": decision.get("strict_score_after_projected"),
+        "tool_calls_delta_projected": decision.get("tool_calls_delta_projected"),
+        "tokens_delta_projected": decision.get("tokens_delta_projected"),
+        "wall_time_delta_projected": decision.get("wall_time_delta_projected"),
+        "direct_http_hits": decision.get("direct_http_hits"),
+        "final_submission_format_changed": bool(decision.get("final_submission_format_changed", False)),
+        "official_overall_score_claim": bool(
+            audit.get("official_organizer_weighted_score_claim", decision.get("official_organizer_weighted_score_claim", False))
+        ),
+        "source_reports": [
+            "outputs/reports/core_tool_optimization_audit.md",
+            "outputs/reports/core_tool_optimization_search_space.md",
+            "outputs/reports/core_tool_policy_optimizer.md",
+            "outputs/reports/core_tool_policy_search_results.md",
+            "outputs/reports/execute_sql_optimization_candidates.md",
+            "outputs/reports/call_api_optimization_candidates.md",
+            "outputs/reports/core_tool_compiled_policy_candidate.md",
+            "outputs/reports/core_tool_policy_promotion_decision.md",
+        ],
+    }
+
+
 def _dashsys_project_skill_status(sources: dict[str, Any]) -> dict[str, Any]:
     audit = sources.get("dashsys_project_skill_audit") or {}
     return {
@@ -1610,6 +2033,33 @@ def _dashsys_project_skill_status(sources: dict[str, Any]) -> dict[str, Any]:
         "mutating_adobe_calls_allowed": audit.get("mutating_adobe_calls_allowed", False),
         "failed_checks": audit.get("failed_checks", []),
         "source_reports": ["outputs/reports/dashsys_project_skill_audit.md"],
+    }
+
+
+def _repo_cleanup_status(sources: dict[str, Any]) -> dict[str, Any]:
+    preflight = sources.get("repo_cleanup_preflight") or {}
+    inventory = sources.get("repo_cleanup_candidate_inventory") or {}
+    plan = sources.get("repo_cleanup_deletion_plan") or {}
+    result = sources.get("repo_cleanup_result") or {}
+    return {
+        "status": result.get("status", "not_run"),
+        "preflight_status": "complete" if preflight.get("report_type") == "repo_cleanup_preflight" else "not_run",
+        "inventory_status": "complete"
+        if inventory.get("report_type") == "repo_cleanup_candidate_inventory"
+        else "not_run",
+        "deletion_plan_status": "complete" if plan.get("report_type") == "repo_cleanup_deletion_plan" else "not_run",
+        "deleted_path_count": len(result.get("paths_deleted", [])),
+        "size_reduction_bytes": result.get("total_size_reduction_bytes"),
+        "manual_review_count": len(result.get("manual_review_paths", [])),
+        "runtime_behavior_changed": bool(result.get("runtime_behavior_changed", False)),
+        "final_submission_ready_after_cleanup": result.get("final_submission_ready_after_cleanup"),
+        "pytest_result": result.get("pytest_result"),
+        "source_reports": [
+            "outputs/reports/repo_cleanup_preflight.md",
+            "outputs/reports/repo_cleanup_candidate_inventory.md",
+            "outputs/reports/repo_cleanup_deletion_plan.md",
+            "outputs/reports/repo_cleanup_result.md",
+        ],
     }
 
 
@@ -1641,6 +2091,120 @@ def _context7_audit_status(sources: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _post_live_robustness_status(sources: dict[str, Any]) -> dict[str, Any]:
+    preflight = sources.get("post_live_robustness_preflight") or {}
+    arbitration = sources.get("live_api_arbitration_regression_guard") or {}
+    drift = sources.get("strict_score_drift_analysis") or {}
+    efficiency_preflight = sources.get("efficiency_recovery_preflight") or {}
+    efficiency_components = sources.get("strict_efficiency_component_analysis") or {}
+    efficiency_recovery = sources.get("live_efficiency_recovery_trials") or {}
+    generated = sources.get("full_generated_prompt_suite_diagnostic") or {}
+    unsupported_audit = sources.get("generated_unsupported_claims_audit") or {}
+    unsupported_trial = sources.get("generated_unsupported_claim_fix_trial") or {}
+    clusters = sources.get("generated_prompt_failure_cluster_analysis") or {}
+    answer_shape = sources.get("targeted_answer_shape_trial") or {}
+    route_mismatch = sources.get("route_mismatch_root_cause_analysis") or {}
+    endpoint_selection = sources.get("api_endpoint_selection_gap_analysis") or {}
+    live_efficiency_trial = sources.get("live_api_efficiency_compression_trial") or {}
+    nl_sql = sources.get("nl_sql_robustness_audit") or {}
+    paraphrase = sources.get("nl_sql_paraphrase_consistency") or {}
+    schema_feedback = sources.get("schema_aware_sql_feedback_loop") or {}
+    no_template = sources.get("no_template_sql_mode_diagnostic") or {}
+    llm_trace = sources.get("llm_agent_trace_decomposition") or {}
+    controller = sources.get("controller_rewrite_policy_trial") or {}
+    multi_llm = sources.get("multi_llm_backend_robustness") or {}
+    tool_efficiency = sources.get("live_tool_efficiency_audit") or {}
+    gate = sources.get("integrated_robustness_gate") or {}
+    strict = _sql_first_metrics(sources)
+    nl_metrics = nl_sql.get("metrics") or {}
+    paraphrase_summary = paraphrase.get("summary") or {}
+    schema_decision = schema_feedback.get("promotion_decision") or {}
+    llm_summary = llm_trace.get("summary") or {}
+    return {
+        "recommendation": gate.get("recommendation", "not_run"),
+        "promotion_allowed": gate.get("promotion_allowed", False),
+        "current_strict_score": _first_number(strict.get("avg_final_score"), preflight.get("current_score")),
+        "previous_baseline_score": preflight.get("previous_baseline_score"),
+        "initial_live_regression_score": preflight.get("initial_live_regression_score"),
+        "arbitration_policy": arbitration.get("policy_under_test", "unavailable"),
+        "arbitration_policy_safe": arbitration.get("policy_safe_to_keep", "unavailable"),
+        "arbitration_critical_violations": arbitration.get("critical_policy_violation_count", "unavailable"),
+        "arbitration_warning_count": arbitration.get("policy_warning_count", "unavailable"),
+        "strict_drift_root_cause": (drift.get("root_cause_summary") or {}).get("primary_root_cause"),
+        "strict_drift_reason": (drift.get("root_cause_summary") or {}).get("reason_current_score_is_below_reference"),
+        "efficiency_recovery_preflight_score_gap": efficiency_preflight.get("score_gap"),
+        "strict_efficiency_primary_source": (efficiency_components.get("summary") or {}).get("primary_efficiency_source"),
+        "strict_efficiency_token_overhead": (efficiency_components.get("summary") or {}).get("avg_token_overhead_vs_baseline"),
+        "strict_efficiency_runtime_overhead": (efficiency_components.get("summary") or {}).get("avg_runtime_overhead_vs_baseline"),
+        "efficiency_recovery_best_variant": (efficiency_recovery.get("summary") or {}).get("best_variant"),
+        "efficiency_recovery_best_projected_score": (efficiency_recovery.get("summary") or {}).get("best_projected_strict_score"),
+        "efficiency_recovery_recommendation": (efficiency_recovery.get("summary") or {}).get("recommendation"),
+        "generated_prompts_total": generated.get("total_prompts"),
+        "generated_prompts_executed": generated.get("executed_prompts"),
+        "generated_prompt_runtime_pass_count": generated.get("runtime_pass_count"),
+        "generated_prompt_validation_fail_count": generated.get("validation_fail_count"),
+        "generated_prompt_unsupported_claim_count": generated.get("unsupported_claim_count"),
+        "previous_gate_unsupported_claim_count": (unsupported_audit.get("summary") or {}).get("previous_gate_unsupported_claim_count"),
+        "unsupported_claim_fix_runtime_change_applied": unsupported_trial.get("runtime_change_applied"),
+        "generated_prompt_live_api_calls": generated.get("live_api_calls"),
+        "generated_prompt_template_hit_rate": generated.get("template_hit_rate"),
+        "generated_prompt_template_miss_rate": generated.get("template_miss_rate"),
+        "generated_prompt_cluster_counts": clusters.get("cluster_counts"),
+        "answer_shape_trial_recommendation": answer_shape.get("recommendation"),
+        "route_mismatch_count": route_mismatch.get("mismatch_count"),
+        "endpoint_selection_gap_count": endpoint_selection.get("gap_count"),
+        "live_efficiency_trial_recommendation": live_efficiency_trial.get("recommendation"),
+        "template_dependency_score": nl_metrics.get("template_dependency_score"),
+        "template_hit_rate": nl_metrics.get("template_hit_rate"),
+        "template_miss_rate": nl_metrics.get("template_miss_rate"),
+        "paraphrase_consistency_score": (
+            paraphrase_summary.get("paraphrase_consistency_score")
+            or nl_metrics.get("paraphrase_consistency_score")
+        ),
+        "schema_aware_decision": schema_decision.get("decision", "not_run"),
+        "schema_aware_promotion_allowed": schema_decision.get("promotion_allowed", False),
+        "no_template_sql_validation_pass_rate": no_template.get("sql_validation_pass_rate"),
+        "no_template_sql_execution_pass_rate": no_template.get("sql_execution_pass_rate"),
+        "llm_trace_instrumentation_gap_count": llm_summary.get("instrumentation_gap_count"),
+        "llm_trace_controller_unpromoted": llm_summary.get("controller_remains_unpromoted"),
+        "controller_rewrite_recommendation": controller.get("recommendation", "not_run"),
+        "multi_llm_calls_executed": multi_llm.get("llm_calls_executed", "unavailable"),
+        "tool_efficiency_recommendation": tool_efficiency.get("recommendation", "not_run"),
+        "avg_tool_call_count": _first_number(
+            (tool_efficiency.get("live_mode") or {}).get("avg_tool_call_count"),
+            strict.get("avg_tool_call_count"),
+        ),
+        "source_reports": [
+            "outputs/reports/post_live_robustness_preflight.md",
+            "outputs/reports/next_robustness_improvement_preflight.md",
+            "outputs/reports/external_text_to_sql_tool_agent_research.md",
+            "outputs/reports/live_api_arbitration_regression_guard.md",
+            "outputs/reports/strict_score_drift_analysis.md",
+            "outputs/reports/efficiency_recovery_preflight.md",
+            "outputs/reports/strict_efficiency_component_analysis.md",
+            "outputs/reports/live_efficiency_recovery_trials.md",
+            "outputs/reports/full_generated_prompt_suite_diagnostic.md",
+            "outputs/reports/generated_unsupported_claims_audit.md",
+            "outputs/reports/generated_unsupported_claim_fix_trial.md",
+            "outputs/reports/generated_prompt_failure_cluster_analysis.md",
+            "outputs/reports/targeted_answer_shape_trial.md",
+            "outputs/reports/route_mismatch_root_cause_analysis.md",
+            "outputs/reports/api_endpoint_selection_gap_analysis.md",
+            "outputs/reports/live_api_efficiency_compression_trial.md",
+            "outputs/reports/nl_sql_robustness_audit.md",
+            "outputs/reports/nl_sql_paraphrase_consistency.md",
+            "outputs/reports/schema_aware_sql_failure_decomposition.md",
+            "outputs/reports/schema_aware_sql_feedback_loop.md",
+            "outputs/reports/no_template_sql_mode_diagnostic.md",
+            "outputs/reports/llm_agent_trace_decomposition.md",
+            "outputs/reports/controller_rewrite_policy_trial.md",
+            "outputs/reports/multi_llm_backend_robustness.md",
+            "outputs/reports/live_tool_efficiency_audit.md",
+            "outputs/reports/integrated_robustness_gate.md",
+        ],
+    }
+
+
 def _live_api_readiness_status(sources: dict[str, Any]) -> dict[str, Any]:
     audit = sources.get("live_adobe_api_readiness") or {}
     matrix = sources.get("api_required_readiness_matrix") or {}
@@ -1651,8 +2215,14 @@ def _live_api_readiness_status(sources: dict[str, Any]) -> dict[str, Any]:
     full_run_blocker = sources.get("live_api_full_run_blocker") or {}
     post_permission = sources.get("post_permission_live_api_verification") or {}
     waiting = sources.get("adobe_access_waiting_status") or {}
+    safe_get = sources.get("live_api_safe_get_endpoint_matrix") or {}
+    endpoint_resolution = sources.get("live_api_remaining_endpoint_resolution") or {}
+    guarded_e2e = sources.get("guarded_dash_agent_live_e2e_trial") or {}
+    go_no_go = sources.get("live_api_post_exact_go_no_go") or {}
     pipeline = sources.get("live_api_pipeline_trial") or {}
     mock_pipeline = sources.get("mock_live_api_pipeline_trial") or {}
+    resolution_after_totals = endpoint_resolution.get("after_totals") or {}
+    safe_get_totals = safe_get.get("outcome_counts") or {}
     return {
         "overall_status": audit.get("overall_status", "not_run"),
         "critical_failures": len(audit.get("critical_failures", [])),
@@ -1668,6 +2238,18 @@ def _live_api_readiness_status(sources: dict[str, Any]) -> dict[str, Any]:
         "adobe_access_waiting_status": "complete" if waiting.get("report_type") == "adobe_access_waiting_status" else "not_run",
         "full_live_eval_blocked": blockers.get("full_live_eval_blocked", "unavailable"),
         "full_generated_prompt_suite_blocked": blockers.get("full_generated_prompt_suite_blocked", "unavailable"),
+        "safe_get_matrix_status": "complete" if safe_get.get("report_type") == "live_api_safe_get_endpoint_matrix" else "not_run",
+        "safe_get_total_attempted": resolution_after_totals.get("total_safe_get_endpoints_attempted", smoke.get("endpoints_attempted")),
+        "safe_get_live_success_count": resolution_after_totals.get("live_success_count", safe_get_totals.get("live_success")),
+        "safe_get_live_empty_count": resolution_after_totals.get("live_empty_count", safe_get_totals.get("live_empty")),
+        "endpoint_path_failures_remaining": resolution_after_totals.get("endpoint_path_issue_count", "unavailable"),
+        "runtime_relevant_endpoint_path_failures_remain": endpoint_resolution.get("runtime_relevant_endpoint_path_failures_remain", "unavailable"),
+        "remaining_endpoint_resolution_status": "complete" if endpoint_resolution.get("report_type") == "live_api_remaining_endpoint_resolution_summary" else "not_run",
+        "guarded_live_e2e_status": guarded_e2e.get("status", "not_run"),
+        "guarded_live_e2e_parser_evidencebus_failure_count": (guarded_e2e.get("summary") or {}).get("parser_evidencebus_failure_count"),
+        "guarded_live_e2e_unsupported_api_claim_count": (guarded_e2e.get("summary") or {}).get("unsupported_api_claim_count"),
+        "guarded_live_e2e_unresolved_path_failure_count": (guarded_e2e.get("summary") or {}).get("unresolved_path_failure_count"),
+        "go_no_go_recommendation": go_no_go.get("go_no_go_recommendation", "unavailable"),
         "pipeline_trial_status": pipeline.get("status", "not_run"),
         "mock_pipeline_trial_status": mock_pipeline.get("status", "not_run"),
         "mock_parser_success_count": mock_pipeline.get("parser_success_count", "not_run"),
@@ -1689,6 +2271,10 @@ def _live_api_readiness_status(sources: dict[str, Any]) -> dict[str, Any]:
             "outputs/reports/live_api_full_run_blocker.md",
             "outputs/reports/post_permission_live_api_verification.md",
             "outputs/reports/adobe_access_waiting_status.md",
+            "outputs/reports/live_api_safe_get_endpoint_matrix.md",
+            "outputs/reports/live_api_remaining_endpoint_resolution_summary.md",
+            "outputs/reports/guarded_dash_agent_live_e2e_trial.md",
+            "outputs/reports/live_api_post_exact_reproduction_go_no_go.md",
             "outputs/reports/live_api_evidence_pipeline_trial.md",
             "outputs/reports/mock_live_api_evidence_pipeline_trial.md",
         ],
