@@ -112,6 +112,8 @@ def extract_objective_prompt_features(prompt: str) -> ObjectivePromptFeatures:
         entity.append("DATE_LITERAL")
 
     cap = _capability_codes(domain)
+    cap.extend(_api_family_cue_codes(norm, domain))
+    cap = _dedupe(cap)
 
     if domain and any(code in cue for code in ("DEF", "EXPLAIN", "HOW_WORKS")):
         flags.append("DOMAIN_WITH_DEF_CUE")
@@ -121,6 +123,10 @@ def extract_objective_prompt_features(prompt: str) -> ObjectivePromptFeatures:
         flags.append("CONCRETE_ENTITY")
     if _has_phrase(norm, ("current", "live", "platform", "api", "adobe", "sandbox")):
         flags.append("LIVE_OR_CURRENT")
+    _add_if(flags, "LIVE", _has_word(norm, "live"))
+    _add_if(flags, "CURRENT", _has_word(norm, "current"))
+    _add_if(flags, "PLATFORM", _has_word(norm, "platform"))
+    _add_if(flags, "API", _has_word(norm, "api") or _has_phrase(norm, ("schema registry", "flow service", "flowservice")))
     if _has_phrase(norm, ("schema registry", "schemaregistry")):
         flags.append("EXPLICIT_API_FAMILY")
     if domain and not cue and not (retr or count or status or date or fields or rel):
@@ -190,6 +196,29 @@ def _capability_codes(domain: list[str]) -> list[str]:
     for code in domain:
         caps.extend(mapping.get(code, ()))
     return _dedupe(caps)
+
+
+def _api_family_cue_codes(norm: str, domain: list[str]) -> list[str]:
+    codes: list[str] = []
+    if _has_phrase(norm, ("schema registry", "schemaregistry")) or "SCHEMA" in domain:
+        codes.append("SCHEMA_REGISTRY")
+    if _has_phrase(norm, ("flow service", "flowservice")) or "FLOW" in domain or "DATAFLOW" in domain:
+        codes.append("FLOW_SERVICE")
+    if "TAG" in domain:
+        codes.append("TAGS")
+    if "AUDIT" in domain:
+        codes.append("AUDIT_EVENTS")
+    if "MERGE_POLICY" in domain:
+        codes.append("MERGE_POLICIES")
+    if "SEGMENT" in domain:
+        codes.append("SEGMENT_DEFINITIONS")
+    if "AUDIENCE" in domain:
+        codes.append("UPS_AUDIENCES")
+    if "DATASET" in domain:
+        codes.append("CATALOG_DATASETS")
+    if "BATCH" in domain:
+        codes.append("CATALOG_BATCHES")
+    return _dedupe(codes)
 
 
 def _has_phrase(text: str, phrases: tuple[str, ...]) -> bool:

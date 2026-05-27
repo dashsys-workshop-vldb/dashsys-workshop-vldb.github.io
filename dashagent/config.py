@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 
@@ -95,15 +95,27 @@ class Config:
     enable_objective_prompt_features: bool = True
     enable_semantic_intent_classifier: bool = False
     enable_routing_anti_hallucination_gate: bool = True
+    enable_no_tool_safety_verifier: bool = True
     enable_semantic_route_decision_ladder: bool = False
+    enable_safe_api_probe: bool = False
     semantic_route_shadow_only: bool = True
     semantic_route_tier2_diagnostic: bool = False
     semantic_route_verbose_reports: bool = False
     enable_staged_evidence_policy: bool = False
     staged_evidence_policy_shadow_only: bool = True
     enable_post_sql_api_decision: bool = False
+    enable_post_sql_deterministic_policy: bool = False
     post_sql_api_decision_shadow_only: bool = True
     post_sql_llm_advisor_enabled: bool = False
+    enable_evidence_quality_classifier: bool = False
+    enable_answer_slot_renderer: bool = False
+    enable_evidence_grounded_answer_builder: bool = False
+    enable_score_provenance_guard: bool = False
+    enable_runtime_leakage_guard: bool = False
+    enable_hardcode_fake_score_guard: bool = False
+    enable_broad_semantic_no_tool: bool = False
+    enable_robust_generalized_candidate: bool = False
+    candidate_shadow_only: bool = True
     real_behavior_trial_mode: str = ""
     enable_semantic_no_tool_applied_trial: bool = False
     enable_staged_evidence_applied_trial: bool = False
@@ -180,15 +192,27 @@ class Config:
             enable_objective_prompt_features=_bool_from_env("ENABLE_OBJECTIVE_PROMPT_FEATURES", True),
             enable_semantic_intent_classifier=_bool_from_env("ENABLE_SEMANTIC_INTENT_CLASSIFIER", False),
             enable_routing_anti_hallucination_gate=_bool_from_env("ENABLE_ROUTING_ANTI_HALLUCINATION_GATE", True),
+            enable_no_tool_safety_verifier=_bool_from_env("ENABLE_NO_TOOL_SAFETY_VERIFIER", True),
             enable_semantic_route_decision_ladder=_bool_from_env("ENABLE_SEMANTIC_ROUTE_DECISION_LADDER", False),
+            enable_safe_api_probe=_bool_from_env("ENABLE_SAFE_API_PROBE", False),
             semantic_route_shadow_only=_bool_from_env("SEMANTIC_ROUTE_SHADOW_ONLY", True),
             semantic_route_tier2_diagnostic=_bool_from_env("SEMANTIC_ROUTE_TIER2_DIAGNOSTIC", False),
             semantic_route_verbose_reports=_bool_from_env("SEMANTIC_ROUTE_VERBOSE_REPORTS", False),
             enable_staged_evidence_policy=_bool_from_env("ENABLE_STAGED_EVIDENCE_POLICY", False),
             staged_evidence_policy_shadow_only=_bool_from_env("STAGED_EVIDENCE_POLICY_SHADOW_ONLY", True),
             enable_post_sql_api_decision=_bool_from_env("ENABLE_POST_SQL_API_DECISION", False),
+            enable_post_sql_deterministic_policy=_bool_from_env("ENABLE_POST_SQL_DETERMINISTIC_POLICY", False),
             post_sql_api_decision_shadow_only=_bool_from_env("POST_SQL_API_DECISION_SHADOW_ONLY", True),
             post_sql_llm_advisor_enabled=_bool_from_env("POST_SQL_LLM_ADVISOR_ENABLED", False),
+            enable_evidence_quality_classifier=_bool_from_env("ENABLE_EVIDENCE_QUALITY_CLASSIFIER", False),
+            enable_answer_slot_renderer=_bool_from_env("ENABLE_ANSWER_SLOT_RENDERER", False),
+            enable_evidence_grounded_answer_builder=_bool_from_env("ENABLE_EVIDENCE_GROUNDED_ANSWER_BUILDER", False),
+            enable_score_provenance_guard=_bool_from_env("ENABLE_SCORE_PROVENANCE_GUARD", False),
+            enable_runtime_leakage_guard=_bool_from_env("ENABLE_RUNTIME_LEAKAGE_GUARD", False),
+            enable_hardcode_fake_score_guard=_bool_from_env("ENABLE_HARDCODE_FAKE_SCORE_GUARD", False),
+            enable_broad_semantic_no_tool=_bool_from_env("ENABLE_BROAD_SEMANTIC_NO_TOOL", False),
+            enable_robust_generalized_candidate=_bool_from_env("ENABLE_ROBUST_GENERALIZED_CANDIDATE", False),
+            candidate_shadow_only=_bool_from_env("CANDIDATE_SHADOW_ONLY", True),
             real_behavior_trial_mode=os.getenv("REAL_BEHAVIOR_TRIAL_MODE", ""),
             enable_semantic_no_tool_applied_trial=_bool_from_env("ENABLE_SEMANTIC_NO_TOOL_APPLIED_TRIAL", False),
             enable_staged_evidence_applied_trial=_bool_from_env("ENABLE_STAGED_EVIDENCE_APPLIED_TRIAL", False),
@@ -209,3 +233,40 @@ class Config:
 
 
 DEFAULT_CONFIG = Config.from_env()
+
+
+ROBUST_GENERALIZED_HARNESS_CANDIDATE = "ROBUST_GENERALIZED_HARNESS_CANDIDATE"
+
+
+def robust_generalized_candidate_config(config: Config) -> Config:
+    return replace(
+        config,
+        enable_objective_prompt_features=True,
+        enable_semantic_intent_classifier=True,
+        enable_routing_anti_hallucination_gate=True,
+        enable_no_tool_safety_verifier=True,
+        enable_semantic_route_decision_ladder=True,
+        enable_safe_api_probe=True,
+        semantic_route_shadow_only=False,
+        enable_staged_evidence_policy=True,
+        staged_evidence_policy_shadow_only=False,
+        enable_post_sql_api_decision=True,
+        enable_post_sql_deterministic_policy=True,
+        post_sql_api_decision_shadow_only=False,
+        enable_evidence_quality_classifier=True,
+        enable_answer_slot_renderer=True,
+        enable_evidence_grounded_answer_builder=True,
+        enable_score_provenance_guard=True,
+        enable_runtime_leakage_guard=True,
+        enable_hardcode_fake_score_guard=True,
+        enable_broad_semantic_no_tool=True,
+        enable_robust_generalized_candidate=True,
+        candidate_shadow_only=False,
+        enable_semantic_no_tool_applied_trial=True,
+        enable_staged_evidence_applied_trial=True,
+        enable_post_sql_deterministic_applied_trial=True,
+        enable_post_sql_llm_advisor_applied_trial=False,
+        enable_combined_safe_applied_trial=True,
+        post_sql_llm_advisor_enabled=False,
+        real_behavior_trial_mode=ROBUST_GENERALIZED_HARNESS_CANDIDATE,
+    )

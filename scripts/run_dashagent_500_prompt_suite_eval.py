@@ -17,7 +17,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from dashagent.config import DEFAULT_CONFIG
+from dashagent.config import DEFAULT_CONFIG, robust_generalized_candidate_config
 from dashagent.endpoint_catalog import EndpointCatalog
 from dashagent.evidence_match_scorer import score_evidence_match
 from dashagent.no_tool_safety_verifier import verify_no_tool_safety
@@ -51,6 +51,7 @@ REAL_MODES = {
     "post_sql_llm_advisor_applied_real_trial",
     "combined_safe_applied_real_trial",
     "combined_safe_deterministic_promotion_candidate_real",
+    "robust_generalized_harness_candidate_real",
 }
 RECOGNIZED_MODES = SIMULATED_MODES | REAL_MODES
 REAL_BEHAVIOR_APPLIED_MODES = {
@@ -60,6 +61,7 @@ REAL_BEHAVIOR_APPLIED_MODES = {
     "post_sql_llm_advisor_applied_real_trial",
     "combined_safe_applied_real_trial",
     "combined_safe_deterministic_promotion_candidate_real",
+    "robust_generalized_harness_candidate_real",
 }
 REAL_APPLIED_TRIAL_BLOCKERS = [
     "Semantic route decisions are integrated as shadow checkpoints only.",
@@ -596,6 +598,11 @@ def _config_for_real_mode(mode: str) -> Any:
             enable_post_sql_llm_advisor_applied_trial=False,
             real_behavior_trial_mode=mode,
         )
+    if mode == "robust_generalized_harness_candidate_real":
+        return replace(
+            robust_generalized_candidate_config(DEFAULT_CONFIG),
+            real_behavior_trial_mode=mode,
+        )
     return DEFAULT_CONFIG
 
 
@@ -938,6 +945,7 @@ def _trial_feature_flags_from_records(records: list[dict[str, Any]]) -> dict[str
         "post_sql_llm_advisor_applied": False,
         "combined_safe_applied": False,
         "combined_safe_deterministic_promotion_candidate": False,
+        "robust_generalized_harness_candidate": False,
     }
     for record in records:
         mode = str(record.get("trial_mode") or "")
@@ -953,6 +961,8 @@ def _trial_feature_flags_from_records(records: list[dict[str, Any]]) -> dict[str
             flags["combined_safe_applied"] = True
         elif mode == "combined_safe_deterministic_promotion_candidate_real":
             flags["combined_safe_deterministic_promotion_candidate"] = True
+        elif mode == "robust_generalized_harness_candidate_real":
+            flags["robust_generalized_harness_candidate"] = True
     return flags
 
 

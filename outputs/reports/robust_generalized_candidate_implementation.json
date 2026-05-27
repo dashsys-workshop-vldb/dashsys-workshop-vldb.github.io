@@ -1,0 +1,75 @@
+{
+  "candidate_strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE",
+  "candidate_strategy_implemented": true,
+  "components_disabled_by_default": {
+    "broad_semantic_router_as_packaged_default": true,
+    "post_sql_llm_advisor": true,
+    "simulated_trace": true
+  },
+  "components_implemented": {
+    "answer_slot_renderer": true,
+    "anti_hallucination_feedback": true,
+    "api_preservation_guard": true,
+    "compact_json_llm_context": true,
+    "diagnostics_checkpoints": true,
+    "evidence_grounded_answer_builder": true,
+    "evidence_quality_classifier": true,
+    "hardcode_fake_score_prevention": true,
+    "no_tool_verifier": true,
+    "objective_features": true,
+    "post_sql_deterministic_policy": true,
+    "real_agent_executor_path": true,
+    "runtime_leakage_guard": true,
+    "safe_api_probe": true,
+    "score_provenance_guard": true,
+    "semantic_decision": true,
+    "semantic_ladder": true,
+    "staged_evidence": true
+  },
+  "components_remaining_diagnostic_only": {
+    "hardcode_fake_score_prevention": "runtime/report guard only; does not score or promote",
+    "post_sql_llm_advisor": "disabled; not part of candidate behavior",
+    "score_provenance_guard": "checkpoint/report metadata only; no scoring decision at runtime"
+  },
+  "final_submission_format_changed": false,
+  "generated_at": "2026-05-27T17:35:38.165611+00:00",
+  "known_todos_for_later_testing": [
+    "Run organizer 35 and internal 500 comparisons only in a later experiment pass.",
+    "Stress the SAFE_API_PROBE path across all endpoint families with live/dry-run parity checks.",
+    "Audit evidence-grounded answer builder quality row-by-row before considering any promotion.",
+    "Keep LLM advisor excluded until a separate backend-cost and verifier-acceptance pass justifies it."
+  ],
+  "packaged_default_changed": false,
+  "packaged_default_strategy": "SQL_FIRST_API_VERIFY",
+  "promotion_judgment_run": false,
+  "promotion_recommendation": null,
+  "report_type": "robust_generalized_candidate_implementation",
+  "strategy_selection_instructions": {
+    "agent_executor": "AgentExecutor(config).run(prompt, strategy=\"ROBUST_GENERALIZED_HARNESS_CANDIDATE\")",
+    "internal_500_runner_mode": "robust_generalized_harness_candidate_real",
+    "run_dev_eval": "python3 scripts/run_dev_eval.py --strict --strategies ROBUST_GENERALIZED_HARNESS_CANDIDATE",
+    "run_one_query": "python3 scripts/run_one_query.py \"What is a schema?\" --strategy ROBUST_GENERALIZED_HARNESS_CANDIDATE --query-id robust_candidate_smoke"
+  },
+  "tests_run": [
+    {
+      "command": "python3 -m pytest -q tests/test_robust_generalized_candidate.py",
+      "result": "9 passed"
+    },
+    {
+      "command": "python3 -m pytest -q tests/test_robust_generalized_candidate.py tests/test_real_behavior_applied_trials.py tests/test_staged_evidence_policy.py",
+      "result": "32 passed"
+    },
+    {
+      "command": "python3 scripts/run_one_query.py \"What is a schema?\" --strategy ROBUST_GENERALIZED_HARNESS_CANDIDATE --query-id robust_candidate_smoke",
+      "result": "passed; tool_call_count=0"
+    },
+    {
+      "command": "python3 scripts/check_submission_ready.py",
+      "result": "ok=true; query_output_count=73; packaged strategy SQL_FIRST_API_VERIFY"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  ]
+}

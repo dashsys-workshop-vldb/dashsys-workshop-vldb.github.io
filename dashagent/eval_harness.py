@@ -11,7 +11,7 @@ from typing import Any
 from urllib.parse import parse_qsl, urlparse
 
 from .api_templates import parse_api_call_string
-from .config import Config, DEFAULT_CONFIG
+from .config import Config, DEFAULT_CONFIG, robust_generalized_candidate_config
 from .db import DuckDBDatabase
 from .endpoint_catalog import normalize_api_path
 from .executor import AgentExecutor
@@ -801,4 +801,6 @@ def config_for_applied_trial_strategy(config: Config, strategy: str) -> Config:
             enable_post_sql_llm_advisor_applied_trial=False,
             real_behavior_trial_mode=strategy,
         )
+    if strategy == "ROBUST_GENERALIZED_HARNESS_CANDIDATE":
+        return robust_generalized_candidate_config(config)
     return config

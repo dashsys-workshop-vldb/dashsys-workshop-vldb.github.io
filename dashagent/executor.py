@@ -31,13 +31,15 @@ from .cache import (
 from .candidate_context_builder import build_adaptive_context, build_candidate_context, build_full_schema_context
 from .call_budget import budget_for_strategy
 from .checkpoints import CheckpointLogger
-from .config import Config, DEFAULT_CONFIG
+from .config import Config, DEFAULT_CONFIG, ROBUST_GENERALIZED_HARNESS_CANDIDATE, robust_generalized_candidate_config
 from .core_tool_policy import compact_api_outcome
 from .db import DuckDBDatabase
 from .endpoint_catalog import EndpointCatalog
 from .evidence_match_scorer import score_evidence_match
 from .evidence_bus import EvidenceBus
+from .evidence_grounded_answer_builder import build_evidence_grounded_answer
 from .evidence_policy import API_SKIP
+from .evidence_quality_classifier import classify_evidence_quality
 from .gated_sql_candidates import hard_case_triggers, select_gated_sql_candidate
 from .metadata_selector import MetadataSelector
 from .plan_ensemble import select_plan_candidate
@@ -59,6 +61,7 @@ from .query_family_examples import examples_for_family, few_shot_public_overlap_
 from .query_analysis import analyze_query
 from .risk_efficiency_controller import classify_candidate_risk
 from .router import QueryRouter
+from .runtime_leakage_guard import runtime_guard_checkpoint, score_provenance_runtime_checkpoint
 from .schema_context_voter import vote_schema_contexts
 from .schema_index import SchemaIndex
 from .semantic_routing_helper import apply_semantic_routing_hint, run_semantic_routing_helper
@@ -124,6 +127,22 @@ class AgentExecutor:
     ) -> dict[str, Any]:
         if strategy not in ALL_STRATEGIES:
             raise ValueError(f"Unknown strategy {strategy}. Expected one of {ALL_STRATEGIES}.")
+        original_config = self.config
+        if strategy == ROBUST_GENERALIZED_HARNESS_CANDIDATE and self.config.real_behavior_trial_mode != ROBUST_GENERALIZED_HARNESS_CANDIDATE:
+            self.config = robust_generalized_candidate_config(self.config)
+        try:
+            return self._run_with_active_config(query, strategy=strategy, query_id=query_id, output_dir=output_dir)
+        finally:
+            self.config = original_config
+
+    def _run_with_active_config(
+        self,
+        query: str,
+        *,
+        strategy: str,
+        query_id: str | None = None,
+        output_dir: Path | None = None,
+    ) -> dict[str, Any]:
         execution_strategy = execution_base_strategy(strategy)
         qid = query_id or slugify(query)
         out_dir = output_dir or (self.config.outputs_dir / qid / strategy.lower())
@@ -138,6 +157,28 @@ class AgentExecutor:
             correctness_role="keeps later normalization from changing the user-facing question",
             efficiency_role="starts one trace without extra tool calls",
         )
+        if self.config.enable_runtime_leakage_guard:
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_runtime_leakage_guard",
+                stage="runtime safety",
+                technique="runtime input isolation guard",
+                input_summary={"strategy": strategy},
+                output=runtime_guard_checkpoint(strategy=strategy, query_id=qid, query=query),
+                effect="asserts that candidate runtime receives only prompt/runtime fields, not evaluator metadata",
+                correctness_role="prevents gold/category/tags/oracle/expected-trace leakage into runtime decisions",
+                efficiency_role="adds no tool calls",
+            )
+        if self.config.enable_score_provenance_guard:
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_score_provenance_guard",
+                stage="runtime safety",
+                technique="score provenance guard",
+                input_summary={"strategy": strategy},
+                output=score_provenance_runtime_checkpoint(strategy=strategy),
+                effect="marks candidate runs as real-agent runtime executions without promotion judgment",
+                correctness_role="prevents simulated or gold-visible scores from being treated as runtime evidence",
+                efficiency_role="adds no tool calls",
+            )
         prompt_route = route_prompt(query)
         checkpoint_logger.add_checkpoint(
             "checkpoint_00_prompt_router",
@@ -182,6 +223,28 @@ class AgentExecutor:
                 prompt_route=prompt_route,
                 checkpoint_logger=checkpoint_logger,
                 trial_decision=semantic_trial_decision,
+            )
+        safe_probe_decision = self._semantic_safe_api_probe_applied_decision(semantic_ladder)
+        if safe_probe_decision.get("record"):
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_safe_api_probe",
+                stage="semantic routing applied candidate",
+                technique="safe one-endpoint API probe",
+                input_summary={"trial_mode": self.config.real_behavior_trial_mode},
+                output=safe_probe_decision,
+                effect="applies SAFE_API_PROBE only for one catalog GET endpoint with no unresolved path params",
+                correctness_role="keeps probe evidence constrained by endpoint catalog and API validator",
+                efficiency_role="caps the probe at one API call",
+            )
+        if safe_probe_decision.get("applied"):
+            return self._return_safe_api_probe_result(
+                query=query,
+                qid=qid,
+                strategy=strategy,
+                out_dir=out_dir,
+                prompt_route=prompt_route,
+                checkpoint_logger=checkpoint_logger,
+                probe_decision=safe_probe_decision,
             )
         if prompt_route.mode == LLM_DIRECT:
             metadata = {
@@ -823,6 +886,21 @@ class AgentExecutor:
         )
 
         answer_start = time.perf_counter()
+        api_need_decision = getattr(analysis, "api_need_decision", None)
+        api_required_for_answer = str(getattr(api_need_decision, "mode", "") or "").upper() == "API_REQUIRED"
+        evidence_quality = None
+        if self.config.enable_evidence_quality_classifier:
+            evidence_quality = classify_evidence_quality(tool_results, api_required=api_required_for_answer)
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_evidence_quality_classifier",
+                stage="answer synthesis",
+                technique="SQL/API evidence quality classification",
+                input_summary={"tool_result_count": len(tool_results), "api_required": api_required_for_answer},
+                output=evidence_quality,
+                effect="classifies SQL/API evidence quality before answer rendering",
+                correctness_role="keeps SQL zero rows, live_empty, API errors, and required API missing distinct",
+                efficiency_role="uses executed tool payloads without extra calls",
+            )
         answer_result = synthesize_answer_with_diagnostics(query, tool_results)
         if self.config.enable_answer_shape_v2:
             shape_candidate = propose_answer_shape_candidate(query, tool_results)
@@ -836,8 +914,35 @@ class AgentExecutor:
                         "selection_reason": "ENABLE_ANSWER_SHAPE_V2 selected a same-evidence answer-shape candidate.",
                     },
                 )
-        final_answer = answer_result.answer
         slots = extract_answer_slots(query, tool_results)
+        if self.config.enable_evidence_grounded_answer_builder:
+            grounded = build_evidence_grounded_answer(
+                query,
+                tool_results,
+                slots=slots,
+                evidence_quality=evidence_quality,
+                api_required=api_required_for_answer,
+            )
+            answer_result = AnswerResult(
+                answer=grounded.answer,
+                diagnostics={
+                    **answer_result.diagnostics,
+                    "evidence_grounded_answer_builder": grounded.to_dict(),
+                    "selected_candidate_type": "evidence_grounded_answer_builder",
+                    "selection_reason": "ROBUST_GENERALIZED_HARNESS_CANDIDATE selected deterministic evidence-grounded answer rendering.",
+                },
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_evidence_grounded_answer_builder",
+                stage="answer synthesis",
+                technique="EvidenceBus-centered grounded answer builder",
+                input_summary={"tool_result_count": len(tool_results), "api_required": api_required_for_answer},
+                output=grounded.to_dict(),
+                effect="renders final answer from EvidenceBus-derived answer slots and evidence quality classes",
+                correctness_role="uses exact available values and scoped caveats without inventing missing roles",
+                efficiency_role="uses no extra SQL/API/LLM calls",
+            )
+        final_answer = answer_result.answer
         intent = classify_answer_intent(query, slots)
         claims = extract_claims(final_answer)
         verification = verify_answer(final_answer, slots)
@@ -857,6 +962,19 @@ class AgentExecutor:
             correctness_role="makes final response generation evidence-grounded",
             efficiency_role="keeps answer context compact",
         )
+        if self.config.enable_answer_slot_renderer:
+            renderer_payload = (answer_result.diagnostics.get("evidence_grounded_answer_builder") or {}).get("renderer")
+            if isinstance(renderer_payload, dict):
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_answer_slot_renderer",
+                    stage="answer synthesis",
+                    technique="deterministic answer-slot rendering",
+                    input_summary={"slots": slots.compact()},
+                    output=renderer_payload,
+                    effect="records how requested fields were rendered from answer slots",
+                    correctness_role="makes omitted or unavailable roles explicit",
+                    efficiency_role="avoids LLM answer rewriting in the candidate path",
+                )
         checkpoint_logger.add_checkpoint(
             "checkpoint_16_answer_verification",
             stage="answer verification",
@@ -1213,6 +1331,180 @@ class AgentExecutor:
             "metadata": metadata,
             "plan": {"strategy": strategy, "rationale": "semantic no-tool applied trial", "steps": []},
             "tool_results": [],
+            "final_answer": final_answer,
+            "checkpoints": checkpoint_logger.to_list(),
+            "trajectory": trajectory_payload,
+        }
+
+    def _semantic_safe_api_probe_applied_decision(self, ladder: Any | None) -> dict[str, Any]:
+        if not (self.config.enable_safe_api_probe and self.config.enable_robust_generalized_candidate):
+            return {"record": False, "applied": False}
+        payload = ladder.to_dict() if hasattr(ladder, "to_dict") else {}
+        if payload.get("action") != "SAFE_API_PROBE":
+            return {"record": False, "applied": False}
+        probe = payload.get("safe_api_probe") if isinstance(payload.get("safe_api_probe"), dict) else {}
+        endpoint_id = str(probe.get("endpoint_id") or "")
+        endpoint = self.endpoint_catalog.by_id(endpoint_id) if endpoint_id else None
+        blockers: list[str] = []
+        if endpoint is None:
+            blockers.append("UNKNOWN_ENDPOINT")
+        elif endpoint.method != "GET":
+            blockers.append("UNSAFE_METHOD")
+        elif endpoint.path_params:
+            blockers.append("UNRESOLVED_PATH_PARAM")
+        url = endpoint.path if endpoint is not None else str(probe.get("path") or "")
+        validation = self.api_validator.validate("GET", url, {}, {})
+        if not validation.ok:
+            blockers.extend(validation.errors or ["API_VALIDATION_FAILED"])
+        applied = not blockers
+        return {
+            "record": True,
+            "trial_mode": self.config.real_behavior_trial_mode or ROBUST_GENERALIZED_HARNESS_CANDIDATE,
+            "decision_family": "SEMANTIC_SAFE_API_PROBE",
+            "decision": "SAFE_API_PROBE" if applied else "EVIDENCE_PIPELINE",
+            "applied": applied,
+            "fallback": not applied,
+            "blockers": blockers,
+            "endpoint_id": endpoint_id or None,
+            "method": "GET",
+            "url": url,
+            "max_endpoints": 1,
+            "shadow_only": False,
+        }
+
+    def _return_safe_api_probe_result(
+        self,
+        *,
+        query: str,
+        qid: str,
+        strategy: str,
+        out_dir: Path,
+        prompt_route: Any,
+        checkpoint_logger: CheckpointLogger,
+        probe_decision: dict[str, Any],
+    ) -> dict[str, Any]:
+        step = PlanStep(
+            action="api",
+            purpose="Robust generalized candidate SAFE_API_PROBE evidence.",
+            method="GET",
+            url=str(probe_decision.get("url") or ""),
+            params={},
+            family=str(probe_decision.get("endpoint_id") or ""),
+        )
+        validation = self.api_validator.validate(step.method or "GET", step.url or "", step.params, step.headers)
+        if validation.ok:
+            payload = self.api_client.call_api(step.method or "GET", step.url or "", step.params, step.headers)
+        else:
+            payload = {"ok": False, "dry_run": False, "error": "; ".join(validation.errors)}
+        tool_results = [{"type": "api", "step": step.to_dict(), "validation": validation.to_dict(), "payload": payload}]
+        evidence_bus = EvidenceBus()
+        evidence_bus.observe_api(step, payload)
+        evidence_quality = classify_evidence_quality(tool_results, api_required=True)
+        slots = extract_answer_slots(query, tool_results)
+        grounded = build_evidence_grounded_answer(query, tool_results, slots=slots, evidence_quality=evidence_quality, api_required=True)
+        final_answer = grounded.answer
+        metadata = {
+            "query_id": qid,
+            "query": query,
+            "strategy": strategy,
+            "prompt_route": prompt_route.to_dict(),
+            "safe_api_probe": probe_decision,
+            "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE SAFE_API_PROBE; packaged SQL_FIRST_API_VERIFY default is unchanged.",
+        }
+        self.metadata_selector.save(metadata, out_dir)
+        filled_prompt = render_system_prompt(self.config, metadata)
+        (out_dir / "filled_system_prompt.txt").write_text(filled_prompt, encoding="utf-8")
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_12_validation",
+            stage="validation",
+            technique="SAFE_API_PROBE API validation",
+            input_summary={"api_step": step.to_dict()},
+            output={"api_validation_status": [validation.to_dict()]},
+            effect="validates the single safe API probe before execution",
+            correctness_role="blocks unknown, mutating, or unresolved endpoint probes",
+            efficiency_role="caps validation to one API step",
+        )
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_13_tool_execution",
+            stage="execution",
+            technique="SAFE_API_PROBE tool execution",
+            input_summary={"validated": validation.ok},
+            output=tool_results_execution_summary(tool_results),
+            effect="executes at most one safe GET endpoint for low-confidence API-family prompts",
+            correctness_role="uses real API client output, dry-run output, or validation error only",
+            efficiency_role="avoids SQL and extra API calls for this candidate path",
+        )
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_14_evidence_bus",
+            stage="evidence forwarding",
+            technique="EvidenceBus",
+            input_summary={"tool_result_count": len(tool_results)},
+            output={"evidence": evidence_bus.compact(), "forwarding_actions": []},
+            effect="extracts exact API evidence into answer slots",
+            correctness_role="keeps IDs, names, statuses, counts, and timestamps evidence-grounded",
+            efficiency_role="reuses compact evidence for answer rendering",
+        )
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_evidence_quality_classifier",
+            stage="answer synthesis",
+            technique="SQL/API evidence quality classification",
+            input_summary={"tool_result_count": len(tool_results), "api_required": True},
+            output=evidence_quality,
+            effect="classifies live empty, API error, and direct API evidence distinctly",
+            correctness_role="prevents live_empty and api_error from being treated as global no-data",
+            efficiency_role="uses existing tool result payloads only",
+        )
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_answer_slot_renderer",
+            stage="answer synthesis",
+            technique="deterministic answer-slot rendering",
+            input_summary={"slots": slots.compact()},
+            output=grounded.renderer,
+            effect="renders requested fields from structured answer slots",
+            correctness_role="avoids unsupported concrete claims by using only extracted evidence",
+            efficiency_role="uses no additional tools or LLM calls",
+        )
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_evidence_grounded_answer_builder",
+            stage="answer synthesis",
+            technique="EvidenceBus-centered grounded answer builder",
+            input_summary={"evidence_quality": evidence_quality},
+            output=grounded.to_dict(),
+            effect="builds the final answer from evidence quality and answer slots",
+            correctness_role="uses scoped caveats for live_empty/API errors and does not invent missing roles",
+            efficiency_role="replaces free-form answer synthesis only in the explicit candidate strategy",
+        )
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_18_final_answer",
+            stage="final response",
+            technique="candidate grounded final response",
+            output={"final_answer": final_answer, "answer_length": len(final_answer), "final_token_estimate": estimate_tokens(final_answer)},
+            effect="returns the final candidate answer",
+            correctness_role="final answer remains tied to API probe evidence and caveats",
+            efficiency_role="keeps response concise",
+        )
+        trajectory = TrajectoryLogger(
+            query_id=qid,
+            original_query=query,
+            strategy=strategy,
+            route_type="SAFE_API_PROBE",
+            domain_type="API",
+            max_preview_chars=self.config.max_preview_chars,
+        )
+        trajectory.add_step("prompt_router", prompt_route.to_dict())
+        trajectory.add_step("metadata", {"estimated_tokens": estimate_tokens(metadata), "prompt_tokens": estimate_tokens(filled_prompt), "metadata_path": str(out_dir / "metadata.json")})
+        trajectory.add_api_call(step.method or "GET", step.url or "", step.params, step.headers, validation, payload)
+        trajectory.add_step("answer_diagnostics", grounded.to_dict())
+        trajectory.set_checkpoints(checkpoint_logger.to_list())
+        trajectory_payload = trajectory.save(out_dir / "trajectory.json", final_answer)
+        return {
+            "query_id": qid,
+            "query": query,
+            "strategy": strategy,
+            "output_dir": str(out_dir),
+            "metadata": metadata,
+            "plan": {"strategy": strategy, "rationale": "robust generalized SAFE_API_PROBE", "steps": [step.to_dict()]},
+            "tool_results": tool_results,
             "final_answer": final_answer,
             "checkpoints": checkpoint_logger.to_list(),
             "trajectory": trajectory_payload,
