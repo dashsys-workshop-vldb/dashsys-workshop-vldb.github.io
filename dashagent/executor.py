@@ -1144,6 +1144,16 @@ class AgentExecutor:
                     shadow_only=self.config.semantic_route_shadow_only,
                 )
                 checkpoint_logger.add_checkpoint(
+                    "checkpoint_semantic_parse",
+                    stage="semantic routing shadow",
+                    technique="semantic role parse",
+                    input_summary={"feature_codes": features.to_dict()},
+                    output=ladder.semantic_parse,
+                    effect="separates operation role, target grounding, instance level, and evidence need before route selection",
+                    correctness_role="prevents keyword-only no-tool blocking or allowing decisions",
+                    efficiency_role="adds compact parse metadata without executing tools",
+                )
+                checkpoint_logger.add_checkpoint(
                     "checkpoint_semantic_intent_decision",
                     stage="semantic routing shadow",
                     technique="compact SemanticIntentDecision classification",
@@ -1164,13 +1174,23 @@ class AgentExecutor:
                     efficiency_role="limits revision feedback to compact codes and keeps packaged execution unchanged",
                 )
                 checkpoint_logger.add_checkpoint(
+                    "checkpoint_semantic_consistency_verifier",
+                    stage="semantic routing shadow",
+                    technique="semantic parse and route consistency verifier",
+                    input_summary={"semantic_parse": ladder.semantic_parse, "semantic_intent": ladder.semantic_intent_decision},
+                    output=ladder.semantic_consistency,
+                    effect="allows no-tool only when semantic roles are conceptual, meta-language, or out-of-domain",
+                    correctness_role="blocks real instance-level data requests without treating every cue word as retrieval",
+                    efficiency_role="keeps safe conceptual prompts from entering the evidence pipeline",
+                )
+                checkpoint_logger.add_checkpoint(
                     "checkpoint_no_tool_safety_verifier",
                     stage="semantic routing shadow",
-                    technique="negative no-tool safety guardrail",
+                    technique="semantic consistency compatibility no-tool view",
                     input_summary={"semantic_intent": ladder.semantic_intent_decision},
                     output=ladder.no_tool_safety,
-                    effect="allows or blocks only no-tool decisions and never chooses SQL/API routes",
-                    correctness_role="blocks concrete data prompts from direct LLM handling",
+                    effect="records the semantic consistency result in the legacy no-tool safety checkpoint slot",
+                    correctness_role="blocks concrete data prompts from direct LLM handling while allowing keyword decoys",
                     efficiency_role="estimates safe no-tool savings without changing packaged behavior",
                 )
                 checkpoint_logger.add_checkpoint(

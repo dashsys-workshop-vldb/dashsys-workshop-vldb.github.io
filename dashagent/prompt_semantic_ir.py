@@ -32,6 +32,13 @@ class ObjectivePromptFeatures:
     entity: list[str] = field(default_factory=list)
     cap: list[str] = field(default_factory=list)
     flags: list[str] = field(default_factory=list)
+    quoted_spans: list[str] = field(default_factory=list)
+    meta_language_indicators: list[str] = field(default_factory=list)
+    operation_candidate_spans: list[str] = field(default_factory=list)
+    target_candidate_spans: list[str] = field(default_factory=list)
+    conceptual_object_terms: list[str] = field(default_factory=list)
+    data_object_terms: list[str] = field(default_factory=list)
+    format_request_terms: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, object]:
         payload = asdict(self)
@@ -58,6 +65,13 @@ def extract_objective_prompt_features(prompt: str) -> ObjectivePromptFeatures:
     domain: list[str] = []
     entity: list[str] = []
     flags: list[str] = []
+    quoted_spans = _quoted_spans(str(prompt or ""))
+    meta_language_indicators = _meta_language_indicators(norm)
+    conceptual_object_terms = _conceptual_object_terms(norm)
+    data_object_terms = _data_object_terms(norm)
+    format_request_terms = _format_request_terms(norm)
+    operation_candidate_spans: list[str] = []
+    target_candidate_spans: list[str] = []
 
     _add_if(cue, "DEF", _has_phrase(norm, ("what is", "what are", "define", "definition of")))
     _add_if(cue, "EXPLAIN", _has_phrase(norm, ("explain", "describe", "summarize")))
@@ -101,8 +115,10 @@ def extract_objective_prompt_features(prompt: str) -> ObjectivePromptFeatures:
     _add_if(rel, "USES", _has_phrase(norm, ("uses", "using", "used by", "use ")))
 
     domain.extend(_domain_codes(norm))
+    operation_candidate_spans.extend(_operation_candidate_spans(norm))
+    target_candidate_spans.extend(_target_candidate_spans(norm, domain))
 
-    if re.search(r"'[^']+'|\"[^\"]+\"", prompt or ""):
+    if quoted_spans:
         entity.append("QUOTED")
     if re.search(r"\b[A-Za-z0-9][A-Za-z0-9_-]{7,}\b", prompt or ""):
         entity.append("ID_LIKE")
@@ -129,6 +145,12 @@ def extract_objective_prompt_features(prompt: str) -> ObjectivePromptFeatures:
     _add_if(flags, "API", _has_word(norm, "api") or _has_phrase(norm, ("schema registry", "flow service", "flowservice")))
     if _has_phrase(norm, ("schema registry", "schemaregistry")):
         flags.append("EXPLICIT_API_FAMILY")
+    if meta_language_indicators:
+        flags.append("META_LANGUAGE_CONTEXT")
+    if format_request_terms:
+        flags.append("FORMAT_REQUEST_CONTEXT")
+    if conceptual_object_terms:
+        flags.append("CONCEPTUAL_OBJECT_CONTEXT")
     if domain and not cue and not (retr or count or status or date or fields or rel):
         flags.append("DOMAIN_ONLY")
 
@@ -146,6 +168,13 @@ def extract_objective_prompt_features(prompt: str) -> ObjectivePromptFeatures:
         entity=_dedupe(entity),
         cap=cap,
         flags=flags,
+        quoted_spans=quoted_spans,
+        meta_language_indicators=meta_language_indicators,
+        operation_candidate_spans=_dedupe(operation_candidate_spans),
+        target_candidate_spans=_dedupe(target_candidate_spans),
+        conceptual_object_terms=conceptual_object_terms,
+        data_object_terms=data_object_terms,
+        format_request_terms=format_request_terms,
     )
 
 
@@ -227,6 +256,90 @@ def _has_phrase(text: str, phrases: tuple[str, ...]) -> bool:
 
 def _has_word(text: str, word: str) -> bool:
     return bool(re.search(rf"\b{re.escape(word)}\b", text))
+
+
+def _quoted_spans(prompt: str) -> list[str]:
+    spans = re.findall(r"'([^']+)'|\"([^\"]+)\"", prompt or "")
+    return _dedupe([left or right for left, right in spans if left or right])
+
+
+def _meta_language_indicators(norm: str) -> list[str]:
+    values: list[str] = []
+    _add_if(values, "PHRASE_CONTEXT", _has_phrase(norm, ("in the phrase", "the phrase", "the word", "word ")))
+    _add_if(values, "MEANING_REQUEST", _has_phrase(norm, ("what does", "what is meant by", "mean?")))
+    _add_if(values, "QUOTED_MEANING", _has_phrase(norm, ("'list", "\"list", "'inactive", "\"inactive")))
+    return values
+
+
+def _conceptual_object_terms(norm: str) -> list[str]:
+    values: list[str] = []
+    for code, phrases in [
+        ("REASONS", ("reason", "reasons", "why")),
+        ("EXAMPLES", ("example", "examples")),
+        ("DEFINITION", ("definition", "define", "what does", "what is")),
+        ("OVERVIEW", ("overview", "summarize", "describe")),
+        ("BENEFITS", ("benefit", "benefits", "matter")),
+        ("DIFFERENCES", ("difference", "differences", "compare")),
+        ("STEPS", ("steps", "how to")),
+    ]:
+        _add_if(values, code, _has_phrase(norm, phrases))
+    return values
+
+
+def _data_object_terms(norm: str) -> list[str]:
+    values: list[str] = []
+    for code, phrases in [
+        ("SCHEMA", ("schema", "schemas")),
+        ("DATASET", ("dataset", "datasets", "data set", "data sets")),
+        ("JOURNEY", ("journey", "journeys")),
+        ("SEGMENT", ("segment", "segments")),
+        ("AUDIENCE", ("audience", "audiences")),
+        ("TAG", ("tag", "tags")),
+        ("AUDIT", ("audit", "event", "events")),
+        ("MERGE_POLICY", ("merge policy", "merge policies")),
+        ("FLOW", ("flow", "flows", "dataflow", "data flow")),
+        ("BATCH", ("batch", "batches")),
+    ]:
+        _add_if(values, code, _has_phrase(norm, phrases))
+    return values
+
+
+def _format_request_terms(norm: str) -> list[str]:
+    values: list[str] = []
+    _add_if(values, "LIST_N_REASONS", bool(re.search(r"\blist\s+(?:\d+|one|two|three|four|five|six|several)\s+reasons?\b", norm)))
+    _add_if(values, "GIVE_EXAMPLES", _has_phrase(norm, ("give examples", "provide examples", "list examples")))
+    _add_if(values, "COMPARE_FORMAT", _has_phrase(norm, ("compare", "contrast")))
+    _add_if(values, "EXPLAIN_FORMAT", _has_phrase(norm, ("explain why", "explain how")))
+    return values
+
+
+def _operation_candidate_spans(norm: str) -> list[str]:
+    spans: list[str] = []
+    for phrase in [
+        "what does",
+        "what is",
+        "explain",
+        "describe",
+        "list",
+        "show",
+        "find",
+        "count",
+        "how many",
+        "status",
+        "when",
+        "compare",
+    ]:
+        if _has_phrase(norm, (phrase,)):
+            spans.append(phrase)
+    return spans
+
+
+def _target_candidate_spans(norm: str, domain: list[str]) -> list[str]:
+    spans = [code.lower() for code in domain]
+    for phrase in ("status fields", "api docs", "stock price trends", "local snapshot", "sandbox"):
+        if _has_phrase(norm, (phrase,)):
+            spans.append(phrase)
+    return spans
 
 
 def _add_if(values: list[str], code: str, condition: bool) -> None:

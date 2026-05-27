@@ -135,6 +135,42 @@ def test_robust_candidate_can_skip_tools_for_safe_conceptual_prompt(tiny_project
     assert "checkpoint_score_provenance_guard" in checkpoint_names
 
 
+def test_robust_candidate_semantic_role_parse_skips_list_format_prompt(tiny_project: Config) -> None:
+    result = AgentExecutor(tiny_project).run(
+        "List three reasons why schemas matter.",
+        strategy=ROBUST,
+        query_id="robust_list_format",
+    )
+
+    assert result["tool_results"] == []
+    checkpoint_names = {checkpoint["checkpoint_id"] for checkpoint in result["checkpoints"]}
+    assert "checkpoint_semantic_parse" in checkpoint_names
+    assert "checkpoint_semantic_consistency_verifier" in checkpoint_names
+
+
+def test_robust_candidate_semantic_role_parse_blocks_schema_retrieval_no_tool(tiny_project: Config) -> None:
+    result = AgentExecutor(tiny_project).run(
+        "List current schemas in the sandbox.",
+        strategy=ROBUST,
+        query_id="robust_schema_retrieval",
+    )
+
+    assert any(row["type"] in {"sql", "api"} for row in result["tool_results"])
+    semantic_parse = next(
+        checkpoint["output"]
+        for checkpoint in result["checkpoints"]
+        if checkpoint["checkpoint_id"] == "checkpoint_semantic_parse"
+    )
+    consistency = next(
+        checkpoint["output"]
+        for checkpoint in result["checkpoints"]
+        if checkpoint["checkpoint_id"] == "checkpoint_semantic_consistency_verifier"
+    )
+    assert semantic_parse["target"]["grounding"] == "SUPPORTED_DATA_OBJECT"
+    assert semantic_parse["target"]["instance_level"] is True
+    assert consistency["allow_no_tool"] is False
+
+
 def test_robust_candidate_does_not_no_tool_mixed_prompt(tiny_project: Config) -> None:
     result = AgentExecutor(tiny_project).run(
         "Explain schemas and list schema records",
