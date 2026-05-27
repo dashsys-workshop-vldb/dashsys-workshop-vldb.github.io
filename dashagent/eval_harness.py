@@ -786,4 +786,19 @@ def config_for_applied_trial_strategy(config: Config, strategy: str) -> Config:
             enable_post_sql_llm_advisor_applied_trial=False,
             real_behavior_trial_mode=strategy,
         )
+    if strategy == "COMBINED_SAFE_DETERMINISTIC_PROMOTION_CANDIDATE":
+        return replace(
+            config,
+            enable_staged_evidence_policy=True,
+            staged_evidence_policy_shadow_only=False,
+            enable_post_sql_api_decision=True,
+            post_sql_api_decision_shadow_only=False,
+            enable_staged_evidence_applied_trial=True,
+            enable_post_sql_deterministic_applied_trial=True,
+            enable_combined_safe_applied_trial=True,
+            enable_semantic_no_tool_applied_trial=False,
+            post_sql_llm_advisor_enabled=False,
+            enable_post_sql_llm_advisor_applied_trial=False,
+            real_behavior_trial_mode=strategy,
+        )
     return config

@@ -7,12 +7,14 @@
     "anti_hallucination_initial_fail": false,
     "anti_hallucination_revision_attempted": false,
     "anti_hallucination_revision_success": false,
-    "api_calls": 0,
+    "api_calls": 1,
     "api_calls_added": 0,
-    "api_calls_saved": 1,
-    "api_families": [],
-    "api_used": false,
-    "applied_decision_count": 1,
+    "api_calls_saved": 0,
+    "api_families": [
+      "schema_registry_schemas"
+    ],
+    "api_used": true,
+    "applied_decision_count": 0,
     "applied_decision_records": [
       {
         "applied": false,
@@ -34,30 +36,26 @@
         "truncated_fields": 2
       },
       {
-        "applied": true,
-        "decision": "SKIP_API",
-        "decision_family": "POST_SQL_API",
-        "fallback": false,
-        "policy": {
-          "api_evidence_signal": 0.35,
-          "codes": {
-            "items": [
-              "SQL_DIRECT_ANSWER"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "confidence": "HIGH",
-          "suggestion": "SKIP_API"
+        "applied": false,
+        "blockers": {
+          "items": [
+            "API_REQUIRED",
+            "VERIFIER_DID_NOT_APPROVE_SKIP"
+          ],
+          "total_items": 2,
+          "truncated_items": false
         },
+        "decision": "KEEP_BASELINE_API",
+        "decision_family": "POST_SQL_API",
+        "fallback": true,
         "record": true,
         "shadow_only": false,
         "trial_mode": "combined_safe_applied_real_trial",
         "truncated_fields": 6
       }
     ],
-    "behavior_changed": true,
-    "blocker_count": 3,
+    "behavior_changed": false,
+    "blocker_count": 6,
     "checkpoint_names": [
       "checkpoint_01_raw_query",
       "checkpoint_00_prompt_router",
@@ -96,10 +94,11 @@
       "checkpoint_17_answer_reranking",
       "checkpoint_18_final_answer"
     ],
-    "estimated_total_tokens": 686,
-    "fallback_count": 1,
+    "estimated_total_tokens": 698,
+    "fallback_count": 2,
     "feature_flags_used": {
       "combined_safe_applied": true,
+      "combined_safe_deterministic_promotion_candidate": false,
       "post_sql_deterministic_applied": false,
       "post_sql_llm_advisor_applied": false,
       "semantic_no_tool_applied": false,
@@ -337,14 +336,7 @@
                 "total_items": 0,
                 "truncated_items": false
               },
-              "ok": true,
-              "warnings": {
-                "items": [
-                  "API skipped by isolated post-SQL applied trial."
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              }
+              "ok": true
             }
           ],
           "total_items": 1,
@@ -363,18 +355,33 @@
           ],
           "total_items": 1,
           "truncated_items": false
-        },
-        "warnings": {
-          "items": [
-            "API skipped by isolated post-SQL applied trial."
-          ],
-          "total_items": 1,
-          "truncated_items": false
         }
       },
       "checkpoint_13_tool_execution": {
-        "api_calls_executed": 0,
-        "dry_run_status": false,
+        "api_calls_executed": 1,
+        "api_results": {
+          "items": [
+            {
+              "dry_run": true,
+              "method": "GET",
+              "ok": false,
+              "result_preview": {
+                "caveat": "Adobe credentials unavailable; API call not executed.",
+                "dry_run": true,
+                "endpoint_family": "/data/foundation/schemaregistry/tenant/schemas",
+                "error_category": "dry_run_unavailable",
+                "evidence_state": "dry_run_unavailable",
+                "live_success": false,
+                "ok": false,
+                "usable_evidence": false
+              },
+              "url": "/data/foundation/schemaregistry/tenant/schemas"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "dry_run_status": true,
         "row_counts": {
           "items": [
             1
@@ -420,7 +427,7 @@
           "sql_api_discrepancy": false
         },
         "dry_run_flags": {
-          "dry_run": false
+          "dry_run": true
         },
         "missing_slots": {
           "items": [
@@ -441,15 +448,15 @@
             "truncated_items": false
           },
           "discrepancy": false,
-          "dry_run": false,
+          "dry_run": true,
           "slots_present": {
             "items": [
               "counts",
               "sql_row_count",
-              "first_rows"
+              "dry_run"
             ],
-            "total_items": 3,
-            "truncated_items": false
+            "total_items": 4,
+            "truncated_items": true
           },
           "sql_row_count": 1
         }
@@ -471,9 +478,9 @@
         "selection_reason": "best verifier-passing answer"
       },
       "checkpoint_18_final_answer": {
-        "answer_length": 52,
-        "final_answer": "You have 74 schemas. API evidence was not requested.",
-        "final_token_estimate": 12
+        "answer_length": 102,
+        "final_answer": "You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable.",
+        "final_token_estimate": 18
       },
       "checkpoint_evidence_match_scores": {
         "api_match": 0.7,
@@ -625,12 +632,19 @@
       "checkpoint_post_sql_api_call_verifier": {
         "codes": {
           "items": [
-            "VERIFIED_SKIP_API"
+            "API_REQUIRED_SKIP_BLOCKED"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "final_action": "SKIP_API",
+        "final_action": "CALL_API",
+        "selected_api_families": {
+          "items": [
+            "schema_list"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
         "shadow_only": false,
         "source": "DETERMINISTIC_HIGH_CONF"
       },
@@ -740,22 +754,18 @@
         }
       },
       "checkpoint_real_behavior_applied_trial": {
-        "applied": true,
-        "decision": "SKIP_API",
-        "decision_family": "POST_SQL_API",
-        "fallback": false,
-        "policy": {
-          "api_evidence_signal": 0.35,
-          "codes": {
-            "items": [
-              "SQL_DIRECT_ANSWER"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "confidence": "HIGH",
-          "suggestion": "SKIP_API"
+        "applied": false,
+        "blockers": {
+          "items": [
+            "API_REQUIRED",
+            "VERIFIER_DID_NOT_APPROVE_SKIP"
+          ],
+          "total_items": 2,
+          "truncated_items": false
         },
+        "decision": "KEEP_BASELINE_API",
+        "decision_family": "POST_SQL_API",
+        "fallback": true,
         "record": true,
         "shadow_only": false,
         "trial_mode": "combined_safe_applied_real_trial",
@@ -898,9 +908,9 @@
     "post_sql_verifier_blocked": false,
     "post_sql_verifier_source": "DETERMINISTIC_HIGH_CONF",
     "post_sql_verifier_verified": false,
-    "route_action": "SQL_ONLY",
-    "runtime_ms": 51.44620826467872,
-    "skipped_decision_count": 1,
+    "route_action": "SQL_THEN_API",
+    "runtime_ms": 51.38349998742342,
+    "skipped_decision_count": 2,
     "sql_calls": 1,
     "sql_tables": [
       "dim_blueprint"
@@ -914,22 +924,22 @@
     "answer_grounding_score": 1.0,
     "api_endpoint_family_accuracy": 1.0,
     "api_error_interpretation_correct": true,
-    "api_required_used_accuracy": 1.0,
-    "behavior_score": 0.9583,
-    "combined_diagnostic_score": 0.8708,
-    "expected_evidence_need_accuracy": 1.0,
-    "expected_observable_trace_score": 0.8333,
-    "final_answer_correctness": 0.75,
+    "api_required_used_accuracy": 0.5,
+    "behavior_score": 0.8542,
+    "combined_diagnostic_score": 0.7104,
+    "expected_evidence_need_accuracy": 0.75,
+    "expected_observable_trace_score": 0.6667,
+    "final_answer_correctness": 0.625,
     "forbidden_claims_violation": false,
     "live_empty_interpretation_correct": true,
     "no_tool_false_negative": false,
     "no_tool_false_positive": false,
-    "overall_score": 0.8708,
+    "overall_score": 0.7104,
     "required_facts_coverage": 0.0,
-    "route_accuracy": 1.0,
+    "route_accuracy": 0.75,
     "sql_required_used_accuracy": 1.0,
     "sql_table_accuracy": 0.0,
-    "tool_overuse": 0,
+    "tool_overuse": 1,
     "tool_underuse": 0,
     "trace_observability_score": 0.5,
     "unsupported_claims": 0

@@ -7,12 +7,14 @@
     "anti_hallucination_initial_fail": false,
     "anti_hallucination_revision_attempted": false,
     "anti_hallucination_revision_success": false,
-    "api_calls": 0,
+    "api_calls": 1,
     "api_calls_added": 0,
-    "api_calls_saved": 1,
-    "api_families": [],
-    "api_used": false,
-    "applied_decision_count": 1,
+    "api_calls_saved": 0,
+    "api_families": [
+      "segment_definitions"
+    ],
+    "api_used": true,
+    "applied_decision_count": 0,
     "applied_decision_records": [
       {
         "applied": false,
@@ -34,30 +36,26 @@
         "truncated_fields": 2
       },
       {
-        "applied": true,
-        "decision": "SKIP_API",
-        "decision_family": "POST_SQL_API",
-        "fallback": false,
-        "policy": {
-          "api_evidence_signal": 0.35,
-          "codes": {
-            "items": [
-              "SQL_DIRECT_ANSWER"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "confidence": "HIGH",
-          "suggestion": "SKIP_API"
+        "applied": false,
+        "blockers": {
+          "items": [
+            "POLICY_DID_NOT_SUGGEST_SKIP",
+            "VERIFIER_DID_NOT_APPROVE_SKIP"
+          ],
+          "total_items": 2,
+          "truncated_items": false
         },
+        "decision": "KEEP_BASELINE_API",
+        "decision_family": "POST_SQL_API",
+        "fallback": true,
         "record": true,
         "shadow_only": false,
         "trial_mode": "combined_safe_applied_real_trial",
         "truncated_fields": 6
       }
     ],
-    "behavior_changed": true,
-    "blocker_count": 3,
+    "behavior_changed": false,
+    "blocker_count": 6,
     "checkpoint_names": [
       "checkpoint_01_raw_query",
       "checkpoint_00_prompt_router",
@@ -95,9 +93,10 @@
       "checkpoint_18_final_answer"
     ],
     "estimated_total_tokens": 1088,
-    "fallback_count": 1,
+    "fallback_count": 2,
     "feature_flags_used": {
       "combined_safe_applied": true,
+      "combined_safe_deterministic_promotion_candidate": false,
       "post_sql_deterministic_applied": false,
       "post_sql_llm_advisor_applied": false,
       "semantic_no_tool_applied": false,
@@ -354,14 +353,7 @@
                 "total_items": 0,
                 "truncated_items": false
               },
-              "ok": true,
-              "warnings": {
-                "items": [
-                  "API skipped by isolated post-SQL applied trial."
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              }
+              "ok": true
             }
           ],
           "total_items": 1,
@@ -380,17 +372,10 @@
           ],
           "total_items": 1,
           "truncated_items": false
-        },
-        "warnings": {
-          "items": [
-            "API skipped by isolated post-SQL applied trial."
-          ],
-          "total_items": 1,
-          "truncated_items": false
         }
       },
       "checkpoint_13_tool_execution": {
-        "preview": "{\"sql_calls_executed\": 1, \"api_calls_executed\": 0, \"dry_run_status\": false, \"row_counts\": {\"items\": [13], \"total_items\": 1, \"truncated_items\": false}, \"sql_results\": {\"items\": [{\"result_preview\": {\"items\": [{\"SEGMENTID\": \"2fdfefe1-04d0-46ce-9fbd-7611e311dd26\", \"UPDATEDTIME\": \"2026-04-05T04:33:25.000+00:00\", \"ISACCOUNTSEGMENT\": false, \"NAME\": \"Person: Birthday Today 001\", \"LABELSSEGMENT\": \"[]\", \"LIFECYCLESTATUS\": \"published\", \"CREATEDTIME\": \"2026-04-05T04:33:25.000+00:00\"}, {\"SEGMENTID\": \"574372f1-7b74-489c-b77f-139024b083a5\", \"UPDATEDTIME\": \"2026-03-29T07:52:25.000+00:00\", \"ISACCOUNTSEGMENT\": false, \"NAME\": \"Campaign: 25% Off Purchase Offer Reminder\", \"LABELSSEGMENT\": \"[]\", \"LIFECYCLESTATUS\": \"published\", \"CREATEDTIME\": \"2026-03-29T07:52:25.000+00:00\"}, {\"SEGMENTID\": \"7e7b3d71-ae29-4c97-8b24-99905ea6bf68\", \"UPDATEDTIME\": \"2026-03-29T07:52:17.000+00:00\", \"ISACCOUNTSEGMENT\": false, \"NAME\": \"Campaign: New Application Credit Card Offer\", \"LABELSSEGMENT\": \"[]\", \"LIFECYCLESTATUS\": \"published...",
+        "preview": "{\"sql_calls_executed\": 1, \"api_calls_executed\": 1, \"dry_run_status\": true, \"row_counts\": {\"items\": [13], \"total_items\": 1, \"truncated_items\": false}, \"sql_results\": {\"items\": [{\"result_preview\": {\"items\": [{\"SEGMENTID\": \"2fdfefe1-04d0-46ce-9fbd-7611e311dd26\", \"UPDATEDTIME\": \"2026-04-05T04:33:25.000+00:00\", \"ISACCOUNTSEGMENT\": false, \"NAME\": \"Person: Birthday Today 001\", \"LABELSSEGMENT\": \"[]\", \"LIFECYCLESTATUS\": \"published\", \"CREATEDTIME\": \"2026-04-05T04:33:25.000+00:00\"}, {\"SEGMENTID\": \"574372f1-7b74-489c-b77f-139024b083a5\", \"UPDATEDTIME\": \"2026-03-29T07:52:25.000+00:00\", \"ISACCOUNTSEGMENT\": false, \"NAME\": \"Campaign: 25% Off Purchase Offer Reminder\", \"LABELSSEGMENT\": \"[]\", \"LIFECYCLESTATUS\": \"published\", \"CREATEDTIME\": \"2026-03-29T07:52:25.000+00:00\"}, {\"SEGMENTID\": \"7e7b3d71-ae29-4c97-8b24-99905ea6bf68\", \"UPDATEDTIME\": \"2026-03-29T07:52:17.000+00:00\", \"ISACCOUNTSEGMENT\": false, \"NAME\": \"Campaign: New Application Credit Card Offer\", \"LABELSSEGMENT\": \"[]\", \"LIFECYCLESTATUS\": \"published\"...",
         "truncated": true
       },
       "checkpoint_14_evidence_bus": {
@@ -440,13 +425,20 @@
           "sql_api_discrepancy": false
         },
         "dry_run_flags": {
-          "dry_run": false
+          "dry_run": true
+        },
+        "missing_slots": {
+          "items": [
+            "dry_run_caveat"
+          ],
+          "total_items": 1,
+          "truncated_items": false
         },
         "slots": {
           "answer_family": "generic",
           "api_error": false,
           "discrepancy": false,
-          "dry_run": false,
+          "dry_run": true,
           "entity_ids": {
             "items": [
               "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
@@ -471,7 +463,7 @@
               "entity_ids",
               "counts"
             ],
-            "total_items": 7,
+            "total_items": 8,
             "truncated_items": true
           },
           "sql_row_count": 13,
@@ -601,12 +593,19 @@
       "checkpoint_post_sql_api_call_verifier": {
         "codes": {
           "items": [
-            "VERIFIED_SKIP_API"
+            "VERIFIED_CALL_API"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "final_action": "SKIP_API",
+        "final_action": "CALL_API",
+        "selected_api_families": {
+          "items": [
+            "gold_pattern_fallback"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
         "shadow_only": false,
         "source": "DETERMINISTIC_HIGH_CONF"
       },
@@ -675,47 +674,45 @@
         "task": "POST_SQL_API_DECISION"
       },
       "checkpoint_post_sql_deterministic_policy": {
-        "api_evidence_signal": 0.35,
+        "api_evidence_signal": 0.78,
         "codes": {
           "items": [
-            "SQL_DIRECT_ANSWER"
+            "STRICT_API_DOMAIN_RETRIEVAL",
+            "STRICT_API_CAPABILITY_MATCH"
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         },
         "confidence": "HIGH",
-        "suggestion": "SKIP_API"
+        "suggestion": "CALL_API"
       },
       "checkpoint_post_sql_llm_advisor": {
         "codes": {
           "items": [
-            "SQL_DIRECT_ANSWER"
+            "STRICT_API_DOMAIN_RETRIEVAL",
+            "STRICT_API_CAPABILITY_MATCH"
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         },
         "conf": 1.0,
         "llm_call_attempted": false,
-        "mode": "SKIP_API",
+        "mode": "CALL_API",
         "source": "DETERMINISTIC_BYPASS"
       },
       "checkpoint_real_behavior_applied_trial": {
-        "applied": true,
-        "decision": "SKIP_API",
-        "decision_family": "POST_SQL_API",
-        "fallback": false,
-        "policy": {
-          "api_evidence_signal": 0.35,
-          "codes": {
-            "items": [
-              "SQL_DIRECT_ANSWER"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "confidence": "HIGH",
-          "suggestion": "SKIP_API"
+        "applied": false,
+        "blockers": {
+          "items": [
+            "POLICY_DID_NOT_SUGGEST_SKIP",
+            "VERIFIER_DID_NOT_APPROVE_SKIP"
+          ],
+          "total_items": 2,
+          "truncated_items": false
         },
+        "decision": "KEEP_BASELINE_API",
+        "decision_family": "POST_SQL_API",
+        "fallback": true,
         "record": true,
         "shadow_only": false,
         "trial_mode": "combined_safe_applied_real_trial",
@@ -862,9 +859,9 @@
     "post_sql_verifier_blocked": false,
     "post_sql_verifier_source": "DETERMINISTIC_HIGH_CONF",
     "post_sql_verifier_verified": false,
-    "route_action": "SQL_ONLY",
-    "runtime_ms": 57.56249977275729,
-    "skipped_decision_count": 1,
+    "route_action": "SQL_THEN_API",
+    "runtime_ms": 57.870374992489815,
+    "skipped_decision_count": 2,
     "sql_calls": 1,
     "sql_tables": [
       "dim_segment"
@@ -877,23 +874,23 @@
   "grade": {
     "answer_grounding_score": 1.0,
     "api_endpoint_family_accuracy": 1.0,
-    "api_error_interpretation_correct": true,
-    "api_required_used_accuracy": 1.0,
-    "behavior_score": 0.9583,
-    "combined_diagnostic_score": 0.8708,
-    "expected_evidence_need_accuracy": 1.0,
-    "expected_observable_trace_score": 0.8333,
-    "final_answer_correctness": 0.75,
+    "api_error_interpretation_correct": false,
+    "api_required_used_accuracy": 0.5,
+    "behavior_score": 0.8542,
+    "combined_diagnostic_score": 0.7104,
+    "expected_evidence_need_accuracy": 0.75,
+    "expected_observable_trace_score": 0.6667,
+    "final_answer_correctness": 0.625,
     "forbidden_claims_violation": false,
     "live_empty_interpretation_correct": true,
     "no_tool_false_negative": false,
     "no_tool_false_positive": false,
-    "overall_score": 0.8708,
+    "overall_score": 0.7104,
     "required_facts_coverage": 0.0,
-    "route_accuracy": 1.0,
+    "route_accuracy": 0.75,
     "sql_required_used_accuracy": 1.0,
     "sql_table_accuracy": 1.0,
-    "tool_overuse": 0,
+    "tool_overuse": 1,
     "tool_underuse": 0,
     "trace_observability_score": 0.5,
     "unsupported_claims": 0

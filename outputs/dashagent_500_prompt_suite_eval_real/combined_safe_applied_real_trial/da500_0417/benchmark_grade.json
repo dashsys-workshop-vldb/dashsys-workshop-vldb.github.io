@@ -7,12 +7,14 @@
     "anti_hallucination_initial_fail": false,
     "anti_hallucination_revision_attempted": false,
     "anti_hallucination_revision_success": false,
-    "api_calls": 0,
+    "api_calls": 1,
     "api_calls_added": 0,
-    "api_calls_saved": 1,
-    "api_families": [],
-    "api_used": false,
-    "applied_decision_count": 1,
+    "api_calls_saved": 0,
+    "api_families": [
+      "schema_registry_schemas"
+    ],
+    "api_used": true,
+    "applied_decision_count": 0,
     "applied_decision_records": [
       {
         "applied": false,
@@ -33,30 +35,26 @@
         "truncated_fields": 2
       },
       {
-        "applied": true,
-        "decision": "SKIP_API",
-        "decision_family": "POST_SQL_API",
-        "fallback": false,
-        "policy": {
-          "api_evidence_signal": 0.35,
-          "codes": {
-            "items": [
-              "SQL_DIRECT_ANSWER"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "confidence": "HIGH",
-          "suggestion": "SKIP_API"
+        "applied": false,
+        "blockers": {
+          "items": [
+            "API_REQUIRED",
+            "VERIFIER_DID_NOT_APPROVE_SKIP"
+          ],
+          "total_items": 2,
+          "truncated_items": false
         },
+        "decision": "KEEP_BASELINE_API",
+        "decision_family": "POST_SQL_API",
+        "fallback": true,
         "record": true,
         "shadow_only": false,
         "trial_mode": "combined_safe_applied_real_trial",
         "truncated_fields": 6
       }
     ],
-    "behavior_changed": true,
-    "blocker_count": 3,
+    "behavior_changed": false,
+    "blocker_count": 6,
     "checkpoint_names": [
       "checkpoint_01_raw_query",
       "checkpoint_00_prompt_router",
@@ -93,10 +91,11 @@
       "checkpoint_17_answer_reranking",
       "checkpoint_18_final_answer"
     ],
-    "estimated_total_tokens": 1197,
-    "fallback_count": 1,
+    "estimated_total_tokens": 1212,
+    "fallback_count": 2,
     "feature_flags_used": {
       "combined_safe_applied": true,
+      "combined_safe_deterministic_promotion_candidate": false,
       "post_sql_deterministic_applied": false,
       "post_sql_llm_advisor_applied": false,
       "semantic_no_tool_applied": false,
@@ -358,14 +357,7 @@
                 "total_items": 0,
                 "truncated_items": false
               },
-              "ok": true,
-              "warnings": {
-                "items": [
-                  "API skipped by isolated post-SQL applied trial."
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              }
+              "ok": true
             }
           ],
           "total_items": 1,
@@ -384,59 +376,16 @@
           ],
           "total_items": 1,
           "truncated_items": false
-        },
-        "warnings": {
-          "items": [
-            "API skipped by isolated post-SQL applied trial."
-          ],
-          "total_items": 1,
-          "truncated_items": false
         }
       },
       "checkpoint_13_tool_execution": {
-        "api_calls_executed": 0,
-        "dry_run_status": false,
-        "row_counts": {
-          "items": [
-            27
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "sql_calls_executed": 1,
-        "sql_results": {
-          "items": [
-            {
-              "ok": true,
-              "result_preview": {
-                "items": [
-                  {
-                    "collection_id": "69c8d7e7c4958bffeece5512",
-                    "collection_name": "AJO Interactive Messaging Profile Dataset"
-                  },
-                  {
-                    "collection_id": "69c8d7de7fb08b6f7f037df0",
-                    "collection_name": "AJO Message Feedback Event Dataset"
-                  },
-                  {
-                    "collection_id": "69c8d6c06a9c8527e93c0a0b",
-                    "collection_name": "Journeys"
-                  }
-                ],
-                "total_items": 3,
-                "truncated_items": false
-              },
-              "row_count": 27
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        }
+        "preview": "{\"sql_calls_executed\": 1, \"api_calls_executed\": 1, \"dry_run_status\": true, \"row_counts\": {\"items\": [27], \"total_items\": 1, \"truncated_items\": false}, \"sql_results\": {\"items\": [{\"result_preview\": {\"items\": [{\"collection_id\": \"69c8d7f391a3acd741e7cab8\", \"collection_name\": \"AJO Live Activities Feedback Event Dataset\"}, {\"collection_id\": \"69c8d7e46a9c8527e93c0a15\", \"collection_name\": \"AJO Classification Dataset\"}, {\"collection_id\": \"69c8d7df34e6e84bcbe48031\", \"collection_name\": \"AJO Push Tracking Experience Event Dataset\"}], \"total_items\": 3, \"truncated_items\": false}, \"ok\": true, \"row_count\": 27}], \"total_items\": 1, \"truncated_items\": false}, \"api_results\": {\"items\": [{\"result_preview\": {\"ok\": false, \"dry_run\": true, \"live_success\": false, \"evidence_state\": \"dry_run_unavailable\", \"error_category\": \"dry_run_unavailable\", \"endpoint_family\": \"/data/foundation/schemaregistry/tenant/schemas\", \"usable_evidence\": false, \"caveat\": \"Adobe credentials unavailable; API call not executed.\"}, \"ok\": fa...",
+        "truncated": true
       },
       "checkpoint_14_evidence_bus": {
         "evidence": {
           "ids": {
-            "collection_id": "69c8d7e7c4958bffeece5512"
+            "collection_id": "69c8d7f391a3acd741e7cab8"
           }
         }
       },
@@ -446,7 +395,7 @@
           "sql_api_discrepancy": false
         },
         "dry_run_flags": {
-          "dry_run": false
+          "dry_run": true
         },
         "slots": {
           "answer_family": "schema_dataset",
@@ -459,12 +408,12 @@
             "truncated_items": false
           },
           "discrepancy": false,
-          "dry_run": false,
+          "dry_run": true,
           "entity_names": {
             "items": [
-              "AJO Interactive Messaging Profile Dataset",
-              "AJO Message Feedback Event Dataset",
-              "Journeys"
+              "AJO Live Activities Feedback Event Dataset",
+              "AJO Classification Dataset",
+              "AJO Push Tracking Experience Event Dataset"
             ],
             "total_items": 3,
             "truncated_items": false
@@ -475,7 +424,7 @@
               "counts",
               "sql_row_count"
             ],
-            "total_items": 4,
+            "total_items": 5,
             "truncated_items": true
           },
           "sql_row_count": 27
@@ -498,9 +447,9 @@
         "selection_reason": "best verifier-passing answer"
       },
       "checkpoint_18_final_answer": {
-        "answer_length": 394,
-        "final_answer": "Based on the evidence provided, matching datasets are: AJO Interactive Messaging Profile Dataset, AJO Message Feedback Event Dataset, Journeys, ODE DecisionEvents - external-benchmarking decisioning, hkg_adls_profile_count_history, weRetail: Customer Actions, AJO STO Summary Dataset, AJO Entity Dataset, AJO ExD Decision Event Dataset, and AJO Surfaces Dataset. API evidence was not requested.",
-        "final_token_estimate": 87
+        "answer_length": 453,
+        "final_answer": "Based on the evidence provided, matching datasets are: AJO Live Activities Feedback Event Dataset, AJO Classification Dataset, AJO Push Tracking Experience Event Dataset, hkg_adls_profile_count_history, weRetail: Customer Actions, AJO STO Summary Dataset, AJO Entity Dataset, AJO Push Profile Dataset, hkg_adls_segment_profile_history, and AJO Profile Counters Extension. Live API verification was not executed because Adobe credentials are unavailable.",
+        "final_token_estimate": 91
       },
       "checkpoint_evidence_match_scores": {
         "api_match": 0.7,
@@ -602,12 +551,19 @@
       "checkpoint_post_sql_api_call_verifier": {
         "codes": {
           "items": [
-            "VERIFIED_SKIP_API"
+            "API_REQUIRED_SKIP_BLOCKED"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "final_action": "SKIP_API",
+        "final_action": "CALL_API",
+        "selected_api_families": {
+          "items": [
+            "schema_list"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
         "shadow_only": false,
         "source": "DETERMINISTIC_HIGH_CONF"
       },
@@ -700,22 +656,18 @@
         "source": "DETERMINISTIC_BYPASS"
       },
       "checkpoint_real_behavior_applied_trial": {
-        "applied": true,
-        "decision": "SKIP_API",
-        "decision_family": "POST_SQL_API",
-        "fallback": false,
-        "policy": {
-          "api_evidence_signal": 0.35,
-          "codes": {
-            "items": [
-              "SQL_DIRECT_ANSWER"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "confidence": "HIGH",
-          "suggestion": "SKIP_API"
+        "applied": false,
+        "blockers": {
+          "items": [
+            "API_REQUIRED",
+            "VERIFIER_DID_NOT_APPROVE_SKIP"
+          ],
+          "total_items": 2,
+          "truncated_items": false
         },
+        "decision": "KEEP_BASELINE_API",
+        "decision_family": "POST_SQL_API",
+        "fallback": true,
         "record": true,
         "shadow_only": false,
         "trial_mode": "combined_safe_applied_real_trial",
@@ -818,9 +770,9 @@
     "post_sql_verifier_blocked": false,
     "post_sql_verifier_source": "DETERMINISTIC_HIGH_CONF",
     "post_sql_verifier_verified": false,
-    "route_action": "SQL_ONLY",
-    "runtime_ms": 50.95962481573224,
-    "skipped_decision_count": 1,
+    "route_action": "SQL_THEN_API",
+    "runtime_ms": 50.988041795790195,
+    "skipped_decision_count": 2,
     "sql_calls": 1,
     "sql_tables": [
       "dim_blueprint",
@@ -836,17 +788,17 @@
     "answer_grounding_score": 1.0,
     "api_endpoint_family_accuracy": 1.0,
     "api_error_interpretation_correct": true,
-    "api_required_used_accuracy": 1.0,
-    "behavior_score": 0.6875,
-    "combined_diagnostic_score": 0.4229,
+    "api_required_used_accuracy": 0.5,
+    "behavior_score": 0.5833,
+    "combined_diagnostic_score": 0.3583,
     "expected_evidence_need_accuracy": 0.0,
-    "expected_observable_trace_score": 0.4167,
-    "final_answer_correctness": 0.625,
+    "expected_observable_trace_score": 0.3333,
+    "final_answer_correctness": 0.5,
     "forbidden_claims_violation": false,
     "live_empty_interpretation_correct": true,
     "no_tool_false_negative": true,
     "no_tool_false_positive": false,
-    "overall_score": 0.4229,
+    "overall_score": 0.3583,
     "required_facts_coverage": 0.0,
     "route_accuracy": 0.0,
     "sql_required_used_accuracy": 0.5,

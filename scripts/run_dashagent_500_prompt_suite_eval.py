@@ -50,6 +50,7 @@ REAL_MODES = {
     "post_sql_deterministic_applied_real_trial",
     "post_sql_llm_advisor_applied_real_trial",
     "combined_safe_applied_real_trial",
+    "combined_safe_deterministic_promotion_candidate_real",
 }
 RECOGNIZED_MODES = SIMULATED_MODES | REAL_MODES
 REAL_BEHAVIOR_APPLIED_MODES = {
@@ -58,6 +59,7 @@ REAL_BEHAVIOR_APPLIED_MODES = {
     "post_sql_deterministic_applied_real_trial",
     "post_sql_llm_advisor_applied_real_trial",
     "combined_safe_applied_real_trial",
+    "combined_safe_deterministic_promotion_candidate_real",
 }
 REAL_APPLIED_TRIAL_BLOCKERS = [
     "Semantic route decisions are integrated as shadow checkpoints only.",
@@ -579,6 +581,21 @@ def _config_for_real_mode(mode: str) -> Any:
             post_sql_llm_advisor_enabled=False,
             real_behavior_trial_mode=mode,
         )
+    if mode == "combined_safe_deterministic_promotion_candidate_real":
+        return replace(
+            DEFAULT_CONFIG,
+            enable_staged_evidence_policy=True,
+            staged_evidence_policy_shadow_only=False,
+            enable_post_sql_api_decision=True,
+            post_sql_api_decision_shadow_only=False,
+            enable_staged_evidence_applied_trial=True,
+            enable_post_sql_deterministic_applied_trial=True,
+            enable_combined_safe_applied_trial=True,
+            enable_semantic_no_tool_applied_trial=False,
+            post_sql_llm_advisor_enabled=False,
+            enable_post_sql_llm_advisor_applied_trial=False,
+            real_behavior_trial_mode=mode,
+        )
     return DEFAULT_CONFIG
 
 
@@ -920,6 +937,7 @@ def _trial_feature_flags_from_records(records: list[dict[str, Any]]) -> dict[str
         "post_sql_deterministic_applied": False,
         "post_sql_llm_advisor_applied": False,
         "combined_safe_applied": False,
+        "combined_safe_deterministic_promotion_candidate": False,
     }
     for record in records:
         mode = str(record.get("trial_mode") or "")
@@ -933,6 +951,8 @@ def _trial_feature_flags_from_records(records: list[dict[str, Any]]) -> dict[str
             flags["post_sql_llm_advisor_applied"] = True
         elif mode == "combined_safe_applied_real_trial":
             flags["combined_safe_applied"] = True
+        elif mode == "combined_safe_deterministic_promotion_candidate_real":
+            flags["combined_safe_deterministic_promotion_candidate"] = True
     return flags
 
 
@@ -2169,6 +2189,7 @@ def _real_behavior_gate_for_mode(mode: str, baseline: dict[str, Any], summary: d
         "staged_evidence_applied_real_trial": "staged_evidence_candidate_for_targeted_promotion",
         "post_sql_deterministic_applied_real_trial": "post_sql_deterministic_candidate_for_targeted_promotion",
         "combined_safe_applied_real_trial": "combined_safe_candidate_for_targeted_promotion",
+        "combined_safe_deterministic_promotion_candidate_real": "combined_safe_deterministic_candidate_for_targeted_promotion",
     }
     return {
         "passed": behavior_delta >= 0.0 and answer_delta >= 0.0,
@@ -2181,6 +2202,7 @@ def _real_behavior_gate_for_mode(mode: str, baseline: dict[str, Any], summary: d
 
 def _overall_real_behavior_recommendation(mode_gates: dict[str, Any]) -> str:
     priority = [
+        "combined_safe_deterministic_promotion_candidate_real",
         "combined_safe_applied_real_trial",
         "post_sql_deterministic_applied_real_trial",
         "staged_evidence_applied_real_trial",

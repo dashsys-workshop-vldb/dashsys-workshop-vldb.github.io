@@ -159,6 +159,24 @@ def test_post_sql_deterministic_applied_trial_preserves_live_api_prompt(tiny_pro
     assert client.calls == 1
 
 
+def test_post_sql_deterministic_applied_trial_preserves_explicit_schema_registry_prompt(tiny_project):
+    cfg = replace(
+        tiny_project,
+        enable_post_sql_api_decision=True,
+        post_sql_api_decision_shadow_only=False,
+        enable_post_sql_deterministic_applied_trial=True,
+        real_behavior_trial_mode="post_sql_deterministic_applied_real_trial",
+    )
+    client = CountingAPIClient()
+    executor = AgentExecutor(cfg, api_client=client)
+    executor.planner.create_plan = _sql_then_optional_api_plan
+
+    result = executor.run("List schema registry schemas", strategy="SQL_FIRST_API_VERIFY", query_id="post_sql_keep_schema_registry_api_unit")
+
+    assert [row["type"] for row in result["tool_results"]] == ["sql", "api"]
+    assert client.calls == 1
+
+
 def test_post_sql_deterministic_applied_trial_preserves_journey_list_api(tiny_project):
     cfg = replace(
         tiny_project,
