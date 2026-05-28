@@ -7,10 +7,10 @@
 | Query | Which files are available for download in batch 69de8a0e0cc6102b5d11f01e? |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
 | Final answer | The available batch file(s) are: dataSetFileId=69de8a0e0cc6102b5d11f01e-DE1, isValid=False, _links={'self': {'href': '[REDACTED]:443/data/foundation/export/files/69de8a0e0cc6102b5d11f01e-DE1'}}. |
-| Strict score | 0.6683 |
+| Strict score | 0.6688 |
 | Correctness score | 0.6916 |
 | Answer / SQL / API score | 0.3833 / None / 1.0 |
-| Tools / tokens / runtime | 1 / 901 / 0.9905725419521332 |
+| Tools / tokens / runtime | 1 / 901 / 0.8503769170492887 |
 
 ## Dataflow Graph
 
@@ -52,7 +52,7 @@ flowchart LR
 | 17 | checkpoint_13_tool_execution | execution | SQL/API tool execution | validated_step_count=1 | sql_calls_executed=0; api_calls_executed=1 | captures the actual SQL/API evidence gathered by the backend | yes | yes | no |
 | 18 | checkpoint_14_evidence_bus | evidence forwarding | operand forwarding / EvidenceBus | tool_result_count=1 | evidence=5 field(s) | forwards structured facts to API params and answer slots | yes | yes | no |
 | 19 | checkpoint_15_answer_slots | answer synthesis | structured answer slot extraction | tool_result_count=1 | answer_intent=LIST; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); missing_slots=1 item(s) | turns raw tool results into typed evidence fields | yes | yes | no |
-| 20 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=4; slots_present=8 item(s) | verifier_passed=True; rewrite_applied=False | checks final-answer claims against SQL/API evidence | yes | yes | no |
+| 20 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=3; slots_present=8 item(s) | verifier_passed=True; rewrite_applied=False | checks final-answer claims against SQL/API evidence | yes | yes | no |
 | 21 | checkpoint_17_answer_reranking | answer selection | deterministic answer reranking | answer_family=batch | candidate_count=0; selected_candidate_type=base | selects the safest answer from same-evidence candidates | yes | yes | no |
 | 22 | checkpoint_18_final_answer | final response | concise grounded final response | verifier_passed=True | answer_length=194; final_answer=The available batch file(s) are: dataSetFileId=69de8a0e0c... | returns the final concise answer to the agent harness | yes | yes | no |
 | 23 | checkpoint_official_token_reduction | query understanding | unavailable | unavailable | unavailable | Checkpoint recorded query understanding progress. | no | no | no |

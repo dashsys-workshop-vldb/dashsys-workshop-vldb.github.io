@@ -1,11 +1,11 @@
 # Integrated Robustness Gate
 
-- Recommendation: `promote_efficiency_recovery_fix`
-- Promotion allowed: `True`
+- Recommendation: `blocked_by_robustness_regression`
+- Promotion allowed: `False`
 
 ## Gates
 
-- `strict_score_non_regression`: `True` observed `0.6567`
+- `strict_score_non_regression`: `False` observed `0.6513`
 - `hidden_style_passes`: `True` observed `{'failed_cases': 0, 'family_stability_rate': 1.0, 'passed_cases': 48, 'schema_stability_rate': 1.0, 'top_failure_categories': [], 'total_cases': 48}`
 - `check_submission_ready_passes`: `True` observed `{'ok': True}`
 - `endpoint_matrix_clean`: `True` observed `{'live_empty': 5, 'live_success': 10}`
