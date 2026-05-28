@@ -16,11 +16,13 @@ from .config import (
     DEFAULT_CONFIG,
     ROBUST_ABLATION_STRATEGIES,
     ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2,
+    SQL_FIRST_API_VERIFY_CONCISE_LLM_REWRITE,
     SQL_FIRST_API_VERIFY_HYBRID_ANSWER,
     SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER,
     robust_generalized_ablation_config,
     robust_generalized_candidate_config,
     robust_generalized_v2_config,
+    sql_first_concise_llm_rewrite_config,
     sql_first_hybrid_answer_config,
     sql_first_llm_answer_verifier_config,
 )
@@ -823,6 +825,8 @@ def config_for_applied_trial_strategy(config: Config, strategy: str) -> Config:
         return sql_first_llm_answer_verifier_config(config)
     if strategy == SQL_FIRST_API_VERIFY_HYBRID_ANSWER:
         return sql_first_hybrid_answer_config(config)
+    if strategy == SQL_FIRST_API_VERIFY_CONCISE_LLM_REWRITE:
+        return sql_first_concise_llm_rewrite_config(config)
     if strategy in ROBUST_ABLATION_STRATEGIES:
         return robust_generalized_ablation_config(config, strategy)
     return config

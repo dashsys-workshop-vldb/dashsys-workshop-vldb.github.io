@@ -126,6 +126,12 @@ class Config:
     enable_llm_concept_answer: bool = False
     enable_broad_question_classifier: bool = False
     enable_legacy_first_answer_override: bool = False
+    enable_concise_llm_rewrite: bool = False
+    concise_rewrite_selective_only: bool = True
+    concise_rewrite_max_tokens: int = 96
+    concise_rewrite_use_legacy_answer: bool = True
+    concise_rewrite_use_runtime_evidence: bool = True
+    concise_rewrite_never_use_gold: bool = True
     force_evidence_grounded_llm_answer_generation: bool = False
     enable_score_provenance_guard: bool = False
     enable_runtime_leakage_guard: bool = False
@@ -240,6 +246,12 @@ class Config:
             enable_llm_concept_answer=_bool_from_env("ENABLE_LLM_CONCEPT_ANSWER", False),
             enable_broad_question_classifier=_bool_from_env("ENABLE_BROAD_QUESTION_CLASSIFIER", False),
             enable_legacy_first_answer_override=_bool_from_env("ENABLE_LEGACY_FIRST_ANSWER_OVERRIDE", False),
+            enable_concise_llm_rewrite=_bool_from_env("ENABLE_CONCISE_LLM_REWRITE", False),
+            concise_rewrite_selective_only=_bool_from_env("CONCISE_REWRITE_SELECTIVE_ONLY", True),
+            concise_rewrite_max_tokens=int(os.getenv("CONCISE_REWRITE_MAX_TOKENS", "96")),
+            concise_rewrite_use_legacy_answer=_bool_from_env("CONCISE_REWRITE_USE_LEGACY_ANSWER", True),
+            concise_rewrite_use_runtime_evidence=_bool_from_env("CONCISE_REWRITE_USE_RUNTIME_EVIDENCE", True),
+            concise_rewrite_never_use_gold=_bool_from_env("CONCISE_REWRITE_NEVER_USE_GOLD", True),
             force_evidence_grounded_llm_answer_generation=_bool_from_env("FORCE_EVIDENCE_GROUNDED_LLM_ANSWER_GENERATION", False),
             enable_score_provenance_guard=_bool_from_env("ENABLE_SCORE_PROVENANCE_GUARD", False),
             enable_runtime_leakage_guard=_bool_from_env("ENABLE_RUNTIME_LEAKAGE_GUARD", False),
@@ -271,6 +283,7 @@ DEFAULT_CONFIG = Config.from_env()
 
 SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER = "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER"
 SQL_FIRST_API_VERIFY_HYBRID_ANSWER = "SQL_FIRST_API_VERIFY_HYBRID_ANSWER"
+SQL_FIRST_API_VERIFY_CONCISE_LLM_REWRITE = "SQL_FIRST_API_VERIFY_CONCISE_LLM_REWRITE"
 ROBUST_GENERALIZED_HARNESS_CANDIDATE = "ROBUST_GENERALIZED_HARNESS_CANDIDATE"
 ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 = "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
 ROBUST_ABLATION_STRATEGIES = [
@@ -390,6 +403,64 @@ def sql_first_hybrid_answer_config(config: Config) -> Config:
         enable_post_sql_llm_advisor_applied_trial=False,
         enable_combined_safe_applied_trial=False,
         real_behavior_trial_mode=SQL_FIRST_API_VERIFY_HYBRID_ANSWER,
+    )
+
+
+def sql_first_concise_llm_rewrite_config(config: Config) -> Config:
+    return replace(
+        config,
+        enable_objective_prompt_features=False,
+        enable_semantic_parse=False,
+        enable_semantic_intent_classifier=False,
+        enable_routing_anti_hallucination_gate=False,
+        enable_no_tool_safety_verifier=False,
+        enable_semantic_route_decision_ladder=False,
+        enable_safe_api_probe=False,
+        semantic_route_shadow_only=True,
+        semantic_route_tier2_diagnostic=False,
+        enable_staged_evidence_policy=False,
+        staged_evidence_policy_shadow_only=True,
+        enable_post_sql_api_decision=False,
+        enable_post_sql_deterministic_policy=False,
+        enable_post_sql_llm_semantic_decision=False,
+        post_sql_api_decision_shadow_only=True,
+        post_sql_llm_advisor_enabled=False,
+        enable_evidence_quality_classifier=True,
+        enable_answer_slot_renderer=False,
+        enable_evidence_grounded_answer_builder=False,
+        enable_evidence_grounded_llm_answer_generator=False,
+        enable_evidence_grounded_final_answer_verifier=True,
+        enable_hybrid_answer_composer=False,
+        enable_research_generalized_planner=False,
+        enable_progressive_evidence_policy=False,
+        enable_llm_first_semantic_decision=False,
+        enable_minimal_correction_feedback=False,
+        enable_post_sql_llm_first_decision=False,
+        enable_risk_minimizing_fallback=False,
+        enable_canonical_data_renderer=False,
+        enable_gold_style_canonical_renderer=False,
+        enable_llm_concept_answer=False,
+        enable_broad_question_classifier=False,
+        enable_legacy_first_answer_override=False,
+        enable_concise_llm_rewrite=True,
+        concise_rewrite_selective_only=True,
+        concise_rewrite_max_tokens=96,
+        concise_rewrite_use_legacy_answer=True,
+        concise_rewrite_use_runtime_evidence=True,
+        concise_rewrite_never_use_gold=True,
+        force_evidence_grounded_llm_answer_generation=False,
+        enable_score_provenance_guard=True,
+        enable_runtime_leakage_guard=True,
+        enable_hardcode_fake_score_guard=True,
+        enable_broad_semantic_no_tool=False,
+        enable_robust_generalized_candidate=False,
+        candidate_shadow_only=True,
+        enable_semantic_no_tool_applied_trial=False,
+        enable_staged_evidence_applied_trial=False,
+        enable_post_sql_deterministic_applied_trial=False,
+        enable_post_sql_llm_advisor_applied_trial=False,
+        enable_combined_safe_applied_trial=False,
+        real_behavior_trial_mode=SQL_FIRST_API_VERIFY_CONCISE_LLM_REWRITE,
     )
 
 

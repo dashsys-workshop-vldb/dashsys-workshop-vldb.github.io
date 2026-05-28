@@ -34,15 +34,21 @@ from .cache import (
 from .candidate_context_builder import build_adaptive_context, build_candidate_context, build_full_schema_context
 from .call_budget import budget_for_strategy
 from .checkpoints import CheckpointLogger
+from .concise_llm_answer_rewriter import rewrite_concise_answer
+from .concise_rewrite_card import build_concise_rewrite_card
+from .concise_rewrite_eligibility import decide_concise_rewrite_eligibility
+from .concise_rewrite_selector import select_concise_rewrite
 from .config import (
     Config,
     DEFAULT_CONFIG,
     ROBUST_GENERALIZED_HARNESS_CANDIDATE,
     ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2,
+    SQL_FIRST_API_VERIFY_CONCISE_LLM_REWRITE,
     SQL_FIRST_API_VERIFY_HYBRID_ANSWER,
     SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER,
     robust_generalized_candidate_config,
     robust_generalized_v2_config,
+    sql_first_concise_llm_rewrite_config,
     sql_first_hybrid_answer_config,
     sql_first_llm_answer_verifier_config,
 )
@@ -210,6 +216,11 @@ class AgentExecutor:
             and self.config.real_behavior_trial_mode != SQL_FIRST_API_VERIFY_HYBRID_ANSWER
         ):
             self.config = sql_first_hybrid_answer_config(self.config)
+        if (
+            strategy == SQL_FIRST_API_VERIFY_CONCISE_LLM_REWRITE
+            and self.config.real_behavior_trial_mode != SQL_FIRST_API_VERIFY_CONCISE_LLM_REWRITE
+        ):
+            self.config = sql_first_concise_llm_rewrite_config(self.config)
         try:
             return self._run_with_active_config(query, strategy=strategy, query_id=query_id, output_dir=output_dir)
         finally:
@@ -1170,6 +1181,107 @@ class AgentExecutor:
                     correctness_role="selects only verifier-safe answers using AnswerSlots/EvidenceBus coverage, not gold labels",
                     efficiency_role="uses local scoring without extra SQL/API calls",
                 )
+        if self.config.enable_concise_llm_rewrite:
+            rewrite_eligibility = decide_concise_rewrite_eligibility(
+                prompt=query,
+                legacy_answer=legacy_answer_result.answer,
+                slots=slots,
+                evidence_bus=evidence_bus,
+                evidence_quality=evidence_quality,
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_concise_rewrite_eligibility",
+                stage="answer selection",
+                technique="selective concise rewrite eligibility",
+                input_summary={"legacy_answer_length": len(legacy_answer_result.answer), "slots": slots.compact()},
+                output=rewrite_eligibility.to_dict(),
+                effect="allows LLM rewriting only for simple, exact-fact answer shapes",
+                correctness_role="blocks rewrite for caveat-sensitive, incomplete, conflicted, or complex answers",
+                efficiency_role="avoids all-row LLM answer rewriting",
+            )
+            rewrite_card = None
+            rewrite_result = None
+            rewrite_selection = None
+            if rewrite_eligibility.eligible:
+                rewrite_card = build_concise_rewrite_card(
+                    prompt=query,
+                    legacy_answer=legacy_answer_result.answer,
+                    slots=slots,
+                    eligibility=rewrite_eligibility,
+                    evidence_bus=evidence_bus,
+                    evidence_quality=evidence_quality,
+                )
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_concise_rewrite_card",
+                    stage="answer selection",
+                    technique="compact runtime-evidence rewrite card",
+                    input_summary={"answer_type": rewrite_eligibility.answer_type},
+                    output=rewrite_card.to_dict(),
+                    effect="passes only runtime exact facts and style constraints to the rewrite LLM",
+                    correctness_role="excludes evaluator-only gold, tags, oracle, expected trace, and query-id decision fields",
+                    efficiency_role="keeps rewrite prompt compact",
+                )
+                rewrite_result = rewrite_concise_answer(
+                    rewrite_card,
+                    max_tokens=self.config.concise_rewrite_max_tokens,
+                )
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_concise_llm_rewrite",
+                    stage="answer selection",
+                    technique="one-shot concise gold-style LLM rewrite",
+                    input_summary={"answer_type": rewrite_card.answer_type},
+                    output=rewrite_result.to_dict(),
+                    effect="rewrites the legacy answer only once when exact runtime evidence is available",
+                    correctness_role="uses final-answer text only and leaves SQL/API evidence unchanged",
+                    efficiency_role="limits rewrite to short outputs",
+                )
+            rewrite_selection = select_concise_rewrite(
+                prompt=query,
+                legacy_answer=legacy_answer_result.answer,
+                rewrite_result=rewrite_result,
+                card=rewrite_card,
+                slots=slots,
+                evidence_bus=evidence_bus,
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_concise_rewrite_verifier",
+                stage="answer verification",
+                technique="evidence-grounded concise rewrite verifier",
+                input_summary={"rewrite_attempted": rewrite_result is not None},
+                output=rewrite_selection.verifier,
+                effect="keeps rewritten answers bounded by runtime EvidenceBus and AnswerSlots",
+                correctness_role="rejects invented numbers, dates, statuses, names, IDs, scope, and caveats",
+                efficiency_role="runs local verification without additional tool calls",
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_concise_rewrite_selector",
+                stage="answer selection",
+                technique="legacy-vs-concise-rewrite selector",
+                input_summary={"rewrite_attempted": rewrite_result is not None},
+                output=rewrite_selection.to_dict(),
+                effect="selects the concise rewrite only when exact-fact coverage is preserved and style improves",
+                correctness_role="falls back to legacy if uncertainty remains",
+                efficiency_role="prevents unsafe or low-value rewrite selection",
+            )
+            answer_result = AnswerResult(
+                answer=rewrite_selection.selected_answer,
+                diagnostics={
+                    **legacy_answer_result.diagnostics,
+                    "concise_rewrite_eligibility": rewrite_eligibility.to_dict(),
+                    "concise_rewrite_card": rewrite_card.to_dict() if rewrite_card is not None else None,
+                    "concise_llm_rewrite": rewrite_result.to_dict() if rewrite_result is not None else None,
+                    "concise_rewrite_selector": rewrite_selection.to_dict(),
+                    "rewrite_eligible": rewrite_eligibility.eligible,
+                    "rewrite_attempted": rewrite_result is not None,
+                    "rewrite_selected": rewrite_selection.selected_source == "CONCISE_LLM_REWRITE",
+                    "rewrite_backend_failed": bool(rewrite_result and rewrite_result.category == "backend_unavailable"),
+                    "rewrite_empty": bool(rewrite_result and rewrite_result.category == "empty_rewrite"),
+                    "selected_candidate_type": rewrite_selection.selected_source,
+                    "selected_answer_source": rewrite_selection.selected_source,
+                    "selection_reason": ";".join(rewrite_selection.selection_codes),
+                    "candidate_count": 2 if rewrite_result is not None else 1,
+                },
+            )
         final_answer = answer_result.answer
         intent = classify_answer_intent(query, slots)
         claims = extract_claims(final_answer)
