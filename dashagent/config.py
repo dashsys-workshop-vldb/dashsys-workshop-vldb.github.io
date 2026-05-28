@@ -122,7 +122,10 @@ class Config:
     enable_post_sql_llm_first_decision: bool = False
     enable_risk_minimizing_fallback: bool = False
     enable_canonical_data_renderer: bool = False
+    enable_gold_style_canonical_renderer: bool = False
     enable_llm_concept_answer: bool = False
+    enable_broad_question_classifier: bool = False
+    enable_legacy_first_answer_override: bool = False
     force_evidence_grounded_llm_answer_generation: bool = False
     enable_score_provenance_guard: bool = False
     enable_runtime_leakage_guard: bool = False
@@ -233,7 +236,10 @@ class Config:
             enable_post_sql_llm_first_decision=_bool_from_env("ENABLE_POST_SQL_LLM_FIRST_DECISION", False),
             enable_risk_minimizing_fallback=_bool_from_env("ENABLE_RISK_MINIMIZING_FALLBACK", False),
             enable_canonical_data_renderer=_bool_from_env("ENABLE_CANONICAL_DATA_RENDERER", False),
+            enable_gold_style_canonical_renderer=_bool_from_env("ENABLE_GOLD_STYLE_CANONICAL_RENDERER", False),
             enable_llm_concept_answer=_bool_from_env("ENABLE_LLM_CONCEPT_ANSWER", False),
+            enable_broad_question_classifier=_bool_from_env("ENABLE_BROAD_QUESTION_CLASSIFIER", False),
+            enable_legacy_first_answer_override=_bool_from_env("ENABLE_LEGACY_FIRST_ANSWER_OVERRIDE", False),
             force_evidence_grounded_llm_answer_generation=_bool_from_env("FORCE_EVIDENCE_GROUNDED_LLM_ANSWER_GENERATION", False),
             enable_score_provenance_guard=_bool_from_env("ENABLE_SCORE_PROVENANCE_GUARD", False),
             enable_runtime_leakage_guard=_bool_from_env("ENABLE_RUNTIME_LEAKAGE_GUARD", False),
@@ -315,7 +321,10 @@ def sql_first_llm_answer_verifier_config(config: Config) -> Config:
         enable_post_sql_llm_first_decision=False,
         enable_risk_minimizing_fallback=False,
         enable_canonical_data_renderer=False,
+        enable_gold_style_canonical_renderer=False,
         enable_llm_concept_answer=False,
+        enable_broad_question_classifier=False,
+        enable_legacy_first_answer_override=False,
         force_evidence_grounded_llm_answer_generation=True,
         enable_score_provenance_guard=True,
         enable_runtime_leakage_guard=True,
@@ -364,7 +373,10 @@ def sql_first_hybrid_answer_config(config: Config) -> Config:
         enable_post_sql_llm_first_decision=False,
         enable_risk_minimizing_fallback=False,
         enable_canonical_data_renderer=True,
+        enable_gold_style_canonical_renderer=True,
         enable_llm_concept_answer=True,
+        enable_broad_question_classifier=True,
+        enable_legacy_first_answer_override=True,
         force_evidence_grounded_llm_answer_generation=False,
         enable_score_provenance_guard=True,
         enable_runtime_leakage_guard=True,
@@ -411,7 +423,10 @@ def robust_generalized_candidate_config(config: Config) -> Config:
         enable_post_sql_llm_first_decision=True,
         enable_risk_minimizing_fallback=True,
         enable_canonical_data_renderer=False,
+        enable_gold_style_canonical_renderer=False,
         enable_llm_concept_answer=False,
+        enable_broad_question_classifier=False,
+        enable_legacy_first_answer_override=False,
         force_evidence_grounded_llm_answer_generation=False,
         enable_score_provenance_guard=True,
         enable_runtime_leakage_guard=True,
@@ -459,7 +474,10 @@ def robust_generalized_v2_config(config: Config) -> Config:
         enable_evidence_grounded_final_answer_verifier=True,
         enable_hybrid_answer_composer=True,
         enable_canonical_data_renderer=True,
+        enable_gold_style_canonical_renderer=True,
         enable_llm_concept_answer=True,
+        enable_broad_question_classifier=True,
+        enable_legacy_first_answer_override=True,
         force_evidence_grounded_llm_answer_generation=False,
         enable_score_provenance_guard=True,
         enable_runtime_leakage_guard=True,

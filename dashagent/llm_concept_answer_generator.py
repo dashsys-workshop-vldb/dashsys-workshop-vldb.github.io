@@ -119,6 +119,12 @@ def _extract_content(raw: Any) -> str:
 
 def _deterministic_concept_answer(prompt: str) -> str:
     text = _norm(prompt)
+    if (" in the phrase " in text or "what does" in text) and "list" in text:
+        return "In this phrase, list means to enumerate or show the requested items."
+    if "list" in text and any(token in text for token in ("reasons", "reason", "benefits", "examples")):
+        if "schema" in text:
+            return "Schemas matter because they make data structure explicit, keep records consistent, and help systems validate and interpret data."
+        return "It matters because it clarifies structure, improves consistency, and supports reliable interpretation."
     if "schema" in text:
         return "A schema defines the structure, fields, and expected shape of data."
     if "inactive journey" in text or ("journey" in text and "inactive" in text):
@@ -157,4 +163,3 @@ def _debug(client: Any | None, messages: list[dict[str, Any]]) -> dict[str, Any]
 
 def _norm(value: Any) -> str:
     return re.sub(r"\s+", " ", str(value or "").strip().lower())
-

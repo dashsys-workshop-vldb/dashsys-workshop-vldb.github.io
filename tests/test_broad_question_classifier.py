@@ -51,6 +51,27 @@ def test_explain_and_show_prompt_is_mixed_broad() -> None:
     assert decision.mixed_signal is True
 
 
+def test_meta_language_list_schema_phrase_is_conceptual_broad() -> None:
+    prompt = "In the phrase 'list schemas', what does 'list' mean?"
+
+    decision = classify_broad_question(prompt, slots=_slots(prompt))
+
+    assert decision.broad_question_type == "CONCEPTUAL_BROAD"
+    assert decision.concept_signal is True
+    assert decision.data_signal is False
+    assert "META_LANGUAGE_CONCEPT" in decision.reason_codes
+
+
+def test_list_reasons_prompt_is_conceptual_broad_not_data_broad() -> None:
+    prompt = "List three reasons why schemas matter."
+
+    decision = classify_broad_question(prompt, slots=_slots(prompt))
+
+    assert decision.broad_question_type == "CONCEPTUAL_BROAD"
+    assert decision.concept_signal is True
+    assert decision.data_signal is False
+
+
 def test_ambiguous_prompt_with_concrete_data_signal_forces_data_broad() -> None:
     prompt = "Recent schemas?"
 

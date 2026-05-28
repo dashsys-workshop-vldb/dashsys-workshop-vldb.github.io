@@ -43,6 +43,11 @@ class FakeConceptClient:
         return self.answer
 
 
+class UnavailableConceptClient:
+    def available(self) -> bool:
+        return False
+
+
 @dataclass
 class FakeAnswerCard:
     answer: str
@@ -129,6 +134,24 @@ def test_broad_data_prompt_uses_legacy_first_structured_answer() -> None:
     assert result.selected_source == "LEGACY_SAFE_RENDERER"
     assert result.final_answer == "You have 74 schemas."
     assert "SELECT_LEGACY_STRUCTURED_DEFAULT" in result.selection_codes
+
+
+def test_meta_language_prompt_uses_concept_answer_without_data_fragment() -> None:
+    prompt = "In the phrase 'list schemas', what does 'list' mean?"
+    slots = _slots(prompt)
+
+    result = compose_hybrid_answer(
+        prompt,
+        slots=slots,
+        legacy_answer="The word list means to enumerate items.",
+        llm_client=UnavailableConceptClient(),
+    )
+
+    assert result.intent.answer_intent == "CONCEPT"
+    assert result.intent.answer_mode == "LLM_CONCEPT"
+    assert result.selected_source == "HYBRID_LLM_CONCEPT"
+    assert "enumerate" in result.final_answer.lower()
+    assert "schemas:" not in result.final_answer.lower()
 
 
 def test_unsupported_concept_claim_falls_back_to_legacy() -> None:

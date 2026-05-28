@@ -16,6 +16,7 @@ from .answer_shape import propose_answer_shape_candidate
 from .answer_synthesizer import AnswerResult, synthesize_answer_with_diagnostics
 from .answer_verifier import verify_answer
 from .api_client import AdobeAPIClient
+from .broad_question_classifier import classify_broad_question
 from .cache import (
     api_response_cache_key,
     current_fingerprint,
@@ -999,6 +1000,7 @@ class AgentExecutor:
         generated = None
         pre_llm_selection = None
         hybrid_result = None
+        broad_question_decision = None
         llm_answer_generation_skipped = False
         if self.config.enable_evidence_grounded_answer_builder:
             grounded = build_evidence_grounded_answer(
@@ -1019,6 +1021,13 @@ class AgentExecutor:
                 efficiency_role="uses no extra SQL/API/LLM calls",
             )
             if self.config.enable_hybrid_answer_composer:
+                if self.config.enable_broad_question_classifier:
+                    broad_question_decision = classify_broad_question(
+                        query,
+                        slots=slots,
+                        evidence_bus=evidence_bus,
+                        evidence_quality=evidence_quality,
+                    )
                 hybrid_result = compose_hybrid_answer(
                     query,
                     slots=slots,
@@ -1073,6 +1082,17 @@ class AgentExecutor:
                         ),
                     },
                 )
+                if broad_question_decision is not None:
+                    checkpoint_logger.add_checkpoint(
+                        "checkpoint_broad_question_classifier",
+                        stage="answer selection",
+                        technique="broad-question-aware answer routing",
+                        input_summary={"slot_counts": slots.compact()},
+                        output=broad_question_decision.to_dict(),
+                        effect="distinguishes broad concept, broad data, mixed broad, and structured prompts before answer mode selection",
+                        correctness_role="keeps broad data prompts evidence-first while allowing safe conceptual wording for concept prompts",
+                        efficiency_role="avoids free-form LLM answer generation for structured data unless runtime evidence coverage improves",
+                    )
                 checkpoint_logger.add_checkpoint(
                     "checkpoint_answer_intent_router",
                     stage="answer selection",
@@ -1643,6 +1663,27 @@ class AgentExecutor:
         trial_decision: dict[str, Any],
     ) -> dict[str, Any]:
         final_answer = _conceptual_no_tool_answer(query)
+        evidence_bus = EvidenceBus()
+        slots = extract_answer_slots(query, [])
+        hybrid_result = None
+        broad_question_decision = None
+        if self.config.enable_hybrid_answer_composer:
+            if self.config.enable_broad_question_classifier:
+                broad_question_decision = classify_broad_question(
+                    query,
+                    slots=slots,
+                    evidence_bus=evidence_bus,
+                    evidence_quality=None,
+                )
+            hybrid_result = compose_hybrid_answer(
+                query,
+                slots=slots,
+                evidence_bus=evidence_bus,
+                evidence_quality=None,
+                answer_card=None,
+                legacy_answer=final_answer,
+            )
+            final_answer = hybrid_result.final_answer
         safe_check = validate_llm_safe_direct_answer(final_answer)
         if not safe_check.get("ok"):
             trial_decision["applied"] = False
@@ -1660,6 +1701,47 @@ class AgentExecutor:
         self.metadata_selector.save(metadata, out_dir)
         filled_prompt = render_system_prompt(self.config, metadata)
         (out_dir / "filled_system_prompt.txt").write_text(filled_prompt, encoding="utf-8")
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_broad_question_classifier",
+            stage="answer selection",
+            technique="broad-question-aware answer routing",
+            input_summary={"slot_counts": slots.compact()},
+            output=broad_question_decision.to_dict() if broad_question_decision is not None else {},
+            effect="distinguishes broad concept, broad data, and mixed broad prompts before direct conceptual answering",
+            correctness_role="keeps no-tool direct answers limited to conceptual or meta-language prompts",
+            efficiency_role="uses no SQL/API calls",
+        )
+        if hybrid_result is not None:
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_answer_intent_router",
+                stage="answer selection",
+                technique="intent-aware answer router",
+                input_summary={"slot_counts": slots.compact()},
+                output=hybrid_result.intent.to_dict(),
+                effect="selects concept answer mode for safe direct prompts using runtime prompt fields only",
+                correctness_role="does not use evaluator metadata or concrete data claims",
+                efficiency_role="avoids SQL/API calls for safe conceptual prompts",
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_hybrid_answer_composer",
+                stage="answer selection",
+                technique="intent-aware hybrid answer composition",
+                input_summary={"answer_intent": hybrid_result.intent.answer_intent, "answer_mode": hybrid_result.intent.answer_mode},
+                output=hybrid_result.to_dict(),
+                effect="uses bounded concept generation with legacy fallback for direct conceptual prompts",
+                correctness_role="keeps concrete facts unsupported by SQL/API out of no-tool answers",
+                efficiency_role="uses no SQL/API calls",
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_final_answer_verifier",
+                stage="answer verification",
+                technique="evidence-grounded final answer verifier",
+                input_summary={"selected_source": hybrid_result.selected_source},
+                output=hybrid_result.verification.to_dict(),
+                effect="checks direct conceptual answer claims before final response",
+                correctness_role="blocks invented concrete facts",
+                efficiency_role="uses compact answer slots and no tools",
+            )
         checkpoint_logger.add_checkpoint(
             "checkpoint_18_final_answer",
             stage="final response",
@@ -1766,7 +1848,15 @@ class AgentExecutor:
         legacy_answer_result = synthesize_answer_with_diagnostics(query, tool_results)
         hybrid_result = None
         selection = None
+        broad_question_decision = None
         if self.config.enable_hybrid_answer_composer:
+            if self.config.enable_broad_question_classifier:
+                broad_question_decision = classify_broad_question(
+                    query,
+                    slots=slots,
+                    evidence_bus=evidence_bus,
+                    evidence_quality=evidence_quality,
+                )
             hybrid_result = compose_hybrid_answer(
                 query,
                 slots=slots,
@@ -1859,6 +1949,17 @@ class AgentExecutor:
             efficiency_role="replaces free-form answer synthesis only in the explicit candidate strategy",
         )
         if hybrid_result is not None:
+            if broad_question_decision is not None:
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_broad_question_classifier",
+                    stage="answer selection",
+                    technique="broad-question-aware answer routing",
+                    input_summary={"slot_counts": slots.compact()},
+                    output=broad_question_decision.to_dict(),
+                    effect="distinguishes broad concept, broad data, mixed broad, and structured prompts before SAFE_API_PROBE answer mode selection",
+                    correctness_role="keeps API probe answers evidence-grounded and avoids treating API errors as no-data",
+                    efficiency_role="uses the single collected API result without extra SQL/API calls",
+                )
             checkpoint_logger.add_checkpoint(
                 "checkpoint_answer_intent_router",
                 stage="answer selection",

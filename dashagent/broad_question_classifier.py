@@ -38,6 +38,24 @@ def classify_broad_question(
 ) -> BroadQuestionDecision:
     del objective_features, semantic_parse, evidence_bus, evidence_quality
     text = _norm(prompt)
+    if _is_meta_language_prompt(text):
+        return BroadQuestionDecision(
+            "CONCEPTUAL_BROAD",
+            "HIGH",
+            ["CONCEPT_SIGNAL", "META_LANGUAGE_CONCEPT", "BROAD_CONCEPT_LLM"],
+            False,
+            True,
+            False,
+        )
+    if _is_conceptual_list_prompt(text):
+        return BroadQuestionDecision(
+            "CONCEPTUAL_BROAD",
+            "HIGH",
+            ["CONCEPT_SIGNAL", "LIST_CONCEPTUAL_REQUEST", "BROAD_CONCEPT_LLM"],
+            False,
+            True,
+            False,
+        )
     concept_signal = _concept_signal(text)
     data_signal = _data_signal(text, slots)
     mixed_signal = concept_signal and data_signal and _has_both_clauses(text)
@@ -74,6 +92,14 @@ def _concept_signal(text: str) -> bool:
         or " in the phrase " in text
         or " word " in text
     )
+
+
+def _is_meta_language_prompt(text: str) -> bool:
+    return " in the phrase " in text or bool(re.search(r"\bwhat does\s+['\"][^'\"]+['\"]\s+mean\b", text))
+
+
+def _is_conceptual_list_prompt(text: str) -> bool:
+    return bool(re.search(r"\blist\b.*\b(reasons?|benefits?|examples?|ways?|why|how)\b", text))
 
 
 def _data_signal(text: str, slots: Any | None) -> bool:

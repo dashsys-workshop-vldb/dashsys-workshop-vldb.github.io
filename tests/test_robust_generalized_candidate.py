@@ -129,9 +129,11 @@ def test_robust_v2_strategy_is_explicit_research_planner_not_sql_first(tiny_proj
     assert cfg.enable_post_sql_llm_first_decision is True
     assert cfg.enable_post_sql_llm_semantic_decision is True
     assert cfg.enable_risk_minimizing_fallback is True
+    assert cfg.enable_broad_question_classifier is True
     assert cfg.enable_hybrid_answer_composer is True
-    assert cfg.enable_canonical_data_renderer is True
+    assert cfg.enable_gold_style_canonical_renderer is True
     assert cfg.enable_llm_concept_answer is True
+    assert cfg.enable_legacy_first_answer_override is True
     assert cfg.enable_evidence_grounded_final_answer_verifier is True
     assert cfg.enable_runtime_leakage_guard is True
     assert cfg.enable_score_provenance_guard is True
@@ -151,6 +153,7 @@ def test_robust_v2_runs_generalized_planner_and_progressive_checkpoints(tiny_pro
     assert "checkpoint_semantic_parse" in checkpoint_names
     assert "checkpoint_progressive_evidence_policy" in checkpoint_names
     assert "checkpoint_staged_evidence_acquisition" in checkpoint_names
+    assert "checkpoint_broad_question_classifier" in checkpoint_names
     assert "checkpoint_answer_intent_router" in checkpoint_names
     assert "checkpoint_hybrid_answer_composer" in checkpoint_names
     progressive = next(
