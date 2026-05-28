@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
@@ -188,6 +189,7 @@ def _no_tool_risk_codes(
         risks.append("EXPLICIT_API_FAMILY_REQUIRES_EVIDENCE")
     if _mixed_conceptual_data(features, parsed):
         risks.append("MIXED_CONCEPTUAL_DATA_REQUIRES_EVIDENCE")
+    risks.extend(_objective_evidence_risk_codes(features, parsed))
     if parsed.target.grounding == "UNKNOWN" and metrics.get("concrete_data_signal"):
         risks.append("UNKNOWN_PARSE_WITH_DATA_SIGNAL")
     if decision.get("no_tool") and not consistency.get("allow_no_tool"):
@@ -228,6 +230,8 @@ def _safe_api_probe_risk_codes(
         risks.append("API_PROBE_NOT_STRONGLY_SUPPORTED")
     if probe.get("endpoint_id") and metrics.get("matched_endpoint_family") and metrics.get("selected_api_family") != metrics.get("matched_endpoint_family"):
         risks.append("API_PROBE_ENDPOINT_FAMILY_MISMATCH")
+    if not _simple_safe_api_probe_prompt(features, parsed):
+        risks.append("API_PROBE_PROMPT_NOT_SIMPLE_BROAD_OBJECT_REQUEST")
     return _dedupe(risks)
 
 
@@ -248,10 +252,12 @@ def _capability_metrics(features: dict[str, Any], parsed: SemanticParse, probe: 
             or parsed.evidence_need in {"SQL", "API", "SQL_API"}
         )
     )
+    objective_data_signal = _objective_data_signal(features)
     return {
         "sql_match": float(1.0 if parsed.capability.sql_match else 0.0),
         "api_match": float(1.0 if parsed.capability.api_match else 0.0),
-        "concrete_data_signal": concrete_signal,
+        "concrete_data_signal": bool(concrete_signal or objective_data_signal),
+        "objective_data_signal": objective_data_signal,
         "live_api_signal": _has_live_api_cue(features, parsed),
         "api_required_signal": _has_explicit_api_family(features, parsed) or parsed.evidence_need == "API",
         "api_family_count": len(families),
@@ -303,10 +309,10 @@ def _normalize_family(value: str) -> str:
 
 def _has_live_api_cue(features: dict[str, Any], parsed: SemanticParse) -> bool:
     if parsed.target.grounding in NO_TOOL_GROUNDINGS and parsed.evidence_need == "NONE":
-        return False
+        return _objective_evidence_request(features)
     flags = set(str(value) for value in features.get("flags") or [])
-    caps = set(_normalize_family(str(value)) for value in features.get("cap") or [])
-    return bool(flags & LIVE_API_CUES or caps & LIVE_API_CUES or parsed.evidence_need == "API")
+    live_flags = {"LIVE", "CURRENT", "PLATFORM", "API", "LIVE_OR_CURRENT"}
+    return bool(flags & live_flags or parsed.evidence_need == "API")
 
 
 def _has_explicit_api_family(features: dict[str, Any], parsed: SemanticParse) -> bool:
@@ -315,9 +321,97 @@ def _has_explicit_api_family(features: dict[str, Any], parsed: SemanticParse) ->
 
 
 def _mixed_conceptual_data(features: dict[str, Any], parsed: SemanticParse) -> bool:
+    flags = set(str(value) for value in features.get("flags") or [])
     if parsed.target.grounding in NO_TOOL_GROUNDINGS and parsed.evidence_need == "NONE":
+        return bool("MIXED_CONCEPT_AND_RETRIEVAL" in flags and _objective_evidence_request(features))
+    return bool("MIXED_CONCEPT_AND_RETRIEVAL" in flags)
+
+
+def _objective_data_signal(features: dict[str, Any]) -> bool:
+    return bool(
+        features.get("retr")
+        or features.get("count")
+        or features.get("status")
+        or features.get("date")
+        or features.get("rel")
+        or features.get("fields")
+        or _objective_evidence_request(features)
+    )
+
+
+def _objective_evidence_request(features: dict[str, Any]) -> bool:
+    norm = str(features.get("norm") or "").lower()
+    flags = set(str(value) for value in features.get("flags") or [])
+    has_domain = bool(features.get("domain"))
+    evidence_phrase = any(
+        phrase in norm
+        for phrase in (
+            "provide current evidence",
+            "current evidence",
+            "from evidence",
+            "evidence-bound",
+            "evidence bound",
+            "available records",
+            "return available",
+            "matching records",
+        )
+    )
+    meta_with_data_return = bool("META_LANGUAGE_CONTEXT" in flags and has_domain and ("return" in norm or "records" in norm or "from evidence" in norm))
+    return bool((has_domain and evidence_phrase) or meta_with_data_return)
+
+
+def _objective_evidence_risk_codes(features: dict[str, Any], parsed: SemanticParse) -> list[str]:
+    norm = str(features.get("norm") or "").lower()
+    flags = set(str(value) for value in features.get("flags") or [])
+    codes: list[str] = []
+    if "MIXED_CONCEPT_AND_RETRIEVAL" in flags and ("current evidence" in norm or "provide current evidence" in norm):
+        codes.append("MIXED_CURRENT_EVIDENCE_REQUEST_REQUIRES_PIPELINE")
+    if any(phrase in norm for phrase in ("from evidence", "evidence-bound", "evidence bound", "available records", "return available")):
+        codes.append("EVIDENCE_RECORD_REQUEST_REQUIRES_PIPELINE")
+    if "META_LANGUAGE_CONTEXT" in flags and parsed.target.grounding == "META_LANGUAGE" and _objective_evidence_request(features):
+        codes.append("META_LANGUAGE_WITH_DATA_RETURN_REQUIRES_PIPELINE")
+    return codes
+
+
+def _simple_safe_api_probe_prompt(features: dict[str, Any], parsed: SemanticParse) -> bool:
+    norm = str(features.get("norm") or "").lower()
+    if features.get("quoted_spans"):
         return False
-    return bool("MIXED_CONCEPT_AND_RETRIEVAL" in set(features.get("flags") or []))
+    entities = set(str(value) for value in features.get("entity") or [])
+    real_id_literal = _has_real_id_literal(norm)
+    if entities & {"DATE_LITERAL", "NUMBER"} or ("ID_LIKE" in entities and real_id_literal):
+        return False
+    if features.get("status") or features.get("date") or features.get("rel"):
+        return False
+    if parsed.filters.status or parsed.filters.date or parsed.filters.relationship:
+        return False
+    if parsed.filters.entity and (str(parsed.filters.entity) != "ID_LIKE" or real_id_literal):
+        return False
+    if any(
+        phrase in norm
+        for phrase in (
+            "detail",
+            "details",
+            "named",
+            "belong",
+            "category",
+            "download",
+            "failed",
+            "last ",
+            "recent",
+            "available for download",
+        )
+    ):
+        return False
+    return bool(features.get("domain") and (features.get("retr") or features.get("count") or parsed.evidence_need == "API"))
+
+
+def _has_real_id_literal(norm: str) -> bool:
+    return bool(
+        re.search(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", norm, flags=re.I)
+        or re.search(r"\b01[A-Z0-9]{20,}\b", norm, flags=re.I)
+        or re.search(r"\b(?=[A-Za-z0-9_-]{8,}\b)(?=[A-Za-z0-9_-]*\d)[A-Za-z0-9_-]+\b", norm)
+    )
 
 
 def _conceptual_or_meta(features: dict[str, Any], parsed: SemanticParse) -> bool:

@@ -152,8 +152,9 @@ def extract_answer_slots(query: str, tool_results: list[dict[str, Any]]) -> Answ
             if payload.get("ok"):
                 row_count = int(payload.get("row_count", len(rows)) or 0)
                 slots.sql_row_count = row_count
-                slots.counts.append(row_count)
-                slots.evidence_numbers.add(str(row_count))
+                if not rows_have_count_value(rows):
+                    slots.counts.append(row_count)
+                    slots.evidence_numbers.add(str(row_count))
                 sql_counts.append(row_count)
                 slots.first_rows = rows[:3]
                 slots.important_rows = rows[:3]
@@ -313,6 +314,14 @@ def coerce_rows(value: Any) -> list[dict[str, Any]]:
     if isinstance(value, dict) and isinstance(value.get("items"), list):
         return [row for row in value["items"] if isinstance(row, dict)]
     return []
+
+
+def rows_have_count_value(rows: list[dict[str, Any]]) -> bool:
+    return bool(
+        rows
+        and isinstance(rows[0], dict)
+        and any(looks_like_count_key(normalize_key(str(key))) for key in rows[0].keys())
+    )
 
 
 def normalize_key(key: str) -> str:

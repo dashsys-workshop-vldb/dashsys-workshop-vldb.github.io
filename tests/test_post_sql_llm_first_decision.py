@@ -8,6 +8,7 @@ from dashagent.planner import PACKAGED_DEFAULT_STRATEGY
 from dashagent.post_sql_llm_decision import (
     PostSQLLLMDecision,
     parse_post_sql_llm_decision,
+    reset_post_sql_llm_backend_circuit_for_tests,
     run_post_sql_llm_first_decision,
 )
 from dashagent.post_sql_semantic_decision_card import build_post_sql_semantic_decision_card
@@ -28,6 +29,23 @@ class SequenceLLMClient:
         self.messages_seen.append(messages)
         payload = self.responses.pop(0)
         return {"ok": True, "content": __import__("json").dumps(payload)}
+
+
+class UnavailableLLMClient:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def available(self) -> bool:
+        return True
+
+    def generate_messages(self, messages):
+        self.calls += 1
+        return {
+            "ok": False,
+            "skipped": False,
+            "content": "",
+            "error": "backend unavailable",
+        }
 
 
 def _semantic_parse(evidence_need: str = "SQL_API") -> SemanticParse:
@@ -166,6 +184,58 @@ def test_post_sql_revision_to_call_api_is_accepted() -> None:
     assert result["execution_verifier"]["final_action"] == "CALL_API"
     assert result["execution_verifier"]["source"] == "LLM_DECISION_VERIFIED"
     assert result["feedback"]["task"] == "REVISE_POST_SQL_API_DECISION"
+    assert result["metrics"]["post_sql_first_pass_fail_count"] == 1
+    assert result["metrics"]["post_sql_revision_attempt_count"] == 1
+    assert result["metrics"]["post_sql_revision_success_count"] == 1
+    assert result["metrics"]["post_sql_risk_fallback_count"] == 0
+
+
+def test_default_backend_unavailable_circuit_skips_repeated_runtime_attempts(monkeypatch) -> None:
+    reset_post_sql_llm_backend_circuit_for_tests()
+    client = UnavailableLLMClient()
+    monkeypatch.setattr("dashagent.post_sql_llm_decision.get_llm_client", lambda: client)
+
+    first = run_post_sql_llm_first_decision(_card())
+    second = run_post_sql_llm_first_decision(_card())
+
+    assert client.calls == 1
+    assert first["llm_backend_available"] is False
+    assert second["llm_backend_available"] is False
+    assert first["execution_verifier"]["final_action"] == "CALL_API"
+    assert second["execution_verifier"]["final_action"] == "CALL_API"
+    reset_post_sql_llm_backend_circuit_for_tests()
+
+
+def test_post_sql_partial_sql_revision_to_call_api_is_accepted() -> None:
+    partial_card = _card(
+        user_prompt="Show Journey A status.",
+        api_need_prior="API_OPTIONAL",
+        constraints={"api_required_cannot_skip": False},
+        explicit_cues=[],
+        sql_state={
+            "execution": "SUCCESS",
+            "row_count_bucket": "ONE",
+            "returned_roles": ["name"],
+            "missing_roles": ["status"],
+            "direct_answer": False,
+            "partial_answer": True,
+            "zero_rows": False,
+        },
+        api_candidates=[{**_card()["api_candidates"][0], "can_answer_roles": ["status"], "can_fill_roles": ["status"]}],
+    )
+    client = SequenceLLMClient(
+        [
+            {"mode": "SKIP_API", "endpoint_id": None, "confidence": 0.8, "codes": ["SQL_HAS_NAME"]},
+            {"mode": "CALL_API", "endpoint_id": "schema_registry_schemas", "confidence": 0.86, "codes": ["FILL_STATUS"]},
+        ]
+    )
+
+    result = run_post_sql_llm_first_decision(partial_card, llm_client=client)
+
+    assert result["revision_attempted"] is True
+    assert result["revision_success"] is True
+    assert result["execution_verifier"]["final_action"] == "CALL_API"
+    assert "MISSING_ROLES_CAN_BE_FILLED_BY_API" in result["first_gate"]["conflict_codes"]
 
 
 def test_post_sql_repeated_invalid_skip_uses_risk_minimizing_fallback() -> None:

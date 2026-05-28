@@ -127,15 +127,20 @@ def _api_candidate(step: PlanStep | dict[str, Any], endpoint_catalog: EndpointCa
 
 def _explicit_cues(features: dict[str, Any]) -> list[str]:
     codes: list[str] = []
-    for key in ("flags", "cap", "status", "domain", "retr", "count", "fields"):
+    flags = set(str(value) for value in features.get("flags") or [])
+    for key in ("flags", "status", "domain", "retr", "count", "fields"):
         values = features.get(key) or []
+        if isinstance(values, list):
+            codes.extend(str(value) for value in values)
+    if flags & {"EXPLICIT_API_FAMILY", "API", "LIVE", "CURRENT", "PLATFORM", "LIVE_OR_CURRENT"}:
+        values = features.get("cap") or []
         if isinstance(values, list):
             codes.extend(str(value) for value in values)
     return _dedupe(codes)
 
 
 def _live_or_api_cue(cues: list[str]) -> bool:
-    return bool(set(cues) & {"LIVE", "CURRENT", "PLATFORM", "API", "EXPLICIT_API_FAMILY", "SCHEMA_REGISTRY", "FLOW_SERVICE", "TAGS", "AUDIT_EVENTS", "MERGE_POLICIES"})
+    return bool(set(cues) & {"LIVE", "CURRENT", "PLATFORM", "API", "LIVE_OR_CURRENT"})
 
 
 def _row_count(result: dict[str, Any]) -> int:

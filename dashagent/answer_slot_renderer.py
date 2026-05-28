@@ -25,10 +25,14 @@ def render_answer_slots(query: str, slots: AnswerSlots, evidence_quality: dict[s
     caveats = _quality_caveats(slots, quality)
 
     if _asks_count(lowered) and slots.counts:
-        answer = f"Count: {slots.counts[0]}."
+        if "local snapshot" in lowered or ((_asks_live_scope(lowered) or _asks_platform_scope(lowered)) and (slots.dry_run or slots.api_error)):
+            answer = f"Local snapshot count: {slots.counts[0]}."
+        else:
+            answer = f"Count: {slots.counts[0]}."
         if caveats:
             answer = f"{answer} {' '.join(caveats)}"
-        return RenderedAnswer(answer, "count", ["count"], caveats=caveats)
+        rendered = ["count", "scope"] if "local snapshot" in lowered else ["count"]
+        return RenderedAnswer(answer, "count", rendered, caveats=caveats)
 
     if _asks_status(lowered) and (slots.important_rows or slots.important_items or slots.statuses):
         rows = slots.important_items or slots.important_rows
@@ -81,9 +85,17 @@ def render_answer_slots(query: str, slots: AnswerSlots, evidence_quality: dict[s
 def _quality_caveats(slots: AnswerSlots, quality: dict[str, Any]) -> list[str]:
     caveats: list[str] = []
     api_codes = set(quality.get("api") or [])
+    sql_codes = set(quality.get("sql") or [])
+    direct_sql_count_answer = (
+        "SQL_DIRECT_ANSWER" in sql_codes
+        and bool(slots.counts)
+        and slots.sql_row_count is not None
+        and not _asks_live_scope(slots.query.lower())
+        and not _asks_platform_scope(slots.query.lower())
+    )
     if slots.api_error or "API_ERROR" in api_codes:
         caveats.append("API unavailable/error; cannot verify live state.")
-    if "API_LIVE_EMPTY" in api_codes:
+    if "API_LIVE_EMPTY" in api_codes and not direct_sql_count_answer:
         caveats.append("API returned no matching records for this query/scope.")
     if slots.dry_run:
         caveats.append("Live API verification was not executed because Adobe credentials are unavailable.")
@@ -132,6 +144,14 @@ def _asks_status(text: str) -> bool:
 
 def _asks_date(text: str) -> bool:
     return any(token in text for token in ("when", "created", "updated", "date", "time", "deployed", "published"))
+
+
+def _asks_live_scope(text: str) -> bool:
+    return any(token in text for token in ("current", "live"))
+
+
+def _asks_platform_scope(text: str) -> bool:
+    return "platform" in text or "adobe experience platform" in text
 
 
 def _dedupe(values: list[str]) -> list[str]:

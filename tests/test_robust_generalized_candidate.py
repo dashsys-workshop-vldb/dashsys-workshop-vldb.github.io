@@ -60,6 +60,27 @@ def _sql_then_optional_api_plan(query, routing, metadata, strategy, analysis=Non
     )
 
 
+def _sql_count_then_optional_schema_api_plan(query, routing, metadata, strategy, analysis=None):
+    return Plan(
+        strategy=strategy,
+        rationale="unit local count plus optional schema API",
+        steps=[
+            PlanStep(
+                action="sql",
+                purpose="unit SQL count",
+                sql="SELECT COUNT(*) AS count FROM dim_campaign",
+            ),
+            PlanStep(
+                action="api",
+                purpose="unit optional schema API",
+                method="GET",
+                url="/data/foundation/schemaregistry/tenant/schemas",
+                params={},
+            ),
+        ],
+    )
+
+
 def test_robust_candidate_strategy_is_explicit_and_not_default(tiny_project: Config) -> None:
     assert PACKAGED_DEFAULT_STRATEGY == "SQL_FIRST_API_VERIFY"
     assert ROBUST in ALL_STRATEGIES
@@ -224,6 +245,39 @@ def test_robust_candidate_does_not_no_tool_mixed_prompt(tiny_project: Config) ->
     assert any(row["type"] in {"sql", "api"} for row in result["tool_results"])
 
 
+def test_robust_candidate_does_not_no_tool_current_evidence_decoy(tiny_project: Config) -> None:
+    result = AgentExecutor(tiny_project).run(
+        "In one answer, define dataset and provide current evidence where available. Keep the answer evidence-bound.",
+        strategy=ROBUST,
+        query_id="robust_current_evidence_decoy",
+    )
+
+    progressive = next(
+        checkpoint["output"]
+        for checkpoint in result["checkpoints"]
+        if checkpoint["checkpoint_id"] == "checkpoint_progressive_evidence_policy"
+    )
+    assert progressive["entry_action"] == "EVIDENCE_PIPELINE"
+    assert progressive["allowed_early_exit"] is False
+    assert any(row["type"] in {"sql", "api"} for row in result["tool_results"])
+
+
+def test_robust_candidate_does_not_no_tool_meta_phrase_with_data_return(tiny_project: Config) -> None:
+    result = AgentExecutor(tiny_project).run(
+        "Without using the word list, return available destination records from evidence.",
+        strategy=ROBUST,
+        query_id="robust_meta_phrase_data_return",
+    )
+
+    progressive = next(
+        checkpoint["output"]
+        for checkpoint in result["checkpoints"]
+        if checkpoint["checkpoint_id"] == "checkpoint_progressive_evidence_policy"
+    )
+    assert progressive["entry_action"] == "EVIDENCE_PIPELINE"
+    assert progressive["allowed_early_exit"] is False
+
+
 def test_robust_candidate_safe_api_probe_runs_one_safe_get(tiny_project: Config) -> None:
     client = CountingAPIClient()
     result = AgentExecutor(tiny_project, api_client=client).run("Tags", strategy=ROBUST, query_id="robust_safe_probe")
@@ -240,6 +294,21 @@ def test_robust_candidate_safe_api_probe_runs_one_safe_get(tiny_project: Config)
     )
     assert progressive["entry_action"] == "SAFE_API_PROBE"
     assert progressive["allowed_early_exit"] is True
+
+
+def test_robust_candidate_safe_api_probe_uses_template_params_and_legacy_answer(tiny_project: Config) -> None:
+    client = CountingAPIClient()
+    result = AgentExecutor(tiny_project, api_client=client).run(
+        "How many tags exist in this sandbox?",
+        strategy=ROBUST,
+        query_id="robust_safe_probe_tags_count",
+    )
+
+    assert len(client.calls) == 1
+    assert client.calls[0][2] == {"limit": "20"}
+    assert "api" in result["final_answer"].lower()
+    assert "tag" in result["final_answer"].lower()
+    assert result["final_answer"] != "Count: 1."
 
 
 def test_robust_candidate_ambiguous_api_family_enters_evidence_pipeline(tiny_project: Config) -> None:
@@ -270,6 +339,57 @@ def test_robust_candidate_post_sql_policy_skips_optional_api_after_direct_sql(ti
     assert any(checkpoint["checkpoint_id"] == "checkpoint_post_sql_deterministic_policy" for checkpoint in result["checkpoints"])
     assert any(checkpoint["checkpoint_id"] == "checkpoint_post_sql_semantic_decision_card" for checkpoint in result["checkpoints"])
     assert any(checkpoint["checkpoint_id"] == "checkpoint_post_sql_execution_verifier" for checkpoint in result["checkpoints"])
+
+
+def test_robust_candidate_local_snapshot_count_skips_optional_schema_api(tiny_project: Config) -> None:
+    client = CountingAPIClient()
+    executor = AgentExecutor(tiny_project, api_client=client)
+    executor.planner.create_plan = _sql_count_then_optional_schema_api_plan
+
+    result = executor.run(
+        "How many schema records are in the local snapshot?",
+        strategy=ROBUST,
+        query_id="robust_local_snapshot_count",
+    )
+
+    assert [row["type"] for row in result["tool_results"]] == ["sql"]
+    assert client.calls == []
+    assert "local snapshot" in result["final_answer"].lower()
+    execution_verifier = next(
+        checkpoint["output"]
+        for checkpoint in result["checkpoints"]
+        if checkpoint["checkpoint_id"] == "checkpoint_post_sql_execution_verifier"
+    )
+    assert execution_verifier["final_action"] == "SKIP_API"
+
+
+def test_robust_candidate_skips_llm_answer_when_legacy_answer_is_already_best(
+    tiny_project: Config,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = CountingAPIClient()
+    executor = AgentExecutor(tiny_project, api_client=client)
+    executor.planner.create_plan = _sql_count_then_optional_schema_api_plan
+
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("LLM answer generation should be skipped for complete local SQL answer")
+
+    monkeypatch.setattr("dashagent.executor.generate_evidence_grounded_llm_answer", fail_if_called)
+
+    result = executor.run(
+        "How many schema records are in the local snapshot?",
+        strategy=ROBUST,
+        query_id="robust_local_snapshot_count_no_llm_answer",
+    )
+
+    assert "local snapshot" in result["final_answer"].lower()
+    answer_diagnostics = next(
+        step
+        for step in result["trajectory"]["steps"]
+        if step.get("kind") == "answer_diagnostics"
+    )
+    assert answer_diagnostics["llm_answer_generation_skipped"] is True
+    assert answer_diagnostics["selected_candidate_type"] in {"LEGACY_SAFE_RENDERER", "DETERMINISTIC_FALLBACK"}
 
 
 def test_evidence_quality_classifier_distinguishes_empty_and_error() -> None:
@@ -318,3 +438,67 @@ def test_answer_slot_renderer_renders_requested_evidence() -> None:
     assert "Welcome Journey" in rendered.answer
     assert "published" in rendered.answer
     assert rendered.unsupported_claims_count == 0
+
+
+def test_answer_slots_use_aggregate_count_value_not_sql_row_count() -> None:
+    from dashagent.answer_slot_renderer import render_answer_slots
+    from dashagent.answer_slots import extract_answer_slots
+
+    slots = extract_answer_slots(
+        "How many schemas do I have?",
+        [
+            {
+                "type": "sql",
+                "payload": {
+                    "ok": True,
+                    "row_count": 1,
+                    "rows": [{"count": 74}],
+                },
+            }
+        ],
+    )
+
+    rendered = render_answer_slots("How many schemas do I have?", slots)
+
+    assert slots.sql_row_count == 1
+    assert slots.counts == [74]
+    assert "74" in rendered.answer
+    assert "Count: 1" not in rendered.answer
+
+
+def test_answer_slot_renderer_suppresses_live_empty_caveat_for_direct_sql_count() -> None:
+    from dashagent.answer_slot_renderer import render_answer_slots
+    from dashagent.answer_slots import extract_answer_slots
+
+    slots = extract_answer_slots(
+        "How many schemas do I have?",
+        [
+            {
+                "type": "sql",
+                "payload": {
+                    "ok": True,
+                    "row_count": 1,
+                    "rows": [{"count": 74}],
+                },
+            },
+            {
+                "type": "api",
+                "step": {"family": "schema_list"},
+                "payload": {
+                    "ok": True,
+                    "dry_run": False,
+                    "parsed_evidence": {"evidence_state": "live_empty"},
+                    "result_preview": {"items": []},
+                },
+            },
+        ],
+    )
+
+    rendered = render_answer_slots(
+        "How many schemas do I have?",
+        slots,
+        {"sql": ["SQL_DIRECT_ANSWER"], "api": ["API_LIVE_EMPTY"]},
+    )
+
+    assert "74" in rendered.answer
+    assert "no matching records" not in rendered.answer.lower()

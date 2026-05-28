@@ -13,6 +13,21 @@ from .post_sql_semantic_decision_gate import (
 
 
 POST_SQL_MODES = {"CALL_API", "SKIP_API", "CAVEAT_ONLY"}
+_DEFAULT_BACKEND_UNAVAILABLE_REASON: str | None = None
+
+
+class PostSQLLLMBackendUnavailable(RuntimeError):
+    """Raised when the default post-SQL LLM backend cannot produce a decision."""
+
+
+def reset_post_sql_llm_backend_circuit_for_tests() -> None:
+    global _DEFAULT_BACKEND_UNAVAILABLE_REASON
+    _DEFAULT_BACKEND_UNAVAILABLE_REASON = None
+
+
+def _mark_default_backend_unavailable(reason: str) -> None:
+    global _DEFAULT_BACKEND_UNAVAILABLE_REASON
+    _DEFAULT_BACKEND_UNAVAILABLE_REASON = reason[:200] if reason else "backend unavailable"
 
 
 @dataclass(frozen=True)
@@ -55,6 +70,7 @@ def run_post_sql_llm_first_decision(
     enabled: bool = True,
     budget_available: bool = True,
 ) -> dict[str, Any]:
+    explicit_client = llm_client is not None
     client = _client(llm_client) if enabled else None
     if client is None:
         fallback = risk_minimizing_post_sql_fallback(card)
@@ -81,6 +97,8 @@ def run_post_sql_llm_first_decision(
     try:
         first = _call_decision_client(client, _messages_for_card(card))
     except Exception as exc:
+        if not explicit_client:
+            _mark_default_backend_unavailable(str(exc))
         fallback = risk_minimizing_post_sql_fallback(card)
         verified = verify_post_sql_execution_contract(
             fallback,
@@ -210,7 +228,10 @@ def _call_client(client: Any, messages: list[dict[str, str]]) -> str:
         if isinstance(result, dict) and result.get("ok") and result.get("content"):
             return str(result.get("content") or "")
         if isinstance(result, dict):
-            raise RuntimeError(str(result.get("error") or result.get("reason") or "post-sql LLM returned no content"))
+            reason = str(result.get("error") or result.get("reason") or "post-sql LLM returned no content")
+            if result.get("skipped") or not result.get("ok"):
+                raise PostSQLLLMBackendUnavailable(reason)
+            raise RuntimeError(reason)
         raise RuntimeError("post-sql LLM returned unsupported SDK response")
     if hasattr(client, "complete"):
         return str(client.complete(messages))
@@ -224,10 +245,16 @@ def _call_client(client: Any, messages: list[dict[str, str]]) -> str:
 def _client(llm_client: Any | None) -> Any | None:
     if llm_client is not None:
         return llm_client
+    if _DEFAULT_BACKEND_UNAVAILABLE_REASON:
+        return None
     try:
-        return get_llm_client()
+        client = get_llm_client()
     except Exception:
         return None
+    if hasattr(client, "available") and not client.available():
+        _mark_default_backend_unavailable(getattr(client, "reason", "LLM provider is unavailable"))
+        return None
+    return client
 
 
 def _metrics(
@@ -247,6 +274,11 @@ def _metrics(
         "revision_success_count": 1 if revision_success else 0,
         "revision_fail_count": 1 if revision_attempted and not revision_success else 0,
         "fallback_count": 1 if fallback is not None else 0,
+        "post_sql_first_pass_fail_count": 1 if first_fail else 0,
+        "post_sql_revision_attempt_count": 1 if revision_attempted else 0,
+        "post_sql_revision_success_count": 1 if revision_success else 0,
+        "post_sql_revision_fail_count": 1 if revision_attempted and not revision_success else 0,
+        "post_sql_risk_fallback_count": 1 if fallback is not None else 0,
         "fallback_source_counts": {source: 1} if source else {},
         "average_feedback_token_estimate": max(0, len(str(feedback or {})) // 4),
     }

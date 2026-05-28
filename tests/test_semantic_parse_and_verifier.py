@@ -189,6 +189,39 @@ def test_progressive_policy_forces_supported_data_prompts_to_evidence_pipeline()
         assert progressive.risk_codes
 
 
+def test_progressive_policy_forces_current_evidence_decoys_to_pipeline() -> None:
+    prompts = [
+        "In one answer, define dataset and provide current evidence where available. Keep the answer evidence-bound.",
+        "Define merge policy and provide current evidence where available. Keep the answer evidence-bound.",
+        "Without using the word list, return available destination records from evidence.",
+    ]
+    for prompt in prompts:
+        ladder = run_semantic_route_decision_ladder(prompt, shadow_only=False)
+        progressive = ladder.checkpoints["checkpoint_progressive_evidence_policy"]
+
+        assert ladder.action == "EVIDENCE_PIPELINE"
+        assert progressive["allowed_early_exit"] is False
+        assert progressive["requires_evidence_pipeline"] is True
+        assert any(
+            code in progressive["risk_codes"]
+            for code in {
+                "MIXED_CURRENT_EVIDENCE_REQUEST_REQUIRES_PIPELINE",
+                "EVIDENCE_RECORD_REQUEST_REQUIRES_PIPELINE",
+                "META_LANGUAGE_WITH_DATA_RETURN_REQUIRES_PIPELINE",
+            }
+        )
+
+
+def test_progressive_policy_does_not_treat_latent_api_capability_as_live_scope() -> None:
+    prompt = "How many schema records are in the local snapshot?"
+    ladder = run_semantic_route_decision_ladder(prompt, shadow_only=False)
+    progressive = ladder.checkpoints["checkpoint_progressive_evidence_policy"]
+
+    assert ladder.action == "EVIDENCE_PIPELINE"
+    assert progressive["metrics"]["live_api_signal"] is False
+    assert "LIVE_API_CUE_REQUIRES_EVIDENCE" not in progressive["risk_codes"]
+
+
 def test_progressive_policy_tightens_safe_api_probe() -> None:
     merge_prompt = "List current merge policies from the API."
     merge_features = extract_objective_prompt_features(merge_prompt)
