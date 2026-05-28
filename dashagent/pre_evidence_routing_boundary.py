@@ -43,6 +43,9 @@ def should_bypass_evidence_for_llm_direct(
         return False
     if _requires_evidence(payload):
         return False
+    semantic_parse = _as_dict(payload.get("semantic_parse"))
+    if not _is_pure_no_evidence_parse(semantic_parse):
+        return False
     if _is_mixed(payload):
         return False
     if _is_ambiguous_data_like(payload):

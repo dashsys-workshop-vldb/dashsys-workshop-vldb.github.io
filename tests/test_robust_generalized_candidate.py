@@ -9,6 +9,7 @@ from dashagent.config import Config, ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2
 from dashagent.eval_harness import config_for_applied_trial_strategy
 from dashagent.executor import AgentExecutor
 from dashagent.planner import ALL_STRATEGIES, PACKAGED_DEFAULT_STRATEGY, Plan, PlanStep, STRATEGIES, execution_base_strategy
+from dashagent.pre_evidence_routing_boundary import should_bypass_evidence_for_llm_direct
 from dashagent.prompt_semantic_ir import extract_objective_prompt_features
 
 
@@ -231,6 +232,48 @@ def test_robust_v2_pure_schema_concept_bypasses_evidence_bus(tiny_project: Confi
     _assert_post_evidence_answer_router_not_run(result)
     assert "you have" not in result["final_answer"].lower()
     assert "current schemas" not in result["final_answer"].lower()
+
+
+def test_pre_evidence_bypass_requires_pure_no_evidence_semantic_parse() -> None:
+    base_payload = {
+        "action": "LLM_SAFE_DIRECT",
+        "confidence": 0.95,
+        "semantic_intent_decision": {"conf": 0.95, "need": "NONE", "no_tool": True},
+        "progressive_evidence_policy": {"confidence": "HIGH", "requires_evidence_pipeline": False},
+    }
+    assert not should_bypass_evidence_for_llm_direct(base_payload, strategy=ROBUST_V2, prompt="What is a schema?")
+
+    pure_concept_payload = {
+        **base_payload,
+        "semantic_parse": {
+            "operation": "DEFINE",
+            "target": {"grounding": "CONCEPTUAL_OBJECT", "instance_level": False},
+            "evidence_need": "NONE",
+            "no_tool_safe": True,
+            "confidence": 0.9,
+        },
+    }
+    assert should_bypass_evidence_for_llm_direct(
+        pure_concept_payload,
+        strategy=ROBUST_V2,
+        prompt="What is a schema?",
+    )
+
+    data_payload = {
+        **base_payload,
+        "semantic_parse": {
+            "operation": "LOOKUP",
+            "target": {"grounding": "SUPPORTED_DATA_OBJECT", "instance_level": True},
+            "evidence_need": "SQL_API",
+            "no_tool_safe": False,
+            "confidence": 0.9,
+        },
+    }
+    assert not should_bypass_evidence_for_llm_direct(
+        data_payload,
+        strategy=ROBUST_V2,
+        prompt="What schemas do I have?",
+    )
 
 
 def test_robust_v2_mixed_prompt_still_uses_evidence_bus(tiny_project: Config) -> None:

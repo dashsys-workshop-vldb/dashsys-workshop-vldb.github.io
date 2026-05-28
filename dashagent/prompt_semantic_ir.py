@@ -120,7 +120,7 @@ def extract_objective_prompt_features(prompt: str) -> ObjectivePromptFeatures:
 
     if quoted_spans:
         entity.append("QUOTED")
-    if re.search(r"\b[A-Za-z0-9][A-Za-z0-9_-]{7,}\b", prompt or ""):
+    if re.search(r"\b(?=[A-Za-z0-9_-]{8,}\b)(?=[A-Za-z0-9_-]*(?:\d|_|-))[A-Za-z0-9][A-Za-z0-9_-]*\b", prompt or ""):
         entity.append("ID_LIKE")
     if re.search(r"\b\d+\b", norm):
         entity.append("NUMBER")

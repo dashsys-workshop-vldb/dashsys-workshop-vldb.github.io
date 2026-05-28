@@ -297,7 +297,7 @@ class AgentExecutor:
         semantic_trial_decision = self._semantic_no_tool_applied_decision(
             semantic_ladder,
             query=query,
-            strategy=strategy,
+            strategy=self.config.real_behavior_trial_mode or strategy,
         )
         if semantic_trial_decision.get("record"):
             checkpoint_logger.add_checkpoint(

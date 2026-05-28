@@ -94,6 +94,16 @@ def decide_progressive_evidence_entry(
             requires_evidence_pipeline=False,
             metrics=metrics,
         )
+    if _safe_fallback_no_tool_exit(parsed, decision_payload, consistency_payload, safety_payload, no_tool_risks, metrics):
+        return ProgressiveEvidenceDecision(
+            entry_action="LLM_SAFE_DIRECT",
+            confidence="MEDIUM",
+            reason_codes=["SAFE_CONCEPTUAL_FALLBACK_NO_TOOL"],
+            risk_codes=[],
+            allowed_early_exit=True,
+            requires_evidence_pipeline=False,
+            metrics=metrics,
+        )
 
     probe_risks = _safe_api_probe_risk_codes(feature_payload, parsed, decision_payload, safety_payload, probe, metrics)
     if not probe_risks and _safe_api_probe_exit(parsed, decision_payload, probe, metrics):
@@ -140,6 +150,35 @@ def _safe_no_tool_exit(
         and float(decision.get("conf") or 0.0) >= 0.78
         and float(parsed.confidence or 0.0) >= 0.75
         and not risk_codes
+    )
+
+
+def _safe_fallback_no_tool_exit(
+    parsed: SemanticParse,
+    decision: dict[str, Any],
+    consistency: dict[str, Any],
+    safety: dict[str, Any],
+    risk_codes: list[str],
+    metrics: dict[str, Any],
+) -> bool:
+    tolerated_risks = {"SEMANTIC_CONSISTENCY_BLOCKED_NO_TOOL"}
+    return bool(
+        consistency.get("fallback_action") == "LLM_SAFE_DIRECT"
+        and parsed.target.grounding in {*NO_TOOL_GROUNDINGS, "UNKNOWN"}
+        and not parsed.target.instance_level
+        and parsed.evidence_need in {"NONE", "UNKNOWN"}
+        and parsed.no_tool_safe
+        and bool(decision.get("no_tool"))
+        and str(decision.get("need") or "NONE").upper() in {"NONE", "UNKNOWN"}
+        and float(decision.get("conf") or 0.0) >= 0.7
+        and not parsed.requested_fields
+        and not (parsed.filters.status or parsed.filters.date or parsed.filters.entity or parsed.filters.relationship)
+        and not metrics.get("concrete_data_signal")
+        and not metrics.get("objective_data_signal")
+        and not metrics.get("live_api_signal")
+        and not metrics.get("api_required_signal")
+        and not safety.get("block")
+        and set(risk_codes).issubset(tolerated_risks)
     )
 
 
