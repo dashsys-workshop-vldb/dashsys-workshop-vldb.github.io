@@ -108,9 +108,27 @@ def test_mixed_prompt_includes_concept_and_canonical_data() -> None:
 
     assert result.selected_source == "HYBRID_MIXED"
     assert result.intent.answer_intent == "MIXED"
+    assert "BROAD_MIXED_CONCEPT_PLUS_DATA" in result.intent.reason_codes
     assert result.final_answer.startswith("An inactive journey is not currently active or running.")
     assert "Birthday Message" in result.final_answer
     assert "Gold Tier Welcome Email" in result.final_answer
+
+
+def test_broad_data_prompt_uses_legacy_first_structured_answer() -> None:
+    prompt = "How many schemas do I have?"
+    slots = _slots(prompt, counts=[74], sql_row_count=1)
+
+    result = compose_hybrid_answer(
+        prompt,
+        slots=slots,
+        legacy_answer="You have 74 schemas.",
+    )
+
+    assert result.intent.answer_intent == "COUNT"
+    assert result.intent.answer_mode == "LEGACY_FIRST_DATA"
+    assert result.selected_source == "LEGACY_SAFE_RENDERER"
+    assert result.final_answer == "You have 74 schemas."
+    assert "SELECT_LEGACY_STRUCTURED_DEFAULT" in result.selection_codes
 
 
 def test_unsupported_concept_claim_falls_back_to_legacy() -> None:

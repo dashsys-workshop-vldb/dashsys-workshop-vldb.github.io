@@ -34,6 +34,102 @@ def test_selector_prefers_legacy_when_llm_omits_available_count() -> None:
     assert "COUNT_COVERAGE_ADVANTAGE" in selected.selection_codes
 
 
+def test_legacy_first_structured_selector_keeps_legacy_when_hybrid_loses_exact_number() -> None:
+    slots = _slots("How many schemas do I have?", counts=[74], sql_row_count=1)
+
+    selected = select_answer_candidate(
+        prompt=slots.query,
+        slots=slots,
+        evidence_bus={},
+        hybrid_answer="There are schemas.",
+        hybrid_verification={"ok": True, "unsupported_claims": []},
+        legacy_answer="You have 74 schemas.",
+        grounded_answer="There are schemas.",
+    )
+
+    assert selected.selected_source == "LEGACY_SAFE_RENDERER"
+    assert "REJECT_HYBRID_MISSING_EXACT_FACT" in selected.selection_codes
+    assert "SELECT_LEGACY_STRUCTURED_DEFAULT" in selected.selection_codes
+
+
+def test_legacy_first_structured_selector_keeps_legacy_when_hybrid_changes_object_label() -> None:
+    slots = _slots("How many schemas do I have?", counts=[74], sql_row_count=1)
+
+    selected = select_answer_candidate(
+        prompt=slots.query,
+        slots=slots,
+        evidence_bus={},
+        hybrid_answer="There are 74 records.",
+        hybrid_verification={"ok": True, "unsupported_claims": []},
+        legacy_answer="You have 74 schemas.",
+        grounded_answer="There are 74 records.",
+    )
+
+    assert selected.selected_source == "LEGACY_SAFE_RENDERER"
+    assert "REJECT_HYBRID_WRONG_OBJECT_LABEL" in selected.selection_codes
+
+
+def test_legacy_first_structured_selector_keeps_legacy_when_hybrid_adds_unneeded_scope_caveat() -> None:
+    slots = _slots("How many schemas do I have?", counts=[74], sql_row_count=1)
+
+    selected = select_answer_candidate(
+        prompt=slots.query,
+        slots=slots,
+        evidence_bus={},
+        hybrid_answer="There are 74 schemas in the local snapshot. API unavailable/error; cannot verify live state.",
+        hybrid_verification={"ok": True, "unsupported_claims": []},
+        legacy_answer="You have 74 schemas.",
+        grounded_answer="There are 74 schemas in the local snapshot.",
+    )
+
+    assert selected.selected_source == "LEGACY_SAFE_RENDERER"
+    assert "REJECT_HYBRID_EXTRA_SCOPE_CAVEAT" in selected.selection_codes
+
+
+def test_legacy_first_structured_selector_allows_hybrid_extra_runtime_coverage() -> None:
+    slots = _slots(
+        "List schemas with IDs.",
+        entity_names=["Profile Schema"],
+        entity_ids=["schema-1"],
+    )
+
+    selected = select_answer_candidate(
+        prompt=slots.query,
+        slots=slots,
+        evidence_bus={},
+        hybrid_answer="Profile Schema (schema-1).",
+        hybrid_verification={"ok": True, "unsupported_claims": []},
+        legacy_answer="Profile Schema.",
+        grounded_answer="Profile Schema (schema-1).",
+    )
+
+    assert selected.selected_source == "HYBRID_ANSWER"
+    assert "SELECT_HYBRID_EXTRA_RUNTIME_COVERAGE" in selected.selection_codes
+
+
+def test_legacy_first_structured_selector_keeps_zero_row_no_result_legacy() -> None:
+    slots = _slots(
+        "List all segment audiences connected to the destination named 'SMS Opt-In'.",
+        sql_row_count=0,
+        entity_names=["Activate segments to S3 Feed"],
+        entity_ids=["139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"],
+        api_error=True,
+    )
+
+    selected = select_answer_candidate(
+        prompt=slots.query,
+        slots=slots,
+        evidence_bus={},
+        hybrid_answer="Audiences: Activate segments to S3 Feed id=139bece0-5266-46bd-8ed3-fc1dd5eb5dd4.",
+        hybrid_verification={"ok": True, "unsupported_claims": []},
+        legacy_answer="Based on the evidence provided, there is no data available to answer this question. The SQL query returned zero rows.",
+        grounded_answer="Audiences: Activate segments to S3 Feed id=139bece0-5266-46bd-8ed3-fc1dd5eb5dd4.",
+    )
+
+    assert selected.selected_source == "LEGACY_SAFE_RENDERER"
+    assert "REJECT_HYBRID_UNSUPPORTED" in selected.selection_codes
+
+
 def test_selector_prefers_legacy_when_llm_omits_status() -> None:
     slots = _slots(
         "What is the status of Journey A?",

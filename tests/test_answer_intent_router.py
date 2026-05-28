@@ -54,6 +54,32 @@ def test_conceptual_prompt_without_data_routes_to_llm_concept() -> None:
 
     assert decision.answer_intent == "CONCEPT"
     assert decision.answer_mode == "LLM_CONCEPT"
+    assert "BROAD_CONCEPT_LLM" in decision.reason_codes
+
+
+def test_broad_data_count_routes_to_legacy_first_count() -> None:
+    slots = _slots("How many schemas do I have?", counts=[74], sql_row_count=1)
+
+    decision = route_answer_intent(slots.query, slots=slots)
+
+    assert decision.answer_intent == "COUNT"
+    assert decision.answer_mode == "LEGACY_FIRST_DATA"
+    assert "BROAD_DATA_EVIDENCE_REQUIRED" in decision.reason_codes
+    assert "LEGACY_FIRST_STRUCTURED_DATA" in decision.reason_codes
+
+
+def test_list_request_with_count_field_stays_list_intent() -> None:
+    slots = _slots(
+        "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience.",
+        counts=[0],
+        entity_ids=["aud-1"],
+        entity_names=["Gender: Male"],
+        first_rows=[{"audienceId": "aud-1", "name": "Gender: Male", "used_in_other_audience_count": 0}],
+    )
+
+    decision = route_answer_intent(slots.query, slots=slots)
+
+    assert decision.answer_intent == "LIST"
 
 
 def test_mixed_concept_and_data_prompt_routes_to_hybrid() -> None:
@@ -68,6 +94,7 @@ def test_mixed_concept_and_data_prompt_routes_to_hybrid() -> None:
 
     assert decision.answer_intent == "MIXED"
     assert decision.answer_mode == "HYBRID_MIXED"
+    assert "BROAD_MIXED_CONCEPT_PLUS_DATA" in decision.reason_codes
 
 
 def test_api_error_primary_routes_to_canonical_caveat() -> None:
@@ -77,4 +104,3 @@ def test_api_error_primary_routes_to_canonical_caveat() -> None:
 
     assert decision.answer_intent == "ERROR_CAVEAT"
     assert decision.answer_mode == "CANONICAL_CAVEAT"
-

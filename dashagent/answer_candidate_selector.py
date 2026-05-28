@@ -30,6 +30,8 @@ def select_answer_candidate(
     evidence_bus: Any | None = None,
     llm_answer: str | None = None,
     llm_verification: Any | None = None,
+    hybrid_answer: str | None = None,
+    hybrid_verification: Any | None = None,
     legacy_answer: str | None = None,
     grounded_answer: str | None = None,
     deterministic_answer: str | None = None,
@@ -43,10 +45,23 @@ def select_answer_candidate(
 
     roles = _requested_roles(prompt, slots)
     candidates = [
+        _candidate("HYBRID_ANSWER", hybrid_answer, slots, roles, hybrid_verification),
         _candidate("LLM_EVIDENCE_GROUNDED", llm_answer, slots, roles, llm_verification),
         _candidate("LEGACY_SAFE_RENDERER", legacy_answer, slots, roles, None),
         _candidate("DETERMINISTIC_FALLBACK", grounded_answer or deterministic_answer, slots, roles, None),
     ]
+    hybrid = next((item for item in candidates if item["source"] == "HYBRID_ANSWER"), None)
+    legacy = next((item for item in candidates if item["source"] == "LEGACY_SAFE_RENDERER"), None)
+    if hybrid_answer is not None and hybrid is not None:
+        selected, codes = _select_structured_hybrid_or_legacy(prompt, slots, roles, hybrid, legacy)
+        return AnswerCandidateSelection(
+            selected_answer=str(selected["answer"]),
+            selected_source=str(selected["source"]),
+            coverage_score=float(selected["coverage_score"]),
+            unsupported_claims=int(selected["unsupported_claims"]),
+            selection_codes=_dedupe(codes + list(selected.get("coverage_codes") or [])),
+            candidates=candidates,
+        )
     usable = [candidate for candidate in candidates if candidate["answer"] and candidate["unsupported_claims"] == 0]
     if not usable:
         fallback = _candidate("DETERMINISTIC_FALLBACK", deterministic_answer or grounded_answer or legacy_answer or "", slots, roles, None)
@@ -60,7 +75,6 @@ def select_answer_candidate(
         )
 
     llm = next((item for item in candidates if item["source"] == "LLM_EVIDENCE_GROUNDED"), None)
-    legacy = next((item for item in candidates if item["source"] == "LEGACY_SAFE_RENDERER"), None)
     best = max(usable, key=lambda item: (float(item["coverage_score"]), _source_preference(str(item["source"]))))
     if (
         llm
@@ -373,7 +387,127 @@ def _shape_score(candidate: dict[str, Any]) -> float:
 
 
 def _source_preference(source: str) -> int:
-    return {"LLM_EVIDENCE_GROUNDED": 3, "LEGACY_SAFE_RENDERER": 2, "DETERMINISTIC_FALLBACK": 1}.get(source, 0)
+    return {"HYBRID_ANSWER": 4, "LLM_EVIDENCE_GROUNDED": 3, "LEGACY_SAFE_RENDERER": 2, "DETERMINISTIC_FALLBACK": 1}.get(source, 0)
+
+
+def _select_structured_hybrid_or_legacy(
+    prompt: str,
+    slots: AnswerSlots,
+    roles: list[str],
+    hybrid: dict[str, Any],
+    legacy: dict[str, Any] | None,
+) -> tuple[dict[str, Any], list[str]]:
+    fallback = legacy if legacy and legacy.get("answer") else hybrid
+    if int(hybrid.get("unsupported_claims") or 0) > 0 or not str(hybrid.get("answer") or "").strip():
+        return fallback, ["SELECT_LEGACY_STRUCTURED_DEFAULT", "REJECT_HYBRID_UNSUPPORTED"]
+    if legacy is None or not str(legacy.get("answer") or "").strip():
+        return hybrid, ["SELECT_HYBRID_EXTRA_RUNTIME_COVERAGE"]
+    reject_codes = _hybrid_rejection_codes(prompt, slots, hybrid, legacy)
+    if reject_codes:
+        return legacy, ["SELECT_LEGACY_STRUCTURED_DEFAULT", *reject_codes]
+    hybrid_covered = set(str(role) for role in hybrid.get("covered_roles") or [])
+    legacy_covered = set(str(role) for role in legacy.get("covered_roles") or [])
+    if hybrid_covered - legacy_covered:
+        return hybrid, ["SELECT_HYBRID_EXTRA_RUNTIME_COVERAGE"]
+    if float(hybrid.get("coverage_score") or 0) > float(legacy.get("coverage_score") or 0) + 0.25 and not set(hybrid.get("missing_roles") or []):
+        return hybrid, ["SELECT_HYBRID_EXTRA_RUNTIME_COVERAGE"]
+    return legacy, ["SELECT_LEGACY_STRUCTURED_DEFAULT"]
+
+
+def _hybrid_rejection_codes(prompt: str, slots: AnswerSlots, hybrid: dict[str, Any], legacy: dict[str, Any]) -> list[str]:
+    hybrid_answer = normalize_text(hybrid.get("answer") or "")
+    legacy_answer = normalize_text(legacy.get("answer") or "")
+    prompt_norm = normalize_text(prompt)
+    codes: list[str] = []
+    if _legacy_is_scoped_no_result(legacy_answer, slots) and not _hybrid_preserves_no_result(hybrid_answer):
+        codes.append("REJECT_HYBRID_UNSUPPORTED")
+    for value in _exact_facts(slots):
+        normalized = normalize_text(value)
+        if normalized and normalized in legacy_answer and normalized not in hybrid_answer:
+            codes.append("REJECT_HYBRID_MISSING_EXACT_FACT")
+            break
+    prompt_labels = _object_labels(prompt_norm)
+    if prompt_labels:
+        legacy_labels = _object_labels(legacy_answer)
+        hybrid_labels = _object_labels(hybrid_answer)
+        if prompt_labels & legacy_labels and not prompt_labels & hybrid_labels:
+            codes.append("REJECT_HYBRID_WRONG_OBJECT_LABEL")
+    if _adds_unneeded_scope_caveat(prompt_norm, slots, hybrid_answer, legacy_answer):
+        codes.append("REJECT_HYBRID_EXTRA_SCOPE_CAVEAT")
+    return _dedupe(codes)
+
+
+def _legacy_is_scoped_no_result(legacy_answer: str, slots: AnswerSlots) -> bool:
+    if slots.sql_row_count != 0:
+        return False
+    return any(
+        phrase in legacy_answer
+        for phrase in (
+            "no data available",
+            "zero rows",
+            "no matching",
+            "no entities",
+            "not found",
+            "none were",
+        )
+    )
+
+
+def _hybrid_preserves_no_result(hybrid_answer: str) -> bool:
+    return any(
+        phrase in hybrid_answer
+        for phrase in (
+            "no data available",
+            "zero rows",
+            "no matching",
+            "no entities",
+            "not found",
+            "none were",
+        )
+    )
+
+
+def _exact_facts(slots: AnswerSlots) -> list[str]:
+    facts: list[str] = []
+    facts.extend(str(value) for value in slots.counts[:8])
+    facts.extend(str(value) for value in slots.entity_names[:8])
+    facts.extend(str(value) for value in slots.entity_ids[:8])
+    facts.extend(str(value) for value in slots.statuses[:8])
+    facts.extend(str(value)[:10] for value in slots.timestamps[:8])
+    facts.extend(str(value) for value in sorted(slots.evidence_numbers)[:10])
+    return _dedupe([fact for fact in facts if fact and fact != "None"])
+
+
+def _object_labels(text: str) -> set[str]:
+    labels: set[str] = set()
+    groups = {
+        "schema": ("schema", "schemas"),
+        "dataset": ("dataset", "datasets"),
+        "journey": ("journey", "journeys"),
+        "campaign": ("campaign", "campaigns"),
+        "audience": ("audience", "audiences"),
+        "segment": ("segment", "segments"),
+        "flow": ("flow", "flows", "dataflow", "dataflows"),
+        "batch": ("batch", "batches"),
+        "tag": ("tag", "tags"),
+        "policy": ("policy", "policies"),
+        "record": ("record", "records"),
+    }
+    for label, forms in groups.items():
+        if any(re.search(rf"\b{re.escape(form)}\b", text) for form in forms):
+            labels.add(label)
+    return labels
+
+
+def _adds_unneeded_scope_caveat(prompt_norm: str, slots: AnswerSlots, hybrid_answer: str, legacy_answer: str) -> bool:
+    if "local snapshot" in prompt_norm or any(token in prompt_norm for token in ("current", "live", "platform", "api", "sandbox")):
+        return False
+    if slots.api_error or slots.dry_run:
+        return False
+    if "local snapshot" in hybrid_answer and "local snapshot" not in legacy_answer:
+        return True
+    caveat_phrases = ("api unavailable", "api error", "cannot verify", "could not verify", "no matching records were returned")
+    return any(phrase in hybrid_answer and phrase not in legacy_answer for phrase in caveat_phrases)
 
 
 def _role_weight(role: str) -> float:

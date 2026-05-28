@@ -9,6 +9,7 @@ from .evidence_grounded_final_answer_verifier import EvidenceGroundedFinalAnswer
 from .canonical_data_renderer import CanonicalAnswer, render_canonical_data_answer
 from .hybrid_mixed_answer_composer import HybridMixedAnswer, compose_hybrid_mixed_answer
 from .llm_concept_answer_generator import LLMConceptAnswerResult, generate_llm_concept_answer
+from .answer_candidate_selector import select_answer_candidate
 
 
 @dataclass(frozen=True)
@@ -48,20 +49,40 @@ def compose_hybrid_answer(
     llm_client: Any | None = None,
 ) -> HybridAnswerResult:
     intent = route_answer_intent(prompt, slots=slots, evidence_bus=evidence_bus, evidence_quality=evidence_quality)
-    if intent.answer_mode == "CANONICAL_DATA":
+    if intent.answer_mode in {"CANONICAL_DATA", "CANONICAL_DATA_SELECTIVE", "LEGACY_FIRST_DATA"}:
         canonical = render_canonical_data_answer(prompt, intent, slots, evidence_quality=evidence_quality, evidence_bus=evidence_bus)
-        return _verified_or_legacy(
-            prompt,
-            candidate=canonical.answer,
-            source="HYBRID_CANONICAL_DATA",
-            intent=intent,
+        canonical_verification = verify_evidence_grounded_final_answer(
+            canonical.answer,
+            answer_card=answer_card,
             slots=slots,
             evidence_bus=evidence_bus,
-            answer_card=answer_card,
+            question=prompt,
+        )
+        selection = select_answer_candidate(
+            prompt=prompt,
+            slots=slots,
+            evidence_bus=evidence_bus,
+            hybrid_answer=canonical.answer,
+            hybrid_verification=canonical_verification,
             legacy_answer=legacy_answer,
-            selection_codes=["SELECT_HYBRID_CANONICAL_DATA"],
+            grounded_answer=canonical.answer,
+        )
+        verification = verify_evidence_grounded_final_answer(
+            selection.selected_answer,
+            answer_card=answer_card,
+            slots=slots,
+            evidence_bus=evidence_bus,
+            question=prompt,
+        )
+        selected_source = "HYBRID_CANONICAL_DATA" if selection.selected_source == "HYBRID_ANSWER" else selection.selected_source
+        return HybridAnswerResult(
+            final_answer=selection.selected_answer,
+            selected_source=selected_source,
+            intent=intent,
+            verification=verification,
+            fallback_used=selection.selected_source != "HYBRID_ANSWER",
+            selection_codes=selection.selection_codes,
             canonical=canonical,
-            require_roles=canonical.rendered_roles,
         )
     if intent.answer_mode == "CANONICAL_CAVEAT":
         canonical = render_canonical_data_answer(prompt, intent, slots, evidence_quality=evidence_quality, evidence_bus=evidence_bus)

@@ -5,10 +5,19 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from .answer_slots import AnswerSlots
+from .broad_question_classifier import classify_broad_question
 
 
 ANSWER_INTENTS = {"CONCEPT", "COUNT", "LIST", "STATUS", "DATE", "RELATIONSHIP", "MIXED", "ERROR_CAVEAT", "UNKNOWN"}
-ANSWER_MODES = {"CANONICAL_DATA", "LLM_CONCEPT", "HYBRID_MIXED", "CANONICAL_CAVEAT", "LEGACY_FALLBACK"}
+ANSWER_MODES = {
+    "CANONICAL_DATA",
+    "CANONICAL_DATA_SELECTIVE",
+    "LEGACY_FIRST_DATA",
+    "LLM_CONCEPT",
+    "HYBRID_MIXED",
+    "CANONICAL_CAVEAT",
+    "LEGACY_FALLBACK",
+}
 
 
 @dataclass(frozen=True)
@@ -40,7 +49,6 @@ def route_answer_intent(
     evidence_quality: dict[str, Any] | None = None,
     caveat_states: list[str] | None = None,
 ) -> AnswerIntentDecision:
-    del semantic_parse, objective_features, evidence_bus
     text = _norm(prompt)
     quality = evidence_quality or {}
     api_codes = {str(value).upper() for value in quality.get("api", []) if value}
@@ -60,6 +68,30 @@ def route_answer_intent(
 
     if primary_caveat and not _has_answerable_structured_fact(slots):
         return AnswerIntentDecision("ERROR_CAVEAT", "CANONICAL_CAVEAT", "HIGH", reason_codes)
+
+    broad = classify_broad_question(
+        prompt,
+        semantic_parse=semantic_parse,
+        objective_features=objective_features,
+        evidence_bus=evidence_bus,
+        slots=slots,
+        evidence_quality=evidence_quality,
+    )
+    broad_reasons = list(broad.reason_codes)
+
+    if broad.broad_question_type == "CONCEPTUAL_BROAD":
+        return AnswerIntentDecision("CONCEPT", "LLM_CONCEPT", broad.confidence, _dedupe([*reason_codes, *broad_reasons, "BROAD_CONCEPT_LLM"]))
+    if broad.broad_question_type == "MIXED_BROAD":
+        return AnswerIntentDecision("MIXED", "HYBRID_MIXED", broad.confidence, _dedupe([*reason_codes, *broad_reasons, "BROAD_MIXED_CONCEPT_PLUS_DATA"]))
+    if broad.broad_question_type == "DATA_BROAD":
+        intent = _priority_data_intent(data_intents or _prompt_data_intents(text), text)
+        return AnswerIntentDecision(
+            intent,
+            "LEGACY_FIRST_DATA",
+            broad.confidence,
+            _dedupe([*reason_codes, *broad_reasons, "BROAD_DATA_EVIDENCE_REQUIRED", "LEGACY_FIRST_STRUCTURED_DATA"]),
+        )
+
     if concept and data_intents:
         return AnswerIntentDecision("MIXED", "HYBRID_MIXED", "HIGH", reason_codes)
     if data_intents:
@@ -87,11 +119,30 @@ def _data_intents(text: str, slots: AnswerSlots | None) -> list[str]:
     return _dedupe(intents)
 
 
+def _prompt_data_intents(text: str) -> list[str]:
+    intents: list[str] = []
+    if re.search(r"\b(how many|count|counts|total|number of)\b", text):
+        intents.append("COUNT")
+    if re.search(r"\b(when|created|updated|modified|published|deployed|timestamp|date|recent|latest)\b", text):
+        intents.append("DATE")
+    if re.search(r"\b(status|state|active|inactive|failed|succeeded|published|draft|deployed)\b", text):
+        intents.append("STATUS")
+    if re.search(r"\b(associated|connected|linked|relationship|maps? to|belongs to|used by|uses)\b", text):
+        intents.append("RELATIONSHIP")
+    if re.search(r"\b(list|show|return|give me|which|what are|display|find)\b", text):
+        intents.append("LIST")
+    return _dedupe(intents or ["LIST"])
+
+
 def _priority_data_intent(intents: list[str], text: str) -> str:
-    if "COUNT" in intents:
-        return "COUNT"
+    list_request = bool(re.search(r"\b(list|show|return|give me|which|display|export|all columns|including|showing)\b", text))
+    direct_count_question = bool(re.search(r"\b(how many|count the number|count number|number of|total number|total count)\b", text))
     if "STATUS" in intents and re.search(r"\b(status|state|active|inactive|failed|succeeded|published|draft|deployed)\b", text):
         return "STATUS"
+    if list_request and "LIST" in intents and not direct_count_question:
+        return "LIST"
+    if "COUNT" in intents:
+        return "COUNT"
     if "LIST" in intents and re.search(r"\b(list|show|return|give me|which|display|export|all columns|including)\b", text):
         return "LIST"
     for intent in ["DATE", "RELATIONSHIP", "STATUS", "LIST"]:

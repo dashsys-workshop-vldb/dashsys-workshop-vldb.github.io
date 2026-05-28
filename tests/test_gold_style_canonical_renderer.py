@@ -70,6 +70,25 @@ def test_live_empty_is_scoped() -> None:
     assert "globally" not in rendered.answer.lower()
 
 
+def test_live_empty_does_not_override_sql_direct_answer() -> None:
+    slots = _slots(
+        "How many schemas do I have?",
+        counts=[74],
+        sql_row_count=1,
+        api_evidence_state="live_empty",
+    )
+
+    rendered = render_canonical_data_answer(
+        slots.query,
+        _decision("COUNT"),
+        slots,
+        evidence_quality={"api": ["API_LIVE_EMPTY"], "sql": ["SQL_DIRECT_ANSWER"]},
+    )
+
+    assert rendered.answer == "There are 74 schemas."
+    assert "no matching" not in rendered.answer.lower()
+
+
 def test_missing_fields_are_not_invented() -> None:
     slots = _slots("Show Birthday Message status.", entity_names=["Birthday Message"])
 
