@@ -1,0 +1,1797 @@
+{
+  "answer_time": 4.28386858291924,
+  "api_call_count": 2,
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "correctness_role": "keeps later normalization from changing the user-facing question",
+      "duration_ms": 0.0,
+      "effect": "preserves the original query for reproducibility",
+      "efficiency_role": "starts one trace without extra tool calls",
+      "output": {
+        "query": "Which tags belong to the category 'Uncategorized'?",
+        "query_id": "example_017",
+        "strategy": "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER"
+      },
+      "stage": "input",
+      "technique": "raw user query capture",
+      "timestamp": "2026-05-28T02:46:58.675301+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_runtime_leakage_guard",
+      "correctness_role": "prevents gold/category/tags/oracle/expected-trace leakage into runtime decisions",
+      "duration_ms": 0.0,
+      "effect": "asserts that candidate runtime receives only prompt/runtime fields, not evaluator metadata",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER"
+      },
+      "output": {
+        "category_tags_visible": false,
+        "expected_trace_visible": false,
+        "oracle_sql_visible": false,
+        "prompt_id_specific_branching": false,
+        "query_id_specific_branching": false,
+        "runtime_gold_visible": false,
+        "runtime_input_fields": {
+          "items": [
+            "query"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "runtime safety",
+      "technique": "runtime input isolation guard",
+      "timestamp": "2026-05-28T02:46:58.675316+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_score_provenance_guard",
+      "correctness_role": "prevents simulated or gold-visible scores from being treated as runtime evidence",
+      "duration_ms": 0.0,
+      "effect": "marks candidate runs as real-agent runtime executions without promotion judgment",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER"
+      },
+      "output": {
+        "organizer_equivalent": false,
+        "promotion_eligible": false,
+        "promotion_judgment_run": false,
+        "real_agent_execution": true,
+        "runtime_gold_visible": false,
+        "score_source": "runtime_candidate",
+        "strategy": "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER",
+        "synthetic_trace": false
+      },
+      "stage": "runtime safety",
+      "technique": "score provenance guard",
+      "timestamp": "2026-05-28T02:46:58.675320+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_00_prompt_router",
+      "correctness_role": "routes data questions to evidence tools instead of unsupported direct answers",
+      "duration_ms": 0.0,
+      "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
+      "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
+      "input_summary": {
+        "query": "Which tags belong to the category 'Uncategorized'?"
+      },
+      "output": {
+        "confidence": 0.9,
+        "matched_rules": {
+          "items": [
+            "api_only:tag"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "mode": "API_ONLY",
+        "reason": "API/platform family keyword(s): tag, tags.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": true,
+        "requires_database": false,
+        "risk": "medium",
+        "truncated_fields": 1
+      },
+      "stage": "prompt routing",
+      "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
+      "timestamp": "2026-05-28T02:46:58.675345+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_simple_prompt_gate",
+      "correctness_role": "prevents direct answers for data questions that need SQL/API evidence",
+      "duration_ms": 0.0,
+      "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
+      "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
+      "input_summary": {
+        "query": "Which tags belong to the category 'Uncategorized'?"
+      },
+      "output": {
+        "confidence": 0.9,
+        "is_simple": false,
+        "reason": "API/platform family keyword(s): tag, tags.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      },
+      "stage": "input routing",
+      "technique": "simple prompt gate",
+      "timestamp": "2026-05-28T02:46:58.675361+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_02_query_normalization",
+      "correctness_role": "improves template and route matching across wording variants",
+      "duration_ms": 0.0,
+      "effect": "creates matching-friendly text while preserving the original query",
+      "efficiency_role": "reduces repeated fuzzy matching work downstream",
+      "input_summary": {
+        "query": "Which tags belong to the category 'Uncategorized'?"
+      },
+      "output": {
+        "matching_text": "which tag belong to the category 'uncategorized'?",
+        "normalized_query": "Which tags belong to the category 'Uncategorized'?",
+        "rewrites": {
+          "items": [
+            "important_plurals->singular"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "normalization",
+      "technique": "data cleaning / query normalization",
+      "timestamp": "2026-05-28T02:46:58.675402+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_03_query_tokens",
+      "correctness_role": "grounds names, IDs, dates, metrics, and statuses before planning",
+      "duration_ms": 0.0,
+      "effect": "extracts reusable query fields for routing, planning, and answers",
+      "efficiency_role": "avoids reparsing the query in later modules",
+      "input_summary": {
+        "normalized_query": "Which tags belong to the category 'Uncategorized'?"
+      },
+      "output": {
+        "domains": {
+          "items": [
+            "tags"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "quoted_entities": {
+          "items": [
+            "Uncategorized"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "tokenization",
+      "technique": "domain-aware tokenization/entity extraction",
+      "timestamp": "2026-05-28T02:46:58.675440+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_04_relevance_scoring",
+      "correctness_role": "keeps high-signal tables and endpoints near the planner",
+      "duration_ms": 0.0,
+      "effect": "selects a smaller, more relevant schema/API context",
+      "efficiency_role": "reduces metadata and prompt tokens when compact metadata is enabled",
+      "input_summary": {
+        "tokens": {
+          "domains": {
+            "items": [
+              "tags"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "quoted_entities": {
+            "items": [
+              "Uncategorized"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      },
+      "output": {
+        "top_answer_families": {
+          "items": [
+            "tags"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "top_apis": {
+          "items": [
+            "unified_tag_categories"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "top_join_hints": {
+          "items": [
+            "dim_campaign.CAMPAIGNID->br_campaign_segment.CAMPAIGNID"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "context selection",
+      "technique": "attention-style relevance scoring",
+      "timestamp": "2026-05-28T02:46:58.675596+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_value_entity_retrieval",
+      "correctness_role": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
+      "duration_ms": 0.0,
+      "effect": "grounds query entities against sampled local DB values before planning",
+      "efficiency_role": "uses a cached bounded value index with per-query scan and wall-time budgets",
+      "input_summary": {
+        "query_values": {
+          "items": [
+            {
+              "kind": "quoted_entity",
+              "text": "Uncategorized"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "budget_exceeded": true,
+        "match_count": 0,
+        "retrieval_ms": 12.68
+      },
+      "output": {
+        "active": true,
+        "cache_hit": true,
+        "cache_key": "a2f6025ad4340fb6",
+        "cache_key_algorithm": "sha256",
+        "cache_path": "[REDACTED]/outputs/cache/value_index_a2f6025ad4340fb6.json",
+        "cache_reproducible": true,
+        "match_count": 0,
+        "query_value_count": 1,
+        "truncated_fields": 8
+      },
+      "stage": "query understanding",
+      "technique": "CHESS-style value/entity retrieval",
+      "timestamp": "2026-05-28T02:46:58.676345+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_05_query_analysis",
+      "correctness_role": "aligns routing, metadata, planning, and reporting decisions",
+      "duration_ms": 0.0,
+      "effect": "computes shared query understanding once",
+      "efficiency_role": "avoids repeated template and routing analysis",
+      "input_summary": {
+        "domain_type": "UNKNOWN",
+        "route_type": "API_ONLY"
+      },
+      "output": {
+        "answer_family": "tags",
+        "api_templates": {
+          "items": [
+            "tag_categories"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "confidence": 0.3,
+        "domain_type": "UNKNOWN",
+        "fast_path": "tag_categories+tags_by_uncategorized_category",
+        "route_type": "API_ONLY",
+        "strategy": "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER"
+      },
+      "stage": "routing",
+      "technique": "branch prediction / QueryAnalysis",
+      "timestamp": "2026-05-28T02:46:58.676353+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_06_lookup_path",
+      "correctness_role": "guides relationship-heavy SQL/API selection",
+      "duration_ms": 0.0,
+      "effect": "predicts the relevant table/join/API path",
+      "efficiency_role": "filters unrelated schema and endpoint candidates",
+      "input_summary": {
+        "answer_family": "tags",
+        "domain_type": "UNKNOWN"
+      },
+      "output": {
+        "api_families": {
+          "items": [
+            "tag_count"
+          ],
+          "total_items": 5,
+          "truncated_items": true
+        },
+        "api_mode": "required",
+        "family": "tags",
+        "required_ids": {
+          "items": [
+            "tag_id"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "stage": "path prediction",
+      "technique": "TLB-style lookup path prediction",
+      "timestamp": "2026-05-28T02:46:58.676356+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_07_context_card",
+      "correctness_role": "keeps required tables, columns, joins, and API candidates visible",
+      "duration_ms": 0.0,
+      "effect": "packs family-relevant context into metadata.json and the filled prompt",
+      "efficiency_role": "limits context size for non-baseline strategies",
+      "input_summary": {
+        "broad_context": false,
+        "lookup_path": "tags"
+      },
+      "output": {
+        "estimated_metadata_tokens": 686,
+        "prompt_tokens": 1313,
+        "selected_apis": {
+          "items": [
+            "unified_tag_categories"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "selected_card_name": "tags",
+        "selected_columns": {
+          "br_campaign_segment": {
+            "items": [
+              "SEGMENTID"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "dim_blueprint": {
+            "items": [
+              "BLUEPRINTTYPE"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "dim_campaign": {
+            "items": [
+              "UPDATEDTIME"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "dim_collection": {
+            "items": [
+              "ISIDENTITYENABLED"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "dim_connector": {
+            "items": [
+              "DATAFLOWNAME"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          }
+        },
+        "selected_tables": {
+          "items": [
+            "br_campaign_segment"
+          ],
+          "total_items": 5,
+          "truncated_items": true
+        }
+      },
+      "stage": "metadata packing",
+      "technique": "huge-page-style compact context card",
+      "timestamp": "2026-05-28T02:46:58.678146+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_08_candidate_plans",
+      "correctness_role": "prefers validated, family-matched plans",
+      "duration_ms": 0.0,
+      "effect": "selects one plan before execution",
+      "efficiency_role": "does not execute losing candidate plans",
+      "input_summary": {
+        "base_step_count": 2,
+        "strategy": "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER"
+      },
+      "output": {
+        "candidate_plan_names": {
+          "items": [
+            "generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "reason_selected": "highest pre-execution validation/relevance/cost score",
+        "scores": {
+          "generic_sql_first": 14.2744
+        },
+        "selected_plan": "generic_sql_first"
+      },
+      "stage": "planning",
+      "technique": "pre-execution plan ensemble",
+      "timestamp": "2026-05-28T02:46:58.678443+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_09_plan_optimization",
+      "correctness_role": "drops unresolved placeholder calls unless explicitly warned",
+      "duration_ms": 0.0,
+      "effect": "removes duplicate, skippable, or unsafe calls before validation",
+      "efficiency_role": "enforces a bounded plan before execution",
+      "input_summary": {
+        "original_step_count": 2
+      },
+      "output": {
+        "call_budget_applied": false,
+        "optimized_step_count": 2,
+        "optimizer_actions": {
+          "items": [
+            "ensemble selected generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "original_step_count": 2,
+        "removed_api_skip_calls": 0,
+        "removed_duplicate_calls": 0,
+        "unresolved_placeholders_removed": 0
+      },
+      "stage": "optimization",
+      "technique": "compiler-style plan optimization",
+      "timestamp": "2026-05-28T02:46:58.678451+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_10_evidence_policy",
+      "correctness_role": "keeps API calls for API-only/live families",
+      "duration_ms": 0.0,
+      "effect": "decides when API evidence is required, optional, or unnecessary",
+      "efficiency_role": "skips or caps API calls when SQL evidence is enough",
+      "input_summary": {
+        "answer_family": "tags",
+        "route_type": "API_ONLY"
+      },
+      "output": {
+        "allowed_api_families": {
+          "items": [
+            "tag_categories"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "max_api_calls": 2,
+        "mode": "API_REQUIRED",
+        "reason": "Route is API-only."
+      },
+      "stage": "evidence policy",
+      "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
+      "timestamp": "2026-05-28T02:46:58.678454+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_11_call_budget",
+      "correctness_role": "preserves required grounding steps",
+      "duration_ms": 0.0,
+      "effect": "keeps tool calls within per-family limits",
+      "efficiency_role": "prevents accidental extra SQL/API calls",
+      "input_summary": {
+        "planned_steps": {
+          "items": [
+            {
+              "action": "api",
+              "family": "tag_categories",
+              "method": "GET",
+              "params": {
+                "limit": "100"
+              },
+              "purpose": "API parameter template: tag_categories.",
+              "url": "https://experience.adobe.io/unifiedtags/tagCategory"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "final_planned_calls": 2,
+        "max_api_calls": 2,
+        "max_sql_calls": 1,
+        "max_total_tool_calls": 3,
+        "planned_api_calls": 2,
+        "planned_sql_calls": 0
+      },
+      "stage": "efficiency control",
+      "technique": "tool-call budgeting",
+      "timestamp": "2026-05-28T02:46:58.678470+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_12_validation",
+      "correctness_role": "blocks unsafe SQL and unknown/unresolved API calls",
+      "duration_ms": 0.0,
+      "effect": "records whether planned SQL/API calls were safe to execute",
+      "efficiency_role": "prevents wasted execution on invalid calls",
+      "input_summary": {
+        "optimized_steps": {
+          "items": [
+            {
+              "action": "api",
+              "family": "tag_categories",
+              "method": "GET",
+              "params": {
+                "limit": "100"
+              },
+              "purpose": "API parameter template: tag_categories.",
+              "url": "https://experience.adobe.io/unifiedtags/tagCategory"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "api_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "stage": "validation",
+      "technique": "SQL/API safety validation",
+      "timestamp": "2026-05-28T02:46:59.336221+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_13_tool_execution",
+      "correctness_role": "records row counts, dry-run state, and API status for final answer grounding",
+      "duration_ms": 0.0,
+      "effect": "captures the actual SQL/API evidence gathered by the backend",
+      "efficiency_role": "makes tool-call count and result previews explicit",
+      "input_summary": {
+        "validated_step_count": 2
+      },
+      "output": {
+        "api_calls_executed": 2,
+        "api_results": {
+          "items": [
+            {
+              "dry_run": false,
+              "method": "GET",
+              "ok": true,
+              "result_preview": {
+                "dry_run": false,
+                "endpoint_family": "unified_tag_categories",
+                "error_category": "live_evidence",
+                "evidence_state": "live_evidence",
+                "live_success": false,
+                "ok": true,
+                "status_code": 200,
+                "truncated_fields": 1,
+                "usable_evidence": false
+              },
+              "status_code": 200,
+              "url": "https://experience.adobe.io/unifiedtags/tagCategory"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "api_status_codes": {
+          "items": [
+            200
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "dry_run_status": false,
+        "sql_calls_executed": 0
+      },
+      "stage": "execution",
+      "technique": "SQL/API tool execution",
+      "timestamp": "2026-05-28T02:46:59.336531+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_14_evidence_bus",
+      "correctness_role": "passes exact IDs, names, counts, timestamps, and statuses without text guessing",
+      "duration_ms": 0.0,
+      "effect": "forwards structured facts to API params and answer slots",
+      "efficiency_role": "avoids repeated lookup or reparsing work",
+      "input_summary": {
+        "tool_result_count": 2
+      },
+      "output": {
+        "evidence": {
+          "api_counts": {
+            "items": [
+              1
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "api_ids": {
+            "items": [
+              "Uncategorized-[REDACTED]"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "api_names": {
+            "items": [
+              "Uncategorized"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "api_timestamps": {
+            "items": [
+              "1722607035000"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "counts": {
+            "items": [
+              1
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "ids": {
+            "id": "e8cc16ae-a9fc-4932-9881-37c0a4f9851a"
+          },
+          "names": {
+            "items": [
+              "AI-Generated"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "timestamps": {
+            "items": [
+              "{'createdAt': '1722607035000'}"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "truncated_fields": 6
+        }
+      },
+      "stage": "evidence forwarding",
+      "technique": "operand forwarding / EvidenceBus",
+      "timestamp": "2026-05-28T02:46:59.336540+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_quality_classifier",
+      "correctness_role": "keeps SQL zero rows, live_empty, API errors, and required API missing distinct",
+      "duration_ms": 0.0,
+      "effect": "classifies SQL/API evidence quality before answer rendering",
+      "efficiency_role": "uses executed tool payloads without extra calls",
+      "input_summary": {
+        "api_required": true,
+        "tool_result_count": 2
+      },
+      "output": {
+        "api": {
+          "items": [
+            "API_DIRECT_ANSWER"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "api_error_is_unavailable": false,
+        "live_empty_scoped": false,
+        "sql": {
+          "items": [
+            "SQL_NOT_RUN"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "answer synthesis",
+      "technique": "SQL/API evidence quality classification",
+      "timestamp": "2026-05-28T02:46:59.336555+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_grounded_answer_builder",
+      "correctness_role": "uses exact available values and scoped caveats without inventing missing roles",
+      "duration_ms": 0.0,
+      "effect": "renders final answer from EvidenceBus-derived answer slots and evidence quality classes",
+      "efficiency_role": "uses no extra SQL/API/LLM calls",
+      "input_summary": {
+        "api_required": true,
+        "tool_result_count": 2
+      },
+      "output": {
+        "answer": "Results: {limit=100, count=1}; {id=e8cc16ae-a9fc-4932-9881-37c0a4f9851a, name=AI-Generated}; {id=029025d2-fe85-4150-93ee-78a5da1feccd, name=cool [truncated]",
+        "evidence_quality": {
+          "api": {
+            "items": [
+              "API_DIRECT_ANSWER"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "api_error_is_unavailable": false,
+          "live_empty_scoped": false,
+          "sql": {
+            "items": [
+              "SQL_NOT_RUN"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        },
+        "renderer": {
+          "answer": "Results: {limit=100, count=1}; {id=e8cc16ae-a9fc-4932-9881-37c0a4f9851a, name=AI-Generated}; {id=029025d2-fe85-4150-93ee-78a5da1feccd, name=cool [truncated]",
+          "rendered_fields": {
+            "items": [
+              "id"
+            ],
+            "total_items": 4,
+            "truncated_items": true
+          },
+          "shape": "list",
+          "unsupported_claims_count": 0
+        },
+        "unsupported_claims_count": 0
+      },
+      "stage": "answer synthesis",
+      "technique": "EvidenceBus-centered grounded answer builder",
+      "timestamp": "2026-05-28T02:46:59.342548+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_answer_candidate_selector",
+      "correctness_role": "selects only verifier-safe answers using AnswerSlots/EvidenceBus coverage, not gold labels",
+      "duration_ms": 0.0,
+      "effect": "restores strong same-evidence rendering when LLM wording omits requested roles",
+      "efficiency_role": "uses local scoring without extra SQL/API calls",
+      "input_summary": {
+        "candidate_count": 3,
+        "unsupported_claims": 0
+      },
+      "output": {
+        "preview": "{\"selected_answer\": \"Based on live API evidence, the Uncategorized category contains at least 5 visible tag(s): AI-Generated, cool, new clients, [truncated]",
+        "truncated": true
+      },
+      "stage": "answer selection",
+      "technique": "runtime evidence coverage answer selection",
+      "timestamp": "2026-05-28T02:47:03.612810+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_15_answer_slots",
+      "correctness_role": "makes final response generation evidence-grounded",
+      "duration_ms": 0.0,
+      "effect": "turns raw tool results into typed evidence fields",
+      "efficiency_role": "keeps answer context compact",
+      "input_summary": {
+        "tool_result_count": 2
+      },
+      "output": {
+        "answer_intent": "LIST",
+        "discrepancy_flags": {
+          "sql_api_discrepancy": false
+        },
+        "dry_run_flags": {
+          "dry_run": false
+        },
+        "slots": {
+          "answer_family": "tags",
+          "api_error": false,
+          "api_item_count": 5,
+          "discrepancy": false,
+          "dry_run": false,
+          "entity_ids": {
+            "items": [
+              "e8cc16ae-a9fc-4932-9881-37c0a4f9851a"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "entity_names": {
+            "items": [
+              "Uncategorized"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names"
+            ],
+            "total_items": 10,
+            "truncated_items": true
+          },
+          "truncated_fields": 10
+        }
+      },
+      "stage": "answer synthesis",
+      "technique": "structured answer slot extraction",
+      "timestamp": "2026-05-28T02:47:03.613163+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_answer_slot_renderer",
+      "correctness_role": "makes omitted or unavailable roles explicit",
+      "duration_ms": 0.0,
+      "effect": "records how requested fields were rendered from answer slots",
+      "efficiency_role": "avoids LLM answer rewriting in the candidate path",
+      "input_summary": {
+        "slots": {
+          "answer_family": "tags",
+          "api_error": false,
+          "api_item_count": 5,
+          "discrepancy": false,
+          "dry_run": false,
+          "entity_ids": {
+            "items": [
+              "e8cc16ae-a9fc-4932-9881-37c0a4f9851a"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "entity_names": {
+            "items": [
+              "Uncategorized"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names"
+            ],
+            "total_items": 10,
+            "truncated_items": true
+          },
+          "truncated_fields": 10
+        }
+      },
+      "output": {
+        "answer": "Results: {limit=100, count=1}; {id=e8cc16ae-a9fc-4932-9881-37c0a4f9851a, name=AI-Generated}; {id=029025d2-fe85-4150-93ee-78a5da1feccd, name=cool [truncated]",
+        "rendered_fields": {
+          "items": [
+            "id"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "shape": "list",
+        "unsupported_claims_count": 0
+      },
+      "stage": "answer synthesis",
+      "technique": "deterministic answer-slot rendering",
+      "timestamp": "2026-05-28T02:47:03.613187+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_final_answer_claim_extractor",
+      "correctness_role": "keeps style flexible while making factual boundaries explicit",
+      "duration_ms": 0.0,
+      "effect": "extracts only hard factual claim candidates from free-form answer wording",
+      "efficiency_role": "uses deterministic text scanning with no tool calls",
+      "input_summary": {
+        "final_answer_length": 188
+      },
+      "output": {
+        "claim_count": 5,
+        "claims": {
+          "items": [
+            {
+              "hardness": "HARD",
+              "span": "e8cc16ae-a9fc-4932-9881-37c0a4f9851a",
+              "text": "e8cc16ae-a9fc-4932-9881-37c0a4f9851a",
+              "type": "ID",
+              "value": "e8cc16ae-a9fc-4932-9881-37c0a4f9851a"
+            }
+          ],
+          "total_items": 5,
+          "truncated_items": true
+        }
+      },
+      "stage": "answer verification",
+      "technique": "final-answer factual claim extraction",
+      "timestamp": "2026-05-28T02:47:03.613194+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_final_answer_claim_matcher",
+      "correctness_role": "blocks invented counts, IDs, statuses, dates, relationships, and over-broad no-data claims",
+      "duration_ms": 0.0,
+      "effect": "matches hard claims against EvidenceBus and AnswerSlots allowed facts",
+      "efficiency_role": "uses local normalized indexes without extra tools",
+      "input_summary": {
+        "allowed_fact_index_fields": {
+          "items": [
+            "counts"
+          ],
+          "total_items": 11,
+          "truncated_items": true
+        }
+      },
+      "output": {
+        "matches": {
+          "items": [
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "e8cc16ae-a9fc-4932-9881-37c0a4f9851a",
+                "text": "e8cc16ae-a9fc-4932-9881-37c0a4f9851a",
+                "type": "ID",
+                "value": "e8cc16ae-a9fc-4932-9881-37c0a4f9851a"
+              },
+              "reason": "id",
+              "status": "SUPPORTED"
+            }
+          ],
+          "total_items": 5,
+          "truncated_items": true
+        }
+      },
+      "stage": "answer verification",
+      "technique": "allowed-fact deterministic claim matching",
+      "timestamp": "2026-05-28T02:47:03.613201+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_grounded_final_answer_verifier",
+      "correctness_role": "prevents factual overreach without enforcing deterministic template text",
+      "duration_ms": 0.0,
+      "effect": "accepts natural wording only when factual claims stay inside allowed evidence",
+      "efficiency_role": "falls back locally when no safe LLM answer is available",
+      "input_summary": {
+        "llm_backend_used": true
+      },
+      "output": {
+        "action": "FALLBACK_DETERMINISTIC",
+        "fallback_used": true,
+        "ok": false,
+        "rewrite_attempted": false,
+        "rewrite_success": false,
+        "unsupported_claims": {
+          "items": [
+            {
+              "hardness": "HARD",
+              "span": "100",
+              "text": "100",
+              "type": "COUNT",
+              "value": "100"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "answer verification",
+      "technique": "flexible wording bounded-fact final-answer verifier",
+      "timestamp": "2026-05-28T02:47:03.613208+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_answer_rewrite_feedback",
+      "correctness_role": "keeps rewrite feedback fact-only and excludes gold/category/oracle metadata",
+      "duration_ms": 0.0,
+      "effect": "records blocked claims and allowed facts for one bounded rewrite attempt",
+      "efficiency_role": "uses at most one rewrite attempt before deterministic fallback",
+      "input_summary": {
+        "rewrite_attempted": false
+      },
+      "output": {
+        "preview": "{\"task\": \"REWRITE_FINAL_ANSWER\", \"blocked_claims\": {\"items\": [{\"claim\": \"100\", \"type\": \"COUNT\", \"value\": \"100\", \"issue\": \"UNSUPPORTED_COUNT\"}], [truncated]",
+        "truncated": true
+      },
+      "stage": "answer verification",
+      "technique": "compact rewrite feedback for failed grounded answer verification",
+      "timestamp": "2026-05-28T02:47:03.613213+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_final_answer_minimal_correction_feedback",
+      "correctness_role": "keeps free wording while preventing factual overreach",
+      "duration_ms": 0.0,
+      "effect": "sends only blocked claims and relevant allowed facts to the rewrite LLM",
+      "efficiency_role": "avoids resending full evidence cards on rewrite",
+      "input_summary": {
+        "rewrite_attempted": false
+      },
+      "output": {
+        "preview": "{\"task\": \"REWRITE_FINAL_ANSWER\", \"blocked_claims\": {\"items\": [{\"claim\": \"100\", \"type\": \"COUNT\", \"value\": \"100\", \"issue\": \"UNSUPPORTED_COUNT\"}], [truncated]",
+        "truncated": true
+      },
+      "stage": "answer verification",
+      "technique": "minimal correction feedback for final-answer rewrite",
+      "timestamp": "2026-05-28T02:47:03.613218+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_final_answer_rewrite_result",
+      "correctness_role": "does not keep unsupported rewritten answers",
+      "duration_ms": 0.0,
+      "effect": "records whether one rewrite fixed verifier conflicts",
+      "efficiency_role": "limits correction to one rewrite",
+      "input_summary": {
+        "first_pass_ok": false
+      },
+      "output": {
+        "rewrite_attempted": false,
+        "rewrite_success": false,
+        "unsupported_after_revision": 1
+      },
+      "stage": "answer verification",
+      "technique": "single final-answer rewrite result",
+      "timestamp": "2026-05-28T02:47:03.613224+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_final_answer_fallback_if_any",
+      "correctness_role": "preserves unsupported-claims target",
+      "duration_ms": 0.0,
+      "effect": "falls back to deterministic AnswerSlotRenderer when bounded LLM wording fails",
+      "efficiency_role": "uses no extra tool calls",
+      "input_summary": {
+        "fallback_used": true
+      },
+      "output": {
+        "fallback_reason": "verifier_failed_after_rewrite",
+        "fallback_used": true,
+        "semantic_certainty_claimed": false
+      },
+      "stage": "answer verification",
+      "technique": "deterministic final-answer fallback",
+      "timestamp": "2026-05-28T02:47:03.613229+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_16_answer_verification",
+      "correctness_role": "blocks unsupported numbers, entities, timestamps, statuses, and dry-run API confirmation",
+      "duration_ms": 0.0,
+      "effect": "checks final-answer claims against SQL/API evidence",
+      "efficiency_role": "rewrites safely without extra tool calls",
+      "input_summary": {
+        "claim_count": 3,
+        "slots_present": {
+          "items": [
+            "entity_names"
+          ],
+          "total_items": 10,
+          "truncated_items": true
+        }
+      },
+      "output": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "rewrite_applied": false,
+        "supported_claims_count": 3,
+        "unsupported_claims_count": 0,
+        "verifier_passed": true
+      },
+      "stage": "answer verification",
+      "technique": "claim verification / groundedness checking",
+      "timestamp": "2026-05-28T02:47:03.613243+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_17_answer_reranking",
+      "correctness_role": "prefers verifier-passing and intent-matched answers",
+      "duration_ms": 0.0,
+      "effect": "selects the safest answer from same-evidence candidates",
+      "efficiency_role": "uses no additional SQL/API/LLM calls",
+      "input_summary": {
+        "answer_family": "tags"
+      },
+      "output": {
+        "candidate_count": 3,
+        "selected_candidate_type": "LEGACY_SAFE_RENDERER",
+        "selection_reason": "Selected the verifier-safe same-evidence answer with the best runtime role coverage; no benchmark gold/category/oracle fields are used."
+      },
+      "stage": "answer selection",
+      "technique": "deterministic answer reranking",
+      "timestamp": "2026-05-28T02:47:03.613249+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "correctness_role": "final answer remains tied to evidence and caveats",
+      "duration_ms": 0.0,
+      "effect": "returns the final concise answer to the agent harness",
+      "efficiency_role": "keeps response concise",
+      "input_summary": {
+        "verifier_passed": true
+      },
+      "output": {
+        "answer_length": 188,
+        "final_answer": "Based on live API evidence, the Uncategorized category contains at least 5 visible tag(s): AI-Generated, cool, new clients, sublist, and test. T [truncated]",
+        "final_token_estimate": 42
+      },
+      "stage": "final response",
+      "technique": "concise grounded final response",
+      "timestamp": "2026-05-28T02:47:03.613345+00:00"
+    },
+    {
+      "active": true,
+      "checkpoint_id": "checkpoint_official_token_reduction",
+      "correctness_impact_expected": false,
+      "estimated_tokens_after": 1002,
+      "estimated_tokens_before": 1498,
+      "expected_savings": 496,
+      "packaged_execution_changed": false,
+      "reduced_fields": [
+        "steps[0].candidate_apis",
+        "steps[0].candidate_tables",
+        "steps[2].metadata_path",
+        "steps[3].rationale",
+        "steps[3].steps",
+        "steps[6].result.preview"
+      ]
+    }
+  ],
+  "domain_type": "UNKNOWN",
+  "errors": [],
+  "estimated_tokens": 1002,
+  "execution_time": 0.6560081248171628,
+  "final_answer": "Based on live API evidence, the Uncategorized category contains at least 5 visible tag(s): AI-Generated, cool, new clients, sublist, and test. The category metadata reports 1 total tag(s).",
+  "original_query": "Which tags belong to the category 'Uncategorized'?",
+  "planning_time": 0.0003260830417275429,
+  "preprocessing_time": 0.002784792333841324,
+  "query_id": "example_017",
+  "route_type": "API_ONLY",
+  "runtime": 4.981127499602735,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "journey_list",
+          "method": "GET",
+          "path": "/ajo/journey"
+        },
+        {
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences"
+        },
+        {
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions"
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign"
+      ],
+      "confidence": 0.2,
+      "domain_type": "UNKNOWN",
+      "kind": "route",
+      "reason": "Keyword routing found no domain keyword.",
+      "route_type": "API_ONLY"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "unified_tag_categories",
+          "unified_tag_detail"
+        ],
+        "lookup_paths": [
+          "tags"
+        ]
+      },
+      "rewrites": [
+        "important_plurals->singular"
+      ],
+      "tokens": {
+        "domains": [
+          "tags"
+        ],
+        "quoted_entities": [
+          "Uncategorized"
+        ]
+      },
+      "value_retrieval": {
+        "budget_exceeded": true,
+        "match_count": 0,
+        "matches": [],
+        "retrieval_ms": 12.68
+      }
+    },
+    {
+      "estimated_tokens": 686,
+      "kind": "metadata",
+      "metadata_path": "metadata.json",
+      "prompt_tokens": 1313
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: tag_categ [truncated]",
+      "steps": [
+        {
+          "action": "api",
+          "family": "tag_categories",
+          "method": "GET",
+          "params": {
+            "limit": "100"
+          },
+          "url": "https://experience.adobe.io/unifiedtags/tagCategory"
+        },
+        {
+          "action": "api",
+          "family": "tags_by_uncategorized_category",
+          "method": "GET",
+          "params": {
+            "limit": "100",
+            "tagCategoryId": "Uncategorized"
+          },
+          "url": "https://experience.adobe.io/unifiedtags/tags"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 14.2744
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 2
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "100"
+      },
+      "result": {
+        "dry_run": false,
+        "endpoint": "/unifiedtags/tagCategory",
+        "error": null,
+        "method": "GET",
+        "ok": true,
+        "params": {
+          "limit": "100"
+        },
+        "result_preview": {
+          "_page": {
+            "count": 1,
+            "limit": 100
+          },
+          "tags": {
+            "items": {
+              "items": [
+                {
+                  "createdAt": 1722607035000,
+                  "createdBy": "8AC21FE266602DE40A495FC7@8ac11fe266602de4495fc7.e",
+                  "id": "Uncategorized-[REDACTED]",
+                  "modifiedAt": 1722607035000,
+                  "modifiedBy": "8AC21FE266602DE40A495FC7@8ac11fe266602de4495fc7.e",
+                  "name": "Uncategorized",
+                  "org": "[REDACTED]",
+                  "tagCount": 5
+                }
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "total_items": 1,
+            "truncated_items": false
+          }
+        },
+        "truncated_fields": 3,
+        "url": "https://experience.adobe.io/unifiedtags/tagCategory"
+      },
+      "url": "https://experience.adobe.io/unifiedtags/tagCategory",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "100",
+        "tagCategoryId": "Uncategorized"
+      },
+      "result": {
+        "preview": "{\"error\": null, \"result_preview\": {\"preview\": \"{\\\"tags\\\": {\\\"items\\\": [{\\\"id\\\": \\\"e8cc16ae-a9fc-4932-9881-37c0a4f9851a\\\", \\\"name\\\": \\\"AI-Generat [truncated]",
+        "truncated": true
+      },
+      "url": "https://experience.adobe.io/unifiedtags/tags",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "answer_candidate_selector": {
+        "candidates": [
+          {
+            "answer": "Results: {limit=100, count=1}; {id=e8cc16ae-a9fc-4932-9881-37c0a4f9851a, name=AI-Generated}; {id=029025d2-fe85-4150-93ee-78a5da1feccd, name=cool}; {id=44ff3a90-3a0d-425c-9cc5-6a38514c833d, name=new clients}.",
+            "coverage_codes": [
+              "NAME_COVERED"
+            ],
+            "coverage_score": 3.15,
+            "covered_roles": [
+              "name"
+            ],
+            "missing_roles": [],
+            "source": "LLM_EVIDENCE_GROUNDED",
+            "unsupported_claims": 1,
+            "verification": {
+              "action": "FALLBACK_DETERMINISTIC",
+              "ok": false,
+              "unsupported_claims_count": 1
+            }
+          },
+          {
+            "answer": "Based on live API evidence, the Uncategorized category contains at least 5 visible tag(s): AI-Generated, cool, new clients, sublist, and test. The category metadata reports 1 total tag(s).",
+            "coverage_codes": [
+              "NAME_COVERED"
+            ],
+            "coverage_score": 4.0,
+            "covered_roles": [
+              "name"
+            ],
+            "missing_roles": [],
+            "source": "LEGACY_SAFE_RENDERER",
+            "unsupported_claims": 0,
+            "verification": {
+              "errors": [],
+              "ok": true,
+              "unsupported_claims_count": 0
+            }
+          },
+          {
+            "answer": "Results: {limit=100, count=1}; {id=e8cc16ae-a9fc-4932-9881-37c0a4f9851a, name=AI-Generated}; {id=029025d2-fe85-4150-93ee-78a5da1feccd, name=cool}; {id=44ff3a90-3a0d-425c-9cc5-6a38514c833d, name=new clients}.",
+            "coverage_codes": [
+              "NAME_COVERED"
+            ],
+            "coverage_score": 3.15,
+            "covered_roles": [
+              "name"
+            ],
+            "missing_roles": [],
+            "source": "DETERMINISTIC_FALLBACK",
+            "unsupported_claims": 0,
+            "verification": {
+              "errors": [],
+              "ok": true,
+              "unsupported_claims_count": 0
+            }
+          }
+        ],
+        "coverage_score": 4.0,
+        "selected_answer": "Based on live API evidence, the Uncategorized category contains at least 5 visible tag(s): AI-Generated, cool, new clients, sublist, and test. The category metadata reports 1 total tag(s).",
+        "selected_source": "LEGACY_SAFE_RENDERER",
+        "selection_codes": [
+          "SELECT_LEGACY_LLM_UNSUPPORTED",
+          "NAME_COVERED"
+        ],
+        "unsupported_claims": 0
+      },
+      "answer_family": "tags",
+      "answer_intent": "LIST",
+      "candidate_count": 3,
+      "completeness_missing_fields": [],
+      "evidence_grounded_answer_builder": {
+        "answer": "Results: {limit=100, count=1}; {id=e8cc16ae-a9fc-4932-9881-37c0a4f9851a, name=AI-Generated}; {id=029025d2-fe85-4150-93ee-78a5da1feccd, name=cool}; {id=44ff3a90-3a0d-425c-9cc5-6a38514c833d, name=new clients}.",
+        "evidence_quality": {
+          "api": [
+            "API_DIRECT_ANSWER"
+          ],
+          "api_error_is_unavailable": false,
+          "caveats": [],
+          "conflict": [],
+          "live_empty_scoped": false,
+          "sql": [
+            "SQL_NOT_RUN"
+          ]
+        },
+        "renderer": {
+          "answer": "Results: {limit=100, count=1}; {id=e8cc16ae-a9fc-4932-9881-37c0a4f9851a, name=AI-Generated}; {id=029025d2-fe85-4150-93ee-78a5da1feccd, name=cool}; {id=44ff3a90-3a0d-425c-9cc5-6a38514c833d, name=new clients}.",
+          "caveats": [],
+          "missing_fields": [],
+          "rendered_fields": [
+            "id",
+            "name",
+            "status",
+            "timestamp"
+          ],
+          "shape": "list",
+          "unsupported_claims_count": 0
+        },
+        "unsupported_claims_count": 0
+      },
+      "evidence_grounded_llm_answer_generator": {
+        "debug": {
+          "backend_available": true,
+          "backend_fallback_attempts": [
+            {
+              "available": true,
+              "category": "LLM_BACKEND_AUTH_FAILED",
+              "client_class": "OpenRouterLLMClient",
+              "content_length": 0,
+              "llm_client_name": "openrouter",
+              "raw_response_error_category": "auth_or_401",
+              "raw_response_ok": false,
+              "source": "primary"
+            },
+            {
+              "available": true,
+              "category": null,
+              "client_class": "OpenAILLMClient",
+              "content_length": 207,
+              "llm_client_name": "openai",
+              "raw_response_error_category": null,
+              "raw_response_ok": true,
+              "source": "fallback"
+            }
+          ],
+          "backend_fallback_used": true,
+          "estimated_prompt_tokens": 2269,
+          "exception_class": null,
+          "exception_message": null,
+          "extracted_content_length": 207,
+          "finish_reason": "stop",
+          "llm_client_class": "OpenAILLMClient",
+          "llm_client_name": "openai",
+          "llm_request_built": true,
+          "max_answer_tokens": 2048,
+          "raw_response_error_category": null,
+          "raw_response_error_present": false,
+          "raw_response_ok": true,
+          "raw_response_present": true,
+          "raw_response_shape": {
+            "choices_type": null,
+            "content_type": "str",
+            "keys": [
+              "backend_type",
+              "base_url",
+              "content",
+              "error",
+              "finish_reason",
+              "message",
+              "model",
+              "ok",
+              "provider",
+              "raw_preview",
+              "sdk_path_used",
+              "skipped"
+            ],
+            "output_text_present": false,
+            "output_type": null,
+            "type": "dict"
+          },
+          "request_message_count": 2
+        },
+        "fallback_used": true,
+        "feedback": {
+          "allowed_facts": [
+            {
+              "role": "COUNT",
+              "value": "1"
+            },
+            {
+              "role": "COUNT",
+              "value": "5"
+            }
+          ],
+          "allowed_rewrite": "Use supported count: 1.",
+          "blocked_claims": [
+            {
+              "claim": "100",
+              "issue": "UNSUPPORTED_COUNT",
+              "type": "COUNT",
+              "value": "100"
+            }
+          ],
+          "feedback_token_estimate": 109,
+          "forbidden_claim_types": [
+            "INVENTED_COUNT"
+          ],
+          "minimal_correction_feedback": {
+            "allowed_outputs": [
+              "REWRITE_WITH_ALLOWED_FACTS"
+            ],
+            "conflicts": [
+              {
+                "claim": "100",
+                "code": "UNSUPPORTED_COUNT",
+                "given": "100",
+                "required": "use only relevant allowed facts/caveats"
+              }
+            ],
+            "forbidden_outputs": [
+              "INVENTED_COUNT"
+            ],
+            "must_reconsider": [
+              "unsupported_claims",
+              "claim_scope",
+              "missing_roles"
+            ],
+            "output_schema": {
+              "answer": "string"
+            },
+            "previous_decision": {
+              "answer_action": "FALLBACK_DETERMINISTIC"
+            },
+            "task": "REWRITE_FINAL_ANSWER"
+          },
+          "task": "REWRITE_FINAL_ANSWER"
+        },
+        "final_answer": "Results: {limit=100, count=1}; {id=e8cc16ae-a9fc-4932-9881-37c0a4f9851a, name=AI-Generated}; {id=029025d2-fe85-4150-93ee-78a5da1feccd, name=cool}; {id=44ff3a90-3a0d-425c-9cc5-6a38514c833d, name=new clients}.",
+        "first_pass_ok": false,
+        "generator_category": null,
+        "generator_error": null,
+        "llm_backend_used": true,
+        "rewrite_attempted": false,
+        "rewrite_success": false,
+        "verification": {
+          "action": "FALLBACK_DETERMINISTIC",
+          "allowed_fact_index": {
+            "allowed_caveats": [],
+            "api_error_scopes": [],
+            "counts": [
+              "1",
+              "5"
+            ],
+            "dates": [
+              "{'createdat': '1722607035000'}",
+              "{'createdat': '1771356465184'}",
+              "1722607035000",
+              "1771356465184"
+            ],
+            "evidence_strings": [
+              "uncategorized-[redacted]",
+              "['ai-generated', 'cool', 'new clients', 'sublist', 'test']",
+              "[redacted]",
+              "1727469677827",
+              "1",
+              "['e8cc16ae-a9fc-4932-9881-37c0a4f9851a', '029025d2-fe85-4150-93ee-78a5da1feccd', '44ff3a90-3a0d-425c-9cc5-6a38514c833d', '51175a7f-aa60-4533-bef1-717b3cef7818', 'd249c614-fef1-4d2f-8e65-d8e62fa95021']",
+              "{'createdat': '1771356465184'}",
+              "44ff3a90-3a0d-425c-9cc5-6a38514c833d",
+              "d249c614-fef1-4d2f-8e65-d8e62fa95021",
+              "['uncategorized-[redacted]']",
+              "{'createdat': '1722607035000'}",
+              "100",
+              "1756149078235",
+              "8ac21fe266602de40a495fc7@8ac11fe266602de4495fc7.e",
+              "https://experience.adobe.io/unifiedtags/tags",
+              "ai-generated",
+              "[redacted]:uncategorized-[redacted]:new clients",
+              "[redacted]:uncategorized-[redacted]:test",
+              "029025d2-fe85-4150-93ee-78a5da1feccd",
+              "['uncategorized']",
+              "['uncategorized-87891e4066602d250a495f91@adobeorg']",
+              "false",
+              "[redacted]:uncategorized-[redacted]:sublist",
+              "1771356465184",
+              "https://experience.adobe.io/unifiedtags/tagcategory",
+              "cool",
+              "[redacted]:uncategorized-[redacted]:ai-generated",
+              "[redacted]:uncategorized-[redacted]:cool",
+              "1722607035000",
+              "5",
+              "51175a7f-aa60-4533-bef1-717b3cef7818",
+              "uncategorized",
+              "test",
+              "{'count': 1}",
+              "e8cc16ae-a9fc-4932-9881-37c0a4f9851a",
+              "1748463486496",
+              "{'count': 5}",
+              "new clients",
+              "sublist"
+            ],
+            "ids": [
+              "e8cc16ae-a9fc-4932-9881-37c0a4f9851a",
+              "029025d2-fe85-4150-93ee-78a5da1feccd",
+              "44ff3a90-3a0d-425c-9cc5-6a38514c833d",
+              "51175a7f-aa60-4533-bef1-717b3cef7818",
+              "d249c614-fef1-4d2f-8e65-d8e62fa95021",
+              "uncategorized-87891e4066602d250a495f91@adobeorg"
+            ],
+            "live_empty_scopes": [],
+            "missing_roles": [],
+            "names": [
+              "uncategorized",
+              "ai-generated",
+              "cool",
+              "new clients",
+              "sublist",
+              "test"
+            ],
+            "relationships": [],
+            "statuses": []
+          },
+          "ambiguous_claims": [],
+          "claim_extractor": {
+            "claim_count": 5,
+            "claims": [
+              {
+                "hardness": "HARD",
+                "span": "e8cc16ae-a9fc-4932-9881-37c0a4f9851a",
+                "text": "e8cc16ae-a9fc-4932-9881-37c0a4f9851a",
+                "type": "ID",
+                "value": "e8cc16ae-a9fc-4932-9881-37c0a4f9851a"
+              },
+              {
+                "hardness": "HARD",
+                "span": "029025d2-fe85-4150-93ee-78a5da1feccd",
+                "text": "029025d2-fe85-4150-93ee-78a5da1feccd",
+                "type": "ID",
+                "value": "029025d2-fe85-4150-93ee-78a5da1feccd"
+              },
+              {
+                "hardness": "HARD",
+                "span": "44ff3a90-3a0d-425c-9cc5-6a38514c833d",
+                "text": "44ff3a90-3a0d-425c-9cc5-6a38514c833d",
+                "type": "ID",
+                "value": "44ff3a90-3a0d-425c-9cc5-6a38514c833d"
+              },
+              {
+                "hardness": "HARD",
+                "span": "100",
+                "text": "100",
+                "type": "COUNT",
+                "value": "100"
+              },
+              {
+                "hardness": "HARD",
+                "span": "1",
+                "text": "1",
+                "type": "COUNT",
+                "value": "1"
+              }
+            ]
+          },
+          "claim_matcher": {
+            "matches": [
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "e8cc16ae-a9fc-4932-9881-37c0a4f9851a",
+                  "text": "e8cc16ae-a9fc-4932-9881-37c0a4f9851a",
+                  "type": "ID",
+                  "value": "e8cc16ae-a9fc-4932-9881-37c0a4f9851a"
+                },
+                "reason": "id",
+                "status": "SUPPORTED"
+              },
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "029025d2-fe85-4150-93ee-78a5da1feccd",
+                  "text": "029025d2-fe85-4150-93ee-78a5da1feccd",
+                  "type": "ID",
+                  "value": "029025d2-fe85-4150-93ee-78a5da1feccd"
+                },
+                "reason": "id",
+                "status": "SUPPORTED"
+              },
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "44ff3a90-3a0d-425c-9cc5-6a38514c833d",
+                  "text": "44ff3a90-3a0d-425c-9cc5-6a38514c833d",
+                  "type": "ID",
+                  "value": "44ff3a90-3a0d-425c-9cc5-6a38514c833d"
+                },
+                "reason": "id",
+                "status": "SUPPORTED"
+              },
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "100",
+                  "text": "100",
+                  "type": "COUNT",
+                  "value": "100"
+                },
+                "reason": "count_not_in_allowed_facts",
+                "status": "UNSUPPORTED"
+              },
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "1",
+                  "text": "1",
+                  "type": "COUNT",
+                  "value": "1"
+                },
+                "reason": "count",
+                "status": "SUPPORTED"
+              }
+            ]
+          },
+          "needs_caveat_claims": [],
+          "ok": false,
+          "over_specified_claims": [],
+          "supported_claims": [
+            {
+              "hardness": "HARD",
+              "span": "e8cc16ae-a9fc-4932-9881-37c0a4f9851a",
+              "text": "e8cc16ae-a9fc-4932-9881-37c0a4f9851a",
+              "type": "ID",
+              "value": "e8cc16ae-a9fc-4932-9881-37c0a4f9851a"
+            },
+            {
+              "hardness": "HARD",
+              "span": "029025d2-fe85-4150-93ee-78a5da1feccd",
+              "text": "029025d2-fe85-4150-93ee-78a5da1feccd",
+              "type": "ID",
+              "value": "029025d2-fe85-4150-93ee-78a5da1feccd"
+            },
+            {
+              "hardness": "HARD",
+              "span": "44ff3a90-3a0d-425c-9cc5-6a38514c833d",
+              "text": "44ff3a90-3a0d-425c-9cc5-6a38514c833d",
+              "type": "ID",
+              "value": "44ff3a90-3a0d-425c-9cc5-6a38514c833d"
+            },
+            {
+              "hardness": "HARD",
+              "span": "1",
+              "text": "1",
+              "type": "COUNT",
+              "value": "1"
+            }
+          ],
+          "unsupported_claims": [
+            {
+              "hardness": "HARD",
+              "span": "100",
+              "text": "100",
+              "type": "COUNT",
+              "value": "100"
+            }
+          ]
+        }
+      },
+      "kind": "answer_diagnostics",
+      "llm_answer_attempted": true,
+      "llm_answer_generation_skipped": false,
+      "rewrite_applied": false,
+      "selected_candidate_type": "LEGACY_SAFE_RENDERER",
+      "selection_reason": "Selected the verifier-safe same-evidence answer with the best runtime role coverage; no benchmark gold/category/oracle fields are used.",
+      "slots_present": [
+        "entity_names",
+        "entity_ids",
+        "counts",
+        "api_item_count",
+        "live_api_evidence_available",
+        "api_evidence_state",
+        "answer_slot_source",
+        "api_pagination",
+        "api_parser_modes",
+        "api_items"
+      ],
+      "unsupported_claims_count": 0,
+      "verifier_passed": true
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER",
+  "timings": {
+    "answer_time": 4.28386858291924,
+    "execution_time": 0.6560081248171628,
+    "planning_time": 0.0003260830417275429,
+    "preprocessing_time": 0.002784792333841324
+  },
+  "tool_call_count": 2
+}

@@ -7,10 +7,10 @@
 | Query | What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'? |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
 | Final answer | Based on live observability API evidence, timeseries.ingestion.dataset.recordsuccess.count values include: 2026-03-29 timeseries.ingestion.dataset.recordsuccess.count: 152120.0, 2026-03-30 timeseries.ingestion.dataset.recordsuccess.count: 16231.0, 2026-03-31 timeseries.ingestion.dataset.recordsuccess.count: 2701.0, 2026-03-16 timeseries.ingestion.dataset.recordsuccess.count: 0.0, 2026-03-17 timeseries.ingestion.dataset.recordsuccess.count: 0.0, 2026-03-18 timeseries.ingestion.dataset.recordsuccess.count: 0.0, 2026-03-19 timeseries.ingestion.dataset.recordsuccess.count: 0.0, and 2026-03-20 timeseries.ingestion.dataset.recordsuccess.count: 0.0. Other returned daily values were 0. |
-| Strict score | 0.5473 |
+| Strict score | 0.5385 |
 | Correctness score | 0.5712 |
 | Answer / SQL / API score | 0.1424 / None / 1.0 |
-| Tools / tokens / runtime | 1 / 1039 / 0.8299686666578054 |
+| Tools / tokens / runtime | 1 / 1039 / 3.4483957081101835 |
 
 ## Dataflow Graph
 
@@ -36,7 +36,7 @@ flowchart LR
 | 1 | checkpoint_01_raw_query | input | raw user query capture | unavailable | query=What are the daily 'timeseries.ingestion.dataset.recordsu...; query_id=example_033; strategy=SQL_FIRST_API_VERIFY | preserves the original query for reproducibility | yes | yes | no |
 | 2 | checkpoint_00_prompt_router | prompt routing | LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy | query=What are the daily 'timeseries.ingestion.dataset.recordsu... | confidence=0.84; reason=Local snapshot keyword(s) can be answered from DuckDB/par... | chooses whether the prompt can be answered directly or needs SQL/API evidence | yes | yes | no |
 | 3 | checkpoint_simple_prompt_gate | input routing | simple prompt gate | query=What are the daily 'timeseries.ingestion.dataset.recordsu... | confidence=0.84; is_simple=False; suggested_action=USE_DATA_PIPELINE; reason=Local snapshot keyword(s) can be answered from DuckDB/par... | lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend | yes | yes | no |
-| 4 | checkpoint_objective_prompt_features | semantic routing shadow | objective prompt feature extraction | query=What are the daily 'timeseries.ingestion.dataset.recordsu... | cap=2 item(s); count=1 item(s); cue=1 item(s); domain=1 item(s) | records fact-only prompt cues for semantic routing diagnostics | yes | yes | no |
+| 4 | checkpoint_objective_prompt_features | semantic routing shadow | objective prompt feature extraction | query=What are the daily 'timeseries.ingestion.dataset.recordsu... | cap=3 item(s); count=1 item(s); cue=1 item(s); domain=1 item(s) | records fact-only prompt cues for semantic routing diagnostics | yes | yes | no |
 | 5 | checkpoint_02_query_normalization | normalization | data cleaning / query normalization | query=What are the daily 'timeseries.ingestion.dataset.recordsu... | matching_text=what are the daily 'timeseries.ingestion.dataset.recordsu...; normalized_query=What are the daily 'timeseries.ingestion.dataset.recordsu... | creates matching-friendly text while preserving the original query | yes | yes | no |
 | 6 | checkpoint_03_query_tokens | tokenization | domain-aware tokenization/entity extraction | normalized_query=What are the daily 'timeseries.ingestion.dataset.recordsu... | dates=2 item(s); domains=2 item(s); metrics=1 item(s); quoted_entities=3 item(s) | extracts reusable query fields for routing, planning, and answers | yes | yes | no |
 | 7 | checkpoint_04_relevance_scoring | context selection | attention-style relevance scoring | tokens=4 field(s) | top_answer_families=2 item(s); top_apis=3 item(s) | selects a smaller, more relevant schema/API context | yes | yes | no |

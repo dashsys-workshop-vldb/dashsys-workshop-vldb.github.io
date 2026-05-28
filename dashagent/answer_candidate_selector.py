@@ -59,14 +59,19 @@ def select_answer_candidate(
             candidates=candidates,
         )
 
-    best = max(usable, key=lambda item: (float(item["coverage_score"]), _source_preference(str(item["source"]))))
     llm = next((item for item in candidates if item["source"] == "LLM_EVIDENCE_GROUNDED"), None)
     legacy = next((item for item in candidates if item["source"] == "LEGACY_SAFE_RENDERER"), None)
+    best = max(usable, key=lambda item: (float(item["coverage_score"]), _source_preference(str(item["source"]))))
+    if (
+        llm
+        and legacy
+        and str(best.get("source")) == "LLM_EVIDENCE_GROUNDED"
+        and not _llm_selection_allowed(llm, legacy, roles)
+        and legacy in usable
+    ):
+        best = legacy
     codes: list[str] = []
-    if llm and int(llm["unsupported_claims"]) > 0:
-        codes.append("REJECTED_UNSUPPORTED_LLM")
-    if llm and legacy and legacy["source"] == best["source"] and float(legacy["coverage_score"]) > float(llm["coverage_score"]):
-        codes.extend(_coverage_advantage_codes(llm, legacy))
+    codes.extend(_selection_reason_codes(best, llm, legacy))
     codes.extend(str(code) for code in best.get("coverage_codes", []))
     if not codes:
         codes.append("SELECTED_VERIFIED_HIGHEST_COVERAGE")
@@ -96,6 +101,15 @@ def _candidate(
     unsupported = int((verification or {}).get("unsupported_claims_count", 0) or 0)
     if verification is not None and not bool(verification.get("ok", True)):
         unsupported = max(unsupported, 1)
+    if _has_live_empty_global_overreach(text, slots):
+        unsupported = max(unsupported, 1)
+        verification = {
+            **(verification or {}),
+            "ok": False,
+            "unsupported_claims_count": unsupported,
+            "action": "FALLBACK_DETERMINISTIC",
+            "selector_safety_reason": "live_empty_global_overreach",
+        }
     coverage = _coverage(text, slots, roles)
     return {
         "source": source,
@@ -131,7 +145,14 @@ def _requested_roles(prompt: str, slots: AnswerSlots) -> list[str]:
         roles.append("count")
     if slots.answer_family == "observability_metrics" and slots.metrics:
         roles.append("metric_values")
-    if slots.sql_row_count == 0 or any(str(value) in {"0", "0.0"} for value in slots.counts):
+    positive_count_available = any(_numeric_value(value) > 0 for value in slots.counts)
+    zero_result_lookup = (
+        slots.sql_row_count == 0
+        and not positive_count_available
+        and not slots.entity_names
+        and re.search(r"\b(list|show|return|provide|available|records?|which|what)\b", norm)
+    )
+    if zero_result_lookup:
         roles.append("no_result")
     if "default" in norm and slots.answer_family == "merge_policy":
         roles.append("default_detail")
@@ -212,6 +233,8 @@ def _role_covered(role: str, answer_norm: str, slots: AnswerSlots) -> bool:
         value = str(slots.api_item_count)
         return bool(re.search(rf"(?<!\d){re.escape(value)}(?!\d)", answer_norm))
     if role == "no_result":
+        if "globally" in answer_norm or "anywhere" in answer_norm:
+            return False
         return any(
             phrase in answer_norm
             for phrase in (
@@ -274,6 +297,8 @@ def _answer_shape_quality(answer: str) -> float:
         score -= 0.75
     if lowered.startswith("results: {"):
         score -= 0.85
+    if lowered.startswith("based on the sql evidence"):
+        score -= 0.1
     if "api returned no matching records for this query/scope" in lowered:
         score -= 0.5
     if re.search(r"\b1[0-9]{12}\b", lowered) and lowered.startswith("date/time:"):
@@ -285,6 +310,66 @@ def _coverage_advantage_codes(llm: dict[str, Any], legacy: dict[str, Any]) -> li
     missing_llm = set(str(role) for role in llm.get("missing_roles") or [])
     covered_legacy = set(str(role) for role in legacy.get("covered_roles") or [])
     return [f"{role.upper()}_COVERAGE_ADVANTAGE" for role in sorted(missing_llm & covered_legacy)]
+
+
+def _selection_reason_codes(best: dict[str, Any], llm: dict[str, Any] | None, legacy: dict[str, Any] | None) -> list[str]:
+    codes: list[str] = []
+    if not llm:
+        return codes
+    llm_answer = str(llm.get("answer") or "").strip()
+    llm_unsupported = int(llm.get("unsupported_claims") or 0)
+    selected = str(best.get("source") or "")
+    if not llm_answer:
+        codes.append("SELECT_LEGACY_LLM_EMPTY")
+    elif llm_unsupported > 0:
+        codes.append("SELECT_LEGACY_LLM_UNSUPPORTED")
+    if selected == "LLM_EVIDENCE_GROUNDED":
+        if legacy and _same_role_coverage(llm, legacy) and _shape_score(llm) > _shape_score(legacy):
+            codes.append("SELECT_LLM_EQUAL_COVERAGE_BETTER_SHAPE")
+        else:
+            codes.append("SELECT_LLM_BETTER_COVERAGE")
+        return codes
+    if legacy and selected == "LEGACY_SAFE_RENDERER":
+        if llm_answer and llm_unsupported == 0 and set(llm.get("missing_roles") or []) & set(legacy.get("covered_roles") or []):
+            codes.append("SELECT_LEGACY_LLM_OMITS_ROLE")
+        elif llm_answer and llm_unsupported == 0 and float(legacy.get("coverage_score") or 0) > float(llm.get("coverage_score") or 0):
+            codes.append("SELECT_LEGACY_BETTER_COVERAGE")
+        elif llm_answer and llm_unsupported == 0:
+            codes.append("SELECT_LEGACY_SAFETY_FALLBACK")
+        if float(legacy.get("coverage_score") or 0) > float(llm.get("coverage_score") or 0):
+            codes.extend(_coverage_advantage_codes(llm, legacy))
+    elif selected == "DETERMINISTIC_FALLBACK":
+        codes.append("SELECT_LEGACY_SAFETY_FALLBACK")
+    return codes
+
+
+def _same_role_coverage(left: dict[str, Any], right: dict[str, Any]) -> bool:
+    return set(left.get("covered_roles") or []) == set(right.get("covered_roles") or []) and set(left.get("missing_roles") or []) == set(right.get("missing_roles") or [])
+
+
+def _llm_selection_allowed(llm: dict[str, Any], legacy: dict[str, Any], roles: list[str]) -> bool:
+    llm_score = float(llm.get("coverage_score") or 0)
+    legacy_score = float(legacy.get("coverage_score") or 0)
+    if int(llm.get("unsupported_claims") or 0) > 0 or not str(llm.get("answer") or "").strip():
+        return False
+    if _same_role_coverage(llm, legacy):
+        return _shape_score(llm) > _shape_score(legacy)
+    llm_covered = set(llm.get("covered_roles") or [])
+    legacy_covered = set(legacy.get("covered_roles") or [])
+    llm_missing = set(llm.get("missing_roles") or [])
+    newly_covered = llm_covered - legacy_covered
+    if legacy_score < 0 and llm_score > legacy_score and not llm_missing:
+        return True
+    simple_count_roles = set(roles) <= {"count", "local_scope", "scope", "caveat", "live_scope_caveat"}
+    if simple_count_roles and "count" in newly_covered and not llm_missing:
+        return True
+    if _shape_score(legacy) <= -0.75 and llm_score >= legacy_score and _shape_score(llm) > _shape_score(legacy):
+        return True
+    return False
+
+
+def _shape_score(candidate: dict[str, Any]) -> float:
+    return _answer_shape_quality(str(candidate.get("answer") or ""))
 
 
 def _source_preference(source: str) -> int:
@@ -307,6 +392,21 @@ def _role_weight(role: str) -> float:
     if role == "caveat":
         return 0.5
     return 1.0
+
+
+def _numeric_value(value: Any) -> float:
+    try:
+        text = re.sub(r"[^\d.-]", "", str(value))
+        return float(text) if text else 0.0
+    except Exception:
+        return 0.0
+
+
+def _has_live_empty_global_overreach(answer: str, slots: AnswerSlots) -> bool:
+    if str(slots.api_evidence_state or "").lower() not in {"live_empty", "live_empty_result"}:
+        return False
+    norm = normalize_text(answer)
+    return ("globally" in norm or "anywhere" in norm) and ("no matching" in norm or "there are no" in norm or "no data" in norm)
 
 
 def _status_terms(slots: AnswerSlots) -> list[str]:

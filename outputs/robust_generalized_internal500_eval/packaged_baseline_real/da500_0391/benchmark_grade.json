@@ -1,0 +1,521 @@
+{
+  "agent_executor_used": true,
+  "category_tags_domain_visible_to_runtime": false,
+  "engine": "real_agent",
+  "expected_trace_visible_to_runtime": false,
+  "extracted_runtime": {
+    "anti_hallucination_initial_fail": false,
+    "anti_hallucination_revision_attempted": false,
+    "anti_hallucination_revision_success": false,
+    "api_calls": 1,
+    "api_calls_added": 0,
+    "api_calls_saved": 0,
+    "api_families": [
+      "audit_events"
+    ],
+    "api_used": true,
+    "applied_decision_count": 0,
+    "applied_decision_records": [],
+    "behavior_changed": false,
+    "blocker_count": 0,
+    "checkpoint_names": [
+      "checkpoint_01_raw_query",
+      "checkpoint_00_prompt_router",
+      "checkpoint_simple_prompt_gate",
+      "checkpoint_objective_prompt_features",
+      "checkpoint_02_query_normalization",
+      "checkpoint_03_query_tokens",
+      "checkpoint_04_relevance_scoring",
+      "checkpoint_value_entity_retrieval",
+      "checkpoint_05_query_analysis",
+      "checkpoint_06_lookup_path",
+      "checkpoint_07_context_card",
+      "checkpoint_08_candidate_plans",
+      "checkpoint_09_plan_optimization",
+      "checkpoint_10_evidence_policy",
+      "checkpoint_11_call_budget",
+      "checkpoint_12_validation",
+      "checkpoint_13_tool_execution",
+      "checkpoint_14_evidence_bus",
+      "checkpoint_15_answer_slots",
+      "checkpoint_16_answer_verification",
+      "checkpoint_17_answer_reranking",
+      "checkpoint_18_final_answer"
+    ],
+    "estimated_total_tokens": 1026,
+    "fallback_count": 0,
+    "feature_flags_used": {
+      "combined_safe_applied": false,
+      "combined_safe_deterministic_promotion_candidate": false,
+      "post_sql_deterministic_applied": false,
+      "post_sql_llm_advisor_applied": false,
+      "robust_generalized_harness_candidate": false,
+      "semantic_no_tool_applied": false,
+      "staged_evidence_applied": false
+    },
+    "latest_code_paths_enabled": {
+      "compact_json_llm_context": false,
+      "evidence_bus_answer_verifier_token_reduction": true,
+      "no_tool_safety_verifier": false,
+      "objective_prompt_features": true,
+      "post_sql_api_call_verifier": false,
+      "post_sql_deterministic_policy": false,
+      "post_sql_llm_advisor": false,
+      "routing_anti_hallucination_gate": false,
+      "routing_feedback_revision": false,
+      "semantic_intent_classifier": false,
+      "semantic_route_decision_ladder": false,
+      "staged_evidence_policy": false
+    },
+    "missing_checkpoints": [
+      "checkpoint_semantic_route_decision_ladder",
+      "checkpoint_initial_evidence_branch_policy",
+      "checkpoint_post_sql_api_call_verifier"
+    ],
+    "observable_trace": {
+      "checkpoint_00_prompt_router": {
+        "confidence": 0.9,
+        "matched_rules": {
+          "items": [
+            "api_only:audit"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "mode": "API_ONLY",
+        "reason": "API/platform family keyword(s): audit.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": true,
+        "requires_database": false,
+        "risk": "medium",
+        "truncated_fields": 1
+      },
+      "checkpoint_01_raw_query": {
+        "query": "Explain what a audit event is and list current audit event objects if the live endpoint supports it. Include both the concept and requested evidence for the lifecycle memo.",
+        "query_id": "da500_0391",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "checkpoint_02_query_normalization": {
+        "matching_text": "explain what a audit event is and list current audit event objects if the live endpoint supports it. include both the concept and requested evidence for the lifecycle memo.",
+        "normalized_query": "Explain what a audit event is and list current audit event objects if the live endpoint supports it. Include both the concept and requested evidence for the lifecycle memo."
+      },
+      "checkpoint_03_query_tokens": {
+        "domains": {
+          "items": [
+            "audit",
+            "journey_campaign"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "statuses": {
+          "items": [
+            "live"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_04_relevance_scoring": {
+        "top_answer_families": {
+          "items": [
+            "audit_destination_mapping"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "top_apis": {
+          "items": [
+            "audit_events",
+            "audit_events_short",
+            "catalog_datasets"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_join_hints": {
+          "items": [
+            "dim_segment.SEGMENTID->hkg_br_segment_target.SEGMENTID",
+            "dim_target.TARGETID->hkg_br_segment_target.TARGETID",
+            "br_campaign_segment.SEGMENTID->dim_segment.SEGMENTID"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_tables": {
+          "items": [
+            "dim_collection",
+            "dim_segment",
+            "dim_target"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_05_query_analysis": {
+        "answer_family": "audit_destination_mapping",
+        "api_templates": {
+          "items": [
+            "audit_events"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "confidence": 0.65,
+        "domain_type": "JOURNEY_CAMPAIGN",
+        "route_type": "API_ONLY",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "checkpoint_06_lookup_path": {
+        "api_families": {
+          "items": [
+            "audit_create_events",
+            "audit_events",
+            "dataset_audit_changes"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "api_mode": "required",
+        "family": "audit",
+        "required_ids": {
+          "items": [
+            "collection_id",
+            "segment_id",
+            "target_id"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "tables": {
+          "items": [
+            "dim_collection",
+            "dim_segment",
+            "hkg_br_segment_target"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        }
+      },
+      "checkpoint_07_context_card": {
+        "estimated_metadata_tokens": 1005,
+        "prompt_tokens": 1684,
+        "selected_apis": {
+          "items": [
+            "audit_events"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "selected_card_name": "audit",
+        "selected_columns": {
+          "dim_collection": {
+            "items": [
+              "CREATEDCLIENTID",
+              "CREATEDTIME",
+              "NAME"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "dim_segment": {
+            "items": [
+              "CREATEDTIME",
+              "EVALUATIONCOMPLETEDTIME",
+              "LIFECYCLESTATUS"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "dim_target": {
+            "items": [
+              "CREATEDTIME",
+              "DATAFLOWNAME",
+              "NAME"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "hkg_br_segment_target": {
+            "items": [
+              "TARGETID",
+              "SEGMENTID",
+              "LABELSSEGMENT"
+            ],
+            "total_items": 4,
+            "truncated_items": true
+          }
+        },
+        "selected_tables": {
+          "items": [
+            "dim_collection",
+            "dim_segment",
+            "hkg_br_segment_target"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        }
+      },
+      "checkpoint_08_candidate_plans": {
+        "candidate_plan_names": {
+          "items": [
+            "generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "reason_selected": "highest pre-execution validation/relevance/cost score",
+        "scores": {
+          "generic_sql_first": 12.3896
+        },
+        "selected_plan": "generic_sql_first"
+      },
+      "checkpoint_09_plan_optimization": {
+        "call_budget_applied": false,
+        "optimized_step_count": 1,
+        "optimizer_actions": {
+          "items": [
+            "ensemble selected generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "original_step_count": 1,
+        "removed_api_skip_calls": 0,
+        "removed_duplicate_calls": 0,
+        "unresolved_placeholders_removed": 0
+      },
+      "checkpoint_10_evidence_policy": {
+        "allowed_api_families": {
+          "items": [
+            "audit_events"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "max_api_calls": 1,
+        "mode": "API_REQUIRED",
+        "reason": "Route is API-only."
+      },
+      "checkpoint_11_call_budget": {
+        "final_planned_calls": 1,
+        "max_api_calls": 1,
+        "max_sql_calls": 1,
+        "max_total_tool_calls": 2,
+        "planned_api_calls": 1,
+        "planned_sql_calls": 0
+      },
+      "checkpoint_12_validation": {
+        "api_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_13_tool_execution": {
+        "api_calls_executed": 1,
+        "api_results": {
+          "items": [
+            {
+              "dry_run": true,
+              "method": "GET",
+              "ok": false,
+              "result_preview": {
+                "caveat": "Adobe credentials unavailable; API call not executed.",
+                "dry_run": true,
+                "endpoint_family": "/data/foundation/audit/events",
+                "error_category": "dry_run_unavailable",
+                "evidence_state": "dry_run_unavailable",
+                "live_success": false,
+                "ok": false,
+                "usable_evidence": false
+              },
+              "url": "/data/foundation/audit/events"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "dry_run_status": true,
+        "sql_calls_executed": 0
+      },
+      "checkpoint_14_evidence_bus": {
+        "evidence": {}
+      },
+      "checkpoint_15_answer_slots": {
+        "answer_intent": "LIST",
+        "discrepancy_flags": {
+          "sql_api_discrepancy": false
+        },
+        "dry_run_flags": {
+          "dry_run": true
+        },
+        "missing_slots": {
+          "items": [
+            "list_items",
+            "dry_run_caveat"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "slots": {
+          "answer_family": "audit_destination_mapping",
+          "api_error": false,
+          "discrepancy": false,
+          "dry_run": true,
+          "slots_present": {
+            "items": [
+              "dry_run"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      },
+      "checkpoint_16_answer_verification": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "rewrite_applied": false,
+        "supported_claims_count": 0,
+        "unsupported_claims_count": 0,
+        "verifier_passed": true
+      },
+      "checkpoint_17_answer_reranking": {
+        "candidate_count": 0,
+        "selected_candidate_type": "base",
+        "selection_reason": "best verifier-passing answer"
+      },
+      "checkpoint_18_final_answer": {
+        "answer_length": 76,
+        "final_answer": "Live API verification was skipped because Adobe credentials are unavailable.",
+        "final_token_estimate": 11
+      },
+      "checkpoint_objective_prompt_features": {
+        "count": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "cue": {
+          "items": [
+            "EXPLAIN"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "domain": {
+          "items": [
+            "AUDIT"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "entity": {
+          "items": [
+            "ID_LIKE"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "norm": "explain what a audit event is and list current audit event objects if the live endpoint supports it. include both the concept and requested evidence for the lifecycle memo.",
+        "p": "Explain what a audit event is and list current audit event objects if the live endpoint supports it. Include both the concept and requested evidence for the lifecycle memo.",
+        "retr": {
+          "items": [
+            "LIST"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "status": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "truncated_fields": 12
+      },
+      "checkpoint_simple_prompt_gate": {
+        "confidence": 0.9,
+        "is_simple": false,
+        "reason": "API/platform family keyword(s): audit.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      },
+      "checkpoint_value_entity_retrieval": {
+        "active": true,
+        "cache_hit": true,
+        "cache_key": "599289929490dfbd",
+        "cache_key_algorithm": "sha256",
+        "cache_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/cache/value_index_599289929490dfbd.json",
+        "cache_reproducible": true,
+        "match_count": 0,
+        "query_value_count": 1,
+        "truncated_fields": 8
+      }
+    },
+    "post_sql_advisor_blocked": false,
+    "post_sql_advisor_checkpoint_present": false,
+    "post_sql_advisor_disabled_or_fallback": false,
+    "post_sql_advisor_invoked": false,
+    "post_sql_advisor_source": "UNKNOWN",
+    "post_sql_advisor_verified": false,
+    "post_sql_deterministic_fallback": false,
+    "post_sql_llm_advice_blocked": false,
+    "post_sql_llm_advisor_actual_call": false,
+    "post_sql_verifier_blocked": false,
+    "post_sql_verifier_source": "UNKNOWN",
+    "post_sql_verifier_verified": false,
+    "route_action": "API_ONLY",
+    "runtime_ms": 30.465999618172646,
+    "skipped_decision_count": 0,
+    "sql_calls": 0,
+    "sql_tables": [],
+    "sql_used": false,
+    "trajectory_timing": {},
+    "unsupported_claims": 0
+  },
+  "gold_visible_to_runtime": false,
+  "grade": {
+    "answer_grounding_score": 1.0,
+    "api_endpoint_family_accuracy": 1.0,
+    "api_error_interpretation_correct": true,
+    "api_required_used_accuracy": 1.0,
+    "behavior_score": 0.9583,
+    "combined_diagnostic_score": 0.85,
+    "expected_evidence_need_accuracy": 1.0,
+    "expected_observable_trace_score": 0.75,
+    "final_answer_correctness": 0.75,
+    "forbidden_claims_violation": false,
+    "live_empty_interpretation_correct": true,
+    "no_tool_false_negative": false,
+    "no_tool_false_positive": false,
+    "overall_score": 0.85,
+    "required_facts_coverage": 0.0,
+    "route_accuracy": 1.0,
+    "sql_required_used_accuracy": 1.0,
+    "sql_table_accuracy": 1.0,
+    "tool_overuse": 0,
+    "tool_underuse": 0,
+    "trace_observability_score": 0.25,
+    "unsupported_claims": 0
+  },
+  "mode": "packaged_baseline_real",
+  "oracle_visible_to_runtime": false,
+  "prompt_id": "da500_0391",
+  "runtime_input": {
+    "prompt": "Explain what a audit event is and list current audit event objects if the live endpoint supports it. Include both the concept and requested evidence for the lifecycle memo.",
+    "prompt_id": "da500_0391"
+  },
+  "synthetic_sql_results_used": false,
+  "trajectory_path": "outputs/robust_generalized_internal500_eval/packaged_baseline_real/da500_0391/trajectory.json"
+}

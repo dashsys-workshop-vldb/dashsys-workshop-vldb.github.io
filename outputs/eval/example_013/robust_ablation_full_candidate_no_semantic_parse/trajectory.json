@@ -1,0 +1,931 @@
+{
+  "answer_time": 0.0,
+  "api_call_count": 1,
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "correctness_role": "keeps later normalization from changing the user-facing question",
+      "duration_ms": 0.0,
+      "effect": "preserves the original query for reproducibility",
+      "efficiency_role": "starts one trace without extra tool calls",
+      "output": {
+        "query": "Show recent changes in datasets.",
+        "query_id": "example_013",
+        "strategy": "ROBUST_ABLATION_FULL_CANDIDATE_NO_SEMANTIC_PARSE"
+      },
+      "stage": "input",
+      "technique": "raw user query capture",
+      "timestamp": "2026-05-27T20:10:40.490473+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_runtime_leakage_guard",
+      "correctness_role": "prevents gold/category/tags/oracle/expected-trace leakage into runtime decisions",
+      "duration_ms": 0.0,
+      "effect": "asserts that candidate runtime receives only prompt/runtime fields, not evaluator metadata",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "ROBUST_ABLATION_FULL_CANDIDATE_NO_SEMANTIC_PARSE"
+      },
+      "output": {
+        "category_tags_visible": false,
+        "expected_trace_visible": false,
+        "oracle_sql_visible": false,
+        "prompt_id_specific_branching": false,
+        "query_id_specific_branching": false,
+        "runtime_gold_visible": false,
+        "runtime_input_fields": {
+          "items": [
+            "query",
+            "query_id",
+            "strategy"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "runtime safety",
+      "technique": "runtime input isolation guard",
+      "timestamp": "2026-05-27T20:10:40.490489+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_score_provenance_guard",
+      "correctness_role": "prevents simulated or gold-visible scores from being treated as runtime evidence",
+      "duration_ms": 0.0,
+      "effect": "marks candidate runs as real-agent runtime executions without promotion judgment",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "ROBUST_ABLATION_FULL_CANDIDATE_NO_SEMANTIC_PARSE"
+      },
+      "output": {
+        "organizer_equivalent": false,
+        "promotion_eligible": false,
+        "promotion_judgment_run": false,
+        "real_agent_execution": true,
+        "runtime_gold_visible": false,
+        "score_source": "runtime_candidate",
+        "strategy": "ROBUST_ABLATION_FULL_CANDIDATE_NO_SEMANTIC_PARSE",
+        "synthetic_trace": false
+      },
+      "stage": "runtime safety",
+      "technique": "score provenance guard",
+      "timestamp": "2026-05-27T20:10:40.490493+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_00_prompt_router",
+      "correctness_role": "routes data questions to evidence tools instead of unsupported direct answers",
+      "duration_ms": 0.0,
+      "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
+      "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
+      "input_summary": {
+        "query": "Show recent changes in datasets."
+      },
+      "output": {
+        "confidence": 0.84,
+        "matched_rules": {
+          "items": [
+            "local_db:dataset",
+            "local_db:show"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "mode": "LOCAL_DB_ONLY",
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: dataset, show.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": false,
+        "requires_database": true,
+        "risk": "low",
+        "truncated_fields": 1
+      },
+      "stage": "prompt routing",
+      "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
+      "timestamp": "2026-05-27T20:10:40.490520+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_simple_prompt_gate",
+      "correctness_role": "prevents direct answers for data questions that need SQL/API evidence",
+      "duration_ms": 0.0,
+      "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
+      "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
+      "input_summary": {
+        "query": "Show recent changes in datasets."
+      },
+      "output": {
+        "confidence": 0.84,
+        "is_simple": false,
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: dataset, show.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      },
+      "stage": "input routing",
+      "technique": "simple prompt gate",
+      "timestamp": "2026-05-27T20:10:40.490533+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_objective_prompt_features",
+      "correctness_role": "keeps semantic pre-routing separate from SQL/API planning and answer generation",
+      "duration_ms": 0.0,
+      "effect": "records fact-only prompt cues for semantic routing diagnostics",
+      "efficiency_role": "uses compact symbolic features before any optional LLM classification",
+      "input_summary": {
+        "query": "Show recent changes in datasets."
+      },
+      "output": {
+        "count": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "date": {
+          "items": [
+            "UPDATED"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "domain": {
+          "items": [
+            "DATASET"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "entity": {
+          "items": [
+            "ID_LIKE"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "norm": "show recent changes in datasets.",
+        "p": "Show recent changes in datasets.",
+        "retr": {
+          "items": [
+            "SHOW"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "status": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "truncated_fields": 12
+      },
+      "stage": "semantic routing shadow",
+      "technique": "objective prompt feature extraction",
+      "timestamp": "2026-05-27T20:10:40.490614+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_semantic_parse",
+      "correctness_role": "prevents keyword-only no-tool blocking or allowing decisions",
+      "duration_ms": 0.0,
+      "effect": "separates operation role, target grounding, instance level, and evidence need before route selection",
+      "efficiency_role": "adds compact parse metadata without executing tools",
+      "input_summary": {
+        "feature_codes": {
+          "count": {
+            "items": [],
+            "total_items": 0,
+            "truncated_items": false
+          },
+          "date": {
+            "items": [
+              "UPDATED"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "domain": {
+            "items": [
+              "DATASET"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "entity": {
+            "items": [
+              "ID_LIKE"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "norm": "show recent changes in datasets.",
+          "p": "Show recent changes in datasets.",
+          "retr": {
+            "items": [
+              "SHOW"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "status": {
+            "items": [],
+            "total_items": 0,
+            "truncated_items": false
+          },
+          "truncated_fields": 12
+        }
+      },
+      "output": {
+        "capability": {
+          "api_match": false,
+          "sql_match": false
+        },
+        "confidence": 0.0,
+        "evidence_need": "UNKNOWN",
+        "filters": {
+          "status": null
+        },
+        "no_tool_safe": false,
+        "operation": "UNKNOWN",
+        "source": "SEMANTIC_PARSE_DISABLED",
+        "target": {
+          "grounding": "UNKNOWN",
+          "instance_level": false
+        }
+      },
+      "stage": "semantic routing shadow",
+      "technique": "semantic role parse",
+      "timestamp": "2026-05-27T20:10:40.490835+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_semantic_intent_decision",
+      "correctness_role": "keeps no-tool candidates explicit for verifier review",
+      "duration_ms": 0.0,
+      "effect": "records semantic intent decision without generating SQL, API calls, or answers",
+      "efficiency_role": "measures whether conceptual false positives could avoid tools in a future gate",
+      "input_summary": {
+        "feature_codes": {
+          "count": {
+            "items": [],
+            "total_items": 0,
+            "truncated_items": false
+          },
+          "date": {
+            "items": [
+              "UPDATED"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "domain": {
+            "items": [
+              "DATASET"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "entity": {
+            "items": [
+              "ID_LIKE"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "norm": "show recent changes in datasets.",
+          "p": "Show recent changes in datasets.",
+          "retr": {
+            "items": [
+              "SHOW"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "status": {
+            "items": [],
+            "total_items": 0,
+            "truncated_items": false
+          },
+          "truncated_fields": 12
+        }
+      },
+      "output": {
+        "api": true,
+        "codes": {
+          "items": [
+            "FALLBACK"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "conf": 0.82,
+        "intent": "MIXED",
+        "need": "SQL_API",
+        "no_tool": false,
+        "sql": true
+      },
+      "stage": "semantic routing shadow",
+      "technique": "compact SemanticIntentDecision classification",
+      "timestamp": "2026-05-27T20:10:40.490846+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_routing_anti_hallucination_gate",
+      "correctness_role": "prevents LLM semantic hints from overriding objective data cues",
+      "duration_ms": 0.0,
+      "effect": "blocks unsupported no-tool or capability claims and records one-revision fallback state",
+      "efficiency_role": "limits revision feedback to compact codes and keeps packaged execution unchanged",
+      "input_summary": {
+        "semantic_intent": {
+          "api": true,
+          "codes": {
+            "items": [
+              "FALLBACK"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "conf": 0.82,
+          "intent": "MIXED",
+          "need": "SQL_API",
+          "no_tool": false,
+          "sql": true
+        }
+      },
+      "output": {
+        "final_decision": {
+          "api": true,
+          "codes": {
+            "items": [
+              "FALLBACK"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "conf": 0.82,
+          "intent": "MIXED",
+          "need": "SQL_API",
+          "no_tool": false,
+          "sql": true
+        },
+        "final_gate": {
+          "ok": true,
+          "support": {
+            "caps": true,
+            "intent": true,
+            "need": true
+          }
+        },
+        "initial_decision": {
+          "api": true,
+          "codes": {
+            "items": [
+              "FALLBACK"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "conf": 0.82,
+          "intent": "MIXED",
+          "need": "SQL_API",
+          "no_tool": false,
+          "sql": true
+        },
+        "initial_gate": {
+          "ok": true,
+          "support": {
+            "caps": true,
+            "intent": true,
+            "need": true
+          }
+        },
+        "revision_attempted": false,
+        "revision_success": false,
+        "revision_token_estimate": 0
+      },
+      "stage": "semantic routing shadow",
+      "technique": "objective support check for semantic intent",
+      "timestamp": "2026-05-27T20:10:40.490848+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_semantic_consistency_verifier",
+      "correctness_role": "blocks real instance-level data requests without treating every cue word as retrieval",
+      "duration_ms": 0.0,
+      "effect": "allows no-tool only when semantic roles are conceptual, meta-language, or out-of-domain",
+      "efficiency_role": "keeps safe conceptual prompts from entering the evidence pipeline",
+      "input_summary": {
+        "semantic_intent": {
+          "api": true,
+          "codes": {
+            "items": [
+              "FALLBACK"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "conf": 0.82,
+          "intent": "MIXED",
+          "need": "SQL_API",
+          "no_tool": false,
+          "sql": true
+        },
+        "semantic_parse": {
+          "capability": {
+            "api_match": false,
+            "sql_match": false
+          },
+          "confidence": 0.0,
+          "evidence_need": "UNKNOWN",
+          "filters": {
+            "status": null
+          },
+          "no_tool_safe": false,
+          "operation": "UNKNOWN",
+          "source": "SEMANTIC_PARSE_DISABLED",
+          "target": {
+            "grounding": "UNKNOWN",
+            "instance_level": false
+          }
+        }
+      },
+      "output": {
+        "allow_no_tool": false,
+        "fallback_action": "SAFE_API_PROBE",
+        "ok": true
+      },
+      "stage": "semantic routing shadow",
+      "technique": "semantic parse and route consistency verifier",
+      "timestamp": "2026-05-27T20:10:40.490849+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_no_tool_safety_verifier",
+      "correctness_role": "blocks concrete data prompts from direct LLM handling while allowing keyword decoys",
+      "duration_ms": 0.0,
+      "effect": "records the semantic consistency result in the legacy no-tool safety checkpoint slot",
+      "efficiency_role": "estimates safe no-tool savings without changing packaged behavior",
+      "input_summary": {
+        "semantic_intent": {
+          "api": true,
+          "codes": {
+            "items": [
+              "FALLBACK"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "conf": 0.82,
+          "intent": "MIXED",
+          "need": "SQL_API",
+          "no_tool": false,
+          "sql": true
+        }
+      },
+      "output": {
+        "action": "BLOCK_NO_TOOL",
+        "allow_no_tool": false,
+        "capability_match_score": 0.75,
+        "clear_safe_api_family": false,
+        "evidence_need_score": 0.6,
+        "has_concrete_data_signal": true,
+        "no_tool_safety_score": 0.4
+      },
+      "stage": "semantic routing shadow",
+      "technique": "semantic consistency compatibility no-tool view",
+      "timestamp": "2026-05-27T20:10:40.490851+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_semantic_route_decision_ladder",
+      "correctness_role": "never applies semantic routing to the packaged plan in shadow mode",
+      "duration_ms": 0.0,
+      "effect": "records the shadow action that would be considered by a future promotion gate",
+      "efficiency_role": "estimates tool-call and context-token tradeoffs",
+      "input_summary": {
+        "shadow_only": false
+      },
+      "output": {
+        "action": "SAFE_API_PROBE",
+        "context_token_cost": 202,
+        "low_low_case": false,
+        "promotion_allowed": false,
+        "safe_api_probe": {
+          "endpoint_id": "catalog_datasets",
+          "max_endpoints": 1,
+          "method": "GET",
+          "mutating": false,
+          "path": "/data/foundation/catalog/dataSets",
+          "unresolved_path_params": false
+        },
+        "shadow_only": false,
+        "tier_used": 0
+      },
+      "stage": "semantic routing shadow",
+      "technique": "uncertainty escalation ladder",
+      "timestamp": "2026-05-27T20:10:40.490853+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_real_behavior_applied_trial",
+      "correctness_role": "falls back to SQL_FIRST_API_VERIFY unless all no-tool safety checks pass",
+      "duration_ms": 0.0,
+      "effect": "applies a semantic no-tool shortcut only in explicit real benchmark trial modes",
+      "efficiency_role": "measures real tool-call savings for conceptual false-positive routes",
+      "input_summary": {
+        "trial_mode": "ROBUST_ABLATION_FULL_CANDIDATE_NO_SEMANTIC_PARSE"
+      },
+      "output": {
+        "applied": false,
+        "blockers": {
+          "items": [
+            "SEMANTIC_NO_TOOL_SAFETY_NOT_SATISFIED"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "decision": "SAFE_API_PROBE",
+        "decision_family": "SEMANTIC_NO_TOOL",
+        "fallback": true,
+        "record": true,
+        "shadow_only": false,
+        "trial_mode": "ROBUST_ABLATION_FULL_CANDIDATE_NO_SEMANTIC_PARSE",
+        "truncated_fields": 2
+      },
+      "stage": "isolated applied trial",
+      "technique": "semantic no-tool applied trial",
+      "timestamp": "2026-05-27T20:10:40.490929+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_safe_api_probe",
+      "correctness_role": "keeps probe evidence constrained by endpoint catalog and API validator",
+      "duration_ms": 0.0,
+      "effect": "applies SAFE_API_PROBE only for one catalog GET endpoint with no unresolved path params",
+      "efficiency_role": "caps the probe at one API call",
+      "input_summary": {
+        "trial_mode": "ROBUST_ABLATION_FULL_CANDIDATE_NO_SEMANTIC_PARSE"
+      },
+      "output": {
+        "applied": true,
+        "decision": "SAFE_API_PROBE",
+        "decision_family": "SEMANTIC_SAFE_API_PROBE",
+        "endpoint_id": "catalog_datasets",
+        "fallback": false,
+        "record": true,
+        "shadow_only": false,
+        "trial_mode": "ROBUST_ABLATION_FULL_CANDIDATE_NO_SEMANTIC_PARSE",
+        "truncated_fields": 4
+      },
+      "stage": "semantic routing applied candidate",
+      "technique": "safe one-endpoint API probe",
+      "timestamp": "2026-05-27T20:10:40.491035+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_12_validation",
+      "correctness_role": "blocks unknown, mutating, or unresolved endpoint probes",
+      "duration_ms": 0.0,
+      "effect": "validates the single safe API probe before execution",
+      "efficiency_role": "caps validation to one API step",
+      "input_summary": {
+        "api_step": {
+          "action": "api",
+          "family": "catalog_datasets",
+          "method": "GET",
+          "purpose": "Robust generalized candidate SAFE_API_PROBE evidence.",
+          "url": "/data/foundation/catalog/dataSets"
+        }
+      },
+      "output": {
+        "api_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true,
+              "repaired": false
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "validation",
+      "technique": "SAFE_API_PROBE API validation",
+      "timestamp": "2026-05-27T20:10:41.087622+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_13_tool_execution",
+      "correctness_role": "uses real API client output, dry-run output, or validation error only",
+      "duration_ms": 0.0,
+      "effect": "executes at most one safe GET endpoint for low-confidence API-family prompts",
+      "efficiency_role": "avoids SQL and extra API calls for this candidate path",
+      "input_summary": {
+        "validated": true
+      },
+      "output": {
+        "api_calls_executed": 1,
+        "api_results": {
+          "items": [
+            {
+              "dry_run": false,
+              "method": "GET",
+              "ok": true,
+              "result_preview": {
+                "dry_run": false,
+                "endpoint_family": "catalog_datasets",
+                "error_category": "live_evidence",
+                "evidence_state": "live_evidence",
+                "live_success": false,
+                "ok": true,
+                "status_code": 200,
+                "truncated_fields": 1,
+                "usable_evidence": false
+              },
+              "status_code": 200,
+              "url": "/data/foundation/catalog/dataSets"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "api_status_codes": {
+          "items": [
+            200
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "dry_run_status": false,
+        "sql_calls_executed": 0
+      },
+      "stage": "execution",
+      "technique": "SAFE_API_PROBE tool execution",
+      "timestamp": "2026-05-27T20:10:41.087719+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_14_evidence_bus",
+      "correctness_role": "keeps IDs, names, statuses, counts, and timestamps evidence-grounded",
+      "duration_ms": 0.0,
+      "effect": "extracts exact API evidence into answer slots",
+      "efficiency_role": "reuses compact evidence for answer rendering",
+      "input_summary": {
+        "tool_result_count": 1
+      },
+      "output": {
+        "preview": "{\"evidence\": {\"names\": {\"items\": [\"Decision Object Repository - Fallback Offers\", \"Decision Object Repository - Placements\", \"Decision Object Repository - Personalized Offers\"], \"total_items\": 3, \"truncated_items\": false}, \"ids\": {\"id\": \"69c8d6b0494ee9dc83b67874\"}, \"timestamps\": {\"items\": [\"1774769840999\", \"acp-decisioning-ors@AdobeID\", \"1774769840967\"], \"total_items\": 3, \"truncated_items\": false}, \"counts\": {\"items\": [{\"count\": 1}], \"total_items\": 1, \"truncated_items\": false}, \"api_ids\": {\"items\": [\"69c8d6b0494ee9dc83b67874\", \"[REDACTED]\", \"https://ns.adobe.com/experience/offer-management/fallback-content-offer\"], \"total_items\": 5, \"truncated_items\": true}, \"api_names\": {\"items\": [\"Decision Object Repository - Fallback Offers\", \"Decision Object Repository - Placements\", \"Decision Object Repository - Personalized Offers\"], \"total_items\": 5, \"truncated_items\": true}, \"api_counts\": {\"items\": [1], \"total_items\": 1, \"truncated_items\": false}, \"api_timestamps\": {\"items\": [\"1774769840999\"], ...",
+        "truncated": true
+      },
+      "stage": "evidence forwarding",
+      "technique": "EvidenceBus",
+      "timestamp": "2026-05-27T20:10:41.087725+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_quality_classifier",
+      "correctness_role": "prevents live_empty and api_error from being treated as global no-data",
+      "duration_ms": 0.0,
+      "effect": "classifies live empty, API error, and direct API evidence distinctly",
+      "efficiency_role": "uses existing tool result payloads only",
+      "input_summary": {
+        "api_required": true,
+        "tool_result_count": 1
+      },
+      "output": {
+        "api": {
+          "items": [
+            "API_DIRECT_ANSWER"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "api_error_is_unavailable": false,
+        "live_empty_scoped": false,
+        "sql": {
+          "items": [
+            "SQL_NOT_RUN"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "answer synthesis",
+      "technique": "SQL/API evidence quality classification",
+      "timestamp": "2026-05-27T20:10:41.087728+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_answer_slot_renderer",
+      "correctness_role": "avoids unsupported concrete claims by using only extracted evidence",
+      "duration_ms": 0.0,
+      "effect": "renders requested fields from structured answer slots",
+      "efficiency_role": "uses no additional tools or LLM calls",
+      "input_summary": {
+        "slots": {
+          "answer_family": "schema_dataset",
+          "api_error": false,
+          "api_item_count": 1,
+          "discrepancy": false,
+          "dry_run": false,
+          "entity_ids": {
+            "items": [
+              "69c8d6b0494ee9dc83b67874",
+              "https://ns.adobe.com/experience/offer-management/fallback-content-offer",
+              "a30a9c4e-327a-4d60-8a9c-4e327a6d60dd"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "entity_names": {
+            "items": [
+              "Decision Object Repository - Fallback Offers",
+              "Decision Object Repository - Placements",
+              "Decision Object Repository - Personalized Offers"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names",
+              "entity_ids",
+              "counts"
+            ],
+            "total_items": 10,
+            "truncated_items": true
+          },
+          "truncated_fields": 9
+        }
+      },
+      "output": {
+        "answer": "Results: {id=69c8d6b0494ee9dc83b67874, name=Decision Object Repository - Fallback Offers}; {id=69c8d6b094a54c8d91aa2dca, name=Decision Object Repository - Placements}; {id=69c8d6b0d780f4fae2346a55, name=Decision Object Repository - Personalized Offers}.",
+        "rendered_fields": {
+          "items": [
+            "id",
+            "name",
+            "status"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "shape": "list",
+        "unsupported_claims_count": 0
+      },
+      "stage": "answer synthesis",
+      "technique": "deterministic answer-slot rendering",
+      "timestamp": "2026-05-27T20:10:41.087739+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_grounded_answer_builder",
+      "correctness_role": "uses scoped caveats for live_empty/API errors and does not invent missing roles",
+      "duration_ms": 0.0,
+      "effect": "builds the final answer from evidence quality and answer slots",
+      "efficiency_role": "replaces free-form answer synthesis only in the explicit candidate strategy",
+      "input_summary": {
+        "evidence_quality": {
+          "api": {
+            "items": [
+              "API_DIRECT_ANSWER"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "api_error_is_unavailable": false,
+          "live_empty_scoped": false,
+          "sql": {
+            "items": [
+              "SQL_NOT_RUN"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      },
+      "output": {
+        "answer": "Results: {id=69c8d6b0494ee9dc83b67874, name=Decision Object Repository - Fallback Offers}; {id=69c8d6b094a54c8d91aa2dca, name=Decision Object Repository - Placements}; {id=69c8d6b0d780f4fae2346a55, name=Decision Object Repository - Personalized Offers}.",
+        "evidence_quality": {
+          "api": {
+            "items": [
+              "API_DIRECT_ANSWER"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "api_error_is_unavailable": false,
+          "live_empty_scoped": false,
+          "sql": {
+            "items": [
+              "SQL_NOT_RUN"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        },
+        "renderer": {
+          "answer": "Results: {id=69c8d6b0494ee9dc83b67874, name=Decision Object Repository - Fallback Offers}; {id=69c8d6b094a54c8d91aa2dca, name=Decision Object Repository - Placements}; {id=69c8d6b0d780f4fae2346a55, name=Decision Object Repository - Personalized Offers}.",
+          "rendered_fields": {
+            "items": [
+              "id",
+              "name",
+              "status"
+            ],
+            "total_items": 4,
+            "truncated_items": true
+          },
+          "shape": "list",
+          "unsupported_claims_count": 0
+        },
+        "unsupported_claims_count": 0
+      },
+      "stage": "answer synthesis",
+      "technique": "EvidenceBus-centered grounded answer builder",
+      "timestamp": "2026-05-27T20:10:41.087749+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "correctness_role": "final answer remains tied to API probe evidence and caveats",
+      "duration_ms": 0.0,
+      "effect": "returns the final candidate answer",
+      "efficiency_role": "keeps response concise",
+      "output": {
+        "answer_length": 253,
+        "final_answer": "Results: {id=69c8d6b0494ee9dc83b67874, name=Decision Object Repository - Fallback Offers}; {id=69c8d6b094a54c8d91aa2dca, name=Decision Object Repository - Placements}; {id=69c8d6b0d780f4fae2346a55, name=Decision Object Repository - Personalized Offers}.",
+        "final_token_estimate": 92
+      },
+      "stage": "final response",
+      "technique": "candidate grounded final response",
+      "timestamp": "2026-05-27T20:10:41.087831+00:00"
+    }
+  ],
+  "domain_type": "API",
+  "errors": [],
+  "estimated_tokens": 832,
+  "execution_time": 0.0,
+  "final_answer": "Results: {id=69c8d6b0494ee9dc83b67874, name=Decision Object Repository - Fallback Offers}; {id=69c8d6b094a54c8d91aa2dca, name=Decision Object Repository - Placements}; {id=69c8d6b0d780f4fae2346a55, name=Decision Object Repository - Personalized Offers}.",
+  "original_query": "Show recent changes in datasets.",
+  "planning_time": 0.0,
+  "preprocessing_time": 0.0,
+  "query_id": "example_013",
+  "route_type": "SAFE_API_PROBE",
+  "runtime": 0.03694437490776181,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "api_policy": "API_SKIP",
+      "confidence": 0.84,
+      "kind": "prompt_router",
+      "matched_rules": [
+        "local_db:dataset",
+        "local_db:show"
+      ],
+      "mode": "LOCAL_DB_ONLY",
+      "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: dataset, show.",
+      "recommended_strategy": "SQL_FIRST_API_VERIFY",
+      "requires_api": false,
+      "requires_database": true,
+      "risk": "low"
+    },
+    {
+      "estimated_tokens": 277,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_013/robust_ablation_full_candidate_no_semantic_parse/metadata.json",
+      "prompt_tokens": 770
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {},
+      "result": {
+        "preview": "{\"error\": null, \"result_preview\": {\"preview\": \"{\\\"69c8d6b0494ee9dc83b67874\\\": {\\\"id\\\": \\\"69c8d6b0494ee9dc83b67874\\\", \\\"name\\\": \\\"Decision Object Repository - Fallback Offers\\\", \\\"version\\\": \\\"2.0.0\\\", \\\"imsOrg\\\": \\\"[REDACTED]\\\", \\\"sandboxId\\\": \\\"a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\\\", \\\"created\\\": 1774769840999, \\\"updated\\\": 1774769840999, \\\"createdClient\\\": \\\"acp-decisioning-ors\\\", \\\"truncated_fields\\\": 13}, \\\"69c8d6b094a54c8d91aa2dca\\\": {\\\"id\\\": \\\"69c8d6b094a54c8d91aa2dca\\\", \\\"name\\\": \\\"Decision Object Repository - Placements\\\", \\\"version\\\": \\\"2.0.0\\\", \\\"imsOrg\\\": \\\"[REDACTED]\\\", \\\"sandboxId\\\": \\\"a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\\\", \\\"created\\\": 1774769840967, \\\"updated\\\": 1774769840967, \\\"createdClient\\\": \\\"acp-decisioning-ors\\\", \\\"truncated_fields\\\": 13}, \\\"69c8d6b0d780f4fae2346a55\\\": {\\\"id\\\": \\\"69c8d6b0d780f4fae2346a55\\\", \\\"name\\\": \\\"Decision Object Repository - Personalized Offers\\\", \\\"version\\\": \\\"2.0.0\\\", \\\"imsOrg\\\": \\\"[REDACTED]\\\", \\\"sandboxId\\\": \\\"a30a9c4e-327a-4d60-8a9c-4...",
+        "truncated": true
+      },
+      "url": "/data/foundation/catalog/dataSets",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "answer": "Results: {id=69c8d6b0494ee9dc83b67874, name=Decision Object Repository - Fallback Offers}; {id=69c8d6b094a54c8d91aa2dca, name=Decision Object Repository - Placements}; {id=69c8d6b0d780f4fae2346a55, name=Decision Object Repository - Personalized Offers}.",
+      "evidence_quality": {
+        "api": [
+          "API_DIRECT_ANSWER"
+        ],
+        "api_error_is_unavailable": false,
+        "caveats": [],
+        "conflict": [],
+        "live_empty_scoped": false,
+        "sql": [
+          "SQL_NOT_RUN"
+        ]
+      },
+      "kind": "answer_diagnostics",
+      "renderer": {
+        "answer": "Results: {id=69c8d6b0494ee9dc83b67874, name=Decision Object Repository - Fallback Offers}; {id=69c8d6b094a54c8d91aa2dca, name=Decision Object Repository - Placements}; {id=69c8d6b0d780f4fae2346a55, name=Decision Object Repository - Personalized Offers}.",
+        "caveats": [],
+        "missing_fields": [],
+        "rendered_fields": [
+          "id",
+          "name",
+          "status",
+          "timestamp"
+        ],
+        "shape": "list",
+        "unsupported_claims_count": 0
+      },
+      "unsupported_claims_count": 0
+    }
+  ],
+  "strategy": "ROBUST_ABLATION_FULL_CANDIDATE_NO_SEMANTIC_PARSE",
+  "timings": {},
+  "tool_call_count": 1
+}

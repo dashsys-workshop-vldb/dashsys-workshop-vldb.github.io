@@ -7,10 +7,10 @@
 | Query | Which files are available for download in batch 69de8a0e0cc6102b5d11f01e? |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
 | Final answer | The available batch file(s) are: dataSetFileId=69de8a0e0cc6102b5d11f01e-DE1, isValid=False, _links={'self': {'href': '[REDACTED]:443/data/foundation/export/files/69de8a0e0cc6102b5d11f01e-DE1'}}. |
-| Strict score | 0.6689 |
+| Strict score | 0.6683 |
 | Correctness score | 0.6916 |
 | Answer / SQL / API score | 0.3833 / None / 1.0 |
-| Tools / tokens / runtime | 1 / 901 / 0.8090836247429252 |
+| Tools / tokens / runtime | 1 / 901 / 0.9905725419521332 |
 
 ## Dataflow Graph
 
@@ -36,7 +36,7 @@ flowchart LR
 | 1 | checkpoint_01_raw_query | input | raw user query capture | unavailable | query=Which files are available for download in batch 69de8a0e0...; query_id=example_031; strategy=SQL_FIRST_API_VERIFY | preserves the original query for reproducibility | yes | yes | no |
 | 2 | checkpoint_00_prompt_router | prompt routing | LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy | query=Which files are available for download in batch 69de8a0e0... | confidence=0.9; reason=API/platform family keyword(s): batch, file, files. | chooses whether the prompt can be answered directly or needs SQL/API evidence | yes | yes | no |
 | 3 | checkpoint_simple_prompt_gate | input routing | simple prompt gate | query=Which files are available for download in batch 69de8a0e0... | confidence=0.9; is_simple=False; suggested_action=USE_DATA_PIPELINE; reason=API/platform family keyword(s): batch, file, files. | lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend | yes | yes | no |
-| 4 | checkpoint_objective_prompt_features | semantic routing shadow | objective prompt feature extraction | query=Which files are available for download in batch 69de8a0e0... | cap=1 item(s); count=0 item(s); domain=1 item(s); entity=1 item(s) | records fact-only prompt cues for semantic routing diagnostics | yes | yes | no |
+| 4 | checkpoint_objective_prompt_features | semantic routing shadow | objective prompt feature extraction | query=Which files are available for download in batch 69de8a0e0... | cap=2 item(s); count=0 item(s); domain=1 item(s); entity=1 item(s) | records fact-only prompt cues for semantic routing diagnostics | yes | yes | no |
 | 5 | checkpoint_02_query_normalization | normalization | data cleaning / query normalization | query=Which files are available for download in batch 69de8a0e0... | matching_text=which file are available for download in batch 69de8a0e0c...; normalized_query=Which files are available for download in batch 69de8a0e0...; rewrites=1 item(s) | creates matching-friendly text while preserving the original query | yes | yes | no |
 | 6 | checkpoint_03_query_tokens | tokenization | domain-aware tokenization/entity extraction | normalized_query=Which files are available for download in batch 69de8a0e0... | domains=2 item(s); ids=1 | extracts reusable query fields for routing, planning, and answers | yes | yes | no |
 | 7 | checkpoint_04_relevance_scoring | context selection | attention-style relevance scoring | tokens=2 field(s) | top_answer_families=1 item(s); top_apis=3 item(s) | selects a smaller, more relevant schema/API context | yes | yes | no |

@@ -182,6 +182,7 @@ class OpenAILLMClient(LLMClient):
             response_ok = True
             transport = "openai_sdk"
         except Exception as exc:
+            redacted_error = _redact_error_text(str(exc))[:500]
             return {
                 "ok": False,
                 "skipped": False,
@@ -195,7 +196,8 @@ class OpenAILLMClient(LLMClient):
                 "finish_reason": None,
                 "usage": {},
                 "transport": "openai_sdk",
-                "error": _redact_error_text(str(exc))[:500],
+                "error": redacted_error,
+                "error_category": _classify_llm_error_text(str(exc)),
             }
         content = ""
         tool_calls: list[dict[str, Any]] = []
@@ -336,6 +338,7 @@ class AnthropicLLMClient(LLMClient):
             body = self._create_with_sdk(payload)
             response_ok = True
         except Exception as exc:
+            redacted_error = _redact_error_text(str(exc))[:500]
             return {
                 "ok": False,
                 "skipped": False,
@@ -350,7 +353,8 @@ class AnthropicLLMClient(LLMClient):
                 "message": {},
                 "finish_reason": None,
                 "usage": {},
-                "error": _redact_error_text(str(exc))[:500],
+                "error": redacted_error,
+                "error_category": _classify_llm_error_text(str(exc)),
             }
         content = _anthropic_text_content(body)
         tool_calls = _normalize_anthropic_tool_calls(body)
@@ -578,6 +582,23 @@ def _redact_error_text(text: str) -> str:
     redacted = _BEARER_RE.sub("Bearer [REDACTED]", redacted)
     redacted = _KEY_LIKE_RE.sub("[REDACTED]", redacted)
     return redacted
+
+
+def _classify_llm_error_text(text: str) -> str:
+    lower = str(text or "").lower()
+    if any(marker in lower for marker in ("401", "403", "unauthorized", "forbidden", "invalid api key", "authentication", "auth")):
+        return "auth_or_401"
+    if any(marker in lower for marker in ("429", "rate limit", "rate_limit", "too many requests")):
+        return "rate_limited_or_429"
+    if any(marker in lower for marker in ("insufficient_quota", "quota", "billing")):
+        return "quota_or_billing"
+    if any(marker in lower for marker in ("model_not_found", "model not found", "does not exist", "invalid model", "unknown model")):
+        return "model_not_found"
+    if any(marker in lower for marker in ("timeout", "timed out", "readtimeout")):
+        return "timeout"
+    if any(marker in lower for marker in ("enotfound", "dns", "name resolution", "connection", "connect", "network")):
+        return "network_error"
+    return "provider_error"
 
 
 def get_llm_client(provider: str | None = None) -> LLMClient:

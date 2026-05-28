@@ -1,0 +1,1599 @@
+{
+  "answer_time": 0.8105612923391163,
+  "api_call_count": 1,
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "correctness_role": "keeps later normalization from changing the user-facing question",
+      "duration_ms": 0.0,
+      "effect": "preserves the original query for reproducibility",
+      "efficiency_role": "starts one trace without extra tool calls",
+      "output": {
+        "query": "How many batches have status 'success'?",
+        "query_id": "example_029",
+        "strategy": "ROBUST_ABLATION_LLM_ANSWER_WITH_VERIFIER"
+      },
+      "stage": "input",
+      "technique": "raw user query capture",
+      "timestamp": "2026-05-27T20:14:09.875877+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_runtime_leakage_guard",
+      "correctness_role": "prevents gold/category/tags/oracle/expected-trace leakage into runtime decisions",
+      "duration_ms": 0.0,
+      "effect": "asserts that candidate runtime receives only prompt/runtime fields, not evaluator metadata",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "ROBUST_ABLATION_LLM_ANSWER_WITH_VERIFIER"
+      },
+      "output": {
+        "category_tags_visible": false,
+        "expected_trace_visible": false,
+        "oracle_sql_visible": false,
+        "prompt_id_specific_branching": false,
+        "query_id_specific_branching": false,
+        "runtime_gold_visible": false,
+        "runtime_input_fields": {
+          "items": [
+            "query"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "runtime safety",
+      "technique": "runtime input isolation guard",
+      "timestamp": "2026-05-27T20:14:09.875891+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_score_provenance_guard",
+      "correctness_role": "prevents simulated or gold-visible scores from being treated as runtime evidence",
+      "duration_ms": 0.0,
+      "effect": "marks candidate runs as real-agent runtime executions without promotion judgment",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "ROBUST_ABLATION_LLM_ANSWER_WITH_VERIFIER"
+      },
+      "output": {
+        "organizer_equivalent": false,
+        "promotion_eligible": false,
+        "promotion_judgment_run": false,
+        "real_agent_execution": true,
+        "runtime_gold_visible": false,
+        "score_source": "runtime_candidate",
+        "strategy": "ROBUST_ABLATION_LLM_ANSWER_WITH_VERIFIER",
+        "synthetic_trace": false
+      },
+      "stage": "runtime safety",
+      "technique": "score provenance guard",
+      "timestamp": "2026-05-27T20:14:09.875895+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_00_prompt_router",
+      "correctness_role": "routes data questions to evidence tools instead of unsupported direct answers",
+      "duration_ms": 0.0,
+      "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
+      "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
+      "input_summary": {
+        "query": "How many batches have status 'success'?"
+      },
+      "output": {
+        "confidence": 0.9,
+        "matched_rules": {
+          "items": [
+            "api_only:batch"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "mode": "API_ONLY",
+        "reason": "API/platform family keyword(s): batch, batches.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": true,
+        "requires_database": false,
+        "risk": "medium",
+        "truncated_fields": 1
+      },
+      "stage": "prompt routing",
+      "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
+      "timestamp": "2026-05-27T20:14:09.875918+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_simple_prompt_gate",
+      "correctness_role": "prevents direct answers for data questions that need SQL/API evidence",
+      "duration_ms": 0.0,
+      "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
+      "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
+      "input_summary": {
+        "query": "How many batches have status 'success'?"
+      },
+      "output": {
+        "confidence": 0.9,
+        "is_simple": false,
+        "reason": "API/platform family keyword(s): batch, batches.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      },
+      "stage": "input routing",
+      "technique": "simple prompt gate",
+      "timestamp": "2026-05-27T20:14:09.875931+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_02_query_normalization",
+      "correctness_role": "improves template and route matching across wording variants",
+      "duration_ms": 0.0,
+      "effect": "creates matching-friendly text while preserving the original query",
+      "efficiency_role": "reduces repeated fuzzy matching work downstream",
+      "input_summary": {
+        "query": "How many batches have status 'success'?"
+      },
+      "output": {
+        "matching_text": "how many batch have status 'success'?",
+        "normalized_query": "How many batches have status 'success'?",
+        "rewrites": {
+          "items": [
+            "important_plurals->singular"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "normalization",
+      "technique": "data cleaning / query normalization",
+      "timestamp": "2026-05-27T20:14:09.875969+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_03_query_tokens",
+      "correctness_role": "grounds names, IDs, dates, metrics, and statuses before planning",
+      "duration_ms": 0.0,
+      "effect": "extracts reusable query fields for routing, planning, and answers",
+      "efficiency_role": "avoids reparsing the query in later modules",
+      "input_summary": {
+        "normalized_query": "How many batches have status 'success'?"
+      },
+      "output": {
+        "domains": {
+          "items": [
+            "batch"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "quoted_entities": {
+          "items": [
+            "success"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "statuses": {
+          "items": [
+            "success"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "tokenization",
+      "technique": "domain-aware tokenization/entity extraction",
+      "timestamp": "2026-05-27T20:14:09.876003+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_04_relevance_scoring",
+      "correctness_role": "keeps high-signal tables and endpoints near the planner",
+      "duration_ms": 0.0,
+      "effect": "selects a smaller, more relevant schema/API context",
+      "efficiency_role": "reduces metadata and prompt tokens when compact metadata is enabled",
+      "input_summary": {
+        "tokens": {
+          "domains": {
+            "items": [
+              "batch"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "quoted_entities": {
+            "items": [
+              "success"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "statuses": {
+            "items": [
+              "success"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      },
+      "output": {
+        "top_answer_families": {
+          "items": [
+            "batch"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "top_apis": {
+          "items": [
+            "export_batch_failed"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "context selection",
+      "technique": "attention-style relevance scoring",
+      "timestamp": "2026-05-27T20:14:09.876057+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_value_entity_retrieval",
+      "correctness_role": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
+      "duration_ms": 0.0,
+      "effect": "grounds query entities against sampled local DB values before planning",
+      "efficiency_role": "uses a cached bounded value index with per-query scan and wall-time budgets",
+      "input_summary": {
+        "query_values": {
+          "items": [
+            {
+              "kind": "quoted_entity",
+              "text": "success"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "budget_exceeded": true,
+        "match_count": 0,
+        "retrieval_ms": 12.68
+      },
+      "output": {
+        "active": true,
+        "cache_hit": true,
+        "cache_key": "a2f6025ad4340fb6",
+        "cache_key_algorithm": "sha256",
+        "cache_path": "[REDACTED]/outputs/cache/value_index_a2f6025ad4340fb6.json",
+        "cache_reproducible": true,
+        "match_count": 0,
+        "query_value_count": 2,
+        "truncated_fields": 8
+      },
+      "stage": "query understanding",
+      "technique": "CHESS-style value/entity retrieval",
+      "timestamp": "2026-05-27T20:14:09.877220+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_query_decomposition",
+      "correctness_role": "helps SQL/API planning preserve requested constraints",
+      "duration_ms": 0.0,
+      "effect": "breaks complex prompts into entities, filters, joins, and answer-shape constraints",
+      "efficiency_role": "skips simple queries and uses no LLM/tool calls",
+      "input_summary": {
+        "query": "How many batches have status 'success'?",
+        "tokens": {
+          "domains": {
+            "items": [
+              "batch"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "quoted_entities": {
+            "items": [
+              "success"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "statuses": {
+            "items": [
+              "success"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      },
+      "output": {
+        "active": true,
+        "expected_answer_shape": "scalar_count",
+        "required_aggregations": {
+          "items": [
+            "count"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "required_entities": {
+          "items": [
+            "success"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "required_filters": {
+          "items": [
+            "success"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sub_questions": {
+          "items": [
+            "Ground named entities and identifiers."
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "query understanding",
+      "technique": "DIN-SQL-style deterministic query decomposition",
+      "timestamp": "2026-05-27T20:14:09.877242+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_05_query_analysis",
+      "correctness_role": "aligns routing, metadata, planning, and reporting decisions",
+      "duration_ms": 0.0,
+      "effect": "computes shared query understanding once",
+      "efficiency_role": "avoids repeated template and routing analysis",
+      "input_summary": {
+        "domain_type": "COUNT_AGGREGATION",
+        "route_type": "API_ONLY"
+      },
+      "output": {
+        "answer_family": "batch",
+        "api_templates": {
+          "items": [
+            "successful_batch_count"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "confidence": 0.75,
+        "domain_type": "COUNT_AGGREGATION",
+        "fast_path": "successful_batch_count",
+        "route_type": "API_ONLY",
+        "strategy": "ROBUST_ABLATION_LLM_ANSWER_WITH_VERIFIER"
+      },
+      "stage": "routing",
+      "technique": "branch prediction / QueryAnalysis",
+      "timestamp": "2026-05-27T20:14:09.877247+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_06_lookup_path",
+      "correctness_role": "guides relationship-heavy SQL/API selection",
+      "duration_ms": 0.0,
+      "effect": "predicts the relevant table/join/API path",
+      "efficiency_role": "filters unrelated schema and endpoint candidates",
+      "input_summary": {
+        "answer_family": "batch",
+        "domain_type": "COUNT_AGGREGATION"
+      },
+      "output": {
+        "api_families": {
+          "items": [
+            "batch_list"
+          ],
+          "total_items": 5,
+          "truncated_items": true
+        },
+        "api_mode": "required",
+        "family": "batch",
+        "required_ids": {
+          "items": [
+            "batch_id"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "path prediction",
+      "technique": "TLB-style lookup path prediction",
+      "timestamp": "2026-05-27T20:14:09.877250+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_07_context_card",
+      "correctness_role": "keeps required tables, columns, joins, and API candidates visible",
+      "duration_ms": 0.0,
+      "effect": "packs family-relevant context into metadata.json and the filled prompt",
+      "efficiency_role": "limits context size for non-baseline strategies",
+      "input_summary": {
+        "broad_context": false,
+        "lookup_path": "batch"
+      },
+      "output": {
+        "estimated_metadata_tokens": 1029,
+        "prompt_tokens": 1717,
+        "selected_apis": {
+          "items": [
+            "catalog_batches"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "selected_card_name": "batch",
+        "selected_columns": {
+          "br_campaign_segment": {
+            "items": [
+              "SEGMENTID"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "dim_blueprint": {
+            "items": [
+              "BLUEPRINTTYPE"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "dim_campaign": {
+            "items": [
+              "UPDATEDTIME"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "dim_collection": {
+            "items": [
+              "ISIDENTITYENABLED"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "dim_connector": {
+            "items": [
+              "DATAFLOWNAME"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          }
+        },
+        "selected_tables": {
+          "items": [
+            "br_campaign_segment"
+          ],
+          "total_items": 5,
+          "truncated_items": true
+        }
+      },
+      "stage": "metadata packing",
+      "technique": "huge-page-style compact context card",
+      "timestamp": "2026-05-27T20:14:09.879329+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_08_candidate_plans",
+      "correctness_role": "prefers validated, family-matched plans",
+      "duration_ms": 0.0,
+      "effect": "selects one plan before execution",
+      "efficiency_role": "does not execute losing candidate plans",
+      "input_summary": {
+        "base_step_count": 1,
+        "strategy": "ROBUST_ABLATION_LLM_ANSWER_WITH_VERIFIER"
+      },
+      "output": {
+        "candidate_plan_names": {
+          "items": [
+            "generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "reason_selected": "highest pre-execution validation/relevance/cost score",
+        "scores": {
+          "generic_sql_first": 12.3817
+        },
+        "selected_plan": "generic_sql_first"
+      },
+      "stage": "planning",
+      "technique": "pre-execution plan ensemble",
+      "timestamp": "2026-05-27T20:14:09.879551+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_09_plan_optimization",
+      "correctness_role": "drops unresolved placeholder calls unless explicitly warned",
+      "duration_ms": 0.0,
+      "effect": "removes duplicate, skippable, or unsafe calls before validation",
+      "efficiency_role": "enforces a bounded plan before execution",
+      "input_summary": {
+        "original_step_count": 1
+      },
+      "output": {
+        "call_budget_applied": false,
+        "optimized_step_count": 1,
+        "optimizer_actions": {
+          "items": [
+            "ensemble selected generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "original_step_count": 1,
+        "removed_api_skip_calls": 0,
+        "removed_duplicate_calls": 0,
+        "unresolved_placeholders_removed": 0
+      },
+      "stage": "optimization",
+      "technique": "compiler-style plan optimization",
+      "timestamp": "2026-05-27T20:14:09.879560+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_10_evidence_policy",
+      "correctness_role": "keeps API calls for API-only/live families",
+      "duration_ms": 0.0,
+      "effect": "decides when API evidence is required, optional, or unnecessary",
+      "efficiency_role": "skips or caps API calls when SQL evidence is enough",
+      "input_summary": {
+        "answer_family": "batch",
+        "route_type": "API_ONLY"
+      },
+      "output": {
+        "allowed_api_families": {
+          "items": [
+            "successful_batch_count"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "max_api_calls": 1,
+        "mode": "API_REQUIRED",
+        "reason": "Route is API-only."
+      },
+      "stage": "evidence policy",
+      "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
+      "timestamp": "2026-05-27T20:14:09.879563+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_11_call_budget",
+      "correctness_role": "preserves required grounding steps",
+      "duration_ms": 0.0,
+      "effect": "keeps tool calls within per-family limits",
+      "efficiency_role": "prevents accidental extra SQL/API calls",
+      "input_summary": {
+        "planned_steps": {
+          "items": [
+            {
+              "action": "api",
+              "family": "successful_batch_count",
+              "method": "GET",
+              "params": {
+                "limit": "10",
+                "status": "success"
+              },
+              "purpose": "API parameter template: successful_batch_count.",
+              "url": "/data/foundation/catalog/batches"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "final_planned_calls": 1,
+        "max_api_calls": 1,
+        "max_sql_calls": 1,
+        "max_total_tool_calls": 2,
+        "planned_api_calls": 1,
+        "planned_sql_calls": 0
+      },
+      "stage": "efficiency control",
+      "technique": "tool-call budgeting",
+      "timestamp": "2026-05-27T20:14:09.879574+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_12_validation",
+      "correctness_role": "blocks unsafe SQL and unknown/unresolved API calls",
+      "duration_ms": 0.0,
+      "effect": "records whether planned SQL/API calls were safe to execute",
+      "efficiency_role": "prevents wasted execution on invalid calls",
+      "input_summary": {
+        "optimized_steps": {
+          "items": [
+            {
+              "action": "api",
+              "family": "successful_batch_count",
+              "method": "GET",
+              "params": {
+                "limit": "10",
+                "status": "success"
+              },
+              "purpose": "API parameter template: successful_batch_count.",
+              "url": "/data/foundation/catalog/batches"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "api_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "validation",
+      "technique": "SQL/API safety validation",
+      "timestamp": "2026-05-27T20:14:10.351615+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_13_tool_execution",
+      "correctness_role": "records row counts, dry-run state, and API status for final answer grounding",
+      "duration_ms": 0.0,
+      "effect": "captures the actual SQL/API evidence gathered by the backend",
+      "efficiency_role": "makes tool-call count and result previews explicit",
+      "input_summary": {
+        "validated_step_count": 1
+      },
+      "output": {
+        "api_calls_executed": 1,
+        "api_results": {
+          "items": [
+            {
+              "dry_run": false,
+              "method": "GET",
+              "ok": true,
+              "result_preview": {
+                "dry_run": false,
+                "endpoint_family": "catalog_batches",
+                "error_category": "live_evidence",
+                "evidence_state": "live_evidence",
+                "live_success": false,
+                "ok": true,
+                "status_code": 200,
+                "truncated_fields": 1,
+                "usable_evidence": false
+              },
+              "status_code": 200,
+              "url": "/data/foundation/catalog/batches"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "api_status_codes": {
+          "items": [
+            200
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "dry_run_status": false,
+        "sql_calls_executed": 0
+      },
+      "stage": "execution",
+      "technique": "SQL/API tool execution",
+      "timestamp": "2026-05-27T20:14:10.351866+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_14_evidence_bus",
+      "correctness_role": "passes exact IDs, names, counts, timestamps, and statuses without text guessing",
+      "duration_ms": 0.0,
+      "effect": "forwards structured facts to API params and answer slots",
+      "efficiency_role": "avoids repeated lookup or reparsing work",
+      "input_summary": {
+        "tool_result_count": 1
+      },
+      "output": {
+        "evidence": {
+          "api_counts": {
+            "items": [
+              10
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "api_ids": {
+            "items": [
+              "69c8d6c9b9966265fc8e4ea4"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "api_statuses": {
+            "items": [
+              "success"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "api_timestamps": {
+            "items": [
+              "1779895323686"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "counts": {
+            "items": [
+              {
+                "items": 10
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "ids": {
+            "id": "01KSN0EJVFZF57PH3FVPPHX9TH"
+          },
+          "statuses": {
+            "items": [
+              "success"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "timestamps": {
+            "items": [
+              "1779895323686"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "truncated_fields": 6
+        }
+      },
+      "stage": "evidence forwarding",
+      "technique": "operand forwarding / EvidenceBus",
+      "timestamp": "2026-05-27T20:14:10.351878+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_quality_classifier",
+      "correctness_role": "keeps SQL zero rows, live_empty, API errors, and required API missing distinct",
+      "duration_ms": 0.0,
+      "effect": "classifies SQL/API evidence quality before answer rendering",
+      "efficiency_role": "uses executed tool payloads without extra calls",
+      "input_summary": {
+        "api_required": true,
+        "tool_result_count": 1
+      },
+      "output": {
+        "api": {
+          "items": [
+            "API_DIRECT_ANSWER"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "api_error_is_unavailable": false,
+        "live_empty_scoped": false,
+        "sql": {
+          "items": [
+            "SQL_NOT_RUN"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "answer synthesis",
+      "technique": "SQL/API evidence quality classification",
+      "timestamp": "2026-05-27T20:14:10.351890+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_grounded_answer_builder",
+      "correctness_role": "uses exact available values and scoped caveats without inventing missing roles",
+      "duration_ms": 0.0,
+      "effect": "renders final answer from EvidenceBus-derived answer slots and evidence quality classes",
+      "efficiency_role": "uses no extra SQL/API/LLM calls",
+      "input_summary": {
+        "api_required": true,
+        "tool_result_count": 1
+      },
+      "output": {
+        "answer": "Count: 10.",
+        "evidence_quality": {
+          "api": {
+            "items": [
+              "API_DIRECT_ANSWER"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "api_error_is_unavailable": false,
+          "live_empty_scoped": false,
+          "sql": {
+            "items": [
+              "SQL_NOT_RUN"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        },
+        "renderer": {
+          "answer": "Count: 10.",
+          "rendered_fields": {
+            "items": [
+              "count"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "shape": "count",
+          "unsupported_claims_count": 0
+        },
+        "unsupported_claims_count": 0
+      },
+      "stage": "answer synthesis",
+      "technique": "EvidenceBus-centered grounded answer builder",
+      "timestamp": "2026-05-27T20:14:10.367065+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_15_answer_slots",
+      "correctness_role": "makes final response generation evidence-grounded",
+      "duration_ms": 0.0,
+      "effect": "turns raw tool results into typed evidence fields",
+      "efficiency_role": "keeps answer context compact",
+      "input_summary": {
+        "tool_result_count": 1
+      },
+      "output": {
+        "answer_intent": "COUNT",
+        "discrepancy_flags": {
+          "sql_api_discrepancy": false
+        },
+        "dry_run_flags": {
+          "dry_run": false
+        },
+        "missing_slots": {
+          "items": [
+            "count_shape"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "slots": {
+          "answer_family": "batch",
+          "api_error": false,
+          "api_item_count": 10,
+          "discrepancy": false,
+          "dry_run": false,
+          "entity_ids": {
+            "items": [
+              "01KSN0EJVFZF57PH3FVPPHX9TH"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "entity_names": {
+            "items": [
+              "success"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names"
+            ],
+            "total_items": 11,
+            "truncated_items": true
+          },
+          "truncated_fields": 9
+        }
+      },
+      "stage": "answer synthesis",
+      "technique": "structured answer slot extraction",
+      "timestamp": "2026-05-27T20:14:11.148471+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_answer_slot_renderer",
+      "correctness_role": "makes omitted or unavailable roles explicit",
+      "duration_ms": 0.0,
+      "effect": "records how requested fields were rendered from answer slots",
+      "efficiency_role": "avoids LLM answer rewriting in the candidate path",
+      "input_summary": {
+        "slots": {
+          "answer_family": "batch",
+          "api_error": false,
+          "api_item_count": 10,
+          "discrepancy": false,
+          "dry_run": false,
+          "entity_ids": {
+            "items": [
+              "01KSN0EJVFZF57PH3FVPPHX9TH"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "entity_names": {
+            "items": [
+              "success"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names"
+            ],
+            "total_items": 11,
+            "truncated_items": true
+          },
+          "truncated_fields": 9
+        }
+      },
+      "output": {
+        "answer": "Count: 10.",
+        "rendered_fields": {
+          "items": [
+            "count"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "shape": "count",
+        "unsupported_claims_count": 0
+      },
+      "stage": "answer synthesis",
+      "technique": "deterministic answer-slot rendering",
+      "timestamp": "2026-05-27T20:14:11.148501+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_final_answer_claim_extractor",
+      "correctness_role": "keeps style flexible while making factual boundaries explicit",
+      "duration_ms": 0.0,
+      "effect": "extracts only hard factual claim candidates from free-form answer wording",
+      "efficiency_role": "uses deterministic text scanning with no tool calls",
+      "input_summary": {
+        "final_answer_length": 0
+      },
+      "output": {
+        "claim_count": 0
+      },
+      "stage": "answer verification",
+      "technique": "final-answer factual claim extraction",
+      "timestamp": "2026-05-27T20:14:11.148507+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_final_answer_claim_matcher",
+      "correctness_role": "blocks invented counts, IDs, statuses, dates, relationships, and over-broad no-data claims",
+      "duration_ms": 0.0,
+      "effect": "matches hard claims against EvidenceBus and AnswerSlots allowed facts",
+      "efficiency_role": "uses local normalized indexes without extra tools",
+      "input_summary": {
+        "allowed_fact_index_fields": {
+          "items": [
+            "counts"
+          ],
+          "total_items": 11,
+          "truncated_items": true
+        }
+      },
+      "stage": "answer verification",
+      "technique": "allowed-fact deterministic claim matching",
+      "timestamp": "2026-05-27T20:14:11.148513+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_grounded_final_answer_verifier",
+      "correctness_role": "prevents factual overreach without enforcing deterministic template text",
+      "duration_ms": 0.0,
+      "effect": "accepts natural wording only when factual claims stay inside allowed evidence",
+      "efficiency_role": "falls back locally when no safe LLM answer is available",
+      "input_summary": {
+        "llm_backend_used": true
+      },
+      "output": {
+        "action": "ACCEPT",
+        "fallback_used": false,
+        "ok": true,
+        "rewrite_attempted": false,
+        "rewrite_success": false
+      },
+      "stage": "answer verification",
+      "technique": "flexible wording bounded-fact final-answer verifier",
+      "timestamp": "2026-05-27T20:14:11.148519+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_answer_rewrite_feedback",
+      "correctness_role": "keeps rewrite feedback fact-only and excludes gold/category/oracle metadata",
+      "duration_ms": 0.0,
+      "effect": "records blocked claims and allowed facts for one bounded rewrite attempt",
+      "efficiency_role": "uses at most one rewrite attempt before deterministic fallback",
+      "input_summary": {
+        "rewrite_attempted": false
+      },
+      "stage": "answer verification",
+      "technique": "compact rewrite feedback for failed grounded answer verification",
+      "timestamp": "2026-05-27T20:14:11.148523+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_16_answer_verification",
+      "correctness_role": "blocks unsupported numbers, entities, timestamps, statuses, and dry-run API confirmation",
+      "duration_ms": 0.0,
+      "effect": "checks final-answer claims against SQL/API evidence",
+      "efficiency_role": "rewrites safely without extra tool calls",
+      "input_summary": {
+        "claim_count": 0,
+        "slots_present": {
+          "items": [
+            "entity_names"
+          ],
+          "total_items": 11,
+          "truncated_items": true
+        }
+      },
+      "output": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "rewrite_applied": false,
+        "supported_claims_count": 0,
+        "unsupported_claims_count": 0,
+        "verifier_passed": true
+      },
+      "stage": "answer verification",
+      "technique": "claim verification / groundedness checking",
+      "timestamp": "2026-05-27T20:14:11.148537+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_17_answer_reranking",
+      "correctness_role": "prefers verifier-passing and intent-matched answers",
+      "duration_ms": 0.0,
+      "effect": "selects the safest answer from same-evidence candidates",
+      "efficiency_role": "uses no additional SQL/API/LLM calls",
+      "input_summary": {
+        "answer_family": "batch"
+      },
+      "output": {
+        "candidate_count": 0,
+        "selected_candidate_type": "evidence_grounded_llm_answer_generator",
+        "selection_reason": "ROBUST_GENERALIZED_HARNESS_CANDIDATE allowed free wording only after EvidenceBus/AnswerSlots factual-boundary verification."
+      },
+      "stage": "answer selection",
+      "technique": "deterministic answer reranking",
+      "timestamp": "2026-05-27T20:14:11.148542+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "correctness_role": "final answer remains tied to evidence and caveats",
+      "duration_ms": 0.0,
+      "effect": "returns the final concise answer to the agent harness",
+      "efficiency_role": "keeps response concise",
+      "input_summary": {
+        "verifier_passed": true
+      },
+      "output": {
+        "answer_length": 0,
+        "final_token_estimate": 0
+      },
+      "stage": "final response",
+      "technique": "concise grounded final response",
+      "timestamp": "2026-05-27T20:14:11.148582+00:00"
+    },
+    {
+      "active": true,
+      "checkpoint_id": "checkpoint_official_token_reduction",
+      "correctness_impact_expected": false,
+      "estimated_tokens_after": 559,
+      "estimated_tokens_before": 1000,
+      "expected_savings": 441,
+      "packaged_execution_changed": false,
+      "reduced_fields": [
+        "steps[0].candidate_tables",
+        "steps[1].decomposition",
+        "steps[2].metadata_path",
+        "steps[3].steps",
+        "steps[5].result.preview"
+      ]
+    }
+  ],
+  "domain_type": "COUNT_AGGREGATION",
+  "errors": [],
+  "estimated_tokens": 559,
+  "execution_time": 0.4704811670817435,
+  "final_answer": "",
+  "original_query": "How many batches have status 'success'?",
+  "planning_time": 0.00024520792067050934,
+  "preprocessing_time": 0.0034009581431746483,
+  "query_id": "example_029",
+  "route_type": "API_ONLY",
+  "runtime": 1.3144517079927027,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "candidate_apis": [],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign"
+      ],
+      "confidence": 0.6499999999999999,
+      "domain_type": "COUNT_AGGREGATION",
+      "kind": "route",
+      "reason": "Keyword routing using COUNT_AGGREGATION:1, STATUS_MONITORING:1.",
+      "route_type": "API_ONLY"
+    },
+    {
+      "decomposition": {
+        "expected_answer_shape": "scalar_count",
+        "sub_question_count": 3
+      },
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "export_batch_failed",
+          "audit_events"
+        ],
+        "lookup_paths": [
+          "batch"
+        ]
+      },
+      "rewrites": [
+        "important_plurals->singular"
+      ],
+      "tokens": {
+        "domains": [
+          "batch"
+        ],
+        "quoted_entities": [
+          "success"
+        ],
+        "statuses": [
+          "success"
+        ]
+      },
+      "value_retrieval": {
+        "budget_exceeded": true,
+        "match_count": 0,
+        "matches": [],
+        "retrieval_ms": 12.68
+      }
+    },
+    {
+      "estimated_tokens": 1029,
+      "kind": "metadata",
+      "metadata_path": "metadata.json",
+      "prompt_tokens": 1717
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: successful_batch_count.",
+      "steps": [
+        {
+          "action": "api",
+          "family": "successful_batch_count",
+          "method": "GET",
+          "params": {
+            "limit": "10",
+            "status": "success"
+          },
+          "url": "/data/foundation/catalog/batches"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 12.3817
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 1
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "10",
+        "status": "success"
+      },
+      "result": {
+        "preview": "{\"error\": null, \"result_preview\": {\"preview\": \"{\\\"01KSN0EJVFZF57PH3FVPPHX9TH\\\": {\\\"id\\\": \\\"01KSN0EJVFZF57PH3FVPPHX9TH\\\", \\\"status\\\": \\\"success\\\" [truncated]",
+        "truncated": true
+      },
+      "url": "/data/foundation/catalog/batches",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "answer_family": "batch",
+      "answer_intent": "COUNT",
+      "completeness_missing_fields": [
+        "count_shape"
+      ],
+      "evidence_grounded_answer_builder": {
+        "answer": "Count: 10.",
+        "evidence_quality": {
+          "api": [
+            "API_DIRECT_ANSWER"
+          ],
+          "api_error_is_unavailable": false,
+          "caveats": [],
+          "conflict": [],
+          "live_empty_scoped": false,
+          "sql": [
+            "SQL_NOT_RUN"
+          ]
+        },
+        "renderer": {
+          "answer": "Count: 10.",
+          "caveats": [],
+          "missing_fields": [],
+          "rendered_fields": [
+            "count"
+          ],
+          "shape": "count",
+          "unsupported_claims_count": 0
+        },
+        "unsupported_claims_count": 0
+      },
+      "evidence_grounded_llm_answer_generator": {
+        "fallback_used": false,
+        "feedback": {},
+        "final_answer": "",
+        "first_pass_ok": true,
+        "generator_error": null,
+        "llm_backend_used": true,
+        "rewrite_attempted": false,
+        "rewrite_success": false,
+        "verification": {
+          "action": "ACCEPT",
+          "allowed_fact_index": {
+            "allowed_caveats": [],
+            "api_error_scopes": [],
+            "counts": [
+              "10",
+              "16",
+              "0",
+              "1",
+              "82",
+              "171232",
+              "4",
+              "43",
+              "12189",
+              "7431483",
+              "8"
+            ],
+            "dates": [
+              "1779895323686",
+              "1779895999276",
+              "1779872295818",
+              "1779872344437",
+              "1779871984346",
+              "1779872420598",
+              "1779869776802",
+              "1779870280575",
+              "1779860939172",
+              "1779861060106",
+              "1779851854475",
+              "1779851876742",
+              "1779851837184",
+              "1779851853025",
+              "1779851787475",
+              "1779851818345",
+              "1779786545577",
+              "1779786564003",
+              "1779786545296",
+              "1779786563175",
+              "0",
+              "acp_foundation_datatracker@adobeid"
+            ],
+            "evidence_strings": [
+              "['69c9e8db2efff9048a54dd92']",
+              "{'predecessors': ['01ksh7ssnz2hac2kqsnv2vbpx6'], 'reason': 'rewrite', 'predecessorlistingtype': 'immediate'}",
+              "['{\"id\":\"b6cdfc60da954404b08328b1a46f5fe9\",\"status\":\"finished\",\"createdat\":1779872418767,\"batchid\":\"01ksma6ad9kztk7q7g9j8vnxpr\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"output\":\"/acp_foundation_queryservice/stage/01ksma6ad9kztk7q7g9j8vnxpr-staged/attempt-01ksmakj2t4gpp5g5zsxvryc7g\",\"sandbox\":{\"sandboxid\":\"a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\",\"sandboxname\":\"[redacted]\"},\"properties\":{\"tablecommit\":{\"mastersnapshotid\":\"83\"}}}']",
+              "['{\"id\":\"52cccab3b6794ec49db872ea834e2ebe\",\"status\":\"finished\",\"createdat\":1779851874984,\"batchid\":\"01kskq00ev72z1dzzzgy71p4kt\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"output\":\"/aep_reporting_destinations/stage/01kskq00ev72z1dzzzgy71p4kt-staged/attempt-01kskq0kv3bs1ktrf38x0b1adr\",\"sandbox\":{\"sandboxid\":\"a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\",\"sandboxname\":\"[redacted]\"},\"properties\":{\"tablecommit\":{\"mastersnapshotid\":\"83\"}}}']",
+              "{'numfiles': 16, 'psdkcomputedupdatescount': 0, 'numcopiedrows': 0, 'outputbytesize': 7431483, 'psdkcomputeddeletescount': -1, 'numdeletedrows': 12189, 'psdkcomputedinsertscount': 12189, 'numoutputrows': 12189, 'numoutputbytes': 7431483, 'inputbytesize': 7431483, 'outputrecordcount': 12189, 'outputfilecount': 16, 'inputrecordcount': 12189}",
+              "1779872420598",
+              "1779786562874",
+              "['1779851876692']",
+              "['01kskzrvc66hx94fq41mwm1z8t']",
+              "{'queryid': ['9114d29c-7b26-4789-8771-0357575fd13d'], 'acp_stagepath': ['acp_foundation_queryservice/stage/01ksma6ad9kztk7q7g9j8vnxpr'], 'acp_slopolicyname': ['live10mb'], 'aep/siphon/partitions/paths': [], 'acp_finalized_time': ['1779872420566'], 'acp_workflow': ['valveworkflow'], 'acp_requesttype': ['service'], 'acp_latencytargetinmillis': ['300000'], 'acp_datasetviewid': ['69c8dad4aa7a59818543461a'], 'acp_type': ['ingest'], 'siphon/valve/stage/ingest': ['{\"id\":\"b6cdfc60da954404b08328b1a46f5fe9\",\"status\":\"created\",\"createdat\":1779872294043,\"batchid\":\"01ksma6ad9kztk7q7g9j8vnxpr\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"properties\":{}}'], 'siphon/valve/ingest/status': ['{\"id\":\"b6cdfc60da954404b08328b1a46f5fe9\",\"status\":\"finished\",\"createdat\":1779872418767,\"batchid\":\"01ksma6ad9kztk7q7g9j8vnxpr\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"output\":\"/acp_foundation_queryservice/stage/01ksma6ad9kztk7q7g9j8vnxpr-staged/attempt-01ksmakj2t4gpp5g5zsxvryc7g\",\"sandbox\":{\"sandboxid\":\"a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\",\"sandboxname\":\"[redacted]\"},\"properties\":{\"tablecommit\":{\"mastersnapshotid\":\"83\"}}}'], 'acp_attemptid': ['01ksmakj2t4gpp5g5zsxvryc7g'], 'acp_bulkhead': ['live'], 'acp_producer': ['acp_foundation_queryservice', 'aep/siphon/bi/uploadmode::direct-v1'], 'acp_requestid': ['7dnlxk4rf1cnfwelfpoiv8gzywaivnpb'], 'acp_finalized': ['finalized'], 'acp_buffered': ['false'], 'acp_latencymaxinmillis': ['10800000']}",
+              "1779895323686",
+              "['acp_foundation_queryservice/stage/01kshrpybr9cjdfwptkfzqzqjk']",
+              "{'acp_stagepath': ['acp_core_unifiedprofile_export/stage/01ksm82yq88m6vfncp90erhem5'], 'acp_requesttype': ['service'], 'update_phantom_batch': ['true'], 'acp_datasetviewid': ['69c8d6c810c39fb1068f65b5'], 'acp_type': ['replay'], 'acp_producer': ['acp_core_unifiedprofile_export', 'aep/siphon/bi/uploadmode::']}",
+              "{'queryid': ['5a6eb506-4f62-420e-83d1-fabc19d35d58'], 'acp_stagepath': ['acp_foundation_queryservice/stage/01ksmaftmdqvnn7trsv1fthvff'], 'acp_slopolicyname': ['live10mb'], 'aep/siphon/partitions/paths': [], 'acp_finalized_time': ['1779872344385'], 'acp_workflow': ['valveworkflow'], 'acp_requesttype': ['service'], 'acp_latencytargetinmillis': ['300000'], 'acp_datasetviewid': ['69c8d9c4e592a9df81deb244'], 'acp_type': ['ingest'], 'siphon/valve/stage/ingest': ['{\"id\":\"91cbd4ea27264b0ba789dafd3e7ce538\",\"status\":\"created\",\"createdat\":1779872304838,\"batchid\":\"01ksmaftmdqvnn7trsv1fthvff\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"properties\":{}}'], 'siphon/valve/ingest/status': ['{\"id\":\"91cbd4ea27264b0ba789dafd3e7ce538\",\"status\":\"finished\",\"createdat\":1779872335363,\"batchid\":\"01ksmaftmdqvnn7trsv1fthvff\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"output\":\"/acp_foundation_queryservice/stage/01ksmaftmdqvnn7trsv1fthvff-staged/attempt-01ksmah0h3ba36zvnj8d647qgv\",\"sandbox\":{\"sandboxid\":\"a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\",\"sandboxname\":\"[redacted]\"},\"properties\":{\"tablecommit\":{\"mastersnapshotid\":\"83\"}}}'], 'acp_attemptid': ['01ksmah0h3ba36zvnj8d647qgv'], 'acp_bulkhead': ['live'], 'acp_producer': ['acp_foundation_queryservice', 'aep/siphon/bi/uploadmode::direct-v1'], 'acp_requestid': ['zw0atvb6ybpbyaesr2tkz90j98eepb1j'], 'acp_finalized': ['finalized'], 'acp_buffered': ['false'], 'acp_latencymaxinmillis': ['10800000']}",
+              "['1779861060064']",
+              "['5a6eb506-4f62-420e-83d1-fabc19d35d58']",
+              "dataset",
+              "['aep_reporting_destinations/stage/01kskpzfk17vs7zxk9tzqcvwfw']",
+              "['{\"id\":\"91cbd4ea27264b0ba789dafd3e7ce538\",\"status\":\"created\",\"createdat\":1779872304838,\"batchid\":\"01ksmaftmdqvnn7trsv1fthvff\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"properties\":{}}']",
+              "1779786545577",
+              "-1",
+              "['{\"id\":\"f48f8f0a5e5c48a39de37ad6f00d4c59\",\"status\":\"finished\",\"createdat\":1779861058291,\"batchid\":\"01kskzn89sxtp2dnxmtyqan3z3\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"output\":\"/voyager_authoring_platform_data/stage/01kskzn89sxtp2dnxmtyqan3z3-staged/attempt-01kskzrvc66hx94fq41mwm1z8t\",\"sandbox\":{\"sandboxid\":\"a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\",\"sandboxname\":\"[redacted]\"},\"properties\":{\"tablecommit\":{\"mastersnapshotid\":\"1\"}}}']",
+              "['aep_reporting_destinations/stage/01kskpxz12zt51y4fgwhdymy1x']",
+              "['87014aa1-e739-4df5-8586-c95770d28615']",
+              "{'predecessors': ['01ksh7xkzmnnvn4mr5rz181bpj'], 'reason': 'rewrite', 'predecessorlistingtype': 'immediate'}",
+              "['{\"id\":\"ef5d378ad1e84e7584d4ef2c48beffe3\",\"status\":\"finished\",\"createdat\":1779786561731,\"batchid\":\"01kshrpy36jnb3jyecmphdbfnz\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"output\":\"/acp_foundation_queryservice/stage/01kshrpy36jnb3jyecmphdbfnz-staged/attempt-01kshrqdb7kwejpvxtc1zyf0wb\",\"sandbox\":{\"sandboxid\":\"a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\",\"sandboxname\":\"[redacted]\"},\"properties\":{\"tablecommit\":{\"mastersnapshotid\":\"82\"}}}']",
+              "['ingest']",
+              "['{\"id\":\"f48f8f0a5e5c48a39de37ad6f00d4c59\",\"status\":\"created\",\"createdat\":1779860949740,\"batchid\":\"01kskzn89sxtp2dnxmtyqan3z3\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"properties\":{}}']",
+              "117",
+              "1779861059784",
+              "1779851865647",
+              "['acp_foundation_queryservice/stage/01ksmaftmdqvnn7trsv1fthvff']",
+              "1779786554959",
+              "['7dnlxk4rf1cnfwelfpoiv8gzywaivnpb']",
+              "1779870280575",
+              "[{'type': 'dataset', 'id': '69c8d6c810c39fb1068f65b5'}]",
+              "01kskzn89sxtp2dnxmtyqan3z3",
+              "{'queryid': ['b617cc32-2bb1-45fd-baa2-f37a78360a44'], 'acp_stagepath': ['acp_foundation_queryservice/stage/01kshrpy36jnb3jyecmphdbfnz'], 'acp_slopolicyname': ['live10mb'], 'aep/siphon/partitions/paths': [], 'acp_finalized_time': ['1779786563157'], 'acp_workflow': ['valveworkflow'], 'acp_requesttype': ['service'], 'acp_latencytargetinmillis': ['300000'], 'acp_datasetviewid': ['69c8dad4aa7a59818543461a'], 'acp_type': ['ingest'], 'siphon/valve/stage/ingest': ['{\"id\":\"ef5d378ad1e84e7584d4ef2c48beffe3\",\"status\":\"created\",\"createdat\":1779786555179,\"batchid\":\"01kshrpy36jnb3jyecmphdbfnz\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"properties\":{}}'], 'siphon/valve/ingest/status': ['{\"id\":\"ef5d378ad1e84e7584d4ef2c48beffe3\",\"status\":\"finished\",\"createdat\":1779786561731,\"batchid\":\"01kshrpy36jnb3jyecmphdbfnz\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"output\":\"/acp_foundation_queryservice/stage/01kshrpy36jnb3jyecmphdbfnz-staged/attempt-01kshrqdb7kwejpvxtc1zyf0wb\",\"sandbox\":{\"sandboxid\":\"a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\",\"sandboxname\":\"[redacted]\"},\"properties\":{\"tablecommit\":{\"mastersnapshotid\":\"82\"}}}'], 'acp_attemptid': ['01kshrqdb7kwejpvxtc1zyf0wb'], 'acp_bulkhead': ['live'], 'acp_producer': ['acp_foundation_queryservice', 'aep/siphon/bi/uploadmode::direct-v1'], 'acp_requestid': ['v74fuusajgvvdciaxeutnfpkmttn4l7o'], 'acp_finalized': ['finalized'], 'acp_buffered': ['false'], 'acp_latencymaxinmillis': ['10800000']}",
+              "['success']",
+              "01ksn0ejvfzf57ph3fvpphx9th",
+              "['{\"id\":\"a291e4a8d8f34da2918a94273859cc6e\",\"status\":\"created\",\"createdat\":1779851839671,\"batchid\":\"01kskpzfk17vs7zxk9tzqcvwfw\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"properties\":{}}']",
+              "{'failedrecordcount': 0, 'partitioncount': 0, 'outputbytesize': 7100, 'inputfilecount': 4, 'inputbytesize': 3368, 'outputrecordcount': 1, 'outputfilecount': 1, 'acp_schemawidth': 29, 'inputrecordcount': 1}",
+              "29",
+              "01kshrpy36jnb3jyecmphdbfnz",
+              "01kskpzfk17vs7zxk9tzqcvwfw",
+              "['01ksh7xkzmnnvn4mr5rz181bpj']",
+              "success",
+              "acp_foundation_datatracker@adobeid",
+              "1779871984346",
+              "1779851838762",
+              "['b617cc32-2bb1-45fd-baa2-f37a78360a44']",
+              "['01kskpzvqsxf4td162btypxb6h']",
+              "rewrite",
+              "['voyager_authoring_platform_data', 'aep/siphon/bi/uploadmode::direct-v1']",
+              "['{\"id\":\"cd637b67113548eb98a2ae273f52432b\",\"status\":\"created\",\"createdat\":1779786555464,\"batchid\":\"01kshrpybr9cjdfwptkfzqzqjk\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"properties\":{}}']",
+              "['aep_reporting_destinations', 'aep/siphon/bi/uploadmode::direct-v1']",
+              "['service']",
+              "['acp_foundation_queryservice/stage/01kshrpy36jnb3jyecmphdbfnz']",
+              "1779786554695",
+              "['frgjv7dmfwpbaeqpyeblvfy4i52hwfuu']",
+              "5302",
+              "['zw0atvb6ybpbyaesr2tkz90j98eepb1j']",
+              "69c9e92176c73d7f59fdbc55",
+              "['{\"id\":\"a291e4a8d8f34da2918a94273859cc6e\",\"status\":\"finished\",\"createdat\":1779851850975,\"batchid\":\"01kskpzfk17vs7zxk9tzqcvwfw\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"output\":\"/aep_reporting_destinations/stage/01kskpzfk17vs7zxk9tzqcvwfw-staged/attempt-01kskpzvqsxf4td162btypxb6h\",\"sandbox\":{\"sandboxid\":\"a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\",\"sandboxname\":\"[redacted]\"},\"properties\":{\"tablecommit\":{\"mastersnapshotid\":\"81\"}}}']",
+              "[{'type': 'dataset', 'id': '6a1685ca8edcf6b32ba31e07'}]",
+              "1779851854475",
+              "['live10mb']",
+              "{'failedrecordcount': 0, 'partitioncount': 0, 'outputbytesize': 5139, 'inputfilecount': 4, 'inputbytesize': 1431, 'outputrecordcount': 1, 'outputfilecount': 1, 'acp_schemawidth': 10, 'inputrecordcount': 1}",
+              "['9114d29c-7b26-4789-8771-0357575fd13d']",
+              "['false']",
+              "[{'type': 'dataset', 'id': '69c9e8c280780d73541f8a38'}]",
+              "['01kshnrnxwrn3fnets45ek75fb']",
+              "1779860939172",
+              "1779851817855",
+              "acp_core_unifiedprofile_export@adobeid",
+              "69c8d9c4e592a9df81deb244",
+              "{'acp_stagepath': ['acp_core_unifiedprofile_export/stage/01ksn0ejvfzf57ph3fvpphx9th'], 'acp_requesttype': ['service'], 'update_phantom_batch': ['true'], 'acp_datasetviewid': ['69c8d6c9b9966265fc8e4ea4'], 'acp_type': ['replay'], 'acp_producer': ['acp_core_unifiedprofile_export', 'aep/siphon/bi/uploadmode::']}",
+              "[{'type': 'dataset', 'id': '69c8d6c9b9966265fc8e4ea4'}]",
+              "{'failedrecordcount': 0, 'partitioncount': 0, 'outputbytesize': 5139, 'inputfilecount': 4, 'inputbytesize': 1381, 'outputrecordcount': 1, 'outputfilecount': 1, 'acp_schemawidth': 10, 'inputrecordcount': 1}",
+              "1381",
+              "82",
+              "['01kshrqdb7kwejpvxtc1zyf0wb']",
+              "01kshrpybr9cjdfwptkfzqzqjk",
+              "6a1685ca8edcf6b32ba31e07",
+              "{'predecessors': ['01kshnrnxwrn3fnets45ek75fb'], 'reason': 'replay', 'predecessorlistingtype': 'immediate'}",
+              "['true']",
+              "{'numfiles': 16, 'psdkcomputedupdatescount': 0, 'numcopiedrows': 0, 'outputbytesize': 171232, 'psdkcomputeddeletescount': -1, 'numdeletedrows': 82, 'psdkcomputedinsertscount': 82, 'numoutputrows': 82, 'numoutputbytes': 171232, 'inputbytesize': 171232, 'outputrecordcount': 82, 'outputfilecount': 16, 'inputrecordcount': 82}",
+              "69c9e8c280780d73541f8a38",
+              "1779851876335",
+              "{'failedrecordcount': 0, 'partitioncount': 0, 'outputbytesize': 7424, 'inputfilecount': 4, 'inputbytesize': 3392, 'outputrecordcount': 43, 'outputfilecount': 1, 'acp_schemawidth': 10, 'inputrecordcount': 43}",
+              "1779870280511",
+              "['1779851852999']",
+              "01ksma6ad9kztk7q7g9j8vnxpr",
+              "{'queryid': ['87014aa1-e739-4df5-8586-c95770d28615'], 'acp_stagepath': ['acp_foundation_queryservice/stage/01kshrpybr9cjdfwptkfzqzqjk'], 'acp_slopolicyname': ['live10mb'], 'aep/siphon/partitions/paths': [], 'acp_finalized_time': ['1779786563981'], 'acp_workflow': ['valveworkflow'], 'acp_requesttype': ['service'], 'acp_latencytargetinmillis': ['300000'], 'acp_datasetviewid': ['69c8d9c4e592a9df81deb244'], 'acp_type': ['ingest'], 'siphon/valve/stage/ingest': ['{\"id\":\"cd637b67113548eb98a2ae273f52432b\",\"status\":\"created\",\"createdat\":1779786555464,\"batchid\":\"01kshrpybr9cjdfwptkfzqzqjk\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"properties\":{}}'], 'siphon/valve/ingest/status': ['{\"id\":\"cd637b67113548eb98a2ae273f52432b\",\"status\":\"finished\",\"createdat\":1779786562499,\"batchid\":\"01kshrpybr9cjdfwptkfzqzqjk\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"output\":\"/acp_foundation_queryservice/stage/01kshrpybr9cjdfwptkfzqzqjk-staged/attempt-01kshrqe3b0te9hscwzfpz23vj\",\"sandbox\":{\"sandboxid\":\"a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\",\"sandboxname\":\"[redacted]\"},\"properties\":{\"tablecommit\":{\"mastersnapshotid\":\"82\"}}}'], 'acp_attemptid': ['01kshrqe3b0te9hscwzfpz23vj'], 'acp_bulkhead': ['live'], 'acp_producer': ['acp_foundation_queryservice', 'aep/siphon/bi/uploadmode::direct-v1'], 'acp_requestid': ['8nx9vfubpx0lgidqipdzbzelp8ky4mqc'], 'acp_finalized': ['finalized'], 'acp_buffered': ['false'], 'acp_latencymaxinmillis': ['10800000']}",
+              "['replay']",
+              "acp_foundation_push",
+              "7425",
+              "1244",
+              "['01kshrqe3b0te9hscwzfpz23vj']",
+              "38",
+              "01ksm82yq88m6vfncp90erhem5",
+              "16",
+              "['10800000']",
+              "['01ksmakj2t4gpp5g5zsxvryc7g']",
+              "1779895999276",
+              "69c8d6c810c39fb1068f65b5",
+              "1779851837184",
+              "parquet",
+              "01kskpxz12zt51y4fgwhdymy1x",
+              "voyager_authoring_platform_data@adobeservice",
+              "1779786545296",
+              "['finalized']",
+              "1779851853025",
+              "['6a1685ca8edcf6b32ba31e07']",
+              "['8nx9vfubpx0lgidqipdzbzelp8ky4mqc']",
+              "['69c8d6c9b9966265fc8e4ea4', '01ksn0ejvfzf57ph3fvpphx9th', '87891e4066602d250a495f91@adobeorg', '69c8d9c4e592a9df81deb244', '01ksmaftmdqvnn7trsv1fthvff']",
+              "{'acp_stagepath': ['aep_reporting_destinations/stage/01kskpzfk17vs7zxk9tzqcvwfw'], 'acp_slopolicyname': ['live10mb'], 'aep/siphon/partitions/paths': [], 'acp_finalized_time': ['1779851852999'], 'acp_workflow': ['valveworkflow'], 'acp_requesttype': ['service'], 'acp_latencytargetinmillis': ['300000'], 'acp_datasetviewid': ['69c9e8db2efff9048a54dd92'], 'acp_type': ['replay'], 'siphon/valve/stage/ingest': ['{\"id\":\"a291e4a8d8f34da2918a94273859cc6e\",\"status\":\"created\",\"createdat\":1779851839671,\"batchid\":\"01kskpzfk17vs7zxk9tzqcvwfw\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"properties\":{}}'], 'siphon/valve/ingest/status': ['{\"id\":\"a291e4a8d8f34da2918a94273859cc6e\",\"status\":\"finished\",\"createdat\":1779851850975,\"batchid\":\"01kskpzfk17vs7zxk9tzqcvwfw\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"output\":\"/aep_reporting_destinations/stage/01kskpzfk17vs7zxk9tzqcvwfw-staged/attempt-01kskpzvqsxf4td162btypxb6h\",\"sandbox\":{\"sandboxid\":\"a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\",\"sandboxname\":\"[redacted]\"},\"properties\":{\"tablecommit\":{\"mastersnapshotid\":\"81\"}}}'], 'acp_attemptid': ['01kskpzvqsxf4td162btypxb6h'], 'acp_bulkhead': ['live'], 'acp_producer': ['aep_reporting_destinations', 'aep/siphon/bi/uploadmode::direct-v1'], 'acp_requestid': ['o7ie3uekxx6fleyl3nglo3rj52hqwksn'], 'acp_finalized': ['finalized'], 'acp_buffered': ['false'], 'acp_latencymaxinmillis': ['10800000']}",
+              "01ksmaftmdqvnn7trsv1fthvff",
+              "['01kskq0kv3bs1ktrf38x0b1adr']",
+              "aep_reporting_destinations@adobeid",
+              "7431483",
+              "['1779786563157']",
+              "['01ksh7ssnz2hac2kqsnv2vbpx6']",
+              "1",
+              "{'failedrecordcount': 0, 'partitioncount': 0, 'outputbytesize': 0, 'inputfilecount': 4, 'inputbytesize': 1244, 'outputrecordcount': 0, 'outputfilecount': 0, 'acp_schemawidth': 21, 'inputrecordcount': 0}",
+              "a30a9c4e-327a-4d60-8a9c-4e327a6d60dd",
+              "1.0.1",
+              "{'failedrecordcount': 0, 'partitioncount': 0, 'outputbytesize': 7425, 'inputfilecount': 4, 'inputbytesize': 3341, 'outputrecordcount': 43, 'outputfilecount': 1, 'acp_schemawidth': 10, 'inputrecordcount': 43}",
+              "43",
+              "['01ksje21n3byyxv01k7f5zc51k']",
+              "['69c8d9c4e592a9df81deb244']",
+              "1779872420301",
+              "['01kskpyrkmtk3ehytm0hd480zm']",
+              "['300000']",
+              "{'items': 10}",
+              "4",
+              "['o7ie3uekxx6fleyl3nglo3rj52hqwksn']",
+              "['1779851818285']",
+              "12189",
+              "['0pbxene0bebsoahjkfuczj8cqvdjfqux']",
+              "1779786563175",
+              "['acp_core_unifiedprofile_export/stage/01ksm82yq88m6vfncp90erhem5']",
+              "69c8d6c9b9966265fc8e4ea4",
+              "{'format': 'parquet'}",
+              "1779872295818",
+              "1.0.6",
+              "1779872293196",
+              "/data/foundation/catalog/batches",
+              "['{\"id\":\"ef5d378ad1e84e7584d4ef2c48beffe3\",\"status\":\"created\",\"createdat\":1779786555179,\"batchid\":\"01kshrpy36jnb3jyecmphdbfnz\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"properties\":{}}']",
+              "1779851876742",
+              "[{'type': 'dataset', 'id': '69c8dad4aa7a59818543461a'}]",
+              "immediate",
+              "7100",
+              "1779851787475",
+              "01kskq00ev72z1dzzzgy71p4kt",
+              "[{'type': 'dataset', 'id': '69c9e8db2efff9048a54dd92'}]",
+              "69c9e8db2efff9048a54dd92",
+              "1779860948546",
+              "['1779872344385']",
+              "1779861060106",
+              "['acp_core_unifiedprofile_export', 'aep/siphon/bi/uploadmode::']",
+              "69c8dad4aa7a59818543461a",
+              "171232",
+              "3341",
+              "1779869776802",
+              "[{'type': 'dataset', 'id': '69c9e92176c73d7f59fdbc55'}]",
+              "1779895998979",
+              "1779872304017",
+              "21",
+              "['{\"id\":\"ac850f27dc814a2b8e9550c249e356e6\",\"status\":\"created\",\"createdat\":1779851804431,\"batchid\":\"01kskpxz12zt51y4fgwhdymy1x\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"properties\":{}}']",
+              "{'predecessors': ['01ksh7rfy847dwrswajpandhf0'], 'reason': 'rewrite', 'predecessorlistingtype': 'immediate'}",
+              "['acp_foundation_queryservice', 'aep/siphon/bi/uploadmode::direct-v1']",
+              "{'acp_stagepath': ['aep_reporting_destinations/stage/01kskpxz12zt51y4fgwhdymy1x'], 'acp_slopolicyname': ['live10mb'], 'aep/siphon/partitions/paths': [], 'acp_finalized_time': ['1779851818285'], 'acp_workflow': ['valveworkflow'], 'acp_requesttype': ['service'], 'acp_latencytargetinmillis': ['300000'], 'acp_datasetviewid': ['69c9e8c280780d73541f8a38'], 'acp_type': ['replay'], 'siphon/valve/stage/ingest': ['{\"id\":\"ac850f27dc814a2b8e9550c249e356e6\",\"status\":\"created\",\"createdat\":1779851804431,\"batchid\":\"01kskpxz12zt51y4fgwhdymy1x\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"properties\":{}}'], 'siphon/valve/ingest/status': ['{\"id\":\"ac850f27dc814a2b8e9550c249e356e6\",\"status\":\"finished\",\"createdat\":1779851814579,\"batchid\":\"01kskpxz12zt51y4fgwhdymy1x\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"output\":\"/aep_reporting_destinations/stage/01kskpxz12zt51y4fgwhdymy1x-staged/attempt-01kskpyrkmtk3ehytm0hd480zm\",\"sandbox\":{\"sandboxid\":\"a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\",\"sandboxname\":\"[redacted]\"},\"properties\":{\"tablecommit\":{\"mastersnapshotid\":\"83\"}}}'], 'acp_attemptid': ['01kskpyrkmtk3ehytm0hd480zm'], 'acp_bulkhead': ['live'], 'acp_producer': ['aep_reporting_destinations', 'aep/siphon/bi/uploadmode::direct-v1'], 'acp_requestid': ['0pbxene0bebsoahjkfuczj8cqvdjfqux'], 'acp_finalized': ['finalized'], 'acp_buffered': ['false'], 'acp_latencymaxinmillis': ['10800000']}",
+              "['01ksmah0h3ba36zvnj8d647qgv']",
+              "['69c9e92176c73d7f59fdbc55']",
+              "{'predecessors': ['01ksje21n3byyxv01k7f5zc51k'], 'reason': 'replay', 'predecessorlistingtype': 'immediate'}",
+              "['{\"id\":\"52cccab3b6794ec49db872ea834e2ebe\",\"status\":\"created\",\"createdat\":1779851866402,\"batchid\":\"01kskq00ev72z1dzzzgy71p4kt\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"properties\":{}}']",
+              "['{\"id\":\"b6cdfc60da954404b08328b1a46f5fe9\",\"status\":\"created\",\"createdat\":1779872294043,\"batchid\":\"01ksma6ad9kztk7q7g9j8vnxpr\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"properties\":{}}']",
+              "0",
+              "126853",
+              "['69c8dad4aa7a59818543461a']",
+              "['voyager_authoring_platform_data/stage/01kskzn89sxtp2dnxmtyqan3z3']",
+              "['01ksh7rfy847dwrswajpandhf0']",
+              "1779851818345",
+              "[{'type': 'dataset', 'id': '69c8d9c4e592a9df81deb244'}]",
+              "[redacted]",
+              "['69c8d6c9b9966265fc8e4ea4']",
+              "['acp_core_unifiedprofile_export/stage/01ksn0ejvfzf57ph3fvpphx9th']",
+              "['valveworkflow']",
+              "['1779786563981']",
+              "{'created': '1779895323686', 'updated': '1779895999276'}",
+              "['live']",
+              "3392",
+              "replay",
+              "1431",
+              "130704",
+              "1779872344047",
+              "1779872344437",
+              "{'acp_stagepath': ['voyager_authoring_platform_data/stage/01kskzn89sxtp2dnxmtyqan3z3'], 'acp_slopolicyname': ['live10mb'], 'aep/siphon/partitions/paths': [], 'acp_finalized_time': ['1779861060064'], 'acp_workflow': ['valveworkflow'], 'acp_requesttype': ['service'], 'acp_latencytargetinmillis': ['300000'], 'acp_datasetviewid': ['6a1685ca8edcf6b32ba31e07'], 'acp_type': ['ingest'], 'siphon/valve/stage/ingest': ['{\"id\":\"f48f8f0a5e5c48a39de37ad6f00d4c59\",\"status\":\"created\",\"createdat\":1779860949740,\"batchid\":\"01kskzn89sxtp2dnxmtyqan3z3\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"properties\":{}}'], 'siphon/valve/ingest/status': ['{\"id\":\"f48f8f0a5e5c48a39de37ad6f00d4c59\",\"status\":\"finished\",\"createdat\":1779861058291,\"batchid\":\"01kskzn89sxtp2dnxmtyqan3z3\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"output\":\"/voyager_authoring_platform_data/stage/01kskzn89sxtp2dnxmtyqan3z3-staged/attempt-01kskzrvc66hx94fq41mwm1z8t\",\"sandbox\":{\"sandboxid\":\"a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\",\"sandboxname\":\"[redacted]\"},\"properties\":{\"tablecommit\":{\"mastersnapshotid\":\"1\"}}}'], 'acp_attemptid': ['01kskzrvc66hx94fq41mwm1z8t'], 'acp_bulkhead': ['live'], 'acp_producer': ['voyager_authoring_platform_data', 'aep/siphon/bi/uploadmode::direct-v1'], 'acp_requestid': ['frgjv7dmfwpbaeqpyeblvfy4i52hwfuu'], 'acp_finalized': ['finalized'], 'acp_buffered': ['false'], 'acp_latencymaxinmillis': ['10800000']}",
+              "{'failedrecordcount': 0, 'partitioncount': 0, 'outputbytesize': 9265, 'inputfilecount': 4, 'inputbytesize': 5302, 'outputrecordcount': 1, 'outputfilecount': 1, 'acp_schemawidth': 38, 'inputrecordcount': 1}",
+              "['69c9e8c280780d73541f8a38']",
+              "['{\"id\":\"91cbd4ea27264b0ba789dafd3e7ce538\",\"status\":\"finished\",\"createdat\":1779872335363,\"batchid\":\"01ksmaftmdqvnn7trsv1fthvff\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"output\":\"/acp_foundation_queryservice/stage/01ksmaftmdqvnn7trsv1fthvff-staged/attempt-01ksmah0h3ba36zvnj8d647qgv\",\"sandbox\":{\"sandboxid\":\"a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\",\"sandboxname\":\"[redacted]\"},\"properties\":{\"tablecommit\":{\"mastersnapshotid\":\"83\"}}}']",
+              "['{\"id\":\"ac850f27dc814a2b8e9550c249e356e6\",\"status\":\"finished\",\"createdat\":1779851814579,\"batchid\":\"01kskpxz12zt51y4fgwhdymy1x\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"output\":\"/aep_reporting_destinations/stage/01kskpxz12zt51y4fgwhdymy1x-staged/attempt-01kskpyrkmtk3ehytm0hd480zm\",\"sandbox\":{\"sandboxid\":\"a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\",\"sandboxname\":\"[redacted]\"},\"properties\":{\"tablecommit\":{\"mastersnapshotid\":\"83\"}}}']",
+              "9265",
+              "1779786563706",
+              "['fikerrrm0pa3qfhwbyxpr13hyepnozoo']",
+              "['v74fuusajgvvdciaxeutnfpkmttn4l7o']",
+              "['1779872420566']",
+              "{'failedrecordcount': 0, 'partitioncount': 0, 'outputbytesize': 130704, 'inputfilecount': 8, 'inputbytesize': 126853, 'outputrecordcount': 4, 'outputfilecount': 4, 'acp_schemawidth': 117, 'inputrecordcount': 4}",
+              "7424",
+              "1779851803575",
+              "10",
+              "{'acp_stagepath': ['aep_reporting_destinations/stage/01kskq00ev72z1dzzzgy71p4kt'], 'acp_slopolicyname': ['live10mb'], 'aep/siphon/partitions/paths': [], 'acp_finalized_time': ['1779851876692'], 'acp_workflow': ['valveworkflow'], 'acp_requesttype': ['service'], 'acp_latencytargetinmillis': ['300000'], 'acp_datasetviewid': ['69c9e92176c73d7f59fdbc55'], 'acp_type': ['replay'], 'siphon/valve/stage/ingest': ['{\"id\":\"52cccab3b6794ec49db872ea834e2ebe\",\"status\":\"created\",\"createdat\":1779851866402,\"batchid\":\"01kskq00ev72z1dzzzgy71p4kt\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"properties\":{}}'], 'siphon/valve/ingest/status': ['{\"id\":\"52cccab3b6794ec49db872ea834e2ebe\",\"status\":\"finished\",\"createdat\":1779851874984,\"batchid\":\"01kskq00ev72z1dzzzgy71p4kt\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"output\":\"/aep_reporting_destinations/stage/01kskq00ev72z1dzzzgy71p4kt-staged/attempt-01kskq0kv3bs1ktrf38x0b1adr\",\"sandbox\":{\"sandboxid\":\"a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\",\"sandboxname\":\"[redacted]\"},\"properties\":{\"tablecommit\":{\"mastersnapshotid\":\"83\"}}}'], 'acp_attemptid': ['01kskq0kv3bs1ktrf38x0b1adr'], 'acp_bulkhead': ['live'], 'acp_producer': ['aep_reporting_destinations', 'aep/siphon/bi/uploadmode::direct-v1'], 'acp_requestid': ['fikerrrm0pa3qfhwbyxpr13hyepnozoo'], 'acp_finalized': ['finalized'], 'acp_buffered': ['false'], 'acp_latencymaxinmillis': ['10800000']}",
+              "['aep_reporting_destinations/stage/01kskq00ev72z1dzzzgy71p4kt']",
+              "1779851852729",
+              "1779786564003",
+              "acp_foundation_queryservice@adobeid",
+              "['69c8d6c810c39fb1068f65b5']",
+              "5139",
+              "['acp_foundation_queryservice/stage/01ksma6ad9kztk7q7g9j8vnxpr']",
+              "8",
+              "3368",
+              "['{\"id\":\"cd637b67113548eb98a2ae273f52432b\",\"status\":\"finished\",\"createdat\":1779786562499,\"batchid\":\"01kshrpybr9cjdfwptkfzqzqjk\",\"imsorg\":\"[redacted]\",\"bulkhead\":\"live\",\"service\":\"platform.siphon.ingest\",\"output\":\"/acp_foundation_queryservice/stage/01kshrpybr9cjdfwptkfzqzqjk-staged/attempt-01kshrqe3b0te9hscwzfpz23vj\",\"sandbox\":{\"sandboxid\":\"a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\",\"sandboxname\":\"[redacted]\"},\"properties\":{\"tablecommit\":{\"mastersnapshotid\":\"82\"}}}']"
+            ],
+            "ids": [
+              "01ksn0ejvfzf57ph3fvpphx9th",
+              "69c8d6c9b9966265fc8e4ea4",
+              "a30a9c4e-327a-4d60-8a9c-4e327a6d60dd",
+              "69c8d9c4e592a9df81deb244",
+              "01ksmaftmdqvnn7trsv1fthvff",
+              "69c8dad4aa7a59818543461a",
+              "01ksma6ad9kztk7q7g9j8vnxpr",
+              "69c8d6c810c39fb1068f65b5",
+              "01ksm82yq88m6vfncp90erhem5",
+              "6a1685ca8edcf6b32ba31e07",
+              "01kskzn89sxtp2dnxmtyqan3z3",
+              "69c9e92176c73d7f59fdbc55",
+              "01kskq00ev72z1dzzzgy71p4kt",
+              "69c9e8db2efff9048a54dd92",
+              "01kskpzfk17vs7zxk9tzqcvwfw",
+              "69c9e8c280780d73541f8a38",
+              "01kskpxz12zt51y4fgwhdymy1x",
+              "01kshrpybr9cjdfwptkfzqzqjk",
+              "01kshrpy36jnb3jyecmphdbfnz",
+              "87891e4066602d250a495f91@adobeorg"
+            ],
+            "live_empty_scopes": [],
+            "missing_roles": [],
+            "names": [
+              "success"
+            ],
+            "relationships": [],
+            "statuses": [
+              "succeeded"
+            ]
+          },
+          "ambiguous_claims": [],
+          "claim_extractor": {
+            "claim_count": 0,
+            "claims": []
+          },
+          "claim_matcher": {
+            "matches": []
+          },
+          "needs_caveat_claims": [],
+          "ok": true,
+          "over_specified_claims": [],
+          "supported_claims": [],
+          "unsupported_claims": []
+        }
+      },
+      "kind": "answer_diagnostics",
+      "rewrite_applied": false,
+      "selected_candidate_type": "evidence_grounded_llm_answer_generator",
+      "selection_reason": "ROBUST_GENERALIZED_HARNESS_CANDIDATE allowed free wording only after EvidenceBus/AnswerSlots factual-boundary verification.",
+      "slots_present": [
+        "entity_names",
+        "entity_ids",
+        "counts",
+        "statuses",
+        "timestamps",
+        "api_item_count",
+        "live_api_evidence_available",
+        "api_evidence_state",
+        "answer_slot_source",
+        "api_parser_modes",
+        "api_items"
+      ],
+      "unsupported_claims_count": 0,
+      "verifier_passed": true
+    }
+  ],
+  "strategy": "ROBUST_ABLATION_LLM_ANSWER_WITH_VERIFIER",
+  "timings": {
+    "answer_time": 0.8105612923391163,
+    "execution_time": 0.4704811670817435,
+    "planning_time": 0.00024520792067050934,
+    "preprocessing_time": 0.0034009581431746483
+  },
+  "tool_call_count": 1
+}

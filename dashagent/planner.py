@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from .api_templates import find_api_templates
-from .config import Config, DEFAULT_CONFIG, ROBUST_ABLATION_STRATEGIES
+from .config import Config, DEFAULT_CONFIG, ROBUST_ABLATION_STRATEGIES, SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER
 from .db import quote_ident
 from .evidence_policy import API_SKIP, decide_api_need
 from .endpoint_catalog import Endpoint
@@ -42,6 +42,7 @@ APPLIED_TRIAL_STRATEGIES = [
     "POST_SQL_DETERMINISTIC_APPLIED_TRIAL",
     "COMBINED_SAFE_APPLIED_TRIAL",
     "COMBINED_SAFE_DETERMINISTIC_PROMOTION_CANDIDATE",
+    SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER,
     "ROBUST_GENERALIZED_HARNESS_CANDIDATE",
 ] + ROBUST_ABLATION_STRATEGIES
 

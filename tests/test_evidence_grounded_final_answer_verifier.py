@@ -141,6 +141,17 @@ def test_blocks_live_empty_as_global_absence() -> None:
     assert result.over_specified_claims
 
 
+def test_blocks_live_empty_scoped_phrase_with_global_overreach() -> None:
+    result = verify_evidence_grounded_final_answer(
+        "No matching records were returned for this query globally.",
+        slots=_live_empty_slots(),
+        caveats=["API_LIVE_EMPTY"],
+    )
+
+    assert result.ok is False
+    assert result.over_specified_claims
+
+
 def test_allows_live_empty_as_scoped_empty() -> None:
     result = verify_evidence_grounded_final_answer(
         "No matching records were returned for this query scope.",

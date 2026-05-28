@@ -268,6 +268,25 @@ def test_openrouter_generate_messages_uses_openrouter_endpoint(monkeypatch):
     assert "unit-test-openrouter-key" not in str(result)
 
 
+def test_openai_client_classifies_and_redacts_sdk_auth_error(monkeypatch):
+    class FakeCompletions:
+        def create(self, **payload):
+            raise RuntimeError("401 Unauthorized: Bearer unit-test-secret")
+
+    class FakeOpenAI:
+        def __init__(self, **kwargs):
+            self.chat = type("Chat", (), {"completions": FakeCompletions()})()
+
+    monkeypatch.setattr("dashagent.llm_client.OpenAI", FakeOpenAI)
+    client = OpenAILLMClient(api_key="unit-test-secret")
+    result = client.generate_messages([{"role": "user", "content": "hello"}])
+
+    assert result["ok"] is False
+    assert result["error_category"] == "auth_or_401"
+    assert "unit-test-secret" not in str(result)
+    assert "[REDACTED]" in result["error"]
+
+
 def test_anthropic_client_normalizes_tool_use(monkeypatch):
     captured = {}
 

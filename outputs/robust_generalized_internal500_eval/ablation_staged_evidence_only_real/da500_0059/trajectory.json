@@ -1,0 +1,207 @@
+{
+  "answer_time": 0.0,
+  "api_call_count": 0,
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "correctness_role": "keeps later normalization from changing the user-facing question",
+      "duration_ms": 0.0,
+      "effect": "preserves the original query for reproducibility",
+      "efficiency_role": "starts one trace without extra tool calls",
+      "output": {
+        "query": "Why would an organization use a connector? Keep the answer conceptual for the workflow brief.",
+        "query_id": "da500_0059",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "stage": "input",
+      "technique": "raw user query capture",
+      "timestamp": "2026-05-27T20:29:35.874234+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_runtime_leakage_guard",
+      "correctness_role": "prevents gold/category/tags/oracle/expected-trace leakage into runtime decisions",
+      "duration_ms": 0.0,
+      "effect": "asserts that candidate runtime receives only prompt/runtime fields, not evaluator metadata",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "output": {
+        "category_tags_visible": false,
+        "expected_trace_visible": false,
+        "oracle_sql_visible": false,
+        "prompt_id_specific_branching": false,
+        "query_id_specific_branching": false,
+        "runtime_gold_visible": false,
+        "runtime_input_fields": {
+          "items": [
+            "query",
+            "query_id",
+            "strategy"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "runtime safety",
+      "technique": "runtime input isolation guard",
+      "timestamp": "2026-05-27T20:29:35.874243+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_score_provenance_guard",
+      "correctness_role": "prevents simulated or gold-visible scores from being treated as runtime evidence",
+      "duration_ms": 0.0,
+      "effect": "marks candidate runs as real-agent runtime executions without promotion judgment",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "output": {
+        "organizer_equivalent": false,
+        "promotion_eligible": false,
+        "promotion_judgment_run": false,
+        "real_agent_execution": true,
+        "runtime_gold_visible": false,
+        "score_source": "runtime_candidate",
+        "strategy": "SQL_FIRST_API_VERIFY",
+        "synthetic_trace": false
+      },
+      "stage": "runtime safety",
+      "technique": "score provenance guard",
+      "timestamp": "2026-05-27T20:29:35.874245+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_00_prompt_router",
+      "correctness_role": "routes data questions to evidence tools instead of unsupported direct answers",
+      "duration_ms": 0.0,
+      "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
+      "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
+      "input_summary": {
+        "query": "Why would an organization use a connector? Keep the answer conceptual for the workflow brief."
+      },
+      "output": {
+        "confidence": 0.9,
+        "matched_rules": {
+          "items": [
+            "conceptual_prefix",
+            "no_data_keywords"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "mode": "LLM_DIRECT",
+        "reason": "Conceptual prompt with no local DB/API evidence request.",
+        "recommended_strategy": "LLM_DIRECT",
+        "requires_api": false,
+        "requires_database": false,
+        "risk": "low",
+        "truncated_fields": 1
+      },
+      "stage": "prompt routing",
+      "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
+      "timestamp": "2026-05-27T20:29:35.874270+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_simple_prompt_gate",
+      "correctness_role": "prevents direct answers for data questions that need SQL/API evidence",
+      "duration_ms": 0.0,
+      "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
+      "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
+      "input_summary": {
+        "query": "Why would an organization use a connector? Keep the answer conceptual for the workflow brief."
+      },
+      "output": {
+        "confidence": 0.9,
+        "is_simple": true,
+        "reason": "Conceptual prompt with no local DB/API evidence request.",
+        "suggested_action": "LLM_DIRECT"
+      },
+      "stage": "input routing",
+      "technique": "simple prompt gate",
+      "timestamp": "2026-05-27T20:29:35.874285+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_real_behavior_applied_trial",
+      "correctness_role": "falls back to SQL_FIRST_API_VERIFY unless all no-tool safety checks pass",
+      "duration_ms": 0.0,
+      "effect": "applies a semantic no-tool shortcut only in explicit real benchmark trial modes",
+      "efficiency_role": "measures real tool-call savings for conceptual false-positive routes",
+      "input_summary": {
+        "trial_mode": "ablation_staged_evidence_only_real"
+      },
+      "output": {
+        "applied": false,
+        "blockers": {
+          "items": [
+            "SEMANTIC_NO_TOOL_SAFETY_NOT_SATISFIED"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "decision": "FALLBACK",
+        "decision_family": "SEMANTIC_NO_TOOL",
+        "fallback": true,
+        "record": true,
+        "shadow_only": false,
+        "trial_mode": "ablation_staged_evidence_only_real",
+        "truncated_fields": 2
+      },
+      "stage": "isolated applied trial",
+      "technique": "semantic no-tool applied trial",
+      "timestamp": "2026-05-27T20:29:35.874290+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "correctness_role": "does not invent local DB/API evidence",
+      "duration_ms": 0.0,
+      "effect": "returns a safe no-tool fallback for conceptual prompts",
+      "efficiency_role": "uses zero SQL/API tool calls",
+      "output": {
+        "answer_length": 201,
+        "final_answer": "This is a conceptual prompt that does not require local SQL or Adobe API evidence. Use the optimized LLM controller mode for a real direct LLM response; the deterministic backend skipped SQL/API calls.",
+        "final_token_estimate": 39
+      },
+      "stage": "final response",
+      "technique": "deterministic no-key direct fallback",
+      "timestamp": "2026-05-27T20:29:35.875144+00:00"
+    }
+  ],
+  "domain_type": "CONCEPTUAL",
+  "errors": [],
+  "estimated_tokens": 209,
+  "execution_time": 0.0,
+  "final_answer": "This is a conceptual prompt that does not require local SQL or Adobe API evidence. Use the optimized LLM controller mode for a real direct LLM response; the deterministic backend skipped SQL/API calls.",
+  "original_query": "Why would an organization use a connector? Keep the answer conceptual for the workflow brief.",
+  "planning_time": 0.0,
+  "preprocessing_time": 0.0,
+  "query_id": "da500_0059",
+  "route_type": "LLM_DIRECT",
+  "runtime": 0.0032172081992030144,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "api_policy": "API_SKIP",
+      "confidence": 0.9,
+      "kind": "prompt_router",
+      "matched_rules": [
+        "conceptual_prefix",
+        "no_data_keywords"
+      ],
+      "mode": "LLM_DIRECT",
+      "reason": "Conceptual prompt with no local DB/API evidence request.",
+      "recommended_strategy": "LLM_DIRECT",
+      "requires_api": false,
+      "requires_database": false,
+      "risk": "low"
+    },
+    {
+      "estimated_tokens": 149,
+      "kind": "metadata",
+      "metadata_path": "outputs/robust_generalized_internal500_eval/ablation_staged_evidence_only_real/da500_0059/metadata.json",
+      "prompt_tokens": 626
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {},
+  "tool_call_count": 0
+}

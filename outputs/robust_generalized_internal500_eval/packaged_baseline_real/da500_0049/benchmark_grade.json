@@ -1,0 +1,535 @@
+{
+  "agent_executor_used": true,
+  "category_tags_domain_visible_to_runtime": false,
+  "engine": "real_agent",
+  "expected_trace_visible_to_runtime": false,
+  "extracted_runtime": {
+    "anti_hallucination_initial_fail": false,
+    "anti_hallucination_revision_attempted": false,
+    "anti_hallucination_revision_success": false,
+    "api_calls": 1,
+    "api_calls_added": 0,
+    "api_calls_saved": 0,
+    "api_families": [
+      "schema_registry_schemas"
+    ],
+    "api_used": true,
+    "applied_decision_count": 0,
+    "applied_decision_records": [],
+    "behavior_changed": false,
+    "blocker_count": 0,
+    "checkpoint_names": [
+      "checkpoint_01_raw_query",
+      "checkpoint_00_prompt_router",
+      "checkpoint_simple_prompt_gate",
+      "checkpoint_objective_prompt_features",
+      "checkpoint_02_query_normalization",
+      "checkpoint_03_query_tokens",
+      "checkpoint_04_relevance_scoring",
+      "checkpoint_query_decomposition",
+      "checkpoint_05_query_analysis",
+      "checkpoint_06_lookup_path",
+      "checkpoint_07_context_card",
+      "checkpoint_08_candidate_plans",
+      "checkpoint_09_plan_optimization",
+      "checkpoint_10_evidence_policy",
+      "checkpoint_11_call_budget",
+      "checkpoint_gated_sql_candidate_selection",
+      "checkpoint_12_validation",
+      "checkpoint_sql_ast_validation",
+      "checkpoint_13_tool_execution",
+      "checkpoint_14_evidence_bus",
+      "checkpoint_15_answer_slots",
+      "checkpoint_16_answer_verification",
+      "checkpoint_17_answer_reranking",
+      "checkpoint_18_final_answer"
+    ],
+    "estimated_total_tokens": 1210,
+    "fallback_count": 0,
+    "feature_flags_used": {
+      "combined_safe_applied": false,
+      "combined_safe_deterministic_promotion_candidate": false,
+      "post_sql_deterministic_applied": false,
+      "post_sql_llm_advisor_applied": false,
+      "robust_generalized_harness_candidate": false,
+      "semantic_no_tool_applied": false,
+      "staged_evidence_applied": false
+    },
+    "latest_code_paths_enabled": {
+      "compact_json_llm_context": false,
+      "evidence_bus_answer_verifier_token_reduction": true,
+      "no_tool_safety_verifier": false,
+      "objective_prompt_features": true,
+      "post_sql_api_call_verifier": false,
+      "post_sql_deterministic_policy": false,
+      "post_sql_llm_advisor": false,
+      "routing_anti_hallucination_gate": false,
+      "routing_feedback_revision": false,
+      "semantic_intent_classifier": false,
+      "semantic_route_decision_ladder": false,
+      "staged_evidence_policy": false
+    },
+    "missing_checkpoints": [
+      "checkpoint_semantic_route_decision_ladder",
+      "checkpoint_initial_evidence_branch_policy",
+      "checkpoint_post_sql_api_call_verifier"
+    ],
+    "observable_trace": {
+      "checkpoint_00_prompt_router": {
+        "confidence": 0.9,
+        "matched_rules": {
+          "items": [
+            "api_only:file"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "mode": "API_ONLY",
+        "reason": "API/platform family keyword(s): file.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": true,
+        "requires_database": false,
+        "risk": "medium",
+        "truncated_fields": 1
+      },
+      "checkpoint_01_raw_query": {
+        "query": "Why would an organization use a schema? Keep the answer conceptual for the profile brief.",
+        "query_id": "da500_0049",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "checkpoint_02_query_normalization": {
+        "matching_text": "why would an organization use a schema? keep the answer conceptual for the profile brief.",
+        "normalized_query": "Why would an organization use a schema? Keep the answer conceptual for the profile brief."
+      },
+      "checkpoint_03_query_tokens": {
+        "domains": {
+          "items": [
+            "batch",
+            "schema_dataset",
+            "segment_audience"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_04_relevance_scoring": {
+        "top_answer_families": {
+          "items": [
+            "schema_dataset"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "top_apis": {
+          "items": [
+            "export_batch_failed",
+            "export_batch_files",
+            "audit_events"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_join_hints": {
+          "items": [
+            "dim_blueprint.BLUEPRINTID->hkg_br_blueprint_collection.BLUEPRINTID",
+            "dim_collection.COLLECTIONID->hkg_br_blueprint_collection.COLLECTIONID",
+            "dim_blueprint.BLUEPRINTID->hkg_br_blueprint_property.BLUEPRINTID"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_tables": {
+          "items": [
+            "dim_blueprint",
+            "dim_collection",
+            "hkg_br_blueprint_collection"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_05_query_analysis": {
+        "answer_family": "schema_dataset",
+        "api_templates": {
+          "items": [
+            "schema_list"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "confidence": 0.8,
+        "domain_type": "SEGMENT_AUDIENCE",
+        "fast_path": "blueprint_collection_list+schema_list",
+        "route_type": "SQL_ONLY",
+        "sql_template": "blueprint_collection_list",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "checkpoint_06_lookup_path": {
+        "api_families": {
+          "items": [
+            "datasets_by_schema",
+            "schema_registry_by_id",
+            "schema_by_name"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "api_mode": "required",
+        "family": "schema_dataset",
+        "join_path": {
+          "items": [
+            "dim_blueprint.blueprintid = hkg_br_blueprint_collection.blueprintid",
+            "hkg_br_blueprint_collection.collectionid = dim_collection.collectionid"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "required_ids": {
+          "items": [
+            "schema_id",
+            "blueprint_id",
+            "collection_id"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "tables": {
+          "items": [
+            "dim_blueprint",
+            "hkg_br_blueprint_collection",
+            "dim_collection"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_07_context_card": {
+        "estimated_metadata_tokens": 897,
+        "prompt_tokens": 1548,
+        "selected_apis": {
+          "items": [
+            "schema_registry_schemas"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "selected_card_name": "schema_dataset",
+        "selected_columns": {
+          "dim_blueprint": {
+            "items": [
+              "BLUEPRINTID",
+              "NAME",
+              "CLASS"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "dim_collection": {
+            "items": [
+              "COLLECTIONID",
+              "NAME",
+              "ROWCOUNT"
+            ],
+            "total_items": 4,
+            "truncated_items": true
+          },
+          "hkg_br_blueprint_collection": {
+            "items": [
+              "BLUEPRINTID",
+              "COLLECTIONID"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          }
+        },
+        "selected_tables": {
+          "items": [
+            "dim_blueprint",
+            "hkg_br_blueprint_collection",
+            "dim_collection"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_08_candidate_plans": {
+        "candidate_plan_names": {
+          "items": [
+            "generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "reason_selected": "highest pre-execution validation/relevance/cost score",
+        "scores": {
+          "generic_sql_first": 14.2563
+        },
+        "selected_plan": "generic_sql_first"
+      },
+      "checkpoint_09_plan_optimization": {
+        "call_budget_applied": false,
+        "optimized_step_count": 2,
+        "optimizer_actions": {
+          "items": [
+            "ensemble selected generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "original_step_count": 2,
+        "removed_api_skip_calls": 0,
+        "removed_duplicate_calls": 0,
+        "unresolved_placeholders_removed": 0
+      },
+      "checkpoint_10_evidence_policy": {
+        "allowed_api_families": {
+          "items": [
+            "schema_list"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "max_api_calls": 1,
+        "mode": "API_REQUIRED",
+        "reason": "Query family requires Adobe API evidence."
+      },
+      "checkpoint_11_call_budget": {
+        "final_planned_calls": 2,
+        "max_api_calls": 1,
+        "max_sql_calls": 1,
+        "max_total_tool_calls": 2,
+        "planned_api_calls": 1,
+        "planned_sql_calls": 1
+      },
+      "checkpoint_12_validation": {
+        "api_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_13_tool_execution": {
+        "preview": "{\"sql_calls_executed\": 1, \"api_calls_executed\": 1, \"dry_run_status\": true, \"row_counts\": {\"items\": [27], \"total_items\": 1, \"truncated_items\": false}, \"sql_results\": {\"items\": [{\"result_preview\": {\"items\": [{\"collection_id\": \"69c8dad4aa7a59818543461a\", \"collection_name\": \"hkg_adls_profile_count_history\"}, {\"collection_id\": \"69c8d9e7cba5deaa7974b00b\", \"collection_name\": \"weRetail: Customer Actions\"}, {\"collection_id\": \"69c8d7e9d780f4fae2346a56\", \"collection_name\": \"AJO STO Summary Dataset\"}], \"total_items\": 3, \"truncated_items\": false}, \"ok\": true, \"row_count\": 27}], \"total_items\": 1, \"truncated_items\": false}, \"api_results\": {\"items\": [{\"result_preview\": {\"ok\": false, \"dry_run\": true, \"live_success\": false, \"evidence_state\": \"dry_run_unavailable\", \"error_category\": \"dry_run_unavailable\", \"endpoint_family\": \"/data/foundation/schemaregistry/tenant/schemas\", \"usable_evidence\": false, \"caveat\": \"Adobe credentials unavailable; API call not executed.\"}, \"ok\": false, \"dry_run\": true, \"method\":...",
+        "truncated": true
+      },
+      "checkpoint_14_evidence_bus": {
+        "evidence": {
+          "ids": {
+            "collection_id": "69c8dad4aa7a59818543461a"
+          }
+        }
+      },
+      "checkpoint_15_answer_slots": {
+        "answer_intent": "DETAIL",
+        "discrepancy_flags": {
+          "sql_api_discrepancy": false
+        },
+        "dry_run_flags": {
+          "dry_run": true
+        },
+        "slots": {
+          "answer_family": "schema_dataset",
+          "api_error": false,
+          "counts": {
+            "items": [
+              "27"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "discrepancy": false,
+          "dry_run": true,
+          "entity_names": {
+            "items": [
+              "hkg_adls_profile_count_history",
+              "weRetail: Customer Actions",
+              "AJO STO Summary Dataset"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names",
+              "counts",
+              "sql_row_count"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "sql_row_count": 27
+        }
+      },
+      "checkpoint_16_answer_verification": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "rewrite_applied": false,
+        "supported_claims_count": 0,
+        "unsupported_claims_count": 0,
+        "verifier_passed": true
+      },
+      "checkpoint_17_answer_reranking": {
+        "candidate_count": 0,
+        "selected_candidate_type": "base",
+        "selection_reason": "best verifier-passing answer"
+      },
+      "checkpoint_18_final_answer": {
+        "answer_length": 479,
+        "final_answer": "Based on the evidence provided, matching datasets are: hkg_adls_profile_count_history, weRetail: Customer Actions, AJO STO Summary Dataset, AJO Entity Dataset, AJO Classification Dataset, AJO Push Tracking Experience Event Dataset, AJO Live Activities Feedback Event Dataset, ODE DecisionEvents - external-benchmarking decisioning, AJO Push Profile Dataset, and AJO Inbound Activity Event Dataset. Live API verification was not executed because Adobe credentials are unavailable.",
+        "final_token_estimate": 96
+      },
+      "checkpoint_gated_sql_candidate_selection": {
+        "preview": "{\"active\": true, \"hard_case_triggered\": true, \"trigger_reasons\": {\"items\": [\"complex_query_decomposition\"], \"total_items\": 1, \"truncated_items\": false}, \"candidate_count\": 1, \"candidate_sql_sources\": {\"items\": [\"blueprint_collection_list\"], \"total_items\": 1, \"truncated_items\": false}, \"validation_results\": {\"items\": [{\"name\": \"candidate_0\", \"sql\": \"SELECT DISTINCT C.\\\"COLLECTIONID\\\" AS collection_id, C.\\\"NAME\\\" AS collection_name FROM \\\"hkg_br_blueprint_collection\\\" AS BC JOIN \\\"dim_collection\\\" AS C ON BC.\\\"COLLECTIONID\\\" = C.\\\"COLLECTIONID\\\" JOIN \\\"dim_blueprint\\\" AS B ON BC.\\\"BLUEPRINTID\\\" = B.\\\"BLUEPRINTID\\\" LIMIT 50\", \"source\": \"blueprint_collection_list\", \"validation_ok\": true, \"ast_valid\": true, \"expected_answer_shape\": \"short_fact\", \"cost_estimate\": 1}], \"total_items\": 1, \"truncated_items\": false}, \"selected_candidate\": {\"name\": \"candidate_0\", \"sql\": \"SELECT DISTINCT C.\\\"COLLECTIONID\\\" AS collection_id, C.\\\"NAME\\\" AS collection_name FROM \\\"hkg_br_blueprint_collection\\\" AS BC JO...",
+        "truncated": true
+      },
+      "checkpoint_objective_prompt_features": {
+        "count": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "cue": {
+          "items": [
+            "WHY"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "domain": {
+          "items": [
+            "SCHEMA"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "entity": {
+          "items": [
+            "ID_LIKE"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "norm": "why would an organization use a schema? keep the answer conceptual for the profile brief.",
+        "p": "Why would an organization use a schema? Keep the answer conceptual for the profile brief.",
+        "rel": {
+          "items": [
+            "USES"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "status": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "truncated_fields": 12
+      },
+      "checkpoint_query_decomposition": {
+        "active": true,
+        "expected_answer_shape": "short_fact",
+        "sub_questions": {
+          "items": [
+            "Break complex request into SQL planning constraints."
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_simple_prompt_gate": {
+        "confidence": 0.9,
+        "is_simple": false,
+        "reason": "API/platform family keyword(s): file.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      },
+      "checkpoint_sql_ast_validation": {
+        "preview": "{\"summaries\": {\"items\": [{\"enabled\": true, \"parsed_ok\": true, \"selected_tables\": {\"items\": [\"hkg_br_blueprint_collection\", \"dim_collection\", \"dim_blueprint\"], \"total_items\": 3, \"truncated_items\": false}, \"selected_columns\": {\"items\": [\"C.COLLECTIONID\", \"C.NAME\", \"BC.COLLECTIONID\"], \"total_items\": 5, \"truncated_items\": true}, \"destructive_sql_detected\": false, \"normalized_sql\": \"SELECT DISTINCT C.\\\"COLLECTIONID\\\" AS collection_id, C.\\\"NAME\\\" AS collection_name FROM \\\"hkg_br_blueprint_collection\\\" AS BC JOIN \\\"dim_collection\\\" AS C ON BC.\\\"COLLECTIONID\\\" = C.\\\"COLLECTIONID\\\" JOIN \\\"dim_blueprint\\\" AS B ON BC.\\\"BLUEPRINTID\\\" = B.\\\"BLUEPRINTID\\\" LIMIT 50\"}], \"total_items\": 1, \"truncated_items\": false}, \"parsed_ok\": true, \"selected_tables\": {\"items\": [\"dim_blueprint\", \"dim_collection\", \"hkg_br_blueprint_collection\"], \"total_items\": 3, \"truncated_items\": false}, \"selected_columns\": {\"items\": [\"B.BLUEPRINTID\", \"BC.BLUEPRINTID\", \"BC.COLLECTIONID\"], \"total_items\": 5, \"truncated_items\": true}, \"...",
+        "truncated": true
+      }
+    },
+    "post_sql_advisor_blocked": false,
+    "post_sql_advisor_checkpoint_present": false,
+    "post_sql_advisor_disabled_or_fallback": false,
+    "post_sql_advisor_invoked": false,
+    "post_sql_advisor_source": "UNKNOWN",
+    "post_sql_advisor_verified": false,
+    "post_sql_deterministic_fallback": false,
+    "post_sql_llm_advice_blocked": false,
+    "post_sql_llm_advisor_actual_call": false,
+    "post_sql_verifier_blocked": false,
+    "post_sql_verifier_source": "UNKNOWN",
+    "post_sql_verifier_verified": false,
+    "route_action": "SQL_THEN_API",
+    "runtime_ms": 39.37008371576667,
+    "skipped_decision_count": 0,
+    "sql_calls": 1,
+    "sql_tables": [
+      "dim_blueprint",
+      "dim_collection",
+      "hkg_br_blueprint_collection"
+    ],
+    "sql_used": true,
+    "trajectory_timing": {},
+    "unsupported_claims": 0
+  },
+  "gold_visible_to_runtime": false,
+  "grade": {
+    "answer_grounding_score": 1.0,
+    "api_endpoint_family_accuracy": 1.0,
+    "api_error_interpretation_correct": true,
+    "api_required_used_accuracy": 0.5,
+    "behavior_score": 0.5833,
+    "combined_diagnostic_score": 0.3375,
+    "expected_evidence_need_accuracy": 0.0,
+    "expected_observable_trace_score": 0.25,
+    "final_answer_correctness": 0.5,
+    "forbidden_claims_violation": false,
+    "live_empty_interpretation_correct": true,
+    "no_tool_false_negative": true,
+    "no_tool_false_positive": false,
+    "overall_score": 0.3375,
+    "required_facts_coverage": 0.0,
+    "route_accuracy": 0.0,
+    "sql_required_used_accuracy": 0.5,
+    "sql_table_accuracy": 1.0,
+    "tool_overuse": 1,
+    "tool_underuse": 0,
+    "trace_observability_score": 0.25,
+    "unsupported_claims": 0
+  },
+  "mode": "packaged_baseline_real",
+  "oracle_visible_to_runtime": false,
+  "prompt_id": "da500_0049",
+  "runtime_input": {
+    "prompt": "Why would an organization use a schema? Keep the answer conceptual for the profile brief.",
+    "prompt_id": "da500_0049"
+  },
+  "synthetic_sql_results_used": false,
+  "trajectory_path": "outputs/robust_generalized_internal500_eval/packaged_baseline_real/da500_0049/trajectory.json"
+}

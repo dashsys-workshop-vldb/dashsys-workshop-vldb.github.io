@@ -1,0 +1,644 @@
+{
+  "agent_executor_used": true,
+  "category_tags_domain_visible_to_runtime": false,
+  "engine": "real_agent",
+  "expected_trace_visible_to_runtime": false,
+  "extracted_runtime": {
+    "anti_hallucination_initial_fail": false,
+    "anti_hallucination_revision_attempted": false,
+    "anti_hallucination_revision_success": false,
+    "api_calls": 0,
+    "api_calls_added": 0,
+    "api_calls_saved": 0,
+    "api_families": [],
+    "api_used": false,
+    "applied_decision_count": 0,
+    "applied_decision_records": [
+      {
+        "applied": false,
+        "blockers": {
+          "items": [
+            "SEMANTIC_NO_TOOL_SAFETY_NOT_SATISFIED"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "decision": "FALLBACK",
+        "decision_family": "SEMANTIC_NO_TOOL",
+        "fallback": true,
+        "record": true,
+        "shadow_only": false,
+        "trial_mode": "ablation_staged_evidence_only_real",
+        "truncated_fields": 2
+      }
+    ],
+    "behavior_changed": false,
+    "blocker_count": 3,
+    "checkpoint_names": [
+      "checkpoint_01_raw_query",
+      "checkpoint_runtime_leakage_guard",
+      "checkpoint_score_provenance_guard",
+      "checkpoint_00_prompt_router",
+      "checkpoint_simple_prompt_gate",
+      "checkpoint_real_behavior_applied_trial",
+      "checkpoint_02_query_normalization",
+      "checkpoint_03_query_tokens",
+      "checkpoint_04_relevance_scoring",
+      "checkpoint_query_decomposition",
+      "checkpoint_05_query_analysis",
+      "checkpoint_06_lookup_path",
+      "checkpoint_07_context_card",
+      "checkpoint_08_candidate_plans",
+      "checkpoint_09_plan_optimization",
+      "checkpoint_10_evidence_policy",
+      "checkpoint_11_call_budget",
+      "checkpoint_evidence_match_scores",
+      "checkpoint_initial_evidence_branch_policy",
+      "checkpoint_gated_sql_candidate_selection",
+      "checkpoint_12_validation",
+      "checkpoint_sql_ast_validation",
+      "checkpoint_13_tool_execution",
+      "checkpoint_14_evidence_bus",
+      "checkpoint_15_answer_slots",
+      "checkpoint_16_answer_verification",
+      "checkpoint_17_answer_reranking",
+      "checkpoint_18_final_answer"
+    ],
+    "estimated_total_tokens": 1122,
+    "fallback_count": 1,
+    "feature_flags_used": {
+      "combined_safe_applied": false,
+      "combined_safe_deterministic_promotion_candidate": false,
+      "post_sql_deterministic_applied": false,
+      "post_sql_llm_advisor_applied": false,
+      "robust_generalized_harness_candidate": false,
+      "semantic_no_tool_applied": false,
+      "staged_evidence_applied": false
+    },
+    "latest_code_paths_enabled": {
+      "compact_json_llm_context": false,
+      "evidence_bus_answer_verifier_token_reduction": true,
+      "no_tool_safety_verifier": false,
+      "objective_prompt_features": false,
+      "post_sql_api_call_verifier": false,
+      "post_sql_deterministic_policy": false,
+      "post_sql_llm_advisor": false,
+      "routing_anti_hallucination_gate": false,
+      "routing_feedback_revision": false,
+      "semantic_intent_classifier": false,
+      "semantic_route_decision_ladder": false,
+      "staged_evidence_policy": true
+    },
+    "missing_checkpoints": [
+      "checkpoint_objective_prompt_features",
+      "checkpoint_semantic_route_decision_ladder",
+      "checkpoint_post_sql_api_call_verifier"
+    ],
+    "observable_trace": {
+      "checkpoint_00_prompt_router": {
+        "confidence": 0.84,
+        "matched_rules": {
+          "items": [
+            "local_db:dataset",
+            "local_db:how many",
+            "local_db:local snapshot"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "mode": "LOCAL_DB_ONLY",
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: dataset, how many, local snapshot, segment.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": false,
+        "requires_database": true,
+        "risk": "low",
+        "truncated_fields": 1
+      },
+      "checkpoint_01_raw_query": {
+        "query": "How many local snapshot relationships connect datasets and segments? Use only local snapshot evidence for the quality review.",
+        "query_id": "da500_0066",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "checkpoint_02_query_normalization": {
+        "matching_text": "how many local snapshot relationships connect dataset and segment? use only local snapshot evidence for the quality review.",
+        "normalized_query": "How many local snapshot relationships connect datasets and segments? Use only local snapshot evidence for the quality review.",
+        "rewrites": {
+          "items": [
+            "important_plurals->singular"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_03_query_tokens": {
+        "domains": {
+          "items": [
+            "schema_dataset",
+            "segment_audience"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_04_relevance_scoring": {
+        "top_answer_families": {
+          "items": [
+            "schema_dataset",
+            "segment_destination"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "top_apis": {
+          "items": [
+            "audit_events",
+            "audit_events_short",
+            "catalog_datasets"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_join_hints": {
+          "items": [
+            "br_campaign_segment.SEGMENTID->dim_segment.SEGMENTID",
+            "br_campaign_segment.SEGMENTID->hkg_br_base_segment_used_by_dependent_segment.SEGMENTID",
+            "br_campaign_segment.SEGMENTID->hkg_br_collection_segment.SEGMENTID"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_tables": {
+          "items": [
+            "dim_blueprint",
+            "dim_collection",
+            "hkg_br_blueprint_collection"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_05_query_analysis": {
+        "answer_family": "schema_dataset",
+        "api_templates": {
+          "items": [
+            "gold_pattern_fallback"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "confidence": 1.0,
+        "domain_type": "SEGMENT_AUDIENCE",
+        "fast_path": "blueprint_collection_count+gold_pattern_fallback",
+        "route_type": "SQL_ONLY",
+        "sql_template": "blueprint_collection_count",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "checkpoint_06_lookup_path": {
+        "api_families": {
+          "items": [
+            "datasets_by_schema",
+            "schema_registry_by_id",
+            "schema_by_name"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "api_mode": "required",
+        "family": "schema_dataset",
+        "join_path": {
+          "items": [
+            "dim_blueprint.blueprintid = hkg_br_blueprint_collection.blueprintid",
+            "hkg_br_blueprint_collection.collectionid = dim_collection.collectionid"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "required_ids": {
+          "items": [
+            "schema_id",
+            "blueprint_id",
+            "collection_id"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "tables": {
+          "items": [
+            "dim_blueprint",
+            "hkg_br_blueprint_collection",
+            "dim_collection"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_07_context_card": {
+        "estimated_metadata_tokens": 902,
+        "prompt_tokens": 1552,
+        "selected_apis": {
+          "items": [
+            "schema_registry_schema"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "selected_card_name": "schema_dataset",
+        "selected_columns": {
+          "dim_blueprint": {
+            "items": [
+              "BLUEPRINTID",
+              "NAME",
+              "CLASS"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "dim_collection": {
+            "items": [
+              "COLLECTIONID",
+              "NAME",
+              "ROWCOUNT"
+            ],
+            "total_items": 4,
+            "truncated_items": true
+          },
+          "hkg_br_blueprint_collection": {
+            "items": [
+              "BLUEPRINTID",
+              "COLLECTIONID"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          }
+        },
+        "selected_tables": {
+          "items": [
+            "dim_blueprint",
+            "hkg_br_blueprint_collection",
+            "dim_collection"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_08_candidate_plans": {
+        "candidate_plan_names": {
+          "items": [
+            "generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "reason_selected": "highest pre-execution validation/relevance/cost score",
+        "scores": {
+          "generic_sql_first": 12.3467
+        },
+        "selected_plan": "generic_sql_first"
+      },
+      "checkpoint_09_plan_optimization": {
+        "call_budget_applied": false,
+        "optimized_step_count": 1,
+        "optimizer_actions": {
+          "items": [
+            "ensemble selected generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "original_step_count": 1,
+        "removed_api_skip_calls": 0,
+        "removed_duplicate_calls": 0,
+        "unresolved_placeholders_removed": 0
+      },
+      "checkpoint_10_evidence_policy": {
+        "max_api_calls": 0,
+        "mode": "API_SKIP",
+        "reason": "SQL template blueprint_collection_count fully answers this local query."
+      },
+      "checkpoint_11_call_budget": {
+        "final_planned_calls": 1,
+        "max_api_calls": 0,
+        "max_sql_calls": 1,
+        "max_total_tool_calls": 1,
+        "planned_api_calls": 0,
+        "planned_sql_calls": 1
+      },
+      "checkpoint_12_validation": {
+        "sql_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_13_tool_execution": {
+        "api_calls_executed": 0,
+        "dry_run_status": false,
+        "row_counts": {
+          "items": [
+            26
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_calls_executed": 1,
+        "sql_results": {
+          "items": [
+            {
+              "ok": true,
+              "result_preview": {
+                "items": [
+                  {
+                    "blueprint_id": "b591e935cfb3d52d3dc0c9e551e927d067b35d4b4b8af8bf",
+                    "blueprint_name": "Journey Inbound External Segment Profile Schema",
+                    "collection_count": 2
+                  },
+                  {
+                    "blueprint_id": "5d83782405caad7e84f827d9e3867234d2f4129c26cc2551",
+                    "blueprint_name": "AJO Consent Service Schema",
+                    "collection_count": 1
+                  },
+                  {
+                    "blueprint_id": "83693ac5ccc4a5271a0b1aaf0e378b9c0a477e67a60e92b1",
+                    "blueprint_name": "AJO Profile Counters Extension",
+                    "collection_count": 1
+                  }
+                ],
+                "total_items": 3,
+                "truncated_items": false
+              },
+              "row_count": 26
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_14_evidence_bus": {
+        "evidence": {
+          "counts": {
+            "items": [
+              2,
+              1,
+              1
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "ids": {
+            "schema_id": "b591e935cfb3d52d3dc0c9e551e927d067b35d4b4b8af8bf"
+          }
+        }
+      },
+      "checkpoint_15_answer_slots": {
+        "answer_intent": "COUNT",
+        "discrepancy_flags": {
+          "sql_api_discrepancy": false
+        },
+        "dry_run_flags": {
+          "dry_run": false
+        },
+        "missing_slots": {
+          "items": [
+            "count_shape"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "slots": {
+          "answer_family": "schema_dataset",
+          "api_error": false,
+          "counts": {
+            "items": [
+              "26",
+              "2",
+              "1"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "discrepancy": false,
+          "dry_run": false,
+          "entity_names": {
+            "items": [
+              "Journey Inbound External Segment Profile Schema",
+              "AJO Consent Service Schema",
+              "AJO Profile Counters Extension"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names",
+              "counts",
+              "sql_row_count"
+            ],
+            "total_items": 4,
+            "truncated_items": true
+          },
+          "sql_row_count": 26
+        }
+      },
+      "checkpoint_16_answer_verification": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "rewrite_applied": false,
+        "supported_claims_count": 2,
+        "unsupported_claims_count": 0,
+        "verifier_passed": true
+      },
+      "checkpoint_17_answer_reranking": {
+        "candidate_count": 0,
+        "selected_candidate_type": "base",
+        "selection_reason": "best verifier-passing answer"
+      },
+      "checkpoint_18_final_answer": {
+        "answer_length": 186,
+        "final_answer": "Based on the evidence provided, 2 datasets have been ingested using the same schema. These datasets use \"Journey Inbound External Segment Profile Schema\". API evidence was not requested.",
+        "final_token_estimate": 37
+      },
+      "checkpoint_evidence_match_scores": {
+        "api_match": 0.55,
+        "api_match_codes": {
+          "items": [
+            "API_DOMAIN_MATCH",
+            "API_CAPABILITY_MATCH",
+            "RELEVANT_APIS"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "concrete_data_signal": true,
+        "live_api_signal": false,
+        "sql_match": 1.0,
+        "sql_match_codes": {
+          "items": [
+            "SQL_DOMAIN_MATCH",
+            "SQL_CAPABILITY_MATCH",
+            "CONCRETE_DATA_SIGNAL"
+          ],
+          "total_items": 5,
+          "truncated_items": true
+        }
+      },
+      "checkpoint_gated_sql_candidate_selection": {
+        "preview": "{\"active\": true, \"hard_case_triggered\": true, \"trigger_reasons\": {\"items\": [\"complex_query_decomposition\"], \"total_items\": 1, \"truncated_items\": false}, \"candidate_count\": 1, \"candidate_sql_sources\": {\"items\": [\"blueprint_collection_count\"], \"total_items\": 1, \"truncated_items\": false}, \"validation_results\": {\"items\": [{\"name\": \"candidate_0\", \"sql\": \"SELECT B.\\\"BLUEPRINTID\\\" AS blueprint_id, B.\\\"NAME\\\" AS blueprint_name, COUNT(DISTINCT C.\\\"COLLECTIONID\\\") AS collection_count FROM \\\"dim_blueprint\\\" AS B JOIN \\\"hkg_br_blueprint_collection\\\" AS BC ON B.\\\"BLUEPRINTID\\\" = BC.\\\"BLUEPRINTID\\\" JOIN \\\"dim_collection\\\" AS C ON BC.\\\"COLLECTIONID\\\" = C.\\\"COLLECTIONID\\\" GROUP BY B.\\\"BLUEPRINTID\\\", B.\\\"NAME\\\" ORDER BY collection_count DESC LIMIT 50\", \"source\": \"blueprint_collection_count\", \"validation_ok\": true, \"ast_valid\": false, \"expected_answer_shape\": \"scalar_count\", \"cost_estimate\": 1, \"rejection_reason\": \"AST table/column validation failed\"}], \"total_items\": 1, \"truncated_items\": false}, \"reje...",
+        "truncated": true
+      },
+      "checkpoint_initial_evidence_branch_policy": {
+        "first_branch": "SQL",
+        "policy_codes": {
+          "items": [
+            "SQL_HIGH_API_LOW"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "second_branch_policy": "NONE",
+        "shadow_only": false
+      },
+      "checkpoint_query_decomposition": {
+        "active": true,
+        "expected_answer_shape": "scalar_count",
+        "required_aggregations": {
+          "items": [
+            "count"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sub_questions": {
+          "items": [
+            "Compute requested aggregation or time-range result."
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_real_behavior_applied_trial": {
+        "applied": false,
+        "blockers": {
+          "items": [
+            "SEMANTIC_NO_TOOL_SAFETY_NOT_SATISFIED"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "decision": "FALLBACK",
+        "decision_family": "SEMANTIC_NO_TOOL",
+        "fallback": true,
+        "record": true,
+        "shadow_only": false,
+        "trial_mode": "ablation_staged_evidence_only_real",
+        "truncated_fields": 2
+      },
+      "checkpoint_runtime_leakage_guard": {
+        "category_tags_visible": false,
+        "expected_trace_visible": false,
+        "oracle_sql_visible": false,
+        "prompt_id_specific_branching": false,
+        "query_id_specific_branching": false,
+        "runtime_gold_visible": false,
+        "runtime_input_fields": {
+          "items": [
+            "query",
+            "query_id",
+            "strategy"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_score_provenance_guard": {
+        "organizer_equivalent": false,
+        "promotion_eligible": false,
+        "promotion_judgment_run": false,
+        "real_agent_execution": true,
+        "runtime_gold_visible": false,
+        "score_source": "runtime_candidate",
+        "strategy": "SQL_FIRST_API_VERIFY",
+        "synthetic_trace": false
+      },
+      "checkpoint_simple_prompt_gate": {
+        "confidence": 0.84,
+        "is_simple": false,
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: dataset, how many, local snapshot, segment.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      },
+      "checkpoint_sql_ast_validation": {
+        "preview": "{\"summaries\": {\"items\": [{\"enabled\": true, \"parsed_ok\": true, \"selected_tables\": {\"items\": [\"dim_blueprint\", \"hkg_br_blueprint_collection\", \"dim_collection\"], \"total_items\": 3, \"truncated_items\": false}, \"selected_columns\": {\"items\": [\"B.BLUEPRINTID\", \"B.NAME\", \"BC.BLUEPRINTID\"], \"total_items\": 6, \"truncated_items\": true}, \"unknown_columns\": {\"items\": [\"collection_count\"], \"total_items\": 1, \"truncated_items\": false}, \"destructive_sql_detected\": false, \"closest_column_suggestions\": {}, \"normalized_sql\": \"SELECT B.\\\"BLUEPRINTID\\\" AS blueprint_id, B.\\\"NAME\\\" AS blueprint_name, COUNT(DISTINCT C.\\\"COLLECTIONID\\\") AS collection_count FROM \\\"dim_blueprint\\\" AS B JOIN \\\"hkg_br_blueprint_collection\\\" AS BC ON B.\\\"BLUEPRINTID\\\" = BC.\\\"BLUEPRINTID\\\" JOIN \\\"dim_collection\\\" AS C ON BC.\\\"COLLECTIONID\\\" = C.\\\"COLLECTIONID\\\" GROUP BY B.\\\"BLUEPRINTID\\\", B.\\\"NAME\\\" ORDER BY collection_count DESC LIMIT 50\"}], \"total_items\": 1, \"truncated_items\": false}, \"parsed_ok\": true, \"selected_tables\": {\"items\": [\"...",
+        "truncated": true
+      }
+    },
+    "post_sql_advisor_blocked": false,
+    "post_sql_advisor_checkpoint_present": false,
+    "post_sql_advisor_disabled_or_fallback": false,
+    "post_sql_advisor_invoked": false,
+    "post_sql_advisor_source": "UNKNOWN",
+    "post_sql_advisor_verified": false,
+    "post_sql_deterministic_fallback": false,
+    "post_sql_llm_advice_blocked": false,
+    "post_sql_llm_advisor_actual_call": false,
+    "post_sql_verifier_blocked": false,
+    "post_sql_verifier_source": "UNKNOWN",
+    "post_sql_verifier_verified": false,
+    "route_action": "SQL_ONLY",
+    "runtime_ms": 39.934542030096054,
+    "skipped_decision_count": 1,
+    "sql_calls": 1,
+    "sql_tables": [
+      "dim_blueprint",
+      "dim_collection",
+      "hkg_br_blueprint_collection"
+    ],
+    "sql_used": true,
+    "trajectory_timing": {},
+    "unsupported_claims": 0
+  },
+  "gold_visible_to_runtime": false,
+  "grade": {
+    "answer_grounding_score": 1.0,
+    "api_endpoint_family_accuracy": 1.0,
+    "api_error_interpretation_correct": true,
+    "api_required_used_accuracy": 1.0,
+    "behavior_score": 0.9583,
+    "combined_diagnostic_score": 0.8604,
+    "expected_evidence_need_accuracy": 1.0,
+    "expected_observable_trace_score": 0.7917,
+    "final_answer_correctness": 0.75,
+    "forbidden_claims_violation": false,
+    "live_empty_interpretation_correct": true,
+    "no_tool_false_negative": false,
+    "no_tool_false_positive": false,
+    "overall_score": 0.8604,
+    "required_facts_coverage": 0.0,
+    "route_accuracy": 1.0,
+    "sql_required_used_accuracy": 1.0,
+    "sql_table_accuracy": 0.0,
+    "tool_overuse": 0,
+    "tool_underuse": 0,
+    "trace_observability_score": 0.375,
+    "unsupported_claims": 0
+  },
+  "mode": "ablation_staged_evidence_only_real",
+  "oracle_visible_to_runtime": false,
+  "prompt_id": "da500_0066",
+  "runtime_input": {
+    "prompt": "How many local snapshot relationships connect datasets and segments? Use only local snapshot evidence for the quality review.",
+    "prompt_id": "da500_0066"
+  },
+  "synthetic_sql_results_used": false,
+  "trajectory_path": "outputs/robust_generalized_internal500_eval/ablation_staged_evidence_only_real/da500_0066/trajectory.json"
+}

@@ -17,6 +17,12 @@ def test_strict_answer_caps_fuzzy_only_score():
     assert score <= 0.25
 
 
+def test_strict_answer_does_not_score_empty_generated_answer_as_substring_match():
+    score, reason = score_answer_strict("", "Birthday Message was not published.")
+    assert score == 0.0
+    assert "empty" in reason.lower()
+
+
 def test_strict_api_wrong_path_penalized():
     generated = [{"method": "GET", "path": "/wrong/path", "params": {"limit": 10}}]
     gold = [{"method": "GET", "path": "/data/core/ups/config/mergePolicies", "params": {"limit": 10}}]

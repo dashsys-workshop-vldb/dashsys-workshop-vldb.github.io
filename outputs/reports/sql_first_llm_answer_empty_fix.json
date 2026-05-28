@@ -1,0 +1,149 @@
+{
+  "answer_lift_not_reproduced_reason": "LLM content is now non-empty, but the evidence-bound verifier/answer selector still selects LEGACY_SAFE_RENDERER for all organizer rows based on runtime coverage/safety scoring.",
+  "answer_lift_reproduced": false,
+  "answer_verifier_or_rewrite_fallback_count": 7,
+  "check_submission_ready": {
+    "default_strategy_is_sql_first_api_verify": true,
+    "ok": true,
+    "query_output_count": 73
+  },
+  "credentials_printed": false,
+  "failure_category_counts_before_fix": {
+    "empty_llm_answer": 35
+  },
+  "final_submission_format_unchanged": true,
+  "fix_applied": [
+    "Normalized LLM answer responses from choices[0].message.content, output_text, content blocks, complete/chat/complete_json/generate_messages.",
+    "Added generator_category/debug fields for backend unavailable, backend auth failure, rate limit/quota/model/network/provider failures, raw empty content, malformed content, and exceptions.",
+    "Added shared LLM client error_category classification while preserving redacted error text only.",
+    "Mapped auth_or_401 provider failures to LLM_BACKEND_AUTH_FAILED in answer generation reports.",
+    "Added answer-generator fallback across configured SDK providers after primary backend failure.",
+    "Added strict answer scorer guard so empty generated answers receive 0 answer credit."
+  ],
+  "generated_at": "2026-05-28T02:24:20.853310+00:00",
+  "generator_category_counts_after_fix": {
+    "NONE": 35
+  },
+  "git_diff_check": {
+    "ok": true
+  },
+  "llm_nonempty_generated_count_after_fix": 35,
+  "organizer35": {
+    "SQL_FIRST_API_VERIFY": {
+      "avg_answer_score": 0.3207,
+      "avg_answer_time": 0.0125,
+      "avg_api_score": 0.9791,
+      "avg_correctness_score": 0.685,
+      "avg_estimated_tokens": 790.9714,
+      "avg_execution_time": 0.6557,
+      "avg_final_score": 0.6579,
+      "avg_metadata_tokens": 817.5429,
+      "avg_planning_time": 0.0026,
+      "avg_preprocessing_time": 0.0055,
+      "avg_prompt_tokens": 1459.6286,
+      "avg_runtime": 0.6906,
+      "avg_sql_score": 0.9333,
+      "avg_tool_call_count": 1.4571
+    },
+    "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER": {
+      "avg_answer_score": 0.3207,
+      "avg_answer_time": 2.0037,
+      "avg_api_score": 0.9791,
+      "avg_correctness_score": 0.685,
+      "avg_estimated_tokens": 791.0,
+      "avg_execution_time": 0.4996,
+      "avg_final_score": 0.6517,
+      "avg_metadata_tokens": 823.5429,
+      "avg_planning_time": 0.0024,
+      "avg_preprocessing_time": 0.0027,
+      "avg_prompt_tokens": 1465.6286,
+      "avg_runtime": 2.5341,
+      "avg_sql_score": 0.9333,
+      "avg_tool_call_count": 1.4571
+    },
+    "api_calls": {
+      "SQL_FIRST_API_VERIFY": 36,
+      "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER": 36
+    },
+    "backend_fallback_used_count": 35,
+    "deltas": {
+      "answer": 0.0,
+      "api": 0.0,
+      "correctness": 0.0,
+      "final": -0.0062,
+      "sql": 0.0,
+      "tool_calls": 0.0
+    },
+    "llm_nonempty_generated_count": 35,
+    "selected_answer_source_counts": {
+      "LEGACY_SAFE_RENDERER": 35
+    },
+    "sql_calls": {
+      "SQL_FIRST_API_VERIFY": 15,
+      "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER": 15
+    }
+  },
+  "packaged_default_unchanged": true,
+  "primary_backend_category_counts": {
+    "LLM_BACKEND_AUTH_FAILED": 35
+  },
+  "primary_backend_error_category_counts": {
+    "auth_or_401": 35
+  },
+  "prior_high_scoring_path_found": true,
+  "prior_path_clean_or_gold_leaky": "runtime_payload_clean_but_score_inflated_by_empty_answer_evaluator_bug",
+  "promotion_recommendation": "not_run",
+  "report_type": "sql_first_llm_answer_empty_fix",
+  "root_cause": "The default selected OpenRouter answer backend returns auth/401-class empty responses. A working OpenAI SDK backend is also configured, so the answer generator now retries configured SDK fallback providers after primary backend failure and obtains non-empty answer content.",
+  "sdk_usage_audit": {
+    "runtime_llm_direct_http_hits": 0
+  },
+  "smoke_results": [
+    {
+      "answer_verifier_fallback_used": true,
+      "api_calls": 1,
+      "extracted_content_length": 367,
+      "final_answer": "There are 2 inactive campaigns: Birthday Message (last updated 2026-03-31) and Gold Tier Welcome Email (last updated 2026-03-31). Live API verification was not executed because Adobe credentials are unavailable.",
+      "generator_category": null,
+      "llm_answer_generated": true,
+      "primary_backend_category": "LLM_BACKEND_AUTH_FAILED",
+      "primary_backend_error_category": "auth_or_401",
+      "query_id": "debug_llm_answer_inactive_journeys",
+      "selected_answer_source": "LEGACY_SAFE_RENDERER",
+      "sql_calls": 1,
+      "successful_fallback_provider": "openai"
+    },
+    {
+      "answer_verifier_fallback_used": true,
+      "api_calls": 1,
+      "extracted_content_length": 196,
+      "final_answer": "The journey \"Birthday Message\" has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable.",
+      "generator_category": null,
+      "llm_answer_generated": true,
+      "primary_backend_category": "LLM_BACKEND_AUTH_FAILED",
+      "primary_backend_error_category": "auth_or_401",
+      "query_id": "debug_llm_answer_birthday_published",
+      "selected_answer_source": "LEGACY_SAFE_RENDERER",
+      "sql_calls": 1,
+      "successful_fallback_provider": "openai"
+    },
+    {
+      "answer_verifier_fallback_used": true,
+      "api_calls": 1,
+      "extracted_content_length": 156,
+      "final_answer": "Local snapshot count: 74. API unavailable/error; cannot verify live state. Live API verification was not executed because Adobe credentials are unavailable.",
+      "generator_category": null,
+      "llm_answer_generated": true,
+      "primary_backend_category": "LLM_BACKEND_AUTH_FAILED",
+      "primary_backend_error_category": "auth_or_401",
+      "query_id": "debug_llm_answer_local_schema_count",
+      "selected_answer_source": "DETERMINISTIC_FALLBACK",
+      "sql_calls": 1,
+      "successful_fallback_provider": "openai"
+    }
+  ],
+  "successful_fallback_provider_counts": {
+    "openai": 35
+  },
+  "unsupported_claims": 0
+}

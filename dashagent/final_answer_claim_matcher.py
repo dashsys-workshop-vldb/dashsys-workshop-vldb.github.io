@@ -102,9 +102,10 @@ def _match_no_data(claim: FinalAnswerClaim, index: AllowedFactIndex) -> ClaimMat
         return ClaimMatch(claim, "NEEDS_CAVEAT", "api_error_is_not_no_data")
     if not has_empty_caveat:
         return ClaimMatch(claim, "UNSUPPORTED", "no_empty_evidence")
-    if "anywhere" in value or "globally" in value or re.search(r"\bthere are no\b", value):
-        if "matching" not in value and "query" not in value and "scope" not in value:
-            return ClaimMatch(claim, "OVER_SPECIFIED", "live_empty_is_scoped_not_global")
+    if "anywhere" in value or "globally" in value:
+        return ClaimMatch(claim, "OVER_SPECIFIED", "live_empty_is_scoped_not_global")
+    if re.search(r"\bthere are no\b", value) and "matching" not in value and "query" not in value and "scope" not in value:
+        return ClaimMatch(claim, "OVER_SPECIFIED", "live_empty_is_scoped_not_global")
     if "matching" in value or "query" in value or "scope" in value or "returned no" in value:
         return ClaimMatch(claim, "SUPPORTED", "scoped_empty")
     return ClaimMatch(claim, "NEEDS_CAVEAT", "empty_claim_needs_scope")

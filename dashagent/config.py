@@ -114,6 +114,7 @@ class Config:
     enable_evidence_grounded_answer_builder: bool = False
     enable_evidence_grounded_llm_answer_generator: bool = False
     enable_evidence_grounded_final_answer_verifier: bool = False
+    force_evidence_grounded_llm_answer_generation: bool = False
     enable_score_provenance_guard: bool = False
     enable_runtime_leakage_guard: bool = False
     enable_hardcode_fake_score_guard: bool = False
@@ -215,6 +216,7 @@ class Config:
             enable_evidence_grounded_answer_builder=_bool_from_env("ENABLE_EVIDENCE_GROUNDED_ANSWER_BUILDER", False),
             enable_evidence_grounded_llm_answer_generator=_bool_from_env("ENABLE_EVIDENCE_GROUNDED_LLM_ANSWER_GENERATOR", False),
             enable_evidence_grounded_final_answer_verifier=_bool_from_env("ENABLE_EVIDENCE_GROUNDED_FINAL_ANSWER_VERIFIER", False),
+            force_evidence_grounded_llm_answer_generation=_bool_from_env("FORCE_EVIDENCE_GROUNDED_LLM_ANSWER_GENERATION", False),
             enable_score_provenance_guard=_bool_from_env("ENABLE_SCORE_PROVENANCE_GUARD", False),
             enable_runtime_leakage_guard=_bool_from_env("ENABLE_RUNTIME_LEAKAGE_GUARD", False),
             enable_hardcode_fake_score_guard=_bool_from_env("ENABLE_HARDCODE_FAKE_SCORE_GUARD", False),
@@ -243,6 +245,7 @@ class Config:
 DEFAULT_CONFIG = Config.from_env()
 
 
+SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER = "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER"
 ROBUST_GENERALIZED_HARNESS_CANDIDATE = "ROBUST_GENERALIZED_HARNESS_CANDIDATE"
 ROBUST_ABLATION_STRATEGIES = [
     "ROBUST_ABLATION_NO_SEMANTIC_ROUTING",
@@ -258,6 +261,46 @@ ROBUST_ABLATION_STRATEGIES = [
     "ROBUST_ABLATION_FULL_CANDIDATE_NO_STAGED_POLICY",
     "ROBUST_ABLATION_FULL_CANDIDATE_NO_SEMANTIC_PARSE",
 ]
+
+
+def sql_first_llm_answer_verifier_config(config: Config) -> Config:
+    return replace(
+        config,
+        enable_objective_prompt_features=False,
+        enable_semantic_parse=False,
+        enable_semantic_intent_classifier=False,
+        enable_routing_anti_hallucination_gate=False,
+        enable_no_tool_safety_verifier=False,
+        enable_semantic_route_decision_ladder=False,
+        enable_safe_api_probe=False,
+        semantic_route_shadow_only=True,
+        semantic_route_tier2_diagnostic=False,
+        enable_staged_evidence_policy=False,
+        staged_evidence_policy_shadow_only=True,
+        enable_post_sql_api_decision=False,
+        enable_post_sql_deterministic_policy=False,
+        enable_post_sql_llm_semantic_decision=False,
+        post_sql_api_decision_shadow_only=True,
+        post_sql_llm_advisor_enabled=False,
+        enable_evidence_quality_classifier=True,
+        enable_answer_slot_renderer=True,
+        enable_evidence_grounded_answer_builder=True,
+        enable_evidence_grounded_llm_answer_generator=True,
+        enable_evidence_grounded_final_answer_verifier=True,
+        force_evidence_grounded_llm_answer_generation=True,
+        enable_score_provenance_guard=True,
+        enable_runtime_leakage_guard=True,
+        enable_hardcode_fake_score_guard=True,
+        enable_broad_semantic_no_tool=False,
+        enable_robust_generalized_candidate=False,
+        candidate_shadow_only=True,
+        enable_semantic_no_tool_applied_trial=False,
+        enable_staged_evidence_applied_trial=False,
+        enable_post_sql_deterministic_applied_trial=False,
+        enable_post_sql_llm_advisor_applied_trial=False,
+        enable_combined_safe_applied_trial=False,
+        real_behavior_trial_mode=SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER,
+    )
 
 
 def robust_generalized_candidate_config(config: Config) -> Config:
@@ -282,6 +325,7 @@ def robust_generalized_candidate_config(config: Config) -> Config:
         enable_evidence_grounded_answer_builder=True,
         enable_evidence_grounded_llm_answer_generator=True,
         enable_evidence_grounded_final_answer_verifier=True,
+        force_evidence_grounded_llm_answer_generation=False,
         enable_score_provenance_guard=True,
         enable_runtime_leakage_guard=True,
         enable_hardcode_fake_score_guard=True,

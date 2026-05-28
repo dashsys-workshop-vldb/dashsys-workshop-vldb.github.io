@@ -140,7 +140,7 @@ def _no_data_claims(text: str) -> list[tuple[FinalAnswerClaim, int, int]]:
     lowered = text.lower()
     out: list[tuple[FinalAnswerClaim, int, int]] = []
     patterns = [
-        r"\bno matching records? (?:were )?returned(?: for this query(?:/scope| scope)?)?\b",
+        r"\bno matching records? (?:were )?returned(?: for this query(?:/scope| scope)?)?(?: (?:globally|anywhere))?\b",
         r"\bthere are no [^.]+",
         r"\bno [a-z ]+ anywhere\b",
         r"\bno data\b",

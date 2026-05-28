@@ -7,10 +7,10 @@
 | Query | How many schemas do I have? |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
 | Final answer | You have 74 schemas. This count comes from your blueprint query and is confirmed by the API response from Adobe Schema Registry, which shows tenant schemas are available. |
-| Strict score | 0.7876 |
+| Strict score | 0.7891 |
 | Correctness score | 0.8219 |
 | Answer / SQL / API score | 0.5396 / 0.9 / 1.0 |
-| Tools / tokens / runtime | 2 / 751 / 0.898509374819696 |
+| Tools / tokens / runtime | 2 / 751 / 0.441856374964118 |
 
 ## Dataflow Graph
 
@@ -36,7 +36,7 @@ flowchart LR
 | 1 | checkpoint_01_raw_query | input | raw user query capture | unavailable | query=How many schemas do I have?; query_id=example_011; strategy=SQL_FIRST_API_VERIFY | preserves the original query for reproducibility | yes | yes | no |
 | 2 | checkpoint_00_prompt_router | prompt routing | LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy | query=How many schemas do I have? | confidence=0.84; reason=Local snapshot keyword(s) can be answered from DuckDB/par... | chooses whether the prompt can be answered directly or needs SQL/API evidence | yes | yes | no |
 | 3 | checkpoint_simple_prompt_gate | input routing | simple prompt gate | query=How many schemas do I have? | confidence=0.84; is_simple=False; suggested_action=USE_DATA_PIPELINE; reason=Local snapshot keyword(s) can be answered from DuckDB/par... | lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend | yes | yes | no |
-| 4 | checkpoint_objective_prompt_features | semantic routing shadow | objective prompt feature extraction | query=How many schemas do I have? | cap=2 item(s); count=1 item(s); domain=1 item(s); norm=how many schemas do i have? | records fact-only prompt cues for semantic routing diagnostics | yes | yes | no |
+| 4 | checkpoint_objective_prompt_features | semantic routing shadow | objective prompt feature extraction | query=How many schemas do I have? | cap=3 item(s); count=1 item(s); domain=1 item(s); norm=how many schemas do i have? | records fact-only prompt cues for semantic routing diagnostics | yes | yes | no |
 | 5 | checkpoint_02_query_normalization | normalization | data cleaning / query normalization | query=How many schemas do I have? | matching_text=how many schema do i have?; normalized_query=How many schemas do I have?; rewrites=1 item(s) | creates matching-friendly text while preserving the original query | yes | yes | no |
 | 6 | checkpoint_03_query_tokens | tokenization | domain-aware tokenization/entity extraction | normalized_query=How many schemas do I have? | domains=1 item(s) | extracts reusable query fields for routing, planning, and answers | yes | yes | no |
 | 7 | checkpoint_04_relevance_scoring | context selection | attention-style relevance scoring | tokens=1 field(s) | top_answer_families=1 item(s); top_apis=3 item(s); top_join_hints=3 item(s); top_tables=3 item(s) | selects a smaller, more relevant schema/API context | yes | yes | no |

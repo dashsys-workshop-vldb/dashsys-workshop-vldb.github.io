@@ -214,7 +214,90 @@ def test_selector_rejects_unsupported_llm_claim() -> None:
 
     assert selected.selected_source == "LEGACY_SAFE_RENDERER"
     assert selected.unsupported_claims == 0
-    assert "REJECTED_UNSUPPORTED_LLM" in selected.selection_codes
+    assert "SELECT_LEGACY_LLM_UNSUPPORTED" in selected.selection_codes
+
+
+def test_selector_selects_llm_when_it_has_better_runtime_coverage() -> None:
+    slots = _slots(
+        "How many schema records are in the local snapshot?",
+        counts=[74],
+        sql_row_count=74,
+    )
+
+    selected = select_answer_candidate(
+        prompt=slots.query,
+        slots=slots,
+        evidence_bus={},
+        llm_answer="The local snapshot contains 74 schema records.",
+        llm_verification={"ok": True, "unsupported_claims": []},
+        legacy_answer="Schema records are available in the local snapshot.",
+        grounded_answer="Count: 74.",
+    )
+
+    assert selected.selected_source == "LLM_EVIDENCE_GROUNDED"
+    assert "SELECT_LLM_BETTER_COVERAGE" in selected.selection_codes
+
+
+def test_selector_selects_llm_when_equal_coverage_has_better_shape() -> None:
+    slots = _slots(
+        "List campaign names.",
+        entity_names=["Birthday Message", "Welcome Journey"],
+        first_rows=[{"name": "Birthday Message"}, {"name": "Welcome Journey"}],
+    )
+
+    selected = select_answer_candidate(
+        prompt=slots.query,
+        slots=slots,
+        evidence_bus={},
+        llm_answer="The matching campaigns are Birthday Message and Welcome Journey.",
+        llm_verification={"ok": True, "unsupported_claims": []},
+        legacy_answer="Results: {name=Birthday Message}; {name=Welcome Journey}.",
+        grounded_answer="Results: {name=Birthday Message}; {name=Welcome Journey}.",
+    )
+
+    assert selected.selected_source == "LLM_EVIDENCE_GROUNDED"
+    assert "SELECT_LLM_EQUAL_COVERAGE_BETTER_SHAPE" in selected.selection_codes
+
+
+def test_selector_marks_llm_omitted_runtime_role() -> None:
+    slots = _slots(
+        "What is the status of Journey A?",
+        entity_names=["Journey A"],
+        statuses=["inactive"],
+    )
+
+    selected = select_answer_candidate(
+        prompt=slots.query,
+        slots=slots,
+        evidence_bus={},
+        llm_answer="Journey A appears in the evidence.",
+        llm_verification={"ok": True, "unsupported_claims": []},
+        legacy_answer="Journey A has status inactive.",
+        grounded_answer="Results: Journey A.",
+    )
+
+    assert selected.selected_source == "LEGACY_SAFE_RENDERER"
+    assert "SELECT_LEGACY_LLM_OMITS_ROLE" in selected.selection_codes
+
+
+def test_selector_marks_empty_llm_answer() -> None:
+    slots = _slots(
+        "List campaign names.",
+        entity_names=["Birthday Message"],
+    )
+
+    selected = select_answer_candidate(
+        prompt=slots.query,
+        slots=slots,
+        evidence_bus={},
+        llm_answer=" ",
+        llm_verification={"ok": True, "unsupported_claims": []},
+        legacy_answer="Birthday Message.",
+        grounded_answer="Results: Birthday Message.",
+    )
+
+    assert selected.selected_source == "LEGACY_SAFE_RENDERER"
+    assert "SELECT_LEGACY_LLM_EMPTY" in selected.selection_codes
 
 
 def test_selector_prefers_local_scope_caveat_for_live_count_when_api_unavailable() -> None:
@@ -258,6 +341,30 @@ def test_selector_prefers_actual_count_over_sql_row_count() -> None:
     )
 
     assert selected.selected_source == "LEGACY_SAFE_RENDERER"
+
+
+def test_selector_does_not_reward_live_empty_zero_as_no_result_for_positive_count() -> None:
+    slots = _slots(
+        "How many schemas do I have?",
+        counts=[74, 0],
+        sql_row_count=1,
+        api_evidence_state="live_empty",
+    )
+
+    selected = select_answer_candidate(
+        prompt=slots.query,
+        slots=slots,
+        evidence_bus={},
+        llm_answer="Count: 74. No matching records were returned for this query globally.",
+        llm_verification={"ok": True, "unsupported_claims": []},
+        legacy_answer="You have 74 schemas from the available SQL evidence.",
+        grounded_answer="Count: 74.",
+    )
+
+    assert selected.selected_source == "LEGACY_SAFE_RENDERER"
+    llm_candidate = next(candidate for candidate in selected.candidates if candidate["source"] == "LLM_EVIDENCE_GROUNDED")
+    assert "no_result" not in llm_candidate["covered_roles"]
+    assert "no_result" not in llm_candidate["missing_roles"]
     assert "74" in selected.selected_answer
 
 

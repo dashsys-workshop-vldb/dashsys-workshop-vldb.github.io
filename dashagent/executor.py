@@ -33,7 +33,14 @@ from .cache import (
 from .candidate_context_builder import build_adaptive_context, build_candidate_context, build_full_schema_context
 from .call_budget import budget_for_strategy
 from .checkpoints import CheckpointLogger
-from .config import Config, DEFAULT_CONFIG, ROBUST_GENERALIZED_HARNESS_CANDIDATE, robust_generalized_candidate_config
+from .config import (
+    Config,
+    DEFAULT_CONFIG,
+    ROBUST_GENERALIZED_HARNESS_CANDIDATE,
+    SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER,
+    robust_generalized_candidate_config,
+    sql_first_llm_answer_verifier_config,
+)
 from .core_tool_policy import compact_api_outcome
 from .db import DuckDBDatabase
 from .endpoint_catalog import EndpointCatalog
@@ -185,6 +192,11 @@ class AgentExecutor:
         original_config = self.config
         if strategy == ROBUST_GENERALIZED_HARNESS_CANDIDATE and self.config.real_behavior_trial_mode != ROBUST_GENERALIZED_HARNESS_CANDIDATE:
             self.config = robust_generalized_candidate_config(self.config)
+        if (
+            strategy == SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER
+            and self.config.real_behavior_trial_mode != SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER
+        ):
+            self.config = sql_first_llm_answer_verifier_config(self.config)
         try:
             return self._run_with_active_config(query, strategy=strategy, query_id=query_id, output_dir=output_dir)
         finally:
@@ -1003,7 +1015,11 @@ class AgentExecutor:
                     legacy_answer=legacy_answer_result.answer,
                     grounded_answer=grounded.answer,
                 )
-                llm_answer_generation_skipped = _can_skip_llm_answer_generation(pre_llm_selection)
+                llm_answer_generation_skipped = (
+                    False
+                    if self.config.force_evidence_grounded_llm_answer_generation
+                    else _can_skip_llm_answer_generation(pre_llm_selection)
+                )
                 if not llm_answer_generation_skipped:
                     generated = generate_evidence_grounded_llm_answer(
                         query,
@@ -1036,6 +1052,10 @@ class AgentExecutor:
                         generated.to_dict()
                         if generated is not None
                         else _skipped_llm_answer_payload(llm_answer_generation_skipped)
+                    ),
+                    "llm_answer_attempted": bool(
+                        self.config.enable_evidence_grounded_llm_answer_generator
+                        and not llm_answer_generation_skipped
                     ),
                     "llm_answer_generation_skipped": llm_answer_generation_skipped,
                     "answer_candidate_selector": selection.to_dict(),

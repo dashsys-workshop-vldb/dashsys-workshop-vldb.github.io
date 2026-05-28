@@ -11,7 +11,15 @@ from typing import Any
 from urllib.parse import parse_qsl, urlparse
 
 from .api_templates import parse_api_call_string
-from .config import Config, DEFAULT_CONFIG, ROBUST_ABLATION_STRATEGIES, robust_generalized_ablation_config, robust_generalized_candidate_config
+from .config import (
+    Config,
+    DEFAULT_CONFIG,
+    ROBUST_ABLATION_STRATEGIES,
+    SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER,
+    robust_generalized_ablation_config,
+    robust_generalized_candidate_config,
+    sql_first_llm_answer_verifier_config,
+)
 from .db import DuckDBDatabase
 from .endpoint_catalog import normalize_api_path
 from .executor import AgentExecutor
@@ -509,6 +517,8 @@ def score_answer_strict(generated_answer: str, gold_answer: str | None) -> tuple
         return (None, "No gold answer supplied; answer dimension unscored in strict mode.")
     generated = generated_answer.lower().strip()
     gold = gold_answer.lower().strip()
+    if not generated:
+        return (0.0, "Empty generated answer receives no strict answer credit.")
     if generated == gold:
         return (1.0, "Exact answer match.")
     if gold in generated or generated in gold:
@@ -803,6 +813,8 @@ def config_for_applied_trial_strategy(config: Config, strategy: str) -> Config:
         )
     if strategy == "ROBUST_GENERALIZED_HARNESS_CANDIDATE":
         return robust_generalized_candidate_config(config)
+    if strategy == SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER:
+        return sql_first_llm_answer_verifier_config(config)
     if strategy in ROBUST_ABLATION_STRATEGIES:
         return robust_generalized_ablation_config(config, strategy)
     return config

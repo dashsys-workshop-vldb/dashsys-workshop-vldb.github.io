@@ -7,10 +7,10 @@
 | Query | Show the default merge policy for schema class '_xdm.context.profile'. |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
 | Final answer | The default merge policy is Default Timebased. This is based on live merge-policy API evidence. |
-| Strict score | 0.5363 |
+| Strict score | 0.5388 |
 | Correctness score | 0.5579 |
 | Answer / SQL / API score | 0.1157 / None / 1.0 |
-| Tools / tokens / runtime | 1 / 650 / 1.0856733340770006 |
+| Tools / tokens / runtime | 1 / 650 / 0.33179145911708474 |
 
 ## Dataflow Graph
 
@@ -36,7 +36,7 @@ flowchart LR
 | 1 | checkpoint_01_raw_query | input | raw user query capture | unavailable | query=Show the default merge policy for schema class '_xdm.cont...; query_id=example_021; strategy=SQL_FIRST_API_VERIFY | preserves the original query for reproducibility | yes | yes | no |
 | 2 | checkpoint_00_prompt_router | prompt routing | LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy | query=Show the default merge policy for schema class '_xdm.cont... | confidence=0.9; reason=API/platform family keyword(s): file, merge policy. | chooses whether the prompt can be answered directly or needs SQL/API evidence | yes | yes | no |
 | 3 | checkpoint_simple_prompt_gate | input routing | simple prompt gate | query=Show the default merge policy for schema class '_xdm.cont... | confidence=0.9; is_simple=False; suggested_action=USE_DATA_PIPELINE; reason=API/platform family keyword(s): file, merge policy. | lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend | yes | yes | no |
-| 4 | checkpoint_objective_prompt_features | semantic routing shadow | objective prompt feature extraction | query=Show the default merge policy for schema class '_xdm.cont... | cap=3 item(s); count=0 item(s); domain=2 item(s); entity=1 item(s) | records fact-only prompt cues for semantic routing diagnostics | yes | yes | no |
+| 4 | checkpoint_objective_prompt_features | semantic routing shadow | objective prompt feature extraction | query=Show the default merge policy for schema class '_xdm.cont... | cap=5 item(s); count=0 item(s); domain=2 item(s); entity=1 item(s) | records fact-only prompt cues for semantic routing diagnostics | yes | yes | no |
 | 5 | checkpoint_02_query_normalization | normalization | data cleaning / query normalization | query=Show the default merge policy for schema class '_xdm.cont... | matching_text=show the default merge policy for schema class '_xdm.cont...; normalized_query=Show the default merge policy for schema class '_xdm.cont... | creates matching-friendly text while preserving the original query | yes | yes | no |
 | 6 | checkpoint_03_query_tokens | tokenization | domain-aware tokenization/entity extraction | normalized_query=Show the default merge policy for schema class '_xdm.cont... | domains=4 item(s); field_paths=1 item(s); quoted_entities=1 item(s) | extracts reusable query fields for routing, planning, and answers | yes | yes | no |
 | 7 | checkpoint_04_relevance_scoring | context selection | attention-style relevance scoring | tokens=3 field(s) | top_answer_families=2 item(s); top_apis=3 item(s) | selects a smaller, more relevant schema/API context | yes | yes | no |

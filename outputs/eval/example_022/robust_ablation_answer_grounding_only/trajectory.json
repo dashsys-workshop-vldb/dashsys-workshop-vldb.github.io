@@ -1,0 +1,1363 @@
+{
+  "answer_time": 1.0565127921290696,
+  "api_call_count": 1,
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "correctness_role": "keeps later normalization from changing the user-facing question",
+      "duration_ms": 0.0,
+      "effect": "preserves the original query for reproducibility",
+      "efficiency_role": "starts one trace without extra tool calls",
+      "output": {
+        "query": "How many segment definitions exist in this sandbox?",
+        "query_id": "example_022",
+        "strategy": "ROBUST_ABLATION_ANSWER_GROUNDING_ONLY"
+      },
+      "stage": "input",
+      "technique": "raw user query capture",
+      "timestamp": "2026-05-27T20:12:22.948241+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_runtime_leakage_guard",
+      "correctness_role": "prevents gold/category/tags/oracle/expected-trace leakage into runtime decisions",
+      "duration_ms": 0.0,
+      "effect": "asserts that candidate runtime receives only prompt/runtime fields, not evaluator metadata",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "ROBUST_ABLATION_ANSWER_GROUNDING_ONLY"
+      },
+      "output": {
+        "category_tags_visible": false,
+        "expected_trace_visible": false,
+        "oracle_sql_visible": false,
+        "prompt_id_specific_branching": false,
+        "query_id_specific_branching": false,
+        "runtime_gold_visible": false,
+        "runtime_input_fields": {
+          "items": [
+            "query"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "runtime safety",
+      "technique": "runtime input isolation guard",
+      "timestamp": "2026-05-27T20:12:22.948255+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_score_provenance_guard",
+      "correctness_role": "prevents simulated or gold-visible scores from being treated as runtime evidence",
+      "duration_ms": 0.0,
+      "effect": "marks candidate runs as real-agent runtime executions without promotion judgment",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "ROBUST_ABLATION_ANSWER_GROUNDING_ONLY"
+      },
+      "output": {
+        "organizer_equivalent": false,
+        "promotion_eligible": false,
+        "promotion_judgment_run": false,
+        "real_agent_execution": true,
+        "runtime_gold_visible": false,
+        "score_source": "runtime_candidate",
+        "strategy": "ROBUST_ABLATION_ANSWER_GROUNDING_ONLY",
+        "synthetic_trace": false
+      },
+      "stage": "runtime safety",
+      "technique": "score provenance guard",
+      "timestamp": "2026-05-27T20:12:22.948259+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_00_prompt_router",
+      "correctness_role": "routes data questions to evidence tools instead of unsupported direct answers",
+      "duration_ms": 0.0,
+      "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
+      "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
+      "input_summary": {
+        "query": "How many segment definitions exist in this sandbox?"
+      },
+      "output": {
+        "confidence": 0.9,
+        "matched_rules": {
+          "items": [
+            "api_only:sandbox"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "mode": "API_ONLY",
+        "reason": "API/platform family keyword(s): sandbox.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": true,
+        "requires_database": false,
+        "risk": "medium",
+        "truncated_fields": 1
+      },
+      "stage": "prompt routing",
+      "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
+      "timestamp": "2026-05-27T20:12:22.948288+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_simple_prompt_gate",
+      "correctness_role": "prevents direct answers for data questions that need SQL/API evidence",
+      "duration_ms": 0.0,
+      "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
+      "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
+      "input_summary": {
+        "query": "How many segment definitions exist in this sandbox?"
+      },
+      "output": {
+        "confidence": 0.9,
+        "is_simple": false,
+        "reason": "API/platform family keyword(s): sandbox.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      },
+      "stage": "input routing",
+      "technique": "simple prompt gate",
+      "timestamp": "2026-05-27T20:12:22.948304+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_02_query_normalization",
+      "correctness_role": "improves template and route matching across wording variants",
+      "duration_ms": 0.0,
+      "effect": "creates matching-friendly text while preserving the original query",
+      "efficiency_role": "reduces repeated fuzzy matching work downstream",
+      "input_summary": {
+        "query": "How many segment definitions exist in this sandbox?"
+      },
+      "output": {
+        "matching_text": "how many segment definition exist in this sandbox?",
+        "normalized_query": "How many segment definitions exist in this sandbox?",
+        "rewrites": {
+          "items": [
+            "important_plurals->singular"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "normalization",
+      "technique": "data cleaning / query normalization",
+      "timestamp": "2026-05-27T20:12:22.948341+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_03_query_tokens",
+      "correctness_role": "grounds names, IDs, dates, metrics, and statuses before planning",
+      "duration_ms": 0.0,
+      "effect": "extracts reusable query fields for routing, planning, and answers",
+      "efficiency_role": "avoids reparsing the query in later modules",
+      "input_summary": {
+        "normalized_query": "How many segment definitions exist in this sandbox?"
+      },
+      "output": {
+        "domains": {
+          "items": [
+            "segment_audience"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "tokenization",
+      "technique": "domain-aware tokenization/entity extraction",
+      "timestamp": "2026-05-27T20:12:22.948376+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_04_relevance_scoring",
+      "correctness_role": "keeps high-signal tables and endpoints near the planner",
+      "duration_ms": 0.0,
+      "effect": "selects a smaller, more relevant schema/API context",
+      "efficiency_role": "reduces metadata and prompt tokens when compact metadata is enabled",
+      "input_summary": {
+        "tokens": {
+          "domains": {
+            "items": [
+              "segment_audience"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      },
+      "output": {
+        "top_answer_families": {
+          "items": [
+            "segment_destination"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "top_apis": {
+          "items": [
+            "segment_definitions"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_join_hints": {
+          "items": [
+            "br_campaign_segment.SEGMENTID->dim_segment.SEGMENTID"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_tables": {
+          "items": [
+            "dim_segment"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "context selection",
+      "technique": "attention-style relevance scoring",
+      "timestamp": "2026-05-27T20:12:22.948455+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_05_query_analysis",
+      "correctness_role": "aligns routing, metadata, planning, and reporting decisions",
+      "duration_ms": 0.0,
+      "effect": "computes shared query understanding once",
+      "efficiency_role": "avoids repeated template and routing analysis",
+      "input_summary": {
+        "domain_type": "SEGMENT_AUDIENCE",
+        "route_type": "API_ONLY"
+      },
+      "output": {
+        "answer_family": "segment_definitions",
+        "api_templates": {
+          "items": [
+            "segment_definition_count"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "confidence": 0.75,
+        "domain_type": "SEGMENT_AUDIENCE",
+        "fast_path": "segment_definition_count",
+        "route_type": "API_ONLY",
+        "strategy": "ROBUST_ABLATION_ANSWER_GROUNDING_ONLY"
+      },
+      "stage": "routing",
+      "technique": "branch prediction / QueryAnalysis",
+      "timestamp": "2026-05-27T20:12:22.948464+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_06_lookup_path",
+      "correctness_role": "guides relationship-heavy SQL/API selection",
+      "duration_ms": 0.0,
+      "effect": "predicts the relevant table/join/API path",
+      "efficiency_role": "filters unrelated schema and endpoint candidates",
+      "input_summary": {
+        "answer_family": "segment_definitions",
+        "domain_type": "SEGMENT_AUDIENCE"
+      },
+      "output": {
+        "api_families": {
+          "items": [
+            "audience_by_destination_id"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "api_mode": "optional",
+        "family": "segment_destination",
+        "join_path": {
+          "items": [
+            "dim_segment.segmentid = hkg_br_segment_target.segmentid"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "required_ids": {
+          "items": [
+            "segment_id"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "tables": {
+          "items": [
+            "dim_segment"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "path prediction",
+      "technique": "TLB-style lookup path prediction",
+      "timestamp": "2026-05-27T20:12:22.948467+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_07_context_card",
+      "correctness_role": "keeps required tables, columns, joins, and API candidates visible",
+      "duration_ms": 0.0,
+      "effect": "packs family-relevant context into metadata.json and the filled prompt",
+      "efficiency_role": "limits context size for non-baseline strategies",
+      "input_summary": {
+        "broad_context": false,
+        "lookup_path": "segment_destination"
+      },
+      "output": {
+        "estimated_metadata_tokens": 965,
+        "prompt_tokens": 1632,
+        "selected_apis": {
+          "items": [
+            "segment_definitions"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "selected_card_name": "segment_destination",
+        "selected_columns": {
+          "dim_segment": {
+            "items": [
+              "DEFINITION"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "dim_target": {
+            "items": [
+              "CONNECTIONSPECID"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "hkg_br_segment_target": {
+            "items": [
+              "SEGMENTID"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          }
+        },
+        "selected_tables": {
+          "items": [
+            "dim_segment"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "metadata packing",
+      "technique": "huge-page-style compact context card",
+      "timestamp": "2026-05-27T20:12:22.950734+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_08_candidate_plans",
+      "correctness_role": "prefers validated, family-matched plans",
+      "duration_ms": 0.0,
+      "effect": "selects one plan before execution",
+      "efficiency_role": "does not execute losing candidate plans",
+      "input_summary": {
+        "base_step_count": 1,
+        "strategy": "ROBUST_ABLATION_ANSWER_GROUNDING_ONLY"
+      },
+      "output": {
+        "candidate_plan_names": {
+          "items": [
+            "generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "reason_selected": "highest pre-execution validation/relevance/cost score",
+        "scores": {
+          "generic_sql_first": 11.8829
+        },
+        "selected_plan": "generic_sql_first"
+      },
+      "stage": "planning",
+      "technique": "pre-execution plan ensemble",
+      "timestamp": "2026-05-27T20:12:22.950894+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_09_plan_optimization",
+      "correctness_role": "drops unresolved placeholder calls unless explicitly warned",
+      "duration_ms": 0.0,
+      "effect": "removes duplicate, skippable, or unsafe calls before validation",
+      "efficiency_role": "enforces a bounded plan before execution",
+      "input_summary": {
+        "original_step_count": 1
+      },
+      "output": {
+        "call_budget_applied": false,
+        "optimized_step_count": 1,
+        "optimizer_actions": {
+          "items": [
+            "ensemble selected generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "original_step_count": 1,
+        "removed_api_skip_calls": 0,
+        "removed_duplicate_calls": 0,
+        "unresolved_placeholders_removed": 0
+      },
+      "stage": "optimization",
+      "technique": "compiler-style plan optimization",
+      "timestamp": "2026-05-27T20:12:22.950902+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_10_evidence_policy",
+      "correctness_role": "keeps API calls for API-only/live families",
+      "duration_ms": 0.0,
+      "effect": "decides when API evidence is required, optional, or unnecessary",
+      "efficiency_role": "skips or caps API calls when SQL evidence is enough",
+      "input_summary": {
+        "answer_family": "segment_definitions",
+        "route_type": "API_ONLY"
+      },
+      "output": {
+        "allowed_api_families": {
+          "items": [
+            "segment_definition_count"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "max_api_calls": 1,
+        "mode": "API_REQUIRED",
+        "reason": "Route is API-only."
+      },
+      "stage": "evidence policy",
+      "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
+      "timestamp": "2026-05-27T20:12:22.950905+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_11_call_budget",
+      "correctness_role": "preserves required grounding steps",
+      "duration_ms": 0.0,
+      "effect": "keeps tool calls within per-family limits",
+      "efficiency_role": "prevents accidental extra SQL/API calls",
+      "input_summary": {
+        "planned_steps": {
+          "items": [
+            {
+              "action": "api",
+              "family": "segment_definition_count",
+              "method": "GET",
+              "params": {
+                "limit": "100"
+              },
+              "purpose": "API parameter template: segment_definition_count.",
+              "url": "/data/core/ups/segment/definitions"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "final_planned_calls": 1,
+        "max_api_calls": 1,
+        "max_sql_calls": 1,
+        "max_total_tool_calls": 2,
+        "planned_api_calls": 1,
+        "planned_sql_calls": 0
+      },
+      "stage": "efficiency control",
+      "technique": "tool-call budgeting",
+      "timestamp": "2026-05-27T20:12:22.950916+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_12_validation",
+      "correctness_role": "blocks unsafe SQL and unknown/unresolved API calls",
+      "duration_ms": 0.0,
+      "effect": "records whether planned SQL/API calls were safe to execute",
+      "efficiency_role": "prevents wasted execution on invalid calls",
+      "input_summary": {
+        "optimized_steps": {
+          "items": [
+            {
+              "action": "api",
+              "family": "segment_definition_count",
+              "method": "GET",
+              "params": {
+                "limit": "100"
+              },
+              "purpose": "API parameter template: segment_definition_count.",
+              "url": "/data/core/ups/segment/definitions"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "api_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "validation",
+      "technique": "SQL/API safety validation",
+      "timestamp": "2026-05-27T20:12:24.616425+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_13_tool_execution",
+      "correctness_role": "records row counts, dry-run state, and API status for final answer grounding",
+      "duration_ms": 0.0,
+      "effect": "captures the actual SQL/API evidence gathered by the backend",
+      "efficiency_role": "makes tool-call count and result previews explicit",
+      "input_summary": {
+        "validated_step_count": 1
+      },
+      "output": {
+        "api_calls_executed": 1,
+        "api_results": {
+          "items": [
+            {
+              "dry_run": false,
+              "method": "GET",
+              "ok": true,
+              "result_preview": {
+                "dry_run": false,
+                "endpoint_family": "segment_definitions",
+                "error_category": "live_evidence",
+                "evidence_state": "live_evidence",
+                "live_success": false,
+                "ok": true,
+                "status_code": 200,
+                "truncated_fields": 1,
+                "usable_evidence": false
+              },
+              "status_code": 200,
+              "url": "/data/core/ups/segment/definitions"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "api_status_codes": {
+          "items": [
+            200
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "dry_run_status": false,
+        "sql_calls_executed": 0
+      },
+      "stage": "execution",
+      "technique": "SQL/API tool execution",
+      "timestamp": "2026-05-27T20:12:24.616533+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_14_evidence_bus",
+      "correctness_role": "passes exact IDs, names, counts, timestamps, and statuses without text guessing",
+      "duration_ms": 0.0,
+      "effect": "forwards structured facts to API params and answer slots",
+      "efficiency_role": "avoids repeated lookup or reparsing work",
+      "input_summary": {
+        "tool_result_count": 1
+      },
+      "output": {
+        "preview": "{\"evidence\": {\"names\": {\"items\": [\"Very High Loyalty Enrollment Target \u2014 Apr16v7\", \"Fully Profiled Color and Advisor \u2014 Apr16v7\", \"Size Preferenc [truncated]",
+        "truncated": true
+      },
+      "stage": "evidence forwarding",
+      "technique": "operand forwarding / EvidenceBus",
+      "timestamp": "2026-05-27T20:12:24.616539+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_quality_classifier",
+      "correctness_role": "keeps SQL zero rows, live_empty, API errors, and required API missing distinct",
+      "duration_ms": 0.0,
+      "effect": "classifies SQL/API evidence quality before answer rendering",
+      "efficiency_role": "uses executed tool payloads without extra calls",
+      "input_summary": {
+        "api_required": true,
+        "tool_result_count": 1
+      },
+      "output": {
+        "api": {
+          "items": [
+            "API_DIRECT_ANSWER"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "api_error_is_unavailable": false,
+        "live_empty_scoped": false,
+        "sql": {
+          "items": [
+            "SQL_NOT_RUN"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "answer synthesis",
+      "technique": "SQL/API evidence quality classification",
+      "timestamp": "2026-05-27T20:12:24.616548+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_grounded_answer_builder",
+      "correctness_role": "uses exact available values and scoped caveats without inventing missing roles",
+      "duration_ms": 0.0,
+      "effect": "renders final answer from EvidenceBus-derived answer slots and evidence quality classes",
+      "efficiency_role": "uses no extra SQL/API/LLM calls",
+      "input_summary": {
+        "api_required": true,
+        "tool_result_count": 1
+      },
+      "output": {
+        "answer": "Count: 82.",
+        "evidence_quality": {
+          "api": {
+            "items": [
+              "API_DIRECT_ANSWER"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "api_error_is_unavailable": false,
+          "live_empty_scoped": false,
+          "sql": {
+            "items": [
+              "SQL_NOT_RUN"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        },
+        "renderer": {
+          "answer": "Count: 82.",
+          "rendered_fields": {
+            "items": [
+              "count"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "shape": "count",
+          "unsupported_claims_count": 0
+        },
+        "unsupported_claims_count": 0
+      },
+      "stage": "answer synthesis",
+      "technique": "EvidenceBus-centered grounded answer builder",
+      "timestamp": "2026-05-27T20:12:24.642222+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_15_answer_slots",
+      "correctness_role": "makes final response generation evidence-grounded",
+      "duration_ms": 0.0,
+      "effect": "turns raw tool results into typed evidence fields",
+      "efficiency_role": "keeps answer context compact",
+      "input_summary": {
+        "tool_result_count": 1
+      },
+      "output": {
+        "answer_intent": "COUNT",
+        "discrepancy_flags": {
+          "sql_api_discrepancy": false
+        },
+        "dry_run_flags": {
+          "dry_run": false
+        },
+        "missing_slots": {
+          "items": [
+            "count_shape"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "slots": {
+          "answer_family": "segment_definitions",
+          "api_error": false,
+          "api_item_count": 82,
+          "discrepancy": false,
+          "dry_run": false,
+          "entity_ids": {
+            "items": [
+              "706ddcd9-12e2-4036-861b-6d58bebc4fa2"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "entity_names": {
+            "items": [
+              "Very High Loyalty Enrollment Target \u2014 Apr16v7"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names"
+            ],
+            "total_items": 10,
+            "truncated_items": true
+          },
+          "truncated_fields": 10
+        }
+      },
+      "stage": "answer synthesis",
+      "technique": "structured answer slot extraction",
+      "timestamp": "2026-05-27T20:12:25.668174+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_answer_slot_renderer",
+      "correctness_role": "makes omitted or unavailable roles explicit",
+      "duration_ms": 0.0,
+      "effect": "records how requested fields were rendered from answer slots",
+      "efficiency_role": "avoids LLM answer rewriting in the candidate path",
+      "input_summary": {
+        "slots": {
+          "answer_family": "segment_definitions",
+          "api_error": false,
+          "api_item_count": 82,
+          "discrepancy": false,
+          "dry_run": false,
+          "entity_ids": {
+            "items": [
+              "706ddcd9-12e2-4036-861b-6d58bebc4fa2"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "entity_names": {
+            "items": [
+              "Very High Loyalty Enrollment Target \u2014 Apr16v7"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names"
+            ],
+            "total_items": 10,
+            "truncated_items": true
+          },
+          "truncated_fields": 10
+        }
+      },
+      "output": {
+        "answer": "Count: 82.",
+        "rendered_fields": {
+          "items": [
+            "count"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "shape": "count",
+        "unsupported_claims_count": 0
+      },
+      "stage": "answer synthesis",
+      "technique": "deterministic answer-slot rendering",
+      "timestamp": "2026-05-27T20:12:25.668191+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_final_answer_claim_extractor",
+      "correctness_role": "keeps style flexible while making factual boundaries explicit",
+      "duration_ms": 0.0,
+      "effect": "extracts only hard factual claim candidates from free-form answer wording",
+      "efficiency_role": "uses deterministic text scanning with no tool calls",
+      "input_summary": {
+        "final_answer_length": 0
+      },
+      "output": {
+        "claim_count": 0
+      },
+      "stage": "answer verification",
+      "technique": "final-answer factual claim extraction",
+      "timestamp": "2026-05-27T20:12:25.668194+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_final_answer_claim_matcher",
+      "correctness_role": "blocks invented counts, IDs, statuses, dates, relationships, and over-broad no-data claims",
+      "duration_ms": 0.0,
+      "effect": "matches hard claims against EvidenceBus and AnswerSlots allowed facts",
+      "efficiency_role": "uses local normalized indexes without extra tools",
+      "input_summary": {
+        "allowed_fact_index_fields": {
+          "items": [
+            "counts"
+          ],
+          "total_items": 11,
+          "truncated_items": true
+        }
+      },
+      "stage": "answer verification",
+      "technique": "allowed-fact deterministic claim matching",
+      "timestamp": "2026-05-27T20:12:25.668197+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_grounded_final_answer_verifier",
+      "correctness_role": "prevents factual overreach without enforcing deterministic template text",
+      "duration_ms": 0.0,
+      "effect": "accepts natural wording only when factual claims stay inside allowed evidence",
+      "efficiency_role": "falls back locally when no safe LLM answer is available",
+      "input_summary": {
+        "llm_backend_used": true
+      },
+      "output": {
+        "action": "ACCEPT",
+        "fallback_used": false,
+        "ok": true,
+        "rewrite_attempted": false,
+        "rewrite_success": false
+      },
+      "stage": "answer verification",
+      "technique": "flexible wording bounded-fact final-answer verifier",
+      "timestamp": "2026-05-27T20:12:25.668200+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_answer_rewrite_feedback",
+      "correctness_role": "keeps rewrite feedback fact-only and excludes gold/category/oracle metadata",
+      "duration_ms": 0.0,
+      "effect": "records blocked claims and allowed facts for one bounded rewrite attempt",
+      "efficiency_role": "uses at most one rewrite attempt before deterministic fallback",
+      "input_summary": {
+        "rewrite_attempted": false
+      },
+      "stage": "answer verification",
+      "technique": "compact rewrite feedback for failed grounded answer verification",
+      "timestamp": "2026-05-27T20:12:25.668203+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_16_answer_verification",
+      "correctness_role": "blocks unsupported numbers, entities, timestamps, statuses, and dry-run API confirmation",
+      "duration_ms": 0.0,
+      "effect": "checks final-answer claims against SQL/API evidence",
+      "efficiency_role": "rewrites safely without extra tool calls",
+      "input_summary": {
+        "claim_count": 0,
+        "slots_present": {
+          "items": [
+            "entity_names"
+          ],
+          "total_items": 10,
+          "truncated_items": true
+        }
+      },
+      "output": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "rewrite_applied": false,
+        "supported_claims_count": 0,
+        "unsupported_claims_count": 0,
+        "verifier_passed": true
+      },
+      "stage": "answer verification",
+      "technique": "claim verification / groundedness checking",
+      "timestamp": "2026-05-27T20:12:25.668210+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_17_answer_reranking",
+      "correctness_role": "prefers verifier-passing and intent-matched answers",
+      "duration_ms": 0.0,
+      "effect": "selects the safest answer from same-evidence candidates",
+      "efficiency_role": "uses no additional SQL/API/LLM calls",
+      "input_summary": {
+        "answer_family": "segment_definitions"
+      },
+      "output": {
+        "candidate_count": 0,
+        "selected_candidate_type": "evidence_grounded_llm_answer_generator",
+        "selection_reason": "ROBUST_GENERALIZED_HARNESS_CANDIDATE allowed free wording only after EvidenceBus/AnswerSlots factual-boundary verification."
+      },
+      "stage": "answer selection",
+      "technique": "deterministic answer reranking",
+      "timestamp": "2026-05-27T20:12:25.668212+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "correctness_role": "final answer remains tied to evidence and caveats",
+      "duration_ms": 0.0,
+      "effect": "returns the final concise answer to the agent harness",
+      "efficiency_role": "keeps response concise",
+      "input_summary": {
+        "verifier_passed": true
+      },
+      "output": {
+        "answer_length": 0,
+        "final_token_estimate": 0
+      },
+      "stage": "final response",
+      "technique": "concise grounded final response",
+      "timestamp": "2026-05-27T20:12:25.668239+00:00"
+    },
+    {
+      "active": true,
+      "checkpoint_id": "checkpoint_official_token_reduction",
+      "correctness_impact_expected": false,
+      "estimated_tokens_after": 576,
+      "estimated_tokens_before": 1021,
+      "expected_savings": 445,
+      "packaged_execution_changed": false,
+      "reduced_fields": [
+        "steps[0].candidate_apis",
+        "steps[0].candidate_tables",
+        "steps[2].metadata_path",
+        "steps[3].steps",
+        "steps[5].result.preview"
+      ]
+    }
+  ],
+  "domain_type": "SEGMENT_AUDIENCE",
+  "errors": [],
+  "estimated_tokens": 576,
+  "execution_time": 1.6637380830943584,
+  "final_answer": "",
+  "original_query": "How many segment definitions exist in this sandbox?",
+  "planning_time": 0.00018258299678564072,
+  "preprocessing_time": 0.002430916763842106,
+  "query_id": "example_022",
+  "route_type": "API_ONLY",
+  "runtime": 2.741948415990919,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences"
+        },
+        {
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions"
+        },
+        {
+          "id": "merge_policies",
+          "method": "GET",
+          "path": "/data/core/ups/config/mergePolicies"
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_segment",
+        "hkg_br_base_segment_used_by_dependent_segment"
+      ],
+      "confidence": 0.6499999999999999,
+      "domain_type": "SEGMENT_AUDIENCE",
+      "kind": "route",
+      "reason": "Keyword routing using SEGMENT_AUDIENCE:1, COUNT_AGGREGATION:1.",
+      "route_type": "API_ONLY"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "segment_definitions",
+          "export_batch_files"
+        ],
+        "lookup_paths": [
+          "segment_destination",
+          "audit"
+        ],
+        "tables": [
+          "dim_segment",
+          "hkg_br_segment_target"
+        ]
+      },
+      "rewrites": [
+        "important_plurals->singular"
+      ],
+      "tokens": {
+        "domains": [
+          "segment_audience"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 965,
+      "kind": "metadata",
+      "metadata_path": "metadata.json",
+      "prompt_tokens": 1632
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: segment_definition_count.",
+      "steps": [
+        {
+          "action": "api",
+          "family": "segment_definition_count",
+          "method": "GET",
+          "params": {
+            "limit": "100"
+          },
+          "url": "/data/core/ups/segment/definitions"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 11.8829
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 1
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "100"
+      },
+      "result": {
+        "preview": "{\"error\": null, \"result_preview\": {\"preview\": \"{\\\"page\\\": {\\\"totalCount\\\": 82, \\\"totalPages\\\": 1, \\\"sortField\\\": \\\"creationTime\\\", \\\"sort\\\": \\\"D [truncated]",
+        "truncated": true
+      },
+      "url": "/data/core/ups/segment/definitions",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "answer_family": "segment_definitions",
+      "answer_intent": "COUNT",
+      "completeness_missing_fields": [
+        "count_shape"
+      ],
+      "evidence_grounded_answer_builder": {
+        "answer": "Count: 82.",
+        "evidence_quality": {
+          "api": [
+            "API_DIRECT_ANSWER"
+          ],
+          "api_error_is_unavailable": false,
+          "caveats": [],
+          "conflict": [],
+          "live_empty_scoped": false,
+          "sql": [
+            "SQL_NOT_RUN"
+          ]
+        },
+        "renderer": {
+          "answer": "Count: 82.",
+          "caveats": [],
+          "missing_fields": [],
+          "rendered_fields": [
+            "count"
+          ],
+          "shape": "count",
+          "unsupported_claims_count": 0
+        },
+        "unsupported_claims_count": 0
+      },
+      "evidence_grounded_llm_answer_generator": {
+        "fallback_used": false,
+        "feedback": {},
+        "final_answer": "",
+        "first_pass_ok": true,
+        "generator_error": null,
+        "llm_backend_used": true,
+        "rewrite_attempted": false,
+        "rewrite_success": false,
+        "verification": {
+          "action": "ACCEPT",
+          "allowed_fact_index": {
+            "allowed_caveats": [],
+            "api_error_scopes": [],
+            "counts": [
+              "82",
+              "12189",
+              "0",
+              "6134",
+              "2929",
+              "6124",
+              "3045",
+              "8212189"
+            ],
+            "dates": [
+              "1776395696590",
+              "1776395696",
+              "1779870357",
+              "1776395575749",
+              "1776395575",
+              "1779870358",
+              "1776395456184",
+              "1776395456"
+            ],
+            "evidence_strings": [
+              "30",
+              "gold members with more than 3 ytd orders. tests ordersytd numeric + tier equality together.",
+              "1776394855",
+              "1776395215788",
+              "706ddcd9-12e2-4036-861b-6d58bebc4fa2",
+              "{'totalprofiles': 12189, 'totalprofilesbystatus': {'realized': 12189}}",
+              "top-tier propensity for loyalty program enrollment above 0.8. tests propensityforloyaltyprogram at a higher threshold.",
+              "real_time_customer_profile",
+              "1776395456",
+              "5000+ loyalty points and gold or platinum tier. tests numeric comparison + in list on two fields.",
+              "https://ns.adobe.com/xdm/context/profile__union",
+              "1779870358",
+              "loyalty upgrade propensity between 0.5 and 0.7 \u2014 the middle bucket. tests range with two comparisons.",
+              "2e57262769d5626e0a495fbd@8ac11fe266602de4495fc7.e",
+              "{'id': '7f78f1ad-a3ad-413f-a365-23af1efa6271', 'jobid': '15354680', 'type': 'export', 'data': {'totalprofiles': 0}, 'updateepoch': 1779870357}",
+              "{'type': 'pql', 'format': 'pql/json', 'value': '{\"nodetype\":\"fnapply\",\"fnname\":\"in\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"prefsize\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstoreaccountdetails\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"list\",\"value\":[\"m\",\"l\"]}]}'}",
+              "1776395696590",
+              "{'realized': 12189}",
+              "15354680",
+              "{\"nodetype\":\"fnapply\",\"fnname\":\"=\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"loyaltytier\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstoreloyaltystatus\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"string\",\"value\":\"gold\"}]}",
+              "{'id': 'e86d2c94-16ff-4a1a-9993-b6539457e146', 'jobid': '15354680', 'type': 'export', 'data': {'totalprofiles': 12189, 'totalprofilesbystatus': {'realized': 12189}}, 'updateepoch': 1779870358}",
+              "pql/json",
+              "['_adobepeakprogram.retailstoreaccountdetails.prefsize']",
+              "size preference m or l \u2014 apr16v7",
+              "a0212a1e-d1a7-477d-9c2b-79a7aee6bf3f",
+              "{'type': 'pql', 'format': 'pql/json', 'value': '{\"nodetype\":\"fnapply\",\"fnname\":\"and\",\"params\":[{\"nodetype\":\"fnapply\",\"fnname\":\">\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"loyaltypoints\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstoreloyaltystatus\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"integer\",\"value\":5000}]},{\"nodetype\":\"fnapply\",\"fnname\":\"in\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"loyaltytier\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstoreloyaltystatus\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"list\",\"value\":[\"gold\",\"platinum\"]}]}]}'}",
+              "pql",
+              "1776394736056",
+              "c284944b-4332-46e2-be2d-3a2ca10934fa",
+              "['_adobepeakprogram.retailstoreloyaltystatus.ordersytd', '_adobepeakprogram.retailstoreloyaltystatus.loyaltytier']",
+              "{'_xdm.context.profile': '22a941a9-e598-45f8-846b-c9a8889f5035'}",
+              "{'updatetime': '1776395696590'}",
+              "eb5f1e31-7b0a-41fa-8802-26a4a05a5b0d",
+              "{'realized': 6124}",
+              "very high loyalty enrollment target \u2014 apr16 v6",
+              "22a941a9-e598-45f8-846b-c9a8889f5035",
+              "{'totalprofiles': 3045, 'totalprofilesbystatus': {'realized': 3045}}",
+              "1776388209",
+              "{\"nodetype\":\"fnapply\",\"fnname\":\"and\",\"params\":[{\"nodetype\":\"fnapply\",\"fnname\":\">\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"ordersytd\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstoreloyaltystatus\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"integer\",\"value\":3}]},{\"nodetype\":\"fnapply\",\"fnname\":\"=\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"loyaltytier\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstoreloyaltystatus\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"string\",\"value\":\"gold\"}]}]}",
+              "['706ddcd9-12e2-4036-861b-6d58bebc4fa2', '87891e4066602d250a495f91@adobeorg', '4c29991f-e517-4968-978c-1d70367cf145', 'c0960179-0a51-4df6-84d7-5040eccaadaa', 'eb5f1e31-7b0a-41fa-8802-26a4a05a5b0d']",
+              "a07311bc-0301-4afd-81df-fbaf342bc6e2",
+              "1776394975",
+              "{'excludeoptout': true}",
+              "{'totalprofiles': 0}",
+              "4acf5e40-6cd3-46a3-b4a6-4a4fd990595f",
+              "{'id': 'a07311bc-0301-4afd-81df-fbaf342bc6e2', 'jobid': '15354680', 'type': 'export', 'data': {'totalprofiles': 6124, 'totalprofilesbystatus': {'realized': 6124}}, 'updateepoch': 1779870358}",
+              "1776395575",
+              "['_xdm.context.profile', 'very high loyalty enrollment target \u2014 apr16v7', 'fully profiled color and advisor \u2014 apr16v7', 'size preference m or l \u2014 apr16v7', 'high average order value \u2014 apr16v7']",
+              "1779870357",
+              "1776388209392",
+              "{'id': '4c29991f-e517-4968-978c-1d70367cf145', 'jobid': '15354680', 'type': 'export', 'data': {'totalprofiles': 0}, 'updateepoch': 1779870358}",
+              "profiles with gold loyalty tier. simplest possible equality check. streaming so it evaluates quickly.",
+              "['false', 'true', 'published']",
+              "{'id': 'b95a47d2-b7c3-46a5-aae7-a178f64ea2a5', 'jobid': '15354680', 'type': 'export', 'data': {'totalprofiles': 2929, 'totalprofilesbystatus': {'realized': 2929}}, 'updateepoch': 1779870358}",
+              "82",
+              "1776394975989",
+              "{'type': 'pql', 'format': 'pql/json', 'value': '{\"nodetype\":\"fnapply\",\"fnname\":\">\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"recentorderamountavg\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstorerecentorder\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"integer\",\"value\":150}]}'}",
+              "{'type': 'pql', 'format': 'pql/json', 'value': '{\"nodetype\":\"fnapply\",\"fnname\":\"=\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"loyaltytier\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstoreloyaltystatus\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"string\",\"value\":\"gold\"}]}'}",
+              "1776395575749",
+              "{\"nodetype\":\"fnapply\",\"fnname\":\">\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"recentorderamountavg\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstorerecentorder\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"integer\",\"value\":150}]}",
+              "false",
+              "0949264b69d65a7c0a495fd1@8ac11fe266602de4495fc7.e",
+              "['_adobepeakprogram.retailstoreloyaltystatus.loyaltytier']",
+              "{'_xdm.context.profile': ['_adobepeakprogram.retailstorepropensities.propensityforloyaltystatusupgrade']}",
+              "{\"nodetype\":\"fnapply\",\"fnname\":\">\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"offersredeemedlast6months\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstoreoffers\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"integer\",\"value\":2}]}",
+              "{'id': 'eb5f1e31-7b0a-41fa-8802-26a4a05a5b0d', 'jobid': '15354680', 'type': 'export', 'data': {'totalprofiles': 0}, 'updateepoch': 1779870357}",
+              "{'realized': 2929}",
+              "7f78f1ad-a3ad-413f-a365-23af1efa6271",
+              "0655262e69de3a0f0a495c09@techacct.adobe.com",
+              "{'enabled': false}",
+              "profiles who prefer size m or l clothing. tests prefsize with in list.",
+              "{'_xdm.context.profile': ['_adobepeakprogram.retailstoreaccountdetails.prefsize']}",
+              "{'type': 'pql', 'format': 'pql/json', 'value': '{\"nodetype\":\"fnapply\",\"fnname\":\"and\",\"params\":[{\"nodetype\":\"fnapply\",\"fnname\":\">\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"ordersytd\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstoreloyaltystatus\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"integer\",\"value\":3}]},{\"nodetype\":\"fnapply\",\"fnname\":\"=\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"loyaltytier\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstoreloyaltystatus\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"string\",\"value\":\"gold\"}]}]}'}",
+              "{'totalprofiles': 6134, 'totalprofilesbystatus': {'realized': 6134}}",
+              "1776394736",
+              "['_adobepeakprogram.retailstoreoffers.offersredeemedlast6months']",
+              "a30a9c4e-327a-4d60-8a9c-4e327a6d60dd",
+              "{'batch': {'enabled': true}, 'continuous': {'enabled': false}, 'synchronous': {'enabled': false}}",
+              "{\"nodetype\":\"fnapply\",\"fnname\":\"and\",\"params\":[{\"nodetype\":\"fnapply\",\"fnname\":\">\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"propensityforloyaltystatusupgrade\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstorepropensities\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"double\",\"value\":0.5}]},{\"nodetype\":\"fnapply\",\"fnname\":\"<=\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"propensityforloyaltystatusupgrade\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstorepropensities\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"double\",\"value\":0.7}]}]}",
+              "mid upgrade propensity \u2014 apr16v7",
+              "097326d269d65a7e0a495ec6@8ac11fe266602de4495fc7.e",
+              "{'type': 'pql', 'format': 'pql/json', 'value': '{\"nodetype\":\"fnapply\",\"fnname\":\"and\",\"params\":[{\"nodetype\":\"fnapply\",\"fnname\":\">\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"propensityforloyaltystatusupgrade\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstorepropensities\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"double\",\"value\":0.5}]},{\"nodetype\":\"fnapply\",\"fnname\":\"<=\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"propensityforloyaltystatusupgrade\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstorepropensities\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"double\",\"value\":0.7}]}]}'}",
+              "fdaaf0e3-fc16-4adf-bd6a-0ec144622c32",
+              "12189",
+              "1776394855973",
+              "has both color preference and advisor id set. tests is not null on two different field groups.",
+              "{'realized': 3045}",
+              "fully profiled color and advisor \u2014 apr16v7",
+              "{'id': '3e58d729-0b0e-4b7f-8f2a-89b8047c0635', 'jobid': '15354680', 'type': 'export', 'data': {'totalprofiles': 6134, 'totalprofilesbystatus': {'realized': 6134}}, 'updateepoch': 1779870358}",
+              "{'id': '9d6c6bc5-f8c4-45be-9c24-dd7e3224c407', 'jobid': '15354680', 'type': 'export', 'data': {'totalprofiles': 3045, 'totalprofilesbystatus': {'realized': 3045}}, 'updateepoch': 1779870358}",
+              "very high loyalty enrollment target \u2014 apr16v7",
+              "[{'$ref': 'https://ns.adobe.com/xdm/context/profile__union', 'meta:containerid': 'a30a9c4e-327a-4d60-8a9c-4e327a6d60dd', 'meta:resourcetype': 'unions'}]",
+              "segmentdefinition",
+              "{'totalprofiles': 2929, 'totalprofilesbystatus': {'realized': 2929}}",
+              "1776395096",
+              "high average order value \u2014 apr16v7",
+              "{'type': 'pql', 'format': 'pql/json', 'value': '{\"nodetype\":\"fnapply\",\"fnname\":\">\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"offersredeemedlast6months\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstoreoffers\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"integer\",\"value\":2}]}'}",
+              "{'id': '706ddcd9-12e2-4036-861b-6d58bebc4fa2', 'jobid': '15354680', 'type': 'export', 'data': {'totalprofiles': 12189, 'totalprofilesbystatus': {'realized': 12189}}, 'updateepoch': 1779870357}",
+              "{'_xdm.context.profile': ['_adobepeakprogram.retailstoreoffers.offersredeemedlast6months']}",
+              "['_adobepeakprogram.retailstoreloyaltystatus.loyaltypoints', '_adobepeakprogram.retailstoreloyaltystatus.loyaltytier']",
+              "/data/core/ups/segment/definitions",
+              "6124",
+              "ed404820-4f55-4be9-b144-e7b90b1e8797",
+              "published",
+              "profiles who redeemed more than 2 offers in the last 6 months. tests offersredeemedlast6months field.",
+              "['_adobepeakprogram.retailstorepropensities.propensityforloyaltyprogram']",
+              "{'batch': {'enabled': false}, 'continuous': {'enabled': true}, 'synchronous': {'enabled': false}}",
+              "gold loyalty tier \u2014 apr16v7",
+              "1776395336",
+              "{'name': '_xdm.context.profile'}",
+              "_xdm.context.profile",
+              "{'batch': {'enabled': false}, 'continuous': {'enabled': false}, 'synchronous': {'enabled': true}}",
+              "{'totalcount': 82, 'totalprofiles': 12189}",
+              "3e58d729-0b0e-4b7f-8f2a-89b8047c0635",
+              "c521ccf3-16aa-43ce-9b66-fd682265a1ed",
+              "9d6c6bc5-f8c4-45be-9c24-dd7e3224c407",
+              "export",
+              "0",
+              "77355e2a-b0a2-4d56-9e7f-b21b340042f7",
+              "e86d2c94-16ff-4a1a-9993-b6539457e146",
+              "{'_xdm.context.profile': ['_adobepeakprogram.retailstoreloyaltystatus.loyaltypoints', '_adobepeakprogram.retailstoreloyaltystatus.loyaltytier']}",
+              "[redacted]",
+              "{'enabled': true}",
+              "{'_xdm.context.profile': ['_adobepeakprogram.retailstoreaccountdetails.prefcolor', '_adobepeakprogram.retailstoreadditionalidentities.advisorid']}",
+              "2929",
+              "4c29991f-e517-4968-978c-1d70367cf145",
+              "ups",
+              "b95a47d2-b7c3-46a5-aae7-a178f64ea2a5",
+              "6134",
+              "1776395336142",
+              "{'realized': 6134}",
+              "aepsegments",
+              "{'id': 'c0960179-0a51-4df6-84d7-5040eccaadaa', 'jobid': '15354680', 'type': 'export', 'data': {'totalprofiles': 0}, 'updateepoch': 1779870358}",
+              "1776395696",
+              "{\"nodetype\":\"fnapply\",\"fnname\":\"and\",\"params\":[{\"nodetype\":\"fnapply\",\"fnname\":\">\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"loyaltypoints\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstoreloyaltystatus\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"integer\",\"value\":5000}]},{\"nodetype\":\"fnapply\",\"fnname\":\"in\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"loyaltytier\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstoreloyaltystatus\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"list\",\"value\":[\"gold\",\"platinum\"]}]}]}",
+              "['_adobepeakprogram.retailstorerecentorder.recentorderamountavg']",
+              "{\"nodetype\":\"fnapply\",\"fnname\":\">\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"propensityforloyaltyprogram\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstorepropensities\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"double\",\"value\":0.8}]}",
+              "100",
+              "1776395456184",
+              "1776395096226",
+              "3045",
+              "['_adobepeakprogram.retailstorepropensities.propensityforloyaltystatusupgrade']",
+              "{'_xdm.context.profile': ['_adobepeakprogram.retailstoreloyaltystatus.loyaltytier']}",
+              "2d11b67e-3fe1-4f4a-b972-7111c9ebd73d",
+              "0934263c69d65a810a495f8c@8ac11fe266602de4495fc7.e",
+              "active buyer gold tier \u2014 apr16v7",
+              "['_adobepeakprogram.retailstoreaccountdetails.prefcolor', '_adobepeakprogram.retailstoreadditionalidentities.advisorid']",
+              "{'type': 'pql', 'format': 'pql/json', 'value': '{\"nodetype\":\"fnapply\",\"fnname\":\">\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"propensityforloyaltyprogram\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstorepropensities\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"double\",\"value\":0.8}]}'}",
+              "points elite gold platinum \u2014 apr16v7",
+              "offer engager 2 plus \u2014 apr16v7",
+              "true",
+              "1776395215",
+              "{'_xdm.context.profile': ['_adobepeakprogram.retailstorerecentorder.recentorderamountavg']}",
+              "99cfc034-ec5b-4629-a489-24f64de3bd01",
+              "{'type': 'pql', 'format': 'pql/json', 'value': '{\"nodetype\":\"fnapply\",\"fnname\":\"and\",\"params\":[{\"nodetype\":\"fnapply\",\"fnname\":\"!=\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"prefcolor\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstoreaccountdetails\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"null\",\"value\":\"null\"}]},{\"nodetype\":\"fnapply\",\"fnname\":\"!=\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"advisorid\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstoreadditionalidentities\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"null\",\"value\":\"null\"}]}]}'}",
+              "{\"nodetype\":\"fnapply\",\"fnname\":\"and\",\"params\":[{\"nodetype\":\"fnapply\",\"fnname\":\"!=\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"prefcolor\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstoreaccountdetails\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"null\",\"value\":\"null\"}]},{\"nodetype\":\"fnapply\",\"fnname\":\"!=\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"advisorid\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstoreadditionalidentities\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"null\",\"value\":\"null\"}]}]}",
+              "{\"nodetype\":\"fnapply\",\"fnname\":\"in\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"prefsize\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"retailstoreaccountdetails\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"_adobepeakprogram\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}},{\"nodetype\":\"literal\",\"literaltype\":\"list\",\"value\":[\"m\",\"l\"]}]}",
+              "profiles with average order value above 150. tests recentorderamountavg numeric field.",
+              "{'_xdm.context.profile': ['_adobepeakprogram.retailstoreloyaltystatus.ordersytd', '_adobepeakprogram.retailstoreloyaltystatus.loyaltytier']}",
+              "c647d0d7-7884-4fb4-8d17-ae17b01890bf",
+              "{'totalprofiles': 6124, 'totalprofilesbystatus': {'realized': 6124}}",
+              "unions",
+              "{'_xdm.context.profile': ['_adobepeakprogram.retailstorepropensities.propensityforloyaltyprogram']}",
+              "c0960179-0a51-4df6-84d7-5040eccaadaa"
+            ],
+            "ids": [
+              "706ddcd9-12e2-4036-861b-6d58bebc4fa2",
+              "22a941a9-e598-45f8-846b-c9a8889f5035",
+              "a30a9c4e-327a-4d60-8a9c-4e327a6d60dd",
+              "99cfc034-ec5b-4629-a489-24f64de3bd01",
+              "4c29991f-e517-4968-978c-1d70367cf145",
+              "fdaaf0e3-fc16-4adf-bd6a-0ec144622c32",
+              "c0960179-0a51-4df6-84d7-5040eccaadaa",
+              "4acf5e40-6cd3-46a3-b4a6-4a4fd990595f",
+              "eb5f1e31-7b0a-41fa-8802-26a4a05a5b0d",
+              "2d11b67e-3fe1-4f4a-b972-7111c9ebd73d",
+              "3e58d729-0b0e-4b7f-8f2a-89b8047c0635",
+              "c521ccf3-16aa-43ce-9b66-fd682265a1ed",
+              "b95a47d2-b7c3-46a5-aae7-a178f64ea2a5",
+              "a0212a1e-d1a7-477d-9c2b-79a7aee6bf3f",
+              "7f78f1ad-a3ad-413f-a365-23af1efa6271",
+              "c284944b-4332-46e2-be2d-3a2ca10934fa",
+              "a07311bc-0301-4afd-81df-fbaf342bc6e2",
+              "77355e2a-b0a2-4d56-9e7f-b21b340042f7",
+              "9d6c6bc5-f8c4-45be-9c24-dd7e3224c407",
+              "c647d0d7-7884-4fb4-8d17-ae17b01890bf",
+              "e86d2c94-16ff-4a1a-9993-b6539457e146",
+              "ed404820-4f55-4be9-b144-e7b90b1e8797",
+              "87891e4066602d250a495f91@adobeorg"
+            ],
+            "live_empty_scopes": [],
+            "missing_roles": [],
+            "names": [
+              "very high loyalty enrollment target \u2014 apr16v7",
+              "_xdm.context.profile",
+              "fully profiled color and advisor \u2014 apr16v7",
+              "size preference m or l \u2014 apr16v7",
+              "high average order value \u2014 apr16v7",
+              "offer engager 2 plus \u2014 apr16v7",
+              "active buyer gold tier \u2014 apr16v7",
+              "mid upgrade propensity \u2014 apr16v7",
+              "points elite gold platinum \u2014 apr16v7",
+              "gold loyalty tier \u2014 apr16v7",
+              "very high loyalty enrollment target \u2014 apr16 v6"
+            ],
+            "relationships": [],
+            "statuses": [
+              "false",
+              "true",
+              "published"
+            ]
+          },
+          "ambiguous_claims": [],
+          "claim_extractor": {
+            "claim_count": 0,
+            "claims": []
+          },
+          "claim_matcher": {
+            "matches": []
+          },
+          "needs_caveat_claims": [],
+          "ok": true,
+          "over_specified_claims": [],
+          "supported_claims": [],
+          "unsupported_claims": []
+        }
+      },
+      "kind": "answer_diagnostics",
+      "rewrite_applied": false,
+      "selected_candidate_type": "evidence_grounded_llm_answer_generator",
+      "selection_reason": "ROBUST_GENERALIZED_HARNESS_CANDIDATE allowed free wording only after EvidenceBus/AnswerSlots factual-boundary verification.",
+      "slots_present": [
+        "entity_names",
+        "entity_ids",
+        "counts",
+        "api_item_count",
+        "live_api_evidence_available",
+        "api_evidence_state",
+        "answer_slot_source",
+        "api_pagination",
+        "api_parser_modes",
+        "api_items"
+      ],
+      "unsupported_claims_count": 0,
+      "verifier_passed": true
+    }
+  ],
+  "strategy": "ROBUST_ABLATION_ANSWER_GROUNDING_ONLY",
+  "timings": {
+    "answer_time": 1.0565127921290696,
+    "execution_time": 1.6637380830943584,
+    "planning_time": 0.00018258299678564072,
+    "preprocessing_time": 0.002430916763842106
+  },
+  "tool_call_count": 1
+}
