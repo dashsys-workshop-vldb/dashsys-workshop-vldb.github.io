@@ -7,8 +7,8 @@
 - eval_engine: real_agent
 - simulated_trace_only: False
 - real_agent_execution: True
-- baseline_score: 0.6486
-- packaged_baseline_real_score: 0.6486
+- baseline_score: 0.6743
+- packaged_baseline_real_score: 0.6743
 - latest_shadow_real_score: None
 - latest_shadow_real_behavior_score: None
 - latest_shadow_real_trace_observability_score: None

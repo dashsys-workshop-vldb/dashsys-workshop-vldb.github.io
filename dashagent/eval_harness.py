@@ -15,15 +15,19 @@ from .config import (
     Config,
     DEFAULT_CONFIG,
     ROBUST_ABLATION_STRATEGIES,
+    ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2,
+    SQL_FIRST_API_VERIFY_HYBRID_ANSWER,
     SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER,
     robust_generalized_ablation_config,
     robust_generalized_candidate_config,
+    robust_generalized_v2_config,
+    sql_first_hybrid_answer_config,
     sql_first_llm_answer_verifier_config,
 )
 from .db import DuckDBDatabase
 from .endpoint_catalog import normalize_api_path
 from .executor import AgentExecutor
-from .planner import APPLIED_TRIAL_STRATEGIES, STRATEGIES
+from .planner import APPLIED_TRIAL_STRATEGIES, RESEARCH_GENERALIZED_STRATEGIES, STRATEGIES
 
 
 @dataclass
@@ -163,7 +167,7 @@ class EvalHarness:
         return payload
 
     def _executor_for_strategy(self, strategy: str, cache: dict[str, AgentExecutor]) -> AgentExecutor:
-        if strategy not in APPLIED_TRIAL_STRATEGIES:
+        if strategy not in APPLIED_TRIAL_STRATEGIES and strategy not in RESEARCH_GENERALIZED_STRATEGIES:
             return self.executor
         if strategy not in cache:
             trial_config = config_for_applied_trial_strategy(self.config, strategy)
@@ -813,8 +817,12 @@ def config_for_applied_trial_strategy(config: Config, strategy: str) -> Config:
         )
     if strategy == "ROBUST_GENERALIZED_HARNESS_CANDIDATE":
         return robust_generalized_candidate_config(config)
+    if strategy == ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2:
+        return robust_generalized_v2_config(config)
     if strategy == SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER:
         return sql_first_llm_answer_verifier_config(config)
+    if strategy == SQL_FIRST_API_VERIFY_HYBRID_ANSWER:
+        return sql_first_hybrid_answer_config(config)
     if strategy in ROBUST_ABLATION_STRATEGIES:
         return robust_generalized_ablation_config(config, strategy)
     return config

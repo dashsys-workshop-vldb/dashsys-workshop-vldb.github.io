@@ -17,7 +17,13 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from dashagent.config import DEFAULT_CONFIG, robust_generalized_ablation_config, robust_generalized_candidate_config
+from dashagent.config import (
+    DEFAULT_CONFIG,
+    ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2,
+    robust_generalized_ablation_config,
+    robust_generalized_candidate_config,
+    robust_generalized_v2_config,
+)
 from dashagent.endpoint_catalog import EndpointCatalog
 from dashagent.evidence_match_scorer import score_evidence_match
 from dashagent.no_tool_safety_verifier import verify_no_tool_safety
@@ -52,6 +58,7 @@ REAL_MODES = {
     "combined_safe_applied_real_trial",
     "combined_safe_deterministic_promotion_candidate_real",
     "robust_generalized_harness_candidate_real",
+    "robust_generalized_harness_candidate_v2_real",
     "ablation_no_semantic_routing_real",
     "ablation_semantic_routing_only_real",
     "ablation_staged_evidence_only_real",
@@ -74,6 +81,7 @@ REAL_BEHAVIOR_APPLIED_MODES = {
     "combined_safe_applied_real_trial",
     "combined_safe_deterministic_promotion_candidate_real",
     "robust_generalized_harness_candidate_real",
+    "robust_generalized_harness_candidate_v2_real",
     "ablation_no_semantic_routing_real",
     "ablation_semantic_routing_only_real",
     "ablation_staged_evidence_only_real",
@@ -356,7 +364,7 @@ def _run_real_agent_suite_eval(
             run_start = time.perf_counter()
             agent_result = executor.run(
                 runtime_input["prompt"],
-                strategy="SQL_FIRST_API_VERIFY",
+                strategy=_strategy_for_real_mode(mode),
                 query_id=runtime_input["prompt_id"],
                 output_dir=prompt_dir,
             )
@@ -627,9 +635,20 @@ def _config_for_real_mode(mode: str) -> Any:
             robust_generalized_candidate_config(DEFAULT_CONFIG),
             real_behavior_trial_mode=mode,
         )
+    if mode == "robust_generalized_harness_candidate_v2_real":
+        return replace(
+            robust_generalized_v2_config(DEFAULT_CONFIG),
+            real_behavior_trial_mode=ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2,
+        )
     if mode.startswith("ablation_") and mode.endswith("_real"):
         return robust_generalized_ablation_config(DEFAULT_CONFIG, mode)
     return DEFAULT_CONFIG
+
+
+def _strategy_for_real_mode(mode: str) -> str:
+    if mode == "robust_generalized_harness_candidate_v2_real":
+        return ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2
+    return "SQL_FIRST_API_VERIFY"
 
 
 def _make_executor(config: Any, executor_factory: Callable[..., Any] | None) -> Any:
@@ -956,9 +975,14 @@ def _latest_flags_from_checkpoints(checkpoint_names: list[str]) -> dict[str, boo
         "no_tool_safety_verifier": "checkpoint_no_tool_safety_verifier" in names,
         "semantic_route_decision_ladder": "checkpoint_semantic_route_decision_ladder" in names,
         "staged_evidence_policy": "checkpoint_initial_evidence_branch_policy" in names,
+        "progressive_evidence_policy": "checkpoint_progressive_evidence_policy" in names,
+        "staged_evidence_acquisition": "checkpoint_staged_evidence_acquisition" in names,
         "post_sql_deterministic_policy": "checkpoint_post_sql_deterministic_policy" in names,
+        "post_sql_llm_first_decision": "checkpoint_post_sql_llm_decision_v1" in names,
         "post_sql_llm_advisor": "checkpoint_post_sql_llm_advisor" in names,
         "post_sql_api_call_verifier": "checkpoint_post_sql_api_call_verifier" in names,
+        "answer_intent_router": "checkpoint_answer_intent_router" in names,
+        "hybrid_answer_composer": "checkpoint_hybrid_answer_composer" in names,
         "evidence_bus_answer_verifier_token_reduction": "checkpoint_16_answer_verification" in names,
     }
 
@@ -972,6 +996,7 @@ def _trial_feature_flags_from_records(records: list[dict[str, Any]]) -> dict[str
         "combined_safe_applied": False,
         "combined_safe_deterministic_promotion_candidate": False,
         "robust_generalized_harness_candidate": False,
+        "robust_generalized_harness_candidate_v2": False,
     }
     for record in records:
         mode = str(record.get("trial_mode") or "")
@@ -989,6 +1014,8 @@ def _trial_feature_flags_from_records(records: list[dict[str, Any]]) -> dict[str
             flags["combined_safe_deterministic_promotion_candidate"] = True
         elif mode == "robust_generalized_harness_candidate_real":
             flags["robust_generalized_harness_candidate"] = True
+        elif mode in {"robust_generalized_harness_candidate_v2_real", "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"}:
+            flags["robust_generalized_harness_candidate_v2"] = True
     return flags
 
 

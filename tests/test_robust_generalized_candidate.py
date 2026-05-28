@@ -5,7 +5,7 @@ from dataclasses import replace
 import pytest
 
 from dashagent.checkpoints import CheckpointLogger
-from dashagent.config import Config
+from dashagent.config import Config, ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2
 from dashagent.eval_harness import config_for_applied_trial_strategy
 from dashagent.executor import AgentExecutor
 from dashagent.planner import ALL_STRATEGIES, PACKAGED_DEFAULT_STRATEGY, Plan, PlanStep, STRATEGIES, execution_base_strategy
@@ -13,6 +13,7 @@ from dashagent.prompt_semantic_ir import extract_objective_prompt_features
 
 
 ROBUST = "ROBUST_GENERALIZED_HARNESS_CANDIDATE"
+ROBUST_V2 = ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2
 
 
 class CountingAPIClient:
@@ -107,6 +108,112 @@ def test_robust_candidate_strategy_is_explicit_and_not_default(tiny_project: Con
     assert cfg.enable_hardcode_fake_score_guard is True
     assert cfg.post_sql_llm_advisor_enabled is False
     assert cfg.real_behavior_trial_mode == ROBUST
+
+
+def test_robust_v2_strategy_is_explicit_research_planner_not_sql_first(tiny_project: Config) -> None:
+    assert PACKAGED_DEFAULT_STRATEGY == "SQL_FIRST_API_VERIFY"
+    assert ROBUST_V2 in ALL_STRATEGIES
+    assert ROBUST_V2 not in STRATEGIES
+    assert execution_base_strategy(ROBUST_V2) == ROBUST_V2
+
+    cfg = config_for_applied_trial_strategy(tiny_project, ROBUST_V2)
+    assert cfg.enable_research_generalized_planner is True
+    assert cfg.enable_objective_prompt_features is True
+    assert cfg.enable_semantic_parse is True
+    assert cfg.enable_llm_first_semantic_decision is True
+    assert cfg.enable_minimal_correction_feedback is True
+    assert cfg.enable_progressive_evidence_policy is True
+    assert cfg.enable_semantic_route_decision_ladder is True
+    assert cfg.enable_safe_api_probe is True
+    assert cfg.enable_staged_evidence_policy is True
+    assert cfg.enable_post_sql_llm_first_decision is True
+    assert cfg.enable_post_sql_llm_semantic_decision is True
+    assert cfg.enable_risk_minimizing_fallback is True
+    assert cfg.enable_hybrid_answer_composer is True
+    assert cfg.enable_canonical_data_renderer is True
+    assert cfg.enable_llm_concept_answer is True
+    assert cfg.enable_evidence_grounded_final_answer_verifier is True
+    assert cfg.enable_runtime_leakage_guard is True
+    assert cfg.enable_score_provenance_guard is True
+    assert cfg.real_behavior_trial_mode == ROBUST_V2
+
+
+def test_robust_v2_runs_generalized_planner_and_progressive_checkpoints(tiny_project: Config) -> None:
+    result = AgentExecutor(tiny_project).run(
+        "Show inactive journeys.",
+        strategy=ROBUST_V2,
+        query_id="robust_v2_inactive_journeys",
+    )
+
+    assert result["plan"]["strategy"] == ROBUST_V2
+    assert any(row["type"] in {"sql", "api"} for row in result["tool_results"])
+    checkpoint_names = {checkpoint["checkpoint_id"] for checkpoint in result["checkpoints"]}
+    assert "checkpoint_semantic_parse" in checkpoint_names
+    assert "checkpoint_progressive_evidence_policy" in checkpoint_names
+    assert "checkpoint_staged_evidence_acquisition" in checkpoint_names
+    assert "checkpoint_answer_intent_router" in checkpoint_names
+    assert "checkpoint_hybrid_answer_composer" in checkpoint_names
+    progressive = next(
+        checkpoint["output"]
+        for checkpoint in result["checkpoints"]
+        if checkpoint["checkpoint_id"] == "checkpoint_progressive_evidence_policy"
+    )
+    assert progressive["entry_action"] == "EVIDENCE_PIPELINE"
+
+
+def test_robust_v2_safe_conceptual_and_meta_prompts_can_no_tool(tiny_project: Config) -> None:
+    conceptual = AgentExecutor(tiny_project).run(
+        "List three reasons why schemas matter.",
+        strategy=ROBUST_V2,
+        query_id="robust_v2_conceptual_list",
+    )
+    assert conceptual["tool_results"] == []
+
+    meta = AgentExecutor(tiny_project).run(
+        "In the phrase 'list schemas', what does 'list' mean?",
+        strategy=ROBUST_V2,
+        query_id="robust_v2_meta_list",
+    )
+    assert meta["tool_results"] == []
+
+
+def test_robust_v2_post_sql_local_snapshot_count_skips_optional_api(tiny_project: Config) -> None:
+    client = CountingAPIClient()
+    executor = AgentExecutor(tiny_project, api_client=client)
+    executor.planner.create_plan = _sql_count_then_optional_schema_api_plan
+
+    result = executor.run(
+        "How many schema records are in the local snapshot?",
+        strategy=ROBUST_V2,
+        query_id="robust_v2_local_count",
+    )
+
+    assert result["plan"]["strategy"] == ROBUST_V2
+    assert [row["type"] for row in result["tool_results"]] == ["sql"]
+    assert client.calls == []
+    assert "local snapshot" in result["final_answer"].lower()
+
+
+def test_robust_v2_live_platform_count_preserves_api_or_caveats(tiny_project: Config) -> None:
+    client = CountingAPIClient()
+    executor = AgentExecutor(tiny_project, api_client=client)
+    executor.planner.create_plan = _sql_count_then_optional_schema_api_plan
+
+    result = executor.run(
+        "How many current schemas are in Adobe Experience Platform?",
+        strategy=ROBUST_V2,
+        query_id="robust_v2_live_count",
+    )
+
+    assert result["plan"]["strategy"] == ROBUST_V2
+    assert any(row["type"] == "api" for row in result["tool_results"])
+    assert client.calls
+    execution_verifier = next(
+        checkpoint["output"]
+        for checkpoint in result["checkpoints"]
+        if checkpoint["checkpoint_id"] == "checkpoint_post_sql_execution_verifier"
+    )
+    assert execution_verifier["final_action"] in {"CALL_API", "CAVEAT_ONLY"}
 
 
 def test_objective_features_cover_candidate_required_cues() -> None:

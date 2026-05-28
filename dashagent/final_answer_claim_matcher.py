@@ -23,6 +23,12 @@ GENERIC_ENTITY_NAMES = {
     "campaigns",
     "journey",
     "journeys",
+    "tag",
+    "tags",
+    "audience",
+    "audiences",
+    "destination",
+    "destinations",
     "status",
 }
 
@@ -97,6 +103,7 @@ def _name_supported(value: str, index: AllowedFactIndex) -> bool:
 def _match_no_data(claim: FinalAnswerClaim, index: AllowedFactIndex) -> ClaimMatch:
     value = _normalize_text(claim.text or claim.value)
     has_empty_caveat = bool(set(index.allowed_caveats) & {"API_LIVE_EMPTY", "SQL_EMPTY"})
+    has_sql_empty = "SQL_EMPTY" in set(index.allowed_caveats)
     has_api_error_only = "API_ERROR" in set(index.allowed_caveats) and not has_empty_caveat
     if has_api_error_only:
         return ClaimMatch(claim, "NEEDS_CAVEAT", "api_error_is_not_no_data")
@@ -104,6 +111,8 @@ def _match_no_data(claim: FinalAnswerClaim, index: AllowedFactIndex) -> ClaimMat
         return ClaimMatch(claim, "UNSUPPORTED", "no_empty_evidence")
     if "anywhere" in value or "globally" in value:
         return ClaimMatch(claim, "OVER_SPECIFIED", "live_empty_is_scoped_not_global")
+    if has_sql_empty and "to report" in value:
+        return ClaimMatch(claim, "SUPPORTED", "sql_empty_query_scoped")
     if re.search(r"\bthere are no\b", value) and "matching" not in value and "query" not in value and "scope" not in value:
         return ClaimMatch(claim, "OVER_SPECIFIED", "live_empty_is_scoped_not_global")
     if "matching" in value or "query" in value or "scope" in value or "returned no" in value:
@@ -113,7 +122,13 @@ def _match_no_data(claim: FinalAnswerClaim, index: AllowedFactIndex) -> ClaimMat
 
 def _match_caveat(claim: FinalAnswerClaim, index: AllowedFactIndex) -> ClaimMatch:
     value = _normalize_text(claim.text or claim.value)
-    if ("unavailable" in value or "error" in value or "could not be verified" in value or "cannot verify" in value) and (
+    if (
+        "unavailable" in value
+        or "error" in value
+        or "could not be verified" in value
+        or "cannot verify" in value
+        or "not executed" in value
+    ) and (
         set(index.allowed_caveats) & {"API_ERROR", "DRY_RUN_UNAVAILABLE"}
     ):
         return ClaimMatch(claim, "SUPPORTED", "api_error_or_unavailable_caveat")

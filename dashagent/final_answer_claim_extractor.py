@@ -41,6 +41,18 @@ GENERIC_ENTITY_TERMS = {
     "Status",
     "ID",
 }
+GENERIC_ENTITY_PHRASES = {
+    "the api",
+    "the sql",
+    "sql query",
+    "the sql query",
+    "api evidence",
+    "the api evidence",
+    "the evidence",
+    "evidence provided",
+    "the field",
+    "the fields",
+}
 
 
 @dataclass(frozen=True)
@@ -105,8 +117,13 @@ def _date_claims(text: str) -> list[tuple[FinalAnswerClaim, int, int]]:
 
 def _count_claims(text: str, occupied: list[tuple[int, int]]) -> list[tuple[FinalAnswerClaim, int, int]]:
     out: list[tuple[FinalAnswerClaim, int, int]] = []
+    quoted = _quoted_spans(text)
     for match in re.finditer(r"(?<![\w.-])\d+(?:,\d{3})*(?:\.\d+)?(?![\w.-])", text):
         if _overlaps(match.start(), match.end(), occupied):
+            continue
+        if _inside_span(match.start(), match.end(), quoted):
+            continue
+        if _looks_like_url_port(text, match.start(), match.end()):
             continue
         value = match.group(0).replace(",", "")
         out.append((_claim(text, "COUNT", value, match.start(), match.end()), match.start(), match.end()))
@@ -120,6 +137,8 @@ def _status_claims(text: str, occupied: list[tuple[int, int]]) -> list[tuple[Fin
             if _overlaps(match.start(), match.end(), occupied):
                 continue
             if status == "active" and text[max(0, match.start() - 2) : match.start()].lower().endswith("in"):
+                continue
+            if status == "active" and "not currently" in text[max(0, match.start() - 24) : match.start()].lower():
                 continue
             if status == "live" and "api" in text[match.end() : match.end() + 16].lower():
                 continue
@@ -196,7 +215,8 @@ def _entity_name_claims(text: str, occupied: list[tuple[int, int]]) -> list[tupl
         if _overlaps(match.start(), match.end(), occupied):
             continue
         value = match.group(0).strip()
-        if value in GENERIC_ENTITY_TERMS or value.startswith(("Based on", "Available evidence", "Live API")):
+        normalized = re.sub(r"\s+", " ", value).strip().lower()
+        if value in GENERIC_ENTITY_TERMS or normalized in GENERIC_ENTITY_PHRASES or value.startswith(("Based on", "Available evidence", "Live API")):
             continue
         if any(part in STATUS_WORDS for part in value.lower().split()):
             continue
@@ -216,3 +236,19 @@ def _extend(target: list[FinalAnswerClaim], occupied: list[tuple[int, int]], ite
 
 def _overlaps(start: int, end: int, occupied: list[tuple[int, int]]) -> bool:
     return any(start < other_end and end > other_start for other_start, other_end in occupied)
+
+
+def _quoted_spans(text: str) -> list[tuple[int, int]]:
+    return [(match.start(), match.end()) for match in re.finditer(r"'[^']*'|\"[^\"]*\"", text)]
+
+
+def _inside_span(start: int, end: int, spans: list[tuple[int, int]]) -> bool:
+    return any(start >= span_start and end <= span_end for span_start, span_end in spans)
+
+
+def _looks_like_url_port(text: str, start: int, end: int) -> bool:
+    if start <= 0 or text[start - 1] != ":":
+        return False
+    prefix = text[max(0, start - 160) : start]
+    suffix = text[end : min(len(text), end + 16)]
+    return bool(re.search(r"https?://\S*$", prefix, flags=re.I) and (not suffix or suffix[0] in "/?#.:;, )]"))

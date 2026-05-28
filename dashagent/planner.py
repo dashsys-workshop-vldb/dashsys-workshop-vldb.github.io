@@ -5,9 +5,16 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from .api_templates import find_api_templates
-from .config import Config, DEFAULT_CONFIG, ROBUST_ABLATION_STRATEGIES, SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER
+from .config import (
+    Config,
+    DEFAULT_CONFIG,
+    ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2,
+    ROBUST_ABLATION_STRATEGIES,
+    SQL_FIRST_API_VERIFY_HYBRID_ANSWER,
+    SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER,
+)
 from .db import quote_ident
-from .evidence_policy import API_SKIP, decide_api_need
+from .evidence_policy import API_REQUIRED, API_SKIP, decide_api_need
 from .endpoint_catalog import Endpoint
 from .fast_paths import find_fast_path
 from .plan_optimizer import optimize_plan_steps
@@ -43,10 +50,15 @@ APPLIED_TRIAL_STRATEGIES = [
     "COMBINED_SAFE_APPLIED_TRIAL",
     "COMBINED_SAFE_DETERMINISTIC_PROMOTION_CANDIDATE",
     SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER,
+    SQL_FIRST_API_VERIFY_HYBRID_ANSWER,
     "ROBUST_GENERALIZED_HARNESS_CANDIDATE",
 ] + ROBUST_ABLATION_STRATEGIES
 
-ALL_STRATEGIES = STRATEGIES + LLM_SQL_STRATEGIES + APPLIED_TRIAL_STRATEGIES
+RESEARCH_GENERALIZED_STRATEGIES = [
+    ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2,
+]
+
+ALL_STRATEGIES = STRATEGIES + LLM_SQL_STRATEGIES + APPLIED_TRIAL_STRATEGIES + RESEARCH_GENERALIZED_STRATEGIES
 
 
 def execution_base_strategy(strategy: str) -> str:
@@ -108,6 +120,8 @@ class StrategyPlanner:
         strategy: str,
         analysis: QueryAnalysis | None = None,
     ) -> Plan:
+        if strategy == ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2:
+            return self._research_generalized_v2(query, routing, metadata, strategy, analysis)
         if strategy not in STRATEGIES:
             raise ValueError(f"Unknown strategy {strategy}. Expected one of {STRATEGIES}.")
         if strategy == "SQL_ONLY_BASELINE":
@@ -256,6 +270,105 @@ class StrategyPlanner:
         if schema_candidate:
             optimizer_actions.append(f"schema-aware SQL fallback selected {schema_candidate.candidate_id}")
         return Plan(*rationale, optimizer_actions=optimizer_actions)
+
+    def _research_generalized_v2(
+        self,
+        query: str,
+        routing: RoutingDecision,
+        metadata: dict[str, Any],
+        strategy: str,
+        analysis: QueryAnalysis | None = None,
+    ) -> Plan:
+        steps: list[PlanStep] = []
+        planning_query = analysis.normalized_query if analysis else query
+        fast_path = analysis.fast_path if analysis else find_fast_path(planning_query, self.schema_index)
+        sql_template = analysis.sql_template if analysis else (fast_path.sql_template if fast_path else find_sql_template(planning_query, self.schema_index))
+        api_templates = analysis.api_templates if analysis else (fast_path.api_templates if fast_path else find_api_templates(planning_query))
+        schema_candidate: SchemaAwareSQLCandidate | None = None
+
+        if routing.route_type != "API_ONLY":
+            if sql_template is not None:
+                sql = self._build_sql(planning_query, routing, metadata, sql_template=sql_template)
+            else:
+                schema_candidate = self._schema_aware_sql_candidate(planning_query, metadata, analysis)
+                sql = schema_candidate.sql if schema_candidate else self._build_sql(planning_query, routing, metadata)
+        else:
+            sql = None
+
+        api_decision = analysis.api_need_decision if analysis else decide_api_need(planning_query, routing, sql_template, api_templates, strategy)
+        local_snapshot_sql_complete = bool(sql and _explicit_local_snapshot_scope(planning_query) and asks_count(planning_query))
+        if local_snapshot_sql_complete:
+            api_decision = type(api_decision)(
+                API_SKIP,
+                "Explicit local snapshot count is answered by local SQL; live API evidence is not part of the requested scope.",
+                0,
+                [],
+            )
+            api_templates = []
+
+        api_first = bool(
+            api_templates
+            and (
+                routing.route_type == "API_ONLY"
+                or (api_decision.mode == API_REQUIRED and sql is None)
+                or (_explicit_api_only_scope(planning_query) and not sql)
+            )
+        )
+
+        if api_first:
+            steps.extend(
+                self._api_steps(
+                    planning_query,
+                    routing,
+                    metadata,
+                    templates=api_templates,
+                    allowed_families=api_decision.allowed_api_families,
+                )
+            )
+
+        if sql:
+            steps.append(
+                PlanStep(
+                    action="sql",
+                    purpose=_research_sql_step_purpose(
+                        local_snapshot=local_snapshot_sql_complete,
+                        schema_candidate=bool(schema_candidate),
+                        fast_path=bool(fast_path),
+                    ),
+                    sql=sql,
+                    allow_full_result=sql_template.allow_full_result if sql_template else asks_all_rows(planning_query),
+                    family=sql_template.family if sql_template else ("schema_aware_sql_fallback" if schema_candidate else None),
+                    warnings=schema_candidate.warnings if schema_candidate else [],
+                )
+            )
+
+        if not api_first and api_decision.mode != API_SKIP:
+            steps.extend(
+                self._api_steps(
+                    planning_query,
+                    routing,
+                    metadata,
+                    templates=api_templates,
+                    allowed_families=api_decision.allowed_api_families,
+                )
+            )
+
+        optimized = optimize_plan_steps(
+            steps,
+            strategy=strategy,
+            route_type=routing.route_type,
+            api_decision=api_decision,
+        )
+        optimizer_actions = list(optimized.actions)
+        if schema_candidate:
+            optimizer_actions.append(f"schema-aware SQL fallback selected {schema_candidate.candidate_id}")
+        if local_snapshot_sql_complete:
+            optimizer_actions.append("research_v2_local_snapshot_count_sql_only")
+        rationale = (
+            f"Research generalized V2 progressive evidence plan: {api_decision.mode}. "
+            f"{api_decision.reason} Early routing only allowed safe exits; this planner handles evidence-pipeline prompts directly."
+        )
+        return Plan(strategy, rationale, optimized.steps, optimizer_actions=optimizer_actions)
 
     def _template_first(
         self,
@@ -442,6 +555,26 @@ def _sql_step_purpose(*, fast_path: bool, schema_candidate: bool) -> str:
     if schema_candidate:
         return "Schema-aware SQL fallback grounding."
     return "Ground names/IDs in local snapshot before API verification."
+
+
+def _research_sql_step_purpose(*, local_snapshot: bool, fast_path: bool, schema_candidate: bool) -> str:
+    if local_snapshot:
+        return "Research V2 local-snapshot SQL grounding."
+    if fast_path:
+        return "Research V2 fast-path SQL grounding."
+    if schema_candidate:
+        return "Research V2 schema-aware SQL grounding."
+    return "Research V2 evidence-pipeline SQL grounding before post-SQL API decision."
+
+
+def _explicit_local_snapshot_scope(query: str) -> bool:
+    lowered = query.lower()
+    return "local snapshot" in lowered or "local database" in lowered or "local db" in lowered
+
+
+def _explicit_api_only_scope(query: str) -> bool:
+    lowered = query.lower()
+    return any(token in lowered for token in ["schema registry", "flow service", "adobe api", "live api"])
 
 
 PREFERRED_TABLES = {

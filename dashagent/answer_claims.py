@@ -53,6 +53,8 @@ def number_claims(answer: str) -> list[AnswerClaim]:
         value = match.group(0)
         if is_date_component(answer, match.start(), match.end()):
             continue
+        if _looks_like_url_port(answer, match.start(), match.end()):
+            continue
         claims.append(AnswerClaim("number", value.replace(",", ""), match.start(), match.end()))
     return claims
 
@@ -102,10 +104,21 @@ def status_claims(answer: str) -> list[AnswerClaim]:
         for match in re.finditer(rf"\b{re.escape(status)}\b", answer, flags=re.I):
             if status == "live" and "api" in answer[match.end() : match.end() + 32].lower():
                 continue
+            if status == "live" and _live_is_verification_scope(answer, match.start(), match.end()):
+                continue
             if status == "live" and _live_is_title_word(answer, match.start(), match.end()):
                 continue
             claims.append(AnswerClaim("status", match.group(0), match.start(), match.end()))
     return claims
+
+
+def _live_is_verification_scope(answer: str, start: int, end: int) -> bool:
+    before = answer[max(0, start - 48) : start].lower()
+    after = answer[end : min(len(answer), end + 24)].lower()
+    return (
+        any(phrase in before for phrase in ["cannot verify", "could not verify", "not verify", "unavailable; cannot verify"])
+        and "state" in after
+    )
 
 
 def _live_is_title_word(answer: str, start: int, end: int) -> bool:
@@ -125,3 +138,11 @@ def is_date_component(answer: str, start: int, end: int) -> bool:
     if re.search(r"20\d{2}-\d{2}-\d{2}", window):
         return True
     return ":" in window and bool(re.search(r"\d{1,2}:\d{2}(?::\d{2})?", window))
+
+
+def _looks_like_url_port(text: str, start: int, end: int) -> bool:
+    if start <= 0 or text[start - 1] != ":":
+        return False
+    prefix = text[max(0, start - 160) : start]
+    suffix = text[end : min(len(text), end + 16)]
+    return bool(re.search(r"https?://\S*$|\[REDACTED\]\S*$", prefix, flags=re.I) and (not suffix or suffix[0] in "/?#.:;, )]"))

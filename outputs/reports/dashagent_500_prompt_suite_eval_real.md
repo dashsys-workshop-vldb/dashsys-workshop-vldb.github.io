@@ -16,14 +16,14 @@
 
 ## Modes
 ### packaged_baseline_real
-- behavior_score: 0.7708
+- behavior_score: 0.7904
 - trace_observability_score: 0.25
-- combined_diagnostic_score: 0.6486
-- overall_score_alias: 0.6486
-- route_accuracy: 0.69
-- observable_trace_score: 0.5433
+- combined_diagnostic_score: 0.6743
+- overall_score_alias: 0.6743
+- route_accuracy: 0.705
+- observable_trace_score: 0.5717
 - sql_accuracy: 0.74
-- api_accuracy: 0.68
+- api_accuracy: 0.79
 - unsupported_claims: 0
 - no_tool_false_positive: 0
 - no_tool_false_negative: 10
@@ -40,27 +40,27 @@
 - post_sql_verifier_blocked_count: 0
 - post_sql_advisor_source_counts: {'DETERMINISTIC_BYPASS': 0, 'DETERMINISTIC_FALLBACK': 0, 'DETERMINISTIC_HIGH_CONF': 0, 'DISABLED': 0, 'INVALID_JSON': 0, 'LLM_ADVISOR': 0, 'LLM_ADVISOR_BLOCKED': 0, 'LLM_ADVISOR_VERIFIED': 0, 'LLM_BACKEND_UNAVAILABLE': 0}
 
-### robust_generalized_harness_candidate_real
-- behavior_score: 0.8354
+### robust_generalized_harness_candidate_v2_real
+- behavior_score: 0.8529
 - trace_observability_score: 0.41
-- combined_diagnostic_score: 0.7618
-- overall_score_alias: 0.7618
-- route_accuracy: 0.9
-- observable_trace_score: 0.6917
-- sql_accuracy: 0.78
-- api_accuracy: 0.79
+- combined_diagnostic_score: 0.7843
+- overall_score_alias: 0.7843
+- route_accuracy: 0.91
+- observable_trace_score: 0.7167
+- sql_accuracy: 0.81
+- api_accuracy: 0.86
 - unsupported_claims: 0
 - no_tool_false_positive: 0
 - no_tool_false_negative: 0
-- api_calls_saved: 2
+- api_calls_saved: 0
 - api_calls_added: 0
 - anti_hallucination_initial_fail: 0
 - anti_hallucination_revision_success: 0
 - post_sql_advisor_note: checkpoints are observability; actual LLM calls are counted separately
-- post_sql_advisor_checkpoint_present_count: 27
+- post_sql_advisor_checkpoint_present_count: 23
 - post_sql_llm_advisor_actual_call_count: 0
-- post_sql_deterministic_fallback_count: 2
+- post_sql_deterministic_fallback_count: 1
 - post_sql_llm_advice_blocked_count: 0
 - post_sql_verifier_verified_count: 0
 - post_sql_verifier_blocked_count: 0
-- post_sql_advisor_source_counts: {'DETERMINISTIC_BYPASS': 25, 'DETERMINISTIC_FALLBACK': 2, 'DETERMINISTIC_HIGH_CONF': 0, 'DISABLED': 0, 'INVALID_JSON': 0, 'LLM_ADVISOR': 0, 'LLM_ADVISOR_BLOCKED': 0, 'LLM_ADVISOR_VERIFIED': 0, 'LLM_BACKEND_UNAVAILABLE': 0}
+- post_sql_advisor_source_counts: {'DETERMINISTIC_BYPASS': 22, 'DETERMINISTIC_FALLBACK': 1, 'DETERMINISTIC_HIGH_CONF': 0, 'DISABLED': 0, 'INVALID_JSON': 0, 'LLM_ADVISOR': 0, 'LLM_ADVISOR_BLOCKED': 0, 'LLM_ADVISOR_VERIFIED': 0, 'LLM_BACKEND_UNAVAILABLE': 0}

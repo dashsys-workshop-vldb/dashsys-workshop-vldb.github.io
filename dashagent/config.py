@@ -114,6 +114,15 @@ class Config:
     enable_evidence_grounded_answer_builder: bool = False
     enable_evidence_grounded_llm_answer_generator: bool = False
     enable_evidence_grounded_final_answer_verifier: bool = False
+    enable_hybrid_answer_composer: bool = False
+    enable_research_generalized_planner: bool = False
+    enable_progressive_evidence_policy: bool = False
+    enable_llm_first_semantic_decision: bool = False
+    enable_minimal_correction_feedback: bool = False
+    enable_post_sql_llm_first_decision: bool = False
+    enable_risk_minimizing_fallback: bool = False
+    enable_canonical_data_renderer: bool = False
+    enable_llm_concept_answer: bool = False
     force_evidence_grounded_llm_answer_generation: bool = False
     enable_score_provenance_guard: bool = False
     enable_runtime_leakage_guard: bool = False
@@ -216,6 +225,15 @@ class Config:
             enable_evidence_grounded_answer_builder=_bool_from_env("ENABLE_EVIDENCE_GROUNDED_ANSWER_BUILDER", False),
             enable_evidence_grounded_llm_answer_generator=_bool_from_env("ENABLE_EVIDENCE_GROUNDED_LLM_ANSWER_GENERATOR", False),
             enable_evidence_grounded_final_answer_verifier=_bool_from_env("ENABLE_EVIDENCE_GROUNDED_FINAL_ANSWER_VERIFIER", False),
+            enable_hybrid_answer_composer=_bool_from_env("ENABLE_HYBRID_ANSWER_COMPOSER", False),
+            enable_research_generalized_planner=_bool_from_env("ENABLE_RESEARCH_GENERALIZED_PLANNER", False),
+            enable_progressive_evidence_policy=_bool_from_env("ENABLE_PROGRESSIVE_EVIDENCE_POLICY", False),
+            enable_llm_first_semantic_decision=_bool_from_env("ENABLE_LLM_FIRST_SEMANTIC_DECISION", False),
+            enable_minimal_correction_feedback=_bool_from_env("ENABLE_MINIMAL_CORRECTION_FEEDBACK", False),
+            enable_post_sql_llm_first_decision=_bool_from_env("ENABLE_POST_SQL_LLM_FIRST_DECISION", False),
+            enable_risk_minimizing_fallback=_bool_from_env("ENABLE_RISK_MINIMIZING_FALLBACK", False),
+            enable_canonical_data_renderer=_bool_from_env("ENABLE_CANONICAL_DATA_RENDERER", False),
+            enable_llm_concept_answer=_bool_from_env("ENABLE_LLM_CONCEPT_ANSWER", False),
             force_evidence_grounded_llm_answer_generation=_bool_from_env("FORCE_EVIDENCE_GROUNDED_LLM_ANSWER_GENERATION", False),
             enable_score_provenance_guard=_bool_from_env("ENABLE_SCORE_PROVENANCE_GUARD", False),
             enable_runtime_leakage_guard=_bool_from_env("ENABLE_RUNTIME_LEAKAGE_GUARD", False),
@@ -246,7 +264,9 @@ DEFAULT_CONFIG = Config.from_env()
 
 
 SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER = "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER"
+SQL_FIRST_API_VERIFY_HYBRID_ANSWER = "SQL_FIRST_API_VERIFY_HYBRID_ANSWER"
 ROBUST_GENERALIZED_HARNESS_CANDIDATE = "ROBUST_GENERALIZED_HARNESS_CANDIDATE"
+ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 = "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
 ROBUST_ABLATION_STRATEGIES = [
     "ROBUST_ABLATION_NO_SEMANTIC_ROUTING",
     "ROBUST_ABLATION_SEMANTIC_ROUTING_ONLY",
@@ -287,6 +307,15 @@ def sql_first_llm_answer_verifier_config(config: Config) -> Config:
         enable_evidence_grounded_answer_builder=True,
         enable_evidence_grounded_llm_answer_generator=True,
         enable_evidence_grounded_final_answer_verifier=True,
+        enable_hybrid_answer_composer=False,
+        enable_research_generalized_planner=False,
+        enable_progressive_evidence_policy=False,
+        enable_llm_first_semantic_decision=False,
+        enable_minimal_correction_feedback=False,
+        enable_post_sql_llm_first_decision=False,
+        enable_risk_minimizing_fallback=False,
+        enable_canonical_data_renderer=False,
+        enable_llm_concept_answer=False,
         force_evidence_grounded_llm_answer_generation=True,
         enable_score_provenance_guard=True,
         enable_runtime_leakage_guard=True,
@@ -300,6 +329,55 @@ def sql_first_llm_answer_verifier_config(config: Config) -> Config:
         enable_post_sql_llm_advisor_applied_trial=False,
         enable_combined_safe_applied_trial=False,
         real_behavior_trial_mode=SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER,
+    )
+
+
+def sql_first_hybrid_answer_config(config: Config) -> Config:
+    return replace(
+        config,
+        enable_objective_prompt_features=False,
+        enable_semantic_parse=False,
+        enable_semantic_intent_classifier=False,
+        enable_routing_anti_hallucination_gate=False,
+        enable_no_tool_safety_verifier=False,
+        enable_semantic_route_decision_ladder=False,
+        enable_safe_api_probe=False,
+        semantic_route_shadow_only=True,
+        semantic_route_tier2_diagnostic=False,
+        enable_staged_evidence_policy=False,
+        staged_evidence_policy_shadow_only=True,
+        enable_post_sql_api_decision=False,
+        enable_post_sql_deterministic_policy=False,
+        enable_post_sql_llm_semantic_decision=False,
+        post_sql_api_decision_shadow_only=True,
+        post_sql_llm_advisor_enabled=False,
+        enable_evidence_quality_classifier=True,
+        enable_answer_slot_renderer=True,
+        enable_evidence_grounded_answer_builder=True,
+        enable_evidence_grounded_llm_answer_generator=False,
+        enable_evidence_grounded_final_answer_verifier=True,
+        enable_hybrid_answer_composer=True,
+        enable_research_generalized_planner=False,
+        enable_progressive_evidence_policy=False,
+        enable_llm_first_semantic_decision=False,
+        enable_minimal_correction_feedback=False,
+        enable_post_sql_llm_first_decision=False,
+        enable_risk_minimizing_fallback=False,
+        enable_canonical_data_renderer=True,
+        enable_llm_concept_answer=True,
+        force_evidence_grounded_llm_answer_generation=False,
+        enable_score_provenance_guard=True,
+        enable_runtime_leakage_guard=True,
+        enable_hardcode_fake_score_guard=True,
+        enable_broad_semantic_no_tool=False,
+        enable_robust_generalized_candidate=False,
+        candidate_shadow_only=True,
+        enable_semantic_no_tool_applied_trial=False,
+        enable_staged_evidence_applied_trial=False,
+        enable_post_sql_deterministic_applied_trial=False,
+        enable_post_sql_llm_advisor_applied_trial=False,
+        enable_combined_safe_applied_trial=False,
+        real_behavior_trial_mode=SQL_FIRST_API_VERIFY_HYBRID_ANSWER,
     )
 
 
@@ -325,6 +403,15 @@ def robust_generalized_candidate_config(config: Config) -> Config:
         enable_evidence_grounded_answer_builder=True,
         enable_evidence_grounded_llm_answer_generator=True,
         enable_evidence_grounded_final_answer_verifier=True,
+        enable_hybrid_answer_composer=False,
+        enable_research_generalized_planner=False,
+        enable_progressive_evidence_policy=True,
+        enable_llm_first_semantic_decision=True,
+        enable_minimal_correction_feedback=True,
+        enable_post_sql_llm_first_decision=True,
+        enable_risk_minimizing_fallback=True,
+        enable_canonical_data_renderer=False,
+        enable_llm_concept_answer=False,
         force_evidence_grounded_llm_answer_generation=False,
         enable_score_provenance_guard=True,
         enable_runtime_leakage_guard=True,
@@ -339,6 +426,54 @@ def robust_generalized_candidate_config(config: Config) -> Config:
         enable_combined_safe_applied_trial=True,
         post_sql_llm_advisor_enabled=False,
         real_behavior_trial_mode=ROBUST_GENERALIZED_HARNESS_CANDIDATE,
+    )
+
+
+def robust_generalized_v2_config(config: Config) -> Config:
+    return replace(
+        config,
+        enable_research_generalized_planner=True,
+        enable_objective_prompt_features=True,
+        enable_semantic_parse=True,
+        enable_semantic_intent_classifier=True,
+        enable_llm_first_semantic_decision=True,
+        enable_routing_anti_hallucination_gate=True,
+        enable_no_tool_safety_verifier=True,
+        enable_semantic_route_decision_ladder=True,
+        enable_minimal_correction_feedback=True,
+        enable_progressive_evidence_policy=True,
+        enable_safe_api_probe=True,
+        semantic_route_shadow_only=False,
+        enable_staged_evidence_policy=True,
+        staged_evidence_policy_shadow_only=False,
+        enable_post_sql_api_decision=True,
+        enable_post_sql_deterministic_policy=True,
+        enable_post_sql_llm_semantic_decision=True,
+        enable_post_sql_llm_first_decision=True,
+        enable_risk_minimizing_fallback=True,
+        post_sql_api_decision_shadow_only=False,
+        enable_evidence_quality_classifier=True,
+        enable_answer_slot_renderer=True,
+        enable_evidence_grounded_answer_builder=True,
+        enable_evidence_grounded_llm_answer_generator=False,
+        enable_evidence_grounded_final_answer_verifier=True,
+        enable_hybrid_answer_composer=True,
+        enable_canonical_data_renderer=True,
+        enable_llm_concept_answer=True,
+        force_evidence_grounded_llm_answer_generation=False,
+        enable_score_provenance_guard=True,
+        enable_runtime_leakage_guard=True,
+        enable_hardcode_fake_score_guard=True,
+        enable_broad_semantic_no_tool=True,
+        enable_robust_generalized_candidate=True,
+        candidate_shadow_only=False,
+        enable_semantic_no_tool_applied_trial=True,
+        enable_staged_evidence_applied_trial=True,
+        enable_post_sql_deterministic_applied_trial=True,
+        enable_post_sql_llm_advisor_applied_trial=False,
+        enable_combined_safe_applied_trial=True,
+        post_sql_llm_advisor_enabled=False,
+        real_behavior_trial_mode=ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2,
     )
 
 

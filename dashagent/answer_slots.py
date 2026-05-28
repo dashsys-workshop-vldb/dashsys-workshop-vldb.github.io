@@ -162,6 +162,9 @@ def extract_answer_slots(query: str, tool_results: list[dict[str, Any]]) -> Answ
                     collect_mapping(slots, row)
         elif kind == "api":
             parsed = payload.get("parsed_evidence") if isinstance(payload, dict) else None
+            if isinstance(parsed, dict) and "ok" not in parsed and payload.get("ok"):
+                parsed = {**parsed, "ok": True}
+                payload = {**payload, "parsed_evidence": parsed}
             if isinstance(parsed, dict):
                 state = parsed.get("evidence_state")
                 if state:
@@ -218,6 +221,10 @@ def extract_answer_slots(query: str, tool_results: list[dict[str, Any]]) -> Answ
 
     if sql_counts and live_api_counts and query_requests_discrepancy_check(slots.query):
         slots.discrepancy = sql_counts[0] != live_api_counts[0]
+    if (slots.sql_row_count or 0) > 0:
+        for status in query_status_terms(slots.query):
+            slots.statuses.append(status)
+            slots.evidence_strings.add(f"query_status_filter:{status}")
 
     slots.entity_names = dedupe(slots.entity_names)
     slots.entity_ids = dedupe(slots.entity_ids)
@@ -232,6 +239,15 @@ def extract_answer_slots(query: str, tool_results: list[dict[str, Any]]) -> Answ
 def query_requests_discrepancy_check(query: str) -> bool:
     lowered = query.lower()
     return any(token in lowered for token in ["discrepancy", "disagree", "mismatch", "conflict", "compare sql", "sql and api"])
+
+
+def query_status_terms(query: str) -> list[str]:
+    lowered = query.lower()
+    return [
+        status
+        for status in ["inactive", "active", "failed", "succeeded", "published", "draft", "live"]
+        if re.search(rf"\b{re.escape(status)}\b", lowered)
+    ]
 
 
 def _only_synthetic_dry_run_errors(value: Any) -> bool:

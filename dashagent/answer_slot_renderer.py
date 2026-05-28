@@ -25,8 +25,11 @@ def render_answer_slots(query: str, slots: AnswerSlots, evidence_quality: dict[s
     caveats = _quality_caveats(slots, quality)
 
     if _asks_count(lowered) and slots.counts:
+        label = _object_label(lowered)
         if "local snapshot" in lowered or ((_asks_live_scope(lowered) or _asks_platform_scope(lowered)) and (slots.dry_run or slots.api_error)):
-            answer = f"Local snapshot count: {slots.counts[0]}."
+            answer = f"Local snapshot {label} count: {slots.counts[0]}."
+        elif slots.answer_slot_source == "live_api" or slots.api_item_count is not None:
+            answer = f"API {label} count: {slots.counts[0]}."
         else:
             answer = f"Count: {slots.counts[0]}."
         if caveats:
@@ -148,6 +151,26 @@ def _asks_date(text: str) -> bool:
 
 def _asks_live_scope(text: str) -> bool:
     return any(token in text for token in ("current", "live"))
+
+
+def _object_label(text: str) -> str:
+    labels = [
+        ("schema record", "schema records"),
+        ("schema", "schemas"),
+        ("dataset", "datasets"),
+        ("journey", "journeys"),
+        ("campaign", "campaigns"),
+        ("audience", "audiences"),
+        ("segment", "segments"),
+        ("tag", "tags"),
+        ("flow", "flows"),
+        ("batch", "batches"),
+        ("merge polic", "merge policies"),
+    ]
+    for token, label in labels:
+        if token in text:
+            return label
+    return "snapshot"
 
 
 def _asks_platform_scope(text: str) -> bool:

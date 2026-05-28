@@ -5,15 +5,15 @@
 - organizer_equivalent: False
 
 ## Modes
-### robust_generalized_harness_candidate_real
+### robust_generalized_harness_candidate_v2_real
 - available: True
-- behavior_score: 0.8354
+- behavior_score: 0.8529
 - trace_observability_score: 0.41
-- combined_diagnostic_score: 0.7618
-- final_answer_correctness: 0.6425
-- sql_calls: 26
-- api_calls: 28
-- api_calls_saved: 2
+- combined_diagnostic_score: 0.7843
+- final_answer_correctness: 0.6675
+- sql_calls: 28
+- api_calls: 26
+- api_calls_saved: 0
 - unsupported_claims: 0
-- behavior_score_delta: 0.0646
-- rows_helped/hurt/neutral: 12/0/38
+- behavior_score_delta: 0.0625
+- rows_helped/hurt/neutral: 11/0/39

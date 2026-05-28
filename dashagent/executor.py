@@ -37,8 +37,12 @@ from .config import (
     Config,
     DEFAULT_CONFIG,
     ROBUST_GENERALIZED_HARNESS_CANDIDATE,
+    ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2,
+    SQL_FIRST_API_VERIFY_HYBRID_ANSWER,
     SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER,
     robust_generalized_candidate_config,
+    robust_generalized_v2_config,
+    sql_first_hybrid_answer_config,
     sql_first_llm_answer_verifier_config,
 )
 from .core_tool_policy import compact_api_outcome
@@ -51,6 +55,7 @@ from .evidence_grounded_llm_answer_generator import generate_evidence_grounded_l
 from .evidence_policy import API_SKIP
 from .evidence_quality_classifier import classify_evidence_quality
 from .gated_sql_candidates import hard_case_triggers, select_gated_sql_candidate
+from .hybrid_answer_composer import compose_hybrid_answer
 from .metadata_selector import MetadataSelector
 from .plan_ensemble import select_plan_candidate
 from .planner import (
@@ -192,11 +197,18 @@ class AgentExecutor:
         original_config = self.config
         if strategy == ROBUST_GENERALIZED_HARNESS_CANDIDATE and self.config.real_behavior_trial_mode != ROBUST_GENERALIZED_HARNESS_CANDIDATE:
             self.config = robust_generalized_candidate_config(self.config)
+        if strategy == ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 and self.config.real_behavior_trial_mode != ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2:
+            self.config = robust_generalized_v2_config(self.config)
         if (
             strategy == SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER
             and self.config.real_behavior_trial_mode != SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER
         ):
             self.config = sql_first_llm_answer_verifier_config(self.config)
+        if (
+            strategy == SQL_FIRST_API_VERIFY_HYBRID_ANSWER
+            and self.config.real_behavior_trial_mode != SQL_FIRST_API_VERIFY_HYBRID_ANSWER
+        ):
+            self.config = sql_first_hybrid_answer_config(self.config)
         try:
             return self._run_with_active_config(query, strategy=strategy, query_id=query_id, output_dir=output_dir)
         finally:
@@ -232,7 +244,7 @@ class AgentExecutor:
                 input_summary={"strategy": strategy},
                 output=runtime_guard_checkpoint(strategy=strategy, query_id=qid, query=query),
                 effect="asserts that candidate runtime receives only prompt/runtime fields, not evaluator metadata",
-                correctness_role="prevents gold/category/tags/oracle/expected-trace leakage into runtime decisions",
+                correctness_role="prevents evaluator-only metadata leakage into runtime decisions",
                 efficiency_role="adds no tool calls",
             )
         if self.config.enable_score_provenance_guard:
@@ -986,6 +998,7 @@ class AgentExecutor:
         grounded = None
         generated = None
         pre_llm_selection = None
+        hybrid_result = None
         llm_answer_generation_skipped = False
         if self.config.enable_evidence_grounded_answer_builder:
             grounded = build_evidence_grounded_answer(
@@ -1005,7 +1018,16 @@ class AgentExecutor:
                 correctness_role="uses exact available values and scoped caveats without inventing missing roles",
                 efficiency_role="uses no extra SQL/API/LLM calls",
             )
-            if self.config.enable_evidence_grounded_llm_answer_generator:
+            if self.config.enable_hybrid_answer_composer:
+                hybrid_result = compose_hybrid_answer(
+                    query,
+                    slots=slots,
+                    evidence_bus=evidence_bus,
+                    evidence_quality=evidence_quality,
+                    answer_card=grounded,
+                    legacy_answer=legacy_answer_result.answer,
+                )
+            elif self.config.enable_evidence_grounded_llm_answer_generator:
                 pre_llm_selection = select_answer_candidate(
                     prompt=query,
                     slots=slots,
@@ -1031,52 +1053,103 @@ class AgentExecutor:
                         verify_final_answer=self.config.enable_evidence_grounded_final_answer_verifier,
                     )
         if self.config.enable_evidence_grounded_answer_builder and grounded is not None:
-            if llm_answer_generation_skipped and pre_llm_selection is not None:
-                selection = pre_llm_selection
-            else:
-                selection = select_answer_candidate(
-                    prompt=query,
-                    slots=slots,
-                    evidence_bus=evidence_bus,
-                    llm_answer=generated.final_answer if generated is not None else None,
-                    llm_verification=generated.verification if generated is not None else None,
-                    legacy_answer=legacy_answer_result.answer,
-                    grounded_answer=grounded.answer,
+            if self.config.enable_hybrid_answer_composer and hybrid_result is not None:
+                answer_result = AnswerResult(
+                    answer=hybrid_result.final_answer,
+                    diagnostics={
+                        **legacy_answer_result.diagnostics,
+                        "evidence_grounded_answer_builder": grounded.to_dict(),
+                        "hybrid_answer_composer": hybrid_result.to_dict(),
+                        "llm_answer_attempted": bool(
+                            hybrid_result.concept is not None
+                            and hybrid_result.concept.llm_backend_used
+                        ),
+                        "llm_answer_generation_skipped": False,
+                        "candidate_count": 2,
+                        "selected_candidate_type": hybrid_result.selected_source,
+                        "selection_reason": (
+                            "Selected intent-aware hybrid answer using runtime AnswerSlots/EvidenceBus only; "
+                            "SQL/API execution path is unchanged by the answer composer."
+                        ),
+                    },
                 )
-            answer_result = AnswerResult(
-                answer=selection.selected_answer,
-                diagnostics={
-                    **legacy_answer_result.diagnostics,
-                    "evidence_grounded_answer_builder": grounded.to_dict(),
-                    "evidence_grounded_llm_answer_generator": (
-                        generated.to_dict()
-                        if generated is not None
-                        else _skipped_llm_answer_payload(llm_answer_generation_skipped)
-                    ),
-                    "llm_answer_attempted": bool(
-                        self.config.enable_evidence_grounded_llm_answer_generator
-                        and not llm_answer_generation_skipped
-                    ),
-                    "llm_answer_generation_skipped": llm_answer_generation_skipped,
-                    "answer_candidate_selector": selection.to_dict(),
-                    "candidate_count": len(selection.candidates),
-                    "selected_candidate_type": selection.selected_source,
-                    "selection_reason": (
-                        "Selected the verifier-safe same-evidence answer with the best runtime role coverage; "
-                        "no benchmark gold/category/oracle fields are used."
-                    ),
-                },
-            )
-            checkpoint_logger.add_checkpoint(
-                "checkpoint_answer_candidate_selector",
-                stage="answer selection",
-                technique="runtime evidence coverage answer selection",
-                input_summary={"candidate_count": len(selection.candidates), "unsupported_claims": selection.unsupported_claims},
-                output=selection.to_dict(),
-                effect="restores strong same-evidence rendering when LLM wording omits requested roles",
-                correctness_role="selects only verifier-safe answers using AnswerSlots/EvidenceBus coverage, not gold labels",
-                efficiency_role="uses local scoring without extra SQL/API calls",
-            )
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_answer_intent_router",
+                    stage="answer selection",
+                    technique="intent-aware answer router",
+                    input_summary={"slot_counts": slots.compact()},
+                    output=hybrid_result.intent.to_dict(),
+                    effect="selects canonical data, LLM concept, mixed, caveat, or legacy answer mode from runtime evidence",
+                    correctness_role="uses runtime prompt and evidence fields only",
+                    efficiency_role="avoids unnecessary free-form LLM generation for structured data answers",
+                )
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_hybrid_answer_composer",
+                    stage="answer selection",
+                    technique="intent-aware hybrid answer composition",
+                    input_summary={"answer_intent": hybrid_result.intent.answer_intent, "answer_mode": hybrid_result.intent.answer_mode},
+                    output=hybrid_result.to_dict(),
+                    effect="uses canonical data rendering for structured answers and bounded LLM wording for concept sections",
+                    correctness_role="preserves exact evidence facts and falls back to legacy rendering when verification fails",
+                    efficiency_role="avoids all-row free-form LLM answer generation for structured data prompts",
+                )
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_final_answer_verifier",
+                    stage="answer verification",
+                    technique="evidence-grounded final answer verifier",
+                    input_summary={"selected_source": hybrid_result.selected_source},
+                    output=hybrid_result.verification.to_dict(),
+                    effect="accepts free wording only when hard factual claims are bounded by EvidenceBus and AnswerSlots",
+                    correctness_role="blocks invented counts, IDs, statuses, timestamps, relationships, and unsafe no-data claims",
+                    efficiency_role="runs on compact allowed facts and extracted claims without extra SQL/API calls",
+                )
+            else:
+                if llm_answer_generation_skipped and pre_llm_selection is not None:
+                    selection = pre_llm_selection
+                else:
+                    selection = select_answer_candidate(
+                        prompt=query,
+                        slots=slots,
+                        evidence_bus=evidence_bus,
+                        llm_answer=generated.final_answer if generated is not None else None,
+                        llm_verification=generated.verification if generated is not None else None,
+                        legacy_answer=legacy_answer_result.answer,
+                        grounded_answer=grounded.answer,
+                    )
+                answer_result = AnswerResult(
+                    answer=selection.selected_answer,
+                    diagnostics={
+                        **legacy_answer_result.diagnostics,
+                        "evidence_grounded_answer_builder": grounded.to_dict(),
+                        "evidence_grounded_llm_answer_generator": (
+                            generated.to_dict()
+                            if generated is not None
+                            else _skipped_llm_answer_payload(llm_answer_generation_skipped)
+                        ),
+                        "llm_answer_attempted": bool(
+                            self.config.enable_evidence_grounded_llm_answer_generator
+                            and not llm_answer_generation_skipped
+                        ),
+                        "llm_answer_generation_skipped": llm_answer_generation_skipped,
+                        "answer_candidate_selector": selection.to_dict(),
+                        "candidate_count": len(selection.candidates),
+                        "selected_candidate_type": selection.selected_source,
+                        "selection_reason": (
+                            "Selected the verifier-safe same-evidence answer with the best runtime role coverage; "
+                            "no evaluator-only benchmark fields are used."
+                        ),
+                    },
+                )
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_answer_candidate_selector",
+                    stage="answer selection",
+                    technique="runtime evidence coverage answer selection",
+                    input_summary={"candidate_count": len(selection.candidates), "unsupported_claims": selection.unsupported_claims},
+                    output=selection.to_dict(),
+                    effect="restores strong same-evidence rendering when LLM wording omits requested roles",
+                    correctness_role="selects only verifier-safe answers using AnswerSlots/EvidenceBus coverage, not gold labels",
+                    efficiency_role="uses local scoring without extra SQL/API calls",
+                )
         final_answer = answer_result.answer
         intent = classify_answer_intent(query, slots)
         claims = extract_claims(final_answer)
@@ -1159,7 +1232,7 @@ class AgentExecutor:
                 input_summary={"rewrite_attempted": llm_answer_payload.get("rewrite_attempted")},
                 output=llm_answer_payload.get("feedback", {}),
                 effect="records blocked claims and allowed facts for one bounded rewrite attempt",
-                correctness_role="keeps rewrite feedback fact-only and excludes gold/category/oracle metadata",
+                correctness_role="keeps rewrite feedback fact-only and excludes evaluator-only metadata",
                 efficiency_role="uses at most one rewrite attempt before deterministic fallback",
             )
             checkpoint_logger.add_checkpoint(
@@ -1691,23 +1764,36 @@ class AgentExecutor:
         slots = extract_answer_slots(query, tool_results)
         grounded = build_evidence_grounded_answer(query, tool_results, slots=slots, evidence_quality=evidence_quality, api_required=True)
         legacy_answer_result = synthesize_answer_with_diagnostics(query, tool_results)
-        selection = select_answer_candidate(
-            prompt=query,
-            slots=slots,
-            evidence_bus=evidence_bus,
-            llm_answer=None,
-            llm_verification=None,
-            legacy_answer=legacy_answer_result.answer,
-            grounded_answer=grounded.answer,
-        )
-        final_answer = selection.selected_answer
+        hybrid_result = None
+        selection = None
+        if self.config.enable_hybrid_answer_composer:
+            hybrid_result = compose_hybrid_answer(
+                query,
+                slots=slots,
+                evidence_bus=evidence_bus,
+                evidence_quality=evidence_quality,
+                answer_card=grounded,
+                legacy_answer=legacy_answer_result.answer,
+            )
+            final_answer = hybrid_result.final_answer
+        else:
+            selection = select_answer_candidate(
+                prompt=query,
+                slots=slots,
+                evidence_bus=evidence_bus,
+                llm_answer=None,
+                llm_verification=None,
+                legacy_answer=legacy_answer_result.answer,
+                grounded_answer=grounded.answer,
+            )
+            final_answer = selection.selected_answer
         metadata = {
             "query_id": qid,
             "query": query,
             "strategy": strategy,
             "prompt_route": prompt_route.to_dict(),
             "safe_api_probe": probe_decision,
-            "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE SAFE_API_PROBE; packaged SQL_FIRST_API_VERIFY default is unchanged.",
+            "note": "Research generalized candidate SAFE_API_PROBE; packaged SQL_FIRST_API_VERIFY default is unchanged.",
         }
         self.metadata_selector.save(metadata, out_dir)
         filled_prompt = render_system_prompt(self.config, metadata)
@@ -1772,16 +1858,48 @@ class AgentExecutor:
             correctness_role="uses scoped caveats for live_empty/API errors and does not invent missing roles",
             efficiency_role="replaces free-form answer synthesis only in the explicit candidate strategy",
         )
-        checkpoint_logger.add_checkpoint(
-            "checkpoint_answer_candidate_selector",
-            stage="answer selection",
-            technique="runtime evidence coverage answer selection",
-            input_summary={"candidate_count": len(selection.candidates), "unsupported_claims": selection.unsupported_claims},
-            output=selection.to_dict(),
-            effect="uses the same legacy-safe evidence wording available to the full evidence pipeline",
-            correctness_role="selects only verifier-safe answers using AnswerSlots/API evidence coverage, not gold labels",
-            efficiency_role="uses local scoring without extra SQL/API calls",
-        )
+        if hybrid_result is not None:
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_answer_intent_router",
+                stage="answer selection",
+                technique="intent-aware answer router",
+                input_summary={"slot_counts": slots.compact()},
+                output=hybrid_result.intent.to_dict(),
+                effect="selects canonical data, LLM concept, mixed, caveat, or legacy answer mode from runtime evidence",
+                correctness_role="uses runtime prompt and evidence fields only",
+                efficiency_role="avoids unnecessary free-form LLM generation for structured data answers",
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_hybrid_answer_composer",
+                stage="answer selection",
+                technique="intent-aware hybrid answer composition",
+                input_summary={"answer_intent": hybrid_result.intent.answer_intent, "answer_mode": hybrid_result.intent.answer_mode},
+                output=hybrid_result.to_dict(),
+                effect="uses canonical data rendering for structured answers and bounded LLM wording for concept sections",
+                correctness_role="preserves exact evidence facts and falls back to legacy rendering when verification fails",
+                efficiency_role="avoids all-row free-form LLM answer generation for structured data prompts",
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_final_answer_verifier",
+                stage="answer verification",
+                technique="evidence-grounded final answer verifier",
+                input_summary={"selected_source": hybrid_result.selected_source},
+                output=hybrid_result.verification.to_dict(),
+                effect="accepts free wording only when hard factual claims are bounded by EvidenceBus and AnswerSlots",
+                correctness_role="blocks invented counts, IDs, statuses, timestamps, relationships, and unsafe no-data claims",
+                efficiency_role="runs on compact allowed facts and extracted claims without extra SQL/API calls",
+            )
+        elif selection is not None:
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_answer_candidate_selector",
+                stage="answer selection",
+                technique="runtime evidence coverage answer selection",
+                input_summary={"candidate_count": len(selection.candidates), "unsupported_claims": selection.unsupported_claims},
+                output=selection.to_dict(),
+                effect="uses the same legacy-safe evidence wording available to the full evidence pipeline",
+                correctness_role="selects only verifier-safe answers using AnswerSlots/API evidence coverage, not gold labels",
+                efficiency_role="uses local scoring without extra SQL/API calls",
+            )
         checkpoint_logger.add_checkpoint(
             "checkpoint_18_final_answer",
             stage="final response",
@@ -1807,8 +1925,11 @@ class AgentExecutor:
             {
                 **grounded.to_dict(),
                 "legacy_answer": legacy_answer_result.answer,
-                "answer_candidate_selector": selection.to_dict(),
-                "selected_candidate_type": selection.selected_source,
+                "answer_candidate_selector": selection.to_dict() if selection is not None else None,
+                "hybrid_answer_composer": hybrid_result.to_dict() if hybrid_result is not None else None,
+                "selected_candidate_type": (
+                    hybrid_result.selected_source if hybrid_result is not None else selection.selected_source if selection is not None else "UNKNOWN"
+                ),
             },
         )
         trajectory.set_checkpoints(checkpoint_logger.to_list())
@@ -1878,6 +1999,23 @@ class AgentExecutor:
                 effect="records the first evidence branch a future trial would acquire",
                 correctness_role="keeps current SQL_FIRST_API_VERIFY execution unchanged in shadow mode",
                 efficiency_role="measures where upfront SQL+API planning may be avoidable",
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_staged_evidence_acquisition",
+                stage="evidence pipeline",
+                technique="progressive staged evidence acquisition",
+                input_summary={"planned_sql": sql_available, "planned_api": api_available},
+                output={
+                    "generalized_planner_executed": bool(self.config.enable_research_generalized_planner),
+                    "scores": scores.to_dict(),
+                    "initial_branch": branch.to_dict(),
+                    "planned_sql_calls": sum(1 for step in plan.steps if step.action == "sql"),
+                    "planned_api_calls": sum(1 for step in plan.steps if step.action == "api"),
+                    "shadow_only": self.config.staged_evidence_policy_shadow_only,
+                },
+                effect="records the actual evidence pipeline entry and planned staged sources for research V2",
+                correctness_role="keeps ambiguous/data-like prompts in evidence collection rather than early no-tool routing",
+                efficiency_role="records first-source policy without executing extra candidate plans",
             )
         except Exception as exc:
             checkpoint_logger.add_error_checkpoint(

@@ -36,8 +36,8 @@ def select_answer_candidate(
 ) -> AnswerCandidateSelection:
     """Select the safest fact-complete answer using only runtime evidence.
 
-    This selector deliberately does not inspect gold, benchmark category, tags,
-    oracle SQL, or expected traces. It ranks same-evidence answers by claim
+    This selector deliberately does not inspect evaluator-only benchmark fields.
+    It ranks same-evidence answers by claim
     safety and coverage of requested roles already present in AnswerSlots.
     """
 

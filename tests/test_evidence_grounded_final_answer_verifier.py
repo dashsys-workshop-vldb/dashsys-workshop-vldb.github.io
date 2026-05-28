@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from dashagent.answer_slots import AnswerSlots
+from dashagent.answer_verifier import verify_answer
 from dashagent.config import DEFAULT_CONFIG
 from dashagent.evidence_allowed_fact_index import build_allowed_fact_index
 from dashagent.evidence_bus import EvidenceBus
@@ -162,6 +163,22 @@ def test_allows_live_empty_as_scoped_empty() -> None:
     assert result.ok is True
 
 
+def test_allows_sql_empty_to_report_as_query_scoped_empty() -> None:
+    result = verify_evidence_grounded_final_answer(
+        "There are no failed dataflow runs to report. The SQL query returned zero rows.",
+        slots=AnswerSlots(
+            query="Show me the IDs of failed dataflow runs",
+            answer_family="list",
+            statuses=["failed"],
+            sql_row_count=0,
+            evidence_strings={"query_status_filter:failed"},
+        ),
+        caveats=["SQL_EMPTY"],
+    )
+
+    assert result.ok is True
+
+
 def test_blocks_api_error_as_no_data() -> None:
     result = verify_evidence_grounded_final_answer("There are no schemas.", slots=_api_error_slots())
 
@@ -171,6 +188,37 @@ def test_blocks_api_error_as_no_data() -> None:
 
 def test_allows_api_error_as_unavailable() -> None:
     result = verify_evidence_grounded_final_answer("API unavailable; live state could not be verified.", slots=_api_error_slots())
+
+    assert result.ok is True
+
+
+def test_allows_api_error_as_not_executed_caveat() -> None:
+    result = verify_evidence_grounded_final_answer(
+        "Live API verification was not executed because Adobe credentials are unavailable.",
+        slots=_api_error_slots(),
+    )
+
+    assert result.ok is True
+
+
+def test_allows_date_only_claim_for_timestamp_evidence() -> None:
+    result = verify_evidence_grounded_final_answer("Birthday Message was updated on 2026-05-01.", slots=_slots())
+
+    assert result.ok is True
+
+
+def test_status_filter_from_non_empty_sql_rows_is_allowed() -> None:
+    slots = AnswerSlots(
+        query="Show inactive journeys.",
+        answer_family="status",
+        entity_names=["Birthday Message"],
+        statuses=["inactive"],
+        first_rows=[{"name": "Birthday Message", "campaign_state": "updated"}],
+        sql_row_count=1,
+        evidence_strings={"birthday message", "query_status_filter:inactive"},
+    )
+
+    result = verify_evidence_grounded_final_answer("There is 1 inactive journey: Birthday Message.", slots=slots)
 
     assert result.ok is True
 
@@ -301,3 +349,53 @@ def test_claim_extractor_and_matcher_do_not_require_exact_wording() -> None:
     matches = match_final_answer_claims(claims, index)
 
     assert all(match.status == "SUPPORTED" for match in matches)
+
+
+def test_claim_extractor_ignores_generic_sql_api_evidence_phrases() -> None:
+    claims = extract_final_answer_claims(
+        "The SQL query returned zero rows, and the API evidence reports batch 01KSPABCDEFGHIJKLMNOPQRSTUV with status success."
+    )
+
+    entity_values = {claim.value for claim in claims if claim.type == "ENTITY_NAME"}
+    assert "The SQL" not in entity_values
+    assert "The SQL query" not in entity_values
+    assert "The API" not in entity_values
+    assert "The API evidence" not in entity_values
+
+
+def test_claim_extractor_does_not_count_numbers_inside_quoted_names() -> None:
+    claims = extract_final_answer_claims('The field for "Person: Birthday Today 001" is person.birthDate.')
+
+    assert not any(claim.type == "COUNT" and claim.value == "001" for claim in claims)
+
+
+def test_claim_extractor_does_not_count_url_ports() -> None:
+    claims = extract_final_answer_claims(
+        "Live API verification was not executed for https://platform.adobe.io:443/data/foundation/schemaregistry."
+    )
+
+    assert not any(claim.type == "COUNT" and claim.value == "443" for claim in claims)
+
+
+def test_legacy_answer_verifier_does_not_treat_live_state_caveat_as_status() -> None:
+    result = verify_answer(
+        "API unavailable/error; cannot verify live state.",
+        AnswerSlots(query="How many current schemas are in Adobe Experience Platform?", answer_family="count", api_error=True),
+    )
+
+    assert result.ok is True
+
+
+def test_legacy_answer_verifier_does_not_count_redacted_url_ports() -> None:
+    result = verify_answer(
+        "The available batch file is at [REDACTED]:443/data/foundation/export/files/abc.",
+        AnswerSlots(
+            query="Show batch file",
+            answer_family="list",
+            entity_names=["abc"],
+            entity_ids=["abc"],
+            evidence_strings={"[redacted]:443/data/foundation/export/files/abc", "abc"},
+        ),
+    )
+
+    assert not any(error == "unsupported_number:443" for error in result.errors)

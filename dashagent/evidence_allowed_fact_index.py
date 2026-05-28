@@ -224,7 +224,7 @@ def _date_variants(value: Any) -> list[str]:
     text = str(value)
     normalized = _normalize_text(text)
     variants = [normalized]
-    match = re.search(r"\b20\d{2}-\d{2}-\d{2}\b", text)
+    match = re.search(r"(?<!\d)20\d{2}-\d{2}-\d{2}(?!\d)", text)
     if match:
         variants.append(match.group(0).lower())
     return variants
