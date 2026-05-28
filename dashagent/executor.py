@@ -75,6 +75,7 @@ from .planner import (
     StrategyPlanner,
     execution_base_strategy,
 )
+from .pre_evidence_routing_boundary import should_bypass_evidence_for_llm_direct
 from .query_normalizer import normalize_query
 from .query_tokens import extract_query_tokens
 from .llm_sql_generator import generate_sql_with_llm, repair_sql_with_llm
@@ -293,7 +294,11 @@ class AgentExecutor:
             efficiency_role="can skip the data pipeline only for safe conceptual prompts",
         )
         semantic_ladder = self._add_semantic_route_harness_checkpoints(query, checkpoint_logger)
-        semantic_trial_decision = self._semantic_no_tool_applied_decision(semantic_ladder)
+        semantic_trial_decision = self._semantic_no_tool_applied_decision(
+            semantic_ladder,
+            query=query,
+            strategy=strategy,
+        )
         if semantic_trial_decision.get("record"):
             checkpoint_logger.add_checkpoint(
                 "checkpoint_real_behavior_applied_trial",
@@ -962,6 +967,22 @@ class AgentExecutor:
             correctness_role="records row counts, dry-run state, and API status for final answer grounding",
             efficiency_role="makes tool-call count and result previews explicit",
         )
+        evidence_boundary_payload = {
+            "evidence_pipeline_bypassed": False,
+            "evidence_bus_built": True,
+            "post_evidence_answer_router_ran": bool(self.config.enable_hybrid_answer_composer),
+        }
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_evidence_pipeline_boundary",
+            stage="evidence forwarding",
+            technique="pre-evidence routing boundary",
+            input_summary={"tool_result_count": len(tool_results), "strategy": strategy},
+            output=evidence_boundary_payload,
+            effect="records that the prompt continued into the evidence-backed answer path",
+            correctness_role="separates data and mixed prompts from pure direct concept/meta bypasses",
+            efficiency_role="makes EvidenceBus construction explicit in trajectories",
+        )
+        trajectory.add_step("evidence_boundary", evidence_boundary_payload)
         checkpoint_logger.add_checkpoint(
             "checkpoint_14_evidence_bus",
             stage="evidence forwarding",
@@ -1731,7 +1752,7 @@ class AgentExecutor:
             )
         return None
 
-    def _semantic_no_tool_applied_decision(self, ladder: Any | None) -> dict[str, Any]:
+    def _semantic_no_tool_applied_decision(self, ladder: Any | None, *, query: str, strategy: str) -> dict[str, Any]:
         enabled = bool(
             self.config.enable_semantic_no_tool_applied_trial
             or self.config.enable_combined_safe_applied_trial
@@ -1743,12 +1764,10 @@ class AgentExecutor:
         safety = payload.get("no_tool_safety") if isinstance(payload.get("no_tool_safety"), dict) else {}
         decision = payload.get("semantic_intent_decision") if isinstance(payload.get("semantic_intent_decision"), dict) else {}
         blocked = list(safety.get("block") or [])
-        allowed = (
-            action in {"LLM_DIRECT", "LLM_SAFE_DIRECT"}
-            and bool(decision.get("no_tool"))
-            and bool(safety.get("allow_no_tool"))
-            and not blocked
-            and float(decision.get("conf") or 0.0) >= 0.8
+        allowed = should_bypass_evidence_for_llm_direct(
+            payload,
+            strategy=strategy,
+            prompt=query,
         )
         return {
             "record": True,
@@ -1757,9 +1776,11 @@ class AgentExecutor:
             "decision": action or "FALLBACK",
             "applied": allowed,
             "fallback": not allowed,
-            "blockers": [] if allowed else blocked or ["SEMANTIC_NO_TOOL_SAFETY_NOT_SATISFIED"],
+            "blockers": [] if allowed else blocked or ["PRE_EVIDENCE_LLM_DIRECT_BYPASS_NOT_ALLOWED"],
             "semantic_confidence": round(float(decision.get("conf") or 0.0), 4),
             "evidence_need_score": safety.get("evidence_need_score"),
+            "evidence_pipeline_bypassed": bool(allowed),
+            "bypass_reason": "high_confidence_llm_direct_no_evidence_required" if allowed else None,
             "shadow_only": False,
         }
 
@@ -1775,85 +1796,54 @@ class AgentExecutor:
         trial_decision: dict[str, Any],
     ) -> dict[str, Any]:
         final_answer = _conceptual_no_tool_answer(query)
-        evidence_bus = EvidenceBus()
-        slots = extract_answer_slots(query, [])
-        hybrid_result = None
-        broad_question_decision = None
-        if self.config.enable_hybrid_answer_composer:
-            if self.config.enable_broad_question_classifier:
-                broad_question_decision = classify_broad_question(
-                    query,
-                    slots=slots,
-                    evidence_bus=evidence_bus,
-                    evidence_quality=None,
-                )
-            hybrid_result = compose_hybrid_answer(
-                query,
-                slots=slots,
-                evidence_bus=evidence_bus,
-                evidence_quality=None,
-                answer_card=None,
-                legacy_answer=final_answer,
-            )
-            final_answer = hybrid_result.final_answer
         safe_check = validate_llm_safe_direct_answer(final_answer)
         if not safe_check.get("ok"):
             trial_decision["applied"] = False
             trial_decision["fallback"] = True
             trial_decision["blockers"] = list(safe_check.get("blocked_claims") or [])
-            final_answer = "This is a conceptual question; no concrete local records or live platform state were used."
+            final_answer = "This is a conceptual question; no concrete runtime records were used."
+            safe_check = validate_llm_safe_direct_answer(final_answer)
+        boundary_payload = {
+            "evidence_pipeline_bypassed": True,
+            "bypass_reason": "high_confidence_llm_direct_no_evidence_required",
+            "pre_evidence_route": trial_decision.get("decision") or "LLM_SAFE_DIRECT",
+            "confidence": trial_decision.get("semantic_confidence"),
+            "post_evidence_answer_router_ran": False,
+            "evidence_bus_built": False,
+        }
         metadata = {
             "query_id": qid,
             "query": query,
             "strategy": strategy,
             "prompt_route": prompt_route.to_dict(),
             "real_behavior_trial": trial_decision,
+            "evidence_pipeline_bypassed": True,
+            "bypass_reason": boundary_payload["bypass_reason"],
             "note": "Isolated semantic no-tool applied trial; packaged SQL_FIRST_API_VERIFY default is unchanged.",
         }
         self.metadata_selector.save(metadata, out_dir)
         filled_prompt = render_system_prompt(self.config, metadata)
         (out_dir / "filled_system_prompt.txt").write_text(filled_prompt, encoding="utf-8")
         checkpoint_logger.add_checkpoint(
-            "checkpoint_broad_question_classifier",
-            stage="answer selection",
-            technique="broad-question-aware answer routing",
-            input_summary={"slot_counts": slots.compact()},
-            output=broad_question_decision.to_dict() if broad_question_decision is not None else {},
-            effect="distinguishes broad concept, broad data, and mixed broad prompts before direct conceptual answering",
-            correctness_role="keeps no-tool direct answers limited to conceptual or meta-language prompts",
+            "checkpoint_evidence_pipeline_bypass",
+            stage="pre-evidence routing",
+            technique="high-confidence direct LLM routing boundary",
+            input_summary={"trial_mode": self.config.real_behavior_trial_mode, "strategy": strategy},
+            output=boundary_payload,
+            effect="bypasses SQL/API, EvidenceBus, answer slots, and post-evidence answer routing for pure concept/meta prompts",
+            correctness_role="keeps evidence-free answers separate from grounded SQL/API answer composition",
             efficiency_role="uses no SQL/API calls",
         )
-        if hybrid_result is not None:
-            checkpoint_logger.add_checkpoint(
-                "checkpoint_answer_intent_router",
-                stage="answer selection",
-                technique="intent-aware answer router",
-                input_summary={"slot_counts": slots.compact()},
-                output=hybrid_result.intent.to_dict(),
-                effect="selects concept answer mode for safe direct prompts using runtime prompt fields only",
-                correctness_role="does not use evaluator metadata or concrete data claims",
-                efficiency_role="avoids SQL/API calls for safe conceptual prompts",
-            )
-            checkpoint_logger.add_checkpoint(
-                "checkpoint_hybrid_answer_composer",
-                stage="answer selection",
-                technique="intent-aware hybrid answer composition",
-                input_summary={"answer_intent": hybrid_result.intent.answer_intent, "answer_mode": hybrid_result.intent.answer_mode},
-                output=hybrid_result.to_dict(),
-                effect="uses bounded concept generation with legacy fallback for direct conceptual prompts",
-                correctness_role="keeps concrete facts unsupported by SQL/API out of no-tool answers",
-                efficiency_role="uses no SQL/API calls",
-            )
-            checkpoint_logger.add_checkpoint(
-                "checkpoint_final_answer_verifier",
-                stage="answer verification",
-                technique="evidence-grounded final answer verifier",
-                input_summary={"selected_source": hybrid_result.selected_source},
-                output=hybrid_result.verification.to_dict(),
-                effect="checks direct conceptual answer claims before final response",
-                correctness_role="blocks invented concrete facts",
-                efficiency_role="uses compact answer slots and no tools",
-            )
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_safe_direct_answer_verifier",
+            stage="answer verification",
+            technique="safe-direct answer verifier",
+            input_summary={"pre_evidence_route": boundary_payload["pre_evidence_route"]},
+            output=safe_check,
+            effect="checks direct concept/meta answers without constructing grounded evidence artifacts",
+            correctness_role="blocks invented counts, IDs, timestamps, statuses, or live platform claims",
+            efficiency_role="uses no SQL/API calls",
+        )
         checkpoint_logger.add_checkpoint(
             "checkpoint_18_final_answer",
             stage="final response",
@@ -1874,6 +1864,8 @@ class AgentExecutor:
         trajectory.add_step("prompt_router", prompt_route.to_dict())
         trajectory.add_step("metadata", {"estimated_tokens": estimate_tokens(metadata), "prompt_tokens": estimate_tokens(filled_prompt), "metadata_path": str(out_dir / "metadata.json")})
         trajectory.add_step("real_behavior_applied_trial", trial_decision)
+        trajectory.add_step("evidence_boundary", boundary_payload)
+        trajectory.add_step("safe_direct_answer_verifier", safe_check)
         trajectory.set_checkpoints(checkpoint_logger.to_list())
         trajectory_payload = trajectory.save(out_dir / "trajectory.json", final_answer)
         return {

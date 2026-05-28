@@ -16,6 +16,26 @@ ROBUST = "ROBUST_GENERALIZED_HARNESS_CANDIDATE"
 ROBUST_V2 = ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2
 
 
+def _checkpoint_names(result: dict) -> set[str]:
+    return {checkpoint["checkpoint_id"] for checkpoint in result["checkpoints"]}
+
+
+def _checkpoint_output(result: dict, checkpoint_id: str) -> dict:
+    return next(
+        checkpoint["output"]
+        for checkpoint in result["checkpoints"]
+        if checkpoint["checkpoint_id"] == checkpoint_id
+    )
+
+
+def _assert_post_evidence_answer_router_not_run(result: dict) -> None:
+    checkpoint_names = _checkpoint_names(result)
+    assert "checkpoint_14_evidence_bus" not in checkpoint_names
+    assert "checkpoint_broad_question_classifier" not in checkpoint_names
+    assert "checkpoint_answer_intent_router" not in checkpoint_names
+    assert "checkpoint_hybrid_answer_composer" not in checkpoint_names
+
+
 class CountingAPIClient:
     dry_run = False
 
@@ -171,6 +191,13 @@ def test_robust_v2_safe_conceptual_and_meta_prompts_can_no_tool(tiny_project: Co
         query_id="robust_v2_conceptual_list",
     )
     assert conceptual["tool_results"] == []
+    conceptual_boundary = _checkpoint_output(conceptual, "checkpoint_evidence_pipeline_bypass")
+    assert conceptual_boundary["evidence_pipeline_bypassed"] is True
+    assert conceptual_boundary["bypass_reason"] == "high_confidence_llm_direct_no_evidence_required"
+    assert conceptual_boundary["pre_evidence_route"] in {"LLM_DIRECT", "LLM_SAFE_DIRECT"}
+    assert conceptual_boundary["post_evidence_answer_router_ran"] is False
+    assert conceptual_boundary["evidence_bus_built"] is False
+    _assert_post_evidence_answer_router_not_run(conceptual)
 
     meta = AgentExecutor(tiny_project).run(
         "In the phrase 'list schemas', what does 'list' mean?",
@@ -178,6 +205,88 @@ def test_robust_v2_safe_conceptual_and_meta_prompts_can_no_tool(tiny_project: Co
         query_id="robust_v2_meta_list",
     )
     assert meta["tool_results"] == []
+    meta_boundary = _checkpoint_output(meta, "checkpoint_evidence_pipeline_bypass")
+    assert meta_boundary["evidence_pipeline_bypassed"] is True
+    assert meta_boundary["pre_evidence_route"] in {"LLM_DIRECT", "LLM_SAFE_DIRECT"}
+    assert meta_boundary["post_evidence_answer_router_ran"] is False
+    assert meta_boundary["evidence_bus_built"] is False
+    _assert_post_evidence_answer_router_not_run(meta)
+    assert "you have" not in meta["final_answer"].lower()
+    assert "current schemas" not in meta["final_answer"].lower()
+
+
+def test_robust_v2_pure_schema_concept_bypasses_evidence_bus(tiny_project: Config) -> None:
+    result = AgentExecutor(tiny_project).run(
+        "What is a schema?",
+        strategy=ROBUST_V2,
+        query_id="robust_v2_schema_concept_bypass",
+    )
+
+    assert result["tool_results"] == []
+    boundary = _checkpoint_output(result, "checkpoint_evidence_pipeline_bypass")
+    assert boundary["evidence_pipeline_bypassed"] is True
+    assert boundary["pre_evidence_route"] in {"LLM_DIRECT", "LLM_SAFE_DIRECT"}
+    assert boundary["post_evidence_answer_router_ran"] is False
+    assert boundary["evidence_bus_built"] is False
+    _assert_post_evidence_answer_router_not_run(result)
+    assert "you have" not in result["final_answer"].lower()
+    assert "current schemas" not in result["final_answer"].lower()
+
+
+def test_robust_v2_mixed_prompt_still_uses_evidence_bus(tiny_project: Config) -> None:
+    result = AgentExecutor(tiny_project).run(
+        "Explain what inactive journey means and show inactive journeys.",
+        strategy=ROBUST_V2,
+        query_id="robust_v2_mixed_evidence_boundary",
+    )
+
+    assert any(row["type"] in {"sql", "api"} for row in result["tool_results"])
+    boundary = _checkpoint_output(result, "checkpoint_evidence_pipeline_boundary")
+    assert boundary["evidence_pipeline_bypassed"] is False
+    assert boundary["evidence_bus_built"] is True
+    assert "checkpoint_14_evidence_bus" in _checkpoint_names(result)
+    assert "checkpoint_broad_question_classifier" in _checkpoint_names(result)
+    assert "checkpoint_hybrid_answer_composer" in _checkpoint_names(result)
+
+
+def test_robust_v2_ambiguous_data_like_prompt_still_uses_evidence_bus(tiny_project: Config) -> None:
+    result = AgentExecutor(tiny_project).run(
+        "What schemas do I have?",
+        strategy=ROBUST_V2,
+        query_id="robust_v2_ambiguous_schema_evidence_boundary",
+    )
+
+    assert any(row["type"] in {"sql", "api"} for row in result["tool_results"])
+    boundary = _checkpoint_output(result, "checkpoint_evidence_pipeline_boundary")
+    assert boundary["evidence_pipeline_bypassed"] is False
+    assert boundary["evidence_bus_built"] is True
+    assert "checkpoint_14_evidence_bus" in _checkpoint_names(result)
+
+
+def test_sql_first_strategy_does_not_use_research_evidence_bypass(tiny_project: Config) -> None:
+    result = AgentExecutor(tiny_project).run(
+        "What is a schema?",
+        strategy="SQL_FIRST_API_VERIFY",
+        query_id="sql_first_schema_concept_boundary_unchanged",
+    )
+
+    assert "checkpoint_evidence_pipeline_bypass" not in _checkpoint_names(result)
+    assert result["strategy"] == "SQL_FIRST_API_VERIFY"
+
+
+def test_robust_v2_evidence_bypass_trace_has_no_gold_or_oracle_fields(tiny_project: Config) -> None:
+    result = AgentExecutor(tiny_project).run(
+        "What is a schema?",
+        strategy=ROBUST_V2,
+        query_id="robust_v2_schema_concept_no_leakage",
+    )
+
+    boundary = _checkpoint_output(result, "checkpoint_evidence_pipeline_bypass")
+    serialized = repr(boundary).lower()
+    assert "gold" not in serialized
+    assert "oracle" not in serialized
+    assert "expected_trace" not in serialized
+    assert "category" not in serialized
 
 
 def test_robust_v2_post_sql_local_snapshot_count_skips_optional_api(tiny_project: Config) -> None:
