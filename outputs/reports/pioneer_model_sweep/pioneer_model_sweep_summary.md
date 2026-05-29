@@ -16,13 +16,13 @@ Status: diagnostic_only. This sweep changes only the configured Pioneer LLM mode
 
 | Model | Group | Available | Pass | JSON Failures | LLM Direct | Evidence Pipeline | Bypassed | EvidenceBus | no_tool_fp | Unsupported | Latency Sec |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Gpt 4o | gpt_baseline | False | False | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0.0001 |
-| Claude Haiku 4.5 | anthropic_fast_small | False | False | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0.0001 |
-| DeepSeek V4 Flash | deepseek_cheap_fast | False | False | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0.0001 |
-| Qwen3 4B Instruct 2507 | qwen_small_instruct | False | False | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0.0 |
-| Llama 3.1 8B Instruct | llama_small_instruct | False | False | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0.0001 |
-| Mistral Nemo Instruct 2407 | mistral_compact_instruct | False | False | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0.0001 |
-| Gemma 4 E4B It | gemma_small_instruct | False | False | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0.0001 |
+| Gpt 4o | gpt_baseline | False | False | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1.3844 |
+| Claude Haiku 4.5 | anthropic_fast_small | False | False | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 3.0544 |
+| DeepSeek V4 Flash | deepseek_cheap_fast | False | False | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2.7228 |
+| Qwen3 4B Instruct 2507 | qwen_small_instruct | False | False | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 3.2281 |
+| Llama 3.1 8B Instruct | llama_small_instruct | False | False | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1.38 |
+| Mistral Nemo Instruct 2407 | mistral_compact_instruct | False | False | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2.8203 |
+| Gemma 4 E4B It | gemma_small_instruct | False | False | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2.2446 |
 
 ## Summary Answers
 

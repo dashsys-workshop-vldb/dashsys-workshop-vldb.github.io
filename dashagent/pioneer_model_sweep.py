@@ -96,6 +96,34 @@ def parse_pioneer_model_sweep(env_value: str | None = None) -> list[str]:
     return list(DEFAULT_PIONEER_MODEL_SWEEP)
 
 
+def parse_pioneer_model_id_map(env_value: str | None = None) -> dict[str, str]:
+    raw = env_value
+    if raw is None:
+        raw = os.getenv("PIONEER_MODEL_ID_MAP_JSON") or os.getenv("PIONEER_MODEL_ID_MAP")
+    if not raw:
+        return {}
+    raw = raw.strip()
+    if not raw:
+        return {}
+    if raw.startswith("{"):
+        try:
+            payload = json.loads(raw)
+            if isinstance(payload, dict):
+                return {str(key).strip(): str(value).strip() for key, value in payload.items() if str(key).strip() and str(value).strip()}
+        except Exception:
+            return {}
+    mapping: dict[str, str] = {}
+    for item in raw.split(","):
+        if "=" not in item:
+            continue
+        label, model_id = item.split("=", 1)
+        label = label.strip()
+        model_id = model_id.strip()
+        if label and model_id:
+            mapping[label] = model_id
+    return mapping
+
+
 def safe_model_name(model: str) -> str:
     safe = re.sub(r"[^a-z0-9]+", "_", model.lower()).strip("_")
     return safe or "model"
@@ -120,17 +148,19 @@ def run_pioneer_model_sweep(
 def _run_one_model(config: Config, model: str, report_dir: Path) -> dict[str, Any]:
     started = time.perf_counter()
     safe_name = safe_model_name(model)
+    model_id = parse_pioneer_model_id_map().get(model, model)
     log_lines: list[str] = [f"model={model}", f"group={DEFAULT_PIONEER_MODEL_GROUPS.get(model, 'custom')}"]
     with _temporary_env(
         {
             "DASHAGENT_LLM_PROVIDER": "pioneer_chat",
-            "PIONEER_MODEL": model,
+            "PIONEER_MODEL": model_id,
         }
     ):
-        availability = _availability_probe(model)
+        _reset_llm_client_for_model()
+        availability = _with_model_context(_availability_probe(model_id), model, safe_name, model_id)
         log_lines.append("availability=" + json.dumps(redact_secrets(availability), sort_keys=True))
         if not availability.get("available"):
-            result = _empty_model_result(model, availability, started)
+            result = _empty_model_result(model, availability, started, model_id=model_id)
             result["log"] = "\n".join(log_lines) + "\n"
             _write_per_model(report_dir, result)
             return result
@@ -138,7 +168,7 @@ def _run_one_model(config: Config, model: str, report_dir: Path) -> dict[str, An
         prompt_results: list[dict[str, Any]] = []
         semantic_probe_results: list[dict[str, Any]] = []
         for prompt_case in PIONEER_SWEEP_PROMPTS:
-            semantic_probe = _semantic_json_probe(model, prompt_case["prompt"])
+            semantic_probe = _with_model_context(_semantic_json_probe(model_id, prompt_case["prompt"]), model, safe_name, model_id)
             semantic_probe_results.append(semantic_probe)
             prompt_start = time.perf_counter()
             try:
@@ -148,7 +178,9 @@ def _run_one_model(config: Config, model: str, report_dir: Path) -> dict[str, An
                     query_id=f"pioneer_sweep_{safe_name}_{prompt_case['id']}",
                     output_dir=report_dir / "runs" / safe_name / prompt_case["id"],
                 )
+                trajectory_annotated = _annotate_sweep_trajectory(run_result.get("output_dir"), model, safe_name, model_id)
                 prompt_result = _summarize_prompt_result(prompt_case, run_result, time.perf_counter() - prompt_start)
+                prompt_result["trajectory_annotated"] = trajectory_annotated
             except Exception as exc:
                 prompt_result = {
                     "prompt_id": prompt_case["id"],
@@ -158,12 +190,16 @@ def _run_one_model(config: Config, model: str, report_dir: Path) -> dict[str, An
                     "error": redact_secrets(f"{type(exc).__name__}: {exc}"),
                     "latency_sec": round(time.perf_counter() - prompt_start, 4),
                 }
+            prompt_result = _with_model_context(prompt_result, model, safe_name, model_id)
             log_lines.append("prompt_result=" + json.dumps(redact_secrets(prompt_result), sort_keys=True))
             prompt_results.append(prompt_result)
         metrics = _aggregate_metrics(prompt_results, semantic_probe_results, started)
         result = {
             "model": model,
+            "pioneer_model": model,
+            "pioneer_model_id": model_id,
             "safe_model_name": safe_name,
+            "model_sweep_run_id": safe_name,
             "group": DEFAULT_PIONEER_MODEL_GROUPS.get(model, "custom"),
             "availability": availability,
             "metrics": metrics,
@@ -321,10 +357,15 @@ def _aggregate_metrics(
     }
 
 
-def _empty_model_result(model: str, availability: dict[str, Any], started: float) -> dict[str, Any]:
+def _empty_model_result(model: str, availability: dict[str, Any], started: float, *, model_id: str | None = None) -> dict[str, Any]:
+    safe_name = safe_model_name(model)
+    active_model_id = model_id or model
     return {
         "model": model,
-        "safe_model_name": safe_model_name(model),
+        "pioneer_model": model,
+        "pioneer_model_id": active_model_id,
+        "safe_model_name": safe_name,
+        "model_sweep_run_id": safe_name,
         "group": DEFAULT_PIONEER_MODEL_GROUPS.get(model, "custom"),
         "availability": availability,
         "metrics": {
@@ -343,6 +384,56 @@ def _empty_model_result(model: str, availability: dict[str, Any], started: float
         "semantic_probe_results": [],
         "prompt_results": [],
     }
+
+
+def _with_model_context(payload: dict[str, Any], model: str, safe_name: str, model_id: str | None = None) -> dict[str, Any]:
+    contextualized = dict(payload)
+    contextualized["model"] = model
+    contextualized["pioneer_model"] = model
+    contextualized["pioneer_model_id"] = model_id or model
+    contextualized["model_sweep_run_id"] = safe_name
+    return contextualized
+
+
+def _reset_llm_client_for_model() -> None:
+    # get_llm_client() is currently uncached; this hook keeps the sweep safe if a
+    # future shared cache is added to the provider module.
+    try:
+        from . import llm_client as llm_client_module
+    except Exception:
+        return
+    for name in ("reset_llm_client_cache", "clear_llm_client_cache"):
+        reset = getattr(llm_client_module, name, None)
+        if callable(reset):
+            try:
+                reset()
+            except Exception:
+                return
+
+
+def _annotate_sweep_trajectory(output_dir: Any, model: str, safe_name: str, model_id: str | None = None) -> bool:
+    if not output_dir:
+        return False
+    try:
+        trajectory_path = Path(output_dir) / "trajectory.json"
+        if not trajectory_path.exists():
+            return False
+        payload = json.loads(trajectory_path.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            return False
+        payload["pioneer_model"] = model
+        payload["pioneer_model_id"] = model_id or model
+        payload["model_sweep_run_id"] = safe_name
+        diagnostics = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
+        diagnostics["pioneer_model"] = model
+        diagnostics["pioneer_model_id"] = model_id or model
+        diagnostics["model_sweep_run_id"] = safe_name
+        diagnostics["pioneer_model_sweep"] = True
+        payload["diagnostics"] = diagnostics
+        trajectory_path.write_text(json.dumps(redact_secrets(payload), indent=2, sort_keys=True), encoding="utf-8")
+        return True
+    except Exception:
+        return False
 
 
 def write_pioneer_model_sweep_reports(report_dir: Path, model_results: list[dict[str, Any]]) -> dict[str, Path]:

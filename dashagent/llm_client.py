@@ -797,7 +797,18 @@ def _classify_llm_error_text(text: str) -> str:
         return "rate_limited_or_429"
     if any(marker in lower for marker in ("insufficient_quota", "quota", "billing")):
         return "quota_or_billing"
-    if any(marker in lower for marker in ("model_not_found", "model not found", "does not exist", "invalid model", "unknown model")):
+    if any(
+        marker in lower
+        for marker in (
+            "model_not_found",
+            "model not found",
+            "does not exist",
+            "invalid model",
+            "unknown model",
+            "not a recognised model id",
+            "not a recognized model id",
+        )
+    ):
         return "model_not_found"
     if any(marker in lower for marker in ("timeout", "timed out", "readtimeout")):
         return "timeout"
