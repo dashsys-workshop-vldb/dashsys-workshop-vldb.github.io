@@ -261,6 +261,58 @@ def test_env_sweep_override_does_not_mix_models_inside_per_model_result(monkeypa
         assert active_models == {model_result["model"]}
 
 
+def test_sweep_uses_actual_model_id_when_mapping_exists(monkeypatch, tmp_path) -> None:
+    call_order: list[tuple[str, str]] = []
+
+    class FakeExecutor:
+        def __init__(self, config):
+            self.model_at_init = sweep.os.getenv("PIONEER_MODEL")
+
+        def run(self, prompt, *, strategy, query_id, output_dir):
+            call_order.append((sweep.os.getenv("PIONEER_MODEL") or "", prompt))
+            assert sweep.os.getenv("PIONEER_MODEL") == "actual-model-a"
+            return _fake_evidence_result(output_dir)
+
+    monkeypatch.setenv("PIONEER_MODEL_ID_MAP_JSON", '{"ModelA":"actual-model-a"}')
+    monkeypatch.setattr(sweep, "PIONEER_SWEEP_PROMPTS", [{"id": "prompt1", "prompt": "prompt1", "expected_kind": "EVIDENCE"}])
+    monkeypatch.setattr(sweep, "AgentExecutor", FakeExecutor)
+    monkeypatch.setattr(sweep, "_availability_probe", lambda model: {"available": True, "model": model})
+    monkeypatch.setattr(
+        sweep,
+        "_semantic_json_probe",
+        lambda model, prompt: {
+            "model": model,
+            "pioneer_model": "ModelA",
+            "pioneer_model_id": model,
+            "model_sweep_run_id": "modela",
+            "prompt": prompt,
+            "parse_error": False,
+        },
+    )
+
+    result = run_pioneer_model_sweep(SimpleNamespace(outputs_dir=tmp_path), models=["ModelA"], report_dir=tmp_path)
+
+    assert call_order == [("actual-model-a", "prompt1")]
+    model_result = result["models"][0]
+    assert model_result["model"] == "ModelA"
+    assert model_result["pioneer_model"] == "ModelA"
+    assert model_result["pioneer_model_id"] == "actual-model-a"
+    assert model_result["prompt_results"][0]["pioneer_model_id"] == "actual-model-a"
+
+
+def test_missing_mapping_marks_model_unavailable_without_crashing(monkeypatch, tmp_path) -> None:
+    monkeypatch.delenv("PIONEER_MODEL_ID_MAP_JSON", raising=False)
+    monkeypatch.setattr(sweep, "_availability_probe", lambda model: {"available": False, "model": model, "error_category": "model_not_found"})
+
+    result = run_pioneer_model_sweep(SimpleNamespace(outputs_dir=tmp_path), models=["Unmapped Display"], report_dir=tmp_path)
+
+    model_result = result["models"][0]
+    assert model_result["model"] == "Unmapped Display"
+    assert model_result["pioneer_model_id"] == "Unmapped Display"
+    assert model_result["availability"]["available"] is False
+    assert model_result["prompt_results"] == []
+
+
 class _FakeExecutor:
     def run(self, prompt, *, strategy, query_id, output_dir):
         return _fake_evidence_result(output_dir)

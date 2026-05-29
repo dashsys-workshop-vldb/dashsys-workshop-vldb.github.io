@@ -27,7 +27,7 @@ DEFAULT_ANTHROPIC_MODEL = "claude-3-5-sonnet-latest"
 DEFAULT_PIONEER_MODEL = "gpt-4o"
 DEFAULT_PIONEER_BASE_URL = "https://api.pioneer.ai/v1"
 
-_KEY_LIKE_RE = re.compile(r"sk-[A-Za-z0-9_-]{8,}")
+_KEY_LIKE_RE = re.compile(r"sk-[A-Za-z0-9_*.-]{8,}")
 _AUTH_HEADER_RE = re.compile(r"Authorization\s*:\s*" + r"Bearer\s+[^\s,'\"}]+", re.IGNORECASE)
 _BEARER_RE = re.compile(r"Bearer\s+[A-Za-z0-9._-]{12,}", re.IGNORECASE)
 
@@ -326,9 +326,27 @@ class PioneerChatLLMClient(OpenAILLMClient):
             "temperature": float(temperature),
             "max_tokens": int(max_tokens if max_tokens is not None else os.getenv("LLM_MAX_TOKENS", "512")),
         }
+        store_value = os.getenv("PIONEER_STORE")
+        if store_value is not None:
+            payload["store"] = store_value.strip().lower() not in {"0", "false", "no", "off"}
         try:
             body = self._create_with_sdk(payload)
         except Exception as exc:
+            if "store" in payload and _pioneer_store_field_rejected(str(exc)):
+                payload_without_store = dict(payload)
+                payload_without_store.pop("store", None)
+                try:
+                    body = self._create_with_sdk(payload_without_store)
+                except Exception as retry_exc:
+                    exc = retry_exc
+                else:
+                    return self._pioneer_result_from_body(
+                        body,
+                        tools=tools,
+                        tool_choice=tool_choice,
+                        parallel_tool_calls=parallel_tool_calls,
+                        store_field_retry=True,
+                    )
             redacted_error = _redact_error_text(str(exc))[:500]
             return {
                 "ok": False,
@@ -347,6 +365,23 @@ class PioneerChatLLMClient(OpenAILLMClient):
                 "error_category": _classify_llm_error_text(str(exc)),
                 "tool_call_warning": "pioneer_chat_no_native_tool_calling" if tools or tool_choice else None,
             }
+        return self._pioneer_result_from_body(
+            body,
+            tools=tools,
+            tool_choice=tool_choice,
+            parallel_tool_calls=parallel_tool_calls,
+            store_field_retry=False,
+        )
+
+    def _pioneer_result_from_body(
+        self,
+        body: dict[str, Any],
+        *,
+        tools: list[dict[str, Any]] | None,
+        tool_choice: str | dict[str, Any] | None,
+        parallel_tool_calls: bool | None,
+        store_field_retry: bool,
+    ) -> dict[str, Any]:
         try:
             choice = body["choices"][0]
             message = choice.get("message") or {}
@@ -392,6 +427,7 @@ class PioneerChatLLMClient(OpenAILLMClient):
                 "raw_preview": compact_preview(body, 1200),
                 "error": None,
                 "response_shape": "choices[0].message.content",
+                "store_field_retry": store_field_retry,
                 "tool_call_warning": "pioneer_chat_no_native_tool_calling" if tools or tool_choice or parallel_tool_calls else None,
             }
         )
@@ -789,9 +825,14 @@ def _conservative_json_fallback() -> dict[str, Any]:
     }
 
 
+def _pioneer_store_field_rejected(text: str) -> bool:
+    lower = str(text or "").lower()
+    return "store" in lower and any(marker in lower for marker in ("unknown", "unexpected", "extra", "unrecognized", "not permitted"))
+
+
 def _classify_llm_error_text(text: str) -> str:
     lower = str(text or "").lower()
-    if any(marker in lower for marker in ("401", "403", "unauthorized", "forbidden", "invalid api key", "authentication", "auth")):
+    if any(marker in lower for marker in ("401", "403", "unauthorized", "forbidden", "invalid api key", "incorrect api key", "authentication", "auth")):
         return "auth_or_401"
     if any(marker in lower for marker in ("429", "rate limit", "rate_limit", "too many requests")):
         return "rate_limited_or_429"

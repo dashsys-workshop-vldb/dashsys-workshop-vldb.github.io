@@ -100,6 +100,20 @@ def parse_pioneer_model_id_map(env_value: str | None = None) -> dict[str, str]:
     raw = env_value
     if raw is None:
         raw = os.getenv("PIONEER_MODEL_ID_MAP_JSON") or os.getenv("PIONEER_MODEL_ID_MAP")
+    if raw is None:
+        suggested = Path("outputs/reports/pioneer_model_sweep/pioneer_model_id_map_suggested.json")
+        if suggested.exists():
+            try:
+                payload = json.loads(suggested.read_text(encoding="utf-8"))
+                if isinstance(payload, dict):
+                    mapping = payload.get("mapping") if isinstance(payload.get("mapping"), dict) else payload
+                    return {
+                        str(key).strip(): str(value).strip()
+                        for key, value in mapping.items()
+                        if isinstance(value, str) and str(key).strip() and value.strip()
+                    }
+            except Exception:
+                return {}
     if not raw:
         return {}
     raw = raw.strip()
@@ -109,6 +123,8 @@ def parse_pioneer_model_id_map(env_value: str | None = None) -> dict[str, str]:
         try:
             payload = json.loads(raw)
             if isinstance(payload, dict):
+                if isinstance(payload.get("mapping"), dict):
+                    payload = payload["mapping"]
                 return {str(key).strip(): str(value).strip() for key, value in payload.items() if str(key).strip() and str(value).strip()}
         except Exception:
             return {}
@@ -154,6 +170,7 @@ def _run_one_model(config: Config, model: str, report_dir: Path) -> dict[str, An
         {
             "DASHAGENT_LLM_PROVIDER": "pioneer_chat",
             "PIONEER_MODEL": model_id,
+            "PIONEER_STORE": os.getenv("PIONEER_STORE", "false"),
         }
     ):
         _reset_llm_client_for_model()

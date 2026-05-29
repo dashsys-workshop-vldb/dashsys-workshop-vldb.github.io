@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -29,6 +30,8 @@ MASKED_METADATA_KEYS = {
     "sandbox_name",
     "adobe_sandbox_name",
 }
+
+SECRET_LIKE_RE = re.compile(r"sk-[A-Za-z0-9_*.-]{8,}")
 
 
 def redact_value(key: str, value: Any) -> Any:
@@ -79,6 +82,7 @@ def redact_secrets(obj: Any) -> Any:
         for env_name, env_value in os.environ.items():
             if env_value and len(env_value) >= 12 and env_value in redacted:
                 redacted = redacted.replace(env_value, "[REDACTED]")
+        redacted = SECRET_LIKE_RE.sub("[REDACTED]", redacted)
         return redacted
     return obj
 

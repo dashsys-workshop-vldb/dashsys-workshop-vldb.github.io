@@ -342,6 +342,35 @@ def test_pioneer_chat_ignores_native_tool_calling_and_does_not_execute_sql(monke
     assert result["tool_call_warning"] == "pioneer_chat_no_native_tool_calling"
 
 
+def test_pioneer_store_false_adds_store_false_to_chat_payload(monkeypatch):
+    captured = {}
+
+    class FakeCompletion:
+        def model_dump(self):
+            return {
+                "choices": [{"finish_reason": "stop", "message": {"role": "assistant", "content": "ok"}}],
+                "usage": {"total_tokens": 2},
+            }
+
+    class FakeCompletions:
+        def create(self, **payload):
+            captured["payload"] = payload
+            return FakeCompletion()
+
+    class FakeOpenAI:
+        def __init__(self, **kwargs):
+            self.chat = type("Chat", (), {"completions": FakeCompletions()})()
+
+    monkeypatch.setattr("dashagent.llm_client.OpenAI", FakeOpenAI)
+    monkeypatch.setenv("PIONEER_STORE", "false")
+    client = PioneerChatLLMClient(api_key="unit-test-pioneer-key", model="actual-model-id")
+
+    result = client.generate_messages([{"role": "user", "content": "hello"}])
+
+    assert result["ok"] is True
+    assert captured["payload"]["store"] is False
+
+
 def test_openai_generate_messages_normalizes_native_tool_calls(monkeypatch):
     class FakeCompletion:
         def model_dump(self):
