@@ -24,6 +24,8 @@ DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o-mini"
 DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1"
 DEFAULT_ANTHROPIC_MODEL = "claude-3-5-sonnet-latest"
+DEFAULT_PIONEER_MODEL = "gpt-4o"
+DEFAULT_PIONEER_BASE_URL = "https://api.pioneer.ai/v1"
 
 _KEY_LIKE_RE = re.compile(r"sk-[A-Za-z0-9_-]{8,}")
 _AUTH_HEADER_RE = re.compile(r"Authorization\s*:\s*" + r"Bearer\s+[^\s,'\"}]+", re.IGNORECASE)
@@ -270,6 +272,162 @@ class OpenRouterLLMClient(OpenAILLMClient):
         self.provider = "openrouter"
         self.missing_key_reason = "OPENROUTER_API_KEY is not set"
         self._sdk_client = None
+
+
+class PioneerChatLLMClient(OpenAILLMClient):
+    """OpenAI SDK-compatible chat client for Pioneer no-tool LLM access."""
+
+    def __init__(
+        self,
+        *,
+        api_key: str | None = None,
+        model: str | None = None,
+        base_url: str | None = None,
+        timeout_seconds: int | None = None,
+    ) -> None:
+        self.api_key = api_key if api_key is not None else os.getenv("PIONEER_API_KEY")
+        self.model = model or os.getenv("PIONEER_MODEL", DEFAULT_PIONEER_MODEL)
+        timeout_value = timeout_seconds if timeout_seconds is not None else int(os.getenv("PIONEER_TIMEOUT_SEC", "60"))
+        self.timeout_seconds = timeout_value
+        self.base_url = (base_url or os.getenv("PIONEER_BASE_URL") or DEFAULT_PIONEER_BASE_URL).rstrip("/")
+        self.provider = "pioneer_chat"
+        self.missing_key_reason = "PIONEER_API_KEY is not set"
+        self._sdk_client = None
+
+    def generate(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        tools: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        return self.generate_messages(
+            [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            tools=tools,
+        )
+
+    def generate_messages(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+        parallel_tool_calls: bool | None = None,
+        temperature: float = 0.0,
+        max_tokens: int | None = None,
+    ) -> dict[str, Any]:
+        if not self.available():
+            return NoOpLLMClient(reason=self.missing_key_reason, model=self.model).generate_messages(messages)
+        payload: dict[str, Any] = {
+            "model": self.model,
+            "messages": messages,
+            "stream": False,
+            "temperature": float(temperature),
+            "max_tokens": int(max_tokens if max_tokens is not None else os.getenv("LLM_MAX_TOKENS", "512")),
+        }
+        try:
+            body = self._create_with_sdk(payload)
+        except Exception as exc:
+            redacted_error = _redact_error_text(str(exc))[:500]
+            return {
+                "ok": False,
+                "skipped": False,
+                "provider": self.provider_name(),
+                "model": self.model_name(),
+                "backend_type": "openai_sdk",
+                "sdk_path_used": True,
+                "content": "",
+                "tool_calls": [],
+                "message": {},
+                "finish_reason": None,
+                "usage": {},
+                "transport": "openai_sdk",
+                "error": redacted_error,
+                "error_category": _classify_llm_error_text(str(exc)),
+                "tool_call_warning": "pioneer_chat_no_native_tool_calling" if tools or tool_choice else None,
+            }
+        try:
+            choice = body["choices"][0]
+            message = choice.get("message") or {}
+            if not isinstance(message, dict) or "content" not in message:
+                raise KeyError("choices[0].message.content")
+            content = message.get("content") or ""
+            finish_reason = choice.get("finish_reason")
+        except Exception as exc:
+            return {
+                "ok": False,
+                "skipped": False,
+                "provider": self.provider_name(),
+                "model": self.model_name(),
+                "base_url": self.base_url,
+                "transport": "openai_sdk",
+                "backend_type": "openai_sdk",
+                "sdk_path_used": True,
+                "content": "",
+                "tool_calls": [],
+                "message": {},
+                "finish_reason": None,
+                "usage": body.get("usage", {}) if isinstance(body, dict) else {},
+                "raw_preview": compact_preview(body, 1200),
+                "error": _redact_error_text(f"Pioneer response missing {exc}")[:500],
+                "error_category": "response_parse_failed",
+                "tool_call_warning": "pioneer_chat_no_native_tool_calling" if tools or tool_choice else None,
+            }
+        result = redact_secrets(
+            {
+                "ok": True,
+                "skipped": False,
+                "provider": self.provider_name(),
+                "model": self.model_name(),
+                "base_url": self.base_url,
+                "transport": "openai_sdk",
+                "backend_type": "openai_sdk",
+                "sdk_path_used": True,
+                "content": content,
+                "tool_calls": [],
+                "message": compact_preview(message, 2000),
+                "finish_reason": finish_reason,
+                "usage": body.get("usage", {}),
+                "raw_preview": compact_preview(body, 1200),
+                "error": None,
+                "response_shape": "choices[0].message.content",
+                "tool_call_warning": "pioneer_chat_no_native_tool_calling" if tools or tool_choice or parallel_tool_calls else None,
+            }
+        )
+        result["provider"] = self.provider_name()
+        result["model"] = self.model_name()
+        result["base_url"] = self.base_url
+        return result
+
+    def complete_text(
+        self,
+        system_prompt: str | list[dict[str, Any]],
+        user_prompt: str | None = None,
+        temperature: float = 0.0,
+        max_tokens: int = 512,
+    ) -> str:
+        messages = _messages_from_prompt(system_prompt, user_prompt)
+        result = self.generate_messages(messages, temperature=temperature, max_tokens=max_tokens)
+        if not result.get("ok"):
+            reason = result.get("error") or result.get("reason") or "Pioneer chat completion failed"
+            raise RuntimeError(str(reason))
+        return str(result.get("content") or "").strip()
+
+    def complete_json(
+        self,
+        system_prompt: str | list[dict[str, Any]],
+        user_prompt: str | None = None,
+        schema_hint: dict[str, Any] | None = None,
+        temperature: float = 0.0,
+        max_tokens: int = 512,
+    ) -> dict[str, Any]:
+        messages = _json_messages_from_prompt(system_prompt, user_prompt, schema_hint)
+        try:
+            text = self.complete_text(messages, temperature=temperature, max_tokens=max_tokens)
+            return json.loads(_strip_json_text(text))
+        except Exception:
+            return _conservative_json_fallback()
 
 
 class AnthropicLLMClient(LLMClient):
@@ -584,6 +742,53 @@ def _redact_error_text(text: str) -> str:
     return redacted
 
 
+def _messages_from_prompt(
+    system_prompt: str | list[dict[str, Any]],
+    user_prompt: str | None = None,
+) -> list[dict[str, Any]]:
+    if isinstance(system_prompt, list):
+        return [dict(message) for message in system_prompt if isinstance(message, dict)]
+    return [
+        {"role": "system", "content": str(system_prompt)},
+        {"role": "user", "content": "" if user_prompt is None else str(user_prompt)},
+    ]
+
+
+def _json_messages_from_prompt(
+    system_prompt: str | list[dict[str, Any]],
+    user_prompt: str | None = None,
+    schema_hint: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    json_instruction = "Return ONLY valid JSON. No markdown. No explanation. No code fence."
+    messages = _messages_from_prompt(system_prompt, user_prompt)
+    if messages and messages[0].get("role") == "system":
+        messages[0]["content"] = f"{messages[0].get('content', '')}\n\n{json_instruction}".strip()
+    else:
+        messages.insert(0, {"role": "system", "content": json_instruction})
+    if schema_hint:
+        messages.append({"role": "user", "content": "JSON schema hint: " + json.dumps(schema_hint, sort_keys=True)})
+    return messages
+
+
+def _strip_json_text(text: str) -> str:
+    stripped = str(text or "").strip()
+    if stripped.startswith("```"):
+        stripped = re.sub(r"^```(?:json)?\s*", "", stripped, flags=re.IGNORECASE)
+        stripped = re.sub(r"\s*```$", "", stripped)
+    return stripped.strip()
+
+
+def _conservative_json_fallback() -> dict[str, Any]:
+    return {
+        "intent": "UNKNOWN",
+        "route": "EVIDENCE_PIPELINE",
+        "requires_evidence": True,
+        "pure_no_evidence": False,
+        "confidence": 0.0,
+        "parse_error": True,
+    }
+
+
 def _classify_llm_error_text(text: str) -> str:
     lower = str(text or "").lower()
     if any(marker in lower for marker in ("401", "403", "unauthorized", "forbidden", "invalid api key", "authentication", "auth")):
@@ -602,7 +807,7 @@ def _classify_llm_error_text(text: str) -> str:
 
 
 def get_llm_client(provider: str | None = None) -> LLMClient:
-    selected = (provider or os.getenv("LLM_PROVIDER") or "").strip().lower()
+    selected = (provider or os.getenv("DASHAGENT_LLM_PROVIDER") or os.getenv("LLM_PROVIDER") or "").strip().lower()
     if not selected:
         openai_base_url = os.getenv("OPENAI_BASE_URL", "")
         if os.getenv("OPENAI_API_KEY") and openai_base_url and "openrouter.ai" not in openai_base_url:
@@ -619,6 +824,8 @@ def get_llm_client(provider: str | None = None) -> LLMClient:
         client = OpenAILLMClient()
     elif selected == "anthropic":
         client = AnthropicLLMClient()
+    elif selected == "pioneer_chat":
+        client = PioneerChatLLMClient()
     else:
         return NoOpLLMClient(reason=f"Unsupported LLM_PROVIDER: {selected}", model=DEFAULT_OPENAI_MODEL)
     if client.available():

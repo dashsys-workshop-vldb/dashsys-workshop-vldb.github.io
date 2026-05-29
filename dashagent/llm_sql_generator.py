@@ -16,6 +16,8 @@ def generate_sql_with_llm(
     mode: str = "candidate_guided",
 ) -> dict[str, Any]:
     client = llm_client or get_llm_client()
+    if _forbids_executable_sql_generation(client):
+        return _pioneer_sql_generation_blocked(client, mode)
     if not client.available():
         reason = client.generate_messages([]).get("reason", "LLM provider API key is not set")
         return {
@@ -71,6 +73,8 @@ def repair_sql_with_llm(
     llm_client: LLMClient | None = None,
 ) -> dict[str, Any]:
     client = llm_client or get_llm_client()
+    if _forbids_executable_sql_generation(client):
+        return _pioneer_sql_generation_blocked(client, "repair")
     if not client.available():
         reason = client.generate_messages([]).get("reason", "LLM provider API key is not set")
         return {
@@ -130,6 +134,26 @@ def validate_sql_against_context(sql: str, schema_context: dict[str, Any]) -> di
         if tables and table not in tables:
             errors.append(f"Unknown or out-of-context table: {table}")
     return {"ok": not errors, "errors": errors, "warnings": []}
+
+
+def _forbids_executable_sql_generation(client: LLMClient) -> bool:
+    try:
+        return str(client.provider_name()).lower() == "pioneer_chat"
+    except Exception:
+        return False
+
+
+def _pioneer_sql_generation_blocked(client: LLMClient, mode: str) -> dict[str, Any]:
+    return {
+        "ok": False,
+        "sql": "",
+        "reasoning_summary": "",
+        "provider": client.provider_name(),
+        "model": client.model_name(),
+        "mode": mode,
+        "skipped": True,
+        "error": "pioneer_chat is no-tool LLM access and is not allowed to generate executable SQL.",
+    }
 
 
 def _parse_json_response(text: str) -> dict[str, Any]:
