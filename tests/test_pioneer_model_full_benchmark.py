@@ -168,6 +168,30 @@ def test_per_model_benchmark_report_contains_one_active_model(tmp_path, monkeypa
     assert payload["pioneer_model_id"] == "id-a"
 
 
+def test_per_model_report_includes_model_usage_counts(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("PIONEER_MODEL_ID_MAP_JSON", '{"ModelA":"id-a"}')
+    fullbench.run_pioneer_model_full_benchmark(
+        SimpleNamespace(outputs_dir=tmp_path),
+        models=["ModelA"],
+        report_dir=tmp_path,
+        commands=fullbench.minimal_test_command_plan(),
+        availability_probe=lambda model_id: {"available": True, "model": model_id},
+        focused_smoke_runner=_fake_smoke_with_usage_events,
+        command_runner=lambda command, env, cwd, timeout_sec: _runner_with_fake_artifacts(command, env, tmp_path),
+    )
+
+    payload = json.loads((tmp_path / "per_model_modela_benchmark.json").read_text(encoding="utf-8"))
+    usage = payload["model_usage"]
+    assert usage["active_llm_provider"] == "pioneer_chat"
+    assert usage["pioneer_model"] == "ModelA"
+    assert usage["pioneer_model_id"] == "id-a"
+    assert usage["semantic_llm_call_count"] == 3
+    assert usage["direct_answer_llm_call_count"] == 2
+    assert usage["llm_call_count"] == 5
+    assert usage["json_parse_failures"] == 1
+    assert usage["fallback_to_evidence_pipeline_count"] == 1
+
+
 def test_full_benchmark_redacts_api_key_from_logs(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("PIONEER_API_KEY", "sk-test-secret-value-123456")
     monkeypatch.setenv("PIONEER_MODEL_ID_MAP_JSON", '{"ModelA":"id-a"}')
@@ -224,6 +248,25 @@ def _fake_smoke_with_json_failures(config, *, models, report_dir):
     payload = _fake_smoke(config, models=models, report_dir=report_dir)
     payload["models"][0]["metrics"]["json_parse_failures"] = 6
     payload["models"][0]["metrics"]["semantic_fallback_count"] = 6
+    return payload
+
+
+def _fake_smoke_with_usage_events(config, *, models, report_dir):
+    payload = _fake_smoke(config, models=models, report_dir=report_dir)
+    model = models[0]
+    model_id = fullbench.resolve_pioneer_model_id(model)
+    payload["models"][0]["semantic_probe_results"] = [
+        {"pioneer_model": model, "pioneer_model_id": model_id, "route": "LLM_DIRECT"},
+        {"pioneer_model": model, "pioneer_model_id": model_id, "route": "EVIDENCE_PIPELINE", "parse_error": True},
+        {"pioneer_model": model, "pioneer_model_id": model_id, "route": "EVIDENCE_PIPELINE"},
+    ]
+    payload["models"][0]["prompt_results"] = [
+        {"pioneer_model": model, "pioneer_model_id": model_id, "llm_direct": True},
+        {"pioneer_model": model, "pioneer_model_id": model_id, "llm_direct": True},
+        {"pioneer_model": model, "pioneer_model_id": model_id, "llm_direct": False},
+    ]
+    payload["models"][0]["metrics"]["json_parse_failures"] = 1
+    payload["models"][0]["metrics"]["semantic_fallback_count"] = 1
     return payload
 
 

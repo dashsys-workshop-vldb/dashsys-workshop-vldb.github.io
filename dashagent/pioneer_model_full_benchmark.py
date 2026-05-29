@@ -196,6 +196,7 @@ def _run_one_model_full_benchmark(
         log_lines.append("availability=" + json.dumps(_redact_benchmark(availability), sort_keys=True))
         if not availability.get("available"):
             result = _base_result(model, model_id, safe_name, availability, started)
+            result["model_usage"] = _model_usage_summary(model, model_id, {}, {})
             result["stability_verdict"] = "UNAVAILABLE"
             result["log"] = "\n".join(log_lines) + "\n"
             _write_per_model(report_dir, result)
@@ -243,6 +244,7 @@ def _run_one_model_full_benchmark(
             "commands": commands_run,
             "command_failures": sum(1 for row in commands_run if int(row.get("returncode") or 0) != 0),
             "metrics": metrics,
+            "model_usage": _model_usage_summary(model, model_id, focused_smoke, metrics),
             "stability_verdict": _stability_verdict(metrics, commands_run),
             "outputs_dir": str(model_outputs),
             "trajectories_path": str(trajectories_path) if trajectories_path else None,
@@ -384,6 +386,29 @@ def _collect_model_metrics(model_outputs: Path, focused_smoke: dict[str, Any], c
             "retry_or_fallback_count": int(smoke_metrics.get("semantic_fallback_count") or 0),
         },
         "command_failures": command_failures,
+    }
+
+
+def _model_usage_summary(model: str, model_id: str, focused_smoke: dict[str, Any], metrics: dict[str, Any]) -> dict[str, Any]:
+    smoke_prompt_results = focused_smoke.get("prompt_results") if isinstance(focused_smoke.get("prompt_results"), list) else []
+    semantic_probe_results = (
+        focused_smoke.get("semantic_probe_results") if isinstance(focused_smoke.get("semantic_probe_results"), list) else []
+    )
+    routing = metrics.get("routing_evidence") if isinstance(metrics.get("routing_evidence"), dict) else {}
+    direct_answer_count = sum(1 for row in smoke_prompt_results if bool(row.get("llm_direct")))
+    semantic_count = len(semantic_probe_results)
+    json_failures = int(routing.get("json_parse_failure_count") or 0)
+    fallback_count = int(routing.get("semantic_fallback_count") or 0)
+    return {
+        "active_llm_provider": "pioneer_chat",
+        "pioneer_model": model,
+        "pioneer_model_id": model_id,
+        "llm_call_count": semantic_count + direct_answer_count,
+        "semantic_llm_call_count": semantic_count,
+        "direct_answer_llm_call_count": direct_answer_count,
+        "json_parse_failures": json_failures,
+        "fallback_to_evidence_pipeline_count": fallback_count,
+        "scope": "focused_smoke_model_usage_plus_per_model_benchmark_env",
     }
 
 
@@ -539,6 +564,20 @@ def _summary_markdown(summary: dict[str, Any]) -> str:
         internal = metrics.get("internal50") or {}
         lines.append(
             f"| {row.get('model')} | {row.get('stability_verdict')} | {_fmt(org.get('final_score'))} | {_fmt(org.get('correctness_score'))} | {_fmt(org.get('answer_score'))} | {_fmt(org.get('sql_score'))} | {_fmt(org.get('api_score'))} | {_fmt(org.get('tool_call_count'))} | {_fmt(internal.get('combined_score'))} | {_fmt(internal.get('behavior_score'))} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Model Usage",
+            "",
+            "| Model | Active Provider | Model ID | LLM Calls | Semantic Calls | Direct Answer Calls | JSON Failures | Evidence Fallbacks |",
+            "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    for row in summary.get("models", []):
+        usage = row.get("model_usage") or {}
+        lines.append(
+            f"| {row.get('model')} | {usage.get('active_llm_provider') or ''} | `{usage.get('pioneer_model_id') or row.get('pioneer_model_id')}` | {usage.get('llm_call_count')} | {usage.get('semantic_llm_call_count')} | {usage.get('direct_answer_llm_call_count')} | {usage.get('json_parse_failures')} | {usage.get('fallback_to_evidence_pipeline_count')} |"
         )
     lines.extend(
         [

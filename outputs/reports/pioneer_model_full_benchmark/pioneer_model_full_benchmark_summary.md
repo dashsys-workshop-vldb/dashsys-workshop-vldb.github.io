@@ -32,6 +32,18 @@ Each callable model runs the complete benchmark suite before the runner switches
 | Mistral Nemo Instruct 2407 | STABLE | 0.6286 | 0.6606 | 0.2918 | 0.9333 | 0.9591 | 1.4000 | 0.7816 | 0.8546 |
 | Gemma 4 E4B It | STABLE | 0.6293 | 0.6606 | 0.2918 | 0.9333 | 0.9591 | 1.4000 | 0.7816 | 0.8546 |
 
+## Model Usage
+
+| Model | Active Provider | Model ID | LLM Calls | Semantic Calls | Direct Answer Calls | JSON Failures | Evidence Fallbacks |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Gpt 4o | pioneer_chat | `gpt-4o` | 0 | 0 | 0 | 0 | 0 |
+| Claude Haiku 4.5 | pioneer_chat | `claude-haiku-4-5` | 8 | 6 | 2 | 0 | 0 |
+| DeepSeek V4 Flash | pioneer_chat | `deepseek-ai/DeepSeek-V4-Flash` | 8 | 6 | 2 | 5 | 5 |
+| Qwen3 4B Instruct 2507 | pioneer_chat | `Qwen/Qwen3-4B-Instruct-2507` | 8 | 6 | 2 | 6 | 6 |
+| Llama 3.1 8B Instruct | pioneer_chat | `meta-llama/Llama-3.1-8B-Instruct` | 8 | 6 | 2 | 0 | 0 |
+| Mistral Nemo Instruct 2407 | pioneer_chat | `mistralai/Mistral-Nemo-Instruct-2407` | 8 | 6 | 2 | 0 | 0 |
+| Gemma 4 E4B It | pioneer_chat | `google/gemma-4-E4B-it` | 8 | 6 | 2 | 0 | 0 |
+
 ## Safety
 
 | Model | no_tool_fp | api_required_underuse | unsupported_claims | concrete_data_llm_direct | JSON failures | Semantic fallbacks |
