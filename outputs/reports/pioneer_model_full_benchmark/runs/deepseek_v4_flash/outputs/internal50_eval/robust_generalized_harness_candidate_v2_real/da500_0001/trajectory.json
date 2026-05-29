@@ -1,0 +1,846 @@
+{
+  "answer_time": 0.0,
+  "api_call_count": 0,
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "correctness_role": "keeps later normalization from changing the user-facing question",
+      "duration_ms": 0.0,
+      "effect": "preserves the original query for reproducibility",
+      "efficiency_role": "starts one trace without extra tool calls",
+      "output": {
+        "query": "What is a schema in Adobe Experience Platform? Keep the answer conceptual for the activation handoff.",
+        "query_id": "da500_0001",
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "stage": "input",
+      "technique": "raw user query capture",
+      "timestamp": "2026-05-29T18:18:12.706023+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_runtime_leakage_guard",
+      "correctness_role": "prevents evaluator-only metadata leakage into runtime decisions",
+      "duration_ms": 0.0,
+      "effect": "asserts that candidate runtime receives only prompt/runtime fields, not evaluator metadata",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "category_tags_visible": false,
+        "expected_trace_visible": false,
+        "oracle_sql_visible": false,
+        "prompt_id_specific_branching": false,
+        "query_id_specific_branching": false,
+        "runtime_gold_visible": false,
+        "runtime_input_fields": {
+          "items": [
+            "query",
+            "query_id",
+            "strategy"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "runtime safety",
+      "technique": "runtime input isolation guard",
+      "timestamp": "2026-05-29T18:18:12.706038+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_score_provenance_guard",
+      "correctness_role": "prevents simulated or gold-visible scores from being treated as runtime evidence",
+      "duration_ms": 0.0,
+      "effect": "marks candidate runs as real-agent runtime executions without promotion judgment",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "organizer_equivalent": false,
+        "promotion_eligible": false,
+        "promotion_judgment_run": false,
+        "real_agent_execution": true,
+        "runtime_gold_visible": false,
+        "score_source": "runtime_candidate",
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+        "synthetic_trace": false
+      },
+      "stage": "runtime safety",
+      "technique": "score provenance guard",
+      "timestamp": "2026-05-29T18:18:12.706042+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_00_prompt_router",
+      "correctness_role": "routes data questions to evidence tools instead of unsupported direct answers",
+      "duration_ms": 0.0,
+      "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
+      "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
+      "input_summary": {
+        "query": "What is a schema in Adobe Experience Platform? Keep the answer conceptual for the activation handoff."
+      },
+      "output": {
+        "confidence": 0.9,
+        "matched_rules": {
+          "items": [
+            "api_only:platform"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "mode": "API_ONLY",
+        "reason": "API/platform family keyword(s): platform.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": true,
+        "requires_database": false,
+        "risk": "medium",
+        "truncated_fields": 1
+      },
+      "stage": "prompt routing",
+      "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
+      "timestamp": "2026-05-29T18:18:12.706069+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_simple_prompt_gate",
+      "correctness_role": "prevents direct answers for data questions that need SQL/API evidence",
+      "duration_ms": 0.0,
+      "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
+      "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
+      "input_summary": {
+        "query": "What is a schema in Adobe Experience Platform? Keep the answer conceptual for the activation handoff."
+      },
+      "output": {
+        "confidence": 0.9,
+        "is_simple": false,
+        "reason": "API/platform family keyword(s): platform.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      },
+      "stage": "input routing",
+      "technique": "simple prompt gate",
+      "timestamp": "2026-05-29T18:18:12.706083+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_objective_prompt_features",
+      "correctness_role": "keeps semantic pre-routing separate from SQL/API planning and answer generation",
+      "duration_ms": 0.0,
+      "effect": "records fact-only prompt cues for semantic routing diagnostics",
+      "efficiency_role": "uses compact symbolic features before any optional LLM classification",
+      "input_summary": {
+        "query": "What is a schema in Adobe Experience Platform? Keep the answer conceptual for the activation handoff."
+      },
+      "output": {
+        "cap": {
+          "items": [
+            "SQL_SCHEMA",
+            "API_SCHEMA_REGISTRY",
+            "SCHEMA_REGISTRY"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "count": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "cue": {
+          "items": [
+            "DEF"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "domain": {
+          "items": [
+            "SCHEMA"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "flags": {
+          "items": [
+            "DOMAIN_WITH_DEF_CUE",
+            "LIVE_OR_CURRENT",
+            "PLATFORM"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "norm": "what is a schema in adobe experience platform? keep the answer conceptual for the activation handoff.",
+        "p": "What is a schema in Adobe Experience Platform? Keep the answer conceptual for the activation handoff.",
+        "status": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "truncated_fields": 12
+      },
+      "stage": "semantic routing shadow",
+      "technique": "objective prompt feature extraction",
+      "timestamp": "2026-05-29T18:18:12.706187+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_semantic_parse",
+      "correctness_role": "prevents keyword-only no-tool blocking or allowing decisions",
+      "duration_ms": 0.0,
+      "effect": "separates operation role, target grounding, instance level, and evidence need before route selection",
+      "efficiency_role": "adds compact parse metadata without executing tools",
+      "input_summary": {
+        "feature_codes": {
+          "cap": {
+            "items": [
+              "SQL_SCHEMA",
+              "API_SCHEMA_REGISTRY",
+              "SCHEMA_REGISTRY"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "count": {
+            "items": [],
+            "total_items": 0,
+            "truncated_items": false
+          },
+          "cue": {
+            "items": [
+              "DEF"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "domain": {
+            "items": [
+              "SCHEMA"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "flags": {
+            "items": [
+              "DOMAIN_WITH_DEF_CUE",
+              "LIVE_OR_CURRENT",
+              "PLATFORM"
+            ],
+            "total_items": 4,
+            "truncated_items": true
+          },
+          "norm": "what is a schema in adobe experience platform? keep the answer conceptual for the activation handoff.",
+          "p": "What is a schema in Adobe Experience Platform? Keep the answer conceptual for the activation handoff.",
+          "status": {
+            "items": [],
+            "total_items": 0,
+            "truncated_items": false
+          },
+          "truncated_fields": 12
+        }
+      },
+      "output": {
+        "capability": {
+          "api_families": {
+            "items": [
+              "SCHEMA_REGISTRY"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "api_match": true,
+          "sql_match": true
+        },
+        "confidence": 0.88,
+        "evidence_need": "NONE",
+        "filters": {
+          "status": null
+        },
+        "no_tool_safe": true,
+        "operation": "DEFINE",
+        "supporting_spans": {
+          "items": [
+            "what is",
+            "schema"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "target": {
+          "grounding": "CONCEPTUAL_OBJECT",
+          "instance_level": false,
+          "object_family": "SCHEMA",
+          "text": "schema"
+        },
+        "truncated_fields": 3
+      },
+      "stage": "semantic routing shadow",
+      "technique": "semantic role parse",
+      "timestamp": "2026-05-29T18:18:12.706493+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_semantic_intent_decision",
+      "correctness_role": "keeps no-tool candidates explicit for verifier review",
+      "duration_ms": 0.0,
+      "effect": "records semantic intent decision without generating SQL, API calls, or answers",
+      "efficiency_role": "measures whether conceptual false positives could avoid tools in a future gate",
+      "input_summary": {
+        "feature_codes": {
+          "cap": {
+            "items": [
+              "SQL_SCHEMA",
+              "API_SCHEMA_REGISTRY",
+              "SCHEMA_REGISTRY"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "count": {
+            "items": [],
+            "total_items": 0,
+            "truncated_items": false
+          },
+          "cue": {
+            "items": [
+              "DEF"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "domain": {
+            "items": [
+              "SCHEMA"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "flags": {
+            "items": [
+              "DOMAIN_WITH_DEF_CUE",
+              "LIVE_OR_CURRENT",
+              "PLATFORM"
+            ],
+            "total_items": 4,
+            "truncated_items": true
+          },
+          "norm": "what is a schema in adobe experience platform? keep the answer conceptual for the activation handoff.",
+          "p": "What is a schema in Adobe Experience Platform? Keep the answer conceptual for the activation handoff.",
+          "status": {
+            "items": [],
+            "total_items": 0,
+            "truncated_items": false
+          },
+          "truncated_fields": 12
+        }
+      },
+      "output": {
+        "api": false,
+        "codes": {
+          "items": [
+            "FALLBACK",
+            "SEMANTIC_PARSE_NO_TOOL"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "conf": 0.9,
+        "intent": "CONCEPT",
+        "need": "NONE",
+        "no_tool": true,
+        "sql": false
+      },
+      "stage": "semantic routing shadow",
+      "technique": "compact SemanticIntentDecision classification",
+      "timestamp": "2026-05-29T18:18:12.706506+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_routing_anti_hallucination_gate",
+      "correctness_role": "prevents LLM semantic hints from overriding objective data cues",
+      "duration_ms": 0.0,
+      "effect": "blocks unsupported no-tool or capability claims and records one-revision fallback state",
+      "efficiency_role": "limits revision feedback to compact codes and keeps packaged execution unchanged",
+      "input_summary": {
+        "semantic_intent": {
+          "api": false,
+          "codes": {
+            "items": [
+              "FALLBACK",
+              "SEMANTIC_PARSE_NO_TOOL"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "conf": 0.9,
+          "intent": "CONCEPT",
+          "need": "NONE",
+          "no_tool": true,
+          "sql": false
+        }
+      },
+      "output": {
+        "final_decision": {
+          "api": false,
+          "codes": {
+            "items": [
+              "FALLBACK",
+              "SEMANTIC_PARSE_NO_TOOL"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "conf": 0.9,
+          "intent": "CONCEPT",
+          "need": "NONE",
+          "no_tool": true,
+          "sql": false
+        },
+        "final_gate": {
+          "ok": true,
+          "support": {
+            "caps": true,
+            "intent": true,
+            "need": true
+          }
+        },
+        "initial_decision": {
+          "api": false,
+          "codes": {
+            "items": [
+              "FALLBACK",
+              "SEMANTIC_PARSE_NO_TOOL"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "conf": 0.9,
+          "intent": "CONCEPT",
+          "need": "NONE",
+          "no_tool": true,
+          "sql": false
+        },
+        "initial_gate": {
+          "ok": true,
+          "support": {
+            "caps": true,
+            "intent": true,
+            "need": true
+          }
+        },
+        "revision_attempted": false,
+        "revision_success": false,
+        "revision_token_estimate": 0
+      },
+      "stage": "semantic routing shadow",
+      "technique": "objective support check for semantic intent",
+      "timestamp": "2026-05-29T18:18:12.706508+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_minimal_correction_feedback_semantic",
+      "correctness_role": "gate reports conflicts without replacing the LLM semantic decision",
+      "duration_ms": 0.0,
+      "effect": "records compact conflict deltas for one LLM semantic revision",
+      "efficiency_role": "keeps revision payload compact",
+      "input_summary": {
+        "semantic_intent": {
+          "api": false,
+          "codes": {
+            "items": [
+              "FALLBACK",
+              "SEMANTIC_PARSE_NO_TOOL"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "conf": 0.9,
+          "intent": "CONCEPT",
+          "need": "NONE",
+          "no_tool": true,
+          "sql": false
+        }
+      },
+      "output": {
+        "feedback_token_estimate": 0,
+        "revision_required": false,
+        "task": "REVISE_SEMANTIC_DECISION"
+      },
+      "stage": "semantic routing shadow",
+      "technique": "minimal semantic correction feedback",
+      "timestamp": "2026-05-29T18:18:12.706509+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_semantic_revision_result",
+      "correctness_role": "falls back only after conflict persists",
+      "duration_ms": 0.0,
+      "effect": "records whether LLM revision fixed semantic conflicts",
+      "efficiency_role": "limits semantic revision attempts to one",
+      "input_summary": {
+        "gate_revision_attempted": false
+      },
+      "output": {
+        "final_decision": {
+          "api": false,
+          "codes": {
+            "items": [
+              "FALLBACK",
+              "SEMANTIC_PARSE_NO_TOOL"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "conf": 0.9,
+          "intent": "CONCEPT",
+          "need": "NONE",
+          "no_tool": true,
+          "sql": false
+        },
+        "revision_attempted": false,
+        "revision_success": false,
+        "source": "LOW_AUTHORITY_OR_FALLBACK_DECISION"
+      },
+      "stage": "semantic routing shadow",
+      "technique": "single semantic decision revision result",
+      "timestamp": "2026-05-29T18:18:12.706511+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_semantic_fallback_if_any",
+      "correctness_role": "does not claim deterministic semantic certainty",
+      "duration_ms": 0.0,
+      "effect": "records fallback only when semantic conflicts remain after revision",
+      "efficiency_role": "uses no extra tools",
+      "input_summary": {
+        "action": "LLM_DIRECT"
+      },
+      "output": {
+        "semantic_certainty_claimed": false
+      },
+      "stage": "semantic routing shadow",
+      "technique": "ri[REDACTED] semantic fallback marker",
+      "timestamp": "2026-05-29T18:18:12.706513+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_semantic_consistency_verifier",
+      "correctness_role": "blocks real instance-level data requests without treating every cue word as retrieval",
+      "duration_ms": 0.0,
+      "effect": "allows no-tool only when semantic roles are conceptual, meta-language, or out-of-domain",
+      "efficiency_role": "keeps safe conceptual prompts from entering the evidence pipeline",
+      "input_summary": {
+        "semantic_intent": {
+          "api": false,
+          "codes": {
+            "items": [
+              "FALLBACK",
+              "SEMANTIC_PARSE_NO_TOOL"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "conf": 0.9,
+          "intent": "CONCEPT",
+          "need": "NONE",
+          "no_tool": true,
+          "sql": false
+        },
+        "semantic_parse": {
+          "capability": {
+            "api_families": {
+              "items": [
+                "SCHEMA_REGISTRY"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "api_match": true,
+            "sql_match": true
+          },
+          "confidence": 0.88,
+          "evidence_need": "NONE",
+          "filters": {
+            "status": null
+          },
+          "no_tool_safe": true,
+          "operation": "DEFINE",
+          "supporting_spans": {
+            "items": [
+              "what is",
+              "schema"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "target": {
+            "grounding": "CONCEPTUAL_OBJECT",
+            "instance_level": false,
+            "object_family": "SCHEMA",
+            "text": "schema"
+          },
+          "truncated_fields": 3
+        }
+      },
+      "output": {
+        "allow_no_tool": true,
+        "consistency_codes": {
+          "items": [
+            "KEYWORD_ONLY_BLOCK_AVOIDED",
+            "SEMANTIC_NO_TOOL_CONSISTENT"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "ok": true
+      },
+      "stage": "semantic routing shadow",
+      "technique": "semantic parse and route consistency verifier",
+      "timestamp": "2026-05-29T18:18:12.706517+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_progressive_evidence_policy",
+      "correctness_role": "forces ambiguous and data-like prompts into evidence acquisition before post-evidence decisions",
+      "duration_ms": 0.0,
+      "effect": "restricts early semantic routing to safe no-tool or single-endpoint API probe exits",
+      "efficiency_role": "keeps low-risk conceptual/API-only exits available while avoiding high-risk branch decisions",
+      "input_summary": {
+        "semantic_action": "LLM_DIRECT"
+      },
+      "output": {
+        "allowed_early_exit": true,
+        "confidence": "HIGH",
+        "entry_action": "LLM_DIRECT",
+        "metrics": {
+          "api_families": {
+            "items": [
+              "SCHEMA_REGISTRY"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "api_family_count": 1,
+          "api_match": 1.0,
+          "api_required_signal": false,
+          "concrete_data_signal": false,
+          "live_api_signal": false,
+          "objective_data_signal": false,
+          "sql_match": 1.0,
+          "truncated_fields": 4
+        },
+        "reason_codes": {
+          "items": [
+            "SAFE_CONCEPTUAL_NO_TOOL"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "requires_evidence_pipeline": false
+      },
+      "stage": "semantic routing candidate",
+      "technique": "progressive evidence early-exit policy",
+      "timestamp": "2026-05-29T18:18:12.706519+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_no_tool_safety_verifier",
+      "correctness_role": "blocks concrete data prompts from direct LLM handling while allowing keyword decoys",
+      "duration_ms": 0.0,
+      "effect": "records the semantic consistency result in the legacy no-tool safety checkpoint slot",
+      "efficiency_role": "estimates safe no-tool savings without changing packaged behavior",
+      "input_summary": {
+        "semantic_intent": {
+          "api": false,
+          "codes": {
+            "items": [
+              "FALLBACK",
+              "SEMANTIC_PARSE_NO_TOOL"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "conf": 0.9,
+          "intent": "CONCEPT",
+          "need": "NONE",
+          "no_tool": true,
+          "sql": false
+        }
+      },
+      "output": {
+        "action": "ALLOW_NO_TOOL",
+        "allow_no_tool": true,
+        "capability_match_score": 0.75,
+        "clear_safe_api_family": false,
+        "evidence_need_score": 0.1,
+        "has_concrete_data_signal": false,
+        "no_tool_safety_score": 0.9,
+        "semantic_consistency_codes": {
+          "items": [
+            "KEYWORD_ONLY_BLOCK_AVOIDED",
+            "SEMANTIC_NO_TOOL_CONSISTENT"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "stage": "semantic routing shadow",
+      "technique": "semantic consistency compatibility no-tool view",
+      "timestamp": "2026-05-29T18:18:12.706520+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_semantic_route_decision_ladder",
+      "correctness_role": "never applies semantic routing to the packaged plan in shadow mode",
+      "duration_ms": 0.0,
+      "effect": "records the shadow action that would be considered by a future promotion gate",
+      "efficiency_role": "estimates tool-call and context-token tradeoffs",
+      "input_summary": {
+        "shadow_only": false
+      },
+      "output": {
+        "action": "LLM_DIRECT",
+        "context_token_cost": 245,
+        "low_low_case": false,
+        "promotion_allowed": false,
+        "shadow_only": false,
+        "tier_used": 0
+      },
+      "stage": "semantic routing shadow",
+      "technique": "uncertainty escalation ladder",
+      "timestamp": "2026-05-29T18:18:12.706522+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_real_behavior_applied_trial",
+      "correctness_role": "falls back to SQL_FIRST_API_VERIFY unless all no-tool safety checks pass",
+      "duration_ms": 0.0,
+      "effect": "applies a semantic no-tool shortcut only in explicit real benchmark trial modes",
+      "efficiency_role": "measures real tool-call savings for conceptual false-positive routes",
+      "input_summary": {
+        "trial_mode": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "applied": true,
+        "decision": "LLM_DIRECT",
+        "decision_family": "SEMANTIC_NO_TOOL",
+        "fallback": false,
+        "record": true,
+        "semantic_confidence": 0.9,
+        "shadow_only": false,
+        "trial_mode": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+        "truncated_fields": 4
+      },
+      "stage": "isolated applied trial",
+      "technique": "semantic no-tool applied trial",
+      "timestamp": "2026-05-29T18:18:12.706631+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_pipeline_bypass",
+      "correctness_role": "keeps evidence-free answers separate from grounded SQL/API answer composition",
+      "duration_ms": 0.0,
+      "effect": "bypasses SQL/API, EvidenceBus, answer slots, and post-evidence answer routing for pure concept/meta prompts",
+      "efficiency_role": "uses no SQL/API calls",
+      "input_summary": {
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+        "trial_mode": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "bypass_reason": "high_confidence_llm_direct_no_evidence_required",
+        "confidence": 0.9,
+        "evidence_bus_built": false,
+        "evidence_pipeline_bypassed": true,
+        "post_evidence_answer_router_ran": false,
+        "pre_evidence_route": "LLM_DIRECT"
+      },
+      "stage": "pre-evidence routing",
+      "technique": "high-confidence direct LLM routing boundary",
+      "timestamp": "2026-05-29T18:18:12.707002+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_safe_direct_answer_verifier",
+      "correctness_role": "blocks invented counts, IDs, timestamps, statuses, or live platform claims",
+      "duration_ms": 0.0,
+      "effect": "checks direct concept/meta answers without constructing grounded evidence artifacts",
+      "efficiency_role": "uses no SQL/API calls",
+      "input_summary": {
+        "pre_evidence_route": "LLM_DIRECT"
+      },
+      "output": {
+        "ok": true
+      },
+      "stage": "answer verification",
+      "technique": "safe-direct answer verifier",
+      "timestamp": "2026-05-29T18:18:12.707006+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "correctness_role": "does not invent SQL/API evidence, counts, IDs, statuses, or timestamps",
+      "duration_ms": 0.0,
+      "effect": "returns a no-tool conceptual answer only after semantic safety gates pass",
+      "efficiency_role": "uses zero SQL/API calls for the isolated trial row",
+      "output": {
+        "answer_length": 140,
+        "final_answer": "A schema is a blueprint for how data is structured: it defines fields, types, and constraints so systems can interpret records consistently.",
+        "final_token_estimate": 26
+      },
+      "stage": "final response",
+      "technique": "semantic no-tool applied trial answer",
+      "timestamp": "2026-05-29T18:18:12.707062+00:00"
+    }
+  ],
+  "domain_type": "CONCEPTUAL",
+  "errors": [],
+  "estimated_tokens": 439,
+  "execution_time": 0.0,
+  "final_answer": "A schema is a blueprint for how data is structured: it defines fields, types, and constraints so systems can interpret records consistently.",
+  "model_sweep_run_id": "deepseek_v4_flash",
+  "original_query": "What is a schema in Adobe Experience Platform? Keep the answer conceptual for the activation handoff.",
+  "pioneer_model": "DeepSeek V4 Flash",
+  "pioneer_model_id": "deepseek-ai/DeepSeek-V4-Flash",
+  "planning_time": 0.0,
+  "preprocessing_time": 0.0,
+  "query_id": "da500_0001",
+  "route_type": "LLM_SAFE_DIRECT",
+  "runtime": 0.013190083671361208,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "api_policy": "API_REQUIRED",
+      "confidence": 0.9,
+      "kind": "prompt_router",
+      "matched_rules": [
+        "api_only:platform"
+      ],
+      "mode": "API_ONLY",
+      "reason": "API/platform family keyword(s): platform.",
+      "recommended_strategy": "SQL_FIRST_API_VERIFY",
+      "requires_api": true,
+      "requires_database": false,
+      "risk": "medium"
+    },
+    {
+      "estimated_tokens": 298,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/reports/pioneer_model_full_benchmark/runs/deepseek_v4_flash/outputs/internal50_eval/robust_generalized_harness_candidate_v2_real/da500_0001/metadata.json",
+      "prompt_tokens": 792
+    },
+    {
+      "applied": true,
+      "blockers": [],
+      "bypass_reason": "high_confidence_llm_direct_no_evidence_required",
+      "decision": "LLM_DIRECT",
+      "decision_family": "SEMANTIC_NO_TOOL",
+      "evidence_need_score": 0.1,
+      "evidence_pipeline_bypassed": true,
+      "fallback": false,
+      "kind": "real_behavior_applied_trial",
+      "record": true,
+      "semantic_confidence": 0.9,
+      "shadow_only": false,
+      "trial_mode": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+    },
+    {
+      "bypass_reason": "high_confidence_llm_direct_no_evidence_required",
+      "confidence": 0.9,
+      "evidence_bus_built": false,
+      "evidence_pipeline_bypassed": true,
+      "kind": "evidence_boundary",
+      "post_evidence_answer_router_ran": false,
+      "pre_evidence_route": "LLM_DIRECT"
+    },
+    {
+      "blocked_claims": [],
+      "kind": "safe_direct_answer_verifier",
+      "ok": true
+    }
+  ],
+  "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+  "timings": {},
+  "tool_call_count": 0
+}

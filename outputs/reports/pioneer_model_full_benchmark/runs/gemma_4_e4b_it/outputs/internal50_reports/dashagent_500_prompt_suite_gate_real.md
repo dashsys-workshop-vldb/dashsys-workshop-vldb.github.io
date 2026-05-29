@@ -1,0 +1,31 @@
+# DashAgent 500-Prompt Suite Gate
+
+- passed: False
+- diagnostic_gate_only: True
+- packaged_runtime_changed: False
+- final_submission_format_changed: False
+- eval_engine: real_agent
+- simulated_trace_only: False
+- real_agent_execution: True
+- baseline_score: None
+- packaged_baseline_real_score: None
+- latest_shadow_real_score: None
+- latest_shadow_real_behavior_score: None
+- latest_shadow_real_trace_observability_score: None
+- latest_shadow_real_trace_observability_delta: None
+- latest_shadow_real_post_sql_advisor_checkpoint_present_count: None
+- latest_shadow_real_post_sql_llm_advisor_actual_call_count: None
+- latest_shadow_real_post_sql_llm_advice_blocked_count: None
+- latest_shadow_real_post_sql_deterministic_fallback_count: None
+- latest_trial_score: None
+- route_trace_accuracy: None
+- unsupported_claims_zero: True
+- no_tool_false_positive: None
+- api_calls_saved: None
+- api_calls_added: None
+- runtime_cost_acceptable: None
+- latest_code_paths_explicitly_evaluated: True
+- latest_applied_real_trial_available: False
+- applied_behavior_changed: False
+- recommendation: latest_applied_real_trial_unavailable_keep_shadow
+- blockers: ['Semantic route decisions are integrated as shadow checkpoints only.', 'Staged evidence policy is integrated as shadow checkpoints only.', 'Post-SQL API decision policy records keep/drop/add advice but does not alter actual API execution.', 'No non-shadow promotion gate has approved applying these decisions to packaged execution.']

@@ -366,6 +366,9 @@ def _aggregate_metrics(
         "evidence_pipeline_count": sum(1 for row in prompt_results if bool(row.get("evidence_pipeline"))),
         "evidence_pipeline_bypassed_count": sum(1 for row in prompt_results if bool(row.get("evidence_pipeline_bypassed"))),
         "evidence_bus_built_count": sum(1 for row in prompt_results if bool(row.get("evidence_bus_built"))),
+        "post_evidence_answer_router_ran_count": sum(
+            1 for row in prompt_results if bool(row.get("post_evidence_answer_router_ran"))
+        ),
         "no_tool_fp": len(data_prompt_fail_open),
         "api_required_underuse": 0,
         "unsupported_claims": sum(int(row.get("unsupported_claims") or 0) for row in prompt_results),

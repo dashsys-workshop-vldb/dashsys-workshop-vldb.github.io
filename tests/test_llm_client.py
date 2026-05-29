@@ -25,6 +25,7 @@ def clear_llm_env(monkeypatch):
         "PIONEER_API_KEY",
         "PIONEER_BASE_URL",
         "PIONEER_MODEL",
+        "PIONEER_MODEL_ID",
         "PIONEER_TIMEOUT_SEC",
     ]:
         monkeypatch.delenv(key, raising=False)
@@ -116,6 +117,40 @@ def test_provider_selection_pioneer_chat_from_dashagent_env(monkeypatch):
     assert client.available()
     assert client.provider_name() == "pioneer_chat"
     assert client.model_name() == "gpt-4o"
+
+
+def test_pioneer_chat_prefers_model_id_for_api_payload(monkeypatch):
+    captured = {}
+
+    class FakeCompletion:
+        def model_dump(self):
+            return {
+                "choices": [{"finish_reason": "stop", "message": {"role": "assistant", "content": "ok"}}],
+                "usage": {"total_tokens": 2},
+            }
+
+    class FakeCompletions:
+        def create(self, **payload):
+            captured["payload"] = payload
+            return FakeCompletion()
+
+    class FakeOpenAI:
+        def __init__(self, **kwargs):
+            self.chat = type("Chat", (), {"completions": FakeCompletions()})()
+
+    clear_llm_env(monkeypatch)
+    monkeypatch.setattr("dashagent.llm_client.OpenAI", FakeOpenAI)
+    monkeypatch.setenv("DASHAGENT_LLM_PROVIDER", "pioneer_chat")
+    monkeypatch.setenv("PIONEER_API_KEY", "unit-test-pioneer-key")
+    monkeypatch.setenv("PIONEER_MODEL", "Claude Haiku 4.5")
+    monkeypatch.setenv("PIONEER_MODEL_ID", "claude-haiku-4-5")
+
+    client = get_llm_client()
+    result = client.generate_messages([{"role": "user", "content": "hello"}])
+
+    assert result["ok"] is True
+    assert client.model_name() == "claude-haiku-4-5"
+    assert captured["payload"]["model"] == "claude-haiku-4-5"
 
 
 def test_pioneer_chat_complete_text_uses_openai_sdk_chat_payload(monkeypatch):

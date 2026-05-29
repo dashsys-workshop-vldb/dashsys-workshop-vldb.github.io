@@ -286,7 +286,7 @@ class PioneerChatLLMClient(OpenAILLMClient):
         timeout_seconds: int | None = None,
     ) -> None:
         self.api_key = api_key if api_key is not None else os.getenv("PIONEER_API_KEY")
-        self.model = model or os.getenv("PIONEER_MODEL", DEFAULT_PIONEER_MODEL)
+        self.model = model or os.getenv("PIONEER_MODEL_ID") or os.getenv("PIONEER_MODEL", DEFAULT_PIONEER_MODEL)
         timeout_value = timeout_seconds if timeout_seconds is not None else int(os.getenv("PIONEER_TIMEOUT_SEC", "60"))
         self.timeout_seconds = timeout_value
         self.base_url = (base_url or os.getenv("PIONEER_BASE_URL") or DEFAULT_PIONEER_BASE_URL).rstrip("/")
