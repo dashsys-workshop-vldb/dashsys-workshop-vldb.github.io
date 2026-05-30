@@ -66,6 +66,7 @@ class RecordingAPIClient:
 def _install_fake_planner(monkeypatch: pytest.MonkeyPatch, responses: list[dict]) -> SequencedLLMClient:
     client = SequencedLLMClient(responses)
     monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+    monkeypatch.setattr("dashagent.llm_final_answer_composer.get_llm_client", lambda: client)
     return client
 
 
@@ -123,7 +124,13 @@ def test_v2_valid_llm_sql_passes_compile_gate_and_executes(tiny_project, monkeyp
                 "sql": {"query": "SELECT COUNT(*) AS count FROM dim_campaign", "params": []},
                 "api_request": None,
                 "reason": "count local records",
-            }
+            },
+            {
+                "final_answer": "There are 2 campaigns.",
+                "used_pass_ids": ["sql_1"],
+                "claimed_facts": [{"claim": "There are 2 campaigns.", "supporting_pass_ids": ["sql_1"]}],
+                "caveats_included": [],
+            },
         ],
     )
 
@@ -136,8 +143,11 @@ def test_v2_valid_llm_sql_passes_compile_gate_and_executes(tiny_project, monkeyp
     assert [row["type"] for row in result["tool_results"]] == ["sql"]
     assert result["tool_results"][0]["payload"]["ok"] is True
     assert result["tool_results"][0]["payload"]["rows"] == [{"count": 2}]
+    assert result["final_answer"] == "There are 2 campaigns."
     sql_gate = _checkpoint_output(result, "checkpoint_llm_owned_sql_compile_gate")
     assert sql_gate["passed"] is True
+    answer_gate = _checkpoint_output(result, "checkpoint_llm_final_answer_semantic_gate")
+    assert answer_gate["passed"] is True
     boundary = _checkpoint_output(result, "checkpoint_evidence_pipeline_boundary")
     assert boundary["evidence_pipeline_bypassed"] is False
     assert boundary["evidence_bus_built"] is True
@@ -162,6 +172,12 @@ def test_v2_failed_sql_compile_error_is_returned_to_llm_repair_loop(tiny_project
                 "sql": {"query": "SELECT name FROM dim_campaign ORDER BY campaign_id", "params": []},
                 "api_request": None,
                 "reason": "repair unknown column",
+            },
+            {
+                "final_answer": "Campaigns: Birthday Message; Welcome Journey.",
+                "used_pass_ids": ["sql_1"],
+                "claimed_facts": [{"claim": "Birthday Message and Welcome Journey were returned.", "supporting_pass_ids": ["sql_1"]}],
+                "caveats_included": [],
             },
         ],
     )
@@ -196,7 +212,13 @@ def test_v2_api_request_gate_passes_safe_get_and_executes(tiny_project, monkeypa
                     "params": {"limit": 25},
                 },
                 "reason": "live schema list",
-            }
+            },
+            {
+                "final_answer": "The live API returned Birthday Message.",
+                "used_pass_ids": ["api_1"],
+                "claimed_facts": [{"claim": "Birthday Message was returned by the live API.", "supporting_pass_ids": ["api_1"]}],
+                "caveats_included": [],
+            },
         ],
     )
     api_client = RecordingAPIClient()
@@ -211,6 +233,49 @@ def test_v2_api_request_gate_passes_safe_get_and_executes(tiny_project, monkeypa
     assert api_client.calls == [("GET", "/data/foundation/schemaregistry/tenant/schemas", {"limit": 25})]
     api_gate = _checkpoint_output(result, "checkpoint_llm_owned_api_request_gate")
     assert api_gate["passed"] is True
+
+
+def test_v2_parallel_sql_api_passes_are_aggregated_by_llm_final_answer(tiny_project, monkeypatch):
+    _install_fake_planner(
+        monkeypatch,
+        [
+            {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "PARALLEL",
+                "direct_answer": None,
+                "sql": {"query": "SELECT COUNT(*) AS count FROM dim_campaign", "params": []},
+                "api_request": {
+                    "method": "GET",
+                    "path": "/data/foundation/schemaregistry/tenant/schemas",
+                    "params": {"limit": 25},
+                },
+                "reason": "long prompt needs local SQL and live API evidence",
+            },
+            {
+                "final_answer": "There are 2 campaigns, and Birthday Message was returned by the live API.",
+                "used_pass_ids": ["sql_1", "api_1"],
+                "claimed_facts": [
+                    {"claim": "There are 2 campaigns.", "supporting_pass_ids": ["sql_1"]},
+                    {"claim": "Birthday Message was returned by the live API.", "supporting_pass_ids": ["api_1"]},
+                ],
+                "caveats_included": [],
+            },
+        ],
+    )
+    api_client = RecordingAPIClient()
+
+    result = AgentExecutor(tiny_project, api_client=api_client).run(
+        "For my review, count campaigns locally and verify the live schemas API result.",
+        strategy=ROBUST_V2,
+        query_id="v2_parallel_sql_api_answer",
+    )
+
+    assert [row["type"] for row in result["tool_results"]] == ["sql", "api"]
+    assert result["final_answer"] == "There are 2 campaigns, and Birthday Message was returned by the live API."
+    assert "checkpoint_llm_final_answer_composer" in _checkpoint_names(result)
+    final = _checkpoint_output(result, "checkpoint_18_final_answer")
+    assert final["llm_owned_final_answer"] is True
+    assert final["used_pass_ids"]["items"] == ["sql_1", "api_1"]
 
 
 def test_v2_malformed_api_request_can_repair_without_backend_rewrite(tiny_project, monkeypatch):
@@ -232,6 +297,12 @@ def test_v2_malformed_api_request_can_repair_without_backend_rewrite(tiny_projec
                 "sql": None,
                 "api_request": {"method": "GET", "path": "/data/foundation/schemaregistry/tenant/schemas", "params": {}},
                 "reason": "repair to safe request",
+            },
+            {
+                "final_answer": "The live API returned Birthday Message.",
+                "used_pass_ids": ["api_1"],
+                "claimed_facts": [{"claim": "Birthday Message was returned by the live API.", "supporting_pass_ids": ["api_1"]}],
+                "caveats_included": [],
             },
         ],
     )
@@ -265,7 +336,13 @@ def test_v2_llm_owned_path_does_not_run_backend_semantic_or_template_planners(ti
                 "sql": {"query": "SELECT name FROM dim_campaign ORDER BY campaign_id", "params": []},
                 "api_request": None,
                 "reason": "llm owns SQL",
-            }
+            },
+            {
+                "final_answer": "Campaigns: Birthday Message; Welcome Journey.",
+                "used_pass_ids": ["sql_1"],
+                "claimed_facts": [{"claim": "Birthday Message and Welcome Journey were returned.", "supporting_pass_ids": ["sql_1"]}],
+                "caveats_included": [],
+            },
         ],
     )
 
@@ -278,6 +355,12 @@ def test_v2_llm_owned_path_does_not_run_backend_semantic_or_template_planners(ti
     assert "checkpoint_05_query_analysis" not in checkpoint_names
     assert "checkpoint_08_candidate_plans" not in checkpoint_names
     assert "checkpoint_progressive_evidence_policy" not in checkpoint_names
+    assert "checkpoint_evidence_grounded_answer_builder" not in checkpoint_names
+    assert "checkpoint_broad_question_classifier" not in checkpoint_names
+    assert "checkpoint_answer_intent_router" not in checkpoint_names
+    assert "checkpoint_hybrid_answer_composer" not in checkpoint_names
+    assert "checkpoint_answer_candidate_selector" not in checkpoint_names
+    assert "checkpoint_llm_final_answer_composer" in checkpoint_names
     summary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
     assert summary["llm_owned_generation"] is True
     assert "sql_gate_passed" in summary
@@ -296,7 +379,13 @@ def test_v2_planner_trace_excludes_gold_oracle_and_expected_trace(tiny_project, 
                 "sql": {"query": "SELECT COUNT(*) AS count FROM dim_campaign", "params": []},
                 "api_request": None,
                 "reason": "runtime only",
-            }
+            },
+            {
+                "final_answer": "There are 2 campaigns.",
+                "used_pass_ids": ["sql_1"],
+                "claimed_facts": [{"claim": "There are 2 campaigns.", "supporting_pass_ids": ["sql_1"]}],
+                "caveats_included": [],
+            },
         ],
     )
 
@@ -305,6 +394,7 @@ def test_v2_planner_trace_excludes_gold_oracle_and_expected_trace(tiny_project, 
     inspected = [
         _checkpoint_output(result, "checkpoint_llm_unified_planner"),
         _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary"),
+        _checkpoint_output(result, "checkpoint_llm_final_answer_composer"),
     ]
     serialized = json.dumps(inspected, default=str).lower()
     assert "gold_answer" not in serialized

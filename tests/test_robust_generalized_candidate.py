@@ -87,6 +87,7 @@ class SequencedLLMClient:
 def _install_v2_llm_plans(monkeypatch: pytest.MonkeyPatch, responses: list[dict]) -> SequencedLLMClient:
     client = SequencedLLMClient(responses)
     monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+    monkeypatch.setattr("dashagent.llm_final_answer_composer.get_llm_client", lambda: client)
     return client
 
 
@@ -201,7 +202,13 @@ def test_robust_v2_runs_llm_owned_planner_and_evidence_checkpoints(tiny_project:
                 "sql": {"query": "SELECT name, status FROM dim_campaign ORDER BY campaign_id", "params": []},
                 "api_request": None,
                 "reason": "LLM-owned data evidence",
-            }
+            },
+            {
+                "final_answer": "Inactive journeys: Birthday Message (draft); Welcome Journey (published).",
+                "used_pass_ids": ["sql_1"],
+                "claimed_facts": [{"claim": "Birthday Message and Welcome Journey were returned.", "supporting_pass_ids": ["sql_1"]}],
+                "caveats_included": [],
+            },
         ],
     )
     result = AgentExecutor(tiny_project).run(
@@ -217,9 +224,10 @@ def test_robust_v2_runs_llm_owned_planner_and_evidence_checkpoints(tiny_project:
     assert "checkpoint_llm_owned_generation_boundary" in checkpoint_names
     assert "checkpoint_00_prompt_router" not in checkpoint_names
     assert "checkpoint_progressive_evidence_policy" not in checkpoint_names
-    assert "checkpoint_broad_question_classifier" in checkpoint_names
-    assert "checkpoint_answer_intent_router" in checkpoint_names
-    assert "checkpoint_hybrid_answer_composer" in checkpoint_names
+    assert "checkpoint_broad_question_classifier" not in checkpoint_names
+    assert "checkpoint_answer_intent_router" not in checkpoint_names
+    assert "checkpoint_hybrid_answer_composer" not in checkpoint_names
+    assert "checkpoint_llm_final_answer_composer" in checkpoint_names
     boundary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
     assert boundary["llm_owned_generation"] is True
     assert "sql_gate_passed" in boundary
@@ -363,7 +371,13 @@ def test_robust_v2_mixed_prompt_still_uses_evidence_bus(tiny_project: Config, mo
                 "sql": {"query": "SELECT name, status FROM dim_campaign ORDER BY campaign_id", "params": []},
                 "api_request": None,
                 "reason": "mixed prompt needs data evidence",
-            }
+            },
+            {
+                "final_answer": "An inactive journey is not currently running. Journeys: Birthday Message (draft); Welcome Journey (published).",
+                "used_pass_ids": ["sql_1"],
+                "claimed_facts": [{"claim": "Birthday Message and Welcome Journey were returned.", "supporting_pass_ids": ["sql_1"]}],
+                "caveats_included": [],
+            },
         ],
     )
     result = AgentExecutor(tiny_project).run(
@@ -376,9 +390,11 @@ def test_robust_v2_mixed_prompt_still_uses_evidence_bus(tiny_project: Config, mo
     boundary = _checkpoint_output(result, "checkpoint_evidence_pipeline_boundary")
     assert boundary["evidence_pipeline_bypassed"] is False
     assert boundary["evidence_bus_built"] is True
+    assert boundary["post_evidence_answer_router_ran"] is False
     assert "checkpoint_14_evidence_bus" in _checkpoint_names(result)
-    assert "checkpoint_broad_question_classifier" in _checkpoint_names(result)
-    assert "checkpoint_hybrid_answer_composer" in _checkpoint_names(result)
+    assert "checkpoint_broad_question_classifier" not in _checkpoint_names(result)
+    assert "checkpoint_hybrid_answer_composer" not in _checkpoint_names(result)
+    assert "checkpoint_llm_final_answer_composer" in _checkpoint_names(result)
 
 
 def test_robust_v2_ambiguous_data_like_prompt_still_uses_evidence_bus(tiny_project: Config, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -392,7 +408,13 @@ def test_robust_v2_ambiguous_data_like_prompt_still_uses_evidence_bus(tiny_proje
                 "sql": {"query": "SELECT name FROM dim_campaign ORDER BY campaign_id", "params": []},
                 "api_request": None,
                 "reason": "ambiguous user-specific data",
-            }
+            },
+            {
+                "final_answer": "Schemas returned by the local evidence: Birthday Message; Welcome Journey.",
+                "used_pass_ids": ["sql_1"],
+                "claimed_facts": [{"claim": "Birthday Message and Welcome Journey were returned.", "supporting_pass_ids": ["sql_1"]}],
+                "caveats_included": [],
+            },
         ],
     )
     result = AgentExecutor(tiny_project).run(
@@ -405,7 +427,9 @@ def test_robust_v2_ambiguous_data_like_prompt_still_uses_evidence_bus(tiny_proje
     boundary = _checkpoint_output(result, "checkpoint_evidence_pipeline_boundary")
     assert boundary["evidence_pipeline_bypassed"] is False
     assert boundary["evidence_bus_built"] is True
+    assert boundary["post_evidence_answer_router_ran"] is False
     assert "checkpoint_14_evidence_bus" in _checkpoint_names(result)
+    assert "checkpoint_llm_final_answer_composer" in _checkpoint_names(result)
 
 
 def test_sql_first_strategy_does_not_use_research_evidence_bypass(tiny_project: Config) -> None:
@@ -458,7 +482,13 @@ def test_robust_v2_post_sql_local_snapshot_count_skips_optional_api(tiny_project
                 "sql": {"query": "SELECT COUNT(*) AS count FROM dim_campaign", "params": []},
                 "api_request": None,
                 "reason": "local SQL count only",
-            }
+            },
+            {
+                "final_answer": "There are 2 schema records in the local snapshot.",
+                "used_pass_ids": ["sql_1"],
+                "claimed_facts": [{"claim": "There are 2 schema records in the local snapshot.", "supporting_pass_ids": ["sql_1"]}],
+                "caveats_included": [],
+            },
         ],
     )
     client = CountingAPIClient()
@@ -487,7 +517,13 @@ def test_robust_v2_live_platform_count_preserves_api_or_caveats(tiny_project: Co
                 "sql": None,
                 "api_request": {"method": "GET", "path": "/data/foundation/schemaregistry/tenant/schemas", "params": {}},
                 "reason": "live platform count requires API evidence",
-            }
+            },
+            {
+                "final_answer": "The live API returned 1 schema.",
+                "used_pass_ids": ["api_1"],
+                "claimed_facts": [{"claim": "The live API returned 1 schema.", "supporting_pass_ids": ["api_1"]}],
+                "caveats_included": [],
+            },
         ],
     )
     client = CountingAPIClient()

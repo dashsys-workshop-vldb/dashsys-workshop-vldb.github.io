@@ -80,6 +80,13 @@ from .pre_evidence_routing_boundary import should_bypass_evidence_for_llm_direct
 from .query_normalizer import normalize_query
 from .query_tokens import extract_query_tokens
 from .llm_sql_generator import generate_sql_with_llm, repair_sql_with_llm
+from .llm_final_answer_composer import (
+    build_llm_final_answer_card,
+    check_final_answer_semantic_grounding,
+    check_final_answer_syntax,
+    compose_llm_final_answer,
+    safe_llm_final_answer_fallback,
+)
 from .llm_unified_planner import LLMUnifiedPlan, run_llm_unified_planner
 from .query_decomposer import decompose_query
 from .query_family_examples import examples_for_family, few_shot_public_overlap_check
@@ -1640,7 +1647,8 @@ class AgentExecutor:
         evidence_boundary_payload = {
             "evidence_pipeline_bypassed": False,
             "evidence_bus_built": True,
-            "post_evidence_answer_router_ran": bool(self.config.enable_hybrid_answer_composer),
+            "post_evidence_answer_router_ran": False,
+            "llm_final_answer_composer_ran": True,
             "llm_route": plan.route,
             "llm_evidence_order": plan.evidence_order,
         }
@@ -1678,175 +1686,167 @@ class AgentExecutor:
             correctness_role="prevents API_ERROR as no-data and LIVE_EMPTY as global absence",
             efficiency_role="uses existing payloads only",
         )
-        legacy_answer_result = synthesize_answer_with_diagnostics(query, tool_results)
         slots = extract_answer_slots(query, tool_results)
-        grounded = build_evidence_grounded_answer(
-            query,
-            tool_results,
-            slots=slots,
+        runtime_passes = _runtime_passes_from_tool_results(tool_results)
+        answer_card = build_llm_final_answer_card(
+            user_prompt=query,
+            llm_plan=plan,
+            runtime_passes=runtime_passes,
+            evidence_bus=evidence_bus,
+            answer_slots=slots,
             evidence_quality=evidence_quality,
-            api_required=any(item.get("type") == "api" for item in tool_results),
         )
-        checkpoint_logger.add_checkpoint(
-            "checkpoint_evidence_grounded_answer_builder",
-            stage="answer synthesis",
-            technique="EvidenceBus-centered grounded answer builder",
-            input_summary={"tool_result_count": len(tool_results)},
-            output=grounded.to_dict(),
-            effect="builds an answer from runtime evidence slots only",
-            correctness_role="does not use LLM-provided direct answers in evidence mode",
-            efficiency_role="uses no extra SQL/API calls",
-        )
-        broad_question_decision = None
-        hybrid_result = None
-        if self.config.enable_hybrid_answer_composer:
-            if self.config.enable_broad_question_classifier:
-                broad_question_decision = classify_broad_question(
-                    query,
-                    slots=slots,
-                    evidence_bus=evidence_bus,
-                    evidence_quality=evidence_quality,
-                )
-                checkpoint_logger.add_checkpoint(
-                    "checkpoint_broad_question_classifier",
-                    stage="answer selection",
-                    technique="post-evidence broad-question classifier",
-                    input_summary={"slot_counts": slots.compact()},
-                    output=broad_question_decision.to_dict(),
-                    effect="runs only after evidence exists in V2 evidence mode",
-                    correctness_role="keeps mixed/data answer composition evidence-grounded",
-                    efficiency_role="does not affect SQL/API generation",
-                )
-            hybrid_result = compose_hybrid_answer(
-                query,
-                slots=slots,
-                evidence_bus=evidence_bus,
-                evidence_quality=evidence_quality,
-                answer_card=grounded,
-                legacy_answer=legacy_answer_result.answer,
-            )
-            checkpoint_logger.add_checkpoint(
-                "checkpoint_answer_intent_router",
-                stage="answer selection",
-                technique="post-evidence answer mode router",
-                input_summary={"slot_counts": slots.compact()},
-                output=hybrid_result.intent.to_dict(),
-                effect="selects final answer mode after runtime evidence exists",
-                correctness_role="keeps data rendering bounded by EvidenceBus and AnswerSlots",
-                efficiency_role="does not plan SQL/API",
-            )
-            checkpoint_logger.add_checkpoint(
-                "checkpoint_hybrid_answer_composer",
-                stage="answer selection",
-                technique="hybrid answer composer",
-                input_summary={"answer_intent": hybrid_result.intent.answer_intent, "answer_mode": hybrid_result.intent.answer_mode},
-                output=hybrid_result.to_dict(),
-                effect="combines bounded concept wording with grounded data rendering only after evidence",
-                correctness_role="falls back to legacy-safe rendering when uncertain",
-                efficiency_role="uses existing answer module",
-            )
-            checkpoint_logger.add_checkpoint(
-                "checkpoint_final_answer_verifier",
-                stage="answer verification",
-                technique="evidence-grounded final answer verifier",
-                input_summary={"selected_source": hybrid_result.selected_source},
-                output=hybrid_result.verification.to_dict(),
-                effect="blocks unsupported hard claims in selected final answer",
-                correctness_role="preserves unsupported-claims target",
-                efficiency_role="uses compact answer slots",
-            )
-            answer_result = AnswerResult(
-                answer=hybrid_result.final_answer,
-                diagnostics={
-                    **legacy_answer_result.diagnostics,
-                    "evidence_grounded_answer_builder": grounded.to_dict(),
-                    "broad_question_classifier": broad_question_decision.to_dict() if broad_question_decision else None,
-                    "hybrid_answer_composer": hybrid_result.to_dict(),
-                    "selected_candidate_type": hybrid_result.selected_source,
-                    "selected_answer_source": hybrid_result.selected_source,
-                    "selection_reason": "V2 LLM-owned evidence path selected verified post-evidence answer.",
-                    "candidate_count": 2,
-                },
-            )
-        else:
-            selection = select_answer_candidate(
-                prompt=query,
-                slots=slots,
-                evidence_bus=evidence_bus,
-                llm_answer=None,
-                llm_verification=None,
-                legacy_answer=legacy_answer_result.answer,
-                grounded_answer=grounded.answer,
-            )
-            checkpoint_logger.add_checkpoint(
-                "checkpoint_answer_candidate_selector",
-                stage="answer selection",
-                technique="runtime evidence coverage answer selection",
-                input_summary={"candidate_count": len(selection.candidates), "unsupported_claims": selection.unsupported_claims},
-                output=selection.to_dict(),
-                effect="selects the safest answer from same-evidence candidates",
-                correctness_role="does not use evaluator-only fields",
-                efficiency_role="uses no extra SQL/API calls",
-            )
-            answer_result = AnswerResult(
-                answer=selection.selected_answer,
-                diagnostics={
-                    **legacy_answer_result.diagnostics,
-                    "evidence_grounded_answer_builder": grounded.to_dict(),
-                    "answer_candidate_selector": selection.to_dict(),
-                    "selected_candidate_type": selection.selected_source,
-                    "selected_answer_source": selection.selected_source,
-                    "selection_reason": "V2 LLM-owned evidence path selected verified post-evidence answer.",
-                    "candidate_count": len(selection.candidates),
-                },
-            )
-        final_answer = answer_result.answer
-        intent = classify_answer_intent(query, slots)
-        claims = extract_claims(final_answer)
-        verification = verify_answer(final_answer, slots)
         checkpoint_logger.add_checkpoint(
             "checkpoint_15_answer_slots",
             stage="answer synthesis",
             technique="structured answer slot extraction",
             input_summary={"tool_result_count": len(tool_results)},
             output={
-                "answer_intent": str(intent),
                 "slots": slots.compact(),
-                "missing_slots": answer_result.diagnostics.get("completeness_missing_fields", []),
                 "discrepancy_flags": {"sql_api_discrepancy": slots.discrepancy},
                 "dry_run_flags": {"dry_run": slots.dry_run},
             },
             effect="turns runtime evidence into typed answer fields",
-            correctness_role="keeps final answer grounded after V2 LLM-owned planning",
+            correctness_role="provides runtime facts to the LLM-owned final answer composer",
             efficiency_role="uses existing slot extraction",
         )
+        candidate = compose_llm_final_answer(card=answer_card)
         checkpoint_logger.add_checkpoint(
-            "checkpoint_16_answer_verification",
-            stage="answer verification",
-            technique="claim verification / groundedness checking",
-            input_summary={"claim_count": len(claims), "slots_present": slots.slots_present()},
-            output={
-                "supported_claims_count": max(0, len(claims) - verification.unsupported_count),
-                "unsupported_claims_count": verification.unsupported_count,
-                "verifier_passed": verification.ok,
-                "errors": verification.errors[:5],
-                "warnings": verification.warnings[:5],
-            },
-            effect="checks selected answer against runtime evidence",
-            correctness_role="blocks unsupported facts",
+            "checkpoint_llm_final_answer_composer",
+            stage="llm-owned answer synthesis",
+            technique="LLMFinalAnswerComposer",
+            input_summary={"runtime_pass_count": len(runtime_passes), "slot_counts": slots.compact()},
+            output=candidate.to_dict(),
+            effect="lets the LLM own final answer composition from runtime evidence",
+            correctness_role="backend does not render deterministic templates or select competing answers",
+            efficiency_role="uses one final-answer LLM call after evidence execution",
+        )
+        syntax_gate = check_final_answer_syntax(candidate)
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_llm_final_answer_syntax_gate",
+            stage="answer gate",
+            technique="minimal final-answer syntax gate",
+            input_summary={"composer": "LLMFinalAnswerComposer"},
+            output=syntax_gate.to_dict(),
+            effect="checks only answer existence and wrapper serialization",
+            correctness_role="does not rewrite, shorten, or score the answer",
+            efficiency_role="no SQL/API calls",
+        )
+        if syntax_gate.passed:
+            semantic_gate = check_final_answer_semantic_grounding(
+                syntax_gate.final_answer or "",
+                question=query,
+                runtime_passes=runtime_passes,
+                evidence_bus=evidence_bus,
+                slots=slots,
+            )
+        else:
+            semantic_gate = None
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_llm_final_answer_semantic_gate",
+            stage="answer gate",
+            technique="runtime-evidence semantic grounding gate",
+            input_summary={"syntax_gate_passed": syntax_gate.passed},
+            output=semantic_gate.to_dict() if semantic_gate is not None else {"passed": False, "error_type": "syntax_gate_failed"},
+            effect="checks whether LLM final answer claims are supported by runtime evidence",
+            correctness_role="blocks unsupported facts, missing requested facts, and scope/caveat errors without generating an answer",
+            efficiency_role="no SQL/API calls",
+        )
+        answer_repair_attempts = 0
+        final_candidate = candidate
+        final_syntax_gate = syntax_gate
+        final_semantic_gate = semantic_gate
+        if not syntax_gate.passed or semantic_gate is None or not semantic_gate.passed:
+            repair_context = {
+                "syntax_gate": syntax_gate.to_dict(),
+                "semantic_gate": semantic_gate.to_dict() if semantic_gate is not None else None,
+                "previous_candidate": candidate.to_dict(),
+            }
+            repaired = compose_llm_final_answer(card=answer_card, repair_context=repair_context)
+            answer_repair_attempts = 1
+            repaired_syntax = check_final_answer_syntax(repaired)
+            if repaired_syntax.passed:
+                repaired_semantic = check_final_answer_semantic_grounding(
+                    repaired_syntax.final_answer or "",
+                    question=query,
+                    runtime_passes=runtime_passes,
+                    evidence_bus=evidence_bus,
+                    slots=slots,
+                )
+            else:
+                repaired_semantic = None
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_llm_final_answer_repair",
+                stage="llm-owned answer repair",
+                technique="single LLM-owned final answer repair",
+                input_summary={"failed_syntax": not syntax_gate.passed, "failed_semantic": semantic_gate is not None and not semantic_gate.passed},
+                output={
+                    "candidate": repaired.to_dict(),
+                    "syntax_gate": repaired_syntax.to_dict(),
+                    "semantic_gate": repaired_semantic.to_dict() if repaired_semantic is not None else {"passed": False, "error_type": "syntax_gate_failed"},
+                },
+                effect="returns gate errors to the LLM once; backend does not repair the answer itself",
+                correctness_role="preserves LLM ownership while enforcing evidence boundaries",
+                efficiency_role="caps answer repair to one LLM call",
+            )
+            if repaired_syntax.passed and repaired_semantic is not None and repaired_semantic.passed:
+                final_candidate = repaired
+                final_syntax_gate = repaired_syntax
+                final_semantic_gate = repaired_semantic
+        final_answer_supported = bool(final_syntax_gate.passed and final_semantic_gate is not None and final_semantic_gate.passed)
+        final_answer = (
+            final_syntax_gate.final_answer
+            if final_answer_supported and final_syntax_gate.final_answer is not None
+            else safe_llm_final_answer_fallback(runtime_passes, syntax_gate=final_syntax_gate, semantic_gate=final_semantic_gate)
+        )
+        answer_diagnostics = {
+            "llm_owned_final_answer": True,
+            "answer_composer_used": "LLMFinalAnswerComposer",
+            "answer_syntax_gate_passed": bool(final_syntax_gate.passed),
+            "answer_semantic_gate_passed": bool(final_semantic_gate.passed) if final_semantic_gate is not None else False,
+            "answer_repair_attempts": answer_repair_attempts,
+            "used_pass_ids": final_candidate.used_pass_ids,
+            "final_answer_supported_by_evidence": final_answer_supported,
+            "hidden_eval_gold_used": False,
+            "deterministic_answer_template_used": False,
+            "syntax_gate": final_syntax_gate.to_dict(),
+            "semantic_gate": final_semantic_gate.to_dict() if final_semantic_gate is not None else None,
+        }
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_llm_owned_final_answer_boundary",
+            stage="answer ownership boundary",
+            technique="LLM-owned final answer with backend gates",
+            input_summary={"runtime_pass_count": len(runtime_passes)},
+            output=answer_diagnostics,
+            effect="records that V2 did not use deterministic answer templates, renderers, or selectors as competing generators",
+            correctness_role="keeps backend responsible only for syntax/semantic gates after LLM answer generation",
             efficiency_role="no extra tool calls",
         )
         checkpoint_logger.add_checkpoint(
             "checkpoint_18_final_answer",
             stage="final response",
-            technique="grounded final response",
-            input_summary={"verifier_passed": verification.ok},
-            output={"final_answer": final_answer, "answer_length": len(final_answer), "final_token_estimate": estimate_tokens(final_answer)},
-            effect="returns final answer after evidence grounding",
-            correctness_role="does not use LLM direct answer in evidence mode",
-            efficiency_role="keeps response concise",
+            technique="LLM-owned final response",
+            input_summary={"answer_semantic_gate_passed": final_answer_supported},
+            output={
+                "final_answer": final_answer,
+                "answer_length": len(final_answer),
+                "final_token_estimate": estimate_tokens(final_answer),
+                "llm_owned_final_answer": True,
+                "answer_composer_used": "LLMFinalAnswerComposer",
+                "answer_syntax_gate_passed": bool(final_syntax_gate.passed),
+                "answer_semantic_gate_passed": bool(final_semantic_gate.passed) if final_semantic_gate is not None else False,
+                "answer_repair_attempts": answer_repair_attempts,
+                "used_pass_ids": final_candidate.used_pass_ids,
+                "final_answer_supported_by_evidence": final_answer_supported,
+                "hidden_eval_gold_used": False,
+                "deterministic_answer_template_used": False,
+            },
+            effect="returns the LLM-composed answer when gates pass, otherwise a safe evidence-state fallback",
+            correctness_role="keeps final answer generation LLM-owned while preserving runtime evidence grounding",
+            efficiency_role="no additional SQL/API calls",
         )
-        trajectory.add_step("answer_diagnostics", answer_result.diagnostics)
+        trajectory.add_step("llm_final_answer_composer", final_candidate.to_dict())
+        trajectory.add_step("answer_diagnostics", answer_diagnostics)
         trajectory.set_timing("answer_time", time.perf_counter() - answer_start)
         trajectory.set_checkpoints(checkpoint_logger.to_list())
         trajectory_payload = trajectory.finish(final_answer)
@@ -3492,6 +3492,70 @@ def _blocked_api_tool_result(gate_result: APIRequestGateResult) -> dict[str, Any
             "api_request_gate": gate_result.to_dict(),
         },
     }
+
+
+def _runtime_passes_from_tool_results(tool_results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    passes: list[dict[str, Any]] = []
+    counters = {"sql": 0, "api": 0}
+    for item in tool_results:
+        kind = str(item.get("type") or "").lower()
+        if kind not in counters:
+            continue
+        counters[kind] += 1
+        payload = item.get("payload") if isinstance(item.get("payload"), dict) else {}
+        step = item.get("step") if isinstance(item.get("step"), dict) else {}
+        if kind == "sql":
+            rows = payload.get("rows") if isinstance(payload.get("rows"), list) else []
+            status = "SUCCESS" if payload.get("ok") and rows else ("EMPTY" if payload.get("ok") else "ERROR")
+            result = {
+                "sql": step.get("sql") or payload.get("sql"),
+                "row_count": payload.get("row_count", len(rows)),
+                "rows": rows[:5],
+                "compile_gate": payload.get("compile_gate"),
+                "error": payload.get("error"),
+            }
+            caveats = [str(payload.get("error"))] if payload.get("error") else []
+            passes.append(
+                {
+                    "pass_id": f"sql_{counters[kind]}",
+                    "source": "SQL",
+                    "status": status,
+                    "scope": "LOCAL_SNAPSHOT",
+                    "result": result,
+                    "caveats": caveats,
+                }
+            )
+        else:
+            parsed = payload.get("parsed_evidence") if isinstance(payload.get("parsed_evidence"), dict) else {}
+            evidence_state = str(parsed.get("evidence_state") or "").lower()
+            if not payload.get("ok") or evidence_state in {"api_error", "malformed_response"}:
+                status = "API_ERROR"
+            elif "empty" in evidence_state:
+                status = "LIVE_EMPTY"
+            else:
+                status = "SUCCESS"
+            error = payload.get("error") or "; ".join(str(value) for value in parsed.get("errors", [])[:3]) if isinstance(parsed.get("errors"), list) else payload.get("error")
+            result = {
+                "method": step.get("method"),
+                "url": step.get("url"),
+                "params": step.get("params") if isinstance(step.get("params"), dict) else {},
+                "parsed_evidence": parsed,
+                "result_preview": payload.get("result_preview"),
+                "api_request_gate": payload.get("api_request_gate"),
+                "error": error,
+            }
+            caveats = [str(error)] if error else []
+            passes.append(
+                {
+                    "pass_id": f"api_{counters[kind]}",
+                    "source": "API",
+                    "status": status,
+                    "scope": "LIVE_API",
+                    "result": result,
+                    "caveats": caveats,
+                }
+            )
+    return passes
 
 
 def _is_compact_experiment_output(output_dir: Path, outputs_dir: Path) -> bool:
