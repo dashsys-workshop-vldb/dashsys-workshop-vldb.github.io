@@ -177,6 +177,7 @@ def test_v2_failed_sql_compile_error_is_returned_to_llm_repair_loop(tiny_project
     repaired_gate = _checkpoint_output(result, "checkpoint_llm_owned_sql_compile_gate_repair")
     assert repaired_gate["passed"] is True
     summary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
+    assert summary["sql_gate_passed"] is True
     assert summary["sql_repair_attempts"] == 1
 
 
@@ -249,6 +250,7 @@ def test_v2_malformed_api_request_can_repair_without_backend_rewrite(tiny_projec
     assert repair_gate["passed"] is True
     assert api_client.calls == [("GET", "/data/foundation/schemaregistry/tenant/schemas", {})]
     summary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
+    assert summary["api_gate_passed"] is True
     assert summary["api_repair_attempts"] == 1
 
 
@@ -278,6 +280,8 @@ def test_v2_llm_owned_path_does_not_run_backend_semantic_or_template_planners(ti
     assert "checkpoint_progressive_evidence_policy" not in checkpoint_names
     summary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
     assert summary["llm_owned_generation"] is True
+    assert "sql_gate_passed" in summary
+    assert "api_gate_passed" in summary
     assert summary["backend_semantic_planning_used"] is False
 
 

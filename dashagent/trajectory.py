@@ -110,11 +110,26 @@ IMPORTANT_PREVIEW_KEYS = [
     "hint_application_mode",
     "normalization_actions",
     "applied_to_runtime",
+    "llm_owned_generation",
+    "llm_route",
+    "llm_evidence_order",
+    "sql_gate_passed",
+    "api_gate_passed",
+    "sql_repair_attempts",
+    "api_repair_attempts",
+    "backend_semantic_planning_used",
     "would_change_route",
     "would_change_domain",
     "would_change_intent",
     "sdk_path_used",
 ]
+
+PRESERVE_NULL_PREVIEW_KEYS = {
+    "sql_gate_passed",
+    "api_gate_passed",
+    "sql_compile_gate_passed",
+    "api_request_gate_passed",
+}
 
 
 def compact_preview(obj: Any, max_chars: int = 1000) -> Any:
@@ -143,7 +158,7 @@ def structural_preview(obj: Any) -> Any:
                 continue
             if key in {"original_sql", "sql"} and ("row_count" in obj or "rows" in obj):
                 continue
-            if value in ({}, [], None, ""):
+            if value in ({}, [], "") or (value is None and key not in PRESERVE_NULL_PREVIEW_KEYS):
                 continue
             if len(compact) >= 8:
                 compact["truncated_fields"] = max(0, len(obj) - len(compact))

@@ -222,6 +222,8 @@ def test_robust_v2_runs_llm_owned_planner_and_evidence_checkpoints(tiny_project:
     assert "checkpoint_hybrid_answer_composer" in checkpoint_names
     boundary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
     assert boundary["llm_owned_generation"] is True
+    assert "sql_gate_passed" in boundary
+    assert "api_gate_passed" in boundary
     assert boundary["backend_semantic_planning_used"] is False
 
 

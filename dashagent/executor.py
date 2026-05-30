@@ -1898,6 +1898,8 @@ class AgentExecutor:
             "llm_owned_generation": True,
             "llm_route": plan.route,
             "llm_evidence_order": plan.evidence_order,
+            "sql_gate_passed": None,
+            "api_gate_passed": None,
             "backend_semantic_planning_used": False,
             "sql_compile_gate_passed": None,
             "api_request_gate_passed": None,
@@ -1982,6 +1984,8 @@ class AgentExecutor:
         plan = initial_plan
         tool_results: list[dict[str, Any]] = []
         summary: dict[str, Any] = {
+            "sql_gate_passed": None,
+            "api_gate_passed": None,
             "sql_compile_gate_passed": None,
             "api_request_gate_passed": None,
             "sql_repair_attempts": 0,
@@ -2025,6 +2029,7 @@ class AgentExecutor:
         if candidate is None:
             return None, plan
         compile_result = self.sql_compile_gate.check(candidate.query, candidate.params)
+        summary["sql_gate_passed"] = compile_result.passed
         summary["sql_compile_gate_passed"] = compile_result.passed
         checkpoint_logger.add_checkpoint(
             "checkpoint_llm_owned_sql_compile_gate",
@@ -2057,6 +2062,7 @@ class AgentExecutor:
             if repair_plan.sql is None:
                 return _blocked_sql_tool_result(candidate.query, candidate.params, compile_result), repair_plan
             repaired_compile = self.sql_compile_gate.check(repair_plan.sql.query, repair_plan.sql.params)
+            summary["sql_gate_passed"] = repaired_compile.passed
             summary["sql_compile_gate_passed"] = repaired_compile.passed
             checkpoint_logger.add_checkpoint(
                 "checkpoint_llm_owned_sql_compile_gate_repair",
@@ -2097,6 +2103,7 @@ class AgentExecutor:
         if request is None:
             return None, plan
         gate_result = self.api_request_gate.check(request)
+        summary["api_gate_passed"] = gate_result.passed
         summary["api_request_gate_passed"] = gate_result.passed
         checkpoint_logger.add_checkpoint(
             "checkpoint_llm_owned_api_request_gate",
@@ -2129,6 +2136,7 @@ class AgentExecutor:
             if repair_plan.api_request is None:
                 return _blocked_api_tool_result(gate_result), repair_plan
             repaired_gate = self.api_request_gate.check(repair_plan.api_request)
+            summary["api_gate_passed"] = repaired_gate.passed
             summary["api_request_gate_passed"] = repaired_gate.passed
             checkpoint_logger.add_checkpoint(
                 "checkpoint_llm_owned_api_request_gate_repair",
