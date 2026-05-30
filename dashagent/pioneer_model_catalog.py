@@ -8,7 +8,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Callable
 
-from .pioneer_model_sweep import DEFAULT_PIONEER_MODEL_SWEEP
+from .pioneer_model_sweep import DEFAULT_PIONEER_MODEL_SWEEP, GPT_LIGHT_BASELINE_CANDIDATES
 from .trajectory import redact_secrets
 
 
@@ -106,13 +106,21 @@ def discover_pioneer_model_catalog(
                 if key not in seen:
                     seen.add(key)
                     records.append(record)
-    suggestion = suggest_pioneer_model_id_map(DEFAULT_PIONEER_MODEL_SWEEP, records)
+    suggestion = suggest_pioneer_model_id_map(desired_pioneer_model_mapping_names(), records)
     return {
         "endpoint_results": endpoint_results,
         "records": records,
         "decoder_or_inference_model_count": len(records),
         "mapping_suggestion": suggestion,
     }
+
+
+def desired_pioneer_model_mapping_names() -> list[str]:
+    desired: list[str] = []
+    for name in [*GPT_LIGHT_BASELINE_CANDIDATES, *DEFAULT_PIONEER_MODEL_SWEEP]:
+        if name not in desired:
+            desired.append(name)
+    return desired
 
 
 def extract_catalog_records(payload: Any, *, source: str) -> list[dict[str, Any]]:

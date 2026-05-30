@@ -9,6 +9,7 @@ from dashagent.pioneer_model_sweep import (
     DEFAULT_PIONEER_MODEL_GROUPS,
     DEFAULT_PIONEER_MODEL_SWEEP,
     EXCLUDED_DEFAULT_PIONEER_MODELS,
+    GPT_LIGHT_BASELINE_CANDIDATES,
     PIONEER_SWEEP_PROMPTS,
     parse_pioneer_model_sweep,
     run_pioneer_model_sweep,
@@ -20,7 +21,7 @@ from dashagent.pre_evidence_routing_boundary import should_bypass_evidence_for_l
 
 def test_default_pioneer_model_sweep_is_exact_selected_set() -> None:
     assert DEFAULT_PIONEER_MODEL_SWEEP == [
-        "Gpt 4o",
+        "Gpt 4o Mini",
         "Claude Haiku 4.5",
         "DeepSeek V4 Flash",
         "Qwen3 4B Instruct 2507",
@@ -29,7 +30,9 @@ def test_default_pioneer_model_sweep_is_exact_selected_set() -> None:
         "Gemma 4 E4B It",
     ]
     assert DEFAULT_PIONEER_MODEL_GROUPS == {
-        "Gpt 4o": "gpt_baseline",
+        "Gpt 4o Mini": "gpt_light_baseline",
+        "Gpt 4.1 Mini": "gpt_light_baseline_fallback",
+        "Gpt 4.1 Nano": "gpt_light_baseline_fallback",
         "Claude Haiku 4.5": "anthropic_fast_small",
         "DeepSeek V4 Flash": "deepseek_cheap_fast",
         "Qwen3 4B Instruct 2507": "qwen_small_instruct",
@@ -41,7 +44,16 @@ def test_default_pioneer_model_sweep_is_exact_selected_set() -> None:
 
 def test_default_pioneer_model_sweep_includes_only_one_gpt_model() -> None:
     gpt_models = [model for model in DEFAULT_PIONEER_MODEL_SWEEP if model.lower().startswith("gpt")]
-    assert gpt_models == ["Gpt 4o"]
+    assert gpt_models == ["Gpt 4o Mini"]
+    assert "Gpt 4o" not in DEFAULT_PIONEER_MODEL_SWEEP
+
+
+def test_gpt_light_fallback_order_is_preferred_order() -> None:
+    assert GPT_LIGHT_BASELINE_CANDIDATES == [
+        "Gpt 4o Mini",
+        "Gpt 4.1 Mini",
+        "Gpt 4.1 Nano",
+    ]
 
 
 def test_excluded_gpt_and_frontier_models_are_not_in_default_sweep() -> None:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 
 import pytest
@@ -59,6 +60,34 @@ class CountingAPIClient:
             },
             "result_preview": {"items": [{"id": "tag-1", "name": "VIP"}]},
         }
+
+
+class SequencedLLMClient:
+    def __init__(self, responses: list[dict]) -> None:
+        self.responses = list(responses)
+
+    def available(self):
+        return True
+
+    def provider_name(self):
+        return "fake_llm"
+
+    def model_name(self):
+        return "fake-model"
+
+    def generate(self, system_prompt, user_prompt, tools=None):
+        if not self.responses:
+            raise AssertionError("Fake LLM called more times than expected")
+        return {"ok": True, "provider": self.provider_name(), "model": self.model_name(), "content": json.dumps(self.responses.pop(0))}
+
+    def generate_messages(self, messages, tools=None, tool_choice=None, parallel_tool_calls=None):
+        return self.generate(messages[0]["content"], messages[-1]["content"], tools=tools)
+
+
+def _install_v2_llm_plans(monkeypatch: pytest.MonkeyPatch, responses: list[dict]) -> SequencedLLMClient:
+    client = SequencedLLMClient(responses)
+    monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+    return client
 
 
 def _sql_then_optional_api_plan(query, routing, metadata, strategy, analysis=None):
@@ -161,7 +190,20 @@ def test_robust_v2_strategy_is_explicit_research_planner_not_sql_first(tiny_proj
     assert cfg.real_behavior_trial_mode == ROBUST_V2
 
 
-def test_robust_v2_runs_generalized_planner_and_progressive_checkpoints(tiny_project: Config) -> None:
+def test_robust_v2_runs_llm_owned_planner_and_evidence_checkpoints(tiny_project: Config, monkeypatch: pytest.MonkeyPatch) -> None:
+    _install_v2_llm_plans(
+        monkeypatch,
+        [
+            {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "SQL_FIRST",
+                "direct_answer": None,
+                "sql": {"query": "SELECT name, status FROM dim_campaign ORDER BY campaign_id", "params": []},
+                "api_request": None,
+                "reason": "LLM-owned data evidence",
+            }
+        ],
+    )
     result = AgentExecutor(tiny_project).run(
         "Show inactive journeys.",
         strategy=ROBUST_V2,
@@ -171,21 +213,40 @@ def test_robust_v2_runs_generalized_planner_and_progressive_checkpoints(tiny_pro
     assert result["plan"]["strategy"] == ROBUST_V2
     assert any(row["type"] in {"sql", "api"} for row in result["tool_results"])
     checkpoint_names = {checkpoint["checkpoint_id"] for checkpoint in result["checkpoints"]}
-    assert "checkpoint_semantic_parse" in checkpoint_names
-    assert "checkpoint_progressive_evidence_policy" in checkpoint_names
-    assert "checkpoint_staged_evidence_acquisition" in checkpoint_names
+    assert "checkpoint_llm_unified_planner" in checkpoint_names
+    assert "checkpoint_llm_owned_generation_boundary" in checkpoint_names
+    assert "checkpoint_00_prompt_router" not in checkpoint_names
+    assert "checkpoint_progressive_evidence_policy" not in checkpoint_names
     assert "checkpoint_broad_question_classifier" in checkpoint_names
     assert "checkpoint_answer_intent_router" in checkpoint_names
     assert "checkpoint_hybrid_answer_composer" in checkpoint_names
-    progressive = next(
-        checkpoint["output"]
-        for checkpoint in result["checkpoints"]
-        if checkpoint["checkpoint_id"] == "checkpoint_progressive_evidence_policy"
+    boundary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
+    assert boundary["llm_owned_generation"] is True
+    assert boundary["backend_semantic_planning_used"] is False
+
+
+def test_robust_v2_safe_conceptual_and_meta_prompts_can_no_tool(tiny_project: Config, monkeypatch: pytest.MonkeyPatch) -> None:
+    _install_v2_llm_plans(
+        monkeypatch,
+        [
+            {
+                "route": "LLM_DIRECT",
+                "evidence_order": "NO_EVIDENCE",
+                "direct_answer": "Schemas define data structure and field meaning.",
+                "sql": None,
+                "api_request": None,
+                "reason": "concept",
+            },
+            {
+                "route": "LLM_DIRECT",
+                "evidence_order": "NO_EVIDENCE",
+                "direct_answer": "Here, list means to present items in a sequence.",
+                "sql": None,
+                "api_request": None,
+                "reason": "meta-language",
+            },
+        ],
     )
-    assert progressive["entry_action"] == "EVIDENCE_PIPELINE"
-
-
-def test_robust_v2_safe_conceptual_and_meta_prompts_can_no_tool(tiny_project: Config) -> None:
     conceptual = AgentExecutor(tiny_project).run(
         "List three reasons why schemas matter.",
         strategy=ROBUST_V2,
@@ -194,8 +255,8 @@ def test_robust_v2_safe_conceptual_and_meta_prompts_can_no_tool(tiny_project: Co
     assert conceptual["tool_results"] == []
     conceptual_boundary = _checkpoint_output(conceptual, "checkpoint_evidence_pipeline_bypass")
     assert conceptual_boundary["evidence_pipeline_bypassed"] is True
-    assert conceptual_boundary["bypass_reason"] == "high_confidence_llm_direct_no_evidence_required"
-    assert conceptual_boundary["pre_evidence_route"] in {"LLM_DIRECT", "LLM_SAFE_DIRECT"}
+    assert conceptual_boundary["bypass_reason"] == "llm_owned_direct_no_evidence_required"
+    assert conceptual_boundary["pre_evidence_route"] == "LLM_DIRECT"
     assert conceptual_boundary["post_evidence_answer_router_ran"] is False
     assert conceptual_boundary["evidence_bus_built"] is False
     _assert_post_evidence_answer_router_not_run(conceptual)
@@ -216,7 +277,20 @@ def test_robust_v2_safe_conceptual_and_meta_prompts_can_no_tool(tiny_project: Co
     assert "current schemas" not in meta["final_answer"].lower()
 
 
-def test_robust_v2_pure_schema_concept_bypasses_evidence_bus(tiny_project: Config) -> None:
+def test_robust_v2_pure_schema_concept_bypasses_evidence_bus(tiny_project: Config, monkeypatch: pytest.MonkeyPatch) -> None:
+    _install_v2_llm_plans(
+        monkeypatch,
+        [
+            {
+                "route": "LLM_DIRECT",
+                "evidence_order": "NO_EVIDENCE",
+                "direct_answer": "A schema defines the structure and meaning of data fields.",
+                "sql": None,
+                "api_request": None,
+                "reason": "concept",
+            }
+        ],
+    )
     result = AgentExecutor(tiny_project).run(
         "What is a schema?",
         strategy=ROBUST_V2,
@@ -226,7 +300,7 @@ def test_robust_v2_pure_schema_concept_bypasses_evidence_bus(tiny_project: Confi
     assert result["tool_results"] == []
     boundary = _checkpoint_output(result, "checkpoint_evidence_pipeline_bypass")
     assert boundary["evidence_pipeline_bypassed"] is True
-    assert boundary["pre_evidence_route"] in {"LLM_DIRECT", "LLM_SAFE_DIRECT"}
+    assert boundary["pre_evidence_route"] == "LLM_DIRECT"
     assert boundary["post_evidence_answer_router_ran"] is False
     assert boundary["evidence_bus_built"] is False
     _assert_post_evidence_answer_router_not_run(result)
@@ -276,7 +350,20 @@ def test_pre_evidence_bypass_requires_pure_no_evidence_semantic_parse() -> None:
     )
 
 
-def test_robust_v2_mixed_prompt_still_uses_evidence_bus(tiny_project: Config) -> None:
+def test_robust_v2_mixed_prompt_still_uses_evidence_bus(tiny_project: Config, monkeypatch: pytest.MonkeyPatch) -> None:
+    _install_v2_llm_plans(
+        monkeypatch,
+        [
+            {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "SQL_FIRST",
+                "direct_answer": None,
+                "sql": {"query": "SELECT name, status FROM dim_campaign ORDER BY campaign_id", "params": []},
+                "api_request": None,
+                "reason": "mixed prompt needs data evidence",
+            }
+        ],
+    )
     result = AgentExecutor(tiny_project).run(
         "Explain what inactive journey means and show inactive journeys.",
         strategy=ROBUST_V2,
@@ -292,7 +379,20 @@ def test_robust_v2_mixed_prompt_still_uses_evidence_bus(tiny_project: Config) ->
     assert "checkpoint_hybrid_answer_composer" in _checkpoint_names(result)
 
 
-def test_robust_v2_ambiguous_data_like_prompt_still_uses_evidence_bus(tiny_project: Config) -> None:
+def test_robust_v2_ambiguous_data_like_prompt_still_uses_evidence_bus(tiny_project: Config, monkeypatch: pytest.MonkeyPatch) -> None:
+    _install_v2_llm_plans(
+        monkeypatch,
+        [
+            {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "SQL_FIRST",
+                "direct_answer": None,
+                "sql": {"query": "SELECT name FROM dim_campaign ORDER BY campaign_id", "params": []},
+                "api_request": None,
+                "reason": "ambiguous user-specific data",
+            }
+        ],
+    )
     result = AgentExecutor(tiny_project).run(
         "What schemas do I have?",
         strategy=ROBUST_V2,
@@ -317,7 +417,20 @@ def test_sql_first_strategy_does_not_use_research_evidence_bypass(tiny_project: 
     assert result["strategy"] == "SQL_FIRST_API_VERIFY"
 
 
-def test_robust_v2_evidence_bypass_trace_has_no_gold_or_oracle_fields(tiny_project: Config) -> None:
+def test_robust_v2_evidence_bypass_trace_has_no_gold_or_oracle_fields(tiny_project: Config, monkeypatch: pytest.MonkeyPatch) -> None:
+    _install_v2_llm_plans(
+        monkeypatch,
+        [
+            {
+                "route": "LLM_DIRECT",
+                "evidence_order": "NO_EVIDENCE",
+                "direct_answer": "A schema defines data structure.",
+                "sql": None,
+                "api_request": None,
+                "reason": "concept",
+            }
+        ],
+    )
     result = AgentExecutor(tiny_project).run(
         "What is a schema?",
         strategy=ROBUST_V2,
@@ -332,10 +445,22 @@ def test_robust_v2_evidence_bypass_trace_has_no_gold_or_oracle_fields(tiny_proje
     assert "category" not in serialized
 
 
-def test_robust_v2_post_sql_local_snapshot_count_skips_optional_api(tiny_project: Config) -> None:
+def test_robust_v2_post_sql_local_snapshot_count_skips_optional_api(tiny_project: Config, monkeypatch: pytest.MonkeyPatch) -> None:
+    _install_v2_llm_plans(
+        monkeypatch,
+        [
+            {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "SQL_FIRST",
+                "direct_answer": None,
+                "sql": {"query": "SELECT COUNT(*) AS count FROM dim_campaign", "params": []},
+                "api_request": None,
+                "reason": "local SQL count only",
+            }
+        ],
+    )
     client = CountingAPIClient()
     executor = AgentExecutor(tiny_project, api_client=client)
-    executor.planner.create_plan = _sql_count_then_optional_schema_api_plan
 
     result = executor.run(
         "How many schema records are in the local snapshot?",
@@ -349,10 +474,22 @@ def test_robust_v2_post_sql_local_snapshot_count_skips_optional_api(tiny_project
     assert "local snapshot" in result["final_answer"].lower()
 
 
-def test_robust_v2_live_platform_count_preserves_api_or_caveats(tiny_project: Config) -> None:
+def test_robust_v2_live_platform_count_preserves_api_or_caveats(tiny_project: Config, monkeypatch: pytest.MonkeyPatch) -> None:
+    _install_v2_llm_plans(
+        monkeypatch,
+        [
+            {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "API_FIRST",
+                "direct_answer": None,
+                "sql": None,
+                "api_request": {"method": "GET", "path": "/data/foundation/schemaregistry/tenant/schemas", "params": {}},
+                "reason": "live platform count requires API evidence",
+            }
+        ],
+    )
     client = CountingAPIClient()
     executor = AgentExecutor(tiny_project, api_client=client)
-    executor.planner.create_plan = _sql_count_then_optional_schema_api_plan
 
     result = executor.run(
         "How many current schemas are in Adobe Experience Platform?",
@@ -363,12 +500,10 @@ def test_robust_v2_live_platform_count_preserves_api_or_caveats(tiny_project: Co
     assert result["plan"]["strategy"] == ROBUST_V2
     assert any(row["type"] == "api" for row in result["tool_results"])
     assert client.calls
-    execution_verifier = next(
-        checkpoint["output"]
-        for checkpoint in result["checkpoints"]
-        if checkpoint["checkpoint_id"] == "checkpoint_post_sql_execution_verifier"
-    )
-    assert execution_verifier["final_action"] in {"CALL_API", "CAVEAT_ONLY"}
+    api_gate = _checkpoint_output(result, "checkpoint_llm_owned_api_request_gate")
+    assert api_gate["passed"] is True
+    boundary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
+    assert boundary["backend_semantic_planning_used"] is False
 
 
 def test_objective_features_cover_candidate_required_cues() -> None:

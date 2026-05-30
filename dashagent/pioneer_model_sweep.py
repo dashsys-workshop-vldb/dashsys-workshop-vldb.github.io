@@ -14,8 +14,14 @@ from .llm_client import PioneerChatLLMClient
 from .trajectory import redact_secrets
 
 
+GPT_LIGHT_BASELINE_CANDIDATES = [
+    "Gpt 4o Mini",
+    "Gpt 4.1 Mini",
+    "Gpt 4.1 Nano",
+]
+
 DEFAULT_PIONEER_MODEL_SWEEP = [
-    "Gpt 4o",
+    "Gpt 4o Mini",
     "Claude Haiku 4.5",
     "DeepSeek V4 Flash",
     "Qwen3 4B Instruct 2507",
@@ -25,7 +31,9 @@ DEFAULT_PIONEER_MODEL_SWEEP = [
 ]
 
 DEFAULT_PIONEER_MODEL_GROUPS = {
-    "Gpt 4o": "gpt_baseline",
+    "Gpt 4o Mini": "gpt_light_baseline",
+    "Gpt 4.1 Mini": "gpt_light_baseline_fallback",
+    "Gpt 4.1 Nano": "gpt_light_baseline_fallback",
     "Claude Haiku 4.5": "anthropic_fast_small",
     "DeepSeek V4 Flash": "deepseek_cheap_fast",
     "Qwen3 4B Instruct 2507": "qwen_small_instruct",
@@ -35,6 +43,7 @@ DEFAULT_PIONEER_MODEL_GROUPS = {
 }
 
 EXCLUDED_DEFAULT_PIONEER_MODELS = {
+    "Gpt 4o",
     "Gpt 4.1",
     "Gpt 4.1 Mini",
     "Gpt 4.1 Nano",

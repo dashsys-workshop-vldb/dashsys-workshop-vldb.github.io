@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import signal
 import shutil
 import subprocess
 import time
@@ -11,6 +12,7 @@ from typing import Any, Callable
 from .config import Config
 from .pioneer_model_sweep import (
     DEFAULT_PIONEER_MODEL_SWEEP,
+    GPT_LIGHT_BASELINE_CANDIDATES,
     parse_pioneer_model_id_map,
     parse_pioneer_model_sweep,
     run_pioneer_model_sweep,
@@ -22,7 +24,9 @@ from .trajectory import SECRET_KEYS, SECRET_LIKE_RE
 
 
 DEFAULT_SELECTED_MODEL_ID_MAP = {
-    "Gpt 4o": "gpt-4o",
+    "Gpt 4o Mini": "gpt-4o-mini",
+    "Gpt 4.1 Mini": "gpt-4.1-mini",
+    "Gpt 4.1 Nano": "gpt-4.1-nano",
     "Claude Haiku 4.5": "claude-haiku-4-5",
     "DeepSeek V4 Flash": "deepseek-ai/DeepSeek-V4-Flash",
     "Qwen3 4B Instruct 2507": "Qwen/Qwen3-4B-Instruct-2507",
@@ -133,6 +137,7 @@ def run_pioneer_model_full_benchmark(
     smoke_runner = focused_smoke_runner or run_pioneer_model_sweep
     runner = command_runner or _run_subprocess_command
     manifest = _write_command_manifest(destination, command_plan)
+    selected_models, gpt_light_selection = _select_gpt_light_baseline(selected_models, probe)
 
     results: list[dict[str, Any]] = []
     for model in selected_models:
@@ -148,7 +153,7 @@ def run_pioneer_model_full_benchmark(
             )
         )
 
-    summary = _summary_payload(results, manifest)
+    summary = _summary_payload(results, manifest, gpt_light_selection)
     summary_json = destination / "pioneer_model_full_benchmark_summary.json"
     summary_md = destination / "pioneer_model_full_benchmark_summary.md"
     summary_json.write_text(json.dumps(_redact_benchmark(summary), indent=2, sort_keys=True, default=str), encoding="utf-8")
@@ -252,6 +257,89 @@ def _run_one_model_full_benchmark(
         }
         _write_per_model(report_dir, result)
         return result
+
+
+def _select_gpt_light_baseline(models: list[str], availability_probe: AvailabilityProbe) -> tuple[list[str], dict[str, Any]]:
+    selected = list(models)
+    legacy_gpt_present = "Gpt 4o" in selected
+    present_candidates = [model for model in GPT_LIGHT_BASELINE_CANDIDATES if model in selected]
+    if not present_candidates and not legacy_gpt_present:
+        return selected, {
+            "enabled": False,
+            "reason": "no_gpt_light_candidate_in_selected_models",
+            "preferred_model": GPT_LIGHT_BASELINE_CANDIDATES[0],
+            "selected_model": None,
+            "fallback_needed": False,
+            "attempts": [],
+            "old_removed_model": "Gpt 4o",
+            "old_removed_reason": "Pioneer returned provider/auth unavailable for gpt-4o in the previous benchmark.",
+        }
+
+    first_index_values = [selected.index(model) for model in present_candidates]
+    if legacy_gpt_present:
+        first_index_values.append(selected.index("Gpt 4o"))
+    first_index = min(first_index_values)
+    first_candidate = present_candidates[0] if present_candidates else GPT_LIGHT_BASELINE_CANDIDATES[0]
+    start_index = GPT_LIGHT_BASELINE_CANDIDATES.index(first_candidate)
+    attempts: list[dict[str, Any]] = []
+    selected_candidate: str | None = None
+    for candidate in GPT_LIGHT_BASELINE_CANDIDATES[start_index:]:
+        model_id = resolve_pioneer_model_id(candidate)
+        try:
+            availability = _call_availability_probe_with_timeout(availability_probe, model_id)
+        except Exception as exc:
+            availability = {"available": False, "error": f"{type(exc).__name__}: {exc}", "model": model_id}
+        attempt = {
+            "display_name": candidate,
+            "model_id": model_id,
+            "available": bool(availability.get("available")),
+            "error_category": availability.get("error_category"),
+            "error": availability.get("error"),
+        }
+        attempts.append(_redact_benchmark(attempt))
+        if attempt["available"]:
+            selected_candidate = candidate
+            break
+
+    without_gpt_candidates = [model for model in selected if model not in GPT_LIGHT_BASELINE_CANDIDATES and model != "Gpt 4o"]
+    resolved = without_gpt_candidates[:]
+    if selected_candidate is not None:
+        resolved.insert(first_index, selected_candidate)
+    return resolved, {
+        "enabled": True,
+        "preferred_model": GPT_LIGHT_BASELINE_CANDIDATES[0],
+        "fallback_order": list(GPT_LIGHT_BASELINE_CANDIDATES),
+        "selected_model": selected_candidate,
+        "selected_model_id": resolve_pioneer_model_id(selected_candidate) if selected_candidate else None,
+        "fallback_needed": selected_candidate != first_candidate,
+        "all_gpt_light_candidates_unavailable": selected_candidate is None,
+        "legacy_model_replaced": legacy_gpt_present,
+        "attempts": attempts,
+        "old_removed_model": "Gpt 4o",
+        "old_removed_reason": "Pioneer returned provider/auth unavailable for gpt-4o in the previous benchmark.",
+    }
+
+
+class _ProbeTimeout(RuntimeError):
+    pass
+
+
+def _call_availability_probe_with_timeout(availability_probe: AvailabilityProbe, model_id: str) -> dict[str, Any]:
+    timeout_sec = int(os.getenv("PIONEER_GPT_FALLBACK_PROBE_TIMEOUT_SEC", "45"))
+    if timeout_sec <= 0 or signal.getsignal(signal.SIGALRM) is None:
+        return availability_probe(model_id)
+    previous_handler = signal.getsignal(signal.SIGALRM)
+
+    def _handle_timeout(signum, frame):  # noqa: ANN001 - signal handler signature.
+        raise _ProbeTimeout(f"availability probe timed out after {timeout_sec}s")
+
+    try:
+        signal.signal(signal.SIGALRM, _handle_timeout)
+        signal.alarm(timeout_sec)
+        return availability_probe(model_id)
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, previous_handler)
 
 
 def _model_env(model: str, model_id: str, model_outputs: Path) -> dict[str, str]:
@@ -492,11 +580,12 @@ def _write_command_manifest(report_dir: Path, commands: list[dict[str, Any]]) ->
     return path
 
 
-def _summary_payload(model_results: list[dict[str, Any]], manifest: Path) -> dict[str, Any]:
+def _summary_payload(model_results: list[dict[str, Any]], manifest: Path, gpt_light_selection: dict[str, Any] | None = None) -> dict[str, Any]:
     return {
         "purpose": "This benchmark verifies cross-model stability of the V2 system, not model selection or optimization.",
         "model_major_semantics_confirmed": True,
         "default_model_sweep": list(DEFAULT_PIONEER_MODEL_SWEEP),
+        "gpt_light_baseline_selection": gpt_light_selection or {},
         "benchmark_command_manifest": str(manifest),
         "models": model_results,
         "cross_model_conclusion": _cross_model_conclusion(model_results),
@@ -539,11 +628,53 @@ def _summary_markdown(summary: dict[str, Any]) -> str:
         "",
         "Each callable model runs the complete benchmark suite before the runner switches to the next model. No per-prompt model rotation is used.",
         "",
-        "## Model Availability",
+        "## GPT-Light Baseline Selection",
         "",
-        "| Display Name | Model ID | Available | Error |",
-        "| --- | --- | ---: | --- |",
     ]
+    selection = summary.get("gpt_light_baseline_selection") or {}
+    if selection.get("enabled"):
+        preferred = selection.get("preferred_model")
+        selected = selection.get("selected_model")
+        if selection.get("all_gpt_light_candidates_unavailable"):
+            lines.extend(
+                [
+                    f"- Old baseline removed: {selection.get('old_removed_model')} ({selection.get('old_removed_reason')})",
+                    f"- {preferred} unavailable.",
+                    "- No GPT-light fallback candidate was callable; GPT baseline omitted from this run.",
+                ]
+            )
+        elif selection.get("fallback_needed"):
+            lines.extend(
+                [
+                    f"- Old baseline removed: {selection.get('old_removed_model')} ({selection.get('old_removed_reason')})",
+                    f"- {preferred} unavailable.",
+                    f"- Fallback selected: {selected}",
+                ]
+            )
+        else:
+            lines.extend(
+                [
+                    f"- Old baseline removed: {selection.get('old_removed_model')} ({selection.get('old_removed_reason')})",
+                    f"- New GPT-light baseline selected: {selected}",
+                    f"- {preferred} callable: {selected == preferred}",
+                ]
+            )
+        lines.extend(["", "| Candidate | Model ID | Available | Error |", "| --- | --- | ---: | --- |"])
+        for attempt in selection.get("attempts") or []:
+            lines.append(
+                f"| {attempt.get('display_name')} | `{attempt.get('model_id')}` | {bool(attempt.get('available'))} | {attempt.get('error_category') or attempt.get('error') or ''} |"
+            )
+    else:
+        lines.append(f"- GPT-light fallback not applied: {selection.get('reason') or 'not configured'}")
+    lines.extend(
+        [
+            "",
+            "## Model Availability",
+            "",
+            "| Display Name | Model ID | Available | Error |",
+            "| --- | --- | ---: | --- |",
+        ]
+    )
     for row in summary.get("models", []):
         availability = row.get("availability") or {}
         lines.append(

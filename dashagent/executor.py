@@ -11,6 +11,7 @@ from .answer_claims import extract_claims
 from .answer_intent import classify_answer_intent
 from .answer_candidate_selector import select_answer_candidate
 from .answer_slots import extract_answer_slots
+from .api_request_gate import APIRequestGate, APIRequestGateResult
 from .api_templates import find_api_templates
 from .answer_shape import propose_answer_shape_candidate
 from .answer_synthesizer import AnswerResult, synthesize_answer_with_diagnostics
@@ -79,6 +80,7 @@ from .pre_evidence_routing_boundary import should_bypass_evidence_for_llm_direct
 from .query_normalizer import normalize_query
 from .query_tokens import extract_query_tokens
 from .llm_sql_generator import generate_sql_with_llm, repair_sql_with_llm
+from .llm_unified_planner import LLMUnifiedPlan, run_llm_unified_planner
 from .query_decomposer import decompose_query
 from .query_family_examples import examples_for_family, few_shot_public_overlap_check
 from .query_analysis import analyze_query
@@ -103,6 +105,7 @@ from .post_sql_llm_decision import run_post_sql_llm_first_decision
 from .post_sql_semantic_decision_card import build_post_sql_semantic_decision_card
 from .simple_prompt_gate import decide_simple_prompt
 from .staged_evidence_policy import decide_initial_evidence_branch
+from .sql_compile_gate import SQLCompileGate, SQLCompileGateResult
 from .sql_only_api_skip_guard import should_skip_api_with_sql_evidence
 from .prompt_router import LLM_DIRECT, route_prompt
 from .trajectory import TrajectoryLogger, estimate_tokens
@@ -186,10 +189,12 @@ class AgentExecutor:
         self.metadata_selector = MetadataSelector(self.schema_index, self.endpoint_catalog, self.config)
         self.planner = StrategyPlanner(self.schema_index, self.config)
         self.sql_validator = SQLValidator(self.schema_index, enable_ast_validation=self.config.enable_sql_ast_validation)
+        self.sql_compile_gate = SQLCompileGate(self.db)
         self.api_validator = APIValidator(
             self.endpoint_catalog,
             allow_unknown=self.config.allow_unknown_api_endpoints,
         )
+        self.api_request_gate = APIRequestGate(self.api_validator)
         self.cache_fingerprint = current_fingerprint(self.config)
 
     def run(
@@ -270,6 +275,14 @@ class AgentExecutor:
                 effect="marks candidate runs as real-agent runtime executions without promotion judgment",
                 correctness_role="prevents simulated or gold-visible scores from being treated as runtime evidence",
                 efficiency_role="adds no tool calls",
+            )
+        if strategy == ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2:
+            return self._run_llm_owned_v2(
+                query=query,
+                qid=qid,
+                strategy=strategy,
+                out_dir=out_dir,
+                checkpoint_logger=checkpoint_logger,
             )
         prompt_route = route_prompt(query)
         checkpoint_logger.add_checkpoint(
@@ -1493,6 +1506,703 @@ class AgentExecutor:
             "trajectory": trajectory_payload,
         }
 
+    def _run_llm_owned_v2(
+        self,
+        *,
+        query: str,
+        qid: str,
+        strategy: str,
+        out_dir: Path,
+        checkpoint_logger: CheckpointLogger,
+    ) -> dict[str, Any]:
+        planner_context = self._llm_owned_planner_context()
+        plan = run_llm_unified_planner(
+            user_prompt=query,
+            schema_context=planner_context["schema_context"],
+            endpoint_context=planner_context["endpoint_context"],
+        )
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_llm_unified_planner",
+            stage="llm-owned planning",
+            technique="single unified LLM route/evidence/sql/api planner",
+            input_summary={"query": query},
+            output=plan.to_dict(),
+            effect="lets the LLM own route, evidence order, and SQL/API candidate generation for V2",
+            correctness_role="keeps backend deterministic logic limited to compile/request gates and execution",
+            efficiency_role="uses one compact planner call before any SQL/API execution",
+        )
+
+        metadata = {
+            "query_id": qid,
+            "query": query,
+            "strategy": strategy,
+            "llm_owned_generation": True,
+            "backend_semantic_planning_used": False,
+            "llm_unified_plan": plan.to_dict(),
+            "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
+        }
+        self.metadata_selector.save(metadata, out_dir)
+        filled_prompt = render_system_prompt(self.config, metadata)
+        (out_dir / "filled_system_prompt.txt").write_text(filled_prompt, encoding="utf-8")
+
+        if plan.route == "LLM_DIRECT" and plan.evidence_order == "NO_EVIDENCE":
+            return self._return_llm_owned_direct_result(
+                query=query,
+                qid=qid,
+                strategy=strategy,
+                out_dir=out_dir,
+                metadata=metadata,
+                filled_prompt=filled_prompt,
+                plan=plan,
+                checkpoint_logger=checkpoint_logger,
+            )
+
+        tool_results, execution_summary = self._execute_llm_owned_evidence_plan(
+            query=query,
+            initial_plan=plan,
+            planner_context=planner_context,
+            checkpoint_logger=checkpoint_logger,
+        )
+        boundary_summary = {
+            "llm_owned_generation": True,
+            "llm_route": plan.route,
+            "llm_evidence_order": plan.evidence_order,
+            "backend_semantic_planning_used": False,
+            **execution_summary,
+        }
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_llm_owned_generation_boundary",
+            stage="llm/backend boundary",
+            technique="LLM-owned candidate generation with backend-only gates",
+            input_summary={"route": plan.route, "evidence_order": plan.evidence_order},
+            output=boundary_summary,
+            effect="records that backend did not replace LLM semantic or SQL/API generation",
+            correctness_role="separates LLM ownership from compile/request/runtime safety checks",
+            efficiency_role="bounds repair attempts before execution",
+        )
+
+        evidence_bus = EvidenceBus()
+        for item in tool_results:
+            step_payload = item.get("step") if isinstance(item.get("step"), dict) else {}
+            step = PlanStep(
+                action=str(step_payload.get("action") or item.get("type") or ""),
+                purpose=str(step_payload.get("purpose") or "LLM-owned V2 evidence."),
+                sql=step_payload.get("sql"),
+                method=step_payload.get("method"),
+                url=step_payload.get("url"),
+                params=step_payload.get("params") if isinstance(step_payload.get("params"), dict) else {},
+                headers=step_payload.get("headers") if isinstance(step_payload.get("headers"), dict) else {},
+                allow_full_result=bool(step_payload.get("allow_full_result", True)),
+                family=step_payload.get("family"),
+            )
+            payload = item.get("payload") if isinstance(item.get("payload"), dict) else {}
+            if item.get("type") == "sql":
+                evidence_bus.observe_sql(step, payload)
+            elif item.get("type") == "api":
+                evidence_bus.observe_api(step, payload)
+
+        trajectory = TrajectoryLogger(
+            query_id=qid,
+            original_query=query,
+            strategy=strategy,
+            route_type=plan.route,
+            domain_type="LLM_OWNED_V2",
+            max_preview_chars=self.config.max_preview_chars,
+        )
+        trajectory.add_step("metadata", {"estimated_tokens": estimate_tokens(metadata), "prompt_tokens": estimate_tokens(filled_prompt), "metadata_path": str(out_dir / "metadata.json")})
+        trajectory.add_step("llm_unified_planner", plan.to_dict())
+        for item in tool_results:
+            step_payload = item.get("step") if isinstance(item.get("step"), dict) else {}
+            validation = _validation_result_from_payload(item.get("validation"))
+            payload = item.get("payload") if isinstance(item.get("payload"), dict) else {}
+            if item.get("type") == "sql":
+                trajectory.add_sql_call(str(step_payload.get("sql") or ""), validation, payload)
+            elif item.get("type") == "api":
+                trajectory.add_api_call(
+                    str(step_payload.get("method") or "GET"),
+                    str(step_payload.get("url") or ""),
+                    step_payload.get("params") if isinstance(step_payload.get("params"), dict) else {},
+                    {},
+                    validation,
+                    payload,
+                )
+
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_13_tool_execution",
+            stage="execution",
+            technique="LLM-owned SQL/API tool execution",
+            input_summary={"tool_result_count": len(tool_results)},
+            output=tool_results_execution_summary(tool_results),
+            effect="executes only LLM-proposed candidates that pass backend gates",
+            correctness_role="records runtime evidence or compile/request failures without fabricating data",
+            efficiency_role="does not execute alternative backend-generated candidates",
+        )
+        evidence_boundary_payload = {
+            "evidence_pipeline_bypassed": False,
+            "evidence_bus_built": True,
+            "post_evidence_answer_router_ran": bool(self.config.enable_hybrid_answer_composer),
+            "llm_route": plan.route,
+            "llm_evidence_order": plan.evidence_order,
+        }
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_evidence_pipeline_boundary",
+            stage="evidence forwarding",
+            technique="V2 evidence boundary",
+            input_summary={"tool_result_count": len(tool_results), "strategy": strategy},
+            output=evidence_boundary_payload,
+            effect="records that data/mixed/ambiguous prompts continued into evidence-backed answer grounding",
+            correctness_role="prevents pure direct answer routing from masking evidence-required prompts",
+            efficiency_role="makes EvidenceBus construction explicit",
+        )
+        trajectory.add_step("evidence_boundary", evidence_boundary_payload)
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_14_evidence_bus",
+            stage="evidence forwarding",
+            technique="EvidenceBus",
+            input_summary={"tool_result_count": len(tool_results)},
+            output={"evidence": evidence_bus.compact(), "forwarding_actions": []},
+            effect="forwards executed SQL/API evidence into the existing grounded answer pipeline",
+            correctness_role="keeps exact values and scoped caveats in existing EvidenceBus semantics",
+            efficiency_role="uses collected evidence without extra tool calls",
+        )
+
+        answer_start = time.perf_counter()
+        evidence_quality = classify_evidence_quality(tool_results, api_required=any(item.get("type") == "api" for item in tool_results))
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_evidence_quality_classifier",
+            stage="answer synthesis",
+            technique="SQL/API evidence quality classification",
+            input_summary={"tool_result_count": len(tool_results)},
+            output=evidence_quality,
+            effect="keeps SQL errors, API errors, live empty, and direct evidence distinct",
+            correctness_role="prevents API_ERROR as no-data and LIVE_EMPTY as global absence",
+            efficiency_role="uses existing payloads only",
+        )
+        legacy_answer_result = synthesize_answer_with_diagnostics(query, tool_results)
+        slots = extract_answer_slots(query, tool_results)
+        grounded = build_evidence_grounded_answer(
+            query,
+            tool_results,
+            slots=slots,
+            evidence_quality=evidence_quality,
+            api_required=any(item.get("type") == "api" for item in tool_results),
+        )
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_evidence_grounded_answer_builder",
+            stage="answer synthesis",
+            technique="EvidenceBus-centered grounded answer builder",
+            input_summary={"tool_result_count": len(tool_results)},
+            output=grounded.to_dict(),
+            effect="builds an answer from runtime evidence slots only",
+            correctness_role="does not use LLM-provided direct answers in evidence mode",
+            efficiency_role="uses no extra SQL/API calls",
+        )
+        broad_question_decision = None
+        hybrid_result = None
+        if self.config.enable_hybrid_answer_composer:
+            if self.config.enable_broad_question_classifier:
+                broad_question_decision = classify_broad_question(
+                    query,
+                    slots=slots,
+                    evidence_bus=evidence_bus,
+                    evidence_quality=evidence_quality,
+                )
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_broad_question_classifier",
+                    stage="answer selection",
+                    technique="post-evidence broad-question classifier",
+                    input_summary={"slot_counts": slots.compact()},
+                    output=broad_question_decision.to_dict(),
+                    effect="runs only after evidence exists in V2 evidence mode",
+                    correctness_role="keeps mixed/data answer composition evidence-grounded",
+                    efficiency_role="does not affect SQL/API generation",
+                )
+            hybrid_result = compose_hybrid_answer(
+                query,
+                slots=slots,
+                evidence_bus=evidence_bus,
+                evidence_quality=evidence_quality,
+                answer_card=grounded,
+                legacy_answer=legacy_answer_result.answer,
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_answer_intent_router",
+                stage="answer selection",
+                technique="post-evidence answer mode router",
+                input_summary={"slot_counts": slots.compact()},
+                output=hybrid_result.intent.to_dict(),
+                effect="selects final answer mode after runtime evidence exists",
+                correctness_role="keeps data rendering bounded by EvidenceBus and AnswerSlots",
+                efficiency_role="does not plan SQL/API",
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_hybrid_answer_composer",
+                stage="answer selection",
+                technique="hybrid answer composer",
+                input_summary={"answer_intent": hybrid_result.intent.answer_intent, "answer_mode": hybrid_result.intent.answer_mode},
+                output=hybrid_result.to_dict(),
+                effect="combines bounded concept wording with grounded data rendering only after evidence",
+                correctness_role="falls back to legacy-safe rendering when uncertain",
+                efficiency_role="uses existing answer module",
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_final_answer_verifier",
+                stage="answer verification",
+                technique="evidence-grounded final answer verifier",
+                input_summary={"selected_source": hybrid_result.selected_source},
+                output=hybrid_result.verification.to_dict(),
+                effect="blocks unsupported hard claims in selected final answer",
+                correctness_role="preserves unsupported-claims target",
+                efficiency_role="uses compact answer slots",
+            )
+            answer_result = AnswerResult(
+                answer=hybrid_result.final_answer,
+                diagnostics={
+                    **legacy_answer_result.diagnostics,
+                    "evidence_grounded_answer_builder": grounded.to_dict(),
+                    "broad_question_classifier": broad_question_decision.to_dict() if broad_question_decision else None,
+                    "hybrid_answer_composer": hybrid_result.to_dict(),
+                    "selected_candidate_type": hybrid_result.selected_source,
+                    "selected_answer_source": hybrid_result.selected_source,
+                    "selection_reason": "V2 LLM-owned evidence path selected verified post-evidence answer.",
+                    "candidate_count": 2,
+                },
+            )
+        else:
+            selection = select_answer_candidate(
+                prompt=query,
+                slots=slots,
+                evidence_bus=evidence_bus,
+                llm_answer=None,
+                llm_verification=None,
+                legacy_answer=legacy_answer_result.answer,
+                grounded_answer=grounded.answer,
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_answer_candidate_selector",
+                stage="answer selection",
+                technique="runtime evidence coverage answer selection",
+                input_summary={"candidate_count": len(selection.candidates), "unsupported_claims": selection.unsupported_claims},
+                output=selection.to_dict(),
+                effect="selects the safest answer from same-evidence candidates",
+                correctness_role="does not use evaluator-only fields",
+                efficiency_role="uses no extra SQL/API calls",
+            )
+            answer_result = AnswerResult(
+                answer=selection.selected_answer,
+                diagnostics={
+                    **legacy_answer_result.diagnostics,
+                    "evidence_grounded_answer_builder": grounded.to_dict(),
+                    "answer_candidate_selector": selection.to_dict(),
+                    "selected_candidate_type": selection.selected_source,
+                    "selected_answer_source": selection.selected_source,
+                    "selection_reason": "V2 LLM-owned evidence path selected verified post-evidence answer.",
+                    "candidate_count": len(selection.candidates),
+                },
+            )
+        final_answer = answer_result.answer
+        intent = classify_answer_intent(query, slots)
+        claims = extract_claims(final_answer)
+        verification = verify_answer(final_answer, slots)
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_15_answer_slots",
+            stage="answer synthesis",
+            technique="structured answer slot extraction",
+            input_summary={"tool_result_count": len(tool_results)},
+            output={
+                "answer_intent": str(intent),
+                "slots": slots.compact(),
+                "missing_slots": answer_result.diagnostics.get("completeness_missing_fields", []),
+                "discrepancy_flags": {"sql_api_discrepancy": slots.discrepancy},
+                "dry_run_flags": {"dry_run": slots.dry_run},
+            },
+            effect="turns runtime evidence into typed answer fields",
+            correctness_role="keeps final answer grounded after V2 LLM-owned planning",
+            efficiency_role="uses existing slot extraction",
+        )
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_16_answer_verification",
+            stage="answer verification",
+            technique="claim verification / groundedness checking",
+            input_summary={"claim_count": len(claims), "slots_present": slots.slots_present()},
+            output={
+                "supported_claims_count": max(0, len(claims) - verification.unsupported_count),
+                "unsupported_claims_count": verification.unsupported_count,
+                "verifier_passed": verification.ok,
+                "errors": verification.errors[:5],
+                "warnings": verification.warnings[:5],
+            },
+            effect="checks selected answer against runtime evidence",
+            correctness_role="blocks unsupported facts",
+            efficiency_role="no extra tool calls",
+        )
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_18_final_answer",
+            stage="final response",
+            technique="grounded final response",
+            input_summary={"verifier_passed": verification.ok},
+            output={"final_answer": final_answer, "answer_length": len(final_answer), "final_token_estimate": estimate_tokens(final_answer)},
+            effect="returns final answer after evidence grounding",
+            correctness_role="does not use LLM direct answer in evidence mode",
+            efficiency_role="keeps response concise",
+        )
+        trajectory.add_step("answer_diagnostics", answer_result.diagnostics)
+        trajectory.set_timing("answer_time", time.perf_counter() - answer_start)
+        trajectory.set_checkpoints(checkpoint_logger.to_list())
+        trajectory_payload = trajectory.finish(final_answer)
+        trajectory_path = out_dir / "trajectory.json"
+        trajectory_path.parent.mkdir(parents=True, exist_ok=True)
+        trajectory_path.write_text(json.dumps(trajectory_payload, indent=2, sort_keys=True, default=str), encoding="utf-8")
+        return {
+            "query_id": qid,
+            "query": query,
+            "strategy": strategy,
+            "output_dir": str(out_dir),
+            "metadata": metadata,
+            "plan": self._llm_owned_plan_dict(strategy, plan, tool_results),
+            "tool_results": tool_results,
+            "final_answer": final_answer,
+            "checkpoints": checkpoint_logger.to_list(),
+            "trajectory": trajectory_payload,
+        }
+
+    def _return_llm_owned_direct_result(
+        self,
+        *,
+        query: str,
+        qid: str,
+        strategy: str,
+        out_dir: Path,
+        metadata: dict[str, Any],
+        filled_prompt: str,
+        plan: LLMUnifiedPlan,
+        checkpoint_logger: CheckpointLogger,
+    ) -> dict[str, Any]:
+        final_answer = str(plan.direct_answer or "").strip()
+        if not final_answer:
+            final_answer = "This is a general conceptual question and no runtime evidence was used."
+        safe_check = validate_llm_safe_direct_answer(final_answer)
+        if not safe_check.get("ok"):
+            final_answer = "This is a general conceptual question; no user-specific or live platform records were used."
+            safe_check = validate_llm_safe_direct_answer(final_answer)
+        boundary_payload = {
+            "evidence_pipeline_bypassed": True,
+            "bypass_reason": "llm_owned_direct_no_evidence_required",
+            "pre_evidence_route": plan.route,
+            "llm_route": plan.route,
+            "llm_evidence_order": plan.evidence_order,
+            "post_evidence_answer_router_ran": False,
+            "evidence_bus_built": False,
+        }
+        generation_boundary = {
+            "llm_owned_generation": True,
+            "llm_route": plan.route,
+            "llm_evidence_order": plan.evidence_order,
+            "backend_semantic_planning_used": False,
+            "sql_compile_gate_passed": None,
+            "api_request_gate_passed": None,
+            "sql_repair_attempts": 0,
+            "api_repair_attempts": 0,
+            "evidence_pipeline_bypassed": True,
+        }
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_llm_owned_generation_boundary",
+            stage="llm/backend boundary",
+            technique="LLM-owned direct route",
+            input_summary={"route": plan.route, "evidence_order": plan.evidence_order},
+            output=generation_boundary,
+            effect="records that no backend SQL/API/evidence planning ran for direct V2 answer",
+            correctness_role="keeps direct conceptual answers separate from evidence-grounded data answers",
+            efficiency_role="uses zero SQL/API calls",
+        )
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_evidence_pipeline_bypass",
+            stage="pre-evidence routing",
+            technique="LLM-owned high-confidence direct routing boundary",
+            input_summary={"strategy": strategy},
+            output=boundary_payload,
+            effect="bypasses SQL/API, EvidenceBus, answer slots, and post-evidence answer routing",
+            correctness_role="prevents empty EvidenceBus construction for no-evidence concept/meta answers",
+            efficiency_role="uses no SQL/API calls",
+        )
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_safe_direct_answer_verifier",
+            stage="answer verification",
+            technique="safe-direct answer verifier",
+            input_summary={"llm_route": plan.route},
+            output=safe_check,
+            effect="checks direct answer for unsupported concrete runtime claims",
+            correctness_role="blocks counts, IDs, timestamps, statuses, and live platform claims",
+            efficiency_role="uses no SQL/API calls",
+        )
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_18_final_answer",
+            stage="final response",
+            technique="LLM-owned direct concept answer",
+            output={"final_answer": final_answer, "answer_length": len(final_answer), "final_token_estimate": estimate_tokens(final_answer)},
+            effect="returns the safe direct answer without building evidence artifacts",
+            correctness_role="does not invent SQL/API evidence",
+            efficiency_role="zero tool calls",
+        )
+        trajectory = TrajectoryLogger(
+            query_id=qid,
+            original_query=query,
+            strategy=strategy,
+            route_type=plan.route,
+            domain_type="CONCEPTUAL",
+            max_preview_chars=self.config.max_preview_chars,
+        )
+        trajectory.add_step("metadata", {"estimated_tokens": estimate_tokens(metadata), "prompt_tokens": estimate_tokens(filled_prompt), "metadata_path": str(out_dir / "metadata.json")})
+        trajectory.add_step("llm_unified_planner", plan.to_dict())
+        trajectory.add_step("evidence_boundary", boundary_payload)
+        trajectory.add_step("safe_direct_answer_verifier", safe_check)
+        trajectory.set_checkpoints(checkpoint_logger.to_list())
+        trajectory_payload = trajectory.save(out_dir / "trajectory.json", final_answer)
+        return {
+            "query_id": qid,
+            "query": query,
+            "strategy": strategy,
+            "output_dir": str(out_dir),
+            "metadata": metadata,
+            "plan": self._llm_owned_plan_dict(strategy, plan, []),
+            "tool_results": [],
+            "final_answer": final_answer,
+            "checkpoints": checkpoint_logger.to_list(),
+            "trajectory": trajectory_payload,
+        }
+
+    def _execute_llm_owned_evidence_plan(
+        self,
+        *,
+        query: str,
+        initial_plan: LLMUnifiedPlan,
+        planner_context: dict[str, Any],
+        checkpoint_logger: CheckpointLogger,
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        plan = initial_plan
+        tool_results: list[dict[str, Any]] = []
+        summary: dict[str, Any] = {
+            "sql_compile_gate_passed": None,
+            "api_request_gate_passed": None,
+            "sql_repair_attempts": 0,
+            "api_repair_attempts": 0,
+            "sql_executed": False,
+            "api_executed": False,
+        }
+        for source in self._llm_owned_execution_order(plan):
+            if source == "sql" and plan.sql is not None:
+                result, plan = self._run_llm_owned_sql_candidate(
+                    query=query,
+                    plan=plan,
+                    planner_context=planner_context,
+                    checkpoint_logger=checkpoint_logger,
+                    summary=summary,
+                )
+                if result is not None:
+                    tool_results.append(result)
+            elif source == "api" and plan.api_request is not None:
+                result, plan = self._run_llm_owned_api_candidate(
+                    query=query,
+                    plan=plan,
+                    planner_context=planner_context,
+                    checkpoint_logger=checkpoint_logger,
+                    summary=summary,
+                )
+                if result is not None:
+                    tool_results.append(result)
+        return tool_results, summary
+
+    def _run_llm_owned_sql_candidate(
+        self,
+        *,
+        query: str,
+        plan: LLMUnifiedPlan,
+        planner_context: dict[str, Any],
+        checkpoint_logger: CheckpointLogger,
+        summary: dict[str, Any],
+    ) -> tuple[dict[str, Any] | None, LLMUnifiedPlan]:
+        candidate = plan.sql
+        if candidate is None:
+            return None, plan
+        compile_result = self.sql_compile_gate.check(candidate.query, candidate.params)
+        summary["sql_compile_gate_passed"] = compile_result.passed
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_llm_owned_sql_compile_gate",
+            stage="llm sql compile gate",
+            technique="DuckDB EXPLAIN compile check for LLM-owned SQL",
+            input_summary={"sql": candidate.query},
+            output=compile_result.to_dict(),
+            effect="checks syntax/database-semantic validity without rewriting SQL",
+            correctness_role="returns compile errors for one LLM repair attempt",
+            efficiency_role="prevents executing uncompilable SQL",
+        )
+        if not compile_result.passed:
+            repair_plan = run_llm_unified_planner(
+                user_prompt=query,
+                schema_context=planner_context["schema_context"],
+                endpoint_context=planner_context["endpoint_context"],
+                repair_context={"failed_component": "sql", "compile_gate": compile_result.to_dict(), "previous_plan": plan.to_dict()},
+            )
+            summary["sql_repair_attempts"] = 1
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_llm_owned_sql_repair",
+                stage="llm sql repair",
+                technique="single LLM-owned SQL repair",
+                input_summary={"failed_sql": candidate.query, "error_type": compile_result.error_type},
+                output=repair_plan.to_dict(),
+                effect="lets the LLM repair its SQL after compile feedback",
+                correctness_role="backend supplies only compile error feedback and no replacement SQL",
+                efficiency_role="caps repair to one attempt",
+            )
+            if repair_plan.sql is None:
+                return _blocked_sql_tool_result(candidate.query, candidate.params, compile_result), repair_plan
+            repaired_compile = self.sql_compile_gate.check(repair_plan.sql.query, repair_plan.sql.params)
+            summary["sql_compile_gate_passed"] = repaired_compile.passed
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_llm_owned_sql_compile_gate_repair",
+                stage="llm sql compile gate",
+                technique="DuckDB EXPLAIN compile check for repaired LLM-owned SQL",
+                input_summary={"sql": repair_plan.sql.query},
+                output=repaired_compile.to_dict(),
+                effect="checks the LLM repair without backend mutation",
+                correctness_role="executes repaired SQL only if it compiles",
+                efficiency_role="stops after one repair",
+            )
+            if not repaired_compile.passed:
+                return _blocked_sql_tool_result(repair_plan.sql.query, repair_plan.sql.params, repaired_compile), repair_plan
+            candidate = repair_plan.sql
+            plan = repair_plan
+        payload = self.db.execute_sql(candidate.query, params=candidate.params, allow_full_result=True)
+        summary["sql_executed"] = True
+        validation = ValidationResult(True, warnings=["LLM SQL passed compile gate."], errors=[])
+        step = PlanStep(
+            action="sql",
+            purpose="V2 LLM-owned SQL candidate.",
+            sql=candidate.query,
+            allow_full_result=True,
+            family="llm_owned_v2",
+        )
+        return {"type": "sql", "step": step.to_dict(), "validation": validation.to_dict(), "payload": payload}, plan
+
+    def _run_llm_owned_api_candidate(
+        self,
+        *,
+        query: str,
+        plan: LLMUnifiedPlan,
+        planner_context: dict[str, Any],
+        checkpoint_logger: CheckpointLogger,
+        summary: dict[str, Any],
+    ) -> tuple[dict[str, Any] | None, LLMUnifiedPlan]:
+        request = plan.api_request
+        if request is None:
+            return None, plan
+        gate_result = self.api_request_gate.check(request)
+        summary["api_request_gate_passed"] = gate_result.passed
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_llm_owned_api_request_gate",
+            stage="llm api request gate",
+            technique="safe GET request-shape/catalog gate",
+            input_summary={"method": request.method, "path": request.path},
+            output=gate_result.to_dict(),
+            effect="checks only executable API request shape before runtime execution",
+            correctness_role="blocks unsafe method, unknown endpoint, unresolved path, or malformed params",
+            efficiency_role="prevents invalid API calls without planning endpoints",
+        )
+        if not gate_result.passed:
+            repair_plan = run_llm_unified_planner(
+                user_prompt=query,
+                schema_context=planner_context["schema_context"],
+                endpoint_context=planner_context["endpoint_context"],
+                repair_context={"failed_component": "api_request", "api_request_gate": gate_result.to_dict(), "previous_plan": plan.to_dict()},
+            )
+            summary["api_repair_attempts"] = 1
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_llm_owned_api_request_repair",
+                stage="llm api request repair",
+                technique="single LLM-owned API request repair",
+                input_summary={"failed_api_request": request.to_dict(), "error_type": gate_result.error_type},
+                output=repair_plan.to_dict(),
+                effect="lets the LLM repair request shape after gate feedback",
+                correctness_role="backend supplies only request errors and no replacement endpoint",
+                efficiency_role="caps repair to one attempt",
+            )
+            if repair_plan.api_request is None:
+                return _blocked_api_tool_result(gate_result), repair_plan
+            repaired_gate = self.api_request_gate.check(repair_plan.api_request)
+            summary["api_request_gate_passed"] = repaired_gate.passed
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_llm_owned_api_request_gate_repair",
+                stage="llm api request gate",
+                technique="request gate for repaired LLM-owned API request",
+                input_summary={"method": repair_plan.api_request.method, "path": repair_plan.api_request.path},
+                output=repaired_gate.to_dict(),
+                effect="checks repaired request without backend endpoint replacement",
+                correctness_role="executes repaired request only if it passes",
+                efficiency_role="stops after one repair",
+            )
+            if not repaired_gate.passed:
+                return _blocked_api_tool_result(repaired_gate), repair_plan
+            request = repair_plan.api_request
+            gate_result = repaired_gate
+            plan = repair_plan
+        method = str(gate_result.method or request.method)
+        path = str(gate_result.path or request.path)
+        params = dict(gate_result.params or request.params or {})
+        payload = self.api_client.call_api(method, path, params, {})
+        summary["api_executed"] = True
+        validation = ValidationResult(True, warnings=["LLM API request passed request gate."], errors=[])
+        step = PlanStep(
+            action="api",
+            purpose="V2 LLM-owned API request.",
+            method=method,
+            url=path,
+            params=params,
+            headers={},
+            family="llm_owned_v2",
+        )
+        return {"type": "api", "step": step.to_dict(), "validation": validation.to_dict(), "payload": payload}, plan
+
+    def _llm_owned_execution_order(self, plan: LLMUnifiedPlan) -> list[str]:
+        if plan.evidence_order in {"API_FIRST", "API_THEN_SQL"}:
+            return ["api", "sql"]
+        if plan.evidence_order == "PARALLEL":
+            return ["sql", "api"]
+        return ["sql", "api"]
+
+    def _llm_owned_planner_context(self) -> dict[str, Any]:
+        return {
+            "schema_context": self.db.get_schema_summary(),
+            "endpoint_context": [
+                {
+                    "id": endpoint.get("id"),
+                    "method": endpoint.get("method"),
+                    "path": endpoint.get("path"),
+                    "use_when": endpoint.get("use_when"),
+                    "common_params": endpoint.get("common_params", {}),
+                    "path_params": endpoint.get("path_params", []),
+                    "domains": endpoint.get("domains", []),
+                }
+                for endpoint in self.endpoint_catalog.as_list()
+            ],
+        }
+
+    def _llm_owned_plan_dict(self, strategy: str, plan: LLMUnifiedPlan, tool_results: list[dict[str, Any]]) -> dict[str, Any]:
+        steps: list[dict[str, Any]] = []
+        if plan.sql is not None:
+            steps.append({"action": "sql", "sql": plan.sql.query, "params": plan.sql.params})
+        if plan.api_request is not None:
+            steps.append({"action": "api", **plan.api_request.to_dict()})
+        return {
+            "strategy": strategy,
+            "rationale": plan.reason,
+            "llm_owned_generation": True,
+            "backend_semantic_planning_used": False,
+            "route": plan.route,
+            "evidence_order": plan.evidence_order,
+            "steps": steps,
+            "executed_tool_count": len(tool_results),
+        }
+
     def _compact_context_experiment_candidate(self, *, query: str, strategy: str, output_dir: Path) -> dict[str, Any]:
         if not self.config.enable_compact_context_when_schema_vote_safe:
             return {"active": False, "eligible": False, "reason": "ENABLE_COMPACT_CONTEXT_WHEN_SCHEMA_VOTE_SAFE is off"}
@@ -2569,13 +3279,22 @@ class AgentExecutor:
             correctness_role="blocks destructive SQL and unknown tables/columns",
             efficiency_role="prevents wasted execution on invalid LLM output",
         )
+        validation, compile_result = self._check_llm_sql_compiles(
+            sql,
+            validation,
+            checkpoint_logger,
+            "checkpoint_llm_sql_compile_gate",
+        )
         if sql and not validation.ok and not generation.get("skipped"):
-            repair = repair_sql_with_llm(query, sql, validation.errors, schema_context or {})
+            repair_errors = list(validation.errors)
+            if compile_result and compile_result.error_message and compile_result.error_message not in repair_errors:
+                repair_errors.append(compile_result.error_message)
+            repair = repair_sql_with_llm(query, sql, repair_errors, schema_context or {})
             checkpoint_logger.add_checkpoint(
                 "checkpoint_llm_sql_repair",
                 stage="llm sql repair",
                 technique="one-shot LLM SQL repair",
-                input_summary={"bad_sql": sql, "validation_errors": validation.errors},
+                input_summary={"bad_sql": sql, "validation_errors": repair_errors},
                 output={
                     "ok": repair.get("ok"),
                     "skipped": repair.get("skipped"),
@@ -2589,6 +3308,12 @@ class AgentExecutor:
             if repair.get("ok") and repair.get("sql"):
                 sql = str(repair["sql"])
                 validation = self.sql_validator.validate(sql)
+                validation, _ = self._check_llm_sql_compiles(
+                    sql,
+                    validation,
+                    checkpoint_logger,
+                    "checkpoint_llm_sql_compile_gate_repair",
+                )
 
         if strategy == "CANDIDATE_GUIDED_LLM_SQL" and (not validation.ok or not sql) and not generation.get("skipped"):
             full_context = build_full_schema_context(self.schema_index, self.endpoint_catalog)
@@ -2612,6 +3337,12 @@ class AgentExecutor:
             if full_generation.get("ok") and full_generation.get("sql"):
                 sql = str(full_generation["sql"])
                 validation = self.sql_validator.validate(sql)
+                validation, _ = self._check_llm_sql_compiles(
+                    sql,
+                    validation,
+                    checkpoint_logger,
+                    "checkpoint_llm_sql_compile_gate_fallback",
+                )
 
         if not sql or not validation.ok:
             checkpoint_logger.add_checkpoint(
@@ -2652,10 +3383,107 @@ class AgentExecutor:
             optimizer_actions=[],
         )
 
+    def _check_llm_sql_compiles(
+        self,
+        sql: str,
+        validation: ValidationResult,
+        checkpoint_logger: CheckpointLogger,
+        checkpoint_name: str,
+    ) -> tuple[ValidationResult, SQLCompileGateResult | None]:
+        if not sql or not validation.ok:
+            return validation, None
+        result = self.sql_compile_gate.check(sql)
+        checkpoint_logger.add_checkpoint(
+            checkpoint_name,
+            stage="llm sql compile gate",
+            technique="DuckDB EXPLAIN compile check for LLM-generated SQL",
+            input_summary={"sql": sql},
+            output=result.to_dict(),
+            effect="checks whether the LLM SQL compiles against the actual database schema without mutating it",
+            correctness_role="returns syntax/database-semantic compile errors to the LLM repair loop or fallback path",
+            efficiency_role="prevents execution of SQL that cannot compile",
+        )
+        if result.passed:
+            return validation, result
+        errors = list(validation.errors)
+        message = result.error_message or "SQL failed database compile gate."
+        if message not in errors:
+            errors.append(message)
+        return ValidationResult(False, errors=errors, warnings=list(validation.warnings)), result
+
 
 def slugify(text: str, max_length: int = 48) -> str:
     slug = re.sub(r"[^a-zA-Z0-9]+", "_", text.lower()).strip("_")
     return (slug[:max_length] or "query").strip("_")
+
+
+def _validation_result_from_payload(payload: Any) -> ValidationResult:
+    if isinstance(payload, dict):
+        return ValidationResult(
+            ok=bool(payload.get("ok")),
+            errors=list(payload.get("errors") or []),
+            warnings=list(payload.get("warnings") or []),
+            repaired=bool(payload.get("repaired", False)),
+        )
+    return ValidationResult(False, errors=["Missing validation payload."])
+
+
+def _blocked_sql_tool_result(sql: str, params: list[Any] | None, compile_result: SQLCompileGateResult) -> dict[str, Any]:
+    validation = ValidationResult(
+        False,
+        errors=[compile_result.error_message or "SQL failed compile gate."],
+        warnings=[],
+    )
+    step = PlanStep(
+        action="sql",
+        purpose="Blocked V2 LLM-owned SQL candidate.",
+        sql=sql,
+        allow_full_result=True,
+        family="llm_owned_v2",
+    )
+    return {
+        "type": "sql",
+        "step": step.to_dict(),
+        "validation": validation.to_dict(),
+        "payload": {
+            "ok": False,
+            "sql": sql,
+            "params": list(params) if params is not None else None,
+            "rows": [],
+            "row_count": 0,
+            "limited": False,
+            "error": compile_result.error_message,
+            "compile_gate": compile_result.to_dict(),
+        },
+    }
+
+
+def _blocked_api_tool_result(gate_result: APIRequestGateResult) -> dict[str, Any]:
+    validation = ValidationResult(
+        False,
+        errors=[gate_result.error_message or "API request failed gate."],
+        warnings=[],
+    )
+    step = PlanStep(
+        action="api",
+        purpose="Blocked V2 LLM-owned API request.",
+        method=gate_result.method or "GET",
+        url=gate_result.path or "",
+        params=dict(gate_result.params or {}),
+        headers={},
+        family="llm_owned_v2",
+    )
+    return {
+        "type": "api",
+        "step": step.to_dict(),
+        "validation": validation.to_dict(),
+        "payload": {
+            "ok": False,
+            "dry_run": False,
+            "error": gate_result.error_message,
+            "api_request_gate": gate_result.to_dict(),
+        },
+    }
 
 
 def _is_compact_experiment_output(output_dir: Path, outputs_dir: Path) -> bool:

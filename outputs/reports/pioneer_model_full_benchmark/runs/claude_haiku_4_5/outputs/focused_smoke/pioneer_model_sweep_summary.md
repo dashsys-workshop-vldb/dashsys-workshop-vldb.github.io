@@ -4,7 +4,7 @@ Status: diagnostic_only. This sweep changes only the configured Pioneer LLM mode
 
 ## Default Model Set
 
-- Gpt 4o: gpt_baseline
+- Gpt 4o Mini: gpt_light_baseline
 - Claude Haiku 4.5: anthropic_fast_small
 - DeepSeek V4 Flash: deepseek_cheap_fast
 - Qwen3 4B Instruct 2507: qwen_small_instruct
@@ -16,7 +16,7 @@ Status: diagnostic_only. This sweep changes only the configured Pioneer LLM mode
 
 | Model | Group | Available | Pass | JSON Failures | LLM Direct | Evidence Pipeline | Bypassed | EvidenceBus | no_tool_fp | Unsupported | Latency Sec |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Claude Haiku 4.5 | anthropic_fast_small | True | True | 0 | 2 | 4 | 2 | 4 | 0 | 0 | 22.1913 |
+| Claude Haiku 4.5 | anthropic_fast_small | True | True | 0 | 2 | 4 | 2 | 4 | 0 | 0 | 23.3051 |
 
 ## Summary Answers
 

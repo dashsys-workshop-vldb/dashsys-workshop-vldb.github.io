@@ -2,7 +2,7 @@
 
 | Strategy | Correctness | Final score | Tool calls | Runtime (s) | Tokens |
 |---|---:|---:|---:|---:|---:|
-| ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 | 0.6606 | 0.6352 | 1.40 | 0.1460 | 888 |
+| ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 | 0.6606 | 0.6352 | 1.40 | 0.1535 | 888 |
 
 - Best correctness: `ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2`
 - Best efficiency: `ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2`
@@ -12,7 +12,7 @@
 
 | Strategy | Metadata tokens | Prompt tokens | Preprocess (s) | Planning (s) | Execution (s) | Answer (s) |
 |---|---:|---:|---:|---:|---:|---:|
-| ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 | 709 | 1318 | 0.00790 | 0.00170 | 0.10340 | 0.00310 |
+| ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 | 709 | 1318 | 0.00900 | 0.00180 | 0.10990 | 0.00320 |
 
 ## Recommended Next Focus
 - Inspect failed examples and add deterministic routing/schema selection rules before adding agent complexity.

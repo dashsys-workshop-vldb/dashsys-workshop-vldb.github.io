@@ -173,6 +173,7 @@ class DuckDBDatabase:
         self,
         sql: str,
         *,
+        params: list[Any] | None = None,
         max_rows: int | None = None,
         allow_full_result: bool = False,
     ) -> dict[str, Any]:
@@ -191,13 +192,14 @@ class DuckDBDatabase:
             executable_sql, max_rows or self.config.max_result_rows, allow_full_result
         )
         try:
-            result = self.conn.execute(effective_sql)
+            result = self.conn.execute(effective_sql, params or None)
             columns = [desc[0] for desc in result.description] if result.description else []
             rows = [dict(zip(columns, row, strict=False)) for row in result.fetchall()]
             return {
                 "ok": True,
                 "sql": effective_sql,
                 "original_sql": sql,
+                "params": list(params) if params is not None else None,
                 "rows": rows,
                 "row_count": len(rows),
                 "limited": limited,
@@ -208,6 +210,7 @@ class DuckDBDatabase:
                 "ok": False,
                 "sql": effective_sql,
                 "original_sql": sql,
+                "params": list(params) if params is not None else None,
                 "rows": [],
                 "row_count": 0,
                 "limited": limited,

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 from dashagent.pioneer_model_catalog import (
+    desired_pioneer_model_mapping_names,
     extract_catalog_records,
     suggest_pioneer_model_id_map,
     write_pioneer_model_catalog_reports,
@@ -78,6 +79,14 @@ def test_mapping_suggestion_keeps_display_name_separate_from_actual_model_id() -
     assert match["display_name"] == "Claude Haiku 4.5"
     assert match["model_id"] == "anthropic/claude-haiku-4-5"
     assert match["confidence"] >= 0.99
+
+
+def test_discovery_desired_names_include_gpt_light_fallback_candidates() -> None:
+    desired = desired_pioneer_model_mapping_names()
+
+    assert desired[:3] == ["Gpt 4o Mini", "Gpt 4.1 Mini", "Gpt 4.1 Nano"]
+    assert "Gpt 4o" not in desired
+    assert len([name for name in desired if name.lower().startswith("gpt")]) == 3
 
 
 def test_low_confidence_mapping_is_not_silently_used() -> None:

@@ -116,7 +116,7 @@
       "checkpoint_17_answer_reranking",
       "checkpoint_18_final_answer"
     ],
-    "estimated_total_tokens": 1192,
+    "estimated_total_tokens": 1196,
     "fallback_count": 2,
     "feature_flags_used": {
       "combined_safe_applied": false,
@@ -466,9 +466,9 @@
         "selection_reason": "Selected intent-aware hybrid answer using runtime AnswerSlots/EvidenceBus only; SQL/API execution path is unchanged by the answer composer."
       },
       "checkpoint_18_final_answer": {
-        "answer_length": 433,
-        "final_answer": "Based on the evidence provided, matching datasets are: AJO Interactive Messaging Profile Dataset, AJO Message Feedback Event Dataset, Journeys, hkg_adls_profile_count_history, weRetail: Customer Actions, AJO STO Summary Dataset, AJO Entity Dataset, AJO Classification Dataset, AJO Push Tracking Experience Event Dataset, and Segment Ingestion Dataset. Live API verification was not executed because Adobe credentials are unavailable.",
-        "final_token_estimate": 86
+        "answer_length": 450,
+        "final_answer": "Based on the evidence provided, matching datasets are: AJO Interactive Messaging Profile Dataset, AJO Message Feedback Event Dataset, Journeys, AJO Live Activities Feedback Event Dataset, hkg_adls_profile_count_history, weRetail: Customer Actions, AJO STO Summary Dataset, AJO Entity Dataset, AJO Classification Dataset, and AJO Push Tracking Experience Event Dataset. Live API verification was not executed because Adobe credentials are unavailable.",
+        "final_token_estimate": 88
       },
       "checkpoint_answer_intent_router": {
         "answer_intent": "STATUS",
@@ -593,7 +593,7 @@
         "truncated": true
       },
       "checkpoint_hybrid_answer_composer": {
-        "preview": "{\"final_answer\": \"Based on the evidence provided, matching datasets are: AJO Interactive Messaging Profile Dataset, AJO Message Feedback Event Dataset, Journeys, hkg_adls_profile_count_history, weRetail: Customer Actions, AJO STO Summary Dataset, AJO Entity Dataset, AJO Classification Dataset, AJO Push Tracking Experience Event Dataset, and Segment Ingestion Dataset. Live API verification was not executed because Adobe credentials are unavailable.\", \"selected_source\": \"LEGACY_SAFE_RENDERER\", \"answer_intent\": {\"answer_intent\": \"STATUS\", \"answer_mode\": \"CANONICAL_DATA\", \"confidence\": \"HIGH\", \"reason_codes\": {\"items\": [\"STRUCTURED_DATA_ROLE\", \"PRIMARY_CAVEAT_STATE\"], \"total_items\": 2, \"truncated_items\": false}}, \"verification\": {\"ok\": true, \"supported_claims\": {\"items\": [{\"text\": \"Live API verification was not executed\", \"type\": \"CAVEAT\", \"value\": \"live api verification was not executed\", \"span\": \"Live API verification was not executed\", \"hardness\": \"HARD\"}, {\"text\": \"AJO Interactive Mess...",
+        "preview": "{\"final_answer\": \"Based on the evidence provided, matching datasets are: AJO Interactive Messaging Profile Dataset, AJO Message Feedback Event Dataset, Journeys, AJO Live Activities Feedback Event Dataset, hkg_adls_profile_count_history, weRetail: Customer Actions, AJO STO Summary Dataset, AJO Entity Dataset, AJO Classification Dataset, and AJO Push Tracking Experience Event Dataset. Live API verification was not executed because Adobe credentials are unavailable.\", \"selected_source\": \"LEGACY_SAFE_RENDERER\", \"answer_intent\": {\"answer_intent\": \"STATUS\", \"answer_mode\": \"CANONICAL_DATA\", \"confidence\": \"HIGH\", \"reason_codes\": {\"items\": [\"STRUCTURED_DATA_ROLE\", \"PRIMARY_CAVEAT_STATE\"], \"total_items\": 2, \"truncated_items\": false}}, \"verification\": {\"ok\": true, \"supported_claims\": {\"items\": [{\"text\": \"Live API verification was not executed\", \"type\": \"CAVEAT\", \"value\": \"live api verification was not executed\", \"span\": \"Live API verification was not executed\", \"hardness\": \"HARD\"}, {\"text\": \"AJO...",
         "truncated": true
       },
       "checkpoint_initial_evidence_branch_policy": {
@@ -678,21 +678,14 @@
       "checkpoint_post_sql_api_call_verifier": {
         "codes": {
           "items": [
-            "VERIFIED_CALL_API"
+            "VERIFIED_CAVEAT_ONLY"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "final_action": "CALL_API",
-        "selected_api_families": {
-          "items": [
-            "schema_registry_schemas"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
+        "final_action": "CAVEAT_ONLY",
         "shadow_only": false,
-        "source": "RISK_MINIMIZING_FALLBACK"
+        "source": "LLM_DECISION_VERIFIED"
       },
       "checkpoint_post_sql_decision_card": {
         "allowed_outputs": {
@@ -779,22 +772,14 @@
       "checkpoint_post_sql_execution_verifier": {
         "codes": {
           "items": [
-            "VERIFIED_CALL_API"
+            "VERIFIED_CAVEAT_ONLY"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "endpoint_id": "schema_registry_schemas",
-        "final_action": "CALL_API",
+        "final_action": "CAVEAT_ONLY",
         "ok": true,
-        "selected_api_families": {
-          "items": [
-            "schema_registry_schemas"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "source": "RISK_MINIMIZING_FALLBACK"
+        "source": "LLM_DECISION_VERIFIED"
       },
       "checkpoint_post_sql_llm_advisor": {
         "codes": {
@@ -809,31 +794,22 @@
         "mode": "CAVEAT_ONLY",
         "source": "DETERMINISTIC_FALLBACK"
       },
-      "checkpoint_post_sql_llm_decision_v1": {},
-      "checkpoint_post_sql_llm_decision_v2": {},
-      "checkpoint_post_sql_minimal_correction_feedback": {},
-      "checkpoint_post_sql_risk_minimizing_fallback": {
+      "checkpoint_post_sql_llm_decision_v1": {
         "codes": {
           "items": [
-            "FALLBACK_PRESERVE_API"
+            "MISSING_STATUS"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "confidence": 0.0,
-        "endpoint_id": "schema_registry_schemas",
-        "fallback_reason_codes": {
-          "items": [
-            "API_REQUIRED_CANNOT_SKIP",
-            "LIVE_OR_STATUS_API_CUE_CANNOT_SKIP"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
-        "fallback_source": "RISK_MINIMIZING_FALLBACK",
-        "mode": "CALL_API",
-        "semantic_certainty_claimed": false
+        "confidence": 0.5,
+        "llm_call_attempted": true,
+        "mode": "CAVEAT_ONLY",
+        "source": "LLM_POST_SQL_DECISION"
       },
+      "checkpoint_post_sql_llm_decision_v2": {},
+      "checkpoint_post_sql_minimal_correction_feedback": {},
+      "checkpoint_post_sql_risk_minimizing_fallback": {},
       "checkpoint_post_sql_semantic_decision_card": {
         "preview": "{\"task\": \"POST_SQL_SEMANTIC_DECISION\", \"user_prompt\": \"Which connector objects have status information? Use observable evidence. Keep the answer evidence-bound for the schema walkthrough.\", \"semantic_parse\": {\"operation\": \"RELATIONSHIP\", \"target\": {\"grounding\": \"SUPPORTED_DATA_OBJECT\", \"object_family\": \"SCHEMA\", \"instance_level\": true}, \"requested_fields\": {\"items\": [\"STATUS\"], \"total_items\": 1, \"truncated_items\": false}, \"capability\": {\"sql_match\": true, \"api_match\": true, \"api_families\": {\"items\": [\"SCHEMA_REGISTRY\", \"FLOW_SERVICE\"], \"total_items\": 2, \"truncated_items\": false}}, \"evidence_need\": \"SQL_API\", \"no_tool_safe\": false, \"source\": \"DETERMINISTIC_FALLBACK\"}, \"user_requested_scope\": \"LOCAL_SNAPSHOT\", \"sql_result_scope\": \"LOCAL_SNAPSHOT\", \"sql_state\": {\"validation\": \"PASS\", \"execution\": \"SUCCESS\", \"row_count_bucket\": \"MANY\", \"returned_roles\": {\"items\": [\"id\", \"name\"], \"total_items\": 2, \"truncated_items\": false}, \"missing_roles\": {\"items\": [\"status\"], \"total_items\": 1, \"truncated...",
         "truncated": true
@@ -1147,10 +1123,10 @@
     "post_sql_llm_advice_blocked": false,
     "post_sql_llm_advisor_actual_call": false,
     "post_sql_verifier_blocked": false,
-    "post_sql_verifier_source": "RISK_MINIMIZING_FALLBACK",
+    "post_sql_verifier_source": "LLM_DECISION_VERIFIED",
     "post_sql_verifier_verified": false,
     "route_action": "SQL_THEN_API",
-    "runtime_ms": 118.43783408403397,
+    "runtime_ms": 10748.992334119976,
     "skipped_decision_count": 2,
     "sql_calls": 1,
     "sql_tables": [

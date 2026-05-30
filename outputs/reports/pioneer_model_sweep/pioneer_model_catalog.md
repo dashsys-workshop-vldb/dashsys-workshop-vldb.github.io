@@ -17,7 +17,9 @@ Decoder/inference-capable model records extracted: 222
 
 | Display Name | Model ID | Confidence | Reason |
 |---|---|---:|---|
-| Gpt 4o | gpt-4o | 1.0 | exact_normalized_match |
+| Gpt 4o Mini | gpt-4o-mini | 1.0 | exact_normalized_match |
+| Gpt 4.1 Mini | gpt-4.1-mini | 1.0 | exact_normalized_match |
+| Gpt 4.1 Nano | gpt-4.1-nano | 1.0 | exact_normalized_match |
 | Claude Haiku 4.5 | claude-haiku-4-5 | 1.0 | exact_normalized_match |
 | DeepSeek V4 Flash | deepseek-ai/DeepSeek-V4-Flash | 1.0 | exact_normalized_match |
 | Qwen3 4B Instruct 2507 | Qwen/Qwen3-4B-Instruct-2507 | 1.0 | exact_normalized_match |

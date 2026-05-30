@@ -68,7 +68,7 @@ def test_full_benchmark_runs_model_major_for_all_callable_models(tmp_path, monke
 
 def test_full_benchmark_reports_all_seven_and_unavailable_is_not_fatal(tmp_path, monkeypatch) -> None:
     def fake_probe(model_id: str) -> dict:
-        if model_id == "gpt-4o":
+        if model_id == "google/gemma-4-E4B-it":
             return {"available": False, "model": model_id, "error_category": "auth_or_401", "error": "provider_auth_error"}
         return {"available": True, "model": model_id}
 
@@ -87,11 +87,109 @@ def test_full_benchmark_reports_all_seven_and_unavailable_is_not_fatal(tmp_path,
     )
 
     assert [row["model"] for row in result["models"]] == DEFAULT_PIONEER_MODEL_SWEEP
-    assert result["models"][0]["availability"]["available"] is False
-    assert result["models"][0]["stability_verdict"] == "UNAVAILABLE"
-    assert any(row["availability"]["available"] for row in result["models"][1:])
+    assert result["models"][0]["model"] == "Gpt 4o Mini"
+    assert result["models"][0]["availability"]["available"] is True
+    assert result["models"][-1]["availability"]["available"] is False
+    assert result["models"][-1]["stability_verdict"] == "UNAVAILABLE"
+    assert any(row["availability"]["available"] for row in result["models"][:-1])
     summary = json.loads((tmp_path / "pioneer_model_full_benchmark_summary.json").read_text(encoding="utf-8"))
     assert len(summary["models"]) == 7
+
+
+def test_gpt_light_fallback_selects_next_candidate_when_preferred_unavailable(tmp_path, monkeypatch) -> None:
+    probe_calls: list[str] = []
+    run_models: list[str] = []
+
+    def fake_probe(model_id: str) -> dict:
+        probe_calls.append(model_id)
+        if model_id == "gpt-4o-mini":
+            return {"available": False, "model": model_id, "error_category": "model_not_found"}
+        return {"available": True, "model": model_id}
+
+    def fake_runner(command, env, cwd, timeout_sec):
+        run_models.append(env["PIONEER_MODEL_DISPLAY"])
+        _write_fake_artifacts(Path(env["DASHAGENT_OUTPUTS_DIR"]), tmp_path / "reports", command["name"])
+        return {"returncode": 0, "stdout": "ok", "stderr": "", "duration_sec": 0.01}
+
+    monkeypatch.setenv("PIONEER_MODEL_ID_MAP_JSON", json.dumps(fullbench.DEFAULT_SELECTED_MODEL_ID_MAP))
+    result = fullbench.run_pioneer_model_full_benchmark(
+        SimpleNamespace(outputs_dir=tmp_path),
+        models=["Gpt 4o Mini", "Claude Haiku 4.5"],
+        report_dir=tmp_path,
+        commands=fullbench.minimal_test_command_plan(),
+        availability_probe=fake_probe,
+        focused_smoke_runner=_fake_smoke,
+        command_runner=fake_runner,
+    )
+
+    assert [row["model"] for row in result["models"]] == ["Gpt 4.1 Mini", "Claude Haiku 4.5"]
+    assert run_models == ["Gpt 4.1 Mini", "Gpt 4.1 Mini", "Claude Haiku 4.5", "Claude Haiku 4.5"]
+    assert "gpt-4o-mini" in probe_calls
+    assert "gpt-4.1-mini" in probe_calls
+    summary = json.loads((tmp_path / "pioneer_model_full_benchmark_summary.json").read_text(encoding="utf-8"))
+    selection = summary["gpt_light_baseline_selection"]
+    assert selection["preferred_model"] == "Gpt 4o Mini"
+    assert selection["selected_model"] == "Gpt 4.1 Mini"
+    assert selection["fallback_needed"] is True
+    assert selection["attempts"][0]["available"] is False
+    assert selection["attempts"][1]["available"] is True
+    markdown = (tmp_path / "pioneer_model_full_benchmark_summary.md").read_text(encoding="utf-8")
+    assert "Gpt 4o Mini unavailable" in markdown
+    assert "Fallback selected: Gpt 4.1 Mini" in markdown
+
+
+def test_legacy_gpt_4o_entry_is_replaced_by_gpt_light_candidate(tmp_path, monkeypatch) -> None:
+    run_models: list[str] = []
+
+    def fake_runner(command, env, cwd, timeout_sec):
+        run_models.append(env["PIONEER_MODEL_DISPLAY"])
+        _write_fake_artifacts(Path(env["DASHAGENT_OUTPUTS_DIR"]), tmp_path / "reports", command["name"])
+        return {"returncode": 0, "stdout": "ok", "stderr": "", "duration_sec": 0.01}
+
+    monkeypatch.setenv("PIONEER_MODEL_ID_MAP_JSON", json.dumps(fullbench.DEFAULT_SELECTED_MODEL_ID_MAP))
+    result = fullbench.run_pioneer_model_full_benchmark(
+        SimpleNamespace(outputs_dir=tmp_path),
+        models=["Gpt 4o", "Claude Haiku 4.5"],
+        report_dir=tmp_path,
+        commands=fullbench.minimal_test_command_plan(),
+        availability_probe=lambda model_id: {"available": True, "model": model_id},
+        focused_smoke_runner=_fake_smoke,
+        command_runner=fake_runner,
+    )
+
+    assert [row["model"] for row in result["models"]] == ["Gpt 4o Mini", "Claude Haiku 4.5"]
+    assert "Gpt 4o" not in run_models
+    summary = json.loads((tmp_path / "pioneer_model_full_benchmark_summary.json").read_text(encoding="utf-8"))
+    assert summary["gpt_light_baseline_selection"]["legacy_model_replaced"] is True
+
+
+def test_all_unavailable_gpt_light_candidates_are_recorded_and_omitted(tmp_path, monkeypatch) -> None:
+    def fake_probe(model_id: str) -> dict:
+        if model_id.startswith("gpt-4"):
+            return {"available": False, "model": model_id, "error_category": "timeout"}
+        return {"available": True, "model": model_id}
+
+    monkeypatch.setenv("PIONEER_MODEL_ID_MAP_JSON", json.dumps(fullbench.DEFAULT_SELECTED_MODEL_ID_MAP))
+    result = fullbench.run_pioneer_model_full_benchmark(
+        SimpleNamespace(outputs_dir=tmp_path),
+        models=["Gpt 4o Mini", "Claude Haiku 4.5"],
+        report_dir=tmp_path,
+        commands=fullbench.minimal_test_command_plan(),
+        availability_probe=fake_probe,
+        focused_smoke_runner=_fake_smoke,
+        command_runner=lambda command, env, cwd, timeout_sec: _runner_with_fake_artifacts(command, env, tmp_path),
+    )
+
+    assert [row["model"] for row in result["models"]] == ["Claude Haiku 4.5"]
+    summary = json.loads((tmp_path / "pioneer_model_full_benchmark_summary.json").read_text(encoding="utf-8"))
+    selection = summary["gpt_light_baseline_selection"]
+    assert selection["selected_model"] is None
+    assert selection["all_gpt_light_candidates_unavailable"] is True
+    assert [row["display_name"] for row in selection["attempts"]] == [
+        "Gpt 4o Mini",
+        "Gpt 4.1 Mini",
+        "Gpt 4.1 Nano",
+    ]
 
 
 def test_full_benchmark_does_not_skip_deepseek_or_qwen_after_json_failures(tmp_path, monkeypatch) -> None:

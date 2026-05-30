@@ -670,7 +670,7 @@
           "truncated_items": false
         },
         "shadow_only": false,
-        "source": "RISK_MINIMIZING_FALLBACK"
+        "source": "LLM_DECISION_VERIFIED"
       },
       "checkpoint_post_sql_decision_card": {
         "allowed_outputs": {
@@ -767,7 +767,7 @@
           "total_items": 1,
           "truncated_items": false
         },
-        "source": "RISK_MINIMIZING_FALLBACK"
+        "source": "LLM_DECISION_VERIFIED"
       },
       "checkpoint_post_sql_llm_advisor": {
         "codes": {
@@ -784,30 +784,72 @@
         "mode": "CALL_API",
         "source": "DETERMINISTIC_BYPASS"
       },
-      "checkpoint_post_sql_llm_decision_v1": {},
-      "checkpoint_post_sql_llm_decision_v2": {},
-      "checkpoint_post_sql_minimal_correction_feedback": {},
-      "checkpoint_post_sql_risk_minimizing_fallback": {
-        "codes": {
-          "items": [
-            "FALLBACK_PRESERVE_API"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "confidence": 0.0,
-        "endpoint_id": "journey_list",
-        "fallback_reason_codes": {
-          "items": [
-            "LIVE_OR_STATUS_API_CUE_CANNOT_SKIP"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "fallback_source": "RISK_MINIMIZING_FALLBACK",
-        "mode": "CALL_API",
-        "semantic_certainty_claimed": false
+      "checkpoint_post_sql_llm_decision_v1": {
+        "confidence": 1.0,
+        "llm_call_attempted": true,
+        "mode": "SKIP_API",
+        "source": "LLM_POST_SQL_DECISION"
       },
+      "checkpoint_post_sql_llm_decision_v2": {
+        "confidence": 1.0,
+        "endpoint_id": "journey_list",
+        "llm_call_attempted": true,
+        "mode": "CALL_API",
+        "source": "LLM_POST_SQL_DECISION"
+      },
+      "checkpoint_post_sql_minimal_correction_feedback": {
+        "allowed_outputs": {
+          "items": [
+            "CALL_API",
+            "CAVEAT_ONLY"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "conflicts": {
+          "items": [
+            {
+              "code": "LIVE_OR_STATUS_API_CUE_CANNOT_SKIP",
+              "given": "mode=SKIP_API",
+              "required": "live/current/platform/status/API cue present"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "forbidden_outputs": {
+          "items": [
+            "SKIP_API"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "must_reconsider": {
+          "items": [
+            "live_status_scope"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "output_schema": {
+          "codes": {
+            "items": [
+              "short codes"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "confidence": "0.0-1.0",
+          "endpoint_id": "journey_list|null",
+          "mode": "CALL_API|CAVEAT_ONLY"
+        },
+        "previous_decision": {
+          "confidence": 1.0,
+          "mode": "SKIP_API"
+        },
+        "task": "REVISE_POST_SQL_API_DECISION"
+      },
+      "checkpoint_post_sql_risk_minimizing_fallback": {},
       "checkpoint_post_sql_semantic_decision_card": {
         "preview": "{\"task\": \"POST_SQL_SEMANTIC_DECISION\", \"user_prompt\": \"Show local status/state distribution for campaign records. Use only local snapshot evidence for the quality runbook.\", \"semantic_parse\": {\"operation\": \"RELATIONSHIP\", \"target\": {\"grounding\": \"SUPPORTED_DATA_OBJECT\", \"object_family\": \"JOURNEY\", \"instance_level\": true}, \"requested_fields\": {\"items\": [\"STATUS\"], \"total_items\": 1, \"truncated_items\": false}, \"capability\": {\"sql_match\": true, \"api_match\": true, \"api_families\": {\"items\": [\"JOURNEY\", \"FLOW_SERVICE\"], \"total_items\": 2, \"truncated_items\": false}}, \"evidence_need\": \"SQL\", \"no_tool_safe\": false, \"source\": \"DETERMINISTIC_FALLBACK\"}, \"user_requested_scope\": \"LOCAL_SNAPSHOT\", \"sql_result_scope\": \"LOCAL_SNAPSHOT\", \"sql_state\": {\"validation\": \"PASS\", \"execution\": \"SUCCESS\", \"row_count_bucket\": \"MANY\", \"returned_roles\": {\"items\": [\"id\", \"name\", \"status\"], \"total_items\": 4, \"truncated_items\": true}, \"direct_answer\": true, \"partial_answer\": false, \"zero_rows\": false}, \"returned_roles\"...",
         "truncated": true
@@ -1151,10 +1193,10 @@
     "post_sql_llm_advice_blocked": false,
     "post_sql_llm_advisor_actual_call": false,
     "post_sql_verifier_blocked": false,
-    "post_sql_verifier_source": "RISK_MINIMIZING_FALLBACK",
+    "post_sql_verifier_source": "LLM_DECISION_VERIFIED",
     "post_sql_verifier_verified": false,
     "route_action": "SQL_THEN_API",
-    "runtime_ms": 106.13970831036568,
+    "runtime_ms": 20340.354416985065,
     "skipped_decision_count": 2,
     "sql_calls": 1,
     "sql_tables": [
