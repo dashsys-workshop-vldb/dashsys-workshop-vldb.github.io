@@ -65,6 +65,7 @@ from .evidence_quality_classifier import classify_evidence_quality
 from .gated_sql_candidates import hard_case_triggers, select_gated_sql_candidate
 from .hybrid_answer_composer import compose_hybrid_answer
 from .metadata_selector import MetadataSelector
+from .pass_graph_gate import PassGraphGate, PassGraphGateResult
 from .plan_ensemble import select_plan_candidate
 from .planner import (
     ALL_STRATEGIES,
@@ -116,9 +117,10 @@ from .staged_evidence_policy import decide_initial_evidence_branch
 from .sql_compile_gate import SQLCompileGate, SQLCompileGateResult
 from .sql_only_api_skip_guard import should_skip_api_with_sql_evidence
 from .prompt_router import LLM_DIRECT, route_prompt
-from .trajectory import TrajectoryLogger, estimate_tokens
+from .trajectory import TrajectoryLogger, compact_preview, estimate_tokens
 from .token_reduction_policy import apply_token_reduction_to_trajectory
 from .validators import APIValidator, SQLValidator, ValidationResult
+from .v2_pipeline_scheduler import V2PipelineScheduler
 from .value_retrieval import build_value_index, extract_query_values, retrieve_value_matches, value_retrieval_summary
 
 
@@ -198,11 +200,13 @@ class AgentExecutor:
         self.planner = StrategyPlanner(self.schema_index, self.config)
         self.sql_validator = SQLValidator(self.schema_index, enable_ast_validation=self.config.enable_sql_ast_validation)
         self.sql_compile_gate = SQLCompileGate(self.db)
+        self.pass_graph_gate = PassGraphGate()
         self.api_validator = APIValidator(
             self.endpoint_catalog,
             allow_unknown=self.config.allow_unknown_api_endpoints,
         )
         self.api_request_gate = APIRequestGate(self.api_validator)
+        self.v2_pipeline_scheduler = V2PipelineScheduler()
         self.cache_fingerprint = current_fingerprint(self.config)
 
     def run(
@@ -252,7 +256,10 @@ class AgentExecutor:
         qid = query_id or slugify(query)
         out_dir = output_dir or (self.config.outputs_dir / qid / strategy.lower())
         out_dir.mkdir(parents=True, exist_ok=True)
-        checkpoint_logger = CheckpointLogger(max_preview_chars=self.config.max_preview_chars)
+        checkpoint_preview_chars = self.config.max_preview_chars
+        if strategy == ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2:
+            checkpoint_preview_chars = max(checkpoint_preview_chars, 4000)
+        checkpoint_logger = CheckpointLogger(max_preview_chars=checkpoint_preview_chars)
         checkpoint_logger.add_checkpoint(
             "checkpoint_01_raw_query",
             stage="input",
@@ -1576,7 +1583,7 @@ class AgentExecutor:
             "llm_route": plan.route,
             "llm_evidence_order": plan.evidence_order,
             "backend_semantic_planning_used": False,
-            **execution_summary,
+            **_llm_owned_generation_boundary_summary(execution_summary),
         }
         checkpoint_logger.add_checkpoint(
             "checkpoint_llm_owned_generation_boundary",
@@ -1608,6 +1615,8 @@ class AgentExecutor:
                 evidence_bus.observe_sql(step, payload)
             elif item.get("type") == "api":
                 evidence_bus.observe_api(step, payload)
+        for pass_result in runtime_passes:
+            evidence_bus.observe_pass_result(pass_result)
 
         trajectory = TrajectoryLogger(
             query_id=qid,
@@ -1684,7 +1693,7 @@ class AgentExecutor:
             stage="evidence forwarding",
             technique="ResultBundle",
             input_summary={"pass_results_count": result_bundle.pass_results_count, "tool_result_count": len(tool_results)},
-            output=result_bundle.to_dict(),
+            output=_result_bundle_checkpoint_payload(result_bundle),
             effect="stores all LLM-declared pass results before final LLM aggregation",
             correctness_role="keeps pass-level runtime evidence separate from backend answer generation",
             efficiency_role="reuses executed pass results without extra tools",
@@ -1911,11 +1920,25 @@ class AgentExecutor:
         generation_boundary = {
             "llm_owned_generation": True,
             "multi_pass_enabled": False,
+            "llm_pass_graph_used": False,
+            "v2_pipeline_scheduler_used": False,
+            "pipeline_stage_count": 0,
+            "max_parallelism": 0,
+            "max_sql_workers": 0,
+            "max_api_workers": 0,
             "llm_pass_count": 0,
             "parallel_pass_count": 0,
             "sequential_pass_count": 0,
             "pass_ids": [],
+            "parallel_groups": [],
+            "dependency_edges": [],
+            "pass_graph_gate_passed": True,
+            "stage_events": [],
             "pass_results_count": 0,
+            "passes_executed": [],
+            "passes_completed": [],
+            "passes_failed": [],
+            "passes_dependency_blocked": [],
             "llm_route": plan.route,
             "llm_evidence_order": plan.evidence_order,
             "sql_gate_passed": None,
@@ -2005,6 +2028,8 @@ class AgentExecutor:
         tool_results: list[dict[str, Any]] = []
         runtime_passes: list[dict[str, Any]] = []
         pass_specs = initial_plan.passes or []
+        graph_gate = self.pass_graph_gate.check(initial_plan)
+        pipeline_schedule = self.v2_pipeline_scheduler.schedule(pass_specs, graph_gate)
         summary: dict[str, Any] = {
             "sql_gate_passed": None,
             "api_gate_passed": None,
@@ -2015,15 +2040,47 @@ class AgentExecutor:
             "sql_executed": False,
             "api_executed": False,
             "multi_pass_enabled": bool(len(pass_specs) > 1 or initial_plan.evidence_order == "MULTI_PASS"),
+            "llm_pass_graph_used": bool(pass_specs),
             "llm_pass_count": len(pass_specs),
             "parallel_pass_count": sum(1 for item in pass_specs if item.can_run_parallel and not item.depends_on),
             "sequential_pass_count": sum(1 for item in pass_specs if not item.can_run_parallel or item.depends_on),
             "pass_ids": [item.pass_id for item in pass_specs],
+            "parallel_groups": graph_gate.parallel_groups,
+            "dependency_edges": graph_gate.dependency_edges,
+            "pass_graph_gate_passed": graph_gate.passed,
+            **pipeline_schedule.to_summary(),
             "pass_results_count": 0,
+            "passes_executed": [],
+            "dependency_resolution_errors": 0,
+            "dependency_repair_attempts": 0,
             "backend_semantic_decomposition_used": False,
             "deterministic_answer_template_used": False,
             "hidden_eval_gold_used": False,
         }
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_v2_pipeline_scheduler",
+            stage="llm-owned pipeline scheduling",
+            technique="resource-bounded stage scheduler for LLM-declared pass DAG",
+            input_summary={"pass_ids": summary["pass_ids"], "parallel_groups": pipeline_schedule.parallel_groups},
+            output=pipeline_schedule.to_dict(),
+            effect="moves LLM-declared passes through fixed execution stages without changing pass semantics",
+            correctness_role="keeps backend responsibility limited to scheduling, gates, execution, and result storage",
+            efficiency_role="allows later passes to enter free stages before earlier passes finish all stages",
+        )
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_llm_owned_pass_graph_gate",
+            stage="llm-owned pass graph validation",
+            technique="shape-only PassGraphGate",
+            input_summary={"pass_ids": summary["pass_ids"], "evidence_order": initial_plan.evidence_order},
+            output=graph_gate.to_dict(),
+            effect="validates only graph shape; does not choose subtasks, dependencies, SQL, or API paths",
+            correctness_role="blocks malformed dependency graphs before execution",
+            efficiency_role="bounds pass scheduling to LLM-declared valid graphs",
+        )
+        if not graph_gate.passed:
+            runtime_passes.append(_pass_graph_error_runtime_pass(graph_gate))
+            summary["pass_results_count"] = len(runtime_passes)
+            return tool_results, runtime_passes, summary
         checkpoint_logger.add_checkpoint(
             "checkpoint_llm_owned_pass_scheduler",
             stage="llm-owned pass scheduling",
@@ -2034,36 +2091,126 @@ class AgentExecutor:
             correctness_role="keeps decomposition owned by the LLM and backend role limited to scheduling/gates/execution",
             efficiency_role="groups dependency-free passes without changing their semantics",
         )
-        for pass_spec in self._schedule_llm_owned_passes(pass_specs):
-            pass_tool_results: list[dict[str, Any]] = []
-            for source in self._llm_owned_pass_execution_order(pass_spec):
-                if source == "sql" and pass_spec.sql is not None:
-                    result = self._run_llm_owned_sql_for_pass(
-                        query=query,
-                        original_plan=initial_plan,
-                        pass_spec=pass_spec,
-                        planner_context=planner_context,
-                        checkpoint_logger=checkpoint_logger,
-                        summary=summary,
-                    )
-                    if result is not None:
-                        pass_tool_results.append(result)
-                        tool_results.append(result)
-                elif source == "api" and pass_spec.api_request is not None:
-                    result = self._run_llm_owned_api_for_pass(
-                        query=query,
-                        original_plan=initial_plan,
-                        pass_spec=pass_spec,
-                        planner_context=planner_context,
-                        checkpoint_logger=checkpoint_logger,
-                        summary=summary,
-                    )
-                    if result is not None:
-                        pass_tool_results.append(result)
-                        tool_results.append(result)
-            runtime_passes.append(_runtime_pass_from_pass_spec(pass_spec, pass_tool_results))
+        pass_by_id = {item.pass_id: item for item in pass_specs}
+        for pass_group in [[pass_by_id[pass_id] for pass_id in group if pass_id in pass_by_id] for group in pipeline_schedule.parallel_groups]:
+            for pass_spec in pass_group:
+                resolved_pass, dependency_resolution = self._resolve_or_repair_llm_owned_pass(
+                    query=query,
+                    original_plan=initial_plan,
+                    pass_spec=pass_spec,
+                    runtime_passes=runtime_passes,
+                    planner_context=planner_context,
+                    checkpoint_logger=checkpoint_logger,
+                    summary=summary,
+                )
+                if resolved_pass is None:
+                    runtime_passes.append(_dependency_error_runtime_pass(pass_spec, dependency_resolution))
+                    continue
+                pass_tool_results: list[dict[str, Any]] = []
+                for source in self._llm_owned_pass_execution_order(resolved_pass):
+                    if source == "sql" and resolved_pass.sql is not None:
+                        result = self._run_llm_owned_sql_for_pass(
+                            query=query,
+                            original_plan=initial_plan,
+                            pass_spec=resolved_pass,
+                            planner_context=planner_context,
+                            checkpoint_logger=checkpoint_logger,
+                            summary=summary,
+                        )
+                        if result is not None:
+                            pass_tool_results.append(result)
+                            tool_results.append(result)
+                    elif source == "api" and resolved_pass.api_request is not None:
+                        result = self._run_llm_owned_api_for_pass(
+                            query=query,
+                            original_plan=initial_plan,
+                            pass_spec=resolved_pass,
+                            planner_context=planner_context,
+                            checkpoint_logger=checkpoint_logger,
+                            summary=summary,
+                        )
+                        if result is not None:
+                            pass_tool_results.append(result)
+                            tool_results.append(result)
+                runtime_pass = _runtime_pass_from_pass_spec(
+                    resolved_pass,
+                    pass_tool_results,
+                    dependency_resolution=dependency_resolution,
+                    stage_history=pipeline_schedule.pass_stage_history.get(resolved_pass.pass_id, []),
+                )
+                runtime_passes.append(runtime_pass)
+                summary["passes_executed"].append(resolved_pass.pass_id)
         summary["pass_results_count"] = len(runtime_passes)
         return tool_results, runtime_passes, summary
+
+    def _resolve_or_repair_llm_owned_pass(
+        self,
+        *,
+        query: str,
+        original_plan: LLMUnifiedPlan,
+        pass_spec: LLMUnifiedPass,
+        runtime_passes: list[dict[str, Any]],
+        planner_context: dict[str, Any],
+        checkpoint_logger: CheckpointLogger,
+        summary: dict[str, Any],
+    ) -> tuple[LLMUnifiedPass | None, dict[str, Any]]:
+        resolved_pass, resolution = _resolve_pass_placeholders(pass_spec, runtime_passes)
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_llm_owned_dependency_resolution",
+            stage="llm-owned pass dependency resolution",
+            technique="placeholder resolution from completed LLM pass results",
+            input_summary={"pass_id": pass_spec.pass_id, "depends_on": pass_spec.depends_on},
+            output=resolution,
+            effect="resolves only placeholders explicitly declared by the LLM pass graph",
+            correctness_role="does not infer missing dependency values or add backend-selected subtasks",
+            efficiency_role="prevents executing unresolved placeholder SQL/API calls",
+        )
+        if resolution.get("resolved"):
+            return resolved_pass, resolution
+
+        summary["dependency_resolution_errors"] = int(summary.get("dependency_resolution_errors", 0) or 0) + 1
+        repair_plan = run_llm_unified_planner(
+            user_prompt=query,
+            schema_context=planner_context["schema_context"],
+            endpoint_context=planner_context["endpoint_context"],
+            repair_context={
+                "failed_component": "dependency_resolution",
+                "pass_id": pass_spec.pass_id,
+                "subtask": pass_spec.subtask,
+                "dependency_resolution": resolution,
+                "previous_plan": original_plan.to_dict(),
+                "completed_passes": compact_preview(runtime_passes, 1800),
+            },
+        )
+        summary["dependency_repair_attempts"] = int(summary.get("dependency_repair_attempts", 0) or 0) + 1
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_llm_owned_dependency_resolution_repair",
+            stage="llm-owned pass dependency repair",
+            technique="single LLM-owned dependency placeholder repair",
+            input_summary={"pass_id": pass_spec.pass_id, "errors": resolution.get("errors", [])},
+            output=repair_plan.to_dict(),
+            effect="lets the LLM repair its pass placeholders after dependency-resolution feedback",
+            correctness_role="backend supplies only resolution errors and no replacement SQL/API",
+            efficiency_role="caps dependency repair to one attempt",
+        )
+        repaired_pass = _repaired_pass_for(repair_plan, pass_spec.pass_id, source=_primary_pass_source(pass_spec))
+        if repaired_pass is None:
+            return None, {**resolution, "repair_attempted": True, "repair_resolved": False}
+        repaired_resolved_pass, repaired_resolution = _resolve_pass_placeholders(repaired_pass, runtime_passes)
+        repaired_resolution = {**repaired_resolution, "repair_attempted": True}
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_llm_owned_dependency_resolution_repair_check",
+            stage="llm-owned pass dependency resolution",
+            technique="placeholder resolution for repaired LLM pass",
+            input_summary={"pass_id": repaired_pass.pass_id, "depends_on": repaired_pass.depends_on},
+            output=repaired_resolution,
+            effect="checks repaired placeholders without backend mutation",
+            correctness_role="executes repaired pass only if placeholders resolve from prior pass evidence",
+            efficiency_role="stops after one dependency repair",
+        )
+        if repaired_resolution.get("resolved"):
+            return repaired_resolved_pass, repaired_resolution
+        return None, repaired_resolution
 
     def _run_llm_owned_sql_for_pass(
         self,
@@ -2411,6 +2558,12 @@ class AgentExecutor:
         return ["sql", "api"]
 
     def _llm_owned_pass_execution_order(self, pass_spec: LLMUnifiedPass) -> list[str]:
+        if pass_spec.path == "SQL":
+            return ["sql"]
+        if pass_spec.path == "API":
+            return ["api"]
+        if pass_spec.path in {"DIRECT", "AGGREGATION_ONLY"}:
+            return []
         if pass_spec.evidence_order in {"API_FIRST", "API_THEN_SQL"}:
             return ["api", "sql"]
         if pass_spec.evidence_order == "NO_EVIDENCE":
@@ -3759,31 +3912,321 @@ def _blocked_api_tool_result(gate_result: APIRequestGateResult, *, pass_id: str 
 
 def _repaired_pass_for(plan: LLMUnifiedPlan, pass_id: str, *, source: str) -> LLMUnifiedPass | None:
     for item in plan.passes:
-        if item.pass_id == pass_id and ((source == "sql" and item.sql is not None) or (source == "api" and item.api_request is not None)):
+        if item.pass_id == pass_id and (
+            source == "any"
+            or (source == "sql" and item.sql is not None)
+            or (source == "api" and item.api_request is not None)
+        ):
             return item
     for item in plan.passes:
-        if (source == "sql" and item.sql is not None) or (source == "api" and item.api_request is not None):
+        if source == "any" or (source == "sql" and item.sql is not None) or (source == "api" and item.api_request is not None):
             return item
     if source == "sql" and plan.sql is not None:
-        return LLMUnifiedPass(pass_id=pass_id, subtask="Repaired SQL pass.", can_run_parallel=False, depends_on=[], evidence_order="SQL_FIRST", sql=plan.sql, api_request=None)
+        return LLMUnifiedPass(pass_id=pass_id, subtask="Repaired SQL pass.", path="SQL", can_run_parallel=False, depends_on=[], evidence_order="SQL_FIRST", sql=plan.sql, api_request=None)
     if source == "api" and plan.api_request is not None:
-        return LLMUnifiedPass(pass_id=pass_id, subtask="Repaired API pass.", can_run_parallel=False, depends_on=[], evidence_order="API_FIRST", sql=None, api_request=plan.api_request)
+        return LLMUnifiedPass(pass_id=pass_id, subtask="Repaired API pass.", path="API", can_run_parallel=False, depends_on=[], evidence_order="API_FIRST", sql=None, api_request=plan.api_request)
     return None
 
 
-def _runtime_pass_from_pass_spec(pass_spec: LLMUnifiedPass, tool_results: list[dict[str, Any]]) -> dict[str, Any]:
+def _llm_owned_generation_boundary_summary(summary: dict[str, Any]) -> dict[str, Any]:
+    keys = [
+        "multi_pass_enabled",
+        "llm_pass_graph_used",
+        "v2_pipeline_scheduler_used",
+        "pipeline_stage_count",
+        "max_parallelism",
+        "max_sql_workers",
+        "max_api_workers",
+        "llm_pass_count",
+        "parallel_pass_count",
+        "sequential_pass_count",
+        "pass_ids",
+        "parallel_groups",
+        "dependency_edges",
+        "pass_graph_gate_passed",
+        "passes_executed",
+        "stage_events",
+        "passes_completed",
+        "passes_failed",
+        "passes_dependency_blocked",
+        "pass_results_count",
+        "sql_gate_passed",
+        "api_gate_passed",
+        "sql_repair_attempts",
+        "api_repair_attempts",
+        "dependency_resolution_errors",
+        "dependency_repair_attempts",
+        "backend_semantic_decomposition_used",
+        "deterministic_answer_template_used",
+        "hidden_eval_gold_used",
+    ]
+    return {key: summary.get(key) for key in keys}
+
+
+def _result_bundle_checkpoint_payload(result_bundle: ResultBundle) -> dict[str, Any]:
+    return {
+        "pass_results_count": result_bundle.pass_results_count,
+        "runtime_passes": [
+            {
+                "pass_id": item.get("pass_id"),
+                "path": item.get("path"),
+                "status": item.get("status"),
+                "depends_on": item.get("depends_on"),
+                "started_at": item.get("started_at"),
+                "completed_at": item.get("completed_at"),
+                "stage_history": item.get("stage_history"),
+                "dependency_resolution": item.get("dependency_resolution"),
+                "facts": item.get("facts"),
+                "source_result_count": len(item.get("source_results") or []),
+            }
+            for item in result_bundle.runtime_passes
+        ],
+    }
+
+
+def _primary_pass_source(pass_spec: LLMUnifiedPass) -> str:
+    if pass_spec.path == "SQL" or pass_spec.sql is not None:
+        return "sql"
+    if pass_spec.path == "API" or pass_spec.api_request is not None:
+        return "api"
+    return "any"
+
+
+def _runtime_pass_from_pass_spec(
+    pass_spec: LLMUnifiedPass,
+    tool_results: list[dict[str, Any]],
+    *,
+    dependency_resolution: dict[str, Any] | None = None,
+    stage_history: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     source_results = [_source_result_from_tool_result(item) for item in tool_results]
     caveats = [str(item.get("error")) for item in source_results if item.get("error")]
+    status = _pass_status_from_source_results(source_results)
+    started_at = stage_history[0]["timestamp"] if stage_history else None
+    completed_at = stage_history[-1]["timestamp"] if stage_history else None
     return {
         "pass_id": pass_spec.pass_id,
         "subtask": pass_spec.subtask,
+        "path": pass_spec.path,
+        "status": status,
         "can_run_parallel": pass_spec.can_run_parallel,
         "depends_on": pass_spec.depends_on,
         "expected_result": pass_spec.expected_result,
+        "started_at": started_at,
+        "completed_at": completed_at,
+        "stage_history": list(stage_history or []),
+        "dependency_resolution": dependency_resolution or {"required": False, "resolved": True, "errors": []},
         "source_results": source_results,
         "facts": _facts_from_source_results(source_results),
         "caveats": caveats,
     }
+
+
+def _pass_graph_error_runtime_pass(graph_gate: PassGraphGateResult) -> dict[str, Any]:
+    return {
+        "pass_id": "pass_graph_gate",
+        "subtask": "Validate LLM-owned pass graph.",
+        "path": "AGGREGATION_ONLY",
+        "status": "ERROR",
+        "can_run_parallel": False,
+        "depends_on": [],
+        "expected_result": "Valid pass graph.",
+        "started_at": None,
+        "completed_at": None,
+        "stage_history": [],
+        "dependency_resolution": {"required": False, "resolved": True, "errors": []},
+        "source_results": [
+            {
+                "source": "PASS_GRAPH_GATE",
+                "status": "ERROR",
+                "scope": "RUNTIME",
+                "result": graph_gate.to_dict(),
+                "error": graph_gate.error_message,
+                "gate_passed": False,
+                "repair_attempts": 0,
+            }
+        ],
+        "facts": [],
+        "caveats": [str(graph_gate.error_message or "Pass graph gate failed.")],
+    }
+
+
+def _dependency_error_runtime_pass(pass_spec: LLMUnifiedPass, dependency_resolution: dict[str, Any]) -> dict[str, Any]:
+    error_message = "; ".join(str(item) for item in dependency_resolution.get("errors", []) if item) or "Dependency placeholder could not be resolved."
+    return {
+        "pass_id": pass_spec.pass_id,
+        "subtask": pass_spec.subtask,
+        "path": pass_spec.path,
+        "status": "DEPENDENCY_BLOCKED",
+        "can_run_parallel": pass_spec.can_run_parallel,
+        "depends_on": pass_spec.depends_on,
+        "expected_result": pass_spec.expected_result,
+        "started_at": None,
+        "completed_at": None,
+        "stage_history": [],
+        "dependency_resolution": dependency_resolution,
+        "source_results": [
+            {
+                "source": "DEPENDENCY_RESOLUTION",
+                "status": "ERROR",
+                "scope": "RUNTIME",
+                "result": dependency_resolution,
+                "error": error_message,
+                "gate_passed": False,
+                "repair_attempts": 1 if dependency_resolution.get("repair_attempted") else 0,
+            }
+        ],
+        "facts": [],
+        "caveats": [error_message],
+    }
+
+
+def _pass_status_from_source_results(source_results: list[dict[str, Any]]) -> str:
+    statuses = {str(item.get("status") or "").upper() for item in source_results if isinstance(item, dict)}
+    if not statuses:
+        return "SKIPPED"
+    for status in ["COMPILE_ERROR", "REQUEST_ERROR", "API_ERROR", "ERROR", "LIVE_EMPTY", "EMPTY"]:
+        if status in statuses:
+            return status
+    return "SUCCESS"
+
+
+PLACEHOLDER_RE = re.compile(r"\{\{\s*([^{}]+?)\s*\}\}")
+
+
+def _resolve_pass_placeholders(pass_spec: LLMUnifiedPass, runtime_passes: list[dict[str, Any]]) -> tuple[LLMUnifiedPass, dict[str, Any]]:
+    errors: list[str] = []
+    replacements: list[dict[str, Any]] = []
+
+    def resolve_value(value: Any) -> Any:
+        if isinstance(value, str):
+            matches = list(PLACEHOLDER_RE.finditer(value))
+            if not matches:
+                return value
+            if len(matches) == 1 and matches[0].span() == (0, len(value)):
+                resolved = _resolve_placeholder_token(matches[0].group(1), runtime_passes)
+                if resolved.get("ok"):
+                    replacements.append({"placeholder": matches[0].group(0), "value_preview": compact_preview(resolved.get("value"), 200)})
+                    return resolved.get("value")
+                errors.append(str(resolved.get("error")))
+                return value
+            out = value
+            for match in matches:
+                resolved = _resolve_placeholder_token(match.group(1), runtime_passes)
+                if resolved.get("ok"):
+                    replacements.append({"placeholder": match.group(0), "value_preview": compact_preview(resolved.get("value"), 200)})
+                    out = out.replace(match.group(0), str(resolved.get("value")))
+                else:
+                    errors.append(str(resolved.get("error")))
+            return out
+        if isinstance(value, list):
+            return [resolve_value(item) for item in value]
+        if isinstance(value, dict):
+            return {key: resolve_value(item) for key, item in value.items()}
+        return value
+
+    sql = pass_spec.sql
+    if sql is not None:
+        sql = LLMUnifiedSQLCandidate(query=resolve_value(sql.query), params=resolve_value(sql.params))
+    api_request = pass_spec.api_request
+    if api_request is not None:
+        api_request = LLMUnifiedAPIRequest(
+            method=api_request.method,
+            path=resolve_value(api_request.path),
+            params=resolve_value(api_request.params),
+        )
+    resolved_pass = LLMUnifiedPass(
+        pass_id=pass_spec.pass_id,
+        subtask=pass_spec.subtask,
+        path=pass_spec.path,
+        can_run_parallel=pass_spec.can_run_parallel,
+        depends_on=pass_spec.depends_on,
+        evidence_order=pass_spec.evidence_order,
+        sql=sql,
+        api_request=api_request,
+        expected_result=pass_spec.expected_result,
+    )
+    required = bool(PLACEHOLDER_RE.search(json.dumps(pass_spec.to_dict(), default=str)))
+    return resolved_pass, {
+        "required": required,
+        "resolved": not errors,
+        "errors": errors,
+        "replacements": replacements,
+    }
+
+
+def _resolve_placeholder_token(token: str, runtime_passes: list[dict[str, Any]]) -> dict[str, Any]:
+    text = str(token or "").strip()
+    marker = ".result."
+    if marker not in text:
+        return {"ok": False, "error": f"Unsupported placeholder '{{{{{text}}}}}'."}
+    pass_id, field_path = text.split(marker, 1)
+    pass_id = pass_id.strip()
+    field_path = field_path.strip()
+    runtime_pass = next((item for item in runtime_passes if str(item.get("pass_id")) == pass_id), None)
+    if runtime_pass is None:
+        return {"ok": False, "error": f"Dependency pass '{pass_id}' has no completed result."}
+    found, value = _lookup_runtime_pass_value(runtime_pass, field_path)
+    if not found:
+        return {"ok": False, "error": f"Dependency placeholder '{text}' could not be resolved."}
+    return {"ok": True, "value": value}
+
+
+def _lookup_runtime_pass_value(runtime_pass: dict[str, Any], field_path: str) -> tuple[bool, Any]:
+    source_results = runtime_pass.get("source_results") if isinstance(runtime_pass.get("source_results"), list) else []
+    for source in source_results:
+        if not isinstance(source, dict) or str(source.get("status") or "").upper() not in {"SUCCESS", "LIVE_EMPTY", "EMPTY"}:
+            continue
+        result = source.get("result") if isinstance(source.get("result"), dict) else {}
+        found, value = _lookup_result_payload(result, field_path)
+        if found:
+            return True, value
+    return False, None
+
+
+def _lookup_result_payload(payload: dict[str, Any], field_path: str) -> tuple[bool, Any]:
+    rows = payload.get("rows") if isinstance(payload.get("rows"), list) else []
+    for row in rows:
+        if isinstance(row, dict) and field_path in row and row[field_path] not in (None, ""):
+            return True, row[field_path]
+    parsed = payload.get("parsed_evidence") if isinstance(payload.get("parsed_evidence"), dict) else {}
+    field_aliases = {
+        "id": "ids",
+        "name": "names",
+        "status": "statuses",
+        "count": "counts",
+    }
+    for key in [field_path, field_aliases.get(field_path, "")]:
+        if not key:
+            continue
+        value = parsed.get(key)
+        if isinstance(value, list) and value:
+            return True, value[0]
+        if isinstance(value, dict) and value:
+            first = next((item for item in value.values() if item not in (None, "")), None)
+            if first is not None:
+                return True, first
+        if value not in (None, "", [], {}):
+            return True, value
+    preview = payload.get("result_preview")
+    if isinstance(preview, dict):
+        items = preview.get("items") if isinstance(preview.get("items"), list) else []
+        for item in items:
+            if isinstance(item, dict) and field_path in item and item[field_path] not in (None, ""):
+                return True, item[field_path]
+    return _lookup_nested_value(payload, field_path.split("."))
+
+
+def _lookup_nested_value(value: Any, parts: list[str]) -> tuple[bool, Any]:
+    current = value
+    for part in parts:
+        if isinstance(current, dict) and part in current:
+            current = current[part]
+        elif isinstance(current, list) and part.isdigit() and int(part) < len(current):
+            current = current[int(part)]
+        else:
+            return False, None
+    return (current not in (None, "", [], {})), current
 
 
 def _source_result_from_tool_result(item: dict[str, Any]) -> dict[str, Any]:

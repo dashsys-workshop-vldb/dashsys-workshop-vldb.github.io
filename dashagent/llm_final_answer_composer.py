@@ -359,9 +359,16 @@ def _missing_required_pass_results(final_answer: str, *, runtime_passes: list[di
         return []
     answer = _norm(final_answer)
     missing: list[str] = []
+    dependency_only_passes = {
+        str(dep)
+        for item in runtime_passes
+        for dep in (item.get("depends_on") if isinstance(item.get("depends_on"), list) else [])
+    }
     for item in runtime_passes:
         pass_id = str(item.get("pass_id") or "").strip()
         if not pass_id or not _pass_has_successful_evidence(item):
+            continue
+        if pass_id in dependency_only_passes:
             continue
         facts = [str(value) for value in item.get("facts", []) if value] if isinstance(item.get("facts"), list) else []
         if facts and not any(_fact_value_in_answer(fact, answer) for fact in facts):

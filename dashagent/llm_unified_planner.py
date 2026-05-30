@@ -20,6 +20,7 @@ ALLOWED_EVIDENCE_ORDERS = {
     "MULTI_PASS",
 }
 MAX_LLM_OWNED_PASSES = 6
+ALLOWED_PASS_PATHS = {"SQL", "API", "SQL_AND_API", "DIRECT", "AGGREGATION_ONLY"}
 
 
 @dataclass
@@ -45,6 +46,7 @@ class LLMUnifiedAPIRequest:
 class LLMUnifiedPass:
     pass_id: str
     subtask: str
+    path: str
     can_run_parallel: bool
     depends_on: list[str]
     evidence_order: str
@@ -56,6 +58,7 @@ class LLMUnifiedPass:
         return {
             "pass_id": self.pass_id,
             "subtask": self.subtask,
+            "path": self.path,
             "can_run_parallel": self.can_run_parallel,
             "depends_on": self.depends_on,
             "evidence_order": self.evidence_order,
@@ -131,7 +134,7 @@ def run_llm_unified_planner(
     payload = {
         "output_schema": {
             "route": "LLM_DIRECT | EVIDENCE_PIPELINE",
-            "evidence_order": "NO_EVIDENCE | SQL_FIRST | API_FIRST | SQL_THEN_API | API_THEN_SQL | PARALLEL",
+            "evidence_order": "NO_EVIDENCE | SQL_FIRST | API_FIRST | SQL_THEN_API | API_THEN_SQL | PARALLEL | MULTI_PASS",
             "direct_answer": "string or null",
             "sql": {"query": "string", "params": []},
             "api_request": {"method": "GET", "path": "/path", "params": {}},
@@ -139,6 +142,7 @@ def run_llm_unified_planner(
                 {
                     "pass_id": "pass_1",
                     "subtask": "short description",
+                    "path": "SQL | API | SQL_AND_API | DIRECT | AGGREGATION_ONLY",
                     "can_run_parallel": True,
                     "depends_on": [],
                     "evidence_order": "SQL_FIRST | API_FIRST | SQL_THEN_API | API_THEN_SQL | PARALLEL | NO_EVIDENCE",
@@ -156,7 +160,8 @@ def run_llm_unified_planner(
         "repair_context": repair_context or None,
         "constraints": [
             "LLM owns semantic route, evidence order, SQL/API candidate generation, and optional repair.",
-            "LLM owns decomposition for long prompts. Use passes for independent or dependent evidence needs.",
+            "LLM owns decomposition and dependency planning. Use passes for independent or dependent evidence needs.",
+            "Use depends_on only when a pass needs earlier pass results. Use placeholders like {{pass_1.result.id}} only when needed.",
             "Do not output deterministic templates or explanations outside JSON.",
             "Use route LLM_DIRECT only when no runtime evidence is required.",
             "Use route EVIDENCE_PIPELINE when uncertain.",
@@ -274,13 +279,14 @@ def _normalize_passes(
             if normalized is not None:
                 passes.append(normalized)
     if passes:
-        return _dedupe_pass_ids(passes)
+        return passes
     if fallback_sql is None and fallback_api_request is None:
         return []
     return [
         LLMUnifiedPass(
             pass_id="pass_1",
             subtask="Primary evidence pass.",
+            path="SQL_AND_API" if fallback_sql is not None and fallback_api_request is not None else ("SQL" if fallback_sql is not None else "API"),
             can_run_parallel=True,
             depends_on=[],
             evidence_order=fallback_evidence_order if fallback_evidence_order in ALLOWED_EVIDENCE_ORDERS else "SQL_FIRST",
@@ -299,6 +305,7 @@ def _normalize_pass(value: Any, *, index: int) -> LLMUnifiedPass | None:
         evidence_order = "SQL_FIRST"
     sql = _normalize_sql_candidate(value.get("sql"))
     api_request = _normalize_api_request(value.get("api_request"))
+    path = _normalize_pass_path(value.get("path"), sql=sql, api_request=api_request, evidence_order=evidence_order)
     if sql is None and api_request is None and evidence_order != "NO_EVIDENCE":
         evidence_order = "NO_EVIDENCE"
     depends_on = value.get("depends_on")
@@ -308,6 +315,7 @@ def _normalize_pass(value: Any, *, index: int) -> LLMUnifiedPass | None:
     return LLMUnifiedPass(
         pass_id=pass_id,
         subtask=str(value.get("subtask") or f"Evidence pass {index}.").strip(),
+        path=path,
         can_run_parallel=bool(value.get("can_run_parallel", False)),
         depends_on=[str(item).strip() for item in depends_on if str(item).strip()],
         evidence_order=evidence_order,
@@ -330,6 +338,7 @@ def _dedupe_pass_ids(passes: list[LLMUnifiedPass]) -> list[LLMUnifiedPass]:
                 LLMUnifiedPass(
                     pass_id=f"{base}_{seen[base]}",
                     subtask=item.subtask,
+                    path=item.path,
                     can_run_parallel=item.can_run_parallel,
                     depends_on=item.depends_on,
                     evidence_order=item.evidence_order,
@@ -339,6 +348,27 @@ def _dedupe_pass_ids(passes: list[LLMUnifiedPass]) -> list[LLMUnifiedPass]:
                 )
             )
     return out
+
+
+def _normalize_pass_path(
+    value: Any,
+    *,
+    sql: LLMUnifiedSQLCandidate | None,
+    api_request: LLMUnifiedAPIRequest | None,
+    evidence_order: str,
+) -> str:
+    path = str(value or "").strip().upper()
+    if path:
+        return path
+    if sql is not None and api_request is not None:
+        return "SQL_AND_API"
+    if sql is not None:
+        return "SQL"
+    if api_request is not None:
+        return "API"
+    if evidence_order == "NO_EVIDENCE":
+        return "DIRECT"
+    return "AGGREGATION_ONLY"
 
 
 def _parse_json_object(text: str) -> dict[str, Any]:

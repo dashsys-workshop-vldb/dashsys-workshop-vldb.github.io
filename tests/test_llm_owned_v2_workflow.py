@@ -92,6 +92,16 @@ def _client_call_payloads(client: SequencedLLMClient) -> list[dict]:
     return payloads
 
 
+def _preview_items(value):
+    if isinstance(value, dict) and "items" in value:
+        return value["items"]
+    return value
+
+
+def _preview_groups(value):
+    return [_preview_items(item) for item in _preview_items(value)]
+
+
 def test_v2_llm_direct_skips_tools_evidence_and_post_evidence_answering(tiny_project, monkeypatch):
     _install_fake_planner(
         monkeypatch,
@@ -257,6 +267,7 @@ def test_v2_parallel_sql_api_passes_are_aggregated_by_llm_final_answer(tiny_proj
                     {
                         "pass_id": "local_count",
                         "subtask": "Count local campaigns.",
+                        "path": "SQL",
                         "can_run_parallel": True,
                         "depends_on": [],
                         "evidence_order": "SQL_FIRST",
@@ -266,6 +277,7 @@ def test_v2_parallel_sql_api_passes_are_aggregated_by_llm_final_answer(tiny_proj
                     {
                         "pass_id": "live_schema_probe",
                         "subtask": "Probe live schemas.",
+                        "path": "API",
                         "can_run_parallel": True,
                         "depends_on": [],
                         "evidence_order": "API_FIRST",
@@ -307,8 +319,19 @@ def test_v2_parallel_sql_api_passes_are_aggregated_by_llm_final_answer(tiny_proj
     assert final["used_pass_ids"]["items"] == ["local_count", "live_schema_probe"]
     boundary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
     assert boundary["multi_pass_enabled"] is True
+    assert boundary["v2_pipeline_scheduler_used"] is True
+    assert boundary["pipeline_stage_count"] == 8
+    assert "stage_events" in boundary
+    assert boundary["llm_pass_graph_used"] is True
     assert boundary["llm_pass_count"] == 2
     assert boundary["parallel_pass_count"] == 2
+    assert _preview_groups(boundary["parallel_groups"]) == [["local_count", "live_schema_probe"]]
+    assert _preview_groups(boundary["dependency_edges"]) == []
+    assert boundary["pass_graph_gate_passed"] is True
+    stage_events = _preview_items(boundary["stage_events"])
+    p2_gate_started = next(index for index, item in enumerate(stage_events) if item["pass_id"] == "live_schema_probe" and item["stage"] == "SQL_API_GATE" and item["event"] == "started")
+    p1_final_ready = next(index for index, item in enumerate(stage_events) if item["pass_id"] == "local_count" and item["stage"] == "READY_FOR_FINAL_COMPOSITION" and item["event"] == "completed")
+    assert p2_gate_started < p1_final_ready
     assert boundary["backend_semantic_decomposition_used"] is False
     composer_payload = next(payload for payload in _client_call_payloads(client) if payload.get("task") == "LLM_OWNED_FINAL_ANSWER_COMPOSITION")
     assert [item["pass_id"] for item in composer_payload["runtime_passes"]] == ["local_count", "live_schema_probe"]
@@ -326,6 +349,7 @@ def test_v2_dependent_pass_waits_for_declared_dependency(tiny_project, monkeypat
                     {
                         "pass_id": "first",
                         "subtask": "Fetch names.",
+                        "path": "SQL",
                         "can_run_parallel": False,
                         "depends_on": [],
                         "evidence_order": "SQL_FIRST",
@@ -334,6 +358,7 @@ def test_v2_dependent_pass_waits_for_declared_dependency(tiny_project, monkeypat
                     {
                         "pass_id": "second",
                         "subtask": "Fetch statuses after names.",
+                        "path": "SQL",
                         "can_run_parallel": False,
                         "depends_on": ["first"],
                         "evidence_order": "SQL_FIRST",
@@ -364,7 +389,120 @@ def test_v2_dependent_pass_waits_for_declared_dependency(tiny_project, monkeypat
     assert [row["pass_id"] for row in result["tool_results"]] == ["first", "second"]
     boundary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
     assert boundary["pass_ids"]["items"] == ["first", "second"]
+    assert _preview_groups(boundary["parallel_groups"]) == [["first"], ["second"]]
+    assert _preview_groups(boundary["dependency_edges"]) == [["first", "second"]]
     assert boundary["sequential_pass_count"] == 2
+
+
+def test_v2_dependent_pass_resolves_placeholder_from_dependency_result(tiny_project, monkeypatch):
+    _install_fake_planner(
+        monkeypatch,
+        [
+            {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "MULTI_PASS",
+                "passes": [
+                    {
+                        "pass_id": "lookup",
+                        "subtask": "Lookup campaign id.",
+                        "path": "SQL",
+                        "can_run_parallel": False,
+                        "depends_on": [],
+                        "sql": {"query": "SELECT campaign_id FROM dim_campaign WHERE name = ?", "params": ["Birthday Message"]},
+                    },
+                    {
+                        "pass_id": "details",
+                        "subtask": "Fetch campaign details using the id.",
+                        "path": "SQL",
+                        "can_run_parallel": False,
+                        "depends_on": ["lookup"],
+                        "sql": {"query": "SELECT name, status FROM dim_campaign WHERE campaign_id = ?", "params": ["{{lookup.result.campaign_id}}"]},
+                    },
+                ],
+                "aggregation_instruction": "Answer using both lookup and details.",
+            },
+            {
+                "final_answer": "Birthday Message is draft.",
+                "used_pass_ids": ["lookup", "details"],
+                "claimed_facts": [{"claim": "Birthday Message is draft.", "supporting_pass_ids": ["details"]}],
+                "caveats_included": [],
+            },
+        ],
+    )
+
+    result = AgentExecutor(tiny_project).run(
+        "Find Birthday Message by id, then show its status.",
+        strategy=ROBUST_V2,
+        query_id="v2_placeholder_dependency",
+    )
+
+    assert [row["pass_id"] for row in result["tool_results"]] == ["lookup", "details"]
+    assert result["tool_results"][1]["step"]["sql"] == "SELECT name, status FROM dim_campaign WHERE campaign_id = ?"
+    assert result["tool_results"][1]["payload"]["rows"] == [{"name": "Birthday Message", "status": "draft"}]
+    pass_results = _preview_items(_checkpoint_output(result, "checkpoint_result_bundle")["runtime_passes"])
+    assert pass_results[1]["dependency_resolution"]["resolved"] is True
+
+
+def test_v2_missing_dependency_placeholder_returns_error_to_llm_repair_once(tiny_project, monkeypatch):
+    client = _install_fake_planner(
+        monkeypatch,
+        [
+            {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "MULTI_PASS",
+                "passes": [
+                    {
+                        "pass_id": "lookup",
+                        "subtask": "Lookup campaign.",
+                        "path": "SQL",
+                        "can_run_parallel": False,
+                        "depends_on": [],
+                        "sql": {"query": "SELECT campaign_id FROM dim_campaign WHERE name = ?", "params": ["Birthday Message"]},
+                    },
+                    {
+                        "pass_id": "details",
+                        "subtask": "Use a missing field.",
+                        "path": "SQL",
+                        "can_run_parallel": False,
+                        "depends_on": ["lookup"],
+                        "sql": {"query": "SELECT name FROM dim_campaign WHERE campaign_id = ?", "params": ["{{lookup.result.missing_id}}"]},
+                    },
+                ],
+            },
+            {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "MULTI_PASS",
+                "passes": [
+                    {
+                        "pass_id": "details",
+                        "subtask": "Repair by using the campaign_id field.",
+                        "path": "SQL",
+                        "can_run_parallel": False,
+                        "depends_on": ["lookup"],
+                        "sql": {"query": "SELECT name FROM dim_campaign WHERE campaign_id = ?", "params": ["{{lookup.result.campaign_id}}"]},
+                    }
+                ],
+            },
+            {
+                "final_answer": "Birthday Message was found.",
+                "used_pass_ids": ["lookup", "details"],
+                "claimed_facts": [{"claim": "Birthday Message was found.", "supporting_pass_ids": ["details"]}],
+                "caveats_included": [],
+            },
+        ],
+    )
+
+    result = AgentExecutor(tiny_project).run(
+        "Lookup Birthday Message, then use the lookup id.",
+        strategy=ROBUST_V2,
+        query_id="v2_missing_placeholder_repair",
+    )
+
+    assert [row["pass_id"] for row in result["tool_results"]] == ["lookup", "details"]
+    assert result["tool_results"][1]["payload"]["rows"] == [{"name": "Birthday Message"}]
+    repair_payload = next(payload for payload in _client_call_payloads(client) if isinstance(payload.get("repair_context"), dict))
+    assert repair_payload["repair_context"]["failed_component"] == "dependency_resolution"
+    assert repair_payload["repair_context"]["pass_id"] == "details"
 
 
 def test_v2_each_pass_uses_gate_and_failed_pass_sql_repairs_with_pass_context(tiny_project, monkeypatch):
@@ -378,6 +516,7 @@ def test_v2_each_pass_uses_gate_and_failed_pass_sql_repairs_with_pass_context(ti
                     {
                         "pass_id": "broken_sql",
                         "subtask": "Fetch campaign names.",
+                        "path": "SQL",
                         "can_run_parallel": False,
                         "depends_on": [],
                         "evidence_order": "SQL_FIRST",
@@ -393,6 +532,7 @@ def test_v2_each_pass_uses_gate_and_failed_pass_sql_repairs_with_pass_context(ti
                     {
                         "pass_id": "broken_sql",
                         "subtask": "Fetch campaign names.",
+                        "path": "SQL",
                         "can_run_parallel": False,
                         "depends_on": [],
                         "evidence_order": "SQL_FIRST",

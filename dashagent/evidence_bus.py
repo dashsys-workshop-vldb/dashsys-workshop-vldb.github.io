@@ -49,6 +49,7 @@ class EvidenceBus:
     api_pagination: list[dict[str, Any]] = field(default_factory=list)
     api_evidence_states: list[str] = field(default_factory=list)
     api_parser_modes: list[str] = field(default_factory=list)
+    pass_results: list[dict[str, Any]] = field(default_factory=list)
 
     def observe_sql(self, step: Any, payload: dict[str, Any]) -> None:
         if not payload.get("ok"):
@@ -98,6 +99,20 @@ class EvidenceBus:
         fields = evidence.get("important_fields", {})
         if isinstance(fields, dict):
             self._observe_mapping(fields)
+
+    def observe_pass_result(self, pass_result: dict[str, Any]) -> None:
+        if not isinstance(pass_result, dict):
+            return
+        self.pass_results.append(
+            {
+                "pass_id": pass_result.get("pass_id"),
+                "path": pass_result.get("path"),
+                "status": pass_result.get("status"),
+                "depends_on": list(pass_result.get("depends_on") or []),
+                "facts": list(pass_result.get("facts") or [])[:10],
+                "source_result_count": len(pass_result.get("source_results") or []),
+            }
+        )
 
     def forward_to_step(self, step: Any) -> list[str]:
         actions: list[str] = []
@@ -157,6 +172,8 @@ class EvidenceBus:
             "api_pagination": self.api_pagination[:2],
             "api_evidence_states": self.api_evidence_states[:5],
             "api_parser_modes": self.api_parser_modes[:5],
+            "pass_result_count": len(self.pass_results),
+            "pass_ids": [str(item.get("pass_id")) for item in self.pass_results[:6] if item.get("pass_id")],
         }
 
 

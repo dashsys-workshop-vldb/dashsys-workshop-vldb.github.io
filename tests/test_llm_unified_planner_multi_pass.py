@@ -12,6 +12,7 @@ def test_normalize_multi_pass_plan_keeps_llm_declared_passes_and_aggregation_ins
                 {
                     "pass_id": "local_status",
                     "subtask": "Fetch local journey status.",
+                    "path": "SQL",
                     "can_run_parallel": True,
                     "depends_on": [],
                     "evidence_order": "SQL_FIRST",
@@ -22,6 +23,7 @@ def test_normalize_multi_pass_plan_keeps_llm_declared_passes_and_aggregation_ins
                 {
                     "pass_id": "live_status",
                     "subtask": "Fetch live journey status.",
+                    "path": "API",
                     "can_run_parallel": True,
                     "depends_on": [],
                     "evidence_order": "API_FIRST",
@@ -40,12 +42,16 @@ def test_normalize_multi_pass_plan_keeps_llm_declared_passes_and_aggregation_ins
     assert plan.evidence_order == "MULTI_PASS"
     assert len(plan.passes) == 2
     assert plan.passes[0].pass_id == "local_status"
+    assert plan.passes[0].path == "SQL"
     assert plan.passes[0].sql is not None
+    assert plan.passes[1].path == "API"
     assert plan.passes[1].api_request is not None
     assert plan.aggregation_instruction == "Compare local and live status."
     payload = plan.to_dict()
     assert payload["passes"][0]["pass_id"] == "local_status"
+    assert payload["passes"][0]["path"] == "SQL"
     assert payload["passes"][1]["pass_id"] == "live_status"
+    assert payload["passes"][1]["path"] == "API"
 
 
 def test_normalize_single_pass_plan_backfills_passes_for_backward_compatibility():
@@ -63,6 +69,7 @@ def test_normalize_single_pass_plan_backfills_passes_for_backward_compatibility(
 
     assert len(plan.passes) == 1
     assert plan.passes[0].pass_id == "pass_1"
+    assert plan.passes[0].path == "SQL"
     assert plan.passes[0].sql is not None
     assert plan.sql is not None
 
