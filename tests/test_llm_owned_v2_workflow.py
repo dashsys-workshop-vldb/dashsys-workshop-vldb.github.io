@@ -82,6 +82,16 @@ def _checkpoint_output(result: dict, checkpoint_id: str) -> dict:
     )
 
 
+def _client_call_payloads(client: SequencedLLMClient) -> list[dict]:
+    payloads = []
+    for call in client.calls:
+        try:
+            payloads.append(json.loads(call["user"]))
+        except Exception:
+            continue
+    return payloads
+
+
 def test_v2_llm_direct_skips_tools_evidence_and_post_evidence_answering(tiny_project, monkeypatch):
     _install_fake_planner(
         monkeypatch,
@@ -236,27 +246,46 @@ def test_v2_api_request_gate_passes_safe_get_and_executes(tiny_project, monkeypa
 
 
 def test_v2_parallel_sql_api_passes_are_aggregated_by_llm_final_answer(tiny_project, monkeypatch):
-    _install_fake_planner(
+    client = _install_fake_planner(
         monkeypatch,
         [
             {
                 "route": "EVIDENCE_PIPELINE",
-                "evidence_order": "PARALLEL",
+                "evidence_order": "MULTI_PASS",
                 "direct_answer": None,
-                "sql": {"query": "SELECT COUNT(*) AS count FROM dim_campaign", "params": []},
-                "api_request": {
-                    "method": "GET",
-                    "path": "/data/foundation/schemaregistry/tenant/schemas",
-                    "params": {"limit": 25},
-                },
+                "passes": [
+                    {
+                        "pass_id": "local_count",
+                        "subtask": "Count local campaigns.",
+                        "can_run_parallel": True,
+                        "depends_on": [],
+                        "evidence_order": "SQL_FIRST",
+                        "sql": {"query": "SELECT COUNT(*) AS count FROM dim_campaign", "params": []},
+                        "api_request": None,
+                    },
+                    {
+                        "pass_id": "live_schema_probe",
+                        "subtask": "Probe live schemas.",
+                        "can_run_parallel": True,
+                        "depends_on": [],
+                        "evidence_order": "API_FIRST",
+                        "sql": None,
+                        "api_request": {
+                            "method": "GET",
+                            "path": "/data/foundation/schemaregistry/tenant/schemas",
+                            "params": {"limit": 25},
+                        },
+                    },
+                ],
+                "aggregation_instruction": "Report both local count and live API evidence.",
                 "reason": "long prompt needs local SQL and live API evidence",
             },
             {
                 "final_answer": "There are 2 campaigns, and Birthday Message was returned by the live API.",
-                "used_pass_ids": ["sql_1", "api_1"],
+                "used_pass_ids": ["local_count", "live_schema_probe"],
                 "claimed_facts": [
-                    {"claim": "There are 2 campaigns.", "supporting_pass_ids": ["sql_1"]},
-                    {"claim": "Birthday Message was returned by the live API.", "supporting_pass_ids": ["api_1"]},
+                    {"claim": "There are 2 campaigns.", "supporting_pass_ids": ["local_count"]},
+                    {"claim": "Birthday Message was returned by the live API.", "supporting_pass_ids": ["live_schema_probe"]},
                 ],
                 "caveats_included": [],
             },
@@ -275,7 +304,120 @@ def test_v2_parallel_sql_api_passes_are_aggregated_by_llm_final_answer(tiny_proj
     assert "checkpoint_llm_final_answer_composer" in _checkpoint_names(result)
     final = _checkpoint_output(result, "checkpoint_18_final_answer")
     assert final["llm_owned_final_answer"] is True
-    assert final["used_pass_ids"]["items"] == ["sql_1", "api_1"]
+    assert final["used_pass_ids"]["items"] == ["local_count", "live_schema_probe"]
+    boundary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
+    assert boundary["multi_pass_enabled"] is True
+    assert boundary["llm_pass_count"] == 2
+    assert boundary["parallel_pass_count"] == 2
+    assert boundary["backend_semantic_decomposition_used"] is False
+    composer_payload = next(payload for payload in _client_call_payloads(client) if payload.get("task") == "LLM_OWNED_FINAL_ANSWER_COMPOSITION")
+    assert [item["pass_id"] for item in composer_payload["runtime_passes"]] == ["local_count", "live_schema_probe"]
+    assert composer_payload["aggregation_instruction"] == "Report both local count and live API evidence."
+
+
+def test_v2_dependent_pass_waits_for_declared_dependency(tiny_project, monkeypatch):
+    _install_fake_planner(
+        monkeypatch,
+        [
+            {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "MULTI_PASS",
+                "passes": [
+                    {
+                        "pass_id": "first",
+                        "subtask": "Fetch names.",
+                        "can_run_parallel": False,
+                        "depends_on": [],
+                        "evidence_order": "SQL_FIRST",
+                        "sql": {"query": "SELECT name FROM dim_campaign ORDER BY campaign_id", "params": []},
+                    },
+                    {
+                        "pass_id": "second",
+                        "subtask": "Fetch statuses after names.",
+                        "can_run_parallel": False,
+                        "depends_on": ["first"],
+                        "evidence_order": "SQL_FIRST",
+                        "sql": {"query": "SELECT status FROM dim_campaign ORDER BY campaign_id", "params": []},
+                    },
+                ],
+                "aggregation_instruction": "Answer both subtasks.",
+                "reason": "dependency declared by LLM",
+            },
+            {
+                "final_answer": "Birthday Message and Welcome Journey were returned, with statuses draft and published.",
+                "used_pass_ids": ["first", "second"],
+                "claimed_facts": [
+                    {"claim": "Birthday Message and Welcome Journey were returned.", "supporting_pass_ids": ["first"]},
+                    {"claim": "Statuses draft and published were returned.", "supporting_pass_ids": ["second"]},
+                ],
+                "caveats_included": [],
+            },
+        ],
+    )
+
+    result = AgentExecutor(tiny_project).run(
+        "Fetch campaign names first, then fetch their statuses.",
+        strategy=ROBUST_V2,
+        query_id="v2_dependent_passes",
+    )
+
+    assert [row["pass_id"] for row in result["tool_results"]] == ["first", "second"]
+    boundary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
+    assert boundary["pass_ids"]["items"] == ["first", "second"]
+    assert boundary["sequential_pass_count"] == 2
+
+
+def test_v2_each_pass_uses_gate_and_failed_pass_sql_repairs_with_pass_context(tiny_project, monkeypatch):
+    client = _install_fake_planner(
+        monkeypatch,
+        [
+            {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "MULTI_PASS",
+                "passes": [
+                    {
+                        "pass_id": "broken_sql",
+                        "subtask": "Fetch campaign names.",
+                        "can_run_parallel": False,
+                        "depends_on": [],
+                        "evidence_order": "SQL_FIRST",
+                        "sql": {"query": "SELECT campaign_name FROM dim_campaign", "params": []},
+                    }
+                ],
+                "reason": "first attempt has bad SQL",
+            },
+            {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "MULTI_PASS",
+                "passes": [
+                    {
+                        "pass_id": "broken_sql",
+                        "subtask": "Fetch campaign names.",
+                        "can_run_parallel": False,
+                        "depends_on": [],
+                        "evidence_order": "SQL_FIRST",
+                        "sql": {"query": "SELECT name FROM dim_campaign ORDER BY campaign_id", "params": []},
+                    }
+                ],
+                "reason": "repair pass SQL",
+            },
+            {
+                "final_answer": "Campaigns: Birthday Message; Welcome Journey.",
+                "used_pass_ids": ["broken_sql"],
+                "claimed_facts": [{"claim": "Birthday Message and Welcome Journey were returned.", "supporting_pass_ids": ["broken_sql"]}],
+                "caveats_included": [],
+            },
+        ],
+    )
+
+    result = AgentExecutor(tiny_project).run("Show campaigns.", strategy=ROBUST_V2, query_id="v2_pass_sql_repair")
+
+    assert result["tool_results"][0]["pass_id"] == "broken_sql"
+    assert result["tool_results"][0]["payload"]["ok"] is True
+    summary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
+    assert summary["sql_repair_attempts"] == 1
+    repair_payload = next(payload for payload in _client_call_payloads(client) if isinstance(payload.get("repair_context"), dict))
+    assert repair_payload["repair_context"]["pass_id"] == "broken_sql"
 
 
 def test_v2_malformed_api_request_can_repair_without_backend_rewrite(tiny_project, monkeypatch):

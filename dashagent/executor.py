@@ -87,11 +87,12 @@ from .llm_final_answer_composer import (
     compose_llm_final_answer,
     safe_llm_final_answer_fallback,
 )
-from .llm_unified_planner import LLMUnifiedPlan, run_llm_unified_planner
+from .llm_unified_planner import LLMUnifiedAPIRequest, LLMUnifiedPass, LLMUnifiedPlan, LLMUnifiedSQLCandidate, run_llm_unified_planner
 from .query_decomposer import decompose_query
 from .query_family_examples import examples_for_family, few_shot_public_overlap_check
 from .query_analysis import analyze_query
 from .risk_efficiency_controller import classify_candidate_risk
+from .result_bundle import ResultBundle
 from .router import QueryRouter
 from .runtime_leakage_guard import runtime_guard_checkpoint, score_provenance_runtime_checkpoint
 from .schema_context_voter import vote_schema_contexts
@@ -1564,7 +1565,7 @@ class AgentExecutor:
                 checkpoint_logger=checkpoint_logger,
             )
 
-        tool_results, execution_summary = self._execute_llm_owned_evidence_plan(
+        tool_results, runtime_passes, execution_summary = self._execute_llm_owned_evidence_plan(
             query=query,
             initial_plan=plan,
             planner_context=planner_context,
@@ -1649,6 +1650,7 @@ class AgentExecutor:
             "evidence_bus_built": True,
             "post_evidence_answer_router_ran": False,
             "llm_final_answer_composer_ran": True,
+            "pass_results_count": len(runtime_passes),
             "llm_route": plan.route,
             "llm_evidence_order": plan.evidence_order,
         }
@@ -1676,6 +1678,17 @@ class AgentExecutor:
 
         answer_start = time.perf_counter()
         evidence_quality = classify_evidence_quality(tool_results, api_required=any(item.get("type") == "api" for item in tool_results))
+        result_bundle = ResultBundle.from_pass_results(runtime_passes, tool_results)
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_result_bundle",
+            stage="evidence forwarding",
+            technique="ResultBundle",
+            input_summary={"pass_results_count": result_bundle.pass_results_count, "tool_result_count": len(tool_results)},
+            output=result_bundle.to_dict(),
+            effect="stores all LLM-declared pass results before final LLM aggregation",
+            correctness_role="keeps pass-level runtime evidence separate from backend answer generation",
+            efficiency_role="reuses executed pass results without extra tools",
+        )
         checkpoint_logger.add_checkpoint(
             "checkpoint_evidence_quality_classifier",
             stage="answer synthesis",
@@ -1687,7 +1700,6 @@ class AgentExecutor:
             efficiency_role="uses existing payloads only",
         )
         slots = extract_answer_slots(query, tool_results)
-        runtime_passes = _runtime_passes_from_tool_results(tool_results)
         answer_card = build_llm_final_answer_card(
             user_prompt=query,
             llm_plan=plan,
@@ -1695,6 +1707,8 @@ class AgentExecutor:
             evidence_bus=evidence_bus,
             answer_slots=slots,
             evidence_quality=evidence_quality,
+            result_bundle=result_bundle,
+            aggregation_instruction=plan.aggregation_instruction,
         )
         checkpoint_logger.add_checkpoint(
             "checkpoint_15_answer_slots",
@@ -1896,11 +1910,18 @@ class AgentExecutor:
         }
         generation_boundary = {
             "llm_owned_generation": True,
+            "multi_pass_enabled": False,
+            "llm_pass_count": 0,
+            "parallel_pass_count": 0,
+            "sequential_pass_count": 0,
+            "pass_ids": [],
+            "pass_results_count": 0,
             "llm_route": plan.route,
             "llm_evidence_order": plan.evidence_order,
             "sql_gate_passed": None,
             "api_gate_passed": None,
             "backend_semantic_planning_used": False,
+            "backend_semantic_decomposition_used": False,
             "sql_compile_gate_passed": None,
             "api_request_gate_passed": None,
             "sql_repair_attempts": 0,
@@ -1980,9 +2001,10 @@ class AgentExecutor:
         initial_plan: LLMUnifiedPlan,
         planner_context: dict[str, Any],
         checkpoint_logger: CheckpointLogger,
-    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-        plan = initial_plan
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
         tool_results: list[dict[str, Any]] = []
+        runtime_passes: list[dict[str, Any]] = []
+        pass_specs = initial_plan.passes or []
         summary: dict[str, Any] = {
             "sql_gate_passed": None,
             "api_gate_passed": None,
@@ -1992,29 +2014,240 @@ class AgentExecutor:
             "api_repair_attempts": 0,
             "sql_executed": False,
             "api_executed": False,
+            "multi_pass_enabled": bool(len(pass_specs) > 1 or initial_plan.evidence_order == "MULTI_PASS"),
+            "llm_pass_count": len(pass_specs),
+            "parallel_pass_count": sum(1 for item in pass_specs if item.can_run_parallel and not item.depends_on),
+            "sequential_pass_count": sum(1 for item in pass_specs if not item.can_run_parallel or item.depends_on),
+            "pass_ids": [item.pass_id for item in pass_specs],
+            "pass_results_count": 0,
+            "backend_semantic_decomposition_used": False,
+            "deterministic_answer_template_used": False,
+            "hidden_eval_gold_used": False,
         }
-        for source in self._llm_owned_execution_order(plan):
-            if source == "sql" and plan.sql is not None:
-                result, plan = self._run_llm_owned_sql_candidate(
-                    query=query,
-                    plan=plan,
-                    planner_context=planner_context,
-                    checkpoint_logger=checkpoint_logger,
-                    summary=summary,
-                )
-                if result is not None:
-                    tool_results.append(result)
-            elif source == "api" and plan.api_request is not None:
-                result, plan = self._run_llm_owned_api_candidate(
-                    query=query,
-                    plan=plan,
-                    planner_context=planner_context,
-                    checkpoint_logger=checkpoint_logger,
-                    summary=summary,
-                )
-                if result is not None:
-                    tool_results.append(result)
-        return tool_results, summary
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_llm_owned_pass_scheduler",
+            stage="llm-owned pass scheduling",
+            technique="dependency-aware scheduling of LLM-declared evidence passes",
+            input_summary={"pass_ids": summary["pass_ids"], "multi_pass_enabled": summary["multi_pass_enabled"]},
+            output=summary,
+            effect="schedules only LLM-declared passes; does not split prompts or add semantic subtasks",
+            correctness_role="keeps decomposition owned by the LLM and backend role limited to scheduling/gates/execution",
+            efficiency_role="groups dependency-free passes without changing their semantics",
+        )
+        for pass_spec in self._schedule_llm_owned_passes(pass_specs):
+            pass_tool_results: list[dict[str, Any]] = []
+            for source in self._llm_owned_pass_execution_order(pass_spec):
+                if source == "sql" and pass_spec.sql is not None:
+                    result = self._run_llm_owned_sql_for_pass(
+                        query=query,
+                        original_plan=initial_plan,
+                        pass_spec=pass_spec,
+                        planner_context=planner_context,
+                        checkpoint_logger=checkpoint_logger,
+                        summary=summary,
+                    )
+                    if result is not None:
+                        pass_tool_results.append(result)
+                        tool_results.append(result)
+                elif source == "api" and pass_spec.api_request is not None:
+                    result = self._run_llm_owned_api_for_pass(
+                        query=query,
+                        original_plan=initial_plan,
+                        pass_spec=pass_spec,
+                        planner_context=planner_context,
+                        checkpoint_logger=checkpoint_logger,
+                        summary=summary,
+                    )
+                    if result is not None:
+                        pass_tool_results.append(result)
+                        tool_results.append(result)
+            runtime_passes.append(_runtime_pass_from_pass_spec(pass_spec, pass_tool_results))
+        summary["pass_results_count"] = len(runtime_passes)
+        return tool_results, runtime_passes, summary
+
+    def _run_llm_owned_sql_for_pass(
+        self,
+        *,
+        query: str,
+        original_plan: LLMUnifiedPlan,
+        pass_spec: LLMUnifiedPass,
+        planner_context: dict[str, Any],
+        checkpoint_logger: CheckpointLogger,
+        summary: dict[str, Any],
+    ) -> dict[str, Any] | None:
+        candidate = pass_spec.sql
+        if candidate is None:
+            return None
+        compile_result = self.sql_compile_gate.check(candidate.query, candidate.params)
+        summary["sql_gate_passed"] = compile_result.passed
+        summary["sql_compile_gate_passed"] = compile_result.passed
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_llm_owned_sql_compile_gate",
+            stage="llm sql compile gate",
+            technique="DuckDB EXPLAIN compile check for LLM-owned SQL pass",
+            input_summary={"pass_id": pass_spec.pass_id, "sql": candidate.query},
+            output={"pass_id": pass_spec.pass_id, **compile_result.to_dict()},
+            effect="checks syntax/database-semantic validity without rewriting SQL",
+            correctness_role="returns compile errors for one LLM repair attempt",
+            efficiency_role="prevents executing uncompilable SQL",
+        )
+        if not compile_result.passed:
+            repair_plan = run_llm_unified_planner(
+                user_prompt=query,
+                schema_context=planner_context["schema_context"],
+                endpoint_context=planner_context["endpoint_context"],
+                repair_context={
+                    "failed_component": "sql",
+                    "pass_id": pass_spec.pass_id,
+                    "subtask": pass_spec.subtask,
+                    "compile_gate": compile_result.to_dict(),
+                    "previous_plan": original_plan.to_dict(),
+                },
+            )
+            summary["sql_repair_attempts"] = int(summary.get("sql_repair_attempts", 0) or 0) + 1
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_llm_owned_sql_repair",
+                stage="llm sql repair",
+                technique="single LLM-owned SQL pass repair",
+                input_summary={"pass_id": pass_spec.pass_id, "failed_sql": candidate.query, "error_type": compile_result.error_type},
+                output=repair_plan.to_dict(),
+                effect="lets the LLM repair its pass SQL after compile feedback",
+                correctness_role="backend supplies only compile error feedback and no replacement SQL",
+                efficiency_role="caps repair to one attempt",
+            )
+            repaired_pass = _repaired_pass_for(repair_plan, pass_spec.pass_id, source="sql")
+            if repaired_pass is None or repaired_pass.sql is None:
+                return _blocked_sql_tool_result(candidate.query, candidate.params, compile_result, pass_id=pass_spec.pass_id, subtask=pass_spec.subtask)
+            repaired_compile = self.sql_compile_gate.check(repaired_pass.sql.query, repaired_pass.sql.params)
+            summary["sql_gate_passed"] = repaired_compile.passed
+            summary["sql_compile_gate_passed"] = repaired_compile.passed
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_llm_owned_sql_compile_gate_repair",
+                stage="llm sql compile gate",
+                technique="DuckDB EXPLAIN compile check for repaired LLM-owned SQL pass",
+                input_summary={"pass_id": pass_spec.pass_id, "sql": repaired_pass.sql.query},
+                output={"pass_id": pass_spec.pass_id, **repaired_compile.to_dict()},
+                effect="checks the LLM repair without backend mutation",
+                correctness_role="executes repaired SQL only if it compiles",
+                efficiency_role="stops after one repair",
+            )
+            if not repaired_compile.passed:
+                return _blocked_sql_tool_result(repaired_pass.sql.query, repaired_pass.sql.params, repaired_compile, pass_id=pass_spec.pass_id, subtask=pass_spec.subtask)
+            candidate = repaired_pass.sql
+        payload = self.db.execute_sql(candidate.query, params=candidate.params, allow_full_result=True)
+        summary["sql_executed"] = True
+        validation = ValidationResult(True, warnings=["LLM SQL pass passed compile gate."], errors=[])
+        step = PlanStep(
+            action="sql",
+            purpose=f"V2 LLM-owned SQL pass: {pass_spec.subtask}",
+            sql=candidate.query,
+            allow_full_result=True,
+            family="llm_owned_v2",
+        )
+        return {
+            "type": "sql",
+            "pass_id": pass_spec.pass_id,
+            "subtask": pass_spec.subtask,
+            "expected_result": pass_spec.expected_result,
+            "step": step.to_dict(),
+            "validation": validation.to_dict(),
+            "payload": payload,
+        }
+
+    def _run_llm_owned_api_for_pass(
+        self,
+        *,
+        query: str,
+        original_plan: LLMUnifiedPlan,
+        pass_spec: LLMUnifiedPass,
+        planner_context: dict[str, Any],
+        checkpoint_logger: CheckpointLogger,
+        summary: dict[str, Any],
+    ) -> dict[str, Any] | None:
+        request = pass_spec.api_request
+        if request is None:
+            return None
+        gate_result = self.api_request_gate.check(request)
+        summary["api_gate_passed"] = gate_result.passed
+        summary["api_request_gate_passed"] = gate_result.passed
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_llm_owned_api_request_gate",
+            stage="llm api request gate",
+            technique="safe GET request-shape/catalog gate for LLM-owned API pass",
+            input_summary={"pass_id": pass_spec.pass_id, "method": request.method, "path": request.path},
+            output={"pass_id": pass_spec.pass_id, **gate_result.to_dict()},
+            effect="checks only executable API request shape before runtime execution",
+            correctness_role="blocks unsafe method, unknown endpoint, unresolved path, or malformed params",
+            efficiency_role="prevents invalid API calls without planning endpoints",
+        )
+        if not gate_result.passed:
+            repair_plan = run_llm_unified_planner(
+                user_prompt=query,
+                schema_context=planner_context["schema_context"],
+                endpoint_context=planner_context["endpoint_context"],
+                repair_context={
+                    "failed_component": "api_request",
+                    "pass_id": pass_spec.pass_id,
+                    "subtask": pass_spec.subtask,
+                    "api_request_gate": gate_result.to_dict(),
+                    "previous_plan": original_plan.to_dict(),
+                },
+            )
+            summary["api_repair_attempts"] = int(summary.get("api_repair_attempts", 0) or 0) + 1
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_llm_owned_api_request_repair",
+                stage="llm api request repair",
+                technique="single LLM-owned API pass repair",
+                input_summary={"pass_id": pass_spec.pass_id, "failed_api_request": request.to_dict(), "error_type": gate_result.error_type},
+                output=repair_plan.to_dict(),
+                effect="lets the LLM repair request shape after gate feedback",
+                correctness_role="backend supplies only request errors and no replacement endpoint",
+                efficiency_role="caps repair to one attempt",
+            )
+            repaired_pass = _repaired_pass_for(repair_plan, pass_spec.pass_id, source="api")
+            if repaired_pass is None or repaired_pass.api_request is None:
+                return _blocked_api_tool_result(gate_result, pass_id=pass_spec.pass_id, subtask=pass_spec.subtask)
+            repaired_gate = self.api_request_gate.check(repaired_pass.api_request)
+            summary["api_gate_passed"] = repaired_gate.passed
+            summary["api_request_gate_passed"] = repaired_gate.passed
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_llm_owned_api_request_gate_repair",
+                stage="llm api request gate",
+                technique="request gate for repaired LLM-owned API pass",
+                input_summary={"pass_id": pass_spec.pass_id, "method": repaired_pass.api_request.method, "path": repaired_pass.api_request.path},
+                output={"pass_id": pass_spec.pass_id, **repaired_gate.to_dict()},
+                effect="checks repaired request without backend endpoint replacement",
+                correctness_role="executes repaired request only if it passes",
+                efficiency_role="stops after one repair",
+            )
+            if not repaired_gate.passed:
+                return _blocked_api_tool_result(repaired_gate, pass_id=pass_spec.pass_id, subtask=pass_spec.subtask)
+            request = repaired_pass.api_request
+            gate_result = repaired_gate
+        method = str(gate_result.method or request.method)
+        path = str(gate_result.path or request.path)
+        params = dict(gate_result.params or request.params or {})
+        payload = self.api_client.call_api(method, path, params, {})
+        summary["api_executed"] = True
+        validation = ValidationResult(True, warnings=["LLM API request pass passed request gate."], errors=[])
+        step = PlanStep(
+            action="api",
+            purpose=f"V2 LLM-owned API pass: {pass_spec.subtask}",
+            method=method,
+            url=path,
+            params=params,
+            headers={},
+            family="llm_owned_v2",
+        )
+        return {
+            "type": "api",
+            "pass_id": pass_spec.pass_id,
+            "subtask": pass_spec.subtask,
+            "expected_result": pass_spec.expected_result,
+            "step": step.to_dict(),
+            "validation": validation.to_dict(),
+            "payload": payload,
+        }
 
     def _run_llm_owned_sql_candidate(
         self,
@@ -2177,6 +2410,30 @@ class AgentExecutor:
             return ["sql", "api"]
         return ["sql", "api"]
 
+    def _llm_owned_pass_execution_order(self, pass_spec: LLMUnifiedPass) -> list[str]:
+        if pass_spec.evidence_order in {"API_FIRST", "API_THEN_SQL"}:
+            return ["api", "sql"]
+        if pass_spec.evidence_order == "NO_EVIDENCE":
+            return []
+        return ["sql", "api"]
+
+    def _schedule_llm_owned_passes(self, passes: list[LLMUnifiedPass]) -> list[LLMUnifiedPass]:
+        pending = list(passes)
+        complete: set[str] = set()
+        ordered: list[LLMUnifiedPass] = []
+        while pending:
+            ready = [item for item in pending if all(dep in complete for dep in item.depends_on)]
+            if not ready:
+                ordered.extend(pending)
+                break
+            parallel_ready = [item for item in ready if item.can_run_parallel and not item.depends_on]
+            sequential_ready = [item for item in ready if item not in parallel_ready]
+            for item in [*parallel_ready, *sequential_ready]:
+                ordered.append(item)
+                complete.add(item.pass_id)
+                pending.remove(item)
+        return ordered
+
     def _llm_owned_planner_context(self) -> dict[str, Any]:
         return {
             "schema_context": self.db.get_schema_summary(),
@@ -2207,6 +2464,8 @@ class AgentExecutor:
             "backend_semantic_planning_used": False,
             "route": plan.route,
             "evidence_order": plan.evidence_order,
+            "passes": [item.to_dict() for item in plan.passes],
+            "aggregation_instruction": plan.aggregation_instruction,
             "steps": steps,
             "executed_tool_count": len(tool_results),
         }
@@ -3436,7 +3695,7 @@ def _validation_result_from_payload(payload: Any) -> ValidationResult:
     return ValidationResult(False, errors=["Missing validation payload."])
 
 
-def _blocked_sql_tool_result(sql: str, params: list[Any] | None, compile_result: SQLCompileGateResult) -> dict[str, Any]:
+def _blocked_sql_tool_result(sql: str, params: list[Any] | None, compile_result: SQLCompileGateResult, *, pass_id: str | None = None, subtask: str | None = None) -> dict[str, Any]:
     validation = ValidationResult(
         False,
         errors=[compile_result.error_message or "SQL failed compile gate."],
@@ -3451,6 +3710,8 @@ def _blocked_sql_tool_result(sql: str, params: list[Any] | None, compile_result:
     )
     return {
         "type": "sql",
+        "pass_id": pass_id,
+        "subtask": subtask,
         "step": step.to_dict(),
         "validation": validation.to_dict(),
         "payload": {
@@ -3466,7 +3727,7 @@ def _blocked_sql_tool_result(sql: str, params: list[Any] | None, compile_result:
     }
 
 
-def _blocked_api_tool_result(gate_result: APIRequestGateResult) -> dict[str, Any]:
+def _blocked_api_tool_result(gate_result: APIRequestGateResult, *, pass_id: str | None = None, subtask: str | None = None) -> dict[str, Any]:
     validation = ValidationResult(
         False,
         errors=[gate_result.error_message or "API request failed gate."],
@@ -3483,6 +3744,8 @@ def _blocked_api_tool_result(gate_result: APIRequestGateResult) -> dict[str, Any
     )
     return {
         "type": "api",
+        "pass_id": pass_id,
+        "subtask": subtask,
         "step": step.to_dict(),
         "validation": validation.to_dict(),
         "payload": {
@@ -3492,6 +3755,96 @@ def _blocked_api_tool_result(gate_result: APIRequestGateResult) -> dict[str, Any
             "api_request_gate": gate_result.to_dict(),
         },
     }
+
+
+def _repaired_pass_for(plan: LLMUnifiedPlan, pass_id: str, *, source: str) -> LLMUnifiedPass | None:
+    for item in plan.passes:
+        if item.pass_id == pass_id and ((source == "sql" and item.sql is not None) or (source == "api" and item.api_request is not None)):
+            return item
+    for item in plan.passes:
+        if (source == "sql" and item.sql is not None) or (source == "api" and item.api_request is not None):
+            return item
+    if source == "sql" and plan.sql is not None:
+        return LLMUnifiedPass(pass_id=pass_id, subtask="Repaired SQL pass.", can_run_parallel=False, depends_on=[], evidence_order="SQL_FIRST", sql=plan.sql, api_request=None)
+    if source == "api" and plan.api_request is not None:
+        return LLMUnifiedPass(pass_id=pass_id, subtask="Repaired API pass.", can_run_parallel=False, depends_on=[], evidence_order="API_FIRST", sql=None, api_request=plan.api_request)
+    return None
+
+
+def _runtime_pass_from_pass_spec(pass_spec: LLMUnifiedPass, tool_results: list[dict[str, Any]]) -> dict[str, Any]:
+    source_results = [_source_result_from_tool_result(item) for item in tool_results]
+    caveats = [str(item.get("error")) for item in source_results if item.get("error")]
+    return {
+        "pass_id": pass_spec.pass_id,
+        "subtask": pass_spec.subtask,
+        "can_run_parallel": pass_spec.can_run_parallel,
+        "depends_on": pass_spec.depends_on,
+        "expected_result": pass_spec.expected_result,
+        "source_results": source_results,
+        "facts": _facts_from_source_results(source_results),
+        "caveats": caveats,
+    }
+
+
+def _source_result_from_tool_result(item: dict[str, Any]) -> dict[str, Any]:
+    kind = str(item.get("type") or "").lower()
+    payload = item.get("payload") if isinstance(item.get("payload"), dict) else {}
+    if kind == "sql":
+        rows = payload.get("rows") if isinstance(payload.get("rows"), list) else []
+        compile_gate = payload.get("compile_gate") if isinstance(payload.get("compile_gate"), dict) else None
+        if compile_gate and not compile_gate.get("passed"):
+            status = "COMPILE_ERROR"
+        else:
+            status = "SUCCESS" if payload.get("ok") and rows else ("EMPTY" if payload.get("ok") else "ERROR")
+        return {
+            "source": "SQL",
+            "status": status,
+            "scope": "LOCAL_SNAPSHOT",
+            "result": {"rows": rows[:5], "row_count": payload.get("row_count", len(rows)), "sql": payload.get("sql")},
+            "error": payload.get("error"),
+            "gate_passed": None if compile_gate is None else bool(compile_gate.get("passed")),
+            "repair_attempts": 0,
+        }
+    parsed = payload.get("parsed_evidence") if isinstance(payload.get("parsed_evidence"), dict) else {}
+    gate = payload.get("api_request_gate") if isinstance(payload.get("api_request_gate"), dict) else None
+    state = str(parsed.get("evidence_state") or "").lower()
+    if gate and not gate.get("passed"):
+        status = "REQUEST_ERROR"
+    elif not payload.get("ok") or state in {"api_error", "malformed_response"}:
+        status = "API_ERROR"
+    elif "empty" in state:
+        status = "LIVE_EMPTY"
+    else:
+        status = "SUCCESS"
+    error = payload.get("error") or "; ".join(str(value) for value in parsed.get("errors", [])[:3]) if isinstance(parsed.get("errors"), list) else payload.get("error")
+    return {
+        "source": "API",
+        "status": status,
+        "scope": "LIVE_API",
+        "result": {"parsed_evidence": parsed, "result_preview": payload.get("result_preview")},
+        "error": error,
+        "gate_passed": None if gate is None else bool(gate.get("passed")),
+        "repair_attempts": 0,
+    }
+
+
+def _facts_from_source_results(source_results: list[dict[str, Any]]) -> list[str]:
+    facts: list[str] = []
+    for result in source_results:
+        payload = result.get("result") if isinstance(result.get("result"), dict) else {}
+        rows = payload.get("rows") if isinstance(payload.get("rows"), list) else []
+        for row in rows[:3]:
+            if isinstance(row, dict):
+                facts.extend(f"{key}:{value}" for key, value in row.items() if value not in (None, ""))
+        parsed = payload.get("parsed_evidence") if isinstance(payload.get("parsed_evidence"), dict) else {}
+        for key in ["names", "ids", "statuses"]:
+            values = parsed.get(key)
+            if isinstance(values, list):
+                facts.extend(f"{key}:{value}" for value in values[:5])
+        counts = parsed.get("counts")
+        if isinstance(counts, dict):
+            facts.extend(f"count:{value}" for value in counts.values() if value not in (None, ""))
+    return facts[:20]
 
 
 def _runtime_passes_from_tool_results(tool_results: list[dict[str, Any]]) -> list[dict[str, Any]]:

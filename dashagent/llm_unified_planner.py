@@ -17,7 +17,9 @@ ALLOWED_EVIDENCE_ORDERS = {
     "SQL_THEN_API",
     "API_THEN_SQL",
     "PARALLEL",
+    "MULTI_PASS",
 }
+MAX_LLM_OWNED_PASSES = 6
 
 
 @dataclass
@@ -40,12 +42,38 @@ class LLMUnifiedAPIRequest:
 
 
 @dataclass
+class LLMUnifiedPass:
+    pass_id: str
+    subtask: str
+    can_run_parallel: bool
+    depends_on: list[str]
+    evidence_order: str
+    sql: LLMUnifiedSQLCandidate | None
+    api_request: LLMUnifiedAPIRequest | None
+    expected_result: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "pass_id": self.pass_id,
+            "subtask": self.subtask,
+            "can_run_parallel": self.can_run_parallel,
+            "depends_on": self.depends_on,
+            "evidence_order": self.evidence_order,
+            "sql": self.sql.to_dict() if self.sql else None,
+            "api_request": self.api_request.to_dict() if self.api_request else None,
+            "expected_result": self.expected_result,
+        }
+
+
+@dataclass
 class LLMUnifiedPlan:
     route: str
     evidence_order: str
     direct_answer: str | None
     sql: LLMUnifiedSQLCandidate | None
     api_request: LLMUnifiedAPIRequest | None
+    passes: list[LLMUnifiedPass]
+    aggregation_instruction: str
     reason: str
     provider: str
     model: str
@@ -60,6 +88,8 @@ class LLMUnifiedPlan:
             "direct_answer": self.direct_answer,
             "sql": self.sql.to_dict() if self.sql else None,
             "api_request": self.api_request.to_dict() if self.api_request else None,
+            "passes": [item.to_dict() for item in self.passes],
+            "aggregation_instruction": self.aggregation_instruction,
             "reason": self.reason,
             "provider": self.provider,
             "model": self.model,
@@ -105,6 +135,19 @@ def run_llm_unified_planner(
             "direct_answer": "string or null",
             "sql": {"query": "string", "params": []},
             "api_request": {"method": "GET", "path": "/path", "params": {}},
+            "passes": [
+                {
+                    "pass_id": "pass_1",
+                    "subtask": "short description",
+                    "can_run_parallel": True,
+                    "depends_on": [],
+                    "evidence_order": "SQL_FIRST | API_FIRST | SQL_THEN_API | API_THEN_SQL | PARALLEL | NO_EVIDENCE",
+                    "sql": {"query": "string", "params": []},
+                    "api_request": {"method": "GET", "path": "/path", "params": {}},
+                    "expected_result": "short result description",
+                }
+            ],
+            "aggregation_instruction": "How to combine pass results into one final answer",
             "reason": "short string",
         },
         "user_prompt": user_prompt,
@@ -113,6 +156,7 @@ def run_llm_unified_planner(
         "repair_context": repair_context or None,
         "constraints": [
             "LLM owns semantic route, evidence order, SQL/API candidate generation, and optional repair.",
+            "LLM owns decomposition for long prompts. Use passes for independent or dependent evidence needs.",
             "Do not output deterministic templates or explanations outside JSON.",
             "Use route LLM_DIRECT only when no runtime evidence is required.",
             "Use route EVIDENCE_PIPELINE when uncertain.",
@@ -158,6 +202,18 @@ def normalize_llm_unified_plan(payload: dict[str, Any], *, provider: str = "unkn
 
     sql = _normalize_sql_candidate(payload.get("sql"))
     api_request = _normalize_api_request(payload.get("api_request"))
+    passes = _normalize_passes(payload.get("passes"), fallback_sql=sql, fallback_api_request=api_request, fallback_evidence_order=evidence_order)
+    if route == "LLM_DIRECT":
+        passes = []
+        sql = None
+        api_request = None
+    elif passes and len(passes) > 1:
+        evidence_order = "MULTI_PASS"
+    elif evidence_order == "MULTI_PASS" and len(passes) <= 1:
+        evidence_order = passes[0].evidence_order if passes else "SQL_FIRST"
+    if passes:
+        sql = passes[0].sql
+        api_request = passes[0].api_request
     direct_answer = payload.get("direct_answer")
     if direct_answer is not None:
         direct_answer = str(direct_answer).strip() or None
@@ -167,6 +223,8 @@ def normalize_llm_unified_plan(payload: dict[str, Any], *, provider: str = "unkn
         direct_answer=direct_answer,
         sql=sql,
         api_request=api_request,
+        passes=passes,
+        aggregation_instruction=str(payload.get("aggregation_instruction") or "").strip(),
         reason=str(payload.get("reason") or ""),
         provider=provider,
         model=model,
@@ -202,6 +260,87 @@ def _normalize_api_request(value: Any) -> LLMUnifiedAPIRequest | None:
     return LLMUnifiedAPIRequest(method=method, path=path, params=normalized_params)
 
 
+def _normalize_passes(
+    value: Any,
+    *,
+    fallback_sql: LLMUnifiedSQLCandidate | None,
+    fallback_api_request: LLMUnifiedAPIRequest | None,
+    fallback_evidence_order: str,
+) -> list[LLMUnifiedPass]:
+    passes: list[LLMUnifiedPass] = []
+    if isinstance(value, list):
+        for index, item in enumerate(value[:MAX_LLM_OWNED_PASSES], start=1):
+            normalized = _normalize_pass(item, index=index)
+            if normalized is not None:
+                passes.append(normalized)
+    if passes:
+        return _dedupe_pass_ids(passes)
+    if fallback_sql is None and fallback_api_request is None:
+        return []
+    return [
+        LLMUnifiedPass(
+            pass_id="pass_1",
+            subtask="Primary evidence pass.",
+            can_run_parallel=True,
+            depends_on=[],
+            evidence_order=fallback_evidence_order if fallback_evidence_order in ALLOWED_EVIDENCE_ORDERS else "SQL_FIRST",
+            sql=fallback_sql,
+            api_request=fallback_api_request,
+            expected_result="Primary runtime evidence.",
+        )
+    ]
+
+
+def _normalize_pass(value: Any, *, index: int) -> LLMUnifiedPass | None:
+    if not isinstance(value, dict):
+        return None
+    evidence_order = str(value.get("evidence_order") or "").strip().upper()
+    if evidence_order not in ALLOWED_EVIDENCE_ORDERS:
+        evidence_order = "SQL_FIRST"
+    sql = _normalize_sql_candidate(value.get("sql"))
+    api_request = _normalize_api_request(value.get("api_request"))
+    if sql is None and api_request is None and evidence_order != "NO_EVIDENCE":
+        evidence_order = "NO_EVIDENCE"
+    depends_on = value.get("depends_on")
+    if not isinstance(depends_on, list):
+        depends_on = []
+    pass_id = re.sub(r"[^A-Za-z0-9_.-]+", "_", str(value.get("pass_id") or f"pass_{index}").strip())[:80] or f"pass_{index}"
+    return LLMUnifiedPass(
+        pass_id=pass_id,
+        subtask=str(value.get("subtask") or f"Evidence pass {index}.").strip(),
+        can_run_parallel=bool(value.get("can_run_parallel", False)),
+        depends_on=[str(item).strip() for item in depends_on if str(item).strip()],
+        evidence_order=evidence_order,
+        sql=sql,
+        api_request=api_request,
+        expected_result=str(value.get("expected_result") or "").strip(),
+    )
+
+
+def _dedupe_pass_ids(passes: list[LLMUnifiedPass]) -> list[LLMUnifiedPass]:
+    seen: dict[str, int] = {}
+    out: list[LLMUnifiedPass] = []
+    for item in passes:
+        base = item.pass_id
+        seen[base] = seen.get(base, 0) + 1
+        if seen[base] == 1:
+            out.append(item)
+        else:
+            out.append(
+                LLMUnifiedPass(
+                    pass_id=f"{base}_{seen[base]}",
+                    subtask=item.subtask,
+                    can_run_parallel=item.can_run_parallel,
+                    depends_on=item.depends_on,
+                    evidence_order=item.evidence_order,
+                    sql=item.sql,
+                    api_request=item.api_request,
+                    expected_result=item.expected_result,
+                )
+            )
+    return out
+
+
 def _parse_json_object(text: str) -> dict[str, Any]:
     stripped = _strip_json_text(text)
     parsed = json.loads(stripped)
@@ -234,6 +373,8 @@ def _fallback_plan(
         direct_answer=None,
         sql=None,
         api_request=None,
+        passes=[],
+        aggregation_instruction="",
         reason=redact_secrets(reason),
         provider=provider,
         model=model,

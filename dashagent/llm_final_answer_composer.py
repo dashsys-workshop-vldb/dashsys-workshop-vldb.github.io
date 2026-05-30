@@ -12,6 +12,7 @@ from .evidence_grounded_final_answer_verifier import verify_evidence_grounded_fi
 from .final_answer_claim_extractor import extract_final_answer_claims
 from .llm_client import get_llm_client
 from .llm_unified_planner import LLMUnifiedPlan
+from .result_bundle import ResultBundle
 from .trajectory import compact_preview, redact_secrets
 
 
@@ -32,6 +33,8 @@ SENSITIVE_CONTEXT_KEYS = {
 class LLMFinalAnswerCandidate:
     final_answer: str | None
     used_pass_ids: list[str] = field(default_factory=list)
+    answered_subtasks: list[str] = field(default_factory=list)
+    unanswered_subtasks: list[str] = field(default_factory=list)
     claimed_facts: list[dict[str, Any]] = field(default_factory=list)
     caveats_included: list[str] = field(default_factory=list)
     provider: str = "unknown"
@@ -78,6 +81,8 @@ def build_llm_final_answer_card(
     evidence_bus: EvidenceBus,
     answer_slots: AnswerSlots,
     evidence_quality: dict[str, Any] | None = None,
+    result_bundle: ResultBundle | None = None,
+    aggregation_instruction: str = "",
     repair_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     card = {
@@ -91,9 +96,11 @@ def build_llm_final_answer_card(
             "api_request_present": llm_plan.api_request is not None,
         },
         "runtime_passes": [_safe_pass_payload(item) for item in runtime_passes],
+        "result_bundle": result_bundle.to_dict() if result_bundle is not None else None,
         "evidence_bus": evidence_bus.compact(),
         "answer_slots": answer_slots.compact(),
         "evidence_quality": compact_preview(evidence_quality or {}, 1800),
+        "aggregation_instruction": aggregation_instruction or llm_plan.aggregation_instruction,
         "repair_context": compact_preview(repair_context, 1800) if repair_context else None,
         "scope_labels": ["LOCAL_SNAPSHOT", "LIVE_API", "API_ERROR", "LIVE_EMPTY"],
         "constraints": [
@@ -102,6 +109,7 @@ def build_llm_final_answer_card(
             "Do not turn API_ERROR into no-data.",
             "Do not turn LIVE_EMPTY into global absence.",
             "Include required information from evidence when the user explicitly asked for it.",
+            "For multi-pass plans, answer all requested parts using the relevant pass results.",
             "Extra context or explanation is allowed only when semantically correct and evidence-safe.",
             "Do not optimize for hidden eval, gold answer wording, or scorer-specific phrasing.",
         ],
@@ -178,6 +186,8 @@ def parse_llm_final_answer_response(raw_content: str) -> LLMFinalAnswerCandidate
     return LLMFinalAnswerCandidate(
         final_answer=str(parsed.get("final_answer")).strip() if parsed.get("final_answer") is not None else None,
         used_pass_ids=[str(value) for value in parsed.get("used_pass_ids", []) if value] if isinstance(parsed.get("used_pass_ids"), list) else [],
+        answered_subtasks=[str(value) for value in parsed.get("answered_subtasks", []) if value] if isinstance(parsed.get("answered_subtasks"), list) else [],
+        unanswered_subtasks=[str(value) for value in parsed.get("unanswered_subtasks", []) if value] if isinstance(parsed.get("unanswered_subtasks"), list) else [],
         claimed_facts=[dict(value) for value in parsed.get("claimed_facts", []) if isinstance(value, dict)] if isinstance(parsed.get("claimed_facts"), list) else [],
         caveats_included=[str(value) for value in parsed.get("caveats_included", []) if value] if isinstance(parsed.get("caveats_included"), list) else [],
         raw_preview=compact_preview(parsed, 1200),
@@ -239,6 +249,7 @@ def check_final_answer_semantic_grounding(
         )
 
     missing = _missing_required_fields(final_answer, question=question, index=index, slots=slots)
+    missing.extend(_missing_required_pass_results(final_answer, runtime_passes=runtime_passes))
     if missing:
         return FinalAnswerSemanticGateResult(
             False,
@@ -341,6 +352,34 @@ def _missing_required_fields(final_answer: str, *, question: str, index: Any, sl
         if absent:
             missing.append("entity_names")
     return missing
+
+
+def _missing_required_pass_results(final_answer: str, *, runtime_passes: list[dict[str, Any]]) -> list[str]:
+    if len(runtime_passes) <= 1:
+        return []
+    answer = _norm(final_answer)
+    missing: list[str] = []
+    for item in runtime_passes:
+        pass_id = str(item.get("pass_id") or "").strip()
+        if not pass_id or not _pass_has_successful_evidence(item):
+            continue
+        facts = [str(value) for value in item.get("facts", []) if value] if isinstance(item.get("facts"), list) else []
+        if facts and not any(_fact_value_in_answer(fact, answer) for fact in facts):
+            missing.append(f"pass:{pass_id}")
+    return missing
+
+
+def _pass_has_successful_evidence(item: dict[str, Any]) -> bool:
+    source_results = item.get("source_results")
+    if not isinstance(source_results, list):
+        return False
+    return any(str(source.get("status") or "").upper() == "SUCCESS" for source in source_results if isinstance(source, dict))
+
+
+def _fact_value_in_answer(fact: str, answer: str) -> bool:
+    text = str(fact)
+    value = text.split(":", 1)[1] if ":" in text else text
+    return _value_in_answer(value, answer)
 
 
 def _scope_errors(final_answer: str, *, question: str, runtime_passes: list[dict[str, Any]], slots: AnswerSlots) -> list[str]:

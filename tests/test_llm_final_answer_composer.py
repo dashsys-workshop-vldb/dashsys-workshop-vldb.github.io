@@ -177,3 +177,34 @@ def test_semantic_gate_allows_extra_correct_context_without_gold_wording():
     serialized = json.dumps(result.to_dict(), sort_keys=True).lower()
     assert "gold_answer" not in serialized
     assert "expected_trace" not in serialized
+
+
+def test_semantic_gate_catches_ignored_necessary_pass_result():
+    tool_results = [_sql_tool_result([{"count": 2}])]
+    bus, slots = _bus_and_slots("Count campaigns locally and verify the live API result.", tool_results)
+    bus.api_names.append("Birthday Message")
+
+    result = check_final_answer_semantic_grounding(
+        "There are 2 campaigns.",
+        question="Count campaigns locally and verify the live API result.",
+        runtime_passes=[
+            {
+                "pass_id": "local_count",
+                "source_results": [{"source": "SQL", "status": "SUCCESS", "scope": "LOCAL_SNAPSHOT", "result": {"rows": [{"count": 2}]}}],
+                "facts": ["count:2"],
+                "caveats": [],
+            },
+            {
+                "pass_id": "live_probe",
+                "source_results": [{"source": "API", "status": "SUCCESS", "scope": "LIVE_API", "result": {"parsed_evidence": {"names": ["Birthday Message"]}}}],
+                "facts": ["names:Birthday Message"],
+                "caveats": [],
+            },
+        ],
+        evidence_bus=bus,
+        slots=slots,
+    )
+
+    assert result.passed is False
+    assert result.error_type == "missing_required_info"
+    assert "pass:live_probe" in result.missing_required_fields
