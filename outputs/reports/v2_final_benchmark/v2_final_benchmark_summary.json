@@ -1,0 +1,835 @@
+{
+  "architecture_reminder": {
+    "backend_owns": [
+      "scheduling",
+      "gates",
+      "execution",
+      "storage",
+      "error checks",
+      "objective diagnostics"
+    ],
+    "llm_owns": [
+      "route",
+      "decomposition",
+      "SQL/API candidate generation",
+      "final answer composition",
+      "repair"
+    ],
+    "packaged_default": "SQL_FIRST_API_VERIFY"
+  },
+  "commands_run": [
+    "git status --short",
+    "python3 -m pytest -q",
+    "python3 scripts/check_submission_ready.py",
+    "python3 scripts/generate_sdk_usage_audit.py",
+    "git diff --check",
+    "rg -n \"run_dev_eval|Organizer35|Internal50|promotion|hidden_style|integrated_robustness|500_prompt|strict|score|gate\" scripts tests README.md docs . || true",
+    "ls scripts",
+    "python3 scripts/run_dev_eval.py --help",
+    "python3 scripts/run_dashagent_500_prompt_suite_eval.py --help",
+    "python3 scripts/run_dev_eval.py --strict --strategies SQL_FIRST_API_VERIFY",
+    "python3 scripts/run_dev_eval.py --strict --strategies ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+    "python3 scripts/run_dashagent_500_prompt_suite_eval.py --engine real_agent --mode packaged_baseline_real --limit 50 --seed 20260525 --clean --output-dir outputs/reports/v2_final_benchmark/internal50/packaged_baseline/outputs --report-dir outputs/reports/v2_final_benchmark/internal50/packaged_baseline",
+    "python3 scripts/run_dashagent_500_prompt_suite_eval.py --engine real_agent --mode robust_generalized_harness_candidate_v2_real --limit 50 --seed 20260525 --clean --output-dir outputs/reports/v2_final_benchmark/internal50/v2/outputs --report-dir outputs/reports/v2_final_benchmark/internal50/v2",
+    "python3 scripts/run_semantic_route_promotion_gate.py",
+    "python3 scripts/run_integrated_robustness_gate.py",
+    "python3 scripts/run_hidden_style_eval.py",
+    "python3 scripts/check_submission_ready.py",
+    "python3 scripts/run_one_query.py <7 focused prompts> --strategy ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+  ],
+  "failure_analysis": {
+    "grouped_counts": {
+      "api_gate_failure": 0,
+      "evidence_bus_missing_evidence": 35,
+      "execution_error": 0,
+      "final_semantic_grounding_failure": 35,
+      "final_syntax_gate_failure": 35,
+      "missing_required_info": 46,
+      "pass_graph_failure": 0,
+      "planner_toolcall_failure_or_no_usable_plan": 35,
+      "provider_error": 35,
+      "scope_confusion": "not detected, but not assessable for V2 rows because no SQL/API evidence was produced",
+      "sql_gate_failure": 0,
+      "timeout": 0,
+      "unsupported_claim": 0
+    },
+    "primary_failure_type": "provider/model error caused LLM planner and final composer to return errors; V2 failed closed to EVIDENCE_PIPELINE with zero declared passes and zero SQL/API calls."
+  },
+  "focused_smoke": [
+    {
+      "api_calls": 0,
+      "composer_error": "Error code: 401 - {'error': {'message': 'User not found.', 'code': 401}}",
+      "evidence_bus_built": true,
+      "evidence_order": "SQL_FIRST",
+      "evidence_pipeline_bypassed": false,
+      "expected": "SQL/API evidence as planned; no invented date",
+      "final_answer": "I could not compose a verified final answer from the available runtime evidence.",
+      "llm_pass_count": 0,
+      "matches_expectation": false,
+      "missing_required_info": "yes",
+      "pass_results_count": 0,
+      "post_evidence_answer_router_ran": false,
+      "prompt": "When was the journey \"Birthday Message\" published?",
+      "query_id": "v2_final_smoke_birthday_published",
+      "route": "EVIDENCE_PIPELINE",
+      "scope_caveat_errors": "not assessable: no evidence/tool result produced",
+      "semantic_gate_passed": false,
+      "sql_calls": 0,
+      "syntax_gate_passed": false,
+      "unsupported_claims": 0
+    },
+    {
+      "api_calls": 0,
+      "composer_error": "Error code: 401 - {'error': {'message': 'User not found.', 'code': 401}}",
+      "evidence_bus_built": true,
+      "evidence_order": "SQL_FIRST",
+      "evidence_pipeline_bypassed": false,
+      "expected": "local/live scope preserved; API_ERROR not no-data",
+      "final_answer": "I could not compose a verified final answer from the available runtime evidence.",
+      "llm_pass_count": 0,
+      "matches_expectation": false,
+      "missing_required_info": "yes",
+      "pass_results_count": 0,
+      "post_evidence_answer_router_ran": false,
+      "prompt": "Compare local and live status of Birthday Message if both are available.",
+      "query_id": "v2_final_smoke_compare_local_live_birthday",
+      "route": "EVIDENCE_PIPELINE",
+      "scope_caveat_errors": "not assessable: no evidence/tool result produced",
+      "semantic_gate_passed": false,
+      "sql_calls": 0,
+      "syntax_gate_passed": false,
+      "unsupported_claims": 0
+    },
+    {
+      "api_calls": 0,
+      "composer_error": "Error code: 401 - {'error': {'message': 'User not found.', 'code': 401}}",
+      "evidence_bus_built": true,
+      "evidence_order": "SQL_FIRST",
+      "evidence_pipeline_bypassed": false,
+      "expected": "LLM_DIRECT/no evidence; SQL=0 API=0; EvidenceBus not built",
+      "final_answer": "I could not compose a verified final answer from the available runtime evidence.",
+      "llm_pass_count": 0,
+      "matches_expectation": false,
+      "missing_required_info": "yes",
+      "pass_results_count": 0,
+      "post_evidence_answer_router_ran": false,
+      "prompt": "What is a schema?",
+      "query_id": "v2_final_smoke_concept_schema",
+      "route": "EVIDENCE_PIPELINE",
+      "scope_caveat_errors": "not assessable: no evidence/tool result produced",
+      "semantic_gate_passed": false,
+      "sql_calls": 0,
+      "syntax_gate_passed": false,
+      "unsupported_claims": 0
+    },
+    {
+      "api_calls": 0,
+      "composer_error": "Error code: 401 - {'error': {'message': 'User not found.', 'code': 401}}",
+      "evidence_bus_built": true,
+      "evidence_order": "SQL_FIRST",
+      "evidence_pipeline_bypassed": false,
+      "expected": "SQL evidence; LOCAL_SNAPSHOT; no live claim",
+      "final_answer": "I could not compose a verified final answer from the available runtime evidence.",
+      "llm_pass_count": 0,
+      "matches_expectation": false,
+      "missing_required_info": "yes",
+      "pass_results_count": 0,
+      "post_evidence_answer_router_ran": false,
+      "prompt": "How many schema records are in the local snapshot?",
+      "query_id": "v2_final_smoke_local_schema_count",
+      "route": "EVIDENCE_PIPELINE",
+      "scope_caveat_errors": "not assessable: no evidence/tool result produced",
+      "semantic_gate_passed": false,
+      "sql_calls": 0,
+      "syntax_gate_passed": false,
+      "unsupported_claims": 0
+    },
+    {
+      "api_calls": 0,
+      "composer_error": "Error code: 401 - {'error': {'message': 'User not found.', 'code': 401}}",
+      "evidence_bus_built": true,
+      "evidence_order": "SQL_FIRST",
+      "evidence_pipeline_bypassed": false,
+      "expected": "LLM_DIRECT/no evidence; SQL=0 API=0; EvidenceBus not built",
+      "final_answer": "I could not compose a verified final answer from the available runtime evidence.",
+      "llm_pass_count": 0,
+      "matches_expectation": false,
+      "missing_required_info": "yes",
+      "pass_results_count": 0,
+      "post_evidence_answer_router_ran": false,
+      "prompt": "In the phrase \"list schemas\", what does \"list\" mean?",
+      "query_id": "v2_final_smoke_meta_list_schemas",
+      "route": "EVIDENCE_PIPELINE",
+      "scope_caveat_errors": "not assessable: no evidence/tool result produced",
+      "semantic_gate_passed": false,
+      "sql_calls": 0,
+      "syntax_gate_passed": false,
+      "unsupported_claims": 0
+    },
+    {
+      "api_calls": 0,
+      "composer_error": "Error code: 401 - {'error': {'message': 'User not found.', 'code': 401}}",
+      "evidence_bus_built": true,
+      "evidence_order": "SQL_FIRST",
+      "evidence_pipeline_bypassed": false,
+      "expected": "multi-part concept + evidence aggregation",
+      "final_answer": "I could not compose a verified final answer from the available runtime evidence.",
+      "llm_pass_count": 0,
+      "matches_expectation": false,
+      "missing_required_info": "yes",
+      "pass_results_count": 0,
+      "post_evidence_answer_router_ran": false,
+      "prompt": "Explain what inactive journey means and show inactive journeys.",
+      "query_id": "v2_final_smoke_mixed_inactive_journeys",
+      "route": "EVIDENCE_PIPELINE",
+      "scope_caveat_errors": "not assessable: no evidence/tool result produced",
+      "semantic_gate_passed": false,
+      "sql_calls": 0,
+      "syntax_gate_passed": false,
+      "unsupported_claims": 0
+    },
+    {
+      "api_calls": 0,
+      "composer_error": "Error code: 401 - {'error': {'message': 'User not found.', 'code': 401}}",
+      "evidence_bus_built": true,
+      "evidence_order": "SQL_FIRST",
+      "evidence_pipeline_bypassed": false,
+      "expected": "EVIDENCE_PIPELINE; EvidenceBus built; no pure direct bypass",
+      "final_answer": "I could not compose a verified final answer from the available runtime evidence.",
+      "llm_pass_count": 0,
+      "matches_expectation": false,
+      "missing_required_info": "yes",
+      "pass_results_count": 0,
+      "post_evidence_answer_router_ran": false,
+      "prompt": "What schemas do I have?",
+      "query_id": "v2_final_smoke_schemas_do_i_have",
+      "route": "EVIDENCE_PIPELINE",
+      "scope_caveat_errors": "not assessable: no evidence/tool result produced",
+      "semantic_gate_passed": false,
+      "sql_calls": 0,
+      "syntax_gate_passed": false,
+      "unsupported_claims": 0
+    }
+  ],
+  "gates": {
+    "check_submission_ready": {
+      "default_strategy_is_sql_first_api_verify": true,
+      "ok": true,
+      "query_output_count": 73,
+      "secret_scan_ok": true
+    },
+    "hidden_style_eval": {
+      "cases": 48,
+      "failed_cases": 0,
+      "passed_cases": 48,
+      "summary": {
+        "failed_cases": 0,
+        "family_stability_rate": 1.0,
+        "passed_cases": 48,
+        "schema_stability_rate": 1.0,
+        "top_failure_categories": [],
+        "total_cases": 48
+      }
+    },
+    "integrated_robustness_gate": {
+      "gates": {
+        "answer_shape_trial_not_promoted_without_gate": {
+          "observed": {
+            "eligible_rows": 141,
+            "implementation_ready": false,
+            "runtime_change_applied": false
+          },
+          "passed": true
+        },
+        "check_submission_ready_passes": {
+          "observed": {
+            "ok": true
+          },
+          "passed": true
+        },
+        "efficiency_recovery_trial_recorded": {
+          "observed": {
+            "best_projected_strict_score": 0.6575,
+            "best_variant": "compact_repeated_checkpoint_metadata",
+            "recommendation": "promote_efficiency_recovery_fix"
+          },
+          "passed": true
+        },
+        "endpoint_matrix_clean": {
+          "observed": {
+            "live_empty": 5,
+            "live_success": 10
+          },
+          "passed": true
+        },
+        "endpoint_selection_analysis_recorded": {
+          "observed": {
+            "gap_count": 152,
+            "gap_type_counts": {
+              "less_useful_or_error_endpoint_selected": 138,
+              "optional_api_call_when_sql_complete": 14
+            }
+          },
+          "passed": true
+        },
+        "final_submission_format_unchanged": {
+          "observed": true,
+          "passed": true
+        },
+        "generated_prompt_clusters_recorded": {
+          "observed": {
+            "answer_shape_weak": 88,
+            "api_endpoint_selection_gap": 57,
+            "no_clear_failure": 17,
+            "no_template_fallback_weak": 2,
+            "route_mismatch": 86
+          },
+          "passed": true
+        },
+        "hidden_style_passes": {
+          "observed": {
+            "failed_cases": 0,
+            "family_stability_rate": 1.0,
+            "passed_cases": 48,
+            "schema_stability_rate": 1.0,
+            "top_failure_categories": [],
+            "total_cases": 48
+          },
+          "passed": true
+        },
+        "live_efficiency_trial_not_promoted_without_strict_delta": {
+          "observed": {
+            "api_prompt_rows": 202,
+            "runtime_change_applied": false
+          },
+          "passed": true
+        },
+        "multi_llm_sensitivity_not_promoted": {
+          "observed": {
+            "llm_calls_executed": 0
+          },
+          "passed": true
+        },
+        "no_template_mode_not_packaged": {
+          "observed": {
+            "promotable": false,
+            "reason": "Template-disabled behavior is not evaluated as packaged runtime; schema-aware fallback must pass separate strict and robustness gates before any promotion."
+          },
+          "passed": true
+        },
+        "paraphrase_consistency_recorded": {
+          "observed": 0.9907,
+          "passed": true
+        },
+        "route_mismatch_analysis_recorded": {
+          "observed": {
+            "likely_cause_counts": {
+              "ambiguous_domain_terms": 44,
+              "api_need_decision_gap": 33,
+              "generated_label_noise": 3,
+              "no_template_fallback_route_gap": 4,
+              "unnecessary_api_call_noise": 2
+            },
+            "mismatch_count": 86
+          },
+          "passed": true
+        },
+        "schema_aware_not_promoted": {
+          "observed": {
+            "decision": "keep_trial_only",
+            "failed_gates": [
+              "strict_score_non_regression",
+              "template_dependency_decreased"
+            ],
+            "promotion_allowed": false,
+            "reason": "Robustness gates did not all pass; schema-aware SQL remains diagnostic-only."
+          },
+          "passed": true
+        },
+        "strict_score_non_regression": {
+          "observed": null,
+          "passed": false
+        },
+        "template_dependency_known_not_promoted": {
+          "observed": 0.1634,
+          "passed": true
+        },
+        "tool_efficiency_recorded": {
+          "observed": 1.4571,
+          "passed": true
+        },
+        "unsupported_claims_not_increased": {
+          "observed": {
+            "generated_prompt_runtime_pass_count": 250,
+            "generated_prompt_unsupported_claim_count": 0,
+            "generated_prompt_validation_fail_count": 0
+          },
+          "passed": true
+        }
+      },
+      "promotion_allowed": false,
+      "recommendation": "blocked_by_robustness_regression"
+    },
+    "semantic_route_promotion_gate": {
+      "gates": {
+        "broad_semantic_router_promotion_blocked": true,
+        "check_submission_ready_passes": true,
+        "conceptual_keyword_prompts_skip_tools_safely": true,
+        "endpoint_matrix_clean": true,
+        "final_submission_format_unchanged": true,
+        "generated_prompt_unsupported_claims_zero": true,
+        "hidden_style_passes": true,
+        "no_concrete_data_plain_llm_direct": true,
+        "no_increase_false_no_tool_risk": true,
+        "packaged_runtime_unchanged": true,
+        "public_dev_strict_no_regression": false,
+        "shadow_false_positive_reduction": true,
+        "tool_runtime_token_cost_improves_or_stable": true
+      },
+      "packaged_default_strategy": "SQL_FIRST_API_VERIFY",
+      "promotion_allowed": false,
+      "recommendation": "keep_shadow_only",
+      "strict_score_raw": {
+        "avg_answer_score": null,
+        "avg_api_score": null,
+        "avg_final_score": null,
+        "avg_sql_score": null
+      }
+    }
+  },
+  "internal50": {
+    "objective_delta_v2_minus_baseline": {
+      "api_calls": -33,
+      "api_required_underuse": 0,
+      "no_tool_false_positive": 46,
+      "sql_calls": -40,
+      "tool_underuse": 40,
+      "unsupported_claims": 0
+    },
+    "packaged_baseline_real": {
+      "api_calls": 33,
+      "api_required_underuse": 0,
+      "available": true,
+      "behavior_score": 0.8238,
+      "combined_diagnostic_score": 0.7168,
+      "completed": true,
+      "estimated_total_tokens": 1019.24,
+      "expected_evidence_need_accuracy": 0.77,
+      "final_answer_correctness": 0.6525,
+      "no_tool_false_positive": 0,
+      "overall_score": 0.7168,
+      "prompt_count": 50,
+      "raw_mode_summary": {
+        "agent_executor_used": true,
+        "answer_grounding_score": 1.0,
+        "anti_hallucination_initial_fail": 0,
+        "anti_hallucination_revision_attempted": 0,
+        "anti_hallucination_revision_success": 0,
+        "api_calls": 33,
+        "api_calls_added": 0,
+        "api_calls_saved": 0,
+        "api_endpoint_family_accuracy": 0.74,
+        "api_required_underuse": 0,
+        "api_required_used_accuracy": 0.76,
+        "applied_decision_count": 0,
+        "applied_decision_records": [],
+        "available": true,
+        "behavior_changed": false,
+        "behavior_score": 0.8238,
+        "blocker_count": 0,
+        "combined_diagnostic_score": 0.7168,
+        "estimated_total_tokens": 1019.24,
+        "excluded_from_comparison": false,
+        "expected_evidence_need_accuracy": 0.77,
+        "expected_observable_trace_score": 0.6117,
+        "fallback_count": 0,
+        "feature_flags_used": {
+          "combined_safe_applied": false,
+          "combined_safe_deterministic_promotion_candidate": false,
+          "post_sql_deterministic_applied": false,
+          "post_sql_llm_advisor_applied": false,
+          "robust_generalized_harness_candidate": false,
+          "robust_generalized_harness_candidate_v2": false,
+          "semantic_no_tool_applied": false,
+          "staged_evidence_applied": false
+        },
+        "final_answer_correctness": 0.6525,
+        "latest_code_paths_enabled": {
+          "answer_intent_router": false,
+          "compact_json_llm_context": false,
+          "evidence_bus_answer_verifier_token_reduction": true,
+          "hybrid_answer_composer": false,
+          "no_tool_safety_verifier": false,
+          "objective_prompt_features": true,
+          "post_sql_api_call_verifier": false,
+          "post_sql_deterministic_policy": false,
+          "post_sql_llm_advisor": false,
+          "post_sql_llm_first_decision": false,
+          "progressive_evidence_policy": false,
+          "routing_anti_hallucination_gate": false,
+          "routing_feedback_revision": false,
+          "semantic_intent_classifier": false,
+          "semantic_route_decision_ladder": false,
+          "staged_evidence_acquisition": false,
+          "staged_evidence_policy": false
+        },
+        "mode": "packaged_baseline_real",
+        "no_tool_false_negative": 3,
+        "no_tool_false_positive": 0,
+        "old_generated_diagnostic_path_used": false,
+        "overall_score": 0.7168,
+        "packaged_behavior_changed": false,
+        "per_category": {
+          "ambiguous_low_confidence": 0.85,
+          "api_only_live_platform": 0.6354,
+          "conceptual_no_tool": 0.4927,
+          "hard_stress": 0.6974,
+          "mixed_conceptual_data": 0.7531,
+          "sql_only_local_snapshot": 0.7469,
+          "sql_then_api_verification": 0.85
+        },
+        "per_domain": {
+          "unknown": 0.7168
+        },
+        "per_evidence_need": {
+          "unknown": 0.7168
+        },
+        "post_sql_advisor_blocked": 0,
+        "post_sql_advisor_checkpoint_present_count": 0,
+        "post_sql_advisor_disabled_or_fallback_count": 0,
+        "post_sql_advisor_invoked": 0,
+        "post_sql_advisor_source_counts": {
+          "DETERMINISTIC_BYPASS": 0,
+          "DETERMINISTIC_FALLBACK": 0,
+          "DETERMINISTIC_HIGH_CONF": 0,
+          "DISABLED": 0,
+          "INVALID_JSON": 0,
+          "LLM_ADVISOR": 0,
+          "LLM_ADVISOR_BLOCKED": 0,
+          "LLM_ADVISOR_VERIFIED": 0,
+          "LLM_BACKEND_UNAVAILABLE": 0
+        },
+        "post_sql_advisor_verified": 0,
+        "post_sql_deterministic_fallback_count": 0,
+        "post_sql_llm_advice_blocked_count": 0,
+        "post_sql_llm_advisor_actual_call_count": 0,
+        "post_sql_verifier_blocked_count": 0,
+        "post_sql_verifier_verified_count": 0,
+        "prompt_count": 50,
+        "real_agent_execution": true,
+        "required_facts_coverage": 0.0,
+        "route_accuracy": 0.8,
+        "rows_helped": [],
+        "rows_hurt": [],
+        "runtime_ms": 38.1407,
+        "runtime_used_category_tags_for_decision": false,
+        "shadow_modules_executed": false,
+        "skipped_decision_count": 0,
+        "sql_calls": 40,
+        "sql_required_used_accuracy": 0.85,
+        "sql_table_accuracy": 0.82,
+        "synthetic_sql_results_used": false,
+        "tool_overuse": 26,
+        "tool_underuse": 6,
+        "trace_observability_score": 0.245,
+        "unsupported_claims": 0,
+        "wall_time_seconds": 1.9407
+      },
+      "route_accuracy": 0.8,
+      "runtime_ms": 38.1407,
+      "sql_calls": 40,
+      "tool_overuse": 26,
+      "tool_underuse": 6,
+      "trace_observability_score": 0.245,
+      "unsupported_claims": 0
+    },
+    "robust_generalized_harness_candidate_v2_real": {
+      "api_calls": 0,
+      "api_required_underuse": 0,
+      "available": true,
+      "behavior_score": 0.52,
+      "combined_diagnostic_score": 0.3785,
+      "completed": true,
+      "estimated_total_tokens": 571.88,
+      "expected_evidence_need_accuracy": 0.08,
+      "final_answer_correctness": 0.52,
+      "no_tool_false_positive": 46,
+      "overall_score": 0.3785,
+      "prompt_count": 50,
+      "raw_mode_summary": {
+        "agent_executor_used": true,
+        "answer_grounding_score": 1.0,
+        "anti_hallucination_initial_fail": 0,
+        "anti_hallucination_revision_attempted": 0,
+        "anti_hallucination_revision_success": 0,
+        "api_calls": 0,
+        "api_calls_added": 0,
+        "api_calls_saved": 0,
+        "api_endpoint_family_accuracy": 0.44,
+        "api_required_underuse": 0,
+        "api_required_used_accuracy": 0.64,
+        "applied_decision_count": 0,
+        "applied_decision_records": [],
+        "available": true,
+        "behavior_changed": false,
+        "behavior_score": 0.52,
+        "blocker_count": 0,
+        "combined_diagnostic_score": 0.3785,
+        "estimated_total_tokens": 571.88,
+        "excluded_from_comparison": false,
+        "expected_evidence_need_accuracy": 0.08,
+        "expected_observable_trace_score": 0.29,
+        "fallback_count": 0,
+        "feature_flags_used": {
+          "combined_safe_applied": false,
+          "combined_safe_deterministic_promotion_candidate": false,
+          "post_sql_deterministic_applied": false,
+          "post_sql_llm_advisor_applied": false,
+          "robust_generalized_harness_candidate": false,
+          "robust_generalized_harness_candidate_v2": false,
+          "semantic_no_tool_applied": false,
+          "staged_evidence_applied": false
+        },
+        "final_answer_correctness": 0.52,
+        "latest_code_paths_enabled": {
+          "answer_intent_router": false,
+          "compact_json_llm_context": false,
+          "evidence_bus_answer_verifier_token_reduction": false,
+          "hybrid_answer_composer": false,
+          "no_tool_safety_verifier": false,
+          "objective_prompt_features": false,
+          "post_sql_api_call_verifier": false,
+          "post_sql_deterministic_policy": false,
+          "post_sql_llm_advisor": false,
+          "post_sql_llm_first_decision": false,
+          "progressive_evidence_policy": false,
+          "routing_anti_hallucination_gate": false,
+          "routing_feedback_revision": false,
+          "semantic_intent_classifier": false,
+          "semantic_route_decision_ladder": false,
+          "staged_evidence_acquisition": false,
+          "staged_evidence_policy": false
+        },
+        "mode": "robust_generalized_harness_candidate_v2_real",
+        "no_tool_false_negative": 0,
+        "no_tool_false_positive": 46,
+        "old_generated_diagnostic_path_used": false,
+        "overall_score": 0.3785,
+        "packaged_behavior_changed": false,
+        "per_category": {
+          "ambiguous_low_confidence": 0.3375,
+          "api_only_live_platform": 0.3375,
+          "conceptual_no_tool": 0.85,
+          "hard_stress": 0.3375,
+          "mixed_conceptual_data": 0.3375,
+          "sql_only_local_snapshot": 0.3375,
+          "sql_then_api_verification": 0.3375
+        },
+        "per_domain": {
+          "unknown": 0.3785
+        },
+        "per_evidence_need": {
+          "unknown": 0.3785
+        },
+        "post_sql_advisor_blocked": 0,
+        "post_sql_advisor_checkpoint_present_count": 0,
+        "post_sql_advisor_disabled_or_fallback_count": 0,
+        "post_sql_advisor_invoked": 0,
+        "post_sql_advisor_source_counts": {
+          "DETERMINISTIC_BYPASS": 0,
+          "DETERMINISTIC_FALLBACK": 0,
+          "DETERMINISTIC_HIGH_CONF": 0,
+          "DISABLED": 0,
+          "INVALID_JSON": 0,
+          "LLM_ADVISOR": 0,
+          "LLM_ADVISOR_BLOCKED": 0,
+          "LLM_ADVISOR_VERIFIED": 0,
+          "LLM_BACKEND_UNAVAILABLE": 0
+        },
+        "post_sql_advisor_verified": 0,
+        "post_sql_deterministic_fallback_count": 0,
+        "post_sql_llm_advice_blocked_count": 0,
+        "post_sql_llm_advisor_actual_call_count": 0,
+        "post_sql_verifier_blocked_count": 0,
+        "post_sql_verifier_verified_count": 0,
+        "prompt_count": 50,
+        "real_agent_execution": true,
+        "required_facts_coverage": 0.0,
+        "route_accuracy": 0.08,
+        "rows_helped": [],
+        "rows_hurt": [],
+        "runtime_ms": 2760.0468,
+        "runtime_used_category_tags_for_decision": false,
+        "shadow_modules_executed": false,
+        "skipped_decision_count": 0,
+        "sql_calls": 0,
+        "sql_required_used_accuracy": 0.44,
+        "sql_table_accuracy": 0.44,
+        "synthetic_sql_results_used": false,
+        "tool_overuse": 0,
+        "tool_underuse": 46,
+        "trace_observability_score": 0.25,
+        "unsupported_claims": 0,
+        "wall_time_seconds": 138.0438
+      },
+      "route_accuracy": 0.08,
+      "runtime_ms": 2760.0468,
+      "sql_calls": 0,
+      "tool_overuse": 0,
+      "tool_underuse": 46,
+      "trace_observability_score": 0.25,
+      "unsupported_claims": 0
+    }
+  },
+  "organizer35_strict": {
+    "baseline_sql_first_api_verify": {
+      "answer_reason_counts": {
+        "Strict answer score from required facts plus capped fuzzy similarity.": 35
+      },
+      "api_calls": 36,
+      "api_reason_counts": {
+        "No gold API supplied; API dimension unscored in strict mode.": 4,
+        "Strict API method/path/required-param/call-count score: 0.6175.": 1,
+        "Strict API method/path/required-param/call-count score: 0.7337.": 1,
+        "Strict API method/path/required-param/call-count score: 1.0000.": 29
+      },
+      "completed": true,
+      "error_count": 0,
+      "examples": 35,
+      "missing_api_when_gold_api_exists": 0,
+      "missing_sql_when_gold_sql_exists": 0,
+      "raw_score_fields": {
+        "avg_answer_score": 0.3223,
+        "avg_answer_time": 0.0008,
+        "avg_api_score": 0.9791,
+        "avg_correctness_score": 0.6812,
+        "avg_estimated_tokens": 796.8571,
+        "avg_execution_time": 0.0012,
+        "avg_final_score": 0.6563,
+        "avg_metadata_tokens": 817.5429,
+        "avg_planning_time": 0.0019,
+        "avg_preprocessing_time": 0.0063,
+        "avg_prompt_tokens": 1459.6286,
+        "avg_runtime": 0.0168,
+        "avg_sql_score": 0.9333,
+        "avg_tool_call_count": 1.4571
+      },
+      "row_count": 35,
+      "sql_calls": 15,
+      "sql_reason_counts": {
+        "No gold SQL supplied; SQL dimension unscored in strict mode.": 20,
+        "Normalized exact SQL match.": 5,
+        "Strict semantic result match.": 10
+      },
+      "tool_calls": 51,
+      "validation_failures": 1
+    },
+    "objective_delta_v2_minus_baseline": {
+      "api_calls": -36,
+      "missing_api_when_gold_api_exists": 31,
+      "missing_sql_when_gold_sql_exists": 15,
+      "sql_calls": -15,
+      "tool_calls": -51
+    },
+    "robust_generalized_harness_candidate_v2": {
+      "answer_reason_counts": {
+        "Strict answer score from required facts plus capped fuzzy similarity.": 35
+      },
+      "api_calls": 0,
+      "api_reason_counts": {
+        "No generated API call while gold API exists.": 31,
+        "No gold API supplied; API dimension unscored in strict mode.": 4
+      },
+      "completed": true,
+      "error_count": 0,
+      "examples": 35,
+      "missing_api_when_gold_api_exists": 31,
+      "missing_sql_when_gold_sql_exists": 15,
+      "raw_score_fields": {
+        "avg_answer_score": 0.1775,
+        "avg_answer_time": 2.2326,
+        "avg_api_score": 0.0,
+        "avg_correctness_score": 0.0745,
+        "avg_estimated_tokens": 764.9429,
+        "avg_execution_time": 0.0,
+        "avg_final_score": 0.0606,
+        "avg_metadata_tokens": 632.5714,
+        "avg_planning_time": 0.0,
+        "avg_preprocessing_time": 0.0,
+        "avg_prompt_tokens": 1146.5714,
+        "avg_runtime": 2.252,
+        "avg_sql_score": 0.0,
+        "avg_tool_call_count": 0.0
+      },
+      "row_count": 35,
+      "sql_calls": 0,
+      "sql_reason_counts": {
+        "No generated SQL while gold SQL exists.": 15,
+        "No gold SQL supplied; SQL dimension unscored in strict mode.": 20
+      },
+      "tool_calls": 0,
+      "validation_failures": 0
+    },
+    "v2_trace_metrics": {
+      "final_answer_composer_error_counts": {
+        "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}": 35
+      },
+      "final_answer_counts": {
+        "I could not compose a verified final answer from the available runtime evidence.": 35
+      },
+      "metrics": {
+        "api_repair_attempts": 0,
+        "cache_hits": 0,
+        "evidence_bus_built_count": 35,
+        "final_answer_composer_calls": 35,
+        "generation_boundary_count": 35,
+        "llm_planner_calls": 35,
+        "pass_graph_gate_count": 35,
+        "pass_graph_gate_passed": 35,
+        "pass_results_count_total": 0,
+        "result_bundle_built_count": 35,
+        "sql_repair_attempts": 0,
+        "total_llm_declared_passes": 0
+      },
+      "planner_reason_counts": {
+        "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}": 35
+      },
+      "semantic_gate_counts": {
+        "failed:syntax_gate_failed": 35
+      },
+      "syntax_gate_counts": {
+        "failed:missing_final_answer": 35
+      }
+    }
+  },
+  "preflight": {
+    "check_submission_ready": {
+      "default_strategy_is_sql_first_api_verify": true,
+      "ok": true,
+      "query_output_count": 73,
+      "secret_scan_ok": true
+    },
+    "env_local": {
+      "git_ignored": true,
+      "printed": false,
+      "tracked": false
+    },
+    "git_diff_check": "passed",
+    "git_status_note": "Only generated output/report files changed during benchmark pass; .env.local was not printed.",
+    "pytest": {
+      "failed": 0,
+      "passed": 991,
+      "skipped": 1
+    },
+    "sdk_usage_audit": {
+      "runtime_llm_direct_http_hits": 0
+    }
+  },
+  "purpose": "Evaluate finalized V2 stability and objective correctness without promoting V2.",
+  "recommendation": {
+    "reason": "V2 benchmark completed but is objectively not stable: provider/model failures led to zero SQL/API evidence, 46 Internal50 no_tool_false_positive, strict public-dev SQL/API underuse, and promotion gates block promotion.",
+    "safe_to_commit_reports": true,
+    "safe_to_keep": true,
+    "safe_to_promote_v2": false
+  }
+}

@@ -1,0 +1,184 @@
+{
+  "answer_time": 0.0,
+  "api_call_count": 0,
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "correctness_role": "keeps later normalization from changing the user-facing question",
+      "duration_ms": 0.0,
+      "effect": "preserves the original query for reproducibility",
+      "efficiency_role": "starts one trace without extra tool calls",
+      "output": {
+        "query": "Why would an organization use a connector? Keep the answer conceptual for the workflow brief.",
+        "query_id": "da500_0059",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "stage": "input",
+      "technique": "raw user query capture",
+      "timestamp": "2026-06-01T02:59:37.932849+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_00_prompt_router",
+      "correctness_role": "routes data questions to evidence tools instead of unsupported direct answers",
+      "duration_ms": 0.0,
+      "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
+      "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
+      "input_summary": {
+        "query": "Why would an organization use a connector? Keep the answer conceptual for the workflow brief."
+      },
+      "output": {
+        "confidence": 0.9,
+        "matched_rules": {
+          "items": [
+            "conceptual_prefix",
+            "no_data_keywords"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "mode": "LLM_DIRECT",
+        "reason": "Conceptual prompt with no local DB/API evidence request.",
+        "recommended_strategy": "LLM_DIRECT",
+        "requires_api": false,
+        "requires_database": false,
+        "risk": "low",
+        "truncated_fields": 1
+      },
+      "stage": "prompt routing",
+      "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
+      "timestamp": "2026-06-01T02:59:37.932879+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_simple_prompt_gate",
+      "correctness_role": "prevents direct answers for data questions that need SQL/API evidence",
+      "duration_ms": 0.0,
+      "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
+      "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
+      "input_summary": {
+        "query": "Why would an organization use a connector? Keep the answer conceptual for the workflow brief."
+      },
+      "output": {
+        "confidence": 0.9,
+        "is_simple": true,
+        "reason": "Conceptual prompt with no local DB/API evidence request.",
+        "suggested_action": "LLM_DIRECT"
+      },
+      "stage": "input routing",
+      "technique": "simple prompt gate",
+      "timestamp": "2026-06-01T02:59:37.932893+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_objective_prompt_features",
+      "correctness_role": "keeps semantic pre-routing separate from SQL/API planning and answer generation",
+      "duration_ms": 0.0,
+      "effect": "records fact-only prompt cues for semantic routing diagnostics",
+      "efficiency_role": "uses compact symbolic features before any optional LLM classification",
+      "input_summary": {
+        "query": "Why would an organization use a connector? Keep the answer conceptual for the workflow brief."
+      },
+      "output": {
+        "cap": {
+          "items": [
+            "SQL_FLOW",
+            "API_FLOW_SERVICE",
+            "SQL_CONNECTOR"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "count": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "cue": {
+          "items": [
+            "WHY"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "domain": {
+          "items": [
+            "DATAFLOW",
+            "FLOW",
+            "CONNECTOR"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "norm": "why would an organization use a connector? keep the answer conceptual for the workflow brief.",
+        "p": "Why would an organization use a connector? Keep the answer conceptual for the workflow brief.",
+        "rel": {
+          "items": [
+            "USES"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "status": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "truncated_fields": 12
+      },
+      "stage": "semantic routing shadow",
+      "technique": "objective prompt feature extraction",
+      "timestamp": "2026-06-01T02:59:37.932983+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "correctness_role": "does not invent local DB/API evidence",
+      "duration_ms": 0.0,
+      "effect": "returns a safe no-tool fallback for conceptual prompts",
+      "efficiency_role": "uses zero SQL/API tool calls",
+      "output": {
+        "answer_length": 201,
+        "final_answer": "This is a conceptual prompt that does not require local SQL or Adobe API evidence. Use the optimized LLM controller mode for a real direct LLM response; the deterministic backend skipped SQL/API calls.",
+        "final_token_estimate": 39
+      },
+      "stage": "final response",
+      "technique": "deterministic no-key direct fallback",
+      "timestamp": "2026-06-01T02:59:37.933787+00:00"
+    }
+  ],
+  "domain_type": "CONCEPTUAL",
+  "errors": [],
+  "estimated_tokens": 212,
+  "execution_time": 0.0,
+  "final_answer": "This is a conceptual prompt that does not require local SQL or Adobe API evidence. Use the optimized LLM controller mode for a real direct LLM response; the deterministic backend skipped SQL/API calls.",
+  "original_query": "Why would an organization use a connector? Keep the answer conceptual for the workflow brief.",
+  "planning_time": 0.0,
+  "preprocessing_time": 0.0,
+  "query_id": "da500_0059",
+  "route_type": "LLM_DIRECT",
+  "runtime": 0.0027581248432397842,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "api_policy": "API_SKIP",
+      "confidence": 0.9,
+      "kind": "prompt_router",
+      "matched_rules": [
+        "conceptual_prefix",
+        "no_data_keywords"
+      ],
+      "mode": "LLM_DIRECT",
+      "reason": "Conceptual prompt with no local DB/API evidence request.",
+      "recommended_strategy": "LLM_DIRECT",
+      "requires_api": false,
+      "requires_database": false,
+      "risk": "low"
+    },
+    {
+      "estimated_tokens": 149,
+      "kind": "metadata",
+      "metadata_path": "outputs/reports/v2_final_benchmark/internal50/packaged_baseline/outputs/packaged_baseline_real/da500_0059/metadata.json",
+      "prompt_tokens": 626
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {},
+  "tool_call_count": 0
+}

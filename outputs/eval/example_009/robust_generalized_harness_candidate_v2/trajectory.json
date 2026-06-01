@@ -1,6 +1,6 @@
 {
-  "answer_time": 0.006904709152877331,
-  "api_call_count": 1,
+  "answer_time": 2.0351548343896866,
+  "api_call_count": 0,
   "checkpoints": [
     {
       "checkpoint_id": "checkpoint_01_raw_query",
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-05-28T11:05:04.497356+00:00"
+      "timestamp": "2026-06-01T02:57:45.760965+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-05-28T11:05:04.497377+00:00"
+      "timestamp": "2026-06-01T02:57:45.760984+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,1756 +68,546 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-05-28T11:05:04.497381+00:00"
+      "timestamp": "2026-06-01T02:57:45.760991+00:00"
     },
     {
-      "checkpoint_id": "checkpoint_00_prompt_router",
-      "correctness_role": "routes data questions to evidence tools instead of unsupported direct answers",
+      "checkpoint_id": "checkpoint_llm_unified_planner",
+      "correctness_role": "keeps backend deterministic logic limited to compile/request gates and execution",
       "duration_ms": 0.0,
-      "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
-      "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
+      "effect": "lets the LLM own route, evidence order, and SQL/API candidate generation for V2",
+      "efficiency_role": "uses one compact planner call before any SQL/API execution",
       "input_summary": {
         "query": "Provide more details for the schema 'weRetail: Customer Actions'"
       },
       "output": {
-        "confidence": 0.84,
-        "matched_rules": {
-          "items": [
-            "local_db:schema"
-          ],
-          "total_items": 1,
-          "truncated_items": false
+        "backend_unavailable": false,
+        "evidence_order": "SQL_FIRST",
+        "model": "Gpt 4o",
+        "parse_error": false,
+        "provider": "[REDACTED]",
+        "raw_preview": {
+          "backend_type": "openai_sdk",
+          "error": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
+          "model": "Gpt 4o",
+          "ok": false,
+          "provider": "[REDACTED]",
+          "sdk_path_used": true,
+          "skipped": false,
+          "transport": "openai_sdk",
+          "truncated_fields": 1
         },
-        "mode": "LOCAL_DB_ONLY",
-        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: schema.",
-        "recommended_strategy": "SQL_FIRST_API_VERIFY",
-        "requires_api": false,
-        "requires_database": true,
-        "risk": "low",
-        "truncated_fields": 1
+        "reason": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
+        "route": "EVIDENCE_PIPELINE"
       },
-      "stage": "prompt routing",
-      "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
-      "timestamp": "2026-05-28T11:05:04.497417+00:00"
+      "stage": "llm-owned planning",
+      "technique": "single unified LLM route/evidence/sql/api planner",
+      "timestamp": "2026-06-01T02:57:46.771455+00:00"
     },
     {
-      "checkpoint_id": "checkpoint_simple_prompt_gate",
-      "correctness_role": "prevents direct answers for data questions that need SQL/API evidence",
+      "checkpoint_id": "checkpoint_v2_execution_optimizer",
+      "correctness_role": "does not split prompts, choose SQL/API paths, rewrite SQL/API, or generate answers",
       "duration_ms": 0.0,
-      "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
-      "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
+      "effect": "optimizes resource order, exact duplicate work, cache reuse, and budgets without changing LLM semantics",
+      "efficiency_role": "prioritizes critical path and enables exact pass-result reuse",
       "input_summary": {
-        "query": "Provide more details for the schema 'weRetail: Customer Actions'"
-      },
-      "output": {
-        "confidence": 0.84,
-        "is_simple": false,
-        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: schema.",
-        "suggested_action": "USE_DATA_PIPELINE"
-      },
-      "stage": "input routing",
-      "technique": "simple prompt gate",
-      "timestamp": "2026-05-28T11:05:04.497435+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_objective_prompt_features",
-      "correctness_role": "keeps semantic pre-routing separate from SQL/API planning and answer generation",
-      "duration_ms": 0.0,
-      "effect": "records fact-only prompt cues for semantic routing diagnostics",
-      "efficiency_role": "uses compact symbolic features before any optional LLM classification",
-      "input_summary": {
-        "query": "Provide more details for the schema 'weRetail: Customer Actions'"
-      },
-      "output": {
-        "cap": {
-          "items": [
-            "SQL_SCHEMA",
-            "API_SCHEMA_REGISTRY",
-            "SCHEMA_REGISTRY"
-          ],
-          "total_items": 3,
-          "truncated_items": false
-        },
-        "count": {
+        "dependency_edges": {
           "items": [],
           "total_items": 0,
           "truncated_items": false
         },
-        "domain": {
-          "items": [
-            "SCHEMA"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "entity": {
-          "items": [
-            "QUOTED",
-            "ID_LIKE"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
-        "norm": "provide more details for the schema 'weretail: customer actions'",
-        "p": "Provide more details for the schema 'weRetail: Customer Actions'",
-        "retr": {
-          "items": [
-            "RETURN"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "status": {
+        "pass_ids": {
           "items": [],
           "total_items": 0,
           "truncated_items": false
-        },
-        "truncated_fields": 12
-      },
-      "stage": "semantic routing shadow",
-      "technique": "objective prompt feature extraction",
-      "timestamp": "2026-05-28T11:05:04.497563+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_semantic_parse",
-      "correctness_role": "prevents keyword-only no-tool blocking or allowing decisions",
-      "duration_ms": 0.0,
-      "effect": "separates operation role, target grounding, instance level, and evidence need before route selection",
-      "efficiency_role": "adds compact parse metadata without executing tools",
-      "input_summary": {
-        "feature_codes": {
-          "cap": {
-            "items": [
-              "SQL_SCHEMA",
-              "API_SCHEMA_REGISTRY",
-              "SCHEMA_REGISTRY"
-            ],
-            "total_items": 3,
-            "truncated_items": false
-          },
-          "count": {
-            "items": [],
-            "total_items": 0,
-            "truncated_items": false
-          },
-          "domain": {
-            "items": [
-              "SCHEMA"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "entity": {
-            "items": [
-              "QUOTED",
-              "ID_LIKE"
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          },
-          "norm": "provide more details for the schema 'weretail: customer actions'",
-          "p": "Provide more details for the schema 'weRetail: Customer Actions'",
-          "retr": {
-            "items": [
-              "RETURN"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "status": {
-            "items": [],
-            "total_items": 0,
-            "truncated_items": false
-          },
-          "truncated_fields": 12
         }
       },
       "output": {
-        "capability": {
-          "api_families": {
-            "items": [
-              "SCHEMA_REGISTRY"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "api_match": true,
-          "sql_match": true
-        },
-        "confidence": 0.87,
-        "evidence_need": "SQL_API",
-        "filters": {
-          "entity": "WERETAIL: CUSTOMER ACTIONS",
-          "status": null
-        },
-        "no_tool_safe": false,
-        "operation": "LOOKUP",
-        "supporting_spans": {
-          "items": [
-            "weRetail: Customer Actions",
-            "schema"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
-        "target": {
-          "grounding": "SUPPORTED_DATA_OBJECT",
-          "instance_level": true,
-          "object_family": "SCHEMA",
-          "text": "schema"
-        },
-        "truncated_fields": 3
-      },
-      "stage": "semantic routing shadow",
-      "technique": "semantic role parse",
-      "timestamp": "2026-05-28T11:05:04.497963+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_semantic_intent_decision",
-      "correctness_role": "keeps no-tool candidates explicit for verifier review",
-      "duration_ms": 0.0,
-      "effect": "records semantic intent decision without generating SQL, API calls, or answers",
-      "efficiency_role": "measures whether conceptual false positives could avoid tools in a future gate",
-      "input_summary": {
-        "feature_codes": {
-          "cap": {
-            "items": [
-              "SQL_SCHEMA",
-              "API_SCHEMA_REGISTRY",
-              "SCHEMA_REGISTRY"
-            ],
-            "total_items": 3,
-            "truncated_items": false
-          },
-          "count": {
-            "items": [],
-            "total_items": 0,
-            "truncated_items": false
-          },
-          "domain": {
-            "items": [
-              "SCHEMA"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "entity": {
-            "items": [
-              "QUOTED",
-              "ID_LIKE"
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          },
-          "norm": "provide more details for the schema 'weretail: customer actions'",
-          "p": "Provide more details for the schema 'weRetail: Customer Actions'",
-          "retr": {
-            "items": [
-              "RETURN"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "status": {
-            "items": [],
-            "total_items": 0,
-            "truncated_items": false
-          },
-          "truncated_fields": 12
-        }
-      },
-      "output": {
-        "api": true,
-        "codes": {
-          "items": [
-            "FALLBACK",
-            "SEMANTIC_PARSE_EVIDENCE"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
-        "conf": 0.87,
-        "intent": "MIXED",
-        "need": "SQL_API",
-        "no_tool": false,
-        "sql": true
-      },
-      "stage": "semantic routing shadow",
-      "technique": "compact SemanticIntentDecision classification",
-      "timestamp": "2026-05-28T11:05:04.497977+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_routing_anti_hallucination_gate",
-      "correctness_role": "prevents LLM semantic hints from overriding objective data cues",
-      "duration_ms": 0.0,
-      "effect": "blocks unsupported no-tool or capability claims and records one-revision fallback state",
-      "efficiency_role": "limits revision feedback to compact codes and keeps packaged execution unchanged",
-      "input_summary": {
-        "semantic_intent": {
-          "api": true,
-          "codes": {
-            "items": [
-              "FALLBACK",
-              "SEMANTIC_PARSE_EVIDENCE"
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          },
-          "conf": 0.87,
-          "intent": "MIXED",
-          "need": "SQL_API",
-          "no_tool": false,
-          "sql": true
-        }
-      },
-      "output": {
-        "final_decision": {
-          "api": true,
-          "codes": {
-            "items": [
-              "FALLBACK",
-              "SEMANTIC_PARSE_EVIDENCE"
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          },
-          "conf": 0.87,
-          "intent": "MIXED",
-          "need": "SQL_API",
-          "no_tool": false,
-          "sql": true
-        },
-        "final_gate": {
-          "ok": true,
-          "support": {
-            "caps": true,
-            "intent": true,
-            "need": true
-          }
-        },
-        "initial_decision": {
-          "api": true,
-          "codes": {
-            "items": [
-              "FALLBACK",
-              "SEMANTIC_PARSE_EVIDENCE"
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          },
-          "conf": 0.87,
-          "intent": "MIXED",
-          "need": "SQL_API",
-          "no_tool": false,
-          "sql": true
-        },
-        "initial_gate": {
-          "ok": true,
-          "support": {
-            "caps": true,
-            "intent": true,
-            "need": true
-          }
-        },
-        "revision_attempted": false,
-        "revision_success": false,
-        "revision_token_estimate": 0
-      },
-      "stage": "semantic routing shadow",
-      "technique": "objective support check for semantic intent",
-      "timestamp": "2026-05-28T11:05:04.497979+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_minimal_correction_feedback_semantic",
-      "correctness_role": "gate reports conflicts without replacing the LLM semantic decision",
-      "duration_ms": 0.0,
-      "effect": "records compact conflict deltas for one LLM semantic revision",
-      "efficiency_role": "keeps revision payload compact",
-      "input_summary": {
-        "semantic_intent": {
-          "api": true,
-          "codes": {
-            "items": [
-              "FALLBACK",
-              "SEMANTIC_PARSE_EVIDENCE"
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          },
-          "conf": 0.87,
-          "intent": "MIXED",
-          "need": "SQL_API",
-          "no_tool": false,
-          "sql": true
-        }
-      },
-      "output": {
-        "feedback_token_estimate": 0,
-        "revision_required": false,
-        "task": "REVISE_SEMANTIC_DECISION"
-      },
-      "stage": "semantic routing shadow",
-      "technique": "minimal semantic correction feedback",
-      "timestamp": "2026-05-28T11:05:04.497982+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_semantic_revision_result",
-      "correctness_role": "falls back only after conflict persists",
-      "duration_ms": 0.0,
-      "effect": "records whether LLM revision fixed semantic conflicts",
-      "efficiency_role": "limits semantic revision attempts to one",
-      "input_summary": {
-        "gate_revision_attempted": false
-      },
-      "output": {
-        "final_decision": {
-          "api": true,
-          "codes": {
-            "items": [
-              "FALLBACK",
-              "SEMANTIC_PARSE_EVIDENCE"
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          },
-          "conf": 0.87,
-          "intent": "MIXED",
-          "need": "SQL_API",
-          "no_tool": false,
-          "sql": true
-        },
-        "revision_attempted": false,
-        "revision_success": false,
-        "source": "LOW_AUTHORITY_OR_FALLBACK_DECISION"
-      },
-      "stage": "semantic routing shadow",
-      "technique": "single semantic decision revision result",
-      "timestamp": "2026-05-28T11:05:04.497984+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_semantic_fallback_if_any",
-      "correctness_role": "does not claim deterministic semantic certainty",
-      "duration_ms": 0.0,
-      "effect": "records fallback only when semantic conflicts remain after revision",
-      "efficiency_role": "uses no extra tools",
-      "input_summary": {
-        "action": "EVIDENCE_PIPELINE"
-      },
-      "output": {
-        "semantic_certainty_claimed": false
-      },
-      "stage": "semantic routing shadow",
-      "technique": "risk-minimizing semantic fallback marker",
-      "timestamp": "2026-05-28T11:05:04.497987+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_semantic_consistency_verifier",
-      "correctness_role": "blocks real instance-level data requests without treating every cue word as retrieval",
-      "duration_ms": 0.0,
-      "effect": "allows no-tool only when semantic roles are conceptual, meta-language, or out-of-domain",
-      "efficiency_role": "keeps safe conceptual prompts from entering the evidence pipeline",
-      "input_summary": {
-        "semantic_intent": {
-          "api": true,
-          "codes": {
-            "items": [
-              "FALLBACK",
-              "SEMANTIC_PARSE_EVIDENCE"
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          },
-          "conf": 0.87,
-          "intent": "MIXED",
-          "need": "SQL_API",
-          "no_tool": false,
-          "sql": true
-        },
-        "semantic_parse": {
-          "capability": {
-            "api_families": {
-              "items": [
-                "SCHEMA_REGISTRY"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            "api_match": true,
-            "sql_match": true
-          },
-          "confidence": 0.87,
-          "evidence_need": "SQL_API",
-          "filters": {
-            "entity": "WERETAIL: CUSTOMER ACTIONS",
-            "status": null
-          },
-          "no_tool_safe": false,
-          "operation": "LOOKUP",
-          "supporting_spans": {
-            "items": [
-              "weRetail: Customer Actions",
-              "schema"
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          },
-          "target": {
-            "grounding": "SUPPORTED_DATA_OBJECT",
-            "instance_level": true,
-            "object_family": "SCHEMA",
-            "text": "schema"
-          },
-          "truncated_fields": 3
-        }
-      },
-      "output": {
-        "allow_no_tool": false,
-        "consistency_codes": {
-          "items": [
-            "SEMANTIC_DATA_ROLE_REQUIRES_EVIDENCE"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "fallback_action": "EVIDENCE_PIPELINE",
-        "ok": true
-      },
-      "stage": "semantic routing shadow",
-      "technique": "semantic parse and route consistency verifier",
-      "timestamp": "2026-05-28T11:05:04.497989+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_progressive_evidence_policy",
-      "correctness_role": "forces ambiguous and data-like prompts into evidence acquisition before post-evidence decisions",
-      "duration_ms": 0.0,
-      "effect": "restricts early semantic routing to safe no-tool or single-endpoint API probe exits",
-      "efficiency_role": "keeps low-risk conceptual/API-only exits available while avoiding high-risk branch decisions",
-      "input_summary": {
-        "semantic_action": "EVIDENCE_PIPELINE"
-      },
-      "output": {
-        "allowed_early_exit": false,
-        "confidence": "MEDIUM",
-        "entry_action": "EVIDENCE_PIPELINE",
-        "metrics": {
-          "api_families": {
-            "items": [
-              "SCHEMA_REGISTRY"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "api_family_count": 1,
-          "api_match": 1.0,
-          "api_required_signal": false,
-          "concrete_data_signal": true,
-          "live_api_signal": false,
-          "objective_data_signal": true,
-          "sql_match": 1.0,
-          "truncated_fields": 4
-        },
-        "reason_codes": {
-          "items": [
-            "PROGRESSIVE_EVIDENCE_REQUIRED"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "requires_evidence_pipeline": true,
-        "risk_codes": {
-          "items": [
-            "STATUS_OR_FILTER_REQUIRES_EVIDENCE",
-            "SUPPORTED_DATA_OBJECT_REQUIRES_EVIDENCE",
-            "INSTANCE_LEVEL_REQUIRES_EVIDENCE"
-          ],
-          "total_items": 10,
-          "truncated_items": true
-        }
-      },
-      "stage": "semantic routing candidate",
-      "technique": "progressive evidence early-exit policy",
-      "timestamp": "2026-05-28T11:05:04.497991+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_no_tool_safety_verifier",
-      "correctness_role": "blocks concrete data prompts from direct LLM handling while allowing keyword decoys",
-      "duration_ms": 0.0,
-      "effect": "records the semantic consistency result in the legacy no-tool safety checkpoint slot",
-      "efficiency_role": "estimates safe no-tool savings without changing packaged behavior",
-      "input_summary": {
-        "semantic_intent": {
-          "api": true,
-          "codes": {
-            "items": [
-              "FALLBACK",
-              "SEMANTIC_PARSE_EVIDENCE"
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          },
-          "conf": 0.87,
-          "intent": "MIXED",
-          "need": "SQL_API",
-          "no_tool": false,
-          "sql": true
-        }
-      },
-      "output": {
-        "action": "BLOCK_NO_TOOL",
-        "allow_no_tool": false,
-        "capability_match_score": 0.75,
-        "clear_safe_api_family": false,
-        "evidence_need_score": 0.43,
-        "has_concrete_data_signal": true,
-        "no_tool_safety_score": 0.57,
-        "semantic_consistency_codes": {
-          "items": [
-            "SEMANTIC_DATA_ROLE_REQUIRES_EVIDENCE"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        }
-      },
-      "stage": "semantic routing shadow",
-      "technique": "semantic consistency compatibility no-tool view",
-      "timestamp": "2026-05-28T11:05:04.497993+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_semantic_route_decision_ladder",
-      "correctness_role": "never applies semantic routing to the packaged plan in shadow mode",
-      "duration_ms": 0.0,
-      "effect": "records the shadow action that would be considered by a future promotion gate",
-      "efficiency_role": "estimates tool-call and context-token tradeoffs",
-      "input_summary": {
-        "shadow_only": false
-      },
-      "output": {
-        "action": "EVIDENCE_PIPELINE",
-        "context_token_cost": 217,
-        "low_low_case": false,
-        "promotion_allowed": false,
-        "shadow_only": false,
-        "tier_used": 0
-      },
-      "stage": "semantic routing shadow",
-      "technique": "uncertainty escalation ladder",
-      "timestamp": "2026-05-28T11:05:04.497996+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_real_behavior_applied_trial",
-      "correctness_role": "falls back to SQL_FIRST_API_VERIFY unless all no-tool safety checks pass",
-      "duration_ms": 0.0,
-      "effect": "applies a semantic no-tool shortcut only in explicit real benchmark trial modes",
-      "efficiency_role": "measures real tool-call savings for conceptual false-positive routes",
-      "input_summary": {
-        "trial_mode": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
-      },
-      "output": {
-        "applied": false,
-        "blockers": {
-          "items": [
-            "SEMANTIC_NO_TOOL_SAFETY_NOT_SATISFIED"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "decision": "EVIDENCE_PIPELINE",
-        "decision_family": "SEMANTIC_NO_TOOL",
-        "fallback": true,
-        "record": true,
-        "shadow_only": false,
-        "trial_mode": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
-        "truncated_fields": 2
-      },
-      "stage": "isolated applied trial",
-      "technique": "semantic no-tool applied trial",
-      "timestamp": "2026-05-28T11:05:04.498100+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_02_query_normalization",
-      "correctness_role": "improves template and route matching across wording variants",
-      "duration_ms": 0.0,
-      "effect": "creates matching-friendly text while preserving the original query",
-      "efficiency_role": "reduces repeated fuzzy matching work downstream",
-      "input_summary": {
-        "query": "Provide more details for the schema 'weRetail: Customer Actions'"
-      },
-      "output": {
-        "matching_text": "provide more details for the schema 'weretail: customer actions'",
-        "normalized_query": "Provide more details for the schema 'weRetail: Customer Actions'"
-      },
-      "stage": "normalization",
-      "technique": "data cleaning / query normalization",
-      "timestamp": "2026-05-28T11:05:04.498237+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_03_query_tokens",
-      "correctness_role": "grounds names, IDs, dates, metrics, and statuses before planning",
-      "duration_ms": 0.0,
-      "effect": "extracts reusable query fields for routing, planning, and answers",
-      "efficiency_role": "avoids reparsing the query in later modules",
-      "input_summary": {
-        "normalized_query": "Provide more details for the schema 'weRetail: Customer Actions'"
-      },
-      "output": {
-        "domains": {
-          "items": [
-            "schema_dataset"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "quoted_entities": {
-          "items": [
-            "weRetail: Customer Actions"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        }
-      },
-      "stage": "tokenization",
-      "technique": "domain-aware tokenization/entity extraction",
-      "timestamp": "2026-05-28T11:05:04.498282+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_04_relevance_scoring",
-      "correctness_role": "keeps high-signal tables and endpoints near the planner",
-      "duration_ms": 0.0,
-      "effect": "selects a smaller, more relevant schema/API context",
-      "efficiency_role": "reduces metadata and prompt tokens when compact metadata is enabled",
-      "input_summary": {
-        "tokens": {
-          "domains": {
-            "items": [
-              "schema_dataset"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "quoted_entities": {
-            "items": [
-              "weRetail: Customer Actions"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          }
-        }
-      },
-      "output": {
-        "top_answer_families": {
-          "items": [
-            "schema_dataset"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "top_apis": {
-          "items": [
-            "audit_events",
-            "audit_events_short",
-            "catalog_batch_detail"
-          ],
-          "total_items": 3,
-          "truncated_items": false
-        },
-        "top_join_hints": {
-          "items": [
-            "dim_blueprint.BLUEPRINTID->hkg_br_blueprint_collection.BLUEPRINTID",
-            "dim_collection.COLLECTIONID->hkg_br_blueprint_collection.COLLECTIONID",
-            "dim_blueprint.BLUEPRINTID->hkg_br_blueprint_property.BLUEPRINTID"
-          ],
-          "total_items": 3,
-          "truncated_items": false
-        },
-        "top_tables": {
-          "items": [
-            "dim_blueprint",
-            "dim_collection",
-            "hkg_br_blueprint_collection"
-          ],
-          "total_items": 3,
-          "truncated_items": false
-        }
-      },
-      "stage": "context selection",
-      "technique": "attention-style relevance scoring",
-      "timestamp": "2026-05-28T11:05:04.499190+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_value_entity_retrieval",
-      "correctness_role": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
-      "duration_ms": 0.0,
-      "effect": "grounds query entities against sampled local DB values before planning",
-      "efficiency_role": "uses a cached bounded value index with per-query scan and wall-time budgets",
-      "input_summary": {
-        "query_values": {
-          "items": [
-            {
-              "kind": "quoted_entity",
-              "text": "weRetail: Customer Actions"
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        }
-      },
-      "metrics": {
+        "backend_semantic_planning_used": false,
+        "budget_error": null,
         "budget_exceeded": false,
-        "match_count": 2,
-        "retrieval_ms": 9.526
+        "budget_limits": {
+          "max_api_workers": 2,
+          "max_llm_calls": 8,
+          "max_parallelism": 4,
+          "max_passes": 6,
+          "max_repair_attempts": 1,
+          "max_sql_workers": 2,
+          "timeout_seconds": 30.0
+        },
+        "cache_hits": 0,
+        "checkpoint_resume_used": false,
+        "critical_path": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "deduped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "early_stopped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "model_cascade_used": false,
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "stage_pipeline_used": true,
+        "truncated_fields": 1,
+        "v2_execution_optimizer_used": true
       },
-      "output": {
-        "preview": "{\"active\": true, \"query_value_count\": 1, \"matches\": {\"items\": [{\"mention\": \"weRetail: Customer Actions\", \"kind\": \"quoted_entity\", \"matched_table\": \"dim_blueprint\", \"matched_column\": \"NAME\", \"matched_value\": \"weRetail: Customer Actions\", \"confidence\": 1.0, \"match_type\": \"exact\", \"retrieval_cost\": {\"cache_hit\": true, \"cache_key\": \"9c6f3a8deea3757e\", \"cache_key_algorithm\": \"sha256\", \"cache_reproducible\": true, \"retrieval_ms\": 9.526, \"budget_exceeded\": false}, \"truncated_fields\": 1}, {\"mention\": \"weRetail: Customer Actions\", \"kind\": \"quoted_entity\", \"matched_table\": \"dim_collection\", \"matched_column\": \"NAME\", \"matched_value\": \"weRetail: Customer Actions\", \"confidence\": 1.0, \"match_type\": \"exact\", \"retrieval_cost\": {\"cache_hit\": true, \"cache_key\": \"9c6f3a8deea3757e\", \"cache_key_algorithm\": \"sha256\", \"cache_reproducible\": true, \"retrieval_ms\": 9.526, \"budget_exceeded\": false}, \"truncated_fields\": 1}], \"total_items\": 2, \"truncated_items\": false}, \"match_count\": 2, \"cache_hit\": true, \"cache_ke...",
-        "truncated": true
-      },
-      "stage": "query understanding",
-      "technique": "CHESS-style value/entity retrieval",
-      "timestamp": "2026-05-28T11:05:04.500077+00:00"
+      "stage": "llm-owned execution optimization",
+      "technique": "backend-only scheduling/cache/budget optimizer",
+      "timestamp": "2026-06-01T02:57:46.776682+00:00"
     },
     {
-      "checkpoint_id": "checkpoint_05_query_analysis",
-      "correctness_role": "aligns routing, metadata, planning, and reporting decisions",
+      "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
+      "correctness_role": "keeps backend responsibility limited to scheduling, gates, execution, and result storage",
       "duration_ms": 0.0,
-      "effect": "computes shared query understanding once",
-      "efficiency_role": "avoids repeated template and routing analysis",
+      "effect": "moves LLM-declared passes through fixed execution stages without changing pass semantics",
+      "efficiency_role": "allows later passes to enter free stages before earlier passes finish all stages",
       "input_summary": {
-        "domain_type": "SEGMENT_AUDIENCE",
-        "route_type": "SQL_ONLY"
-      },
-      "output": {
-        "answer_family": "schema_dataset",
-        "api_templates": {
-          "items": [
-            "schema_by_name"
-          ],
-          "total_items": 1,
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
-        "confidence": 0.8,
-        "domain_type": "SEGMENT_AUDIENCE",
-        "fast_path": "schema_detail_counts+schema_by_name",
-        "route_type": "SQL_ONLY",
-        "sql_template": "schema_detail_counts",
-        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
-      },
-      "stage": "routing",
-      "technique": "branch prediction / QueryAnalysis",
-      "timestamp": "2026-05-28T11:05:04.500087+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_06_lookup_path",
-      "correctness_role": "guides relationship-heavy SQL/API selection",
-      "duration_ms": 0.0,
-      "effect": "predicts the relevant table/join/API path",
-      "efficiency_role": "filters unrelated schema and endpoint candidates",
-      "input_summary": {
-        "answer_family": "schema_dataset",
-        "domain_type": "SEGMENT_AUDIENCE"
-      },
-      "output": {
-        "api_families": {
-          "items": [
-            "datasets_by_schema",
-            "schema_registry_by_id",
-            "schema_by_name"
-          ],
-          "total_items": 4,
-          "truncated_items": true
-        },
-        "api_mode": "required",
-        "family": "schema_dataset",
-        "join_path": {
-          "items": [
-            "dim_blueprint.blueprintid = hkg_br_blueprint_collection.blueprintid",
-            "hkg_br_blueprint_collection.collectionid = dim_collection.collectionid"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
-        "required_ids": {
-          "items": [
-            "schema_id",
-            "blueprint_id",
-            "collection_id"
-          ],
-          "total_items": 3,
-          "truncated_items": false
-        },
-        "tables": {
-          "items": [
-            "dim_blueprint",
-            "hkg_br_blueprint_collection",
-            "dim_collection"
-          ],
-          "total_items": 3,
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         }
       },
-      "stage": "path prediction",
-      "technique": "TLB-style lookup path prediction",
-      "timestamp": "2026-05-28T11:05:04.500091+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_07_context_card",
-      "correctness_role": "keeps required tables, columns, joins, and API candidates visible",
-      "duration_ms": 0.0,
-      "effect": "packs family-relevant context into metadata.json and the filled prompt",
-      "efficiency_role": "limits context size for non-baseline strategies",
-      "input_summary": {
-        "broad_context": false,
-        "lookup_path": "schema_dataset"
-      },
       "output": {
-        "estimated_metadata_tokens": 926,
-        "prompt_tokens": 1585,
-        "selected_apis": {
-          "items": [
-            "schema_registry_schemas"
-          ],
-          "total_items": 1,
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
-        "selected_card_name": "schema_dataset",
-        "selected_columns": {
-          "dim_blueprint": {
-            "items": [
-              "BLUEPRINTID",
-              "NAME",
-              "CLASS"
-            ],
-            "total_items": 5,
-            "truncated_items": true
-          },
-          "dim_collection": {
-            "items": [
-              "COLLECTIONID",
-              "NAME",
-              "ROWCOUNT"
-            ],
-            "total_items": 4,
-            "truncated_items": true
-          },
-          "hkg_br_blueprint_collection": {
-            "items": [
-              "BLUEPRINTID",
-              "COLLECTIONID"
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          },
-          "hkg_br_blueprint_property": {
-            "items": [
-              "BLUEPRINTID",
-              "PROPERTY"
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          }
-        },
-        "selected_tables": {
-          "items": [
-            "dim_blueprint",
-            "hkg_br_blueprint_collection",
-            "dim_collection"
-          ],
-          "total_items": 4,
-          "truncated_items": true
-        }
-      },
-      "stage": "metadata packing",
-      "technique": "huge-page-style compact context card",
-      "timestamp": "2026-05-28T11:05:04.502097+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_08_candidate_plans",
-      "correctness_role": "prefers validated, family-matched plans",
-      "duration_ms": 0.0,
-      "effect": "selects one plan before execution",
-      "efficiency_role": "does not execute losing candidate plans",
-      "input_summary": {
-        "base_step_count": 2,
-        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
-      },
-      "output": {
-        "candidate_plan_names": {
-          "items": [
-            "strategy_plan"
-          ],
-          "total_items": 1,
+        "max_api_workers": 2,
+        "max_parallelism": 4,
+        "max_sql_workers": 2,
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
-        "reason_selected": "strategy does not use ensemble selection",
-        "scores": {
-          "strategy_plan": 1.0
-        },
-        "selected_plan": "strategy_plan"
-      },
-      "stage": "planning",
-      "technique": "pre-execution plan ensemble",
-      "timestamp": "2026-05-28T11:05:04.502167+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_09_plan_optimization",
-      "correctness_role": "drops unresolved placeholder calls unless explicitly warned",
-      "duration_ms": 0.0,
-      "effect": "removes duplicate, skippable, or unsafe calls before validation",
-      "efficiency_role": "enforces a bounded plan before execution",
-      "input_summary": {
-        "original_step_count": 2
-      },
-      "output": {
-        "call_budget_applied": false,
-        "optimized_step_count": 2,
-        "original_step_count": 2,
-        "removed_api_skip_calls": 0,
-        "removed_duplicate_calls": 0,
-        "unresolved_placeholders_removed": 0
-      },
-      "stage": "optimization",
-      "technique": "compiler-style plan optimization",
-      "timestamp": "2026-05-28T11:05:04.502174+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_10_evidence_policy",
-      "correctness_role": "keeps API calls for API-only/live families",
-      "duration_ms": 0.0,
-      "effect": "decides when API evidence is required, optional, or unnecessary",
-      "efficiency_role": "skips or caps API calls when SQL evidence is enough",
-      "input_summary": {
-        "answer_family": "schema_dataset",
-        "route_type": "SQL_ONLY"
-      },
-      "output": {
-        "allowed_api_families": {
-          "items": [
-            "schema_by_name"
-          ],
-          "total_items": 1,
+        "passes_completed": {
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
-        "max_api_calls": 1,
-        "mode": "API_REQUIRED",
-        "reason": "Query family requires Adobe API evidence."
-      },
-      "stage": "evidence policy",
-      "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
-      "timestamp": "2026-05-28T11:05:04.502178+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_11_call_budget",
-      "correctness_role": "preserves required grounding steps",
-      "duration_ms": 0.0,
-      "effect": "keeps tool calls within per-family limits",
-      "efficiency_role": "prevents accidental extra SQL/API calls",
-      "input_summary": {
-        "preview": "{\"planned_steps\": {\"items\": [{\"action\": \"sql\", \"purpose\": \"Research V2 fast-path SQL grounding.\", \"sql\": \"SELECT S.\\\"BLUEPRINTID\\\" AS blueprint_id, S.\\\"NAME\\\", S.\\\"CLASS\\\", S.\\\"ISPROFILEENABLED\\\", S.\\\"UPDATEDTIME\\\" AS updated_time, S.\\\"REQUIREDFIELDS\\\" AS required_fields, COUNT(DISTINCT SD.\\\"COLLECTIONID\\\") AS collection_count, COUNT(DISTINCT SA.\\\"PROPERTY\\\") AS property_count FROM \\\"dim_blueprint\\\" AS S LEFT JOIN \\\"hkg_br_blueprint_collection\\\" AS SD ON S.\\\"BLUEPRINTID\\\" = SD.\\\"BLUEPRINTID\\\" LEFT JOIN \\\"hkg_br_blueprint_property\\\" AS SA ON S.\\\"BLUEPRINTID\\\" = SA.\\\"BLUEPRINTID\\\" WHERE LOWER(S.\\\"NAME\\\") = LOWER('weRetail: Customer Actions') GROUP BY S.\\\"BLUEPRINTID\\\", S.\\\"NAME\\\", S.\\\"CLASS\\\", S.\\\"ISPROFILEENABLED\\\", S.\\\"UPDATEDTIME\\\", S.\\\"REQUIREDFIELDS\\\" LIMIT 3\", \"family\": \"schema_detail_counts\"}, {\"action\": \"api\", \"purpose\": \"API parameter template: schema_by_name.\", \"method\": \"GET\", \"url\": \"/data/foundation/schemaregistry/tenant/schemas\", \"params\": {\"filter\": \"name==weRetail: Custom...",
-        "truncated": true
-      },
-      "output": {
-        "final_planned_calls": 2,
-        "max_api_calls": 1,
-        "max_sql_calls": 1,
-        "max_total_tool_calls": 2,
-        "planned_api_calls": 1,
-        "planned_sql_calls": 1
-      },
-      "stage": "efficiency control",
-      "technique": "tool-call budgeting",
-      "timestamp": "2026-05-28T11:05:04.502200+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_evidence_match_scores",
-      "correctness_role": "does not choose final answer or bypass SQL/API validators",
-      "duration_ms": 0.0,
-      "effect": "estimates whether SQL, API, both, or neither are plausible evidence sources",
-      "efficiency_role": "identifies potential staged acquisition savings without changing the plan",
-      "input_summary": {
-        "answer_family": "schema_dataset",
-        "route_type": "SQL_ONLY"
-      },
-      "output": {
-        "api_match": 0.7,
-        "api_match_codes": {
-          "items": [
-            "API_DOMAIN_MATCH",
-            "API_CAPABILITY_MATCH",
-            "API_CANDIDATE_AVAILABLE"
-          ],
-          "total_items": 4,
-          "truncated_items": true
-        },
-        "concrete_data_signal": true,
-        "live_api_signal": false,
-        "sql_match": 1.0,
-        "sql_match_codes": {
-          "items": [
-            "SQL_DOMAIN_MATCH",
-            "SQL_CAPABILITY_MATCH",
-            "CONCRETE_DATA_SIGNAL"
-          ],
-          "total_items": 5,
-          "truncated_items": true
-        }
-      },
-      "stage": "staged evidence policy shadow",
-      "technique": "objective SQL/API evidence match scorer",
-      "timestamp": "2026-05-28T11:05:04.502330+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_initial_evidence_branch_policy",
-      "correctness_role": "keeps current SQL_FIRST_API_VERIFY execution unchanged in shadow mode",
-      "duration_ms": 0.0,
-      "effect": "records the first evidence branch a future trial would acquire",
-      "efficiency_role": "measures where upfront SQL+API planning may be avoidable",
-      "input_summary": {
-        "score": {
-          "api_match": 0.7,
-          "api_match_codes": {
-            "items": [
-              "API_DOMAIN_MATCH",
-              "API_CAPABILITY_MATCH",
-              "API_CANDIDATE_AVAILABLE"
-            ],
-            "total_items": 4,
-            "truncated_items": true
-          },
-          "concrete_data_signal": true,
-          "live_api_signal": false,
-          "sql_match": 1.0,
-          "sql_match_codes": {
-            "items": [
-              "SQL_DOMAIN_MATCH",
-              "SQL_CAPABILITY_MATCH",
-              "CONCRETE_DATA_SIGNAL"
-            ],
-            "total_items": 5,
-            "truncated_items": true
-          }
-        }
-      },
-      "output": {
-        "first_branch": "SQL",
-        "policy_codes": {
-          "items": [
-            "SQL_HIGH_API_HIGH"
-          ],
-          "total_items": 1,
+        "passes_dependency_blocked": {
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
-        "second_branch_policy": "API_AFTER_SQL_IF_NEEDED",
-        "shadow_only": false
+        "passes_failed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pipeline_stage_count": 8,
+        "stage_events": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "truncated_fields": 4,
+        "v2_pipeline_scheduler_used": false
       },
-      "stage": "staged evidence policy shadow",
-      "technique": "SQL-first/API-first staged branch policy",
-      "timestamp": "2026-05-28T11:05:04.502340+00:00"
+      "stage": "llm-owned pipeline scheduling",
+      "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
+      "timestamp": "2026-06-01T02:57:46.776716+00:00"
     },
     {
-      "checkpoint_id": "checkpoint_staged_evidence_acquisition",
-      "correctness_role": "keeps ambiguous/data-like prompts in evidence collection rather than early no-tool routing",
+      "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
+      "correctness_role": "blocks malformed dependency graphs before execution",
       "duration_ms": 0.0,
-      "effect": "records the actual evidence pipeline entry and planned staged sources for research V2",
-      "efficiency_role": "records first-source policy without executing extra candidate plans",
+      "effect": "validates only graph shape; does not choose subtasks, dependencies, SQL, or API paths",
+      "efficiency_role": "bounds pass scheduling to LLM-declared valid graphs",
       "input_summary": {
-        "planned_api": true,
-        "planned_sql": true
-      },
-      "output": {
-        "generalized_planner_executed": true,
-        "initial_branch": {
-          "first_branch": "SQL",
-          "policy_codes": {
-            "items": [
-              "SQL_HIGH_API_HIGH"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "second_branch_policy": "API_AFTER_SQL_IF_NEEDED"
-        },
-        "planned_api_calls": 1,
-        "planned_sql_calls": 1,
-        "scores": {
-          "api_match": 0.7,
-          "api_match_codes": {
-            "items": [
-              "API_DOMAIN_MATCH",
-              "API_CAPABILITY_MATCH",
-              "API_CANDIDATE_AVAILABLE"
-            ],
-            "total_items": 4,
-            "truncated_items": true
-          },
-          "concrete_data_signal": true,
-          "live_api_signal": false,
-          "sql_match": 1.0,
-          "sql_match_codes": {
-            "items": [
-              "SQL_DOMAIN_MATCH",
-              "SQL_CAPABILITY_MATCH",
-              "CONCRETE_DATA_SIGNAL"
-            ],
-            "total_items": 5,
-            "truncated_items": true
-          }
-        },
-        "shadow_only": false
-      },
-      "stage": "evidence pipeline",
-      "technique": "progressive staged evidence acquisition",
-      "timestamp": "2026-05-28T11:05:04.502348+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_gated_sql_candidate_selection",
-      "correctness_role": "selects only validator- and AST-passing SQL candidates",
-      "duration_ms": 0.0,
-      "effect": "validates hard-case SQL candidates before execution without executing losing candidates",
-      "efficiency_role": "executes only one selected candidate in packaged SQL_FIRST_API_VERIFY mode",
-      "input_summary": {
-        "trigger_reasons": {
-          "items": [
-            "value_match_not_used_by_sql"
-          ],
-          "total_items": 1,
+        "evidence_order": "SQL_FIRST",
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         }
       },
-      "metrics": {
-        "candidate_count": 1,
-        "cost_estimate": 1
-      },
       "output": {
-        "preview": "{\"active\": true, \"hard_case_triggered\": true, \"trigger_reasons\": {\"items\": [\"value_match_not_used_by_sql\"], \"total_items\": 1, \"truncated_items\": false}, \"candidate_count\": 1, \"candidate_sql_sources\": {\"items\": [\"schema_detail_counts\"], \"total_items\": 1, \"truncated_items\": false}, \"validation_results\": {\"items\": [{\"name\": \"candidate_0\", \"sql\": \"SELECT S.\\\"BLUEPRINTID\\\" AS blueprint_id, S.\\\"NAME\\\", S.\\\"CLASS\\\", S.\\\"ISPROFILEENABLED\\\", S.\\\"UPDATEDTIME\\\" AS updated_time, S.\\\"REQUIREDFIELDS\\\" AS required_fields, COUNT(DISTINCT SD.\\\"COLLECTIONID\\\") AS collection_count, COUNT(DISTINCT SA.\\\"PROPERTY\\\") AS property_count FROM \\\"dim_blueprint\\\" AS S LEFT JOIN \\\"hkg_br_blueprint_collection\\\" AS SD ON S.\\\"BLUEPRINTID\\\" = SD.\\\"BLUEPRINTID\\\" LEFT JOIN \\\"hkg_br_blueprint_property\\\" AS SA ON S.\\\"BLUEPRINTID\\\" = SA.\\\"BLUEPRINTID\\\" WHERE LOWER(S.\\\"NAME\\\") = LOWER('weRetail: Customer Actions') GROUP BY S.\\\"BLUEPRINTID\\\", S.\\\"NAME\\\", S.\\\"CLASS\\\", S.\\\"ISPROFILEENABLED\\\", S.\\\"UPDATEDTIME\\\", S.\\\"REQUIREDFIEL...",
-        "truncated": true
-      },
-      "stage": "planning",
-      "technique": "hard-case gated SQL candidate validation",
-      "timestamp": "2026-05-28T11:05:04.511660+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_post_sql_decision_card",
-      "correctness_role": "uses role/bucket summaries rather than raw large result payloads",
-      "duration_ms": 0.0,
-      "effect": "summarizes SQL result quality and safe API candidates before API execution",
-      "efficiency_role": "provides compact input for deterministic or LLM API advice",
-      "input_summary": {
-        "api_step": {
-          "action": "api",
-          "family": "schema_by_name",
-          "headers": {
-            "Accept": "application/vnd.adobe.xed-id+json"
-          },
-          "method": "GET",
-          "params": {
-            "filter": "name==weRetail: Customer Actions"
-          },
-          "purpose": "API parameter template: schema_by_name.",
-          "url": "/data/foundation/schemaregistry/tenant/schemas"
-        },
-        "sql_result_seen": true
-      },
-      "output": {
-        "allowed_outputs": {
-          "mode": {
-            "items": [
-              "CALL_API",
-              "SKIP_API",
-              "CAVEAT_ONLY"
-            ],
-            "total_items": 3,
-            "truncated_items": false
-          }
-        },
-        "answer_intent": "SCHEMA_DATASET",
-        "api_candidates": {
-          "items": [
-            {
-              "can_fill_roles": {
-                "items": [
-                  "id",
-                  "name",
-                  "detail"
-                ],
-                "total_items": 3,
-                "truncated_items": false
-              },
-              "endpoint_id": "schema_registry_schemas",
-              "family": "schema_by_name",
-              "live_health": "UNKNOWN",
-              "method": "GET",
-              "requires_path_param": false,
-              "safe_get": true
-            }
-          ],
-          "total_items": 1,
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
-        "prompt_features": {
-          "items": [
-            "RETURN",
-            "SCHEMA",
-            "QUOTED"
-          ],
-          "total_items": 8,
-          "truncated_items": true
-        },
-        "sql_state": {
-          "direct_answer": true,
-          "execution": "SUCCESS",
-          "partial_answer": false,
-          "returned_roles": {
-            "items": [
-              "id",
-              "name",
-              "timestamp"
-            ],
-            "total_items": 5,
-            "truncated_items": true
-          },
-          "row_count_bucket": "ONE",
-          "validation": "PASS",
-          "zero_rows": false
-        },
-        "task": "POST_SQL_API_DECISION"
-      },
-      "stage": "post-SQL API decision shadow",
-      "technique": "compact post-SQL decision card",
-      "timestamp": "2026-05-28T11:05:04.514885+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_post_sql_deterministic_policy",
-      "correctness_role": "does not execute or suppress API calls in shadow mode",
-      "duration_ms": 0.0,
-      "effect": "bypasses LLM advice for high-confidence call/skip decisions",
-      "efficiency_role": "estimates where ambiguous-only LLM advice would save calls",
-      "input_summary": {
-        "card_task": "POST_SQL_API_DECISION"
-      },
-      "output": {
-        "api_evidence_signal": 0.35,
-        "codes": {
-          "items": [
-            "SQL_DIRECT_ANSWER"
-          ],
-          "total_items": 1,
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
-        "confidence": "HIGH",
-        "suggestion": "SKIP_API"
-      },
-      "stage": "post-SQL API decision shadow",
-      "technique": "confidence-banded deterministic post-SQL policy",
-      "timestamp": "2026-05-28T11:05:04.514893+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_post_sql_llm_advisor",
-      "correctness_role": "never creates endpoints, params, user answers, or bypasses validators",
-      "duration_ms": 0.0,
-      "effect": "records advisory CALL_API/SKIP_API/CAVEAT_ONLY choice when enabled or deterministic fallback otherwise",
-      "efficiency_role": "invokes LLM only for medium/low/ambiguous policy bands",
-      "input_summary": {
-        "advisor_enabled": false,
-        "policy_confidence": "HIGH"
-      },
-      "output": {
-        "codes": {
-          "items": [
-            "SQL_DIRECT_ANSWER"
-          ],
-          "total_items": 1,
+        "pass_count": 0,
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
-        "conf": 1.0,
-        "llm_call_attempted": false,
-        "mode": "SKIP_API",
-        "source": "DETERMINISTIC_BYPASS"
+        "passed": true
       },
-      "stage": "post-SQL API decision shadow",
-      "technique": "medium/low-confidence LLM API advisor",
-      "timestamp": "2026-05-28T11:05:04.514899+00:00"
+      "stage": "llm-owned pass graph validation",
+      "technique": "shape-only PassGraphGate",
+      "timestamp": "2026-06-01T02:57:46.776730+00:00"
     },
     {
-      "checkpoint_id": "checkpoint_post_sql_api_call_verifier",
-      "correctness_role": "blocks unknown endpoints, unresolved path params, and API-required skips",
+      "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
+      "correctness_role": "keeps decomposition owned by the LLM and backend role limited to scheduling/gates/execution",
       "duration_ms": 0.0,
-      "effect": "verifies endpoint legality and records what would be kept, dropped, or caveated",
-      "efficiency_role": "estimates API call savings/additions without changing execution",
+      "effect": "schedules only LLM-declared passes; does not split prompts or add semantic subtasks",
+      "efficiency_role": "groups dependency-free passes without changing their semantics",
       "input_summary": {
-        "advisor_source": "DETERMINISTIC_BYPASS"
-      },
-      "output": {
-        "codes": {
-          "items": [
-            "VERIFIED_CALL_API"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "final_action": "CALL_API",
-        "selected_api_families": {
-          "items": [
-            "schema_registry_schemas"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "shadow_only": false,
-        "source": "RISK_MINIMIZING_FALLBACK"
-      },
-      "stage": "post-SQL API decision shadow",
-      "technique": "thin verifier for post-SQL API advice",
-      "timestamp": "2026-05-28T11:05:04.514904+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_post_sql_semantic_decision_card",
-      "correctness_role": "omits raw large SQL/API payloads and evaluator metadata",
-      "duration_ms": 0.0,
-      "effect": "provides compact SQL state, scope, API candidate, and constraints to the LLM decision",
-      "efficiency_role": "bounds the LLM decision payload",
-      "input_summary": {
-        "api_step": {
-          "action": "api",
-          "family": "schema_by_name",
-          "headers": {
-            "Accept": "application/vnd.adobe.xed-id+json"
-          },
-          "method": "GET",
-          "params": {
-            "filter": "name==weRetail: Customer Actions"
-          },
-          "purpose": "API parameter template: schema_by_name.",
-          "url": "/data/foundation/schemaregistry/tenant/schemas"
-        },
-        "sql_result_seen": true
-      },
-      "output": {
-        "preview": "{\"task\": \"POST_SQL_SEMANTIC_DECISION\", \"user_prompt\": \"Provide more details for the schema 'weRetail: Customer Actions'\", \"semantic_parse\": {\"operation\": \"LOOKUP\", \"target\": {\"grounding\": \"SUPPORTED_DATA_OBJECT\", \"object_family\": \"SCHEMA\", \"instance_level\": true}, \"capability\": {\"sql_match\": true, \"api_match\": true, \"api_families\": {\"items\": [\"SCHEMA_REGISTRY\"], \"total_items\": 1, \"truncated_items\": false}}, \"evidence_need\": \"SQL_API\", \"no_tool_safe\": false, \"source\": \"DETERMINISTIC_FALLBACK\"}, \"user_requested_scope\": \"LOCAL_SNAPSHOT\", \"sql_result_scope\": \"LOCAL_SNAPSHOT\", \"sql_state\": {\"validation\": \"PASS\", \"execution\": \"SUCCESS\", \"row_count_bucket\": \"ONE\", \"returned_roles\": {\"items\": [\"id\", \"name\", \"timestamp\"], \"total_items\": 5, \"truncated_items\": true}, \"direct_answer\": true, \"partial_answer\": false, \"zero_rows\": false}, \"returned_roles\": {\"items\": [\"id\", \"name\", \"timestamp\"], \"total_items\": 5, \"truncated_items\": true}, \"sql_facts_summary\": {\"execution\": \"SUCCESS\", \"row_count_bucket...",
-        "truncated": true
-      },
-      "stage": "post-SQL API semantic decision",
-      "technique": "compact LLM-first post-SQL semantic decision card",
-      "timestamp": "2026-05-28T11:05:04.514911+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_post_sql_llm_decision_v1",
-      "correctness_role": "LLM decides semantics; gates only detect conflicts",
-      "duration_ms": 0.0,
-      "effect": "records the initial LLM CALL_API/SKIP_API/CAVEAT_ONLY decision",
-      "efficiency_role": "can suppress optional API only after verifier acceptance",
-      "input_summary": {
-        "llm_backend_available": false
-      },
-      "stage": "post-SQL API semantic decision",
-      "technique": "LLM-first post-SQL API decision",
-      "timestamp": "2026-05-28T11:05:04.514914+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_post_sql_minimal_correction_feedback",
-      "correctness_role": "does not replace the LLM semantic decision with deterministic policy",
-      "duration_ms": 0.0,
-      "effect": "sends only conflict deltas and narrowed output choices for one revision",
-      "efficiency_role": "keeps revision payload compact",
-      "input_summary": {
-        "first_pass_ok": false
-      },
-      "stage": "post-SQL API semantic decision",
-      "technique": "minimal compiler-style correction feedback",
-      "timestamp": "2026-05-28T11:05:04.514916+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_post_sql_llm_decision_v2",
-      "correctness_role": "lets LLM revise before fallback",
-      "duration_ms": 0.0,
-      "effect": "records the one allowed LLM correction after gate feedback",
-      "efficiency_role": "bounds post-SQL LLM calls to at most two",
-      "input_summary": {
-        "revision_attempted": false
-      },
-      "stage": "post-SQL API semantic decision",
-      "technique": "single LLM post-SQL revision",
-      "timestamp": "2026-05-28T11:05:04.514919+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_post_sql_risk_minimizing_fallback",
-      "correctness_role": "does not claim deterministic semantic certainty",
-      "duration_ms": 0.0,
-      "effect": "preserves evidence or caveats unsafe API only when LLM revision fails",
-      "efficiency_role": "uses local risk rules only after LLM failure",
-      "input_summary": {
-        "revision_success": false
-      },
-      "output": {
-        "codes": {
-          "items": [
-            "FALLBACK_PRESERVE_API"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "confidence": 0.0,
-        "endpoint_id": "schema_registry_schemas",
-        "fallback_reason_codes": {
-          "items": [
-            "API_REQUIRED_CANNOT_SKIP"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "fallback_source": "RISK_MINIMIZING_FALLBACK",
-        "mode": "CALL_API",
-        "semantic_certainty_claimed": false
-      },
-      "stage": "post-SQL API semantic decision",
-      "technique": "risk-minimizing fallback after failed LLM revision",
-      "timestamp": "2026-05-28T11:05:04.514921+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_post_sql_execution_verifier",
-      "correctness_role": "blocks unsafe or unexecutable API calls without re-scoring semantic intent",
-      "duration_ms": 0.0,
-      "effect": "checks endpoint existence, safe GET, path params, role gain, and budget before execution",
-      "efficiency_role": "prevents invalid API execution",
-      "input_summary": {
-        "decision_source": "RISK_MINIMIZING_FALLBACK"
-      },
-      "output": {
-        "codes": {
-          "items": [
-            "VERIFIED_CALL_API"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "endpoint_id": "schema_registry_schemas",
-        "final_action": "CALL_API",
-        "ok": true,
-        "selected_api_families": {
-          "items": [
-            "schema_registry_schemas"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "source": "RISK_MINIMIZING_FALLBACK"
-      },
-      "stage": "post-SQL API semantic decision",
-      "technique": "thin execution contract verifier",
-      "timestamp": "2026-05-28T11:05:04.514923+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_real_behavior_applied_trial",
-      "correctness_role": "preserves API-required and live/API prompts while testing optional API suppression",
-      "duration_ms": 0.0,
-      "effect": "applies deterministic post-SQL API keep/drop decisions only in explicit real benchmark trial modes",
-      "efficiency_role": "measures actual API call savings in trajectory tool results",
-      "input_summary": {
-        "api_step": {
-          "action": "api",
-          "family": "schema_by_name",
-          "headers": {
-            "Accept": "application/vnd.adobe.xed-id+json"
-          },
-          "method": "GET",
-          "params": {
-            "filter": "name==weRetail: Customer Actions"
-          },
-          "purpose": "API parameter template: schema_by_name.",
-          "url": "/data/foundation/schemaregistry/tenant/schemas"
-        },
-        "trial_mode": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
-      },
-      "output": {
-        "applied": false,
-        "blockers": {
-          "items": [
-            "API_REQUIRED",
-            "VERIFIER_DID_NOT_APPROVE_SKIP"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
-        "decision": "KEEP_BASELINE_API",
-        "decision_family": "POST_SQL_API",
-        "fallback": true,
-        "record": true,
-        "shadow_only": false,
-        "trial_mode": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
-        "truncated_fields": 6
-      },
-      "stage": "isolated applied trial",
-      "technique": "post-SQL API decision applied trial",
-      "timestamp": "2026-05-28T11:05:04.514948+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_12_validation",
-      "correctness_role": "blocks unsafe SQL and unknown/unresolved API calls",
-      "duration_ms": 0.0,
-      "effect": "records whether planned SQL/API calls were safe to execute",
-      "efficiency_role": "prevents wasted execution on invalid calls",
-      "input_summary": {
-        "preview": "{\"optimized_steps\": {\"items\": [{\"action\": \"sql\", \"purpose\": \"Research V2 fast-path SQL grounding.\", \"sql\": \"SELECT S.\\\"BLUEPRINTID\\\" AS blueprint_id, S.\\\"NAME\\\", S.\\\"CLASS\\\", S.\\\"ISPROFILEENABLED\\\", S.\\\"UPDATEDTIME\\\" AS updated_time, S.\\\"REQUIREDFIELDS\\\" AS required_fields, COUNT(DISTINCT SD.\\\"COLLECTIONID\\\") AS collection_count, COUNT(DISTINCT SA.\\\"PROPERTY\\\") AS property_count FROM \\\"dim_blueprint\\\" AS S LEFT JOIN \\\"hkg_br_blueprint_collection\\\" AS SD ON S.\\\"BLUEPRINTID\\\" = SD.\\\"BLUEPRINTID\\\" LEFT JOIN \\\"hkg_br_blueprint_property\\\" AS SA ON S.\\\"BLUEPRINTID\\\" = SA.\\\"BLUEPRINTID\\\" WHERE LOWER(S.\\\"NAME\\\") = LOWER('weRetail: Customer Actions') GROUP BY S.\\\"BLUEPRINTID\\\", S.\\\"NAME\\\", S.\\\"CLASS\\\", S.\\\"ISPROFILEENABLED\\\", S.\\\"UPDATEDTIME\\\", S.\\\"REQUIREDFIELDS\\\" LIMIT 3\", \"family\": \"schema_detail_counts\"}, {\"action\": \"api\", \"purpose\": \"API parameter template: schema_by_name.\", \"method\": \"GET\", \"url\": \"/data/foundation/schemaregistry/tenant/schemas\", \"params\": {\"filter\": \"name==weRetail: Cust...",
-        "truncated": true
-      },
-      "output": {
-        "api_validation_status": {
-          "items": [
-            {
-              "errors": {
-                "items": [],
-                "total_items": 0,
-                "truncated_items": false
-              },
-              "ok": true
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "sql_validation_status": {
-          "items": [
-            {
-              "errors": {
-                "items": [],
-                "total_items": 0,
-                "truncated_items": false
-              },
-              "ok": true
-            }
-          ],
-          "total_items": 1,
+        "multi_pass_enabled": false,
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         }
       },
-      "stage": "validation",
-      "technique": "SQL/API safety validation",
-      "timestamp": "2026-05-28T11:05:04.968365+00:00"
+      "output": {
+        "api_gate_passed": null,
+        "api_repair_attempts": 0,
+        "backend_semantic_decomposition_used": false,
+        "backend_semantic_planning_used": false,
+        "budget_error": null,
+        "budget_exceeded": false,
+        "budget_limits": {
+          "max_api_workers": 2,
+          "max_llm_calls": 8,
+          "max_parallelism": 4,
+          "max_passes": 6,
+          "max_repair_attempts": 1,
+          "max_sql_workers": 2,
+          "timeout_seconds": 30.0
+        },
+        "cache_hits": 0,
+        "checkpoint_resume_used": false,
+        "critical_path": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "deduped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "deterministic_answer_template_used": false,
+        "early_stopped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "evidence_bus_id": "evidence_run_3a8fd001cde546bb8a15f30d4ed6621d",
+        "hidden_eval_gold_used": false,
+        "llm_pass_count": 0,
+        "llm_pass_graph_used": false,
+        "max_api_workers": 2,
+        "max_parallelism": 4,
+        "max_sql_workers": 2,
+        "model_cascade_used": false,
+        "multi_pass_enabled": false,
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "parallel_pass_count": 0,
+        "pass_graph_gate_passed": true,
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pass_results_count": 0,
+        "passes_completed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_dependency_blocked": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_executed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_failed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pipeline_stage_count": 8,
+        "plan_version": 1,
+        "result_bundle_id": "bundle_run_3a8fd001cde546bb8a15f30d4ed6621d",
+        "run_id": "run_3a8fd001cde546bb8a15f30d4ed6621d",
+        "sequential_pass_count": 0,
+        "sql_gate_passed": null,
+        "sql_repair_attempts": 0,
+        "stage_events": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "stage_pipeline_used": true,
+        "truncated_fields": 6,
+        "v2_execution_optimizer_used": true,
+        "v2_pipeline_scheduler_used": false
+      },
+      "stage": "llm-owned pass scheduling",
+      "technique": "dependency-aware scheduling of LLM-declared evidence passes",
+      "timestamp": "2026-06-01T02:57:46.776735+00:00"
     },
     {
-      "checkpoint_id": "checkpoint_sql_ast_validation",
-      "correctness_role": "detects unsafe SQL and schema mismatches with parser-backed structure",
+      "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
+      "correctness_role": "separates LLM ownership from compile/request/runtime safety checks",
       "duration_ms": 0.0,
-      "effect": "adds AST-level table and column extraction after existing SQL validation",
-      "efficiency_role": "provides precise feedback without extra SQL tool calls",
+      "effect": "records that backend did not replace LLM semantic or SQL/API generation",
+      "efficiency_role": "bounds repair attempts before execution",
       "input_summary": {
-        "sql_call_count": 1
+        "evidence_order": "SQL_FIRST",
+        "route": "EVIDENCE_PIPELINE"
       },
       "output": {
-        "preview": "{\"summaries\": {\"items\": [{\"enabled\": true, \"parsed_ok\": true, \"selected_tables\": {\"items\": [\"dim_blueprint\", \"hkg_br_blueprint_collection\", \"hkg_br_blueprint_property\"], \"total_items\": 3, \"truncated_items\": false}, \"selected_columns\": {\"items\": [\"S.NAME\", \"S.CLASS\", \"S.ISPROFILEENABLED\"], \"total_items\": 10, \"truncated_items\": true}, \"destructive_sql_detected\": false, \"normalized_sql\": \"SELECT S.\\\"BLUEPRINTID\\\" AS blueprint_id, S.\\\"NAME\\\", S.\\\"CLASS\\\", S.\\\"ISPROFILEENABLED\\\", S.\\\"UPDATEDTIME\\\" AS updated_time, S.\\\"REQUIREDFIELDS\\\" AS required_fields, COUNT(DISTINCT SD.\\\"COLLECTIONID\\\") AS collection_count, COUNT(DISTINCT SA.\\\"PROPERTY\\\") AS property_count FROM \\\"dim_blueprint\\\" AS S LEFT JOIN \\\"hkg_br_blueprint_collection\\\" AS SD ON S.\\\"BLUEPRINTID\\\" = SD.\\\"BLUEPRINTID\\\" LEFT JOIN \\\"hkg_br_blueprint_property\\\" AS SA ON S.\\\"BLUEPRINTID\\\" = SA.\\\"BLUEPRINTID\\\" WHERE LOWER(S.\\\"NAME\\\") = LOWER('weRetail: Customer Actions') GROUP BY S.\\\"BLUEPRINTID\\\", S.\\\"NAME\\\", S.\\\"CLASS\\\", S.\\\"ISPROFILEENA...",
-        "truncated": true
+        "api_gate_passed": null,
+        "api_repair_attempts": 0,
+        "backend_semantic_decomposition_used": false,
+        "backend_semantic_planning_used": false,
+        "budget_error": null,
+        "budget_exceeded": false,
+        "budget_limits": {
+          "max_api_workers": 2,
+          "max_llm_calls": 8,
+          "max_parallelism": 4,
+          "max_passes": 6,
+          "max_repair_attempts": 1,
+          "max_sql_workers": 2,
+          "timeout_seconds": 30.0
+        },
+        "cache_hits": 0,
+        "checkpoint_resume_used": false,
+        "critical_path": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "deduped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "deterministic_answer_template_used": false,
+        "early_stopped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "evidence_bus_id": "evidence_run_3a8fd001cde546bb8a15f30d4ed6621d",
+        "hidden_eval_gold_used": false,
+        "llm_evidence_order": "SQL_FIRST",
+        "llm_owned_generation": true,
+        "llm_pass_count": 0,
+        "llm_pass_graph_used": false,
+        "llm_route": "EVIDENCE_PIPELINE",
+        "max_api_workers": 2,
+        "max_parallelism": 4,
+        "max_sql_workers": 2,
+        "model_cascade_used": false,
+        "multi_pass_enabled": false,
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "parallel_pass_count": 0,
+        "pass_graph_gate_passed": true,
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pass_results_count": 0,
+        "passes_completed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_dependency_blocked": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_executed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_failed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pipeline_stage_count": 8,
+        "plan_version": 1,
+        "result_bundle_id": "bundle_run_3a8fd001cde546bb8a15f30d4ed6621d",
+        "run_id": "run_3a8fd001cde546bb8a15f30d4ed6621d",
+        "sequential_pass_count": 0,
+        "sql_gate_passed": null,
+        "sql_repair_attempts": 0,
+        "stage_events": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "stage_pipeline_used": true,
+        "truncated_fields": 2,
+        "v2_execution_optimizer_used": true,
+        "v2_pipeline_scheduler_used": false
       },
-      "stage": "validation",
-      "technique": "SQLGlot AST-based SQL validation and extraction",
-      "timestamp": "2026-05-28T11:05:04.968400+00:00"
+      "stage": "llm/backend boundary",
+      "technique": "LLM-owned candidate generation with backend-only gates",
+      "timestamp": "2026-06-01T02:57:46.776755+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
-      "correctness_role": "records row counts, dry-run state, and API status for final answer grounding",
+      "correctness_role": "records runtime evidence or compile/request failures without fabricating data",
       "duration_ms": 0.0,
-      "effect": "captures the actual SQL/API evidence gathered by the backend",
-      "efficiency_role": "makes tool-call count and result previews explicit",
+      "effect": "executes only LLM-proposed candidates that pass backend gates",
+      "efficiency_role": "does not execute alternative backend-generated candidates",
       "input_summary": {
-        "validated_step_count": 2
+        "tool_result_count": 0
       },
       "output": {
-        "preview": "{\"sql_calls_executed\": 1, \"api_calls_executed\": 1, \"dry_run_status\": false, \"row_counts\": {\"items\": [1], \"total_items\": 1, \"truncated_items\": false}, \"api_status_codes\": {\"items\": [200], \"total_items\": 1, \"truncated_items\": false}, \"sql_results\": {\"items\": [{\"result_preview\": {\"items\": [{\"blueprint_id\": \"d4327cfe6472e58dd10c532840541e66b09a0c1a636e1e0f\", \"NAME\": \"weRetail: Customer Actions\", \"CLASS\": \"https://ns.adobe.com/xdm/context/experienceevent\", \"ISPROFILEENABLED\": true, \"updated_time\": \"2026-03-29T07:51:00.000+00:00\", \"required_fields\": \"[]\", \"collection_count\": 1, \"property_count\": 6}], \"total_items\": 1, \"truncated_items\": false}, \"ok\": true, \"row_count\": 1}], \"total_items\": 1, \"truncated_items\": false}, \"api_results\": {\"items\": [{\"result_preview\": {\"ok\": true, \"dry_run\": false, \"live_success\": false, \"status_code\": 200, \"evidence_state\": \"live_empty\", \"error_category\": \"live_empty\", \"endpoint_family\": \"schema_registry_schemas\", \"usable_evidence\": false, \"truncated_fields\": 1},...",
-        "truncated": true
+        "api_calls_executed": 0,
+        "dry_run_status": false,
+        "sql_calls_executed": 0
       },
       "stage": "execution",
-      "technique": "SQL/API tool execution",
-      "timestamp": "2026-05-28T11:05:04.968548+00:00"
+      "technique": "LLM-owned SQL/API tool execution",
+      "timestamp": "2026-06-01T02:57:46.778778+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
+      "correctness_role": "prevents pure direct answer routing from masking evidence-required prompts",
+      "duration_ms": 0.0,
+      "effect": "records that data/mixed/ambiguous prompts continued into evidence-backed answer grounding",
+      "efficiency_role": "makes EvidenceBus construction explicit",
+      "input_summary": {
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+        "tool_result_count": 0
+      },
+      "output": {
+        "evidence_bus_built": true,
+        "evidence_pipeline_bypassed": false,
+        "llm_evidence_order": "SQL_FIRST",
+        "llm_final_answer_composer_ran": true,
+        "llm_route": "EVIDENCE_PIPELINE",
+        "pass_results_count": 0,
+        "post_evidence_answer_router_ran": false
+      },
+      "stage": "evidence forwarding",
+      "technique": "V2 evidence boundary",
+      "timestamp": "2026-06-01T02:57:46.778787+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
-      "correctness_role": "passes exact IDs, names, counts, timestamps, and statuses without text guessing",
+      "correctness_role": "keeps exact values and scoped caveats in existing EvidenceBus semantics",
       "duration_ms": 0.0,
-      "effect": "forwards structured facts to API params and answer slots",
-      "efficiency_role": "avoids repeated lookup or reparsing work",
+      "effect": "forwards executed SQL/API evidence into the existing grounded answer pipeline",
+      "efficiency_role": "uses collected evidence without extra tool calls",
       "input_summary": {
-        "tool_result_count": 2
+        "tool_result_count": 0
       },
       "output": {
         "evidence": {
-          "api_evidence_states": {
-            "items": [
-              "live_empty"
-            ],
-            "total_items": 1,
+          "pass_ids": {
+            "items": [],
+            "total_items": 0,
             "truncated_items": false
           },
-          "api_parser_modes": {
-            "items": [
-              "generic_fallback"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "counts": {
-            "items": [
-              1,
-              6
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          },
-          "ids": {
-            "schema_id": "d4327cfe6472e58dd10c532840541e66b09a0c1a636e1e0f"
-          },
-          "names": {
-            "items": [
-              "weRetail: Customer Actions"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "timestamps": {
-            "items": [
-              "2026-03-29T07:51:00.000+00:00"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          }
+          "pass_result_count": 0,
+          "run_id": "run_3a8fd001cde546bb8a15f30d4ed6621d"
         }
       },
       "stage": "evidence forwarding",
-      "technique": "operand forwarding / EvidenceBus",
-      "timestamp": "2026-05-28T11:05:04.968557+00:00"
+      "technique": "EvidenceBus",
+      "timestamp": "2026-06-01T02:57:46.778869+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_result_bundle",
+      "correctness_role": "keeps pass-level runtime evidence separate from backend answer generation",
+      "duration_ms": 0.0,
+      "effect": "stores all LLM-declared pass results before final LLM aggregation",
+      "efficiency_role": "reuses executed pass results without extra tools",
+      "input_summary": {
+        "pass_results_count": 0,
+        "tool_result_count": 0
+      },
+      "output": {
+        "pass_results_count": 0,
+        "run_id": "run_3a8fd001cde546bb8a15f30d4ed6621d"
+      },
+      "stage": "evidence forwarding",
+      "technique": "ResultBundle",
+      "timestamp": "2026-06-01T02:57:46.778891+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
-      "correctness_role": "keeps SQL zero rows, live_empty, API errors, and required API missing distinct",
+      "correctness_role": "prevents API_ERROR as no-data and LIVE_EMPTY as global absence",
       "duration_ms": 0.0,
-      "effect": "classifies SQL/API evidence quality before answer rendering",
-      "efficiency_role": "uses executed tool payloads without extra calls",
+      "effect": "keeps SQL errors, API errors, live empty, and direct evidence distinct",
+      "efficiency_role": "uses existing payloads only",
       "input_summary": {
-        "api_required": true,
-        "tool_result_count": 2
+        "tool_result_count": 0
       },
       "output": {
         "api": {
           "items": [
-            "API_LIVE_EMPTY"
+            "API_NOT_RUN"
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "api_error_is_unavailable": false,
-        "caveats": {
-          "items": [
-            "live_empty_is_scoped_not_global_no_data"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "conflict": {
-          "items": [
-            "SQL_SUCCESS_API_EMPTY"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "live_empty_scoped": true,
+        "live_empty_scoped": false,
         "sql": {
           "items": [
-            "SQL_DIRECT_ANSWER"
+            "SQL_NOT_RUN"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -1825,167 +615,18 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-05-28T11:05:04.968579+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_evidence_grounded_answer_builder",
-      "correctness_role": "uses exact available values and scoped caveats without inventing missing roles",
-      "duration_ms": 0.0,
-      "effect": "renders final answer from EvidenceBus-derived answer slots and evidence quality classes",
-      "efficiency_role": "uses no extra SQL/API/LLM calls",
-      "input_summary": {
-        "api_required": true,
-        "tool_result_count": 2
-      },
-      "output": {
-        "answer": "Results: {updated_time=2026-03-29T07:51:00.000+00:00}.",
-        "evidence_quality": {
-          "api": {
-            "items": [
-              "API_LIVE_EMPTY"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "api_error_is_unavailable": false,
-          "caveats": {
-            "items": [
-              "live_empty_is_scoped_not_global_no_data"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "conflict": {
-            "items": [
-              "SQL_SUCCESS_API_EMPTY"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "live_empty_scoped": true,
-          "sql": {
-            "items": [
-              "SQL_DIRECT_ANSWER"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          }
-        },
-        "renderer": {
-          "answer": "Results: {updated_time=2026-03-29T07:51:00.000+00:00}.",
-          "rendered_fields": {
-            "items": [
-              "id",
-              "name",
-              "status"
-            ],
-            "total_items": 4,
-            "truncated_items": true
-          },
-          "shape": "list",
-          "unsupported_claims_count": 0
-        },
-        "unsupported_claims_count": 0
-      },
-      "stage": "answer synthesis",
-      "technique": "EvidenceBus-centered grounded answer builder",
-      "timestamp": "2026-05-28T11:05:04.970106+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_answer_intent_router",
-      "correctness_role": "uses runtime prompt and evidence fields only",
-      "duration_ms": 0.0,
-      "effect": "selects canonical data, LLM concept, mixed, caveat, or legacy answer mode from runtime evidence",
-      "efficiency_role": "avoids unnecessary free-form LLM generation for structured data answers",
-      "input_summary": {
-        "slot_counts": {
-          "answer_family": "schema_dataset",
-          "api_error": false,
-          "api_item_count": 0,
-          "discrepancy": false,
-          "dry_run": false,
-          "entity_names": {
-            "items": [
-              "weRetail: Customer Actions"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "slots_present": {
-            "items": [
-              "entity_names",
-              "counts",
-              "timestamps"
-            ],
-            "total_items": 8,
-            "truncated_items": true
-          },
-          "sql_row_count": 1,
-          "truncated_fields": 8
-        }
-      },
-      "output": {
-        "answer_intent": "ERROR_CAVEAT",
-        "answer_mode": "CANONICAL_CAVEAT",
-        "confidence": "MEDIUM",
-        "reason_codes": {
-          "items": [
-            "PRIMARY_CAVEAT_STATE"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        }
-      },
-      "stage": "answer selection",
-      "technique": "intent-aware answer router",
-      "timestamp": "2026-05-28T11:05:04.970977+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_hybrid_answer_composer",
-      "correctness_role": "preserves exact evidence facts and falls back to legacy rendering when verification fails",
-      "duration_ms": 0.0,
-      "effect": "uses canonical data rendering for structured answers and bounded LLM wording for concept sections",
-      "efficiency_role": "avoids all-row free-form LLM answer generation for structured data prompts",
-      "input_summary": {
-        "answer_intent": "ERROR_CAVEAT",
-        "answer_mode": "CANONICAL_CAVEAT"
-      },
-      "output": {
-        "preview": "{\"final_answer\": \"The 'weRetail: Customer Actions' schema has class https://ns.adobe.com/xdm/context/experienceevent, has 6 properties, across 1 collection(s), and was last updated on 2026-03-29. The API returned usable supporting evidence.\", \"selected_source\": \"LEGACY_SAFE_RENDERER\", \"answer_intent\": {\"answer_intent\": \"ERROR_CAVEAT\", \"answer_mode\": \"CANONICAL_CAVEAT\", \"confidence\": \"MEDIUM\", \"reason_codes\": {\"items\": [\"PRIMARY_CAVEAT_STATE\"], \"total_items\": 1, \"truncated_items\": false}}, \"verification\": {\"ok\": true, \"supported_claims\": {\"items\": [{\"text\": \"2026-03-29\", \"type\": \"DATE\", \"value\": \"2026-03-29\", \"span\": \"2026-03-29\", \"hardness\": \"HARD\"}, {\"text\": \"6\", \"type\": \"COUNT\", \"value\": \"6\", \"span\": \"6\", \"hardness\": \"HARD\"}, {\"text\": \"1\", \"type\": \"COUNT\", \"value\": \"1\", \"span\": \"1\", \"hardness\": \"HARD\"}], \"total_items\": 5, \"truncated_items\": true}, \"action\": \"ACCEPT\", \"claim_extractor\": {\"claim_count\": 5, \"claims\": {\"items\": [{\"text\": \"2026-03-29\", \"type\": \"DATE\", \"value\": \"2026-03-29...",
-        "truncated": true
-      },
-      "stage": "answer selection",
-      "technique": "intent-aware hybrid answer composition",
-      "timestamp": "2026-05-28T11:05:04.971034+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_final_answer_verifier",
-      "correctness_role": "blocks invented counts, IDs, statuses, timestamps, relationships, and unsafe no-data claims",
-      "duration_ms": 0.0,
-      "effect": "accepts free wording only when hard factual claims are bounded by EvidenceBus and AnswerSlots",
-      "efficiency_role": "runs on compact allowed facts and extracted claims without extra SQL/API calls",
-      "input_summary": {
-        "selected_source": "LEGACY_SAFE_RENDERER"
-      },
-      "output": {
-        "preview": "{\"ok\": true, \"supported_claims\": {\"items\": [{\"text\": \"2026-03-29\", \"type\": \"DATE\", \"value\": \"2026-03-29\", \"span\": \"2026-03-29\", \"hardness\": \"HARD\"}, {\"text\": \"6\", \"type\": \"COUNT\", \"value\": \"6\", \"span\": \"6\", \"hardness\": \"HARD\"}, {\"text\": \"1\", \"type\": \"COUNT\", \"value\": \"1\", \"span\": \"1\", \"hardness\": \"HARD\"}], \"total_items\": 5, \"truncated_items\": true}, \"action\": \"ACCEPT\", \"claim_extractor\": {\"claim_count\": 5, \"claims\": {\"items\": [{\"text\": \"2026-03-29\", \"type\": \"DATE\", \"value\": \"2026-03-29\", \"span\": \"2026-03-29\", \"hardness\": \"HARD\"}, {\"text\": \"6\", \"type\": \"COUNT\", \"value\": \"6\", \"span\": \"6\", \"hardness\": \"HARD\"}, {\"text\": \"1\", \"type\": \"COUNT\", \"value\": \"1\", \"span\": \"1\", \"hardness\": \"HARD\"}], \"total_items\": 5, \"truncated_items\": true}}, \"claim_matcher\": {\"matches\": {\"items\": [{\"status\": \"SUPPORTED\", \"claim\": {\"text\": \"2026-03-29\", \"type\": \"DATE\", \"value\": \"2026-03-29\", \"span\": \"2026-03-29\", \"hardness\": \"HARD\"}, \"reason\": \"date\"}, {\"status\": \"SUPPORTED\", \"claim\": {\"text\": \"6\", \"type\": \"COUNT\",...",
-        "truncated": true
-      },
-      "stage": "answer verification",
-      "technique": "evidence-grounded final answer verifier",
-      "timestamp": "2026-05-28T11:05:04.971081+00:00"
+      "timestamp": "2026-06-01T02:57:46.778896+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
-      "correctness_role": "makes final response generation evidence-grounded",
+      "correctness_role": "provides runtime facts to the LLM-owned final answer composer",
       "duration_ms": 0.0,
-      "effect": "turns raw tool results into typed evidence fields",
-      "efficiency_role": "keeps answer context compact",
+      "effect": "turns runtime evidence into typed answer fields",
+      "efficiency_role": "uses existing slot extraction",
       "input_summary": {
-        "tool_result_count": 2
+        "tool_result_count": 0
       },
       "output": {
-        "answer_intent": "DETAIL",
         "discrepancy_flags": {
           "sql_api_discrepancy": false
         },
@@ -1995,7 +636,6 @@
         "slots": {
           "answer_family": "schema_dataset",
           "api_error": false,
-          "api_item_count": 0,
           "discrepancy": false,
           "dry_run": false,
           "entity_names": {
@@ -2007,32 +647,28 @@
           },
           "slots_present": {
             "items": [
-              "entity_names",
-              "counts",
-              "timestamps"
+              "entity_names"
             ],
-            "total_items": 8,
-            "truncated_items": true
-          },
-          "sql_row_count": 1,
-          "truncated_fields": 8
+            "total_items": 1,
+            "truncated_items": false
+          }
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-05-28T11:05:04.971300+00:00"
+      "timestamp": "2026-06-01T02:57:46.779890+00:00"
     },
     {
-      "checkpoint_id": "checkpoint_answer_slot_renderer",
-      "correctness_role": "makes omitted or unavailable roles explicit",
+      "checkpoint_id": "checkpoint_llm_final_answer_composer",
+      "correctness_role": "backend does not render deterministic templates or select competing answers",
       "duration_ms": 0.0,
-      "effect": "records how requested fields were rendered from answer slots",
-      "efficiency_role": "avoids LLM answer rewriting in the candidate path",
+      "effect": "lets the LLM own final answer composition from runtime evidence",
+      "efficiency_role": "uses one final-answer LLM call after evidence execution",
       "input_summary": {
-        "slots": {
+        "runtime_pass_count": 0,
+        "slot_counts": {
           "answer_family": "schema_dataset",
           "api_error": false,
-          "api_item_count": 0,
           "discrepancy": false,
           "dry_run": false,
           "entity_names": {
@@ -2044,586 +680,285 @@
           },
           "slots_present": {
             "items": [
-              "entity_names",
-              "counts",
-              "timestamps"
+              "entity_names"
             ],
-            "total_items": 8,
-            "truncated_items": true
-          },
-          "sql_row_count": 1,
-          "truncated_fields": 8
+            "total_items": 1,
+            "truncated_items": false
+          }
         }
       },
       "output": {
-        "answer": "Results: {updated_time=2026-03-29T07:51:00.000+00:00}.",
-        "rendered_fields": {
-          "items": [
-            "id",
-            "name",
-            "status"
-          ],
-          "total_items": 4,
-          "truncated_items": true
+        "backend_unavailable": false,
+        "error_message": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
+        "model": "Gpt 4o",
+        "parse_error": false,
+        "provider": "[REDACTED]",
+        "raw_preview": {
+          "backend_type": "openai_sdk",
+          "error": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
+          "model": "Gpt 4o",
+          "ok": false,
+          "provider": "[REDACTED]",
+          "sdk_path_used": true,
+          "skipped": false,
+          "transport": "openai_sdk",
+          "truncated_fields": 1
         },
-        "shape": "list",
-        "unsupported_claims_count": 0
-      },
-      "stage": "answer synthesis",
-      "technique": "deterministic answer-slot rendering",
-      "timestamp": "2026-05-28T11:05:04.971311+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_16_answer_verification",
-      "correctness_role": "blocks unsupported numbers, entities, timestamps, statuses, and dry-run API confirmation",
-      "duration_ms": 0.0,
-      "effect": "checks final-answer claims against SQL/API evidence",
-      "efficiency_role": "rewrites safely without extra tool calls",
-      "input_summary": {
-        "claim_count": 5,
-        "slots_present": {
-          "items": [
-            "entity_names",
-            "counts",
-            "timestamps"
-          ],
-          "total_items": 8,
-          "truncated_items": true
-        }
-      },
-      "output": {
-        "errors": {
+        "used_pass_ids": {
           "items": [],
           "total_items": 0,
           "truncated_items": false
-        },
-        "rewrite_applied": false,
-        "supported_claims_count": 5,
-        "unsupported_claims_count": 0,
-        "verifier_passed": true
-      },
-      "stage": "answer verification",
-      "technique": "claim verification / groundedness checking",
-      "timestamp": "2026-05-28T11:05:04.971322+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_17_answer_reranking",
-      "correctness_role": "prefers verifier-passing and intent-matched answers",
-      "duration_ms": 0.0,
-      "effect": "selects the safest answer from same-evidence candidates",
-      "efficiency_role": "uses no additional SQL/API/LLM calls",
-      "input_summary": {
-        "answer_family": "schema_dataset"
-      },
-      "output": {
-        "candidate_count": 2,
-        "selected_candidate_type": "LEGACY_SAFE_RENDERER",
-        "selection_reason": "Selected intent-aware hybrid answer using runtime AnswerSlots/EvidenceBus only; SQL/API execution path is unchanged by the answer composer."
-      },
-      "stage": "answer selection",
-      "technique": "deterministic answer reranking",
-      "timestamp": "2026-05-28T11:05:04.971326+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_18_final_answer",
-      "correctness_role": "final answer remains tied to evidence and caveats",
-      "duration_ms": 0.0,
-      "effect": "returns the final concise answer to the agent harness",
-      "efficiency_role": "keeps response concise",
-      "input_summary": {
-        "verifier_passed": true
-      },
-      "output": {
-        "answer_length": 222,
-        "final_answer": "The 'weRetail: Customer Actions' schema has class https://ns.adobe.com/xdm/context/experienceevent, has 6 properties, across 1 collection(s), and was last updated on 2026-03-29. The API returned usable supporting evidence.",
-        "final_token_estimate": 56
-      },
-      "stage": "final response",
-      "technique": "concise grounded final response",
-      "timestamp": "2026-05-28T11:05:04.971435+00:00"
-    }
-  ],
-  "domain_type": "SEGMENT_AUDIENCE",
-  "errors": [],
-  "estimated_tokens": 2029,
-  "execution_time": 0.4542273748666048,
-  "final_answer": "The 'weRetail: Customer Actions' schema has class https://ns.adobe.com/xdm/context/experienceevent, has 6 properties, across 1 collection(s), and was last updated on 2026-03-29. The API returned usable supporting evidence.",
-  "original_query": "Provide more details for the schema 'weRetail: Customer Actions'",
-  "planning_time": 0.009568875189870596,
-  "preprocessing_time": 0.003909583203494549,
-  "query_id": "example_009",
-  "route_type": "SQL_ONLY",
-  "runtime": 0.5201836251653731,
-  "sql_call_count": 1,
-  "steps": [
-    {
-      "candidate_apis": [
-        {
-          "id": "ups_audiences",
-          "method": "GET",
-          "path": "/data/core/ups/audiences"
-        },
-        {
-          "id": "segment_definitions",
-          "method": "GET",
-          "path": "/data/core/ups/segment/definitions"
-        },
-        {
-          "id": "merge_policies",
-          "method": "GET",
-          "path": "/data/core/ups/config/mergePolicies"
-        },
-        {
-          "id": "segment_jobs",
-          "method": "GET",
-          "path": "/data/core/ups/segment/jobs"
         }
-      ],
-      "candidate_tables": [
-        "br_campaign_segment",
-        "dim_blueprint",
-        "dim_collection",
-        "dim_segment",
-        "hkg_br_base_segment_used_by_dependent_segment",
-        "hkg_br_blueprint_collection",
-        "hkg_br_blueprint_property",
-        "hkg_br_collection_property"
-      ],
-      "confidence": 0.6499999999999999,
-      "domain_type": "SEGMENT_AUDIENCE",
-      "kind": "route",
-      "reason": "Keyword routing using SEGMENT_AUDIENCE:1, DATASET_SCHEMA:1.",
-      "route_type": "SQL_ONLY"
+      },
+      "stage": "llm-owned answer synthesis",
+      "technique": "LLMFinalAnswerComposer",
+      "timestamp": "2026-06-01T02:57:47.838581+00:00"
     },
     {
-      "kind": "nlp",
-      "relevance": {
-        "apis": [
-          "audit_events",
-          "audit_events_short"
-        ],
-        "lookup_paths": [
-          "schema_dataset",
-          "batch"
-        ],
-        "tables": [
-          "dim_blueprint",
-          "dim_collection"
-        ]
+      "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
+      "correctness_role": "does not rewrite, shorten, or score the answer",
+      "duration_ms": 0.0,
+      "effect": "checks only answer existence and wrapper serialization",
+      "efficiency_role": "no SQL/API calls",
+      "input_summary": {
+        "composer": "LLMFinalAnswerComposer"
       },
-      "tokens": {
-        "domains": [
-          "schema_dataset"
-        ],
-        "quoted_entities": [
-          "weRetail: Customer Actions"
-        ]
+      "output": {
+        "error_message": "final_answer must be a string.",
+        "error_type": "missing_final_answer",
+        "passed": false
       },
-      "value_retrieval": {
-        "budget_exceeded": false,
-        "match_count": 2,
-        "matches": [
-          {
-            "confidence": 1.0,
-            "kind": "quoted_entity",
-            "match_type": "exact",
-            "matched_column": "NAME",
-            "matched_table": "dim_blueprint",
-            "matched_value": "weRetail: Customer Actions",
-            "mention": "weRetail: Customer Actions",
-            "retrieval_cost": {
-              "budget_exceeded": false,
-              "cache_hit": true,
-              "cache_key": "9c6f3a8deea3757e",
-              "cache_key_algorithm": "sha256",
-              "cache_reproducible": true,
-              "retrieval_ms": 9.526
-            },
-            "used_for": "sql_filter"
+      "stage": "answer gate",
+      "technique": "minimal final-answer syntax gate",
+      "timestamp": "2026-06-01T02:57:47.838593+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
+      "correctness_role": "blocks unsupported facts, missing requested facts, and scope/caveat errors without generating an answer",
+      "duration_ms": 0.0,
+      "effect": "checks whether LLM final answer claims are supported by runtime evidence",
+      "efficiency_role": "no SQL/API calls",
+      "input_summary": {
+        "syntax_gate_passed": false
+      },
+      "output": {
+        "error_type": "syntax_gate_failed",
+        "passed": false
+      },
+      "stage": "answer gate",
+      "technique": "runtime-evidence semantic grounding gate",
+      "timestamp": "2026-06-01T02:57:47.838596+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_repair",
+      "correctness_role": "preserves LLM ownership while enforcing evidence boundaries",
+      "duration_ms": 0.0,
+      "effect": "returns gate errors to the LLM once; backend does not repair the answer itself",
+      "efficiency_role": "caps answer repair to one LLM call",
+      "input_summary": {
+        "failed_semantic": false,
+        "failed_syntax": true
+      },
+      "output": {
+        "candidate": {
+          "backend_unavailable": false,
+          "error_message": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
+          "model": "Gpt 4o",
+          "parse_error": false,
+          "provider": "[REDACTED]",
+          "raw_preview": {
+            "backend_type": "openai_sdk",
+            "error": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
+            "model": "Gpt 4o",
+            "ok": false,
+            "provider": "[REDACTED]",
+            "sdk_path_used": true,
+            "skipped": false,
+            "transport": "openai_sdk",
+            "truncated_fields": 1
           },
-          {
-            "confidence": 1.0,
-            "kind": "quoted_entity",
-            "match_type": "exact",
-            "matched_column": "NAME",
-            "matched_table": "dim_collection",
-            "matched_value": "weRetail: Customer Actions",
-            "mention": "weRetail: Customer Actions",
-            "retrieval_cost": {
-              "budget_exceeded": false,
-              "cache_hit": true,
-              "cache_key": "9c6f3a8deea3757e",
-              "cache_key_algorithm": "sha256",
-              "cache_reproducible": true,
-              "retrieval_ms": 9.526
-            },
-            "used_for": "sql_filter"
+          "used_pass_ids": {
+            "items": [],
+            "total_items": 0,
+            "truncated_items": false
           }
-        ],
-        "retrieval_ms": 9.526
-      }
-    },
-    {
-      "estimated_tokens": 926,
-      "kind": "metadata",
-      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_009/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 1585
-    },
-    {
-      "kind": "plan",
-      "rationale": "Research generalized V2 progressive evidence plan: API_REQUIRED. Query family requires Adobe API evidence. Early routing only allowed safe exits; this planner handles evidence-pipeline prompts directly.",
-      "steps": [
-        {
-          "action": "sql",
-          "family": "schema_detail_counts",
-          "purpose": "Research V2 fast-path SQL grounding.",
-          "sql": "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\" AS updated_time, S.\"REQUIREDFIELDS\" AS required_fields, COUNT(DISTINCT SD.\"COLLECTIONID\") AS collection_count, COUNT(DISTINCT SA.\"PROPERTY\") AS property_count FROM \"dim_blueprint\" AS S LEFT JOIN \"hkg_br_blueprint_collection\" AS SD ON S.\"BLUEPRINTID\" = SD.\"BLUEPRINTID\" LEFT JOIN \"hkg_br_blueprint_property\" AS SA ON S.\"BLUEPRINTID\" = SA.\"BLUEPRINTID\" WHERE LOWER(S.\"NAME\") = LOWER('weRetail: Customer Actions') GROUP BY S.\"BLUEPRINTID\", S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\", S.\"REQUIREDFIELDS\" LIMIT 3"
         },
-        {
-          "action": "api",
-          "family": "schema_by_name",
-          "headers": {
-            "Accept": "application/vnd.adobe.xed-id+json"
-          },
-          "method": "GET",
-          "params": {
-            "filter": "name==weRetail: Customer Actions"
-          },
-          "purpose": "API parameter template: schema_by_name.",
-          "url": "/data/foundation/schemaregistry/tenant/schemas"
+        "semantic_gate": {
+          "error_type": "syntax_gate_failed",
+          "passed": false
+        },
+        "syntax_gate": {
+          "error_message": "final_answer must be a string.",
+          "error_type": "missing_final_answer",
+          "passed": false
         }
-      ],
-      "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "stage": "llm-owned answer repair",
+      "technique": "single LLM-owned final answer repair",
+      "timestamp": "2026-06-01T02:57:48.813738+00:00"
     },
     {
-      "kind": "sql_call",
-      "result": {
-        "error": null,
-        "limited": false,
-        "ok": true,
-        "row_count": 1,
-        "rows": {
-          "items": [
-            {
-              "CLASS": "https://ns.adobe.com/xdm/context/experienceevent",
-              "ISPROFILEENABLED": true,
-              "NAME": "weRetail: Customer Actions",
-              "blueprint_id": "d4327cfe6472e58dd10c532840541e66b09a0c1a636e1e0f",
-              "collection_count": 1,
-              "property_count": 6,
-              "required_fields": "[]",
-              "updated_time": "2026-03-29T07:51:00.000+00:00"
-            }
-          ],
-          "total_items": 1,
+      "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
+      "correctness_role": "keeps backend responsible only for syntax/semantic gates after LLM answer generation",
+      "duration_ms": 0.0,
+      "effect": "records that V2 did not use deterministic answer templates, renderers, or selectors as competing generators",
+      "efficiency_role": "no extra tool calls",
+      "input_summary": {
+        "runtime_pass_count": 0
+      },
+      "output": {
+        "answer_composer_used": "LLMFinalAnswerComposer",
+        "answer_repair_attempts": 1,
+        "answer_semantic_gate_passed": false,
+        "answer_syntax_gate_passed": false,
+        "deterministic_answer_template_used": false,
+        "final_answer_supported_by_evidence": false,
+        "hidden_eval_gold_used": false,
+        "llm_owned_final_answer": true,
+        "truncated_fields": 2,
+        "used_pass_ids": {
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         }
       },
-      "sql": "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\" AS updated_time, S.\"REQUIREDFIELDS\" AS required_fields, COUNT(DISTINCT SD.\"COLLECTIONID\") AS collection_count, COUNT(DISTINCT SA.\"PROPERTY\") AS property_count FROM \"dim_blueprint\" AS S LEFT JOIN \"hkg_br_blueprint_collection\" AS SD ON S.\"BLUEPRINTID\" = SD.\"BLUEPRINTID\" LEFT JOIN \"hkg_br_blueprint_property\" AS SA ON S.\"BLUEPRINTID\" = SA.\"BLUEPRINTID\" WHERE LOWER(S.\"NAME\") = LOWER('weRetail: Customer Actions') GROUP BY S.\"BLUEPRINTID\", S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\", S.\"REQUIREDFIELDS\" LIMIT 3",
-      "validation": {
-        "errors": [],
-        "ok": true,
-        "repaired": false,
-        "warnings": []
-      }
+      "stage": "answer ownership boundary",
+      "technique": "LLM-owned final answer with backend gates",
+      "timestamp": "2026-06-01T02:57:48.813750+00:00"
     },
     {
-      "headers": {
-        "Accept": "application/vnd.adobe.xed-id+json"
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "correctness_role": "keeps final answer generation LLM-owned while preserving runtime evidence grounding",
+      "duration_ms": 0.0,
+      "effect": "returns the LLM-composed answer when gates pass, otherwise a safe evidence-state fallback",
+      "efficiency_role": "no additional SQL/API calls",
+      "input_summary": {
+        "answer_semantic_gate_passed": false
       },
-      "kind": "api_call",
-      "method": "GET",
-      "params": {
-        "filter": "name==weRetail: Customer Actions"
-      },
-      "result": {
-        "preview": "{\"error\": null, \"result_preview\": {\"preview\": \"\\\"{\\\\\\\"results\\\\\\\":[{\\\\\\\"$id\\\\\\\":\\\\\\\"https://ns.adobe.com/adobepeakprogram/schemas/9db980b935c74be2e562c1863a97bc390d8cdce9dec9cb04\\\\\\\",\\\\\\\"meta:altId\\\\\\\":\\\\\\\"_adobepeakprogram.schemas.9db980b935c74be2e562c1863a97bc390d8cdce9dec9cb04\\\\\\\",\\\\\\\"version\\\\\\\":\\\\\\\"1.0\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_c669b81b-91ff-46ff-b229-5db798200b1f\\\\\\\"},{\\\\\\\"$id\\\\\\\":\\\\\\\"https://ns.adobe.com/adobepeakprogram/schemas/4c069e12042b1805866fada74ed1ecc4662d6fa0745c4ecb\\\\\\\",\\\\\\\"meta:altId\\\\\\\":\\\\\\\"_adobepeakprogram.schemas.4c069e12042b1805866fada74ed1ecc4662d6fa0745c4ecb\\\\\\\",\\\\\\\"version\\\\\\\":\\\\\\\"1.0\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_f0e1b1d8-370d-4726-9525-cc33b5056132\\\\\\\"},{\\\\\\\"$id\\\\\\\":\\\\\\\"https://ns.adobe.com/adobepeakprogram/schemas/ffccd42bf290029686cf76bf1686087fe68254c73f873d57\\\\\\\",\\\\\\\"meta:altId\\\\\\\":\\\\\\\"_adobepeakprogram.schemas.ffccd42bf290029686cf76bf1686087fe68254c73f873d57\\\\\\\",\\\\\\\"v...",
-        "truncated": true
-      },
-      "url": "/data/foundation/schemaregistry/tenant/schemas",
-      "validation": {
-        "errors": [],
-        "ok": true,
-        "repaired": false,
-        "warnings": []
-      }
-    },
-    {
-      "answer_family": "schema_dataset",
-      "answer_intent": "DETAIL",
-      "candidate_count": 2,
-      "completeness_missing_fields": [],
-      "evidence_grounded_answer_builder": {
-        "answer": "Results: {updated_time=2026-03-29T07:51:00.000+00:00}.",
-        "evidence_quality": {
-          "api": [
-            "API_LIVE_EMPTY"
-          ],
-          "api_error_is_unavailable": false,
-          "caveats": [
-            "live_empty_is_scoped_not_global_no_data"
-          ],
-          "conflict": [
-            "SQL_SUCCESS_API_EMPTY"
-          ],
-          "live_empty_scoped": true,
-          "sql": [
-            "SQL_DIRECT_ANSWER"
-          ]
-        },
-        "renderer": {
-          "answer": "Results: {updated_time=2026-03-29T07:51:00.000+00:00}.",
-          "caveats": [],
-          "missing_fields": [],
-          "rendered_fields": [
-            "id",
-            "name",
-            "status",
-            "timestamp"
-          ],
-          "shape": "list",
-          "unsupported_claims_count": 0
-        },
-        "unsupported_claims_count": 0
-      },
-      "hybrid_answer_composer": {
-        "answer_intent": {
-          "answer_intent": "ERROR_CAVEAT",
-          "answer_mode": "CANONICAL_CAVEAT",
-          "confidence": "MEDIUM",
-          "reason_codes": [
-            "PRIMARY_CAVEAT_STATE"
-          ]
-        },
-        "canonical": {
-          "answer": "No matching records were returned for this query/scope.",
-          "caveat_roles": [
-            "LIVE_EMPTY"
-          ],
-          "missing_roles": [],
-          "rendered_roles": [
-            "CAVEAT"
-          ],
-          "source_facts": {}
-        },
-        "concept": null,
-        "fallback_used": true,
-        "final_answer": "The 'weRetail: Customer Actions' schema has class https://ns.adobe.com/xdm/context/experienceevent, has 6 properties, across 1 collection(s), and was last updated on 2026-03-29. The API returned usable supporting evidence.",
-        "mixed": null,
-        "selected_source": "LEGACY_SAFE_RENDERER",
-        "selection_codes": [
-          "SELECT_LEGACY_MISSING_SLOTS"
-        ],
-        "verification": {
-          "action": "ACCEPT",
-          "allowed_fact_index": {
-            "allowed_caveats": [
-              "API_LIVE_EMPTY"
-            ],
-            "api_error_scopes": [],
-            "counts": [
-              "1",
-              "6",
-              "0"
-            ],
-            "dates": [
-              "2026-03-29t07:51:00.000+00:00",
-              "2026-03-29"
-            ],
-            "evidence_strings": [
-              "2026-03-29t07:51:00.000+00:00",
-              "https://ns.adobe.com/xdm/context/experienceevent",
-              "weretail: customer actions",
-              "1",
-              "name==weretail: customer actions",
-              "/data/foundation/schemaregistry/tenant/schemas",
-              "[]",
-              "true",
-              "d4327cfe6472e58dd10c532840541e66b09a0c1a636e1e0f",
-              "6"
-            ],
-            "ids": [
-              "d4327cfe6472e58dd10c532840541e66b09a0c1a636e1e0f"
-            ],
-            "live_empty_scopes": [
-              "query/scope"
-            ],
-            "missing_roles": [],
-            "names": [
-              "weretail: customer actions"
-            ],
-            "relationships": [],
-            "statuses": []
-          },
-          "ambiguous_claims": [],
-          "claim_extractor": {
-            "claim_count": 5,
-            "claims": [
-              {
-                "hardness": "HARD",
-                "span": "2026-03-29",
-                "text": "2026-03-29",
-                "type": "DATE",
-                "value": "2026-03-29"
-              },
-              {
-                "hardness": "HARD",
-                "span": "6",
-                "text": "6",
-                "type": "COUNT",
-                "value": "6"
-              },
-              {
-                "hardness": "HARD",
-                "span": "1",
-                "text": "1",
-                "type": "COUNT",
-                "value": "1"
-              },
-              {
-                "hardness": "HARD",
-                "span": "'weRetail: Customer Actions'",
-                "text": "'weRetail: Customer Actions'",
-                "type": "ENTITY_NAME",
-                "value": "weRetail: Customer Actions"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Customer Actions",
-                "text": "Customer Actions",
-                "type": "ENTITY_NAME",
-                "value": "Customer Actions"
-              }
-            ]
-          },
-          "claim_matcher": {
-            "matches": [
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "2026-03-29",
-                  "text": "2026-03-29",
-                  "type": "DATE",
-                  "value": "2026-03-29"
-                },
-                "reason": "date",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "6",
-                  "text": "6",
-                  "type": "COUNT",
-                  "value": "6"
-                },
-                "reason": "count",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "1",
-                  "text": "1",
-                  "type": "COUNT",
-                  "value": "1"
-                },
-                "reason": "count",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "'weRetail: Customer Actions'",
-                  "text": "'weRetail: Customer Actions'",
-                  "type": "ENTITY_NAME",
-                  "value": "weRetail: Customer Actions"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Customer Actions",
-                  "text": "Customer Actions",
-                  "type": "ENTITY_NAME",
-                  "value": "Customer Actions"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              }
-            ]
-          },
-          "needs_caveat_claims": [],
-          "ok": true,
-          "over_specified_claims": [],
-          "supported_claims": [
-            {
-              "hardness": "HARD",
-              "span": "2026-03-29",
-              "text": "2026-03-29",
-              "type": "DATE",
-              "value": "2026-03-29"
-            },
-            {
-              "hardness": "HARD",
-              "span": "6",
-              "text": "6",
-              "type": "COUNT",
-              "value": "6"
-            },
-            {
-              "hardness": "HARD",
-              "span": "1",
-              "text": "1",
-              "type": "COUNT",
-              "value": "1"
-            },
-            {
-              "hardness": "HARD",
-              "span": "'weRetail: Customer Actions'",
-              "text": "'weRetail: Customer Actions'",
-              "type": "ENTITY_NAME",
-              "value": "weRetail: Customer Actions"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Customer Actions",
-              "text": "Customer Actions",
-              "type": "ENTITY_NAME",
-              "value": "Customer Actions"
-            }
-          ],
-          "unsupported_claims": []
+      "output": {
+        "answer_composer_used": "LLMFinalAnswerComposer",
+        "answer_repair_attempts": 1,
+        "answer_semantic_gate_passed": false,
+        "answer_syntax_gate_passed": false,
+        "deterministic_answer_template_used": false,
+        "final_answer_supported_by_evidence": false,
+        "hidden_eval_gold_used": false,
+        "llm_owned_final_answer": true,
+        "truncated_fields": 3,
+        "used_pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
         }
       },
+      "stage": "final response",
+      "technique": "LLM-owned final response",
+      "timestamp": "2026-06-01T02:57:48.813793+00:00"
+    }
+  ],
+  "domain_type": "LLM_OWNED_V2",
+  "errors": [],
+  "estimated_tokens": 764,
+  "execution_time": 0.0,
+  "final_answer": "I could not compose a verified final answer from the available runtime evidence.",
+  "original_query": "Provide more details for the schema 'weRetail: Customer Actions'",
+  "planning_time": 0.0,
+  "preprocessing_time": 0.0,
+  "query_id": "example_009",
+  "route_type": "EVIDENCE_PIPELINE",
+  "runtime": 2.0472681247629225,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "estimated_tokens": 636,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_009/robust_generalized_harness_candidate_v2/metadata.json",
+      "prompt_tokens": 1150
+    },
+    {
+      "aggregation_instruction": "",
+      "api_request": null,
+      "backend_unavailable": false,
+      "direct_answer": null,
+      "evidence_order": "SQL_FIRST",
+      "kind": "llm_unified_planner",
+      "model": "Gpt 4o",
+      "parse_error": false,
+      "passes": [],
+      "provider": "[REDACTED]",
+      "raw_preview": {
+        "backend_type": "openai_sdk",
+        "error": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
+        "model": "Gpt 4o",
+        "ok": false,
+        "provider": "[REDACTED]",
+        "sdk_path_used": true,
+        "skipped": false,
+        "transport": "openai_sdk",
+        "truncated_fields": 7
+      },
+      "reason": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
+      "route": "EVIDENCE_PIPELINE",
+      "sql": null
+    },
+    {
+      "evidence_bus_built": true,
+      "evidence_pipeline_bypassed": false,
+      "kind": "evidence_boundary",
+      "llm_evidence_order": "SQL_FIRST",
+      "llm_final_answer_composer_ran": true,
+      "llm_route": "EVIDENCE_PIPELINE",
+      "pass_results_count": 0,
+      "post_evidence_answer_router_ran": false
+    },
+    {
+      "answered_subtasks": [],
+      "backend_unavailable": false,
+      "caveats_included": [],
+      "claimed_facts": [],
+      "error_message": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
+      "final_answer": null,
+      "kind": "llm_final_answer_composer",
+      "model": "Gpt 4o",
+      "parse_error": false,
+      "provider": "[REDACTED]",
+      "raw_preview": {
+        "backend_type": "openai_sdk",
+        "error": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
+        "model": "Gpt 4o",
+        "ok": false,
+        "provider": "[REDACTED]",
+        "sdk_path_used": true,
+        "skipped": false,
+        "transport": "openai_sdk",
+        "truncated_fields": 7
+      },
+      "unanswered_subtasks": [],
+      "used_pass_ids": []
+    },
+    {
+      "answer_composer_used": "LLMFinalAnswerComposer",
+      "answer_repair_attempts": 1,
+      "answer_semantic_gate_passed": false,
+      "answer_syntax_gate_passed": false,
+      "deterministic_answer_template_used": false,
+      "final_answer_supported_by_evidence": false,
+      "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
-      "llm_answer_attempted": false,
-      "llm_answer_generation_skipped": false,
-      "rewrite_applied": false,
-      "selected_candidate_type": "LEGACY_SAFE_RENDERER",
-      "selection_reason": "Selected intent-aware hybrid answer using runtime AnswerSlots/EvidenceBus only; SQL/API execution path is unchanged by the answer composer.",
-      "slots_present": [
-        "entity_names",
-        "counts",
-        "timestamps",
-        "sql_row_count",
-        "api_evidence_state",
-        "answer_slot_source",
-        "api_parser_modes",
-        "first_rows"
-      ],
-      "unsupported_claims_count": 0,
-      "verifier_passed": true
+      "llm_owned_final_answer": true,
+      "semantic_gate": null,
+      "syntax_gate": {
+        "error_message": "final_answer must be a string.",
+        "error_type": "missing_final_answer",
+        "final_answer": null,
+        "passed": false
+      },
+      "used_pass_ids": []
     }
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 0.006904709152877331,
-    "execution_time": 0.4542273748666048,
-    "planning_time": 0.009568875189870596,
-    "preprocessing_time": 0.003909583203494549
+    "answer_time": 2.0351548343896866
   },
-  "tool_call_count": 2
+  "tool_call_count": 0
 }
