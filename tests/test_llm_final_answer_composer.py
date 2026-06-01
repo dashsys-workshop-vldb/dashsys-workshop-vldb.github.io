@@ -8,6 +8,7 @@ from dashagent.llm_final_answer_composer import (
     check_final_answer_semantic_grounding,
     check_final_answer_syntax,
     parse_llm_final_answer_response,
+    safe_llm_final_answer_fallback,
 )
 from dashagent.planner import PlanStep
 
@@ -159,6 +160,22 @@ def test_semantic_gate_rejects_live_empty_as_global_absence():
 
     assert result.passed is False
     assert result.error_type == "caveat_error"
+
+
+def test_safe_error_fallback_uses_semantic_gate_safe_wording():
+    answer = safe_llm_final_answer_fallback([{"status": "ERROR"}])
+    bus, slots = _bus_and_slots("When was the journey Birthday Message published?", [])
+
+    result = check_final_answer_semantic_grounding(
+        answer,
+        question="When was the journey Birthday Message published?",
+        runtime_passes=[{"pass_id": "p1", "status": "ERROR", "source_results": []}],
+        evidence_bus=bus,
+        slots=slots,
+    )
+
+    assert answer == "Runtime evidence was unavailable; cannot provide a verified answer."
+    assert result.passed is True
 
 
 def test_semantic_gate_allows_extra_correct_context_without_gold_wording():

@@ -108,6 +108,9 @@ def build_llm_final_answer_card(
             "Do not claim live/current/platform state unless LIVE_API evidence supports it.",
             "Do not turn API_ERROR into no-data.",
             "Do not turn LIVE_EMPTY into global absence.",
+            "If no matching runtime evidence is available, use exactly: No matching runtime evidence was available for this query/scope.",
+            "If runtime evidence is unavailable or errored, use exactly: Runtime evidence was unavailable; cannot provide a verified answer.",
+            "When repairing unsupported claims, remove the unsupported span instead of restating it as a negative fact.",
             "Include required information from evidence when the user explicitly asked for it.",
             "For multi-pass plans, answer all requested parts using the relevant pass results.",
             "Extra context or explanation is allowed only when semantically correct and evidence-safe.",
@@ -178,7 +181,9 @@ def _final_answer_system_prompt(*, requires_json_prompting: bool = False) -> str
             "Use only runtime evidence provided in the card. "
             "Do not use hidden eval or gold-answer wording. "
             "Do not invent counts, dates, statuses, entity names, IDs, relationships, live state, or API success. "
-            "If evidence is unavailable or failed, use a scoped caveat instead of unsupported data."
+            "If no matching runtime evidence is available, use exactly: No matching runtime evidence was available for this query/scope. "
+            "If runtime evidence is unavailable or errored, use exactly: Runtime evidence was unavailable; cannot provide a verified answer. "
+            "When repairing unsupported claims, remove the unsupported span instead of restating it as a negative fact."
         )
     return (
         "You are the sole final-answer composer for DASHSys V2. "
@@ -290,7 +295,7 @@ def check_final_answer_semantic_grounding(
 def safe_llm_final_answer_fallback(runtime_passes: list[dict[str, Any]], *, syntax_gate: FinalAnswerSyntaxGateResult | None = None, semantic_gate: FinalAnswerSemanticGateResult | None = None) -> str:
     statuses = {str(item.get("status") or "").upper() for item in runtime_passes}
     if statuses & {"API_ERROR", "ERROR"}:
-        return "Runtime evidence was unavailable or failed; cannot provide a verified answer."
+        return "Runtime evidence was unavailable; cannot provide a verified answer."
     if statuses & {"LIVE_EMPTY", "EMPTY"}:
         return "No matching runtime evidence was available for this query/scope."
     return "I could not compose a verified final answer from the available runtime evidence."

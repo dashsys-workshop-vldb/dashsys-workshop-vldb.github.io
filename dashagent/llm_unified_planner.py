@@ -153,6 +153,17 @@ def run_llm_unified_planner(
             backend_unavailable=True,
             diagnostics={**base_diagnostics, "planner_provider_latency_ms": _elapsed_ms(started)},
         )
+    if capabilities.requires_json_prompting and repair_context is None:
+        return _run_two_phase_json_planner(
+            client,
+            user_prompt=user_prompt,
+            schema_context=schema_context,
+            endpoint_context=endpoint_context,
+            provider=provider,
+            model=model,
+            started=started,
+            base_diagnostics=base_diagnostics,
+        )
 
     system_prompt = _planner_system_prompt(capabilities)
     payload = _planner_payload(
@@ -255,6 +266,196 @@ def run_llm_unified_planner(
     )
 
 
+def _run_two_phase_json_planner(
+    client: Any,
+    *,
+    user_prompt: str,
+    schema_context: dict[str, Any],
+    endpoint_context: list[dict[str, Any]],
+    provider: str,
+    model: str,
+    started: float,
+    base_diagnostics: dict[str, Any],
+) -> LLMUnifiedPlan:
+    route_payload = _route_gate_payload(user_prompt, repair_context=None)
+    route_result, route_call_error = _call_planner_model(
+        client,
+        system_prompt=_route_gate_system_prompt(),
+        payload=route_payload,
+        tool=None,
+        toolcall_attempted=False,
+    )
+    route_raw = str(route_result.get("content") or "")
+    route_parse_error: str | None = None
+    route_decision: dict[str, Any] | None = None
+    if route_call_error:
+        route_parse_error = route_call_error
+    else:
+        try:
+            route_decision = _normalize_route_gate_result(_parse_json_object(route_raw))
+        except Exception as exc:
+            route_parse_error = str(exc)
+    route_repair_attempted = False
+    if route_decision is None:
+        route_repair_attempted = True
+        repair_result, repair_call_error = _call_planner_model(
+            client,
+            system_prompt=_route_gate_repair_system_prompt(),
+            payload=_route_gate_repair_payload(route_payload, raw_content=route_raw, parse_error=route_parse_error),
+            tool=None,
+            toolcall_attempted=False,
+        )
+        route_raw = str(repair_result.get("content") or route_raw)
+        if repair_call_error:
+            route_parse_error = repair_call_error
+        else:
+            try:
+                route_decision = _normalize_route_gate_result(_parse_json_object(route_raw))
+                route_parse_error = None
+            except Exception as exc:
+                route_parse_error = str(exc)
+
+    route_success = route_decision is not None
+    if route_decision is None:
+        route_decision = {
+            "route": "EVIDENCE_PIPELINE",
+            "evidence_order": "NEED_EVIDENCE",
+            "direct_answer": None,
+            "reason": "Malformed route gate output after one repair; fail closed to evidence planner.",
+        }
+    route = str(route_decision.get("route") or "EVIDENCE_PIPELINE").strip().upper()
+    diagnostics = {
+        **base_diagnostics,
+        "llm_route_gate_used": True,
+        "route_gate_success": route_success,
+        "route_gate_route": route,
+        "route_gate_repair_attempted": route_repair_attempted,
+        "route_gate_parse_error": route_parse_error,
+        "evidence_planner_called": route != "LLM_DIRECT",
+        "backend_route_inference_used": False,
+        "planner_json_fallback_used": True,
+        "planner_parse_source": "two_phase_json",
+        "planner_provider_latency_ms": _elapsed_ms(started),
+    }
+    if route == "LLM_DIRECT":
+        diagnostics["planner_success"] = route_success
+        return LLMUnifiedPlan(
+            route="LLM_DIRECT",
+            evidence_order="NO_EVIDENCE",
+            direct_answer=str(route_decision.get("direct_answer") or "").strip() or None,
+            sql=None,
+            api_request=None,
+            passes=[],
+            aggregation_instruction="",
+            reason=str(route_decision.get("reason") or "route gate selected no-evidence direct answer"),
+            provider=provider,
+            model=model,
+            parse_error=not route_success,
+            raw_preview=compact_preview(route_raw, 1000),
+            diagnostics={**diagnostics, "planner_provider_latency_ms": _elapsed_ms(started)},
+        )
+
+    plan_payload = _planner_payload(
+        user_prompt=user_prompt,
+        schema_context=schema_context,
+        endpoint_context=endpoint_context,
+        repair_context={"route_gate": route_decision},
+        compact_for_weak_model=True,
+    )
+    plan_result, plan_call_error = _call_planner_model(
+        client,
+        system_prompt=_evidence_planner_system_prompt(),
+        payload=plan_payload,
+        tool=None,
+        toolcall_attempted=False,
+    )
+    diagnostics["planner_provider_latency_ms"] = _elapsed_ms(started)
+    if plan_call_error:
+        return _fallback_plan(
+            provider=provider,
+            model=model,
+            reason=plan_call_error,
+            backend_unavailable=True,
+            raw_preview=compact_preview(plan_call_error, 1000),
+            diagnostics={
+                **diagnostics,
+                "planner_timeout": "timeout" in plan_call_error.lower(),
+                "planner_provider_latency_ms": _elapsed_ms(started),
+            },
+        )
+    parsed, raw_content, parse_error, parse_source = _parse_planner_response(plan_result, toolcall_attempted=False)
+    diagnostics.update(
+        {
+            "planner_json_parse_error": parse_error,
+            "planner_parse_source": parse_source,
+            "planner_provider_latency_ms": _elapsed_ms(started),
+        }
+    )
+    if parsed is None:
+        diagnostics["planner_repair_attempted"] = True
+        repair_result, repair_call_error = _call_planner_model(
+            client,
+            system_prompt=_planner_repair_system_prompt(),
+            payload=_planner_repair_payload(plan_payload, raw_content=raw_content, parse_error=parse_error),
+            tool=None,
+            toolcall_attempted=False,
+        )
+        if repair_call_error:
+            return _fallback_plan(
+                provider=provider,
+                model=model,
+                reason=repair_call_error,
+                parse_error=True,
+                backend_unavailable=True,
+                raw_preview=compact_preview(raw_content, 1000),
+                diagnostics={
+                    **diagnostics,
+                    "planner_timeout": "timeout" in repair_call_error.lower(),
+                    "planner_provider_latency_ms": _elapsed_ms(started),
+                },
+            )
+        parsed, raw_content, repair_parse_error, parse_source = _parse_planner_response(repair_result, toolcall_attempted=False)
+        diagnostics["planner_json_parse_error"] = repair_parse_error
+        diagnostics["planner_parse_source"] = parse_source
+        if parsed is None:
+            return _fallback_plan(
+                provider=provider,
+                model=model,
+                reason="Malformed LLM evidence planner JSON after one repair attempt; fail closed to EVIDENCE_PIPELINE.",
+                parse_error=True,
+                raw_preview=compact_preview(raw_content, 1000),
+                diagnostics={**diagnostics, "planner_provider_latency_ms": _elapsed_ms(started)},
+            )
+    diagnostics["planner_success"] = True
+    plan = normalize_llm_unified_plan(
+        parsed,
+        provider=provider,
+        model=model,
+        raw_preview=compact_preview(raw_content, 1000),
+        diagnostics={**diagnostics, "planner_provider_latency_ms": _elapsed_ms(started)},
+    )
+    if plan.route != "EVIDENCE_PIPELINE":
+        return _fallback_plan(
+            provider=provider,
+            model=model,
+            reason="Evidence planner returned a non-evidence route after RouteGate selected EVIDENCE_PIPELINE.",
+            parse_error=True,
+            raw_preview=compact_preview(raw_content, 1000),
+            diagnostics={**plan.diagnostics, "planner_success": False, "planner_provider_latency_ms": _elapsed_ms(started)},
+        )
+    return _apply_plan_self_check(
+        client,
+        plan,
+        user_prompt=user_prompt,
+        route_gate_result=route_decision,
+        schema_context=schema_context,
+        endpoint_context=endpoint_context,
+        provider=provider,
+        model=model,
+        started=started,
+    )
+
+
 def planner_provider_capabilities(provider: str, model: str | None = None) -> PlannerProviderCapabilities:
     normalized_provider = str(provider or "").strip().lower()
     if normalized_provider == "pioneer_chat":
@@ -302,6 +503,34 @@ def _planner_system_prompt(capabilities: PlannerProviderCapabilities) -> str:
     )
 
 
+def _route_gate_system_prompt() -> str:
+    return (
+        "You are the LLM-owned RouteGate for DASHSys V2. "
+        "Return ONLY one valid JSON object. No markdown, no code fence, no explanation. "
+        "Do not generate SQL or API requests. "
+        "Choose LLM_DIRECT only for pure concept, pure meta-language, or out-of-domain questions that need no runtime evidence. "
+        "Choose EVIDENCE_PIPELINE for user-specific records, lists, counts, status, dates, local snapshot, live/current/platform/API/SQL, "
+        "ambiguous-data-like, or mixed concept plus data prompts. If uncertain, choose EVIDENCE_PIPELINE."
+    )
+
+
+def _route_gate_repair_system_prompt() -> str:
+    return (
+        "Your previous RouteGate response was malformed. Return ONLY valid JSON with route, evidence_order, direct_answer, and reason. "
+        "Do not generate SQL or API. If uncertain, choose EVIDENCE_PIPELINE."
+    )
+
+
+def _evidence_planner_system_prompt() -> str:
+    return (
+        "RouteGate already selected EVIDENCE_PIPELINE. You are now the LLM-owned Evidence Planner. "
+        "Return ONLY one valid JSON object. No markdown, no code fence, no explanation. "
+        "Generate the pass graph, SQL/API candidates, dependencies, and aggregation instruction. "
+        "Do not answer directly. Do not output enum choices joined by '|'. "
+        "Use only table and column names from database_schema and only safe GET API endpoints from allowed_api_endpoints."
+    )
+
+
 def _planner_repair_system_prompt() -> str:
     return (
         "Your previous V2 planner response was not valid planner JSON. "
@@ -309,6 +538,227 @@ def _planner_repair_system_prompt() -> str:
         "Do not add markdown, commentary, or code fences. "
         "Do not let malformed JSON fail open into LLM_DIRECT; choose EVIDENCE_PIPELINE when uncertain."
     )
+
+
+def _route_gate_payload(user_prompt: str, repair_context: dict[str, Any] | None = None) -> dict[str, Any]:
+    return {
+        "task": "V2_ROUTE_GATE_ONLY",
+        "user_prompt": user_prompt,
+        "output_schema": {
+            "route_allowed_values": ["LLM_DIRECT", "EVIDENCE_PIPELINE"],
+            "evidence_order_allowed_values": ["NO_EVIDENCE", "NEED_EVIDENCE"],
+            "direct_answer": "string or null",
+            "reason": "short string",
+        },
+        "required_output_template": {
+            "route": "EVIDENCE_PIPELINE",
+            "evidence_order": "NEED_EVIDENCE",
+            "direct_answer": None,
+            "reason": "short reason",
+        },
+        "rules": [
+            "Do not generate SQL.",
+            "Do not generate API requests.",
+            "LLM_DIRECT only for pure concept/meta/out-of-domain prompts needing no runtime evidence.",
+            "EVIDENCE_PIPELINE for user-specific records, lists, counts, status, dates, local snapshot, live/current/platform/API/SQL, mixed, or ambiguous-data-like prompts.",
+            "If uncertain, choose EVIDENCE_PIPELINE.",
+        ],
+        "examples": _route_gate_examples(),
+        "repair_context": repair_context or None,
+    }
+
+
+def _route_gate_examples() -> list[dict[str, Any]]:
+    return [
+        {
+            "user_prompt": "What is a schema?",
+            "response": {
+                "route": "LLM_DIRECT",
+                "evidence_order": "NO_EVIDENCE",
+                "direct_answer": "A schema defines the structure and meaning of data fields.",
+                "reason": "pure concept question",
+            },
+        },
+        {
+            "user_prompt": 'In the phrase "list schemas", what does "list" mean?',
+            "response": {
+                "route": "LLM_DIRECT",
+                "evidence_order": "NO_EVIDENCE",
+                "direct_answer": "Here, list means to enumerate or show the available schemas.",
+                "reason": "pure meta-language question",
+            },
+        },
+        {
+            "user_prompt": "What schemas do I have?",
+            "response": {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "NEED_EVIDENCE",
+                "direct_answer": None,
+                "reason": "user-specific data request",
+            },
+        },
+        {
+            "user_prompt": "How many schema records are in the local snapshot?",
+            "response": {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "NEED_EVIDENCE",
+                "direct_answer": None,
+                "reason": "local count request",
+            },
+        },
+        {
+            "user_prompt": "Explain what inactive journey means and show inactive journeys.",
+            "response": {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "NEED_EVIDENCE",
+                "direct_answer": None,
+                "reason": "mixed concept plus data request",
+            },
+        },
+    ]
+
+
+def _route_gate_repair_payload(payload: dict[str, Any], *, raw_content: str, parse_error: str | None) -> dict[str, Any]:
+    return {
+        "task": "REPAIR_V2_ROUTE_GATE_JSON",
+        "original_route_gate_request": compact_preview(payload, 2600),
+        "previous_response": compact_preview(raw_content, 1000),
+        "parse_error": str(parse_error or "unknown route gate parse error")[:500],
+        "required_output": payload.get("required_output_template"),
+    }
+
+
+def _plan_self_check_system_prompt() -> str:
+    return (
+        "You are the LLM-owned V2 plan self-checker. Return ONLY valid JSON. "
+        "Do not generate final answers. Do not rewrite SQL/API unless revised_plan is needed. "
+        "Check whether the plan answers every explicit prompt part while preserving LLM ownership."
+    )
+
+
+def _plan_self_check_payload(
+    *,
+    user_prompt: str,
+    route_gate_result: dict[str, Any],
+    initial_plan: LLMUnifiedPlan,
+    schema_context: dict[str, Any],
+    endpoint_context: list[dict[str, Any]],
+) -> dict[str, Any]:
+    return {
+        "task": "V2_LLM_OWNED_PLAN_SELF_CHECK",
+        "user_prompt": user_prompt,
+        "route_gate_result": route_gate_result,
+        "initial_plan": initial_plan.to_dict(),
+        "database_schema": compact_preview(schema_context, 2200),
+        "allowed_api_endpoints": _compact_api_endpoint_context(endpoint_context, max_endpoints=8),
+        "output_schema": {
+            "plan_ok": True,
+            "revised_plan": None,
+            "missing_parts": [],
+            "reason": "short string",
+        },
+        "checks": [
+            "Does this plan answer every explicit part of the user prompt?",
+            "For mixed prompts, is there a concept/direct pass and executable SQL/API evidence pass?",
+            "For entity/date prompts, does the evidence plan filter by the named entity and select an available date/time column rather than filtering metadata text?",
+            "For status/list prompts, does the evidence plan select available entity name and status/state columns?",
+            "For compare local/live prompts, is local evidence and live/API evidence planned when a safe GET endpoint exists?",
+            "Does EVIDENCE_PIPELINE include executable SQL/API evidence pass?",
+            "Are there empty or aggregation-only passes without evidence?",
+        ],
+    }
+
+
+def _apply_plan_self_check(
+    client: Any,
+    plan: LLMUnifiedPlan,
+    *,
+    user_prompt: str,
+    route_gate_result: dict[str, Any],
+    schema_context: dict[str, Any],
+    endpoint_context: list[dict[str, Any]],
+    provider: str,
+    model: str,
+    started: float,
+) -> LLMUnifiedPlan:
+    diagnostics = {
+        **plan.diagnostics,
+        "llm_plan_self_check_used": True,
+        "plan_self_check_ok": None,
+        "plan_self_check_revised": False,
+        "plan_self_check_missing_parts": [],
+    }
+    payload = _plan_self_check_payload(
+        user_prompt=user_prompt,
+        route_gate_result=route_gate_result,
+        initial_plan=plan,
+        schema_context=schema_context,
+        endpoint_context=endpoint_context,
+    )
+    result, call_error = _call_planner_model(
+        client,
+        system_prompt=_plan_self_check_system_prompt(),
+        payload=payload,
+        tool=None,
+        toolcall_attempted=False,
+    )
+    diagnostics["planner_provider_latency_ms"] = _elapsed_ms(started)
+    if call_error:
+        plan.diagnostics = {**diagnostics, "plan_self_check_error": call_error}
+        return plan
+    raw_content = str(result.get("content") or "")
+    try:
+        parsed = _parse_json_object(raw_content)
+    except Exception as exc:
+        plan.diagnostics = {**diagnostics, "plan_self_check_parse_error": str(exc)}
+        return plan
+    plan_ok = bool(parsed.get("plan_ok"))
+    missing_parts = parsed.get("missing_parts")
+    if not isinstance(missing_parts, list):
+        missing_parts = []
+    diagnostics.update(
+        {
+            "plan_self_check_ok": plan_ok,
+            "plan_self_check_missing_parts": [str(item) for item in missing_parts],
+        }
+    )
+    revised = parsed.get("revised_plan")
+    if plan_ok or not isinstance(revised, dict):
+        plan.diagnostics = diagnostics
+        return plan
+    revised_plan = normalize_llm_unified_plan(
+        revised,
+        provider=provider,
+        model=model,
+        raw_preview=compact_preview(raw_content, 1000),
+        diagnostics={
+            **diagnostics,
+            "plan_self_check_revised": True,
+            "planner_provider_latency_ms": _elapsed_ms(started),
+        },
+    )
+    if revised_plan.route != "EVIDENCE_PIPELINE":
+        plan.diagnostics = {**diagnostics, "plan_self_check_revised": False, "plan_self_check_revised_invalid": True}
+        return plan
+    return revised_plan
+
+
+def _normalize_route_gate_result(payload: dict[str, Any]) -> dict[str, Any]:
+    route = str(payload.get("route") or "").strip().upper()
+    if route not in ALLOWED_ROUTES:
+        raise ValueError("RouteGate route must be LLM_DIRECT or EVIDENCE_PIPELINE")
+    evidence_order = str(payload.get("evidence_order") or "").strip().upper()
+    if route == "LLM_DIRECT":
+        evidence_order = "NO_EVIDENCE"
+    elif evidence_order not in {"NEED_EVIDENCE", "EVIDENCE_PIPELINE"}:
+        evidence_order = "NEED_EVIDENCE"
+    direct_answer = payload.get("direct_answer")
+    return {
+        "route": route,
+        "evidence_order": evidence_order,
+        "direct_answer": str(direct_answer).strip() if direct_answer is not None else None,
+        "reason": str(payload.get("reason") or "").strip(),
+    }
 
 
 def _planner_payload(
@@ -326,8 +776,42 @@ def _planner_payload(
         if compact_for_weak_model
         else compact_preview(endpoint_context, endpoint_chars)
     )
-    return {
-        "output_schema": {
+    if compact_for_weak_model:
+        output_schema: dict[str, Any] = {
+            "route_allowed_values": ["LLM_DIRECT", "EVIDENCE_PIPELINE"],
+            "evidence_order_allowed_values": ["NO_EVIDENCE", "SQL_FIRST", "API_FIRST", "SQL_THEN_API", "API_THEN_SQL", "PARALLEL", "MULTI_PASS"],
+            "path_allowed_values": ["DIRECT", "SQL", "API", "SQL_AND_API", "AGGREGATION_ONLY"],
+            "direct_answer": "string or null",
+            "sql": {"query": "string", "params": []},
+            "api_request": {"method": "GET", "path": "/path", "params": {}},
+            "passes": [
+                {
+                    "pass_id": "pass_1",
+                    "subtask": "short description",
+                    "path": "SQL",
+                    "can_run_parallel": True,
+                    "depends_on": [],
+                    "evidence_order": "SQL_FIRST",
+                    "sql": {"query": "string", "params": []},
+                    "api_request": None,
+                    "expected_result": "short result description",
+                    "optional": False,
+                    "fallback": False,
+                }
+            ],
+            "aggregation_instruction": "How to combine pass results into one final answer",
+            "reason": "short string",
+        }
+        required_output_template = {
+            "route": "EVIDENCE_PIPELINE",
+            "evidence_order": "SQL_FIRST",
+            "direct_answer": None,
+            "passes": [],
+            "aggregation_instruction": "Answer from pass results only.",
+            "reason": "short reason",
+        }
+    else:
+        output_schema = {
             "route": "LLM_DIRECT | EVIDENCE_PIPELINE",
             "evidence_order": "NO_EVIDENCE | SQL_FIRST | API_FIRST | SQL_THEN_API | API_THEN_SQL | PARALLEL | MULTI_PASS",
             "direct_answer": "string or null",
@@ -350,7 +834,10 @@ def _planner_payload(
             ],
             "aggregation_instruction": "How to combine pass results into one final answer",
             "reason": "short string",
-        },
+        }
+        required_output_template = None
+    payload = {
+        "output_schema": output_schema,
         "user_prompt": user_prompt,
         "database_schema": compact_preview(schema_context, schema_chars),
         "allowed_api_endpoints": api_context,
@@ -362,7 +849,7 @@ def _planner_payload(
             "Do not output deterministic templates or explanations outside JSON.",
             "Use route LLM_DIRECT only when no runtime evidence is required.",
             "Prompts asking what data the user has, lists, counts, status, dates, local snapshots, live/current/platform state, or mixed concept+data require EVIDENCE_PIPELINE.",
-            "If route is EVIDENCE_PIPELINE, include at least one pass with path SQL, API, SQL_AND_API, DIRECT, or AGGREGATION_ONLY.",
+            "If route is EVIDENCE_PIPELINE, include at least one executable evidence pass with path SQL, API, or SQL_AND_API.",
             "For mixed prompts, include a concept/direct pass and a SQL/API evidence pass; do not leave passes empty.",
             "Never output angle-bracket placeholders such as <schema_table> or <journey_table>.",
             "Use only table and column names present in database_schema.",
@@ -373,6 +860,9 @@ def _planner_payload(
         ],
         "examples": _build_schema_aware_examples(schema_context, endpoint_context),
     }
+    if required_output_template is not None:
+        payload["required_output_template"] = required_output_template
+    return payload
 
 
 def _compact_api_endpoint_context(endpoint_context: list[dict[str, Any]], *, max_endpoints: int = 8) -> list[dict[str, Any]]:
@@ -412,25 +902,14 @@ def _compact_api_endpoint_context(endpoint_context: list[dict[str, Any]], *, max
 
 
 def _build_schema_aware_examples(schema_context: dict[str, Any], endpoint_context: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    table = _first_schema_table(schema_context)
+    schema_table = _find_relevant_schema_table(schema_context, terms=["schema", "xdm"])
+    journey_table = _find_relevant_schema_table(schema_context, terms=["journey", "campaign"], preferred_columns=["name", "status"])
     safe_get = _first_safe_get_endpoint(endpoint_context)
-    list_sql = _example_list_sql(table)
-    count_sql = _example_count_sql(table)
-    status_sql = _example_status_sql(table)
+    list_sql = _example_list_sql(schema_table)
+    count_sql = _example_count_sql(schema_table)
+    status_sql = _example_status_sql(journey_table)
+    date_sql = _example_date_sql(journey_table)
     examples: list[dict[str, Any]] = [
-        {
-            "user_prompt": "What is a schema?",
-            "response": {
-                "route": "LLM_DIRECT",
-                "evidence_order": "NO_EVIDENCE",
-                "direct_answer": "A schema defines the structure and meaning of data fields.",
-                "sql": None,
-                "api_request": None,
-                "passes": [],
-                "aggregation_instruction": "",
-                "reason": "pure concept question; no runtime evidence required",
-            },
-        },
         {
             "user_prompt": "What schemas do I have?",
             "response": {
@@ -479,6 +958,31 @@ def _build_schema_aware_examples(schema_context: dict[str, Any], endpoint_contex
                 ],
                 "aggregation_instruction": "Answer with the count from pass_1.",
                 "reason": "count request requires runtime data evidence",
+            },
+        },
+        {
+            "user_prompt": 'When was the journey "Birthday Message" published?',
+            "response": {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "SQL_FIRST",
+                "direct_answer": None,
+                "passes": [
+                    {
+                        "pass_id": "pass_1",
+                        "subtask": "Find the named journey/campaign and return available date/time fields using database_schema.",
+                        "path": "SQL",
+                        "can_run_parallel": True,
+                        "depends_on": [],
+                        "evidence_order": "SQL_FIRST",
+                        "sql": date_sql,
+                        "api_request": None,
+                        "expected_result": "entity date/time evidence",
+                        "optional": False,
+                        "fallback": False,
+                    }
+                ],
+                "aggregation_instruction": "Answer only with the date/time value returned by pass_1, or a scoped caveat if unavailable.",
+                "reason": "named entity date request requires runtime evidence",
             },
         },
         {
@@ -580,6 +1084,57 @@ def _first_schema_table(schema_context: dict[str, Any]) -> dict[str, Any] | None
     return None
 
 
+def _iter_schema_tables(schema_context: dict[str, Any]) -> list[dict[str, Any]]:
+    tables = schema_context.get("tables") if isinstance(schema_context, dict) else None
+    out: list[dict[str, Any]] = []
+    if isinstance(tables, dict):
+        for name, payload in tables.items():
+            if isinstance(payload, dict):
+                out.append({"name": str(name), "columns": _column_names(payload.get("columns"))})
+    elif isinstance(tables, list):
+        for item in tables:
+            if isinstance(item, dict) and item.get("name"):
+                out.append({"name": str(item.get("name")), "columns": _column_names(item.get("columns"))})
+    return out
+
+
+def _find_relevant_schema_table(
+    schema_context: dict[str, Any],
+    *,
+    terms: list[str],
+    preferred_columns: list[str] | None = None,
+) -> dict[str, Any] | None:
+    tables = _iter_schema_tables(schema_context)
+    if not tables:
+        return None
+    normalized_terms = [term.lower() for term in terms]
+    preferred = [column.lower() for column in (preferred_columns or [])]
+    scored: list[tuple[int, dict[str, Any]]] = []
+    for table in tables:
+        name = str(table.get("name") or "").lower()
+        columns = [str(column).lower() for column in table.get("columns") or []]
+        score = 0
+        for term in normalized_terms:
+            if term and term in name:
+                score += 4
+            if any(term and term in column for column in columns):
+                score += 2
+        for column in preferred:
+            if column in columns:
+                score += 1
+        if score > 0:
+            scored.append((score, table))
+    if scored:
+        scored.sort(key=lambda item: (-item[0], str(item[1].get("name") or "")))
+        return scored[0][1]
+    if preferred_columns:
+        for table in tables:
+            columns = {str(column).lower() for column in table.get("columns") or []}
+            if all(column.lower() in columns for column in preferred_columns):
+                return table
+    return None
+
+
 def _column_names(value: Any) -> list[str]:
     columns: list[str] = []
     if isinstance(value, list):
@@ -596,7 +1151,8 @@ def _example_list_sql(table: dict[str, Any] | None) -> dict[str, Any] | None:
         return None
     table_name = _quote_identifier(table["name"])
     columns = table.get("columns") or []
-    preferred = [name for name in ("name", "id", "status") if name in columns]
+    preferred = [_matching_column(columns, name) for name in ("name", "id", "status", "state")]
+    preferred = [name for name in preferred if name]
     selected = preferred or columns[:3] or ["*"]
     select_clause = ", ".join(_quote_identifier(column) if column != "*" else "*" for column in selected)
     return {"query": f"SELECT {select_clause} FROM {table_name} LIMIT 50", "params": []}
@@ -613,9 +1169,45 @@ def _example_status_sql(table: dict[str, Any] | None) -> dict[str, Any] | None:
         return None
     table_name = _quote_identifier(table["name"])
     columns = table.get("columns") or []
-    if "name" in columns and "status" in columns:
-        return {"query": f"SELECT name, status FROM {table_name} WHERE LOWER(status) = 'inactive' LIMIT 50", "params": []}
+    name_col = _matching_column(columns, "name")
+    status_col = _matching_column(columns, "status") or _matching_column(columns, "state")
+    if name_col and status_col:
+        return {
+            "query": f"SELECT {_quote_identifier(name_col)}, {_quote_identifier(status_col)} FROM {table_name} WHERE LOWER({_quote_identifier(status_col)}) = 'inactive' LIMIT 50",
+            "params": [],
+        }
     return _example_list_sql(table)
+
+
+def _example_date_sql(table: dict[str, Any] | None) -> dict[str, Any] | None:
+    if table is None:
+        return None
+    table_name = _quote_identifier(table["name"])
+    columns = table.get("columns") or []
+    name_col = _matching_column(columns, "name")
+    date_col = (
+        _matching_column(columns, "publishedtime")
+        or _matching_column(columns, "lastdeployedtime")
+        or _matching_column(columns, "updatedtime")
+        or _matching_column(columns, "createdtime")
+    )
+    if name_col and date_col:
+        return {
+            "query": f"SELECT {_quote_identifier(name_col)}, {_quote_identifier(date_col)} FROM {table_name} WHERE LOWER({_quote_identifier(name_col)}) = LOWER(?) LIMIT 1",
+            "params": ["Birthday Message"],
+        }
+    return _example_list_sql(table)
+
+
+def _matching_column(columns: list[str], wanted: str) -> str | None:
+    wanted_l = wanted.lower()
+    for column in columns:
+        if str(column).lower() == wanted_l:
+            return str(column)
+    for column in columns:
+        if wanted_l in str(column).lower():
+            return str(column)
+    return None
 
 
 def _first_safe_get_endpoint(endpoint_context: list[dict[str, Any]]) -> dict[str, Any] | None:

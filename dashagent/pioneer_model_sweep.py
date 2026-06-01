@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
+import sys
 import time
 from contextlib import contextmanager
 from pathlib import Path
@@ -11,6 +13,7 @@ from typing import Any, Iterator
 from .config import Config, ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2
 from .executor import AgentExecutor
 from .llm_client import PioneerChatLLMClient
+from .llm_unified_planner import _route_gate_payload
 from .trajectory import redact_secrets
 
 
@@ -106,11 +109,6 @@ PIONEER_SWEEP_PROMPTS = [
         "expected_kind": "PURE_DIRECT",
     },
     {
-        "id": "mixed_inactive_journeys",
-        "prompt": "Explain what inactive journey means and show inactive journeys.",
-        "expected_kind": "EVIDENCE",
-    },
-    {
         "id": "ambiguous_user_schemas",
         "prompt": "What schemas do I have?",
         "expected_kind": "EVIDENCE",
@@ -126,10 +124,21 @@ PIONEER_SWEEP_PROMPTS = [
         "expected_kind": "EVIDENCE",
     },
     {
+        "id": "mixed_inactive_journeys",
+        "prompt": "Explain what inactive journey means and show inactive journeys.",
+        "expected_kind": "EVIDENCE",
+    },
+    {
         "id": "compare_local_live_birthday_status",
         "prompt": "Compare local and live status of Birthday Message if both are available.",
         "expected_kind": "EVIDENCE",
     },
+]
+
+SLOW_ROUTE_PROBE_MODELS = {"DeepSeek V4 Flash", "GLM 5.1"}
+ROUTE_GATE_PROBE_PROMPTS = [
+    {"id": "probe_concept", "prompt": "What is a schema?", "expected_route": "LLM_DIRECT"},
+    {"id": "probe_data", "prompt": "What schemas do I have?", "expected_route": "EVIDENCE_PIPELINE"},
 ]
 
 
@@ -242,6 +251,19 @@ def _run_one_model(config: Config, model: str, report_dir: Path) -> dict[str, An
             result["log"] = "\n".join(log_lines) + "\n"
             _write_per_model(report_dir, result)
             return result
+        route_gate_probe: dict[str, Any] | None = None
+        if model in SLOW_ROUTE_PROBE_MODELS:
+            route_gate_probe = _route_gate_short_probe(model_id)
+            route_gate_probe = _with_model_context(route_gate_probe, model, safe_name, model_id)
+            log_lines.append("route_gate_probe=" + json.dumps(redact_secrets(route_gate_probe), sort_keys=True))
+            if not route_gate_probe.get("usable"):
+                result = _empty_model_result(model, availability, started, model_id=model_id)
+                result["route_gate_probe"] = route_gate_probe
+                result["metrics"]["route_gate_probe_usable"] = False
+                result["metrics"]["route_gate_probe_failures"] = len(route_gate_probe.get("prompt_results") or [])
+                result["log"] = "\n".join(log_lines) + "\n"
+                _write_per_model(report_dir, result)
+                return result
         executor = AgentExecutor(config)
         prompt_results: list[dict[str, Any]] = []
         semantic_probe_results: list[dict[str, Any]] = [
@@ -285,6 +307,7 @@ def _run_one_model(config: Config, model: str, report_dir: Path) -> dict[str, An
             "model_sweep_run_id": safe_name,
             "group": DEFAULT_PIONEER_MODEL_GROUPS.get(model, "custom"),
             "availability": availability,
+            "route_gate_probe": route_gate_probe,
             "metrics": metrics,
             "semantic_probe_results": semantic_probe_results,
             "prompt_results": prompt_results,
@@ -377,6 +400,129 @@ def _semantic_json_probe(model: str, prompt: str) -> dict[str, Any]:
     return redact_secrets(result)
 
 
+def _route_gate_short_probe(model: str) -> dict[str, Any]:
+    if os.getenv("PIONEER_ROUTE_GATE_PROBE_SUBPROCESS", "true").strip().lower() not in {"0", "false", "no", "off"}:
+        return _route_gate_short_probe_subprocess(model)
+    return _route_gate_short_probe_inline(model)
+
+
+def _route_gate_short_probe_subprocess(model: str) -> dict[str, Any]:
+    timeout_seconds = int(os.getenv("PIONEER_ROUTE_GATE_PROBE_TOTAL_TIMEOUT_SEC", "35"))
+    code = (
+        "import json, os, sys\n"
+        "from dashagent.pioneer_model_sweep import _route_gate_short_probe_inline\n"
+        "os.environ['PIONEER_ROUTE_GATE_PROBE_SUBPROCESS']='false'\n"
+        "print(json.dumps(_route_gate_short_probe_inline(sys.argv[1]), sort_keys=True))\n"
+    )
+    started = time.perf_counter()
+    try:
+        completed = subprocess.run(
+            [sys.executable, "-c", code, model],
+            cwd=str(Path.cwd()),
+            env=dict(os.environ),
+            text=True,
+            capture_output=True,
+            timeout=timeout_seconds,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return {
+            "usable": False,
+            "error_category": "route_gate_timeout",
+            "prompt_results": [],
+            "latency_sec": round(time.perf_counter() - started, 4),
+        }
+    if completed.returncode != 0:
+        return redact_secrets(
+            {
+                "usable": False,
+                "error_category": "route_gate_error",
+                "prompt_results": [],
+                "stderr_tail": completed.stderr[-600:],
+                "latency_sec": round(time.perf_counter() - started, 4),
+            }
+        )
+    try:
+        parsed = json.loads(completed.stdout.strip().splitlines()[-1])
+        if isinstance(parsed, dict):
+            return redact_secrets(parsed)
+    except Exception as exc:
+        return redact_secrets(
+            {
+                "usable": False,
+                "error_category": "route_gate_parse_failure",
+                "prompt_results": [],
+                "error": str(exc),
+                "latency_sec": round(time.perf_counter() - started, 4),
+            }
+        )
+    return {
+        "usable": False,
+        "error_category": "route_gate_parse_failure",
+        "prompt_results": [],
+        "latency_sec": round(time.perf_counter() - started, 4),
+    }
+
+
+def _route_gate_short_probe_inline(model: str) -> dict[str, Any]:
+    started = time.perf_counter()
+    timeout_seconds = int(os.getenv("PIONEER_ROUTE_GATE_PROBE_TIMEOUT_SEC", "10"))
+    client = PioneerChatLLMClient(model=model, timeout_seconds=timeout_seconds)
+    if not client.available():
+        return {
+            "usable": False,
+            "error_category": "provider_unavailable",
+            "prompt_results": [],
+            "latency_sec": 0.0,
+        }
+    prompt_results: list[dict[str, Any]] = []
+    for case in ROUTE_GATE_PROBE_PROMPTS:
+        prompt_started = time.perf_counter()
+        try:
+            result = client.complete_json(
+                "Return ONLY valid JSON for DASHSys V2 RouteGate. Do not generate SQL or API.",
+                json.dumps(_route_gate_payload(case["prompt"], repair_context=None), sort_keys=True),
+                schema_hint={
+                    "route_allowed_values": ["LLM_DIRECT", "EVIDENCE_PIPELINE"],
+                    "evidence_order_allowed_values": ["NO_EVIDENCE", "NEED_EVIDENCE"],
+                    "direct_answer": "string or null",
+                    "reason": "short string",
+                },
+                max_tokens=160,
+            )
+            if not isinstance(result, dict):
+                result = {"parse_error": True, "route": "EVIDENCE_PIPELINE", "error": f"non_object:{type(result).__name__}"}
+        except TimeoutError as exc:
+            result = {"parse_error": True, "route": "EVIDENCE_PIPELINE", "error_category": "route_gate_timeout", "error": str(exc)}
+        except Exception as exc:
+            result = {"parse_error": True, "route": "EVIDENCE_PIPELINE", "error_category": "route_gate_error", "error": redact_secrets(str(exc))}
+        route = str(result.get("route") or "").strip().upper()
+        parse_error = bool(result.get("parse_error")) or route not in {"LLM_DIRECT", "EVIDENCE_PIPELINE"}
+        prompt_results.append(
+            redact_secrets(
+                {
+                    "prompt_id": case["id"],
+                    "prompt": case["prompt"],
+                    "expected_route": case["expected_route"],
+                    "route": route or "EVIDENCE_PIPELINE",
+                    "parse_error": parse_error,
+                    "pass": (not parse_error) and route == case["expected_route"],
+                    "error_category": result.get("error_category"),
+                    "latency_sec": round(time.perf_counter() - prompt_started, 4),
+                }
+            )
+        )
+    usable = bool(prompt_results) and all((not row.get("parse_error")) for row in prompt_results)
+    return redact_secrets(
+        {
+            "usable": usable,
+            "error_category": None if usable else "route_gate_parse_failure",
+            "prompt_results": prompt_results,
+            "latency_sec": round(time.perf_counter() - started, 4),
+        }
+    )
+
+
 def _summarize_prompt_result(prompt_case: dict[str, str], run_result: dict[str, Any], latency_sec: float) -> dict[str, Any]:
     checkpoints = run_result.get("checkpoints") or []
     checkpoint_names = {str(item.get("checkpoint_id")) for item in checkpoints if isinstance(item, dict)}
@@ -393,9 +539,10 @@ def _summarize_prompt_result(prompt_case: dict[str, str], run_result: dict[str, 
     )
     declared_pass_count = _declared_pass_count(checkpoints)
     pass_results_count = _pass_results_count(checkpoints)
-    result_bundle_built = bool("checkpoint_llm_owned_result_bundle" in checkpoint_names)
-    final_syntax_gate_failures = _gate_failure_count(checkpoints, "checkpoint_llm_final_answer_syntax_gate")
-    final_semantic_gate_failures = _gate_failure_count(checkpoints, "checkpoint_llm_final_answer_semantic_gate")
+    result_bundle_built = bool("checkpoint_result_bundle" in checkpoint_names)
+    answer_gate_metrics = _answer_gate_metrics(checkpoints)
+    final_syntax_gate_failures = answer_gate_metrics["answer_syntax_gate_final_failures"]
+    final_semantic_gate_failures = answer_gate_metrics["answer_semantic_gate_final_failures"]
     unsupported_claims = _unsupported_claim_count(checkpoints)
     expected_kind = prompt_case["expected_kind"]
     if expected_kind == "PURE_DIRECT":
@@ -405,11 +552,20 @@ def _summarize_prompt_result(prompt_case: dict[str, str], run_result: dict[str, 
             and evidence_pipeline_bypassed
             and not evidence_bus_built
             and not post_router_ran
+            and final_syntax_gate_failures == 0
+            and final_semantic_gate_failures == 0
             and unsupported_claims == 0
         )
     else:
         evidence_path_exercised = evidence_bus_built or result_bundle_built or declared_pass_count > 0 or sql_calls > 0 or api_calls > 0
-        passed = (not evidence_pipeline_bypassed) and evidence_path_exercised and declared_pass_count > 0 and unsupported_claims == 0
+        passed = (
+            (not evidence_pipeline_bypassed)
+            and evidence_path_exercised
+            and declared_pass_count > 0
+            and final_syntax_gate_failures == 0
+            and final_semantic_gate_failures == 0
+            and unsupported_claims == 0
+        )
     return redact_secrets(
         {
             "prompt_id": prompt_case["id"],
@@ -425,6 +581,7 @@ def _summarize_prompt_result(prompt_case: dict[str, str], run_result: dict[str, 
             "post_evidence_answer_router_ran": post_router_ran,
             "declared_pass_count": declared_pass_count,
             "pass_results_count": pass_results_count,
+            **answer_gate_metrics,
             "final_syntax_gate_failures": final_syntax_gate_failures,
             "final_semantic_gate_failures": final_semantic_gate_failures,
             "unsupported_claims": unsupported_claims,
@@ -463,6 +620,12 @@ def _aggregate_metrics(
         "result_bundle_built_count": sum(1 for row in prompt_results if bool(row.get("result_bundle_built"))),
         "declared_pass_count": sum(int(row.get("declared_pass_count") or 0) for row in prompt_results),
         "planner_usable_count": len(planner_usable_rows),
+        "answer_syntax_gate_initial_failures": sum(int(row.get("answer_syntax_gate_initial_failures") or 0) for row in prompt_results),
+        "answer_semantic_gate_initial_failures": sum(int(row.get("answer_semantic_gate_initial_failures") or 0) for row in prompt_results),
+        "answer_repair_attempts": sum(int(row.get("answer_repair_attempts") or 0) for row in prompt_results),
+        "answer_syntax_gate_final_failures": sum(int(row.get("answer_syntax_gate_final_failures") or 0) for row in prompt_results),
+        "answer_semantic_gate_final_failures": sum(int(row.get("answer_semantic_gate_final_failures") or 0) for row in prompt_results),
+        "answer_repaired_successes": sum(int(row.get("answer_repaired_successes") or 0) for row in prompt_results),
         "final_syntax_gate_failures": sum(int(row.get("final_syntax_gate_failures") or 0) for row in prompt_results),
         "final_semantic_gate_failures": sum(int(row.get("final_semantic_gate_failures") or 0) for row in prompt_results),
         "final_gates_all_failed": all_final_gates_failed,
@@ -499,6 +662,12 @@ def _empty_model_result(model: str, availability: dict[str, Any], started: float
             "result_bundle_built_count": 0,
             "declared_pass_count": 0,
             "planner_usable_count": 0,
+            "answer_syntax_gate_initial_failures": 0,
+            "answer_semantic_gate_initial_failures": 0,
+            "answer_repair_attempts": 0,
+            "answer_syntax_gate_final_failures": 0,
+            "answer_semantic_gate_final_failures": 0,
+            "answer_repaired_successes": 0,
             "final_syntax_gate_failures": 0,
             "final_semantic_gate_failures": 0,
             "final_gates_all_failed": False,
@@ -719,6 +888,28 @@ def _pass_results_count(checkpoints: list[dict[str, Any]]) -> int:
         nested = checkpoint.get("input_summary")
         counts.extend(_find_numeric_fields(nested, {"pass_results_count", "result_bundle_pass_results_count"}))
     return max(counts) if counts else 0
+
+
+def _answer_gate_metrics(checkpoints: list[dict[str, Any]]) -> dict[str, int]:
+    initial_syntax = _gate_failure_count(checkpoints, "checkpoint_llm_final_answer_syntax_gate")
+    initial_semantic = _gate_failure_count(checkpoints, "checkpoint_llm_final_answer_semantic_gate")
+    boundary = _checkpoint_output(checkpoints, "checkpoint_llm_owned_final_answer_boundary")
+    repair_attempts = int(boundary.get("answer_repair_attempts") or 0) if boundary else 0
+    if boundary:
+        final_syntax = 0 if bool(boundary.get("answer_syntax_gate_passed")) else 1
+        final_semantic = 0 if bool(boundary.get("answer_semantic_gate_passed")) else 1
+    else:
+        final_syntax = initial_syntax
+        final_semantic = initial_semantic
+    repaired_successes = 1 if repair_attempts > 0 and final_syntax == 0 and final_semantic == 0 else 0
+    return {
+        "answer_syntax_gate_initial_failures": initial_syntax,
+        "answer_semantic_gate_initial_failures": initial_semantic,
+        "answer_repair_attempts": repair_attempts,
+        "answer_syntax_gate_final_failures": final_syntax,
+        "answer_semantic_gate_final_failures": final_semantic,
+        "answer_repaired_successes": repaired_successes,
+    }
 
 
 def _gate_failure_count(checkpoints: list[dict[str, Any]], checkpoint_id: str) -> int:

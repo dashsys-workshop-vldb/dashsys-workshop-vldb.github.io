@@ -127,6 +127,129 @@ def test_unsupported_claim_counter_handles_list_values() -> None:
     assert sweep._unsupported_claim_count(checkpoints) == 1
 
 
+def test_prompt_result_splits_initial_and_final_answer_gate_failures() -> None:
+    run_result = {
+        "final_answer": "repaired ok",
+        "tool_results": [{"type": "sql"}],
+        "checkpoints": [
+            {
+                "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
+                "output": {"evidence_pipeline_bypassed": False, "evidence_bus_built": True},
+            },
+            {
+                "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
+                "input_summary": {"llm_pass_count": 1},
+                "output": {"pass_count": 1},
+            },
+            {"checkpoint_id": "checkpoint_result_bundle", "output": {"pass_results_count": 1}},
+            {"checkpoint_id": "checkpoint_llm_final_answer_semantic_gate", "output": {"passed": False}},
+            {
+                "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
+                "output": {
+                    "answer_syntax_gate_passed": True,
+                    "answer_semantic_gate_passed": True,
+                    "answer_repair_attempts": 1,
+                },
+            },
+        ],
+    }
+
+    result = sweep._summarize_prompt_result(
+        {"id": "data", "prompt": "What schemas do I have?", "expected_kind": "EVIDENCE"},
+        run_result,
+        0.1,
+    )
+
+    assert result["answer_semantic_gate_initial_failures"] == 1
+    assert result["answer_semantic_gate_final_failures"] == 0
+    assert result["answer_repair_attempts"] == 1
+    assert result["answer_repaired_successes"] == 1
+    assert result["pass"] is True
+
+
+def test_unrepaired_final_answer_failure_blocks_smoke_prompt() -> None:
+    run_result = {
+        "final_answer": "fallback",
+        "tool_results": [{"type": "sql"}],
+        "checkpoints": [
+            {
+                "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
+                "output": {"evidence_pipeline_bypassed": False, "evidence_bus_built": True},
+            },
+            {
+                "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
+                "input_summary": {"llm_pass_count": 1},
+                "output": {"pass_count": 1},
+            },
+            {"checkpoint_id": "checkpoint_result_bundle", "output": {"pass_results_count": 1}},
+            {"checkpoint_id": "checkpoint_llm_final_answer_semantic_gate", "output": {"passed": False}},
+            {
+                "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
+                "output": {
+                    "answer_syntax_gate_passed": True,
+                    "answer_semantic_gate_passed": False,
+                    "answer_repair_attempts": 1,
+                },
+            },
+        ],
+    }
+
+    result = sweep._summarize_prompt_result(
+        {"id": "data", "prompt": "What schemas do I have?", "expected_kind": "EVIDENCE"},
+        run_result,
+        0.1,
+    )
+
+    assert result["answer_semantic_gate_initial_failures"] == 1
+    assert result["answer_semantic_gate_final_failures"] == 1
+    assert result["pass"] is False
+
+
+def test_slow_model_route_probe_timeout_prevents_expensive_full_smoke(monkeypatch, tmp_path) -> None:
+    monkeypatch.setattr(sweep, "SLOW_ROUTE_PROBE_MODELS", {"SlowModel"})
+    monkeypatch.setattr(sweep, "_availability_probe", lambda model: {"available": True, "model": model})
+    monkeypatch.setattr(
+        sweep,
+        "_route_gate_short_probe",
+        lambda model: {"usable": False, "error_category": "route_gate_timeout", "prompt_results": []},
+    )
+
+    class FailingExecutor:
+        def __init__(self, config):
+            pass
+
+        def run(self, *args, **kwargs):
+            raise AssertionError("full smoke should not run when short route probe fails")
+
+    monkeypatch.setattr(sweep, "AgentExecutor", FailingExecutor)
+
+    result = run_pioneer_model_sweep(SimpleNamespace(outputs_dir=tmp_path), models=["SlowModel"], report_dir=tmp_path)
+
+    model_result = result["models"][0]
+    assert model_result["route_gate_probe"]["usable"] is False
+    assert model_result["metrics"]["focused_smoke_pass"] is False
+    assert model_result["prompt_results"] == []
+
+
+def test_slow_model_route_probe_success_allows_full_smoke(monkeypatch, tmp_path) -> None:
+    monkeypatch.setattr(sweep, "SLOW_ROUTE_PROBE_MODELS", {"SlowModel"})
+    monkeypatch.setattr(sweep, "PIONEER_SWEEP_PROMPTS", [{"id": "prompt1", "prompt": "prompt1", "expected_kind": "EVIDENCE"}])
+    monkeypatch.setattr(sweep, "_availability_probe", lambda model: {"available": True, "model": model})
+    monkeypatch.setattr(
+        sweep,
+        "_route_gate_short_probe",
+        lambda model: {"usable": True, "error_category": None, "prompt_results": [{"parse_error": False}]},
+    )
+    monkeypatch.setattr(sweep, "_semantic_json_probe", lambda model, prompt: {"parse_error": False, "route": "EVIDENCE_PIPELINE", "prompt": prompt})
+    monkeypatch.setattr(sweep, "AgentExecutor", lambda config: _FakeExecutor())
+
+    result = run_pioneer_model_sweep(SimpleNamespace(outputs_dir=tmp_path), models=["SlowModel"], report_dir=tmp_path)
+
+    model_result = result["models"][0]
+    assert model_result["route_gate_probe"]["usable"] is True
+    assert len(model_result["prompt_results"]) == 1
+
+
 def test_all_semantic_probe_parse_failures_do_not_fast_fail_closed_smoke(monkeypatch, tmp_path) -> None:
     monkeypatch.setattr(
         sweep,
