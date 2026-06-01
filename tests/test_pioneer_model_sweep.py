@@ -167,6 +167,93 @@ def test_prompt_result_splits_initial_and_final_answer_gate_failures() -> None:
     assert result["pass"] is True
 
 
+def test_prompt_result_splits_runtime_facts_from_caveat_only_evidence() -> None:
+    success_result = {
+        "final_answer": "There are 2 schemas.",
+        "tool_results": [{"type": "sql"}],
+        "checkpoints": [
+            {
+                "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
+                "output": {"evidence_pipeline_bypassed": False, "evidence_bus_built": True},
+            },
+            {
+                "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
+                "input_summary": {"llm_pass_count": 1},
+                "output": {"pass_count": 1},
+            },
+            {
+                "checkpoint_id": "checkpoint_result_bundle",
+                "output": {
+                    "pass_results_count": 1,
+                    "runtime_passes": [
+                        {
+                            "pass_id": "p1",
+                            "status": "SUCCESS",
+                            "facts": ["count: 2"],
+                            "source_results": [{"status": "SUCCESS"}],
+                        }
+                    ],
+                },
+            },
+        ],
+    }
+    caveat_result = {
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "tool_results": [],
+        "checkpoints": [
+            {
+                "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
+                "output": {"evidence_pipeline_bypassed": False, "evidence_bus_built": True},
+            },
+            {
+                "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
+                "input_summary": {"llm_pass_count": 1},
+                "output": {"pass_count": 1},
+            },
+            {
+                "checkpoint_id": "checkpoint_result_bundle",
+                "output": {
+                    "pass_results_count": 1,
+                    "runtime_passes": [
+                        {
+                            "pass_id": "p1",
+                            "status": "API_ERROR",
+                            "facts": [],
+                            "caveats": ["API_ERROR"],
+                            "source_results": [{"status": "ERROR"}],
+                        }
+                    ],
+                },
+            },
+        ],
+    }
+
+    success = sweep._summarize_prompt_result(
+        {"id": "success", "prompt": "How many schemas?", "expected_kind": "EVIDENCE"},
+        success_result,
+        0.1,
+    )
+    caveat = sweep._summarize_prompt_result(
+        {"id": "caveat", "prompt": "How many current schemas?", "expected_kind": "EVIDENCE"},
+        caveat_result,
+        0.1,
+    )
+    aggregate = sweep._aggregate_metrics([success, caveat], [], 0.0)
+
+    assert success["evidence_bus_runtime_fact_count"] == 1
+    assert success["evidence_bus_runtime_non_empty"] is True
+    assert success["evidence_bus_error_or_caveat_only"] is False
+    assert success["result_bundle_success_pass_count"] == 1
+    assert caveat["evidence_bus_runtime_fact_count"] == 0
+    assert caveat["evidence_bus_runtime_non_empty"] is False
+    assert caveat["evidence_bus_error_or_caveat_only"] is True
+    assert aggregate["evidence_bus_built_count"] == 2
+    assert aggregate["evidence_bus_runtime_fact_count"] == 1
+    assert aggregate["evidence_bus_runtime_non_empty_count"] == 1
+    assert aggregate["evidence_bus_error_or_caveat_only_count"] == 1
+    assert aggregate["result_bundle_success_pass_count"] == 1
+
+
 def test_unrepaired_final_answer_failure_blocks_smoke_prompt() -> None:
     run_result = {
         "final_answer": "fallback",
@@ -338,6 +425,41 @@ def test_report_generation_works_with_fake_metrics(tmp_path) -> None:
     payload = json.loads(paths["summary_json"].read_text(encoding="utf-8"))
     assert payload["model_count"] == 1
     assert payload["models"][0]["model"] == "Qwen3 4B Instruct 2507"
+
+
+def test_report_generation_preserves_public_model_labels_when_model_is_in_env(monkeypatch, tmp_path) -> None:
+    monkeypatch.setenv("PIONEER_MODEL", "Claude Haiku 4.5")
+    model_result = {
+        "model": "Claude Haiku 4.5",
+        "pioneer_model": "Claude Haiku 4.5",
+        "pioneer_model_id": "claude-haiku-4-5",
+        "safe_model_name": safe_model_name("Claude Haiku 4.5"),
+        "model_sweep_run_id": safe_model_name("Claude Haiku 4.5"),
+        "group": "anthropic_fast_small",
+        "availability": {"available": True},
+        "metrics": {
+            "json_parse_failures": 0,
+            "semantic_fallback_count": 0,
+            "llm_direct_count": 2,
+            "evidence_pipeline_count": 5,
+            "evidence_pipeline_bypassed_count": 2,
+            "evidence_bus_built_count": 5,
+            "no_tool_fp": 0,
+            "unsupported_claims": 0,
+            "focused_smoke_pass": False,
+            "latency_sec": 1.0,
+        },
+        "prompt_results": [{"pioneer_model": "Claude Haiku 4.5", "pioneer_model_id": "claude-haiku-4-5"}],
+    }
+
+    write_pioneer_model_sweep_reports(tmp_path, [model_result])
+
+    payload = json.loads((tmp_path / "per_model_claude_haiku_4_5.json").read_text(encoding="utf-8"))
+    summary = json.loads((tmp_path / "pioneer_model_sweep_summary.json").read_text(encoding="utf-8"))
+    assert payload["model"] == "Claude Haiku 4.5"
+    assert payload["pioneer_model_id"] == "claude-haiku-4-5"
+    assert payload["prompt_results"][0]["pioneer_model"] == "Claude Haiku 4.5"
+    assert summary["models"][0]["model"] == "Claude Haiku 4.5"
 
 
 def test_pioneer_model_sweep_is_model_major_not_prompt_major(monkeypatch, tmp_path) -> None:

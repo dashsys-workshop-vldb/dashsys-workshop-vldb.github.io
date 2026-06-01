@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import json
 
-from dashagent.llm_final_answer_composer import compose_llm_final_answer
+from dashagent.answer_slots import AnswerSlots
+from dashagent.evidence_bus import EvidenceBus
+from dashagent.llm_final_answer_composer import build_llm_final_answer_card, compose_llm_final_answer
 from dashagent.llm_unified_planner import (
+    normalize_llm_unified_plan,
     _compact_api_endpoint_context,
     _planner_payload,
     _route_gate_payload,
@@ -11,12 +14,14 @@ from dashagent.llm_unified_planner import (
     run_llm_unified_planner,
 )
 from dashagent.pass_graph_gate import PassGraphGate
+from dashagent.result_bundle import ResultBundle
 
 
 class ToolCallClient:
-    def __init__(self, tool_name: str, arguments: dict) -> None:
+    def __init__(self, tool_name: str, arguments: dict, *, challenge_response: str | None = None) -> None:
         self.tool_name = tool_name
         self.arguments = arguments
+        self.challenge_response = challenge_response
         self.calls: list[dict] = []
 
     def available(self) -> bool:
@@ -35,8 +40,16 @@ class ToolCallClient:
             tool_choice="required" if tools else None,
         )
 
-    def generate_messages(self, messages, tools=None, tool_choice=None, parallel_tool_calls=None):
-        self.calls.append({"tools": tools, "tool_choice": tool_choice, "messages": messages})
+    def generate_messages(self, messages, tools=None, tool_choice=None, parallel_tool_calls=None, **kwargs):
+        self.calls.append({"tools": tools, "tool_choice": tool_choice, "messages": messages, **kwargs})
+        if self.challenge_response and "Direct Route Challenge" in str(messages[0].get("content") or ""):
+            return {
+                "ok": True,
+                "provider": self.provider_name(),
+                "model": self.model_name(),
+                "content": self.challenge_response,
+                "tool_calls": [],
+            }
         return {
             "ok": True,
             "provider": self.provider_name(),
@@ -69,8 +82,8 @@ class ContentOnlyPlannerClient:
     def model_name(self) -> str:
         return self.model
 
-    def generate_messages(self, messages, tools=None, tool_choice=None, parallel_tool_calls=None):
-        self.calls.append({"tools": tools, "tool_choice": tool_choice, "messages": messages})
+    def generate_messages(self, messages, tools=None, tool_choice=None, parallel_tool_calls=None, **kwargs):
+        self.calls.append({"tools": tools, "tool_choice": tool_choice, "messages": messages, **kwargs})
         if not self.responses:
             raise AssertionError("Fake planner client called more times than expected")
         return {
@@ -134,6 +147,7 @@ def test_llm_unified_planner_accepts_toolcall_arguments_without_requiring_tools(
             "aggregation_instruction": None,
             "reason": "pure concept",
         },
+        challenge_response="NEEDS_EVIDENCE=NO\nREASON=pure concept",
     )
     monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
 
@@ -144,6 +158,7 @@ def test_llm_unified_planner_accepts_toolcall_arguments_without_requiring_tools(
     assert client.calls[0]["tools"] is None
     assert client.calls[0]["tool_choice"] is None
     assert plan.diagnostics["weak_model_stable_protocol_used"] is True
+    assert plan.diagnostics["direct_route_challenge_used"] is True
 
 
 def test_pioneer_planner_uses_json_content_fallback_without_toolcall(monkeypatch):
@@ -184,7 +199,8 @@ def test_pioneer_route_gate_direct_skips_evidence_planner(monkeypatch):
                     "direct_answer": "A schema defines the structure and meaning of data fields.",
                     "reason": "pure concept",
                 }
-            )
+            ),
+            "NEEDS_EVIDENCE=NO\nREASON=pure concept",
         ]
     )
     monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
@@ -195,9 +211,10 @@ def test_pioneer_route_gate_direct_skips_evidence_planner(monkeypatch):
     assert plan.evidence_order == "NO_EVIDENCE"
     assert plan.direct_answer == "A schema defines the structure and meaning of data fields."
     assert plan.passes == []
-    assert len(client.calls) == 1
+    assert len(client.calls) == 2
     assert plan.diagnostics["llm_route_gate_used"] is True
     assert plan.diagnostics["route_gate_success"] is True
+    assert plan.diagnostics["direct_route_challenge_used"] is True
     assert plan.diagnostics["evidence_planner_called"] is False
 
 
@@ -606,6 +623,7 @@ def test_final_answer_composer_uses_json_content_when_toolcalls_unavailable(monk
     assert candidate.final_answer == "There are 3 schema records in the local snapshot."
     assert candidate.used_pass_ids == ["pass_1"]
     assert client.calls[0]["tools"] is None
+    assert client.calls[0]["max_tokens"] == 500
 
 
 def test_llm_final_answer_composer_prefers_sdk_toolcall_structured_output(monkeypatch):
@@ -627,3 +645,75 @@ def test_llm_final_answer_composer_prefers_sdk_toolcall_structured_output(monkey
     assert candidate.used_pass_ids == ["p1"]
     assert client.calls[0]["tools"][0]["function"]["name"] == "submit_final_answer"
     assert client.calls[0]["tool_choice"]["function"]["name"] == "submit_final_answer"
+
+
+def test_final_answer_card_includes_task_and_evidence_checklist_and_repair_context(monkeypatch):
+    plan = normalize_llm_unified_plan(
+        {
+            "route": "EVIDENCE_PIPELINE",
+            "evidence_order": "SQL_FIRST",
+            "passes": [
+                {
+                    "pass_id": "t1",
+                    "subtask": "Count schema records.",
+                    "path": "SQL",
+                    "depends_on": [],
+                    "can_run_parallel": True,
+                    "sql": {"query": "SELECT COUNT(*) AS count FROM schemas", "params": []},
+                    "expected_result": "schema count",
+                }
+            ],
+            "aggregation_instruction": "Answer with the count.",
+            "reason": "data",
+        },
+        provider="fake",
+        model="fake",
+    )
+    runtime_passes = [
+        {
+            "pass_id": "t1",
+            "path": "SQL",
+            "scope": "LOCAL_SNAPSHOT",
+            "status": "SUCCESS",
+            "facts": ["count: 74"],
+            "source_results": [{"status": "SUCCESS"}],
+        }
+    ]
+    evidence_bus = EvidenceBus(run_id="unit")
+    evidence_bus.counts = [74]
+    evidence_bus.observe_pass_result(runtime_passes[0])
+    slots = AnswerSlots(query="How many schemas?", answer_family="COUNT", counts=[74], sql_row_count=74)
+    bundle = ResultBundle.from_pass_results(runtime_passes, [], run_id="unit")
+    card = build_llm_final_answer_card(
+        user_prompt="How many schemas?",
+        llm_plan=plan,
+        runtime_passes=runtime_passes,
+        evidence_bus=evidence_bus,
+        answer_slots=slots,
+        result_bundle=bundle,
+        repair_context={
+            "previous_answer": "There are schemas.",
+            "semantic_gate": {
+                "error_type": "missing_required_info",
+                "missing_required_fields": ["count"],
+                "scope_errors": [],
+                "unsupported_claims": [],
+            },
+        },
+    )
+
+    assert card["final_answer_max_tokens"] == 500
+    assert card["required_task_ids"] == ["t1"]
+    assert card["task_checklist"][0]["task_id"] == "t1"
+    assert card["pass_result_checklist"][0]["facts"] == ["count: 74"]
+    assert card["repair_context"]["semantic_gate_error_type"] == "missing_required_info"
+
+    client = ContentOnlyPlannerClient(["There are 74 schemas."], provider="pioneer_chat", model="weak")
+    monkeypatch.setattr("dashagent.llm_final_answer_composer.get_llm_client", lambda: client)
+    candidate = compose_llm_final_answer(card=card)
+
+    assert candidate.final_answer == "There are 74 schemas."
+    payload = client.calls[0]["messages"][1]["content"]
+    assert '"task_checklist"' in payload
+    assert '"pass_result_checklist"' in payload
+    assert client.calls[0]["max_tokens"] == 500

@@ -539,6 +539,7 @@ def _summarize_prompt_result(prompt_case: dict[str, str], run_result: dict[str, 
     )
     declared_pass_count = _declared_pass_count(checkpoints)
     pass_results_count = _pass_results_count(checkpoints)
+    runtime_evidence_metrics = _runtime_evidence_metrics(checkpoints)
     result_bundle_built = bool("checkpoint_result_bundle" in checkpoint_names)
     answer_gate_metrics = _answer_gate_metrics(checkpoints)
     planner_metrics = _weak_protocol_planner_metrics(checkpoints)
@@ -583,6 +584,7 @@ def _summarize_prompt_result(prompt_case: dict[str, str], run_result: dict[str, 
             "post_evidence_answer_router_ran": post_router_ran,
             "declared_pass_count": declared_pass_count,
             "pass_results_count": pass_results_count,
+            **runtime_evidence_metrics,
             **planner_metrics,
             **tool_gate_metrics,
             **answer_gate_metrics,
@@ -621,6 +623,10 @@ def _aggregate_metrics(
         "evidence_pipeline_bypassed_count": sum(1 for row in prompt_results if bool(row.get("evidence_pipeline_bypassed"))),
         "evidence_bus_built_count": sum(1 for row in prompt_results if bool(row.get("evidence_bus_built"))),
         "evidence_bus_non_empty_count": sum(1 for row in prompt_results if int(row.get("pass_results_count") or 0) > 0),
+        "evidence_bus_runtime_fact_count": sum(int(row.get("evidence_bus_runtime_fact_count") or 0) for row in prompt_results),
+        "evidence_bus_runtime_non_empty_count": sum(1 for row in prompt_results if bool(row.get("evidence_bus_runtime_non_empty"))),
+        "evidence_bus_error_or_caveat_only_count": sum(1 for row in prompt_results if bool(row.get("evidence_bus_error_or_caveat_only"))),
+        "result_bundle_success_pass_count": sum(int(row.get("result_bundle_success_pass_count") or 0) for row in prompt_results),
         "result_bundle_built_count": sum(1 for row in prompt_results if bool(row.get("result_bundle_built"))),
         "declared_pass_count": sum(int(row.get("declared_pass_count") or 0) for row in prompt_results),
         "route_card_success_count": sum(1 for row in prompt_results if bool(row.get("route_card_success"))),
@@ -668,6 +674,10 @@ def _empty_model_result(model: str, availability: dict[str, Any], started: float
             "evidence_pipeline_bypassed_count": 0,
             "evidence_bus_built_count": 0,
             "evidence_bus_non_empty_count": 0,
+            "evidence_bus_runtime_fact_count": 0,
+            "evidence_bus_runtime_non_empty_count": 0,
+            "evidence_bus_error_or_caveat_only_count": 0,
+            "result_bundle_success_pass_count": 0,
             "result_bundle_built_count": 0,
             "declared_pass_count": 0,
             "planner_usable_count": 0,
@@ -748,7 +758,7 @@ def write_pioneer_model_sweep_reports(report_dir: Path, model_results: list[dict
     summary = _summary_payload(model_results)
     summary_json = report_dir / "pioneer_model_sweep_summary.json"
     summary_md = report_dir / "pioneer_model_sweep_summary.md"
-    summary_json.write_text(json.dumps(redact_secrets(summary), indent=2, sort_keys=True), encoding="utf-8")
+    summary_json.write_text(json.dumps(_redact_preserving_model_labels(summary), indent=2, sort_keys=True), encoding="utf-8")
     summary_md.write_text(_summary_markdown(summary), encoding="utf-8")
     return {"summary_json": summary_json, "summary_md": summary_md}
 
@@ -759,12 +769,35 @@ def _write_per_model(report_dir: Path, result: dict[str, Any]) -> None:
     payload = dict(result)
     log = str(payload.pop("log", ""))
     (report_dir / f"per_model_{safe_name}.json").write_text(
-        json.dumps(redact_secrets(payload), indent=2, sort_keys=True),
+        json.dumps(_redact_preserving_model_labels(payload), indent=2, sort_keys=True),
         encoding="utf-8",
     )
     if not log:
-        log = json.dumps(redact_secrets(payload), indent=2, sort_keys=True)
+        log = json.dumps(_redact_preserving_model_labels(payload), indent=2, sort_keys=True)
     (report_dir / f"per_model_{safe_name}.log").write_text(log, encoding="utf-8")
+
+
+def _redact_preserving_model_labels(payload: Any) -> Any:
+    redacted = redact_secrets(payload)
+    return _restore_model_label_fields(redacted, payload)
+
+
+def _restore_model_label_fields(redacted: Any, original: Any) -> Any:
+    public_model_keys = {"model", "pioneer_model", "pioneer_model_id", "model_sweep_run_id", "safe_model_name"}
+    if isinstance(redacted, dict) and isinstance(original, dict):
+        restored: dict[Any, Any] = {}
+        for key, value in redacted.items():
+            if key in public_model_keys and key in original:
+                restored[key] = original[key]
+            else:
+                restored[key] = _restore_model_label_fields(value, original.get(key))
+        return restored
+    if isinstance(redacted, list) and isinstance(original, list):
+        return [
+            _restore_model_label_fields(value, original[index] if index < len(original) else None)
+            for index, value in enumerate(redacted)
+        ]
+    return redacted
 
 
 def _summary_payload(model_results: list[dict[str, Any]]) -> dict[str, Any]:
@@ -899,6 +932,83 @@ def _pass_results_count(checkpoints: list[dict[str, Any]]) -> int:
     return max(counts) if counts else 0
 
 
+def _runtime_evidence_metrics(checkpoints: list[dict[str, Any]]) -> dict[str, Any]:
+    runtime_passes: list[dict[str, Any]] = []
+    evidence_fact_count = 0
+    for checkpoint in checkpoints:
+        if checkpoint.get("checkpoint_id") != "checkpoint_result_bundle":
+            if checkpoint.get("checkpoint_id") == "checkpoint_14_evidence_bus":
+                output = checkpoint.get("output")
+                if isinstance(output, dict):
+                    evidence = output.get("evidence")
+                    if isinstance(evidence, dict):
+                        evidence_fact_count += _compact_fact_count(evidence)
+            continue
+        output = checkpoint.get("output")
+        if isinstance(output, dict):
+            runtime_passes.extend(_compact_runtime_passes(output.get("runtime_passes")))
+        input_summary = checkpoint.get("input_summary")
+        if isinstance(input_summary, dict):
+            runtime_passes.extend(_compact_runtime_passes(input_summary.get("runtime_passes")))
+    # Deduplicate by pass/attempt when the same bundle is present in output and input summaries.
+    unique: dict[tuple[str, int], dict[str, Any]] = {}
+    for item in runtime_passes:
+        key = (str(item.get("pass_id") or ""), int(item.get("attempt_id") or 0))
+        if key[0] or key not in unique:
+            unique[key] = item
+    runtime_passes = list(unique.values())
+    fact_count = 0
+    success_count = 0
+    caveat_only_count = 0
+    for item in runtime_passes:
+        facts = item.get("facts")
+        if isinstance(facts, list):
+            fact_count += sum(1 for fact in facts if str(fact or "").strip())
+        status = str(item.get("status") or "").upper()
+        source_results = item.get("source_results") if isinstance(item.get("source_results"), list) else []
+        has_success = status == "SUCCESS" or any(
+            isinstance(source, dict) and str(source.get("status") or "").upper() == "SUCCESS"
+            for source in source_results
+        )
+        if has_success:
+            success_count += 1
+        caveats = item.get("caveats") if isinstance(item.get("caveats"), list) else []
+        if not has_success and (status in {"API_ERROR", "ERROR", "LIVE_EMPTY", "EMPTY"} or caveats):
+            caveat_only_count += 1
+    total_fact_count = max(fact_count, evidence_fact_count)
+    return {
+        "evidence_bus_runtime_fact_count": total_fact_count,
+        "evidence_bus_runtime_non_empty": total_fact_count > 0,
+        "evidence_bus_error_or_caveat_only": bool(runtime_passes) and total_fact_count == 0 and caveat_only_count > 0,
+        "result_bundle_success_pass_count": success_count,
+    }
+
+
+def _compact_runtime_passes(value: Any) -> list[dict[str, Any]]:
+    if isinstance(value, list):
+        return [item for item in value if isinstance(item, dict)]
+    if isinstance(value, dict) and isinstance(value.get("items"), list):
+        return [item for item in value.get("items") if isinstance(item, dict)]
+    return []
+
+
+def _compact_fact_count(evidence: dict[str, Any]) -> int:
+    count = 0
+    for key in ("counts", "names", "ids", "timestamps", "statuses", "api_names", "api_ids", "api_statuses", "api_counts", "api_timestamps"):
+        value = evidence.get(key)
+        if isinstance(value, dict) and isinstance(value.get("items"), list):
+            count += sum(1 for item in value.get("items") if item not in (None, "", [], {}))
+        elif isinstance(value, list):
+            count += sum(1 for item in value if item not in (None, "", [], {}))
+    for key in ("first_rows", "api_items"):
+        value = evidence.get(key)
+        if isinstance(value, dict):
+            count += int(value.get("total_items") or len(value.get("items") or []))
+        elif isinstance(value, list):
+            count += len(value)
+    return count
+
+
 def _weak_protocol_planner_metrics(checkpoints: list[dict[str, Any]]) -> dict[str, Any]:
     planner_checkpoint = next(
         (checkpoint for checkpoint in checkpoints if checkpoint.get("checkpoint_id") == "checkpoint_llm_unified_planner"),
@@ -912,6 +1022,10 @@ def _weak_protocol_planner_metrics(checkpoints: list[dict[str, Any]]) -> dict[st
         "route_card_success": source.get("route_card_success"),
         "route_card_route": source.get("route_card_route"),
         "route_card_repair_attempted": source.get("route_card_repair_attempted"),
+        "route_card_effective_route": source.get("route_card_effective_route"),
+        "direct_route_challenge_used": source.get("direct_route_challenge_used"),
+        "direct_route_challenge_needs_evidence": source.get("direct_route_challenge_needs_evidence"),
+        "direct_route_challenge_repair_attempted": source.get("direct_route_challenge_repair_attempted"),
         "task_ledger_success": source.get("task_ledger_success"),
         "task_ledger_repair_attempted": source.get("task_ledger_repair_attempted"),
         "candidate_card_success": int(source.get("candidate_card_success") or 0),

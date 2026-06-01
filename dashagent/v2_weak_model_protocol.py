@@ -11,12 +11,26 @@ from .trajectory import compact_preview, redact_secrets
 
 ALLOWED_ROUTE_CARD_VALUES = {"DIRECT", "EVIDENCE"}
 ALLOWED_TASK_PATHS = {"DIRECT", "SQL", "API", "SQL_AND_API", "AGGREGATE"}
+ROUTE_CARD_MAX_TOKENS = 80
+DIRECT_CHALLENGE_MAX_TOKENS = 40
+TASK_LEDGER_MAX_TOKENS = 300
+CANDIDATE_CARD_MAX_TOKENS = 220
+CANDIDATE_REPAIR_MAX_TOKENS = 220
 
 
 @dataclass
 class RouteCard:
     route: str
     direct_answer: str | None = None
+    reason: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class DirectRouteChallenge:
+    needs_evidence: bool
     reason: str = ""
 
     def to_dict(self) -> dict[str, Any]:
@@ -109,9 +123,17 @@ def run_weak_model_stable_protocol(
         "sql_candidate_cards": 0,
         "api_candidate_cards": 0,
         "candidate_repair_attempts": 0,
+        "direct_route_challenge_used": False,
+        "direct_route_challenge_needs_evidence": None,
+        "direct_route_challenge_repair_attempted": False,
         "backend_route_inference_used": False,
         "backend_semantic_planning_used": False,
         "backend_semantic_decomposition_used": False,
+        "route_card_max_tokens": ROUTE_CARD_MAX_TOKENS,
+        "direct_route_challenge_max_tokens": DIRECT_CHALLENGE_MAX_TOKENS,
+        "task_ledger_max_tokens": TASK_LEDGER_MAX_TOKENS,
+        "candidate_card_max_tokens": CANDIDATE_CARD_MAX_TOKENS,
+        "candidate_repair_max_tokens": CANDIDATE_REPAIR_MAX_TOKENS,
     }
     if repair_context:
         return _run_repair_context_protocol(
@@ -128,9 +150,11 @@ def run_weak_model_stable_protocol(
         client,
         system_prompt=_route_card_system_prompt(),
         user_prompt=_route_card_user_prompt(user_prompt),
+        max_tokens=ROUTE_CARD_MAX_TOKENS,
     )
     diagnostics["route_card_latency_ms"] = route_latency_ms
     raw_previews: dict[str, Any] = {"route_card": compact_preview(route_raw or route_error, 1000)}
+    route_card: RouteCard | None = None
     legacy_payload = _legacy_full_plan_payload(route_raw)
     if legacy_payload is not None:
         route_card = _route_card_from_legacy_payload(legacy_payload)
@@ -146,10 +170,23 @@ def run_weak_model_stable_protocol(
                 "planner_provider_latency_ms": _elapsed_ms(started),
             }
         )
-        return WeakProtocolResult(plan_payload=legacy_payload, diagnostics=diagnostics, raw_preview=raw_previews)
-    route_card: RouteCard | None = None
+        if route_card.route == "DIRECT":
+            challenge, challenge_raw_preview = _run_direct_route_challenge(
+                client=client,
+                user_prompt=user_prompt,
+                route_card=route_card,
+                diagnostics=diagnostics,
+            )
+            raw_previews.update(challenge_raw_preview)
+            if not challenge.needs_evidence:
+                return WeakProtocolResult(plan_payload=legacy_payload, diagnostics=diagnostics, raw_preview=raw_previews)
+            diagnostics["weak_protocol_legacy_direct_challenge_forced_evidence"] = True
+            diagnostics["planner_success"] = False
+            route_card = RouteCard(route="EVIDENCE", direct_answer=None, reason=challenge.reason)
+        else:
+            return WeakProtocolResult(plan_payload=legacy_payload, diagnostics=diagnostics, raw_preview=raw_previews)
     route_parse_error = route_error
-    if not route_error:
+    if route_card is None and not route_error:
         try:
             route_card = parse_route_card(route_raw)
             route_parse_error = None
@@ -162,6 +199,7 @@ def run_weak_model_stable_protocol(
             client,
             system_prompt=_route_card_repair_system_prompt(),
             user_prompt=_route_card_repair_user_prompt(user_prompt, route_raw, route_parse_error),
+            max_tokens=ROUTE_CARD_MAX_TOKENS,
         )
         diagnostics["route_card_repair_latency_ms"] = repair_latency_ms
         raw_previews["route_card_repair"] = compact_preview(repair_raw or repair_error, 1000)
@@ -180,7 +218,21 @@ def run_weak_model_stable_protocol(
                     "planner_provider_latency_ms": _elapsed_ms(started),
                 }
             )
-            return WeakProtocolResult(plan_payload=legacy_payload, diagnostics=diagnostics, raw_preview=raw_previews)
+            if route_card.route == "DIRECT":
+                challenge, challenge_raw_preview = _run_direct_route_challenge(
+                    client=client,
+                    user_prompt=user_prompt,
+                    route_card=route_card,
+                    diagnostics=diagnostics,
+                )
+                raw_previews.update(challenge_raw_preview)
+                if not challenge.needs_evidence:
+                    return WeakProtocolResult(plan_payload=legacy_payload, diagnostics=diagnostics, raw_preview=raw_previews)
+                diagnostics["weak_protocol_legacy_direct_challenge_forced_evidence"] = True
+                diagnostics["planner_success"] = False
+                route_card = RouteCard(route="EVIDENCE", direct_answer=None, reason=challenge.reason)
+            else:
+                return WeakProtocolResult(plan_payload=legacy_payload, diagnostics=diagnostics, raw_preview=raw_previews)
         if not repair_error:
             try:
                 route_card = parse_route_card(repair_raw)
@@ -229,6 +281,24 @@ def run_weak_model_stable_protocol(
     diagnostics["route_gate_route"] = _planner_route_from_route_card(route_card.route)
 
     if route_card.route == "DIRECT":
+        challenge, challenge_raw_preview = _run_direct_route_challenge(
+            client=client,
+            user_prompt=user_prompt,
+            route_card=route_card,
+            diagnostics=diagnostics,
+        )
+        raw_previews.update(challenge_raw_preview)
+        if challenge.needs_evidence:
+            route_card = RouteCard(
+                route="EVIDENCE",
+                direct_answer=None,
+                reason=challenge.reason or "Direct Route Challenge required runtime evidence.",
+            )
+            diagnostics["route_card_effective_route"] = "EVIDENCE"
+            diagnostics["route_gate_route"] = "EVIDENCE_PIPELINE"
+        else:
+            diagnostics["route_card_effective_route"] = "DIRECT"
+    if route_card.route == "DIRECT":
         diagnostics.update(
             {
                 "weak_protocol_task_ledger_used": False,
@@ -255,6 +325,7 @@ def run_weak_model_stable_protocol(
         client,
         system_prompt=_task_ledger_system_prompt(),
         user_prompt=_task_ledger_user_prompt(user_prompt, schema_context, endpoint_context),
+        max_tokens=TASK_LEDGER_MAX_TOKENS,
     )
     diagnostics["weak_protocol_task_ledger_used"] = True
     diagnostics["task_ledger_latency_ms"] = ledger_latency_ms
@@ -288,6 +359,7 @@ def run_weak_model_stable_protocol(
             client,
             system_prompt=_task_ledger_repair_system_prompt(),
             user_prompt=_task_ledger_repair_user_prompt(user_prompt, ledger_raw, ledger_parse_error),
+            max_tokens=TASK_LEDGER_MAX_TOKENS,
         )
         diagnostics["task_ledger_repair_latency_ms"] = repair_latency_ms
         raw_previews["task_ledger_repair"] = compact_preview(repair_raw or repair_error, 1400)
@@ -366,12 +438,70 @@ def run_weak_model_stable_protocol(
     )
 
 
+def _run_direct_route_challenge(
+    *,
+    client: Any,
+    user_prompt: str,
+    route_card: RouteCard,
+    diagnostics: dict[str, Any],
+) -> tuple[DirectRouteChallenge, dict[str, Any]]:
+    diagnostics["direct_route_challenge_used"] = True
+    raw_previews: dict[str, Any] = {}
+    challenge_raw, challenge_error, challenge_latency_ms = _call_text(
+        client,
+        system_prompt=_direct_route_challenge_system_prompt(),
+        user_prompt=_direct_route_challenge_user_prompt(user_prompt, route_card),
+        max_tokens=DIRECT_CHALLENGE_MAX_TOKENS,
+    )
+    diagnostics["direct_route_challenge_latency_ms"] = challenge_latency_ms
+    raw_previews["direct_route_challenge"] = compact_preview(challenge_raw or challenge_error, 800)
+    challenge: DirectRouteChallenge | None = None
+    parse_error = challenge_error
+    if not challenge_error:
+        try:
+            challenge = parse_direct_route_challenge(challenge_raw)
+            parse_error = None
+        except Exception as exc:
+            parse_error = str(exc)
+    if challenge is None:
+        diagnostics["direct_route_challenge_repair_attempted"] = True
+        repair_raw, repair_error, repair_latency_ms = _call_text(
+            client,
+            system_prompt=_direct_route_challenge_repair_system_prompt(),
+            user_prompt=_direct_route_challenge_repair_user_prompt(user_prompt, route_card, challenge_raw, parse_error),
+            max_tokens=DIRECT_CHALLENGE_MAX_TOKENS,
+        )
+        diagnostics["direct_route_challenge_repair_latency_ms"] = repair_latency_ms
+        raw_previews["direct_route_challenge_repair"] = compact_preview(repair_raw or repair_error, 800)
+        if not repair_error:
+            try:
+                challenge = parse_direct_route_challenge(repair_raw)
+                parse_error = None
+            except Exception as exc:
+                parse_error = str(exc)
+        else:
+            parse_error = repair_error
+    if challenge is None:
+        challenge = DirectRouteChallenge(
+            needs_evidence=True,
+            reason=f"Malformed Direct Route Challenge after one repair: {parse_error or 'unknown'}",
+        )
+        diagnostics["direct_route_challenge_parse_error"] = parse_error
+    diagnostics["direct_route_challenge_needs_evidence"] = challenge.needs_evidence
+    diagnostics["direct_route_challenge_reason"] = challenge.reason
+    return challenge, raw_previews
+
+
 def parse_route_card(raw_content: str) -> RouteCard:
-    parsed_json = _try_json_object(raw_content)
+    parsed_json = _try_protocol_json_object(raw_content)
     if parsed_json is not None:
         return _route_card_from_json(parsed_json)
     fields = _parse_key_value_lines(raw_content)
     route = str(fields.get("ROUTE") or "").strip().upper()
+    if route in {"LLM_DIRECT", "LLM_SAFE_DIRECT"}:
+        route = "DIRECT"
+    if route == "EVIDENCE_PIPELINE":
+        route = "EVIDENCE"
     if route not in ALLOWED_ROUTE_CARD_VALUES:
         raise ProtocolParseError("ROUTE must be DIRECT or EVIDENCE.")
     answer = str(fields.get("DIRECT_ANSWER") or "").strip() or None
@@ -380,20 +510,57 @@ def parse_route_card(raw_content: str) -> RouteCard:
     return RouteCard(route=route, direct_answer=answer, reason=str(fields.get("REASON") or "").strip())
 
 
+def parse_direct_route_challenge(raw_content: str) -> DirectRouteChallenge:
+    parsed_json = _try_protocol_json_object(raw_content)
+    if parsed_json is not None:
+        value = parsed_json.get("needs_evidence")
+        if value is None:
+            value = parsed_json.get("NEEDS_EVIDENCE")
+        if value is None:
+            raise ProtocolParseError("NEEDS_EVIDENCE is required.")
+        return DirectRouteChallenge(needs_evidence=_parse_yes_no(value), reason=str(parsed_json.get("reason") or parsed_json.get("REASON") or "").strip())
+    fields = _parse_key_value_lines(raw_content)
+    if "NEEDS_EVIDENCE" not in fields:
+        raise ProtocolParseError("NEEDS_EVIDENCE is required.")
+    return DirectRouteChallenge(
+        needs_evidence=_parse_yes_no(fields.get("NEEDS_EVIDENCE")),
+        reason=str(fields.get("REASON") or "").strip(),
+    )
+
+
 def parse_task_ledger_card(raw_content: str) -> TaskLedger:
     legacy = _legacy_full_plan_payload(raw_content)
     if legacy is not None:
         return TaskLedger(legacy_plan_payload=legacy)
+    parsed_json = _try_protocol_json_object(raw_content)
+    if parsed_json is not None and isinstance(parsed_json.get("tasks"), list):
+        tasks: list[TaskLedgerTask] = []
+        for item in parsed_json.get("tasks") or []:
+            if not isinstance(item, dict):
+                continue
+            task_id = _normalize_task_id(item.get("task_id") or item.get("id") or item.get("pass_id"))
+            path = str(item.get("path") or "").strip().upper()
+            description = str(item.get("description") or item.get("subtask") or item.get("task") or "").strip()
+            if path not in ALLOWED_TASK_PATHS:
+                raise ProtocolParseError(f"Invalid task path: {path}")
+            depends_on = item.get("depends_on") if isinstance(item.get("depends_on"), list) else []
+            tasks.append(TaskLedgerTask(task_id=task_id, path=path, depends_on=[str(dep) for dep in depends_on if dep], description=description))
+        ledger = TaskLedger(tasks=tasks, aggregation_instruction=str(parsed_json.get("aggregation_instruction") or parsed_json.get("aggregate") or "").strip())
+        error = _task_ledger_shape_error(tasks)
+        if error:
+            ledger.shape_error, ledger.shape_error_message = error
+        return ledger
     tasks: list[TaskLedgerTask] = []
     aggregation = ""
     for raw_line in str(raw_content or "").splitlines():
-        line = raw_line.strip()
+        line = _strip_protocol_prefix(raw_line)
         if not line:
             continue
-        if line.upper().startswith("TASK "):
+        upper = line.upper()
+        if upper.startswith("TASK ") or upper.startswith("TASK:"):
             tasks.append(_parse_task_line(line))
-        elif line.upper().startswith("AGGREGATE="):
-            aggregation = line.split("=", 1)[1].strip()
+        elif upper.startswith("AGGREGATE=") or upper.startswith("AGGREGATE:"):
+            aggregation = re.split(r"[:=]", line, maxsplit=1)[1].strip()
     ledger = TaskLedger(tasks=tasks, aggregation_instruction=aggregation)
     error = _task_ledger_shape_error(tasks)
     if error:
@@ -402,6 +569,9 @@ def parse_task_ledger_card(raw_content: str) -> TaskLedger:
 
 
 def parse_pass_candidate_card(raw_content: str) -> PassCandidateCard:
+    parsed_json = _try_protocol_json_object(raw_content)
+    if parsed_json is not None:
+        return _pass_candidate_from_json(parsed_json)
     fields = _parse_key_value_lines(raw_content)
     path = str(fields.get("PATH") or "").strip().upper()
     if path not in {"SQL", "API"}:
@@ -491,6 +661,7 @@ def _candidate_card_for_task(
     endpoint_context: list[dict[str, Any]],
     diagnostics: dict[str, Any],
     raw_previews: dict[str, Any],
+    repair_context: dict[str, Any] | None = None,
 ) -> PassCandidateCard | None:
     diagnostics["pass_candidate_cards"] = int(diagnostics.get("pass_candidate_cards", 0) or 0) + 1
     if requested_path == "SQL":
@@ -501,7 +672,7 @@ def _candidate_card_for_task(
         diagnostics["api_candidate_cards"] = int(diagnostics.get("api_candidate_cards", 0) or 0) + 1
         system = _api_candidate_system_prompt()
         user = _api_candidate_user_prompt(user_prompt, task, endpoint_context)
-    raw, error, latency_ms = _call_text(client, system_prompt=system, user_prompt=user)
+    raw, error, latency_ms = _call_text(client, system_prompt=system, user_prompt=user, max_tokens=CANDIDATE_CARD_MAX_TOKENS)
     diagnostics["candidate_card_latency_ms"] = int(diagnostics.get("candidate_card_latency_ms", 0) or 0) + latency_ms
     raw_previews[f"candidate_{task.task_id}_{requested_path.lower()}"] = compact_preview(raw or error, 1000)
     parse_error = error
@@ -521,7 +692,8 @@ def _candidate_card_for_task(
     repair_raw, repair_error, repair_latency_ms = _call_text(
         client,
         system_prompt=_candidate_repair_system_prompt(requested_path),
-        user_prompt=_candidate_repair_user_prompt(user_prompt, task, requested_path, raw, parse_error),
+        user_prompt=_candidate_repair_user_prompt(user_prompt, task, requested_path, raw, parse_error, schema_context, endpoint_context, repair_context),
+        max_tokens=CANDIDATE_REPAIR_MAX_TOKENS,
     )
     diagnostics["candidate_card_latency_ms"] = int(diagnostics.get("candidate_card_latency_ms", 0) or 0) + repair_latency_ms
     raw_previews[f"candidate_repair_{task.task_id}_{requested_path.lower()}"] = compact_preview(repair_raw or repair_error, 1000)
@@ -557,6 +729,7 @@ def _run_repair_context_protocol(
         client,
         system_prompt=_generic_repair_system_prompt(),
         user_prompt=_generic_repair_user_prompt(user_prompt, repair_context),
+        max_tokens=CANDIDATE_REPAIR_MAX_TOKENS,
     )
     diagnostics["planner_repair_attempted"] = True
     diagnostics["weak_protocol_generic_repair_attempted"] = True
@@ -611,6 +784,7 @@ def _run_repair_context_protocol(
         endpoint_context=endpoint_context,
         diagnostics=diagnostics,
         raw_previews=raw_previews,
+        repair_context=repair_context,
     )
     if card and card.sql:
         target["sql"] = {"query": card.sql, "params": card.params if isinstance(card.params, list) else []}
@@ -633,12 +807,13 @@ def _run_repair_context_protocol(
 
 
 def _parse_task_line(line: str) -> TaskLedgerTask:
-    body = line[5:].strip()
+    line = _strip_protocol_prefix(line)
+    body = re.sub(r"^TASK\s*:?", "", line, flags=re.I).strip()
     parts = [part.strip() for part in body.split("|", 3)]
     if len(parts) != 4:
         raise ProtocolParseError("TASK line must have four pipe-separated fields.")
     task_id, path, deps, description = parts
-    task_id = re.sub(r"[^A-Za-z0-9_.-]+", "_", task_id.strip())[:80]
+    task_id = _normalize_task_id(task_id)
     path = path.upper()
     if path not in ALLOWED_TASK_PATHS:
         raise ProtocolParseError(f"Invalid task path: {path}")
@@ -693,12 +868,66 @@ def _task_has_cycle(tasks: list[TaskLedgerTask]) -> bool:
 def _parse_key_value_lines(raw_content: str) -> dict[str, str]:
     fields: dict[str, str] = {}
     for raw_line in str(raw_content or "").splitlines():
-        line = raw_line.strip()
-        if not line or "=" not in line:
+        line = _strip_protocol_prefix(raw_line)
+        if not line:
             continue
-        key, value = line.split("=", 1)
+        equal_at = line.find("=")
+        colon_at = line.find(":")
+        split_at = -1
+        if equal_at >= 0 and colon_at >= 0:
+            split_at = min(equal_at, colon_at)
+        elif equal_at >= 0:
+            split_at = equal_at
+        elif colon_at >= 0:
+            split_at = colon_at
+        if split_at < 0:
+            continue
+        key, value = line[:split_at], line[split_at + 1 :]
         fields[key.strip().upper()] = value.strip()
     return fields
+
+
+def _strip_protocol_prefix(raw_line: Any) -> str:
+    line = str(raw_line or "").strip()
+    line = re.sub(r"^\s*[-*]\s+", "", line)
+    line = re.sub(r"^\s*\d+[\.)]\s+", "", line)
+    return line.strip()
+
+
+def _normalize_task_id(value: Any) -> str:
+    return re.sub(r"[^A-Za-z0-9_.-]+", "_", str(value or "").strip())[:80]
+
+
+def _parse_yes_no(value: Any) -> bool:
+    text = str(value or "").strip().upper()
+    if text in {"YES", "Y", "TRUE", "1"}:
+        return True
+    if text in {"NO", "N", "FALSE", "0"}:
+        return False
+    raise ProtocolParseError("NEEDS_EVIDENCE must be YES or NO.")
+
+
+def _pass_candidate_from_json(payload: dict[str, Any]) -> PassCandidateCard:
+    path = str(payload.get("path") or payload.get("PATH") or "").strip().upper()
+    if path not in {"SQL", "API"}:
+        raise ProtocolParseError("JSON candidate path must be SQL or API.")
+    if path == "SQL":
+        sql_value = payload.get("sql")
+        params = payload.get("params")
+        if isinstance(sql_value, dict):
+            params = sql_value.get("params", params)
+            sql_value = sql_value.get("query")
+        sql = str(sql_value or "").strip()
+        if not sql:
+            raise ProtocolParseError("SQL candidate is missing sql.")
+        return PassCandidateCard(path="SQL", sql=sql, params=params if isinstance(params, list) else [])
+    api_value = payload.get("api_request") if isinstance(payload.get("api_request"), dict) else payload
+    method = str(api_value.get("method") or payload.get("method") or "GET").strip().upper()
+    api_path = str(api_value.get("path") or api_value.get("api_path") or payload.get("api_path") or payload.get("API_PATH") or "").strip()
+    if not api_path:
+        raise ProtocolParseError("API candidate is missing path.")
+    params = api_value.get("params") if isinstance(api_value.get("params"), dict) else payload.get("params")
+    return PassCandidateCard(path="API", method=method, api_path=api_path, params=params if isinstance(params, dict) else {})
 
 
 def _parse_dep_list(value: str) -> list[str]:
@@ -734,6 +963,17 @@ def _try_json_object(raw_content: str) -> dict[str, Any] | None:
     except Exception:
         return None
     return payload if isinstance(payload, dict) else None
+
+
+def _try_protocol_json_object(raw_content: str) -> dict[str, Any] | None:
+    text = str(raw_content or "").strip()
+    if not text:
+        return None
+    if text.startswith("```"):
+        return _try_json_object(text)
+    if text.startswith("{"):
+        return _try_json_object(text)
+    return None
 
 
 def _route_card_from_json(payload: dict[str, Any]) -> RouteCard:
@@ -827,15 +1067,33 @@ def _evidence_order_for_passes(passes: list[dict[str, Any]]) -> str:
     return "SQL_FIRST"
 
 
-def _call_text(client: Any, *, system_prompt: str, user_prompt: str) -> tuple[str, str | None, int]:
+def _call_text(client: Any, *, system_prompt: str, user_prompt: str, max_tokens: int | None = None) -> tuple[str, str | None, int]:
     started = time.perf_counter()
+    kwargs: dict[str, Any] = {
+        "tools": None,
+        "tool_choice": None,
+        "parallel_tool_calls": None,
+    }
+    if max_tokens is not None:
+        kwargs["max_tokens"] = max_tokens
+        kwargs["temperature"] = 0
     try:
         result = client.generate_messages(
             [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-            tools=None,
-            tool_choice=None,
-            parallel_tool_calls=None,
+            **kwargs,
         )
+    except TypeError as exc:
+        if "max_tokens" not in str(exc) and "temperature" not in str(exc):
+            return "", str(redact_secrets(str(exc)))[:500], _elapsed_ms(started)
+        kwargs.pop("max_tokens", None)
+        kwargs.pop("temperature", None)
+        try:
+            result = client.generate_messages(
+                [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
+                **kwargs,
+            )
+        except Exception as retry_exc:
+            return "", str(redact_secrets(str(retry_exc)))[:500], _elapsed_ms(started)
     except Exception as exc:
         return "", str(redact_secrets(str(exc)))[:500], _elapsed_ms(started)
     if not isinstance(result, dict):
@@ -903,6 +1161,49 @@ def _route_card_repair_user_prompt(user_prompt: str, raw_content: str, parse_err
             f"PREVIOUS_RESPONSE={compact_preview(raw_content, 600)}",
             f"PARSE_ERROR={parse_error or 'unknown'}",
             "Allowed ROUTE values: DIRECT, EVIDENCE.",
+        ]
+    )
+
+
+def _direct_route_challenge_system_prompt() -> str:
+    return (
+        "You are the Direct Route Challenge checker. Output exactly NEEDS_EVIDENCE=YES or NEEDS_EVIDENCE=NO and REASON=. "
+        "YES means the prompt needs runtime SQL/API/local/live/user-specific evidence. NO means pure concept/meta/general with no runtime evidence."
+    )
+
+
+def _direct_route_challenge_user_prompt(user_prompt: str, route_card: RouteCard) -> str:
+    return "\n".join(
+        [
+            f"USER_PROMPT={user_prompt}",
+            f"PROPOSED_DIRECT_ANSWER={route_card.direct_answer or ''}",
+            f"ROUTE_REASON={route_card.reason}",
+            "Use NEEDS_EVIDENCE=YES for records the user has, counts, lists, status, dates, local snapshots, live/current/platform/API, mixed prompts, or ambiguous data-like prompts.",
+            "Use NEEDS_EVIDENCE=NO only for pure concept/meta/general prompts.",
+            "Return exactly:",
+            "NEEDS_EVIDENCE=NO",
+            "REASON=<short reason>",
+        ]
+    )
+
+
+def _direct_route_challenge_repair_system_prompt() -> str:
+    return "Repair the Direct Route Challenge. Output only NEEDS_EVIDENCE=YES|NO and REASON=. If uncertain use NEEDS_EVIDENCE=YES."
+
+
+def _direct_route_challenge_repair_user_prompt(
+    user_prompt: str,
+    route_card: RouteCard,
+    raw_content: str,
+    parse_error: str | None,
+) -> str:
+    return "\n".join(
+        [
+            f"USER_PROMPT={user_prompt}",
+            f"PROPOSED_DIRECT_ANSWER={route_card.direct_answer or ''}",
+            f"PREVIOUS_RESPONSE={compact_preview(raw_content, 500)}",
+            f"PARSE_ERROR={parse_error or 'unknown'}",
+            "Allowed values: NEEDS_EVIDENCE=YES or NEEDS_EVIDENCE=NO.",
         ]
     )
 
@@ -988,17 +1289,96 @@ def _candidate_repair_system_prompt(requested_path: str) -> str:
     return f"Repair the {requested_path} candidate card. Output only PATH={requested_path} card lines."
 
 
-def _candidate_repair_user_prompt(user_prompt: str, task: TaskLedgerTask, requested_path: str, raw_content: str, parse_error: str | None) -> str:
-    return "\n".join(
-        [
-            f"USER_PROMPT={user_prompt}",
-            f"TASK_ID={task.task_id}",
-            f"TASK_DESCRIPTION={task.description}",
-            f"REQUESTED_PATH={requested_path}",
-            f"PREVIOUS_RESPONSE={compact_preview(raw_content, 900)}",
-            f"PARSE_ERROR={parse_error or 'unknown'}",
-        ]
-    )
+def _candidate_repair_user_prompt(
+    user_prompt: str,
+    task: TaskLedgerTask,
+    requested_path: str,
+    raw_content: str,
+    parse_error: str | None,
+    schema_context: dict[str, Any],
+    endpoint_context: list[dict[str, Any]],
+    repair_context: dict[str, Any] | None,
+) -> str:
+    gate_error = _candidate_gate_error(repair_context, requested_path)
+    lines = [
+        f"USER_PROMPT={user_prompt}",
+        f"TASK_ID={task.task_id}",
+        f"TASK_DESCRIPTION={task.description}",
+        f"REQUESTED_PATH={requested_path}",
+        f"PREVIOUS_RESPONSE={compact_preview(raw_content, 900)}",
+        f"PARSE_OR_GATE_ERROR={parse_error or gate_error or 'unknown'}",
+    ]
+    if requested_path == "SQL":
+        lines.extend(
+            [
+                "Previous SQL:",
+                _previous_sql_from_repair_context(repair_context),
+                "SQLCompileGate sanitized error:",
+                gate_error or "unknown",
+                "Schema context:",
+                _compact_schema_lines(schema_context, max_tables=12),
+                "Use only tables and columns in Schema context. Do not invent missing columns.",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                "Previous API request:",
+                _previous_api_from_repair_context(repair_context),
+                "APIRequestGate sanitized error:",
+                gate_error or "unknown",
+                "Safe GET endpoint context:",
+                _compact_endpoint_lines(endpoint_context, max_endpoints=10),
+                "Use only endpoints in Safe GET endpoint context. Do not invent paths.",
+            ]
+        )
+    return "\n".join(lines)
+
+
+def _candidate_gate_error(repair_context: dict[str, Any] | None, requested_path: str) -> str:
+    if not isinstance(repair_context, dict):
+        return ""
+    keys = ["sql_compile_gate", "compile_gate", "sql_gate"] if requested_path == "SQL" else ["api_request_gate", "api_gate"]
+    for key in keys:
+        value = repair_context.get(key)
+        if isinstance(value, dict):
+            return str(redact_secrets(value.get("error_message") or value.get("message") or value.get("error") or ""))[:500]
+    return str(redact_secrets(repair_context.get("error_message") or repair_context.get("gate_error") or ""))[:500]
+
+
+def _previous_sql_from_repair_context(repair_context: dict[str, Any] | None) -> str:
+    if not isinstance(repair_context, dict):
+        return ""
+    previous_plan = repair_context.get("previous_plan")
+    pass_id = str(repair_context.get("pass_id") or "")
+    target = _target_previous_pass(previous_plan, pass_id)
+    sql = target.get("sql") if isinstance(target, dict) else None
+    if isinstance(sql, dict):
+        return str(sql.get("query") or "")
+    return ""
+
+
+def _previous_api_from_repair_context(repair_context: dict[str, Any] | None) -> str:
+    if not isinstance(repair_context, dict):
+        return ""
+    previous_plan = repair_context.get("previous_plan")
+    pass_id = str(repair_context.get("pass_id") or "")
+    target = _target_previous_pass(previous_plan, pass_id)
+    api = target.get("api_request") if isinstance(target, dict) else None
+    return json.dumps(redact_secrets(api or {}), sort_keys=True) if isinstance(api, dict) else ""
+
+
+def _target_previous_pass(previous_plan: Any, pass_id: str) -> dict[str, Any]:
+    if not isinstance(previous_plan, dict):
+        return {}
+    passes = previous_plan.get("passes")
+    if isinstance(passes, list):
+        for item in passes:
+            if isinstance(item, dict) and str(item.get("pass_id") or "") == pass_id:
+                return item
+        if len(passes) == 1 and isinstance(passes[0], dict):
+            return passes[0]
+    return {}
 
 
 def _generic_repair_system_prompt() -> str:

@@ -76,6 +76,20 @@ class SequencedLLMClient:
         return "fake-model"
 
     def generate(self, system_prompt, user_prompt, tools=None):
+        if "Direct Route Challenge" in str(system_prompt):
+            return {"ok": True, "provider": self.provider_name(), "model": self.model_name(), "content": "NEEDS_EVIDENCE=NO\nREASON=pure concept"}
+        if "final-answer writer" in str(system_prompt):
+            try:
+                payload = json.loads(user_prompt)
+            except Exception:
+                payload = {}
+            if payload.get("task_checklist") == []:
+                prompt = str(payload.get("user_prompt") or "")
+                if "list schemas" in prompt.lower():
+                    answer = "Here, list means to present items in a sequence."
+                else:
+                    answer = "A schema defines the structure and meaning of data fields."
+                return {"ok": True, "provider": self.provider_name(), "model": self.model_name(), "content": answer}
         if not self.responses:
             raise AssertionError("Fake LLM called more times than expected")
         return {"ok": True, "provider": self.provider_name(), "model": self.model_name(), "content": json.dumps(self.responses.pop(0))}

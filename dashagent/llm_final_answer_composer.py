@@ -27,6 +27,7 @@ SENSITIVE_CONTEXT_KEYS = {
     "query_id",
     "example_id",
 }
+FINAL_ANSWER_MAX_TOKENS = 500
 
 
 @dataclass
@@ -95,16 +96,24 @@ def build_llm_final_answer_card(
             "sql_present": llm_plan.sql is not None,
             "api_request_present": llm_plan.api_request is not None,
         },
+        "task_checklist": _task_checklist(llm_plan),
+        "required_task_ids": _required_task_ids(llm_plan),
         "runtime_passes": [_safe_pass_payload(item) for item in runtime_passes],
+        "pass_result_checklist": _pass_result_checklist(runtime_passes),
         "result_bundle": result_bundle.to_dict() if result_bundle is not None else None,
         "evidence_bus": evidence_bus.compact(),
         "answer_slots": answer_slots.compact(),
         "evidence_quality": compact_preview(evidence_quality or {}, 1800),
         "aggregation_instruction": aggregation_instruction or llm_plan.aggregation_instruction,
-        "repair_context": compact_preview(repair_context, 1800) if repair_context else None,
+        "repair_context": _final_answer_repair_context(repair_context) if repair_context else None,
+        "required_caveats": _required_caveats(runtime_passes, evidence_bus),
         "scope_labels": ["LOCAL_SNAPSHOT", "LIVE_API", "API_ERROR", "LIVE_EMPTY"],
+        "final_answer_max_tokens": FINAL_ANSWER_MAX_TOKENS,
         "constraints": [
             "Generate the final answer using only runtime evidence in this card.",
+            "Answer every required task ID with successful evidence.",
+            "If a required task failed, state the scoped unavailable/error caveat for that task.",
+            "Preserve local snapshot versus live/API scope exactly.",
             "Do not claim live/current/platform state unless LIVE_API evidence supports it.",
             "Do not turn API_ERROR into no-data.",
             "Do not turn LIVE_EMPTY into global absence.",
@@ -127,7 +136,7 @@ def compose_llm_final_answer(
     *,
     card: dict[str, Any],
     repair_context: dict[str, Any] | None = None,
-    max_tokens: int = 700,
+    max_tokens: int = FINAL_ANSWER_MAX_TOKENS,
 ) -> LLMFinalAnswerCandidate:
     client = get_llm_client()
     provider = client.provider_name()
@@ -147,14 +156,17 @@ def compose_llm_final_answer(
         prefer_plain_text=prefer_plain_text,
     )
     payload = dict(card)
+    payload["final_answer_max_tokens"] = max_tokens
     if repair_context:
-        payload["repair_context"] = compact_preview(repair_context, 1800)
+        payload["repair_context"] = _final_answer_repair_context(repair_context)
     toolcall_attempted = bool(capabilities.supports_tool_calls and not prefer_plain_text)
-    result = client.generate_messages(
-        [{"role": "system", "content": system_prompt}, {"role": "user", "content": json.dumps(payload, sort_keys=True, default=str)}],
+    result = _generate_final_answer_messages(
+        client,
+        messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": json.dumps(payload, sort_keys=True, default=str)}],
         tools=[_final_answer_tool_schema()] if toolcall_attempted else None,
         tool_choice={"type": "function", "function": {"name": "submit_final_answer"}} if toolcall_attempted else None,
         parallel_tool_calls=False if toolcall_attempted else None,
+        max_tokens=max_tokens,
     )
     provider = str(result.get("provider") or provider)
     model = str(result.get("model") or model)
@@ -385,6 +397,102 @@ def _final_answer_tool_schema() -> dict[str, Any]:
 
 def _safe_pass_payload(item: dict[str, Any]) -> dict[str, Any]:
     return _strip_sensitive_keys(compact_preview(item, 2200))
+
+
+def _task_checklist(llm_plan: LLMUnifiedPlan) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    for item in llm_plan.passes:
+        items.append(
+            {
+                "task_id": item.pass_id,
+                "subtask": item.subtask,
+                "path": item.path,
+                "depends_on": list(item.depends_on),
+                "expected_result": item.expected_result,
+                "required": not bool(getattr(item, "optional", False) or getattr(item, "fallback", False)),
+            }
+        )
+    return _strip_sensitive_keys(items)
+
+
+def _required_task_ids(llm_plan: LLMUnifiedPlan) -> list[str]:
+    task_ids: list[str] = []
+    for item in llm_plan.passes:
+        if bool(getattr(item, "optional", False) or getattr(item, "fallback", False)):
+            continue
+        if item.path == "AGGREGATION_ONLY":
+            continue
+        task_ids.append(str(item.pass_id))
+    return task_ids
+
+
+def _pass_result_checklist(runtime_passes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    checklist: list[dict[str, Any]] = []
+    for item in runtime_passes:
+        if not isinstance(item, dict):
+            continue
+        checklist.append(
+            {
+                "task_id": str(item.get("pass_id") or ""),
+                "source": str(item.get("path") or item.get("source") or ""),
+                "scope": str(item.get("scope") or ""),
+                "status": str(item.get("status") or ""),
+                "facts": [str(value) for value in item.get("facts", [])[:10] if value] if isinstance(item.get("facts"), list) else [],
+                "caveats": [str(value) for value in item.get("caveats", [])[:8] if value] if isinstance(item.get("caveats"), list) else [],
+                "depends_on": list(item.get("depends_on") or []) if isinstance(item.get("depends_on"), list) else [],
+            }
+        )
+    return _strip_sensitive_keys(checklist)
+
+
+def _required_caveats(runtime_passes: list[dict[str, Any]], evidence_bus: EvidenceBus) -> list[str]:
+    caveats = _caveats_from_passes(runtime_passes)
+    for error in getattr(evidence_bus, "api_errors", [])[:5]:
+        caveats.append(str(error))
+    return list(dict.fromkeys(str(item) for item in caveats if item))
+
+
+def _final_answer_repair_context(repair_context: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not isinstance(repair_context, dict):
+        return None
+    semantic_gate = repair_context.get("semantic_gate")
+    if not isinstance(semantic_gate, dict):
+        semantic_gate = repair_context.get("semantic_gate_result") if isinstance(repair_context.get("semantic_gate_result"), dict) else {}
+    payload = {
+        "previous_answer": repair_context.get("previous_answer") or repair_context.get("final_answer"),
+        "semantic_gate_error_type": semantic_gate.get("error_type") or repair_context.get("error_type"),
+        "missing_required_fields": semantic_gate.get("missing_required_fields") or repair_context.get("missing_required_fields") or [],
+        "scope_errors": semantic_gate.get("scope_errors") or repair_context.get("scope_errors") or [],
+        "unsupported_claims": semantic_gate.get("unsupported_claims") or repair_context.get("unsupported_claims") or [],
+        "raw": compact_preview(repair_context, 1200),
+    }
+    return _strip_sensitive_keys(payload)
+
+
+def _generate_final_answer_messages(
+    client: Any,
+    *,
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]] | None,
+    tool_choice: dict[str, Any] | None,
+    parallel_tool_calls: bool | None,
+    max_tokens: int,
+) -> dict[str, Any]:
+    kwargs = {
+        "tools": tools,
+        "tool_choice": tool_choice,
+        "parallel_tool_calls": parallel_tool_calls,
+        "max_tokens": max_tokens,
+        "temperature": 0,
+    }
+    try:
+        return client.generate_messages(messages, **kwargs)
+    except TypeError as exc:
+        if "max_tokens" not in str(exc) and "temperature" not in str(exc):
+            raise
+        kwargs.pop("max_tokens", None)
+        kwargs.pop("temperature", None)
+        return client.generate_messages(messages, **kwargs)
 
 
 def _strip_sensitive_keys(value: Any) -> Any:

@@ -1,82 +1,99 @@
 {
-  "answer_policy": [
-    "Answer from evidence only.",
-    "Say not found/dry-run when evidence is empty."
-  ],
-  "constraints": [
-    "Use validated SQL/API only.",
-    "Prefer fewer tool calls when evidence is sufficient."
-  ],
-  "context_card": {
-    "answer_policy": "Report publish/status evidence from dim_campaign; dry-run API is not confirmation.",
-    "api_families": [
-      "journey_by_name",
-      "journey_inactive",
-      "journey_list"
-    ],
-    "api_mode": "optional",
-    "family": "journey_campaign",
-    "join_path": [],
-    "required_ids": [
-      "campaign_id",
-      "journey_name"
-    ],
-    "tables": [
-      "dim_campaign"
-    ]
-  },
-  "domain_type": "JOURNEY_CAMPAIGN",
-  "known_example_patterns": [
-    {
-      "method": "GET",
-      "params": {
-        "filter": "status!=live",
-        "pageSize": "10"
+  "backend_semantic_planning_used": false,
+  "llm_owned_generation": true,
+  "llm_unified_plan": {
+    "aggregation_instruction": "",
+    "api_request": null,
+    "backend_unavailable": false,
+    "diagnostics": {
+      "api_candidate_cards": 0,
+      "backend_route_inference_used": false,
+      "backend_semantic_decomposition_used": false,
+      "backend_semantic_planning_used": false,
+      "candidate_card_max_tokens": 220,
+      "candidate_card_success": 0,
+      "candidate_repair_attempts": 0,
+      "candidate_repair_max_tokens": 220,
+      "direct_route_challenge_max_tokens": 40,
+      "direct_route_challenge_needs_evidence": null,
+      "direct_route_challenge_repair_attempted": false,
+      "direct_route_challenge_used": false,
+      "evidence_planner_called": true,
+      "llm_route_gate_used": true,
+      "pass_candidate_cards": 0,
+      "planner_json_fallback_used": false,
+      "planner_json_parse_error": null,
+      "planner_parse_source": "weak_model_line_protocol",
+      "planner_provider_latency_ms": 5146,
+      "planner_repair_attempted": true,
+      "planner_success": false,
+      "planner_timeout": false,
+      "planner_toolcall_attempted": false,
+      "planner_toolcall_supported": false,
+      "provider_capabilities": {
+        "requires_json_prompting": true,
+        "supports_json_content_fallback": true,
+        "supports_tool_calls": false
       },
-      "path": "/ajo/journey"
-    }
-  ],
-  "nlp_diagnostics": {
-    "relevance": {
-      "lookup_paths": [
-        "journey_campaign"
-      ]
+      "route_card_latency_ms": 1535,
+      "route_card_max_tokens": 80,
+      "route_card_parse_error": "ROUTE must be DIRECT or EVIDENCE.",
+      "route_card_repair_attempted": true,
+      "route_card_repair_latency_ms": 1239,
+      "route_card_route": "EVIDENCE",
+      "route_card_success": false,
+      "route_gate_repair_attempted": true,
+      "route_gate_route": "EVIDENCE_PIPELINE",
+      "route_gate_success": false,
+      "sql_candidate_cards": 0,
+      "task_ledger_error": "empty_task_ledger",
+      "task_ledger_latency_ms": 1224,
+      "task_ledger_max_tokens": 300,
+      "task_ledger_repair_attempted": true,
+      "task_ledger_repair_latency_ms": 1147,
+      "task_ledger_success": false,
+      "weak_model_stable_protocol_used": true,
+      "weak_protocol_route_card_used": true,
+      "weak_protocol_task_ledger_used": true
     },
-    "rewrites": [
-      "important_plurals->singular"
-    ]
+    "direct_answer": null,
+    "evidence_order": "SQL_FIRST",
+    "model": "Qwen/Qwen3-4B-Instruct-2507",
+    "parse_error": true,
+    "passes": [],
+    "provider": "pioneer_chat",
+    "raw_preview": {
+      "route_card": null,
+      "route_card_repair": null,
+      "task_ledger": null,
+      "task_ledger_repair": null
+    },
+    "reason": "Task Ledger failed shape gate: empty_task_ledger",
+    "route": "EVIDENCE_PIPELINE",
+    "sql": null
   },
+  "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
   "query": "Explain what inactive journey means and show inactive journeys.",
   "query_id": "pioneer_sweep_qwen3_4b_instruct_2507_mixed_inactive_journeys",
-  "route_type": "SQL_THEN_API",
-  "selected_apis": [
-    {
-      "id": "journey_list",
-      "method": "GET",
-      "path": "/ajo/journey"
-    }
-  ],
-  "selected_columns": {
-    "dim_campaign": [
-      "CAMPAIGNID",
-      "NAME",
-      "STATE",
-      "UPDATEDTIME",
-      "LASTDEPLOYEDTIME"
-    ]
+  "run_context": {
+    "budget": {
+      "max_answer_repair_attempts": 1,
+      "max_api_workers": 2,
+      "max_parallelism": 4,
+      "max_passes": 6,
+      "max_repair_attempts": 1,
+      "max_sql_workers": 2,
+      "run_timeout_ms": 30000
+    },
+    "created_at": "2026-06-01T19:32:45.210933+00:00",
+    "deadline_at": "2026-06-01T19:33:15.210933+00:00",
+    "evidence_bus_id": "evidence_run_61a8e8a58dd24925bd8b8748f422ebbb",
+    "original_prompt": "Explain what inactive journey means and show inactive journeys.",
+    "plan_version": 1,
+    "prompt_id": "pioneer_sweep_qwen3_4b_instruct_2507_mixed_inactive_journeys",
+    "result_bundle_id": "bundle_run_61a8e8a58dd24925bd8b8748f422ebbb",
+    "run_id": "run_61a8e8a58dd24925bd8b8748f422ebbb",
+    "status": "RUNNING"
   },
-  "selected_join_hints": [
-    {
-      "confidence": 0.98,
-      "left_column": "CAMPAIGNID",
-      "left_table": "dim_campaign",
-      "reason": "Curated: Campaign to segment bridge.",
-      "right_column": "CAMPAIGNID",
-      "right_table": "br_campaign_segment"
-    }
-  ],
-  "selected_tables": [
-    "dim_campaign"
-  ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
 }
