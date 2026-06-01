@@ -113,14 +113,17 @@ def build_llm_final_answer_card(
             "Generate the final answer using only runtime evidence in this card.",
             "Answer every required task ID with successful evidence.",
             "If a required task failed, state the scoped unavailable/error caveat for that task.",
+            "If any required local evidence succeeded while live/API evidence failed, answer the successful local evidence first and include a scoped live/API caveat.",
+            "Only use the global runtime-unavailable answer if all required evidence failed or no usable runtime evidence exists.",
             "Preserve local snapshot versus live/API scope exactly.",
             "Do not claim live/current/platform state unless LIVE_API evidence supports it.",
             "Do not turn API_ERROR into no-data.",
             "Do not turn LIVE_EMPTY into global absence.",
             "If no matching runtime evidence is available, use exactly: No matching runtime evidence was available for this query/scope.",
-            "If runtime evidence is unavailable or errored, use exactly: Runtime evidence was unavailable; cannot provide a verified answer.",
+            "If all required runtime evidence is unavailable or errored, use exactly: Runtime evidence was unavailable; cannot provide a verified answer.",
             "When repairing unsupported claims, remove the unsupported span instead of restating it as a negative fact.",
             "Include required information from evidence when the user explicitly asked for it.",
+            "Do not add list-size phrases such as 'first 10' unless that exact list-size fact is present in runtime evidence.",
             "For multi-pass plans, answer all requested parts using the relevant pass results.",
             "Extra context or explanation is allowed only when semantically correct and evidence-safe.",
             "Do not optimize for hidden eval, gold answer wording, or scorer-specific phrasing.",
@@ -198,7 +201,8 @@ def _final_answer_system_prompt(*, requires_json_prompting: bool = False, prefer
             "Do not use hidden eval or gold-answer wording. "
             "Do not invent counts, dates, statuses, entity names, IDs, relationships, live state, or API success. "
             "If no matching runtime evidence is available, use exactly: No matching runtime evidence was available for this query/scope. "
-            "If runtime evidence is unavailable or errored, use exactly: Runtime evidence was unavailable; cannot provide a verified answer. "
+            "If some local evidence succeeded but live/API evidence failed, answer the local evidence first and include the scoped live/API caveat. "
+            "Use exactly 'Runtime evidence was unavailable; cannot provide a verified answer.' only when all required runtime evidence is unavailable or errored. "
             "When repairing unsupported claims, remove the unsupported span instead of restating it as a negative fact."
         )
     if requires_json_prompting:
@@ -210,7 +214,8 @@ def _final_answer_system_prompt(*, requires_json_prompting: bool = False, prefer
             "Do not use hidden eval or gold-answer wording. "
             "Do not invent counts, dates, statuses, entity names, IDs, relationships, live state, or API success. "
             "If no matching runtime evidence is available, use exactly: No matching runtime evidence was available for this query/scope. "
-            "If runtime evidence is unavailable or errored, use exactly: Runtime evidence was unavailable; cannot provide a verified answer. "
+            "If some local evidence succeeded but live/API evidence failed, answer the local evidence first and include the scoped live/API caveat. "
+            "Use exactly 'Runtime evidence was unavailable; cannot provide a verified answer.' only when all required runtime evidence is unavailable or errored. "
             "When repairing unsupported claims, remove the unsupported span instead of restating it as a negative fact."
         )
     return (
@@ -330,6 +335,9 @@ def check_final_answer_semantic_grounding(
 
 def safe_llm_final_answer_fallback(runtime_passes: list[dict[str, Any]], *, syntax_gate: FinalAnswerSyntaxGateResult | None = None, semantic_gate: FinalAnswerSemanticGateResult | None = None) -> str:
     statuses = {str(item.get("status") or "").upper() for item in runtime_passes}
+    has_success = "SUCCESS" in statuses or any(_pass_has_successful_evidence(item) for item in runtime_passes)
+    if has_success:
+        return "I could not compose a verified final answer from the available runtime evidence."
     if statuses & {"API_ERROR", "ERROR"}:
         return "Runtime evidence was unavailable; cannot provide a verified answer."
     if statuses & {"LIVE_EMPTY", "EMPTY"}:

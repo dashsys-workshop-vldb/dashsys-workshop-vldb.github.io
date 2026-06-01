@@ -118,7 +118,7 @@ def _date_claims(text: str) -> list[tuple[FinalAnswerClaim, int, int]]:
 def _count_claims(text: str, occupied: list[tuple[int, int]]) -> list[tuple[FinalAnswerClaim, int, int]]:
     out: list[tuple[FinalAnswerClaim, int, int]] = []
     quoted = _quoted_spans(text)
-    for match in re.finditer(r"(?<![\w.-])\d+(?:,\d{3})*(?:\.\d+)?(?![\w.-])", text):
+    for match in re.finditer(r"(?<![\w.-])\d+(?:,\d{3})*(?:\.\d+)?(?![\w-])", text):
         if _overlaps(match.start(), match.end(), occupied):
             continue
         if _inside_span(match.start(), match.end(), quoted):
@@ -141,6 +141,10 @@ def _status_claims(text: str, occupied: list[tuple[int, int]]) -> list[tuple[Fin
             if status == "active" and "not currently" in text[max(0, match.start() - 24) : match.start()].lower():
                 continue
             if status == "live" and "api" in text[match.end() : match.end() + 16].lower():
+                continue
+            if _looks_like_conceptual_status_example(text, match.start(), match.end(), status):
+                continue
+            if _looks_like_api_caveat_status(text, match.start(), match.end(), status):
                 continue
             out.append((_claim(text, "STATUS", match.group(0), match.start(), match.end()), match.start(), match.end()))
     return out
@@ -252,3 +256,23 @@ def _looks_like_url_port(text: str, start: int, end: int) -> bool:
     prefix = text[max(0, start - 160) : start]
     suffix = text[end : min(len(text), end + 16)]
     return bool(re.search(r"https?://\S*$", prefix, flags=re.I) and (not suffix or suffix[0] in "/?#.:;, )]"))
+
+
+def _looks_like_api_caveat_status(text: str, start: int, end: int, status: str) -> bool:
+    if str(status).lower() not in {"failed", "success", "succeeded", "deployed"}:
+        return False
+    context = text[max(0, start - 100) : min(len(text), end + 100)].lower()
+    if str(status).lower() == "deployed" and re.search(r"\b(last\s+deployed|deployed\s+time|deployment\s+time|timestamp)\b", context):
+        return True
+    has_api_subject = bool(re.search(r"\b(api|live api|api call|api request|endpoint|credentials?|verification|tool call|request)\b", context))
+    has_caveat_signal = bool(re.search(r"\b(unavailable|error|errored|failed|not executed|could not|unable|credentials?)\b", context))
+    return has_api_subject and has_caveat_signal
+
+
+def _looks_like_conceptual_status_example(text: str, start: int, end: int, status: str) -> bool:
+    if str(status).lower() not in {"draft", "deployed", "published", "unpublished"}:
+        return False
+    context = text[max(0, start - 120) : min(len(text), end + 120)].lower()
+    conceptual_signal = bool(re.search(r"\b(refers to|typically|can mean|can include|includes|such as|e\\.g\\.|for example|concept|state encompasses|is considered)\b", context))
+    data_signal = bool(re.search(r"\b(status|state)\s*[:=]\s*$", context[: max(0, start - max(0, start - 120))]))
+    return conceptual_signal and not data_signal

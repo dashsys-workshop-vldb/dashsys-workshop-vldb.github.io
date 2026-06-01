@@ -340,6 +340,32 @@ def test_llm_unified_planner_uses_sdk_toolcall_semantic_ir_primary_path(monkeypa
     assert client.calls[0]["tool_choice"]["function"]["name"] == "submit_semantic_ir_plan"
 
 
+def test_semantic_ir_planner_prompt_keeps_local_source_preference_llm_owned(monkeypatch):
+    client = ToolCallSemanticIRClient([_local_count_plan()])
+    monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+
+    run_llm_unified_planner(
+        user_prompt="What schemas do I have?",
+        schema_context=_schema_context(),
+        endpoint_context=_endpoint_context(),
+    )
+
+    system_prompt = client.calls[0]["messages"][0]["content"]
+    user_payload = json.loads(client.calls[0]["messages"][1]["content"])
+    rules = " ".join(user_payload["rules"])
+
+    assert "single Unified LLM Planner facade" in system_prompt
+    assert "SDK toolcall Semantic IR" in system_prompt
+    assert "Prefer LOCAL_QUERY" in rules
+    assert "LIVE_QUERY is the wrong source" in rules
+    assert "local_query.count=true" in rules
+    assert "select all relevant local timestamp candidates" in rules
+    assert "unless the prompt explicitly asks for live/current/platform/API" in rules
+    assert "mixed concept plus data" in rules
+    assert "compare local/live" in rules
+    assert "backend" not in rules.lower() or "will not choose" in system_prompt
+
+
 def test_direct_toolcall_route_skips_sql_api_passes(monkeypatch):
     client = ToolCallSemanticIRClient([_direct_plan()])
     monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)

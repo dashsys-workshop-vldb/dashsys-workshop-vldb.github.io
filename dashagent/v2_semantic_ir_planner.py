@@ -432,7 +432,7 @@ def _failed_semantic_ir_result(
 
 def _semantic_ir_system_prompt() -> str:
     return (
-        "You are the only Semantic IR planner for DASHSys V2. "
+        "You are the single Unified LLM Planner facade for DASHSys V2, and SDK toolcall Semantic IR is the primary internal planning contract. "
         "Use the submit_semantic_ir_plan SDK tool. Do not answer in plain text unless tool calls are unavailable. "
         "You own DIRECT vs EVIDENCE routing, task semantics, source, operation, selected table/endpoint IDs, fields, filters, values, dependencies, and aggregation instruction. "
         "Use DIRECT only for pure concept, pure meta-language, or out-of-domain prompts needing no local or live evidence. "
@@ -461,6 +461,19 @@ def _semantic_ir_user_prompt(
             "Do not ask the backend to infer missing filters or fields.",
             "For DIRECT route, tasks must be empty and direct_answer must be concise.",
             "For EVIDENCE route, tasks must contain the LLM-owned evidence tasks.",
+            "Prefer LOCAL_QUERY for user-specific local or ambiguous data-like prompts unless the prompt explicitly asks for live/current/platform/API evidence.",
+            "Hard source contract: if the prompt has no live/current/platform/API cue and asks what records exist, what records the user has, a count, date, status, or list, LIVE_QUERY is the wrong source; choose LOCAL_QUERY.",
+            "Phrases like 'do I have', 'my', 'show/list/give me records', and bare entity lookups without live/current/platform/API cues are LOCAL_SNAPSHOT requests.",
+            "Do not choose LIVE_QUERY merely because a live endpoint exists for the object family.",
+            "Use LIVE_QUERY only when the prompt explicitly asks for live/current/platform/API state or when comparing local/live evidence.",
+            "For mixed concept plus data prompts without live/current/platform/API cues, include a CONCEPT task and a LOCAL_QUERY data task; do not use API as the primary data source.",
+            "For any how many/count/number of/total prompt, use operation COUNT and local_query.count=true; do not list rows and count the displayed limit.",
+            "For local snapshot counts, use LOCAL_QUERY with operation COUNT.",
+            "For date or published/created/updated lookup prompts without live/current/platform/API cues, use LOCAL_QUERY with DATE or LOOKUP when an allowed local table has a relevant date/timestamp field; do not make API a prerequisite.",
+            "For published/date prompts, select all relevant local timestamp candidates available in the allowed table, such as CREATEDTIME, UPDATEDTIME, STARTDATE, LASTDEPLOYEDTIME, STOPPEDTIME, or FINISHEDTIME, instead of selecting only one nullable timestamp.",
+            "Do not make a local lookup depend on a live API task unless the local filter literally needs an ID returned by the live task.",
+            "For lifecycle words such as active/inactive/status/state, choose filters only on allowed local fields and values you can justify from schema context; if exact enum values are unknown, prefer a broader LOCAL_QUERY over an invented literal enum like INACTIVE.",
+            "For compare local/live prompts, include both LOCAL_QUERY and LIVE_QUERY tasks when both are available, then aggregate.",
         ],
         "repair_context": redact_secrets(repair_context) if repair_context else None,
     }
