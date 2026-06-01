@@ -249,42 +249,9 @@ def _run_one_model(config: Config, model: str, report_dir: Path) -> dict[str, An
             for prompt_case in PIONEER_SWEEP_PROMPTS
         ]
         if semantic_probe_results and all(bool(row.get("parse_error")) for row in semantic_probe_results):
-            prompt_results = [
-                _with_model_context(
-                    {
-                        "prompt_id": prompt_case["id"],
-                        "prompt": prompt_case["prompt"],
-                        "expected_kind": prompt_case["expected_kind"],
-                        "pass": False,
-                        "error": "semantic_json_probe_parse_error",
-                        "latency_sec": 0.0,
-                    },
-                    model,
-                    safe_name,
-                    model_id,
-                )
-                for prompt_case in PIONEER_SWEEP_PROMPTS
-            ]
             for semantic_probe in semantic_probe_results:
                 log_lines.append("semantic_probe=" + json.dumps(redact_secrets(semantic_probe), sort_keys=True))
-            metrics = _aggregate_metrics(prompt_results, semantic_probe_results, started)
-            result = {
-                "model": model,
-                "pioneer_model": model,
-                "pioneer_model_id": model_id,
-                "safe_model_name": safe_name,
-                "model_sweep_run_id": safe_name,
-                "group": DEFAULT_PIONEER_MODEL_GROUPS.get(model, "custom"),
-                "availability": availability,
-                "metrics": metrics,
-                "semantic_probe_results": semantic_probe_results,
-                "prompt_results": prompt_results,
-                "smoke_fast_failed": True,
-                "fast_fail_reason": "all_semantic_json_probes_failed",
-                "log": "\n".join(log_lines) + "\n",
-            }
-            _write_per_model(report_dir, result)
-            return result
+            log_lines.append("semantic_probe_all_failed_closed=true")
         for prompt_case in PIONEER_SWEEP_PROMPTS:
             prompt_start = time.perf_counter()
             try:
@@ -783,7 +750,13 @@ def _find_unsupported_counts(value: Any) -> list[int]:
             elif lowered == "unsupported_claims" and isinstance(nested, list):
                 counts.append(len(nested))
             counts.extend(_find_unsupported_counts(nested))
-    return counts
+        return counts
+    if isinstance(value, list):
+        counts: list[int] = []
+        for item in value:
+            counts.extend(_find_unsupported_counts(item))
+        return counts
+    return []
 
 
 def _find_numeric_fields(value: Any, field_names: set[str]) -> list[int]:
@@ -799,12 +772,6 @@ def _find_numeric_fields(value: Any, field_names: set[str]) -> list[int]:
         counts: list[int] = []
         for item in value:
             counts.extend(_find_numeric_fields(item, field_names))
-        return counts
-    return []
-    if isinstance(value, list):
-        counts: list[int] = []
-        for item in value:
-            counts.extend(_find_unsupported_counts(item))
         return counts
     return []
 

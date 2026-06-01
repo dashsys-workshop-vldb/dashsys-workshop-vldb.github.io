@@ -1558,6 +1558,7 @@ class AgentExecutor:
             effect="lets the LLM own route, evidence order, and SQL/API candidate generation for V2",
             correctness_role="keeps backend deterministic logic limited to compile/request gates and execution",
             efficiency_role="uses one compact planner call before any SQL/API execution",
+            metrics=plan.diagnostics,
         )
 
         metadata = {

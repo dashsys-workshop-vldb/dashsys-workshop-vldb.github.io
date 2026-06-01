@@ -1,0 +1,1336 @@
+{
+  "answer_time": 10.002254959195852,
+  "api_call_count": 0,
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "correctness_role": "keeps later normalization from changing the user-facing question",
+      "duration_ms": 0.0,
+      "effect": "preserves the original query for reproducibility",
+      "efficiency_role": "starts one trace without extra tool calls",
+      "output": {
+        "query": "What schemas do I have?",
+        "query_id": "pioneer_sweep_claude_haiku_4_5_ambiguous_user_schemas",
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "stage": "input",
+      "technique": "raw user query capture",
+      "timestamp": "2026-06-01T14:49:06.354211+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_runtime_leakage_guard",
+      "correctness_role": "prevents evaluator-only metadata leakage into runtime decisions",
+      "duration_ms": 0.0,
+      "effect": "asserts that candidate runtime receives only prompt/runtime fields, not evaluator metadata",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "category_tags_visible": false,
+        "expected_trace_visible": false,
+        "oracle_sql_visible": false,
+        "prompt_id_specific_branching": false,
+        "query_id_specific_branching": false,
+        "runtime_gold_visible": false,
+        "runtime_input_fields": {
+          "items": [
+            "query",
+            "query_id",
+            "strategy"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "runtime safety",
+      "technique": "runtime input isolation guard",
+      "timestamp": "2026-06-01T14:49:06.354225+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_score_provenance_guard",
+      "correctness_role": "prevents simulated or gold-visible scores from being treated as runtime evidence",
+      "duration_ms": 0.0,
+      "effect": "marks candidate runs as real-agent runtime executions without promotion judgment",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "organizer_equivalent": false,
+        "promotion_eligible": false,
+        "promotion_judgment_run": false,
+        "real_agent_execution": true,
+        "runtime_gold_visible": false,
+        "score_source": "runtime_candidate",
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+        "synthetic_trace": false
+      },
+      "stage": "runtime safety",
+      "technique": "score provenance guard",
+      "timestamp": "2026-06-01T14:49:06.354228+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_unified_planner",
+      "correctness_role": "keeps backend deterministic logic limited to compile/request gates and execution",
+      "duration_ms": 0.0,
+      "effect": "lets the LLM own route, evidence order, and SQL/API candidate generation for V2",
+      "efficiency_role": "uses one compact planner call before any SQL/API execution",
+      "input_summary": {
+        "query": "What schemas do I have?"
+      },
+      "output": {
+        "aggregation_instruction": "Compile the SQL result into a user-friendly list of available schemas (tables) with their primary columns and purposes based on naming conventions and column metadata.",
+        "evidence_order": "SQL_FIRST",
+        "model": "[REDACTED]",
+        "passes": {
+          "items": [
+            {
+              "can_run_parallel": true,
+              "evidence_order": "SQL_FIRST",
+              "expected_result": "List of available tables and their key columns",
+              "optional": false,
+              "pass_id": "pass_1",
+              "path": "SQL",
+              "sql": {
+                "query": "SELECT 'br_campaign_segment' AS table_name, 'SEGMENTID, CAMPAIGNID, LABELSSEGMENT' AS columns UNION ALL SELECT 'dim_blueprint', 'BLUEPRINTTYPE, EXTENDS, UPDATEDCLIENTID' UNION ALL SELECT 'dim_campaign', '_ACP_SYSTEM_METADATA, UPDATEDTIME, STARTDATE' UNION ALL SELECT 'dim_collection', 'ISIDENTITYENABLED, ROWCOUNT, UPDATEDTIME' UNION ALL SELECT 'dim_connector', 'DATAFLOWNAME, INTERVAL, UPDATEDTIME' UNION ALL SELECT 'dim_property', 'PROPERTY, ALTDISPLAYDESC, UPDATEDTIME' UNION ALL SELECT 'dim_segment', 'DEFINITION, SEGMENTID, UPDATEDTIME' UNION ALL SELECT 'dim_target', 'DATAFLOWNAME, INTERVAL, UPDATEDTIME'"
+              },
+              "subtask": "Retrieve all table names and column metadata from the local database snapshot",
+              "truncated_fields": 3
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "provider": "[REDACTED]",
+        "reason": "User is asking about schemas in their system; this requires runtime data evidence from the local database snapshot to enumerate available tables and their structures.",
+        "route": "EVIDENCE_PIPELINE",
+        "sql": {
+          "query": "SELECT 'br_campaign_segment' AS table_name, 'SEGMENTID, CAMPAIGNID, LABELSSEGMENT' AS columns UNION ALL SELECT 'dim_blueprint', 'BLUEPRINTTYPE, EXTENDS, UPDATEDCLIENTID' UNION ALL SELECT 'dim_campaign', '_ACP_SYSTEM_METADATA, UPDATEDTIME, STARTDATE' UNION ALL SELECT 'dim_collection', 'ISIDENTITYENABLED, ROWCOUNT, UPDATEDTIME' UNION ALL SELECT 'dim_connector', 'DATAFLOWNAME, INTERVAL, UPDATEDTIME' UNION ALL SELECT 'dim_property', 'PROPERTY, ALTDISPLAYDESC, UPDATEDTIME' UNION ALL SELECT 'dim_segment', 'DEFINITION, SEGMENTID, UPDATEDTIME' UNION ALL SELECT 'dim_target', 'DATAFLOWNAME, INTERVAL, UPDATEDTIME'"
+        },
+        "truncated_fields": 6
+      },
+      "stage": "llm-owned planning",
+      "technique": "single unified LLM route/evidence/sql/api planner",
+      "timestamp": "2026-06-01T14:49:11.999698+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_v2_execution_optimizer",
+      "correctness_role": "does not split prompts, choose SQL/API paths, rewrite SQL/API, or generate answers",
+      "duration_ms": 0.0,
+      "effect": "optimizes resource order, exact duplicate work, cache reuse, and budgets without changing LLM semantics",
+      "efficiency_role": "prioritizes critical path and enables exact pass-result reuse",
+      "input_summary": {
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pass_ids": {
+          "items": [
+            "pass_1"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "backend_semantic_planning_used": false,
+        "budget_error": null,
+        "budget_exceeded": false,
+        "budget_limits": {
+          "max_api_workers": 2,
+          "max_llm_calls": 8,
+          "max_parallelism": 4,
+          "max_passes": 6,
+          "max_repair_attempts": 1,
+          "max_sql_workers": 2,
+          "timeout_seconds": 30.0
+        },
+        "cache_hits": 0,
+        "checkpoint_resume_used": false,
+        "critical_path": {
+          "items": [
+            "pass_1"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "deduped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "early_stopped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "model_cascade_used": false,
+        "parallel_groups": {
+          "items": [
+            {
+              "items": [
+                "pass_1"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_ids": {
+          "items": [
+            "pass_1"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "stage_pipeline_used": true,
+        "truncated_fields": 1,
+        "v2_execution_optimizer_used": true
+      },
+      "stage": "llm-owned execution optimization",
+      "technique": "backend-only scheduling/cache/budget optimizer",
+      "timestamp": "2026-06-01T14:49:12.000796+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
+      "correctness_role": "keeps backend responsibility limited to scheduling, gates, execution, and result storage",
+      "duration_ms": 0.0,
+      "effect": "moves LLM-declared passes through fixed execution stages without changing pass semantics",
+      "efficiency_role": "allows later passes to enter free stages before earlier passes finish all stages",
+      "input_summary": {
+        "parallel_groups": {
+          "items": [
+            {
+              "items": [
+                "pass_1"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_ids": {
+          "items": [
+            "pass_1"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "max_api_workers": 2,
+        "max_parallelism": 4,
+        "max_sql_workers": 2,
+        "parallel_groups": {
+          "items": [
+            {
+              "items": [
+                "pass_1"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "passes_completed": {
+          "items": [
+            "pass_1"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "passes_dependency_blocked": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_failed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pipeline_stage_count": 8,
+        "stage_events": {
+          "items": [
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_d3852c6755b94a3a8d21a80dd3a38be7:pass_1",
+              "pass_id": "pass_1",
+              "plan_version": 1,
+              "run_id": "run_d3852c6755b94a3a8d21a80dd3a38be7",
+              "stage": "PLAN_READY",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_d3852c6755b94a3a8d21a80dd3a38be7:pass_1",
+              "pass_id": "pass_1",
+              "plan_version": 1,
+              "run_id": "run_d3852c6755b94a3a8d21a80dd3a38be7",
+              "stage": "PLAN_READY",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_d3852c6755b94a3a8d21a80dd3a38be7:pass_1",
+              "pass_id": "pass_1",
+              "plan_version": 1,
+              "run_id": "run_d3852c6755b94a3a8d21a80dd3a38be7",
+              "stage": "DEPENDENCY_READY",
+              "status": "OK",
+              "truncated_fields": 3
+            }
+          ],
+          "total_items": 16,
+          "truncated_items": true
+        },
+        "truncated_fields": 4,
+        "v2_pipeline_scheduler_used": true
+      },
+      "stage": "llm-owned pipeline scheduling",
+      "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
+      "timestamp": "2026-06-01T14:49:12.000890+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
+      "correctness_role": "blocks malformed dependency graphs before execution",
+      "duration_ms": 0.0,
+      "effect": "validates only graph shape; does not choose subtasks, dependencies, SQL, or API paths",
+      "efficiency_role": "bounds pass scheduling to LLM-declared valid graphs",
+      "input_summary": {
+        "evidence_order": "SQL_FIRST",
+        "pass_ids": {
+          "items": [
+            "pass_1"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "parallel_groups": {
+          "items": [
+            {
+              "items": [
+                "pass_1"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_count": 1,
+        "pass_ids": {
+          "items": [
+            "pass_1"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "passed": true
+      },
+      "stage": "llm-owned pass graph validation",
+      "technique": "shape-only PassGraphGate",
+      "timestamp": "2026-06-01T14:49:12.000898+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
+      "correctness_role": "keeps decomposition owned by the LLM and backend role limited to scheduling/gates/execution",
+      "duration_ms": 0.0,
+      "effect": "schedules only LLM-declared passes; does not split prompts or add semantic subtasks",
+      "efficiency_role": "groups dependency-free passes without changing their semantics",
+      "input_summary": {
+        "multi_pass_enabled": false,
+        "pass_ids": {
+          "items": [
+            "pass_1"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "api_gate_passed": null,
+        "api_repair_attempts": 0,
+        "backend_semantic_decomposition_used": false,
+        "backend_semantic_planning_used": false,
+        "budget_error": null,
+        "budget_exceeded": false,
+        "budget_limits": {
+          "max_api_workers": 2,
+          "max_llm_calls": 8,
+          "max_parallelism": 4,
+          "max_passes": 6,
+          "max_repair_attempts": 1,
+          "max_sql_workers": 2,
+          "timeout_seconds": 30.0
+        },
+        "cache_hits": 0,
+        "checkpoint_resume_used": false,
+        "critical_path": {
+          "items": [
+            "pass_1"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "deduped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "deterministic_answer_template_used": false,
+        "early_stopped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "evidence_bus_id": "evidence_run_d3852c6755b94a3a8d21a80dd3a38be7",
+        "hidden_eval_gold_used": false,
+        "llm_pass_count": 1,
+        "llm_pass_graph_used": true,
+        "max_api_workers": 2,
+        "max_parallelism": 4,
+        "max_sql_workers": 2,
+        "model_cascade_used": false,
+        "multi_pass_enabled": false,
+        "parallel_groups": {
+          "items": [
+            {
+              "items": [
+                "pass_1"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "parallel_pass_count": 1,
+        "pass_graph_gate_passed": true,
+        "pass_ids": {
+          "items": [
+            "pass_1"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_results_count": 1,
+        "passes_completed": {
+          "items": [
+            "pass_1"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "passes_dependency_blocked": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_executed": {
+          "items": [
+            "pass_1"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "passes_failed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pipeline_stage_count": 8,
+        "plan_version": 1,
+        "result_bundle_id": "bundle_run_d3852c6755b94a3a8d21a80dd3a38be7",
+        "run_id": "run_d3852c6755b94a3a8d21a80dd3a38be7",
+        "sequential_pass_count": 0,
+        "sql_gate_passed": true,
+        "sql_repair_attempts": 0,
+        "stage_events": {
+          "items": [
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_d3852c6755b94a3a8d21a80dd3a38be7:pass_1",
+              "pass_id": "pass_1",
+              "plan_version": 1,
+              "run_id": "run_d3852c6755b94a3a8d21a80dd3a38be7",
+              "stage": "SQL_API_GATE",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_d3852c6755b94a3a8d21a80dd3a38be7:pass_1",
+              "pass_id": "pass_1",
+              "plan_version": 1,
+              "run_id": "run_d3852c6755b94a3a8d21a80dd3a38be7",
+              "stage": "READY_FOR_FINAL_COMPOSITION",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_d3852c6755b94a3a8d21a80dd3a38be7:pass_1",
+              "pass_id": "pass_1",
+              "plan_version": 1,
+              "run_id": "run_d3852c6755b94a3a8d21a80dd3a38be7",
+              "stage": "SQL_API_GATE",
+              "status": "OK",
+              "truncated_fields": 3
+            }
+          ],
+          "total_items": 6,
+          "truncated_items": true
+        },
+        "stage_pipeline_used": true,
+        "truncated_fields": 6,
+        "v2_execution_optimizer_used": true,
+        "v2_pipeline_scheduler_used": true
+      },
+      "stage": "llm-owned pass scheduling",
+      "technique": "dependency-aware scheduling of LLM-declared evidence passes",
+      "timestamp": "2026-06-01T14:49:12.000901+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
+      "correctness_role": "does not infer missing dependency values or add backend-selected subtasks",
+      "duration_ms": 0.0,
+      "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
+      "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
+      "input_summary": {
+        "pass_id": "pass_1"
+      },
+      "output": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "required": false,
+        "resolved": true,
+        "run_id": "run_d3852c6755b94a3a8d21a80dd3a38be7"
+      },
+      "stage": "llm-owned pass dependency resolution",
+      "technique": "placeholder resolution from completed LLM pass results",
+      "timestamp": "2026-06-01T14:49:12.000924+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
+      "correctness_role": "returns compile errors for one LLM repair attempt",
+      "duration_ms": 0.0,
+      "effect": "checks syntax/database-semantic validity without rewriting SQL",
+      "efficiency_role": "prevents executing uncompilable SQL",
+      "input_summary": {
+        "pass_id": "pass_1",
+        "sql": "SELECT 'br_campaign_segment' AS table_name, 'SEGMENTID, CAMPAIGNID, LABELSSEGMENT' AS columns UNION ALL SELECT 'dim_blueprint', 'BLUEPRINTTYPE, EXTENDS, UPDATEDCLIENTID' UNION ALL SELECT 'dim_campaign', '_ACP_SYSTEM_METADATA, UPDATEDTIME, STARTDATE' UNION ALL SELECT 'dim_collection', 'ISIDENTITYENABLED, ROWCOUNT, UPDATEDTIME' UNION ALL SELECT 'dim_connector', 'DATAFLOWNAME, INTERVAL, UPDATEDTIME' UNION ALL SELECT 'dim_property', 'PROPERTY, ALTDISPLAYDESC, UPDATEDTIME' UNION ALL SELECT 'dim_segment', 'DEFINITION, SEGMENTID, UPDATEDTIME' UNION ALL SELECT 'dim_target', 'DATAFLOWNAME, INTERVAL, UPDATEDTIME'"
+      },
+      "output": {
+        "pass_id": "pass_1",
+        "passed": true,
+        "sql": "SELECT 'br_campaign_segment' AS table_name, 'SEGMENTID, CAMPAIGNID, LABELSSEGMENT' AS columns UNION ALL SELECT 'dim_blueprint', 'BLUEPRINTTYPE, EXTENDS, UPDATEDCLIENTID' UNION ALL SELECT 'dim_campaign', '_ACP_SYSTEM_METADATA, UPDATEDTIME, STARTDATE' UNION ALL SELECT 'dim_collection', 'ISIDENTITYENABLED, ROWCOUNT, UPDATEDTIME' UNION ALL SELECT 'dim_connector', 'DATAFLOWNAME, INTERVAL, UPDATEDTIME' UNION ALL SELECT 'dim_property', 'PROPERTY, ALTDISPLAYDESC, UPDATEDTIME' UNION ALL SELECT 'dim_segment', 'DEFINITION, SEGMENTID, UPDATEDTIME' UNION ALL SELECT 'dim_target', 'DATAFLOWNAME, INTERVAL, UPDATEDTIME'"
+      },
+      "stage": "llm sql compile gate",
+      "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
+      "timestamp": "2026-06-01T14:49:12.002252+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
+      "correctness_role": "separates LLM ownership from compile/request/runtime safety checks",
+      "duration_ms": 0.0,
+      "effect": "records that backend did not replace LLM semantic or SQL/API generation",
+      "efficiency_role": "bounds repair attempts before execution",
+      "input_summary": {
+        "evidence_order": "SQL_FIRST",
+        "route": "EVIDENCE_PIPELINE"
+      },
+      "output": {
+        "api_gate_passed": null,
+        "api_repair_attempts": 0,
+        "backend_semantic_decomposition_used": false,
+        "backend_semantic_planning_used": false,
+        "budget_error": null,
+        "budget_exceeded": false,
+        "budget_limits": {
+          "max_api_workers": 2,
+          "max_llm_calls": 8,
+          "max_parallelism": 4,
+          "max_passes": 6,
+          "max_repair_attempts": 1,
+          "max_sql_workers": 2,
+          "timeout_seconds": 30.0
+        },
+        "cache_hits": 0,
+        "checkpoint_resume_used": false,
+        "critical_path": {
+          "items": [
+            "pass_1"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "deduped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "deterministic_answer_template_used": false,
+        "early_stopped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "evidence_bus_id": "evidence_run_d3852c6755b94a3a8d21a80dd3a38be7",
+        "hidden_eval_gold_used": false,
+        "llm_evidence_order": "SQL_FIRST",
+        "llm_owned_generation": true,
+        "llm_pass_count": 1,
+        "llm_pass_graph_used": true,
+        "llm_route": "EVIDENCE_PIPELINE",
+        "max_api_workers": 2,
+        "max_parallelism": 4,
+        "max_sql_workers": 2,
+        "model_cascade_used": false,
+        "multi_pass_enabled": false,
+        "parallel_groups": {
+          "items": [
+            {
+              "items": [
+                "pass_1"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "parallel_pass_count": 1,
+        "pass_graph_gate_passed": true,
+        "pass_ids": {
+          "items": [
+            "pass_1"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_results_count": 1,
+        "passes_completed": {
+          "items": [
+            "pass_1"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "passes_dependency_blocked": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_executed": {
+          "items": [
+            "pass_1"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "passes_failed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pipeline_stage_count": 8,
+        "plan_version": 1,
+        "result_bundle_id": "bundle_run_d3852c6755b94a3a8d21a80dd3a38be7",
+        "run_id": "run_d3852c6755b94a3a8d21a80dd3a38be7",
+        "sequential_pass_count": 0,
+        "sql_gate_passed": true,
+        "sql_repair_attempts": 0,
+        "stage_events": {
+          "items": [
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_d3852c6755b94a3a8d21a80dd3a38be7:pass_1",
+              "pass_id": "pass_1",
+              "plan_version": 1,
+              "run_id": "run_d3852c6755b94a3a8d21a80dd3a38be7",
+              "stage": "SQL_API_GATE",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_d3852c6755b94a3a8d21a80dd3a38be7:pass_1",
+              "pass_id": "pass_1",
+              "plan_version": 1,
+              "run_id": "run_d3852c6755b94a3a8d21a80dd3a38be7",
+              "stage": "READY_FOR_FINAL_COMPOSITION",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_d3852c6755b94a3a8d21a80dd3a38be7:pass_1",
+              "pass_id": "pass_1",
+              "plan_version": 1,
+              "run_id": "run_d3852c6755b94a3a8d21a80dd3a38be7",
+              "stage": "SQL_API_GATE",
+              "status": "OK",
+              "truncated_fields": 3
+            }
+          ],
+          "total_items": 6,
+          "truncated_items": true
+        },
+        "stage_pipeline_used": true,
+        "truncated_fields": 2,
+        "v2_execution_optimizer_used": true,
+        "v2_pipeline_scheduler_used": true
+      },
+      "stage": "llm/backend boundary",
+      "technique": "LLM-owned candidate generation with backend-only gates",
+      "timestamp": "2026-06-01T14:49:12.003342+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_13_tool_execution",
+      "correctness_role": "records runtime evidence or compile/request failures without fabricating data",
+      "duration_ms": 0.0,
+      "effect": "executes only LLM-proposed candidates that pass backend gates",
+      "efficiency_role": "does not execute alternative backend-generated candidates",
+      "input_summary": {
+        "tool_result_count": 1
+      },
+      "output": {
+        "api_calls_executed": 0,
+        "dry_run_status": false,
+        "row_counts": {
+          "items": [
+            8
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_calls_executed": 1,
+        "sql_results": {
+          "items": [
+            {
+              "ok": true,
+              "result_preview": {
+                "items": [
+                  {
+                    "columns": "SEGMENTID, CAMPAIGNID, LABELSSEGMENT",
+                    "table_name": "br_campaign_segment"
+                  },
+                  {
+                    "columns": "BLUEPRINTTYPE, EXTENDS, UPDATEDCLIENTID",
+                    "table_name": "dim_blueprint"
+                  },
+                  {
+                    "columns": "_ACP_SYSTEM_METADATA, UPDATEDTIME, STARTDATE",
+                    "table_name": "dim_campaign"
+                  }
+                ],
+                "total_items": 3,
+                "truncated_items": false
+              },
+              "row_count": 8
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "execution",
+      "technique": "LLM-owned SQL/API tool execution",
+      "timestamp": "2026-06-01T14:49:12.006942+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
+      "correctness_role": "prevents pure direct answer routing from masking evidence-required prompts",
+      "duration_ms": 0.0,
+      "effect": "records that data/mixed/ambiguous prompts continued into evidence-backed answer grounding",
+      "efficiency_role": "makes EvidenceBus construction explicit",
+      "input_summary": {
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+        "tool_result_count": 1
+      },
+      "output": {
+        "evidence_bus_built": true,
+        "evidence_pipeline_bypassed": false,
+        "llm_evidence_order": "SQL_FIRST",
+        "llm_final_answer_composer_ran": true,
+        "llm_route": "EVIDENCE_PIPELINE",
+        "pass_results_count": 1,
+        "post_evidence_answer_router_ran": false
+      },
+      "stage": "evidence forwarding",
+      "technique": "V2 evidence boundary",
+      "timestamp": "2026-06-01T14:49:12.006951+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_14_evidence_bus",
+      "correctness_role": "keeps exact values and scoped caveats in existing EvidenceBus semantics",
+      "duration_ms": 0.0,
+      "effect": "forwards executed SQL/API evidence into the existing grounded answer pipeline",
+      "efficiency_role": "uses collected evidence without extra tool calls",
+      "input_summary": {
+        "tool_result_count": 1
+      },
+      "output": {
+        "evidence": {
+          "pass_ids": {
+            "items": [
+              "pass_1"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "pass_result_count": 1,
+          "run_id": "run_d3852c6755b94a3a8d21a80dd3a38be7"
+        }
+      },
+      "stage": "evidence forwarding",
+      "technique": "EvidenceBus",
+      "timestamp": "2026-06-01T14:49:12.007008+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_result_bundle",
+      "correctness_role": "keeps pass-level runtime evidence separate from backend answer generation",
+      "duration_ms": 0.0,
+      "effect": "stores all LLM-declared pass results before final LLM aggregation",
+      "efficiency_role": "reuses executed pass results without extra tools",
+      "input_summary": {
+        "pass_results_count": 1,
+        "tool_result_count": 1
+      },
+      "output": {
+        "append_events": {
+          "items": [
+            {
+              "appended": true,
+              "attempt_id": 0,
+              "pass_id": "pass_1"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_results_count": 1,
+        "run_id": "run_d3852c6755b94a3a8d21a80dd3a38be7",
+        "runtime_passes": {
+          "items": [
+            {
+              "attempt_id": 0,
+              "cached_sources": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "dependency_resolution": {
+                "errors": {
+                  "items": [],
+                  "total_items": 0,
+                  "truncated_items": false
+                },
+                "required": false,
+                "resolved": true,
+                "run_id": "run_d3852c6755b94a3a8d21a80dd3a38be7"
+              },
+              "global_pass_id": "run_d3852c6755b94a3a8d21a80dd3a38be7:pass_1",
+              "pass_id": "pass_1",
+              "plan_version": 1,
+              "run_id": "run_d3852c6755b94a3a8d21a80dd3a38be7",
+              "status": "SUCCESS",
+              "truncated_fields": 7
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "evidence forwarding",
+      "technique": "ResultBundle",
+      "timestamp": "2026-06-01T14:49:12.007042+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_quality_classifier",
+      "correctness_role": "prevents API_ERROR as no-data and LIVE_EMPTY as global absence",
+      "duration_ms": 0.0,
+      "effect": "keeps SQL errors, API errors, live empty, and direct evidence distinct",
+      "efficiency_role": "uses existing payloads only",
+      "input_summary": {
+        "tool_result_count": 1
+      },
+      "output": {
+        "api": {
+          "items": [
+            "API_NOT_RUN"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "api_error_is_unavailable": false,
+        "live_empty_scoped": false,
+        "sql": {
+          "items": [
+            "SQL_DIRECT_ANSWER"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "answer synthesis",
+      "technique": "SQL/API evidence quality classification",
+      "timestamp": "2026-06-01T14:49:12.007046+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_15_answer_slots",
+      "correctness_role": "provides runtime facts to the LLM-owned final answer composer",
+      "duration_ms": 0.0,
+      "effect": "turns runtime evidence into typed answer fields",
+      "efficiency_role": "uses existing slot extraction",
+      "input_summary": {
+        "tool_result_count": 1
+      },
+      "output": {
+        "discrepancy_flags": {
+          "sql_api_discrepancy": false
+        },
+        "dry_run_flags": {
+          "dry_run": false
+        },
+        "slots": {
+          "answer_family": "schema_dataset",
+          "api_error": false,
+          "counts": {
+            "items": [
+              "8"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "discrepancy": false,
+          "dry_run": false,
+          "slots_present": {
+            "items": [
+              "counts",
+              "sql_row_count",
+              "first_rows"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "sql_row_count": 8
+        }
+      },
+      "stage": "answer synthesis",
+      "technique": "structured answer slot extraction",
+      "timestamp": "2026-06-01T14:49:12.015116+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_composer",
+      "correctness_role": "backend does not render deterministic templates or select competing answers",
+      "duration_ms": 0.0,
+      "effect": "lets the LLM own final answer composition from runtime evidence",
+      "efficiency_role": "uses one final-answer LLM call after evidence execution",
+      "input_summary": {
+        "runtime_pass_count": 1,
+        "slot_counts": {
+          "answer_family": "schema_dataset",
+          "api_error": false,
+          "counts": {
+            "items": [
+              "8"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "discrepancy": false,
+          "dry_run": false,
+          "slots_present": {
+            "items": [
+              "counts",
+              "sql_row_count",
+              "first_rows"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "sql_row_count": 8
+        }
+      },
+      "output": {
+        "backend_unavailable": false,
+        "error_message": "Final answer wrapper is not valid JSON: Unterminated string starting at: line 16 column 5 (char 1678)",
+        "model": "[REDACTED]",
+        "parse_error": true,
+        "provider": "[REDACTED]",
+        "raw_preview": {
+          "preview": "\"```json\\n{\\n  \\\"final_answer\\\": \\\"You have 8 available schemas (tables) in your system:\\\\n\\\\n1. br_campaign_segment - Primary columns: SEGMENTID, CAMPAIGNID, LABELSSEGMENT. Purpose: Campaign segment mapping and labeling.\\\\n\\\\n2. dim_blueprint - Primary columns: BLUEPRINTTYPE, EXTENDS, UPDATEDCLIENTID. Purpose: Blueprint dimension with type and inheritance tracking.\\\\n\\\\n3. dim_campaign - Primary columns: _ACP_SYSTEM_METADATA, UPDATEDTIME, STARTDATE. Purpose: Campaign dimension with metadata and temporal attributes.\\\\n\\\\n4. dim_collection - Primary columns: ISIDENTITYENABLED, ROWCOUNT, UPDATEDTIME. Purpose: Collection dimension with identity settings and row tracking.\\\\n\\\\n5. dim_connector - Primary columns: DATAFLOWNAME, INTERVAL, UPDATEDTIME. Purpose: Connector dimension for dataflow configuration and scheduling.\\\\n\\\\n6. dim_property - Primary columns: PROPERTY, ALTDISPLAYDESC, UPDATEDTIME. Purpose: Property dimension with alternative display descriptions.\\\\n\\\\n7. dim_segment - Primary columns: DEFINITION, SEGMENTID, UPDATEDTIME. Purpose: Segment dimension with definitions and identifiers.\\\\n\\\\n8. dim_target - Primary columns: DATAFLOWNAME, INTERVAL, UPDATEDTIME. Purpose: Target ...",
+          "truncated": true
+        },
+        "used_pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        }
+      },
+      "stage": "llm-owned answer synthesis",
+      "technique": "LLMFinalAnswerComposer",
+      "timestamp": "2026-06-01T14:49:16.859989+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
+      "correctness_role": "does not rewrite, shorten, or score the answer",
+      "duration_ms": 0.0,
+      "effect": "checks only answer existence and wrapper serialization",
+      "efficiency_role": "no SQL/API calls",
+      "input_summary": {
+        "composer": "LLMFinalAnswerComposer"
+      },
+      "output": {
+        "error_message": "Final answer wrapper is not valid JSON: Unterminated string starting at: line 16 column 5 (char 1678)",
+        "error_type": "malformed_json",
+        "passed": false
+      },
+      "stage": "answer gate",
+      "technique": "minimal final-answer syntax gate",
+      "timestamp": "2026-06-01T14:49:16.860025+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
+      "correctness_role": "blocks unsupported facts, missing requested facts, and scope/caveat errors without generating an answer",
+      "duration_ms": 0.0,
+      "effect": "checks whether LLM final answer claims are supported by runtime evidence",
+      "efficiency_role": "no SQL/API calls",
+      "input_summary": {
+        "syntax_gate_passed": false
+      },
+      "output": {
+        "error_type": "syntax_gate_failed",
+        "passed": false
+      },
+      "stage": "answer gate",
+      "technique": "runtime-evidence semantic grounding gate",
+      "timestamp": "2026-06-01T14:49:16.860028+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_repair",
+      "correctness_role": "preserves LLM ownership while enforcing evidence boundaries",
+      "duration_ms": 0.0,
+      "effect": "returns gate errors to the LLM once; backend does not repair the answer itself",
+      "efficiency_role": "caps answer repair to one LLM call",
+      "input_summary": {
+        "failed_semantic": false,
+        "failed_syntax": true
+      },
+      "output": {
+        "candidate": {
+          "backend_unavailable": false,
+          "error_message": "Final answer wrapper is not valid JSON: Unterminated string starting at: line 14 column 5 (char 1670)",
+          "model": "[REDACTED]",
+          "parse_error": true,
+          "provider": "[REDACTED]",
+          "raw_preview": {
+            "preview": "\"```json\\n{\\n  \\\"final_answer\\\": \\\"You have 8 available schemas (tables) in your system:\\\\n\\\\n1. br_campaign_segment - Primary columns: SEGMENTID, CAMPAIGNID, LABELSSEGMENT. Purpose: Campaign segment mapping and labeling.\\\\n\\\\n2. dim_blueprint - Primary columns: BLUEPRINTTYPE, EXTENDS, UPDATEDCLIENTID. Purpose: Blueprint dimension with type and inheritance tracking.\\\\n\\\\n3. dim_campaign - Primary columns: _ACP_SYSTEM_METADATA, UPDATEDTIME, STARTDATE. Purpose: Campaign dimension with metadata and temporal attributes.\\\\n\\\\n4. dim_collection - Primary columns: ISIDENTITYENABLED, ROWCOUNT, UPDATEDTIME. Purpose: Collection dimension with identity settings and row tracking.\\\\n\\\\n5. dim_connector - Primary columns: DATAFLOWNAME, INTERVAL, UPDATEDTIME. Purpose: Connector dimension for dataflow configuration and scheduling.\\\\n\\\\n6. dim_property - Primary columns: PROPERTY, ALTDISPLAYDESC, UPDATEDTIME. Purpose: Property dimension with alternative display descriptions.\\\\n\\\\n7. dim_segment - Primary columns: DEFINITION, SEGMENTID, UPDATEDTIME. Purpose: Segment dimension with definitions and identifiers.\\\\n\\\\n8. dim_target - Primary columns: DATAFLOWNAME, INTERVAL, UPDATEDTIME. Purpose: Target ...",
+            "truncated": true
+          },
+          "used_pass_ids": {
+            "items": [],
+            "total_items": 0,
+            "truncated_items": false
+          }
+        },
+        "semantic_gate": {
+          "error_type": "syntax_gate_failed",
+          "passed": false
+        },
+        "syntax_gate": {
+          "error_message": "Final answer wrapper is not valid JSON: Unterminated string starting at: line 14 column 5 (char 1670)",
+          "error_type": "malformed_json",
+          "passed": false
+        }
+      },
+      "stage": "llm-owned answer repair",
+      "technique": "single LLM-owned final answer repair",
+      "timestamp": "2026-06-01T14:49:22.008798+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
+      "correctness_role": "keeps backend responsible only for syntax/semantic gates after LLM answer generation",
+      "duration_ms": 0.0,
+      "effect": "records that V2 did not use deterministic answer templates, renderers, or selectors as competing generators",
+      "efficiency_role": "no extra tool calls",
+      "input_summary": {
+        "runtime_pass_count": 1
+      },
+      "output": {
+        "answer_composer_used": "LLMFinalAnswerComposer",
+        "answer_repair_attempts": 1,
+        "answer_semantic_gate_passed": false,
+        "answer_syntax_gate_passed": false,
+        "deterministic_answer_template_used": false,
+        "final_answer_supported_by_evidence": false,
+        "hidden_eval_gold_used": false,
+        "llm_owned_final_answer": true,
+        "truncated_fields": 2,
+        "used_pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        }
+      },
+      "stage": "answer ownership boundary",
+      "technique": "LLM-owned final answer with backend gates",
+      "timestamp": "2026-06-01T14:49:22.008834+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "correctness_role": "keeps final answer generation LLM-owned while preserving runtime evidence grounding",
+      "duration_ms": 0.0,
+      "effect": "returns the LLM-composed answer when gates pass, otherwise a safe evidence-state fallback",
+      "efficiency_role": "no additional SQL/API calls",
+      "input_summary": {
+        "answer_semantic_gate_passed": false
+      },
+      "output": {
+        "answer_composer_used": "LLMFinalAnswerComposer",
+        "answer_repair_attempts": 1,
+        "answer_semantic_gate_passed": false,
+        "answer_syntax_gate_passed": false,
+        "deterministic_answer_template_used": false,
+        "final_answer_supported_by_evidence": false,
+        "hidden_eval_gold_used": false,
+        "llm_owned_final_answer": true,
+        "truncated_fields": 3,
+        "used_pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        }
+      },
+      "stage": "final response",
+      "technique": "LLM-owned final response",
+      "timestamp": "2026-06-01T14:49:22.008928+00:00"
+    }
+  ],
+  "diagnostics": {
+    "model_sweep_run_id": "claude_haiku_4_5",
+    "pioneer_model": "[REDACTED]",
+    "pioneer_model_id": "[REDACTED]",
+    "pioneer_model_sweep": true
+  },
+  "domain_type": "LLM_OWNED_V2",
+  "errors": [],
+  "estimated_tokens": 1910,
+  "execution_time": 0.0,
+  "final_answer": "I could not compose a verified final answer from the available runtime evidence.",
+  "model_sweep_run_id": "claude_haiku_4_5",
+  "original_query": "What schemas do I have?",
+  "pioneer_model": "[REDACTED]",
+  "pioneer_model_id": "[REDACTED]",
+  "planning_time": 0.0,
+  "preprocessing_time": 0.0,
+  "query_id": "pioneer_sweep_claude_haiku_4_5_ambiguous_user_schemas",
+  "route_type": "EVIDENCE_PIPELINE",
+  "runtime": 10.049684457946569,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "estimated_tokens": 1352,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/reports/v2_non_gpt_model_benchmark/planner_compatibility_focused_smoke/runs/claude_haiku_4_5/ambiguous_user_schemas/metadata.json",
+      "prompt_tokens": 1904
+    },
+    {
+      "aggregation_instruction": "Compile the SQL result into a user-friendly list of available schemas (tables) with their primary columns and purposes based on naming conventions and column metadata.",
+      "api_request": null,
+      "backend_unavailable": false,
+      "diagnostics": {
+        "planner_json_fallback_used": true,
+        "planner_json_parse_error": null,
+        "planner_parse_source": "content_json",
+        "planner_provider_latency_ms": 5639,
+        "planner_repair_attempted": false,
+        "planner_success": true,
+        "planner_timeout": false,
+        "planner_toolcall_attempted": false,
+        "planner_toolcall_supported": false,
+        "provider_capabilities": {
+          "requires_json_prompting": true,
+          "supports_json_content_fallback": true,
+          "supports_tool_calls": false
+        }
+      },
+      "direct_answer": null,
+      "evidence_order": "SQL_FIRST",
+      "kind": "llm_unified_planner",
+      "model": "[REDACTED]",
+      "parse_error": false,
+      "passes": [
+        {
+          "api_request": null,
+          "can_run_parallel": true,
+          "depends_on": [],
+          "evidence_order": "SQL_FIRST",
+          "expected_result": "List of available tables and their key columns",
+          "fallback": false,
+          "optional": false,
+          "pass_id": "pass_1",
+          "path": "SQL",
+          "sql": {
+            "params": [],
+            "query": "SELECT 'br_campaign_segment' AS table_name, 'SEGMENTID, CAMPAIGNID, LABELSSEGMENT' AS columns UNION ALL SELECT 'dim_blueprint', 'BLUEPRINTTYPE, EXTENDS, UPDATEDCLIENTID' UNION ALL SELECT 'dim_campaign', '_ACP_SYSTEM_METADATA, UPDATEDTIME, STARTDATE' UNION ALL SELECT 'dim_collection', 'ISIDENTITYENABLED, ROWCOUNT, UPDATEDTIME' UNION ALL SELECT 'dim_connector', 'DATAFLOWNAME, INTERVAL, UPDATEDTIME' UNION ALL SELECT 'dim_property', 'PROPERTY, ALTDISPLAYDESC, UPDATEDTIME' UNION ALL SELECT 'dim_segment', 'DEFINITION, SEGMENTID, UPDATEDTIME' UNION ALL SELECT 'dim_target', 'DATAFLOWNAME, INTERVAL, UPDATEDTIME'"
+          },
+          "subtask": "Retrieve all table names and column metadata from the local database snapshot"
+        }
+      ],
+      "provider": "[REDACTED]",
+      "raw_preview": {
+        "preview": "\"```json\\n{\\n  \\\"route\\\": \\\"EVIDENCE_PIPELINE\\\",\\n  \\\"evidence_order\\\": \\\"SQL_FIRST\\\",\\n  \\\"reason\\\": \\\"User is asking about schemas in their system; this requires runtime data evidence from the local database snapshot to enumerate available tables and their structures.\\\",\\n  \\\"passes\\\": [\\n    {\\n      \\\"pass_id\\\": \\\"pass_1\\\",\\n      \\\"path\\\": \\\"SQL\\\",\\n      \\\"subtask\\\": \\\"Retrieve all table names and column metadata from the local database snapshot\\\",\\n      \\\"sql\\\": {\\n        \\\"query\\\": \\\"SELECT 'br_campaign_segment' AS table_name, 'SEGMENTID, CAMPAIGNID, LABELSSEGMENT' AS columns UNION ALL SELECT 'dim_blueprint', 'BLUEPRINTTYPE, EXTENDS, UPDATEDCLIENTID' UNION ALL SELECT 'dim_campaign', '_ACP_SYSTEM_METADATA, UPDATEDTIME, STARTDATE' UNION ALL SELECT 'dim_collection', 'ISIDENTITYENABLED, ROWCOUNT, UPDATEDTIME' UNION ALL SELECT 'dim_connector', 'DATAFLOWNAME, INTERVAL, UPDATEDTIME' UNION ALL SELECT 'dim_property', 'PROPERTY, ALTDISPLAYDESC, UPDATEDTIME' UNION ALL SELECT 'dim_segmen...",
+        "truncated": true
+      },
+      "reason": "User is asking about schemas in their system; this requires runtime data evidence from the local database snapshot to enumerate available tables and their structures.",
+      "route": "EVIDENCE_PIPELINE",
+      "sql": {
+        "params": [],
+        "query": "SELECT 'br_campaign_segment' AS table_name, 'SEGMENTID, CAMPAIGNID, LABELSSEGMENT' AS columns UNION ALL SELECT 'dim_blueprint', 'BLUEPRINTTYPE, EXTENDS, UPDATEDCLIENTID' UNION ALL SELECT 'dim_campaign', '_ACP_SYSTEM_METADATA, UPDATEDTIME, STARTDATE' UNION ALL SELECT 'dim_collection', 'ISIDENTITYENABLED, ROWCOUNT, UPDATEDTIME' UNION ALL SELECT 'dim_connector', 'DATAFLOWNAME, INTERVAL, UPDATEDTIME' UNION ALL SELECT 'dim_property', 'PROPERTY, ALTDISPLAYDESC, UPDATEDTIME' UNION ALL SELECT 'dim_segment', 'DEFINITION, SEGMENTID, UPDATEDTIME' UNION ALL SELECT 'dim_target', 'DATAFLOWNAME, INTERVAL, UPDATEDTIME'"
+      }
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "row_count": 8,
+        "rows": {
+          "items": [
+            {
+              "columns": "SEGMENTID, CAMPAIGNID, LABELSSEGMENT",
+              "table_name": "br_campaign_segment"
+            },
+            {
+              "columns": "BLUEPRINTTYPE, EXTENDS, UPDATEDCLIENTID",
+              "table_name": "dim_blueprint"
+            },
+            {
+              "columns": "_ACP_SYSTEM_METADATA, UPDATEDTIME, STARTDATE",
+              "table_name": "dim_campaign"
+            }
+          ],
+          "total_items": 8,
+          "truncated_items": true
+        }
+      },
+      "sql": "SELECT 'br_campaign_segment' AS table_name, 'SEGMENTID, CAMPAIGNID, LABELSSEGMENT' AS columns UNION ALL SELECT 'dim_blueprint', 'BLUEPRINTTYPE, EXTENDS, UPDATEDCLIENTID' UNION ALL SELECT 'dim_campaign', '_ACP_SYSTEM_METADATA, UPDATEDTIME, STARTDATE' UNION ALL SELECT 'dim_collection', 'ISIDENTITYENABLED, ROWCOUNT, UPDATEDTIME' UNION ALL SELECT 'dim_connector', 'DATAFLOWNAME, INTERVAL, UPDATEDTIME' UNION ALL SELECT 'dim_property', 'PROPERTY, ALTDISPLAYDESC, UPDATEDTIME' UNION ALL SELECT 'dim_segment', 'DEFINITION, SEGMENTID, UPDATEDTIME' UNION ALL SELECT 'dim_target', 'DATAFLOWNAME, INTERVAL, UPDATEDTIME'",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": [
+          "LLM SQL pass passed compile gate."
+        ]
+      }
+    },
+    {
+      "evidence_bus_built": true,
+      "evidence_pipeline_bypassed": false,
+      "kind": "evidence_boundary",
+      "llm_evidence_order": "SQL_FIRST",
+      "llm_final_answer_composer_ran": true,
+      "llm_route": "EVIDENCE_PIPELINE",
+      "pass_results_count": 1,
+      "post_evidence_answer_router_ran": false
+    },
+    {
+      "answered_subtasks": [],
+      "backend_unavailable": false,
+      "caveats_included": [],
+      "claimed_facts": [],
+      "error_message": "Final answer wrapper is not valid JSON: Unterminated string starting at: line 16 column 5 (char 1678)",
+      "final_answer": null,
+      "kind": "llm_final_answer_composer",
+      "model": "[REDACTED]",
+      "parse_error": true,
+      "provider": "[REDACTED]",
+      "raw_preview": {
+        "preview": "\"```json\\n{\\n  \\\"final_answer\\\": \\\"You have 8 available schemas (tables) in your system:\\\\n\\\\n1. br_campaign_segment - Primary columns: SEGMENTID, CAMPAIGNID, LABELSSEGMENT. Purpose: Campaign segment mapping and labeling.\\\\n\\\\n2. dim_blueprint - Primary columns: BLUEPRINTTYPE, EXTENDS, UPDATEDCLIENTID. Purpose: Blueprint dimension with type and inheritance tracking.\\\\n\\\\n3. dim_campaign - Primary columns: _ACP_SYSTEM_METADATA, UPDATEDTIME, STARTDATE. Purpose: Campaign dimension with metadata and temporal attributes.\\\\n\\\\n4. dim_collection - Primary columns: ISIDENTITYENABLED, ROWCOUNT, UPDATEDTIME. Purpose: Collection dimension with identity settings and row tracking.\\\\n\\\\n5. dim_connector - Primary columns: DATAFLOWNAME, INTERVAL, UPDATEDTIME. Purpose: Connector dimension for dataflow configuration and scheduling.\\\\n\\\\n6. dim_property - Primary columns: PROPERTY, ALTDISPLAYDESC, UPDATEDTIME. Purpose: Property dimension with alternative display descriptions.\\\\n\\\\n7. dim_segment - Primary columns: DEFINITION, SEGMENTID, UPDATEDTIME. Purpose: Segment dimension with definitions and identifiers.\\\\n\\\\n8. dim_target - Primary columns: DATAFLOWNAME, INTERVAL, UPDATEDTIME. Purpose: Target ...",
+        "truncated": true
+      },
+      "unanswered_subtasks": [],
+      "used_pass_ids": []
+    },
+    {
+      "answer_composer_used": "LLMFinalAnswerComposer",
+      "answer_repair_attempts": 1,
+      "answer_semantic_gate_passed": false,
+      "answer_syntax_gate_passed": false,
+      "deterministic_answer_template_used": false,
+      "final_answer_supported_by_evidence": false,
+      "hidden_eval_gold_used": false,
+      "kind": "answer_diagnostics",
+      "llm_owned_final_answer": true,
+      "semantic_gate": null,
+      "syntax_gate": {
+        "error_message": "Final answer wrapper is not valid JSON: Unterminated string starting at: line 16 column 5 (char 1678)",
+        "error_type": "malformed_json",
+        "final_answer": null,
+        "passed": false
+      },
+      "used_pass_ids": []
+    }
+  ],
+  "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+  "timings": {
+    "answer_time": 10.002254959195852
+  },
+  "tool_call_count": 1
+}

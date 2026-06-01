@@ -116,6 +116,46 @@ def test_semantic_probe_non_object_json_fails_closed(monkeypatch) -> None:
     assert result["requires_evidence"] is True
 
 
+def test_unsupported_claim_counter_handles_list_values() -> None:
+    checkpoints = [
+        {
+            "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
+            "output": {"unsupported_claims": [{"claim": "unsupported"}]},
+        }
+    ]
+
+    assert sweep._unsupported_claim_count(checkpoints) == 1
+
+
+def test_all_semantic_probe_parse_failures_do_not_fast_fail_closed_smoke(monkeypatch, tmp_path) -> None:
+    monkeypatch.setattr(
+        sweep,
+        "PIONEER_SWEEP_PROMPTS",
+        [{"id": "data", "prompt": "What schemas do I have?", "expected_kind": "EVIDENCE"}],
+    )
+    monkeypatch.setattr(sweep, "AgentExecutor", lambda config: _FakeExecutor())
+    monkeypatch.setattr(sweep, "_availability_probe", lambda model: {"available": True, "model": model})
+    monkeypatch.setattr(
+        sweep,
+        "_semantic_json_probe",
+        lambda model, prompt: {
+            "model": model,
+            "prompt": prompt,
+            "parse_error": True,
+            "route": "EVIDENCE_PIPELINE",
+            "requires_evidence": True,
+            "pure_no_evidence": False,
+        },
+    )
+
+    result = run_pioneer_model_sweep(SimpleNamespace(outputs_dir=tmp_path), models=["ModelA"], report_dir=tmp_path)
+
+    model_result = result["models"][0]
+    assert model_result.get("smoke_fast_failed") is not True
+    assert model_result["prompt_results"][0]["pass"] is True
+    assert model_result["metrics"]["semantic_fallback_count"] == 1
+
+
 def test_concrete_data_prompt_cannot_bypass_evidence_bus_under_weak_output() -> None:
     weak_payload = {
         "action": "LLM_SAFE_DIRECT",
@@ -368,7 +408,13 @@ def _fake_evidence_result(output_dir):
                     "evidence_pipeline_bypassed": False,
                     "evidence_bus_built": True,
                     "post_evidence_answer_router_ran": True,
+                    "llm_pass_count": 1,
                 },
+            },
+            {
+                "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
+                "input_summary": {"llm_pass_count": 1},
+                "output": {"pass_count": 1},
             },
             {"checkpoint_id": "checkpoint_14_evidence_bus", "output": {}},
             {"checkpoint_id": "checkpoint_broad_question_classifier", "output": {}},
