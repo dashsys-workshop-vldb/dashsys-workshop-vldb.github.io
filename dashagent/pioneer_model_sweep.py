@@ -248,6 +248,7 @@ def _run_one_model(config: Config, model: str, report_dir: Path) -> dict[str, An
         log_lines.append("availability=" + json.dumps(redact_secrets(availability), sort_keys=True))
         if not availability.get("available"):
             result = _empty_model_result(model, availability, started, model_id=model_id)
+            result.update(_model_connection_fields(availability=availability, route_probe=None))
             result["log"] = "\n".join(log_lines) + "\n"
             _write_per_model(report_dir, result)
             return result
@@ -259,6 +260,7 @@ def _run_one_model(config: Config, model: str, report_dir: Path) -> dict[str, An
             if not route_gate_probe.get("usable"):
                 result = _empty_model_result(model, availability, started, model_id=model_id)
                 result["route_gate_probe"] = route_gate_probe
+                result.update(_model_connection_fields(availability=availability, route_probe=route_gate_probe))
                 result["metrics"]["route_gate_probe_usable"] = False
                 result["metrics"]["route_gate_probe_failures"] = len(route_gate_probe.get("prompt_results") or [])
                 result["log"] = "\n".join(log_lines) + "\n"
@@ -308,6 +310,7 @@ def _run_one_model(config: Config, model: str, report_dir: Path) -> dict[str, An
             "group": DEFAULT_PIONEER_MODEL_GROUPS.get(model, "custom"),
             "availability": availability,
             "route_gate_probe": route_gate_probe,
+            **_model_connection_fields(availability=availability, route_probe=route_gate_probe),
             "metrics": metrics,
             "semantic_probe_results": semantic_probe_results,
             "prompt_results": prompt_results,
@@ -315,6 +318,49 @@ def _run_one_model(config: Config, model: str, report_dir: Path) -> dict[str, An
         }
         _write_per_model(report_dir, result)
         return result
+
+
+def _model_connection_fields(*, availability: dict[str, Any], route_probe: dict[str, Any] | None) -> dict[str, Any]:
+    availability_callable = bool(availability.get("available"))
+    availability_error = str(availability.get("error_category") or availability.get("reason") or "")
+    if not availability_callable:
+        status = "provider_unavailable"
+        route_call_completed = False
+        route_parse_success = False
+        route_failure = "provider_error"
+    elif route_probe is None:
+        status = "connected"
+        route_call_completed = True
+        route_parse_success = True
+        route_failure = "none"
+    else:
+        category = str(route_probe.get("error_category") or "")
+        prompt_results = route_probe.get("prompt_results") if isinstance(route_probe.get("prompt_results"), list) else []
+        route_call_completed = category != "route_gate_timeout" or bool(prompt_results)
+        route_parse_success = bool(route_probe.get("usable")) and not any(bool(row.get("parse_error")) for row in prompt_results)
+        if route_parse_success:
+            status = "connected"
+            route_failure = "none"
+        elif category == "route_gate_timeout":
+            status = "route_timeout"
+            route_failure = "timeout"
+        elif category in {"provider_unavailable", "provider_error"}:
+            status = "provider_unavailable"
+            route_failure = "provider_error"
+        elif category in {"route_gate_parse_failure", "route_gate_error"}:
+            status = "protocol_parse_failure"
+            route_failure = "protocol_parse_failure"
+        else:
+            status = "protocol_parse_failure"
+            route_failure = "malformed_output"
+    return {
+        "availability_probe_callable": availability_callable,
+        "availability_error_category": availability.get("error_category") or availability_error or None,
+        "route_atomic_call_completed": route_call_completed,
+        "route_atomic_parse_success": route_parse_success,
+        "route_atomic_failure_category": route_failure,
+        "model_connection_status": status,
+    }
 
 
 def _availability_probe(model: str) -> dict[str, Any]:
@@ -627,6 +673,9 @@ def _aggregate_metrics(
         "evidence_bus_runtime_non_empty_count": sum(1 for row in prompt_results if bool(row.get("evidence_bus_runtime_non_empty"))),
         "evidence_bus_error_or_caveat_only_count": sum(1 for row in prompt_results if bool(row.get("evidence_bus_error_or_caveat_only"))),
         "result_bundle_success_pass_count": sum(int(row.get("result_bundle_success_pass_count") or 0) for row in prompt_results),
+        "direct_pass_success_count": sum(int(row.get("direct_pass_success_count") or 0) for row in prompt_results),
+        "sql_success_pass_count": sum(int(row.get("sql_success_pass_count") or 0) for row in prompt_results),
+        "api_success_pass_count": sum(int(row.get("api_success_pass_count") or 0) for row in prompt_results),
         "result_bundle_built_count": sum(1 for row in prompt_results if bool(row.get("result_bundle_built"))),
         "declared_pass_count": sum(int(row.get("declared_pass_count") or 0) for row in prompt_results),
         "route_card_success_count": sum(1 for row in prompt_results if bool(row.get("route_card_success"))),
@@ -666,6 +715,7 @@ def _empty_model_result(model: str, availability: dict[str, Any], started: float
         "model_sweep_run_id": safe_name,
         "group": DEFAULT_PIONEER_MODEL_GROUPS.get(model, "custom"),
         "availability": availability,
+        **_model_connection_fields(availability=availability, route_probe=None),
         "metrics": {
             "json_parse_failures": 0,
             "semantic_fallback_count": 0,
@@ -678,6 +728,9 @@ def _empty_model_result(model: str, availability: dict[str, Any], started: float
             "evidence_bus_runtime_non_empty_count": 0,
             "evidence_bus_error_or_caveat_only_count": 0,
             "result_bundle_success_pass_count": 0,
+            "direct_pass_success_count": 0,
+            "sql_success_pass_count": 0,
+            "api_success_pass_count": 0,
             "result_bundle_built_count": 0,
             "declared_pass_count": 0,
             "planner_usable_count": 0,
@@ -959,6 +1012,9 @@ def _runtime_evidence_metrics(checkpoints: list[dict[str, Any]]) -> dict[str, An
     runtime_passes = list(unique.values())
     fact_count = 0
     success_count = 0
+    direct_success_count = 0
+    sql_success_count = 0
+    api_success_count = 0
     caveat_only_count = 0
     for item in runtime_passes:
         facts = item.get("facts")
@@ -972,6 +1028,16 @@ def _runtime_evidence_metrics(checkpoints: list[dict[str, Any]]) -> dict[str, An
         )
         if has_success:
             success_count += 1
+        for source in source_results:
+            if not isinstance(source, dict) or str(source.get("status") or "").upper() != "SUCCESS":
+                continue
+            source_name = str(source.get("cached_source") or source.get("source") or "").upper()
+            if source_name == "DIRECT":
+                direct_success_count += 1
+            elif source_name == "SQL":
+                sql_success_count += 1
+            elif source_name == "API":
+                api_success_count += 1
         caveats = item.get("caveats") if isinstance(item.get("caveats"), list) else []
         if not has_success and (status in {"API_ERROR", "ERROR", "LIVE_EMPTY", "EMPTY"} or caveats):
             caveat_only_count += 1
@@ -981,6 +1047,9 @@ def _runtime_evidence_metrics(checkpoints: list[dict[str, Any]]) -> dict[str, An
         "evidence_bus_runtime_non_empty": total_fact_count > 0,
         "evidence_bus_error_or_caveat_only": bool(runtime_passes) and total_fact_count == 0 and caveat_only_count > 0,
         "result_bundle_success_pass_count": success_count,
+        "direct_pass_success_count": direct_success_count,
+        "sql_success_pass_count": sql_success_count,
+        "api_success_pass_count": api_success_count,
     }
 
 
@@ -1019,6 +1088,19 @@ def _weak_protocol_planner_metrics(checkpoints: list[dict[str, Any]]) -> dict[st
     diagnostics = planner.get("diagnostics") if isinstance(planner.get("diagnostics"), dict) else {}
     source = metrics or diagnostics or planner
     return {
+        "atomic_checklist_used": source.get("atomic_checklist_used"),
+        "checklist_parse_success": source.get("checklist_parse_success"),
+        "checklist_repair_attempted": source.get("checklist_repair_attempted"),
+        "checklist_route": source.get("checklist_route"),
+        "backend_semantic_routing_used": source.get("backend_semantic_routing_used"),
+        "fixed_task_slots_used": source.get("fixed_task_slots_used"),
+        "slot_count": source.get("slot_count"),
+        "active_task_count": source.get("active_task_count"),
+        "task_paths": source.get("task_paths"),
+        "task_slot_repair_attempted": source.get("task_slot_repair_attempted"),
+        "atomic_candidate_slots_used": source.get("atomic_candidate_slots_used"),
+        "sql_candidate_success_count": int(source.get("sql_candidate_success_count") or 0),
+        "api_candidate_success_count": int(source.get("api_candidate_success_count") or 0),
         "route_card_success": source.get("route_card_success"),
         "route_card_route": source.get("route_card_route"),
         "route_card_repair_attempted": source.get("route_card_repair_attempted"),

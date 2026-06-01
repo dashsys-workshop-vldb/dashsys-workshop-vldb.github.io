@@ -1,6 +1,6 @@
 {
-  "answer_time": 5.525536667089909,
-  "api_call_count": 1,
+  "answer_time": 4.9944506250321865,
+  "api_call_count": 0,
   "checkpoints": [
     {
       "checkpoint_id": "checkpoint_01_raw_query",
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-01T19:27:19.895001+00:00"
+      "timestamp": "2026-06-01T20:10:42.255937+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-01T19:27:19.895024+00:00"
+      "timestamp": "2026-06-01T20:10:42.255951+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,7 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-01T19:27:19.895031+00:00"
+      "timestamp": "2026-06-01T20:10:42.255955+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -80,29 +80,51 @@
         "query": "What schemas do I have?"
       },
       "metrics": {
-        "api_candidate_cards": 1,
+        "active_task_count": 0,
+        "api_candidate_cards": 0,
+        "api_candidate_success_count": 0,
+        "atomic_candidate_slots_used": false,
+        "atomic_checklist_used": true,
+        "atomic_weak_protocol_used": true,
         "backend_route_inference_used": false,
         "backend_semantic_decomposition_used": false,
         "backend_semantic_planning_used": false,
-        "candidate_card_latency_ms": 3295,
+        "backend_semantic_routing_used": false,
         "candidate_card_max_tokens": 220,
-        "candidate_card_success": 2,
+        "candidate_card_success": 0,
         "candidate_repair_attempts": 0,
         "candidate_repair_max_tokens": 220,
-        "dependency_edges": [],
-        "direct_route_challenge_max_tokens": 40,
+        "checklist_bits": {
+          "COUNT": 0,
+          "DATE": 0,
+          "LIST": 1,
+          "LIVE_CURRENT": 0,
+          "LOCAL_SNAPSHOT": 1,
+          "MIXED_CONCEPT_DATA": 0,
+          "PURE_CONCEPT": 0,
+          "RECORDS": 1,
+          "SHOW_ITEMS": 1,
+          "STATUS": 0
+        },
+        "checklist_latency_ms": 2775,
+        "checklist_parse_success": true,
+        "checklist_repair_attempted": false,
+        "checklist_route": "EVIDENCE_PIPELINE",
         "direct_route_challenge_needs_evidence": null,
         "direct_route_challenge_repair_attempted": false,
         "direct_route_challenge_used": false,
         "evidence_planner_called": true,
+        "final_answer_max_tokens": 500,
+        "fixed_task_slot_error": "empty_task_slots",
+        "fixed_task_slots_used": false,
         "llm_route_gate_used": true,
-        "pass_candidate_cards": 2,
+        "pass_candidate_cards": 0,
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
-        "planner_parse_source": "weak_model_line_protocol",
-        "planner_provider_latency_ms": 7518,
-        "planner_repair_attempted": false,
-        "planner_success": true,
+        "planner_parse_source": "atomic_weak_protocol",
+        "planner_provider_latency_ms": 8732,
+        "planner_repair_attempted": true,
+        "planner_success": false,
         "planner_timeout": false,
         "planner_toolcall_attempted": false,
         "planner_toolcall_supported": false,
@@ -111,7 +133,6 @@
           "supports_json_content_fallback": true,
           "supports_tool_calls": false
         },
-        "route_card_latency_ms": 2124,
         "route_card_max_tokens": 80,
         "route_card_repair_attempted": false,
         "route_card_route": "EVIDENCE",
@@ -119,68 +140,37 @@
         "route_gate_repair_attempted": false,
         "route_gate_route": "EVIDENCE_PIPELINE",
         "route_gate_success": true,
-        "sql_candidate_cards": 1,
-        "task_count": 2,
-        "task_ledger_latency_ms": 2097,
+        "slot_count": 5,
+        "sql_candidate_cards": 0,
+        "sql_candidate_success_count": 0,
+        "task_ledger_latency_ms": 3915,
         "task_ledger_max_tokens": 300,
-        "task_ledger_repair_attempted": false,
-        "task_ledger_success": true,
-        "task_paths": [
-          "SQL",
-          "API"
-        ],
+        "task_ledger_repair_attempted": true,
+        "task_ledger_repair_latency_ms": 2042,
+        "task_ledger_success": false,
+        "task_slot_repair_attempted": true,
         "weak_model_stable_protocol_used": true,
         "weak_protocol_route_card_used": true,
         "weak_protocol_task_ledger_used": true
       },
       "output": {
-        "evidence_order": "MULTI_PASS",
+        "backend_unavailable": false,
+        "evidence_order": "SQL_FIRST",
         "model": "[REDACTED]",
-        "parse_error": false,
-        "passes": {
-          "items": [
-            {
-              "can_run_parallel": true,
-              "evidence_order": "SQL_FIRST",
-              "expected_result": "List all schemas from dim_blueprint, dim_collection, dim_segment, dim_target, dim_connector, dim_campaign, dim_property with names and types",
-              "optional": false,
-              "pass_id": "t1",
-              "path": "SQL",
-              "sql": {
-                "query": "SELECT 'dim_blueprint' as schema_name, 'BLUEPRINTTYPE' as column_name, 'STRING' as column_type UNION ALL"
-              },
-              "subtask": "List all schemas from dim_blueprint, dim_collection, dim_segment, dim_target, dim_connector, dim_campaign, dim_property with names and types",
-              "truncated_fields": 3
-            },
-            {
-              "api_request": {
-                "method": "GET",
-                "path": "/data/foundation/schemaregistry/tenant/schemas"
-              },
-              "can_run_parallel": true,
-              "evidence_order": "API_FIRST",
-              "expected_result": "Fetch tenant schemas via GET /data/foundation/schemaregistry/tenant/schemas for live schema registry metadata",
-              "optional": false,
-              "pass_id": "t2",
-              "path": "API",
-              "subtask": "Fetch tenant schemas via GET /data/foundation/schemaregistry/tenant/schemas for live schema registry metadata",
-              "truncated_fields": 3
-            }
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
+        "parse_error": true,
         "provider": "[REDACTED]",
-        "reason": "User is asking for their specific schemas (a list of user-owned items), which requires runtime data access, not conceptual explanation.",
-        "route": "EVIDENCE_PIPELINE",
-        "sql": {
-          "query": "SELECT 'dim_blueprint' as schema_name, 'BLUEPRINTTYPE' as column_name, 'STRING' as column_type UNION ALL"
+        "raw_preview": {
+          "atomic_checklist": "RECORDS=1\nLIST=1\nCOUNT=0\nSTATUS=0\nDATE=0\nLOCAL_SNAPSHOT=1\nLIVE_CURRENT=0\nSHOW_ITEMS=1\nMIXED_CONCEPT_DATA=0\nPURE_CONCEPT=0\nDIRECT_ANSWER=",
+          "fixed_task_slots": "# Task Slot Configuration\n\nBased on your question \"What schemas do I have?\", here is the optimal five-slot setup:\n\n## Slot Assignments\n\n**T1_PATH=SQL**\n- T1_DEPS=[]\n- T1_DESC=Query local database to retrieve all available schemas\n\n**T2_PATH=API**\n- T2_DEPS=[]\n- T2_DESC=Fetch current/live schema metadata from platform API\n\n**T3_PATH=DIRECT**\n- T3_DEPS=[T1, T2]\n- T3_DESC=Conceptual explanation of schema types and structure\n\n**T4_PATH=SQL_AND_API**\n- T4_DEPS=[T1, T2]\n- T4_DESC=Cross-validate schema consistency between local snapshot and live platform\n\n**T5_PATH=AGGREGATE**\n- T5_DEPS=[T1, T2, T3, T4]\n- T5_DESC=Combine all evidence into unified schema inventory with comparison notes\n\n## Aggregation Strategy\n\n**AGGREGATE=** Merge T1 (local schemas) and T2 (live schemas) into a single authoritative list. Include T3's conceptual context. Apply T4's validation results to flag discrepancies. Present final output as: (1) Complete schema",
+          "fixed_task_slots_repair": "# Task Slot Configuration - REPAIRED\n\nBased on your question \"What schemas do I have?\", here is the corrected five-slot setup:\n\n## Slot Assignments\n\n**T1_PATH=SQL**\n- T1_DEPS=[]\n- T1_DESC=Query local database to retrieve all available schemas\n\n**T2_PATH=API**\n- T2_DEPS=[]\n- T2_DESC=Fetch current/live schema metadata from platform API\n\n**T3_PATH=DIRECT**\n- T3_DEPS=[T1, T2]\n- T3_DESC=Conceptual explanation of schema types and structure\n\n**T4_PATH=SQL_AND_API**\n- T4_DEPS=[T1, T2]\n- T4_DESC=Cross-validate schema consistency between local snapshot and live platform\n\n**T5_PATH=AGGREGATE**\n- T5_DEPS=[T1, T2, T3, T4]\n- T5_DESC=Combine all evidence into unified schema inventory with comparison notes\n\n## Aggregation Strategy\n\n**AGGREGATE=** Merge T1 (local schemas) and T2 (live schemas) into a single authoritative list. Include T3's conceptual context. Apply T4's validation results to flag discrepancies. Present final output as:"
         },
+        "reason": "Fixed task slots failed shape gate: empty_task_slots",
+        "route": "EVIDENCE_PIPELINE",
         "truncated_fields": 6
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-01T19:27:27.422758+00:00"
+      "timestamp": "2026-06-01T20:10:50.994726+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
@@ -189,13 +179,10 @@
       "effect": "validates only graph shape; does not choose subtasks, dependencies, SQL, or API paths",
       "efficiency_role": "bounds pass scheduling to LLM-declared valid graphs",
       "input_summary": {
-        "evidence_order": "MULTI_PASS",
+        "evidence_order": "SQL_FIRST",
         "pass_ids": {
-          "items": [
-            "t1",
-            "t2"
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         }
       },
@@ -205,34 +192,96 @@
           "total_items": 0,
           "truncated_items": false
         },
+        "error_message": "EVIDENCE_PIPELINE plans must declare at least one pass.",
+        "error_type": "empty_evidence_plan",
         "parallel_groups": {
-          "items": [
-            {
-              "items": [
-                "t1",
-                "t2"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
-        "pass_count": 2,
+        "pass_count": 0,
         "pass_ids": {
-          "items": [
-            "t1",
-            "t2"
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
-        "passed": true
+        "passed": false
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-01T19:27:27.427110+00:00"
+      "timestamp": "2026-06-01T20:10:50.995434+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_pass_graph_repair",
+      "correctness_role": "backend supplies only graph-shape errors and no replacement subtasks or SQL/API",
+      "duration_ms": 0.0,
+      "effect": "lets the LLM repair its own pass graph after shape-only feedback",
+      "efficiency_role": "caps pass graph repair to one attempt",
+      "input_summary": {
+        "error_message": "EVIDENCE_PIPELINE plans must declare at least one pass.",
+        "error_type": "empty_evidence_plan"
+      },
+      "output": {
+        "pass_graph_gate_error_type": "empty_evidence_plan",
+        "pass_graph_repair_attempted": true,
+        "pass_graph_repair_success": false,
+        "repair_plan": {
+          "backend_unavailable": false,
+          "evidence_order": "SQL_FIRST",
+          "model": "[REDACTED]",
+          "parse_error": true,
+          "provider": "[REDACTED]",
+          "raw_preview": {
+            "atomic_full_plan_repair": "```json\n{\n  \"route\": \"EVIDENCE_PIPELINE\",\n  \"evidence_order\": \"API_FIRST\",\n  \"aggregation_instruction\": \"Combine API schema list with local database schema inventory. Present unified catalog with schema names, types, and metadata.\",\n  \"passes\": [\n    {\n      \"pass_id\": \"fetch_schemas_api\",\n      \"path\": \"API\",\n      \"subtask\": \"Fetch all tenant schemas from schema registry\",\n      \"depends_on\": [],\n      \"api_request\": {\n        \"method\": \"GET\",\n        \"path\": \"/data/foundation/schemaregistry/tenant/schemas\",\n        \"params\": {}\n      }\n    },\n    {\n      \"pass_id\": \"list_local_schemas\",\n      \"path\": \"SQL\",\n      \"subtask\": \"Query local database schema tables to enumerate available schemas\",\n      \"depends_on\": [],\n      \"sql\": {\n        \"query\": \"SELECT DISTINCT 'dim_blueprint' as schema_name, COUNT(*) as record_count FROM dim_blueprint UNION ALL SELECT 'dim_campaign', COUNT(*) FROM dim_campaign UNION ALL SELECT 'dim_collection', COUNT(*) FROM dim_collection UNION ALL SELECT 'dim_connector', COUNT(*) FROM dim_"
+          },
+          "reason": "Fixed task slots failed shape gate: empty_task_slots",
+          "route": "EVIDENCE_PIPELINE",
+          "truncated_fields": 6
+        },
+        "repaired_pass_count": 0
+      },
+      "stage": "llm-owned pass graph repair",
+      "technique": "single LLM-owned pass graph repair",
+      "timestamp": "2026-06-01T20:10:55.433193+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate_repair",
+      "correctness_role": "does not add missing passes or choose SQL/API paths",
+      "duration_ms": 0.0,
+      "effect": "executes repaired plan only if the LLM supplied a valid graph",
+      "efficiency_role": "stops after one graph repair attempt",
+      "input_summary": {
+        "evidence_order": "SQL_FIRST",
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "error_message": "EVIDENCE_PIPELINE plans must declare at least one pass.",
+        "error_type": "empty_evidence_plan",
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pass_count": 0,
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passed": false
+      },
+      "stage": "llm-owned pass graph validation",
+      "technique": "shape-only PassGraphGate on repaired plan",
+      "timestamp": "2026-06-01T20:10:55.433237+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -247,11 +296,8 @@
           "truncated_items": false
         },
         "pass_ids": {
-          "items": [
-            "t1",
-            "t2"
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         }
       },
@@ -271,10 +317,8 @@
         "cache_hits": 0,
         "checkpoint_resume_used": false,
         "critical_path": {
-          "items": [
-            "t2"
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -294,25 +338,13 @@
         },
         "model_cascade_used": false,
         "parallel_groups": {
-          "items": [
-            {
-              "items": [
-                "t2",
-                "t1"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "pass_ids": {
-          "items": [
-            "t1",
-            "t2"
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "stage_pipeline_used": true,
@@ -321,7 +353,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-01T19:27:27.427863+00:00"
+      "timestamp": "2026-06-01T20:10:55.433508+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -331,25 +363,13 @@
       "efficiency_role": "allows later passes to enter free stages before earlier passes finish all stages",
       "input_summary": {
         "parallel_groups": {
-          "items": [
-            {
-              "items": [
-                "t2",
-                "t1"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "pass_ids": {
-          "items": [
-            "t1",
-            "t2"
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         }
       },
@@ -363,25 +383,13 @@
         "max_parallelism": 4,
         "max_sql_workers": 2,
         "parallel_groups": {
-          "items": [
-            {
-              "items": [
-                "t2",
-                "t1"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "passes_completed": {
-          "items": [
-            "t2",
-            "t1"
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "passes_dependency_blocked": {
@@ -396,396 +404,16 @@
         },
         "pipeline_stage_count": 8,
         "stage_events": {
-          "items": [
-            {
-              "attempt_id": 0,
-              "event": "started",
-              "global_pass_id": "run_56204769dad54e468cff2282036144b3:t2",
-              "pass_id": "t2",
-              "plan_version": 1,
-              "run_id": "run_56204769dad54e468cff2282036144b3",
-              "stage": "PLAN_READY",
-              "status": "OK",
-              "truncated_fields": 3
-            },
-            {
-              "attempt_id": 0,
-              "event": "started",
-              "global_pass_id": "run_56204769dad54e468cff2282036144b3:t1",
-              "pass_id": "t1",
-              "plan_version": 1,
-              "run_id": "run_56204769dad54e468cff2282036144b3",
-              "stage": "PLAN_READY",
-              "status": "OK",
-              "truncated_fields": 3
-            },
-            {
-              "attempt_id": 0,
-              "event": "completed",
-              "global_pass_id": "run_56204769dad54e468cff2282036144b3:t2",
-              "pass_id": "t2",
-              "plan_version": 1,
-              "run_id": "run_56204769dad54e468cff2282036144b3",
-              "stage": "PLAN_READY",
-              "status": "OK",
-              "truncated_fields": 3
-            }
-          ],
-          "total_items": 32,
-          "truncated_items": true
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
         },
         "truncated_fields": 4,
-        "v2_pipeline_scheduler_used": true
+        "v2_pipeline_scheduler_used": false
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-01T19:27:27.428285+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
-      "correctness_role": "keeps decomposition owned by the LLM and backend role limited to scheduling/gates/execution",
-      "duration_ms": 0.0,
-      "effect": "schedules only LLM-declared passes; does not split prompts or add semantic subtasks",
-      "efficiency_role": "groups dependency-free passes without changing their semantics",
-      "input_summary": {
-        "multi_pass_enabled": true,
-        "pass_ids": {
-          "items": [
-            "t1",
-            "t2"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        }
-      },
-      "output": {
-        "api_gate_passed": true,
-        "api_repair_attempts": 0,
-        "backend_semantic_decomposition_used": false,
-        "backend_semantic_planning_used": false,
-        "budget_error": null,
-        "budget_exceeded": false,
-        "budget_limits": {
-          "max_api_workers": 2,
-          "max_llm_calls": 8,
-          "max_parallelism": 4,
-          "max_passes": 6,
-          "max_repair_attempts": 1,
-          "max_sql_workers": 2,
-          "timeout_seconds": 30.0
-        },
-        "cache_hits": 0,
-        "checkpoint_resume_used": false,
-        "critical_path": {
-          "items": [
-            "t2"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "deduped_passes": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "dependency_edges": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "deterministic_answer_template_used": false,
-        "early_stopped_passes": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "evidence_bus_id": "evidence_run_56204769dad54e468cff2282036144b3",
-        "hidden_eval_gold_used": false,
-        "llm_pass_count": 2,
-        "llm_pass_graph_used": true,
-        "max_api_workers": 2,
-        "max_parallelism": 4,
-        "max_sql_workers": 2,
-        "model_cascade_used": false,
-        "multi_pass_enabled": true,
-        "parallel_groups": {
-          "items": [
-            {
-              "items": [
-                "t2",
-                "t1"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "parallel_pass_count": 2,
-        "pass_graph_gate_error_type": null,
-        "pass_graph_gate_passed": true,
-        "pass_graph_repair_attempted": false,
-        "pass_graph_repair_success": false,
-        "pass_ids": {
-          "items": [
-            "t1",
-            "t2"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
-        "pass_results_count": 2,
-        "passes_completed": {
-          "items": [
-            "t2",
-            "t1"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
-        "passes_dependency_blocked": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "passes_executed": {
-          "items": [
-            "t2",
-            "t1"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
-        "passes_failed": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "pipeline_stage_count": 8,
-        "plan_version": 1,
-        "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_56204769dad54e468cff2282036144b3",
-        "run_id": "run_56204769dad54e468cff2282036144b3",
-        "sequential_pass_count": 0,
-        "sql_gate_passed": false,
-        "sql_repair_attempts": 1,
-        "stage_events": {
-          "items": [
-            {
-              "attempt_id": 0,
-              "event": "started",
-              "global_pass_id": "run_56204769dad54e468cff2282036144b3:t2",
-              "pass_id": "t2",
-              "plan_version": 1,
-              "run_id": "run_56204769dad54e468cff2282036144b3",
-              "stage": "SQL_API_GATE",
-              "status": "OK",
-              "truncated_fields": 3
-            },
-            {
-              "attempt_id": 0,
-              "event": "completed",
-              "global_pass_id": "run_56204769dad54e468cff2282036144b3:t2",
-              "pass_id": "t2",
-              "plan_version": 1,
-              "run_id": "run_56204769dad54e468cff2282036144b3",
-              "stage": "READY_FOR_FINAL_COMPOSITION",
-              "status": "OK",
-              "truncated_fields": 3
-            },
-            {
-              "attempt_id": 0,
-              "event": "completed",
-              "global_pass_id": "run_56204769dad54e468cff2282036144b3:t1",
-              "pass_id": "t1",
-              "plan_version": 1,
-              "run_id": "run_56204769dad54e468cff2282036144b3",
-              "stage": "READY_FOR_FINAL_COMPOSITION",
-              "status": "OK",
-              "truncated_fields": 3
-            }
-          ],
-          "total_items": 12,
-          "truncated_items": true
-        },
-        "stage_pipeline_used": true,
-        "truncated_fields": 6,
-        "v2_execution_optimizer_used": true,
-        "v2_pipeline_scheduler_used": true
-      },
-      "stage": "llm-owned pass scheduling",
-      "technique": "dependency-aware scheduling of LLM-declared evidence passes",
-      "timestamp": "2026-06-01T19:27:27.428304+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
-      "correctness_role": "does not infer missing dependency values or add backend-selected subtasks",
-      "duration_ms": 0.0,
-      "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
-      "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
-      "input_summary": {
-        "pass_id": "t2"
-      },
-      "output": {
-        "errors": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "required": false,
-        "resolved": true,
-        "run_id": "run_56204769dad54e468cff2282036144b3"
-      },
-      "stage": "llm-owned pass dependency resolution",
-      "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-01T19:27:27.428429+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_api_request_gate",
-      "correctness_role": "blocks unsafe method, unknown endpoint, unresolved path, or malformed params",
-      "duration_ms": 0.0,
-      "effect": "checks only executable API request shape before runtime execution",
-      "efficiency_role": "prevents invalid API calls without planning endpoints",
-      "input_summary": {
-        "method": "GET",
-        "pass_id": "t2",
-        "path": "/data/foundation/schemaregistry/tenant/schemas"
-      },
-      "output": {
-        "method": "GET",
-        "pass_id": "t2",
-        "passed": true,
-        "path": "/data/foundation/schemaregistry/tenant/schemas"
-      },
-      "stage": "llm api request gate",
-      "technique": "safe GET request-shape/catalog gate for LLM-owned API pass",
-      "timestamp": "2026-06-01T19:27:27.429341+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
-      "correctness_role": "does not infer missing dependency values or add backend-selected subtasks",
-      "duration_ms": 0.0,
-      "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
-      "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
-      "input_summary": {
-        "pass_id": "t1"
-      },
-      "output": {
-        "errors": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "required": false,
-        "resolved": true,
-        "run_id": "run_56204769dad54e468cff2282036144b3"
-      },
-      "stage": "llm-owned pass dependency resolution",
-      "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-01T19:27:27.429816+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
-      "correctness_role": "returns compile errors for one LLM repair attempt",
-      "duration_ms": 0.0,
-      "effect": "checks syntax/database-semantic validity without rewriting SQL",
-      "efficiency_role": "prevents executing uncompilable SQL",
-      "input_summary": {
-        "pass_id": "t1",
-        "sql": "SELECT 'dim_blueprint' as schema_name, 'BLUEPRINTTYPE' as column_name, 'STRING' as column_type UNION ALL"
-      },
-      "output": {
-        "error_message": "Parser Error: syntax error at end of input",
-        "error_type": "syntax_error",
-        "pass_id": "t1",
-        "passed": false,
-        "sql": "SELECT 'dim_blueprint' as schema_name, 'BLUEPRINTTYPE' as column_name, 'STRING' as column_type UNION ALL"
-      },
-      "stage": "llm sql compile gate",
-      "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
-      "timestamp": "2026-06-01T19:27:27.431430+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_sql_repair",
-      "correctness_role": "backend supplies only compile error feedback and no replacement SQL",
-      "duration_ms": 0.0,
-      "effect": "lets the LLM repair its pass SQL after compile feedback",
-      "efficiency_role": "caps repair to one attempt",
-      "input_summary": {
-        "error_type": "syntax_error",
-        "failed_sql": "SELECT 'dim_blueprint' as schema_name, 'BLUEPRINTTYPE' as column_name, 'STRING' as column_type UNION ALL",
-        "pass_id": "t1"
-      },
-      "output": {
-        "evidence_order": "MULTI_PASS",
-        "model": "[REDACTED]",
-        "parse_error": false,
-        "passes": {
-          "items": [
-            {
-              "can_run_parallel": true,
-              "evidence_order": "SQL_FIRST",
-              "expected_result": "List all schemas from dim_blueprint, dim_collection, dim_segment, dim_target, dim_connector, dim_campaign, dim_property with names and types",
-              "optional": false,
-              "pass_id": "t1",
-              "path": "SQL",
-              "sql": {
-                "query": "SELECT 'dim_blueprint' as schema_name, 'BLUEPRINTTYPE' as column_name, 'STRING' as column_type UNION ALL"
-              },
-              "subtask": "List all schemas from dim_blueprint, dim_collection, dim_segment, dim_target, dim_connector, dim_campaign, dim_property with names and types",
-              "truncated_fields": 3
-            },
-            {
-              "api_request": {
-                "method": "GET",
-                "path": "/data/foundation/schemaregistry/tenant/schemas"
-              },
-              "can_run_parallel": true,
-              "evidence_order": "API_FIRST",
-              "expected_result": "Fetch tenant schemas via GET /data/foundation/schemaregistry/tenant/schemas for live schema registry metadata",
-              "optional": false,
-              "pass_id": "t2",
-              "path": "API",
-              "subtask": "Fetch tenant schemas via GET /data/foundation/schemaregistry/tenant/schemas for live schema registry metadata",
-              "truncated_fields": 3
-            }
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
-        "provider": "[REDACTED]",
-        "reason": "User is asking for their specific schemas (a list of user-owned items), which requires runtime data access, not conceptual explanation.",
-        "route": "EVIDENCE_PIPELINE",
-        "sql": {
-          "query": "SELECT 'dim_blueprint' as schema_name, 'BLUEPRINTTYPE' as column_name, 'STRING' as column_type UNION ALL"
-        },
-        "truncated_fields": 6
-      },
-      "stage": "llm sql repair",
-      "technique": "single LLM-owned SQL pass repair",
-      "timestamp": "2026-06-01T19:27:33.383707+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate_repair",
-      "correctness_role": "executes repaired SQL only if it compiles",
-      "duration_ms": 0.0,
-      "effect": "checks the LLM repair without backend mutation",
-      "efficiency_role": "stops after one repair",
-      "input_summary": {
-        "pass_id": "t1",
-        "sql": "SELECT 'dim_blueprint' as schema_name, 'BLUEPRINTTYPE' as column_name, 'STRING' as column_type UNION ALL"
-      },
-      "output": {
-        "error_message": "Parser Error: syntax error at end of input",
-        "error_type": "syntax_error",
-        "pass_id": "t1",
-        "passed": false,
-        "sql": "SELECT 'dim_blueprint' as schema_name, 'BLUEPRINTTYPE' as column_name, 'STRING' as column_type UNION ALL"
-      },
-      "stage": "llm sql compile gate",
-      "technique": "DuckDB EXPLAIN compile check for repaired LLM-owned SQL pass",
-      "timestamp": "2026-06-01T19:27:33.384354+00:00"
+      "timestamp": "2026-06-01T20:10:55.433546+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -794,11 +422,11 @@
       "effect": "records that backend did not replace LLM semantic or SQL/API generation",
       "efficiency_role": "bounds repair attempts before execution",
       "input_summary": {
-        "evidence_order": "MULTI_PASS",
+        "evidence_order": "SQL_FIRST",
         "route": "EVIDENCE_PIPELINE"
       },
       "output": {
-        "api_gate_passed": true,
+        "api_gate_passed": null,
         "api_repair_attempts": 0,
         "backend_semantic_decomposition_used": false,
         "backend_semantic_planning_used": false,
@@ -816,10 +444,8 @@
         "cache_hits": 0,
         "checkpoint_resume_used": false,
         "critical_path": {
-          "items": [
-            "t2"
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -838,52 +464,37 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_56204769dad54e468cff2282036144b3",
+        "evidence_bus_id": "evidence_run_178ca7324f6a46e29fca66ab20324855",
         "hidden_eval_gold_used": false,
-        "llm_evidence_order": "MULTI_PASS",
+        "llm_evidence_order": "SQL_FIRST",
         "llm_owned_generation": true,
-        "llm_pass_count": 2,
-        "llm_pass_graph_used": true,
+        "llm_pass_count": 0,
+        "llm_pass_graph_used": false,
         "llm_route": "EVIDENCE_PIPELINE",
         "max_api_workers": 2,
         "max_parallelism": 4,
         "max_sql_workers": 2,
         "model_cascade_used": false,
-        "multi_pass_enabled": true,
+        "multi_pass_enabled": false,
         "parallel_groups": {
-          "items": [
-            {
-              "items": [
-                "t2",
-                "t1"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
-        "parallel_pass_count": 2,
-        "pass_graph_gate_error_type": null,
-        "pass_graph_gate_passed": true,
-        "pass_graph_repair_attempted": false,
+        "parallel_pass_count": 0,
+        "pass_graph_gate_error_type": "empty_evidence_plan",
+        "pass_graph_gate_passed": false,
+        "pass_graph_repair_attempted": true,
         "pass_graph_repair_success": false,
         "pass_ids": {
-          "items": [
-            "t1",
-            "t2"
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
-        "pass_results_count": 2,
+        "pass_results_count": 1,
         "passes_completed": {
-          "items": [
-            "t2",
-            "t1"
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "passes_dependency_blocked": {
@@ -892,11 +503,8 @@
           "truncated_items": false
         },
         "passes_executed": {
-          "items": [
-            "t2",
-            "t1"
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "passes_failed": {
@@ -907,58 +515,24 @@
         "pipeline_stage_count": 8,
         "plan_version": 1,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_56204769dad54e468cff2282036144b3",
-        "run_id": "run_56204769dad54e468cff2282036144b3",
+        "result_bundle_id": "bundle_run_178ca7324f6a46e29fca66ab20324855",
+        "run_id": "run_178ca7324f6a46e29fca66ab20324855",
         "sequential_pass_count": 0,
-        "sql_gate_passed": false,
-        "sql_repair_attempts": 1,
+        "sql_gate_passed": null,
+        "sql_repair_attempts": 0,
         "stage_events": {
-          "items": [
-            {
-              "attempt_id": 0,
-              "event": "started",
-              "global_pass_id": "run_56204769dad54e468cff2282036144b3:t2",
-              "pass_id": "t2",
-              "plan_version": 1,
-              "run_id": "run_56204769dad54e468cff2282036144b3",
-              "stage": "SQL_API_GATE",
-              "status": "OK",
-              "truncated_fields": 3
-            },
-            {
-              "attempt_id": 0,
-              "event": "completed",
-              "global_pass_id": "run_56204769dad54e468cff2282036144b3:t2",
-              "pass_id": "t2",
-              "plan_version": 1,
-              "run_id": "run_56204769dad54e468cff2282036144b3",
-              "stage": "READY_FOR_FINAL_COMPOSITION",
-              "status": "OK",
-              "truncated_fields": 3
-            },
-            {
-              "attempt_id": 0,
-              "event": "completed",
-              "global_pass_id": "run_56204769dad54e468cff2282036144b3:t1",
-              "pass_id": "t1",
-              "plan_version": 1,
-              "run_id": "run_56204769dad54e468cff2282036144b3",
-              "stage": "READY_FOR_FINAL_COMPOSITION",
-              "status": "OK",
-              "truncated_fields": 3
-            }
-          ],
-          "total_items": 12,
-          "truncated_items": true
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
         },
         "stage_pipeline_used": true,
         "truncated_fields": 2,
         "v2_execution_optimizer_used": true,
-        "v2_pipeline_scheduler_used": true
+        "v2_pipeline_scheduler_used": false
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-01T19:27:33.384598+00:00"
+      "timestamp": "2026-06-01T20:10:55.433588+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -967,60 +541,16 @@
       "effect": "executes only LLM-proposed candidates that pass backend gates",
       "efficiency_role": "does not execute alternative backend-generated candidates",
       "input_summary": {
-        "tool_result_count": 2
+        "tool_result_count": 0
       },
       "output": {
-        "api_calls_executed": 1,
-        "api_results": {
-          "items": [
-            {
-              "dry_run": true,
-              "method": "GET",
-              "ok": false,
-              "result_preview": {
-                "caveat": "Adobe credentials unavailable; API call not executed.",
-                "dry_run": true,
-                "endpoint_family": "/data/foundation/schemaregistry/tenant/schemas",
-                "error_category": "dry_run_unavailable",
-                "evidence_state": "dry_run_unavailable",
-                "live_success": false,
-                "ok": false,
-                "usable_evidence": false
-              },
-              "url": "/data/foundation/schemaregistry/tenant/schemas"
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "dry_run_status": true,
-        "row_counts": {
-          "items": [
-            0
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "sql_calls_executed": 1,
-        "sql_results": {
-          "items": [
-            {
-              "ok": false,
-              "result_preview": {
-                "items": [],
-                "total_items": 0,
-                "truncated_items": false
-              },
-              "row_count": 0
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        }
+        "api_calls_executed": 0,
+        "dry_run_status": false,
+        "sql_calls_executed": 0
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-01T19:27:33.400796+00:00"
+      "timestamp": "2026-06-01T20:10:55.437465+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -1030,20 +560,20 @@
       "efficiency_role": "makes EvidenceBus construction explicit",
       "input_summary": {
         "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
-        "tool_result_count": 2
+        "tool_result_count": 0
       },
       "output": {
         "evidence_bus_built": true,
         "evidence_pipeline_bypassed": false,
-        "llm_evidence_order": "MULTI_PASS",
+        "llm_evidence_order": "SQL_FIRST",
         "llm_final_answer_composer_ran": true,
         "llm_route": "EVIDENCE_PIPELINE",
-        "pass_results_count": 2,
+        "pass_results_count": 1,
         "post_evidence_answer_router_ran": false
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-01T19:27:33.400819+00:00"
+      "timestamp": "2026-06-01T20:10:55.437478+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -1052,25 +582,24 @@
       "effect": "forwards executed SQL/API evidence into the existing grounded answer pipeline",
       "efficiency_role": "uses collected evidence without extra tool calls",
       "input_summary": {
-        "tool_result_count": 2
+        "tool_result_count": 0
       },
       "output": {
         "evidence": {
           "pass_ids": {
             "items": [
-              "t2",
-              "t1"
+              "pass_graph_gate"
             ],
-            "total_items": 2,
+            "total_items": 1,
             "truncated_items": false
           },
-          "pass_result_count": 2,
-          "run_id": "run_56204769dad54e468cff2282036144b3"
+          "pass_result_count": 1,
+          "run_id": "run_178ca7324f6a46e29fca66ab20324855"
         }
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-01T19:27:33.400945+00:00"
+      "timestamp": "2026-06-01T20:10:55.437572+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -1079,8 +608,8 @@
       "effect": "stores all LLM-declared pass results before final LLM aggregation",
       "efficiency_role": "reuses executed pass results without extra tools",
       "input_summary": {
-        "pass_results_count": 2,
-        "tool_result_count": 2
+        "pass_results_count": 1,
+        "tool_result_count": 0
       },
       "output": {
         "append_events": {
@@ -1088,28 +617,19 @@
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "t2"
-            },
-            {
-              "appended": true,
-              "attempt_id": 0,
-              "pass_id": "t1"
+              "pass_id": "pass_graph_gate"
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
-        "pass_results_count": 2,
-        "run_id": "run_56204769dad54e468cff2282036144b3",
+        "pass_results_count": 1,
+        "run_id": "run_178ca7324f6a46e29fca66ab20324855",
         "runtime_passes": {
           "items": [
             {
               "attempt_id": 0,
-              "cached_sources": {
-                "items": [],
-                "total_items": 0,
-                "truncated_items": false
-              },
+              "cached_sources": null,
               "dependency_resolution": {
                 "errors": {
                   "items": [],
@@ -1117,48 +637,23 @@
                   "truncated_items": false
                 },
                 "required": false,
-                "resolved": true,
-                "run_id": "run_56204769dad54e468cff2282036144b3"
+                "resolved": true
               },
-              "global_pass_id": "run_56204769dad54e468cff2282036144b3:t2",
-              "pass_id": "t2",
+              "global_pass_id": "run_178ca7324f6a46e29fca66ab20324855:pass_graph_gate",
+              "pass_id": "pass_graph_gate",
               "plan_version": 1,
-              "run_id": "run_56204769dad54e468cff2282036144b3",
-              "status": "API_ERROR",
-              "truncated_fields": 7
-            },
-            {
-              "attempt_id": 0,
-              "cached_sources": {
-                "items": [],
-                "total_items": 0,
-                "truncated_items": false
-              },
-              "dependency_resolution": {
-                "errors": {
-                  "items": [],
-                  "total_items": 0,
-                  "truncated_items": false
-                },
-                "required": false,
-                "resolved": true,
-                "run_id": "run_56204769dad54e468cff2282036144b3"
-              },
-              "global_pass_id": "run_56204769dad54e468cff2282036144b3:t1",
-              "pass_id": "t1",
-              "plan_version": 1,
-              "run_id": "run_56204769dad54e468cff2282036144b3",
-              "status": "COMPILE_ERROR",
+              "run_id": "run_178ca7324f6a46e29fca66ab20324855",
+              "status": "ERROR",
               "truncated_fields": 7
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         }
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-01T19:27:33.401032+00:00"
+      "timestamp": "2026-06-01T20:10:55.437617+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -1167,28 +662,21 @@
       "effect": "keeps SQL errors, API errors, live empty, and direct evidence distinct",
       "efficiency_role": "uses existing payloads only",
       "input_summary": {
-        "tool_result_count": 2
+        "tool_result_count": 0
       },
       "output": {
         "api": {
           "items": [
-            "API_ERROR"
+            "API_NOT_RUN"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "api_error_is_unavailable": true,
-        "caveats": {
-          "items": [
-            "api_error_is_unavailable_not_no_data"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
+        "api_error_is_unavailable": false,
         "live_empty_scoped": false,
         "sql": {
           "items": [
-            "SQL_ERROR"
+            "SQL_NOT_RUN"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -1196,7 +684,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-01T19:27:33.401037+00:00"
+      "timestamp": "2026-06-01T20:10:55.437622+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -1205,32 +693,25 @@
       "effect": "turns runtime evidence into typed answer fields",
       "efficiency_role": "uses existing slot extraction",
       "input_summary": {
-        "tool_result_count": 2
+        "tool_result_count": 0
       },
       "output": {
         "discrepancy_flags": {
           "sql_api_discrepancy": false
         },
         "dry_run_flags": {
-          "dry_run": true
+          "dry_run": false
         },
         "slots": {
           "answer_family": "schema_dataset",
           "api_error": false,
           "discrepancy": false,
-          "dry_run": true,
-          "slots_present": {
-            "items": [
-              "dry_run"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          }
+          "dry_run": false
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-01T19:27:33.419038+00:00"
+      "timestamp": "2026-06-01T20:10:55.440597+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -1239,28 +720,21 @@
       "effect": "lets the LLM own final answer composition from runtime evidence",
       "efficiency_role": "uses one final-answer LLM call after evidence execution",
       "input_summary": {
-        "runtime_pass_count": 2,
+        "runtime_pass_count": 1,
         "slot_counts": {
           "answer_family": "schema_dataset",
           "api_error": false,
           "discrepancy": false,
-          "dry_run": true,
-          "slots_present": {
-            "items": [
-              "dry_run"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          }
+          "dry_run": false
         }
       },
       "output": {
         "backend_unavailable": false,
-        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nBoth required data sources failed: the API call could not execute due to Adobe credentials being unavailable, and the SQL query encountered a syntax error at the end of input. Without successful results from either source, I cannot provide verified information about your schemas.",
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration error during execution and was unable to retrieve schema information. No data collection passes were available to query your schemas.",
         "model": "[REDACTED]",
         "parse_error": false,
         "provider": "[REDACTED]",
-        "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nBoth required data sources failed: the API call could not execute due to Adobe credentials being unavailable, and the SQL query encountered a syntax error at the end of input. Without successful results from either source, I cannot provide verified information about your schemas.",
+        "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration error during execution and was unable to retrieve schema information. No data collection passes were available to query your schemas.",
         "used_pass_ids": {
           "items": [],
           "total_items": 0,
@@ -1269,7 +743,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-01T19:27:36.148647+00:00"
+      "timestamp": "2026-06-01T20:10:57.951996+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -1281,12 +755,12 @@
         "composer": "LLMFinalAnswerComposer"
       },
       "output": {
-        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nBoth required data sources failed: the API call could not execute due to Adobe credentials being unavailable, and the SQL query encountered a syntax error at the end of input. Without successful results from either source, I cannot provide verified information about your schemas.",
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration error during execution and was unable to retrieve schema information. No data collection passes were available to query your schemas.",
         "passed": true
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-01T19:27:36.148664+00:00"
+      "timestamp": "2026-06-01T20:10:57.952046+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -1299,43 +773,30 @@
       },
       "output": {
         "error_message": "Final answer contains a hard claim not supported by runtime evidence.",
-        "error_type": "unsupported_claim",
+        "error_type": "caveat_error",
         "passed": false,
         "unsupported_claims": {
           "items": [
             {
               "hardness": "HARD",
-              "span": "failed",
-              "text": "failed",
-              "type": "STATUS",
-              "value": "failed"
+              "span": "No data",
+              "text": "No data",
+              "type": "NO_DATA",
+              "value": "no data"
             }
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "verifier": {
-          "action": "FALLBACK_DETERMINISTIC",
+          "action": "REWRITE_WITH_FEEDBACK",
           "allowed_fact_index": {
             "allowed_caveats": {
               "items": [
-                "API_ERROR"
+                "API_ERROR",
+                "EVIDENCE_PIPELINE PLANS MUST DECLARE AT LEAST ONE PASS."
               ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            "api_error_scopes": {
-              "items": [
-                "live api verification"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            "evidence_strings": {
-              "items": [
-                "/data/foundation/schemaregistry/tenant/schemas"
-              ],
-              "total_items": 1,
+              "total_items": 2,
               "truncated_items": false
             }
           },
@@ -1345,10 +806,10 @@
               "items": [
                 {
                   "hardness": "HARD",
-                  "span": "failed",
-                  "text": "failed",
-                  "type": "STATUS",
-                  "value": "failed"
+                  "span": "No data",
+                  "text": "No data",
+                  "type": "NO_DATA",
+                  "value": "no data"
                 }
               ],
               "total_items": 1,
@@ -1361,38 +822,38 @@
                 {
                   "claim": {
                     "hardness": "HARD",
-                    "span": "failed",
-                    "text": "failed",
-                    "type": "STATUS",
-                    "value": "failed"
+                    "span": "No data",
+                    "text": "No data",
+                    "type": "NO_DATA",
+                    "value": "no data"
                   },
-                  "reason": "status_not_in_allowed_facts",
-                  "status": "UNSUPPORTED"
+                  "reason": "api_error_is_not_no_data",
+                  "status": "NEEDS_CAVEAT"
                 }
               ],
               "total_items": 1,
               "truncated_items": false
             }
           },
-          "ok": false,
-          "unsupported_claims": {
+          "needs_caveat_claims": {
             "items": [
               {
                 "hardness": "HARD",
-                "span": "failed",
-                "text": "failed",
-                "type": "STATUS",
-                "value": "failed"
+                "span": "No data",
+                "text": "No data",
+                "type": "NO_DATA",
+                "value": "no data"
               }
             ],
             "total_items": 1,
             "truncated_items": false
-          }
+          },
+          "ok": false
         }
       },
       "stage": "answer gate",
       "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-01T19:27:36.151000+00:00"
+      "timestamp": "2026-06-01T20:10:57.953397+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_repair",
@@ -1407,11 +868,11 @@
       "output": {
         "candidate": {
           "backend_unavailable": false,
-          "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe API call could not execute due to Adobe credentials being unavailable, and the SQL query encountered a syntax error at the end of input. Without successful results from either source, I cannot provide verified information about your schemas.",
+          "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration error during execution and was unable to retrieve schema information.",
           "model": "[REDACTED]",
           "parse_error": false,
           "provider": "[REDACTED]",
-          "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe API call could not execute due to Adobe credentials being unavailable, and the SQL query encountered a syntax error at the end of input. Without successful results from either source, I cannot provide verified information about your schemas.",
+          "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration error during execution and was unable to retrieve schema information.",
           "used_pass_ids": {
             "items": [],
             "total_items": 0,
@@ -1425,23 +886,10 @@
             "allowed_fact_index": {
               "allowed_caveats": {
                 "items": [
-                  "API_ERROR"
+                  "API_ERROR",
+                  "EVIDENCE_PIPELINE PLANS MUST DECLARE AT LEAST ONE PASS."
                 ],
-                "total_items": 1,
-                "truncated_items": false
-              },
-              "api_error_scopes": {
-                "items": [
-                  "live api verification"
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              },
-              "evidence_strings": {
-                "items": [
-                  "/data/foundation/schemaregistry/tenant/schemas"
-                ],
-                "total_items": 1,
+                "total_items": 2,
                 "truncated_items": false
               }
             },
@@ -1451,8 +899,8 @@
                 "items": [
                   {
                     "hardness": "SOFT",
-                    "span": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe API call could not execute due to Adobe credent",
-                    "text": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe API call could not execute due to Adobe credent",
+                    "span": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration e",
+                    "text": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration e",
                     "type": "SOFT_TEXT"
                   }
                 ],
@@ -1466,8 +914,8 @@
                   {
                     "claim": {
                       "hardness": "SOFT",
-                      "span": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe API call could not execute due to Adobe credent",
-                      "text": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe API call could not execute due to Adobe credent",
+                      "span": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration e",
+                      "text": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration e",
                       "type": "SOFT_TEXT"
                     },
                     "reason": "soft_text",
@@ -1483,8 +931,8 @@
               "items": [
                 {
                   "hardness": "SOFT",
-                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe API call could not execute due to Adobe credent",
-                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe API call could not execute due to Adobe credent",
+                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration e",
+                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration e",
                   "type": "SOFT_TEXT"
                 }
               ],
@@ -1494,13 +942,13 @@
           }
         },
         "syntax_gate": {
-          "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe API call could not execute due to Adobe credentials being unavailable, and the SQL query encountered a syntax error at the end of input. Without successful results from either source, I cannot provide verified information about your schemas.",
+          "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration error during execution and was unable to retrieve schema information.",
           "passed": true
         }
       },
       "stage": "llm-owned answer repair",
       "technique": "single LLM-owned final answer repair",
-      "timestamp": "2026-06-01T19:27:38.925142+00:00"
+      "timestamp": "2026-06-01T20:11:00.425478+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -1509,7 +957,7 @@
       "effect": "records that V2 did not use deterministic answer templates, renderers, or selectors as competing generators",
       "efficiency_role": "no extra tool calls",
       "input_summary": {
-        "runtime_pass_count": 2
+        "runtime_pass_count": 1
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
@@ -1529,7 +977,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-01T19:27:38.925229+00:00"
+      "timestamp": "2026-06-01T20:11:00.425572+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -1558,7 +1006,7 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-01T19:27:38.925389+00:00"
+      "timestamp": "2026-06-01T20:11:00.425750+00:00"
     }
   ],
   "diagnostics": {
@@ -1569,9 +1017,9 @@
   },
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 1985,
+  "estimated_tokens": 1723,
   "execution_time": 0.0,
-  "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe API call could not execute due to Adobe credentials being unavailable, and the SQL query encountered a syntax error at the end of input. Without successful results from either source, I cannot provide verified information about your schemas.",
+  "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration error during execution and was unable to retrieve schema information.",
   "model_sweep_run_id": "claude_haiku_4_5",
   "original_query": "What schemas do I have?",
   "pioneer_model": "[REDACTED]",
@@ -1580,43 +1028,65 @@
   "preprocessing_time": 0.0,
   "query_id": "pioneer_sweep_claude_haiku_4_5_ambiguous_user_schemas",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 5.593153749592602,
-  "sql_call_count": 1,
+  "runtime": 5.0232400838285685,
+  "sql_call_count": 0,
   "steps": [
     {
-      "estimated_tokens": 1586,
+      "estimated_tokens": 1730,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/reports/pioneer_model_sweep/runs/claude_haiku_4_5/ambiguous_user_schemas/metadata.json",
-      "prompt_tokens": 2200
+      "prompt_tokens": 2317
     },
     {
       "aggregation_instruction": "",
       "api_request": null,
       "backend_unavailable": false,
       "diagnostics": {
-        "api_candidate_cards": 1,
+        "active_task_count": 0,
+        "api_candidate_cards": 0,
+        "api_candidate_success_count": 0,
+        "atomic_candidate_slots_used": false,
+        "atomic_checklist_used": true,
+        "atomic_weak_protocol_used": true,
         "backend_route_inference_used": false,
         "backend_semantic_decomposition_used": false,
         "backend_semantic_planning_used": false,
-        "candidate_card_latency_ms": 3295,
+        "backend_semantic_routing_used": false,
         "candidate_card_max_tokens": 220,
-        "candidate_card_success": 2,
+        "candidate_card_success": 0,
         "candidate_repair_attempts": 0,
         "candidate_repair_max_tokens": 220,
-        "dependency_edges": [],
-        "direct_route_challenge_max_tokens": 40,
+        "checklist_bits": {
+          "COUNT": 0,
+          "DATE": 0,
+          "LIST": 1,
+          "LIVE_CURRENT": 0,
+          "LOCAL_SNAPSHOT": 1,
+          "MIXED_CONCEPT_DATA": 0,
+          "PURE_CONCEPT": 0,
+          "RECORDS": 1,
+          "SHOW_ITEMS": 1,
+          "STATUS": 0
+        },
+        "checklist_latency_ms": 2775,
+        "checklist_parse_success": true,
+        "checklist_repair_attempted": false,
+        "checklist_route": "EVIDENCE_PIPELINE",
         "direct_route_challenge_needs_evidence": null,
         "direct_route_challenge_repair_attempted": false,
         "direct_route_challenge_used": false,
         "evidence_planner_called": true,
+        "final_answer_max_tokens": 500,
+        "fixed_task_slot_error": "empty_task_slots",
+        "fixed_task_slots_used": false,
         "llm_route_gate_used": true,
-        "pass_candidate_cards": 2,
+        "pass_candidate_cards": 0,
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
-        "planner_parse_source": "weak_model_line_protocol",
-        "planner_provider_latency_ms": 7518,
-        "planner_repair_attempted": false,
-        "planner_success": true,
+        "planner_parse_source": "atomic_weak_protocol",
+        "planner_provider_latency_ms": 8732,
+        "planner_repair_attempted": true,
+        "planner_success": false,
         "planner_timeout": false,
         "planner_toolcall_attempted": false,
         "planner_toolcall_supported": false,
@@ -1625,7 +1095,6 @@
           "supports_json_content_fallback": true,
           "supports_tool_calls": false
         },
-        "route_card_latency_ms": 2124,
         "route_card_max_tokens": 80,
         "route_card_repair_attempted": false,
         "route_card_route": "EVIDENCE",
@@ -1633,130 +1102,43 @@
         "route_gate_repair_attempted": false,
         "route_gate_route": "EVIDENCE_PIPELINE",
         "route_gate_success": true,
-        "sql_candidate_cards": 1,
-        "task_count": 2,
-        "task_ledger_latency_ms": 2097,
+        "slot_count": 5,
+        "sql_candidate_cards": 0,
+        "sql_candidate_success_count": 0,
+        "task_ledger_latency_ms": 3915,
         "task_ledger_max_tokens": 300,
-        "task_ledger_repair_attempted": false,
-        "task_ledger_success": true,
-        "task_paths": [
-          "SQL",
-          "API"
-        ],
+        "task_ledger_repair_attempted": true,
+        "task_ledger_repair_latency_ms": 2042,
+        "task_ledger_success": false,
+        "task_slot_repair_attempted": true,
         "weak_model_stable_protocol_used": true,
         "weak_protocol_route_card_used": true,
         "weak_protocol_task_ledger_used": true
       },
       "direct_answer": null,
-      "evidence_order": "MULTI_PASS",
+      "evidence_order": "SQL_FIRST",
       "kind": "llm_unified_planner",
       "model": "[REDACTED]",
-      "parse_error": false,
-      "passes": [
-        {
-          "api_request": null,
-          "can_run_parallel": true,
-          "depends_on": [],
-          "evidence_order": "SQL_FIRST",
-          "expected_result": "List all schemas from dim_blueprint, dim_collection, dim_segment, dim_target, dim_connector, dim_campaign, dim_property with names and types",
-          "fallback": false,
-          "optional": false,
-          "pass_id": "t1",
-          "path": "SQL",
-          "sql": {
-            "params": [],
-            "query": "SELECT 'dim_blueprint' as schema_name, 'BLUEPRINTTYPE' as column_name, 'STRING' as column_type UNION ALL"
-          },
-          "subtask": "List all schemas from dim_blueprint, dim_collection, dim_segment, dim_target, dim_connector, dim_campaign, dim_property with names and types"
-        },
-        {
-          "api_request": {
-            "method": "GET",
-            "params": {},
-            "path": "/data/foundation/schemaregistry/tenant/schemas"
-          },
-          "can_run_parallel": true,
-          "depends_on": [],
-          "evidence_order": "API_FIRST",
-          "expected_result": "Fetch tenant schemas via GET /data/foundation/schemaregistry/tenant/schemas for live schema registry metadata",
-          "fallback": false,
-          "optional": false,
-          "pass_id": "t2",
-          "path": "API",
-          "sql": null,
-          "subtask": "Fetch tenant schemas via GET /data/foundation/schemaregistry/tenant/schemas for live schema registry metadata"
-        }
-      ],
+      "parse_error": true,
+      "passes": [],
       "provider": "[REDACTED]",
       "raw_preview": {
-        "candidate_t1_sql": "PATH=SQL\nSQL=SELECT 'dim_blueprint' as schema_name, 'BLUEPRINTTYPE' as column_name, 'STRING' as column_type UNION ALL\nSELECT 'dim_blueprint', 'EXTENDS', 'STRING' UNION ALL\nSELECT 'dim_blueprint', 'UPDATEDCLIENTID', 'STRING' UNION ALL\nSELECT 'dim_blueprint', 'LABELSBLUEPRINT', 'STRING' UNION ALL\nSELECT 'dim_blueprint', 'UPDATEDTIME', 'TIMESTAMP' UNION ALL\nSELECT 'dim_blueprint', 'CLASS', 'STRING' UNION ALL\nSELECT 'dim_blueprint', 'BLUEPRINTID', 'STRING' UNION ALL\nSELECT 'dim_blueprint', 'IMMUTABLETAGS', 'STRING' UNION ALL\nSELECT 'dim_blueprint', 'TENANT', 'STRING' UNION ALL\nSELECT '",
-        "candidate_t2_api": "PATH=API\nMETHOD=GET\nAPI_PATH=/data/foundation/schemaregistry/tenant/schemas\nPARAMS={}",
-        "route_card": "ROUTE=EVIDENCE\nDIRECT_ANSWER=\nREASON=User is asking for their specific schemas (a list of user-owned items), which requires runtime data access, not conceptual explanation.",
-        "task_ledger": "TASK t1 | SQL | [] | List all schemas from dim_blueprint, dim_collection, dim_segment, dim_target, dim_connector, dim_campaign, dim_property with names and types\nTASK t2 | API | [] | Fetch tenant schemas via GET /data/foundation/schemaregistry/tenant/schemas for live schema registry metadata\nAGGREGATE | Combine SQL snapshot of local schema objects with API schema registry to show complete schema inventory"
+        "atomic_checklist": "RECORDS=1\nLIST=1\nCOUNT=0\nSTATUS=0\nDATE=0\nLOCAL_SNAPSHOT=1\nLIVE_CURRENT=0\nSHOW_ITEMS=1\nMIXED_CONCEPT_DATA=0\nPURE_CONCEPT=0\nDIRECT_ANSWER=",
+        "fixed_task_slots": "# Task Slot Configuration\n\nBased on your question \"What schemas do I have?\", here is the optimal five-slot setup:\n\n## Slot Assignments\n\n**T1_PATH=SQL**\n- T1_DEPS=[]\n- T1_DESC=Query local database to retrieve all available schemas\n\n**T2_PATH=API**\n- T2_DEPS=[]\n- T2_DESC=Fetch current/live schema metadata from platform API\n\n**T3_PATH=DIRECT**\n- T3_DEPS=[T1, T2]\n- T3_DESC=Conceptual explanation of schema types and structure\n\n**T4_PATH=SQL_AND_API**\n- T4_DEPS=[T1, T2]\n- T4_DESC=Cross-validate schema consistency between local snapshot and live platform\n\n**T5_PATH=AGGREGATE**\n- T5_DEPS=[T1, T2, T3, T4]\n- T5_DESC=Combine all evidence into unified schema inventory with comparison notes\n\n## Aggregation Strategy\n\n**AGGREGATE=** Merge T1 (local schemas) and T2 (live schemas) into a single authoritative list. Include T3's conceptual context. Apply T4's validation results to flag discrepancies. Present final output as: (1) Complete schema",
+        "fixed_task_slots_repair": "# Task Slot Configuration - REPAIRED\n\nBased on your question \"What schemas do I have?\", here is the corrected five-slot setup:\n\n## Slot Assignments\n\n**T1_PATH=SQL**\n- T1_DEPS=[]\n- T1_DESC=Query local database to retrieve all available schemas\n\n**T2_PATH=API**\n- T2_DEPS=[]\n- T2_DESC=Fetch current/live schema metadata from platform API\n\n**T3_PATH=DIRECT**\n- T3_DEPS=[T1, T2]\n- T3_DESC=Conceptual explanation of schema types and structure\n\n**T4_PATH=SQL_AND_API**\n- T4_DEPS=[T1, T2]\n- T4_DESC=Cross-validate schema consistency between local snapshot and live platform\n\n**T5_PATH=AGGREGATE**\n- T5_DEPS=[T1, T2, T3, T4]\n- T5_DESC=Combine all evidence into unified schema inventory with comparison notes\n\n## Aggregation Strategy\n\n**AGGREGATE=** Merge T1 (local schemas) and T2 (live schemas) into a single authoritative list. Include T3's conceptual context. Apply T4's validation results to flag discrepancies. Present final output as:"
       },
-      "reason": "User is asking for their specific schemas (a list of user-owned items), which requires runtime data access, not conceptual explanation.",
+      "reason": "Fixed task slots failed shape gate: empty_task_slots",
       "route": "EVIDENCE_PIPELINE",
-      "sql": {
-        "params": [],
-        "query": "SELECT 'dim_blueprint' as schema_name, 'BLUEPRINTTYPE' as column_name, 'STRING' as column_type UNION ALL"
-      }
-    },
-    {
-      "headers": {},
-      "kind": "api_call",
-      "method": "GET",
-      "params": {},
-      "result": {
-        "dry_run": true,
-        "endpoint": "/data/foundation/schemaregistry/tenant/schemas",
-        "error": "Adobe credentials unavailable; API call not executed.",
-        "method": "GET",
-        "ok": false,
-        "result_preview": null,
-        "url": "https://platform.adobe.io/data/foundation/schemaregistry/tenant/schemas"
-      },
-      "url": "/data/foundation/schemaregistry/tenant/schemas",
-      "validation": {
-        "errors": [],
-        "ok": true,
-        "repaired": false,
-        "warnings": [
-          "LLM API request pass passed request gate."
-        ]
-      }
-    },
-    {
-      "kind": "sql_call",
-      "result": {
-        "compile_gate": {
-          "error_message": "Parser Error: syntax error at end of input",
-          "error_type": "syntax_error",
-          "passed": false,
-          "sql": "SELECT 'dim_blueprint' as schema_name, 'BLUEPRINTTYPE' as column_name, 'STRING' as column_type UNION ALL"
-        },
-        "error": "Parser Error: syntax error at end of input",
-        "limited": false,
-        "ok": false,
-        "row_count": 0
-      },
-      "sql": "SELECT 'dim_blueprint' as schema_name, 'BLUEPRINTTYPE' as column_name, 'STRING' as column_type UNION ALL",
-      "validation": {
-        "errors": [
-          "Parser Error: syntax error at end of input"
-        ],
-        "ok": false,
-        "repaired": false,
-        "warnings": []
-      }
+      "sql": null
     },
     {
       "evidence_bus_built": true,
       "evidence_pipeline_bypassed": false,
       "kind": "evidence_boundary",
-      "llm_evidence_order": "MULTI_PASS",
+      "llm_evidence_order": "SQL_FIRST",
       "llm_final_answer_composer_ran": true,
       "llm_route": "EVIDENCE_PIPELINE",
-      "pass_results_count": 2,
+      "pass_results_count": 1,
       "post_evidence_answer_router_ran": false
     },
     {
@@ -1765,12 +1147,12 @@
       "caveats_included": [],
       "claimed_facts": [],
       "error_message": null,
-      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe API call could not execute due to Adobe credentials being unavailable, and the SQL query encountered a syntax error at the end of input. Without successful results from either source, I cannot provide verified information about your schemas.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration error during execution and was unable to retrieve schema information.",
       "kind": "llm_final_answer_composer",
       "model": "[REDACTED]",
       "parse_error": false,
       "provider": "[REDACTED]",
-      "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe API call could not execute due to Adobe credentials being unavailable, and the SQL query encountered a syntax error at the end of input. Without successful results from either source, I cannot provide verified information about your schemas.",
+      "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration error during execution and was unable to retrieve schema information.",
       "unanswered_subtasks": [],
       "used_pass_ids": []
     },
@@ -1795,16 +1177,13 @@
           "action": "ACCEPT",
           "allowed_fact_index": {
             "allowed_caveats": [
-              "API_ERROR"
+              "API_ERROR",
+              "EVIDENCE_PIPELINE PLANS MUST DECLARE AT LEAST ONE PASS."
             ],
-            "api_error_scopes": [
-              "live api verification"
-            ],
+            "api_error_scopes": [],
             "counts": [],
             "dates": [],
-            "evidence_strings": [
-              "/data/foundation/schemaregistry/tenant/schemas"
-            ],
+            "evidence_strings": [],
             "ids": [],
             "live_empty_scopes": [],
             "missing_roles": [],
@@ -1818,8 +1197,8 @@
             "claims": [
               {
                 "hardness": "SOFT",
-                "span": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe API call could not execute due to Adobe credent",
-                "text": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe API call could not execute due to Adobe credent",
+                "span": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration e",
+                "text": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration e",
                 "type": "SOFT_TEXT",
                 "value": ""
               }
@@ -1830,8 +1209,8 @@
               {
                 "claim": {
                   "hardness": "SOFT",
-                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe API call could not execute due to Adobe credent",
-                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe API call could not execute due to Adobe credent",
+                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration e",
+                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration e",
                   "type": "SOFT_TEXT",
                   "value": ""
                 },
@@ -1846,8 +1225,8 @@
           "supported_claims": [
             {
               "hardness": "SOFT",
-              "span": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe API call could not execute due to Adobe credent",
-              "text": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe API call could not execute due to Adobe credent",
+              "span": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration e",
+              "text": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration e",
               "type": "SOFT_TEXT",
               "value": ""
             }
@@ -1858,7 +1237,7 @@
       "syntax_gate": {
         "error_message": null,
         "error_type": null,
-        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe API call could not execute due to Adobe credentials being unavailable, and the SQL query encountered a syntax error at the end of input. Without successful results from either source, I cannot provide verified information about your schemas.",
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.\n\nThe evidence pipeline encountered a configuration error during execution and was unable to retrieve schema information.",
         "passed": true
       },
       "used_pass_ids": []
@@ -1866,7 +1245,7 @@
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 5.525536667089909
+    "answer_time": 4.9944506250321865
   },
-  "tool_call_count": 2
+  "tool_call_count": 0
 }

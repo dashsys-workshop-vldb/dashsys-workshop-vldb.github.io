@@ -1,5 +1,5 @@
 {
-  "answer_time": 2.8090243339538574,
+  "answer_time": 3.234356709290296,
   "api_call_count": 0,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-01T19:32:34.887513+00:00"
+      "timestamp": "2026-06-01T20:18:13.817985+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-01T19:32:34.887528+00:00"
+      "timestamp": "2026-06-01T20:18:13.817999+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,7 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-01T19:32:34.887532+00:00"
+      "timestamp": "2026-06-01T20:18:13.818003+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -80,25 +80,39 @@
         "query": "When was the journey \"Birthday Message\" published?"
       },
       "metrics": {
+        "active_task_count": 0,
         "api_candidate_cards": 0,
+        "api_candidate_success_count": 0,
+        "atomic_candidate_slots_used": false,
+        "atomic_checklist_used": true,
+        "atomic_weak_protocol_used": true,
         "backend_route_inference_used": false,
         "backend_semantic_decomposition_used": false,
         "backend_semantic_planning_used": false,
+        "backend_semantic_routing_used": false,
         "candidate_card_max_tokens": 220,
         "candidate_card_success": 0,
         "candidate_repair_attempts": 0,
         "candidate_repair_max_tokens": 220,
-        "direct_route_challenge_max_tokens": 40,
+        "checklist_bits": {},
+        "checklist_latency_ms": 1637,
+        "checklist_parse_success": false,
+        "checklist_repair_attempted": true,
+        "checklist_repair_latency_ms": 1495,
+        "checklist_route": "EVIDENCE_PIPELINE",
         "direct_route_challenge_needs_evidence": null,
         "direct_route_challenge_repair_attempted": false,
         "direct_route_challenge_used": false,
         "evidence_planner_called": true,
+        "final_answer_max_tokens": 500,
+        "fixed_task_slot_error": "empty_task_slots",
+        "fixed_task_slots_used": false,
         "llm_route_gate_used": true,
         "pass_candidate_cards": 0,
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
-        "planner_parse_source": "weak_model_line_protocol",
-        "planner_provider_latency_ms": 4754,
+        "planner_parse_source": "atomic_weak_protocol",
+        "planner_provider_latency_ms": 6536,
         "planner_repair_attempted": true,
         "planner_success": false,
         "planner_timeout": false,
@@ -109,23 +123,22 @@
           "supports_json_content_fallback": true,
           "supports_tool_calls": false
         },
-        "route_card_latency_ms": 1436,
         "route_card_max_tokens": 80,
-        "route_card_parse_error": "ROUTE must be DIRECT or EVIDENCE.",
         "route_card_repair_attempted": true,
-        "route_card_repair_latency_ms": 1147,
-        "route_card_route": "EVIDENCE",
+        "route_card_route": null,
         "route_card_success": false,
         "route_gate_repair_attempted": true,
         "route_gate_route": "EVIDENCE_PIPELINE",
         "route_gate_success": false,
+        "slot_count": 5,
         "sql_candidate_cards": 0,
-        "task_ledger_error": "empty_task_ledger",
-        "task_ledger_latency_ms": 1063,
+        "sql_candidate_success_count": 0,
+        "task_ledger_latency_ms": 1597,
         "task_ledger_max_tokens": 300,
         "task_ledger_repair_attempted": true,
-        "task_ledger_repair_latency_ms": 1108,
+        "task_ledger_repair_latency_ms": 1806,
         "task_ledger_success": false,
+        "task_slot_repair_attempted": true,
         "weak_model_stable_protocol_used": true,
         "weak_protocol_route_card_used": true,
         "weak_protocol_task_ledger_used": true
@@ -137,13 +150,13 @@
         "parse_error": true,
         "provider": "[REDACTED]",
         "raw_preview": {},
-        "reason": "Task Ledger failed shape gate: empty_task_ledger",
+        "reason": "Fixed task slots failed shape gate: empty_task_slots",
         "route": "EVIDENCE_PIPELINE",
         "truncated_fields": 6
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-01T19:32:39.649165+00:00"
+      "timestamp": "2026-06-01T20:18:20.360454+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
@@ -182,7 +195,7 @@
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-01T19:32:39.649852+00:00"
+      "timestamp": "2026-06-01T20:18:20.361309+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_repair",
@@ -204,24 +217,8 @@
           "model": "[REDACTED]",
           "parse_error": true,
           "provider": "[REDACTED]",
-          "raw_preview": {
-            "repair_context": {
-              "failed_component": "pass_graph_gate",
-              "graph_gate_error_message": "EVIDENCE_PIPELINE plans must declare at least one pass.",
-              "graph_gate_error_type": "empty_evidence_plan",
-              "previous_plan": {
-                "backend_unavailable": false,
-                "evidence_order": "SQL_FIRST",
-                "model": "[REDACTED]",
-                "parse_error": true,
-                "provider": "[REDACTED]",
-                "reason": "Task Ledger failed shape gate: empty_task_ledger",
-                "route": "EVIDENCE_PIPELINE",
-                "truncated_fields": 6
-              }
-            }
-          },
-          "reason": "Unsupported repair context for weak protocol.",
+          "raw_preview": {},
+          "reason": "Fixed task slots failed shape gate: empty_task_slots",
           "route": "EVIDENCE_PIPELINE",
           "truncated_fields": 6
         },
@@ -229,7 +226,7 @@
       },
       "stage": "llm-owned pass graph repair",
       "technique": "single LLM-owned pass graph repair",
-      "timestamp": "2026-06-01T19:32:42.351544+00:00"
+      "timestamp": "2026-06-01T20:18:22.374266+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate_repair",
@@ -268,7 +265,7 @@
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate on repaired plan",
-      "timestamp": "2026-06-01T19:32:42.351558+00:00"
+      "timestamp": "2026-06-01T20:18:22.374279+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -340,7 +337,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-01T19:32:42.351599+00:00"
+      "timestamp": "2026-06-01T20:18:22.374320+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -400,7 +397,7 @@
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-01T19:32:42.351609+00:00"
+      "timestamp": "2026-06-01T20:18:22.374330+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -451,7 +448,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_66066bc77a46476a917f0169d1d7fd6c",
+        "evidence_bus_id": "evidence_run_f5d7e3860969492693725aa8eff71570",
         "hidden_eval_gold_used": false,
         "llm_evidence_order": "SQL_FIRST",
         "llm_owned_generation": true,
@@ -502,8 +499,8 @@
         "pipeline_stage_count": 8,
         "plan_version": 1,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_66066bc77a46476a917f0169d1d7fd6c",
-        "run_id": "run_66066bc77a46476a917f0169d1d7fd6c",
+        "result_bundle_id": "bundle_run_f5d7e3860969492693725aa8eff71570",
+        "run_id": "run_f5d7e3860969492693725aa8eff71570",
         "sequential_pass_count": 0,
         "sql_gate_passed": null,
         "sql_repair_attempts": 0,
@@ -519,7 +516,7 @@
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-01T19:32:42.351623+00:00"
+      "timestamp": "2026-06-01T20:18:22.374344+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -537,7 +534,7 @@
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-01T19:32:42.353778+00:00"
+      "timestamp": "2026-06-01T20:18:22.375686+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -560,7 +557,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-01T19:32:42.353785+00:00"
+      "timestamp": "2026-06-01T20:18:22.375691+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -581,12 +578,12 @@
             "truncated_items": false
           },
           "pass_result_count": 1,
-          "run_id": "run_66066bc77a46476a917f0169d1d7fd6c"
+          "run_id": "run_f5d7e3860969492693725aa8eff71570"
         }
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-01T19:32:42.353829+00:00"
+      "timestamp": "2026-06-01T20:18:22.375745+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -611,7 +608,7 @@
           "truncated_items": false
         },
         "pass_results_count": 1,
-        "run_id": "run_66066bc77a46476a917f0169d1d7fd6c",
+        "run_id": "run_f5d7e3860969492693725aa8eff71570",
         "runtime_passes": {
           "items": [
             {
@@ -626,10 +623,10 @@
                 "required": false,
                 "resolved": true
               },
-              "global_pass_id": "run_66066bc77a46476a917f0169d1d7fd6c:pass_graph_gate",
+              "global_pass_id": "run_f5d7e3860969492693725aa8eff71570:pass_graph_gate",
               "pass_id": "pass_graph_gate",
               "plan_version": 1,
-              "run_id": "run_66066bc77a46476a917f0169d1d7fd6c",
+              "run_id": "run_f5d7e3860969492693725aa8eff71570",
               "status": "ERROR",
               "truncated_fields": 7
             }
@@ -640,7 +637,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-01T19:32:42.353844+00:00"
+      "timestamp": "2026-06-01T20:18:22.375760+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -671,7 +668,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-01T19:32:42.353846+00:00"
+      "timestamp": "2026-06-01T20:18:22.375762+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -712,7 +709,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-01T19:32:42.355385+00:00"
+      "timestamp": "2026-06-01T20:18:22.377349+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -757,7 +754,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-01T19:32:43.595482+00:00"
+      "timestamp": "2026-06-01T20:18:23.893608+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -775,7 +772,7 @@
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-01T19:32:43.595555+00:00"
+      "timestamp": "2026-06-01T20:18:23.893649+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -792,7 +789,7 @@
       },
       "stage": "answer gate",
       "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-01T19:32:43.595562+00:00"
+      "timestamp": "2026-06-01T20:18:23.893653+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_repair",
@@ -829,7 +826,7 @@
       },
       "stage": "llm-owned answer repair",
       "technique": "single LLM-owned final answer repair",
-      "timestamp": "2026-06-01T19:32:45.162431+00:00"
+      "timestamp": "2026-06-01T20:18:25.609683+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -858,7 +855,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-01T19:32:45.162462+00:00"
+      "timestamp": "2026-06-01T20:18:25.609715+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -887,7 +884,7 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-01T19:32:45.162541+00:00"
+      "timestamp": "2026-06-01T20:18:25.609786+00:00"
     }
   ],
   "diagnostics": {
@@ -898,7 +895,7 @@
   },
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 895,
+  "estimated_tokens": 995,
   "execution_time": 0.0,
   "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
   "model_sweep_run_id": "qwen3_4b_instruct_2507",
@@ -909,39 +906,53 @@
   "preprocessing_time": 0.0,
   "query_id": "pioneer_sweep_qwen3_4b_instruct_2507_birthday_message_published",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 2.833180666901171,
+  "runtime": 3.2585245417430997,
   "sql_call_count": 0,
   "steps": [
     {
-      "estimated_tokens": 971,
+      "estimated_tokens": 1058,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/reports/pioneer_model_sweep/runs/qwen3_4b_instruct_2507/birthday_message_published/metadata.json",
-      "prompt_tokens": 1534
+      "prompt_tokens": 1634
     },
     {
       "aggregation_instruction": "",
       "api_request": null,
       "backend_unavailable": false,
       "diagnostics": {
+        "active_task_count": 0,
         "api_candidate_cards": 0,
+        "api_candidate_success_count": 0,
+        "atomic_candidate_slots_used": false,
+        "atomic_checklist_used": true,
+        "atomic_weak_protocol_used": true,
         "backend_route_inference_used": false,
         "backend_semantic_decomposition_used": false,
         "backend_semantic_planning_used": false,
+        "backend_semantic_routing_used": false,
         "candidate_card_max_tokens": 220,
         "candidate_card_success": 0,
         "candidate_repair_attempts": 0,
         "candidate_repair_max_tokens": 220,
-        "direct_route_challenge_max_tokens": 40,
+        "checklist_bits": {},
+        "checklist_latency_ms": 1637,
+        "checklist_parse_success": false,
+        "checklist_repair_attempted": true,
+        "checklist_repair_latency_ms": 1495,
+        "checklist_route": "EVIDENCE_PIPELINE",
         "direct_route_challenge_needs_evidence": null,
         "direct_route_challenge_repair_attempted": false,
         "direct_route_challenge_used": false,
         "evidence_planner_called": true,
+        "final_answer_max_tokens": 500,
+        "fixed_task_slot_error": "empty_task_slots",
+        "fixed_task_slots_used": false,
         "llm_route_gate_used": true,
         "pass_candidate_cards": 0,
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
-        "planner_parse_source": "weak_model_line_protocol",
-        "planner_provider_latency_ms": 4754,
+        "planner_parse_source": "atomic_weak_protocol",
+        "planner_provider_latency_ms": 6536,
         "planner_repair_attempted": true,
         "planner_success": false,
         "planner_timeout": false,
@@ -952,23 +963,22 @@
           "supports_json_content_fallback": true,
           "supports_tool_calls": false
         },
-        "route_card_latency_ms": 1436,
         "route_card_max_tokens": 80,
-        "route_card_parse_error": "ROUTE must be DIRECT or EVIDENCE.",
         "route_card_repair_attempted": true,
-        "route_card_repair_latency_ms": 1147,
-        "route_card_route": "EVIDENCE",
+        "route_card_route": null,
         "route_card_success": false,
         "route_gate_repair_attempted": true,
         "route_gate_route": "EVIDENCE_PIPELINE",
         "route_gate_success": false,
+        "slot_count": 5,
         "sql_candidate_cards": 0,
-        "task_ledger_error": "empty_task_ledger",
-        "task_ledger_latency_ms": 1063,
+        "sql_candidate_success_count": 0,
+        "task_ledger_latency_ms": 1597,
         "task_ledger_max_tokens": 300,
         "task_ledger_repair_attempted": true,
-        "task_ledger_repair_latency_ms": 1108,
+        "task_ledger_repair_latency_ms": 1806,
         "task_ledger_success": false,
+        "task_slot_repair_attempted": true,
         "weak_model_stable_protocol_used": true,
         "weak_protocol_route_card_used": true,
         "weak_protocol_task_ledger_used": true
@@ -981,12 +991,12 @@
       "passes": [],
       "provider": "[REDACTED]",
       "raw_preview": {
-        "route_card": null,
-        "route_card_repair": null,
-        "task_ledger": null,
-        "task_ledger_repair": null
+        "atomic_checklist": null,
+        "atomic_checklist_repair": null,
+        "fixed_task_slots": null,
+        "fixed_task_slots_repair": null
       },
-      "reason": "Task Ledger failed shape gate: empty_task_ledger",
+      "reason": "Fixed task slots failed shape gate: empty_task_slots",
       "route": "EVIDENCE_PIPELINE",
       "sql": null
     },
@@ -1037,7 +1047,7 @@
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 2.8090243339538574
+    "answer_time": 3.234356709290296
   },
   "tool_call_count": 0
 }

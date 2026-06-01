@@ -2311,25 +2311,35 @@ class AgentExecutor:
             error = "LLM backend unavailable for DIRECT task."
         else:
             try:
-                result = client.generate_messages(
-                    [
-                        {
-                            "role": "system",
-                            "content": (
-                                "Answer this DIRECT subtask concisely and generally. "
-                                "Do not claim user-specific records, counts, IDs, dates, statuses, live state, SQL results, or API results. "
-                                "Return plain text only."
-                            ),
-                        },
-                        {
-                            "role": "user",
-                            "content": f"USER_PROMPT={query}\nTASK_ID={pass_spec.pass_id}\nTASK_DESCRIPTION={pass_spec.subtask}",
-                        },
-                    ],
-                    tools=None,
-                    tool_choice=None,
-                    parallel_tool_calls=None,
-                )
+                messages = [
+                    {
+                        "role": "system",
+                        "content": (
+                            "Answer this DIRECT subtask concisely and generally. "
+                            "Do not claim user-specific records, counts, IDs, dates, statuses, live state, SQL results, or API results. "
+                            "Return plain text only."
+                        ),
+                    },
+                    {
+                        "role": "user",
+                        "content": f"USER_PROMPT={query}\nTASK_ID={pass_spec.pass_id}\nTASK_DESCRIPTION={pass_spec.subtask}",
+                    },
+                ]
+                try:
+                    result = client.generate_messages(
+                        messages,
+                        tools=None,
+                        tool_choice=None,
+                        parallel_tool_calls=None,
+                        max_tokens=120,
+                    )
+                except TypeError:
+                    result = client.generate_messages(
+                        messages,
+                        tools=None,
+                        tool_choice=None,
+                        parallel_tool_calls=None,
+                    )
                 if not result.get("ok", True) and not result.get("content"):
                     error = str(result.get("error") or result.get("reason") or "DIRECT task LLM call failed")
                 else:

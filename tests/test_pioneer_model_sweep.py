@@ -315,6 +315,7 @@ def test_slow_model_route_probe_timeout_prevents_expensive_full_smoke(monkeypatc
     model_result = result["models"][0]
     assert model_result["route_gate_probe"]["usable"] is False
     assert model_result["metrics"]["focused_smoke_pass"] is False
+    assert model_result["model_connection_status"] == "route_timeout"
     assert model_result["prompt_results"] == []
 
 
@@ -634,6 +635,30 @@ def test_missing_mapping_marks_model_unavailable_without_crashing(monkeypatch, t
     assert model_result["pioneer_model_id"] == "Unmapped Display"
     assert model_result["availability"]["available"] is False
     assert model_result["prompt_results"] == []
+    assert model_result["model_connection_status"] == "provider_unavailable"
+
+
+def test_callable_route_parse_failure_is_protocol_parse_failure_not_not_connected(monkeypatch, tmp_path) -> None:
+    monkeypatch.setattr(sweep, "SLOW_ROUTE_PROBE_MODELS", {"ParseFailModel"})
+    monkeypatch.setattr(sweep, "_availability_probe", lambda model: {"available": True, "model": model})
+    monkeypatch.setattr(
+        sweep,
+        "_route_gate_short_probe",
+        lambda model: {
+            "usable": False,
+            "error_category": "route_gate_parse_failure",
+            "prompt_results": [{"parse_error": True}],
+        },
+    )
+
+    result = run_pioneer_model_sweep(SimpleNamespace(outputs_dir=tmp_path), models=["ParseFailModel"], report_dir=tmp_path)
+
+    model_result = result["models"][0]
+    assert model_result["availability_probe_callable"] is True
+    assert model_result["route_atomic_call_completed"] is True
+    assert model_result["route_atomic_parse_success"] is False
+    assert model_result["route_atomic_failure_category"] == "protocol_parse_failure"
+    assert model_result["model_connection_status"] == "protocol_parse_failure"
 
 
 class _FakeExecutor:

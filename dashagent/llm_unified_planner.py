@@ -9,7 +9,7 @@ from typing import Any
 
 from .llm_client import get_llm_client
 from .trajectory import compact_preview, redact_secrets
-from .v2_weak_model_protocol import run_weak_model_stable_protocol
+from .v2_atomic_weak_protocol import run_atomic_weak_protocol
 
 
 ALLOWED_ROUTES = {"LLM_DIRECT", "EVIDENCE_PIPELINE"}
@@ -154,7 +154,7 @@ def run_llm_unified_planner(
             backend_unavailable=True,
             diagnostics={**base_diagnostics, "planner_provider_latency_ms": _elapsed_ms(started)},
         )
-    protocol_result = run_weak_model_stable_protocol(
+    protocol_result = run_atomic_weak_protocol(
         client=client,
         user_prompt=user_prompt,
         schema_context=schema_context,
@@ -166,7 +166,7 @@ def run_llm_unified_planner(
         **protocol_result.diagnostics,
         "planner_toolcall_attempted": False,
         "planner_json_fallback_used": bool(protocol_result.diagnostics.get("planner_json_fallback_used")),
-        "planner_parse_source": "weak_model_line_protocol",
+        "planner_parse_source": "atomic_weak_protocol",
         "provider_capabilities": capabilities.to_dict(),
     }
     if protocol_result.backend_unavailable:

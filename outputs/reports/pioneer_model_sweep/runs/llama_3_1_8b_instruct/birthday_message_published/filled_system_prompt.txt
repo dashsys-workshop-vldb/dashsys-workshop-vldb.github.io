@@ -10,50 +10,55 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
   "backend_semantic_planning_used": false,
   "llm_owned_generation": true,
   "llm_unified_plan": {
-    "aggregation_instruction": "",
+    "aggregation_instruction": "Combine the results from T2 and T4 to determine the publication date of the \"Birthday Message\" journey.",
     "api_request": null,
     "backend_unavailable": false,
     "diagnostics": {
-      "api_candidate_cards": 1,
+      "active_task_count": 0,
+      "api_candidate_cards": 0,
+      "api_candidate_success_count": 0,
+      "atomic_candidate_slots_used": false,
+      "atomic_checklist_used": true,
+      "atomic_weak_protocol_used": true,
       "backend_route_inference_used": false,
       "backend_semantic_decomposition_used": false,
       "backend_semantic_planning_used": false,
-      "candidate_card_latency_ms": 1902,
+      "backend_semantic_routing_used": false,
       "candidate_card_max_tokens": 220,
-      "candidate_card_success": 2,
+      "candidate_card_success": 0,
       "candidate_repair_attempts": 0,
       "candidate_repair_max_tokens": 220,
-      "dependency_edges": [
-        [
-          "t1",
-          "t2"
-        ],
-        [
-          "t1",
-          "t4"
-        ],
-        [
-          "t2",
-          "t4"
-        ],
-        [
-          "t3",
-          "t4"
-        ]
-      ],
-      "direct_route_challenge_max_tokens": 40,
+      "checklist_bits": {
+        "COUNT": 0,
+        "DATE": 1,
+        "LIST": 0,
+        "LIVE_CURRENT": 0,
+        "LOCAL_SNAPSHOT": 0,
+        "MIXED_CONCEPT_DATA": 0,
+        "PURE_CONCEPT": 0,
+        "RECORDS": 0,
+        "SHOW_ITEMS": 0,
+        "STATUS": 0
+      },
+      "checklist_latency_ms": 3451,
+      "checklist_parse_success": true,
+      "checklist_repair_attempted": false,
+      "checklist_route": "EVIDENCE_PIPELINE",
       "direct_route_challenge_needs_evidence": null,
       "direct_route_challenge_repair_attempted": false,
       "direct_route_challenge_used": false,
       "evidence_planner_called": true,
+      "final_answer_max_tokens": 500,
+      "fixed_task_slot_error": "unknown_dependency",
+      "fixed_task_slots_used": false,
       "llm_route_gate_used": true,
-      "pass_candidate_cards": 2,
+      "pass_candidate_cards": 0,
       "planner_json_fallback_used": false,
       "planner_json_parse_error": null,
-      "planner_parse_source": "weak_model_line_protocol",
-      "planner_provider_latency_ms": 4909,
-      "planner_repair_attempted": false,
-      "planner_success": true,
+      "planner_parse_source": "atomic_weak_protocol",
+      "planner_provider_latency_ms": 9547,
+      "planner_repair_attempted": true,
+      "planner_success": false,
       "planner_timeout": false,
       "planner_toolcall_attempted": false,
       "planner_toolcall_supported": false,
@@ -62,7 +67,6 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
         "supports_json_content_fallback": true,
         "supports_tool_calls": false
       },
-      "route_card_latency_ms": 1353,
       "route_card_max_tokens": 80,
       "route_card_repair_attempted": false,
       "route_card_route": "EVIDENCE",
@@ -70,101 +74,31 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "route_gate_repair_attempted": false,
       "route_gate_route": "EVIDENCE_PIPELINE",
       "route_gate_success": true,
-      "sql_candidate_cards": 1,
-      "task_count": 4,
-      "task_ledger_latency_ms": 1653,
+      "slot_count": 5,
+      "sql_candidate_cards": 0,
+      "sql_candidate_success_count": 0,
+      "task_ledger_latency_ms": 3010,
       "task_ledger_max_tokens": 300,
-      "task_ledger_repair_attempted": false,
-      "task_ledger_success": true,
-      "task_paths": [
-        "DIRECT",
-        "SQL",
-        "API",
-        "AGGREGATE"
-      ],
+      "task_ledger_repair_attempted": true,
+      "task_ledger_repair_latency_ms": 3085,
+      "task_ledger_success": false,
+      "task_slot_repair_attempted": true,
       "weak_model_stable_protocol_used": true,
       "weak_protocol_route_card_used": true,
       "weak_protocol_task_ledger_used": true
     },
     "direct_answer": null,
-    "evidence_order": "MULTI_PASS",
+    "evidence_order": "SQL_FIRST",
     "model": "meta-llama/Llama-3.1-8B-Instruct",
-    "parse_error": false,
-    "passes": [
-      {
-        "api_request": null,
-        "can_run_parallel": true,
-        "depends_on": [],
-        "evidence_order": "NO_EVIDENCE",
-        "expected_result": "Determine the journey \"Birthday Message\" publication date from the journey name.",
-        "fallback": false,
-        "optional": false,
-        "pass_id": "t1",
-        "path": "DIRECT",
-        "sql": null,
-        "subtask": "Determine the journey \"Birthday Message\" publication date from the journey name."
-      },
-      {
-        "api_request": null,
-        "can_run_parallel": false,
-        "depends_on": [
-          "t1"
-        ],
-        "evidence_order": "SQL_FIRST",
-        "expected_result": "Retrieve the publication date of the \"Birthday Message\" journey from the `dim_campaign` table.",
-        "fallback": false,
-        "optional": false,
-        "pass_id": "t2",
-        "path": "SQL",
-        "sql": {
-          "params": [],
-          "query": "SELECT UPDATEDTIME FROM dim_campaign WHERE NAME = 'Birthday Message'"
-        },
-        "subtask": "Retrieve the publication date of the \"Birthday Message\" journey from the `dim_campaign` table."
-      },
-      {
-        "api_request": {
-          "method": "GET",
-          "params": {},
-          "path": "/ajo/journey"
-        },
-        "can_run_parallel": true,
-        "depends_on": [],
-        "evidence_order": "API_FIRST",
-        "expected_result": "Check the current publication status of the \"Birthday Message\" journey using the Journey Optimizer API.",
-        "fallback": false,
-        "optional": false,
-        "pass_id": "t3",
-        "path": "API",
-        "sql": null,
-        "subtask": "Check the current publication status of the \"Birthday Message\" journey using the Journey Optimizer API."
-      },
-      {
-        "api_request": null,
-        "can_run_parallel": false,
-        "depends_on": [
-          "t1",
-          "t2",
-          "t3"
-        ],
-        "evidence_order": "NO_EVIDENCE",
-        "expected_result": "Combine the results from tasks t1, t2, and t3 to determine the publication date of the \"Birthday Message\" journey.",
-        "fallback": false,
-        "optional": false,
-        "pass_id": "t4",
-        "path": "AGGREGATION_ONLY",
-        "sql": null,
-        "subtask": "Combine the results from tasks t1, t2, and t3 to determine the publication date of the \"Birthday Message\" journey."
-      }
-    ],
+    "parse_error": true,
+    "passes": [],
     "provider": "pioneer_chat",
     "raw_preview": {
-      "candidate_t2_sql": "PATH=SQL\nSQL=SELECT UPDATEDTIME FROM dim_campaign WHERE NAME = 'Birthday Message'\nPARAMS=[]",
-      "candidate_t3_api": "PATH=API\nMETHOD=GET\nAPI_PATH=/ajo/journey\nPARAMS={journeyName=\"Birthday Message\"}",
-      "route_card": "ROUTE=EVIDENCE\nDIRECT_ANSWER=\nREASON=The prompt asks about a specific journey's publication date, which requires user-specific data.",
-      "task_ledger": "TASK t1 | DIRECT | [] | Determine the journey \"Birthday Message\" publication date from the journey name.\nTASK t2 | SQL | [t1] | Retrieve the publication date of the \"Birthday Message\" journey from the `dim_campaign` table.\nTASK t3 | API | [] | Check the current publication status of the \"Birthday Message\" journey using the Journey Optimizer API.\nTASK t4 | AGGREGATE | [t1, t2, t3] | Combine the results from tasks t1, t2, and t3 to determine the publication date of the \"Birthday Message\" journey."
+      "atomic_checklist": "RECORDS=0\nLIST=0\nCOUNT=0\nSTATUS=0\nDATE=1\nLOCAL_SNAPSHOT=0\nLIVE_CURRENT=0\nSHOW_ITEMS=0\nMIXED_CONCEPT_DATA=0\nPURE_CONCEPT=0\nDIRECT_ANSWER=",
+      "fixed_task_slots": "To fill the five fixed task slots, I will provide a response that meets the requirements. Since the prompt does not specify a particular task or question, I will create a hypothetical scenario for each slot. Here's how I will fill the slots:\n\n1. **T1_PATH**: I will choose the path as **DIRECT** because it involves a concept-only prompt, which fits the description of the task.\n2. **T1_DEPS**: Since the task is concept-only, there are no dependencies, so I will leave this as an empty list.\n3. **T1_DESC**: For the description, I will provide a simple concept-based task: \"Describe the concept of a birthday message.\"\n4. **T2_PATH**: I will choose the path as **SQL** because it involves accessing local data, which is a common use case for SQL.\n5. **T2_DEPS**: For the dependencies, I will list the necessary tables or data sources required for the task, such as \"birthday_messages\" and \"users\".\n6. **T2_DESC**: For the description, I will provide a task that involves querying the local database, such as \"Retrieve the total number of birthday messages sent in the last year.\"\n7. **T3_PATH**: I will choose the path as **API** because it involves accessing live data through an API, which is a common use case for APIs.\n8. **T3_DEPS**: For the dependencies, I will list the necessary API",
+      "fixed_task_slots_repair": "Based on the provided information, I will fill in the task slots as follows:\n\nT1_PATH: DIRECT\nT1_DEPS: []\nT1_DESC: Describe the concept of a birthday message.\nT2_PATH: SQL\nT2_DEPS: [\"birthday_messages\", \"users\"]\nT2_DESC: Query the database to retrieve the publication date of the \"Birthday Message\" journey.\nT3_PATH: API\nT3_DEPS: []\nT3_DESC: Use the API to retrieve the current publication date of the \"Birthday Message\" journey.\nT4_PATH: SQL\nT4_DEPS: [\"birthday_messages\", \"users\"]\nT4_DESC: Query the database to retrieve the publication date of the \"Birthday Message\" journey.\nT5_PATH: AGGREGATE\nT5_DEPS: []\nT5_DESC: Combine the results from T2 and T4 to determine the publication date of the \"Birthday Message\" journey.\n\nAGGREGATE: Combine the results from T2 and T4 to determine the publication date of the \"Birthday Message\" journey.\n\nThe final output will be:\n\nT1_PATH: DIRECT\nT1_DEPS: []\nT1_DESC: Describe the concept of a birthday message.\nT2_PATH: SQL\nT2_DEPS: [\"birthday_messages\", \"users\"]\nT2_DESC: Query the database to retrieve the publication date of the \"Birthday Message\" journey.\nT3_PATH: API\nT3_DEPS: []\nT3_DESC"
     },
-    "reason": "The prompt asks about a specific journey's publication date, which requires user-specific data.",
+    "reason": "Fixed task slots failed shape gate: unknown_dependency",
     "route": "EVIDENCE_PIPELINE",
     "sql": null
   },
@@ -181,14 +115,14 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "max_sql_workers": 2,
       "run_timeout_ms": 30000
     },
-    "created_at": "2026-06-01T19:31:11.646891+00:00",
-    "deadline_at": "2026-06-01T19:31:41.646891+00:00",
-    "evidence_bus_id": "evidence_run_18a1584df63245a8a55a3126d8ab5f3a",
+    "created_at": "2026-06-01T20:16:30.206635+00:00",
+    "deadline_at": "2026-06-01T20:17:00.206635+00:00",
+    "evidence_bus_id": "evidence_run_6b623e97e1bc4b2799e3945813612b1c",
     "original_prompt": "When was the journey \"Birthday Message\" published?",
     "plan_version": 1,
     "prompt_id": "pioneer_sweep_llama_3_1_8b_instruct_birthday_message_published",
-    "result_bundle_id": "bundle_run_18a1584df63245a8a55a3126d8ab5f3a",
-    "run_id": "run_18a1584df63245a8a55a3126d8ab5f3a",
+    "result_bundle_id": "bundle_run_6b623e97e1bc4b2799e3945813612b1c",
+    "run_id": "run_6b623e97e1bc4b2799e3945813612b1c",
     "status": "RUNNING"
   },
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
