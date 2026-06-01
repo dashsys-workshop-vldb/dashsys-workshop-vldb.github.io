@@ -21,7 +21,7 @@ def main() -> int:
     parser.add_argument(
         "--models",
         default=None,
-        help="Comma-separated Pioneer model display names. Defaults to PIONEER_MODEL_SWEEP or the curated seven-model set.",
+        help="Comma-separated Pioneer model display names. Defaults to PIONEER_MODEL_SWEEP or the curated non-GPT-4 model set.",
     )
     args = parser.parse_args()
 

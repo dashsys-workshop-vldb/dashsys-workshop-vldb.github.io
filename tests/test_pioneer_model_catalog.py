@@ -81,12 +81,14 @@ def test_mapping_suggestion_keeps_display_name_separate_from_actual_model_id() -
     assert match["confidence"] >= 0.99
 
 
-def test_discovery_desired_names_include_gpt_light_fallback_candidates() -> None:
+def test_discovery_desired_names_exclude_gpt4_family_and_prioritize_qwen() -> None:
     desired = desired_pioneer_model_mapping_names()
 
-    assert desired[:3] == ["Gpt 4o Mini", "Gpt 4.1 Mini", "Gpt 4.1 Nano"]
+    assert desired[0] == "Qwen3 4B Instruct 2507"
     assert "Gpt 4o" not in desired
-    assert len([name for name in desired if name.lower().startswith("gpt")]) == 3
+    assert "Gpt 4o Mini" not in desired
+    assert "Gpt 4.1 Mini" not in desired
+    assert not [name for name in desired if name.lower().startswith(("gpt 4", "gpt-4"))]
 
 
 def test_low_confidence_mapping_is_not_silently_used() -> None:

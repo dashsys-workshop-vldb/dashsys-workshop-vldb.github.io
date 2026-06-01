@@ -1,0 +1,101 @@
+{
+  "backend_semantic_planning_used": false,
+  "llm_owned_generation": true,
+  "llm_unified_plan": {
+    "aggregation_instruction": "",
+    "api_request": {
+      "method": "GET",
+      "params": {},
+      "path": "/ajo/journey"
+    },
+    "backend_unavailable": false,
+    "direct_answer": null,
+    "evidence_order": "MULTI_PASS",
+    "model": "google/gemma-4-E2B-it",
+    "parse_error": false,
+    "passes": [
+      {
+        "api_request": {
+          "method": "GET",
+          "params": {},
+          "path": "/ajo/journey"
+        },
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "API_FIRST",
+        "expected_result": "List of journeys/campaigns and their statuses",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "pass_1",
+        "path": "API_FIRST",
+        "sql": null,
+        "subtask": "Retrieve all journey/campaign statuses to find 'Birthday Message' status."
+      },
+      {
+        "api_request": {
+          "method": "GET",
+          "params": {},
+          "path": "/status/monitoring"
+        },
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "API_FIRST",
+        "expected_result": "Live status monitoring data",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "pass_2",
+        "path": "API_FIRST",
+        "sql": null,
+        "subtask": "Retrieve live status monitoring data to find 'Birthday Message' status."
+      },
+      {
+        "api_request": null,
+        "can_run_parallel": false,
+        "depends_on": [
+          "pass_1",
+          "pass_2"
+        ],
+        "evidence_order": "NO_EVIDENCE",
+        "expected_result": "The status of the 'Birthday Message' journey/campaign",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "pass_3",
+        "path": "SQL_FIRST",
+        "sql": null,
+        "subtask": "Evidence pass 3."
+      }
+    ],
+    "provider": "pioneer_chat",
+    "raw_preview": {
+      "preview": "\"{\\\"route\\\": \\\"EVIDENCE_PIPELINE\\\", \\\"passes\\\": [{\\\"api_request\\\": {\\\"method\\\": \\\"GET\\\", \\\"params\\\": {}, \\\"path\\\": \\\"/ajo/journey\\\"}, \\\"can_run_parallel\\\": true, \\\"depends_on\\\": [], \\\"evidence_order\\\": \\\"API_FIRST\\\", \\\"expected_result\\\": \\\"List of journeys/campaigns and their statuses\\\", \\\"fallback\\\": false, \\\"optional\\\": false, \\\"pass_id\\\": \\\"pass_1\\\", \\\"path\\\": \\\"API_FIRST\\\", \\\"sql\\\": null, \\\"subtask\\\": \\\"Retrieve all journey/campaign statuses to find 'Birthday Message' status.\\\"}, {\\\"api_request\\\": {\\\"method\\\": \\\"GET\\\", \\\"params\\\": {}, \\\"path\\\": \\\"/status/monitoring\\\"}, \\\"can_run_parallel\\\": true, \\\"depends_on\\\": [], \\\"evidence_order\\\": \\\"API_FIRST\\\", \\\"expected_result\\\": \\\"Live status monitoring data\\\", \\\"fallback\\\": false, \\\"optional\\\": false, \\\"pass_id\\\": \\\"pass_2\\\", \\\"path\\\": \\\"API_FIRST\\\", \\\"sql\\\": null, \\\"subtask\\\": \\\"Retrieve live status monitoring data to find 'Birthday Message' status.\\\"}, {\\\"sql\\\": {\\\"params\\\": [], \\\"query\\\": \\\"SELECT T1.status FROM journey_list AS T1 WHER...",
+      "truncated": true
+    },
+    "reason": "Need to check the status of the 'Birthday Message' by querying the journey list endpoint and the status monitoring endpoint, and then combining the results.",
+    "route": "EVIDENCE_PIPELINE",
+    "sql": null
+  },
+  "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
+  "query": "Compare local and live status of Birthday Message if both are available.",
+  "query_id": "pioneer_sweep_gemma_4_e2b_it_compare_local_live_birthday_status",
+  "run_context": {
+    "budget": {
+      "max_answer_repair_attempts": 1,
+      "max_api_workers": 2,
+      "max_parallelism": 4,
+      "max_passes": 6,
+      "max_repair_attempts": 1,
+      "max_sql_workers": 2,
+      "run_timeout_ms": 30000
+    },
+    "created_at": "2026-06-01T09:50:55.428212+00:00",
+    "deadline_at": "2026-06-01T09:51:25.428212+00:00",
+    "evidence_bus_id": "evidence_run_37c47a8100de4b4d8c1d10bfb4cbb0ac",
+    "original_prompt": "Compare local and live status of Birthday Message if both are available.",
+    "plan_version": 1,
+    "prompt_id": "pioneer_sweep_gemma_4_e2b_it_compare_local_live_birthday_status",
+    "result_bundle_id": "bundle_run_37c47a8100de4b4d8c1d10bfb4cbb0ac",
+    "run_id": "run_37c47a8100de4b4d8c1d10bfb4cbb0ac",
+    "status": "RUNNING"
+  },
+  "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+}

@@ -6,11 +6,11 @@
 | --- | --- |
 | Query | Show the default merge policy for schema class '_xdm.context.profile'. |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
-| Final answer | The default merge policy is Default Timebased. This is based on live merge-policy API evidence. |
-| Strict score | 0.5383 |
-| Correctness score | 0.5579 |
-| Answer / SQL / API score | 0.1157 / None / 1.0 |
-| Tools / tokens / runtime | 1 / 650 / 0.501262292265892 |
+| Final answer | The default merge policy requires live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable. |
+| Strict score | unavailable |
+| Correctness score | unavailable |
+| Answer / SQL / API score | unavailable / unavailable / unavailable |
+| Tools / tokens / runtime | 1 / 700 / 0.01582325017079711 |
 
 ## Dataflow Graph
 
@@ -22,11 +22,11 @@ flowchart LR
   C --> P["Plan SQL/API"]
   P --> S["SQL rows"]
   P --> A["API candidates: 'items': ['merge_policies'], 'total_ite..."]
-  A --> E["Live/API evidence"]
+  A --> E["Dry-run API"]
   S --> V["Evidence bus"]
   E --> V
   V --> H["Answer synthesis"]
-  H --> F["Final: The default merge policy is Default Tim..."]
+  H --> F["Final: The default merge policy requires live..."]
 ```
 
 ## Checkpoint Timeline
@@ -51,21 +51,22 @@ flowchart LR
 | 16 | checkpoint_11_call_budget | efficiency control | tool-call budgeting | planned_steps=1 item(s) | planned_sql_calls=0; planned_api_calls=1; final_planned_calls=1; max_total_tool_calls=2 | keeps tool calls within per-family limits | yes | yes | no |
 | 17 | checkpoint_12_validation | validation | SQL/API safety validation | optimized_steps=1 item(s) | api_validation_status=1 item(s) | records whether planned SQL/API calls were safe to execute | yes | yes | yes |
 | 18 | checkpoint_13_tool_execution | execution | SQL/API tool execution | validated_step_count=1 | sql_calls_executed=0; api_calls_executed=1 | captures the actual SQL/API evidence gathered by the backend | yes | yes | no |
-| 19 | checkpoint_14_evidence_bus | evidence forwarding | operand forwarding / EvidenceBus | tool_result_count=1 | evidence=9 field(s) | forwards structured facts to API params and answer slots | yes | yes | no |
-| 20 | checkpoint_15_answer_slots | answer synthesis | structured answer slot extraction | tool_result_count=1 | answer_intent=DETAIL; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); slots=9 field(s) | turns raw tool results into typed evidence fields | yes | yes | no |
-| 21 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=1; slots_present=10 item(s) | verifier_passed=True; rewrite_applied=False | checks final-answer claims against SQL/API evidence | yes | yes | no |
-| 22 | checkpoint_17_answer_reranking | answer selection | deterministic answer reranking | answer_family=merge_policy | candidate_count=0; selected_candidate_type=base | selects the safest answer from same-evidence candidates | yes | yes | no |
-| 23 | checkpoint_18_final_answer | final response | concise grounded final response | verifier_passed=True | answer_length=95; final_answer=The default merge policy is Default Timebased. This is ba... | returns the final concise answer to the agent harness | yes | yes | no |
-| 24 | checkpoint_official_token_reduction | query understanding | unavailable | unavailable | unavailable | Checkpoint recorded query understanding progress. | no | no | no |
+| 19 | checkpoint_evidence_pipeline_boundary | evidence forwarding | pre-evidence routing boundary | strategy=SQL_FIRST_API_VERIFY | evidence_bus_built=True; evidence_pipeline_bypassed=False; post_evidence_answer_router_ran=False | records that the prompt continued into the evidence-backed answer path | yes | yes | no |
+| 20 | checkpoint_14_evidence_bus | evidence forwarding | operand forwarding / EvidenceBus | tool_result_count=1 | evidence=3 field(s) | forwards structured facts to API params and answer slots | yes | yes | no |
+| 21 | checkpoint_15_answer_slots | answer synthesis | structured answer slot extraction | tool_result_count=1 | answer_intent=DETAIL; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); slots=6 field(s) | turns raw tool results into typed evidence fields | yes | yes | no |
+| 22 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=0; slots_present=2 item(s) | verifier_passed=True; rewrite_applied=False | checks final-answer claims against SQL/API evidence | yes | yes | no |
+| 23 | checkpoint_17_answer_reranking | answer selection | deterministic answer reranking | answer_family=merge_policy | candidate_count=0; selected_candidate_type=base | selects the safest answer from same-evidence candidates | yes | yes | no |
+| 24 | checkpoint_18_final_answer | final response | concise grounded final response | verifier_passed=True | answer_length=140; final_answer=The default merge policy requires live Adobe API evidence... | returns the final concise answer to the agent harness | yes | yes | no |
+| 25 | checkpoint_official_token_reduction | query understanding | unavailable | unavailable | unavailable | Checkpoint recorded query understanding progress. | no | no | no |
 
 ## Evidence Table
 
 | Evidence | Used/status | Source | Preview |
 | --- | --- | --- | --- |
 | SQL evidence | n/a - no SQL call in trajectory | n/a - no SQL call in trajectory | n/a - no SQL rows preview recorded |
-| API evidence | no | GET /data/core/ups/config/mergePolicies | n/a - no API result preview recorded |
+| API evidence | dry-run | GET /data/core/ups/config/mergePolicies | n/a - no API result preview recorded |
 | Local Parquet evidence | unavailable | unavailable | query=Show the default merge policy for schema class '_xdm.cont...; query_id=example_021 |
-| Dry-run label | no | API dry-run result label | No successful evidence was available from executed tools. |
+| Dry-run label | yes | API dry-run result label | API tool was invoked and validated, but live evidence was unavailable because Adobe credentials were missing. |
 | Unsupported claims replaced | no | supportable_answer_rewrite_eval | unavailable |
 
 ## Decision Table
@@ -73,7 +74,7 @@ flowchart LR
 | Decision | Selected value | Reason | Promotion status |
 | --- | --- | --- | --- |
 | Why SQL was used | SQL calls=0 | API_ONLY | promoted_default |
-| Why API was used or skipped | API calls=1; dry_run=False | n/a - no API policy recorded | promoted_default |
+| Why API was used or skipped | API calls=1; dry_run=True | n/a - no API policy recorded | promoted_default |
 | Answer template / rewriter | packaged answer synthesizer | No default-on answer rewrite promoted. | promoted_default + shadow_only diagnostics |
 | Endpoint family changed? | unavailable | no_validated_replacement_endpoint_candidate | shadow_only |
 | Candidate promoted? | unavailable | No promoted candidate for packaged path. | shadow_only / isolated_trial |

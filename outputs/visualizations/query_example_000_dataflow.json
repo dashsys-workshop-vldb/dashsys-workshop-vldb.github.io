@@ -244,10 +244,22 @@
       "affects_accuracy": "yes",
       "affects_efficiency": "yes",
       "affects_safety": "no",
-      "checkpoint_id": "checkpoint_14_evidence_bus",
+      "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
       "checkpoint_order": 21,
+      "short_input_summary": "strategy=SQL_FIRST_API_VERIFY",
+      "short_output_summary": "evidence_bus_built=True; evidence_pipeline_bypassed=False; post_evidence_answer_router_ran=False",
+      "stage": "evidence forwarding",
+      "technique": "pre-evidence routing boundary",
+      "what_changed": "records that the prompt continued into the evidence-backed answer path"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_14_evidence_bus",
+      "checkpoint_order": 22,
       "short_input_summary": "tool_result_count=2",
-      "short_output_summary": "evidence=6 field(s)",
+      "short_output_summary": "evidence=4 field(s)",
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
       "what_changed": "forwards structured facts to API params and answer slots"
@@ -257,7 +269,7 @@
       "affects_efficiency": "yes",
       "affects_safety": "no",
       "checkpoint_id": "checkpoint_15_answer_slots",
-      "checkpoint_order": 22,
+      "checkpoint_order": 23,
       "short_input_summary": "tool_result_count=2",
       "short_output_summary": "answer_intent=WHEN; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); missing_slots=1 item(s)",
       "stage": "answer synthesis",
@@ -269,8 +281,8 @@
       "affects_efficiency": "yes",
       "affects_safety": "no",
       "checkpoint_id": "checkpoint_16_answer_verification",
-      "checkpoint_order": 23,
-      "short_input_summary": "claim_count=3; slots_present=9 item(s)",
+      "checkpoint_order": 24,
+      "short_input_summary": "claim_count=2; slots_present=6 item(s)",
       "short_output_summary": "verifier_passed=True; rewrite_applied=False",
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
@@ -281,7 +293,7 @@
       "affects_efficiency": "yes",
       "affects_safety": "no",
       "checkpoint_id": "checkpoint_17_answer_reranking",
-      "checkpoint_order": 24,
+      "checkpoint_order": 25,
       "short_input_summary": "answer_family=journey_published",
       "short_output_summary": "candidate_count=0; selected_candidate_type=base",
       "stage": "answer selection",
@@ -293,9 +305,9 @@
       "affects_efficiency": "yes",
       "affects_safety": "no",
       "checkpoint_id": "checkpoint_18_final_answer",
-      "checkpoint_order": 25,
+      "checkpoint_order": 26,
       "short_input_summary": "verifier_passed=True",
-      "short_output_summary": "answer_length=162; final_answer=The journey \"Birthday Message\" has not been published. Th...",
+      "short_output_summary": "answer_length=199; final_answer=The journey \"Birthday Message\" has not been published. Th...",
       "stage": "final response",
       "technique": "concise grounded final response",
       "what_changed": "returns the final concise answer to the agent harness"
@@ -305,7 +317,7 @@
       "affects_efficiency": "no",
       "affects_safety": "no",
       "checkpoint_id": "checkpoint_official_token_reduction",
-      "checkpoint_order": 26,
+      "checkpoint_order": 27,
       "short_input_summary": "unavailable",
       "short_output_summary": "unavailable",
       "stage": "query understanding",
@@ -324,7 +336,7 @@
       "decision": "Why API was used or skipped",
       "promotion_status": "promoted_default",
       "reason": "n/a - no API policy recorded",
-      "selected_value": "API calls=1; dry_run=False"
+      "selected_value": "API calls=1; dry_run=True"
     },
     {
       "decision": "Answer template / rewriter",
@@ -354,9 +366,9 @@
     },
     {
       "evidence_type": "API evidence",
-      "preview": "{\"filter\": \"name==Birthday Message\", \"pagination\": {\"page\": 0, \"pageSize\": 100, \"totalCount\": 0}}",
+      "preview": "n/a - no API result preview recorded",
       "source": "GET /ajo/journey",
-      "used_or_status": "yes"
+      "used_or_status": "dry-run"
     },
     {
       "evidence_type": "Local Parquet evidence",
@@ -366,9 +378,9 @@
     },
     {
       "evidence_type": "Dry-run label",
-      "preview": "At least one SQL/API result provided evidence for answer construction.",
+      "preview": "SQL evidence is available. API tool was invoked and validated, but live API evidence was unavailable because Adobe credentials were missing.",
       "source": "API dry-run result label",
-      "used_or_status": "no"
+      "used_or_status": "yes"
     },
     {
       "evidence_type": "Unsupported claims replaced",
@@ -377,19 +389,19 @@
       "used_or_status": "no"
     }
   ],
-  "mermaid_dataflow_graph": "\nflowchart LR\n  Q[\"Raw query: When was the journey 'Birthday Message' p...\"] --> N[\"Normalize + tokens\"]\n  N --> R[\"Route: SQL_PLUS_API\"]\n  R --> C[\"Context tables: 'items': ['dim_campaign'], 'total_items...\"]\n  C --> P[\"Plan SQL/API\"]\n  P --> S[\"SQL rows\"]\n  P --> A[\"API candidates: 'items': ['journey_list'], 'total_items...\"]\n  A --> E[\"Live/API evidence\"]\n  S --> V[\"Evidence bus\"]\n  E --> V\n  V --> H[\"Answer synthesis\"]\n  H --> F[\"Final: The journey 'Birthday Message' has not...\"]\n",
+  "mermaid_dataflow_graph": "\nflowchart LR\n  Q[\"Raw query: When was the journey 'Birthday Message' p...\"] --> N[\"Normalize + tokens\"]\n  N --> R[\"Route: SQL_PLUS_API\"]\n  R --> C[\"Context tables: 'items': ['dim_campaign'], 'total_items...\"]\n  C --> P[\"Plan SQL/API\"]\n  P --> S[\"SQL rows\"]\n  P --> A[\"API candidates: 'items': ['journey_list'], 'total_items...\"]\n  A --> E[\"Dry-run API\"]\n  S --> V[\"Evidence bus\"]\n  E --> V\n  V --> H[\"Answer synthesis\"]\n  H --> F[\"Final: The journey 'Birthday Message' has not...\"]\n",
   "query_summary": {
-    "answer_score": 0.5044,
-    "api_score": null,
-    "correctness_score": 0.7305,
+    "answer_score": "unavailable",
+    "api_score": "unavailable",
+    "correctness_score": "unavailable",
     "current_packaged_strategy_used": "SQL_FIRST_API_VERIFY",
-    "final_answer": "The journey \"Birthday Message\" has not been published. The database shows a null published_time for this journey, and the API returned usable supporting evidence.",
+    "final_answer": "The journey \"Birthday Message\" has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable.",
     "query": "When was the journey 'Birthday Message' published?",
     "query_id": "example_000",
-    "runtime": 4.92185250017792,
-    "sql_score": 0.9,
-    "strict_score": 0.6823,
-    "tokens": 810,
+    "runtime": 0.021087625063955784,
+    "sql_score": "unavailable",
+    "strict_score": "unavailable",
+    "tokens": 826,
     "tool_calls": 2
   },
   "source_trajectory": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_000/sql_first_api_verify/trajectory.json"

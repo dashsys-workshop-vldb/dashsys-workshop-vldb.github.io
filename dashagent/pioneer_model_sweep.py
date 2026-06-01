@@ -14,39 +14,70 @@ from .llm_client import PioneerChatLLMClient
 from .trajectory import redact_secrets
 
 
-GPT_LIGHT_BASELINE_CANDIDATES = [
-    "Gpt 4o Mini",
-    "Gpt 4.1 Mini",
-    "Gpt 4.1 Nano",
-]
-
 DEFAULT_PIONEER_MODEL_SWEEP = [
-    "Gpt 4o Mini",
+    "Qwen3 4B Instruct 2507",
+    "Qwen3 8B",
+    "Qwen3.5 9B",
+    "Qwen3.6 27B",
+    "Qwen3.6 Flash",
+    "Qwen3.6 Plus",
+    "Qwen3.6 35B A3B",
+    "Qwen3.7 Max",
     "Claude Haiku 4.5",
     "DeepSeek V4 Flash",
-    "Qwen3 4B Instruct 2507",
+    "DeepSeek V4 Pro",
     "Llama 3.1 8B Instruct",
+    "Llama 3.2 3B Instruct",
     "Mistral Nemo Instruct 2407",
     "Gemma 4 E4B It",
+    "Gemma 4 31B It",
+    "MiniMax M2.7",
+    "Kimi K2.6",
+    "GLM 5.1",
+    "GPT-OSS 20B",
+    "GPT-OSS 120B",
 ]
 
 DEFAULT_PIONEER_MODEL_GROUPS = {
-    "Gpt 4o Mini": "gpt_light_baseline",
-    "Gpt 4.1 Mini": "gpt_light_baseline_fallback",
-    "Gpt 4.1 Nano": "gpt_light_baseline_fallback",
+    "Qwen3 4B Instruct 2507": "qwen",
+    "Qwen3 8B": "qwen",
+    "Qwen3.5 9B": "qwen",
+    "Qwen3.6 27B": "qwen",
+    "Qwen3.6 Flash": "qwen",
+    "Qwen3.6 Plus": "qwen",
+    "Qwen3.6 35B A3B": "qwen",
+    "Qwen3.7 Max": "qwen",
     "Claude Haiku 4.5": "anthropic_fast_small",
     "DeepSeek V4 Flash": "deepseek_cheap_fast",
+    "DeepSeek V4 Pro": "deepseek",
     "Qwen3 4B Instruct 2507": "qwen_small_instruct",
     "Llama 3.1 8B Instruct": "llama_small_instruct",
+    "Llama 3.2 3B Instruct": "llama_small_instruct",
     "Mistral Nemo Instruct 2407": "mistral_compact_instruct",
     "Gemma 4 E4B It": "gemma_small_instruct",
+    "Gemma 4 31B It": "gemma",
+    "MiniMax M2.7": "minimax",
+    "Kimi K2.6": "kimi",
+    "GLM 5.1": "glm",
+    "GPT-OSS 20B": "gpt_oss",
+    "GPT-OSS 120B": "gpt_oss",
 }
 
-EXCLUDED_DEFAULT_PIONEER_MODELS = {
+GPT4_FAMILY_EXCLUDED_MODELS = {
     "Gpt 4o",
+    "gpt-4o",
+    "Gpt 4o Mini",
+    "gpt-4o-mini",
     "Gpt 4.1",
     "Gpt 4.1 Mini",
     "Gpt 4.1 Nano",
+    "gpt-4.1",
+    "gpt-4.1-mini",
+    "gpt-4.1-nano",
+}
+
+EXCLUDED_DEFAULT_PIONEER_MODELS = {
+    *GPT4_FAMILY_EXCLUDED_MODELS,
     "Gpt 5 Mini",
     "Gpt 5 Nano",
     "Gpt 5.1",
@@ -58,7 +89,6 @@ EXCLUDED_DEFAULT_PIONEER_MODELS = {
     "Claude Sonnet",
     "Claude Sonnet 4",
     "Claude Sonnet 4.5",
-    "DeepSeek V4 Pro",
     "Qwen Max",
     "Qwen Plus",
     "Gemini 3.5 Flash",
@@ -95,7 +125,23 @@ PIONEER_SWEEP_PROMPTS = [
         "prompt": 'When was the journey "Birthday Message" published?',
         "expected_kind": "EVIDENCE",
     },
+    {
+        "id": "compare_local_live_birthday_status",
+        "prompt": "Compare local and live status of Birthday Message if both are available.",
+        "expected_kind": "EVIDENCE",
+    },
 ]
+
+
+def is_gpt4_family_model(*values: str | None) -> bool:
+    """Return True for GPT-4/Gpt 4 display names or model IDs only."""
+    for value in values:
+        normalized = _normalize_model_family_text(value)
+        if not normalized:
+            continue
+        if normalized.startswith(("gpt4", "gpt4o", "gpt41")):
+            return True
+    return False
 
 
 def parse_pioneer_model_sweep(env_value: str | None = None) -> list[str]:
@@ -149,6 +195,10 @@ def parse_pioneer_model_id_map(env_value: str | None = None) -> dict[str, str]:
     return mapping
 
 
+def _normalize_model_family_text(value: str | None) -> str:
+    return re.sub(r"[^a-z0-9]+", "", str(value or "").lower())
+
+
 def safe_model_name(model: str) -> str:
     safe = re.sub(r"[^a-z0-9]+", "_", model.lower()).strip("_")
     return safe or "model"
@@ -178,7 +228,9 @@ def _run_one_model(config: Config, model: str, report_dir: Path) -> dict[str, An
     with _temporary_env(
         {
             "DASHAGENT_LLM_PROVIDER": "pioneer_chat",
-            "PIONEER_MODEL": model_id,
+            "PIONEER_MODEL": model,
+            "PIONEER_MODEL_ID": model_id,
+            "PIONEER_MODEL_DISPLAY": model,
             "PIONEER_STORE": os.getenv("PIONEER_STORE", "false"),
         }
     ):
@@ -192,10 +244,48 @@ def _run_one_model(config: Config, model: str, report_dir: Path) -> dict[str, An
             return result
         executor = AgentExecutor(config)
         prompt_results: list[dict[str, Any]] = []
-        semantic_probe_results: list[dict[str, Any]] = []
+        semantic_probe_results: list[dict[str, Any]] = [
+            _with_model_context(_semantic_json_probe(model_id, prompt_case["prompt"]), model, safe_name, model_id)
+            for prompt_case in PIONEER_SWEEP_PROMPTS
+        ]
+        if semantic_probe_results and all(bool(row.get("parse_error")) for row in semantic_probe_results):
+            prompt_results = [
+                _with_model_context(
+                    {
+                        "prompt_id": prompt_case["id"],
+                        "prompt": prompt_case["prompt"],
+                        "expected_kind": prompt_case["expected_kind"],
+                        "pass": False,
+                        "error": "semantic_json_probe_parse_error",
+                        "latency_sec": 0.0,
+                    },
+                    model,
+                    safe_name,
+                    model_id,
+                )
+                for prompt_case in PIONEER_SWEEP_PROMPTS
+            ]
+            for semantic_probe in semantic_probe_results:
+                log_lines.append("semantic_probe=" + json.dumps(redact_secrets(semantic_probe), sort_keys=True))
+            metrics = _aggregate_metrics(prompt_results, semantic_probe_results, started)
+            result = {
+                "model": model,
+                "pioneer_model": model,
+                "pioneer_model_id": model_id,
+                "safe_model_name": safe_name,
+                "model_sweep_run_id": safe_name,
+                "group": DEFAULT_PIONEER_MODEL_GROUPS.get(model, "custom"),
+                "availability": availability,
+                "metrics": metrics,
+                "semantic_probe_results": semantic_probe_results,
+                "prompt_results": prompt_results,
+                "smoke_fast_failed": True,
+                "fast_fail_reason": "all_semantic_json_probes_failed",
+                "log": "\n".join(log_lines) + "\n",
+            }
+            _write_per_model(report_dir, result)
+            return result
         for prompt_case in PIONEER_SWEEP_PROMPTS:
-            semantic_probe = _with_model_context(_semantic_json_probe(model_id, prompt_case["prompt"]), model, safe_name, model_id)
-            semantic_probe_results.append(semantic_probe)
             prompt_start = time.perf_counter()
             try:
                 run_result = executor.run(
@@ -289,7 +379,7 @@ def _semantic_json_probe(model: str, prompt: str) -> dict[str, Any]:
         "confidence": 0.0,
         "reason": "short string",
     }
-    result = client.complete_json(
+    raw_result = client.complete_json(
         (
             "Classify this prompt for DASHSys pre-evidence routing. "
             "Concrete user data, counts, lists, status, dates, live/current/platform/API prompts, "
@@ -299,7 +389,17 @@ def _semantic_json_probe(model: str, prompt: str) -> dict[str, Any]:
         schema_hint=schema_hint,
         max_tokens=160,
     )
-    result = dict(result)
+    if isinstance(raw_result, dict):
+        result = dict(raw_result)
+    else:
+        result = {
+            "parse_error": True,
+            "route": "EVIDENCE_PIPELINE",
+            "requires_evidence": True,
+            "pure_no_evidence": False,
+            "confidence": 0.0,
+            "raw_type": type(raw_result).__name__,
+        }
     result.update(
         {
             "prompt": prompt,
@@ -324,6 +424,11 @@ def _summarize_prompt_result(prompt_case: dict[str, str], run_result: dict[str, 
         {"checkpoint_broad_question_classifier", "checkpoint_answer_intent_router", "checkpoint_hybrid_answer_composer"}
         & checkpoint_names
     )
+    declared_pass_count = _declared_pass_count(checkpoints)
+    pass_results_count = _pass_results_count(checkpoints)
+    result_bundle_built = bool("checkpoint_llm_owned_result_bundle" in checkpoint_names)
+    final_syntax_gate_failures = _gate_failure_count(checkpoints, "checkpoint_llm_final_answer_syntax_gate")
+    final_semantic_gate_failures = _gate_failure_count(checkpoints, "checkpoint_llm_final_answer_semantic_gate")
     unsupported_claims = _unsupported_claim_count(checkpoints)
     expected_kind = prompt_case["expected_kind"]
     if expected_kind == "PURE_DIRECT":
@@ -336,7 +441,8 @@ def _summarize_prompt_result(prompt_case: dict[str, str], run_result: dict[str, 
             and unsupported_claims == 0
         )
     else:
-        passed = (not evidence_pipeline_bypassed) and evidence_bus_built and post_router_ran and unsupported_claims == 0
+        evidence_path_exercised = evidence_bus_built or result_bundle_built or declared_pass_count > 0 or sql_calls > 0 or api_calls > 0
+        passed = (not evidence_pipeline_bypassed) and evidence_path_exercised and declared_pass_count > 0 and unsupported_claims == 0
     return redact_secrets(
         {
             "prompt_id": prompt_case["id"],
@@ -348,7 +454,12 @@ def _summarize_prompt_result(prompt_case: dict[str, str], run_result: dict[str, 
             "api_calls": api_calls,
             "evidence_pipeline_bypassed": evidence_pipeline_bypassed,
             "evidence_bus_built": evidence_bus_built,
+            "result_bundle_built": result_bundle_built,
             "post_evidence_answer_router_ran": post_router_ran,
+            "declared_pass_count": declared_pass_count,
+            "pass_results_count": pass_results_count,
+            "final_syntax_gate_failures": final_syntax_gate_failures,
+            "final_semantic_gate_failures": final_semantic_gate_failures,
             "unsupported_claims": unsupported_claims,
             "llm_direct": evidence_pipeline_bypassed,
             "evidence_pipeline": not evidence_pipeline_bypassed,
@@ -368,6 +479,12 @@ def _aggregate_metrics(
         for row in prompt_results
         if row.get("expected_kind") == "EVIDENCE" and bool(row.get("evidence_pipeline_bypassed"))
     ]
+    evidence_rows = [row for row in prompt_results if row.get("expected_kind") == "EVIDENCE"]
+    planner_usable_rows = [row for row in evidence_rows if int(row.get("declared_pass_count") or 0) > 0]
+    all_final_gates_failed = bool(prompt_results) and all(
+        int(row.get("final_syntax_gate_failures") or 0) > 0 or int(row.get("final_semantic_gate_failures") or 0) > 0
+        for row in prompt_results
+    )
     return {
         "json_parse_failures": sum(1 for row in semantic_probe_results if bool(row.get("parse_error"))),
         "semantic_fallback_count": sum(1 for row in semantic_probe_results if bool(row.get("parse_error"))),
@@ -375,6 +492,13 @@ def _aggregate_metrics(
         "evidence_pipeline_count": sum(1 for row in prompt_results if bool(row.get("evidence_pipeline"))),
         "evidence_pipeline_bypassed_count": sum(1 for row in prompt_results if bool(row.get("evidence_pipeline_bypassed"))),
         "evidence_bus_built_count": sum(1 for row in prompt_results if bool(row.get("evidence_bus_built"))),
+        "evidence_bus_non_empty_count": sum(1 for row in prompt_results if int(row.get("pass_results_count") or 0) > 0),
+        "result_bundle_built_count": sum(1 for row in prompt_results if bool(row.get("result_bundle_built"))),
+        "declared_pass_count": sum(int(row.get("declared_pass_count") or 0) for row in prompt_results),
+        "planner_usable_count": len(planner_usable_rows),
+        "final_syntax_gate_failures": sum(int(row.get("final_syntax_gate_failures") or 0) for row in prompt_results),
+        "final_semantic_gate_failures": sum(int(row.get("final_semantic_gate_failures") or 0) for row in prompt_results),
+        "final_gates_all_failed": all_final_gates_failed,
         "post_evidence_answer_router_ran_count": sum(
             1 for row in prompt_results if bool(row.get("post_evidence_answer_router_ran"))
         ),
@@ -404,6 +528,13 @@ def _empty_model_result(model: str, availability: dict[str, Any], started: float
             "evidence_pipeline_count": 0,
             "evidence_pipeline_bypassed_count": 0,
             "evidence_bus_built_count": 0,
+            "evidence_bus_non_empty_count": 0,
+            "result_bundle_built_count": 0,
+            "declared_pass_count": 0,
+            "planner_usable_count": 0,
+            "final_syntax_gate_failures": 0,
+            "final_semantic_gate_failures": 0,
+            "final_gates_all_failed": False,
             "no_tool_fp": 0,
             "api_required_underuse": 0,
             "unsupported_claims": 0,
@@ -602,6 +733,38 @@ def _checkpoint_output(checkpoints: list[dict[str, Any]], checkpoint_id: str) ->
     return {}
 
 
+def _declared_pass_count(checkpoints: list[dict[str, Any]]) -> int:
+    counts: list[int] = []
+    for checkpoint in checkpoints:
+        output = checkpoint.get("output")
+        counts.extend(_find_numeric_fields(output, {"llm_pass_count", "declared_pass_count", "pass_count"}))
+        if checkpoint.get("checkpoint_id") == "checkpoint_llm_owned_pass_graph_gate":
+            nested = checkpoint.get("input_summary")
+            counts.extend(_find_numeric_fields(nested, {"llm_pass_count", "declared_pass_count", "pass_count"}))
+    return max(counts) if counts else 0
+
+
+def _pass_results_count(checkpoints: list[dict[str, Any]]) -> int:
+    counts: list[int] = []
+    for checkpoint in checkpoints:
+        output = checkpoint.get("output")
+        counts.extend(_find_numeric_fields(output, {"pass_results_count", "result_bundle_pass_results_count"}))
+        nested = checkpoint.get("input_summary")
+        counts.extend(_find_numeric_fields(nested, {"pass_results_count", "result_bundle_pass_results_count"}))
+    return max(counts) if counts else 0
+
+
+def _gate_failure_count(checkpoints: list[dict[str, Any]], checkpoint_id: str) -> int:
+    failures = 0
+    for checkpoint in checkpoints:
+        if checkpoint.get("checkpoint_id") != checkpoint_id:
+            continue
+        output = checkpoint.get("output")
+        if isinstance(output, dict) and output.get("passed") is False:
+            failures += 1
+    return failures
+
+
 def _unsupported_claim_count(checkpoints: list[dict[str, Any]]) -> int:
     counts: list[int] = []
     for checkpoint in checkpoints:
@@ -620,7 +783,24 @@ def _find_unsupported_counts(value: Any) -> list[int]:
             elif lowered == "unsupported_claims" and isinstance(nested, list):
                 counts.append(len(nested))
             counts.extend(_find_unsupported_counts(nested))
+    return counts
+
+
+def _find_numeric_fields(value: Any, field_names: set[str]) -> list[int]:
+    if isinstance(value, dict):
+        counts: list[int] = []
+        for key, nested in value.items():
+            if str(key) in field_names and isinstance(nested, (int, float)):
+                counts.append(int(nested))
+            else:
+                counts.extend(_find_numeric_fields(nested, field_names))
         return counts
+    if isinstance(value, list):
+        counts: list[int] = []
+        for item in value:
+            counts.extend(_find_numeric_fields(item, field_names))
+        return counts
+    return []
     if isinstance(value, list):
         counts: list[int] = []
         for item in value:

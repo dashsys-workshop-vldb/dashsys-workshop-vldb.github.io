@@ -30,12 +30,23 @@ def test_full_benchmark_runs_model_major_for_all_callable_models(tmp_path, monke
                         "evidence_pipeline_count": 4,
                         "evidence_pipeline_bypassed_count": 2,
                         "evidence_bus_built_count": 4,
+                        "evidence_bus_non_empty_count": 4,
+                        "result_bundle_built_count": 4,
+                        "declared_pass_count": 4,
+                        "planner_usable_count": 4,
                         "post_evidence_answer_router_ran_count": 4,
+                        "final_syntax_gate_failures": 0,
+                        "final_semantic_gate_failures": 0,
+                        "final_gates_all_failed": False,
                         "no_tool_fp": 0,
                         "api_required_underuse": 0,
                         "unsupported_claims": 0,
                         "focused_smoke_pass": True,
                     },
+                    "prompt_results": [
+                        {"expected_kind": "PURE_DIRECT", "sql_calls": 0, "api_calls": 0, "declared_pass_count": 0},
+                        {"expected_kind": "EVIDENCE", "sql_calls": 1, "api_calls": 0, "declared_pass_count": 1},
+                    ],
                 }
             ]
         }
@@ -87,23 +98,21 @@ def test_full_benchmark_reports_all_seven_and_unavailable_is_not_fatal(tmp_path,
     )
 
     assert [row["model"] for row in result["models"]] == DEFAULT_PIONEER_MODEL_SWEEP
-    assert result["models"][0]["model"] == "Gpt 4o Mini"
+    assert result["models"][0]["model"] == "Qwen3 4B Instruct 2507"
     assert result["models"][0]["availability"]["available"] is True
-    assert result["models"][-1]["availability"]["available"] is False
-    assert result["models"][-1]["stability_verdict"] == "UNAVAILABLE"
+    gemma = next(row for row in result["models"] if row["model"] == "Gemma 4 E4B It")
+    assert gemma["availability"]["available"] is False
+    assert gemma["stability_verdict"] == "UNAVAILABLE"
     assert any(row["availability"]["available"] for row in result["models"][:-1])
     summary = json.loads((tmp_path / "pioneer_model_full_benchmark_summary.json").read_text(encoding="utf-8"))
-    assert len(summary["models"]) == 7
+    assert len(summary["models"]) == len(DEFAULT_PIONEER_MODEL_SWEEP)
 
 
-def test_gpt_light_fallback_selects_next_candidate_when_preferred_unavailable(tmp_path, monkeypatch) -> None:
-    probe_calls: list[str] = []
+def test_gpt4_family_models_are_excluded_not_probed(tmp_path, monkeypatch) -> None:
     run_models: list[str] = []
 
     def fake_probe(model_id: str) -> dict:
-        probe_calls.append(model_id)
-        if model_id == "gpt-4o-mini":
-            return {"available": False, "model": model_id, "error_category": "model_not_found"}
+        assert not model_id.startswith("gpt-4")
         return {"available": True, "model": model_id}
 
     def fake_runner(command, env, cwd, timeout_sec):
@@ -114,7 +123,7 @@ def test_gpt_light_fallback_selects_next_candidate_when_preferred_unavailable(tm
     monkeypatch.setenv("PIONEER_MODEL_ID_MAP_JSON", json.dumps(fullbench.DEFAULT_SELECTED_MODEL_ID_MAP))
     result = fullbench.run_pioneer_model_full_benchmark(
         SimpleNamespace(outputs_dir=tmp_path),
-        models=["Gpt 4o Mini", "Claude Haiku 4.5"],
+        models=["Gpt 4o Mini", "Gpt 4.1 Mini", "Claude Haiku 4.5"],
         report_dir=tmp_path,
         commands=fullbench.minimal_test_command_plan(),
         availability_probe=fake_probe,
@@ -122,23 +131,16 @@ def test_gpt_light_fallback_selects_next_candidate_when_preferred_unavailable(tm
         command_runner=fake_runner,
     )
 
-    assert [row["model"] for row in result["models"]] == ["Gpt 4.1 Mini", "Claude Haiku 4.5"]
-    assert run_models == ["Gpt 4.1 Mini", "Gpt 4.1 Mini", "Claude Haiku 4.5", "Claude Haiku 4.5"]
-    assert "gpt-4o-mini" in probe_calls
-    assert "gpt-4.1-mini" in probe_calls
+    assert [row["model"] for row in result["models"]] == ["Claude Haiku 4.5"]
+    assert run_models == ["Claude Haiku 4.5", "Claude Haiku 4.5"]
     summary = json.loads((tmp_path / "pioneer_model_full_benchmark_summary.json").read_text(encoding="utf-8"))
-    selection = summary["gpt_light_baseline_selection"]
-    assert selection["preferred_model"] == "Gpt 4o Mini"
-    assert selection["selected_model"] == "Gpt 4.1 Mini"
-    assert selection["fallback_needed"] is True
-    assert selection["attempts"][0]["available"] is False
-    assert selection["attempts"][1]["available"] is True
+    excluded = summary["gpt4_family_exclusion"]["excluded_models"]
+    assert {row["display_name"] for row in excluded} == {"Gpt 4o Mini", "Gpt 4.1 Mini"}
     markdown = (tmp_path / "pioneer_model_full_benchmark_summary.md").read_text(encoding="utf-8")
-    assert "Gpt 4o Mini unavailable" in markdown
-    assert "Fallback selected: Gpt 4.1 Mini" in markdown
+    assert "GPT-4/Gpt 4o family models are intentionally excluded" in markdown
 
 
-def test_legacy_gpt_4o_entry_is_replaced_by_gpt_light_candidate(tmp_path, monkeypatch) -> None:
+def test_legacy_gpt_4o_entry_is_excluded_without_replacement(tmp_path, monkeypatch) -> None:
     run_models: list[str] = []
 
     def fake_runner(command, env, cwd, timeout_sec):
@@ -157,39 +159,29 @@ def test_legacy_gpt_4o_entry_is_replaced_by_gpt_light_candidate(tmp_path, monkey
         command_runner=fake_runner,
     )
 
-    assert [row["model"] for row in result["models"]] == ["Gpt 4o Mini", "Claude Haiku 4.5"]
+    assert [row["model"] for row in result["models"]] == ["Claude Haiku 4.5"]
     assert "Gpt 4o" not in run_models
     summary = json.loads((tmp_path / "pioneer_model_full_benchmark_summary.json").read_text(encoding="utf-8"))
-    assert summary["gpt_light_baseline_selection"]["legacy_model_replaced"] is True
+    excluded = summary["gpt4_family_exclusion"]["excluded_models"]
+    assert excluded[0]["display_name"] == "Gpt 4o"
 
 
-def test_all_unavailable_gpt_light_candidates_are_recorded_and_omitted(tmp_path, monkeypatch) -> None:
-    def fake_probe(model_id: str) -> dict:
-        if model_id.startswith("gpt-4"):
-            return {"available": False, "model": model_id, "error_category": "timeout"}
-        return {"available": True, "model": model_id}
+def test_smoke_failed_model_skips_expensive_benchmark(tmp_path, monkeypatch) -> None:
+    run_models: list[str] = []
 
-    monkeypatch.setenv("PIONEER_MODEL_ID_MAP_JSON", json.dumps(fullbench.DEFAULT_SELECTED_MODEL_ID_MAP))
     result = fullbench.run_pioneer_model_full_benchmark(
         SimpleNamespace(outputs_dir=tmp_path),
-        models=["Gpt 4o Mini", "Claude Haiku 4.5"],
+        models=["Claude Haiku 4.5"],
         report_dir=tmp_path,
         commands=fullbench.minimal_test_command_plan(),
-        availability_probe=fake_probe,
-        focused_smoke_runner=_fake_smoke,
-        command_runner=lambda command, env, cwd, timeout_sec: _runner_with_fake_artifacts(command, env, tmp_path),
+        availability_probe=lambda model_id: {"available": True, "model": model_id},
+        focused_smoke_runner=_fake_smoke_failed_no_passes,
+        command_runner=lambda command, env, cwd, timeout_sec: run_models.append(env["PIONEER_MODEL_DISPLAY"]) or _runner_with_fake_artifacts(command, env, tmp_path),
     )
 
-    assert [row["model"] for row in result["models"]] == ["Claude Haiku 4.5"]
-    summary = json.loads((tmp_path / "pioneer_model_full_benchmark_summary.json").read_text(encoding="utf-8"))
-    selection = summary["gpt_light_baseline_selection"]
-    assert selection["selected_model"] is None
-    assert selection["all_gpt_light_candidates_unavailable"] is True
-    assert [row["display_name"] for row in selection["attempts"]] == [
-        "Gpt 4o Mini",
-        "Gpt 4.1 Mini",
-        "Gpt 4.1 Nano",
-    ]
+    assert run_models == []
+    assert result["models"][0]["benchmark_status"] == "skipped_smoke_failed"
+    assert result["models"][0]["stability_verdict"] == "SMOKE_FAILED"
 
 
 def test_full_benchmark_does_not_skip_deepseek_or_qwen_after_json_failures(tmp_path, monkeypatch) -> None:
@@ -331,12 +323,24 @@ def _fake_smoke(config, *, models, report_dir):
                     "evidence_pipeline_count": 4,
                     "evidence_pipeline_bypassed_count": 2,
                     "evidence_bus_built_count": 4,
+                    "evidence_bus_non_empty_count": 4,
+                    "result_bundle_built_count": 4,
+                    "declared_pass_count": 4,
+                    "planner_usable_count": 4,
                     "post_evidence_answer_router_ran_count": 4,
+                    "final_syntax_gate_failures": 0,
+                    "final_semantic_gate_failures": 0,
+                    "final_gates_all_failed": False,
                     "no_tool_fp": 0,
                     "api_required_underuse": 0,
                     "unsupported_claims": 0,
                     "focused_smoke_pass": True,
                 },
+                "prompt_results": [
+                    {"expected_kind": "PURE_DIRECT", "sql_calls": 0, "api_calls": 0, "declared_pass_count": 0},
+                    {"expected_kind": "PURE_DIRECT", "sql_calls": 0, "api_calls": 0, "declared_pass_count": 0},
+                    {"expected_kind": "EVIDENCE", "sql_calls": 1, "api_calls": 0, "declared_pass_count": 1},
+                ],
             }
         ]
     }
@@ -346,6 +350,14 @@ def _fake_smoke_with_json_failures(config, *, models, report_dir):
     payload = _fake_smoke(config, models=models, report_dir=report_dir)
     payload["models"][0]["metrics"]["json_parse_failures"] = 6
     payload["models"][0]["metrics"]["semantic_fallback_count"] = 6
+    return payload
+
+
+def _fake_smoke_failed_no_passes(config, *, models, report_dir):
+    payload = _fake_smoke(config, models=models, report_dir=report_dir)
+    payload["models"][0]["metrics"]["focused_smoke_pass"] = False
+    payload["models"][0]["metrics"]["declared_pass_count"] = 0
+    payload["models"][0]["metrics"]["planner_usable_count"] = 0
     return payload
 
 

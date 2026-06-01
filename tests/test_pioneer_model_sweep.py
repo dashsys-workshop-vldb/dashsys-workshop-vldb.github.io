@@ -9,8 +9,8 @@ from dashagent.pioneer_model_sweep import (
     DEFAULT_PIONEER_MODEL_GROUPS,
     DEFAULT_PIONEER_MODEL_SWEEP,
     EXCLUDED_DEFAULT_PIONEER_MODELS,
-    GPT_LIGHT_BASELINE_CANDIDATES,
     PIONEER_SWEEP_PROMPTS,
+    is_gpt4_family_model,
     parse_pioneer_model_sweep,
     run_pioneer_model_sweep,
     safe_model_name,
@@ -21,39 +21,43 @@ from dashagent.pre_evidence_routing_boundary import should_bypass_evidence_for_l
 
 def test_default_pioneer_model_sweep_is_exact_selected_set() -> None:
     assert DEFAULT_PIONEER_MODEL_SWEEP == [
-        "Gpt 4o Mini",
+        "Qwen3 4B Instruct 2507",
+        "Qwen3 8B",
+        "Qwen3.5 9B",
+        "Qwen3.6 27B",
+        "Qwen3.6 Flash",
+        "Qwen3.6 Plus",
+        "Qwen3.6 35B A3B",
+        "Qwen3.7 Max",
         "Claude Haiku 4.5",
         "DeepSeek V4 Flash",
-        "Qwen3 4B Instruct 2507",
+        "DeepSeek V4 Pro",
         "Llama 3.1 8B Instruct",
+        "Llama 3.2 3B Instruct",
         "Mistral Nemo Instruct 2407",
         "Gemma 4 E4B It",
+        "Gemma 4 31B It",
+        "MiniMax M2.7",
+        "Kimi K2.6",
+        "GLM 5.1",
+        "GPT-OSS 20B",
+        "GPT-OSS 120B",
     ]
-    assert DEFAULT_PIONEER_MODEL_GROUPS == {
-        "Gpt 4o Mini": "gpt_light_baseline",
-        "Gpt 4.1 Mini": "gpt_light_baseline_fallback",
-        "Gpt 4.1 Nano": "gpt_light_baseline_fallback",
-        "Claude Haiku 4.5": "anthropic_fast_small",
-        "DeepSeek V4 Flash": "deepseek_cheap_fast",
-        "Qwen3 4B Instruct 2507": "qwen_small_instruct",
-        "Llama 3.1 8B Instruct": "llama_small_instruct",
-        "Mistral Nemo Instruct 2407": "mistral_compact_instruct",
-        "Gemma 4 E4B It": "gemma_small_instruct",
-    }
+    assert DEFAULT_PIONEER_MODEL_GROUPS["Qwen3 4B Instruct 2507"].startswith("qwen")
+    assert DEFAULT_PIONEER_MODEL_GROUPS["Claude Haiku 4.5"] == "anthropic_fast_small"
+    assert DEFAULT_PIONEER_MODEL_GROUPS["GPT-OSS 20B"] == "gpt_oss"
 
 
-def test_default_pioneer_model_sweep_includes_only_one_gpt_model() -> None:
-    gpt_models = [model for model in DEFAULT_PIONEER_MODEL_SWEEP if model.lower().startswith("gpt")]
-    assert gpt_models == ["Gpt 4o Mini"]
+def test_default_pioneer_model_sweep_excludes_gpt4_family() -> None:
+    assert not any(is_gpt4_family_model(model) for model in DEFAULT_PIONEER_MODEL_SWEEP)
     assert "Gpt 4o" not in DEFAULT_PIONEER_MODEL_SWEEP
+    assert "Gpt 4o Mini" not in DEFAULT_PIONEER_MODEL_SWEEP
+    assert "Gpt 4.1 Mini" not in DEFAULT_PIONEER_MODEL_SWEEP
 
 
-def test_gpt_light_fallback_order_is_preferred_order() -> None:
-    assert GPT_LIGHT_BASELINE_CANDIDATES == [
-        "Gpt 4o Mini",
-        "Gpt 4.1 Mini",
-        "Gpt 4.1 Nano",
-    ]
+def test_focused_sweep_contains_seven_requested_prompts() -> None:
+    assert len(PIONEER_SWEEP_PROMPTS) == 7
+    assert PIONEER_SWEEP_PROMPTS[-1]["id"] == "compare_local_live_birthday_status"
 
 
 def test_excluded_gpt_and_frontier_models_are_not_in_default_sweep() -> None:
@@ -90,6 +94,26 @@ def test_weak_model_malformed_json_falls_back_to_evidence_pipeline(monkeypatch) 
     assert result["requires_evidence"] is True
     assert result["pure_no_evidence"] is False
     assert result["parse_error"] is True
+
+
+def test_semantic_probe_non_object_json_fails_closed(monkeypatch) -> None:
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def available(self):
+            return True
+
+        def complete_json(self, *args, **kwargs):
+            return 7
+
+    monkeypatch.setattr(sweep, "PioneerChatLLMClient", FakeClient)
+
+    result = sweep._semantic_json_probe("weak-model", "What schemas do I have?")
+
+    assert result["parse_error"] is True
+    assert result["route"] == "EVIDENCE_PIPELINE"
+    assert result["requires_evidence"] is True
 
 
 def test_concrete_data_prompt_cannot_bypass_evidence_bus_under_weak_output() -> None:
@@ -279,10 +303,12 @@ def test_sweep_uses_actual_model_id_when_mapping_exists(monkeypatch, tmp_path) -
     class FakeExecutor:
         def __init__(self, config):
             self.model_at_init = sweep.os.getenv("PIONEER_MODEL")
+            self.model_id_at_init = sweep.os.getenv("PIONEER_MODEL_ID")
 
         def run(self, prompt, *, strategy, query_id, output_dir):
-            call_order.append((sweep.os.getenv("PIONEER_MODEL") or "", prompt))
-            assert sweep.os.getenv("PIONEER_MODEL") == "actual-model-a"
+            call_order.append((sweep.os.getenv("PIONEER_MODEL") or "", sweep.os.getenv("PIONEER_MODEL_ID") or "", prompt))
+            assert sweep.os.getenv("PIONEER_MODEL") == "ModelA"
+            assert sweep.os.getenv("PIONEER_MODEL_ID") == "actual-model-a"
             return _fake_evidence_result(output_dir)
 
     monkeypatch.setenv("PIONEER_MODEL_ID_MAP_JSON", '{"ModelA":"actual-model-a"}')
@@ -304,7 +330,7 @@ def test_sweep_uses_actual_model_id_when_mapping_exists(monkeypatch, tmp_path) -
 
     result = run_pioneer_model_sweep(SimpleNamespace(outputs_dir=tmp_path), models=["ModelA"], report_dir=tmp_path)
 
-    assert call_order == [("actual-model-a", "prompt1")]
+    assert call_order == [("ModelA", "actual-model-a", "prompt1")]
     model_result = result["models"][0]
     assert model_result["model"] == "ModelA"
     assert model_result["pioneer_model"] == "ModelA"

@@ -85,4 +85,4 @@ flowchart LR
 
 | Before | After | Technique | Impact |
 | --- | --- | --- | --- |
-| evidence=sql_calls_executed=1; api_calls_executed=1; slots=answer_intent=COUNT | answer_length=170; final_answer=You have 74 schemas. This count comes from your blueprint... | answer slots + verifier | accuracy + safety |
+| evidence=sql_calls_executed=1; api_calls_executed=1; slots=answer_intent=COUNT | answer_length=102; final_answer=You have 74 schemas. Live API verification was not execut... | answer slots + verifier | accuracy + safety |

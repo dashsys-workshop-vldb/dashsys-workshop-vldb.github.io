@@ -220,10 +220,22 @@
       "affects_accuracy": "yes",
       "affects_efficiency": "yes",
       "affects_safety": "no",
-      "checkpoint_id": "checkpoint_14_evidence_bus",
+      "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
       "checkpoint_order": 19,
+      "short_input_summary": "strategy=SQL_FIRST_API_VERIFY",
+      "short_output_summary": "evidence_bus_built=True; evidence_pipeline_bypassed=False; post_evidence_answer_router_ran=False",
+      "stage": "evidence forwarding",
+      "technique": "pre-evidence routing boundary",
+      "what_changed": "records that the prompt continued into the evidence-backed answer path"
+    },
+    {
+      "affects_accuracy": "yes",
+      "affects_efficiency": "yes",
+      "affects_safety": "no",
+      "checkpoint_id": "checkpoint_14_evidence_bus",
+      "checkpoint_order": 20,
       "short_input_summary": "tool_result_count=1",
-      "short_output_summary": "evidence=5 field(s)",
+      "short_output_summary": "evidence=3 field(s)",
       "stage": "evidence forwarding",
       "technique": "operand forwarding / EvidenceBus",
       "what_changed": "forwards structured facts to API params and answer slots"
@@ -233,9 +245,9 @@
       "affects_efficiency": "yes",
       "affects_safety": "no",
       "checkpoint_id": "checkpoint_15_answer_slots",
-      "checkpoint_order": 20,
+      "checkpoint_order": 21,
       "short_input_summary": "tool_result_count=1",
-      "short_output_summary": "answer_intent=WHEN; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); slots=9 field(s)",
+      "short_output_summary": "answer_intent=WHEN; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); slots=8 field(s)",
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
       "what_changed": "turns raw tool results into typed evidence fields"
@@ -245,8 +257,8 @@
       "affects_efficiency": "yes",
       "affects_safety": "no",
       "checkpoint_id": "checkpoint_16_answer_verification",
-      "checkpoint_order": 21,
-      "short_input_summary": "claim_count=16; slots_present=11 item(s)",
+      "checkpoint_order": 22,
+      "short_input_summary": "claim_count=2; slots_present=5 item(s)",
       "short_output_summary": "verifier_passed=True; rewrite_applied=False",
       "stage": "answer verification",
       "technique": "claim verification / groundedness checking",
@@ -257,7 +269,7 @@
       "affects_efficiency": "yes",
       "affects_safety": "no",
       "checkpoint_id": "checkpoint_17_answer_reranking",
-      "checkpoint_order": 22,
+      "checkpoint_order": 23,
       "short_input_summary": "answer_family=observability_metrics",
       "short_output_summary": "candidate_count=0; selected_candidate_type=base",
       "stage": "answer selection",
@@ -269,9 +281,9 @@
       "affects_efficiency": "yes",
       "affects_safety": "no",
       "checkpoint_id": "checkpoint_18_final_answer",
-      "checkpoint_order": 23,
+      "checkpoint_order": 24,
       "short_input_summary": "verifier_passed=True",
-      "short_output_summary": "answer_length=686; final_answer=Based on live observability API evidence, timeseries.inge...",
+      "short_output_summary": "answer_length=202; final_answer=Values for timeseries.ingestion.dataset.recordsuccess.cou...",
       "stage": "final response",
       "technique": "concise grounded final response",
       "what_changed": "returns the final concise answer to the agent harness"
@@ -281,7 +293,7 @@
       "affects_efficiency": "no",
       "affects_safety": "no",
       "checkpoint_id": "checkpoint_official_token_reduction",
-      "checkpoint_order": 24,
+      "checkpoint_order": 25,
       "short_input_summary": "unavailable",
       "short_output_summary": "unavailable",
       "stage": "query understanding",
@@ -300,7 +312,7 @@
       "decision": "Why API was used or skipped",
       "promotion_status": "promoted_default",
       "reason": "n/a - no API policy recorded",
-      "selected_value": "API calls=1; dry_run=False"
+      "selected_value": "API calls=1; dry_run=True"
     },
     {
       "decision": "Answer template / rewriter",
@@ -332,7 +344,7 @@
       "evidence_type": "API evidence",
       "preview": "n/a - no API result preview recorded",
       "source": "POST /data/infrastructure/observability/insights/metrics",
-      "used_or_status": "no"
+      "used_or_status": "dry-run"
     },
     {
       "evidence_type": "Local Parquet evidence",
@@ -342,9 +354,9 @@
     },
     {
       "evidence_type": "Dry-run label",
-      "preview": "No successful evidence was available from executed tools.",
+      "preview": "API tool was invoked and validated, but live evidence was unavailable because Adobe credentials were missing.",
       "source": "API dry-run result label",
-      "used_or_status": "no"
+      "used_or_status": "yes"
     },
     {
       "evidence_type": "Unsupported claims replaced",
@@ -353,19 +365,19 @@
       "used_or_status": "no"
     }
   ],
-  "mermaid_dataflow_graph": "\nflowchart LR\n  Q[\"Raw query: What are the daily 'timeseries.ingestion....\"] --> N[\"Normalize + tokens\"]\n  N --> R[\"Route: LOCAL_DB_ONLY\"]\n  R --> C[\"Context tables: n/a - no candidate tables recorded\"]\n  C --> P[\"Plan SQL/API\"]\n  P --> S[\"SQL rows\"]\n  P --> A[\"API candidates: 'items': ['observability_metrics'], 'to...\"]\n  A --> E[\"Live/API evidence\"]\n  S --> V[\"Evidence bus\"]\n  E --> V\n  V --> H[\"Answer synthesis\"]\n  H --> F[\"Final: Based on live observability API evidenc...\"]\n",
+  "mermaid_dataflow_graph": "\nflowchart LR\n  Q[\"Raw query: What are the daily 'timeseries.ingestion....\"] --> N[\"Normalize + tokens\"]\n  N --> R[\"Route: LOCAL_DB_ONLY\"]\n  R --> C[\"Context tables: n/a - no candidate tables recorded\"]\n  C --> P[\"Plan SQL/API\"]\n  P --> S[\"SQL rows\"]\n  P --> A[\"API candidates: 'items': ['observability_metrics'], 'to...\"]\n  A --> E[\"Dry-run API\"]\n  S --> V[\"Evidence bus\"]\n  E --> V\n  V --> H[\"Answer synthesis\"]\n  H --> F[\"Final: Values for timeseries.ingestion.dataset...\"]\n",
   "query_summary": {
-    "answer_score": 0.1424,
-    "api_score": 1.0,
-    "correctness_score": 0.5712,
+    "answer_score": "unavailable",
+    "api_score": "unavailable",
+    "correctness_score": "unavailable",
     "current_packaged_strategy_used": "SQL_FIRST_API_VERIFY",
-    "final_answer": "Based on live observability API evidence, timeseries.ingestion.dataset.recordsuccess.count values include: 2026-03-29 timeseries.ingestion.dataset.recordsuccess.count: 152120.0, 2026-03-30 timeseries.ingestion.dataset.recordsuccess.count: 16231.0, 2026-03-31 timeseries.ingestion.dataset.recordsuccess.count: 2701.0, 2026-03-16 timeseries.ingestion.dataset.recordsuccess.count: 0.0, 2026-03-17 timeseries.ingestion.dataset.recordsuccess.count: 0.0, 2026-03-18 timeseries.ingestion.dataset.recordsuccess.count: 0.0, 2026-03-19 timeseries.ingestion.dataset.recordsuccess.count: 0.0, and 2026-03-20 timeseries.ingestion.dataset.recordsuccess.count: 0.0. Other returned daily values were 0.",
+    "final_answer": "Values for timeseries.ingestion.dataset.recordsuccess.count between 2026-03-15 and 2026-03-31 require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
     "query": "What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'?",
     "query_id": "example_033",
-    "runtime": 0.39107999997213483,
-    "sql_score": null,
-    "strict_score": 0.5487,
-    "tokens": 1039,
+    "runtime": 0.017565832938998938,
+    "sql_score": "unavailable",
+    "strict_score": "unavailable",
+    "tokens": 1028,
     "tool_calls": 1
   },
   "source_trajectory": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_033/sql_first_api_verify/trajectory.json"

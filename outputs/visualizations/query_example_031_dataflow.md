@@ -6,11 +6,11 @@
 | --- | --- |
 | Query | Which files are available for download in batch 69de8a0e0cc6102b5d11f01e? |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
-| Final answer | The available batch file(s) are: dataSetFileId=69de8a0e0cc6102b5d11f01e-DE1, isValid=False, _links={'self': {'href': '[REDACTED]:443/data/foundation/export/files/69de8a0e0cc6102b5d11f01e-DE1'}}. |
-| Strict score | 0.6688 |
-| Correctness score | 0.6916 |
-| Answer / SQL / API score | 0.3833 / None / 1.0 |
-| Tools / tokens / runtime | 1 / 901 / 0.8503769170492887 |
+| Final answer | 69de8a0e0cc6102b5d11f01e batch list is unavailable in dry-run mode. Endpoint: GET /data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files. Live API unavailable. |
+| Strict score | unavailable |
+| Correctness score | unavailable |
+| Answer / SQL / API score | unavailable / unavailable / unavailable |
+| Tools / tokens / runtime | 1 / 734 / 0.014722291845828295 |
 
 ## Dataflow Graph
 
@@ -22,11 +22,11 @@ flowchart LR
   C --> P["Plan SQL/API"]
   P --> S["SQL rows"]
   P --> A["API candidates: 'items': ['export_batch_files'], 'total..."]
-  A --> E["Live/API evidence"]
+  A --> E["Dry-run API"]
   S --> V["Evidence bus"]
   E --> V
   V --> H["Answer synthesis"]
-  H --> F["Final: The available batch file(s) are: dataSe..."]
+  H --> F["Final: 69de8a0e0cc6102b5d11f01e batch list is..."]
 ```
 
 ## Checkpoint Timeline
@@ -50,21 +50,22 @@ flowchart LR
 | 15 | checkpoint_11_call_budget | efficiency control | tool-call budgeting | planned_steps=1 item(s) | planned_sql_calls=0; planned_api_calls=1; final_planned_calls=1; max_total_tool_calls=2 | keeps tool calls within per-family limits | yes | yes | no |
 | 16 | checkpoint_12_validation | validation | SQL/API safety validation | optimized_steps=1 item(s) | api_validation_status=1 item(s) | records whether planned SQL/API calls were safe to execute | yes | yes | yes |
 | 17 | checkpoint_13_tool_execution | execution | SQL/API tool execution | validated_step_count=1 | sql_calls_executed=0; api_calls_executed=1 | captures the actual SQL/API evidence gathered by the backend | yes | yes | no |
-| 18 | checkpoint_14_evidence_bus | evidence forwarding | operand forwarding / EvidenceBus | tool_result_count=1 | evidence=5 field(s) | forwards structured facts to API params and answer slots | yes | yes | no |
-| 19 | checkpoint_15_answer_slots | answer synthesis | structured answer slot extraction | tool_result_count=1 | answer_intent=LIST; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); missing_slots=1 item(s) | turns raw tool results into typed evidence fields | yes | yes | no |
-| 20 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=3; slots_present=8 item(s) | verifier_passed=True; rewrite_applied=False | checks final-answer claims against SQL/API evidence | yes | yes | no |
-| 21 | checkpoint_17_answer_reranking | answer selection | deterministic answer reranking | answer_family=batch | candidate_count=0; selected_candidate_type=base | selects the safest answer from same-evidence candidates | yes | yes | no |
-| 22 | checkpoint_18_final_answer | final response | concise grounded final response | verifier_passed=True | answer_length=194; final_answer=The available batch file(s) are: dataSetFileId=69de8a0e0c... | returns the final concise answer to the agent harness | yes | yes | no |
-| 23 | checkpoint_official_token_reduction | query understanding | unavailable | unavailable | unavailable | Checkpoint recorded query understanding progress. | no | no | no |
+| 18 | checkpoint_evidence_pipeline_boundary | evidence forwarding | pre-evidence routing boundary | strategy=SQL_FIRST_API_VERIFY | evidence_bus_built=True; evidence_pipeline_bypassed=False; post_evidence_answer_router_ran=False | records that the prompt continued into the evidence-backed answer path | yes | yes | no |
+| 19 | checkpoint_14_evidence_bus | evidence forwarding | operand forwarding / EvidenceBus | tool_result_count=1 | evidence=3 field(s) | forwards structured facts to API params and answer slots | yes | yes | no |
+| 20 | checkpoint_15_answer_slots | answer synthesis | structured answer slot extraction | tool_result_count=1 | answer_intent=LIST; discrepancy_flags=1 field(s); dry_run_flags=1 field(s); missing_slots=1 item(s) | turns raw tool results into typed evidence fields | yes | yes | no |
+| 21 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=0; slots_present=1 item(s) | verifier_passed=True; rewrite_applied=False | checks final-answer claims against SQL/API evidence | yes | yes | no |
+| 22 | checkpoint_17_answer_reranking | answer selection | deterministic answer reranking | answer_family=batch | candidate_count=0; selected_candidate_type=base | selects the safest answer from same-evidence candidates | yes | yes | no |
+| 23 | checkpoint_18_final_answer | final response | concise grounded final response | verifier_passed=True | answer_length=167; final_answer=69de8a0e0cc6102b5d11f01e batch list is unavailable in dry... | returns the final concise answer to the agent harness | yes | yes | no |
+| 24 | checkpoint_official_token_reduction | query understanding | unavailable | unavailable | unavailable | Checkpoint recorded query understanding progress. | no | no | no |
 
 ## Evidence Table
 
 | Evidence | Used/status | Source | Preview |
 | --- | --- | --- | --- |
 | SQL evidence | n/a - no SQL call in trajectory | n/a - no SQL call in trajectory | n/a - no SQL rows preview recorded |
-| API evidence | yes | GET /data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files | {"preview": "{\"_page\": {\"count\": 1, \"limit\": 100}, \"data\": {\"items\": {\"items\": {\"items\": [{\"_links\": {\"self\": {\"href\": \"[REDACTED]:443/data/foundation/export/files/69de8a0e0cc6102b5d11f01e-DE1\"}}, \"dataSetFileId\": \"69de8a0e0cc6102b5d11f01e-DE1\", \"isValid\": false}], \"total_...", "truncated": true} |
+| API evidence | dry-run | GET /data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files | n/a - no API result preview recorded |
 | Local Parquet evidence | unavailable | unavailable | query=Which files are available for download in batch 69de8a0e0...; query_id=example_031 |
-| Dry-run label | no | API dry-run result label | At least one SQL/API result provided evidence for answer construction. |
+| Dry-run label | yes | API dry-run result label | API tool was invoked and validated, but live evidence was unavailable because Adobe credentials were missing. |
 | Unsupported claims replaced | no | supportable_answer_rewrite_eval | unavailable |
 
 ## Decision Table
@@ -72,7 +73,7 @@ flowchart LR
 | Decision | Selected value | Reason | Promotion status |
 | --- | --- | --- | --- |
 | Why SQL was used | SQL calls=0 | API_ONLY | promoted_default |
-| Why API was used or skipped | API calls=1; dry_run=False | n/a - no API policy recorded | promoted_default |
+| Why API was used or skipped | API calls=1; dry_run=True | n/a - no API policy recorded | promoted_default |
 | Answer template / rewriter | packaged answer synthesizer | No default-on answer rewrite promoted. | promoted_default + shadow_only diagnostics |
 | Endpoint family changed? | unavailable | no_family_divergence | shadow_only |
 | Candidate promoted? | unavailable | Packaged system remains current safe default. | shadow_only / isolated_trial |

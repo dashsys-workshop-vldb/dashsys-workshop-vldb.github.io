@@ -12,7 +12,7 @@ from typing import Any, Callable
 from .config import Config
 from .pioneer_model_sweep import (
     DEFAULT_PIONEER_MODEL_SWEEP,
-    GPT_LIGHT_BASELINE_CANDIDATES,
+    is_gpt4_family_model,
     parse_pioneer_model_id_map,
     parse_pioneer_model_sweep,
     run_pioneer_model_sweep,
@@ -24,15 +24,35 @@ from .trajectory import SECRET_KEYS, SECRET_LIKE_RE
 
 
 DEFAULT_SELECTED_MODEL_ID_MAP = {
-    "Gpt 4o Mini": "gpt-4o-mini",
-    "Gpt 4.1 Mini": "gpt-4.1-mini",
-    "Gpt 4.1 Nano": "gpt-4.1-nano",
+    "Qwen3 4B Instruct 2507": "Qwen/Qwen3-4B-Instruct-2507",
+    "Qwen3 4B Instruct": "Qwen/Qwen3-4B-Instruct-2507",
+    "Qwen3 8B": "Qwen/Qwen3-8B",
+    "Qwen3.5 9B": "Qwen/Qwen3.5-9B",
+    "Qwen3.6 27B": "Qwen/Qwen3.6-27B",
+    "Qwen3.6 Flash": "qwen3.6-flash",
+    "Qwen3.6 Plus": "qwen3.6-plus",
+    "Qwen3.6 35B A3B": "Qwen/Qwen3.6-35B-A3B",
+    "Qwen3.7 Max": "qwen3.7-max",
     "Claude Haiku 4.5": "claude-haiku-4-5",
     "DeepSeek V4 Flash": "deepseek-ai/DeepSeek-V4-Flash",
-    "Qwen3 4B Instruct 2507": "Qwen/Qwen3-4B-Instruct-2507",
+    "DeepSeek V4 Pro": "deepseek-ai/DeepSeek-V4-Pro",
     "Llama 3.1 8B Instruct": "meta-llama/Llama-3.1-8B-Instruct",
+    "Llama 3.2 3B Instruct": "meta-llama/Llama-3.2-3B-Instruct",
+    "Llama 3.2 1B Instruct": "meta-llama/Llama-3.2-1B-Instruct",
     "Mistral Nemo Instruct 2407": "mistralai/Mistral-Nemo-Instruct-2407",
+    "Mistral Nemo": "mistralai/Mistral-Nemo-Instruct-2407",
     "Gemma 4 E4B It": "google/gemma-4-E4B-it",
+    "Gemma 4 E4B IT": "google/gemma-4-E4B-it",
+    "Gemma 4 31B It": "google/gemma-4-31B-it",
+    "Gemma 4 31B IT": "google/gemma-4-31B-it",
+    "MiniMax M2.7": "MiniMaxAI/MiniMax-M2.7",
+    "Minimax M2.7": "MiniMaxAI/MiniMax-M2.7",
+    "Kimi K2.6": "moonshotai/Kimi-K2.6",
+    "GLM 5.1": "zai-org/GLM-5.1",
+    "GPT-OSS 20B": "openai/gpt-oss-20b",
+    "Gpt Oss 20b": "openai/gpt-oss-20b",
+    "GPT-OSS 120B": "openai/gpt-oss-120b",
+    "Gpt Oss 120b": "openai/gpt-oss-120b",
 }
 
 
@@ -129,7 +149,7 @@ def run_pioneer_model_full_benchmark(
     focused_smoke_runner: FocusedSmokeRunner | None = None,
     command_runner: CommandRunner | None = None,
 ) -> dict[str, Any]:
-    selected_models = models or parse_pioneer_model_sweep()
+    selected_models = _exclude_gpt4_family(models or parse_pioneer_model_sweep())
     destination = report_dir or (config.outputs_dir / "reports" / "pioneer_model_full_benchmark")
     destination.mkdir(parents=True, exist_ok=True)
     command_plan = commands or default_full_benchmark_command_plan()
@@ -137,7 +157,7 @@ def run_pioneer_model_full_benchmark(
     smoke_runner = focused_smoke_runner or run_pioneer_model_sweep
     runner = command_runner or _run_subprocess_command
     manifest = _write_command_manifest(destination, command_plan)
-    selected_models, gpt_light_selection = _select_gpt_light_baseline(selected_models, probe)
+    exclusion_summary = _gpt4_exclusion_summary(models or parse_pioneer_model_sweep(), selected_models)
 
     results: list[dict[str, Any]] = []
     for model in selected_models:
@@ -153,7 +173,7 @@ def run_pioneer_model_full_benchmark(
             )
         )
 
-    summary = _summary_payload(results, manifest, gpt_light_selection)
+    summary = _summary_payload(results, manifest, exclusion_summary)
     summary_json = destination / "pioneer_model_full_benchmark_summary.json"
     summary_md = destination / "pioneer_model_full_benchmark_summary.md"
     summary_json.write_text(json.dumps(_redact_benchmark(summary), indent=2, sort_keys=True, default=str), encoding="utf-8")
@@ -197,7 +217,7 @@ def _run_one_model_full_benchmark(
 
     with _temporary_environ(model_env):
         _reset_llm_client_for_model()
-        availability = _contextualize(availability_probe(model_id), model, model_id, safe_name)
+        availability = _contextualize(_call_availability_probe_with_timeout(availability_probe, model_id), model, model_id, safe_name)
         log_lines.append("availability=" + json.dumps(_redact_benchmark(availability), sort_keys=True))
         if not availability.get("available"):
             result = _base_result(model, model_id, safe_name, availability, started)
@@ -215,6 +235,23 @@ def _run_one_model_full_benchmark(
             focused_smoke_runner,
             log_lines,
         )
+        if not _smoke_minimum_passed(focused_smoke):
+            metrics = _collect_model_metrics(model_outputs, focused_smoke, commands_run)
+            result = {
+                **_base_result(model, model_id, safe_name, availability, started),
+                "focused_smoke": focused_smoke,
+                "commands": commands_run,
+                "command_failures": 0,
+                "metrics": metrics,
+                "model_usage": _model_usage_summary(model, model_id, focused_smoke, metrics),
+                "stability_verdict": "SMOKE_FAILED",
+                "benchmark_status": "skipped_smoke_failed",
+                "outputs_dir": str(model_outputs),
+                "trajectories_path": None,
+                "log": "\n".join(log_lines + ["benchmark_skipped=smoke_minimum_failed"]) + "\n",
+            }
+            _write_per_model(report_dir, result)
+            return result
         for command in commands:
             prepared = _prepare_command(command, model_outputs)
             command_started = time.perf_counter()
@@ -251,6 +288,7 @@ def _run_one_model_full_benchmark(
             "metrics": metrics,
             "model_usage": _model_usage_summary(model, model_id, focused_smoke, metrics),
             "stability_verdict": _stability_verdict(metrics, commands_run),
+            "benchmark_status": "completed" if commands_run else "not_run",
             "outputs_dir": str(model_outputs),
             "trajectories_path": str(trajectories_path) if trajectories_path else None,
             "log": "\n".join(log_lines) + "\n",
@@ -259,64 +297,25 @@ def _run_one_model_full_benchmark(
         return result
 
 
-def _select_gpt_light_baseline(models: list[str], availability_probe: AvailabilityProbe) -> tuple[list[str], dict[str, Any]]:
-    selected = list(models)
-    legacy_gpt_present = "Gpt 4o" in selected
-    present_candidates = [model for model in GPT_LIGHT_BASELINE_CANDIDATES if model in selected]
-    if not present_candidates and not legacy_gpt_present:
-        return selected, {
-            "enabled": False,
-            "reason": "no_gpt_light_candidate_in_selected_models",
-            "preferred_model": GPT_LIGHT_BASELINE_CANDIDATES[0],
-            "selected_model": None,
-            "fallback_needed": False,
-            "attempts": [],
-            "old_removed_model": "Gpt 4o",
-            "old_removed_reason": "Pioneer returned provider/auth unavailable for gpt-4o in the previous benchmark.",
-        }
+def _exclude_gpt4_family(models: list[str]) -> list[str]:
+    return [model for model in models if not is_gpt4_family_model(model, resolve_pioneer_model_id(model))]
 
-    first_index_values = [selected.index(model) for model in present_candidates]
-    if legacy_gpt_present:
-        first_index_values.append(selected.index("Gpt 4o"))
-    first_index = min(first_index_values)
-    first_candidate = present_candidates[0] if present_candidates else GPT_LIGHT_BASELINE_CANDIDATES[0]
-    start_index = GPT_LIGHT_BASELINE_CANDIDATES.index(first_candidate)
-    attempts: list[dict[str, Any]] = []
-    selected_candidate: str | None = None
-    for candidate in GPT_LIGHT_BASELINE_CANDIDATES[start_index:]:
-        model_id = resolve_pioneer_model_id(candidate)
-        try:
-            availability = _call_availability_probe_with_timeout(availability_probe, model_id)
-        except Exception as exc:
-            availability = {"available": False, "error": f"{type(exc).__name__}: {exc}", "model": model_id}
-        attempt = {
-            "display_name": candidate,
-            "model_id": model_id,
-            "available": bool(availability.get("available")),
-            "error_category": availability.get("error_category"),
-            "error": availability.get("error"),
-        }
-        attempts.append(_redact_benchmark(attempt))
-        if attempt["available"]:
-            selected_candidate = candidate
-            break
 
-    without_gpt_candidates = [model for model in selected if model not in GPT_LIGHT_BASELINE_CANDIDATES and model != "Gpt 4o"]
-    resolved = without_gpt_candidates[:]
-    if selected_candidate is not None:
-        resolved.insert(first_index, selected_candidate)
-    return resolved, {
+def _gpt4_exclusion_summary(original_models: list[str], selected_models: list[str]) -> dict[str, Any]:
+    selected_set = set(selected_models)
+    excluded = [
+        {
+            "display_name": model,
+            "model_id": resolve_pioneer_model_id(model),
+            "reason": "excluded_gpt4_family_or_unavailable",
+        }
+        for model in original_models
+        if model not in selected_set and is_gpt4_family_model(model, resolve_pioneer_model_id(model))
+    ]
+    return {
         "enabled": True,
-        "preferred_model": GPT_LIGHT_BASELINE_CANDIDATES[0],
-        "fallback_order": list(GPT_LIGHT_BASELINE_CANDIDATES),
-        "selected_model": selected_candidate,
-        "selected_model_id": resolve_pioneer_model_id(selected_candidate) if selected_candidate else None,
-        "fallback_needed": selected_candidate != first_candidate,
-        "all_gpt_light_candidates_unavailable": selected_candidate is None,
-        "legacy_model_replaced": legacy_gpt_present,
-        "attempts": attempts,
-        "old_removed_model": "Gpt 4o",
-        "old_removed_reason": "Pioneer returned provider/auth unavailable for gpt-4o in the previous benchmark.",
+        "reason": "GPT-4/Gpt 4o family models are excluded from this non-GPT-4 stability benchmark.",
+        "excluded_models": excluded,
     }
 
 
@@ -362,7 +361,17 @@ def _run_focused_smoke_safely(
     log_lines: list[str],
 ) -> dict[str, Any]:
     try:
-        smoke = focused_smoke_runner(config, models=[model], report_dir=model_outputs / "focused_smoke")
+        timeout_sec = int(os.getenv("PIONEER_FOCUSED_SMOKE_TIMEOUT_SEC", "120"))
+        if timeout_sec > 0:
+            smoke = _call_focused_smoke_with_timeout(
+                focused_smoke_runner,
+                config,
+                model,
+                model_outputs,
+                timeout_sec,
+            )
+        else:
+            smoke = focused_smoke_runner(config, models=[model], report_dir=model_outputs / "focused_smoke")
         smoke_model = (smoke.get("models") or [{}])[0]
         return _contextualize(smoke_model, model, model_id, safe_model_name(model))
     except Exception as exc:
@@ -391,6 +400,54 @@ def _run_focused_smoke_safely(
         )
         log_lines.append("focused_smoke_error=" + json.dumps(_redact_benchmark(payload), sort_keys=True))
         return payload
+
+
+def _call_focused_smoke_with_timeout(
+    focused_smoke_runner: FocusedSmokeRunner,
+    config: Config,
+    model: str,
+    model_outputs: Path,
+    timeout_sec: int,
+) -> dict[str, Any]:
+    previous_handler = signal.getsignal(signal.SIGALRM)
+
+    def _handle_timeout(signum, frame):  # noqa: ANN001 - signal handler signature.
+        raise _ProbeTimeout(f"focused smoke timed out after {timeout_sec}s")
+
+    try:
+        signal.signal(signal.SIGALRM, _handle_timeout)
+        signal.alarm(timeout_sec)
+        return focused_smoke_runner(config, models=[model], report_dir=model_outputs / "focused_smoke")
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, previous_handler)
+
+
+def _smoke_minimum_passed(focused_smoke: dict[str, Any]) -> bool:
+    availability = focused_smoke.get("availability") if isinstance(focused_smoke.get("availability"), dict) else {}
+    metrics = focused_smoke.get("metrics") if isinstance(focused_smoke.get("metrics"), dict) else {}
+    if availability and availability.get("available") is False:
+        return False
+    if int(metrics.get("planner_usable_count") or 0) <= 0:
+        return False
+    if int(metrics.get("declared_pass_count") or 0) <= 0:
+        return False
+    if int(metrics.get("no_tool_fp") or 0) > 0:
+        return False
+    if int(metrics.get("unsupported_claims") or 0) > 0:
+        return False
+    if bool(metrics.get("final_gates_all_failed")):
+        return False
+    prompt_results = focused_smoke.get("prompt_results") if isinstance(focused_smoke.get("prompt_results"), list) else []
+    pure_rows = [row for row in prompt_results if row.get("expected_kind") == "PURE_DIRECT"]
+    evidence_rows = [row for row in prompt_results if row.get("expected_kind") == "EVIDENCE"]
+    if not pure_rows or not evidence_rows:
+        return False
+    if any(int(row.get("sql_calls") or 0) > 0 or int(row.get("api_calls") or 0) > 0 for row in pure_rows):
+        return False
+    if all(int(row.get("declared_pass_count") or 0) == 0 for row in evidence_rows):
+        return False
+    return True
 
 
 def _prepare_command(command: dict[str, Any], model_outputs: Path) -> dict[str, Any]:
@@ -427,6 +484,8 @@ def _collect_model_metrics(model_outputs: Path, focused_smoke: dict[str, Any], c
     internal_summary = ((internal50.get("mode_summary") or {}).get("robust_generalized_harness_candidate_v2_real") or {})
     smoke_metrics = focused_smoke.get("metrics") if isinstance(focused_smoke.get("metrics"), dict) else {}
     smoke_prompt_results = focused_smoke.get("prompt_results") if isinstance(focused_smoke.get("prompt_results"), list) else []
+    smoke_sql_calls = sum(int(row.get("sql_calls") or 0) for row in smoke_prompt_results)
+    smoke_api_calls = sum(int(row.get("api_calls") or 0) for row in smoke_prompt_results)
     command_failures = sum(1 for row in commands_run if int(row.get("returncode") or 0) != 0)
     post_router_count = smoke_metrics.get("post_evidence_answer_router_ran_count")
     if post_router_count is None:
@@ -458,16 +517,34 @@ def _collect_model_metrics(model_outputs: Path, focused_smoke: dict[str, Any], c
             "live_empty_treated_as_global_absence": None,
             "live_local_scope_confusion": None,
         },
+        "execution": {
+            "focused_smoke_sql_calls": smoke_sql_calls,
+            "focused_smoke_api_calls": smoke_api_calls,
+            "focused_smoke_tool_calls": smoke_sql_calls + smoke_api_calls,
+            "sql_gate_failures": 0,
+            "api_gate_failures": 0,
+            "sql_repair_attempts": 0,
+            "api_repair_attempts": 0,
+            "exact_pass_cache_hits": 0,
+            "exact_pass_cache_misses": 0,
+            "result_bundle_built_count": int(smoke_metrics.get("result_bundle_built_count") or 0),
+        },
         "routing_evidence": {
             "llm_direct_count": int(smoke_metrics.get("llm_direct_count") or 0),
             "llm_safe_direct_count": int(smoke_metrics.get("llm_safe_direct_count") or 0),
             "evidence_pipeline_count": int(smoke_metrics.get("evidence_pipeline_count") or 0),
             "evidence_pipeline_bypassed_count": int(smoke_metrics.get("evidence_pipeline_bypassed_count") or 0),
             "evidence_bus_built_count": int(smoke_metrics.get("evidence_bus_built_count") or 0),
+            "evidence_bus_non_empty_count": int(smoke_metrics.get("evidence_bus_non_empty_count") or 0),
+            "result_bundle_built_count": int(smoke_metrics.get("result_bundle_built_count") or 0),
+            "declared_pass_count": int(smoke_metrics.get("declared_pass_count") or 0),
+            "planner_usable_count": int(smoke_metrics.get("planner_usable_count") or 0),
             "post_evidence_answer_router_ran_count": int(post_router_count or 0),
             "semantic_fallback_count": int(smoke_metrics.get("semantic_fallback_count") or 0),
             "json_parse_failure_count": int(smoke_metrics.get("json_parse_failures") or 0),
             "malformed_model_response_count": int(smoke_metrics.get("json_parse_failures") or 0),
+            "final_syntax_gate_failures": int(smoke_metrics.get("final_syntax_gate_failures") or 0),
+            "final_semantic_gate_failures": int(smoke_metrics.get("final_semantic_gate_failures") or 0),
         },
         "availability": {
             "latency_sec": (focused_smoke.get("availability") or {}).get("latency_sec"),
@@ -580,12 +657,12 @@ def _write_command_manifest(report_dir: Path, commands: list[dict[str, Any]]) ->
     return path
 
 
-def _summary_payload(model_results: list[dict[str, Any]], manifest: Path, gpt_light_selection: dict[str, Any] | None = None) -> dict[str, Any]:
+def _summary_payload(model_results: list[dict[str, Any]], manifest: Path, gpt4_exclusion: dict[str, Any] | None = None) -> dict[str, Any]:
     return {
-        "purpose": "This benchmark verifies cross-model stability of the V2 system, not model selection or optimization.",
+        "purpose": "This benchmark verifies V2 stability across callable non-GPT-4 Pioneer/API models.",
         "model_major_semantics_confirmed": True,
         "default_model_sweep": list(DEFAULT_PIONEER_MODEL_SWEEP),
-        "gpt_light_baseline_selection": gpt_light_selection or {},
+        "gpt4_family_exclusion": gpt4_exclusion or {},
         "benchmark_command_manifest": str(manifest),
         "models": model_results,
         "cross_model_conclusion": _cross_model_conclusion(model_results),
@@ -598,7 +675,7 @@ def _cross_model_conclusion(model_results: list[dict[str, Any]]) -> dict[str, An
     completed = [
         row.get("model")
         for row in callable_models
-        if all(int(command.get("returncode") or 0) == 0 for command in row.get("commands", []))
+        if row.get("commands") and all(int(command.get("returncode") or 0) == 0 for command in row.get("commands", []))
     ]
     return {
         "callable_model_count": len(callable_models),
@@ -618,67 +695,37 @@ def _cross_model_conclusion(model_results: list[dict[str, Any]]) -> dict[str, An
 
 def _summary_markdown(summary: dict[str, Any]) -> str:
     lines = [
-        "# Pioneer Model Full Benchmark Summary",
+        "# V2 Non-GPT-4 Pioneer Model Benchmark Summary",
         "",
         "## Purpose",
         "",
-        "This benchmark verifies cross-model stability of the V2 system, not model selection or optimization.",
+        "This benchmark verifies V2 stability across callable non-GPT-4 Pioneer/API models. GPT-4/Gpt 4o family models are intentionally excluded.",
         "",
         "## Model-Major Semantics",
         "",
         "Each callable model runs the complete benchmark suite before the runner switches to the next model. No per-prompt model rotation is used.",
         "",
-        "## GPT-Light Baseline Selection",
+        "## Excluded GPT-4 Family Models",
         "",
     ]
-    selection = summary.get("gpt_light_baseline_selection") or {}
-    if selection.get("enabled"):
-        preferred = selection.get("preferred_model")
-        selected = selection.get("selected_model")
-        if selection.get("all_gpt_light_candidates_unavailable"):
-            lines.extend(
-                [
-                    f"- Old baseline removed: {selection.get('old_removed_model')} ({selection.get('old_removed_reason')})",
-                    f"- {preferred} unavailable.",
-                    "- No GPT-light fallback candidate was callable; GPT baseline omitted from this run.",
-                ]
-            )
-        elif selection.get("fallback_needed"):
-            lines.extend(
-                [
-                    f"- Old baseline removed: {selection.get('old_removed_model')} ({selection.get('old_removed_reason')})",
-                    f"- {preferred} unavailable.",
-                    f"- Fallback selected: {selected}",
-                ]
-            )
-        else:
-            lines.extend(
-                [
-                    f"- Old baseline removed: {selection.get('old_removed_model')} ({selection.get('old_removed_reason')})",
-                    f"- New GPT-light baseline selected: {selected}",
-                    f"- {preferred} callable: {selected == preferred}",
-                ]
-            )
-        lines.extend(["", "| Candidate | Model ID | Available | Error |", "| --- | --- | ---: | --- |"])
-        for attempt in selection.get("attempts") or []:
-            lines.append(
-                f"| {attempt.get('display_name')} | `{attempt.get('model_id')}` | {bool(attempt.get('available'))} | {attempt.get('error_category') or attempt.get('error') or ''} |"
-            )
-    else:
-        lines.append(f"- GPT-light fallback not applied: {selection.get('reason') or 'not configured'}")
+    exclusion = summary.get("gpt4_family_exclusion") or {}
+    lines.append(f"- Reason: {exclusion.get('reason') or 'excluded from this benchmark scope'}")
+    lines.extend(["", "| Display Name | Model ID | Reason |", "| --- | --- | --- |"])
+    for row in exclusion.get("excluded_models") or []:
+        lines.append(f"| {row.get('display_name')} | `{row.get('model_id')}` | {row.get('reason')} |")
     lines.extend(
         [
             "",
             "## Model Availability",
             "",
-            "| Display Name | Model ID | Available | Error |",
-            "| --- | --- | ---: | --- |",
+            "| Display Name | Model ID | Available | Smoke | Benchmark | Error |",
+            "| --- | --- | ---: | --- | --- | --- |",
         ]
     )
     for row in summary.get("models", []):
         availability = row.get("availability") or {}
         lines.append(
-            f"| {row.get('model')} | `{row.get('pioneer_model_id')}` | {bool(availability.get('available'))} | {availability.get('error_category') or availability.get('error') or ''} |"
+            f"| {row.get('model')} | `{row.get('pioneer_model_id')}` | {bool(availability.get('available'))} | {bool(((row.get('focused_smoke') or {}).get('metrics') or {}).get('focused_smoke_pass'))} | {row.get('benchmark_status') or 'not_run'} | {availability.get('error_category') or availability.get('error') or ''} |"
         )
     lines.extend(
         [

@@ -8,7 +8,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Callable
 
-from .pioneer_model_sweep import DEFAULT_PIONEER_MODEL_SWEEP, GPT_LIGHT_BASELINE_CANDIDATES
+from .pioneer_model_sweep import DEFAULT_PIONEER_MODEL_SWEEP
 from .trajectory import redact_secrets
 
 
@@ -117,7 +117,7 @@ def discover_pioneer_model_catalog(
 
 def desired_pioneer_model_mapping_names() -> list[str]:
     desired: list[str] = []
-    for name in [*GPT_LIGHT_BASELINE_CANDIDATES, *DEFAULT_PIONEER_MODEL_SWEEP]:
+    for name in DEFAULT_PIONEER_MODEL_SWEEP:
         if name not in desired:
             desired.append(name)
     return desired

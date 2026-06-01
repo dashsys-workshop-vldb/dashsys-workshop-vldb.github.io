@@ -18,10 +18,10 @@
 
 | Metric | Value | Note |
 | --- | --- | --- |
-| **API score** | `1.0` | The selected API call is scored as correct. |
-| **Answer score** | `0.5396` | The final answer is weak because live file payload is unavailable. |
+| **API score** | `unavailable` | The selected API call is scored as correct. |
+| **Answer score** | `unavailable` | The final answer is weak because live file payload is unavailable. |
 | **Main bottleneck** | `SQL provides the answer source; API verification is dry-run/unavailable in the packaged trace.` | No file list can be safely stated from dry-run evidence. |
-| **Dry-run status** | `Live/API evidence available.` | Credentials were not available for live API payloads. |
+| **Dry-run status** | `API verification attempted as dry-run; live API payload unavailable.` | Credentials were not available for live API payloads. |
 
 ## Storyboard Flow
 
@@ -140,4 +140,4 @@ flowchart LR
 
 ## Final Answer
 
-> You have 74 schemas. This count comes from your blueprint query and is confirmed by the API response from Adobe Schema Registry, which shows tenant schemas are available.
+> You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable.

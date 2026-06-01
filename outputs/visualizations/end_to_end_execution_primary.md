@@ -87,12 +87,13 @@ sequenceDiagram
 | 15 | checkpoint_12_validation | validation | SQL/API safety validation | optimized_steps=2 item(s) | api_validation_status=1 item(s); sql_validation_status=1 item(s) | records whether planned SQL/API calls were safe to execute | blocks unsafe SQL and unknown/unresolved API calls |
 | 16 | checkpoint_sql_ast_validation | validation | SQLGlot AST-based SQL validation and extraction | sql_call_count=1 | destructive_sql_detected=False; parsed_ok=True; selected_columns=1 item(s); selected_tables=1 item(s) | adds AST-level table and column extraction after existing SQL validation | detects unsafe SQL and schema mismatches with parser-backed structure |
 | 17 | checkpoint_13_tool_execution | execution | SQL/API tool execution | validated_step_count=2 | sql_calls_executed=1; api_calls_executed=1 | captures the actual SQL/API evidence gathered by the backend | records row counts, dry-run state, and API status for final answer grounding |
-| 18 | checkpoint_14_evidence_bus | evidence forwarding | operand forwarding / EvidenceBus | tool_result_count=2 | evidence=3 field(s) | forwards structured facts to API params and answer slots | passes exact IDs, names, counts, timestamps, and statuses without text guessing |
-| 19 | checkpoint_15_answer_slots | answer synthesis | structured answer slot extraction | tool_result_count=2 | answer_intent=COUNT | turns raw tool results into typed evidence fields | makes final response generation evidence-grounded |
-| 20 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=1; slots_present=6 item(s) | verifier_passed=True | checks final-answer claims against SQL/API evidence | blocks unsupported numbers, entities, timestamps, statuses, and dry-run API confirmation |
-| 21 | checkpoint_17_answer_reranking | answer selection | deterministic answer reranking | answer_family=schema_dataset | candidate_count=0; selected_candidate_type=base; selection_reason=best verifier-passing answer | selects the safest answer from same-evidence candidates | prefers verifier-passing and intent-matched answers |
-| 22 | checkpoint_18_final_answer | final response | concise grounded final response | verifier_passed=True | answer_length=170; final_answer=You have 74 schemas. This count comes from your blueprint... | returns the final concise answer to the agent harness | final answer remains tied to evidence and caveats |
-| 23 | checkpoint_official_token_reduction | query understanding | unavailable | unavailable | unavailable | Recorded the stage output in trajectory. | observability |
+| 18 | checkpoint_evidence_pipeline_boundary | evidence forwarding | pre-evidence routing boundary | strategy=SQL_FIRST_API_VERIFY | evidence_bus_built=True; evidence_pipeline_bypassed=False; post_evidence_answer_router_ran=False | records that the prompt continued into the evidence-backed answer path | separates data and mixed prompts from pure direct concept/meta bypasses |
+| 19 | checkpoint_14_evidence_bus | evidence forwarding | operand forwarding / EvidenceBus | tool_result_count=2 | evidence=4 field(s) | forwards structured facts to API params and answer slots | passes exact IDs, names, counts, timestamps, and statuses without text guessing |
+| 20 | checkpoint_15_answer_slots | answer synthesis | structured answer slot extraction | tool_result_count=2 | answer_intent=COUNT | turns raw tool results into typed evidence fields | makes final response generation evidence-grounded |
+| 21 | checkpoint_16_answer_verification | answer verification | claim verification / groundedness checking | claim_count=1; slots_present=4 item(s) | verifier_passed=True | checks final-answer claims against SQL/API evidence | blocks unsupported numbers, entities, timestamps, statuses, and dry-run API confirmation |
+| 22 | checkpoint_17_answer_reranking | answer selection | deterministic answer reranking | answer_family=schema_dataset | candidate_count=0; selected_candidate_type=base; selection_reason=best verifier-passing answer | selects the safest answer from same-evidence candidates | prefers verifier-passing and intent-matched answers |
+| 23 | checkpoint_18_final_answer | final response | concise grounded final response | verifier_passed=True | answer_length=102; final_answer=You have 74 schemas. Live API verification was not execut... | returns the final concise answer to the agent harness | final answer remains tied to evidence and caveats |
+| 24 | checkpoint_official_token_reduction | query understanding | unavailable | unavailable | unavailable | Recorded the stage output in trajectory. | observability |
 
 ## Evidence Flow Panel
 
@@ -115,4 +116,4 @@ sequenceDiagram
 
 ## Final Answer
 
-> You have 74 schemas. This count comes from your blueprint query and is confirmed by the API response from Adobe Schema Registry, which shows tenant schemas are available.
+> You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable.
