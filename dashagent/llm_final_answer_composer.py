@@ -11,7 +11,7 @@ from .evidence_bus import EvidenceBus
 from .evidence_grounded_final_answer_verifier import verify_evidence_grounded_final_answer
 from .final_answer_claim_extractor import extract_final_answer_claims
 from .llm_client import get_llm_client
-from .llm_unified_planner import LLMUnifiedPlan
+from .llm_unified_planner import LLMUnifiedPlan, planner_provider_capabilities
 from .result_bundle import ResultBundle
 from .trajectory import compact_preview, redact_secrets
 
@@ -136,22 +136,17 @@ def compose_llm_final_answer(
             backend_unavailable=True,
             error_message="LLM backend unavailable for final answer composition.",
         )
-    system_prompt = (
-        "You are the sole final-answer composer for DASHSys V2. "
-        "Use the submit_final_answer tool when available; otherwise return ONLY valid JSON with keys final_answer, used_pass_ids, claimed_facts, caveats_included. "
-        "Use only runtime evidence provided in the card. "
-        "Do not use hidden eval or gold-answer wording. "
-        "Do not invent counts, dates, statuses, entity names, IDs, relationships, live state, or API success. "
-        "Do not call tools. Do not include markdown."
-    )
+    capabilities = planner_provider_capabilities(provider, model)
+    system_prompt = _final_answer_system_prompt(requires_json_prompting=capabilities.requires_json_prompting)
     payload = dict(card)
     if repair_context:
         payload["repair_context"] = compact_preview(repair_context, 1800)
+    toolcall_attempted = bool(capabilities.supports_tool_calls)
     result = client.generate_messages(
         [{"role": "system", "content": system_prompt}, {"role": "user", "content": json.dumps(payload, sort_keys=True, default=str)}],
-        tools=[_final_answer_tool_schema()],
-        tool_choice={"type": "function", "function": {"name": "submit_final_answer"}},
-        parallel_tool_calls=False,
+        tools=[_final_answer_tool_schema()] if toolcall_attempted else None,
+        tool_choice={"type": "function", "function": {"name": "submit_final_answer"}} if toolcall_attempted else None,
+        parallel_tool_calls=False if toolcall_attempted else None,
     )
     provider = str(result.get("provider") or provider)
     model = str(result.get("model") or model)
@@ -172,6 +167,27 @@ def compose_llm_final_answer(
     candidate.provider = provider
     candidate.model = model
     return candidate
+
+
+def _final_answer_system_prompt(*, requires_json_prompting: bool = False) -> str:
+    if requires_json_prompting:
+        return (
+            "You are the sole final-answer composer for DASHSys V2. "
+            "Return ONLY one valid JSON object. No markdown, no code fence, no explanation outside JSON. "
+            "Required keys: final_answer, used_pass_ids, claimed_facts, caveats_included. "
+            "Use only runtime evidence provided in the card. "
+            "Do not use hidden eval or gold-answer wording. "
+            "Do not invent counts, dates, statuses, entity names, IDs, relationships, live state, or API success. "
+            "If evidence is unavailable or failed, use a scoped caveat instead of unsupported data."
+        )
+    return (
+        "You are the sole final-answer composer for DASHSys V2. "
+        "Use the submit_final_answer tool when available; otherwise return ONLY valid JSON with keys final_answer, used_pass_ids, claimed_facts, caveats_included. "
+        "Use only runtime evidence provided in the card. "
+        "Do not use hidden eval or gold-answer wording. "
+        "Do not invent counts, dates, statuses, entity names, IDs, relationships, live state, or API success. "
+        "Do not call tools. Do not include markdown."
+    )
 
 
 def parse_llm_final_answer_response(raw_content: str) -> LLMFinalAnswerCandidate:

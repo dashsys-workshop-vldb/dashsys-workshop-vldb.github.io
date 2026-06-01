@@ -160,6 +160,7 @@ def run_llm_unified_planner(
         schema_context=schema_context,
         endpoint_context=endpoint_context,
         repair_context=repair_context,
+        compact_for_weak_model=capabilities.requires_json_prompting,
     )
     toolcall_attempted = bool(capabilities.supports_tool_calls)
     tool = _planner_tool_schema()
@@ -316,7 +317,10 @@ def _planner_payload(
     schema_context: dict[str, Any],
     endpoint_context: list[dict[str, Any]],
     repair_context: dict[str, Any] | None = None,
+    compact_for_weak_model: bool = False,
 ) -> dict[str, Any]:
+    schema_chars = 2600 if compact_for_weak_model else 7000
+    endpoint_chars = 2200 if compact_for_weak_model else 6000
     return {
         "output_schema": {
             "route": "LLM_DIRECT | EVIDENCE_PIPELINE",
@@ -343,8 +347,8 @@ def _planner_payload(
             "reason": "short string",
         },
         "user_prompt": user_prompt,
-        "database_schema": compact_preview(schema_context, 7000),
-        "allowed_api_endpoints": compact_preview(endpoint_context, 6000),
+        "database_schema": compact_preview(schema_context, schema_chars),
+        "allowed_api_endpoints": compact_preview(endpoint_context, endpoint_chars),
         "repair_context": repair_context or None,
         "constraints": [
             "LLM owns semantic route, evidence order, SQL/API candidate generation, and optional repair.",
@@ -352,6 +356,10 @@ def _planner_payload(
             "Use depends_on only when a pass needs earlier pass results. Use placeholders like {{pass_1.result.id}} only when needed.",
             "Do not output deterministic templates or explanations outside JSON.",
             "Use route LLM_DIRECT only when no runtime evidence is required.",
+            "Prompts asking what data the user has, lists, counts, status, dates, local snapshots, live/current/platform state, or mixed concept+data require EVIDENCE_PIPELINE.",
+            "If route is EVIDENCE_PIPELINE, include at least one pass with path SQL, API, SQL_AND_API, DIRECT, or AGGREGATION_ONLY.",
+            "For mixed prompts, include a concept/direct pass and a SQL/API evidence pass; do not leave passes empty.",
+            "Never answer a user-specific data prompt with route LLM_DIRECT.",
             "Use route EVIDENCE_PIPELINE when uncertain.",
             "API requests must be safe GET requests from the endpoint context.",
         ],
@@ -367,6 +375,31 @@ def _planner_payload(
                     "passes": [],
                     "aggregation_instruction": "",
                     "reason": "pure concept question; no runtime evidence required",
+                },
+            },
+            {
+                "user_prompt": "What schemas do I have?",
+                "response": {
+                    "route": "EVIDENCE_PIPELINE",
+                    "evidence_order": "SQL_FIRST",
+                    "direct_answer": None,
+                    "passes": [
+                        {
+                            "pass_id": "pass_1",
+                            "subtask": "Find schemas available to the user from runtime evidence.",
+                            "path": "SQL",
+                            "can_run_parallel": True,
+                            "depends_on": [],
+                            "evidence_order": "SQL_FIRST",
+                            "sql": {"query": "SELECT name FROM <schema_table> LIMIT 50", "params": []},
+                            "api_request": None,
+                            "expected_result": "schema names or records",
+                            "optional": False,
+                            "fallback": False,
+                        }
+                    ],
+                    "aggregation_instruction": "Answer from pass_1 runtime evidence only.",
+                    "reason": "user-specific data/list request requires evidence",
                 },
             },
             {
@@ -392,6 +425,44 @@ def _planner_payload(
                     ],
                     "aggregation_instruction": "Answer with the count from pass_1.",
                     "reason": "count request requires runtime data evidence",
+                },
+            },
+            {
+                "user_prompt": "Explain what inactive journey means and show inactive journeys.",
+                "response": {
+                    "route": "EVIDENCE_PIPELINE",
+                    "evidence_order": "MULTI_PASS",
+                    "direct_answer": None,
+                    "passes": [
+                        {
+                            "pass_id": "pass_1",
+                            "subtask": "Explain the inactive journey concept in general terms.",
+                            "path": "DIRECT",
+                            "can_run_parallel": True,
+                            "depends_on": [],
+                            "evidence_order": "NO_EVIDENCE",
+                            "sql": None,
+                            "api_request": None,
+                            "expected_result": "short concept explanation",
+                            "optional": False,
+                            "fallback": False,
+                        },
+                        {
+                            "pass_id": "pass_2",
+                            "subtask": "Find inactive journeys from runtime evidence.",
+                            "path": "SQL",
+                            "can_run_parallel": True,
+                            "depends_on": [],
+                            "evidence_order": "SQL_FIRST",
+                            "sql": {"query": "SELECT name, status FROM <journey_table> WHERE LOWER(status) = 'inactive' LIMIT 50", "params": []},
+                            "api_request": None,
+                            "expected_result": "inactive journey records",
+                            "optional": False,
+                            "fallback": False,
+                        },
+                    ],
+                    "aggregation_instruction": "Combine the concept sentence with pass_2 evidence. Do not invent records.",
+                    "reason": "mixed concept plus data request requires evidence pipeline",
                 },
             },
         ],

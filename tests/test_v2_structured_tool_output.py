@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 
 from dashagent.llm_final_answer_composer import compose_llm_final_answer
-from dashagent.llm_unified_planner import run_llm_unified_planner
+from dashagent.llm_unified_planner import _planner_payload, planner_provider_capabilities, run_llm_unified_planner
 from dashagent.pass_graph_gate import PassGraphGate
 
 
@@ -163,6 +163,16 @@ def test_planner_json_fallback_extracts_code_fenced_json(monkeypatch):
     assert plan.diagnostics["planner_success"] is True
 
 
+def test_planner_json_fallback_extracts_surrounding_text(monkeypatch):
+    client = ContentOnlyPlannerClient(["Here is the plan:\n" + _planner_json() + "\nDone."])
+    monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+
+    plan = run_llm_unified_planner(user_prompt="How many schemas do I have?", schema_context={}, endpoint_context=[])
+
+    assert plan.route == "EVIDENCE_PIPELINE"
+    assert len(plan.passes) == 1
+
+
 def test_malformed_planner_json_triggers_one_repair(monkeypatch):
     client = ContentOnlyPlannerClient(["not-json", _planner_json(reason="repaired")])
     monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
@@ -221,6 +231,71 @@ def test_pass_graph_gate_still_validates_parsed_plan(monkeypatch):
 
     assert gate.passed is False
     assert gate.error_type == "invalid_path"
+
+
+def test_planner_prompt_contains_compact_examples_for_concept_data_local_and_mixed() -> None:
+    payload = _planner_payload(
+        user_prompt="unit",
+        schema_context={},
+        endpoint_context=[],
+        repair_context=None,
+        compact_for_weak_model=True,
+    )
+    examples = payload["examples"]
+    prompts = [row["user_prompt"] for row in examples]
+
+    assert "What is a schema?" in prompts
+    assert "What schemas do I have?" in prompts
+    assert "How many schema records are in the local snapshot?" in prompts
+    assert "Explain what inactive journey means and show inactive journeys." in prompts
+    assert len(examples) == 4
+
+
+def test_planner_prompt_requires_evidence_pipeline_to_include_passes() -> None:
+    payload = _planner_payload(
+        user_prompt="unit",
+        schema_context={},
+        endpoint_context=[],
+        repair_context=None,
+        compact_for_weak_model=True,
+    )
+    constraints = "\n".join(payload["constraints"])
+
+    assert "If route is EVIDENCE_PIPELINE, include at least one pass" in constraints
+    assert "For mixed prompts, include a concept/direct pass and a SQL/API evidence pass" in constraints
+
+
+def test_pioneer_capability_metadata_is_not_mistral_specific() -> None:
+    mistral = planner_provider_capabilities("pioneer_chat", "mistralai/Mistral-Nemo-Instruct-2407")
+    qwen = planner_provider_capabilities("pioneer_chat", "Qwen/Qwen3-4B-Instruct-2507")
+
+    assert mistral == qwen
+    assert mistral.supports_tool_calls is False
+    assert mistral.supports_json_content_fallback is True
+
+
+def test_final_answer_composer_uses_json_content_when_toolcalls_unavailable(monkeypatch):
+    client = ContentOnlyPlannerClient(
+        [
+            json.dumps(
+                {
+                    "final_answer": "There are 3 schema records in the local snapshot.",
+                    "used_pass_ids": ["pass_1"],
+                    "claimed_facts": [{"claim": "There are 3 schema records.", "supporting_pass_ids": ["pass_1"]}],
+                    "caveats_included": [],
+                }
+            )
+        ],
+        provider="pioneer_chat",
+        model="mistral",
+    )
+    monkeypatch.setattr("dashagent.llm_final_answer_composer.get_llm_client", lambda: client)
+
+    candidate = compose_llm_final_answer(card={"task": "LLM_OWNED_FINAL_ANSWER_COMPOSITION"})
+
+    assert candidate.final_answer == "There are 3 schema records in the local snapshot."
+    assert candidate.used_pass_ids == ["pass_1"]
+    assert client.calls[0]["tools"] is None
 
 
 def test_llm_final_answer_composer_prefers_sdk_toolcall_structured_output(monkeypatch):
