@@ -173,6 +173,112 @@ def test_v2_valid_llm_sql_passes_compile_gate_and_executes(tiny_project, monkeyp
     assert boundary["evidence_bus_built"] is True
 
 
+def test_v2_empty_evidence_plan_triggers_pass_graph_repair_once(tiny_project, monkeypatch):
+    client = _install_fake_planner(
+        monkeypatch,
+        [
+            {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "SQL_FIRST",
+                "direct_answer": None,
+                "passes": [],
+                "reason": "invalid empty evidence plan",
+            },
+            {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "SQL_FIRST",
+                "direct_answer": None,
+                "passes": [
+                    {
+                        "pass_id": "count_campaigns",
+                        "subtask": "Count campaigns.",
+                        "path": "SQL",
+                        "can_run_parallel": True,
+                        "depends_on": [],
+                        "sql": {"query": "SELECT COUNT(*) AS count FROM dim_campaign", "params": []},
+                    }
+                ],
+                "reason": "repaired graph with executable evidence pass",
+            },
+            {
+                "final_answer": "There are 2 campaigns.",
+                "used_pass_ids": ["count_campaigns"],
+                "claimed_facts": [{"claim": "There are 2 campaigns.", "supporting_pass_ids": ["count_campaigns"]}],
+                "caveats_included": [],
+            },
+        ],
+    )
+
+    result = AgentExecutor(tiny_project).run(
+        "How many campaigns are there?",
+        strategy=ROBUST_V2,
+        query_id="v2_empty_graph_repair",
+    )
+
+    assert [row["pass_id"] for row in result["tool_results"]] == ["count_campaigns"]
+    assert result["tool_results"][0]["payload"]["rows"] == [{"count": 2}]
+    summary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
+    assert summary["pass_graph_repair_attempted"] is True
+    assert summary["pass_graph_repair_success"] is True
+    assert summary["pass_graph_gate_error_type"] == "empty_evidence_plan"
+    assert summary["repaired_pass_count"] == 1
+    repair_payload = next(payload for payload in _client_call_payloads(client) if isinstance(payload.get("repair_context"), dict))
+    assert repair_payload["repair_context"]["failed_component"] == "pass_graph_gate"
+    assert repair_payload["repair_context"]["graph_gate_error_type"] == "empty_evidence_plan"
+
+
+def test_v2_second_invalid_pass_graph_fails_safely_without_backend_created_passes(tiny_project, monkeypatch):
+    client = _install_fake_planner(
+        monkeypatch,
+        [
+            {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "SQL_FIRST",
+                "direct_answer": None,
+                "passes": [],
+                "reason": "invalid empty evidence plan",
+            },
+            {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "MULTI_PASS",
+                "direct_answer": None,
+                "passes": [
+                    {
+                        "pass_id": "concept_only",
+                        "subtask": "Explain the concept only.",
+                        "path": "DIRECT",
+                        "can_run_parallel": True,
+                        "depends_on": [],
+                        "evidence_order": "NO_EVIDENCE",
+                    }
+                ],
+                "reason": "still invalid because no executable evidence pass",
+            },
+            {
+                "final_answer": "Runtime evidence could not be collected because the pass graph was invalid.",
+                "used_pass_ids": ["pass_graph_gate"],
+                "claimed_facts": [],
+                "caveats_included": ["invalid pass graph"],
+            },
+        ],
+    )
+
+    result = AgentExecutor(tiny_project).run(
+        "How many campaigns are there?",
+        strategy=ROBUST_V2,
+        query_id="v2_second_bad_graph",
+    )
+
+    assert result["tool_results"] == []
+    summary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
+    assert summary["pass_graph_repair_attempted"] is True
+    assert summary["pass_graph_repair_success"] is False
+    assert summary["pass_results_count"] == 1
+    assert _preview_items(summary["passes_executed"]) == []
+    repair_payloads = [payload for payload in _client_call_payloads(client) if isinstance(payload.get("repair_context"), dict)]
+    assert len(repair_payloads) == 1
+
+
 def test_v2_failed_sql_compile_error_is_returned_to_llm_repair_loop(tiny_project, monkeypatch):
     _install_fake_planner(
         monkeypatch,

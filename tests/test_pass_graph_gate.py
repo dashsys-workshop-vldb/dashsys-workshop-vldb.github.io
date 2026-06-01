@@ -149,3 +149,116 @@ def test_pass_graph_gate_rejects_path_field_mismatch():
 
     assert result.passed is False
     assert result.error_type == "path_mismatch"
+
+
+def test_pass_graph_gate_rejects_empty_evidence_pipeline_plan():
+    plan = normalize_llm_unified_plan(
+        {
+            "route": "EVIDENCE_PIPELINE",
+            "evidence_order": "SQL_FIRST",
+            "passes": [],
+        },
+        provider="fake",
+        model="fake",
+    )
+
+    result = PassGraphGate(max_passes=4).check(plan)
+
+    assert result.passed is False
+    assert result.error_type == "empty_evidence_plan"
+
+
+def test_pass_graph_gate_rejects_evidence_pipeline_with_only_direct_pass():
+    plan = normalize_llm_unified_plan(
+        {
+            "route": "EVIDENCE_PIPELINE",
+            "evidence_order": "MULTI_PASS",
+            "passes": [
+                {
+                    "pass_id": "concept",
+                    "path": "DIRECT",
+                    "can_run_parallel": True,
+                    "depends_on": [],
+                    "evidence_order": "NO_EVIDENCE",
+                }
+            ],
+        },
+        provider="fake",
+        model="fake",
+    )
+
+    result = PassGraphGate(max_passes=4).check(plan)
+
+    assert result.passed is False
+    assert result.error_type == "missing_executable_evidence_pass"
+
+
+def test_pass_graph_gate_rejects_evidence_pipeline_with_only_aggregation_pass():
+    plan = normalize_llm_unified_plan(
+        {
+            "route": "EVIDENCE_PIPELINE",
+            "evidence_order": "MULTI_PASS",
+            "passes": [
+                {
+                    "pass_id": "aggregate",
+                    "path": "AGGREGATION_ONLY",
+                    "can_run_parallel": False,
+                    "depends_on": [],
+                }
+            ],
+        },
+        provider="fake",
+        model="fake",
+    )
+
+    result = PassGraphGate(max_passes=4).check(plan)
+
+    assert result.passed is False
+    assert result.error_type == "aggregation_without_dependencies"
+
+
+def test_pass_graph_gate_accepts_evidence_pipeline_with_direct_and_sql_passes():
+    plan = normalize_llm_unified_plan(
+        {
+            "route": "EVIDENCE_PIPELINE",
+            "evidence_order": "MULTI_PASS",
+            "passes": [
+                {
+                    "pass_id": "concept",
+                    "path": "DIRECT",
+                    "can_run_parallel": True,
+                    "depends_on": [],
+                    "evidence_order": "NO_EVIDENCE",
+                },
+                {
+                    "pass_id": "data",
+                    "path": "SQL",
+                    "can_run_parallel": True,
+                    "depends_on": [],
+                    "sql": {"query": "SELECT 1", "params": []},
+                },
+            ],
+        },
+        provider="fake",
+        model="fake",
+    )
+
+    result = PassGraphGate(max_passes=4).check(plan)
+
+    assert result.passed is True
+
+
+def test_pass_graph_gate_allows_llm_direct_without_passes():
+    plan = normalize_llm_unified_plan(
+        {
+            "route": "LLM_DIRECT",
+            "evidence_order": "NO_EVIDENCE",
+            "passes": [],
+        },
+        provider="fake",
+        model="fake",
+    )
+
+    result = PassGraphGate(max_passes=4).check(plan)
+
+    assert result.passed is True

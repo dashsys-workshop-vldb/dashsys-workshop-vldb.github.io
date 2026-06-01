@@ -2057,8 +2057,70 @@ class AgentExecutor:
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
         tool_results: list[dict[str, Any]] = []
         runtime_passes: list[dict[str, Any]] = []
-        pass_specs = initial_plan.passes or []
-        graph_gate = self.pass_graph_gate.check(initial_plan)
+        active_plan = initial_plan
+        pass_specs = active_plan.passes or []
+        graph_gate = self.pass_graph_gate.check(active_plan)
+        pass_graph_repair_attempted = False
+        pass_graph_repair_success = False
+        initial_graph_gate_error_type = graph_gate.error_type
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_llm_owned_pass_graph_gate",
+            stage="llm-owned pass graph validation",
+            technique="shape-only PassGraphGate",
+            input_summary={"pass_ids": [item.pass_id for item in pass_specs], "evidence_order": active_plan.evidence_order},
+            output=graph_gate.to_dict(),
+            effect="validates only graph shape; does not choose subtasks, dependencies, SQL, or API paths",
+            correctness_role="blocks malformed dependency graphs before execution",
+            efficiency_role="bounds pass scheduling to LLM-declared valid graphs",
+        )
+        if not graph_gate.passed:
+            pass_graph_repair_attempted = True
+            repair_plan = run_llm_unified_planner(
+                user_prompt=query,
+                schema_context=planner_context["schema_context"],
+                endpoint_context=planner_context["endpoint_context"],
+                repair_context={
+                    "failed_component": "pass_graph_gate",
+                    "graph_gate_error_type": graph_gate.error_type,
+                    "graph_gate_error_message": graph_gate.error_message,
+                    "previous_plan": initial_plan.to_dict(),
+                },
+            )
+            repaired_graph_gate = self.pass_graph_gate.check(repair_plan)
+            pass_graph_repair_success = repaired_graph_gate.passed
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_llm_owned_pass_graph_repair",
+                stage="llm-owned pass graph repair",
+                technique="single LLM-owned pass graph repair",
+                input_summary={"error_type": graph_gate.error_type, "error_message": graph_gate.error_message},
+                output={
+                    "repair_plan": repair_plan.to_dict(),
+                    "pass_graph_repair_attempted": True,
+                    "pass_graph_repair_success": pass_graph_repair_success,
+                    "pass_graph_gate_error_type": graph_gate.error_type,
+                    "repaired_pass_count": len(repair_plan.passes or []),
+                },
+                effect="lets the LLM repair its own pass graph after shape-only feedback",
+                correctness_role="backend supplies only graph-shape errors and no replacement subtasks or SQL/API",
+                efficiency_role="caps pass graph repair to one attempt",
+            )
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_llm_owned_pass_graph_gate_repair",
+                stage="llm-owned pass graph validation",
+                technique="shape-only PassGraphGate on repaired plan",
+                input_summary={"pass_ids": [item.pass_id for item in repair_plan.passes or []], "evidence_order": repair_plan.evidence_order},
+                output=repaired_graph_gate.to_dict(),
+                effect="executes repaired plan only if the LLM supplied a valid graph",
+                correctness_role="does not add missing passes or choose SQL/API paths",
+                efficiency_role="stops after one graph repair attempt",
+            )
+            if repaired_graph_gate.passed:
+                active_plan = repair_plan
+                graph_gate = repaired_graph_gate
+                pass_specs = active_plan.passes or []
+            else:
+                graph_gate = repaired_graph_gate
+                pass_specs = repair_plan.passes or []
         run_optimizer = V2ExecutionOptimizer(
             budget_limits=BudgetLimits(
                 max_passes=run_context.budget.max_passes,
@@ -2090,7 +2152,7 @@ class AgentExecutor:
             "api_repair_attempts": 0,
             "sql_executed": False,
             "api_executed": False,
-            "multi_pass_enabled": bool(len(pass_specs) > 1 or initial_plan.evidence_order == "MULTI_PASS"),
+            "multi_pass_enabled": bool(len(pass_specs) > 1 or active_plan.evidence_order == "MULTI_PASS"),
             "llm_pass_graph_used": bool(pass_specs),
             "llm_pass_count": len(pass_specs),
             "parallel_pass_count": sum(1 for item in pass_specs if item.can_run_parallel and not item.depends_on),
@@ -2099,6 +2161,10 @@ class AgentExecutor:
             "parallel_groups": graph_gate.parallel_groups,
             "dependency_edges": graph_gate.dependency_edges,
             "pass_graph_gate_passed": graph_gate.passed,
+            "pass_graph_repair_attempted": pass_graph_repair_attempted,
+            "pass_graph_repair_success": pass_graph_repair_success,
+            "pass_graph_gate_error_type": initial_graph_gate_error_type,
+            "repaired_pass_count": len(pass_specs) if pass_graph_repair_success else 0,
             **optimization_plan.to_summary(),
             **pipeline_schedule.to_summary(),
             "pass_results_count": 0,
@@ -2129,16 +2195,6 @@ class AgentExecutor:
             correctness_role="keeps backend responsibility limited to scheduling, gates, execution, and result storage",
             efficiency_role="allows later passes to enter free stages before earlier passes finish all stages",
         )
-        checkpoint_logger.add_checkpoint(
-            "checkpoint_llm_owned_pass_graph_gate",
-            stage="llm-owned pass graph validation",
-            technique="shape-only PassGraphGate",
-            input_summary={"pass_ids": summary["pass_ids"], "evidence_order": initial_plan.evidence_order},
-            output=graph_gate.to_dict(),
-            effect="validates only graph shape; does not choose subtasks, dependencies, SQL, or API paths",
-            correctness_role="blocks malformed dependency graphs before execution",
-            efficiency_role="bounds pass scheduling to LLM-declared valid graphs",
-        )
         if not graph_gate.passed:
             runtime_passes.append(_pass_graph_error_runtime_pass(graph_gate, run_context=run_context))
             summary["pass_results_count"] = len(runtime_passes)
@@ -2167,7 +2223,7 @@ class AgentExecutor:
                     continue
                 resolved_pass, dependency_resolution = self._resolve_or_repair_llm_owned_pass(
                     query=query,
-                    original_plan=initial_plan,
+                    original_plan=active_plan,
                     pass_spec=pass_spec,
                     runtime_passes=runtime_passes,
                     planner_context=planner_context,
@@ -2193,7 +2249,7 @@ class AgentExecutor:
                     if source == "sql" and resolved_pass.sql is not None:
                         result = self._run_llm_owned_sql_for_pass(
                             query=query,
-                            original_plan=initial_plan,
+                            original_plan=active_plan,
                             pass_spec=resolved_pass,
                             planner_context=planner_context,
                             checkpoint_logger=checkpoint_logger,
@@ -2206,7 +2262,7 @@ class AgentExecutor:
                     elif source == "api" and resolved_pass.api_request is not None:
                         result = self._run_llm_owned_api_for_pass(
                             query=query,
-                            original_plan=initial_plan,
+                            original_plan=active_plan,
                             pass_spec=resolved_pass,
                             planner_context=planner_context,
                             checkpoint_logger=checkpoint_logger,
@@ -4047,6 +4103,10 @@ def _llm_owned_generation_boundary_summary(summary: dict[str, Any]) -> dict[str,
         "parallel_groups",
         "dependency_edges",
         "pass_graph_gate_passed",
+        "pass_graph_repair_attempted",
+        "pass_graph_repair_success",
+        "pass_graph_gate_error_type",
+        "repaired_pass_count",
         "passes_executed",
         "stage_events",
         "passes_completed",

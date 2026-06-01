@@ -3,7 +3,12 @@ from __future__ import annotations
 import json
 
 from dashagent.llm_final_answer_composer import compose_llm_final_answer
-from dashagent.llm_unified_planner import _planner_payload, planner_provider_capabilities, run_llm_unified_planner
+from dashagent.llm_unified_planner import (
+    _compact_api_endpoint_context,
+    _planner_payload,
+    planner_provider_capabilities,
+    run_llm_unified_planner,
+)
 from dashagent.pass_graph_gate import PassGraphGate
 
 
@@ -173,6 +178,41 @@ def test_planner_json_fallback_extracts_surrounding_text(monkeypatch):
     assert len(plan.passes) == 1
 
 
+def test_planner_json_fallback_cleans_trailing_commas(monkeypatch):
+    client = ContentOnlyPlannerClient(
+        [
+            """
+            {
+              "route": "EVIDENCE_PIPELINE",
+              "evidence_order": "SQL_FIRST",
+              "direct_answer": null,
+              "passes": [
+                {
+                  "pass_id": "pass_1",
+                  "subtask": "Count schema records.",
+                  "path": "SQL",
+                  "can_run_parallel": true,
+                  "depends_on": [],
+                  "sql": {"query": "SELECT COUNT(*) AS count FROM schemas", "params": [],},
+                  "api_request": null,
+                  "expected_result": "schema count",
+                },
+              ],
+              "aggregation_instruction": "Answer with the count.",
+              "reason": "data request",
+            }
+            """
+        ]
+    )
+    monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+
+    plan = run_llm_unified_planner(user_prompt="How many schemas do I have?", schema_context={}, endpoint_context=[])
+
+    assert plan.route == "EVIDENCE_PIPELINE"
+    assert len(plan.passes) == 1
+    assert plan.diagnostics["planner_repair_attempted"] is False
+
+
 def test_malformed_planner_json_triggers_one_repair(monkeypatch):
     client = ContentOnlyPlannerClient(["not-json", _planner_json(reason="repaired")])
     monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
@@ -248,7 +288,24 @@ def test_planner_prompt_contains_compact_examples_for_concept_data_local_and_mix
     assert "What schemas do I have?" in prompts
     assert "How many schema records are in the local snapshot?" in prompts
     assert "Explain what inactive journey means and show inactive journeys." in prompts
-    assert len(examples) == 4
+    assert "Compare local and live status of Birthday Message if both are available." in prompts
+    assert len(examples) >= 5
+
+
+def test_planner_examples_do_not_contain_angle_bracket_placeholders() -> None:
+    payload = _planner_payload(
+        user_prompt="unit",
+        schema_context={"tables": [{"name": "dim_campaign", "columns": ["name", "status", "campaign_id"]}]},
+        endpoint_context=[],
+        repair_context=None,
+        compact_for_weak_model=True,
+    )
+    text = json.dumps(payload["examples"], sort_keys=True)
+
+    assert "<schema_table>" not in text
+    assert "<journey_table>" not in text
+    assert "<" not in text
+    assert "dim_campaign" in text
 
 
 def test_planner_prompt_requires_evidence_pipeline_to_include_passes() -> None:
@@ -263,6 +320,61 @@ def test_planner_prompt_requires_evidence_pipeline_to_include_passes() -> None:
 
     assert "If route is EVIDENCE_PIPELINE, include at least one pass" in constraints
     assert "For mixed prompts, include a concept/direct pass and a SQL/API evidence pass" in constraints
+    assert "Never output angle-bracket placeholders" in constraints
+
+
+def test_weak_model_payload_uses_compact_api_endpoint_context() -> None:
+    payload = _planner_payload(
+        user_prompt="Compare local and live status of Birthday Message if both are available.",
+        schema_context={},
+        endpoint_context=[
+            {
+                "id": "journey_list",
+                "method": "GET",
+                "path": "/ajo/journey",
+                "use_when": "List journeys and statuses.",
+                "common_params": {"limit": 50, "start": 0},
+                "path_params": [],
+                "domains": ["JOURNEY_CAMPAIGN"],
+                "extra": {"large": "ignored"},
+            }
+        ],
+        repair_context=None,
+        compact_for_weak_model=True,
+    )
+
+    endpoints = payload["allowed_api_endpoints"]
+    assert endpoints == [
+        {
+            "method": "GET",
+            "path": "/ajo/journey",
+            "params": ["limit", "start"],
+            "description": "List journeys and statuses.",
+            "safe_get": True,
+        }
+    ]
+    constraints = "\n".join(payload["constraints"])
+    assert "For live/current/platform/compare local-vs-live prompts, include an API pass" in constraints
+
+
+def test_compact_api_endpoint_context_limits_and_preserves_shape() -> None:
+    endpoints = [
+        {"method": "POST", "path": "/unsafe", "common_params": {"x": 1}, "use_when": "unsafe"},
+        {"method": "GET", "path": "/safe", "common_params": {"limit": 25}, "use_when": "safe endpoint"},
+        {"method": "GET", "path": "/safe2", "path_params": ["id"], "use_when": "safe endpoint two"},
+    ]
+
+    compact = _compact_api_endpoint_context(endpoints, max_endpoints=1)
+
+    assert compact == [
+        {
+            "method": "GET",
+            "path": "/safe",
+            "params": ["limit"],
+            "description": "safe endpoint",
+            "safe_get": True,
+        }
+    ]
 
 
 def test_pioneer_capability_metadata_is_not_mistral_specific() -> None:

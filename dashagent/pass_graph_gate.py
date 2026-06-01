@@ -39,6 +39,8 @@ class PassGraphGate:
             "dependency_edges": edges,
             "parallel_groups": _parallel_groups(passes),
         }
+        if plan.route == "EVIDENCE_PIPELINE" and not passes:
+            return _fail("empty_evidence_plan", "EVIDENCE_PIPELINE plans must declare at least one pass.", **base)
         if len(passes) > self.max_passes:
             return _fail("too_many_passes", f"LLM pass count exceeds max_passes={self.max_passes}.", **base)
         if len(set(pass_ids)) != len(pass_ids):
@@ -57,6 +59,11 @@ class PassGraphGate:
                     return _fail("unknown_placeholder_dependency", f"Pass '{item.pass_id}' references unknown placeholder pass '{ref}'.", **base)
         if _has_cycle(passes):
             return _fail("dependency_cycle", "LLM pass dependency graph contains a cycle.", **base)
+        for item in passes:
+            if item.path == "AGGREGATION_ONLY" and len(passes) == 1:
+                return _fail("aggregation_only_without_evidence", "AGGREGATION_ONLY cannot be the only pass.", **base)
+        if plan.route == "EVIDENCE_PIPELINE" and not any(item.path in {"SQL", "API", "SQL_AND_API"} for item in passes):
+            return _fail("missing_executable_evidence_pass", "EVIDENCE_PIPELINE requires at least one executable SQL/API evidence pass.", **base)
         return PassGraphGateResult(True, **base)
 
 
@@ -81,6 +88,8 @@ def _pass_shape_error(item: LLMUnifiedPass) -> tuple[str, str] | None:
         return "path_mismatch", f"Pass '{item.pass_id}' path SQL_AND_API must contain both sql and api_request."
     if item.path in {"DIRECT", "AGGREGATION_ONLY"} and (has_sql or has_api):
         return "path_mismatch", f"Pass '{item.pass_id}' path {item.path} must not contain sql or api_request."
+    if item.path == "AGGREGATION_ONLY" and not item.depends_on:
+        return "aggregation_without_dependencies", f"Pass '{item.pass_id}' path AGGREGATION_ONLY must depend on earlier passes."
     if item.sql is not None and not str(item.sql.query or "").strip():
         return "malformed_sql", f"Pass '{item.pass_id}' SQL query is missing."
     if item.api_request is not None:

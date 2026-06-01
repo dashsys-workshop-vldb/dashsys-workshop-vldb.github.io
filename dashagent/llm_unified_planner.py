@@ -321,6 +321,11 @@ def _planner_payload(
 ) -> dict[str, Any]:
     schema_chars = 2600 if compact_for_weak_model else 7000
     endpoint_chars = 2200 if compact_for_weak_model else 6000
+    api_context = (
+        _compact_api_endpoint_context(endpoint_context, max_endpoints=8)
+        if compact_for_weak_model
+        else compact_preview(endpoint_context, endpoint_chars)
+    )
     return {
         "output_schema": {
             "route": "LLM_DIRECT | EVIDENCE_PIPELINE",
@@ -348,7 +353,7 @@ def _planner_payload(
         },
         "user_prompt": user_prompt,
         "database_schema": compact_preview(schema_context, schema_chars),
-        "allowed_api_endpoints": compact_preview(endpoint_context, endpoint_chars),
+        "allowed_api_endpoints": api_context,
         "repair_context": repair_context or None,
         "constraints": [
             "LLM owns semantic route, evidence order, SQL/API candidate generation, and optional repair.",
@@ -359,114 +364,270 @@ def _planner_payload(
             "Prompts asking what data the user has, lists, counts, status, dates, local snapshots, live/current/platform state, or mixed concept+data require EVIDENCE_PIPELINE.",
             "If route is EVIDENCE_PIPELINE, include at least one pass with path SQL, API, SQL_AND_API, DIRECT, or AGGREGATION_ONLY.",
             "For mixed prompts, include a concept/direct pass and a SQL/API evidence pass; do not leave passes empty.",
+            "Never output angle-bracket placeholders such as <schema_table> or <journey_table>.",
+            "Use only table and column names present in database_schema.",
+            "For live/current/platform/compare local-vs-live prompts, include an API pass if allowed_api_endpoints contains a relevant safe GET endpoint.",
             "Never answer a user-specific data prompt with route LLM_DIRECT.",
             "Use route EVIDENCE_PIPELINE when uncertain.",
             "API requests must be safe GET requests from the endpoint context.",
         ],
-        "examples": [
-            {
-                "user_prompt": "What is a schema?",
-                "response": {
-                    "route": "LLM_DIRECT",
-                    "evidence_order": "NO_EVIDENCE",
-                    "direct_answer": "A schema defines the structure and meaning of data fields.",
-                    "sql": None,
-                    "api_request": None,
-                    "passes": [],
-                    "aggregation_instruction": "",
-                    "reason": "pure concept question; no runtime evidence required",
-                },
-            },
-            {
-                "user_prompt": "What schemas do I have?",
-                "response": {
-                    "route": "EVIDENCE_PIPELINE",
-                    "evidence_order": "SQL_FIRST",
-                    "direct_answer": None,
-                    "passes": [
-                        {
-                            "pass_id": "pass_1",
-                            "subtask": "Find schemas available to the user from runtime evidence.",
-                            "path": "SQL",
-                            "can_run_parallel": True,
-                            "depends_on": [],
-                            "evidence_order": "SQL_FIRST",
-                            "sql": {"query": "SELECT name FROM <schema_table> LIMIT 50", "params": []},
-                            "api_request": None,
-                            "expected_result": "schema names or records",
-                            "optional": False,
-                            "fallback": False,
-                        }
-                    ],
-                    "aggregation_instruction": "Answer from pass_1 runtime evidence only.",
-                    "reason": "user-specific data/list request requires evidence",
-                },
-            },
-            {
-                "user_prompt": "How many schema records are in the local snapshot?",
-                "response": {
-                    "route": "EVIDENCE_PIPELINE",
-                    "evidence_order": "SQL_FIRST",
-                    "direct_answer": None,
-                    "passes": [
-                        {
-                            "pass_id": "pass_1",
-                            "subtask": "Count schema records in the local snapshot.",
-                            "path": "SQL",
-                            "can_run_parallel": True,
-                            "depends_on": [],
-                            "evidence_order": "SQL_FIRST",
-                            "sql": {"query": "SELECT COUNT(*) AS count FROM <schema_table>", "params": []},
-                            "api_request": None,
-                            "expected_result": "local schema count",
-                            "optional": False,
-                            "fallback": False,
-                        }
-                    ],
-                    "aggregation_instruction": "Answer with the count from pass_1.",
-                    "reason": "count request requires runtime data evidence",
-                },
-            },
-            {
-                "user_prompt": "Explain what inactive journey means and show inactive journeys.",
-                "response": {
-                    "route": "EVIDENCE_PIPELINE",
-                    "evidence_order": "MULTI_PASS",
-                    "direct_answer": None,
-                    "passes": [
-                        {
-                            "pass_id": "pass_1",
-                            "subtask": "Explain the inactive journey concept in general terms.",
-                            "path": "DIRECT",
-                            "can_run_parallel": True,
-                            "depends_on": [],
-                            "evidence_order": "NO_EVIDENCE",
-                            "sql": None,
-                            "api_request": None,
-                            "expected_result": "short concept explanation",
-                            "optional": False,
-                            "fallback": False,
-                        },
-                        {
-                            "pass_id": "pass_2",
-                            "subtask": "Find inactive journeys from runtime evidence.",
-                            "path": "SQL",
-                            "can_run_parallel": True,
-                            "depends_on": [],
-                            "evidence_order": "SQL_FIRST",
-                            "sql": {"query": "SELECT name, status FROM <journey_table> WHERE LOWER(status) = 'inactive' LIMIT 50", "params": []},
-                            "api_request": None,
-                            "expected_result": "inactive journey records",
-                            "optional": False,
-                            "fallback": False,
-                        },
-                    ],
-                    "aggregation_instruction": "Combine the concept sentence with pass_2 evidence. Do not invent records.",
-                    "reason": "mixed concept plus data request requires evidence pipeline",
-                },
-            },
-        ],
+        "examples": _build_schema_aware_examples(schema_context, endpoint_context),
     }
+
+
+def _compact_api_endpoint_context(endpoint_context: list[dict[str, Any]], *, max_endpoints: int = 8) -> list[dict[str, Any]]:
+    compact: list[dict[str, Any]] = []
+    for endpoint in endpoint_context or []:
+        if not isinstance(endpoint, dict):
+            continue
+        method = str(endpoint.get("method") or "").strip().upper()
+        path = str(endpoint.get("path") or "").strip()
+        if method != "GET" or not path:
+            continue
+        params: list[str] = []
+        common_params = endpoint.get("common_params")
+        if isinstance(common_params, dict):
+            params.extend(str(key) for key in common_params if str(key).strip())
+        path_params = endpoint.get("path_params")
+        if isinstance(path_params, list):
+            params.extend(str(value) for value in path_params if str(value).strip())
+        seen: set[str] = set()
+        deduped_params = []
+        for param in params:
+            if param not in seen:
+                seen.add(param)
+                deduped_params.append(param)
+        compact.append(
+            {
+                "method": "GET",
+                "path": path,
+                "params": deduped_params,
+                "description": str(endpoint.get("description") or endpoint.get("use_when") or endpoint.get("id") or "")[:220],
+                "safe_get": True,
+            }
+        )
+        if len(compact) >= max_endpoints:
+            break
+    return compact
+
+
+def _build_schema_aware_examples(schema_context: dict[str, Any], endpoint_context: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    table = _first_schema_table(schema_context)
+    safe_get = _first_safe_get_endpoint(endpoint_context)
+    list_sql = _example_list_sql(table)
+    count_sql = _example_count_sql(table)
+    status_sql = _example_status_sql(table)
+    examples: list[dict[str, Any]] = [
+        {
+            "user_prompt": "What is a schema?",
+            "response": {
+                "route": "LLM_DIRECT",
+                "evidence_order": "NO_EVIDENCE",
+                "direct_answer": "A schema defines the structure and meaning of data fields.",
+                "sql": None,
+                "api_request": None,
+                "passes": [],
+                "aggregation_instruction": "",
+                "reason": "pure concept question; no runtime evidence required",
+            },
+        },
+        {
+            "user_prompt": "What schemas do I have?",
+            "response": {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "SQL_FIRST",
+                "direct_answer": None,
+                "passes": [
+                    {
+                        "pass_id": "pass_1",
+                        "subtask": "Find requested records from runtime evidence using table and column names present in database_schema.",
+                        "path": "SQL",
+                        "can_run_parallel": True,
+                        "depends_on": [],
+                        "evidence_order": "SQL_FIRST",
+                        "sql": list_sql,
+                        "api_request": None,
+                        "expected_result": "matching runtime records",
+                        "optional": False,
+                        "fallback": False,
+                    }
+                ],
+                "aggregation_instruction": "Answer from pass_1 runtime evidence only.",
+                "reason": "user-specific data/list request requires evidence",
+            },
+        },
+        {
+            "user_prompt": "How many schema records are in the local snapshot?",
+            "response": {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "SQL_FIRST",
+                "direct_answer": None,
+                "passes": [
+                    {
+                        "pass_id": "pass_1",
+                        "subtask": "Count requested records in the local snapshot using database_schema.",
+                        "path": "SQL",
+                        "can_run_parallel": True,
+                        "depends_on": [],
+                        "evidence_order": "SQL_FIRST",
+                        "sql": count_sql,
+                        "api_request": None,
+                        "expected_result": "local record count",
+                        "optional": False,
+                        "fallback": False,
+                    }
+                ],
+                "aggregation_instruction": "Answer with the count from pass_1.",
+                "reason": "count request requires runtime data evidence",
+            },
+        },
+        {
+            "user_prompt": "Explain what inactive journey means and show inactive journeys.",
+            "response": {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "MULTI_PASS",
+                "direct_answer": None,
+                "passes": [
+                    {
+                        "pass_id": "pass_1",
+                        "subtask": "Explain the inactive journey concept in general terms.",
+                        "path": "DIRECT",
+                        "can_run_parallel": True,
+                        "depends_on": [],
+                        "evidence_order": "NO_EVIDENCE",
+                        "sql": None,
+                        "api_request": None,
+                        "expected_result": "short concept explanation",
+                        "optional": False,
+                        "fallback": False,
+                    },
+                    {
+                        "pass_id": "pass_2",
+                        "subtask": "Find requested inactive records from runtime evidence using database_schema.",
+                        "path": "SQL",
+                        "can_run_parallel": True,
+                        "depends_on": [],
+                        "evidence_order": "SQL_FIRST",
+                        "sql": status_sql,
+                        "api_request": None,
+                        "expected_result": "matching inactive records",
+                        "optional": False,
+                        "fallback": False,
+                    },
+                ],
+                "aggregation_instruction": "Combine the concept sentence with pass_2 evidence. Do not invent records.",
+                "reason": "mixed concept plus data request requires evidence pipeline",
+            },
+        },
+    ]
+    compare_passes = [
+        {
+            "pass_id": "pass_1",
+            "subtask": "Collect local snapshot evidence using database_schema.",
+            "path": "SQL",
+            "can_run_parallel": True,
+            "depends_on": [],
+            "evidence_order": "SQL_FIRST",
+            "sql": status_sql or list_sql,
+            "api_request": None,
+            "expected_result": "local snapshot evidence",
+            "optional": False,
+            "fallback": False,
+        }
+    ]
+    if safe_get is not None:
+        compare_passes.append(
+            {
+                "pass_id": "pass_2",
+                "subtask": "Collect live evidence from a safe GET endpoint selected from allowed_api_endpoints.",
+                "path": "API",
+                "can_run_parallel": True,
+                "depends_on": [],
+                "evidence_order": "API_FIRST",
+                "sql": None,
+                "api_request": {"method": "GET", "path": safe_get["path"], "params": {}},
+                "expected_result": "live API evidence",
+                "optional": False,
+                "fallback": False,
+            }
+        )
+    examples.append(
+        {
+            "user_prompt": "Compare local and live status of Birthday Message if both are available.",
+            "response": {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "MULTI_PASS",
+                "direct_answer": None,
+                "passes": compare_passes,
+                "aggregation_instruction": "Preserve LOCAL_SNAPSHOT and LIVE_API scope separately when combining pass results.",
+                "reason": "local/live comparison requires local evidence and live API evidence when a safe GET endpoint is available",
+            },
+        }
+    )
+    return examples
+
+
+def _first_schema_table(schema_context: dict[str, Any]) -> dict[str, Any] | None:
+    tables = schema_context.get("tables") if isinstance(schema_context, dict) else None
+    if isinstance(tables, dict):
+        for name, payload in tables.items():
+            if isinstance(payload, dict):
+                return {"name": str(name), "columns": _column_names(payload.get("columns"))}
+    if isinstance(tables, list):
+        for item in tables:
+            if isinstance(item, dict) and item.get("name"):
+                return {"name": str(item.get("name")), "columns": _column_names(item.get("columns"))}
+    return None
+
+
+def _column_names(value: Any) -> list[str]:
+    columns: list[str] = []
+    if isinstance(value, list):
+        for item in value:
+            if isinstance(item, dict) and item.get("name"):
+                columns.append(str(item.get("name")))
+            elif isinstance(item, str):
+                columns.append(item)
+    return columns
+
+
+def _example_list_sql(table: dict[str, Any] | None) -> dict[str, Any] | None:
+    if table is None:
+        return None
+    table_name = _quote_identifier(table["name"])
+    columns = table.get("columns") or []
+    preferred = [name for name in ("name", "id", "status") if name in columns]
+    selected = preferred or columns[:3] or ["*"]
+    select_clause = ", ".join(_quote_identifier(column) if column != "*" else "*" for column in selected)
+    return {"query": f"SELECT {select_clause} FROM {table_name} LIMIT 50", "params": []}
+
+
+def _example_count_sql(table: dict[str, Any] | None) -> dict[str, Any] | None:
+    if table is None:
+        return None
+    return {"query": f"SELECT COUNT(*) AS count FROM {_quote_identifier(table['name'])}", "params": []}
+
+
+def _example_status_sql(table: dict[str, Any] | None) -> dict[str, Any] | None:
+    if table is None:
+        return None
+    table_name = _quote_identifier(table["name"])
+    columns = table.get("columns") or []
+    if "name" in columns and "status" in columns:
+        return {"query": f"SELECT name, status FROM {table_name} WHERE LOWER(status) = 'inactive' LIMIT 50", "params": []}
+    return _example_list_sql(table)
+
+
+def _first_safe_get_endpoint(endpoint_context: list[dict[str, Any]]) -> dict[str, Any] | None:
+    compact = _compact_api_endpoint_context(endpoint_context, max_endpoints=1)
+    return compact[0] if compact else None
+
+
+def _quote_identifier(value: str) -> str:
+    cleaned = str(value or "").strip()
+    if re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", cleaned):
+        return cleaned
+    return '"' + cleaned.replace('"', '""') + '"'
 
 
 def _planner_repair_payload(payload: dict[str, Any], *, raw_content: str, parse_error: str | None) -> dict[str, Any]:
@@ -716,10 +877,41 @@ def _normalize_pass_path(
 
 def _parse_json_object(text: str) -> dict[str, Any]:
     stripped = _extract_json_object_text(text)
-    parsed = json.loads(stripped)
+    try:
+        parsed = json.loads(stripped)
+    except json.JSONDecodeError:
+        parsed = json.loads(_remove_json_trailing_commas(stripped))
     if not isinstance(parsed, dict):
         raise ValueError("Planner response must be a JSON object")
     return parsed
+
+
+def _remove_json_trailing_commas(text: str) -> str:
+    out: list[str] = []
+    in_string = False
+    escaped = False
+    for index, char in enumerate(text):
+        if in_string:
+            out.append(char)
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+            out.append(char)
+            continue
+        if char == ",":
+            next_index = index + 1
+            while next_index < len(text) and text[next_index].isspace():
+                next_index += 1
+            if next_index < len(text) and text[next_index] in "}]":
+                continue
+        out.append(char)
+    return "".join(out)
 
 
 def _structured_tool_arguments(result: dict[str, Any], tool_name: str) -> dict[str, Any]:
