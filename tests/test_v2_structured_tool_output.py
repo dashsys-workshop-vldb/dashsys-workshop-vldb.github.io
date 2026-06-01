@@ -136,7 +136,7 @@ def _planner_json(**overrides) -> str:
     return json.dumps(payload)
 
 
-def test_llm_unified_planner_accepts_toolcall_arguments_without_requiring_tools(monkeypatch):
+def test_llm_unified_planner_accepts_legacy_toolcall_arguments_as_diagnostic_fallback(monkeypatch):
     client = ToolCallClient(
         "submit_v2_plan",
         {
@@ -155,10 +155,10 @@ def test_llm_unified_planner_accepts_toolcall_arguments_without_requiring_tools(
 
     assert plan.route == "LLM_DIRECT"
     assert plan.direct_answer == "A schema defines data structure."
-    assert client.calls[0]["tools"] is None
-    assert client.calls[0]["tool_choice"] is None
-    assert plan.diagnostics["weak_model_stable_protocol_used"] is True
-    assert plan.diagnostics["direct_route_challenge_used"] is True
+    assert client.calls[0]["tools"][0]["function"]["name"] == "submit_semantic_ir_plan"
+    assert client.calls[0]["tool_choice"]["function"]["name"] == "submit_semantic_ir_plan"
+    assert plan.diagnostics["planner_parse_source"] == "legacy_planner_payload_fallback"
+    assert plan.diagnostics["atomic_protocol_fallback_used"] is False
 
 
 def test_pioneer_planner_uses_json_content_fallback_without_toolcall(monkeypatch):
