@@ -66,6 +66,9 @@ class SemanticIRValidator:
         return base
 
     def _validate_task(self, task: SemanticIRTask) -> SemanticIRValidationResult:
+        count_shape = self._validate_count_task_shape(task)
+        if not count_shape.passed:
+            return count_shape
         if task.kind == "CONCEPT":
             return self._ok_context()
         if task.kind == "AGGREGATE":
@@ -90,6 +93,28 @@ class SemanticIRValidator:
                 return local_result
             return self._validate_api(task.task_id, task.api_query)
         return self._fail("invalid_kind", f"Invalid task kind: {task.kind}", task.task_id)
+
+    def _validate_count_task_shape(self, task: SemanticIRTask) -> SemanticIRValidationResult:
+        if task.operation != "COUNT":
+            return self._ok_context()
+        if task.source == "LOCAL_SNAPSHOT":
+            if task.kind not in {"LOCAL_QUERY", "LOCAL_AND_LIVE"} or task.local_query is None or not task.local_query.count:
+                return self._fail(
+                    "local_count_requires_count_query",
+                    "COUNT tasks over LOCAL_SNAPSHOT must include a LOCAL_QUERY local_query with count=true.",
+                    task.task_id,
+                )
+        if task.source == "BOTH":
+            if task.kind != "LOCAL_AND_LIVE" or task.local_query is None or not task.local_query.count or task.api_query is None:
+                return self._fail(
+                    "both_count_requires_local_and_live_queries",
+                    "COUNT tasks over BOTH must include LOCAL_AND_LIVE with local_query.count=true and an api_query.",
+                    task.task_id,
+                )
+        if task.source == "LIVE_API":
+            if task.kind not in {"LIVE_QUERY", "LOCAL_AND_LIVE"} or task.api_query is None:
+                return self._fail("live_count_requires_api_query", "COUNT tasks over LIVE_API must include an api_query.", task.task_id)
+        return self._ok_context()
 
     def _validate_local(self, task_id: str, query: LocalQueryIR) -> SemanticIRValidationResult:
         table = self._table_key.get(query.table.lower())

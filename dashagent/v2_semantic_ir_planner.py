@@ -469,6 +469,8 @@ def _semantic_ir_user_prompt(
             "For mixed concept plus data prompts without live/current/platform/API cues, include a CONCEPT task and a LOCAL_QUERY data task; do not use API as the primary data source.",
             "For any how many/count/number of/total prompt, use operation COUNT and local_query.count=true; do not list rows and count the displayed limit.",
             "For local snapshot counts, use LOCAL_QUERY with operation COUNT.",
+            "Do not represent a requested COUNT as an AGGREGATE task over a sampled LIST task; sampled rows are not a count.",
+            "If a COUNT answer is requested for LOCAL_SNAPSHOT, the required evidence task itself must be kind LOCAL_QUERY, source LOCAL_SNAPSHOT, operation COUNT, and local_query.count=true.",
             "For date or published/created/updated lookup prompts without live/current/platform/API cues, use LOCAL_QUERY with DATE or LOOKUP when an allowed local table has a relevant date/timestamp field; do not make API a prerequisite.",
             "For published/date prompts, select all relevant local timestamp candidates available in the allowed table, such as CREATEDTIME, UPDATEDTIME, STARTDATE, LASTDEPLOYEDTIME, STOPPEDTIME, or FINISHEDTIME, instead of selecting only one nullable timestamp.",
             "Do not make a local lookup depend on a live API task unless the local filter literally needs an ID returned by the live task.",

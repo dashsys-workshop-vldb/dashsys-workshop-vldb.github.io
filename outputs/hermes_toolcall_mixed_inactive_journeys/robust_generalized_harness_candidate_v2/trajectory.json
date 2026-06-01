@@ -1,5 +1,5 @@
 {
-  "answer_time": 55.47510683303699,
+  "answer_time": 22.834407541435212,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-01T22:33:24.885527+00:00"
+      "timestamp": "2026-06-01T23:16:02.903107+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-01T22:33:24.885545+00:00"
+      "timestamp": "2026-06-01T23:16:02.903126+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,7 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-01T22:33:24.885549+00:00"
+      "timestamp": "2026-06-01T23:16:02.903131+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -91,7 +91,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 22803,
+        "planner_provider_latency_ms": 18061,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -104,10 +104,10 @@
         },
         "sdk_toolcall_semantic_ir_used": true,
         "semantic_ir_plan_preview": {
-          "preview": "{\"route\": \"EVIDENCE\", \"direct_answer\": \"An inactive journey is a Journey Optimizer campaign that is not currently active or running. This typically means the campaign has been stopped, finished, or is in a draft state where it is not being executed.\", \"tasks\": {\"items\": [{\"task_id\": \"concept_inactive_journey\", \"kind\": \"CONCEPT\", \"operation\": \"EXPLAIN\", \"source\": \"NONE\", \"description\": \"Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context, relating it to campaign states like stopped, finished, or draft.\", \"required\": true}, {\"task_id\": \"list_inactive_journeys\", \"kind\": \"LOCAL_AND_LIVE\", \"operation\": \"LIST\", \"source\": \"BOTH\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"CAMPAIGNID\", \"NAME\", \"STATUS\"], \"total_items\": 7, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"STATUS\", \"op\": \"!=\", \"value\": \"ACTIVE\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 50}, \"api_query\": {\"endpoint_id\": \"journey_list\", \"method\": \"GET\", \"query_params\": {\"limit\": 50, \"start\": 0}}, \"description\": \"List inactive journeys by querying local snapshot for campaigns with non-ACTIVE status and cross-referencing with live API journey...",
+          "preview": "{\"route\": \"EVIDENCE\", \"direct_answer\": \"An inactive journey is a Journey Optimizer campaign that is not currently active, running, or deployed. It typically refers to journeys in a draft, stopped, or finished state, as opposed to those that are live or published.\", \"tasks\": {\"items\": [{\"task_id\": \"concept_inactive_journey\", \"kind\": \"CONCEPT\", \"operation\": \"EXPLAIN\", \"source\": \"NONE\", \"description\": \"Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context.\", \"required\": true}, {\"task_id\": \"list_inactive_journeys\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LIST\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"CAMPAIGNID\", \"NAME\", \"STATE\"], \"total_items\": 7, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"STATE\", \"op\": \"!=\", \"value\": \"ACTIVE\"}, {\"field\": \"STATUS\", \"op\": \"!=\", \"value\": \"LIVE\"}], \"total_items\": 2, \"truncated_items\": false}, \"limit\": 50}, \"description\": \"List campaigns/journeys from the local snapshot that are not in an active or live state to identify inactive journeys.\", \"required\": true}, {\"task_id\": \"verify_inactive_via_api\", \"kind\": \"LIVE_QUERY\", \"operation\": \"LIST\", \"source\": ...",
           "truncated": true
         },
-        "semantic_ir_provider_latency_ms": 22801,
+        "semantic_ir_provider_latency_ms": 18058,
         "semantic_ir_repair_attempted": false,
         "semantic_ir_repair_success": false,
         "semantic_ir_task_count": 3,
@@ -119,7 +119,7 @@
         "v2_semantic_ir_used": true
       },
       "output": {
-        "aggregation_instruction": "Combine the concept explanation with the list of inactive journeys. Use the local query results from dim_campaign where STATUS is not 'ACTIVE' as the primary source for 'inactive' identification, as local snapshot reflects the user's specific data. Supplement with live API data if available to confirm current state. Present the journey ID, name, and relevant status/timestamp fields.",
+        "aggregation_instruction": "Combine the concept explanation with the list of inactive journeys found in the local snapshot. Use the live API list as supplementary evidence if needed to confirm current state, but prioritize the local snapshot for the 'show inactive journeys' request as it represents the user's specific data records.",
         "evidence_order": "MULTI_PASS",
         "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "parse_error": false,
@@ -128,12 +128,33 @@
             {
               "can_run_parallel": true,
               "evidence_order": "NO_EVIDENCE",
-              "expected_result": "Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context, relating it to campaign states like stopped, finished, or draft.",
+              "expected_result": "Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context.",
               "fallback": false,
               "optional": false,
               "pass_id": "concept_inactive_journey",
               "path": "DIRECT",
-              "subtask": "Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context, relating it to campaign states like stopped, finished, or draft."
+              "subtask": "Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context."
+            },
+            {
+              "can_run_parallel": true,
+              "evidence_order": "SQL_FIRST",
+              "expected_result": "List campaigns/journeys from the local snapshot that are not in an active or live state to identify inactive journeys.",
+              "optional": false,
+              "pass_id": "list_inactive_journeys",
+              "path": "SQL",
+              "sql": {
+                "params": {
+                  "items": [
+                    "ACTIVE",
+                    "LIVE"
+                  ],
+                  "total_items": 2,
+                  "truncated_items": false
+                },
+                "query": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATE\", \"STATUS\", \"LASTDEPLOYEDTIME\", \"STOPPEDTIME\", \"FINISHEDTIME\" FROM \"dim_campaign\" WHERE \"STATE\" != ? AND \"STATUS\" != ? LIMIT 50"
+              },
+              "subtask": "List campaigns/journeys from the local snapshot that are not in an active or live state to identify inactive journeys.",
+              "truncated_fields": 3
             },
             {
               "api_request": {
@@ -145,38 +166,12 @@
                 "path": "/ajo/journey"
               },
               "can_run_parallel": true,
-              "evidence_order": "PARALLEL",
-              "expected_result": "List inactive journeys by querying local snapshot for campaigns with non-ACTIVE status and cross-referencing with live API journey list to identify current inactive/draft/stopped states.",
-              "pass_id": "list_inactive_journeys",
-              "path": "SQL_AND_API",
-              "sql": {
-                "params": {
-                  "items": [
-                    "ACTIVE"
-                  ],
-                  "total_items": 1,
-                  "truncated_items": false
-                },
-                "query": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATUS\", \"STATE\", \"LASTDEPLOYEDTIME\", \"STOPPEDTIME\", \"FINISHEDTIME\" FROM \"dim_campaign\" WHERE \"STATUS\" != ? LIMIT 50"
-              },
-              "subtask": "List inactive journeys by querying local snapshot for campaigns with non-ACTIVE status and cross-referencing with live API journey list to identify current inactive/draft/stopped states.",
-              "truncated_fields": 3
-            },
-            {
-              "can_run_parallel": false,
-              "depends_on": {
-                "items": [
-                  "list_inactive_journeys"
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              },
-              "evidence_order": "NO_EVIDENCE",
-              "expected_result": "Aggregate results from local and live tasks to present a unified list of inactive journeys with their status details.",
-              "optional": false,
-              "pass_id": "aggregate_inactive_journeys",
-              "path": "AGGREGATION_ONLY",
-              "subtask": "Aggregate results from local and live tasks to present a unified list of inactive journeys with their status details.",
+              "evidence_order": "API_FIRST",
+              "expected_result": "Fetch current live journey list to cross-reference and confirm which ones are not currently active/live.",
+              "optional": true,
+              "pass_id": "verify_inactive_via_api",
+              "path": "API",
+              "subtask": "Fetch current live journey list to cross-reference and confirm which ones are not currently active/live.",
               "truncated_fields": 3
             }
           ],
@@ -190,7 +185,7 @@
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-01T22:33:47.695992+00:00"
+      "timestamp": "2026-06-01T23:16:20.975231+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
@@ -204,7 +199,7 @@
           "items": [
             "concept_inactive_journey",
             "list_inactive_journeys",
-            "aggregate_inactive_journeys"
+            "verify_inactive_via_api"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -212,17 +207,8 @@
       },
       "output": {
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "list_inactive_journeys",
-                "aggregate_inactive_journeys"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "parallel_groups": {
@@ -230,20 +216,14 @@
             {
               "items": [
                 "concept_inactive_journey",
-                "list_inactive_journeys"
+                "list_inactive_journeys",
+                "verify_inactive_via_api"
               ],
-              "total_items": 2,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "aggregate_inactive_journeys"
-              ],
-              "total_items": 1,
+              "total_items": 3,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "pass_count": 3,
@@ -251,7 +231,7 @@
           "items": [
             "concept_inactive_journey",
             "list_inactive_journeys",
-            "aggregate_inactive_journeys"
+            "verify_inactive_via_api"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -260,7 +240,7 @@
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-01T22:33:47.697342+00:00"
+      "timestamp": "2026-06-01T23:16:20.978507+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -270,24 +250,15 @@
       "efficiency_role": "prioritizes critical path and enables exact pass-result reuse",
       "input_summary": {
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "list_inactive_journeys",
-                "aggregate_inactive_journeys"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "pass_ids": {
           "items": [
             "concept_inactive_journey",
             "list_inactive_journeys",
-            "aggregate_inactive_journeys"
+            "verify_inactive_via_api"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -310,10 +281,9 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "list_inactive_journeys",
-            "aggregate_inactive_journeys"
+            "verify_inactive_via_api"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -322,17 +292,8 @@
           "truncated_items": false
         },
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "list_inactive_journeys",
-                "aggregate_inactive_journeys"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "early_stopped_passes": {
@@ -345,28 +306,22 @@
           "items": [
             {
               "items": [
-                "list_inactive_journeys",
-                "concept_inactive_journey"
+                "verify_inactive_via_api",
+                "concept_inactive_journey",
+                "list_inactive_journeys"
               ],
-              "total_items": 2,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "aggregate_inactive_journeys"
-              ],
-              "total_items": 1,
+              "total_items": 3,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "pass_ids": {
           "items": [
             "concept_inactive_journey",
             "list_inactive_journeys",
-            "aggregate_inactive_journeys"
+            "verify_inactive_via_api"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -377,7 +332,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-01T22:33:47.697675+00:00"
+      "timestamp": "2026-06-01T23:16:20.978937+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -390,28 +345,22 @@
           "items": [
             {
               "items": [
-                "list_inactive_journeys",
-                "concept_inactive_journey"
+                "verify_inactive_via_api",
+                "concept_inactive_journey",
+                "list_inactive_journeys"
               ],
-              "total_items": 2,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "aggregate_inactive_journeys"
-              ],
-              "total_items": 1,
+              "total_items": 3,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "pass_ids": {
           "items": [
             "concept_inactive_journey",
             "list_inactive_journeys",
-            "aggregate_inactive_journeys"
+            "verify_inactive_via_api"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -419,17 +368,8 @@
       },
       "output": {
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "list_inactive_journeys",
-                "aggregate_inactive_journeys"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "max_api_workers": 2,
@@ -439,28 +379,22 @@
           "items": [
             {
               "items": [
-                "list_inactive_journeys",
-                "concept_inactive_journey"
+                "verify_inactive_via_api",
+                "concept_inactive_journey",
+                "list_inactive_journeys"
               ],
-              "total_items": 2,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "aggregate_inactive_journeys"
-              ],
-              "total_items": 1,
+              "total_items": 3,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_completed": {
           "items": [
-            "list_inactive_journeys",
+            "verify_inactive_via_api",
             "concept_inactive_journey",
-            "aggregate_inactive_journeys"
+            "list_inactive_journeys"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -481,10 +415,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202:list_inactive_journeys",
-              "pass_id": "list_inactive_journeys",
+              "global_pass_id": "run_65242ba5687f4749868b979b1e5402a2:verify_inactive_via_api",
+              "pass_id": "verify_inactive_via_api",
               "plan_version": 1,
-              "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202",
+              "run_id": "run_65242ba5687f4749868b979b1e5402a2",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -492,21 +426,21 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202:concept_inactive_journey",
+              "global_pass_id": "run_65242ba5687f4749868b979b1e5402a2:concept_inactive_journey",
               "pass_id": "concept_inactive_journey",
               "plan_version": 1,
-              "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202",
+              "run_id": "run_65242ba5687f4749868b979b1e5402a2",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
             },
             {
               "attempt_id": 0,
-              "event": "completed",
-              "global_pass_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202:list_inactive_journeys",
+              "event": "started",
+              "global_pass_id": "run_65242ba5687f4749868b979b1e5402a2:list_inactive_journeys",
               "pass_id": "list_inactive_journeys",
               "plan_version": 1,
-              "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202",
+              "run_id": "run_65242ba5687f4749868b979b1e5402a2",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -520,7 +454,7 @@
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-01T22:33:47.699156+00:00"
+      "timestamp": "2026-06-01T23:16:20.980211+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
@@ -534,7 +468,7 @@
           "items": [
             "concept_inactive_journey",
             "list_inactive_journeys",
-            "aggregate_inactive_journeys"
+            "verify_inactive_via_api"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -560,10 +494,9 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "list_inactive_journeys",
-            "aggregate_inactive_journeys"
+            "verify_inactive_via_api"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -572,17 +505,8 @@
           "truncated_items": false
         },
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "list_inactive_journeys",
-                "aggregate_inactive_journeys"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "deterministic_answer_template_used": false,
@@ -591,7 +515,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_bd6d3fb34e4f488b9dc6eef29c5f0202",
+        "evidence_bus_id": "evidence_run_65242ba5687f4749868b979b1e5402a2",
         "hidden_eval_gold_used": false,
         "llm_pass_count": 3,
         "llm_pass_graph_used": true,
@@ -604,24 +528,18 @@
           "items": [
             {
               "items": [
-                "list_inactive_journeys",
-                "concept_inactive_journey"
+                "verify_inactive_via_api",
+                "concept_inactive_journey",
+                "list_inactive_journeys"
               ],
-              "total_items": 2,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "aggregate_inactive_journeys"
-              ],
-              "total_items": 1,
+              "total_items": 3,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
-        "parallel_pass_count": 2,
+        "parallel_pass_count": 3,
         "pass_graph_gate_error_type": null,
         "pass_graph_gate_passed": true,
         "pass_graph_repair_attempted": false,
@@ -630,7 +548,7 @@
           "items": [
             "concept_inactive_journey",
             "list_inactive_journeys",
-            "aggregate_inactive_journeys"
+            "verify_inactive_via_api"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -638,9 +556,9 @@
         "pass_results_count": 3,
         "passes_completed": {
           "items": [
-            "list_inactive_journeys",
+            "verify_inactive_via_api",
             "concept_inactive_journey",
-            "aggregate_inactive_journeys"
+            "list_inactive_journeys"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -652,9 +570,9 @@
         },
         "passes_executed": {
           "items": [
-            "list_inactive_journeys",
+            "verify_inactive_via_api",
             "concept_inactive_journey",
-            "aggregate_inactive_journeys"
+            "list_inactive_journeys"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -667,9 +585,9 @@
         "pipeline_stage_count": 8,
         "plan_version": 1,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_bd6d3fb34e4f488b9dc6eef29c5f0202",
-        "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202",
-        "sequential_pass_count": 1,
+        "result_bundle_id": "bundle_run_65242ba5687f4749868b979b1e5402a2",
+        "run_id": "run_65242ba5687f4749868b979b1e5402a2",
+        "sequential_pass_count": 0,
         "sql_gate_passed": true,
         "sql_repair_attempts": 0,
         "stage_events": {
@@ -677,10 +595,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202:list_inactive_journeys",
-              "pass_id": "list_inactive_journeys",
+              "global_pass_id": "run_65242ba5687f4749868b979b1e5402a2:verify_inactive_via_api",
+              "pass_id": "verify_inactive_via_api",
               "plan_version": 1,
-              "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202",
+              "run_id": "run_65242ba5687f4749868b979b1e5402a2",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -688,10 +606,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202:list_inactive_journeys",
-              "pass_id": "list_inactive_journeys",
+              "global_pass_id": "run_65242ba5687f4749868b979b1e5402a2:verify_inactive_via_api",
+              "pass_id": "verify_inactive_via_api",
               "plan_version": 1,
-              "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202",
+              "run_id": "run_65242ba5687f4749868b979b1e5402a2",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -699,10 +617,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202:concept_inactive_journey",
+              "global_pass_id": "run_65242ba5687f4749868b979b1e5402a2:concept_inactive_journey",
               "pass_id": "concept_inactive_journey",
               "plan_version": 1,
-              "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202",
+              "run_id": "run_65242ba5687f4749868b979b1e5402a2",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -718,7 +636,7 @@
       },
       "stage": "llm-owned pass scheduling",
       "technique": "dependency-aware scheduling of LLM-declared evidence passes",
-      "timestamp": "2026-06-01T22:33:47.699170+00:00"
+      "timestamp": "2026-06-01T23:16:20.980215+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -727,7 +645,7 @@
       "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
       "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
       "input_summary": {
-        "pass_id": "list_inactive_journeys"
+        "pass_id": "verify_inactive_via_api"
       },
       "output": {
         "errors": {
@@ -737,37 +655,11 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202"
+        "run_id": "run_65242ba5687f4749868b979b1e5402a2"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-01T22:33:47.699230+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
-      "correctness_role": "returns compile errors for one LLM repair attempt",
-      "duration_ms": 0.0,
-      "effect": "checks syntax/database-semantic validity without rewriting SQL",
-      "efficiency_role": "prevents executing uncompilable SQL",
-      "input_summary": {
-        "pass_id": "list_inactive_journeys",
-        "sql": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATUS\", \"STATE\", \"LASTDEPLOYEDTIME\", \"STOPPEDTIME\", \"FINISHEDTIME\" FROM \"dim_campaign\" WHERE \"STATUS\" != ? LIMIT 50"
-      },
-      "output": {
-        "params": {
-          "items": [
-            "ACTIVE"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "pass_id": "list_inactive_journeys",
-        "passed": true,
-        "sql": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATUS\", \"STATE\", \"LASTDEPLOYEDTIME\", \"STOPPEDTIME\", \"FINISHEDTIME\" FROM \"dim_campaign\" WHERE \"STATUS\" != ? LIMIT 50"
-      },
-      "stage": "llm sql compile gate",
-      "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
-      "timestamp": "2026-06-01T22:33:47.700749+00:00"
+      "timestamp": "2026-06-01T23:16:20.980243+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_api_request_gate",
@@ -777,7 +669,7 @@
       "efficiency_role": "prevents invalid API calls without planning endpoints",
       "input_summary": {
         "method": "GET",
-        "pass_id": "list_inactive_journeys",
+        "pass_id": "verify_inactive_via_api",
         "path": "/ajo/journey"
       },
       "output": {
@@ -786,13 +678,13 @@
           "limit": 50,
           "start": 0
         },
-        "pass_id": "list_inactive_journeys",
+        "pass_id": "verify_inactive_via_api",
         "passed": true,
         "path": "/ajo/journey"
       },
       "stage": "llm api request gate",
       "technique": "safe GET request-shape/catalog gate for LLM-owned API pass",
-      "timestamp": "2026-06-01T22:33:47.702358+00:00"
+      "timestamp": "2026-06-01T23:16:20.980305+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -811,11 +703,11 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202"
+        "run_id": "run_65242ba5687f4749868b979b1e5402a2"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-01T22:33:47.702505+00:00"
+      "timestamp": "2026-06-01T23:16:20.980400+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_direct_task",
@@ -825,14 +717,11 @@
       "efficiency_role": "does not invoke SQL/API tools",
       "input_summary": {
         "pass_id": "concept_inactive_journey",
-        "subtask": "Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context, relating it to campaign states like stopped, finished, or draft."
+        "subtask": "Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context."
       },
       "output": {
-        "answer_preview": {
-          "preview": "\"In Adobe Journey Optimizer, an inactive journey refers to any journey that is not currently processing or sending messages to customers. This state encompasses journeys that have been explicitly paused or stopped by an administrator, journeys that have naturally completed their execution flow (finished), and journeys that are still in the creation or editing phase (draft). Essentially, any journey that is not in an \\\"active\\\" or \\\"running\\\" state is considered inactive, meaning it is not active...",
-          "truncated": true
-        },
-        "latency_ms": 3661,
+        "answer_preview": "In Adobe Journey Optimizer, an inactive journey refers to a journey that is not currently processing any messages or interacting with customers. This state typically occurs when a journey has been paused, stopped, or has completed its execution without any active audience segments triggering it. An inactive journey does not consume resources for real-time decisioning or message delivery, though its configuration and history remain stored for potential reactivation or analysis.",
+        "latency_ms": 2487,
         "ok": false,
         "pass_id": "concept_inactive_journey",
         "safe_direct_check": {
@@ -848,7 +737,7 @@
       },
       "stage": "llm-owned direct subtask",
       "technique": "concept-only DIRECT task execution inside evidence plan",
-      "timestamp": "2026-06-01T22:33:51.363549+00:00"
+      "timestamp": "2026-06-01T23:16:23.467925+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -857,14 +746,7 @@
       "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
       "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
       "input_summary": {
-        "depends_on": {
-          "items": [
-            "list_inactive_journeys"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "pass_id": "aggregate_inactive_journeys"
+        "pass_id": "list_inactive_journeys"
       },
       "output": {
         "errors": {
@@ -874,11 +756,38 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202"
+        "run_id": "run_65242ba5687f4749868b979b1e5402a2"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-01T22:33:51.363644+00:00"
+      "timestamp": "2026-06-01T23:16:23.467992+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
+      "correctness_role": "returns compile errors for one LLM repair attempt",
+      "duration_ms": 0.0,
+      "effect": "checks syntax/database-semantic validity without rewriting SQL",
+      "efficiency_role": "prevents executing uncompilable SQL",
+      "input_summary": {
+        "pass_id": "list_inactive_journeys",
+        "sql": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATE\", \"STATUS\", \"LASTDEPLOYEDTIME\", \"STOPPEDTIME\", \"FINISHEDTIME\" FROM \"dim_campaign\" WHERE \"STATE\" != ? AND \"STATUS\" != ? LIMIT 50"
+      },
+      "output": {
+        "params": {
+          "items": [
+            "ACTIVE",
+            "LIVE"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "pass_id": "list_inactive_journeys",
+        "passed": true,
+        "sql": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATE\", \"STATUS\", \"LASTDEPLOYEDTIME\", \"STOPPEDTIME\", \"FINISHEDTIME\" FROM \"dim_campaign\" WHERE \"STATE\" != ? AND \"STATUS\" != ? LIMIT 50"
+      },
+      "stage": "llm sql compile gate",
+      "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
+      "timestamp": "2026-06-01T23:16:23.469246+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -910,10 +819,9 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "list_inactive_journeys",
-            "aggregate_inactive_journeys"
+            "verify_inactive_via_api"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -922,17 +830,8 @@
           "truncated_items": false
         },
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "list_inactive_journeys",
-                "aggregate_inactive_journeys"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "deterministic_answer_template_used": false,
@@ -941,7 +840,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_bd6d3fb34e4f488b9dc6eef29c5f0202",
+        "evidence_bus_id": "evidence_run_65242ba5687f4749868b979b1e5402a2",
         "hidden_eval_gold_used": false,
         "llm_evidence_order": "MULTI_PASS",
         "llm_owned_generation": true,
@@ -957,24 +856,18 @@
           "items": [
             {
               "items": [
-                "list_inactive_journeys",
-                "concept_inactive_journey"
+                "verify_inactive_via_api",
+                "concept_inactive_journey",
+                "list_inactive_journeys"
               ],
-              "total_items": 2,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "aggregate_inactive_journeys"
-              ],
-              "total_items": 1,
+              "total_items": 3,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
-        "parallel_pass_count": 2,
+        "parallel_pass_count": 3,
         "pass_graph_gate_error_type": null,
         "pass_graph_gate_passed": true,
         "pass_graph_repair_attempted": false,
@@ -983,7 +876,7 @@
           "items": [
             "concept_inactive_journey",
             "list_inactive_journeys",
-            "aggregate_inactive_journeys"
+            "verify_inactive_via_api"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -991,9 +884,9 @@
         "pass_results_count": 3,
         "passes_completed": {
           "items": [
-            "list_inactive_journeys",
+            "verify_inactive_via_api",
             "concept_inactive_journey",
-            "aggregate_inactive_journeys"
+            "list_inactive_journeys"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -1005,9 +898,9 @@
         },
         "passes_executed": {
           "items": [
-            "list_inactive_journeys",
+            "verify_inactive_via_api",
             "concept_inactive_journey",
-            "aggregate_inactive_journeys"
+            "list_inactive_journeys"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -1020,9 +913,9 @@
         "pipeline_stage_count": 8,
         "plan_version": 1,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_bd6d3fb34e4f488b9dc6eef29c5f0202",
-        "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202",
-        "sequential_pass_count": 1,
+        "result_bundle_id": "bundle_run_65242ba5687f4749868b979b1e5402a2",
+        "run_id": "run_65242ba5687f4749868b979b1e5402a2",
+        "sequential_pass_count": 0,
         "sql_gate_passed": true,
         "sql_repair_attempts": 0,
         "stage_events": {
@@ -1030,10 +923,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202:list_inactive_journeys",
-              "pass_id": "list_inactive_journeys",
+              "global_pass_id": "run_65242ba5687f4749868b979b1e5402a2:verify_inactive_via_api",
+              "pass_id": "verify_inactive_via_api",
               "plan_version": 1,
-              "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202",
+              "run_id": "run_65242ba5687f4749868b979b1e5402a2",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -1041,10 +934,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202:list_inactive_journeys",
-              "pass_id": "list_inactive_journeys",
+              "global_pass_id": "run_65242ba5687f4749868b979b1e5402a2:verify_inactive_via_api",
+              "pass_id": "verify_inactive_via_api",
               "plan_version": 1,
-              "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202",
+              "run_id": "run_65242ba5687f4749868b979b1e5402a2",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -1052,10 +945,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202:concept_inactive_journey",
+              "global_pass_id": "run_65242ba5687f4749868b979b1e5402a2:concept_inactive_journey",
               "pass_id": "concept_inactive_journey",
               "plan_version": 1,
-              "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202",
+              "run_id": "run_65242ba5687f4749868b979b1e5402a2",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -1071,7 +964,7 @@
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-01T22:33:51.363690+00:00"
+      "timestamp": "2026-06-01T23:16:23.470361+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -1146,7 +1039,7 @@
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-01T22:33:51.370609+00:00"
+      "timestamp": "2026-06-01T23:16:23.474196+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -1169,7 +1062,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-01T22:33:51.370626+00:00"
+      "timestamp": "2026-06-01T23:16:23.474202+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -1195,15 +1088,15 @@
           },
           "pass_ids": {
             "items": [
-              "list_inactive_journeys",
+              "verify_inactive_via_api",
               "concept_inactive_journey",
-              "aggregate_inactive_journeys"
+              "list_inactive_journeys"
             ],
             "total_items": 3,
             "truncated_items": false
           },
           "pass_result_count": 3,
-          "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202",
+          "run_id": "run_65242ba5687f4749868b979b1e5402a2",
           "statuses": {
             "items": [
               "updated",
@@ -1216,7 +1109,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-01T22:33:51.370724+00:00"
+      "timestamp": "2026-06-01T23:16:23.474260+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -1234,7 +1127,7 @@
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "list_inactive_journeys"
+              "pass_id": "verify_inactive_via_api"
             },
             {
               "appended": true,
@@ -1244,14 +1137,14 @@
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "aggregate_inactive_journeys"
+              "pass_id": "list_inactive_journeys"
             }
           ],
           "total_items": 3,
           "truncated_items": false
         },
         "pass_results_count": 3,
-        "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202",
+        "run_id": "run_65242ba5687f4749868b979b1e5402a2",
         "runtime_passes": {
           "items": [
             {
@@ -1269,12 +1162,12 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202"
+                "run_id": "run_65242ba5687f4749868b979b1e5402a2"
               },
-              "global_pass_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202:list_inactive_journeys",
-              "pass_id": "list_inactive_journeys",
+              "global_pass_id": "run_65242ba5687f4749868b979b1e5402a2:verify_inactive_via_api",
+              "pass_id": "verify_inactive_via_api",
               "plan_version": 1,
-              "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202",
+              "run_id": "run_65242ba5687f4749868b979b1e5402a2",
               "status": "API_ERROR",
               "truncated_fields": 7
             },
@@ -1293,12 +1186,12 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202"
+                "run_id": "run_65242ba5687f4749868b979b1e5402a2"
               },
-              "global_pass_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202:concept_inactive_journey",
+              "global_pass_id": "run_65242ba5687f4749868b979b1e5402a2:concept_inactive_journey",
               "pass_id": "concept_inactive_journey",
               "plan_version": 1,
-              "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202",
+              "run_id": "run_65242ba5687f4749868b979b1e5402a2",
               "status": "ERROR",
               "truncated_fields": 7
             },
@@ -1317,13 +1210,13 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202"
+                "run_id": "run_65242ba5687f4749868b979b1e5402a2"
               },
-              "global_pass_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202:aggregate_inactive_journeys",
-              "pass_id": "aggregate_inactive_journeys",
+              "global_pass_id": "run_65242ba5687f4749868b979b1e5402a2:list_inactive_journeys",
+              "pass_id": "list_inactive_journeys",
               "plan_version": 1,
-              "run_id": "run_bd6d3fb34e4f488b9dc6eef29c5f0202",
-              "status": "SKIPPED",
+              "run_id": "run_65242ba5687f4749868b979b1e5402a2",
+              "status": "SUCCESS",
               "truncated_fields": 7
             }
           ],
@@ -1333,7 +1226,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-01T22:33:51.370768+00:00"
+      "timestamp": "2026-06-01T23:16:23.474284+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -1378,7 +1271,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-01T22:33:51.370774+00:00"
+      "timestamp": "2026-06-01T23:16:23.474287+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -1432,7 +1325,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-01T22:33:51.406538+00:00"
+      "timestamp": "2026-06-01T23:16:23.500870+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -1478,11 +1371,11 @@
       },
       "output": {
         "backend_unavailable": false,
-        "final_answer": "In Adobe Journey Optimizer, an inactive journey refers to any journey that is not currently processing or sending messages to customers. This state encompasses journeys that have been explicitly paused or stopped by an administrator, journeys that have naturally completed their execution flow (finished), and journeys that are still in the creation or editing phase (draft). Essentially, any journey that is not in an \"active\" or \"running\" state is considered inactive, meaning it is not actively engaging with the audience at that moment.\n\nBased on the local snapshot, the following journeys are identified as inactive:\n\n1. **Birthday Message**\n   - Journey ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6\n   - Status: updated\n   - State: updated\n\n2. **Gold Tier Welcome Email**\n   - Journey ID: 3f277603-ac4d-4022-a993-8cbd3afc0d62\n   - Status: created\n   - State: created\n\nNote: Live API data was unavailable due to Adobe credentials being unavailable; the above list is derived solely from the local snapshot.",
+        "final_answer": "Based on the local snapshot, there are 2 inactive journeys: Birthday Message (ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6) and Gold Tier Welcome Email (ID: 3f277603-ac4d-4022-a993-8cbd3afc0d62). Live API evidence was unavailable due to missing credentials.",
         "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "parse_error": false,
         "provider": "openai",
-        "raw_preview": "In Adobe Journey Optimizer, an inactive journey refers to any journey that is not currently processing or sending messages to customers. This state encompasses journeys that have been explicitly paused or stopped by an administrator, journeys that have naturally completed their execution flow (finished), and journeys that are still in the creation or editing phase (draft). Essentially, any journey that is not in an \"active\" or \"running\" state is considered inactive, meaning it is not actively engaging with the audience at that moment.\n\nBased on the local snapshot, the following journeys are identified as inactive:\n\n1. **Birthday Message**\n   - Journey ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6\n   - Status: updated\n   - State: updated\n\n2. **Gold Tier Welcome Email**\n   - Journey ID: 3f277603-ac4d-4022-a993-8cbd3afc0d62\n   - Status: created\n   - State: created\n\nNote: Live API data was unavailable due to Adobe credentials being unavailable; the above list is derived solely from the local snapshot.",
+        "raw_preview": "Based on the local snapshot, there are 2 inactive journeys: Birthday Message (ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6) and Gold Tier Welcome Email (ID: 3f277603-ac4d-4022-a993-8cbd3afc0d62). Live API evidence was unavailable due to missing credentials.",
         "used_pass_ids": {
           "items": [],
           "total_items": 0,
@@ -1491,7 +1384,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-01T22:34:18.152304+00:00"
+      "timestamp": "2026-06-01T23:16:46.304058+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -1503,12 +1396,12 @@
         "composer": "LLMFinalAnswerComposer"
       },
       "output": {
-        "final_answer": "In Adobe Journey Optimizer, an inactive journey refers to any journey that is not currently processing or sending messages to customers. This state encompasses journeys that have been explicitly paused or stopped by an administrator, journeys that have naturally completed their execution flow (finished), and journeys that are still in the creation or editing phase (draft). Essentially, any journey that is not in an \"active\" or \"running\" state is considered inactive, meaning it is not actively engaging with the audience at that moment.\n\nBased on the local snapshot, the following journeys are identified as inactive:\n\n1. **Birthday Message**\n   - Journey ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6\n   - Status: updated\n   - State: updated\n\n2. **Gold Tier Welcome Email**\n   - Journey ID: 3f277603-ac4d-4022-a993-8cbd3afc0d62\n   - Status: created\n   - State: created\n\nNote: Live API data was unavailable due to Adobe credentials being unavailable; the above list is derived solely from the local snapshot.",
+        "final_answer": "Based on the local snapshot, there are 2 inactive journeys: Birthday Message (ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6) and Gold Tier Welcome Email (ID: 3f277603-ac4d-4022-a993-8cbd3afc0d62). Live API evidence was unavailable due to missing credentials.",
         "passed": true
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-01T22:34:18.152342+00:00"
+      "timestamp": "2026-06-01T23:16:46.304077+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -1520,83 +1413,171 @@
         "syntax_gate_passed": true
       },
       "output": {
-        "error_message": "Status claim 'draft' contradicts available status evidence.",
-        "error_type": "contradiction",
-        "passed": false,
-        "unsupported_claims": {
-          "items": [
-            {
-              "claim": {
-                "hardness": "HARD",
-                "span": "draft",
-                "text": "draft",
-                "type": "STATUS",
-                "value": "draft"
-              },
-              "message": "Status claim 'draft' contradicts available status evidence."
+        "passed": true,
+        "verifier": {
+          "action": "ACCEPT",
+          "allowed_fact_index": {
+            "allowed_caveats": {
+              "items": [
+                "API_ERROR",
+                "UNSAFE_DIRECT_TASK_ANSWER"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            "api_error_scopes": {
+              "items": [
+                "live api verification"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "counts": {
+              "items": [
+                "2"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "evidence_strings": {
+              "items": [
+                "gold tier welcome email",
+                "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+                "0"
+              ],
+              "total_items": 10,
+              "truncated_items": true
+            },
+            "ids": {
+              "items": [
+                "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+                "3f277603-ac4d-4022-a993-8cbd3afc0d62"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            "names": {
+              "items": [
+                "birthday message",
+                "gold tier welcome email"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            "statuses": {
+              "items": [
+                "updated",
+                "created",
+                "inactive"
+              ],
+              "total_items": 3,
+              "truncated_items": false
             }
-          ],
-          "total_items": 1,
-          "truncated_items": false
+          },
+          "claim_extractor": {
+            "claim_count": 6,
+            "claims": {
+              "items": [
+                {
+                  "hardness": "HARD",
+                  "span": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+                  "text": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+                  "type": "ID",
+                  "value": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
+                },
+                {
+                  "hardness": "HARD",
+                  "span": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+                  "text": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+                  "type": "ID",
+                  "value": "3f277603-ac4d-4022-a993-8cbd3afc0d62"
+                },
+                {
+                  "hardness": "HARD",
+                  "span": "2",
+                  "text": "2",
+                  "type": "COUNT",
+                  "value": "2"
+                }
+              ],
+              "total_items": 6,
+              "truncated_items": true
+            }
+          },
+          "claim_matcher": {
+            "matches": {
+              "items": [
+                {
+                  "claim": {
+                    "hardness": "HARD",
+                    "span": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+                    "text": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+                    "type": "ID",
+                    "value": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
+                  },
+                  "reason": "id",
+                  "status": "SUPPORTED"
+                },
+                {
+                  "claim": {
+                    "hardness": "HARD",
+                    "span": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+                    "text": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+                    "type": "ID",
+                    "value": "3f277603-ac4d-4022-a993-8cbd3afc0d62"
+                  },
+                  "reason": "id",
+                  "status": "SUPPORTED"
+                },
+                {
+                  "claim": {
+                    "hardness": "HARD",
+                    "span": "2",
+                    "text": "2",
+                    "type": "COUNT",
+                    "value": "2"
+                  },
+                  "reason": "count",
+                  "status": "SUPPORTED"
+                }
+              ],
+              "total_items": 6,
+              "truncated_items": true
+            }
+          },
+          "ok": true,
+          "supported_claims": {
+            "items": [
+              {
+                "hardness": "HARD",
+                "span": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+                "text": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+                "type": "ID",
+                "value": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
+              },
+              {
+                "hardness": "HARD",
+                "span": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+                "text": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+                "type": "ID",
+                "value": "3f277603-ac4d-4022-a993-8cbd3afc0d62"
+              },
+              {
+                "hardness": "HARD",
+                "span": "2",
+                "text": "2",
+                "type": "COUNT",
+                "value": "2"
+              }
+            ],
+            "total_items": 6,
+            "truncated_items": true
+          }
         }
       },
       "stage": "answer gate",
       "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-01T22:34:18.153968+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_final_answer_repair",
-      "correctness_role": "preserves LLM ownership while enforcing evidence boundaries",
-      "duration_ms": 0.0,
-      "effect": "returns gate errors to the LLM once; backend does not repair the answer itself",
-      "efficiency_role": "caps answer repair to one LLM call",
-      "input_summary": {
-        "failed_semantic": true,
-        "failed_syntax": false
-      },
-      "output": {
-        "candidate": {
-          "backend_unavailable": false,
-          "final_answer": "In Adobe Journey Optimizer, an inactive journey refers to any journey that is not currently processing or sending messages to customers. This state encompasses journeys that have been explicitly paused or stopped by an administrator, journeys that have naturally completed their execution flow, and journeys that are still in the creation or editing phase. Essentially, any journey that is not in an \"active\" or \"running\" state is considered inactive, meaning it is not actively engaging with the audience at that moment.\n\nBased on the local snapshot, the following journeys are identified as inactive:\n\n1. Birthday Message\n   - Journey ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6\n   - Status: updated\n   - State: updated\n\n2. Gold Tier Welcome Email\n   - Journey ID: 3f277603-ac4d-4022-a993-8cbd3afc0d62\n   - Status: created\n   - State: created\n\nNote: Live API data was unavailable due to Adobe credentials being unavailable; the above list is derived solely from the local snapshot.",
-          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-          "parse_error": false,
-          "provider": "openai",
-          "raw_preview": "In Adobe Journey Optimizer, an inactive journey refers to any journey that is not currently processing or sending messages to customers. This state encompasses journeys that have been explicitly paused or stopped by an administrator, journeys that have naturally completed their execution flow, and journeys that are still in the creation or editing phase. Essentially, any journey that is not in an \"active\" or \"running\" state is considered inactive, meaning it is not actively engaging with the audience at that moment.\n\nBased on the local snapshot, the following journeys are identified as inactive:\n\n1. Birthday Message\n   - Journey ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6\n   - Status: updated\n   - State: updated\n\n2. Gold Tier Welcome Email\n   - Journey ID: 3f277603-ac4d-4022-a993-8cbd3afc0d62\n   - Status: created\n   - State: created\n\nNote: Live API data was unavailable due to Adobe credentials being unavailable; the above list is derived solely from the local snapshot.",
-          "used_pass_ids": {
-            "items": [],
-            "total_items": 0,
-            "truncated_items": false
-          }
-        },
-        "semantic_gate": {
-          "error_message": "Status claim 'active' contradicts available status evidence.",
-          "error_type": "contradiction",
-          "passed": false,
-          "unsupported_claims": {
-            "items": [
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "active",
-                  "text": "active",
-                  "type": "STATUS",
-                  "value": "active"
-                },
-                "message": "Status claim 'active' contradicts available status evidence."
-              }
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          }
-        },
-        "syntax_gate": {
-          "final_answer": "In Adobe Journey Optimizer, an inactive journey refers to any journey that is not currently processing or sending messages to customers. This state encompasses journeys that have been explicitly paused or stopped by an administrator, journeys that have naturally completed their execution flow, and journeys that are still in the creation or editing phase. Essentially, any journey that is not in an \"active\" or \"running\" state is considered inactive, meaning it is not actively engaging with the audience at that moment.\n\nBased on the local snapshot, the following journeys are identified as inactive:\n\n1. Birthday Message\n   - Journey ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6\n   - Status: updated\n   - State: updated\n\n2. Gold Tier Welcome Email\n   - Journey ID: 3f277603-ac4d-4022-a993-8cbd3afc0d62\n   - Status: created\n   - State: created\n\nNote: Live API data was unavailable due to Adobe credentials being unavailable; the above list is derived solely from the local snapshot.",
-          "passed": true
-        }
-      },
-      "stage": "llm-owned answer repair",
-      "technique": "single LLM-owned final answer repair",
-      "timestamp": "2026-06-01T22:34:46.845293+00:00"
+      "timestamp": "2026-06-01T23:16:46.305131+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -1609,11 +1590,11 @@
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
-        "answer_repair_attempts": 1,
-        "answer_semantic_gate_passed": false,
+        "answer_repair_attempts": 0,
+        "answer_semantic_gate_passed": true,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
-        "final_answer_supported_by_evidence": false,
+        "final_answer_supported_by_evidence": true,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 2,
@@ -1625,7 +1606,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-01T22:34:46.845342+00:00"
+      "timestamp": "2026-06-01T23:16:46.305203+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -1634,15 +1615,15 @@
       "effect": "returns the LLM-composed answer when gates pass, otherwise a safe evidence-state fallback",
       "efficiency_role": "no additional SQL/API calls",
       "input_summary": {
-        "answer_semantic_gate_passed": false
+        "answer_semantic_gate_passed": true
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
-        "answer_repair_attempts": 1,
-        "answer_semantic_gate_passed": false,
+        "answer_repair_attempts": 0,
+        "answer_semantic_gate_passed": true,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
-        "final_answer_supported_by_evidence": false,
+        "final_answer_supported_by_evidence": true,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 3,
@@ -1654,30 +1635,30 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-01T22:34:46.845418+00:00"
+      "timestamp": "2026-06-01T23:16:46.305316+00:00"
     }
   ],
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 2603,
+  "estimated_tokens": 2297,
   "execution_time": 0.0,
-  "final_answer": "I could not compose a verified final answer from the available runtime evidence.",
+  "final_answer": "Based on the local snapshot, there are 2 inactive journeys: Birthday Message (ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6) and Gold Tier Welcome Email (ID: 3f277603-ac4d-4022-a993-8cbd3afc0d62). Live API evidence was unavailable due to missing credentials.",
   "original_query": "Explain what inactive journey means and show inactive journeys.",
   "planning_time": 0.0,
   "preprocessing_time": 0.0,
   "query_id": "hermes_toolcall_mixed_inactive_journeys",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 55.5511801247485,
+  "runtime": 22.922627916093916,
   "sql_call_count": 1,
   "steps": [
     {
-      "estimated_tokens": 1768,
+      "estimated_tokens": 1690,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/hermes_toolcall_mixed_inactive_journeys/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 2401
+      "prompt_tokens": 2320
     },
     {
-      "aggregation_instruction": "Combine the concept explanation with the list of inactive journeys. Use the local query results from dim_campaign where STATUS is not 'ACTIVE' as the primary source for 'inactive' identification, as local snapshot reflects the user's specific data. Supplement with live API data if available to confirm current state. Present the journey ID, name, and relevant status/timestamp fields.",
+      "aggregation_instruction": "Combine the concept explanation with the list of inactive journeys found in the local snapshot. Use the live API list as supplementary evidence if needed to confirm current state, but prioritize the local snapshot for the 'show inactive journeys' request as it represents the user's specific data records.",
       "api_request": null,
       "backend_unavailable": false,
       "diagnostics": {
@@ -1692,7 +1673,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 22803,
+        "planner_provider_latency_ms": 18061,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -1705,10 +1686,10 @@
         },
         "sdk_toolcall_semantic_ir_used": true,
         "semantic_ir_plan_preview": {
-          "preview": "{\"route\": \"EVIDENCE\", \"direct_answer\": \"An inactive journey is a Journey Optimizer campaign that is not currently active or running. This typically means the campaign has been stopped, finished, or is in a draft state where it is not being executed.\", \"tasks\": {\"items\": [{\"task_id\": \"concept_inactive_journey\", \"kind\": \"CONCEPT\", \"operation\": \"EXPLAIN\", \"source\": \"NONE\", \"description\": \"Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context, relating it to campaign states like stopped, finished, or draft.\", \"required\": true}, {\"task_id\": \"list_inactive_journeys\", \"kind\": \"LOCAL_AND_LIVE\", \"operation\": \"LIST\", \"source\": \"BOTH\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"CAMPAIGNID\", \"NAME\", \"STATUS\"], \"total_items\": 7, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"STATUS\", \"op\": \"!=\", \"value\": \"ACTIVE\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 50}, \"api_query\": {\"endpoint_id\": \"journey_list\", \"method\": \"GET\", \"query_params\": {\"limit\": 50, \"start\": 0}}, \"description\": \"List inactive journeys by querying local snapshot for campaigns with non-ACTIVE status and cross-referencing with live API journey...",
+          "preview": "{\"route\": \"EVIDENCE\", \"direct_answer\": \"An inactive journey is a Journey Optimizer campaign that is not currently active, running, or deployed. It typically refers to journeys in a draft, stopped, or finished state, as opposed to those that are live or published.\", \"tasks\": {\"items\": [{\"task_id\": \"concept_inactive_journey\", \"kind\": \"CONCEPT\", \"operation\": \"EXPLAIN\", \"source\": \"NONE\", \"description\": \"Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context.\", \"required\": true}, {\"task_id\": \"list_inactive_journeys\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LIST\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"CAMPAIGNID\", \"NAME\", \"STATE\"], \"total_items\": 7, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"STATE\", \"op\": \"!=\", \"value\": \"ACTIVE\"}, {\"field\": \"STATUS\", \"op\": \"!=\", \"value\": \"LIVE\"}], \"total_items\": 2, \"truncated_items\": false}, \"limit\": 50}, \"description\": \"List campaigns/journeys from the local snapshot that are not in an active or live state to identify inactive journeys.\", \"required\": true}, {\"task_id\": \"verify_inactive_via_api\", \"kind\": \"LIVE_QUERY\", \"operation\": \"LIST\", \"source\": ...",
           "truncated": true
         },
-        "semantic_ir_provider_latency_ms": 22801,
+        "semantic_ir_provider_latency_ms": 18058,
         "semantic_ir_repair_attempted": false,
         "semantic_ir_repair_success": false,
         "semantic_ir_task_count": 3,
@@ -1730,13 +1711,32 @@
           "can_run_parallel": true,
           "depends_on": [],
           "evidence_order": "NO_EVIDENCE",
-          "expected_result": "Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context, relating it to campaign states like stopped, finished, or draft.",
+          "expected_result": "Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context.",
           "fallback": false,
           "optional": false,
           "pass_id": "concept_inactive_journey",
           "path": "DIRECT",
           "sql": null,
-          "subtask": "Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context, relating it to campaign states like stopped, finished, or draft."
+          "subtask": "Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context."
+        },
+        {
+          "api_request": null,
+          "can_run_parallel": true,
+          "depends_on": [],
+          "evidence_order": "SQL_FIRST",
+          "expected_result": "List campaigns/journeys from the local snapshot that are not in an active or live state to identify inactive journeys.",
+          "fallback": false,
+          "optional": false,
+          "pass_id": "list_inactive_journeys",
+          "path": "SQL",
+          "sql": {
+            "params": [
+              "ACTIVE",
+              "LIVE"
+            ],
+            "query": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATE\", \"STATUS\", \"LASTDEPLOYEDTIME\", \"STOPPEDTIME\", \"FINISHEDTIME\" FROM \"dim_campaign\" WHERE \"STATE\" != ? AND \"STATUS\" != ? LIMIT 50"
+          },
+          "subtask": "List campaigns/journeys from the local snapshot that are not in an active or live state to identify inactive journeys."
         },
         {
           "api_request": {
@@ -1749,34 +1749,14 @@
           },
           "can_run_parallel": true,
           "depends_on": [],
-          "evidence_order": "PARALLEL",
-          "expected_result": "List inactive journeys by querying local snapshot for campaigns with non-ACTIVE status and cross-referencing with live API journey list to identify current inactive/draft/stopped states.",
+          "evidence_order": "API_FIRST",
+          "expected_result": "Fetch current live journey list to cross-reference and confirm which ones are not currently active/live.",
           "fallback": false,
-          "optional": false,
-          "pass_id": "list_inactive_journeys",
-          "path": "SQL_AND_API",
-          "sql": {
-            "params": [
-              "ACTIVE"
-            ],
-            "query": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATUS\", \"STATE\", \"LASTDEPLOYEDTIME\", \"STOPPEDTIME\", \"FINISHEDTIME\" FROM \"dim_campaign\" WHERE \"STATUS\" != ? LIMIT 50"
-          },
-          "subtask": "List inactive journeys by querying local snapshot for campaigns with non-ACTIVE status and cross-referencing with live API journey list to identify current inactive/draft/stopped states."
-        },
-        {
-          "api_request": null,
-          "can_run_parallel": false,
-          "depends_on": [
-            "list_inactive_journeys"
-          ],
-          "evidence_order": "NO_EVIDENCE",
-          "expected_result": "Aggregate results from local and live tasks to present a unified list of inactive journeys with their status details.",
-          "fallback": false,
-          "optional": false,
-          "pass_id": "aggregate_inactive_journeys",
-          "path": "AGGREGATION_ONLY",
+          "optional": true,
+          "pass_id": "verify_inactive_via_api",
+          "path": "API",
           "sql": null,
-          "subtask": "Aggregate results from local and live tasks to present a unified list of inactive journeys with their status details."
+          "subtask": "Fetch current live journey list to cross-reference and confirm which ones are not currently active/live."
         }
       ],
       "provider": "openai",
@@ -1796,49 +1776,6 @@
       "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
       "route": "EVIDENCE_PIPELINE",
       "sql": null
-    },
-    {
-      "kind": "sql_call",
-      "result": {
-        "error": null,
-        "limited": false,
-        "ok": true,
-        "params": {
-          "items": [
-            "ACTIVE"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "row_count": 2,
-        "rows": {
-          "items": [
-            {
-              "CAMPAIGNID": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
-              "NAME": "Birthday Message",
-              "STATE": "updated",
-              "STATUS": "updated"
-            },
-            {
-              "CAMPAIGNID": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
-              "NAME": "Gold Tier Welcome Email",
-              "STATE": "created",
-              "STATUS": "created"
-            }
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        }
-      },
-      "sql": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATUS\", \"STATE\", \"LASTDEPLOYEDTIME\", \"STOPPEDTIME\", \"FINISHEDTIME\" FROM \"dim_campaign\" WHERE \"STATUS\" != ? LIMIT 50",
-      "validation": {
-        "errors": [],
-        "ok": true,
-        "repaired": false,
-        "warnings": [
-          "LLM SQL pass passed compile gate."
-        ]
-      }
     },
     {
       "headers": {},
@@ -1872,6 +1809,50 @@
       }
     },
     {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "params": {
+          "items": [
+            "ACTIVE",
+            "LIVE"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "row_count": 2,
+        "rows": {
+          "items": [
+            {
+              "CAMPAIGNID": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+              "NAME": "Birthday Message",
+              "STATE": "updated",
+              "STATUS": "updated"
+            },
+            {
+              "CAMPAIGNID": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+              "NAME": "Gold Tier Welcome Email",
+              "STATE": "created",
+              "STATUS": "created"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "sql": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATE\", \"STATUS\", \"LASTDEPLOYEDTIME\", \"STOPPEDTIME\", \"FINISHEDTIME\" FROM \"dim_campaign\" WHERE \"STATE\" != ? AND \"STATUS\" != ? LIMIT 50",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": [
+          "LLM SQL pass passed compile gate."
+        ]
+      }
+    },
+    {
       "evidence_bus_built": true,
       "evidence_pipeline_bypassed": false,
       "kind": "evidence_boundary",
@@ -1887,49 +1868,247 @@
       "caveats_included": [],
       "claimed_facts": [],
       "error_message": null,
-      "final_answer": "In Adobe Journey Optimizer, an inactive journey refers to any journey that is not currently processing or sending messages to customers. This state encompasses journeys that have been explicitly paused or stopped by an administrator, journeys that have naturally completed their execution flow (finished), and journeys that are still in the creation or editing phase (draft). Essentially, any journey that is not in an \"active\" or \"running\" state is considered inactive, meaning it is not actively engaging with the audience at that moment.\n\nBased on the local snapshot, the following journeys are identified as inactive:\n\n1. **Birthday Message**\n   - Journey ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6\n   - Status: updated\n   - State: updated\n\n2. **Gold Tier Welcome Email**\n   - Journey ID: 3f277603-ac4d-4022-a993-8cbd3afc0d62\n   - Status: created\n   - State: created\n\nNote: Live API data was unavailable due to Adobe credentials being unavailable; the above list is derived solely from the local snapshot.",
+      "final_answer": "Based on the local snapshot, there are 2 inactive journeys: Birthday Message (ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6) and Gold Tier Welcome Email (ID: 3f277603-ac4d-4022-a993-8cbd3afc0d62). Live API evidence was unavailable due to missing credentials.",
       "kind": "llm_final_answer_composer",
       "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
       "parse_error": false,
       "provider": "openai",
-      "raw_preview": "In Adobe Journey Optimizer, an inactive journey refers to any journey that is not currently processing or sending messages to customers. This state encompasses journeys that have been explicitly paused or stopped by an administrator, journeys that have naturally completed their execution flow (finished), and journeys that are still in the creation or editing phase (draft). Essentially, any journey that is not in an \"active\" or \"running\" state is considered inactive, meaning it is not actively engaging with the audience at that moment.\n\nBased on the local snapshot, the following journeys are identified as inactive:\n\n1. **Birthday Message**\n   - Journey ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6\n   - Status: updated\n   - State: updated\n\n2. **Gold Tier Welcome Email**\n   - Journey ID: 3f277603-ac4d-4022-a993-8cbd3afc0d62\n   - Status: created\n   - State: created\n\nNote: Live API data was unavailable due to Adobe credentials being unavailable; the above list is derived solely from the local snapshot.",
+      "raw_preview": "Based on the local snapshot, there are 2 inactive journeys: Birthday Message (ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6) and Gold Tier Welcome Email (ID: 3f277603-ac4d-4022-a993-8cbd3afc0d62). Live API evidence was unavailable due to missing credentials.",
       "unanswered_subtasks": [],
       "used_pass_ids": []
     },
     {
       "answer_composer_used": "LLMFinalAnswerComposer",
-      "answer_repair_attempts": 1,
-      "answer_semantic_gate_passed": false,
+      "answer_repair_attempts": 0,
+      "answer_semantic_gate_passed": true,
       "answer_syntax_gate_passed": true,
       "deterministic_answer_template_used": false,
-      "final_answer_supported_by_evidence": false,
+      "final_answer_supported_by_evidence": true,
       "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
       "llm_owned_final_answer": true,
       "semantic_gate": {
-        "error_message": "Status claim 'draft' contradicts available status evidence.",
-        "error_type": "contradiction",
+        "error_message": null,
+        "error_type": null,
         "missing_required_fields": [],
-        "passed": false,
+        "passed": true,
         "scope_errors": [],
-        "unsupported_claims": [
-          {
-            "claim": {
+        "unsupported_claims": [],
+        "verifier": {
+          "action": "ACCEPT",
+          "allowed_fact_index": {
+            "allowed_caveats": [
+              "API_ERROR",
+              "UNSAFE_DIRECT_TASK_ANSWER"
+            ],
+            "api_error_scopes": [
+              "live api verification"
+            ],
+            "counts": [
+              "2"
+            ],
+            "dates": [],
+            "evidence_strings": [
+              "gold tier welcome email",
+              "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+              "0",
+              "query_status_filter:inactive",
+              "birthday message",
+              "created",
+              "/ajo/journey",
+              "50",
+              "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+              "updated"
+            ],
+            "ids": [
+              "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+              "3f277603-ac4d-4022-a993-8cbd3afc0d62"
+            ],
+            "live_empty_scopes": [],
+            "missing_roles": [],
+            "names": [
+              "birthday message",
+              "gold tier welcome email"
+            ],
+            "relationships": [],
+            "statuses": [
+              "updated",
+              "created",
+              "inactive"
+            ]
+          },
+          "ambiguous_claims": [],
+          "claim_extractor": {
+            "claim_count": 6,
+            "claims": [
+              {
+                "hardness": "HARD",
+                "span": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+                "text": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+                "type": "ID",
+                "value": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
+              },
+              {
+                "hardness": "HARD",
+                "span": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+                "text": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+                "type": "ID",
+                "value": "3f277603-ac4d-4022-a993-8cbd3afc0d62"
+              },
+              {
+                "hardness": "HARD",
+                "span": "2",
+                "text": "2",
+                "type": "COUNT",
+                "value": "2"
+              },
+              {
+                "hardness": "HARD",
+                "span": "inactive",
+                "text": "inactive",
+                "type": "STATUS",
+                "value": "inactive"
+              },
+              {
+                "hardness": "HARD",
+                "span": "Birthday Message",
+                "text": "Birthday Message",
+                "type": "ENTITY_NAME",
+                "value": "Birthday Message"
+              },
+              {
+                "hardness": "HARD",
+                "span": "Gold Tier Welcome Email",
+                "text": "Gold Tier Welcome Email",
+                "type": "ENTITY_NAME",
+                "value": "Gold Tier Welcome Email"
+              }
+            ]
+          },
+          "claim_matcher": {
+            "matches": [
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+                  "text": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+                  "type": "ID",
+                  "value": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
+                },
+                "reason": "id",
+                "status": "SUPPORTED"
+              },
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+                  "text": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+                  "type": "ID",
+                  "value": "3f277603-ac4d-4022-a993-8cbd3afc0d62"
+                },
+                "reason": "id",
+                "status": "SUPPORTED"
+              },
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "2",
+                  "text": "2",
+                  "type": "COUNT",
+                  "value": "2"
+                },
+                "reason": "count",
+                "status": "SUPPORTED"
+              },
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "inactive",
+                  "text": "inactive",
+                  "type": "STATUS",
+                  "value": "inactive"
+                },
+                "reason": "status",
+                "status": "SUPPORTED"
+              },
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "Birthday Message",
+                  "text": "Birthday Message",
+                  "type": "ENTITY_NAME",
+                  "value": "Birthday Message"
+                },
+                "reason": "entity_name",
+                "status": "SUPPORTED"
+              },
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "Gold Tier Welcome Email",
+                  "text": "Gold Tier Welcome Email",
+                  "type": "ENTITY_NAME",
+                  "value": "Gold Tier Welcome Email"
+                },
+                "reason": "entity_name",
+                "status": "SUPPORTED"
+              }
+            ]
+          },
+          "needs_caveat_claims": [],
+          "ok": true,
+          "over_specified_claims": [],
+          "supported_claims": [
+            {
               "hardness": "HARD",
-              "span": "draft",
-              "text": "draft",
-              "type": "STATUS",
-              "value": "draft"
+              "span": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+              "text": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+              "type": "ID",
+              "value": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
             },
-            "message": "Status claim 'draft' contradicts available status evidence."
-          }
-        ],
-        "verifier": {}
+            {
+              "hardness": "HARD",
+              "span": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+              "text": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+              "type": "ID",
+              "value": "3f277603-ac4d-4022-a993-8cbd3afc0d62"
+            },
+            {
+              "hardness": "HARD",
+              "span": "2",
+              "text": "2",
+              "type": "COUNT",
+              "value": "2"
+            },
+            {
+              "hardness": "HARD",
+              "span": "inactive",
+              "text": "inactive",
+              "type": "STATUS",
+              "value": "inactive"
+            },
+            {
+              "hardness": "HARD",
+              "span": "Birthday Message",
+              "text": "Birthday Message",
+              "type": "ENTITY_NAME",
+              "value": "Birthday Message"
+            },
+            {
+              "hardness": "HARD",
+              "span": "Gold Tier Welcome Email",
+              "text": "Gold Tier Welcome Email",
+              "type": "ENTITY_NAME",
+              "value": "Gold Tier Welcome Email"
+            }
+          ],
+          "unsupported_claims": []
+        }
       },
       "syntax_gate": {
         "error_message": null,
         "error_type": null,
-        "final_answer": "In Adobe Journey Optimizer, an inactive journey refers to any journey that is not currently processing or sending messages to customers. This state encompasses journeys that have been explicitly paused or stopped by an administrator, journeys that have naturally completed their execution flow (finished), and journeys that are still in the creation or editing phase (draft). Essentially, any journey that is not in an \"active\" or \"running\" state is considered inactive, meaning it is not actively engaging with the audience at that moment.\n\nBased on the local snapshot, the following journeys are identified as inactive:\n\n1. **Birthday Message**\n   - Journey ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6\n   - Status: updated\n   - State: updated\n\n2. **Gold Tier Welcome Email**\n   - Journey ID: 3f277603-ac4d-4022-a993-8cbd3afc0d62\n   - Status: created\n   - State: created\n\nNote: Live API data was unavailable due to Adobe credentials being unavailable; the above list is derived solely from the local snapshot.",
+        "final_answer": "Based on the local snapshot, there are 2 inactive journeys: Birthday Message (ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6) and Gold Tier Welcome Email (ID: 3f277603-ac4d-4022-a993-8cbd3afc0d62). Live API evidence was unavailable due to missing credentials.",
         "passed": true
       },
       "used_pass_ids": []
@@ -1937,7 +2116,7 @@
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 55.47510683303699
+    "answer_time": 22.834407541435212
   },
   "tool_call_count": 2
 }

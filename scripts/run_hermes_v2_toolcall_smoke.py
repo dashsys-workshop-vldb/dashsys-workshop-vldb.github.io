@@ -110,16 +110,20 @@ def _build_smoke_row(item: dict[str, Any], result: dict[str, Any]) -> dict[str, 
         "unsupported_claims": unsupported_claims,
         "final_semantic_gate_initial_failures": gate_metrics["final_semantic_gate_initial_failures"],
         "final_semantic_gate_final_failures": gate_metrics["final_semantic_gate_final_failures"],
+        "final_answer_repair_attempts": gate_metrics["final_answer_repair_attempts"],
+        "repaired_success": gate_metrics["repaired_success"],
         "no_tool_fp": item["expected"] != "DIRECT" and sql_calls == 0 and api_calls == 0,
         "final_answer": result.get("final_answer"),
         "output_dir": result.get("output_dir"),
     }
+    row["final_unavailable_with_runtime_facts"] = _final_unavailable_with_runtime_facts(row)
     row["matches_expectation"] = _matches_expectation(item["expected"], row, diagnostics)
     row["pass"] = bool(
         row["matches_expectation"]
         and _answer_contains_expected(row)
         and unsupported_claims == 0
         and row["final_semantic_gate_final_failures"] == 0
+        and not row["final_unavailable_with_runtime_facts"]
     )
     return row
 
@@ -270,6 +274,8 @@ def _final_gate_metrics(result: dict[str, Any]) -> dict[str, int]:
     initial_failures = 0
     final_failures = 0
     unsupported_claims = 0
+    repair_attempts = 0
+    repair_semantic_passed = False
     for checkpoint in result.get("checkpoints") or []:
         output = checkpoint.get("output") if isinstance(checkpoint.get("output"), dict) else {}
         checkpoint_id = str(checkpoint.get("checkpoint_id") or "")
@@ -280,15 +286,19 @@ def _final_gate_metrics(result: dict[str, Any]) -> dict[str, int]:
         elif checkpoint_id == "checkpoint_llm_final_answer_repair":
             semantic = output.get("semantic_gate") if isinstance(output.get("semantic_gate"), dict) else {}
             unsupported_claims += _unsupported_claims_len(semantic)
+            repair_semantic_passed = semantic.get("passed") is True
         elif checkpoint_id == "checkpoint_llm_owned_final_answer_boundary":
             if output.get("answer_semantic_gate_passed") is False:
                 final_failures += 1
+            repair_attempts = max(repair_attempts, int(output.get("answer_repair_attempts") or 0))
             semantic = output.get("semantic_gate") if isinstance(output.get("semantic_gate"), dict) else {}
             unsupported_claims += _unsupported_claims_len(semantic)
     return {
         "final_semantic_gate_initial_failures": initial_failures,
         "final_semantic_gate_final_failures": final_failures,
         "unsupported_claims": unsupported_claims,
+        "final_answer_repair_attempts": repair_attempts,
+        "repaired_success": bool(repair_attempts > 0 and repair_semantic_passed and final_failures == 0),
     }
 
 
@@ -327,6 +337,13 @@ def _answer_contains_expected(row: dict[str, Any]) -> bool:
     return str(expected).lower() in str(row.get("final_answer") or "").lower()
 
 
+def _final_unavailable_with_runtime_facts(row: dict[str, Any]) -> bool:
+    if int(row.get("runtime_fact_count") or 0) <= 0:
+        return False
+    answer = str(row.get("final_answer") or "").lower()
+    return "runtime evidence was unavailable" in answer or "no matching runtime evidence was available" in answer
+
+
 def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "row_count": len(rows),
@@ -344,6 +361,9 @@ def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "no_tool_fp": sum(1 for row in rows if row.get("no_tool_fp")),
         "final_semantic_gate_initial_failures": sum(int(row.get("final_semantic_gate_initial_failures") or 0) for row in rows),
         "final_semantic_gate_final_failures": sum(int(row.get("final_semantic_gate_final_failures") or 0) for row in rows),
+        "final_answer_repair_attempts": sum(int(row.get("final_answer_repair_attempts") or 0) for row in rows),
+        "repaired_success_count": sum(1 for row in rows if row.get("repaired_success")),
+        "final_unavailable_with_runtime_facts": sum(1 for row in rows if row.get("final_unavailable_with_runtime_facts")),
         "atomic_protocol_fallback_count": sum(1 for row in rows if row.get("atomic_protocol_fallback_used")),
     }
 
@@ -376,8 +396,8 @@ def _markdown(report: dict[str, Any]) -> str:
         "",
         "## Rows",
         "",
-        "| Prompt | SQL | API | Semantic IR | Atomic Fallback | Compiled SQL | Compiled API | Runtime Facts | Local Facts | Caveats/Errors | Initial Gate Fail | Final Gate Fail | Expected | Pass |",
-        "|---|---:|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|",
+        "| Prompt | SQL | API | Semantic IR | Atomic Fallback | Compiled SQL | Compiled API | Runtime Facts | Local Facts | Caveats/Errors | Initial Gate Fail | Final Gate Fail | Repair Attempts | Repaired | Expected | Pass |",
+        "|---|---:|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---|",
     ]
     for row in report.get("rows") or []:
         lines.append(
@@ -396,6 +416,8 @@ def _markdown(report: dict[str, Any]) -> str:
                     str(row.get("caveat_or_error_only_count")),
                     str(row.get("final_semantic_gate_initial_failures")),
                     str(row.get("final_semantic_gate_final_failures")),
+                    str(row.get("final_answer_repair_attempts")),
+                    str(row.get("repaired_success")),
                     str(row.get("expected")),
                     str(row.get("pass")),
                 ]
@@ -441,8 +463,8 @@ def _quality_markdown(payload: dict[str, Any]) -> str:
         "",
         "## Smoke Rows",
         "",
-        "| Prompt | Expected | SQL | API | Runtime Facts | Local Facts | Initial Gate Fail | Final Gate Fail | Pass | Final Answer |",
-        "|---|---|---:|---:|---:|---:|---:|---:|---|---|",
+        "| Prompt | Expected | SQL | API | Runtime Facts | Local Facts | Initial Gate Fail | Final Gate Fail | Repair Attempts | Repaired | Pass | Final Answer |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|---|",
     ]
     for row in payload.get("rows") or []:
         answer = str(row.get("final_answer") or "").replace("\n", " ")[:180]
@@ -458,6 +480,8 @@ def _quality_markdown(payload: dict[str, Any]) -> str:
                     str(row.get("local_snapshot_fact_count")),
                     str(row.get("final_semantic_gate_initial_failures")),
                     str(row.get("final_semantic_gate_final_failures")),
+                    str(row.get("final_answer_repair_attempts")),
+                    str(row.get("repaired_success")),
                     str(row.get("pass")),
                     answer,
                 ]

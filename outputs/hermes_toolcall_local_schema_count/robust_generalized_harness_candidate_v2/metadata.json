@@ -2,7 +2,7 @@
   "backend_semantic_planning_used": false,
   "llm_owned_generation": true,
   "llm_unified_plan": {
-    "aggregation_instruction": "Return the count from the schema_count task. Optionally include the sample list from schema_list for context.",
+    "aggregation_instruction": "Return the count from the schema_count task.",
     "api_request": null,
     "backend_unavailable": false,
     "diagnostics": {
@@ -17,7 +17,7 @@
       "planner_json_fallback_used": false,
       "planner_json_parse_error": null,
       "planner_parse_source": "sdk_toolcall_semantic_ir",
-      "planner_provider_latency_ms": 16684,
+      "planner_provider_latency_ms": 18250,
       "planner_repair_attempted": false,
       "planner_success": true,
       "planner_timeout": false,
@@ -30,41 +30,13 @@
       },
       "sdk_toolcall_semantic_ir_used": true,
       "semantic_ir_plan_preview": {
-        "aggregation_instruction": "Return the count from the schema_count task. Optionally include the sample list from schema_list for context.",
+        "aggregation_instruction": "Return the count from the schema_count task.",
         "route": "EVIDENCE",
         "tasks": {
           "items": [
             {
-              "description": "List a sample of schema records to provide context.",
+              "description": "Count the number of schema records (blueprints) in the local snapshot.",
               "kind": "LOCAL_QUERY",
-              "local_query": {
-                "count": false,
-                "fields": {
-                  "items": [
-                    "BLUEPRINTID",
-                    "NAME"
-                  ],
-                  "total_items": 2,
-                  "truncated_items": false
-                },
-                "limit": 10,
-                "table": "dim_blueprint"
-              },
-              "operation": "LIST",
-              "required": false,
-              "source": "LOCAL_SNAPSHOT",
-              "task_id": "schema_list"
-            },
-            {
-              "depends_on": {
-                "items": [
-                  "schema_list"
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              },
-              "description": "Count the number of schema records in the local snapshot.",
-              "kind": "AGGREGATE",
               "local_query": {
                 "count": true,
                 "fields": {
@@ -82,23 +54,23 @@
               "task_id": "schema_count"
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         }
       },
-      "semantic_ir_provider_latency_ms": 16683,
+      "semantic_ir_provider_latency_ms": 18249,
       "semantic_ir_repair_attempted": true,
       "semantic_ir_repair_success": true,
-      "semantic_ir_task_count": 2,
+      "semantic_ir_task_count": 1,
       "semantic_ir_toolcall_supported": true,
-      "semantic_ir_validation_error_message": "AGGREGATE task must depend on prior tasks.",
-      "semantic_ir_validation_error_type": "aggregate_missing_dependencies",
+      "semantic_ir_validation_error_message": "Unknown table: schema_registry_schemas",
+      "semantic_ir_validation_error_type": "unknown_table",
       "semantic_ir_validation_passed": true,
       "sql_compile_gate_failures": 0,
       "v2_semantic_ir_used": true
     },
     "direct_answer": null,
-    "evidence_order": "MULTI_PASS",
+    "evidence_order": "SQL_FIRST",
     "model": "/Users/tanqinyang/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
     "parse_error": false,
     "passes": [
@@ -107,31 +79,16 @@
         "can_run_parallel": true,
         "depends_on": [],
         "evidence_order": "SQL_FIRST",
-        "expected_result": "List a sample of schema records to provide context.",
-        "fallback": false,
-        "optional": true,
-        "pass_id": "schema_list",
-        "path": "SQL",
-        "sql": {
-          "params": [],
-          "query": "SELECT \"BLUEPRINTID\", \"NAME\" FROM \"dim_blueprint\" LIMIT 10"
-        },
-        "subtask": "List a sample of schema records to provide context."
-      },
-      {
-        "api_request": null,
-        "can_run_parallel": false,
-        "depends_on": [
-          "schema_list"
-        ],
-        "evidence_order": "NO_EVIDENCE",
-        "expected_result": "Count the number of schema records in the local snapshot.",
+        "expected_result": "Count the number of schema records (blueprints) in the local snapshot.",
         "fallback": false,
         "optional": false,
         "pass_id": "schema_count",
-        "path": "AGGREGATION_ONLY",
-        "sql": null,
-        "subtask": "Count the number of schema records in the local snapshot."
+        "path": "SQL",
+        "sql": {
+          "params": [],
+          "query": "SELECT COUNT(*) AS count FROM \"dim_blueprint\""
+        },
+        "subtask": "Count the number of schema records (blueprints) in the local snapshot."
       }
     ],
     "provider": "openai",
@@ -163,7 +120,7 @@
     "route": "EVIDENCE_PIPELINE",
     "sql": {
       "params": [],
-      "query": "SELECT \"BLUEPRINTID\", \"NAME\" FROM \"dim_blueprint\" LIMIT 10"
+      "query": "SELECT COUNT(*) AS count FROM \"dim_blueprint\""
     }
   },
   "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
@@ -179,14 +136,14 @@
       "max_sql_workers": 2,
       "run_timeout_ms": 30000
     },
-    "created_at": "2026-06-01T22:41:25.726893+00:00",
-    "deadline_at": "2026-06-01T22:41:55.726893+00:00",
-    "evidence_bus_id": "evidence_run_620637bfbbc246f09228ec2e359a73da",
+    "created_at": "2026-06-01T23:15:06.871710+00:00",
+    "deadline_at": "2026-06-01T23:15:36.871710+00:00",
+    "evidence_bus_id": "evidence_run_785592988dcb4351ace4e9211434f05f",
     "original_prompt": "How many schema records are in the local snapshot?",
     "plan_version": 1,
     "prompt_id": "hermes_toolcall_local_schema_count",
-    "result_bundle_id": "bundle_run_620637bfbbc246f09228ec2e359a73da",
-    "run_id": "run_620637bfbbc246f09228ec2e359a73da",
+    "result_bundle_id": "bundle_run_785592988dcb4351ace4e9211434f05f",
+    "run_id": "run_785592988dcb4351ace4e9211434f05f",
     "status": "RUNNING"
   },
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"

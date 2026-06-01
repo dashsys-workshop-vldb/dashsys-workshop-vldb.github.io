@@ -272,6 +272,42 @@ def test_semantic_ir_validator_checks_cycles_and_dependencies():
     assert failed.error_type == "dependency_cycle"
 
 
+def test_semantic_ir_validator_rejects_local_count_without_count_query():
+    payload = _local_count_plan()
+    payload["tasks"][0] = {
+        "task_id": "schema_count",
+        "kind": "AGGREGATE",
+        "operation": "COUNT",
+        "source": "LOCAL_SNAPSHOT",
+        "local_query": None,
+        "api_query": None,
+        "depends_on": ["schema_list"],
+        "description": "Count schema records from a prior list.",
+        "required": True,
+    }
+    payload["tasks"].insert(
+        0,
+        {
+            "task_id": "schema_list",
+            "kind": "LOCAL_QUERY",
+            "operation": "LIST",
+            "source": "LOCAL_SNAPSHOT",
+            "local_query": {"table": "dim_schema", "fields": ["SCHEMAID", "NAME"], "filters": [], "limit": 10, "count": False},
+            "api_query": None,
+            "depends_on": [],
+            "description": "List schema records.",
+            "required": False,
+        },
+    )
+    validator = SemanticIRValidator(build_allowed_local_schema_card(_schema_context()), build_allowed_api_context_card(_endpoint_context()))
+
+    failed = validator.validate(parse_semantic_ir_from_json_or_line_protocol(json.dumps(payload)))
+
+    assert failed.passed is False
+    assert failed.error_type == "local_count_requires_count_query"
+    assert failed.task_id == "schema_count"
+
+
 def test_semantic_ir_compiler_mechanically_compiles_sql_and_api():
     schema_card = build_allowed_local_schema_card(_schema_context())
     api_card = build_allowed_api_context_card(_endpoint_context())

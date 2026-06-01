@@ -112,6 +112,40 @@ def test_semantic_gate_rejects_missing_required_count_when_evidence_contains_it(
     assert "count" in result.missing_required_fields
 
 
+def test_semantic_gate_allows_broad_schema_summary_with_count_and_sample():
+    rows = [
+        {"NAME": "Schema Alpha"},
+        {"NAME": "Schema Beta"},
+        {"NAME": "Schema Gamma"},
+        {"NAME": "Schema Delta"},
+    ]
+    tool_results = [_sql_tool_result(rows)]
+    bus, slots = _bus_and_slots("What schemas do I have?", tool_results)
+    slots.sql_row_count = 74
+    slots.counts = [74]
+    slots.entity_names = ["Schema Alpha", "Schema Beta", "Schema Gamma", "Schema Delta", "Schema Epsilon"]
+
+    result = check_final_answer_semantic_grounding(
+        "Based on the local snapshot, there are 74 schemas. Sample schemas include Schema Alpha, Schema Beta, and Schema Gamma.",
+        question="What schemas do I have?",
+        runtime_passes=[
+            {
+                "pass_id": "schema_list",
+                "source": "SQL",
+                "path": "SQL",
+                "status": "SUCCESS",
+                "scope": "LOCAL_SNAPSHOT",
+                "facts": ["NAME:Schema Alpha", "NAME:Schema Beta", "NAME:Schema Gamma"],
+                "source_results": [{"source": "SQL", "status": "SUCCESS", "scope": "LOCAL_SNAPSHOT", "result": {"rows": rows, "row_count": 74}}],
+            }
+        ],
+        evidence_bus=bus,
+        slots=slots,
+    )
+
+    assert result.passed is True
+
+
 def test_semantic_gate_rejects_local_live_scope_confusion():
     tool_results = [_sql_tool_result([{"count": 2}])]
     bus, slots = _bus_and_slots("How many current schemas are in Adobe Experience Platform?", tool_results)
@@ -205,6 +239,21 @@ def test_claim_extractor_treats_deployed_time_as_timestamp_wording_not_status():
 
     assert not any(claim.type == "STATUS" and claim.value.lower() == "deployed" for claim in claims)
     assert not any(claim.type == "STATUS" and claim.value.lower() == "failed" for claim in claims)
+
+
+def test_claim_extractor_ignores_numbered_list_markers_as_counts():
+    claims = extract_final_answer_claims(
+        "Based on the local snapshot, there are 74 schemas.\n\n"
+        "1. Schema Alpha\n"
+        "2. Schema Beta\n"
+        "3. Schema Gamma"
+    )
+
+    count_values = [claim.value for claim in claims if claim.type == "COUNT"]
+    assert "74" in count_values
+    assert "1" not in count_values
+    assert "2" not in count_values
+    assert "3" not in count_values
 
 
 def test_semantic_gate_allows_draft_as_conceptual_example_when_data_statuses_differ():
@@ -332,6 +381,146 @@ def test_final_answer_card_requires_partial_local_evidence_before_api_caveat():
     constraints = " ".join(card["constraints"])
     assert "If any required local evidence succeeded" in constraints
     assert "Only use the global runtime-unavailable answer if all required evidence failed" in constraints
+    assert card["AVAILABLE_RUNTIME_FACTS"]
+    assert card["AVAILABLE_RUNTIME_FACTS"][0]["task_id"] == "local_status"
+    assert "Birthday Message" in json.dumps(card["AVAILABLE_RUNTIME_FACTS"])
+    assert card["FAILED_OR_UNAVAILABLE_SOURCES"]
+    assert card["FAILED_OR_UNAVAILABLE_SOURCES"][0]["task_id"] == "live_status"
+
+
+def test_final_answer_card_repair_context_exposes_gate_errors_and_runtime_facts():
+    plan = LLMUnifiedPlan(
+        route="EVIDENCE_PIPELINE",
+        evidence_order="SQL_FIRST",
+        direct_answer=None,
+        sql=LLMUnifiedSQLCandidate(query='SELECT COUNT(*) AS "count" FROM "dim_blueprint"', params=[]),
+        api_request=None,
+        passes=[
+            LLMUnifiedPass(
+                pass_id="local_count",
+                subtask="Count schema records in the local snapshot.",
+                path="SQL",
+                can_run_parallel=True,
+                depends_on=[],
+                evidence_order="SQL_FIRST",
+                sql=LLMUnifiedSQLCandidate(query='SELECT COUNT(*) AS "count" FROM "dim_blueprint"', params=[]),
+                api_request=None,
+                expected_result="Schema count.",
+            )
+        ],
+        aggregation_instruction="Answer with the schema count.",
+        reason="test",
+        provider="openai",
+        model="unit",
+    )
+    runtime_passes = [
+        {
+            "pass_id": "local_count",
+            "source": "SQL",
+            "path": "SQL",
+            "status": "SUCCESS",
+            "scope": "LOCAL_SNAPSHOT",
+            "facts": ["count: 74"],
+            "source_results": [
+                {
+                    "source": "SQL",
+                    "status": "SUCCESS",
+                    "scope": "LOCAL_SNAPSHOT",
+                    "result": {"rows": [{"count": 74}], "row_count": 1},
+                }
+            ],
+            "result": {"rows": [{"count": 74}], "row_count": 1},
+        }
+    ]
+    evidence_bus = EvidenceBus(run_id="unit")
+    evidence_bus.counts.append(74)
+    evidence_bus.observe_pass_result(runtime_passes[0])
+    slots = extract_answer_slots("How many schema records are in the local snapshot?", [_sql_tool_result([{"count": 74}])])
+    bundle = ResultBundle.from_pass_results(runtime_passes, [], run_id="unit")
+
+    card = build_llm_final_answer_card(
+        user_prompt="How many schema records are in the local snapshot?",
+        llm_plan=plan,
+        runtime_passes=runtime_passes,
+        evidence_bus=evidence_bus,
+        answer_slots=slots,
+        result_bundle=bundle,
+        repair_context={
+            "previous_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+            "semantic_gate": {
+                "error_type": "missing_required_info",
+                "missing_required_fields": ["count"],
+                "scope_errors": [],
+                "unsupported_claims": [],
+            },
+        },
+    )
+
+    serialized = json.dumps(card, sort_keys=True)
+    assert '"AVAILABLE_RUNTIME_FACTS"' in serialized
+    assert "count: 74" in serialized
+    assert "missing_required_info" in serialized
+    assert "previous_answer" in serialized
+    assert "Runtime evidence was unavailable" in serialized
+
+
+def test_direct_concept_pass_is_not_required_as_runtime_evidence():
+    plan = LLMUnifiedPlan(
+        route="EVIDENCE_PIPELINE",
+        evidence_order="MULTI_PASS",
+        direct_answer=None,
+        sql=LLMUnifiedSQLCandidate(query='SELECT "NAME" FROM "dim_campaign"', params=[]),
+        api_request=None,
+        passes=[
+            LLMUnifiedPass(
+                pass_id="concept",
+                subtask="Explain inactive journey.",
+                path="DIRECT",
+                can_run_parallel=True,
+                depends_on=[],
+                evidence_order="NO_EVIDENCE",
+                sql=None,
+                api_request=None,
+                expected_result="Concept explanation.",
+            ),
+            LLMUnifiedPass(
+                pass_id="local_rows",
+                subtask="Show inactive journeys.",
+                path="SQL",
+                can_run_parallel=True,
+                depends_on=[],
+                evidence_order="SQL_FIRST",
+                sql=LLMUnifiedSQLCandidate(query='SELECT "NAME" FROM "dim_campaign"', params=[]),
+                api_request=None,
+                expected_result="Local rows.",
+            ),
+        ],
+        aggregation_instruction="Answer concept plus local rows.",
+        reason="test",
+        provider="openai",
+        model="unit",
+    )
+    card = build_llm_final_answer_card(
+        user_prompt="Explain inactive journey means and show inactive journeys.",
+        llm_plan=plan,
+        runtime_passes=[
+            {"pass_id": "concept", "source": "DIRECT", "path": "DIRECT", "status": "SUCCESS", "scope": "NO_EVIDENCE", "facts": ["concept: not currently active"], "source_results": []},
+            {
+                "pass_id": "local_rows",
+                "source": "SQL",
+                "path": "SQL",
+                "status": "SUCCESS",
+                "scope": "LOCAL_SNAPSHOT",
+                "facts": ["name: Birthday Message"],
+                "source_results": [{"source": "SQL", "status": "SUCCESS", "scope": "LOCAL_SNAPSHOT"}],
+            },
+        ],
+        evidence_bus=EvidenceBus(run_id="unit"),
+        answer_slots=extract_answer_slots("Explain inactive journey means and show inactive journeys.", [_sql_tool_result([{"name": "Birthday Message"}])]),
+    )
+
+    assert "concept" not in card["required_task_ids"]
+    assert "local_rows" in card["required_task_ids"]
 
 
 def test_safe_error_fallback_uses_semantic_gate_safe_wording():
@@ -348,6 +537,26 @@ def test_safe_error_fallback_uses_semantic_gate_safe_wording():
 
     assert answer == "Runtime evidence was unavailable; cannot provide a verified answer."
     assert result.passed is True
+
+
+def test_safe_fallback_with_runtime_facts_summarizes_scoped_evidence_not_global_unavailable():
+    answer = safe_llm_final_answer_fallback(
+        [
+            {
+                "pass_id": "local_count",
+                "path": "SQL",
+                "source": "SQL",
+                "status": "SUCCESS",
+                "scope": "LOCAL_SNAPSHOT",
+                "facts": ["count: 74"],
+                "source_results": [{"source": "SQL", "status": "SUCCESS", "scope": "LOCAL_SNAPSHOT"}],
+            }
+        ]
+    )
+
+    assert answer.startswith("I found runtime evidence but could not compose a verified final answer.")
+    assert "count: 74" in answer
+    assert "Runtime evidence was unavailable" not in answer
 
 
 def test_semantic_gate_allows_extra_correct_context_without_gold_wording():

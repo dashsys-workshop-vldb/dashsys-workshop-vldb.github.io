@@ -1,5 +1,5 @@
 {
-  "answer_time": 105.4786922079511,
+  "answer_time": 29.174527833238244,
   "api_call_count": 0,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-01T22:39:33.909711+00:00"
+      "timestamp": "2026-06-01T23:14:29.504662+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-01T22:39:33.909731+00:00"
+      "timestamp": "2026-06-01T23:14:29.504682+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,7 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-01T22:39:33.909737+00:00"
+      "timestamp": "2026-06-01T23:14:29.504688+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -91,7 +91,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 6086,
+        "planner_provider_latency_ms": 8080,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -104,7 +104,6 @@
         },
         "sdk_toolcall_semantic_ir_used": true,
         "semantic_ir_plan_preview": {
-          "aggregation_instruction": "Return the list of schema names and IDs from the local snapshot.",
           "route": "EVIDENCE",
           "tasks": {
             "items": [
@@ -127,14 +126,14 @@
                 "operation": "LIST",
                 "required": true,
                 "source": "LOCAL_SNAPSHOT",
-                "task_id": "schema_list"
+                "task_id": "schema_list_local"
               }
             ],
             "total_items": 1,
             "truncated_items": false
           }
         },
-        "semantic_ir_provider_latency_ms": 6086,
+        "semantic_ir_provider_latency_ms": 8078,
         "semantic_ir_repair_attempted": false,
         "semantic_ir_repair_success": false,
         "semantic_ir_task_count": 1,
@@ -146,9 +145,9 @@
         "v2_semantic_ir_used": true
       },
       "output": {
-        "aggregation_instruction": "Return the list of schema names and IDs from the local snapshot.",
         "evidence_order": "SQL_FIRST",
         "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+        "parse_error": false,
         "passes": {
           "items": [
             {
@@ -156,7 +155,7 @@
               "evidence_order": "SQL_FIRST",
               "expected_result": "List available schemas (blueprints) from the local snapshot.",
               "optional": false,
-              "pass_id": "schema_list",
+              "pass_id": "schema_list_local",
               "path": "SQL",
               "sql": {
                 "query": "SELECT \"BLUEPRINTID\", \"NAME\" FROM \"dim_blueprint\" LIMIT 100"
@@ -178,7 +177,7 @@
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-01T22:39:40.005513+00:00"
+      "timestamp": "2026-06-01T23:14:37.593722+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
@@ -190,7 +189,7 @@
         "evidence_order": "SQL_FIRST",
         "pass_ids": {
           "items": [
-            "schema_list"
+            "schema_list_local"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -206,7 +205,7 @@
           "items": [
             {
               "items": [
-                "schema_list"
+                "schema_list_local"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -218,7 +217,7 @@
         "pass_count": 1,
         "pass_ids": {
           "items": [
-            "schema_list"
+            "schema_list_local"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -227,7 +226,7 @@
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-01T22:39:40.007105+00:00"
+      "timestamp": "2026-06-01T23:14:37.596161+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -243,7 +242,7 @@
         },
         "pass_ids": {
           "items": [
-            "schema_list"
+            "schema_list_local"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -266,7 +265,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "schema_list"
+            "schema_list_local"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -291,7 +290,7 @@
           "items": [
             {
               "items": [
-                "schema_list"
+                "schema_list_local"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -302,7 +301,7 @@
         },
         "pass_ids": {
           "items": [
-            "schema_list"
+            "schema_list_local"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -313,7 +312,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-01T22:39:40.007351+00:00"
+      "timestamp": "2026-06-01T23:14:37.596603+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -326,7 +325,7 @@
           "items": [
             {
               "items": [
-                "schema_list"
+                "schema_list_local"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -337,7 +336,7 @@
         },
         "pass_ids": {
           "items": [
-            "schema_list"
+            "schema_list_local"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -356,7 +355,7 @@
           "items": [
             {
               "items": [
-                "schema_list"
+                "schema_list_local"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -367,7 +366,7 @@
         },
         "passes_completed": {
           "items": [
-            "schema_list"
+            "schema_list_local"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -388,10 +387,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_043023f50c98408fb4bc154989c650a0:schema_list",
-              "pass_id": "schema_list",
+              "global_pass_id": "run_857602b9950840c4b42adb294fb3aae0:schema_list_local",
+              "pass_id": "schema_list_local",
               "plan_version": 1,
-              "run_id": "run_043023f50c98408fb4bc154989c650a0",
+              "run_id": "run_857602b9950840c4b42adb294fb3aae0",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -399,10 +398,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_043023f50c98408fb4bc154989c650a0:schema_list",
-              "pass_id": "schema_list",
+              "global_pass_id": "run_857602b9950840c4b42adb294fb3aae0:schema_list_local",
+              "pass_id": "schema_list_local",
               "plan_version": 1,
-              "run_id": "run_043023f50c98408fb4bc154989c650a0",
+              "run_id": "run_857602b9950840c4b42adb294fb3aae0",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -410,10 +409,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_043023f50c98408fb4bc154989c650a0:schema_list",
-              "pass_id": "schema_list",
+              "global_pass_id": "run_857602b9950840c4b42adb294fb3aae0:schema_list_local",
+              "pass_id": "schema_list_local",
               "plan_version": 1,
-              "run_id": "run_043023f50c98408fb4bc154989c650a0",
+              "run_id": "run_857602b9950840c4b42adb294fb3aae0",
               "stage": "DEPENDENCY_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -427,7 +426,7 @@
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-01T22:39:40.007426+00:00"
+      "timestamp": "2026-06-01T23:14:37.596799+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
@@ -439,7 +438,7 @@
         "multi_pass_enabled": false,
         "pass_ids": {
           "items": [
-            "schema_list"
+            "schema_list_local"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -465,7 +464,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "schema_list"
+            "schema_list_local"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -486,7 +485,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_043023f50c98408fb4bc154989c650a0",
+        "evidence_bus_id": "evidence_run_857602b9950840c4b42adb294fb3aae0",
         "hidden_eval_gold_used": false,
         "llm_pass_count": 1,
         "llm_pass_graph_used": true,
@@ -499,7 +498,7 @@
           "items": [
             {
               "items": [
-                "schema_list"
+                "schema_list_local"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -515,7 +514,7 @@
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "schema_list"
+            "schema_list_local"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -523,7 +522,7 @@
         "pass_results_count": 1,
         "passes_completed": {
           "items": [
-            "schema_list"
+            "schema_list_local"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -535,7 +534,7 @@
         },
         "passes_executed": {
           "items": [
-            "schema_list"
+            "schema_list_local"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -548,8 +547,8 @@
         "pipeline_stage_count": 8,
         "plan_version": 1,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_043023f50c98408fb4bc154989c650a0",
-        "run_id": "run_043023f50c98408fb4bc154989c650a0",
+        "result_bundle_id": "bundle_run_857602b9950840c4b42adb294fb3aae0",
+        "run_id": "run_857602b9950840c4b42adb294fb3aae0",
         "sequential_pass_count": 0,
         "sql_gate_passed": true,
         "sql_repair_attempts": 0,
@@ -558,10 +557,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_043023f50c98408fb4bc154989c650a0:schema_list",
-              "pass_id": "schema_list",
+              "global_pass_id": "run_857602b9950840c4b42adb294fb3aae0:schema_list_local",
+              "pass_id": "schema_list_local",
               "plan_version": 1,
-              "run_id": "run_043023f50c98408fb4bc154989c650a0",
+              "run_id": "run_857602b9950840c4b42adb294fb3aae0",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -569,10 +568,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_043023f50c98408fb4bc154989c650a0:schema_list",
-              "pass_id": "schema_list",
+              "global_pass_id": "run_857602b9950840c4b42adb294fb3aae0:schema_list_local",
+              "pass_id": "schema_list_local",
               "plan_version": 1,
-              "run_id": "run_043023f50c98408fb4bc154989c650a0",
+              "run_id": "run_857602b9950840c4b42adb294fb3aae0",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -580,10 +579,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_043023f50c98408fb4bc154989c650a0:schema_list",
-              "pass_id": "schema_list",
+              "global_pass_id": "run_857602b9950840c4b42adb294fb3aae0:schema_list_local",
+              "pass_id": "schema_list_local",
               "plan_version": 1,
-              "run_id": "run_043023f50c98408fb4bc154989c650a0",
+              "run_id": "run_857602b9950840c4b42adb294fb3aae0",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -599,7 +598,7 @@
       },
       "stage": "llm-owned pass scheduling",
       "technique": "dependency-aware scheduling of LLM-declared evidence passes",
-      "timestamp": "2026-06-01T22:39:40.007429+00:00"
+      "timestamp": "2026-06-01T23:14:37.596806+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -608,7 +607,7 @@
       "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
       "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
       "input_summary": {
-        "pass_id": "schema_list"
+        "pass_id": "schema_list_local"
       },
       "output": {
         "errors": {
@@ -618,11 +617,11 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_043023f50c98408fb4bc154989c650a0"
+        "run_id": "run_857602b9950840c4b42adb294fb3aae0"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-01T22:39:40.007467+00:00"
+      "timestamp": "2026-06-01T23:14:37.596875+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
@@ -631,17 +630,17 @@
       "effect": "checks syntax/database-semantic validity without rewriting SQL",
       "efficiency_role": "prevents executing uncompilable SQL",
       "input_summary": {
-        "pass_id": "schema_list",
+        "pass_id": "schema_list_local",
         "sql": "SELECT \"BLUEPRINTID\", \"NAME\" FROM \"dim_blueprint\" LIMIT 100"
       },
       "output": {
-        "pass_id": "schema_list",
+        "pass_id": "schema_list_local",
         "passed": true,
         "sql": "SELECT \"BLUEPRINTID\", \"NAME\" FROM \"dim_blueprint\" LIMIT 100"
       },
       "stage": "llm sql compile gate",
       "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
-      "timestamp": "2026-06-01T22:39:40.010425+00:00"
+      "timestamp": "2026-06-01T23:14:37.603026+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -673,7 +672,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "schema_list"
+            "schema_list_local"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -694,7 +693,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_043023f50c98408fb4bc154989c650a0",
+        "evidence_bus_id": "evidence_run_857602b9950840c4b42adb294fb3aae0",
         "hidden_eval_gold_used": false,
         "llm_evidence_order": "SQL_FIRST",
         "llm_owned_generation": true,
@@ -710,7 +709,7 @@
           "items": [
             {
               "items": [
-                "schema_list"
+                "schema_list_local"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -726,7 +725,7 @@
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "schema_list"
+            "schema_list_local"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -734,7 +733,7 @@
         "pass_results_count": 1,
         "passes_completed": {
           "items": [
-            "schema_list"
+            "schema_list_local"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -746,7 +745,7 @@
         },
         "passes_executed": {
           "items": [
-            "schema_list"
+            "schema_list_local"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -759,8 +758,8 @@
         "pipeline_stage_count": 8,
         "plan_version": 1,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_043023f50c98408fb4bc154989c650a0",
-        "run_id": "run_043023f50c98408fb4bc154989c650a0",
+        "result_bundle_id": "bundle_run_857602b9950840c4b42adb294fb3aae0",
+        "run_id": "run_857602b9950840c4b42adb294fb3aae0",
         "sequential_pass_count": 0,
         "sql_gate_passed": true,
         "sql_repair_attempts": 0,
@@ -769,10 +768,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_043023f50c98408fb4bc154989c650a0:schema_list",
-              "pass_id": "schema_list",
+              "global_pass_id": "run_857602b9950840c4b42adb294fb3aae0:schema_list_local",
+              "pass_id": "schema_list_local",
               "plan_version": 1,
-              "run_id": "run_043023f50c98408fb4bc154989c650a0",
+              "run_id": "run_857602b9950840c4b42adb294fb3aae0",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -780,10 +779,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_043023f50c98408fb4bc154989c650a0:schema_list",
-              "pass_id": "schema_list",
+              "global_pass_id": "run_857602b9950840c4b42adb294fb3aae0:schema_list_local",
+              "pass_id": "schema_list_local",
               "plan_version": 1,
-              "run_id": "run_043023f50c98408fb4bc154989c650a0",
+              "run_id": "run_857602b9950840c4b42adb294fb3aae0",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -791,10 +790,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_043023f50c98408fb4bc154989c650a0:schema_list",
-              "pass_id": "schema_list",
+              "global_pass_id": "run_857602b9950840c4b42adb294fb3aae0:schema_list_local",
+              "pass_id": "schema_list_local",
               "plan_version": 1,
-              "run_id": "run_043023f50c98408fb4bc154989c650a0",
+              "run_id": "run_857602b9950840c4b42adb294fb3aae0",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -810,7 +809,7 @@
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-01T22:39:40.012160+00:00"
+      "timestamp": "2026-06-01T23:14:37.605474+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -863,7 +862,7 @@
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-01T22:39:40.016920+00:00"
+      "timestamp": "2026-06-01T23:14:37.611970+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -886,7 +885,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-01T22:39:40.016928+00:00"
+      "timestamp": "2026-06-01T23:14:37.611978+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -913,18 +912,18 @@
           },
           "pass_ids": {
             "items": [
-              "schema_list"
+              "schema_list_local"
             ],
             "total_items": 1,
             "truncated_items": false
           },
           "pass_result_count": 1,
-          "run_id": "run_043023f50c98408fb4bc154989c650a0"
+          "run_id": "run_857602b9950840c4b42adb294fb3aae0"
         }
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-01T22:39:40.016978+00:00"
+      "timestamp": "2026-06-01T23:14:37.612040+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -942,14 +941,14 @@
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "schema_list"
+              "pass_id": "schema_list_local"
             }
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "pass_results_count": 1,
-        "run_id": "run_043023f50c98408fb4bc154989c650a0",
+        "run_id": "run_857602b9950840c4b42adb294fb3aae0",
         "runtime_passes": {
           "items": [
             {
@@ -967,12 +966,12 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_043023f50c98408fb4bc154989c650a0"
+                "run_id": "run_857602b9950840c4b42adb294fb3aae0"
               },
-              "global_pass_id": "run_043023f50c98408fb4bc154989c650a0:schema_list",
-              "pass_id": "schema_list",
+              "global_pass_id": "run_857602b9950840c4b42adb294fb3aae0:schema_list_local",
+              "pass_id": "schema_list_local",
               "plan_version": 1,
-              "run_id": "run_043023f50c98408fb4bc154989c650a0",
+              "run_id": "run_857602b9950840c4b42adb294fb3aae0",
               "status": "SUCCESS",
               "truncated_fields": 7
             }
@@ -983,7 +982,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-01T22:39:40.017017+00:00"
+      "timestamp": "2026-06-01T23:14:37.612094+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -1014,7 +1013,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-01T22:39:40.017020+00:00"
+      "timestamp": "2026-06-01T23:14:37.612097+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -1067,7 +1066,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-01T22:39:40.027965+00:00"
+      "timestamp": "2026-06-01T23:14:37.628099+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -1111,12 +1110,21 @@
         }
       },
       "output": {
-        "preview": "{\"used_pass_ids\": {\"items\": [], \"total_items\": 0, \"truncated_items\": false}, \"final_answer\": \"Based on the local snapshot, there are 74 schemas. The first few include:\\n\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_961ddfca-2199-4783-b16c-9226938e0d93\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_10b7f335-021a-4ea3-9520-fa206cee8b69\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_27f3f2f7-ccb3-4699-8029-a5d5d1aa6066\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_14af09b4-941b-456c-8035-e05742c3d2b7\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_2a3be7fb-d4ff-44b4-96f4-c33801583cf4\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_b3db3db4-de1b-4984-9ac0-33e2935d3596\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_11f2c467-ed7e-4a05-8f50-87067d5d1e90\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_7da78a57-f2e3-4ea0-b6a9-19c14ede2665\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_cddc2c7b-23cb-4c77-9b7d-0d5bee7df8a8\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_2e86d9ad-8032-4a4b-8f9a-a088a7372c51\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_e507de24-3475-427e-a3ac-7a8acaa98a0b\\n- Lookalike Modeling Audiences Dataset (20260330173605)\\n- Adhoc XDM Schema for dataset uis_graph_export_stitchall_default_9f233cac-cd43-4b33-95d0-fa4016dba6f3\\n- Adhoc XDM Schema for dataset uis_cdc_archive_dataset_default_44e47eda-42b1-4273-a778-e58cdaadf89f\\n- Adhoc XDM Schema for dataset merged_profile_summary_export_c5d8a2db-c9b4-4d91-89d4-7b0dc7c83be1\\n- Adhoc schema for dim_date\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_overlap_by_namespace_and_segment. Random identifier: 9038f8ff-3915-42bc-9eb4-33649cb1bfd5\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_overlap_of_namespace_by_segment. Random identifier: 489e4273-4592-4d23-ae1d-6ebca5da5510\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_overlap_of_namespace. Random identifier: c6be6117-cabf-48f1-b4cc-d16e44e72604\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment_and_namespace. Random identifier: 5b45aef0-f38a-4e69-b47a-702e0b54f7ab\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment. Random identifier: fb1149fe-8136-4fdc-b984-74a290421d75\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_namespace. Random identifier: 06d7bba1-37ae-46ce-85d6-b736812b87ed\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile. Random identifier: 114ed137-d3d2-45a6-985a-8968e0375e85\\n- Adhoc XDM Schema for dataset hkg_adls_profile_count_history_0552412e-4c5d-40d6-b946-1503857c456a\\n- Activation System Audit Schema\\n- ComputedAttributesOutputSchema\\n- weRetail: Customer Actions\\n- Adhoc XDM Schema for dataset hkg_adls_segment_profile_history_48082438-53cd-4303-b5a8-132acdf83a88\\n- weRetail: CRM\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment_ai_models. Random identifier: 24276098-7cbb-4aad-9d8c-c4d4e4ecf1e0\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_ai_models. Random identifier: ad9891b5-81c5-4cb6-ae0c-52ce4dee218d\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment_and_namespace_trendlines. Random identifier: de12d896-5051-4db1-b573-9ca5c0a0049d\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment_trendlines. Random identifier: 812a8b82-7ace-4018-984f-f7f1039fab77\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_namespace_trendlines. Random identifier: ec3a3ac9-c302-483d-9ebd-ca6a914653b4\\n- AJO Live Activities Feedback Event Schema\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_trendlines. Random identifier: 8a5f8c7c-24fe-4449-a2...",
-        "truncated": true
+        "backend_unavailable": false,
+        "final_answer": "Based on the local snapshot, there are 74 schemas. The first five are: Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c, Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7, Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355, Adhoc XDM Schema for dataset JOJourneyVersionsDs_961ddfca-2199-4783-b16c-9226938e0d93, and Adhoc XDM Schema for dataset JOJourneyVersionsDs_10b7f335-021a-4ea3-9520-fa206cee8b69.",
+        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+        "parse_error": false,
+        "provider": "openai",
+        "raw_preview": "Based on the local snapshot, there are 74 schemas. The first five are: Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c, Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7, Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355, Adhoc XDM Schema for dataset JOJourneyVersionsDs_961ddfca-2199-4783-b16c-9226938e0d93, and Adhoc XDM Schema for dataset JOJourneyVersionsDs_10b7f335-021a-4ea3-9520-fa206cee8b69.",
+        "used_pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        }
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-01T22:40:31.556855+00:00"
+      "timestamp": "2026-06-01T23:15:06.775305+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -1128,12 +1136,12 @@
         "composer": "LLMFinalAnswerComposer"
       },
       "output": {
-        "preview": "{\"passed\": true, \"final_answer\": \"Based on the local snapshot, there are 74 schemas. The first few include:\\n\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_961ddfca-2199-4783-b16c-9226938e0d93\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_10b7f335-021a-4ea3-9520-fa206cee8b69\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_27f3f2f7-ccb3-4699-8029-a5d5d1aa6066\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_14af09b4-941b-456c-8035-e05742c3d2b7\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_2a3be7fb-d4ff-44b4-96f4-c33801583cf4\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_b3db3db4-de1b-4984-9ac0-33e2935d3596\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_11f2c467-ed7e-4a05-8f50-87067d5d1e90\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_7da78a57-f2e3-4ea0-b6a9-19c14ede2665\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_cddc2c7b-23cb-4c77-9b7d-0d5bee7df8a8\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_2e86d9ad-8032-4a4b-8f9a-a088a7372c51\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_e507de24-3475-427e-a3ac-7a8acaa98a0b\\n- Lookalike Modeling Audiences Dataset (20260330173605)\\n- Adhoc XDM Schema for dataset uis_graph_export_stitchall_default_9f233cac-cd43-4b33-95d0-fa4016dba6f3\\n- Adhoc XDM Schema for dataset uis_cdc_archive_dataset_default_44e47eda-42b1-4273-a778-e58cdaadf89f\\n- Adhoc XDM Schema for dataset merged_profile_summary_export_c5d8a2db-c9b4-4d91-89d4-7b0dc7c83be1\\n- Adhoc schema for dim_date\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_overlap_by_namespace_and_segment. Random identifier: 9038f8ff-3915-42bc-9eb4-33649cb1bfd5\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_overlap_of_namespace_by_segment. Random identifier: 489e4273-4592-4d23-ae1d-6ebca5da5510\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_overlap_of_namespace. Random identifier: c6be6117-cabf-48f1-b4cc-d16e44e72604\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment_and_namespace. Random identifier: 5b45aef0-f38a-4e69-b47a-702e0b54f7ab\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment. Random identifier: fb1149fe-8136-4fdc-b984-74a290421d75\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_namespace. Random identifier: 06d7bba1-37ae-46ce-85d6-b736812b87ed\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile. Random identifier: 114ed137-d3d2-45a6-985a-8968e0375e85\\n- Adhoc XDM Schema for dataset hkg_adls_profile_count_history_0552412e-4c5d-40d6-b946-1503857c456a\\n- Activation System Audit Schema\\n- ComputedAttributesOutputSchema\\n- weRetail: Customer Actions\\n- Adhoc XDM Schema for dataset hkg_adls_segment_profile_history_48082438-53cd-4303-b5a8-132acdf83a88\\n- weRetail: CRM\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment_ai_models. Random identifier: 24276098-7cbb-4aad-9d8c-c4d4e4ecf1e0\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_ai_models. Random identifier: ad9891b5-81c5-4cb6-ae0c-52ce4dee218d\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment_and_namespace_trendlines. Random identifier: de12d896-5051-4db1-b573-9ca5c0a0049d\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment_trendlines. Random identifier: 812a8b82-7ace-4018-984f-f7f1039fab77\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_namespace_trendlines. Random identifier: ec3a3ac9-c302-483d-9ebd-ca6a914653b4\\n- AJO Live Activities Feedback Event Schema\\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_trendlines. Random identifier: 8a5f8c7c-24fe-4449-a2e0-da968a0e6a30\\n- AJO ExD Decision Event Schema\\n- AJO Inbo...",
-        "truncated": true
+        "final_answer": "Based on the local snapshot, there are 74 schemas. The first five are: Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c, Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7, Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355, Adhoc XDM Schema for dataset JOJourneyVersionsDs_961ddfca-2199-4783-b16c-9226938e0d93, and Adhoc XDM Schema for dataset JOJourneyVersionsDs_10b7f335-021a-4ea3-9520-fa206cee8b69.",
+        "passed": true
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-01T22:40:31.556905+00:00"
+      "timestamp": "2026-06-01T23:15:06.775330+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -1145,30 +1153,147 @@
         "syntax_gate_passed": true
       },
       "output": {
-        "preview": "{\"passed\": false, \"error_type\": \"unsupported_claim\", \"error_message\": \"Final answer contains a hard claim not supported by runtime evidence.\", \"unsupported_claims\": {\"items\": [{\"text\": \"9038f8ff-3915-42bc-9eb4-33649cb1bfd5\", \"type\": \"ID\", \"value\": \"9038f8ff-3915-42bc-9eb4-33649cb1bfd5\", \"span\": \"9038f8ff-3915-42bc-9eb4-33649cb1bfd5\", \"hardness\": \"HARD\"}, {\"text\": \"489e4273-4592-4d23-ae1d-6ebca5da5510\", \"type\": \"ID\", \"value\": \"489e4273-4592-4d23-ae1d-6ebca5da5510\", \"span\": \"489e4273-4592-4d23-ae1d-6ebca5da5510\", \"hardness\": \"HARD\"}, {\"text\": \"c6be6117-cabf-48f1-b4cc-d16e44e72604\", \"type\": \"ID\", \"value\": \"c6be6117-cabf-48f1-b4cc-d16e44e72604\", \"span\": \"c6be6117-cabf-48f1-b4cc-d16e44e72604\", \"hardness\": \"HARD\"}], \"total_items\": 37, \"truncated_items\": true}, \"verifier\": {\"ok\": false, \"unsupported_claims\": {\"items\": [{\"text\": \"9038f8ff-3915-42bc-9eb4-33649cb1bfd5\", \"type\": \"ID\", \"value\": \"9038f8ff-3915-42bc-9eb4-33649cb1bfd5\", \"span\": \"9038f8ff-3915-42bc-9eb4-33649cb1bfd5\", \"hardness\": \"HARD\"}, {\"text\": \"489e4273-4592-4d23-ae1d-6ebca5da5510\", \"type\": \"ID\", \"value\": \"489e4273-4592-4d23-ae1d-6ebca5da5510\", \"span\": \"489e4273-4592-4d23-ae1d-6ebca5da5510\", \"hardness\": \"HARD\"}, {\"text\": \"c6be6117-cabf-48f1-b4cc-d16e44e72604\", \"type\": \"ID\", \"value\": \"c6be6117-cabf-48f1-b4cc-d16e44e72604\", \"span\": \"c6be6117-cabf-48f1-b4cc-d16e44e72604\", \"hardness\": \"HARD\"}], \"total_items\": 37, \"truncated_items\": true}, \"supported_claims\": {\"items\": [{\"text\": \"74\", \"type\": \"COUNT\", \"value\": \"74\", \"span\": \"74\", \"hardness\": \"HARD\"}, {\"text\": \"Adhoc XDM Schema\", \"type\": \"ENTITY_NAME\", \"value\": \"Adhoc XDM Schema\", \"span\": \"Adhoc XDM Schema\", \"hardness\": \"HARD\"}, {\"text\": \"Adhoc XDM Schema\", \"type\": \"ENTITY_NAME\", \"value\": \"Adhoc XDM Schema\", \"span\": \"Adhoc XDM Schema\", \"hardness\": \"HARD\"}], \"total_items\": 38, \"truncated_items\": true}, \"action\": \"FALLBACK_DETERMINISTIC\", \"claim_extractor\": {\"claim_count\": 75, \"claims\": {\"items\": [{\"text\": \"9038f8ff-3915-42bc-9eb4-33649cb1bfd5\", \"type\": \"ID\", \"value\": \"9038f8ff-3915-42bc-9eb4-33649cb1bfd5\", \"span\": \"9038f8ff-3915-42bc-9eb4-33649cb1bfd5\", \"hardness\": \"HARD\"}, {\"text\": \"489e4273-4592-4d23-ae1d-6ebca5da5510\", \"type\": \"ID\", \"value\": \"489e4273-4592-4d23-ae1d-6ebca5da5510\", \"span\": \"489e4273-4592-4d23-ae1d-6ebca5da5510\", \"hardness\": \"HARD\"}, {\"text\": \"c6be6117-cabf-48f1-b4cc-d16e44e72604\", \"type\": \"ID\", \"value\": \"c6be6117-cabf-48f1-b4cc-d16e44e72604\", \"span\": \"c6be6117-cabf-48f1-b4cc-d16e44e72604\", \"hardness\": \"HARD\"}], \"total_items\": 75, \"truncated_items\": true}}, \"claim_matcher\": {\"matches\": {\"items\": [{\"status\": \"UNSUPPORTED\", \"claim\": {\"text\": \"9038f8ff-3915-42bc-9eb4-33649cb1bfd5\", \"type\": \"ID\", \"value\": \"9038f8ff-3915-42bc-9eb4-33649cb1bfd5\", \"span\": \"9038f8ff-3915-42bc-9eb4-33649cb1bfd5\", \"hardness\": \"HARD\"}, \"reason\": \"id_not_in_allowed_facts\"}, {\"status\": \"UNSUPPORTED\", \"claim\": {\"text\": \"489e4273-4592-4d23-ae1d-6ebca5da5510\", \"type\": \"ID\", \"value\": \"489e4273-4592-4d23-ae1d-6ebca5da5510\", \"span\": \"489e4273-4592-4d23-ae1d-6ebca5da5510\", \"hardness\": \"HARD\"}, \"reason\": \"id_not_in_allowed_facts\"}, {\"status\": \"UNSUPPORTED\", \"claim\": {\"text\": \"c6be6117-cabf-48f1-b4cc-d16e44e72604\", \"type\": \"ID\", \"value\": \"c6be6117-cabf-48f1-b4cc-d16e44e72604\", \"span\": \"c6be6117-cabf-48f1-b4cc-d16e44e72604\", \"hardness\": \"HARD\"}, \"reason\": \"id_not_in_allowed_facts\"}], \"total_items\": 75, \"truncated_items\": true}}, \"allowed_fact_index\": {\"counts\": {\"items\": [\"74\"], \"total_items\": 1, \"truncated_items\": false}, \"names\": {\"items\": [\"adhoc xdm schema for dataset jojourneyversionsds_e0f2475b-1232-425e-869d-22e671494d5c\", \"adhoc xdm schema for dataset jojourneyversionsds_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\", \"adhoc xdm schema for dataset jojourneyversionsds_f877134c-9ce5-4ca2-b326-881c75f8a355\"], \"total_items\": 10, \"truncated_items\": true}, \"ids\": {\"items\": [\"8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc\"], \"total_items\": 1, \"truncated_items\": false}, \"evidence_strings\": {\"items\": [\"adhoc xdm schema for dataset jojourneyversionsds_8e9d4f3...",
-        "truncated": true
+        "passed": true,
+        "verifier": {
+          "action": "ACCEPT",
+          "allowed_fact_index": {
+            "counts": {
+              "items": [
+                "74"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "evidence_strings": {
+              "items": [
+                "482df6417bca3933f123d0e202df81fece46a5bd6fd9c926",
+                "9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5",
+                "adhoc xdm schema for dataset jojourneyversionsds_b3db3db4-de1b-4984-9ac0-33e2935d3596"
+              ],
+              "total_items": 20,
+              "truncated_items": true
+            },
+            "ids": {
+              "items": [
+                "8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "names": {
+              "items": [
+                "adhoc xdm schema for dataset jojourneyversionsds_e0f2475b-1232-425e-869d-22e671494d5c",
+                "adhoc xdm schema for dataset jojourneyversionsds_8e9d4f37-a8bf-4085-bfd5-3c893df100e7",
+                "adhoc xdm schema for dataset jojourneyversionsds_f877134c-9ce5-4ca2-b326-881c75f8a355"
+              ],
+              "total_items": 10,
+              "truncated_items": true
+            }
+          },
+          "claim_extractor": {
+            "claim_count": 6,
+            "claims": {
+              "items": [
+                {
+                  "hardness": "HARD",
+                  "span": "74",
+                  "text": "74",
+                  "type": "COUNT",
+                  "value": "74"
+                },
+                {
+                  "hardness": "HARD",
+                  "span": "Adhoc XDM Schema",
+                  "text": "Adhoc XDM Schema",
+                  "type": "ENTITY_NAME",
+                  "value": "Adhoc XDM Schema"
+                },
+                {
+                  "hardness": "HARD",
+                  "span": "Adhoc XDM Schema",
+                  "text": "Adhoc XDM Schema",
+                  "type": "ENTITY_NAME",
+                  "value": "Adhoc XDM Schema"
+                }
+              ],
+              "total_items": 6,
+              "truncated_items": true
+            }
+          },
+          "claim_matcher": {
+            "matches": {
+              "items": [
+                {
+                  "claim": {
+                    "hardness": "HARD",
+                    "span": "74",
+                    "text": "74",
+                    "type": "COUNT",
+                    "value": "74"
+                  },
+                  "reason": "count",
+                  "status": "SUPPORTED"
+                },
+                {
+                  "claim": {
+                    "hardness": "HARD",
+                    "span": "Adhoc XDM Schema",
+                    "text": "Adhoc XDM Schema",
+                    "type": "ENTITY_NAME",
+                    "value": "Adhoc XDM Schema"
+                  },
+                  "reason": "entity_name",
+                  "status": "SUPPORTED"
+                },
+                {
+                  "claim": {
+                    "hardness": "HARD",
+                    "span": "Adhoc XDM Schema",
+                    "text": "Adhoc XDM Schema",
+                    "type": "ENTITY_NAME",
+                    "value": "Adhoc XDM Schema"
+                  },
+                  "reason": "entity_name",
+                  "status": "SUPPORTED"
+                }
+              ],
+              "total_items": 6,
+              "truncated_items": true
+            }
+          },
+          "ok": true,
+          "supported_claims": {
+            "items": [
+              {
+                "hardness": "HARD",
+                "span": "74",
+                "text": "74",
+                "type": "COUNT",
+                "value": "74"
+              },
+              {
+                "hardness": "HARD",
+                "span": "Adhoc XDM Schema",
+                "text": "Adhoc XDM Schema",
+                "type": "ENTITY_NAME",
+                "value": "Adhoc XDM Schema"
+              },
+              {
+                "hardness": "HARD",
+                "span": "Adhoc XDM Schema",
+                "text": "Adhoc XDM Schema",
+                "type": "ENTITY_NAME",
+                "value": "Adhoc XDM Schema"
+              }
+            ],
+            "total_items": 6,
+            "truncated_items": true
+          }
+        }
       },
       "stage": "answer gate",
       "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-01T22:40:31.572497+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_final_answer_repair",
-      "correctness_role": "preserves LLM ownership while enforcing evidence boundaries",
-      "duration_ms": 0.0,
-      "effect": "returns gate errors to the LLM once; backend does not repair the answer itself",
-      "efficiency_role": "caps answer repair to one LLM call",
-      "input_summary": {
-        "failed_semantic": true,
-        "failed_syntax": false
-      },
-      "output": {
-        "preview": "{\"candidate\": {\"used_pass_ids\": {\"items\": [], \"total_items\": 0, \"truncated_items\": false}, \"final_answer\": \"Based on the local snapshot, there are 74 schemas. The first few include:\\n\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_961ddfca-2199-4783-b16c-9226938e0d93\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_10b7f335-021a-4ea3-9520-fa206cee8b69\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_27f3f2f7-ccb3-4699-8029-a5d5d1aa6066\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_14af09b4-941b-456c-8035-e05742c3d2b7\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_2a3be7fb-d4ff-44b4-96f4-c33801583cf4\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_b3db3db4-de1b-4984-9ac0-33e2935d3596\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_11f2c467-ed7e-4a05-8f50-87067d5d1e90\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_7da78a57-f2e3-4ea0-b6a9-19c14ede2665\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_cddc2c7b-23cb-4c77-9b7d-0d5bee7df8a8\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_2e86d9ad-8032-4a4b-8f9a-a088a7372c51\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_e507de24-3475-427e-a3ac-7a8acaa98a0b\\n- Lookalike Modeling Audiences Dataset (20260330173605)\\n- Adhoc XDM Schema for dataset uis_graph_export_stitchall_default_9f233cac-cd43-4b33-95d0-fa4016dba6f3\\n- Adhoc XDM Schema for dataset uis_cdc_archive_dataset_default_44e47eda-42b1-4273-a778-e58cdaadf89f\\n- Adhoc XDM Schema for dataset merged_profile_summary_export_c5d8a2db-c9b4-4d91-89d4-7b0dc7c83be1\\n- Adhoc schema for dim_date\\n- XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_overlap_by_namespace_and_segment. Random identifier: 9038f8ff-3915-42bc-9eb4-33649cb1bfd5\\n- XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_overlap_of_namespace_by_segment. Random identifier: 489e4273-4592-4d23-ae1d-6ebca5da5510\\n- XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_overlap_of_namespace. Random identifier: c6be6117-cabf-48f1-b4cc-d16e44e72604\\n- XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment_and_namespace. Random identifier: 5b45aef0-f38a-4e69-b47a-702e0b54f7ab\\n- XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment. Random identifier: fb1149fe-8136-4fdc-b984-74a290421d75\\n- XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_namespace. Random identifier: 06d7bba1-37ae-46ce-85d7-b736812b87ed\\n- XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile. Random identifier: 114ed137-d3d2-45a6-985a-8968e0375e85\\n- Adhoc XDM Schema for dataset hkg_adls_profile_count_history_0552412e-4c5d-40d6-b946-1503857c456a\\n- Activation System Audit Schema\\n- ComputedAttributesOutputSchema\\n- weRetail: Customer Actions\\n- Adhoc XDM Schema for dataset hkg_adls_segment_profile_history_48082438-53cd-4303-b5a8-132acdf83a88\\n- weRetail: CRM\\n- XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment_ai_models. Random identifier: 24276098-7cbb-4aad-9d8c-c4d4e4ecf1e0\\n- XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_ai_models. Random identifier: ad9891b5-81c5-4cb6-ae0c-52ce4dee218d\\n- XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment_and_namespace_trendlines. Random identifier: de12d896-5051-4db1-b573-9ca5c0a0049d\\n- XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment_trendlines. Random identifier: 812a8b82-7ace-4018-984f-f7f1039fab77\\n- XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_namespace_trendlines. Random identifier: ec3a3ac9-c302-483d-9ebd-ca6a914653b4\\n- AJO Live Activities Feedback Event Schema\\n- XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_trendlines. Random identifier: 8a5f8c7c-24fe-4449-a...",
-        "truncated": true
-      },
-      "stage": "llm-owned answer repair",
-      "technique": "single LLM-owned final answer repair",
-      "timestamp": "2026-06-01T22:41:25.459058+00:00"
+      "timestamp": "2026-06-01T23:15:06.782084+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -1181,11 +1306,11 @@
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
-        "answer_repair_attempts": 1,
-        "answer_semantic_gate_passed": false,
+        "answer_repair_attempts": 0,
+        "answer_semantic_gate_passed": true,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
-        "final_answer_supported_by_evidence": false,
+        "final_answer_supported_by_evidence": true,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 2,
@@ -1197,7 +1322,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-01T22:41:25.459771+00:00"
+      "timestamp": "2026-06-01T23:15:06.782169+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -1206,15 +1331,15 @@
       "effect": "returns the LLM-composed answer when gates pass, otherwise a safe evidence-state fallback",
       "efficiency_role": "no additional SQL/API calls",
       "input_summary": {
-        "answer_semantic_gate_passed": false
+        "answer_semantic_gate_passed": true
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
-        "answer_repair_attempts": 1,
-        "answer_semantic_gate_passed": false,
+        "answer_repair_attempts": 0,
+        "answer_semantic_gate_passed": true,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
-        "final_answer_supported_by_evidence": false,
+        "final_answer_supported_by_evidence": true,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 3,
@@ -1226,30 +1351,30 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-01T22:41:25.459916+00:00"
+      "timestamp": "2026-06-01T23:15:06.782566+00:00"
     }
   ],
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 3701,
+  "estimated_tokens": 1988,
   "execution_time": 0.0,
-  "final_answer": "I could not compose a verified final answer from the available runtime evidence.",
+  "final_answer": "Based on the local snapshot, there are 74 schemas. The first five are: Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c, Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7, Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355, Adhoc XDM Schema for dataset JOJourneyVersionsDs_961ddfca-2199-4783-b16c-9226938e0d93, and Adhoc XDM Schema for dataset JOJourneyVersionsDs_10b7f335-021a-4ea3-9520-fa206cee8b69.",
   "original_query": "What schemas do I have?",
   "planning_time": 0.0,
   "preprocessing_time": 0.0,
   "query_id": "hermes_toolcall_ambiguous_user_schemas",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 105.58221937529743,
+  "runtime": 29.223735874984413,
   "sql_call_count": 1,
   "steps": [
     {
-      "estimated_tokens": 1152,
+      "estimated_tokens": 1124,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/hermes_toolcall_ambiguous_user_schemas/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 1778
+      "prompt_tokens": 1750
     },
     {
-      "aggregation_instruction": "Return the list of schema names and IDs from the local snapshot.",
+      "aggregation_instruction": "",
       "api_request": null,
       "backend_unavailable": false,
       "diagnostics": {
@@ -1264,7 +1389,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 6086,
+        "planner_provider_latency_ms": 8080,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -1277,7 +1402,6 @@
         },
         "sdk_toolcall_semantic_ir_used": true,
         "semantic_ir_plan_preview": {
-          "aggregation_instruction": "Return the list of schema names and IDs from the local snapshot.",
           "route": "EVIDENCE",
           "tasks": {
             "items": [
@@ -1300,14 +1424,14 @@
                 "operation": "LIST",
                 "required": true,
                 "source": "LOCAL_SNAPSHOT",
-                "task_id": "schema_list"
+                "task_id": "schema_list_local"
               }
             ],
             "total_items": 1,
             "truncated_items": false
           }
         },
-        "semantic_ir_provider_latency_ms": 6086,
+        "semantic_ir_provider_latency_ms": 8078,
         "semantic_ir_repair_attempted": false,
         "semantic_ir_repair_success": false,
         "semantic_ir_task_count": 1,
@@ -1332,7 +1456,7 @@
           "expected_result": "List available schemas (blueprints) from the local snapshot.",
           "fallback": false,
           "optional": false,
-          "pass_id": "schema_list",
+          "pass_id": "schema_list_local",
           "path": "SQL",
           "sql": {
             "params": [],
@@ -1414,297 +1538,34 @@
       "caveats_included": [],
       "claimed_facts": [],
       "error_message": null,
-      "final_answer": "Based on the local snapshot, there are 74 schemas. The first few include:\n\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_961ddfca-2199-4783-b16c-9226938e0d93\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_10b7f335-021a-4ea3-9520-fa206cee8b69\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_27f3f2f7-ccb3-4699-8029-a5d5d1aa6066\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_14af09b4-941b-456c-8035-e05742c3d2b7\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_2a3be7fb-d4ff-44b4-96f4-c33801583cf4\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_b3db3db4-de1b-4984-9ac0-33e2935d3596\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_11f2c467-ed7e-4a05-8f50-87067d5d1e90\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_7da78a57-f2e3-4ea0-b6a9-19c14ede2665\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_cddc2c7b-23cb-4c77-9b7d-0d5bee7df8a8\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_2e86d9ad-8032-4a4b-8f9a-a088a7372c51\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_e507de24-3475-427e-a3ac-7a8acaa98a0b\n- Lookalike Modeling Audiences Dataset (20260330173605)\n- Adhoc XDM Schema for dataset uis_graph_export_stitchall_default_9f233cac-cd43-4b33-95d0-fa4016dba6f3\n- Adhoc XDM Schema for dataset uis_cdc_archive_dataset_default_44e47eda-42b1-4273-a778-e58cdaadf89f\n- Adhoc XDM Schema for dataset merged_profile_summary_export_c5d8a2db-c9b4-4d91-89d4-7b0dc7c83be1\n- Adhoc schema for dim_date\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_overlap_by_namespace_and_segment. Random identifier: 9038f8ff-3915-42bc-9eb4-33649cb1bfd5\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_overlap_of_namespace_by_segment. Random identifier: 489e4273-4592-4d23-ae1d-6ebca5da5510\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_overlap_of_namespace. Random identifier: c6be6117-cabf-48f1-b4cc-d16e44e72604\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment_and_namespace. Random identifier: 5b45aef0-f38a-4e69-b47a-702e0b54f7ab\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment. Random identifier: fb1149fe-8136-4fdc-b984-74a290421d75\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_namespace. Random identifier: 06d7bba1-37ae-46ce-85d6-b736812b87ed\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile. Random identifier: 114ed137-d3d2-45a6-985a-8968e0375e85\n- Adhoc XDM Schema for dataset hkg_adls_profile_count_history_0552412e-4c5d-40d6-b946-1503857c456a\n- Activation System Audit Schema\n- ComputedAttributesOutputSchema\n- weRetail: Customer Actions\n- Adhoc XDM Schema for dataset hkg_adls_segment_profile_history_48082438-53cd-4303-b5a8-132acdf83a88\n- weRetail: CRM\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment_ai_models. Random identifier: 24276098-7cbb-4aad-9d8c-c4d4e4ecf1e0\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_ai_models. Random identifier: ad9891b5-81c5-4cb6-ae0c-52ce4dee218d\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment_and_namespace_trendlines. Random identifier: de12d896-5051-4db1-b573-9ca5c0a0049d\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment_trendlines. Random identifier: 812a8b82-7ace-4018-984f-f7f1039fab77\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_namespace_trendlines. Random identifier: ec3a3ac9-c302-483d-9ebd-ca6a914653b4\n- AJO Live Activities Feedback Event Schema\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_trendlines. Random identifier: 8a5f8c7c-24fe-4449-a2e0-da968a0e6a30\n- AJO ExD Decision Event Schema\n- AJO Inbound Surfaces Schema\n- AJO Inbound Activity Event Schema\n- AJO STO Summary Schema\n- AJO Engageable Profile Schema\n- AJO Interactive Messaging Profile Schema\n- AJO Entity Record Schema\n- AJO Email BCC Feedback Event Schema\n- AJO Profile Counters Extension\n- AJO Classification Record Schema\n- AJO Email Tracking Experience Event Schema\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_overlap_of_segments. Random identifier: 26249717-9729-4fd6-85d6-b0c5fec6be19\n- AJO Consent Service Schema\n- AJO Push Profile Schema\n- AJO Push Tracking Experience Event Schema\n- AJO Message Feedback Event Schema\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_dim_ai_models. Random identifier: 5353144d-9f94-4410-bd59-eb3a9507acbe\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_dim_date. Random identifier: 65b72991-aff4-4f26-bbb0-f3be7b9c8f5a\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_dim_br_namespace_destinations. Random identifier: 6f8ecb92-64c0-4ba1-a7f4-6c538ea657a7\n-  XDM Schema",
+      "final_answer": "Based on the local snapshot, there are 74 schemas. The first five are: Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c, Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7, Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355, Adhoc XDM Schema for dataset JOJourneyVersionsDs_961ddfca-2199-4783-b16c-9226938e0d93, and Adhoc XDM Schema for dataset JOJourneyVersionsDs_10b7f335-021a-4ea3-9520-fa206cee8b69.",
       "kind": "llm_final_answer_composer",
       "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
       "parse_error": false,
       "provider": "openai",
-      "raw_preview": {
-        "preview": "\"Based on the local snapshot, there are 74 schemas. The first few include:\\n\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_961ddfca-2199-4783-b16c-9226938e0d93\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_10b7f335-021a-4ea3-9520-fa206cee8b69\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_27f3f2f7-ccb3-4699-8029-a5d5d1aa6066\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_14af09b4-941b-456c-8035-e05742c3d2b7\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_2a3be7fb-d4ff-44b4-96f4-c33801583cf4\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_b3db3db4-de1b-4984-9ac0-33e2935d3596\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_11f2c467-ed7e-4a05-8f50-87067d5d1e90\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_7da78a57-f2e3-4ea0-b6a9-19c14ede2665\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_cddc2c7b-23cb-4c77-9b7d-0d5bee7df8a8\\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_2e8...",
-        "truncated": true
-      },
+      "raw_preview": "Based on the local snapshot, there are 74 schemas. The first five are: Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c, Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7, Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355, Adhoc XDM Schema for dataset JOJourneyVersionsDs_961ddfca-2199-4783-b16c-9226938e0d93, and Adhoc XDM Schema for dataset JOJourneyVersionsDs_10b7f335-021a-4ea3-9520-fa206cee8b69.",
       "unanswered_subtasks": [],
       "used_pass_ids": []
     },
     {
       "answer_composer_used": "LLMFinalAnswerComposer",
-      "answer_repair_attempts": 1,
-      "answer_semantic_gate_passed": false,
+      "answer_repair_attempts": 0,
+      "answer_semantic_gate_passed": true,
       "answer_syntax_gate_passed": true,
       "deterministic_answer_template_used": false,
-      "final_answer_supported_by_evidence": false,
+      "final_answer_supported_by_evidence": true,
       "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
       "llm_owned_final_answer": true,
       "semantic_gate": {
-        "error_message": "Final answer contains a hard claim not supported by runtime evidence.",
-        "error_type": "unsupported_claim",
+        "error_message": null,
+        "error_type": null,
         "missing_required_fields": [],
-        "passed": false,
+        "passed": true,
         "scope_errors": [],
-        "unsupported_claims": [
-          {
-            "hardness": "HARD",
-            "span": "9038f8ff-3915-42bc-9eb4-33649cb1bfd5",
-            "text": "9038f8ff-3915-42bc-9eb4-33649cb1bfd5",
-            "type": "ID",
-            "value": "9038f8ff-3915-42bc-9eb4-33649cb1bfd5"
-          },
-          {
-            "hardness": "HARD",
-            "span": "489e4273-4592-4d23-ae1d-6ebca5da5510",
-            "text": "489e4273-4592-4d23-ae1d-6ebca5da5510",
-            "type": "ID",
-            "value": "489e4273-4592-4d23-ae1d-6ebca5da5510"
-          },
-          {
-            "hardness": "HARD",
-            "span": "c6be6117-cabf-48f1-b4cc-d16e44e72604",
-            "text": "c6be6117-cabf-48f1-b4cc-d16e44e72604",
-            "type": "ID",
-            "value": "c6be6117-cabf-48f1-b4cc-d16e44e72604"
-          },
-          {
-            "hardness": "HARD",
-            "span": "5b45aef0-f38a-4e69-b47a-702e0b54f7ab",
-            "text": "5b45aef0-f38a-4e69-b47a-702e0b54f7ab",
-            "type": "ID",
-            "value": "5b45aef0-f38a-4e69-b47a-702e0b54f7ab"
-          },
-          {
-            "hardness": "HARD",
-            "span": "fb1149fe-8136-4fdc-b984-74a290421d75",
-            "text": "fb1149fe-8136-4fdc-b984-74a290421d75",
-            "type": "ID",
-            "value": "fb1149fe-8136-4fdc-b984-74a290421d75"
-          },
-          {
-            "hardness": "HARD",
-            "span": "06d7bba1-37ae-46ce-85d6-b736812b87ed",
-            "text": "06d7bba1-37ae-46ce-85d6-b736812b87ed",
-            "type": "ID",
-            "value": "06d7bba1-37ae-46ce-85d6-b736812b87ed"
-          },
-          {
-            "hardness": "HARD",
-            "span": "114ed137-d3d2-45a6-985a-8968e0375e85",
-            "text": "114ed137-d3d2-45a6-985a-8968e0375e85",
-            "type": "ID",
-            "value": "114ed137-d3d2-45a6-985a-8968e0375e85"
-          },
-          {
-            "hardness": "HARD",
-            "span": "24276098-7cbb-4aad-9d8c-c4d4e4ecf1e0",
-            "text": "24276098-7cbb-4aad-9d8c-c4d4e4ecf1e0",
-            "type": "ID",
-            "value": "24276098-7cbb-4aad-9d8c-c4d4e4ecf1e0"
-          },
-          {
-            "hardness": "HARD",
-            "span": "ad9891b5-81c5-4cb6-ae0c-52ce4dee218d",
-            "text": "ad9891b5-81c5-4cb6-ae0c-52ce4dee218d",
-            "type": "ID",
-            "value": "ad9891b5-81c5-4cb6-ae0c-52ce4dee218d"
-          },
-          {
-            "hardness": "HARD",
-            "span": "de12d896-5051-4db1-b573-9ca5c0a0049d",
-            "text": "de12d896-5051-4db1-b573-9ca5c0a0049d",
-            "type": "ID",
-            "value": "de12d896-5051-4db1-b573-9ca5c0a0049d"
-          },
-          {
-            "hardness": "HARD",
-            "span": "812a8b82-7ace-4018-984f-f7f1039fab77",
-            "text": "812a8b82-7ace-4018-984f-f7f1039fab77",
-            "type": "ID",
-            "value": "812a8b82-7ace-4018-984f-f7f1039fab77"
-          },
-          {
-            "hardness": "HARD",
-            "span": "ec3a3ac9-c302-483d-9ebd-ca6a914653b4",
-            "text": "ec3a3ac9-c302-483d-9ebd-ca6a914653b4",
-            "type": "ID",
-            "value": "ec3a3ac9-c302-483d-9ebd-ca6a914653b4"
-          },
-          {
-            "hardness": "HARD",
-            "span": "8a5f8c7c-24fe-4449-a2e0-da968a0e6a30",
-            "text": "8a5f8c7c-24fe-4449-a2e0-da968a0e6a30",
-            "type": "ID",
-            "value": "8a5f8c7c-24fe-4449-a2e0-da968a0e6a30"
-          },
-          {
-            "hardness": "HARD",
-            "span": "26249717-9729-4fd6-85d6-b0c5fec6be19",
-            "text": "26249717-9729-4fd6-85d6-b0c5fec6be19",
-            "type": "ID",
-            "value": "26249717-9729-4fd6-85d6-b0c5fec6be19"
-          },
-          {
-            "hardness": "HARD",
-            "span": "5353144d-9f94-4410-bd59-eb3a9507acbe",
-            "text": "5353144d-9f94-4410-bd59-eb3a9507acbe",
-            "type": "ID",
-            "value": "5353144d-9f94-4410-bd59-eb3a9507acbe"
-          },
-          {
-            "hardness": "HARD",
-            "span": "65b72991-aff4-4f26-bbb0-f3be7b9c8f5a",
-            "text": "65b72991-aff4-4f26-bbb0-f3be7b9c8f5a",
-            "type": "ID",
-            "value": "65b72991-aff4-4f26-bbb0-f3be7b9c8f5a"
-          },
-          {
-            "hardness": "HARD",
-            "span": "6f8ecb92-64c0-4ba1-a7f4-6c538ea657a7",
-            "text": "6f8ecb92-64c0-4ba1-a7f4-6c538ea657a7",
-            "type": "ID",
-            "value": "6f8ecb92-64c0-4ba1-a7f4-6c538ea657a7"
-          },
-          {
-            "hardness": "HARD",
-            "span": "20260330173605",
-            "text": "20260330173605",
-            "type": "COUNT",
-            "value": "20260330173605"
-          },
-          {
-            "hardness": "HARD",
-            "span": "Lookalike Modeling Audiences Dataset",
-            "text": "Lookalike Modeling Audiences Dataset",
-            "type": "ENTITY_NAME",
-            "value": "Lookalike Modeling Audiences Dataset"
-          },
-          {
-            "hardness": "HARD",
-            "span": "Activation System Audit Schema",
-            "text": "Activation System Audit Schema",
-            "type": "ENTITY_NAME",
-            "value": "Activation System Audit Schema"
-          },
-          {
-            "hardness": "HARD",
-            "span": "Customer Actions",
-            "text": "Customer Actions",
-            "type": "ENTITY_NAME",
-            "value": "Customer Actions"
-          },
-          {
-            "hardness": "HARD",
-            "span": "AJO Live Activities Feedback Event Schema",
-            "text": "AJO Live Activities Feedback Event Schema",
-            "type": "ENTITY_NAME",
-            "value": "AJO Live Activities Feedback Event Schema"
-          },
-          {
-            "hardness": "HARD",
-            "span": "AJO ExD Decision Event Schema",
-            "text": "AJO ExD Decision Event Schema",
-            "type": "ENTITY_NAME",
-            "value": "AJO ExD Decision Event Schema"
-          },
-          {
-            "hardness": "HARD",
-            "span": "AJO Inbound Surfaces Schema",
-            "text": "AJO Inbound Surfaces Schema",
-            "type": "ENTITY_NAME",
-            "value": "AJO Inbound Surfaces Schema"
-          },
-          {
-            "hardness": "HARD",
-            "span": "AJO Inbound Activity Event Schema",
-            "text": "AJO Inbound Activity Event Schema",
-            "type": "ENTITY_NAME",
-            "value": "AJO Inbound Activity Event Schema"
-          },
-          {
-            "hardness": "HARD",
-            "span": "AJO STO Summary Schema",
-            "text": "AJO STO Summary Schema",
-            "type": "ENTITY_NAME",
-            "value": "AJO STO Summary Schema"
-          },
-          {
-            "hardness": "HARD",
-            "span": "AJO Engageable Profile Schema",
-            "text": "AJO Engageable Profile Schema",
-            "type": "ENTITY_NAME",
-            "value": "AJO Engageable Profile Schema"
-          },
-          {
-            "hardness": "HARD",
-            "span": "AJO Interactive Messaging Profile Schema",
-            "text": "AJO Interactive Messaging Profile Schema",
-            "type": "ENTITY_NAME",
-            "value": "AJO Interactive Messaging Profile Schema"
-          },
-          {
-            "hardness": "HARD",
-            "span": "AJO Entity Record Schema",
-            "text": "AJO Entity Record Schema",
-            "type": "ENTITY_NAME",
-            "value": "AJO Entity Record Schema"
-          },
-          {
-            "hardness": "HARD",
-            "span": "AJO Email BCC Feedback Event Schema",
-            "text": "AJO Email BCC Feedback Event Schema",
-            "type": "ENTITY_NAME",
-            "value": "AJO Email BCC Feedback Event Schema"
-          },
-          {
-            "hardness": "HARD",
-            "span": "AJO Profile Counters Extension",
-            "text": "AJO Profile Counters Extension",
-            "type": "ENTITY_NAME",
-            "value": "AJO Profile Counters Extension"
-          },
-          {
-            "hardness": "HARD",
-            "span": "AJO Classification Record Schema",
-            "text": "AJO Classification Record Schema",
-            "type": "ENTITY_NAME",
-            "value": "AJO Classification Record Schema"
-          },
-          {
-            "hardness": "HARD",
-            "span": "AJO Email Tracking Experience Event Schema",
-            "text": "AJO Email Tracking Experience Event Schema",
-            "type": "ENTITY_NAME",
-            "value": "AJO Email Tracking Experience Event Schema"
-          },
-          {
-            "hardness": "HARD",
-            "span": "AJO Consent Service Schema",
-            "text": "AJO Consent Service Schema",
-            "type": "ENTITY_NAME",
-            "value": "AJO Consent Service Schema"
-          },
-          {
-            "hardness": "HARD",
-            "span": "AJO Push Profile Schema",
-            "text": "AJO Push Profile Schema",
-            "type": "ENTITY_NAME",
-            "value": "AJO Push Profile Schema"
-          },
-          {
-            "hardness": "HARD",
-            "span": "AJO Push Tracking Experience Event Schema",
-            "text": "AJO Push Tracking Experience Event Schema",
-            "type": "ENTITY_NAME",
-            "value": "AJO Push Tracking Experience Event Schema"
-          },
-          {
-            "hardness": "HARD",
-            "span": "AJO Message Feedback Event Schema",
-            "text": "AJO Message Feedback Event Schema",
-            "type": "ENTITY_NAME",
-            "value": "AJO Message Feedback Event Schema"
-          }
-        ],
+        "unsupported_claims": [],
         "verifier": {
-          "action": "FALLBACK_DETERMINISTIC",
+          "action": "ACCEPT",
           "allowed_fact_index": {
             "allowed_caveats": [],
             "api_error_scopes": [],
@@ -1713,26 +1574,26 @@
             ],
             "dates": [],
             "evidence_strings": [
-              "adhoc xdm schema for dataset jojourneyversionsds_8e9d4f37-a8bf-4085-bfd5-3c893df100e7",
+              "482df6417bca3933f123d0e202df81fece46a5bd6fd9c926",
+              "9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5",
               "adhoc xdm schema for dataset jojourneyversionsds_b3db3db4-de1b-4984-9ac0-33e2935d3596",
               "adhoc xdm schema for dataset jojourneyversionsds_2a3be7fb-d4ff-44b4-96f4-c33801583cf4",
               "d809e0ddf27c8bf629425b3ee3df2000e2c2de4655bb54b3",
-              "ce9c03ced11d383065fa28df5505ef0220e13341089e1880",
-              "9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5",
-              "8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc",
-              "adhoc xdm schema for dataset jojourneyversionsds_27f3f2f7-ccb3-4699-8029-a5d5d1aa6066",
-              "adhoc xdm schema for dataset jojourneyversionsds_e0f2475b-1232-425e-869d-22e671494d5c",
-              "bab97535ccf8149a6c890b363b2da7e57e23ade653ace175",
               "adhoc xdm schema for dataset jojourneyversionsds_10b7f335-021a-4ea3-9520-fa206cee8b69",
-              "adhoc xdm schema for dataset jojourneyversionsds_961ddfca-2199-4783-b16c-9226938e0d93",
-              "adhoc xdm schema for dataset jojourneyversionsds_f877134c-9ce5-4ca2-b326-881c75f8a355",
-              "f67782126866728013a531ae680c9e9bad9e22259d83fac9",
-              "482df6417bca3933f123d0e202df81fece46a5bd6fd9c926",
+              "adhoc xdm schema for dataset jojourneyversionsds_e0f2475b-1232-425e-869d-22e671494d5c",
               "adhoc xdm schema for dataset jojourneyversionsds_11f2c467-ed7e-4a05-8f50-87067d5d1e90",
-              "adhoc xdm schema for dataset jojourneyversionsds_14af09b4-941b-456c-8035-e05742c3d2b7",
-              "d1f6d78ece9f26680ec81aba98a0e9a0bd30635e991281d",
+              "adhoc xdm schema for dataset jojourneyversionsds_961ddfca-2199-4783-b16c-9226938e0d93",
+              "242035dec594cda7b0da761c3284d3f7291408549be9c6fd",
+              "ce9c03ced11d383065fa28df5505ef0220e13341089e1880",
+              "adhoc xdm schema for dataset jojourneyversionsds_f877134c-9ce5-4ca2-b326-881c75f8a355",
+              "adhoc xdm schema for dataset jojourneyversionsds_27f3f2f7-ccb3-4699-8029-a5d5d1aa6066",
               "46739dcc77a7f06982b831c340c47eac7927b40a7ee3314b",
-              "242035dec594cda7b0da761c3284d3f7291408549be9c6fd"
+              "8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc",
+              "adhoc xdm schema for dataset jojourneyversionsds_14af09b4-941b-456c-8035-e05742c3d2b7",
+              "adhoc xdm schema for dataset jojourneyversionsds_8e9d4f37-a8bf-4085-bfd5-3c893df100e7",
+              "d1f6d78ece9f26680ec81aba98a0e9a0bd30635e991281d",
+              "bab97535ccf8149a6c890b363b2da7e57e23ade653ace175",
+              "f67782126866728013a531ae680c9e9bad9e22259d83fac9"
             ],
             "ids": [
               "8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc"
@@ -1756,127 +1617,8 @@
           },
           "ambiguous_claims": [],
           "claim_extractor": {
-            "claim_count": 75,
+            "claim_count": 6,
             "claims": [
-              {
-                "hardness": "HARD",
-                "span": "9038f8ff-3915-42bc-9eb4-33649cb1bfd5",
-                "text": "9038f8ff-3915-42bc-9eb4-33649cb1bfd5",
-                "type": "ID",
-                "value": "9038f8ff-3915-42bc-9eb4-33649cb1bfd5"
-              },
-              {
-                "hardness": "HARD",
-                "span": "489e4273-4592-4d23-ae1d-6ebca5da5510",
-                "text": "489e4273-4592-4d23-ae1d-6ebca5da5510",
-                "type": "ID",
-                "value": "489e4273-4592-4d23-ae1d-6ebca5da5510"
-              },
-              {
-                "hardness": "HARD",
-                "span": "c6be6117-cabf-48f1-b4cc-d16e44e72604",
-                "text": "c6be6117-cabf-48f1-b4cc-d16e44e72604",
-                "type": "ID",
-                "value": "c6be6117-cabf-48f1-b4cc-d16e44e72604"
-              },
-              {
-                "hardness": "HARD",
-                "span": "5b45aef0-f38a-4e69-b47a-702e0b54f7ab",
-                "text": "5b45aef0-f38a-4e69-b47a-702e0b54f7ab",
-                "type": "ID",
-                "value": "5b45aef0-f38a-4e69-b47a-702e0b54f7ab"
-              },
-              {
-                "hardness": "HARD",
-                "span": "fb1149fe-8136-4fdc-b984-74a290421d75",
-                "text": "fb1149fe-8136-4fdc-b984-74a290421d75",
-                "type": "ID",
-                "value": "fb1149fe-8136-4fdc-b984-74a290421d75"
-              },
-              {
-                "hardness": "HARD",
-                "span": "06d7bba1-37ae-46ce-85d6-b736812b87ed",
-                "text": "06d7bba1-37ae-46ce-85d6-b736812b87ed",
-                "type": "ID",
-                "value": "06d7bba1-37ae-46ce-85d6-b736812b87ed"
-              },
-              {
-                "hardness": "HARD",
-                "span": "114ed137-d3d2-45a6-985a-8968e0375e85",
-                "text": "114ed137-d3d2-45a6-985a-8968e0375e85",
-                "type": "ID",
-                "value": "114ed137-d3d2-45a6-985a-8968e0375e85"
-              },
-              {
-                "hardness": "HARD",
-                "span": "24276098-7cbb-4aad-9d8c-c4d4e4ecf1e0",
-                "text": "24276098-7cbb-4aad-9d8c-c4d4e4ecf1e0",
-                "type": "ID",
-                "value": "24276098-7cbb-4aad-9d8c-c4d4e4ecf1e0"
-              },
-              {
-                "hardness": "HARD",
-                "span": "ad9891b5-81c5-4cb6-ae0c-52ce4dee218d",
-                "text": "ad9891b5-81c5-4cb6-ae0c-52ce4dee218d",
-                "type": "ID",
-                "value": "ad9891b5-81c5-4cb6-ae0c-52ce4dee218d"
-              },
-              {
-                "hardness": "HARD",
-                "span": "de12d896-5051-4db1-b573-9ca5c0a0049d",
-                "text": "de12d896-5051-4db1-b573-9ca5c0a0049d",
-                "type": "ID",
-                "value": "de12d896-5051-4db1-b573-9ca5c0a0049d"
-              },
-              {
-                "hardness": "HARD",
-                "span": "812a8b82-7ace-4018-984f-f7f1039fab77",
-                "text": "812a8b82-7ace-4018-984f-f7f1039fab77",
-                "type": "ID",
-                "value": "812a8b82-7ace-4018-984f-f7f1039fab77"
-              },
-              {
-                "hardness": "HARD",
-                "span": "ec3a3ac9-c302-483d-9ebd-ca6a914653b4",
-                "text": "ec3a3ac9-c302-483d-9ebd-ca6a914653b4",
-                "type": "ID",
-                "value": "ec3a3ac9-c302-483d-9ebd-ca6a914653b4"
-              },
-              {
-                "hardness": "HARD",
-                "span": "8a5f8c7c-24fe-4449-a2e0-da968a0e6a30",
-                "text": "8a5f8c7c-24fe-4449-a2e0-da968a0e6a30",
-                "type": "ID",
-                "value": "8a5f8c7c-24fe-4449-a2e0-da968a0e6a30"
-              },
-              {
-                "hardness": "HARD",
-                "span": "26249717-9729-4fd6-85d6-b0c5fec6be19",
-                "text": "26249717-9729-4fd6-85d6-b0c5fec6be19",
-                "type": "ID",
-                "value": "26249717-9729-4fd6-85d6-b0c5fec6be19"
-              },
-              {
-                "hardness": "HARD",
-                "span": "5353144d-9f94-4410-bd59-eb3a9507acbe",
-                "text": "5353144d-9f94-4410-bd59-eb3a9507acbe",
-                "type": "ID",
-                "value": "5353144d-9f94-4410-bd59-eb3a9507acbe"
-              },
-              {
-                "hardness": "HARD",
-                "span": "65b72991-aff4-4f26-bbb0-f3be7b9c8f5a",
-                "text": "65b72991-aff4-4f26-bbb0-f3be7b9c8f5a",
-                "type": "ID",
-                "value": "65b72991-aff4-4f26-bbb0-f3be7b9c8f5a"
-              },
-              {
-                "hardness": "HARD",
-                "span": "6f8ecb92-64c0-4ba1-a7f4-6c538ea657a7",
-                "text": "6f8ecb92-64c0-4ba1-a7f4-6c538ea657a7",
-                "type": "ID",
-                "value": "6f8ecb92-64c0-4ba1-a7f4-6c538ea657a7"
-              },
               {
                 "hardness": "HARD",
                 "span": "74",
@@ -1886,13 +1628,6 @@
               },
               {
                 "hardness": "HARD",
-                "span": "20260330173605",
-                "text": "20260330173605",
-                "type": "COUNT",
-                "value": "20260330173605"
-              },
-              {
-                "hardness": "HARD",
                 "span": "Adhoc XDM Schema",
                 "text": "Adhoc XDM Schema",
                 "type": "ENTITY_NAME",
@@ -1925,555 +1660,11 @@
                 "text": "Adhoc XDM Schema",
                 "type": "ENTITY_NAME",
                 "value": "Adhoc XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Adhoc XDM Schema",
-                "text": "Adhoc XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "Adhoc XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Adhoc XDM Schema",
-                "text": "Adhoc XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "Adhoc XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Adhoc XDM Schema",
-                "text": "Adhoc XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "Adhoc XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Adhoc XDM Schema",
-                "text": "Adhoc XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "Adhoc XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Adhoc XDM Schema",
-                "text": "Adhoc XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "Adhoc XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Adhoc XDM Schema",
-                "text": "Adhoc XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "Adhoc XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Adhoc XDM Schema",
-                "text": "Adhoc XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "Adhoc XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Adhoc XDM Schema",
-                "text": "Adhoc XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "Adhoc XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Adhoc XDM Schema",
-                "text": "Adhoc XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "Adhoc XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Lookalike Modeling Audiences Dataset",
-                "text": "Lookalike Modeling Audiences Dataset",
-                "type": "ENTITY_NAME",
-                "value": "Lookalike Modeling Audiences Dataset"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Adhoc XDM Schema",
-                "text": "Adhoc XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "Adhoc XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Adhoc XDM Schema",
-                "text": "Adhoc XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "Adhoc XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Adhoc XDM Schema",
-                "text": "Adhoc XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "Adhoc XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "XDM Schema",
-                "text": "XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "XDM Schema",
-                "text": "XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "XDM Schema",
-                "text": "XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "XDM Schema",
-                "text": "XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "XDM Schema",
-                "text": "XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "XDM Schema",
-                "text": "XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "XDM Schema",
-                "text": "XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Adhoc XDM Schema",
-                "text": "Adhoc XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "Adhoc XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Activation System Audit Schema",
-                "text": "Activation System Audit Schema",
-                "type": "ENTITY_NAME",
-                "value": "Activation System Audit Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Customer Actions",
-                "text": "Customer Actions",
-                "type": "ENTITY_NAME",
-                "value": "Customer Actions"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Adhoc XDM Schema",
-                "text": "Adhoc XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "Adhoc XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "XDM Schema",
-                "text": "XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "XDM Schema",
-                "text": "XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "XDM Schema",
-                "text": "XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "XDM Schema",
-                "text": "XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "XDM Schema",
-                "text": "XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "AJO Live Activities Feedback Event Schema",
-                "text": "AJO Live Activities Feedback Event Schema",
-                "type": "ENTITY_NAME",
-                "value": "AJO Live Activities Feedback Event Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "XDM Schema",
-                "text": "XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "AJO ExD Decision Event Schema",
-                "text": "AJO ExD Decision Event Schema",
-                "type": "ENTITY_NAME",
-                "value": "AJO ExD Decision Event Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "AJO Inbound Surfaces Schema",
-                "text": "AJO Inbound Surfaces Schema",
-                "type": "ENTITY_NAME",
-                "value": "AJO Inbound Surfaces Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "AJO Inbound Activity Event Schema",
-                "text": "AJO Inbound Activity Event Schema",
-                "type": "ENTITY_NAME",
-                "value": "AJO Inbound Activity Event Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "AJO STO Summary Schema",
-                "text": "AJO STO Summary Schema",
-                "type": "ENTITY_NAME",
-                "value": "AJO STO Summary Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "AJO Engageable Profile Schema",
-                "text": "AJO Engageable Profile Schema",
-                "type": "ENTITY_NAME",
-                "value": "AJO Engageable Profile Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "AJO Interactive Messaging Profile Schema",
-                "text": "AJO Interactive Messaging Profile Schema",
-                "type": "ENTITY_NAME",
-                "value": "AJO Interactive Messaging Profile Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "AJO Entity Record Schema",
-                "text": "AJO Entity Record Schema",
-                "type": "ENTITY_NAME",
-                "value": "AJO Entity Record Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "AJO Email BCC Feedback Event Schema",
-                "text": "AJO Email BCC Feedback Event Schema",
-                "type": "ENTITY_NAME",
-                "value": "AJO Email BCC Feedback Event Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "AJO Profile Counters Extension",
-                "text": "AJO Profile Counters Extension",
-                "type": "ENTITY_NAME",
-                "value": "AJO Profile Counters Extension"
-              },
-              {
-                "hardness": "HARD",
-                "span": "AJO Classification Record Schema",
-                "text": "AJO Classification Record Schema",
-                "type": "ENTITY_NAME",
-                "value": "AJO Classification Record Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "AJO Email Tracking Experience Event Schema",
-                "text": "AJO Email Tracking Experience Event Schema",
-                "type": "ENTITY_NAME",
-                "value": "AJO Email Tracking Experience Event Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "XDM Schema",
-                "text": "XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "AJO Consent Service Schema",
-                "text": "AJO Consent Service Schema",
-                "type": "ENTITY_NAME",
-                "value": "AJO Consent Service Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "AJO Push Profile Schema",
-                "text": "AJO Push Profile Schema",
-                "type": "ENTITY_NAME",
-                "value": "AJO Push Profile Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "AJO Push Tracking Experience Event Schema",
-                "text": "AJO Push Tracking Experience Event Schema",
-                "type": "ENTITY_NAME",
-                "value": "AJO Push Tracking Experience Event Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "AJO Message Feedback Event Schema",
-                "text": "AJO Message Feedback Event Schema",
-                "type": "ENTITY_NAME",
-                "value": "AJO Message Feedback Event Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "XDM Schema",
-                "text": "XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "XDM Schema",
-                "text": "XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "XDM Schema",
-                "text": "XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "XDM Schema"
-              },
-              {
-                "hardness": "HARD",
-                "span": "XDM Schema",
-                "text": "XDM Schema",
-                "type": "ENTITY_NAME",
-                "value": "XDM Schema"
               }
             ]
           },
           "claim_matcher": {
             "matches": [
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "9038f8ff-3915-42bc-9eb4-33649cb1bfd5",
-                  "text": "9038f8ff-3915-42bc-9eb4-33649cb1bfd5",
-                  "type": "ID",
-                  "value": "9038f8ff-3915-42bc-9eb4-33649cb1bfd5"
-                },
-                "reason": "id_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "489e4273-4592-4d23-ae1d-6ebca5da5510",
-                  "text": "489e4273-4592-4d23-ae1d-6ebca5da5510",
-                  "type": "ID",
-                  "value": "489e4273-4592-4d23-ae1d-6ebca5da5510"
-                },
-                "reason": "id_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "c6be6117-cabf-48f1-b4cc-d16e44e72604",
-                  "text": "c6be6117-cabf-48f1-b4cc-d16e44e72604",
-                  "type": "ID",
-                  "value": "c6be6117-cabf-48f1-b4cc-d16e44e72604"
-                },
-                "reason": "id_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "5b45aef0-f38a-4e69-b47a-702e0b54f7ab",
-                  "text": "5b45aef0-f38a-4e69-b47a-702e0b54f7ab",
-                  "type": "ID",
-                  "value": "5b45aef0-f38a-4e69-b47a-702e0b54f7ab"
-                },
-                "reason": "id_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "fb1149fe-8136-4fdc-b984-74a290421d75",
-                  "text": "fb1149fe-8136-4fdc-b984-74a290421d75",
-                  "type": "ID",
-                  "value": "fb1149fe-8136-4fdc-b984-74a290421d75"
-                },
-                "reason": "id_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "06d7bba1-37ae-46ce-85d6-b736812b87ed",
-                  "text": "06d7bba1-37ae-46ce-85d6-b736812b87ed",
-                  "type": "ID",
-                  "value": "06d7bba1-37ae-46ce-85d6-b736812b87ed"
-                },
-                "reason": "id_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "114ed137-d3d2-45a6-985a-8968e0375e85",
-                  "text": "114ed137-d3d2-45a6-985a-8968e0375e85",
-                  "type": "ID",
-                  "value": "114ed137-d3d2-45a6-985a-8968e0375e85"
-                },
-                "reason": "id_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "24276098-7cbb-4aad-9d8c-c4d4e4ecf1e0",
-                  "text": "24276098-7cbb-4aad-9d8c-c4d4e4ecf1e0",
-                  "type": "ID",
-                  "value": "24276098-7cbb-4aad-9d8c-c4d4e4ecf1e0"
-                },
-                "reason": "id_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "ad9891b5-81c5-4cb6-ae0c-52ce4dee218d",
-                  "text": "ad9891b5-81c5-4cb6-ae0c-52ce4dee218d",
-                  "type": "ID",
-                  "value": "ad9891b5-81c5-4cb6-ae0c-52ce4dee218d"
-                },
-                "reason": "id_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "de12d896-5051-4db1-b573-9ca5c0a0049d",
-                  "text": "de12d896-5051-4db1-b573-9ca5c0a0049d",
-                  "type": "ID",
-                  "value": "de12d896-5051-4db1-b573-9ca5c0a0049d"
-                },
-                "reason": "id_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "812a8b82-7ace-4018-984f-f7f1039fab77",
-                  "text": "812a8b82-7ace-4018-984f-f7f1039fab77",
-                  "type": "ID",
-                  "value": "812a8b82-7ace-4018-984f-f7f1039fab77"
-                },
-                "reason": "id_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "ec3a3ac9-c302-483d-9ebd-ca6a914653b4",
-                  "text": "ec3a3ac9-c302-483d-9ebd-ca6a914653b4",
-                  "type": "ID",
-                  "value": "ec3a3ac9-c302-483d-9ebd-ca6a914653b4"
-                },
-                "reason": "id_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "8a5f8c7c-24fe-4449-a2e0-da968a0e6a30",
-                  "text": "8a5f8c7c-24fe-4449-a2e0-da968a0e6a30",
-                  "type": "ID",
-                  "value": "8a5f8c7c-24fe-4449-a2e0-da968a0e6a30"
-                },
-                "reason": "id_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "26249717-9729-4fd6-85d6-b0c5fec6be19",
-                  "text": "26249717-9729-4fd6-85d6-b0c5fec6be19",
-                  "type": "ID",
-                  "value": "26249717-9729-4fd6-85d6-b0c5fec6be19"
-                },
-                "reason": "id_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "5353144d-9f94-4410-bd59-eb3a9507acbe",
-                  "text": "5353144d-9f94-4410-bd59-eb3a9507acbe",
-                  "type": "ID",
-                  "value": "5353144d-9f94-4410-bd59-eb3a9507acbe"
-                },
-                "reason": "id_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "65b72991-aff4-4f26-bbb0-f3be7b9c8f5a",
-                  "text": "65b72991-aff4-4f26-bbb0-f3be7b9c8f5a",
-                  "type": "ID",
-                  "value": "65b72991-aff4-4f26-bbb0-f3be7b9c8f5a"
-                },
-                "reason": "id_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "6f8ecb92-64c0-4ba1-a7f4-6c538ea657a7",
-                  "text": "6f8ecb92-64c0-4ba1-a7f4-6c538ea657a7",
-                  "type": "ID",
-                  "value": "6f8ecb92-64c0-4ba1-a7f4-6c538ea657a7"
-                },
-                "reason": "id_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
               {
                 "claim": {
                   "hardness": "HARD",
@@ -2488,17 +1679,6 @@
               {
                 "claim": {
                   "hardness": "HARD",
-                  "span": "20260330173605",
-                  "text": "20260330173605",
-                  "type": "COUNT",
-                  "value": "20260330173605"
-                },
-                "reason": "count_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
                   "span": "Adhoc XDM Schema",
                   "text": "Adhoc XDM Schema",
                   "type": "ENTITY_NAME",
@@ -2547,567 +1727,6 @@
                   "text": "Adhoc XDM Schema",
                   "type": "ENTITY_NAME",
                   "value": "Adhoc XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Adhoc XDM Schema",
-                  "text": "Adhoc XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "Adhoc XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Adhoc XDM Schema",
-                  "text": "Adhoc XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "Adhoc XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Adhoc XDM Schema",
-                  "text": "Adhoc XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "Adhoc XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Adhoc XDM Schema",
-                  "text": "Adhoc XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "Adhoc XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Adhoc XDM Schema",
-                  "text": "Adhoc XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "Adhoc XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Adhoc XDM Schema",
-                  "text": "Adhoc XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "Adhoc XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Adhoc XDM Schema",
-                  "text": "Adhoc XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "Adhoc XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Adhoc XDM Schema",
-                  "text": "Adhoc XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "Adhoc XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Adhoc XDM Schema",
-                  "text": "Adhoc XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "Adhoc XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Lookalike Modeling Audiences Dataset",
-                  "text": "Lookalike Modeling Audiences Dataset",
-                  "type": "ENTITY_NAME",
-                  "value": "Lookalike Modeling Audiences Dataset"
-                },
-                "reason": "entity_name_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Adhoc XDM Schema",
-                  "text": "Adhoc XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "Adhoc XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Adhoc XDM Schema",
-                  "text": "Adhoc XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "Adhoc XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Adhoc XDM Schema",
-                  "text": "Adhoc XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "Adhoc XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "XDM Schema",
-                  "text": "XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "XDM Schema",
-                  "text": "XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "XDM Schema",
-                  "text": "XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "XDM Schema",
-                  "text": "XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "XDM Schema",
-                  "text": "XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "XDM Schema",
-                  "text": "XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "XDM Schema",
-                  "text": "XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Adhoc XDM Schema",
-                  "text": "Adhoc XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "Adhoc XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Activation System Audit Schema",
-                  "text": "Activation System Audit Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "Activation System Audit Schema"
-                },
-                "reason": "entity_name_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Customer Actions",
-                  "text": "Customer Actions",
-                  "type": "ENTITY_NAME",
-                  "value": "Customer Actions"
-                },
-                "reason": "entity_name_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Adhoc XDM Schema",
-                  "text": "Adhoc XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "Adhoc XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "XDM Schema",
-                  "text": "XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "XDM Schema",
-                  "text": "XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "XDM Schema",
-                  "text": "XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "XDM Schema",
-                  "text": "XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "XDM Schema",
-                  "text": "XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "AJO Live Activities Feedback Event Schema",
-                  "text": "AJO Live Activities Feedback Event Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "AJO Live Activities Feedback Event Schema"
-                },
-                "reason": "entity_name_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "XDM Schema",
-                  "text": "XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "AJO ExD Decision Event Schema",
-                  "text": "AJO ExD Decision Event Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "AJO ExD Decision Event Schema"
-                },
-                "reason": "entity_name_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "AJO Inbound Surfaces Schema",
-                  "text": "AJO Inbound Surfaces Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "AJO Inbound Surfaces Schema"
-                },
-                "reason": "entity_name_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "AJO Inbound Activity Event Schema",
-                  "text": "AJO Inbound Activity Event Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "AJO Inbound Activity Event Schema"
-                },
-                "reason": "entity_name_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "AJO STO Summary Schema",
-                  "text": "AJO STO Summary Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "AJO STO Summary Schema"
-                },
-                "reason": "entity_name_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "AJO Engageable Profile Schema",
-                  "text": "AJO Engageable Profile Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "AJO Engageable Profile Schema"
-                },
-                "reason": "entity_name_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "AJO Interactive Messaging Profile Schema",
-                  "text": "AJO Interactive Messaging Profile Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "AJO Interactive Messaging Profile Schema"
-                },
-                "reason": "entity_name_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "AJO Entity Record Schema",
-                  "text": "AJO Entity Record Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "AJO Entity Record Schema"
-                },
-                "reason": "entity_name_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "AJO Email BCC Feedback Event Schema",
-                  "text": "AJO Email BCC Feedback Event Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "AJO Email BCC Feedback Event Schema"
-                },
-                "reason": "entity_name_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "AJO Profile Counters Extension",
-                  "text": "AJO Profile Counters Extension",
-                  "type": "ENTITY_NAME",
-                  "value": "AJO Profile Counters Extension"
-                },
-                "reason": "entity_name_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "AJO Classification Record Schema",
-                  "text": "AJO Classification Record Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "AJO Classification Record Schema"
-                },
-                "reason": "entity_name_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "AJO Email Tracking Experience Event Schema",
-                  "text": "AJO Email Tracking Experience Event Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "AJO Email Tracking Experience Event Schema"
-                },
-                "reason": "entity_name_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "XDM Schema",
-                  "text": "XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "AJO Consent Service Schema",
-                  "text": "AJO Consent Service Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "AJO Consent Service Schema"
-                },
-                "reason": "entity_name_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "AJO Push Profile Schema",
-                  "text": "AJO Push Profile Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "AJO Push Profile Schema"
-                },
-                "reason": "entity_name_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "AJO Push Tracking Experience Event Schema",
-                  "text": "AJO Push Tracking Experience Event Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "AJO Push Tracking Experience Event Schema"
-                },
-                "reason": "entity_name_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "AJO Message Feedback Event Schema",
-                  "text": "AJO Message Feedback Event Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "AJO Message Feedback Event Schema"
-                },
-                "reason": "entity_name_not_in_allowed_facts",
-                "status": "UNSUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "XDM Schema",
-                  "text": "XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "XDM Schema",
-                  "text": "XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "XDM Schema",
-                  "text": "XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "XDM Schema"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "XDM Schema",
-                  "text": "XDM Schema",
-                  "type": "ENTITY_NAME",
-                  "value": "XDM Schema"
                 },
                 "reason": "entity_name",
                 "status": "SUPPORTED"
@@ -3115,7 +1734,7 @@
             ]
           },
           "needs_caveat_claims": [],
-          "ok": false,
+          "ok": true,
           "over_specified_claims": [],
           "supported_claims": [
             {
@@ -3159,499 +1778,15 @@
               "text": "Adhoc XDM Schema",
               "type": "ENTITY_NAME",
               "value": "Adhoc XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Adhoc XDM Schema",
-              "text": "Adhoc XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "Adhoc XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Adhoc XDM Schema",
-              "text": "Adhoc XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "Adhoc XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Adhoc XDM Schema",
-              "text": "Adhoc XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "Adhoc XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Adhoc XDM Schema",
-              "text": "Adhoc XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "Adhoc XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Adhoc XDM Schema",
-              "text": "Adhoc XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "Adhoc XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Adhoc XDM Schema",
-              "text": "Adhoc XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "Adhoc XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Adhoc XDM Schema",
-              "text": "Adhoc XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "Adhoc XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Adhoc XDM Schema",
-              "text": "Adhoc XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "Adhoc XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Adhoc XDM Schema",
-              "text": "Adhoc XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "Adhoc XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Adhoc XDM Schema",
-              "text": "Adhoc XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "Adhoc XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Adhoc XDM Schema",
-              "text": "Adhoc XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "Adhoc XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Adhoc XDM Schema",
-              "text": "Adhoc XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "Adhoc XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "XDM Schema",
-              "text": "XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "XDM Schema",
-              "text": "XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "XDM Schema",
-              "text": "XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "XDM Schema",
-              "text": "XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "XDM Schema",
-              "text": "XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "XDM Schema",
-              "text": "XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "XDM Schema",
-              "text": "XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Adhoc XDM Schema",
-              "text": "Adhoc XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "Adhoc XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Adhoc XDM Schema",
-              "text": "Adhoc XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "Adhoc XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "XDM Schema",
-              "text": "XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "XDM Schema",
-              "text": "XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "XDM Schema",
-              "text": "XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "XDM Schema",
-              "text": "XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "XDM Schema",
-              "text": "XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "XDM Schema",
-              "text": "XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "XDM Schema",
-              "text": "XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "XDM Schema",
-              "text": "XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "XDM Schema",
-              "text": "XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "XDM Schema",
-              "text": "XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "XDM Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "XDM Schema",
-              "text": "XDM Schema",
-              "type": "ENTITY_NAME",
-              "value": "XDM Schema"
             }
           ],
-          "unsupported_claims": [
-            {
-              "hardness": "HARD",
-              "span": "9038f8ff-3915-42bc-9eb4-33649cb1bfd5",
-              "text": "9038f8ff-3915-42bc-9eb4-33649cb1bfd5",
-              "type": "ID",
-              "value": "9038f8ff-3915-42bc-9eb4-33649cb1bfd5"
-            },
-            {
-              "hardness": "HARD",
-              "span": "489e4273-4592-4d23-ae1d-6ebca5da5510",
-              "text": "489e4273-4592-4d23-ae1d-6ebca5da5510",
-              "type": "ID",
-              "value": "489e4273-4592-4d23-ae1d-6ebca5da5510"
-            },
-            {
-              "hardness": "HARD",
-              "span": "c6be6117-cabf-48f1-b4cc-d16e44e72604",
-              "text": "c6be6117-cabf-48f1-b4cc-d16e44e72604",
-              "type": "ID",
-              "value": "c6be6117-cabf-48f1-b4cc-d16e44e72604"
-            },
-            {
-              "hardness": "HARD",
-              "span": "5b45aef0-f38a-4e69-b47a-702e0b54f7ab",
-              "text": "5b45aef0-f38a-4e69-b47a-702e0b54f7ab",
-              "type": "ID",
-              "value": "5b45aef0-f38a-4e69-b47a-702e0b54f7ab"
-            },
-            {
-              "hardness": "HARD",
-              "span": "fb1149fe-8136-4fdc-b984-74a290421d75",
-              "text": "fb1149fe-8136-4fdc-b984-74a290421d75",
-              "type": "ID",
-              "value": "fb1149fe-8136-4fdc-b984-74a290421d75"
-            },
-            {
-              "hardness": "HARD",
-              "span": "06d7bba1-37ae-46ce-85d6-b736812b87ed",
-              "text": "06d7bba1-37ae-46ce-85d6-b736812b87ed",
-              "type": "ID",
-              "value": "06d7bba1-37ae-46ce-85d6-b736812b87ed"
-            },
-            {
-              "hardness": "HARD",
-              "span": "114ed137-d3d2-45a6-985a-8968e0375e85",
-              "text": "114ed137-d3d2-45a6-985a-8968e0375e85",
-              "type": "ID",
-              "value": "114ed137-d3d2-45a6-985a-8968e0375e85"
-            },
-            {
-              "hardness": "HARD",
-              "span": "24276098-7cbb-4aad-9d8c-c4d4e4ecf1e0",
-              "text": "24276098-7cbb-4aad-9d8c-c4d4e4ecf1e0",
-              "type": "ID",
-              "value": "24276098-7cbb-4aad-9d8c-c4d4e4ecf1e0"
-            },
-            {
-              "hardness": "HARD",
-              "span": "ad9891b5-81c5-4cb6-ae0c-52ce4dee218d",
-              "text": "ad9891b5-81c5-4cb6-ae0c-52ce4dee218d",
-              "type": "ID",
-              "value": "ad9891b5-81c5-4cb6-ae0c-52ce4dee218d"
-            },
-            {
-              "hardness": "HARD",
-              "span": "de12d896-5051-4db1-b573-9ca5c0a0049d",
-              "text": "de12d896-5051-4db1-b573-9ca5c0a0049d",
-              "type": "ID",
-              "value": "de12d896-5051-4db1-b573-9ca5c0a0049d"
-            },
-            {
-              "hardness": "HARD",
-              "span": "812a8b82-7ace-4018-984f-f7f1039fab77",
-              "text": "812a8b82-7ace-4018-984f-f7f1039fab77",
-              "type": "ID",
-              "value": "812a8b82-7ace-4018-984f-f7f1039fab77"
-            },
-            {
-              "hardness": "HARD",
-              "span": "ec3a3ac9-c302-483d-9ebd-ca6a914653b4",
-              "text": "ec3a3ac9-c302-483d-9ebd-ca6a914653b4",
-              "type": "ID",
-              "value": "ec3a3ac9-c302-483d-9ebd-ca6a914653b4"
-            },
-            {
-              "hardness": "HARD",
-              "span": "8a5f8c7c-24fe-4449-a2e0-da968a0e6a30",
-              "text": "8a5f8c7c-24fe-4449-a2e0-da968a0e6a30",
-              "type": "ID",
-              "value": "8a5f8c7c-24fe-4449-a2e0-da968a0e6a30"
-            },
-            {
-              "hardness": "HARD",
-              "span": "26249717-9729-4fd6-85d6-b0c5fec6be19",
-              "text": "26249717-9729-4fd6-85d6-b0c5fec6be19",
-              "type": "ID",
-              "value": "26249717-9729-4fd6-85d6-b0c5fec6be19"
-            },
-            {
-              "hardness": "HARD",
-              "span": "5353144d-9f94-4410-bd59-eb3a9507acbe",
-              "text": "5353144d-9f94-4410-bd59-eb3a9507acbe",
-              "type": "ID",
-              "value": "5353144d-9f94-4410-bd59-eb3a9507acbe"
-            },
-            {
-              "hardness": "HARD",
-              "span": "65b72991-aff4-4f26-bbb0-f3be7b9c8f5a",
-              "text": "65b72991-aff4-4f26-bbb0-f3be7b9c8f5a",
-              "type": "ID",
-              "value": "65b72991-aff4-4f26-bbb0-f3be7b9c8f5a"
-            },
-            {
-              "hardness": "HARD",
-              "span": "6f8ecb92-64c0-4ba1-a7f4-6c538ea657a7",
-              "text": "6f8ecb92-64c0-4ba1-a7f4-6c538ea657a7",
-              "type": "ID",
-              "value": "6f8ecb92-64c0-4ba1-a7f4-6c538ea657a7"
-            },
-            {
-              "hardness": "HARD",
-              "span": "20260330173605",
-              "text": "20260330173605",
-              "type": "COUNT",
-              "value": "20260330173605"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Lookalike Modeling Audiences Dataset",
-              "text": "Lookalike Modeling Audiences Dataset",
-              "type": "ENTITY_NAME",
-              "value": "Lookalike Modeling Audiences Dataset"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Activation System Audit Schema",
-              "text": "Activation System Audit Schema",
-              "type": "ENTITY_NAME",
-              "value": "Activation System Audit Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Customer Actions",
-              "text": "Customer Actions",
-              "type": "ENTITY_NAME",
-              "value": "Customer Actions"
-            },
-            {
-              "hardness": "HARD",
-              "span": "AJO Live Activities Feedback Event Schema",
-              "text": "AJO Live Activities Feedback Event Schema",
-              "type": "ENTITY_NAME",
-              "value": "AJO Live Activities Feedback Event Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "AJO ExD Decision Event Schema",
-              "text": "AJO ExD Decision Event Schema",
-              "type": "ENTITY_NAME",
-              "value": "AJO ExD Decision Event Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "AJO Inbound Surfaces Schema",
-              "text": "AJO Inbound Surfaces Schema",
-              "type": "ENTITY_NAME",
-              "value": "AJO Inbound Surfaces Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "AJO Inbound Activity Event Schema",
-              "text": "AJO Inbound Activity Event Schema",
-              "type": "ENTITY_NAME",
-              "value": "AJO Inbound Activity Event Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "AJO STO Summary Schema",
-              "text": "AJO STO Summary Schema",
-              "type": "ENTITY_NAME",
-              "value": "AJO STO Summary Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "AJO Engageable Profile Schema",
-              "text": "AJO Engageable Profile Schema",
-              "type": "ENTITY_NAME",
-              "value": "AJO Engageable Profile Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "AJO Interactive Messaging Profile Schema",
-              "text": "AJO Interactive Messaging Profile Schema",
-              "type": "ENTITY_NAME",
-              "value": "AJO Interactive Messaging Profile Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "AJO Entity Record Schema",
-              "text": "AJO Entity Record Schema",
-              "type": "ENTITY_NAME",
-              "value": "AJO Entity Record Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "AJO Email BCC Feedback Event Schema",
-              "text": "AJO Email BCC Feedback Event Schema",
-              "type": "ENTITY_NAME",
-              "value": "AJO Email BCC Feedback Event Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "AJO Profile Counters Extension",
-              "text": "AJO Profile Counters Extension",
-              "type": "ENTITY_NAME",
-              "value": "AJO Profile Counters Extension"
-            },
-            {
-              "hardness": "HARD",
-              "span": "AJO Classification Record Schema",
-              "text": "AJO Classification Record Schema",
-              "type": "ENTITY_NAME",
-              "value": "AJO Classification Record Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "AJO Email Tracking Experience Event Schema",
-              "text": "AJO Email Tracking Experience Event Schema",
-              "type": "ENTITY_NAME",
-              "value": "AJO Email Tracking Experience Event Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "AJO Consent Service Schema",
-              "text": "AJO Consent Service Schema",
-              "type": "ENTITY_NAME",
-              "value": "AJO Consent Service Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "AJO Push Profile Schema",
-              "text": "AJO Push Profile Schema",
-              "type": "ENTITY_NAME",
-              "value": "AJO Push Profile Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "AJO Push Tracking Experience Event Schema",
-              "text": "AJO Push Tracking Experience Event Schema",
-              "type": "ENTITY_NAME",
-              "value": "AJO Push Tracking Experience Event Schema"
-            },
-            {
-              "hardness": "HARD",
-              "span": "AJO Message Feedback Event Schema",
-              "text": "AJO Message Feedback Event Schema",
-              "type": "ENTITY_NAME",
-              "value": "AJO Message Feedback Event Schema"
-            }
-          ]
+          "unsupported_claims": []
         }
       },
       "syntax_gate": {
         "error_message": null,
         "error_type": null,
-        "final_answer": "Based on the local snapshot, there are 74 schemas. The first few include:\n\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_961ddfca-2199-4783-b16c-9226938e0d93\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_10b7f335-021a-4ea3-9520-fa206cee8b69\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_27f3f2f7-ccb3-4699-8029-a5d5d1aa6066\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_14af09b4-941b-456c-8035-e05742c3d2b7\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_2a3be7fb-d4ff-44b4-96f4-c33801583cf4\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_b3db3db4-de1b-4984-9ac0-33e2935d3596\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_11f2c467-ed7e-4a05-8f50-87067d5d1e90\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_7da78a57-f2e3-4ea0-b6a9-19c14ede2665\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_cddc2c7b-23cb-4c77-9b7d-0d5bee7df8a8\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_2e86d9ad-8032-4a4b-8f9a-a088a7372c51\n- Adhoc XDM Schema for dataset JOJourneyVersionsDs_e507de24-3475-427e-a3ac-7a8acaa98a0b\n- Lookalike Modeling Audiences Dataset (20260330173605)\n- Adhoc XDM Schema for dataset uis_graph_export_stitchall_default_9f233cac-cd43-4b33-95d0-fa4016dba6f3\n- Adhoc XDM Schema for dataset uis_cdc_archive_dataset_default_44e47eda-42b1-4273-a778-e58cdaadf89f\n- Adhoc XDM Schema for dataset merged_profile_summary_export_c5d8a2db-c9b4-4d91-89d4-7b0dc7c83be1\n- Adhoc schema for dim_date\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_overlap_by_namespace_and_segment. Random identifier: 9038f8ff-3915-42bc-9eb4-33649cb1bfd5\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_overlap_of_namespace_by_segment. Random identifier: 489e4273-4592-4d23-ae1d-6ebca5da5510\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_overlap_of_namespace. Random identifier: c6be6117-cabf-48f1-b4cc-d16e44e72604\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment_and_namespace. Random identifier: 5b45aef0-f38a-4e69-b47a-702e0b54f7ab\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment. Random identifier: fb1149fe-8136-4fdc-b984-74a290421d75\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_namespace. Random identifier: 06d7bba1-37ae-46ce-85d6-b736812b87ed\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile. Random identifier: 114ed137-d3d2-45a6-985a-8968e0375e85\n- Adhoc XDM Schema for dataset hkg_adls_profile_count_history_0552412e-4c5d-40d6-b946-1503857c456a\n- Activation System Audit Schema\n- ComputedAttributesOutputSchema\n- weRetail: Customer Actions\n- Adhoc XDM Schema for dataset hkg_adls_segment_profile_history_48082438-53cd-4303-b5a8-132acdf83a88\n- weRetail: CRM\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment_ai_models. Random identifier: 24276098-7cbb-4aad-9d8c-c4d4e4ecf1e0\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_ai_models. Random identifier: ad9891b5-81c5-4cb6-ae0c-52ce4dee218d\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment_and_namespace_trendlines. Random identifier: de12d896-5051-4db1-b573-9ca5c0a0049d\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_segment_trendlines. Random identifier: 812a8b82-7ace-4018-984f-f7f1039fab77\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_namespace_trendlines. Random identifier: ec3a3ac9-c302-483d-9ebd-ca6a914653b4\n- AJO Live Activities Feedback Event Schema\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_by_trendlines. Random identifier: 8a5f8c7c-24fe-4449-a2e0-da968a0e6a30\n- AJO ExD Decision Event Schema\n- AJO Inbound Surfaces Schema\n- AJO Inbound Activity Event Schema\n- AJO STO Summary Schema\n- AJO Engageable Profile Schema\n- AJO Interactive Messaging Profile Schema\n- AJO Entity Record Schema\n- AJO Email BCC Feedback Event Schema\n- AJO Profile Counters Extension\n- AJO Classification Record Schema\n- AJO Email Tracking Experience Event Schema\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_fact_profile_overlap_of_segments. Random identifier: 26249717-9729-4fd6-85d6-b0c5fec6be19\n- AJO Consent Service Schema\n- AJO Push Profile Schema\n- AJO Push Tracking Experience Event Schema\n- AJO Message Feedback Event Schema\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_dim_ai_models. Random identifier: 5353144d-9f94-4410-bd59-eb3a9507acbe\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_dim_date. Random identifier: 65b72991-aff4-4f26-bbb0-f3be7b9c8f5a\n-  XDM Schema for dataset qsaccel.profile_agg.adwh_dim_br_namespace_destinations. Random identifier: 6f8ecb92-64c0-4ba1-a7f4-6c538ea657a7\n-  XDM Schema",
+        "final_answer": "Based on the local snapshot, there are 74 schemas. The first five are: Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c, Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7, Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355, Adhoc XDM Schema for dataset JOJourneyVersionsDs_961ddfca-2199-4783-b16c-9226938e0d93, and Adhoc XDM Schema for dataset JOJourneyVersionsDs_10b7f335-021a-4ea3-9520-fa206cee8b69.",
         "passed": true
       },
       "used_pass_ids": []
@@ -3659,7 +1794,7 @@
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 105.4786922079511
+    "answer_time": 29.174527833238244
   },
   "tool_call_count": 1
 }

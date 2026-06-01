@@ -10,7 +10,7 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
   "backend_semantic_planning_used": false,
   "llm_owned_generation": true,
   "llm_unified_plan": {
-    "aggregation_instruction": "Combine the concept explanation with the list and count results from both local and live sources. Present the inactive journeys identified by local filters (STATE != ACTIVE, STATUS != LIVE) and cross-reference with live API data to confirm current status. If live API returns different status, prioritize live status for 'current' state but show local historical state.",
+    "aggregation_instruction": "Combine the concept explanation with the list of inactive journeys found in the local snapshot. Use the live API list as supplementary evidence if needed to confirm current state, but prioritize the local snapshot for the 'show inactive journeys' request as it represents the user's specific data records.",
     "api_request": null,
     "backend_unavailable": false,
     "diagnostics": {
@@ -20,12 +20,12 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "backend_semantic_decomposition_used": false,
       "backend_semantic_planning_used": false,
       "backend_sql_api_generation_used": false,
-      "compiled_api_count": 2,
-      "compiled_sql_count": 2,
+      "compiled_api_count": 1,
+      "compiled_sql_count": 1,
       "planner_json_fallback_used": false,
       "planner_json_parse_error": null,
       "planner_parse_source": "sdk_toolcall_semantic_ir",
-      "planner_provider_latency_ms": 26593,
+      "planner_provider_latency_ms": 18061,
       "planner_repair_attempted": false,
       "planner_success": true,
       "planner_timeout": false,
@@ -38,10 +38,10 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       },
       "sdk_toolcall_semantic_ir_used": true,
       "semantic_ir_plan_preview": {
-        "preview": "{\"route\": \"EVIDENCE\", \"direct_answer\": \"An inactive journey is a Journey Optimizer campaign that is not currently active, running, or published. It typically refers to journeys in a draft, stopped, or finished state, as opposed to those that are live or currently executing.\", \"tasks\": {\"items\": [{\"task_id\": \"concept_inactive_journey\", \"kind\": \"CONCEPT\", \"operation\": \"EXPLAIN\", \"source\": \"NONE\", \"description\": \"Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context, distinguishing it from active/live/draft states.\", \"required\": true}, {\"task_id\": \"list_inactive_journeys\", \"kind\": \"LOCAL_AND_LIVE\", \"operation\": \"LIST\", \"source\": \"BOTH\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"CAMPAIGNID\", \"NAME\", \"STATE\"], \"total_items\": 7, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"STATE\", \"op\": \"!=\", \"value\": \"ACTIVE\"}, {\"field\": \"STATUS\", \"op\": \"!=\", \"value\": \"LIVE\"}], \"total_items\": 2, \"truncated_items\": false}, \"limit\": 50}, \"api_query\": {\"endpoint_id\": \"journey_list\", \"method\": \"GET\", \"query_params\": {\"limit\": 50, \"start\": 0}}, \"description\": \"List inactive journeys by filtering local dim_campaign for non-active/non...",
+        "preview": "{\"route\": \"EVIDENCE\", \"direct_answer\": \"An inactive journey is a Journey Optimizer campaign that is not currently active, running, or deployed. It typically refers to journeys in a draft, stopped, or finished state, as opposed to those that are live or published.\", \"tasks\": {\"items\": [{\"task_id\": \"concept_inactive_journey\", \"kind\": \"CONCEPT\", \"operation\": \"EXPLAIN\", \"source\": \"NONE\", \"description\": \"Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context.\", \"required\": true}, {\"task_id\": \"list_inactive_journeys\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LIST\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"CAMPAIGNID\", \"NAME\", \"STATE\"], \"total_items\": 7, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"STATE\", \"op\": \"!=\", \"value\": \"ACTIVE\"}, {\"field\": \"STATUS\", \"op\": \"!=\", \"value\": \"LIVE\"}], \"total_items\": 2, \"truncated_items\": false}, \"limit\": 50}, \"description\": \"List campaigns/journeys from the local snapshot that are not in an active or live state to identify inactive journeys.\", \"required\": true}, {\"task_id\": \"verify_inactive_via_api\", \"kind\": \"LIVE_QUERY\", \"operation\": \"LIST\", \"source\": ...",
         "truncated": true
       },
-      "semantic_ir_provider_latency_ms": 26589,
+      "semantic_ir_provider_latency_ms": 18058,
       "semantic_ir_repair_attempted": false,
       "semantic_ir_repair_success": false,
       "semantic_ir_task_count": 3,
@@ -62,13 +62,32 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
         "can_run_parallel": true,
         "depends_on": [],
         "evidence_order": "NO_EVIDENCE",
-        "expected_result": "Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context, distinguishing it from active/live/draft states.",
+        "expected_result": "Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context.",
         "fallback": false,
         "optional": false,
         "pass_id": "concept_inactive_journey",
         "path": "DIRECT",
         "sql": null,
-        "subtask": "Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context, distinguishing it from active/live/draft states."
+        "subtask": "Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context."
+      },
+      {
+        "api_request": null,
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "SQL_FIRST",
+        "expected_result": "List campaigns/journeys from the local snapshot that are not in an active or live state to identify inactive journeys.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "list_inactive_journeys",
+        "path": "SQL",
+        "sql": {
+          "params": [
+            "ACTIVE",
+            "LIVE"
+          ],
+          "query": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATE\", \"STATUS\", \"LASTDEPLOYEDTIME\", \"STOPPEDTIME\", \"FINISHEDTIME\" FROM \"dim_campaign\" WHERE \"STATE\" != ? AND \"STATUS\" != ? LIMIT 50"
+        },
+        "subtask": "List campaigns/journeys from the local snapshot that are not in an active or live state to identify inactive journeys."
       },
       {
         "api_request": {
@@ -81,46 +100,14 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
         },
         "can_run_parallel": true,
         "depends_on": [],
-        "evidence_order": "PARALLEL",
-        "expected_result": "List inactive journeys by filtering local dim_campaign for non-active/non-live states and cross-referencing with live journey list API to identify current status.",
-        "fallback": false,
-        "optional": false,
-        "pass_id": "list_inactive_journeys",
-        "path": "SQL_AND_API",
-        "sql": {
-          "params": [
-            "ACTIVE",
-            "LIVE"
-          ],
-          "query": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATE\", \"STATUS\", \"LASTDEPLOYEDTIME\", \"STOPPEDTIME\", \"FINISHEDTIME\" FROM \"dim_campaign\" WHERE \"STATE\" != ? AND \"STATUS\" != ? LIMIT 50"
-        },
-        "subtask": "List inactive journeys by filtering local dim_campaign for non-active/non-live states and cross-referencing with live journey list API to identify current status."
-      },
-      {
-        "api_request": {
-          "method": "GET",
-          "params": {
-            "limit": 1,
-            "start": 0
-          },
-          "path": "/ajo/journey"
-        },
-        "can_run_parallel": true,
-        "depends_on": [],
-        "evidence_order": "PARALLEL",
-        "expected_result": "Count total inactive journeys using local snapshot filters and verify with live API count.",
+        "evidence_order": "API_FIRST",
+        "expected_result": "Fetch current live journey list to cross-reference and confirm which ones are not currently active/live.",
         "fallback": false,
         "optional": true,
-        "pass_id": "count_inactive_journeys",
-        "path": "SQL_AND_API",
-        "sql": {
-          "params": [
-            "ACTIVE",
-            "LIVE"
-          ],
-          "query": "SELECT COUNT(*) AS count FROM \"dim_campaign\" WHERE \"STATE\" != ? AND \"STATUS\" != ?"
-        },
-        "subtask": "Count total inactive journeys using local snapshot filters and verify with live API count."
+        "pass_id": "verify_inactive_via_api",
+        "path": "API",
+        "sql": null,
+        "subtask": "Fetch current live journey list to cross-reference and confirm which ones are not currently active/live."
       }
     ],
     "provider": "openai",
@@ -154,14 +141,14 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "max_sql_workers": 2,
       "run_timeout_ms": 30000
     },
-    "created_at": "2026-06-01T22:43:03.402224+00:00",
-    "deadline_at": "2026-06-01T22:43:33.402224+00:00",
-    "evidence_bus_id": "evidence_run_a2cca4595c6941e189d8806d72fea168",
+    "created_at": "2026-06-01T23:16:02.903136+00:00",
+    "deadline_at": "2026-06-01T23:16:32.903136+00:00",
+    "evidence_bus_id": "evidence_run_65242ba5687f4749868b979b1e5402a2",
     "original_prompt": "Explain what inactive journey means and show inactive journeys.",
     "plan_version": 1,
     "prompt_id": "hermes_toolcall_mixed_inactive_journeys",
-    "result_bundle_id": "bundle_run_a2cca4595c6941e189d8806d72fea168",
-    "run_id": "run_a2cca4595c6941e189d8806d72fea168",
+    "result_bundle_id": "bundle_run_65242ba5687f4749868b979b1e5402a2",
+    "run_id": "run_65242ba5687f4749868b979b1e5402a2",
     "status": "RUNNING"
   },
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"

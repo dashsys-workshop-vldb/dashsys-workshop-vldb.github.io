@@ -99,6 +99,8 @@ def build_llm_final_answer_card(
         "task_checklist": _task_checklist(llm_plan),
         "required_task_ids": _required_task_ids(llm_plan),
         "runtime_passes": [_safe_pass_payload(item) for item in runtime_passes],
+        "AVAILABLE_RUNTIME_FACTS": _available_runtime_facts(runtime_passes, answer_slots),
+        "FAILED_OR_UNAVAILABLE_SOURCES": _failed_or_unavailable_sources(runtime_passes, evidence_bus),
         "pass_result_checklist": _pass_result_checklist(runtime_passes),
         "result_bundle": result_bundle.to_dict() if result_bundle is not None else None,
         "evidence_bus": evidence_bus.compact(),
@@ -111,6 +113,9 @@ def build_llm_final_answer_card(
         "final_answer_max_tokens": FINAL_ANSWER_MAX_TOKENS,
         "constraints": [
             "Generate the final answer using only runtime evidence in this card.",
+            "Treat AVAILABLE_RUNTIME_FACTS as the authoritative facts for the final answer.",
+            "If AVAILABLE_RUNTIME_FACTS is non-empty, answer from those facts and do not say runtime evidence is globally unavailable.",
+            "If AVAILABLE_RUNTIME_FACTS is non-empty and FAILED_OR_UNAVAILABLE_SOURCES is non-empty, answer the available scoped facts first, then add only the scoped failed-source caveat.",
             "Answer every required task ID with successful evidence.",
             "If a required task failed, state the scoped unavailable/error caveat for that task.",
             "If any required local evidence succeeded while live/API evidence failed, answer the successful local evidence first and include a scoped live/API caveat.",
@@ -119,6 +124,10 @@ def build_llm_final_answer_card(
             "Do not claim live/current/platform state unless LIVE_API evidence supports it.",
             "Do not turn API_ERROR into no-data.",
             "Do not turn LIVE_EMPTY into global absence.",
+            "For count prompts, if AVAILABLE_RUNTIME_FACTS includes a count, state that exact count.",
+            "For what/list prompts, list or summarize only the names/IDs provided in AVAILABLE_RUNTIME_FACTS.",
+            "For date/when prompts, state the exact date/timestamp from AVAILABLE_RUNTIME_FACTS or say that field was not available in the relevant scope.",
+            "For mixed concept plus data prompts, give one concise concept sentence plus the scoped data facts from AVAILABLE_RUNTIME_FACTS.",
             "If no matching runtime evidence is available, use exactly: No matching runtime evidence was available for this query/scope.",
             "If all required runtime evidence is unavailable or errored, use exactly: Runtime evidence was unavailable; cannot provide a verified answer.",
             "When repairing unsupported claims, remove the unsupported span instead of restating it as a negative fact.",
@@ -198,6 +207,8 @@ def _final_answer_system_prompt(*, requires_json_prompting: bool = False, prefer
             "You are the final-answer writer for DASHSys V2. "
             "Return plain natural language final answer text only. No JSON wrapper, no markdown, no code fence. "
             "Use only runtime evidence provided in the card. "
+            "AVAILABLE_RUNTIME_FACTS is authoritative; if it is non-empty, answer from it and do not say runtime evidence is globally unavailable. "
+            "If API/live evidence failed but local evidence succeeded, answer the local evidence first and include only the scoped API/live caveat. "
             "Do not use hidden eval or gold-answer wording. "
             "Do not invent counts, dates, statuses, entity names, IDs, relationships, live state, or API success. "
             "If no matching runtime evidence is available, use exactly: No matching runtime evidence was available for this query/scope. "
@@ -211,6 +222,8 @@ def _final_answer_system_prompt(*, requires_json_prompting: bool = False, prefer
             "Return ONLY one valid JSON object. No markdown, no code fence, no explanation outside JSON. "
             "Required keys: final_answer, used_pass_ids, claimed_facts, caveats_included. "
             "Use only runtime evidence provided in the card. "
+            "AVAILABLE_RUNTIME_FACTS is authoritative; if it is non-empty, answer from it and do not say runtime evidence is globally unavailable. "
+            "If API/live evidence failed but local evidence succeeded, answer the local evidence first and include only the scoped API/live caveat. "
             "Do not use hidden eval or gold-answer wording. "
             "Do not invent counts, dates, statuses, entity names, IDs, relationships, live state, or API success. "
             "If no matching runtime evidence is available, use exactly: No matching runtime evidence was available for this query/scope. "
@@ -222,6 +235,7 @@ def _final_answer_system_prompt(*, requires_json_prompting: bool = False, prefer
         "You are the sole final-answer composer for DASHSys V2. "
         "Use the submit_final_answer tool when available; otherwise return ONLY valid JSON with keys final_answer, used_pass_ids, claimed_facts, caveats_included. "
         "Use only runtime evidence provided in the card. "
+        "AVAILABLE_RUNTIME_FACTS is authoritative; if it is non-empty, answer from it and do not say runtime evidence is globally unavailable. "
         "Do not use hidden eval or gold-answer wording. "
         "Do not invent counts, dates, statuses, entity names, IDs, relationships, live state, or API success. "
         "Do not call tools. Do not include markdown."
@@ -334,6 +348,10 @@ def check_final_answer_semantic_grounding(
 
 
 def safe_llm_final_answer_fallback(runtime_passes: list[dict[str, Any]], *, syntax_gate: FinalAnswerSyntaxGateResult | None = None, semantic_gate: FinalAnswerSemanticGateResult | None = None) -> str:
+    available = _available_runtime_facts(runtime_passes, None)
+    if available:
+        summary = _fallback_fact_summary(available)
+        return f"I found runtime evidence but could not compose a verified final answer. Available scoped evidence includes: {summary}."
     statuses = {str(item.get("status") or "").upper() for item in runtime_passes}
     has_success = "SUCCESS" in statuses or any(_pass_has_successful_evidence(item) for item in runtime_passes)
     if has_success:
@@ -407,6 +425,95 @@ def _safe_pass_payload(item: dict[str, Any]) -> dict[str, Any]:
     return _strip_sensitive_keys(compact_preview(item, 2200))
 
 
+def _available_runtime_facts(runtime_passes: list[dict[str, Any]], answer_slots: AnswerSlots | None) -> list[dict[str, Any]]:
+    facts: list[dict[str, Any]] = []
+    for item in runtime_passes:
+        if not isinstance(item, dict):
+            continue
+        path = str(item.get("path") or item.get("source") or "")
+        if path.upper() in {"DIRECT", "AGGREGATION_ONLY"}:
+            continue
+        if not _pass_has_successful_evidence(item):
+            continue
+        entry = {
+            "task_id": str(item.get("pass_id") or ""),
+            "source": path,
+            "scope": str(item.get("scope") or _scope_from_sources(item.get("source_results")) or ""),
+            "status": str(item.get("status") or ""),
+            "facts": [str(value) for value in item.get("facts", [])[:20] if value] if isinstance(item.get("facts"), list) else [],
+            "row_previews": [],
+            "counts": [],
+            "names": [],
+            "ids": [],
+            "statuses": [],
+            "dates": [],
+        }
+        for source in item.get("source_results", []) if isinstance(item.get("source_results"), list) else []:
+            if not isinstance(source, dict) or str(source.get("status") or "").upper() != "SUCCESS":
+                continue
+            result = source.get("result") if isinstance(source.get("result"), dict) else {}
+            rows = _rows_from_result_payload(result)
+            if rows:
+                entry["row_previews"].extend(_strip_sensitive_keys(rows[:10]))
+                _collect_row_values(entry, rows[:10])
+                row_count = result.get("row_count")
+                if row_count not in (None, "", [], {}) and row_count not in entry["counts"]:
+                    entry["counts"].append(row_count)
+            parsed = result.get("parsed_evidence") if isinstance(result.get("parsed_evidence"), dict) else {}
+            _collect_parsed_values(entry, parsed)
+        if answer_slots is not None and entry["scope"] == "LOCAL_SNAPSHOT":
+            _merge_slot_values(entry, answer_slots)
+        for key in ["row_previews", "counts", "names", "ids", "statuses", "dates", "facts"]:
+            entry[key] = _dedupe_preserve_order(entry[key])
+        if any(entry[key] for key in ["facts", "row_previews", "counts", "names", "ids", "statuses", "dates"]):
+            facts.append(_strip_sensitive_keys(entry))
+    return facts
+
+
+def _failed_or_unavailable_sources(runtime_passes: list[dict[str, Any]], evidence_bus: EvidenceBus | None) -> list[dict[str, Any]]:
+    failed: list[dict[str, Any]] = []
+    for item in runtime_passes:
+        if not isinstance(item, dict):
+            continue
+        pass_id = str(item.get("pass_id") or "")
+        for source in item.get("source_results", []) if isinstance(item.get("source_results"), list) else []:
+            if not isinstance(source, dict):
+                continue
+            status = str(source.get("status") or "").upper()
+            if status in {"SUCCESS", "SKIPPED"}:
+                continue
+            failed.append(
+                _strip_sensitive_keys(
+                    {
+                        "task_id": pass_id,
+                        "source": str(source.get("source") or item.get("source") or item.get("path") or ""),
+                        "scope": str(source.get("scope") or item.get("scope") or ""),
+                        "status": status,
+                        "error": _safe_error(source.get("error")),
+                        "caveat": _source_caveat(source, item),
+                    }
+                )
+            )
+        item_status = str(item.get("status") or "").upper()
+        if item_status in {"API_ERROR", "ERROR", "LIVE_EMPTY", "EMPTY", "COMPILE_ERROR", "REQUEST_ERROR", "DEPENDENCY_BLOCKED", "BUDGET_EXCEEDED"} and not any(entry.get("task_id") == pass_id for entry in failed):
+            failed.append(
+                _strip_sensitive_keys(
+                    {
+                        "task_id": pass_id,
+                        "source": str(item.get("source") or item.get("path") or ""),
+                        "scope": str(item.get("scope") or ""),
+                        "status": item_status,
+                        "error": _safe_error("; ".join(str(value) for value in item.get("caveats", []) if value) if isinstance(item.get("caveats"), list) else None),
+                        "caveat": _item_caveat(item),
+                    }
+                )
+            )
+    if evidence_bus is not None:
+        for error in getattr(evidence_bus, "api_errors", [])[:5]:
+            failed.append({"task_id": "", "source": "API", "scope": "LIVE_API", "status": "API_ERROR", "error": _safe_error(error), "caveat": "Live API evidence was unavailable or errored for this source."})
+    return _dedupe_dicts(failed)
+
+
 def _task_checklist(llm_plan: LLMUnifiedPlan) -> list[dict[str, Any]]:
     items: list[dict[str, Any]] = []
     for item in llm_plan.passes:
@@ -428,7 +535,7 @@ def _required_task_ids(llm_plan: LLMUnifiedPlan) -> list[str]:
     for item in llm_plan.passes:
         if bool(getattr(item, "optional", False) or getattr(item, "fallback", False)):
             continue
-        if item.path == "AGGREGATION_ONLY":
+        if item.path in {"AGGREGATION_ONLY", "DIRECT"}:
             continue
         task_ids.append(str(item.pass_id))
     return task_ids
@@ -567,8 +674,10 @@ def _missing_required_fields(final_answer: str, *, question: str, index: Any, sl
     if _asks_status(prompt) and index.statuses and not any(_value_in_answer(value, answer) for value in index.statuses):
         missing.append("status")
     if _asks_list(prompt) and slots.entity_names:
-        absent = [name for name in slots.entity_names[:10] if _norm(name) not in answer]
-        if absent:
+        names = slots.entity_names[:10]
+        present = [name for name in names if _norm(name) in answer]
+        absent = [name for name in names if _norm(name) not in answer]
+        if absent and not _allows_broad_list_summary(prompt, answer, slots, present):
             missing.append("entity_names")
     return missing
 
@@ -585,6 +694,8 @@ def _missing_required_pass_results(final_answer: str, *, runtime_passes: list[di
     }
     for item in runtime_passes:
         pass_id = str(item.get("pass_id") or "").strip()
+        if str(item.get("path") or item.get("source") or "").upper() == "DIRECT":
+            continue
         if not pass_id or not _pass_has_successful_evidence(item):
             continue
         if pass_id in dependency_only_passes:
@@ -600,6 +711,131 @@ def _pass_has_successful_evidence(item: dict[str, Any]) -> bool:
     if not isinstance(source_results, list):
         return False
     return any(str(source.get("status") or "").upper() == "SUCCESS" for source in source_results if isinstance(source, dict))
+
+
+def _scope_from_sources(source_results: Any) -> str:
+    if not isinstance(source_results, list):
+        return ""
+    for source in source_results:
+        if isinstance(source, dict) and source.get("scope"):
+            return str(source.get("scope"))
+    return ""
+
+
+def _rows_from_result_payload(result: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = result.get("rows")
+    if isinstance(rows, list):
+        return [row for row in rows if isinstance(row, dict)]
+    if isinstance(rows, dict) and isinstance(rows.get("items"), list):
+        return [row for row in rows["items"] if isinstance(row, dict)]
+    preview = result.get("result_preview")
+    if isinstance(preview, list):
+        return [row for row in preview if isinstance(row, dict)]
+    if isinstance(preview, dict) and isinstance(preview.get("items"), list):
+        return [row for row in preview["items"] if isinstance(row, dict)]
+    return []
+
+
+def _collect_row_values(entry: dict[str, Any], rows: list[dict[str, Any]]) -> None:
+    for row in rows:
+        for key, value in row.items():
+            if value in (None, "", [], {}):
+                continue
+            normalized = re.sub(r"[^a-z0-9_]", "", str(key).lower())
+            if "count" in normalized or normalized in {"total", "row_count"}:
+                entry["counts"].append(value)
+            if normalized in {"name", "title", "campaignname", "campaign_name", "blueprintname", "blueprint_name"}:
+                entry["names"].append(str(value))
+            if normalized == "name" or normalized.endswith("name"):
+                entry["names"].append(str(value))
+            if normalized == "id" or normalized.endswith("id"):
+                entry["ids"].append(str(value))
+            if normalized in {"status", "state", "lifecyclestatus", "lifecycle_status"}:
+                entry["statuses"].append(str(value))
+            if "time" in normalized or "date" in normalized or normalized in {"created", "updated", "modified", "published"}:
+                entry["dates"].append(str(value))
+
+
+def _collect_parsed_values(entry: dict[str, Any], parsed: dict[str, Any]) -> None:
+    for key, target in [("names", "names"), ("ids", "ids"), ("statuses", "statuses")]:
+        values = parsed.get(key)
+        if isinstance(values, list):
+            entry[target].extend(str(value) for value in values[:10] if value not in (None, "", [], {}))
+    counts = parsed.get("counts")
+    if isinstance(counts, dict):
+        entry["counts"].extend(value for value in counts.values() if value not in (None, "", [], {}))
+    timestamps = parsed.get("timestamps")
+    if isinstance(timestamps, dict):
+        entry["dates"].extend(str(value) for value in timestamps.values() if value not in (None, "", [], {}))
+
+
+def _merge_slot_values(entry: dict[str, Any], slots: AnswerSlots) -> None:
+    if slots.sql_row_count not in (None, "", [], {}):
+        entry["counts"].append(slots.sql_row_count)
+    entry["counts"].extend(slots.counts[:10])
+    entry["names"].extend(slots.entity_names[:10])
+    entry["ids"].extend(slots.entity_ids[:10])
+    entry["statuses"].extend(slots.statuses[:10])
+    entry["dates"].extend(slots.timestamps[:10])
+
+
+def _source_caveat(source: dict[str, Any], item: dict[str, Any]) -> str:
+    status = str(source.get("status") or item.get("status") or "").upper()
+    if status == "LIVE_EMPTY":
+        return "No matching live API records were returned for this query/scope."
+    if status in {"API_ERROR", "REQUEST_ERROR", "ERROR"} and str(source.get("source") or item.get("source") or "").upper() == "API":
+        return "Live API evidence was unavailable or errored for this source."
+    if status in {"COMPILE_ERROR", "ERROR"}:
+        return "This runtime evidence source errored."
+    return "This runtime evidence source was unavailable for this query/scope."
+
+
+def _item_caveat(item: dict[str, Any]) -> str:
+    status = str(item.get("status") or "").upper()
+    if status == "LIVE_EMPTY":
+        return "No matching live API records were returned for this query/scope."
+    if status == "API_ERROR" or str(item.get("source") or item.get("path") or "").upper() == "API":
+        return "Live API evidence was unavailable or errored for this source."
+    return "This runtime evidence source was unavailable for this query/scope."
+
+
+def _fallback_fact_summary(available: list[dict[str, Any]]) -> str:
+    pieces: list[str] = []
+    for item in available[:4]:
+        label = "/".join(part for part in [str(item.get("task_id") or ""), str(item.get("source") or ""), str(item.get("scope") or "")] if part)
+        values: list[str] = []
+        values.extend(str(value) for value in item.get("facts", [])[:4] if value)
+        if not values:
+            for key in ["counts", "names", "ids", "statuses", "dates"]:
+                for value in item.get(key, [])[:3]:
+                    values.append(f"{key[:-1]}: {value}")
+        if values:
+            pieces.append(f"{label}: {'; '.join(values[:6])}")
+    return " | ".join(pieces) if pieces else "scoped runtime evidence was present"
+
+
+def _dedupe_preserve_order(values: list[Any]) -> list[Any]:
+    out: list[Any] = []
+    seen: set[str] = set()
+    for value in values:
+        marker = json.dumps(value, sort_keys=True, default=str) if isinstance(value, (dict, list)) else str(value)
+        if marker in seen:
+            continue
+        seen.add(marker)
+        out.append(value)
+    return out
+
+
+def _dedupe_dicts(values: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for value in values:
+        marker = json.dumps(value, sort_keys=True, default=str)
+        if marker in seen:
+            continue
+        seen.add(marker)
+        out.append(value)
+    return out
 
 
 def _fact_value_in_answer(fact: str, answer: str) -> bool:
@@ -663,6 +899,20 @@ def _asks_status(prompt: str) -> bool:
 
 def _asks_list(prompt: str) -> bool:
     return bool(re.search(r"\b(list|show|give me|what .+ do i have|which)\b", prompt))
+
+
+def _allows_broad_list_summary(prompt: str, answer: str, slots: AnswerSlots, present_names: list[str]) -> bool:
+    if not present_names:
+        return False
+    if not re.search(r"\bwhat .+ do i have\b", prompt):
+        return False
+    has_count = bool(slots.counts and any(_value_in_answer(value, answer) for value in slots.counts))
+    if not has_count and slots.sql_row_count not in (None, 0, ""):
+        has_count = _value_in_answer(slots.sql_row_count, answer)
+    if not has_count:
+        return False
+    sample_signal = bool(re.search(r"\b(sample|examples?|include|includes|first few|first \w+)\b", answer))
+    return sample_signal and len(present_names) >= min(3, len(slots.entity_names))
 
 
 def _value_in_answer(value: Any, answer: str) -> bool:

@@ -125,6 +125,8 @@ def _count_claims(text: str, occupied: list[tuple[int, int]]) -> list[tuple[Fina
             continue
         if _looks_like_url_port(text, match.start(), match.end()):
             continue
+        if _looks_like_numbered_list_marker(text, match.start(), match.end()):
+            continue
         value = match.group(0).replace(",", "")
         out.append((_claim(text, "COUNT", value, match.start(), match.end()), match.start(), match.end()))
     return out
@@ -256,6 +258,14 @@ def _looks_like_url_port(text: str, start: int, end: int) -> bool:
     prefix = text[max(0, start - 160) : start]
     suffix = text[end : min(len(text), end + 16)]
     return bool(re.search(r"https?://\S*$", prefix, flags=re.I) and (not suffix or suffix[0] in "/?#.:;, )]"))
+
+
+def _looks_like_numbered_list_marker(text: str, start: int, end: int) -> bool:
+    prefix = text[max(0, start - 8) : start]
+    suffix = text[end : min(len(text), end + 2)]
+    if not suffix or suffix[0] not in {".", ")"}:
+        return False
+    return bool(re.search(r"(?:^|\n)\s*$", prefix))
 
 
 def _looks_like_api_caveat_status(text: str, start: int, end: int, status: str) -> bool:
