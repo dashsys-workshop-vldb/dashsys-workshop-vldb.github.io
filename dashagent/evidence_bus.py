@@ -33,6 +33,7 @@ ID_KEYS = {
 
 @dataclass
 class EvidenceBus:
+    run_id: str | None = None
     names: list[str] = field(default_factory=list)
     ids: dict[str, str] = field(default_factory=dict)
     timestamps: list[str] = field(default_factory=list)
@@ -50,6 +51,8 @@ class EvidenceBus:
     api_evidence_states: list[str] = field(default_factory=list)
     api_parser_modes: list[str] = field(default_factory=list)
     pass_results: list[dict[str, Any]] = field(default_factory=list)
+    append_events: list[dict[str, Any]] = field(default_factory=list)
+    _committed_pass_attempts: set[tuple[str, int]] = field(default_factory=set, repr=False)
 
     def observe_sql(self, step: Any, payload: dict[str, Any]) -> None:
         if not payload.get("ok"):
@@ -100,19 +103,39 @@ class EvidenceBus:
         if isinstance(fields, dict):
             self._observe_mapping(fields)
 
-    def observe_pass_result(self, pass_result: dict[str, Any]) -> None:
+    def observe_pass_result(self, pass_result: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(pass_result, dict):
-            return
+            event = {"appended": False, "error_type": "malformed_pass_result"}
+            self.append_events.append(event)
+            return event
+        result_run_id = pass_result.get("run_id")
+        if self.run_id and result_run_id and result_run_id != self.run_id:
+            event = {"appended": False, "error_type": "run_isolation_error", "run_id": result_run_id}
+            self.append_events.append(event)
+            return event
+        pass_id = str(pass_result.get("pass_id") or "")
+        attempt_id = int(pass_result.get("attempt_id") or 0)
+        key = (pass_id, attempt_id)
+        if key in self._committed_pass_attempts:
+            event = {"appended": False, "error_type": "duplicate_commit", "pass_id": pass_id, "attempt_id": attempt_id}
+            self.append_events.append(event)
+            return event
         self.pass_results.append(
             {
+                "run_id": result_run_id or self.run_id,
                 "pass_id": pass_result.get("pass_id"),
                 "path": pass_result.get("path"),
                 "status": pass_result.get("status"),
+                "attempt_id": attempt_id,
                 "depends_on": list(pass_result.get("depends_on") or []),
                 "facts": list(pass_result.get("facts") or [])[:10],
                 "source_result_count": len(pass_result.get("source_results") or []),
             }
         )
+        self._committed_pass_attempts.add(key)
+        event = {"appended": True, "pass_id": pass_id, "attempt_id": attempt_id}
+        self.append_events.append(event)
+        return event
 
     def forward_to_step(self, step: Any) -> list[str]:
         actions: list[str] = []
@@ -172,6 +195,7 @@ class EvidenceBus:
             "api_pagination": self.api_pagination[:2],
             "api_evidence_states": self.api_evidence_states[:5],
             "api_parser_modes": self.api_parser_modes[:5],
+            "run_id": self.run_id,
             "pass_result_count": len(self.pass_results),
             "pass_ids": [str(item.get("pass_id")) for item in self.pass_results[:6] if item.get("pass_id")],
         }

@@ -138,7 +138,7 @@ def compose_llm_final_answer(
         )
     system_prompt = (
         "You are the sole final-answer composer for DASHSys V2. "
-        "Return ONLY valid JSON with keys final_answer, used_pass_ids, claimed_facts, caveats_included. "
+        "Use the submit_final_answer tool when available; otherwise return ONLY valid JSON with keys final_answer, used_pass_ids, claimed_facts, caveats_included. "
         "Use only runtime evidence provided in the card. "
         "Do not use hidden eval or gold-answer wording. "
         "Do not invent counts, dates, statuses, entity names, IDs, relationships, live state, or API success. "
@@ -147,7 +147,12 @@ def compose_llm_final_answer(
     payload = dict(card)
     if repair_context:
         payload["repair_context"] = compact_preview(repair_context, 1800)
-    result = client.generate(system_prompt, json.dumps(payload, sort_keys=True, default=str))
+    result = client.generate_messages(
+        [{"role": "system", "content": system_prompt}, {"role": "user", "content": json.dumps(payload, sort_keys=True, default=str)}],
+        tools=[_final_answer_tool_schema()],
+        tool_choice={"type": "function", "function": {"name": "submit_final_answer"}},
+        parallel_tool_calls=False,
+    )
     provider = str(result.get("provider") or provider)
     model = str(result.get("model") or model)
     if not result.get("ok", True) and not result.get("content"):
@@ -159,7 +164,11 @@ def compose_llm_final_answer(
             raw_preview=compact_preview(result, 1200),
             error_message=str(result.get("error") or result.get("reason") or "LLM final answer composition failed"),
         )
-    candidate = parse_llm_final_answer_response(str(result.get("content") or ""))
+    try:
+        structured = _structured_tool_arguments(result, "submit_final_answer")
+        candidate = parse_llm_final_answer_response(json.dumps(structured, sort_keys=True, default=str))
+    except Exception:
+        candidate = parse_llm_final_answer_response(str(result.get("content") or ""))
     candidate.provider = provider
     candidate.model = model
     return candidate
@@ -278,6 +287,55 @@ def _strip_json_text(text: str) -> str:
         stripped = re.sub(r"```$", "", stripped).strip()
     match = re.search(r"\{.*\}", stripped, flags=re.S)
     return match.group(0) if match else stripped
+
+
+def _structured_tool_arguments(result: dict[str, Any], tool_name: str) -> dict[str, Any]:
+    for call in result.get("tool_calls") or []:
+        if not isinstance(call, dict):
+            continue
+        name = call.get("name") or call.get("tool")
+        if name != tool_name:
+            continue
+        arguments = call.get("arguments")
+        if isinstance(arguments, dict):
+            return arguments
+        raw = call.get("raw_arguments")
+        if isinstance(raw, str):
+            parsed = json.loads(raw)
+            if isinstance(parsed, dict):
+                return parsed
+    raise ValueError(f"Missing structured tool output: {tool_name}")
+
+
+def _final_answer_tool_schema() -> dict[str, Any]:
+    return {
+        "type": "function",
+        "function": {
+            "name": "submit_final_answer",
+            "description": "Submit the LLM-owned final answer wrapper grounded in current run evidence.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "final_answer": {"type": "string"},
+                    "used_pass_ids": {"type": "array", "items": {"type": "string"}},
+                    "claimed_facts": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "claim": {"type": "string"},
+                                "supporting_pass_ids": {"type": "array", "items": {"type": "string"}},
+                            },
+                        },
+                    },
+                    "caveats_included": {"type": "array", "items": {"type": "string"}},
+                    "answered_subtasks": {"type": "array", "items": {"type": "string"}},
+                    "unanswered_subtasks": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["final_answer", "used_pass_ids", "claimed_facts", "caveats_included"],
+            },
+        },
+    }
 
 
 def _safe_pass_payload(item: dict[str, Any]) -> dict[str, Any]:

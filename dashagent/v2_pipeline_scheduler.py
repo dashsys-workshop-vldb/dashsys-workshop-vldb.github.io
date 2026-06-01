@@ -5,6 +5,7 @@ from typing import Any
 
 from .llm_unified_planner import LLMUnifiedPass
 from .pass_graph_gate import PassGraphGateResult
+from .v2_run_context import RunContext, StageEvent
 
 
 PIPELINE_STAGES = [
@@ -77,7 +78,14 @@ class V2PipelineScheduler:
         self.max_api_workers = max(1, int(max_api_workers))
         self.timeout_seconds = float(timeout_seconds)
 
-    def schedule(self, passes: list[LLMUnifiedPass], graph_gate: PassGraphGateResult) -> V2PipelineSchedule:
+    def schedule(
+        self,
+        passes: list[LLMUnifiedPass],
+        graph_gate: PassGraphGateResult,
+        *,
+        parallel_groups: list[list[str]] | None = None,
+        run_context: RunContext | None = None,
+    ) -> V2PipelineSchedule:
         events: list[dict[str, Any]] = []
         histories: dict[str, list[dict[str, Any]]] = {item.pass_id: [] for item in passes}
         completed: list[str] = []
@@ -99,7 +107,7 @@ class V2PipelineScheduler:
                 max_observed_parallelism=0,
                 max_observed_sql_workers=0,
                 max_observed_api_workers=0,
-                parallel_groups=graph_gate.parallel_groups,
+                parallel_groups=parallel_groups or graph_gate.parallel_groups,
                 dependency_edges=graph_gate.dependency_edges,
                 stage_events=[],
                 pass_stage_history=histories,
@@ -108,22 +116,23 @@ class V2PipelineScheduler:
                 passes_dependency_blocked=blocked,
             )
 
-        for group in graph_gate.parallel_groups:
+        selected_parallel_groups = parallel_groups or graph_gate.parallel_groups
+        for group in selected_parallel_groups:
             group_passes = [pass_by_id[pass_id] for pass_id in group if pass_id in pass_by_id]
             for batch in _chunks(group_passes, self.max_parallelism):
                 max_seen_parallel = max(max_seen_parallel, len(batch))
-                _record_stage(events, histories, batch, "PLAN_READY")
-                _record_stage(events, histories, batch, "DEPENDENCY_READY")
-                _record_stage(events, histories, batch, "SQL_API_GATE")
+                _record_stage(events, histories, batch, "PLAN_READY", run_context=run_context)
+                _record_stage(events, histories, batch, "DEPENDENCY_READY", run_context=run_context)
+                _record_stage(events, histories, batch, "SQL_API_GATE", run_context=run_context)
                 sql_count = sum(1 for item in batch if item.path in {"SQL", "SQL_AND_API"})
                 api_count = sum(1 for item in batch if item.path in {"API", "SQL_AND_API"})
                 max_seen_sql = max(max_seen_sql, min(sql_count, self.max_sql_workers))
                 max_seen_api = max(max_seen_api, min(api_count, self.max_api_workers))
-                _record_stage(events, histories, batch, "EXECUTE")
-                _record_stage(events, histories, batch, "NORMALIZE_PASS_RESULT")
-                _record_stage(events, histories, batch, "EVIDENCEBUS_APPEND")
-                _record_stage(events, histories, batch, "RESULTBUNDLE_APPEND")
-                _record_stage(events, histories, batch, "READY_FOR_FINAL_COMPOSITION")
+                _record_stage(events, histories, batch, "EXECUTE", run_context=run_context)
+                _record_stage(events, histories, batch, "NORMALIZE_PASS_RESULT", run_context=run_context)
+                _record_stage(events, histories, batch, "EVIDENCEBUS_APPEND", run_context=run_context)
+                _record_stage(events, histories, batch, "RESULTBUNDLE_APPEND", run_context=run_context)
+                _record_stage(events, histories, batch, "READY_FOR_FINAL_COMPOSITION", run_context=run_context)
                 completed.extend(item.pass_id for item in batch)
 
         return V2PipelineSchedule(
@@ -135,7 +144,7 @@ class V2PipelineScheduler:
             max_observed_parallelism=max_seen_parallel,
             max_observed_sql_workers=max_seen_sql,
             max_observed_api_workers=max_seen_api,
-            parallel_groups=graph_gate.parallel_groups,
+            parallel_groups=selected_parallel_groups,
             dependency_edges=graph_gate.dependency_edges,
             stage_events=events,
             pass_stage_history=histories,
@@ -150,11 +159,13 @@ def _record_stage(
     histories: dict[str, list[dict[str, Any]]],
     passes: list[LLMUnifiedPass],
     stage: str,
+    *,
+    run_context: RunContext | None = None,
 ) -> None:
     for item in passes:
-        _event(events, histories, item.pass_id, stage, "started")
+        _event(events, histories, item.pass_id, stage, "started", run_context=run_context)
     for item in passes:
-        _event(events, histories, item.pass_id, stage, "completed")
+        _event(events, histories, item.pass_id, stage, "completed", run_context=run_context)
 
 
 def _event(
@@ -163,13 +174,28 @@ def _event(
     pass_id: str,
     stage: str,
     event: str,
+    *,
+    run_context: RunContext | None = None,
 ) -> None:
-    payload = {
-        "pass_id": pass_id,
-        "stage": stage,
-        "event": event,
-        "timestamp": f"t{len(events) + 1:06d}",
-    }
+    timestamp = f"t{len(events) + 1:06d}"
+    if run_context is not None:
+        payload = StageEvent(
+            run_id=run_context.run_id,
+            pass_id=pass_id,
+            global_pass_id=f"{run_context.run_id}:{pass_id}",
+            attempt_id=0,
+            plan_version=run_context.plan_version,
+            stage=stage,
+            event=event,
+            timestamp=timestamp,
+        ).to_dict()
+    else:
+        payload = {
+            "pass_id": pass_id,
+            "stage": stage,
+            "event": event,
+            "timestamp": timestamp,
+        }
     events.append(payload)
     histories.setdefault(pass_id, []).append(payload)
 
@@ -181,7 +207,7 @@ def _chunks(values: list[LLMUnifiedPass], size: int) -> list[list[LLMUnifiedPass
 def _summary_stage_events(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     gate_starts = [item for item in events if item.get("stage") == "SQL_API_GATE" and item.get("event") == "started"]
     final_ready = [item for item in events if item.get("stage") == "READY_FOR_FINAL_COMPOSITION" and item.get("event") == "completed"]
-    important = gate_starts + final_ready
+    important = gate_starts[:1] + final_ready + gate_starts[1:]
     seen = {id(item) for item in important}
     rest = [item for item in events if id(item) not in seen and item.get("stage") in {"SQL_API_GATE", "EXECUTE", "READY_FOR_FINAL_COMPOSITION"}]
     return important + rest if important else events

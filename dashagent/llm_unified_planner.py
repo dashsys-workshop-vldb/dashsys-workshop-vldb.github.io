@@ -53,6 +53,8 @@ class LLMUnifiedPass:
     sql: LLMUnifiedSQLCandidate | None
     api_request: LLMUnifiedAPIRequest | None
     expected_result: str = ""
+    optional: bool = False
+    fallback: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -65,6 +67,8 @@ class LLMUnifiedPass:
             "sql": self.sql.to_dict() if self.sql else None,
             "api_request": self.api_request.to_dict() if self.api_request else None,
             "expected_result": self.expected_result,
+            "optional": self.optional,
+            "fallback": self.fallback,
         }
 
 
@@ -123,13 +127,13 @@ def run_llm_unified_planner(
 
     system_prompt = (
         "You are the only semantic planner for this DASHSys V2 runtime. "
-        "Return ONLY valid JSON matching the requested schema. "
+        "Use the submit_v2_plan tool when available; otherwise return ONLY valid JSON matching the requested schema. "
         "You may choose LLM_DIRECT only for pure general, concept, meta-language, or out-of-domain questions "
         "that need no user-specific, live, SQL, or API evidence. "
         "For data, mixed, ambiguous-data-like, SQL/API, live/current/status/date/count/list/show/my prompts, "
         "choose EVIDENCE_PIPELINE and provide SQL and/or one safe GET API request if useful. "
         "The backend will only compile-check SQL, request-check API shape, execute, and ground the final answer. "
-        "Do not rely on tool calling. Do not include markdown."
+        "Do not include markdown."
     )
     payload = {
         "output_schema": {
@@ -149,6 +153,8 @@ def run_llm_unified_planner(
                     "sql": {"query": "string", "params": []},
                     "api_request": {"method": "GET", "path": "/path", "params": {}},
                     "expected_result": "short result description",
+                    "optional": False,
+                    "fallback": False,
                 }
             ],
             "aggregation_instruction": "How to combine pass results into one final answer",
@@ -168,7 +174,13 @@ def run_llm_unified_planner(
             "API requests must be safe GET requests from the endpoint context.",
         ],
     }
-    result = client.generate(system_prompt, json.dumps(payload, sort_keys=True, default=str))
+    tool = _planner_tool_schema()
+    result = client.generate_messages(
+        [{"role": "system", "content": system_prompt}, {"role": "user", "content": json.dumps(payload, sort_keys=True, default=str)}],
+        tools=[tool],
+        tool_choice={"type": "function", "function": {"name": "submit_v2_plan"}},
+        parallel_tool_calls=False,
+    )
     provider = str(result.get("provider") or provider)
     model = str(result.get("model") or model)
     if not result.get("ok", True) and not result.get("content"):
@@ -179,9 +191,13 @@ def run_llm_unified_planner(
             backend_unavailable=bool(result.get("skipped")),
             raw_preview=compact_preview(result, 1000),
         )
-    raw_content = str(result.get("content") or "")
     try:
-        parsed = _parse_json_object(raw_content)
+        parsed = _structured_tool_arguments(result, "submit_v2_plan")
+        raw_content = json.dumps(parsed, sort_keys=True, default=str)
+    except Exception:
+        raw_content = str(result.get("content") or "")
+    try:
+        parsed = parsed if isinstance(locals().get("parsed"), dict) else _parse_json_object(raw_content)
     except Exception:
         return _fallback_plan(
             provider=provider,
@@ -293,6 +309,8 @@ def _normalize_passes(
             sql=fallback_sql,
             api_request=fallback_api_request,
             expected_result="Primary runtime evidence.",
+            optional=False,
+            fallback=False,
         )
     ]
 
@@ -322,6 +340,8 @@ def _normalize_pass(value: Any, *, index: int) -> LLMUnifiedPass | None:
         sql=sql,
         api_request=api_request,
         expected_result=str(value.get("expected_result") or "").strip(),
+        optional=bool(value.get("optional", False)),
+        fallback=bool(value.get("fallback", False)),
     )
 
 
@@ -345,6 +365,8 @@ def _dedupe_pass_ids(passes: list[LLMUnifiedPass]) -> list[LLMUnifiedPass]:
                     sql=item.sql,
                     api_request=item.api_request,
                     expected_result=item.expected_result,
+                    optional=item.optional,
+                    fallback=item.fallback,
                 )
             )
     return out
@@ -377,6 +399,70 @@ def _parse_json_object(text: str) -> dict[str, Any]:
     if not isinstance(parsed, dict):
         raise ValueError("Planner response must be a JSON object")
     return parsed
+
+
+def _structured_tool_arguments(result: dict[str, Any], tool_name: str) -> dict[str, Any]:
+    for call in result.get("tool_calls") or []:
+        if not isinstance(call, dict):
+            continue
+        name = call.get("name") or call.get("tool")
+        if name != tool_name:
+            continue
+        arguments = call.get("arguments")
+        if isinstance(arguments, dict):
+            return arguments
+        raw = call.get("raw_arguments")
+        if isinstance(raw, str):
+            parsed = json.loads(raw)
+            if isinstance(parsed, dict):
+                return parsed
+    raise ValueError(f"Missing structured tool output: {tool_name}")
+
+
+def _planner_tool_schema() -> dict[str, Any]:
+    pass_schema = {
+        "type": "object",
+        "properties": {
+            "pass_id": {"type": "string"},
+            "subtask": {"type": "string"},
+            "path": {"type": "string", "enum": sorted(ALLOWED_PASS_PATHS)},
+            "depends_on": {"type": "array", "items": {"type": "string"}},
+            "can_run_parallel": {"type": "boolean"},
+            "sql": {
+                "type": ["object", "null"],
+                "properties": {"query": {"type": "string"}, "params": {"type": "array"}},
+                "required": ["query"],
+            },
+            "api_request": {
+                "type": ["object", "null"],
+                "properties": {"method": {"type": "string"}, "path": {"type": "string"}, "params": {"type": "object"}},
+                "required": ["method", "path"],
+            },
+            "expected_result": {"type": "string"},
+            "optional": {"type": "boolean"},
+            "fallback": {"type": "boolean"},
+        },
+        "required": ["pass_id", "subtask", "path", "depends_on", "can_run_parallel"],
+    }
+    return {
+        "type": "function",
+        "function": {
+            "name": "submit_v2_plan",
+            "description": "Submit the LLM-owned V2 route, evidence order, pass DAG, SQL/API candidates, and aggregation instruction.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "route": {"type": "string", "enum": sorted(ALLOWED_ROUTES)},
+                    "evidence_order": {"type": "string", "enum": sorted(ALLOWED_EVIDENCE_ORDERS)},
+                    "direct_answer": {"type": ["string", "null"]},
+                    "passes": {"type": "array", "items": pass_schema},
+                    "aggregation_instruction": {"type": ["string", "null"]},
+                    "reason": {"type": ["string", "null"]},
+                },
+                "required": ["route", "evidence_order", "passes"],
+            },
+        },
+    }
 
 
 def _strip_json_text(text: str) -> str:

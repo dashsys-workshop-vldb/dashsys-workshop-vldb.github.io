@@ -83,6 +83,30 @@ def test_pass_graph_gate_rejects_unknown_dependency():
     assert result.error_type == "unknown_dependency"
 
 
+def test_pass_graph_gate_rejects_unknown_placeholder_reference():
+    plan = normalize_llm_unified_plan(
+        {
+            "route": "EVIDENCE_PIPELINE",
+            "evidence_order": "MULTI_PASS",
+            "passes": [
+                {
+                    "pass_id": "details",
+                    "path": "SQL",
+                    "depends_on": [],
+                    "sql": {"query": "SELECT ? AS id", "params": ["{{lookup.result.id}}"]},
+                }
+            ],
+        },
+        provider="fake",
+        model="fake",
+    )
+
+    result = PassGraphGate(max_passes=4).check(plan)
+
+    assert result.passed is False
+    assert result.error_type == "unknown_placeholder_dependency"
+
+
 def test_pass_graph_gate_rejects_dependency_cycle():
     plan = normalize_llm_unified_plan(
         {

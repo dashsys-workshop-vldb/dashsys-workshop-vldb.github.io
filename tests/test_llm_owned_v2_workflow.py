@@ -311,7 +311,7 @@ def test_v2_parallel_sql_api_passes_are_aggregated_by_llm_final_answer(tiny_proj
         query_id="v2_parallel_sql_api_answer",
     )
 
-    assert [row["type"] for row in result["tool_results"]] == ["sql", "api"]
+    assert sorted(row["type"] for row in result["tool_results"]) == ["api", "sql"]
     assert result["final_answer"] == "There are 2 campaigns, and Birthday Message was returned by the live API."
     assert "checkpoint_llm_final_answer_composer" in _checkpoint_names(result)
     final = _checkpoint_output(result, "checkpoint_18_final_answer")
@@ -319,14 +319,18 @@ def test_v2_parallel_sql_api_passes_are_aggregated_by_llm_final_answer(tiny_proj
     assert final["used_pass_ids"]["items"] == ["local_count", "live_schema_probe"]
     boundary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
     assert boundary["multi_pass_enabled"] is True
+    assert boundary["v2_execution_optimizer_used"] is True
+    assert boundary["stage_pipeline_used"] is True
+    assert boundary["backend_semantic_planning_used"] is False
     assert boundary["v2_pipeline_scheduler_used"] is True
     assert boundary["pipeline_stage_count"] == 8
     assert "stage_events" in boundary
     assert boundary["llm_pass_graph_used"] is True
     assert boundary["llm_pass_count"] == 2
     assert boundary["parallel_pass_count"] == 2
-    assert _preview_groups(boundary["parallel_groups"]) == [["local_count", "live_schema_probe"]]
+    assert _preview_groups(boundary["parallel_groups"]) == [["live_schema_probe", "local_count"]]
     assert _preview_groups(boundary["dependency_edges"]) == []
+    assert boundary["critical_path"]["items"] == ["live_schema_probe"]
     assert boundary["pass_graph_gate_passed"] is True
     stage_events = _preview_items(boundary["stage_events"])
     p2_gate_started = next(index for index, item in enumerate(stage_events) if item["pass_id"] == "live_schema_probe" and item["stage"] == "SQL_API_GATE" and item["event"] == "started")
@@ -334,8 +338,63 @@ def test_v2_parallel_sql_api_passes_are_aggregated_by_llm_final_answer(tiny_proj
     assert p2_gate_started < p1_final_ready
     assert boundary["backend_semantic_decomposition_used"] is False
     composer_payload = next(payload for payload in _client_call_payloads(client) if payload.get("task") == "LLM_OWNED_FINAL_ANSWER_COMPOSITION")
-    assert [item["pass_id"] for item in composer_payload["runtime_passes"]] == ["local_count", "live_schema_probe"]
+    assert sorted(item["pass_id"] for item in composer_payload["runtime_passes"]) == ["live_schema_probe", "local_count"]
     assert composer_payload["aggregation_instruction"] == "Report both local count and live API evidence."
+
+
+def test_v2_exact_duplicate_sql_pass_reuses_cached_pass_result(tiny_project, monkeypatch):
+    client = _install_fake_planner(
+        monkeypatch,
+        [
+            {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "MULTI_PASS",
+                "passes": [
+                    {
+                        "pass_id": "first_count",
+                        "subtask": "Count campaigns once.",
+                        "path": "SQL",
+                        "can_run_parallel": True,
+                        "depends_on": [],
+                        "sql": {"query": "SELECT COUNT(*) AS count FROM dim_campaign", "params": []},
+                    },
+                    {
+                        "pass_id": "duplicate_count",
+                        "subtask": "Duplicate count pass declared by the LLM.",
+                        "path": "SQL",
+                        "can_run_parallel": True,
+                        "depends_on": [],
+                        "sql": {"query": "SELECT COUNT(*) AS count FROM dim_campaign", "params": []},
+                    },
+                ],
+                "aggregation_instruction": "Use both declared pass results.",
+            },
+            {
+                "final_answer": "There are 2 campaigns.",
+                "used_pass_ids": ["first_count", "duplicate_count"],
+                "claimed_facts": [{"claim": "There are 2 campaigns.", "supporting_pass_ids": ["first_count", "duplicate_count"]}],
+                "caveats_included": [],
+            },
+        ],
+    )
+
+    result = AgentExecutor(tiny_project).run(
+        "Count campaigns twice if needed.",
+        strategy=ROBUST_V2,
+        query_id="v2_duplicate_sql_cache",
+    )
+
+    assert [row["pass_id"] for row in result["tool_results"]] == ["first_count"]
+    boundary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
+    assert boundary["cache_hits"] == 1
+    assert boundary["deduped_passes"]["items"][0]["pass_id"] == "duplicate_count"
+    result_bundle = _checkpoint_output(result, "checkpoint_result_bundle")
+    runtime_passes = _preview_items(result_bundle["runtime_passes"])
+    assert [item["pass_id"] for item in runtime_passes] == ["first_count", "duplicate_count"]
+    assert runtime_passes[1]["cached_sources"]["items"] == ["sql"]
+    composer_payload = next(payload for payload in _client_call_payloads(client) if payload.get("task") == "LLM_OWNED_FINAL_ANSWER_COMPOSITION")
+    duplicate_pass = next(item for item in composer_payload["runtime_passes"] if item["pass_id"] == "duplicate_count")
+    assert duplicate_pass["cached_sources"]["items"] == ["sql"]
 
 
 def test_v2_dependent_pass_waits_for_declared_dependency(tiny_project, monkeypatch):

@@ -120,7 +120,9 @@ from .prompt_router import LLM_DIRECT, route_prompt
 from .trajectory import TrajectoryLogger, compact_preview, estimate_tokens
 from .token_reduction_policy import apply_token_reduction_to_trajectory
 from .validators import APIValidator, SQLValidator, ValidationResult
+from .v2_execution_optimizer import BudgetLimits, V2ExecutionOptimizer
 from .v2_pipeline_scheduler import V2PipelineScheduler
+from .v2_run_context import RunBudget, RunContext, create_run_context
 from .value_retrieval import build_value_index, extract_query_values, retrieve_value_matches, value_retrieval_summary
 
 
@@ -206,6 +208,7 @@ class AgentExecutor:
             allow_unknown=self.config.allow_unknown_api_endpoints,
         )
         self.api_request_gate = APIRequestGate(self.api_validator)
+        self.v2_execution_optimizer = V2ExecutionOptimizer()
         self.v2_pipeline_scheduler = V2PipelineScheduler()
         self.cache_fingerprint = current_fingerprint(self.config)
 
@@ -1530,6 +1533,16 @@ class AgentExecutor:
         out_dir: Path,
         checkpoint_logger: CheckpointLogger,
     ) -> dict[str, Any]:
+        run_context = create_run_context(
+            query,
+            prompt_id=qid,
+            budget=RunBudget(
+                max_passes=getattr(self.pass_graph_gate, "max_passes", 6),
+                max_parallelism=self.v2_pipeline_scheduler.max_parallelism,
+                max_sql_workers=self.v2_pipeline_scheduler.max_sql_workers,
+                max_api_workers=self.v2_pipeline_scheduler.max_api_workers,
+            ),
+        )
         planner_context = self._llm_owned_planner_context()
         plan = run_llm_unified_planner(
             user_prompt=query,
@@ -1551,6 +1564,7 @@ class AgentExecutor:
             "query_id": qid,
             "query": query,
             "strategy": strategy,
+            "run_context": run_context.to_dict(),
             "llm_owned_generation": True,
             "backend_semantic_planning_used": False,
             "llm_unified_plan": plan.to_dict(),
@@ -1569,12 +1583,14 @@ class AgentExecutor:
                 metadata=metadata,
                 filled_prompt=filled_prompt,
                 plan=plan,
+                run_context=run_context,
                 checkpoint_logger=checkpoint_logger,
             )
 
         tool_results, runtime_passes, execution_summary = self._execute_llm_owned_evidence_plan(
             query=query,
             initial_plan=plan,
+            run_context=run_context,
             planner_context=planner_context,
             checkpoint_logger=checkpoint_logger,
         )
@@ -1596,7 +1612,7 @@ class AgentExecutor:
             efficiency_role="bounds repair attempts before execution",
         )
 
-        evidence_bus = EvidenceBus()
+        evidence_bus = EvidenceBus(run_id=run_context.run_id)
         for item in tool_results:
             step_payload = item.get("step") if isinstance(item.get("step"), dict) else {}
             step = PlanStep(
@@ -1687,7 +1703,7 @@ class AgentExecutor:
 
         answer_start = time.perf_counter()
         evidence_quality = classify_evidence_quality(tool_results, api_required=any(item.get("type") == "api" for item in tool_results))
-        result_bundle = ResultBundle.from_pass_results(runtime_passes, tool_results)
+        result_bundle = ResultBundle.from_pass_results(runtime_passes, tool_results, run_id=run_context.run_id)
         checkpoint_logger.add_checkpoint(
             "checkpoint_result_bundle",
             stage="evidence forwarding",
@@ -1899,6 +1915,7 @@ class AgentExecutor:
         metadata: dict[str, Any],
         filled_prompt: str,
         plan: LLMUnifiedPlan,
+        run_context: RunContext,
         checkpoint_logger: CheckpointLogger,
     ) -> dict[str, Any]:
         final_answer = str(plan.direct_answer or "").strip()
@@ -1918,9 +1935,20 @@ class AgentExecutor:
             "evidence_bus_built": False,
         }
         generation_boundary = {
+            "run_id": run_context.run_id,
             "llm_owned_generation": True,
             "multi_pass_enabled": False,
             "llm_pass_graph_used": False,
+            "v2_execution_optimizer_used": False,
+            "critical_path": [],
+            "stage_pipeline_used": False,
+            "cache_hits": 0,
+            "deduped_passes": [],
+            "early_stopped_passes": [],
+            "budget_limits": run_context.budget.to_dict(),
+            "budget_exceeded": False,
+            "checkpoint_resume_used": False,
+            "model_cascade_used": False,
             "v2_pipeline_scheduler_used": False,
             "pipeline_stage_count": 0,
             "max_parallelism": 0,
@@ -2022,6 +2050,7 @@ class AgentExecutor:
         *,
         query: str,
         initial_plan: LLMUnifiedPlan,
+        run_context: RunContext,
         planner_context: dict[str, Any],
         checkpoint_logger: CheckpointLogger,
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
@@ -2029,8 +2058,29 @@ class AgentExecutor:
         runtime_passes: list[dict[str, Any]] = []
         pass_specs = initial_plan.passes or []
         graph_gate = self.pass_graph_gate.check(initial_plan)
-        pipeline_schedule = self.v2_pipeline_scheduler.schedule(pass_specs, graph_gate)
+        run_optimizer = V2ExecutionOptimizer(
+            budget_limits=BudgetLimits(
+                max_passes=run_context.budget.max_passes,
+                max_parallelism=run_context.budget.max_parallelism,
+                max_sql_workers=run_context.budget.max_sql_workers,
+                max_api_workers=run_context.budget.max_api_workers,
+                max_repair_attempts=run_context.budget.max_repair_attempts,
+                timeout_seconds=run_context.budget.run_timeout_ms / 1000.0,
+            ),
+            run_id=run_context.run_id,
+        )
+        optimization_plan = run_optimizer.prepare(pass_specs, graph_gate)
+        pipeline_schedule = self.v2_pipeline_scheduler.schedule(
+            pass_specs,
+            graph_gate,
+            parallel_groups=optimization_plan.parallel_groups,
+            run_context=run_context,
+        )
         summary: dict[str, Any] = {
+            "run_id": run_context.run_id,
+            "result_bundle_id": run_context.result_bundle_id,
+            "evidence_bus_id": run_context.evidence_bus_id,
+            "plan_version": run_context.plan_version,
             "sql_gate_passed": None,
             "api_gate_passed": None,
             "sql_compile_gate_passed": None,
@@ -2048,6 +2098,7 @@ class AgentExecutor:
             "parallel_groups": graph_gate.parallel_groups,
             "dependency_edges": graph_gate.dependency_edges,
             "pass_graph_gate_passed": graph_gate.passed,
+            **optimization_plan.to_summary(),
             **pipeline_schedule.to_summary(),
             "pass_results_count": 0,
             "passes_executed": [],
@@ -2057,6 +2108,16 @@ class AgentExecutor:
             "deterministic_answer_template_used": False,
             "hidden_eval_gold_used": False,
         }
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_v2_execution_optimizer",
+            stage="llm-owned execution optimization",
+            technique="backend-only scheduling/cache/budget optimizer",
+            input_summary={"pass_ids": summary["pass_ids"], "dependency_edges": graph_gate.dependency_edges},
+            output=optimization_plan.to_dict(),
+            effect="optimizes resource order, exact duplicate work, cache reuse, and budgets without changing LLM semantics",
+            correctness_role="does not split prompts, choose SQL/API paths, rewrite SQL/API, or generate answers",
+            efficiency_role="prioritizes critical path and enables exact pass-result reuse",
+        )
         checkpoint_logger.add_checkpoint(
             "checkpoint_v2_pipeline_scheduler",
             stage="llm-owned pipeline scheduling",
@@ -2078,7 +2139,11 @@ class AgentExecutor:
             efficiency_role="bounds pass scheduling to LLM-declared valid graphs",
         )
         if not graph_gate.passed:
-            runtime_passes.append(_pass_graph_error_runtime_pass(graph_gate))
+            runtime_passes.append(_pass_graph_error_runtime_pass(graph_gate, run_context=run_context))
+            summary["pass_results_count"] = len(runtime_passes)
+            return tool_results, runtime_passes, summary
+        if optimization_plan.budget_exceeded:
+            runtime_passes.append(_budget_error_runtime_pass(optimization_plan, run_context=run_context))
             summary["pass_results_count"] = len(runtime_passes)
             return tool_results, runtime_passes, summary
         checkpoint_logger.add_checkpoint(
@@ -2094,6 +2159,11 @@ class AgentExecutor:
         pass_by_id = {item.pass_id: item for item in pass_specs}
         for pass_group in [[pass_by_id[pass_id] for pass_id in group if pass_id in pass_by_id] for group in pipeline_schedule.parallel_groups]:
             for pass_spec in pass_group:
+                early_stop = run_optimizer.early_stop_decision(pass_spec, runtime_passes)
+                if early_stop.get("skip"):
+                    runtime_passes.append(_early_stopped_runtime_pass(pass_spec, early_stop, run_context=run_context))
+                    summary.setdefault("early_stopped_passes", []).append(early_stop)
+                    continue
                 resolved_pass, dependency_resolution = self._resolve_or_repair_llm_owned_pass(
                     query=query,
                     original_plan=initial_plan,
@@ -2102,12 +2172,23 @@ class AgentExecutor:
                     planner_context=planner_context,
                     checkpoint_logger=checkpoint_logger,
                     summary=summary,
+                    run_context=run_context,
                 )
                 if resolved_pass is None:
-                    runtime_passes.append(_dependency_error_runtime_pass(pass_spec, dependency_resolution))
+                    runtime_passes.append(_dependency_error_runtime_pass(pass_spec, dependency_resolution, run_context=run_context))
                     continue
                 pass_tool_results: list[dict[str, Any]] = []
                 for source in self._llm_owned_pass_execution_order(resolved_pass):
+                    cached_result = run_optimizer.lookup_cached_result(
+                        resolved_pass,
+                        source,
+                        target_pass_id=resolved_pass.pass_id,
+                    )
+                    if cached_result is not None:
+                        pass_tool_results.append(cached_result)
+                        summary["cache_hits"] = run_optimizer.trace.get("cache_hits", 0)
+                        summary["checkpoint_resume_used"] = run_optimizer.trace.get("checkpoint_resume_used", False)
+                        continue
                     if source == "sql" and resolved_pass.sql is not None:
                         result = self._run_llm_owned_sql_for_pass(
                             query=query,
@@ -2120,6 +2201,7 @@ class AgentExecutor:
                         if result is not None:
                             pass_tool_results.append(result)
                             tool_results.append(result)
+                            run_optimizer.store_result(resolved_pass, source, result)
                     elif source == "api" and resolved_pass.api_request is not None:
                         result = self._run_llm_owned_api_for_pass(
                             query=query,
@@ -2132,15 +2214,19 @@ class AgentExecutor:
                         if result is not None:
                             pass_tool_results.append(result)
                             tool_results.append(result)
+                            run_optimizer.store_result(resolved_pass, source, result)
                 runtime_pass = _runtime_pass_from_pass_spec(
                     resolved_pass,
                     pass_tool_results,
                     dependency_resolution=dependency_resolution,
                     stage_history=pipeline_schedule.pass_stage_history.get(resolved_pass.pass_id, []),
+                    run_context=run_context,
                 )
                 runtime_passes.append(runtime_pass)
                 summary["passes_executed"].append(resolved_pass.pass_id)
         summary["pass_results_count"] = len(runtime_passes)
+        summary["cache_hits"] = run_optimizer.trace.get("cache_hits", summary.get("cache_hits", 0))
+        summary["checkpoint_resume_used"] = run_optimizer.trace.get("checkpoint_resume_used", summary.get("checkpoint_resume_used", False))
         return tool_results, runtime_passes, summary
 
     def _resolve_or_repair_llm_owned_pass(
@@ -2153,8 +2239,9 @@ class AgentExecutor:
         planner_context: dict[str, Any],
         checkpoint_logger: CheckpointLogger,
         summary: dict[str, Any],
+        run_context: RunContext,
     ) -> tuple[LLMUnifiedPass | None, dict[str, Any]]:
-        resolved_pass, resolution = _resolve_pass_placeholders(pass_spec, runtime_passes)
+        resolved_pass, resolution = _resolve_pass_placeholders(pass_spec, runtime_passes, run_id=run_context.run_id)
         checkpoint_logger.add_checkpoint(
             "checkpoint_llm_owned_dependency_resolution",
             stage="llm-owned pass dependency resolution",
@@ -2196,7 +2283,7 @@ class AgentExecutor:
         repaired_pass = _repaired_pass_for(repair_plan, pass_spec.pass_id, source=_primary_pass_source(pass_spec))
         if repaired_pass is None:
             return None, {**resolution, "repair_attempted": True, "repair_resolved": False}
-        repaired_resolved_pass, repaired_resolution = _resolve_pass_placeholders(repaired_pass, runtime_passes)
+        repaired_resolved_pass, repaired_resolution = _resolve_pass_placeholders(repaired_pass, runtime_passes, run_id=run_context.run_id)
         repaired_resolution = {**repaired_resolution, "repair_attempted": True}
         checkpoint_logger.add_checkpoint(
             "checkpoint_llm_owned_dependency_resolution_repair_check",
@@ -3930,8 +4017,23 @@ def _repaired_pass_for(plan: LLMUnifiedPlan, pass_id: str, *, source: str) -> LL
 
 def _llm_owned_generation_boundary_summary(summary: dict[str, Any]) -> dict[str, Any]:
     keys = [
+        "run_id",
+        "result_bundle_id",
+        "evidence_bus_id",
+        "plan_version",
         "multi_pass_enabled",
         "llm_pass_graph_used",
+        "v2_execution_optimizer_used",
+        "critical_path",
+        "stage_pipeline_used",
+        "cache_hits",
+        "deduped_passes",
+        "early_stopped_passes",
+        "budget_limits",
+        "budget_exceeded",
+        "budget_error",
+        "checkpoint_resume_used",
+        "model_cascade_used",
         "v2_pipeline_scheduler_used",
         "pipeline_stage_count",
         "max_parallelism",
@@ -3957,6 +4059,7 @@ def _llm_owned_generation_boundary_summary(summary: dict[str, Any]) -> dict[str,
         "dependency_resolution_errors",
         "dependency_repair_attempts",
         "backend_semantic_decomposition_used",
+        "backend_semantic_planning_used",
         "deterministic_answer_template_used",
         "hidden_eval_gold_used",
     ]
@@ -3965,12 +4068,19 @@ def _llm_owned_generation_boundary_summary(summary: dict[str, Any]) -> dict[str,
 
 def _result_bundle_checkpoint_payload(result_bundle: ResultBundle) -> dict[str, Any]:
     return {
+        "run_id": result_bundle.run_id,
         "pass_results_count": result_bundle.pass_results_count,
+        "append_events": result_bundle.append_events,
         "runtime_passes": [
             {
+                "run_id": item.get("run_id"),
                 "pass_id": item.get("pass_id"),
+                "global_pass_id": item.get("global_pass_id"),
+                "attempt_id": item.get("attempt_id"),
+                "plan_version": item.get("plan_version"),
                 "path": item.get("path"),
                 "status": item.get("status"),
+                "cached_sources": item.get("cached_sources"),
                 "depends_on": item.get("depends_on"),
                 "started_at": item.get("started_at"),
                 "completed_at": item.get("completed_at"),
@@ -3998,17 +4108,25 @@ def _runtime_pass_from_pass_spec(
     *,
     dependency_resolution: dict[str, Any] | None = None,
     stage_history: list[dict[str, Any]] | None = None,
+    run_context: RunContext | None = None,
 ) -> dict[str, Any]:
     source_results = [_source_result_from_tool_result(item) for item in tool_results]
     caveats = [str(item.get("error")) for item in source_results if item.get("error")]
     status = _pass_status_from_source_results(source_results)
     started_at = stage_history[0]["timestamp"] if stage_history else None
     completed_at = stage_history[-1]["timestamp"] if stage_history else None
+    cached_sources = [str(item.get("type") or "") for item in tool_results if item.get("cached")]
+    run_id = run_context.run_id if run_context else None
     return {
+        "run_id": run_id,
         "pass_id": pass_spec.pass_id,
+        "global_pass_id": f"{run_id}:{pass_spec.pass_id}" if run_id else None,
+        "attempt_id": 0,
+        "plan_version": run_context.plan_version if run_context else 1,
         "subtask": pass_spec.subtask,
         "path": pass_spec.path,
         "status": status,
+        "cached_sources": cached_sources,
         "can_run_parallel": pass_spec.can_run_parallel,
         "depends_on": pass_spec.depends_on,
         "expected_result": pass_spec.expected_result,
@@ -4022,9 +4140,14 @@ def _runtime_pass_from_pass_spec(
     }
 
 
-def _pass_graph_error_runtime_pass(graph_gate: PassGraphGateResult) -> dict[str, Any]:
+def _pass_graph_error_runtime_pass(graph_gate: PassGraphGateResult, *, run_context: RunContext | None = None) -> dict[str, Any]:
+    run_id = run_context.run_id if run_context else None
     return {
+        "run_id": run_id,
         "pass_id": "pass_graph_gate",
+        "global_pass_id": f"{run_id}:pass_graph_gate" if run_id else None,
+        "attempt_id": 0,
+        "plan_version": run_context.plan_version if run_context else 1,
         "subtask": "Validate LLM-owned pass graph.",
         "path": "AGGREGATION_ONLY",
         "status": "ERROR",
@@ -4051,10 +4174,49 @@ def _pass_graph_error_runtime_pass(graph_gate: PassGraphGateResult) -> dict[str,
     }
 
 
-def _dependency_error_runtime_pass(pass_spec: LLMUnifiedPass, dependency_resolution: dict[str, Any]) -> dict[str, Any]:
-    error_message = "; ".join(str(item) for item in dependency_resolution.get("errors", []) if item) or "Dependency placeholder could not be resolved."
+def _budget_error_runtime_pass(optimization_plan: Any, *, run_context: RunContext | None = None) -> dict[str, Any]:
+    run_id = run_context.run_id if run_context else None
     return {
+        "run_id": run_id,
+        "pass_id": "execution_budget",
+        "global_pass_id": f"{run_id}:execution_budget" if run_id else None,
+        "attempt_id": 0,
+        "plan_version": run_context.plan_version if run_context else 1,
+        "subtask": "Enforce V2 execution budget.",
+        "path": "AGGREGATION_ONLY",
+        "status": "BUDGET_EXCEEDED",
+        "can_run_parallel": False,
+        "depends_on": [],
+        "expected_result": "Budget-safe execution plan.",
+        "started_at": None,
+        "completed_at": None,
+        "stage_history": [],
+        "dependency_resolution": {"required": False, "resolved": True, "errors": []},
+        "source_results": [
+            {
+                "source": "EXECUTION_OPTIMIZER",
+                "status": "BUDGET_EXCEEDED",
+                "scope": "RUNTIME",
+                "result": optimization_plan.to_dict() if hasattr(optimization_plan, "to_dict") else optimization_plan,
+                "error": getattr(optimization_plan, "budget_error", None) or "Execution budget exceeded.",
+                "gate_passed": False,
+                "repair_attempts": 0,
+            }
+        ],
+        "facts": [],
+        "caveats": [getattr(optimization_plan, "budget_error", None) or "Execution budget exceeded."],
+    }
+
+
+def _dependency_error_runtime_pass(pass_spec: LLMUnifiedPass, dependency_resolution: dict[str, Any], *, run_context: RunContext | None = None) -> dict[str, Any]:
+    error_message = "; ".join(str(item) for item in dependency_resolution.get("errors", []) if item) or "Dependency placeholder could not be resolved."
+    run_id = run_context.run_id if run_context else None
+    return {
+        "run_id": run_id,
         "pass_id": pass_spec.pass_id,
+        "global_pass_id": f"{run_id}:{pass_spec.pass_id}" if run_id else None,
+        "attempt_id": 0,
+        "plan_version": run_context.plan_version if run_context else 1,
         "subtask": pass_spec.subtask,
         "path": pass_spec.path,
         "status": "DEPENDENCY_BLOCKED",
@@ -4081,6 +4243,41 @@ def _dependency_error_runtime_pass(pass_spec: LLMUnifiedPass, dependency_resolut
     }
 
 
+def _early_stopped_runtime_pass(pass_spec: LLMUnifiedPass, decision: dict[str, Any], *, run_context: RunContext | None = None) -> dict[str, Any]:
+    reason = str(decision.get("reason") or "optional pass skipped")
+    run_id = run_context.run_id if run_context else None
+    return {
+        "run_id": run_id,
+        "pass_id": pass_spec.pass_id,
+        "global_pass_id": f"{run_id}:{pass_spec.pass_id}" if run_id else None,
+        "attempt_id": 0,
+        "plan_version": run_context.plan_version if run_context else 1,
+        "subtask": pass_spec.subtask,
+        "path": pass_spec.path,
+        "status": "SKIPPED",
+        "can_run_parallel": pass_spec.can_run_parallel,
+        "depends_on": pass_spec.depends_on,
+        "expected_result": pass_spec.expected_result,
+        "started_at": None,
+        "completed_at": None,
+        "stage_history": [],
+        "dependency_resolution": {"required": bool(pass_spec.depends_on), "resolved": True, "errors": []},
+        "source_results": [
+            {
+                "source": "EXECUTION_OPTIMIZER",
+                "status": "SKIPPED",
+                "scope": "RUNTIME",
+                "result": decision,
+                "error": None,
+                "gate_passed": True,
+                "repair_attempts": 0,
+            }
+        ],
+        "facts": [],
+        "caveats": [reason],
+    }
+
+
 def _pass_status_from_source_results(source_results: list[dict[str, Any]]) -> str:
     statuses = {str(item.get("status") or "").upper() for item in source_results if isinstance(item, dict)}
     if not statuses:
@@ -4094,7 +4291,7 @@ def _pass_status_from_source_results(source_results: list[dict[str, Any]]) -> st
 PLACEHOLDER_RE = re.compile(r"\{\{\s*([^{}]+?)\s*\}\}")
 
 
-def _resolve_pass_placeholders(pass_spec: LLMUnifiedPass, runtime_passes: list[dict[str, Any]]) -> tuple[LLMUnifiedPass, dict[str, Any]]:
+def _resolve_pass_placeholders(pass_spec: LLMUnifiedPass, runtime_passes: list[dict[str, Any]], *, run_id: str | None) -> tuple[LLMUnifiedPass, dict[str, Any]]:
     errors: list[str] = []
     replacements: list[dict[str, Any]] = []
 
@@ -4104,7 +4301,7 @@ def _resolve_pass_placeholders(pass_spec: LLMUnifiedPass, runtime_passes: list[d
             if not matches:
                 return value
             if len(matches) == 1 and matches[0].span() == (0, len(value)):
-                resolved = _resolve_placeholder_token(matches[0].group(1), runtime_passes)
+                resolved = _resolve_placeholder_token(matches[0].group(1), runtime_passes, run_id=run_id)
                 if resolved.get("ok"):
                     replacements.append({"placeholder": matches[0].group(0), "value_preview": compact_preview(resolved.get("value"), 200)})
                     return resolved.get("value")
@@ -4112,7 +4309,7 @@ def _resolve_pass_placeholders(pass_spec: LLMUnifiedPass, runtime_passes: list[d
                 return value
             out = value
             for match in matches:
-                resolved = _resolve_placeholder_token(match.group(1), runtime_passes)
+                resolved = _resolve_placeholder_token(match.group(1), runtime_passes, run_id=run_id)
                 if resolved.get("ok"):
                     replacements.append({"placeholder": match.group(0), "value_preview": compact_preview(resolved.get("value"), 200)})
                     out = out.replace(match.group(0), str(resolved.get("value")))
@@ -4145,17 +4342,22 @@ def _resolve_pass_placeholders(pass_spec: LLMUnifiedPass, runtime_passes: list[d
         sql=sql,
         api_request=api_request,
         expected_result=pass_spec.expected_result,
+        optional=pass_spec.optional,
+        fallback=pass_spec.fallback,
     )
     required = bool(PLACEHOLDER_RE.search(json.dumps(pass_spec.to_dict(), default=str)))
     return resolved_pass, {
         "required": required,
         "resolved": not errors,
+        "run_id": run_id,
         "errors": errors,
         "replacements": replacements,
     }
 
 
-def _resolve_placeholder_token(token: str, runtime_passes: list[dict[str, Any]]) -> dict[str, Any]:
+def _resolve_placeholder_token(token: str, runtime_passes: list[dict[str, Any]], *, run_id: str | None) -> dict[str, Any]:
+    if not run_id:
+        return {"ok": False, "error": "Placeholder resolution requires run_id."}
     text = str(token or "").strip()
     marker = ".result."
     if marker not in text:
@@ -4163,7 +4365,7 @@ def _resolve_placeholder_token(token: str, runtime_passes: list[dict[str, Any]])
     pass_id, field_path = text.split(marker, 1)
     pass_id = pass_id.strip()
     field_path = field_path.strip()
-    runtime_pass = next((item for item in runtime_passes if str(item.get("pass_id")) == pass_id), None)
+    runtime_pass = next((item for item in runtime_passes if str(item.get("pass_id")) == pass_id and (not item.get("run_id") or item.get("run_id") == run_id)), None)
     if runtime_pass is None:
         return {"ok": False, "error": f"Dependency pass '{pass_id}' has no completed result."}
     found, value = _lookup_runtime_pass_value(runtime_pass, field_path)
@@ -4240,7 +4442,8 @@ def _source_result_from_tool_result(item: dict[str, Any]) -> dict[str, Any]:
         else:
             status = "SUCCESS" if payload.get("ok") and rows else ("EMPTY" if payload.get("ok") else "ERROR")
         return {
-            "source": "SQL",
+            "source": "cached" if item.get("cached") else "SQL",
+            "cached_source": "SQL" if item.get("cached") else None,
             "status": status,
             "scope": "LOCAL_SNAPSHOT",
             "result": {"rows": rows[:5], "row_count": payload.get("row_count", len(rows)), "sql": payload.get("sql")},
@@ -4261,7 +4464,8 @@ def _source_result_from_tool_result(item: dict[str, Any]) -> dict[str, Any]:
         status = "SUCCESS"
     error = payload.get("error") or "; ".join(str(value) for value in parsed.get("errors", [])[:3]) if isinstance(parsed.get("errors"), list) else payload.get("error")
     return {
-        "source": "API",
+        "source": "cached" if item.get("cached") else "API",
+        "cached_source": "API" if item.get("cached") else None,
         "status": status,
         "scope": "LIVE_API",
         "result": {"parsed_evidence": parsed, "result_preview": payload.get("result_preview")},

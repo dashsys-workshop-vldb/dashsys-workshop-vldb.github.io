@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 from typing import Any
+import json
+import re
 
 from .llm_unified_planner import ALLOWED_PASS_PATHS, LLMUnifiedPass, LLMUnifiedPlan, MAX_LLM_OWNED_PASSES
 from .trajectory import redact_secrets
@@ -49,6 +51,10 @@ class PassGraphGate:
         for dep, pass_id in edges:
             if dep not in known:
                 return _fail("unknown_dependency", f"Pass '{pass_id}' depends on unknown pass '{dep}'.", **base)
+        for item in passes:
+            for ref in _placeholder_pass_refs(item):
+                if ref not in known:
+                    return _fail("unknown_placeholder_dependency", f"Pass '{item.pass_id}' references unknown placeholder pass '{ref}'.", **base)
         if _has_cycle(passes):
             return _fail("dependency_cycle", "LLM pass dependency graph contains a cycle.", **base)
         return PassGraphGateResult(True, **base)
@@ -127,3 +133,11 @@ def _parallel_groups(passes: list[LLMUnifiedPass]) -> list[list[str]]:
             complete.add(item.pass_id)
             pending.remove(item)
     return groups
+
+
+PLACEHOLDER_PASS_RE = re.compile(r"\{\{\s*([A-Za-z0-9_.-]+)\.result\.")
+
+
+def _placeholder_pass_refs(item: LLMUnifiedPass) -> list[str]:
+    text = json.dumps(item.to_dict(), sort_keys=True, default=str)
+    return [match.group(1) for match in PLACEHOLDER_PASS_RE.finditer(text)]
