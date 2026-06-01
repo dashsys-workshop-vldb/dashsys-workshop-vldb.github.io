@@ -123,7 +123,7 @@ def _planner_json(**overrides) -> str:
     return json.dumps(payload)
 
 
-def test_llm_unified_planner_prefers_sdk_toolcall_structured_output(monkeypatch):
+def test_llm_unified_planner_accepts_toolcall_arguments_without_requiring_tools(monkeypatch):
     client = ToolCallClient(
         "submit_v2_plan",
         {
@@ -141,8 +141,9 @@ def test_llm_unified_planner_prefers_sdk_toolcall_structured_output(monkeypatch)
 
     assert plan.route == "LLM_DIRECT"
     assert plan.direct_answer == "A schema defines data structure."
-    assert client.calls[0]["tools"][0]["function"]["name"] == "submit_v2_plan"
-    assert client.calls[0]["tool_choice"]["function"]["name"] == "submit_v2_plan"
+    assert client.calls[0]["tools"] is None
+    assert client.calls[0]["tool_choice"] is None
+    assert plan.diagnostics["weak_model_stable_protocol_used"] is True
 
 
 def test_pioneer_planner_uses_json_content_fallback_without_toolcall(monkeypatch):
@@ -221,7 +222,7 @@ def test_pioneer_route_gate_malformed_repairs_once_then_calls_phase2(monkeypatch
 
     assert plan.route == "EVIDENCE_PIPELINE"
     assert len(plan.passes) == 1
-    assert len(client.calls) == 4
+    assert len(client.calls) == 3
     assert plan.diagnostics["route_gate_repair_attempted"] is True
     assert plan.diagnostics["route_gate_success"] is True
     assert plan.diagnostics["evidence_planner_called"] is True
@@ -241,7 +242,7 @@ def test_pioneer_route_gate_malformed_twice_fails_closed_to_phase2_without_backe
     assert plan.diagnostics["backend_route_inference_used"] is False
 
 
-def test_pioneer_plan_self_check_can_apply_llm_revised_plan(monkeypatch):
+def test_weak_protocol_does_not_backend_self_check_or_add_missing_api_pass(monkeypatch):
     initial = _planner_json(
         passes=[
             {
@@ -255,42 +256,10 @@ def test_pioneer_plan_self_check_can_apply_llm_revised_plan(monkeypatch):
         ],
         reason="missing api",
     )
-    revised_plan = json.loads(
-        _planner_json(
-            evidence_order="MULTI_PASS",
-            passes=[
-                {
-                    "pass_id": "local",
-                    "subtask": "Check local status.",
-                    "path": "SQL",
-                    "can_run_parallel": True,
-                    "depends_on": [],
-                    "sql": {"query": "SELECT name, status FROM dim_campaign", "params": []},
-                },
-                {
-                    "pass_id": "live",
-                    "subtask": "Check live status.",
-                    "path": "API",
-                    "can_run_parallel": True,
-                    "depends_on": [],
-                    "api_request": {"method": "GET", "path": "/data/foundation/schemaregistry/tenant/schemas", "params": {"limit": 25}},
-                },
-            ],
-            reason="revised with live api",
-        )
-    )
     client = ContentOnlyPlannerClient(
         [
             json.dumps({"route": "EVIDENCE_PIPELINE", "evidence_order": "NEED_EVIDENCE", "direct_answer": None, "reason": "compare"}),
             initial,
-            json.dumps(
-                {
-                    "plan_ok": False,
-                    "revised_plan": revised_plan,
-                    "missing_parts": ["live/API evidence"],
-                    "reason": "compare prompt needs local and live evidence",
-                }
-            ),
         ]
     )
     monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
@@ -301,12 +270,11 @@ def test_pioneer_plan_self_check_can_apply_llm_revised_plan(monkeypatch):
         endpoint_context=[{"method": "GET", "path": "/data/foundation/schemaregistry/tenant/schemas", "common_params": {"limit": 25}}],
     )
 
-    assert [item.pass_id for item in plan.passes] == ["local", "live"]
-    assert plan.passes[1].path == "API"
-    assert plan.diagnostics["llm_plan_self_check_used"] is True
-    assert plan.diagnostics["plan_self_check_ok"] is False
-    assert plan.diagnostics["plan_self_check_revised"] is True
-    assert plan.diagnostics["plan_self_check_missing_parts"] == ["live/API evidence"]
+    assert [item.pass_id for item in plan.passes] == ["local"]
+    assert all(item.path != "API" for item in plan.passes)
+    assert plan.diagnostics["weak_model_stable_protocol_used"] is True
+    assert plan.diagnostics.get("llm_plan_self_check_used") is not True
+    assert len(client.calls) == 2
 
 
 def test_planner_json_fallback_extracts_code_fenced_json(monkeypatch):
@@ -389,7 +357,7 @@ def test_malformed_planner_json_triggers_one_repair(monkeypatch):
     plan = run_llm_unified_planner(user_prompt="How many schemas do I have?", schema_context={}, endpoint_context=[])
 
     assert plan.reason == "repaired"
-    assert len(client.calls) == 4
+    assert len(client.calls) == 3
     assert plan.diagnostics["planner_repair_attempted"] is True
     assert plan.diagnostics["planner_success"] is True
 

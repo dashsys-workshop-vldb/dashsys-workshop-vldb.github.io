@@ -30,18 +30,18 @@ Status: diagnostic_only. This sweep changes only the configured Pioneer LLM mode
 
 | Model | Group | Available | Pass | JSON Failures | LLM Direct | Evidence Pipeline | Bypassed | EvidenceBus | no_tool_fp | Unsupported | Latency Sec |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Claude Haiku 4.5 | anthropic_fast_small | True | False | 0 | 2 | 5 | 2 | 5 | 0 | 0 | 142.2219 |
-| Mistral Nemo Instruct 2407 | mistral_compact_instruct | True | False | 0 | 2 | 5 | 2 | 5 | 0 | 0 | 142.0323 |
-| Llama 3.1 8B Instruct | llama_small_instruct | True | False | 0 | 0 | 7 | 0 | 7 | 0 | 0 | 120.2894 |
-| Qwen3 4B Instruct 2507 | qwen_small_instruct | True | False | 7 | 0 | 7 | 0 | 7 | 0 | 0 | 123.5251 |
-| DeepSeek V4 Flash | deepseek_cheap_fast | True | False | 1 | 2 | 5 | 2 | 5 | 0 | 0 | 506.1778 |
-| GLM 5.1 | glm | True | False | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 6.7362 |
+| Claude Haiku 4.5 | anthropic_fast_small | True | True | 0 | 2 | 5 | 2 | 5 | 0 | 0 | 112.7526 |
+| Mistral Nemo Instruct 2407 | mistral_compact_instruct | True | False | 0 | 2 | 5 | 2 | 5 | 0 | 0 | 578.8511 |
+| Llama 3.1 8B Instruct | llama_small_instruct | True | False | 0 | 0 | 7 | 0 | 7 | 0 | 0 | 126.8492 |
+| Qwen3 4B Instruct 2507 | qwen_small_instruct | True | False | 7 | 0 | 7 | 0 | 7 | 0 | 0 | 137.5616 |
+| DeepSeek V4 Flash | deepseek_cheap_fast | True | False | 1 | 2 | 5 | 2 | 5 | 0 | 0 | 325.9592 |
+| GLM 5.1 | glm | True | False | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 5.5203 |
 
 ## Summary Answers
 
-1. Safest non-GPT model: none evaluated as safe.
+1. Safest non-GPT model: Claude Haiku 4.5.
 2. Fewest JSON failures: GLM 5.1.
 3. Incorrect EvidenceBus bypass models: [].
-4. Viable cross-family small models: [].
+4. Viable cross-family small models: ['Claude Haiku 4.5'].
 5. Per-family safety is determined by focused smoke pass, no_tool_fp=0, and unsupported_claims=0.
-6. GPT-4o necessary based on this focused run: True.
+6. GPT-4o necessary based on this focused run: False.

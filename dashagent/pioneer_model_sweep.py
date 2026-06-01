@@ -541,6 +541,8 @@ def _summarize_prompt_result(prompt_case: dict[str, str], run_result: dict[str, 
     pass_results_count = _pass_results_count(checkpoints)
     result_bundle_built = bool("checkpoint_result_bundle" in checkpoint_names)
     answer_gate_metrics = _answer_gate_metrics(checkpoints)
+    planner_metrics = _weak_protocol_planner_metrics(checkpoints)
+    tool_gate_metrics = _tool_gate_metrics(checkpoints)
     final_syntax_gate_failures = answer_gate_metrics["answer_syntax_gate_final_failures"]
     final_semantic_gate_failures = answer_gate_metrics["answer_semantic_gate_final_failures"]
     unsupported_claims = _unsupported_claim_count(checkpoints)
@@ -581,6 +583,8 @@ def _summarize_prompt_result(prompt_case: dict[str, str], run_result: dict[str, 
             "post_evidence_answer_router_ran": post_router_ran,
             "declared_pass_count": declared_pass_count,
             "pass_results_count": pass_results_count,
+            **planner_metrics,
+            **tool_gate_metrics,
             **answer_gate_metrics,
             "final_syntax_gate_failures": final_syntax_gate_failures,
             "final_semantic_gate_failures": final_semantic_gate_failures,
@@ -619,6 +623,11 @@ def _aggregate_metrics(
         "evidence_bus_non_empty_count": sum(1 for row in prompt_results if int(row.get("pass_results_count") or 0) > 0),
         "result_bundle_built_count": sum(1 for row in prompt_results if bool(row.get("result_bundle_built"))),
         "declared_pass_count": sum(int(row.get("declared_pass_count") or 0) for row in prompt_results),
+        "route_card_success_count": sum(1 for row in prompt_results if bool(row.get("route_card_success"))),
+        "task_ledger_success_count": sum(1 for row in prompt_results if bool(row.get("task_ledger_success"))),
+        "candidate_card_success_count": sum(int(row.get("candidate_card_success") or 0) for row in prompt_results),
+        "sql_gate_failures": sum(int(row.get("sql_gate_failures") or 0) for row in prompt_results),
+        "api_gate_failures": sum(int(row.get("api_gate_failures") or 0) for row in prompt_results),
         "planner_usable_count": len(planner_usable_rows),
         "answer_syntax_gate_initial_failures": sum(int(row.get("answer_syntax_gate_initial_failures") or 0) for row in prompt_results),
         "answer_semantic_gate_initial_failures": sum(int(row.get("answer_semantic_gate_initial_failures") or 0) for row in prompt_results),
@@ -888,6 +897,47 @@ def _pass_results_count(checkpoints: list[dict[str, Any]]) -> int:
         nested = checkpoint.get("input_summary")
         counts.extend(_find_numeric_fields(nested, {"pass_results_count", "result_bundle_pass_results_count"}))
     return max(counts) if counts else 0
+
+
+def _weak_protocol_planner_metrics(checkpoints: list[dict[str, Any]]) -> dict[str, Any]:
+    planner_checkpoint = next(
+        (checkpoint for checkpoint in checkpoints if checkpoint.get("checkpoint_id") == "checkpoint_llm_unified_planner"),
+        {},
+    )
+    planner = planner_checkpoint.get("output") if isinstance(planner_checkpoint.get("output"), dict) else {}
+    metrics = planner_checkpoint.get("metrics") if isinstance(planner_checkpoint.get("metrics"), dict) else {}
+    diagnostics = planner.get("diagnostics") if isinstance(planner.get("diagnostics"), dict) else {}
+    source = metrics or diagnostics or planner
+    return {
+        "route_card_success": source.get("route_card_success"),
+        "route_card_route": source.get("route_card_route"),
+        "route_card_repair_attempted": source.get("route_card_repair_attempted"),
+        "task_ledger_success": source.get("task_ledger_success"),
+        "task_ledger_repair_attempted": source.get("task_ledger_repair_attempted"),
+        "candidate_card_success": int(source.get("candidate_card_success") or 0),
+        "pass_candidate_cards": int(source.get("pass_candidate_cards") or 0),
+        "sql_candidate_cards": int(source.get("sql_candidate_cards") or 0),
+        "api_candidate_cards": int(source.get("api_candidate_cards") or 0),
+        "candidate_repair_attempts": int(source.get("candidate_repair_attempts") or 0),
+        "route_card_latency_ms": source.get("route_card_latency_ms"),
+        "task_ledger_latency_ms": source.get("task_ledger_latency_ms"),
+        "candidate_card_latency_ms": source.get("candidate_card_latency_ms"),
+    }
+
+
+def _tool_gate_metrics(checkpoints: list[dict[str, Any]]) -> dict[str, int]:
+    sql_gate_failures = 0
+    api_gate_failures = 0
+    for checkpoint in checkpoints:
+        checkpoint_id = str(checkpoint.get("checkpoint_id") or "")
+        output = checkpoint.get("output")
+        if not isinstance(output, dict) or output.get("passed") is not False:
+            continue
+        if "sql_compile_gate" in checkpoint_id:
+            sql_gate_failures += 1
+        if "api_request_gate" in checkpoint_id:
+            api_gate_failures += 1
+    return {"sql_gate_failures": sql_gate_failures, "api_gate_failures": api_gate_failures}
 
 
 def _answer_gate_metrics(checkpoints: list[dict[str, Any]]) -> dict[str, int]:

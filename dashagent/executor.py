@@ -81,6 +81,7 @@ from .pre_evidence_routing_boundary import should_bypass_evidence_for_llm_direct
 from .query_normalizer import normalize_query
 from .query_tokens import extract_query_tokens
 from .llm_sql_generator import generate_sql_with_llm, repair_sql_with_llm
+from .llm_client import get_llm_client
 from .llm_final_answer_composer import (
     build_llm_final_answer_card,
     check_final_answer_semantic_grounding,
@@ -2235,6 +2236,14 @@ class AgentExecutor:
                     runtime_passes.append(_dependency_error_runtime_pass(pass_spec, dependency_resolution, run_context=run_context))
                     continue
                 pass_tool_results: list[dict[str, Any]] = []
+                if resolved_pass.path == "DIRECT":
+                    direct_result = self._run_llm_owned_direct_for_pass(
+                        query=query,
+                        pass_spec=resolved_pass,
+                        checkpoint_logger=checkpoint_logger,
+                        summary=summary,
+                    )
+                    pass_tool_results.append(direct_result)
                 for source in self._llm_owned_pass_execution_order(resolved_pass):
                     cached_result = run_optimizer.lookup_cached_result(
                         resolved_pass,
@@ -2285,6 +2294,80 @@ class AgentExecutor:
         summary["cache_hits"] = run_optimizer.trace.get("cache_hits", summary.get("cache_hits", 0))
         summary["checkpoint_resume_used"] = run_optimizer.trace.get("checkpoint_resume_used", summary.get("checkpoint_resume_used", False))
         return tool_results, runtime_passes, summary
+
+    def _run_llm_owned_direct_for_pass(
+        self,
+        *,
+        query: str,
+        pass_spec: LLMUnifiedPass,
+        checkpoint_logger: CheckpointLogger,
+        summary: dict[str, Any],
+    ) -> dict[str, Any]:
+        client = get_llm_client()
+        started = time.perf_counter()
+        answer = ""
+        error: str | None = None
+        if not client.available():
+            error = "LLM backend unavailable for DIRECT task."
+        else:
+            try:
+                result = client.generate_messages(
+                    [
+                        {
+                            "role": "system",
+                            "content": (
+                                "Answer this DIRECT subtask concisely and generally. "
+                                "Do not claim user-specific records, counts, IDs, dates, statuses, live state, SQL results, or API results. "
+                                "Return plain text only."
+                            ),
+                        },
+                        {
+                            "role": "user",
+                            "content": f"USER_PROMPT={query}\nTASK_ID={pass_spec.pass_id}\nTASK_DESCRIPTION={pass_spec.subtask}",
+                        },
+                    ],
+                    tools=None,
+                    tool_choice=None,
+                    parallel_tool_calls=None,
+                )
+                if not result.get("ok", True) and not result.get("content"):
+                    error = str(result.get("error") or result.get("reason") or "DIRECT task LLM call failed")
+                else:
+                    answer = str(result.get("content") or "").strip()
+            except Exception as exc:
+                error = str(exc)
+        safe_check = validate_llm_safe_direct_answer(answer) if answer else {"ok": False, "reason": "empty_direct_task_answer"}
+        if not safe_check.get("ok") and error is None:
+            error = str(safe_check.get("reason") or "unsafe_direct_task_answer")
+        summary["direct_task_llm_calls"] = int(summary.get("direct_task_llm_calls", 0) or 0) + 1
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_llm_owned_direct_task",
+            stage="llm-owned direct subtask",
+            technique="concept-only DIRECT task execution inside evidence plan",
+            input_summary={"pass_id": pass_spec.pass_id, "subtask": pass_spec.subtask},
+            output={
+                "pass_id": pass_spec.pass_id,
+                "ok": error is None,
+                "answer_preview": compact_preview(answer, 500),
+                "safe_direct_check": safe_check,
+                "latency_ms": int(round((time.perf_counter() - started) * 1000)),
+            },
+            effect="executes LLM-owned concept subtasks without SQL/API calls",
+            correctness_role="keeps mixed-prompt concept text separate from grounded SQL/API evidence",
+            efficiency_role="does not invoke SQL/API tools",
+        )
+        return {
+            "type": "direct",
+            "pass_id": pass_spec.pass_id,
+            "subtask": pass_spec.subtask,
+            "expected_result": pass_spec.expected_result,
+            "payload": {
+                "ok": error is None,
+                "answer": answer,
+                "error": error,
+                "safe_direct_check": safe_check,
+            },
+        }
 
     def _resolve_or_repair_llm_owned_pass(
         self,
@@ -4495,6 +4578,18 @@ def _lookup_nested_value(value: Any, parts: list[str]) -> tuple[bool, Any]:
 def _source_result_from_tool_result(item: dict[str, Any]) -> dict[str, Any]:
     kind = str(item.get("type") or "").lower()
     payload = item.get("payload") if isinstance(item.get("payload"), dict) else {}
+    if kind == "direct":
+        answer = str(payload.get("answer") or "").strip()
+        ok = bool(payload.get("ok")) and bool(answer)
+        return {
+            "source": "DIRECT",
+            "status": "SUCCESS" if ok else "ERROR",
+            "scope": "NO_EVIDENCE_CONCEPT",
+            "result": {"answer": answer},
+            "error": payload.get("error"),
+            "gate_passed": bool((payload.get("safe_direct_check") or {}).get("ok")) if isinstance(payload.get("safe_direct_check"), dict) else None,
+            "repair_attempts": 0,
+        }
     if kind == "sql":
         rows = payload.get("rows") if isinstance(payload.get("rows"), list) else []
         compile_gate = payload.get("compile_gate") if isinstance(payload.get("compile_gate"), dict) else None
@@ -4552,6 +4647,9 @@ def _facts_from_source_results(source_results: list[dict[str, Any]]) -> list[str
         counts = parsed.get("counts")
         if isinstance(counts, dict):
             facts.extend(f"count:{value}" for value in counts.values() if value not in (None, ""))
+        direct_answer = payload.get("answer")
+        if direct_answer:
+            facts.append(f"direct_answer:{str(direct_answer)[:120]}")
     return facts[:20]
 
 

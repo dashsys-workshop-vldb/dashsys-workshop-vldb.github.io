@@ -118,6 +118,7 @@ def build_llm_final_answer_card(
         ],
         "hidden_eval_gold_used": False,
         "deterministic_answer_template_used": False,
+        "weak_model_stable_protocol": True,
     }
     return _strip_sensitive_keys(card)
 
@@ -140,11 +141,15 @@ def compose_llm_final_answer(
             error_message="LLM backend unavailable for final answer composition.",
         )
     capabilities = planner_provider_capabilities(provider, model)
-    system_prompt = _final_answer_system_prompt(requires_json_prompting=capabilities.requires_json_prompting)
+    prefer_plain_text = bool(card.get("weak_model_stable_protocol"))
+    system_prompt = _final_answer_system_prompt(
+        requires_json_prompting=capabilities.requires_json_prompting,
+        prefer_plain_text=prefer_plain_text,
+    )
     payload = dict(card)
     if repair_context:
         payload["repair_context"] = compact_preview(repair_context, 1800)
-    toolcall_attempted = bool(capabilities.supports_tool_calls)
+    toolcall_attempted = bool(capabilities.supports_tool_calls and not prefer_plain_text)
     result = client.generate_messages(
         [{"role": "system", "content": system_prompt}, {"role": "user", "content": json.dumps(payload, sort_keys=True, default=str)}],
         tools=[_final_answer_tool_schema()] if toolcall_attempted else None,
@@ -166,13 +171,24 @@ def compose_llm_final_answer(
         structured = _structured_tool_arguments(result, "submit_final_answer")
         candidate = parse_llm_final_answer_response(json.dumps(structured, sort_keys=True, default=str))
     except Exception:
-        candidate = parse_llm_final_answer_response(str(result.get("content") or ""))
+        candidate = parse_llm_final_answer_response(str(result.get("content") or ""), allow_plain_text=prefer_plain_text)
     candidate.provider = provider
     candidate.model = model
     return candidate
 
 
-def _final_answer_system_prompt(*, requires_json_prompting: bool = False) -> str:
+def _final_answer_system_prompt(*, requires_json_prompting: bool = False, prefer_plain_text: bool = False) -> str:
+    if prefer_plain_text:
+        return (
+            "You are the final-answer writer for DASHSys V2. "
+            "Return plain natural language final answer text only. No JSON wrapper, no markdown, no code fence. "
+            "Use only runtime evidence provided in the card. "
+            "Do not use hidden eval or gold-answer wording. "
+            "Do not invent counts, dates, statuses, entity names, IDs, relationships, live state, or API success. "
+            "If no matching runtime evidence is available, use exactly: No matching runtime evidence was available for this query/scope. "
+            "If runtime evidence is unavailable or errored, use exactly: Runtime evidence was unavailable; cannot provide a verified answer. "
+            "When repairing unsupported claims, remove the unsupported span instead of restating it as a negative fact."
+        )
     if requires_json_prompting:
         return (
             "You are the sole final-answer composer for DASHSys V2. "
@@ -195,11 +211,19 @@ def _final_answer_system_prompt(*, requires_json_prompting: bool = False) -> str
     )
 
 
-def parse_llm_final_answer_response(raw_content: str) -> LLMFinalAnswerCandidate:
+def parse_llm_final_answer_response(raw_content: str, *, allow_plain_text: bool = False) -> LLMFinalAnswerCandidate:
     text = str(raw_content or "").strip()
     try:
         parsed = json.loads(_strip_json_text(text))
     except Exception as exc:
+        if allow_plain_text and text:
+            return LLMFinalAnswerCandidate(
+                final_answer=text,
+                used_pass_ids=[],
+                claimed_facts=[],
+                caveats_included=[],
+                raw_preview=compact_preview(text, 1200),
+            )
         return LLMFinalAnswerCandidate(
             final_answer=None,
             raw_preview=compact_preview(text, 1200),

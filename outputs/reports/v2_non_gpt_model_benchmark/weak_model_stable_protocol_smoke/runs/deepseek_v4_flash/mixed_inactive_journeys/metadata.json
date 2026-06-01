@@ -1,0 +1,152 @@
+{
+  "backend_semantic_planning_used": false,
+  "llm_owned_generation": true,
+  "llm_unified_plan": {
+    "aggregation_instruction": "",
+    "api_request": null,
+    "backend_unavailable": false,
+    "diagnostics": {
+      "api_candidate_cards": 1,
+      "backend_route_inference_used": false,
+      "backend_semantic_decomposition_used": false,
+      "backend_semantic_planning_used": false,
+      "candidate_card_latency_ms": 4329,
+      "candidate_card_success": 1,
+      "candidate_repair_attempts": 0,
+      "dependency_edges": [
+        [
+          "t1",
+          "t3"
+        ],
+        [
+          "t2",
+          "t3"
+        ]
+      ],
+      "evidence_planner_called": true,
+      "llm_route_gate_used": true,
+      "pass_candidate_cards": 1,
+      "planner_json_fallback_used": false,
+      "planner_json_parse_error": null,
+      "planner_parse_source": "weak_model_line_protocol",
+      "planner_provider_latency_ms": 19807,
+      "planner_repair_attempted": false,
+      "planner_success": true,
+      "planner_timeout": false,
+      "planner_toolcall_attempted": false,
+      "planner_toolcall_supported": false,
+      "provider_capabilities": {
+        "requires_json_prompting": true,
+        "supports_json_content_fallback": true,
+        "supports_tool_calls": false
+      },
+      "route_card_latency_ms": 6510,
+      "route_card_repair_attempted": false,
+      "route_card_route": "EVIDENCE",
+      "route_card_success": true,
+      "route_gate_repair_attempted": false,
+      "route_gate_route": "EVIDENCE_PIPELINE",
+      "route_gate_success": true,
+      "sql_candidate_cards": 0,
+      "task_count": 3,
+      "task_ledger_latency_ms": 8968,
+      "task_ledger_repair_attempted": false,
+      "task_ledger_success": true,
+      "task_paths": [
+        "DIRECT",
+        "API",
+        "AGGREGATE"
+      ],
+      "weak_model_stable_protocol_used": true,
+      "weak_protocol_route_card_used": true,
+      "weak_protocol_task_ledger_used": true
+    },
+    "direct_answer": null,
+    "evidence_order": "MULTI_PASS",
+    "model": "deepseek-ai/DeepSeek-V4-Flash",
+    "parse_error": false,
+    "passes": [
+      {
+        "api_request": null,
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "NO_EVIDENCE",
+        "expected_result": "Explain what an inactive journey means in Journey Optimizer.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "t1",
+        "path": "DIRECT",
+        "sql": null,
+        "subtask": "Explain what an inactive journey means in Journey Optimizer."
+      },
+      {
+        "api_request": {
+          "method": "GET",
+          "params": {
+            "status": "Inactive"
+          },
+          "path": "/ajo/journey"
+        },
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "API_FIRST",
+        "expected_result": "Fetch and list journeys from GET /ajo/journey with status \"Inactive\".",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "t2",
+        "path": "API",
+        "sql": null,
+        "subtask": "Fetch and list journeys from GET /ajo/journey with status \"Inactive\"."
+      },
+      {
+        "api_request": null,
+        "can_run_parallel": false,
+        "depends_on": [
+          "t1",
+          "t2"
+        ],
+        "evidence_order": "NO_EVIDENCE",
+        "expected_result": "Combine concept explanation with the list of inactive journeys.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "t3",
+        "path": "AGGREGATION_ONLY",
+        "sql": null,
+        "subtask": "Combine concept explanation with the list of inactive journeys."
+      }
+    ],
+    "provider": "pioneer_chat",
+    "raw_preview": {
+      "candidate_t2_api": "PATH=API\nMETHOD=GET\nAPI_PATH=/ajo/journey\nPARAMS={\"status\":\"Inactive\"}",
+      "route_card": "ROUTE=EVIDENCE\nDIRECT_ANSWER=\nREASON=The prompt asks to 'show inactive journeys', which is a request for user-specific data/list of actual items, so it requires EVIDENCE route.",
+      "task_ledger": "TASK t1 | DIRECT | [] | Explain what an inactive journey means in Journey Optimizer.\nTASK t2 | API | [] | Fetch and list journeys from GET /ajo/journey with status \"Inactive\".\nTASK t3 | AGGREGATE | [t1, t2] | Combine concept explanation with the list of inactive journeys."
+    },
+    "reason": "The prompt asks to 'show inactive journeys', which is a request for user-specific data/list of actual items, so it requires EVIDENCE route.",
+    "route": "EVIDENCE_PIPELINE",
+    "sql": null
+  },
+  "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
+  "query": "Explain what inactive journey means and show inactive journeys.",
+  "query_id": "pioneer_sweep_deepseek_v4_flash_mixed_inactive_journeys",
+  "run_context": {
+    "budget": {
+      "max_answer_repair_attempts": 1,
+      "max_api_workers": 2,
+      "max_parallelism": 4,
+      "max_passes": 6,
+      "max_repair_attempts": 1,
+      "max_sql_workers": 2,
+      "run_timeout_ms": 30000
+    },
+    "created_at": "2026-06-01T18:46:19.246407+00:00",
+    "deadline_at": "2026-06-01T18:46:49.246407+00:00",
+    "evidence_bus_id": "evidence_run_82792b74913745f38ba69afb97afb20b",
+    "original_prompt": "Explain what inactive journey means and show inactive journeys.",
+    "plan_version": 1,
+    "prompt_id": "pioneer_sweep_deepseek_v4_flash_mixed_inactive_journeys",
+    "result_bundle_id": "bundle_run_82792b74913745f38ba69afb97afb20b",
+    "run_id": "run_82792b74913745f38ba69afb97afb20b",
+    "status": "RUNNING"
+  },
+  "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+}

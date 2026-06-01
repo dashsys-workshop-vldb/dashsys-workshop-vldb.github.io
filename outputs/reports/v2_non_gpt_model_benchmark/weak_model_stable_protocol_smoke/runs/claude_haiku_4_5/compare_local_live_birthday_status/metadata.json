@@ -1,0 +1,160 @@
+{
+  "backend_semantic_planning_used": false,
+  "llm_owned_generation": true,
+  "llm_unified_plan": {
+    "aggregation_instruction": "",
+    "api_request": null,
+    "backend_unavailable": false,
+    "diagnostics": {
+      "api_candidate_cards": 1,
+      "backend_route_inference_used": false,
+      "backend_semantic_decomposition_used": false,
+      "backend_semantic_planning_used": false,
+      "candidate_card_latency_ms": 3184,
+      "candidate_card_success": 2,
+      "candidate_repair_attempts": 0,
+      "dependency_edges": [
+        [
+          "t1",
+          "t3"
+        ],
+        [
+          "t2",
+          "t3"
+        ]
+      ],
+      "evidence_planner_called": true,
+      "llm_route_gate_used": true,
+      "pass_candidate_cards": 2,
+      "planner_json_fallback_used": false,
+      "planner_json_parse_error": null,
+      "planner_parse_source": "weak_model_line_protocol",
+      "planner_provider_latency_ms": 7871,
+      "planner_repair_attempted": false,
+      "planner_success": true,
+      "planner_timeout": false,
+      "planner_toolcall_attempted": false,
+      "planner_toolcall_supported": false,
+      "provider_capabilities": {
+        "requires_json_prompting": true,
+        "supports_json_content_fallback": true,
+        "supports_tool_calls": false
+      },
+      "route_card_latency_ms": 2175,
+      "route_card_repair_attempted": false,
+      "route_card_route": "EVIDENCE",
+      "route_card_success": true,
+      "route_gate_repair_attempted": false,
+      "route_gate_route": "EVIDENCE_PIPELINE",
+      "route_gate_success": true,
+      "sql_candidate_cards": 1,
+      "task_count": 3,
+      "task_ledger_latency_ms": 2512,
+      "task_ledger_repair_attempted": false,
+      "task_ledger_success": true,
+      "task_paths": [
+        "SQL",
+        "API",
+        "AGGREGATE"
+      ],
+      "weak_model_stable_protocol_used": true,
+      "weak_protocol_route_card_used": true,
+      "weak_protocol_task_ledger_used": true
+    },
+    "direct_answer": null,
+    "evidence_order": "MULTI_PASS",
+    "model": "claude-haiku-4-5",
+    "parse_error": false,
+    "passes": [
+      {
+        "api_request": null,
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "SQL_FIRST",
+        "expected_result": "Retrieve local Birthday Message campaign status from dim_campaign (NAME, STATE, ISSCHEDULED, LASTDEPLOYEDTIME, UPDATEDTIME)",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "t1",
+        "path": "SQL",
+        "sql": {
+          "params": [],
+          "query": "SELECT NAME, STATE, ISSCHEDULED, LASTDEPLOYEDTIME, UPDATEDTIME FROM dim_campaign WHERE NAME = 'Birthday Message'"
+        },
+        "subtask": "Retrieve local Birthday Message campaign status from dim_campaign (NAME, STATE, ISSCHEDULED, LASTDEPLOYEDTIME, UPDATEDTIME)"
+      },
+      {
+        "api_request": {
+          "method": "GET",
+          "params": {
+            "fields": "id,name,status,state,publishedDate,modifiedDate,deploymentMetadata",
+            "filter": "campaignType==birthday OR name==*birthday*"
+          },
+          "path": "/ajo/journey"
+        },
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "API_FIRST",
+        "expected_result": "Fetch live Birthday Message campaign status from GET /ajo/journey to compare published/active state and deployment metadata",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "t2",
+        "path": "API",
+        "sql": null,
+        "subtask": "Fetch live Birthday Message campaign status from GET /ajo/journey to compare published/active state and deployment metadata"
+      },
+      {
+        "api_request": null,
+        "can_run_parallel": false,
+        "depends_on": [
+          "t1",
+          "t2"
+        ],
+        "evidence_order": "NO_EVIDENCE",
+        "expected_result": "Compare local snapshot (dim_campaign STATE, LASTDEPLOYEDTIME) against live API status (published state, active deployment) to identify discrepancies in Birthday Message campaign configuration and execution state",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "t3",
+        "path": "AGGREGATION_ONLY",
+        "sql": null,
+        "subtask": "Compare local snapshot (dim_campaign STATE, LASTDEPLOYEDTIME) against live API status (published state, active deployment) to identify discrepancies in Birthday Message campaign configuration and execution state"
+      }
+    ],
+    "provider": "pioneer_chat",
+    "raw_preview": {
+      "candidate_t1_sql": "PATH=SQL\nSQL=SELECT NAME, STATE, ISSCHEDULED, LASTDEPLOYEDTIME, UPDATEDTIME FROM dim_campaign WHERE NAME = 'Birthday Message'\nPARAMS=[]",
+      "candidate_t2_api": "PATH=API\nMETHOD=GET\nAPI_PATH=/ajo/journey\nPARAMS={\"filter\":\"campaignType==birthday OR name==*birthday*\",\"fields\":\"id,name,status,state,publishedDate,modifiedDate,deploymentMetadata\"}",
+      "route_card": "ROUTE=EVIDENCE\nDIRECT_ANSWER=\nREASON=Comparing local and live status requires accessing actual runtime data/state of the Birthday Message object from both environments, which is user-specific data retrieval.",
+      "task_ledger": "TASK t1 | SQL | [] | Retrieve local Birthday Message campaign status from dim_campaign (NAME, STATE, ISSCHEDULED, LASTDEPLOYEDTIME, UPDATEDTIME)\nTASK t2 | API | [] | Fetch live Birthday Message campaign status from GET /ajo/journey to compare published/active state and deployment metadata\nTASK t3 | AGGREGATE | [t1, t2] | Compare local snapshot (dim_campaign STATE, LASTDEPLOYEDTIME) against live API status (published state, active deployment) to identify discrepancies in Birthday Message campaign configuration and execution state"
+    },
+    "reason": "Comparing local and live status requires accessing actual runtime data/state of the Birthday Message object from both environments, which is user-specific data retrieval.",
+    "route": "EVIDENCE_PIPELINE",
+    "sql": {
+      "params": [],
+      "query": "SELECT NAME, STATE, ISSCHEDULED, LASTDEPLOYEDTIME, UPDATEDTIME FROM dim_campaign WHERE NAME = 'Birthday Message'"
+    }
+  },
+  "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
+  "query": "Compare local and live status of Birthday Message if both are available.",
+  "query_id": "pioneer_sweep_claude_haiku_4_5_compare_local_live_birthday_status",
+  "run_context": {
+    "budget": {
+      "max_answer_repair_attempts": 1,
+      "max_api_workers": 2,
+      "max_parallelism": 4,
+      "max_passes": 6,
+      "max_repair_attempts": 1,
+      "max_sql_workers": 2,
+      "run_timeout_ms": 30000
+    },
+    "created_at": "2026-06-01T18:39:42.838447+00:00",
+    "deadline_at": "2026-06-01T18:40:12.838447+00:00",
+    "evidence_bus_id": "evidence_run_0e9e8c46a8254be68426e0e076a96d1d",
+    "original_prompt": "Compare local and live status of Birthday Message if both are available.",
+    "plan_version": 1,
+    "prompt_id": "pioneer_sweep_claude_haiku_4_5_compare_local_live_birthday_status",
+    "result_bundle_id": "bundle_run_0e9e8c46a8254be68426e0e076a96d1d",
+    "run_id": "run_0e9e8c46a8254be68426e0e076a96d1d",
+    "status": "RUNNING"
+  },
+  "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+}

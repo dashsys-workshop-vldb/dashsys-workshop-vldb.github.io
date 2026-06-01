@@ -1,0 +1,413 @@
+{
+  "answer_time": 0.0,
+  "api_call_count": 0,
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "correctness_role": "keeps later normalization from changing the user-facing question",
+      "duration_ms": 0.0,
+      "effect": "preserves the original query for reproducibility",
+      "efficiency_role": "starts one trace without extra tool calls",
+      "output": {
+        "query": "What is a schema?",
+        "query_id": "pioneer_sweep_mistral_nemo_instruct_2407_pure_concept_schema",
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "stage": "input",
+      "technique": "raw user query capture",
+      "timestamp": "2026-06-01T18:40:19.448262+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_runtime_leakage_guard",
+      "correctness_role": "prevents evaluator-only metadata leakage into runtime decisions",
+      "duration_ms": 0.0,
+      "effect": "asserts that candidate runtime receives only prompt/runtime fields, not evaluator metadata",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "category_tags_visible": false,
+        "expected_trace_visible": false,
+        "oracle_sql_visible": false,
+        "prompt_id_specific_branching": false,
+        "query_id_specific_branching": false,
+        "runtime_gold_visible": false,
+        "runtime_input_fields": {
+          "items": [
+            "query",
+            "query_id",
+            "strategy"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "runtime safety",
+      "technique": "runtime input isolation guard",
+      "timestamp": "2026-06-01T18:40:19.448278+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_score_provenance_guard",
+      "correctness_role": "prevents simulated or gold-visible scores from being treated as runtime evidence",
+      "duration_ms": 0.0,
+      "effect": "marks candidate runs as real-agent runtime executions without promotion judgment",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "organizer_equivalent": false,
+        "promotion_eligible": false,
+        "promotion_judgment_run": false,
+        "real_agent_execution": true,
+        "runtime_gold_visible": false,
+        "score_source": "runtime_candidate",
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+        "synthetic_trace": false
+      },
+      "stage": "runtime safety",
+      "technique": "score provenance guard",
+      "timestamp": "2026-06-01T18:40:19.448281+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_unified_planner",
+      "correctness_role": "keeps backend deterministic logic limited to compile/request gates and execution",
+      "duration_ms": 0.0,
+      "effect": "lets the LLM own route, evidence order, and SQL/API candidate generation for V2",
+      "efficiency_role": "uses one compact planner call before any SQL/API execution",
+      "input_summary": {
+        "query": "What is a schema?"
+      },
+      "metrics": {
+        "api_candidate_cards": 0,
+        "backend_route_inference_used": false,
+        "backend_semantic_decomposition_used": false,
+        "backend_semantic_planning_used": false,
+        "candidate_card_success": 0,
+        "candidate_repair_attempts": 0,
+        "evidence_planner_called": false,
+        "llm_route_gate_used": true,
+        "pass_candidate_cards": 0,
+        "planner_json_fallback_used": false,
+        "planner_json_parse_error": null,
+        "planner_parse_source": "weak_model_line_protocol",
+        "planner_provider_latency_ms": 2066,
+        "planner_repair_attempted": false,
+        "planner_success": true,
+        "planner_timeout": false,
+        "planner_toolcall_attempted": false,
+        "planner_toolcall_supported": false,
+        "provider_capabilities": {
+          "requires_json_prompting": true,
+          "supports_json_content_fallback": true,
+          "supports_tool_calls": false
+        },
+        "route_card_latency_ms": 2066,
+        "route_card_repair_attempted": false,
+        "route_card_route": "DIRECT",
+        "route_card_success": true,
+        "route_gate_repair_attempted": false,
+        "route_gate_route": "LLM_DIRECT",
+        "route_gate_success": true,
+        "sql_candidate_cards": 0,
+        "task_ledger_repair_attempted": false,
+        "task_ledger_success": false,
+        "weak_model_stable_protocol_used": true,
+        "weak_protocol_route_card_used": true,
+        "weak_protocol_task_ledger_used": false
+      },
+      "output": {
+        "backend_unavailable": false,
+        "diagnostics": {
+          "backend_semantic_decomposition_used": false,
+          "backend_semantic_planning_used": false,
+          "planner_json_fallback_used": false,
+          "planner_repair_attempted": false,
+          "planner_success": true,
+          "planner_timeout": false,
+          "planner_toolcall_attempted": false,
+          "planner_toolcall_supported": false,
+          "truncated_fields": 24
+        },
+        "evidence_order": "NO_EVIDENCE",
+        "model": "[REDACTED]",
+        "parse_error": false,
+        "provider": "[REDACTED]",
+        "raw_preview": {
+          "route_card": "ROUTE=DIRECT\nDIRECT_ANSWER:A schema is a structure that defines how data is organized.\nREASON:The prompt is asking for a general definition of a concept."
+        },
+        "route": "LLM_DIRECT"
+      },
+      "stage": "llm-owned planning",
+      "technique": "single unified LLM route/evidence/sql/api planner",
+      "timestamp": "2026-06-01T18:40:21.521215+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
+      "correctness_role": "keeps direct conceptual answers separate from evidence-grounded data answers",
+      "duration_ms": 0.0,
+      "effect": "records that no backend SQL/API/evidence planning ran for direct V2 answer",
+      "efficiency_role": "uses zero SQL/API calls",
+      "input_summary": {
+        "evidence_order": "NO_EVIDENCE",
+        "route": "LLM_DIRECT"
+      },
+      "output": {
+        "api_gate_passed": null,
+        "api_repair_attempts": 0,
+        "backend_semantic_decomposition_used": false,
+        "backend_semantic_planning_used": false,
+        "budget_exceeded": false,
+        "budget_limits": {
+          "max_answer_repair_attempts": 1,
+          "max_api_workers": 2,
+          "max_parallelism": 4,
+          "max_passes": 6,
+          "max_repair_attempts": 1,
+          "max_sql_workers": 2,
+          "run_timeout_ms": 30000
+        },
+        "cache_hits": 0,
+        "checkpoint_resume_used": false,
+        "critical_path": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "deduped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "early_stopped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "evidence_pipeline_bypassed": true,
+        "llm_evidence_order": "NO_EVIDENCE",
+        "llm_owned_generation": true,
+        "llm_pass_count": 0,
+        "llm_pass_graph_used": false,
+        "llm_route": "LLM_DIRECT",
+        "max_api_workers": 0,
+        "max_parallelism": 0,
+        "max_sql_workers": 0,
+        "model_cascade_used": false,
+        "multi_pass_enabled": false,
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "parallel_pass_count": 0,
+        "pass_graph_gate_passed": true,
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pass_results_count": 0,
+        "passes_completed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_dependency_blocked": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_executed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_failed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pipeline_stage_count": 0,
+        "run_id": "run_805b688e0cff4cda850c4bb7e3810eb7",
+        "sequential_pass_count": 0,
+        "sql_gate_passed": null,
+        "sql_repair_attempts": 0,
+        "stage_events": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "stage_pipeline_used": false,
+        "truncated_fields": 2,
+        "v2_execution_optimizer_used": false,
+        "v2_pipeline_scheduler_used": false
+      },
+      "stage": "llm/backend boundary",
+      "technique": "LLM-owned direct route",
+      "timestamp": "2026-06-01T18:40:21.522055+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_pipeline_bypass",
+      "correctness_role": "prevents empty EvidenceBus construction for no-evidence concept/meta answers",
+      "duration_ms": 0.0,
+      "effect": "bypasses SQL/API, EvidenceBus, answer slots, and post-evidence answer routing",
+      "efficiency_role": "uses no SQL/API calls",
+      "input_summary": {
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "bypass_reason": "llm_owned_direct_no_evidence_required",
+        "evidence_bus_built": false,
+        "evidence_pipeline_bypassed": true,
+        "llm_evidence_order": "NO_EVIDENCE",
+        "llm_route": "LLM_DIRECT",
+        "post_evidence_answer_router_ran": false,
+        "pre_evidence_route": "LLM_DIRECT"
+      },
+      "stage": "pre-evidence routing",
+      "technique": "LLM-owned high-confidence direct routing boundary",
+      "timestamp": "2026-06-01T18:40:21.522060+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_safe_direct_answer_verifier",
+      "correctness_role": "blocks counts, IDs, timestamps, statuses, and live platform claims",
+      "duration_ms": 0.0,
+      "effect": "checks direct answer for unsupported concrete runtime claims",
+      "efficiency_role": "uses no SQL/API calls",
+      "input_summary": {
+        "llm_route": "LLM_DIRECT"
+      },
+      "output": {
+        "ok": true
+      },
+      "stage": "answer verification",
+      "technique": "safe-direct answer verifier",
+      "timestamp": "2026-06-01T18:40:21.522062+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "correctness_role": "does not invent SQL/API evidence",
+      "duration_ms": 0.0,
+      "effect": "returns the safe direct answer without building evidence artifacts",
+      "efficiency_role": "zero tool calls",
+      "output": {
+        "answer_length": 71,
+        "final_answer": "This is a general conceptual question and no runtime evidence was used.",
+        "final_token_estimate": 13
+      },
+      "stage": "final response",
+      "technique": "LLM-owned direct concept answer",
+      "timestamp": "2026-06-01T18:40:21.522100+00:00"
+    }
+  ],
+  "diagnostics": {
+    "model_sweep_run_id": "mistral_nemo_instruct_2407",
+    "pioneer_model": "[REDACTED]",
+    "pioneer_model_id": "[REDACTED]",
+    "pioneer_model_sweep": true
+  },
+  "domain_type": "CONCEPTUAL",
+  "errors": [],
+  "estimated_tokens": 671,
+  "execution_time": 0.0,
+  "final_answer": "This is a general conceptual question and no runtime evidence was used.",
+  "model_sweep_run_id": "mistral_nemo_instruct_2407",
+  "original_query": "What is a schema?",
+  "pioneer_model": "[REDACTED]",
+  "pioneer_model_id": "[REDACTED]",
+  "planning_time": 0.0,
+  "preprocessing_time": 0.0,
+  "query_id": "pioneer_sweep_mistral_nemo_instruct_2407_pure_concept_schema",
+  "route_type": "LLM_DIRECT",
+  "runtime": 0.007017042022198439,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "estimated_tokens": 816,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/reports/v2_non_gpt_model_benchmark/weak_model_stable_protocol_smoke/runs/mistral_nemo_instruct_2407/pure_concept_schema/metadata.json",
+      "prompt_tokens": 1362
+    },
+    {
+      "aggregation_instruction": "",
+      "api_request": null,
+      "backend_unavailable": false,
+      "diagnostics": {
+        "api_candidate_cards": 0,
+        "backend_route_inference_used": false,
+        "backend_semantic_decomposition_used": false,
+        "backend_semantic_planning_used": false,
+        "candidate_card_success": 0,
+        "candidate_repair_attempts": 0,
+        "evidence_planner_called": false,
+        "llm_route_gate_used": true,
+        "pass_candidate_cards": 0,
+        "planner_json_fallback_used": false,
+        "planner_json_parse_error": null,
+        "planner_parse_source": "weak_model_line_protocol",
+        "planner_provider_latency_ms": 2066,
+        "planner_repair_attempted": false,
+        "planner_success": true,
+        "planner_timeout": false,
+        "planner_toolcall_attempted": false,
+        "planner_toolcall_supported": false,
+        "provider_capabilities": {
+          "requires_json_prompting": true,
+          "supports_json_content_fallback": true,
+          "supports_tool_calls": false
+        },
+        "route_card_latency_ms": 2066,
+        "route_card_repair_attempted": false,
+        "route_card_route": "DIRECT",
+        "route_card_success": true,
+        "route_gate_repair_attempted": false,
+        "route_gate_route": "LLM_DIRECT",
+        "route_gate_success": true,
+        "sql_candidate_cards": 0,
+        "task_ledger_repair_attempted": false,
+        "task_ledger_success": false,
+        "weak_model_stable_protocol_used": true,
+        "weak_protocol_route_card_used": true,
+        "weak_protocol_task_ledger_used": false
+      },
+      "direct_answer": null,
+      "evidence_order": "NO_EVIDENCE",
+      "kind": "llm_unified_planner",
+      "model": "[REDACTED]",
+      "parse_error": false,
+      "passes": [],
+      "provider": "[REDACTED]",
+      "raw_preview": {
+        "route_card": "ROUTE=DIRECT\nDIRECT_ANSWER:A schema is a structure that defines how data is organized.\nREASON:The prompt is asking for a general definition of a concept."
+      },
+      "reason": "",
+      "route": "LLM_DIRECT",
+      "sql": null
+    },
+    {
+      "bypass_reason": "llm_owned_direct_no_evidence_required",
+      "evidence_bus_built": false,
+      "evidence_pipeline_bypassed": true,
+      "kind": "evidence_boundary",
+      "llm_evidence_order": "NO_EVIDENCE",
+      "llm_route": "LLM_DIRECT",
+      "post_evidence_answer_router_ran": false,
+      "pre_evidence_route": "LLM_DIRECT"
+    },
+    {
+      "blocked_claims": [],
+      "kind": "safe_direct_answer_verifier",
+      "ok": true
+    }
+  ],
+  "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+  "timings": {},
+  "tool_call_count": 0
+}
