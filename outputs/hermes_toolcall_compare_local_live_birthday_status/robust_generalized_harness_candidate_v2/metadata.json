@@ -2,7 +2,7 @@
   "backend_semantic_planning_used": false,
   "llm_owned_generation": true,
   "llm_unified_plan": {
-    "aggregation_instruction": "Compare the status and state of the 'Birthday Message' campaign from the local snapshot database with its live status retrieved from the real-time Journey Optimizer API.",
+    "aggregation_instruction": "Compare the local status (STATUS/STATE from dim_campaign for NAME='Birthday Message') with the live status (STATUS/STATE from journey_list API for the matching journey). Report both statuses side-by-side. If the local record is not found, report 'not found in local snapshot'. If the live journey is not found, report 'not found in live API'.",
     "api_request": null,
     "backend_unavailable": false,
     "diagnostics": {
@@ -20,7 +20,7 @@
       "planner_json_fallback_used": false,
       "planner_json_parse_error": null,
       "planner_parse_source": "sdk_toolcall_semantic_ir",
-      "planner_provider_latency_ms": 13152,
+      "planner_provider_latency_ms": 21944,
       "planner_repair_attempted": false,
       "planner_success": true,
       "planner_timeout": false,
@@ -48,10 +48,10 @@
       "semantic_alias_validation_passed": true,
       "semantic_alias_validation_used": true,
       "semantic_ir_plan_preview": {
-        "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"local_campaign_status\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"STATUS\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"CAMPAIGNID\", \"NAME\", \"STATUS\"], \"total_items\": 5, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"Birthday Message\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 100}, \"description\": \"Retrieve the status and state of 'Birthday Message' campaign from local dim_campaign table.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"live_journey_status\", \"kind\": \"LIVE_QUERY\", \"operation\": \"STATUS\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"journey_list\", \"method\": \"GET\"}, \"description\": \"Retrieve the real-time list of journeys and campaigns from Adobe Journey Optimizer to inspect the live status of 'Birthday Message'.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"compare_statuses\", \"kind\": \"AGGREGATE\", \"operation\": \"COMPARE\", \"source\": \"BOTH\", \"depends_on\": {\"...",
+        "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_local_status\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"STATUS\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"NAME\", \"STATUS\", \"STATE\"], \"total_items\": 3, \"truncated_items\": false}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"Birthday Message\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 10}, \"description\": \"Get local snapshot status (STATUS/STATE) for the campaign named 'Birthday Message'.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_live_status\", \"kind\": \"LIVE_QUERY\", \"operation\": \"STATUS\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"journey_list\", \"method\": \"GET\", \"query_params\": {\"limit\": 50, \"start\": 0}}, \"description\": \"Get live API status/state for journeys/campaigns to find 'Birthday Message' and its current live status.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t3_aggregate_compare\", \"kind\": \"AGGREGATE\", \"operation\": \"COMPARE\", \"source\": \"BOTH\", \"depends_on\": {\"items...",
         "truncated": true
       },
-      "semantic_ir_provider_latency_ms": 13148,
+      "semantic_ir_provider_latency_ms": 21939,
       "semantic_ir_repair_attempted": false,
       "semantic_ir_repair_latency_ms": 0,
       "semantic_ir_repair_success": false,
@@ -79,7 +79,7 @@
     },
     "direct_answer": null,
     "evidence_order": "MULTI_PASS",
-    "model": "gemini-3.5-flash",
+    "model": "/Users/tanqinyang/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
     "parse_error": false,
     "passes": [
       {
@@ -87,22 +87,20 @@
         "can_run_parallel": true,
         "depends_on": [],
         "evidence_order": "SQL_FIRST",
-        "expected_result": "Retrieve the status and state of 'Birthday Message' campaign from local dim_campaign table.",
+        "expected_result": "Get local snapshot status (STATUS/STATE) for the campaign named 'Birthday Message'.",
         "fallback": false,
         "optional": false,
-        "pass_id": "local_campaign_status",
+        "pass_id": "t1_local_status",
         "path": "SQL",
         "raw_sql_fallback_reason": null,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
         "result_contract": {
-          "entity": "campaign",
+          "entity": "Birthday Message",
           "fields": [
-            "CAMPAIGNID",
             "NAME",
             "STATUS",
-            "STATE",
-            "UPDATEDTIME"
+            "STATE"
           ],
           "filters": [
             {
@@ -112,7 +110,7 @@
             }
           ],
           "freshness": "same_run",
-          "object": "dim_campaign",
+          "object": "campaign",
           "operation": "STATUS",
           "scope": "local",
           "source": "LOCAL_SNAPSHOT"
@@ -123,36 +121,44 @@
           "params": [
             "Birthday Message"
           ],
-          "query": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATUS\", \"STATE\", \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 100"
+          "query": "SELECT \"NAME\", \"STATUS\", \"STATE\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 10"
         },
-        "subtask": "Retrieve the status and state of 'Birthday Message' campaign from local dim_campaign table."
+        "subtask": "Get local snapshot status (STATUS/STATE) for the campaign named 'Birthday Message'."
       },
       {
         "api_request": {
           "method": "GET",
-          "params": {},
+          "params": {
+            "limit": 50,
+            "start": 0
+          },
           "path": "/ajo/journey"
         },
         "can_run_parallel": true,
         "depends_on": [],
         "evidence_order": "API_FIRST",
-        "expected_result": "Retrieve the real-time list of journeys and campaigns from Adobe Journey Optimizer to inspect the live status of 'Birthday Message'.",
+        "expected_result": "Get live API status/state for journeys/campaigns to find 'Birthday Message' and its current live status.",
         "fallback": false,
         "optional": false,
-        "pass_id": "live_journey_status",
+        "pass_id": "t2_live_status",
         "path": "API",
         "raw_sql_fallback_reason": null,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
         "result_contract": {
-          "entity": "journey",
+          "entity": "Birthday Message",
           "fields": [
-            "id",
-            "name",
-            "status",
-            "state"
+            "NAME",
+            "STATUS",
+            "STATE"
           ],
-          "filters": [],
+          "filters": [
+            {
+              "field": "NAME",
+              "op": "=",
+              "value": "Birthday Message"
+            }
+          ],
           "freshness": "same_run",
           "object": "journey",
           "operation": "STATUS",
@@ -162,46 +168,37 @@
         "reuse_result_from": null,
         "semantic_cache_key": null,
         "sql": null,
-        "subtask": "Retrieve the real-time list of journeys and campaigns from Adobe Journey Optimizer to inspect the live status of 'Birthday Message'."
+        "subtask": "Get live API status/state for journeys/campaigns to find 'Birthday Message' and its current live status."
       },
       {
         "api_request": null,
         "can_run_parallel": false,
         "depends_on": [
-          "local_campaign_status",
-          "live_journey_status"
+          "t1_local_status",
+          "t2_live_status"
         ],
         "evidence_order": "NO_EVIDENCE",
-        "expected_result": "Compare the local campaign status from dim_campaign with the live journey status from the AJO API.",
+        "expected_result": "Compare the local status (from t1) and live status (from t2) for 'Birthday Message'.",
         "fallback": false,
         "optional": false,
-        "pass_id": "compare_statuses",
+        "pass_id": "t3_aggregate_compare",
         "path": "AGGREGATION_ONLY",
         "raw_sql_fallback_reason": null,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
-        "result_contract": {
-          "entity": "comparison",
-          "fields": [],
-          "filters": [],
-          "freshness": "same_run",
-          "object": "campaign_comparison",
-          "operation": "COMPARE",
-          "scope": "both",
-          "source": "BOTH"
-        },
+        "result_contract": null,
         "reuse_result_from": null,
         "semantic_cache_key": null,
         "sql": null,
-        "subtask": "Compare the local campaign status from dim_campaign with the live journey status from the AJO API."
+        "subtask": "Compare the local status (from t1) and live status (from t2) for 'Birthday Message'."
       }
     ],
     "provider": "openai",
     "raw_preview": {
       "semantic_ir_initial": {
-        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+        "base_url": "[REDACTED]",
         "error": null,
-        "model": "[REDACTED]",
+        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "ok": true,
         "provider": "openai",
         "sdk_path_used": true,
@@ -216,7 +213,7 @@
       "params": [
         "Birthday Message"
       ],
-      "query": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATUS\", \"STATE\", \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 100"
+      "query": "SELECT \"NAME\", \"STATUS\", \"STATE\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 10"
     }
   },
   "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
@@ -232,14 +229,14 @@
       "max_sql_workers": 2,
       "run_timeout_ms": 30000
     },
-    "created_at": "2026-06-02T08:08:19.258657+00:00",
-    "deadline_at": "2026-06-02T08:08:49.258657+00:00",
-    "evidence_bus_id": "evidence_run_093892c33437496e892bd1425e70e9a8",
+    "created_at": "2026-06-02T09:53:31.904549+00:00",
+    "deadline_at": "2026-06-02T09:54:01.904549+00:00",
+    "evidence_bus_id": "evidence_run_d4e8dcdac07d437d9b992daafa49d6e5",
     "original_prompt": "Compare local and live status of Birthday Message if both are available.",
     "plan_version": 1,
     "prompt_id": "hermes_toolcall_compare_local_live_birthday_status",
-    "result_bundle_id": "bundle_run_093892c33437496e892bd1425e70e9a8",
-    "run_id": "run_093892c33437496e892bd1425e70e9a8",
+    "result_bundle_id": "bundle_run_d4e8dcdac07d437d9b992daafa49d6e5",
+    "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5",
     "status": "RUNNING"
   },
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"

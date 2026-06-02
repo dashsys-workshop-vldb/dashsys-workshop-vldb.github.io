@@ -1,6 +1,6 @@
 {
-  "answer_time": 4.004266916774213,
-  "api_call_count": 0,
+  "answer_time": 17.680163540877402,
+  "api_call_count": 2,
   "checkpoints": [
     {
       "checkpoint_id": "checkpoint_01_raw_query",
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-02T07:21:04.946523+00:00"
+      "timestamp": "2026-06-02T10:32:09.260681+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-02T07:21:04.947583+00:00"
+      "timestamp": "2026-06-02T10:32:09.264303+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,7 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-02T07:21:04.948070+00:00"
+      "timestamp": "2026-06-02T10:32:09.266969+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner_start",
@@ -86,7 +86,7 @@
       },
       "stage": "llm-owned planning",
       "technique": "pre-call heartbeat before Unified LLM Planner",
-      "timestamp": "2026-06-02T07:21:04.954170+00:00"
+      "timestamp": "2026-06-02T10:32:09.285811+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -100,21 +100,21 @@
       "metrics": {
         "api_request_gate_failures": 0,
         "atomic_protocol_fallback_used": false,
-        "backend_formal_compilation_used": false,
+        "backend_formal_compilation_used": true,
         "backend_generated_sql": false,
         "backend_semantic_decomposition_used": false,
         "backend_semantic_planning_used": false,
         "backend_sql_api_generation_used": false,
         "compiled_alias_count": 0,
-        "compiled_api_count": 0,
-        "compiled_sql_count": 0,
+        "compiled_api_count": 2,
+        "compiled_sql_count": 1,
         "compiler_latency_ms": 0,
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
-        "planner_parse_source": "semantic_ir_validation_error",
-        "planner_provider_latency_ms": 39502,
+        "planner_parse_source": "sdk_toolcall_semantic_ir",
+        "planner_provider_latency_ms": 39442,
         "planner_repair_attempted": false,
-        "planner_success": false,
+        "planner_success": true,
         "planner_timeout": false,
         "planner_toolcall_attempted": true,
         "planner_toolcall_supported": true,
@@ -137,68 +137,99 @@
         "semantic_alias_count": 0,
         "semantic_alias_error_type": null,
         "semantic_alias_repair_attempted": false,
-        "semantic_alias_validation_passed": null,
-        "semantic_alias_validation_used": false,
-        "semantic_ir_provider_latency_ms": 39499,
-        "semantic_ir_repair_attempted": true,
-        "semantic_ir_repair_latency_ms": 16244,
+        "semantic_alias_validation_passed": true,
+        "semantic_alias_validation_used": true,
+        "semantic_ir_plan_preview": {
+          "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_ingestion_counts\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"COUNT\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": true, \"table\": \"dim_collection\", \"fields\": {\"items\": [\"COLLECTIONID\", \"NAME\", \"ROWCOUNT\"], \"total_items\": 4, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"UPDATEDTIME\", \"op\": \">=\", \"value\": \"90 days ago\"}], \"total_items\": 1, \"truncated_items\": false}}, \"description\": \"Count ingestion records (rows) per collection/dataset for the last 90 days using local snapshot dim_collection.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_batch_success_counts\", \"kind\": \"LIVE_QUERY\", \"operation\": \"COUNT\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"catalog_batches\", \"method\": \"GET\", \"query_params\": {\"limit\": 50}}, \"description\": \"Count catalog batches from the live API to determine batch success counts. Note: The live API endpoint returns batch metadata; success status may require filtering on returned status fields or using flowservice_runs for dataflow run success. This task retrieves the batch list ...",
+          "truncated": true
+        },
+        "semantic_ir_provider_latency_ms": 39439,
+        "semantic_ir_repair_attempted": false,
+        "semantic_ir_repair_latency_ms": 0,
         "semantic_ir_repair_success": false,
         "semantic_ir_support_check_latency_ms": 0,
-        "semantic_ir_support_checked": false,
+        "semantic_ir_support_checked": true,
+        "semantic_ir_support_recommended_action": "COMPILE",
         "semantic_ir_support_repair_attempted": false,
         "semantic_ir_support_repair_error_message": null,
         "semantic_ir_support_repair_error_type": null,
         "semantic_ir_support_repair_latency_ms": 0,
         "semantic_ir_support_repair_success": false,
-        "semantic_ir_supported": null,
+        "semantic_ir_supported": true,
         "semantic_ir_task_count": 3,
         "semantic_ir_toolcall_supported": true,
         "semantic_ir_unsupported_features": [],
+        "semantic_ir_unsupported_operation": null,
         "semantic_ir_unsupported_reason": null,
-        "semantic_ir_validation_error_message": "Unknown table: catalog_batches",
-        "semantic_ir_validation_error_type": "unknown_table",
+        "semantic_ir_unsupported_task_id": null,
+        "semantic_ir_validation_error_message": null,
+        "semantic_ir_validation_error_type": null,
         "semantic_ir_validation_latency_ms": 0,
-        "semantic_ir_validation_passed": false,
+        "semantic_ir_validation_passed": true,
         "sql_compile_gate_failures": 0,
         "v2_semantic_ir_used": true
       },
       "output": {
-        "backend_unavailable": false,
-        "evidence_order": "SQL_FIRST",
+        "aggregation_instruction": "Aggregate t1 for total ingestion record counts (sum of ROWCOUNT or count of records) over the last 90 days from local snapshot. Aggregate t2 and t3 for batch and dataflow run success counts from live API. Combine results to present ingestion record counts and batch success counts for the last 90 days. Note: The live API endpoints may not directly provide a 'success count' filter; the backend will return counts which may need post-processing for success status if not directly filterable.",
+        "evidence_order": "MULTI_PASS",
         "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-        "parse_error": true,
-        "provider": "openai",
-        "raw_preview": {
-          "semantic_ir_initial": {
-            "base_url": "[REDACTED]",
-            "error": null,
-            "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-            "ok": true,
-            "provider": "openai",
-            "sdk_path_used": true,
-            "skipped": false,
-            "transport": "openai_sdk",
-            "truncated_fields": 1
-          },
-          "semantic_ir_repair": {
-            "base_url": "[REDACTED]",
-            "error": null,
-            "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-            "ok": true,
-            "provider": "openai",
-            "sdk_path_used": true,
-            "skipped": false,
-            "transport": "openai_sdk",
-            "truncated_fields": 1
-          }
+        "passes": {
+          "items": [
+            {
+              "pass_id": "t1_ingestion_counts",
+              "path": "SQL",
+              "raw_sql_fallback_reason": null,
+              "raw_sql_fallback_task_id": null,
+              "raw_sql_fallback_used": false,
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "subtask": "Count ingestion records (rows) per collection/dataset for the last 90 days using local snapshot dim_collection.",
+              "truncated_fields": 9
+            },
+            {
+              "pass_id": "t2_batch_success_counts",
+              "path": "API",
+              "raw_sql_fallback_reason": null,
+              "raw_sql_fallback_task_id": null,
+              "raw_sql_fallback_used": false,
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "subtask": "Count catalog batches from the live API to determine batch success counts. Note: The live API endpoint returns batch metadata; success status may require filtering on returned status fields or using flowservice_runs for dataflow run success. This task retrieves the batch list to enable counting.",
+              "truncated_fields": 9
+            },
+            {
+              "pass_id": "t3_dataflow_run_success_counts",
+              "path": "API",
+              "raw_sql_fallback_reason": null,
+              "raw_sql_fallback_task_id": null,
+              "raw_sql_fallback_used": false,
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "subtask": "Count dataflow runs from the live API to determine batch/dataflow success counts. This complements t2 by providing run-level success/failure status.",
+              "truncated_fields": 9
+            }
+          ],
+          "total_items": 3,
+          "truncated_items": false
         },
-        "reason": "semantic_ir_validation_error: Unknown table: catalog_batches",
+        "provider": "openai",
+        "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
         "route": "EVIDENCE_PIPELINE",
+        "sql": {
+          "params": {
+            "items": [
+              "90 days ago"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "query": "SELECT COUNT(*) AS count FROM \"dim_collection\" WHERE \"UPDATEDTIME\" >= ?"
+        },
         "truncated_fields": 6
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-02T07:21:44.459853+00:00"
+      "timestamp": "2026-06-02T10:32:48.731621+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
@@ -207,10 +238,14 @@
       "effect": "validates only graph shape; does not choose subtasks, dependencies, SQL, or API paths",
       "efficiency_role": "bounds pass scheduling to LLM-declared valid graphs",
       "input_summary": {
-        "evidence_order": "SQL_FIRST",
+        "evidence_order": "MULTI_PASS",
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_ingestion_counts",
+            "t2_batch_success_counts",
+            "t3_dataflow_run_success_counts"
+          ],
+          "total_items": 3,
           "truncated_items": false
         }
       },
@@ -220,117 +255,36 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "error_message": "EVIDENCE_PIPELINE plans must declare at least one pass.",
-        "error_type": "empty_evidence_plan",
         "parallel_groups": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "t1_ingestion_counts",
+                "t2_batch_success_counts",
+                "t3_dataflow_run_success_counts"
+              ],
+              "total_items": 3,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
-        "pass_count": 0,
+        "pass_count": 3,
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_ingestion_counts",
+            "t2_batch_success_counts",
+            "t3_dataflow_run_success_counts"
+          ],
+          "total_items": 3,
           "truncated_items": false
         },
-        "passed": false
+        "passed": true
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-02T07:21:44.462993+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_pass_graph_repair",
-      "correctness_role": "backend supplies only graph-shape errors and no replacement subtasks or SQL/API",
-      "duration_ms": 0.0,
-      "effect": "lets the LLM repair its own pass graph after shape-only feedback",
-      "efficiency_role": "caps pass graph repair to one attempt",
-      "input_summary": {
-        "error_message": "EVIDENCE_PIPELINE plans must declare at least one pass.",
-        "error_type": "empty_evidence_plan"
-      },
-      "output": {
-        "pass_graph_gate_error_type": "empty_evidence_plan",
-        "pass_graph_repair_attempted": true,
-        "pass_graph_repair_success": false,
-        "repair_plan": {
-          "backend_unavailable": false,
-          "evidence_order": "SQL_FIRST",
-          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-          "parse_error": true,
-          "provider": "openai",
-          "raw_preview": {
-            "semantic_ir_initial": {
-              "base_url": "[REDACTED]",
-              "error": null,
-              "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-              "ok": true,
-              "provider": "openai",
-              "sdk_path_used": true,
-              "skipped": false,
-              "transport": "openai_sdk",
-              "truncated_fields": 1
-            },
-            "semantic_ir_repair": {
-              "base_url": "[REDACTED]",
-              "error": null,
-              "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-              "ok": true,
-              "provider": "openai",
-              "sdk_path_used": true,
-              "skipped": false,
-              "transport": "openai_sdk",
-              "truncated_fields": 1
-            }
-          },
-          "reason": "semantic_ir_validation_error: Unknown table: catalog_batches",
-          "route": "EVIDENCE_PIPELINE",
-          "truncated_fields": 6
-        },
-        "repaired_pass_count": 0
-      },
-      "stage": "llm-owned pass graph repair",
-      "technique": "single LLM-owned pass graph repair",
-      "timestamp": "2026-06-02T07:22:33.243232+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate_repair",
-      "correctness_role": "does not add missing passes or choose SQL/API paths",
-      "duration_ms": 0.0,
-      "effect": "executes repaired plan only if the LLM supplied a valid graph",
-      "efficiency_role": "stops after one graph repair attempt",
-      "input_summary": {
-        "evidence_order": "SQL_FIRST",
-        "pass_ids": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        }
-      },
-      "output": {
-        "dependency_edges": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "error_message": "EVIDENCE_PIPELINE plans must declare at least one pass.",
-        "error_type": "empty_evidence_plan",
-        "parallel_groups": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "pass_count": 0,
-        "pass_ids": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "passed": false
-      },
-      "stage": "llm-owned pass graph validation",
-      "technique": "shape-only PassGraphGate on repaired plan",
-      "timestamp": "2026-06-02T07:22:33.245067+00:00"
+      "timestamp": "2026-06-02T10:32:48.733886+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -345,8 +299,12 @@
           "truncated_items": false
         },
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_ingestion_counts",
+            "t2_batch_success_counts",
+            "t3_dataflow_run_success_counts"
+          ],
+          "total_items": 3,
           "truncated_items": false
         }
       },
@@ -366,8 +324,10 @@
         "cache_hits": 0,
         "checkpoint_resume_used": false,
         "critical_path": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t2_batch_success_counts"
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -387,13 +347,27 @@
         },
         "model_cascade_used": false,
         "parallel_groups": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "t2_batch_success_counts",
+                "t1_ingestion_counts",
+                "t3_dataflow_run_success_counts"
+              ],
+              "total_items": 3,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_ingestion_counts",
+            "t2_batch_success_counts",
+            "t3_dataflow_run_success_counts"
+          ],
+          "total_items": 3,
           "truncated_items": false
         },
         "stage_pipeline_used": true,
@@ -402,7 +376,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-02T07:22:33.246276+00:00"
+      "timestamp": "2026-06-02T10:32:48.735531+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -412,13 +386,27 @@
       "efficiency_role": "allows later passes to enter free stages before earlier passes finish all stages",
       "input_summary": {
         "parallel_groups": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "t2_batch_success_counts",
+                "t1_ingestion_counts",
+                "t3_dataflow_run_success_counts"
+              ],
+              "total_items": 3,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_ingestion_counts",
+            "t2_batch_success_counts",
+            "t3_dataflow_run_success_counts"
+          ],
+          "total_items": 3,
           "truncated_items": false
         }
       },
@@ -432,13 +420,27 @@
         "max_parallelism": 4,
         "max_sql_workers": 2,
         "parallel_groups": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "t2_batch_success_counts",
+                "t1_ingestion_counts",
+                "t3_dataflow_run_success_counts"
+              ],
+              "total_items": 3,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_completed": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t2_batch_success_counts",
+            "t1_ingestion_counts",
+            "t3_dataflow_run_success_counts"
+          ],
+          "total_items": 3,
           "truncated_items": false
         },
         "passes_dependency_blocked": {
@@ -453,40 +455,74 @@
         },
         "pipeline_stage_count": 8,
         "stage_events": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
+          "items": [
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_e22dcd68767e4616ba042b5abc2cff33:t2_batch_success_counts",
+              "pass_id": "t2_batch_success_counts",
+              "plan_version": 1,
+              "run_id": "run_e22dcd68767e4616ba042b5abc2cff33",
+              "stage": "PLAN_READY",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_e22dcd68767e4616ba042b5abc2cff33:t1_ingestion_counts",
+              "pass_id": "t1_ingestion_counts",
+              "plan_version": 1,
+              "run_id": "run_e22dcd68767e4616ba042b5abc2cff33",
+              "stage": "PLAN_READY",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_e22dcd68767e4616ba042b5abc2cff33:t3_dataflow_run_success_counts",
+              "pass_id": "t3_dataflow_run_success_counts",
+              "plan_version": 1,
+              "run_id": "run_e22dcd68767e4616ba042b5abc2cff33",
+              "stage": "PLAN_READY",
+              "status": "OK",
+              "truncated_fields": 3
+            }
+          ],
+          "total_items": 48,
+          "truncated_items": true
         },
         "truncated_fields": 4,
-        "v2_pipeline_scheduler_used": false
+        "v2_pipeline_scheduler_used": true
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-02T07:22:33.247264+00:00"
+      "timestamp": "2026-06-02T10:32:48.736934+00:00"
     },
     {
-      "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
-      "correctness_role": "separates LLM ownership from compile/request/runtime safety checks",
+      "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
+      "correctness_role": "keeps decomposition owned by the LLM and backend role limited to scheduling/gates/execution",
       "duration_ms": 0.0,
-      "effect": "records that backend did not replace LLM semantic or SQL/API generation",
-      "efficiency_role": "bounds repair attempts before execution",
+      "effect": "schedules only LLM-declared passes; does not split prompts or add semantic subtasks",
+      "efficiency_role": "groups dependency-free passes without changing their semantics",
       "input_summary": {
-        "evidence_order": "SQL_FIRST",
-        "route": "EVIDENCE_PIPELINE"
-      },
-      "metrics": {
-        "alias_materialized_count": 0,
-        "exact_pass_cache_hits": 0,
-        "exact_pass_cache_scope": "single_run",
-        "semantic_alias_count": 0,
-        "semantic_alias_materialized_count": 0,
-        "semantic_alias_validation_failures": 0
+        "multi_pass_enabled": true,
+        "pass_ids": {
+          "items": [
+            "t1_ingestion_counts",
+            "t2_batch_success_counts",
+            "t3_dataflow_run_success_counts"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
       },
       "output": {
         "alias_materialized_count": 0,
         "api_execution_latency_sec": 0.0,
-        "api_gate_latency_sec": 0.0,
-        "api_gate_passed": null,
+        "api_gate_latency_sec": 0.001,
+        "api_gate_passed": true,
         "api_repair_attempts": 0,
         "backend_semantic_decomposition_used": false,
         "backend_semantic_planning_used": false,
@@ -504,8 +540,10 @@
         "cache_hits": 0,
         "checkpoint_resume_used": false,
         "critical_path": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t2_batch_success_counts"
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -524,39 +562,54 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_cf5f85a84d8944cda35ffaa60fef99eb",
+        "evidence_bus_id": "evidence_run_e22dcd68767e4616ba042b5abc2cff33",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
-        "llm_evidence_order": "SQL_FIRST",
-        "llm_owned_generation": true,
-        "llm_pass_count": 0,
-        "llm_pass_graph_used": false,
-        "llm_route": "EVIDENCE_PIPELINE",
+        "llm_pass_count": 3,
+        "llm_pass_graph_used": true,
         "max_api_workers": 2,
         "max_parallelism": 4,
         "max_sql_workers": 2,
         "model_cascade_used": false,
-        "multi_pass_enabled": false,
+        "multi_pass_enabled": true,
         "parallel_groups": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "t2_batch_success_counts",
+                "t1_ingestion_counts",
+                "t3_dataflow_run_success_counts"
+              ],
+              "total_items": 3,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
-        "parallel_pass_count": 0,
-        "pass_graph_gate_error_type": "empty_evidence_plan",
-        "pass_graph_gate_passed": false,
-        "pass_graph_repair_attempted": true,
+        "parallel_pass_count": 3,
+        "pass_graph_gate_error_type": null,
+        "pass_graph_gate_passed": true,
+        "pass_graph_repair_attempted": false,
         "pass_graph_repair_success": false,
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_ingestion_counts",
+            "t2_batch_success_counts",
+            "t3_dataflow_run_success_counts"
+          ],
+          "total_items": 3,
           "truncated_items": false
         },
-        "pass_results_count": 1,
+        "pass_results_count": 3,
         "passes_completed": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t2_batch_success_counts",
+            "t1_ingestion_counts",
+            "t3_dataflow_run_success_counts"
+          ],
+          "total_items": 3,
           "truncated_items": false
         },
         "passes_dependency_blocked": {
@@ -565,8 +618,12 @@
           "truncated_items": false
         },
         "passes_executed": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t2_batch_success_counts",
+            "t1_ingestion_counts",
+            "t3_dataflow_run_success_counts"
+          ],
+          "total_items": 3,
           "truncated_items": false
         },
         "passes_failed": {
@@ -586,8 +643,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_cf5f85a84d8944cda35ffaa60fef99eb",
-        "run_id": "run_cf5f85a84d8944cda35ffaa60fef99eb",
+        "result_bundle_id": "bundle_run_e22dcd68767e4616ba042b5abc2cff33",
+        "run_id": "run_e22dcd68767e4616ba042b5abc2cff33",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -597,23 +654,409 @@
         "semantic_alias_materialized_count": 0,
         "semantic_alias_validation_failures": 0,
         "sequential_pass_count": 0,
-        "sql_execution_latency_sec": 0.0,
-        "sql_gate_latency_sec": 0.0,
-        "sql_gate_passed": null,
+        "sql_execution_latency_sec": 0.001,
+        "sql_gate_latency_sec": 0.26,
+        "sql_gate_passed": true,
         "sql_repair_attempts": 0,
         "stage_events": {
+          "items": [
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_e22dcd68767e4616ba042b5abc2cff33:t2_batch_success_counts",
+              "pass_id": "t2_batch_success_counts",
+              "plan_version": 1,
+              "run_id": "run_e22dcd68767e4616ba042b5abc2cff33",
+              "stage": "SQL_API_GATE",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_e22dcd68767e4616ba042b5abc2cff33:t2_batch_success_counts",
+              "pass_id": "t2_batch_success_counts",
+              "plan_version": 1,
+              "run_id": "run_e22dcd68767e4616ba042b5abc2cff33",
+              "stage": "READY_FOR_FINAL_COMPOSITION",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_e22dcd68767e4616ba042b5abc2cff33:t1_ingestion_counts",
+              "pass_id": "t1_ingestion_counts",
+              "plan_version": 1,
+              "run_id": "run_e22dcd68767e4616ba042b5abc2cff33",
+              "stage": "READY_FOR_FINAL_COMPOSITION",
+              "status": "OK",
+              "truncated_fields": 3
+            }
+          ],
+          "total_items": 18,
+          "truncated_items": true
+        },
+        "stage_pipeline_used": true,
+        "truncated_fields": 6,
+        "v2_execution_optimizer_used": true,
+        "v2_pipeline_scheduler_used": true
+      },
+      "stage": "llm-owned pass scheduling",
+      "technique": "dependency-aware scheduling of LLM-declared evidence passes",
+      "timestamp": "2026-06-02T10:32:48.738266+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
+      "correctness_role": "does not infer missing dependency values or add backend-selected subtasks",
+      "duration_ms": 0.0,
+      "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
+      "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
+      "input_summary": {
+        "pass_id": "t2_batch_success_counts"
+      },
+      "output": {
+        "errors": {
           "items": [],
           "total_items": 0,
           "truncated_items": false
         },
+        "required": false,
+        "resolved": true,
+        "run_id": "run_e22dcd68767e4616ba042b5abc2cff33"
+      },
+      "stage": "llm-owned pass dependency resolution",
+      "technique": "placeholder resolution from completed LLM pass results",
+      "timestamp": "2026-06-02T10:32:48.739995+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_api_request_gate",
+      "correctness_role": "blocks unsafe method, unknown endpoint, unresolved path, or malformed params",
+      "duration_ms": 0.0,
+      "effect": "checks only executable API request shape before runtime execution",
+      "efficiency_role": "prevents invalid API calls without planning endpoints",
+      "input_summary": {
+        "method": "GET",
+        "pass_id": "t2_batch_success_counts",
+        "path": "/data/foundation/catalog/batches"
+      },
+      "output": {
+        "method": "GET",
+        "params": {
+          "limit": 50
+        },
+        "pass_id": "t2_batch_success_counts",
+        "passed": true,
+        "path": "/data/foundation/catalog/batches"
+      },
+      "stage": "llm api request gate",
+      "technique": "safe GET request-shape/catalog gate for LLM-owned API pass",
+      "timestamp": "2026-06-02T10:32:48.741734+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
+      "correctness_role": "does not infer missing dependency values or add backend-selected subtasks",
+      "duration_ms": 0.0,
+      "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
+      "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
+      "input_summary": {
+        "pass_id": "t1_ingestion_counts"
+      },
+      "output": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "required": false,
+        "resolved": true,
+        "run_id": "run_e22dcd68767e4616ba042b5abc2cff33"
+      },
+      "stage": "llm-owned pass dependency resolution",
+      "technique": "placeholder resolution from completed LLM pass results",
+      "timestamp": "2026-06-02T10:32:48.742782+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
+      "correctness_role": "returns compile errors for one LLM repair attempt",
+      "duration_ms": 0.0,
+      "effect": "checks syntax/database-semantic validity without rewriting SQL",
+      "efficiency_role": "prevents executing uncompilable SQL",
+      "input_summary": {
+        "pass_id": "t1_ingestion_counts",
+        "sql": "SELECT COUNT(*) AS count FROM \"dim_collection\" WHERE \"UPDATEDTIME\" >= ?"
+      },
+      "output": {
+        "params": {
+          "items": [
+            "90 days ago"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_id": "t1_ingestion_counts",
+        "passed": true,
+        "sql": "SELECT COUNT(*) AS count FROM \"dim_collection\" WHERE \"UPDATEDTIME\" >= ?"
+      },
+      "stage": "llm sql compile gate",
+      "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
+      "timestamp": "2026-06-02T10:32:49.003682+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
+      "correctness_role": "does not infer missing dependency values or add backend-selected subtasks",
+      "duration_ms": 0.0,
+      "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
+      "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
+      "input_summary": {
+        "pass_id": "t3_dataflow_run_success_counts"
+      },
+      "output": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "required": false,
+        "resolved": true,
+        "run_id": "run_e22dcd68767e4616ba042b5abc2cff33"
+      },
+      "stage": "llm-owned pass dependency resolution",
+      "technique": "placeholder resolution from completed LLM pass results",
+      "timestamp": "2026-06-02T10:32:49.005334+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_api_request_gate",
+      "correctness_role": "blocks unsafe method, unknown endpoint, unresolved path, or malformed params",
+      "duration_ms": 0.0,
+      "effect": "checks only executable API request shape before runtime execution",
+      "efficiency_role": "prevents invalid API calls without planning endpoints",
+      "input_summary": {
+        "method": "GET",
+        "pass_id": "t3_dataflow_run_success_counts",
+        "path": "/data/foundation/flowservice/runs"
+      },
+      "output": {
+        "method": "GET",
+        "params": {
+          "limit": 50
+        },
+        "pass_id": "t3_dataflow_run_success_counts",
+        "passed": true,
+        "path": "/data/foundation/flowservice/runs"
+      },
+      "stage": "llm api request gate",
+      "technique": "safe GET request-shape/catalog gate for LLM-owned API pass",
+      "timestamp": "2026-06-02T10:32:49.005943+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
+      "correctness_role": "separates LLM ownership from compile/request/runtime safety checks",
+      "duration_ms": 0.0,
+      "effect": "records that backend did not replace LLM semantic or SQL/API generation",
+      "efficiency_role": "bounds repair attempts before execution",
+      "input_summary": {
+        "evidence_order": "MULTI_PASS",
+        "route": "EVIDENCE_PIPELINE"
+      },
+      "metrics": {
+        "alias_materialized_count": 0,
+        "exact_pass_cache_hits": 0,
+        "exact_pass_cache_scope": "single_run",
+        "semantic_alias_count": 0,
+        "semantic_alias_materialized_count": 0,
+        "semantic_alias_validation_failures": 0
+      },
+      "output": {
+        "alias_materialized_count": 0,
+        "api_execution_latency_sec": 0.0,
+        "api_gate_latency_sec": 0.001,
+        "api_gate_passed": true,
+        "api_repair_attempts": 0,
+        "backend_semantic_decomposition_used": false,
+        "backend_semantic_planning_used": false,
+        "budget_error": null,
+        "budget_exceeded": false,
+        "budget_limits": {
+          "max_api_workers": 2,
+          "max_llm_calls": 8,
+          "max_parallelism": 4,
+          "max_passes": 6,
+          "max_repair_attempts": 1,
+          "max_sql_workers": 2,
+          "timeout_seconds": 30.0
+        },
+        "cache_hits": 0,
+        "checkpoint_resume_used": false,
+        "critical_path": {
+          "items": [
+            "t2_batch_success_counts"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "deduped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "deterministic_answer_template_used": false,
+        "early_stopped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "evidence_bus_id": "evidence_run_e22dcd68767e4616ba042b5abc2cff33",
+        "exact_pass_cache_hits": 0,
+        "exact_pass_cache_scope": "single_run",
+        "hidden_eval_gold_used": false,
+        "llm_evidence_order": "MULTI_PASS",
+        "llm_owned_generation": true,
+        "llm_pass_count": 3,
+        "llm_pass_graph_used": true,
+        "llm_route": "EVIDENCE_PIPELINE",
+        "max_api_workers": 2,
+        "max_parallelism": 4,
+        "max_sql_workers": 2,
+        "model_cascade_used": false,
+        "multi_pass_enabled": true,
+        "parallel_groups": {
+          "items": [
+            {
+              "items": [
+                "t2_batch_success_counts",
+                "t1_ingestion_counts",
+                "t3_dataflow_run_success_counts"
+              ],
+              "total_items": 3,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "parallel_pass_count": 3,
+        "pass_graph_gate_error_type": null,
+        "pass_graph_gate_passed": true,
+        "pass_graph_repair_attempted": false,
+        "pass_graph_repair_success": false,
+        "pass_ids": {
+          "items": [
+            "t1_ingestion_counts",
+            "t2_batch_success_counts",
+            "t3_dataflow_run_success_counts"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "pass_results_count": 3,
+        "passes_completed": {
+          "items": [
+            "t2_batch_success_counts",
+            "t1_ingestion_counts",
+            "t3_dataflow_run_success_counts"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "passes_dependency_blocked": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_executed": {
+          "items": [
+            "t2_batch_success_counts",
+            "t1_ingestion_counts",
+            "t3_dataflow_run_success_counts"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "passes_failed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pipeline_stage_count": 8,
+        "plan_version": 1,
+        "raw_sql_fallback_considered": false,
+        "raw_sql_fallback_gate_error_type": null,
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_repair_attempted": false,
+        "raw_sql_fallback_repair_success": false,
+        "raw_sql_fallback_success": false,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "raw_sql_safety_gate_failures": 0,
+        "repaired_pass_count": 0,
+        "result_bundle_id": "bundle_run_e22dcd68767e4616ba042b5abc2cff33",
+        "run_id": "run_e22dcd68767e4616ba042b5abc2cff33",
+        "semantic_alias_count": 0,
+        "semantic_alias_materialized": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "semantic_alias_materialized_count": 0,
+        "semantic_alias_validation_failures": 0,
+        "sequential_pass_count": 0,
+        "sql_execution_latency_sec": 0.001,
+        "sql_gate_latency_sec": 0.26,
+        "sql_gate_passed": true,
+        "sql_repair_attempts": 0,
+        "stage_events": {
+          "items": [
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_e22dcd68767e4616ba042b5abc2cff33:t2_batch_success_counts",
+              "pass_id": "t2_batch_success_counts",
+              "plan_version": 1,
+              "run_id": "run_e22dcd68767e4616ba042b5abc2cff33",
+              "stage": "SQL_API_GATE",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_e22dcd68767e4616ba042b5abc2cff33:t2_batch_success_counts",
+              "pass_id": "t2_batch_success_counts",
+              "plan_version": 1,
+              "run_id": "run_e22dcd68767e4616ba042b5abc2cff33",
+              "stage": "READY_FOR_FINAL_COMPOSITION",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_e22dcd68767e4616ba042b5abc2cff33:t1_ingestion_counts",
+              "pass_id": "t1_ingestion_counts",
+              "plan_version": 1,
+              "run_id": "run_e22dcd68767e4616ba042b5abc2cff33",
+              "stage": "READY_FOR_FINAL_COMPOSITION",
+              "status": "OK",
+              "truncated_fields": 3
+            }
+          ],
+          "total_items": 18,
+          "truncated_items": true
+        },
         "stage_pipeline_used": true,
         "truncated_fields": 2,
         "v2_execution_optimizer_used": true,
-        "v2_pipeline_scheduler_used": false
+        "v2_pipeline_scheduler_used": true
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-02T07:22:33.248426+00:00"
+      "timestamp": "2026-06-02T10:32:49.006524+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -622,16 +1065,80 @@
       "effect": "executes only LLM-proposed candidates that pass backend gates",
       "efficiency_role": "does not execute alternative backend-generated candidates",
       "input_summary": {
-        "tool_result_count": 0
+        "tool_result_count": 3
       },
       "output": {
-        "api_calls_executed": 0,
-        "dry_run_status": false,
-        "sql_calls_executed": 0
+        "api_calls_executed": 2,
+        "api_results": {
+          "items": [
+            {
+              "dry_run": true,
+              "method": "GET",
+              "ok": false,
+              "result_preview": {
+                "caveat": "Adobe credentials unavailable; API call not executed.",
+                "dry_run": true,
+                "endpoint_family": "/data/foundation/catalog/batches",
+                "error_category": "dry_run_unavailable",
+                "evidence_state": "dry_run_unavailable",
+                "live_success": false,
+                "ok": false,
+                "usable_evidence": false
+              },
+              "url": "/data/foundation/catalog/batches"
+            },
+            {
+              "dry_run": true,
+              "method": "GET",
+              "ok": false,
+              "result_preview": {
+                "caveat": "Adobe credentials unavailable; API call not executed.",
+                "dry_run": true,
+                "endpoint_family": "/data/foundation/flowservice/runs",
+                "error_category": "dry_run_unavailable",
+                "evidence_state": "dry_run_unavailable",
+                "live_success": false,
+                "ok": false,
+                "usable_evidence": false
+              },
+              "url": "/data/foundation/flowservice/runs"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "dry_run_status": true,
+        "row_counts": {
+          "items": [
+            1
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_calls_executed": 1,
+        "sql_results": {
+          "items": [
+            {
+              "ok": true,
+              "result_preview": {
+                "items": [
+                  {
+                    "count": 0
+                  }
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              },
+              "row_count": 1
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-02T07:22:33.366212+00:00"
+      "timestamp": "2026-06-02T10:32:49.088922+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -641,20 +1148,20 @@
       "efficiency_role": "makes EvidenceBus construction explicit",
       "input_summary": {
         "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
-        "tool_result_count": 0
+        "tool_result_count": 3
       },
       "output": {
         "evidence_bus_built": true,
         "evidence_pipeline_bypassed": false,
-        "llm_evidence_order": "SQL_FIRST",
+        "llm_evidence_order": "MULTI_PASS",
         "llm_final_answer_composer_ran": true,
         "llm_route": "EVIDENCE_PIPELINE",
-        "pass_results_count": 1,
+        "pass_results_count": 3,
         "post_evidence_answer_router_ran": false
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-02T07:22:33.366906+00:00"
+      "timestamp": "2026-06-02T10:32:49.089395+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -663,24 +1170,33 @@
       "effect": "forwards executed SQL/API evidence into the existing grounded answer pipeline",
       "efficiency_role": "uses collected evidence without extra tool calls",
       "input_summary": {
-        "tool_result_count": 0
+        "tool_result_count": 3
       },
       "output": {
         "evidence": {
-          "pass_ids": {
+          "counts": {
             "items": [
-              "pass_graph_gate"
+              0
             ],
             "total_items": 1,
             "truncated_items": false
           },
-          "pass_result_count": 1,
-          "run_id": "run_cf5f85a84d8944cda35ffaa60fef99eb"
+          "pass_ids": {
+            "items": [
+              "t2_batch_success_counts",
+              "t1_ingestion_counts",
+              "t3_dataflow_run_success_counts"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "pass_result_count": 3,
+          "run_id": "run_e22dcd68767e4616ba042b5abc2cff33"
         }
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-02T07:22:33.367652+00:00"
+      "timestamp": "2026-06-02T10:32:49.089925+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -689,8 +1205,8 @@
       "effect": "stores all LLM-declared pass results before final LLM aggregation",
       "efficiency_role": "reuses executed pass results without extra tools",
       "input_summary": {
-        "pass_results_count": 1,
-        "tool_result_count": 0
+        "pass_results_count": 3,
+        "tool_result_count": 3
       },
       "output": {
         "append_events": {
@@ -698,19 +1214,33 @@
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "pass_graph_gate"
+              "pass_id": "t2_batch_success_counts"
+            },
+            {
+              "appended": true,
+              "attempt_id": 0,
+              "pass_id": "t1_ingestion_counts"
+            },
+            {
+              "appended": true,
+              "attempt_id": 0,
+              "pass_id": "t3_dataflow_run_success_counts"
             }
           ],
-          "total_items": 1,
+          "total_items": 3,
           "truncated_items": false
         },
-        "pass_results_count": 1,
-        "run_id": "run_cf5f85a84d8944cda35ffaa60fef99eb",
+        "pass_results_count": 3,
+        "run_id": "run_e22dcd68767e4616ba042b5abc2cff33",
         "runtime_passes": {
           "items": [
             {
               "attempt_id": 0,
-              "cached_sources": null,
+              "cached_sources": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
               "dependency_resolution": {
                 "errors": {
                   "items": [],
@@ -718,24 +1248,75 @@
                   "truncated_items": false
                 },
                 "required": false,
-                "resolved": true
+                "resolved": true,
+                "run_id": "run_e22dcd68767e4616ba042b5abc2cff33"
               },
-              "global_pass_id": "run_cf5f85a84d8944cda35ffaa60fef99eb:pass_graph_gate",
-              "pass_id": "pass_graph_gate",
-              "path": "AGGREGATION_ONLY",
+              "global_pass_id": "run_e22dcd68767e4616ba042b5abc2cff33:t2_batch_success_counts",
+              "pass_id": "t2_batch_success_counts",
+              "path": "API",
               "plan_version": 1,
-              "run_id": "run_cf5f85a84d8944cda35ffaa60fef99eb",
-              "status": "ERROR",
+              "run_id": "run_e22dcd68767e4616ba042b5abc2cff33",
+              "status": "API_ERROR",
+              "truncated_fields": 6
+            },
+            {
+              "attempt_id": 0,
+              "cached_sources": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "dependency_resolution": {
+                "errors": {
+                  "items": [],
+                  "total_items": 0,
+                  "truncated_items": false
+                },
+                "required": false,
+                "resolved": true,
+                "run_id": "run_e22dcd68767e4616ba042b5abc2cff33"
+              },
+              "global_pass_id": "run_e22dcd68767e4616ba042b5abc2cff33:t1_ingestion_counts",
+              "pass_id": "t1_ingestion_counts",
+              "path": "SQL",
+              "plan_version": 1,
+              "run_id": "run_e22dcd68767e4616ba042b5abc2cff33",
+              "status": "SUCCESS",
+              "truncated_fields": 6
+            },
+            {
+              "attempt_id": 0,
+              "cached_sources": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "dependency_resolution": {
+                "errors": {
+                  "items": [],
+                  "total_items": 0,
+                  "truncated_items": false
+                },
+                "required": false,
+                "resolved": true,
+                "run_id": "run_e22dcd68767e4616ba042b5abc2cff33"
+              },
+              "global_pass_id": "run_e22dcd68767e4616ba042b5abc2cff33:t3_dataflow_run_success_counts",
+              "pass_id": "t3_dataflow_run_success_counts",
+              "path": "API",
+              "plan_version": 1,
+              "run_id": "run_e22dcd68767e4616ba042b5abc2cff33",
+              "status": "API_ERROR",
               "truncated_fields": 6
             }
           ],
-          "total_items": 1,
+          "total_items": 3,
           "truncated_items": false
         }
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-02T07:22:33.368382+00:00"
+      "timestamp": "2026-06-02T10:32:49.090473+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -744,21 +1325,35 @@
       "effect": "keeps SQL errors, API errors, live empty, and direct evidence distinct",
       "efficiency_role": "uses existing payloads only",
       "input_summary": {
-        "tool_result_count": 0
+        "tool_result_count": 3
       },
       "output": {
         "api": {
           "items": [
-            "API_NOT_RUN"
+            "API_ERROR"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "api_error_is_unavailable": false,
+        "api_error_is_unavailable": true,
+        "caveats": {
+          "items": [
+            "api_error_is_unavailable_not_no_data"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "conflict": {
+          "items": [
+            "SQL_SUCCESS_API_ERROR"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
         "live_empty_scoped": false,
         "sql": {
           "items": [
-            "SQL_NOT_RUN"
+            "SQL_DIRECT_ANSWER"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -766,7 +1361,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-02T07:22:33.369110+00:00"
+      "timestamp": "2026-06-02T10:32:49.090937+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -775,20 +1370,27 @@
       "effect": "turns runtime evidence into typed answer fields",
       "efficiency_role": "uses existing slot extraction",
       "input_summary": {
-        "tool_result_count": 0
+        "tool_result_count": 3
       },
       "output": {
         "discrepancy_flags": {
           "sql_api_discrepancy": false
         },
         "dry_run_flags": {
-          "dry_run": false
+          "dry_run": true
         },
         "slots": {
           "answer_family": "observability_metrics",
           "api_error": false,
+          "counts": {
+            "items": [
+              "0"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
           "discrepancy": false,
-          "dry_run": false,
+          "dry_run": true,
           "metrics": {
             "items": [
               "timeseries.ingestion.dataset.recordsuccess.count",
@@ -799,16 +1401,19 @@
           },
           "slots_present": {
             "items": [
-              "metrics"
+              "counts",
+              "metrics",
+              "sql_row_count"
             ],
-            "total_items": 1,
-            "truncated_items": false
-          }
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "sql_row_count": 1
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-02T07:22:33.373605+00:00"
+      "timestamp": "2026-06-02T10:32:49.112546+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer_start",
@@ -817,14 +1422,14 @@
       "effect": "records the exact boundary before the potentially slow final-answer LLM call",
       "efficiency_role": "enables smoke timeout localization without extra SQL/API calls",
       "input_summary": {
-        "runtime_pass_count": 1
+        "runtime_pass_count": 3
       },
       "output": {
         "current_stage": "llm_final_answer_composer_call_start"
       },
       "stage": "llm-owned answer synthesis",
       "technique": "pre-call heartbeat before LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T07:22:33.374287+00:00"
+      "timestamp": "2026-06-02T10:32:49.113135+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -833,12 +1438,19 @@
       "effect": "lets the LLM own final answer composition from runtime evidence",
       "efficiency_role": "uses one final-answer LLM call after evidence execution",
       "input_summary": {
-        "runtime_pass_count": 1,
+        "runtime_pass_count": 3,
         "slot_counts": {
           "answer_family": "observability_metrics",
           "api_error": false,
+          "counts": {
+            "items": [
+              "0"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
           "discrepancy": false,
-          "dry_run": false,
+          "dry_run": true,
           "metrics": {
             "items": [
               "timeseries.ingestion.dataset.recordsuccess.count",
@@ -849,20 +1461,23 @@
           },
           "slots_present": {
             "items": [
-              "metrics"
+              "counts",
+              "metrics",
+              "sql_row_count"
             ],
-            "total_items": 1,
-            "truncated_items": false
-          }
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "sql_row_count": 1
         }
       },
       "output": {
         "backend_unavailable": false,
-        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "final_answer": "The local snapshot shows 0 ingestion records for the last 90 days. Batch and dataflow run success counts could not be retrieved because Adobe credentials were unavailable and the API call was not executed.",
         "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "parse_error": false,
         "provider": "openai",
-        "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "raw_preview": "The local snapshot shows 0 ingestion records for the last 90 days. Batch and dataflow run success counts could not be retrieved because Adobe credentials were unavailable and the API call was not executed.",
         "used_pass_ids": {
           "items": [],
           "total_items": 0,
@@ -871,7 +1486,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T07:22:37.328770+00:00"
+      "timestamp": "2026-06-02T10:32:57.158879+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -883,12 +1498,12 @@
         "composer": "LLMFinalAnswerComposer"
       },
       "output": {
-        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "final_answer": "The local snapshot shows 0 ingestion records for the last 90 days. Batch and dataflow run success counts could not be retrieved because Adobe credentials were unavailable and the API call was not executed.",
         "passed": true
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-02T07:22:37.335941+00:00"
+      "timestamp": "2026-06-02T10:32:57.159718+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -900,31 +1515,77 @@
         "syntax_gate_passed": true
       },
       "output": {
-        "passed": true,
+        "error_message": "Final answer contains a hard claim not supported by runtime evidence.",
+        "error_type": "unsupported_claim",
+        "passed": false,
+        "unsupported_claims": {
+          "items": [
+            {
+              "hardness": "HARD",
+              "span": "90",
+              "text": "90",
+              "type": "COUNT",
+              "value": "90"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
         "verifier": {
-          "action": "ACCEPT",
+          "action": "FALLBACK_DETERMINISTIC",
           "allowed_fact_index": {
             "allowed_caveats": {
               "items": [
-                "API_ERROR",
-                "EVIDENCE_PIPELINE PLANS MUST DECLARE AT LEAST ONE PASS."
+                "API_ERROR"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "api_error_scopes": {
+              "items": [
+                "live api verification"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "counts": {
+              "items": [
+                "0",
+                "1"
               ],
               "total_items": 2,
               "truncated_items": false
+            },
+            "evidence_strings": {
+              "items": [
+                "/data/foundation/flowservice/runs",
+                "/data/foundation/catalog/batches",
+                "0"
+              ],
+              "total_items": 4,
+              "truncated_items": true
             }
           },
           "claim_extractor": {
-            "claim_count": 1,
+            "claim_count": 2,
             "claims": {
               "items": [
                 {
-                  "hardness": "SOFT",
-                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                  "type": "SOFT_TEXT"
+                  "hardness": "HARD",
+                  "span": "0",
+                  "text": "0",
+                  "type": "COUNT",
+                  "value": "0"
+                },
+                {
+                  "hardness": "HARD",
+                  "span": "90",
+                  "text": "90",
+                  "type": "COUNT",
+                  "value": "90"
                 }
               ],
-              "total_items": 1,
+              "total_items": 2,
               "truncated_items": false
             }
           },
@@ -933,27 +1594,53 @@
               "items": [
                 {
                   "claim": {
-                    "hardness": "SOFT",
-                    "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                    "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                    "type": "SOFT_TEXT"
+                    "hardness": "HARD",
+                    "span": "0",
+                    "text": "0",
+                    "type": "COUNT",
+                    "value": "0"
                   },
-                  "reason": "soft_text",
+                  "reason": "count",
                   "status": "SUPPORTED"
+                },
+                {
+                  "claim": {
+                    "hardness": "HARD",
+                    "span": "90",
+                    "text": "90",
+                    "type": "COUNT",
+                    "value": "90"
+                  },
+                  "reason": "count_not_in_allowed_facts",
+                  "status": "UNSUPPORTED"
                 }
               ],
-              "total_items": 1,
+              "total_items": 2,
               "truncated_items": false
             }
           },
-          "ok": true,
+          "ok": false,
           "supported_claims": {
             "items": [
               {
-                "hardness": "SOFT",
-                "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                "type": "SOFT_TEXT"
+                "hardness": "HARD",
+                "span": "0",
+                "text": "0",
+                "type": "COUNT",
+                "value": "0"
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "unsupported_claims": {
+            "items": [
+              {
+                "hardness": "HARD",
+                "span": "90",
+                "text": "90",
+                "type": "COUNT",
+                "value": "90"
               }
             ],
             "total_items": 1,
@@ -963,7 +1650,145 @@
       },
       "stage": "answer gate",
       "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-02T07:22:37.353245+00:00"
+      "timestamp": "2026-06-02T10:32:57.164073+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_repair_start",
+      "correctness_role": "diagnostic only; backend still does not repair the answer",
+      "duration_ms": 0.0,
+      "effect": "records the exact boundary before the potentially slow final-answer repair LLM call",
+      "efficiency_role": "enables smoke timeout localization without extra SQL/API calls",
+      "input_summary": {
+        "failed_semantic": true,
+        "failed_syntax": false
+      },
+      "output": {
+        "current_stage": "llm_final_answer_repair_call_start"
+      },
+      "stage": "llm-owned answer repair",
+      "technique": "pre-call heartbeat before final answer repair",
+      "timestamp": "2026-06-02T10:32:57.164844+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_repair",
+      "correctness_role": "preserves LLM ownership while enforcing evidence boundaries",
+      "duration_ms": 0.0,
+      "effect": "returns gate errors to the LLM once; backend does not repair the answer itself",
+      "efficiency_role": "caps answer repair to one LLM call",
+      "input_summary": {
+        "failed_semantic": true,
+        "failed_syntax": false
+      },
+      "output": {
+        "candidate": {
+          "backend_unavailable": false,
+          "final_answer": "The local snapshot shows 0 ingestion records. Batch and dataflow run success counts could not be retrieved because Adobe credentials were unavailable and the API call was not executed.",
+          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+          "parse_error": false,
+          "provider": "openai",
+          "raw_preview": "The local snapshot shows 0 ingestion records. Batch and dataflow run success counts could not be retrieved because Adobe credentials were unavailable and the API call was not executed.",
+          "used_pass_ids": {
+            "items": [],
+            "total_items": 0,
+            "truncated_items": false
+          }
+        },
+        "semantic_gate": {
+          "passed": true,
+          "verifier": {
+            "action": "ACCEPT",
+            "allowed_fact_index": {
+              "allowed_caveats": {
+                "items": [
+                  "API_ERROR"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              },
+              "api_error_scopes": {
+                "items": [
+                  "live api verification"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              },
+              "counts": {
+                "items": [
+                  "0",
+                  "1"
+                ],
+                "total_items": 2,
+                "truncated_items": false
+              },
+              "evidence_strings": {
+                "items": [
+                  "/data/foundation/flowservice/runs",
+                  "/data/foundation/catalog/batches",
+                  "0"
+                ],
+                "total_items": 4,
+                "truncated_items": true
+              }
+            },
+            "claim_extractor": {
+              "claim_count": 1,
+              "claims": {
+                "items": [
+                  {
+                    "hardness": "HARD",
+                    "span": "0",
+                    "text": "0",
+                    "type": "COUNT",
+                    "value": "0"
+                  }
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              }
+            },
+            "claim_matcher": {
+              "matches": {
+                "items": [
+                  {
+                    "claim": {
+                      "hardness": "HARD",
+                      "span": "0",
+                      "text": "0",
+                      "type": "COUNT",
+                      "value": "0"
+                    },
+                    "reason": "count",
+                    "status": "SUPPORTED"
+                  }
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              }
+            },
+            "ok": true,
+            "supported_claims": {
+              "items": [
+                {
+                  "hardness": "HARD",
+                  "span": "0",
+                  "text": "0",
+                  "type": "COUNT",
+                  "value": "0"
+                }
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          }
+        },
+        "syntax_gate": {
+          "final_answer": "The local snapshot shows 0 ingestion records. Batch and dataflow run success counts could not be retrieved because Adobe credentials were unavailable and the API call was not executed.",
+          "passed": true
+        }
+      },
+      "stage": "llm-owned answer repair",
+      "technique": "single LLM-owned final answer repair",
+      "timestamp": "2026-06-02T10:33:06.768211+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -972,18 +1797,18 @@
       "effect": "records that V2 did not use deterministic answer templates, renderers, or selectors as competing generators",
       "efficiency_role": "no extra tool calls",
       "input_summary": {
-        "runtime_pass_count": 1
+        "runtime_pass_count": 3
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
-        "answer_repair_attempts": 0,
+        "answer_repair_attempts": 1,
         "answer_semantic_gate_passed": true,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
-        "final_answer_repair_latency_sec": 0.0,
+        "final_answer_repair_latency_sec": 9.601,
         "final_answer_supported_by_evidence": true,
-        "final_composer_latency_sec": 3.938,
-        "final_gate_latency_sec": 0.016,
+        "final_composer_latency_sec": 8.044,
+        "final_gate_latency_sec": 0.004,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 2,
@@ -995,7 +1820,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-02T07:22:37.360327+00:00"
+      "timestamp": "2026-06-02T10:33:06.768830+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -1008,7 +1833,7 @@
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
-        "answer_repair_attempts": 0,
+        "answer_repair_attempts": 1,
         "answer_semantic_gate_passed": true,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
@@ -1024,50 +1849,50 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-02T07:22:37.370412+00:00"
+      "timestamp": "2026-06-02T10:33:06.769480+00:00"
     }
   ],
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 1216,
+  "estimated_tokens": 2932,
   "execution_time": 0.0,
-  "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+  "final_answer": "The local snapshot shows 0 ingestion records. Batch and dataflow run success counts could not be retrieved because Adobe credentials were unavailable and the API call was not executed.",
   "original_query": "Show ingestion record counts and batch success counts for the last 90 days.",
   "planning_time": 0.0,
   "preprocessing_time": 0.0,
   "query_id": "example_034",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 4.176874249707907,
-  "sql_call_count": 0,
+  "runtime": 17.826131499838084,
+  "sql_call_count": 1,
   "steps": [
     {
-      "estimated_tokens": 1244,
+      "estimated_tokens": 2457,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_034/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 1843
+      "prompt_tokens": 3206
     },
     {
-      "aggregation_instruction": "",
+      "aggregation_instruction": "Aggregate t1 for total ingestion record counts (sum of ROWCOUNT or count of records) over the last 90 days from local snapshot. Aggregate t2 and t3 for batch and dataflow run success counts from live API. Combine results to present ingestion record counts and batch success counts for the last 90 days. Note: The live API endpoints may not directly provide a 'success count' filter; the backend will return counts which may need post-processing for success status if not directly filterable.",
       "api_request": null,
       "backend_unavailable": false,
       "diagnostics": {
         "api_request_gate_failures": 0,
         "atomic_protocol_fallback_used": false,
-        "backend_formal_compilation_used": false,
+        "backend_formal_compilation_used": true,
         "backend_generated_sql": false,
         "backend_semantic_decomposition_used": false,
         "backend_semantic_planning_used": false,
         "backend_sql_api_generation_used": false,
         "compiled_alias_count": 0,
-        "compiled_api_count": 0,
-        "compiled_sql_count": 0,
+        "compiled_api_count": 2,
+        "compiled_sql_count": 1,
         "compiler_latency_ms": 0,
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
-        "planner_parse_source": "semantic_ir_validation_error",
-        "planner_provider_latency_ms": 39502,
+        "planner_parse_source": "sdk_toolcall_semantic_ir",
+        "planner_provider_latency_ms": 39442,
         "planner_repair_attempted": false,
-        "planner_success": false,
+        "planner_success": true,
         "planner_timeout": false,
         "planner_toolcall_attempted": true,
         "planner_toolcall_supported": true,
@@ -1090,37 +1915,157 @@
         "semantic_alias_count": 0,
         "semantic_alias_error_type": null,
         "semantic_alias_repair_attempted": false,
-        "semantic_alias_validation_passed": null,
-        "semantic_alias_validation_used": false,
-        "semantic_ir_provider_latency_ms": 39499,
-        "semantic_ir_repair_attempted": true,
-        "semantic_ir_repair_latency_ms": 16244,
+        "semantic_alias_validation_passed": true,
+        "semantic_alias_validation_used": true,
+        "semantic_ir_plan_preview": {
+          "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_ingestion_counts\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"COUNT\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": true, \"table\": \"dim_collection\", \"fields\": {\"items\": [\"COLLECTIONID\", \"NAME\", \"ROWCOUNT\"], \"total_items\": 4, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"UPDATEDTIME\", \"op\": \">=\", \"value\": \"90 days ago\"}], \"total_items\": 1, \"truncated_items\": false}}, \"description\": \"Count ingestion records (rows) per collection/dataset for the last 90 days using local snapshot dim_collection.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_batch_success_counts\", \"kind\": \"LIVE_QUERY\", \"operation\": \"COUNT\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"catalog_batches\", \"method\": \"GET\", \"query_params\": {\"limit\": 50}}, \"description\": \"Count catalog batches from the live API to determine batch success counts. Note: The live API endpoint returns batch metadata; success status may require filtering on returned status fields or using flowservice_runs for dataflow run success. This task retrieves the batch list ...",
+          "truncated": true
+        },
+        "semantic_ir_provider_latency_ms": 39439,
+        "semantic_ir_repair_attempted": false,
+        "semantic_ir_repair_latency_ms": 0,
         "semantic_ir_repair_success": false,
         "semantic_ir_support_check_latency_ms": 0,
-        "semantic_ir_support_checked": false,
+        "semantic_ir_support_checked": true,
+        "semantic_ir_support_recommended_action": "COMPILE",
         "semantic_ir_support_repair_attempted": false,
         "semantic_ir_support_repair_error_message": null,
         "semantic_ir_support_repair_error_type": null,
         "semantic_ir_support_repair_latency_ms": 0,
         "semantic_ir_support_repair_success": false,
-        "semantic_ir_supported": null,
+        "semantic_ir_supported": true,
         "semantic_ir_task_count": 3,
         "semantic_ir_toolcall_supported": true,
         "semantic_ir_unsupported_features": [],
+        "semantic_ir_unsupported_operation": null,
         "semantic_ir_unsupported_reason": null,
-        "semantic_ir_validation_error_message": "Unknown table: catalog_batches",
-        "semantic_ir_validation_error_type": "unknown_table",
+        "semantic_ir_unsupported_task_id": null,
+        "semantic_ir_validation_error_message": null,
+        "semantic_ir_validation_error_type": null,
         "semantic_ir_validation_latency_ms": 0,
-        "semantic_ir_validation_passed": false,
+        "semantic_ir_validation_passed": true,
         "sql_compile_gate_failures": 0,
         "v2_semantic_ir_used": true
       },
       "direct_answer": null,
-      "evidence_order": "SQL_FIRST",
+      "evidence_order": "MULTI_PASS",
       "kind": "llm_unified_planner",
       "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-      "parse_error": true,
-      "passes": [],
+      "parse_error": false,
+      "passes": [
+        {
+          "api_request": null,
+          "can_run_parallel": true,
+          "depends_on": [],
+          "evidence_order": "SQL_FIRST",
+          "expected_result": "Count ingestion records (rows) per collection/dataset for the last 90 days using local snapshot dim_collection.",
+          "fallback": false,
+          "optional": false,
+          "pass_id": "t1_ingestion_counts",
+          "path": "SQL",
+          "raw_sql_fallback_reason": null,
+          "raw_sql_fallback_task_id": null,
+          "raw_sql_fallback_used": false,
+          "result_contract": {
+            "entity": "collection",
+            "fields": [
+              "COLLECTIONID",
+              "NAME",
+              "ROWCOUNT",
+              "UPDATEDTIME"
+            ],
+            "filters": [
+              {
+                "field": "UPDATEDTIME",
+                "op": ">=",
+                "value": "90 days ago"
+              }
+            ],
+            "freshness": "same_run",
+            "object": "count",
+            "operation": "COUNT",
+            "scope": "local",
+            "source": "LOCAL_SNAPSHOT"
+          },
+          "reuse_result_from": null,
+          "semantic_cache_key": null,
+          "sql": {
+            "params": [
+              "90 days ago"
+            ],
+            "query": "SELECT COUNT(*) AS count FROM \"dim_collection\" WHERE \"UPDATEDTIME\" >= ?"
+          },
+          "subtask": "Count ingestion records (rows) per collection/dataset for the last 90 days using local snapshot dim_collection."
+        },
+        {
+          "api_request": {
+            "method": "GET",
+            "params": {
+              "limit": 50
+            },
+            "path": "/data/foundation/catalog/batches"
+          },
+          "can_run_parallel": true,
+          "depends_on": [],
+          "evidence_order": "API_FIRST",
+          "expected_result": "Count catalog batches from the live API to determine batch success counts. Note: The live API endpoint returns batch metadata; success status may require filtering on returned status fields or using flowservice_runs for dataflow run success. This task retrieves the batch list to enable counting.",
+          "fallback": false,
+          "optional": false,
+          "pass_id": "t2_batch_success_counts",
+          "path": "API",
+          "raw_sql_fallback_reason": null,
+          "raw_sql_fallback_task_id": null,
+          "raw_sql_fallback_used": false,
+          "result_contract": {
+            "entity": "batch",
+            "fields": [],
+            "filters": [],
+            "freshness": "same_run",
+            "object": "count",
+            "operation": "COUNT",
+            "scope": "live",
+            "source": "LIVE_API"
+          },
+          "reuse_result_from": null,
+          "semantic_cache_key": null,
+          "sql": null,
+          "subtask": "Count catalog batches from the live API to determine batch success counts. Note: The live API endpoint returns batch metadata; success status may require filtering on returned status fields or using flowservice_runs for dataflow run success. This task retrieves the batch list to enable counting."
+        },
+        {
+          "api_request": {
+            "method": "GET",
+            "params": {
+              "limit": 50
+            },
+            "path": "/data/foundation/flowservice/runs"
+          },
+          "can_run_parallel": true,
+          "depends_on": [],
+          "evidence_order": "API_FIRST",
+          "expected_result": "Count dataflow runs from the live API to determine batch/dataflow success counts. This complements t2 by providing run-level success/failure status.",
+          "fallback": false,
+          "optional": false,
+          "pass_id": "t3_dataflow_run_success_counts",
+          "path": "API",
+          "raw_sql_fallback_reason": null,
+          "raw_sql_fallback_task_id": null,
+          "raw_sql_fallback_used": false,
+          "result_contract": {
+            "entity": "dataflow_run",
+            "fields": [],
+            "filters": [],
+            "freshness": "same_run",
+            "object": "count",
+            "operation": "COUNT",
+            "scope": "live",
+            "source": "LIVE_API"
+          },
+          "reuse_result_from": null,
+          "semantic_cache_key": null,
+          "sql": null,
+          "subtask": "Count dataflow runs from the live API to determine batch/dataflow success counts. This complements t2 by providing run-level success/failure status."
+        }
+      ],
       "provider": "openai",
       "raw_preview": {
         "semantic_ir_initial": {
@@ -1133,31 +2078,117 @@
           "skipped": false,
           "transport": "openai_sdk",
           "truncated_fields": 11
-        },
-        "semantic_ir_repair": {
-          "base_url": "[REDACTED]",
-          "error": null,
-          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-          "ok": true,
-          "provider": "openai",
-          "sdk_path_used": true,
-          "skipped": false,
-          "transport": "openai_sdk",
-          "truncated_fields": 11
         }
       },
-      "reason": "semantic_ir_validation_error: Unknown table: catalog_batches",
+      "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
       "route": "EVIDENCE_PIPELINE",
-      "sql": null
+      "sql": {
+        "params": [
+          "90 days ago"
+        ],
+        "query": "SELECT COUNT(*) AS count FROM \"dim_collection\" WHERE \"UPDATEDTIME\" >= ?"
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": 50
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/catalog/batches",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": 50
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/foundation/catalog/batches"
+      },
+      "url": "/data/foundation/catalog/batches",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": [
+          "LLM API request pass passed request gate."
+        ]
+      }
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "params": {
+          "items": [
+            "90 days ago"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "row_count": 1,
+        "rows": {
+          "items": [
+            {
+              "count": 0
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "sql": "SELECT COUNT(*) AS count FROM \"dim_collection\" WHERE \"UPDATEDTIME\" >= ?",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": [
+          "LLM SQL pass passed compile gate."
+        ]
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": 50
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/flowservice/runs",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": 50
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/foundation/flowservice/runs"
+      },
+      "url": "/data/foundation/flowservice/runs",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": [
+          "LLM API request pass passed request gate."
+        ]
+      }
     },
     {
       "evidence_bus_built": true,
       "evidence_pipeline_bypassed": false,
       "kind": "evidence_boundary",
-      "llm_evidence_order": "SQL_FIRST",
+      "llm_evidence_order": "MULTI_PASS",
       "llm_final_answer_composer_ran": true,
       "llm_route": "EVIDENCE_PIPELINE",
-      "pass_results_count": 1,
+      "pass_results_count": 3,
       "post_evidence_answer_router_ran": false
     },
     {
@@ -1166,25 +2197,25 @@
       "caveats_included": [],
       "claimed_facts": [],
       "error_message": null,
-      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "final_answer": "The local snapshot shows 0 ingestion records. Batch and dataflow run success counts could not be retrieved because Adobe credentials were unavailable and the API call was not executed.",
       "kind": "llm_final_answer_composer",
       "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
       "parse_error": false,
       "provider": "openai",
-      "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "raw_preview": "The local snapshot shows 0 ingestion records. Batch and dataflow run success counts could not be retrieved because Adobe credentials were unavailable and the API call was not executed.",
       "unanswered_subtasks": [],
       "used_pass_ids": []
     },
     {
       "answer_composer_used": "LLMFinalAnswerComposer",
-      "answer_repair_attempts": 0,
+      "answer_repair_attempts": 1,
       "answer_semantic_gate_passed": true,
       "answer_syntax_gate_passed": true,
       "deterministic_answer_template_used": false,
-      "final_answer_repair_latency_sec": 0.0,
+      "final_answer_repair_latency_sec": 9.601,
       "final_answer_supported_by_evidence": true,
-      "final_composer_latency_sec": 3.938,
-      "final_gate_latency_sec": 0.016,
+      "final_composer_latency_sec": 8.044,
+      "final_gate_latency_sec": 0.004,
       "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
       "llm_owned_final_answer": true,
@@ -1199,13 +2230,22 @@
           "action": "ACCEPT",
           "allowed_fact_index": {
             "allowed_caveats": [
-              "API_ERROR",
-              "EVIDENCE_PIPELINE PLANS MUST DECLARE AT LEAST ONE PASS."
+              "API_ERROR"
             ],
-            "api_error_scopes": [],
-            "counts": [],
+            "api_error_scopes": [
+              "live api verification"
+            ],
+            "counts": [
+              "0",
+              "1"
+            ],
             "dates": [],
-            "evidence_strings": [],
+            "evidence_strings": [
+              "/data/foundation/flowservice/runs",
+              "/data/foundation/catalog/batches",
+              "0",
+              "50"
+            ],
             "ids": [],
             "live_empty_scopes": [],
             "missing_roles": [],
@@ -1218,11 +2258,11 @@
             "claim_count": 1,
             "claims": [
               {
-                "hardness": "SOFT",
-                "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                "type": "SOFT_TEXT",
-                "value": ""
+                "hardness": "HARD",
+                "span": "0",
+                "text": "0",
+                "type": "COUNT",
+                "value": "0"
               }
             ]
           },
@@ -1230,13 +2270,13 @@
             "matches": [
               {
                 "claim": {
-                  "hardness": "SOFT",
-                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                  "type": "SOFT_TEXT",
-                  "value": ""
+                  "hardness": "HARD",
+                  "span": "0",
+                  "text": "0",
+                  "type": "COUNT",
+                  "value": "0"
                 },
-                "reason": "soft_text",
+                "reason": "count",
                 "status": "SUPPORTED"
               }
             ]
@@ -1246,11 +2286,11 @@
           "over_specified_claims": [],
           "supported_claims": [
             {
-              "hardness": "SOFT",
-              "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
-              "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
-              "type": "SOFT_TEXT",
-              "value": ""
+              "hardness": "HARD",
+              "span": "0",
+              "text": "0",
+              "type": "COUNT",
+              "value": "0"
             }
           ],
           "unsupported_claims": []
@@ -1259,7 +2299,7 @@
       "syntax_gate": {
         "error_message": null,
         "error_type": null,
-        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "final_answer": "The local snapshot shows 0 ingestion records. Batch and dataflow run success counts could not be retrieved because Adobe credentials were unavailable and the API call was not executed.",
         "passed": true
       },
       "used_pass_ids": []
@@ -1267,7 +2307,7 @@
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 4.004266916774213
+    "answer_time": 17.680163540877402
   },
-  "tool_call_count": 0
+  "tool_call_count": 3
 }

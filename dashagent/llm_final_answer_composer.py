@@ -357,9 +357,14 @@ def safe_llm_final_answer_fallback(runtime_passes: list[dict[str, Any]], *, synt
         prefix = "Local snapshot evidence shows" if any(str(item.get("scope") or "").upper() == "LOCAL_SNAPSHOT" for item in available) else "Runtime evidence shows"
         answer = f"{prefix} {summary}."
         failed = _failed_or_unavailable_sources(runtime_passes, None)
+        runtime_failed = [
+            item
+            for item in failed
+            if str(item.get("source") or item.get("path") or "").upper() not in {"DIRECT", "CONCEPT", ""}
+        ]
         if any(str(item.get("source") or item.get("status") or "").upper() in {"API", "LIVE_API", "API_ERROR"} for item in failed):
             answer += " Live API evidence was unavailable, so a live comparison cannot be completed."
-        elif failed:
+        elif runtime_failed:
             answer += " Some requested runtime evidence was unavailable for this query/scope."
         return answer
     statuses = {str(item.get("status") or "").upper() for item in runtime_passes}
@@ -731,7 +736,13 @@ def _missing_required_fields(final_answer: str, *, question: str, index: Any, sl
         missing.append("count")
     if _asks_date(prompt) and index.dates and not any(_date_value_in_answer(value, answer) for value in index.dates):
         missing.append("date")
-    if _asks_status(prompt) and index.statuses and not any(_value_in_answer(value, answer) for value in index.statuses):
+    date_answer_satisfies_published_prompt = (
+        _asks_date(prompt)
+        and "published" in prompt
+        and index.dates
+        and any(_date_value_in_answer(value, answer) for value in index.dates)
+    )
+    if _asks_status(prompt) and not date_answer_satisfies_published_prompt and index.statuses and not any(_value_in_answer(value, answer) for value in index.statuses):
         missing.append("status")
     if _asks_list(prompt) and slots.entity_names:
         names = slots.entity_names[:10]
@@ -861,17 +872,38 @@ def _item_caveat(item: dict[str, Any]) -> str:
 
 def _fallback_fact_summary(available: list[dict[str, Any]]) -> str:
     pieces: list[str] = []
+    labels = {"counts": "count", "names": "name", "ids": "id", "statuses": "status", "dates": "date"}
     for item in available[:4]:
         label = "/".join(part for part in [str(item.get("task_id") or ""), str(item.get("source") or ""), str(item.get("scope") or "")] if part)
         values: list[str] = []
-        values.extend(str(value) for value in item.get("facts", [])[:4] if value)
-        if not values:
-            for key in ["counts", "names", "ids", "statuses", "dates"]:
-                for value in item.get(key, [])[:3]:
-                    values.append(f"{key[:-1]}: {value}")
+        counts = [value for value in item.get("counts", [])[:1]]
+        names = [str(value) for value in item.get("names", [])[:3] if value]
+        if counts:
+            values.append(f"count: {counts[0]}")
+        if names:
+            values.append("examples include " + "; ".join(names))
+        for key in ["ids", "statuses", "dates"]:
+            for value in item.get(key, [])[:3]:
+                values.append(f"{labels[key]}: {value}")
+        if len(values) < 4:
+            for value in item.get("facts", [])[:6]:
+                fact = str(value)
+                if _looks_like_raw_or_oversized_fact(fact):
+                    continue
+                values.append(fact)
+                if len(values) >= 6:
+                    break
         if values:
             pieces.append(f"{label}: {'; '.join(values[:6])}")
     return " | ".join(pieces) if pieces else "scoped runtime evidence was present"
+
+
+def _looks_like_raw_or_oversized_fact(fact: str) -> bool:
+    text = str(fact or "")
+    if len(text) > 180:
+        return True
+    lowered = text.lower()
+    return any(marker in lowered for marker in ['{"', '"nodetype"', '"params"', "[{", "}]"])
 
 
 def _dedupe_preserve_order(values: list[Any]) -> list[Any]:
@@ -971,7 +1003,7 @@ def _allows_broad_list_summary(prompt: str, answer: str, slots: AnswerSlots, pre
         has_count = _value_in_answer(slots.sql_row_count, answer)
     if not has_count:
         return False
-    sample_signal = bool(re.search(r"\b(sample|examples?|include|includes|first few|first \w+)\b", answer))
+    sample_signal = bool(re.search(r"\b(sample|examples?|includ(?:e|es|ed|ing)|first few|first \w+)\b", answer))
     return sample_signal and len(present_names) >= min(3, len(slots.entity_names))
 
 

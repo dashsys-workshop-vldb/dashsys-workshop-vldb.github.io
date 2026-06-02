@@ -208,26 +208,67 @@ def run_semantic_ir_toolcall_planner(
                 }
             )
             return WeakProtocolResult(plan_payload=legacy_payload, diagnostics=diagnostics, raw_preview=redact_secrets(raw_previews))
-        diagnostics.update(
-            {
-                "semantic_ir_toolcall_supported": False,
-                "sdk_toolcall_semantic_ir_used": False,
-                "semantic_ir_validation_passed": False,
-                "semantic_ir_validation_error_type": "missing_tool_call",
-            }
+        diagnostics["semantic_ir_repair_attempted"] = True
+        repair_started = time.perf_counter()
+        repair_result, repair_error = _call_semantic_ir_tool(
+            client,
+            system_prompt=_semantic_ir_repair_system_prompt(),
+            user_prompt=_semantic_ir_missing_toolcall_retry_user_prompt(
+                user_prompt=user_prompt,
+                previous_result=result,
+                allowed_schema_card=schema_card,
+                allowed_api_card=api_card,
+            ),
         )
-        return _fallback_or_failed(
-            client=client,
-            user_prompt=user_prompt,
-            schema_context=schema_context,
-            endpoint_context=endpoint_context,
-            repair_context=repair_context,
-            fallback_to_atomic=fallback_to_atomic,
-            diagnostics=diagnostics,
-            raw_previews=raw_previews,
-            reason="SDK model response did not include submit_semantic_ir_plan tool call.",
-            started=started,
-        )
+        diagnostics["semantic_ir_provider_latency_ms"] = _elapsed_ms(started)
+        diagnostics["semantic_ir_repair_latency_ms"] = _elapsed_ms(repair_started)
+        raw_previews["semantic_ir_missing_toolcall_retry"] = compact_preview(repair_result or repair_error, 1200)
+        if repair_error:
+            diagnostics.update(
+                {
+                    "semantic_ir_toolcall_supported": False,
+                    "sdk_toolcall_semantic_ir_used": False,
+                    "semantic_ir_validation_passed": False,
+                    "semantic_ir_validation_error_type": "missing_tool_call",
+                    "semantic_ir_repair_success": False,
+                }
+            )
+            return _fallback_or_failed(
+                client=client,
+                user_prompt=user_prompt,
+                schema_context=schema_context,
+                endpoint_context=endpoint_context,
+                repair_context=repair_context,
+                fallback_to_atomic=fallback_to_atomic,
+                diagnostics=diagnostics,
+                raw_previews=raw_previews,
+                reason=repair_error,
+                started=started,
+            )
+        retry_args = _extract_semantic_ir_tool_arguments(repair_result)
+        if retry_args is None:
+            diagnostics.update(
+                {
+                    "semantic_ir_toolcall_supported": False,
+                    "sdk_toolcall_semantic_ir_used": False,
+                    "semantic_ir_validation_passed": False,
+                    "semantic_ir_validation_error_type": "missing_tool_call",
+                    "semantic_ir_repair_success": False,
+                }
+            )
+            return _fallback_or_failed(
+                client=client,
+                user_prompt=user_prompt,
+                schema_context=schema_context,
+                endpoint_context=endpoint_context,
+                repair_context=repair_context,
+                fallback_to_atomic=fallback_to_atomic,
+                diagnostics=diagnostics,
+                raw_previews=raw_previews,
+                reason="Semantic IR retry did not return submit_semantic_ir_plan tool call.",
+                started=started,
+            )
+        tool_args = retry_args
 
     validation_started = time.perf_counter()
     parsed_plan, validation = _parse_validate(tool_args, validator)
@@ -246,6 +287,8 @@ def run_semantic_ir_toolcall_planner(
             "semantic_alias_error_type": validation.error_type if validation.error_type == "invalid_semantic_alias" else None,
         }
     )
+    if diagnostics.get("semantic_ir_repair_attempted") and validation.passed:
+        diagnostics["semantic_ir_repair_success"] = True
     if parsed_plan is None or not validation.passed:
         diagnostics["semantic_ir_repair_attempted"] = True
         if validation.error_type == "invalid_semantic_alias":
@@ -745,14 +788,7 @@ def _semantic_ir_user_prompt(
             "Do not ask the backend to write SQL, infer SQL, choose SQL tables, choose SQL fields, or repair SQL for you.",
             "Do not request unsupported JOIN/GROUP/window SQL in Semantic IR unless the user request truly requires it and supported IR cannot represent it.",
             "If unsupported local SQL structure is truly required, set requires_raw_sql_fallback=true, raw_sql_reason, and unsupported_features on that LOCAL_SNAPSHOT task.",
-            "Prefer LOCAL_QUERY for user-specific local or ambiguous data-like prompts unless the prompt explicitly asks for live/current/platform/API evidence.",
-            "Hard source contract: if the prompt has no live/current/platform/API cue and asks what records exist, what records the user has, a count, date, status, or list, LIVE_QUERY is the wrong source; choose LOCAL_QUERY.",
-            "Phrases like 'do I have', 'my', 'show/list/give me records', and bare entity lookups without live/current/platform/API cues are LOCAL_SNAPSHOT requests.",
-            "Do not choose LIVE_QUERY merely because a live endpoint exists for the object family.",
-            "Use LIVE_QUERY only when the prompt explicitly asks for live/current/platform/API state or when comparing local/live evidence.",
-            "For prompts that ask to show/list actual records without live/current/platform/API cues, prefer LOCAL_QUERY over LIVE_QUERY.",
-            "For mixed concept plus data prompts without live/current/platform/API cues, include a CONCEPT task and a LOCAL_QUERY data task; do not use API as the primary data source.",
-            "For inactive journeys without live/current/platform/API cues, use local snapshot journey/campaign records when an allowed local table is available.",
+            *_semantic_ir_source_selection_rules(),
             "For any how many/count/number of/total prompt, use operation COUNT and local_query.count=true; do not list rows and count the displayed limit.",
             "For local snapshot counts, use LOCAL_QUERY with operation COUNT.",
             "Do not represent a requested COUNT as an AGGREGATE task over a sampled LIST task; sampled rows are not a count.",
@@ -804,6 +840,59 @@ def _semantic_ir_user_prompt(
     return json.dumps(payload, ensure_ascii=False, sort_keys=True)
 
 
+def _semantic_ir_source_selection_rules() -> list[str]:
+    return [
+        "Prefer LOCAL_QUERY for user-specific local or ambiguous data-like prompts unless the prompt explicitly asks for live/current/platform/API evidence or unless the prompt names an API catalog resource.",
+        "Hard source contract: if the prompt has no live/current/platform/API cue and asks what records exist, what records the user has, a count, date, status, or list, LIVE_QUERY is the wrong source; choose LOCAL_QUERY unless the prompt names an API catalog resource.",
+        "Phrases like 'do I have', 'my', 'show/list/give me records', and bare entity lookups without live/current/platform/API cues are LOCAL_SNAPSHOT requests unless they name API catalog resources.",
+        "Bare 'schema' or 'schemas' plus 'do I have' or 'my' is a LOCAL_SNAPSHOT request; do not treat schemas alone as a Schema Registry API cue.",
+        "Use the schema registry/schema API only when the prompt explicitly says Schema Registry, API, live, current, platform, Adobe Experience Platform, or asks to compare local and live schemas.",
+        "Do not choose LIVE_QUERY merely because a live endpoint exists for the object family.",
+        "Use LIVE_QUERY when the prompt explicitly asks for live/current/platform/API state, when comparing local/live evidence, or when the prompt names an API catalog resource with a matching AllowedAPIContextCard endpoint.",
+        "Treat sandbox/sandbox-name prompts as live/API evidence cues for API catalog resources unless the prompt explicitly says local snapshot.",
+        "Endpoint catalog resources such as tags, tag categories, merge policies, segment definitions, segment jobs, catalog batches, batch files, audit events, dataflow runs, dataflow flows, and recent platform changes should use LIVE_QUERY when a matching AllowedAPIContextCard endpoint exists.",
+        "Do not invent local table names from endpoint IDs or API nouns; if a matching local table is not listed in AllowedLocalSchemaCard, choose the matching LIVE_QUERY endpoint instead of fabricating a LOCAL_QUERY table.",
+        "For batch prompts, use catalog_batches for batch lists/counts, catalog_batch_detail for one batch, export_batch_files for downloadable files, and export_batch_failed for failed files when path parameters are provided by the user.",
+        "For recent changes, new destinations, or audit-style history prompts, use audit_events or audit_events_short when available.",
+        "For segment definitions as sandbox/platform API resources or bare segment-definition catalog requests, use segment_definitions unless the prompt explicitly asks for the local snapshot.",
+        "For segment jobs or evaluation jobs, use segment_jobs unless the prompt explicitly asks for the local snapshot.",
+        "For tags and merge policies in this sandbox, use unified_tags or merge_policies rather than LOCAL_QUERY.",
+        "For prompts that ask to show/list actual records without live/current/platform/API cues, prefer LOCAL_QUERY over LIVE_QUERY unless they name API catalog resources.",
+            "For mixed concept plus data prompts without live/current/platform/API cues, include a CONCEPT task and a LOCAL_QUERY data task; do not use API as the primary data source unless the data part names an API catalog resource.",
+            "For inactive journeys without live/current/platform/API cues, use local snapshot journey/campaign records when an allowed local table is available.",
+            "For inactive journey/campaign local tasks, do not invent a literal INACTIVE enum unless that exact value is known from evidence context; prefer selecting NAME plus STATUS/STATE so the final answer can show non-active/non-running local records safely.",
+            "For quoted or named entity filters, prefer primary_name_fields or title/name fields over label_fields such as LABELS*; use label fields only when the user asks for labels, tags, or semantic labels.",
+        ]
+
+
+def _semantic_ir_missing_toolcall_retry_user_prompt(
+    *,
+    user_prompt: str,
+    previous_result: dict[str, Any],
+    allowed_schema_card: list[dict[str, Any]],
+    allowed_api_card: list[dict[str, Any]],
+) -> str:
+    payload = {
+        "task": "RETRY_MISSING_DASHSYS_V2_SEMANTIC_IR_TOOLCALL",
+        "user_prompt": user_prompt,
+        "previous_model_response": compact_preview(previous_result, 1200),
+        "validation_error": {
+            "error_type": "missing_tool_call",
+            "error_message": "The previous response did not call submit_semantic_ir_plan. Plain text is not accepted for the V2 primary path.",
+        },
+        "allowed_schema_card": allowed_schema_card,
+        "allowed_api_card": allowed_api_card,
+        "rules": [
+            "Submit exactly one submit_semantic_ir_plan SDK tool call now.",
+            "Do not answer in message content.",
+            "Use DIRECT with empty tasks only for pure no-evidence concept/meta prompts.",
+            "Use EVIDENCE with tasks for data, mixed, local, live, count, list, status, date, lookup, or compare prompts.",
+            *_semantic_ir_source_selection_rules(),
+        ],
+    }
+    return json.dumps(redact_secrets(payload), ensure_ascii=False, sort_keys=True)
+
+
 def _semantic_ir_repair_system_prompt() -> str:
     return (
         "Your previous Semantic IR tool call failed shape or existence validation. "
@@ -836,6 +925,7 @@ def _semantic_ir_repair_user_prompt(
             "Repair by submitting the SDK tool call again.",
             "Use only exact table, field, and endpoint IDs from allowed cards.",
             "Do not output narrative text.",
+            *_semantic_ir_source_selection_rules(),
         ],
     }
     return json.dumps(payload, ensure_ascii=False, sort_keys=True)
@@ -873,6 +963,7 @@ def _semantic_ir_support_repair_user_prompt(
             "Do not choose replacement tables, fields, filters, or endpoints unless they are your LLM-owned corrected plan and appear in the allowed cards.",
             "If supported Semantic IR cannot represent the required local structure, keep the unsupported local task and explicitly set requires_raw_sql_fallback=true, raw_sql_reason, and unsupported_features.",
             "Never use raw SQL fallback for LIVE_API or API tasks.",
+            *_semantic_ir_source_selection_rules(),
         ],
     }
     return json.dumps(redact_secrets(payload), ensure_ascii=False, sort_keys=True)

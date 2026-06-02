@@ -76,7 +76,7 @@ flowchart LR
 | **SQL score** | `0.9` | Generated SQL is validated and scored. |
 | **API score** | `1.0` | API verification is attempted as dry-run/unavailable. |
 | **Answer score** | `0.3915` | Final answer is grounded by SQL count plus dry-run note. |
-| **Strict score** | `0.7458` | Row-level strict score for the packaged path. |
+| **Strict score** | `0.7457` | Row-level strict score for the packaged path. |
 | **Main distinction** | `SQL provides the answer source; API verification is dry-run/unavailable in the packaged trace.` | SQL is the answer source; API verification is not live. |
 
 ## Technique State Legend

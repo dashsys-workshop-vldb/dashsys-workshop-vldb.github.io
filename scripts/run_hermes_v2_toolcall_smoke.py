@@ -168,10 +168,15 @@ def _run_prompt_with_timeout(
         heartbeat = _read_heartbeat(report_dir)
         return _timeout_row(item, timeout_sec=prompt_timeout_sec, total_latency_sec=total_latency, heartbeat=heartbeat)
     try:
-        payload = queue.get_nowait()
+        if hasattr(queue, "get"):
+            payload = queue.get(timeout=5)
+        else:
+            payload = queue.get_nowait()
     except Exception:
         heartbeat = _read_heartbeat(report_dir)
-        return _error_row(item, "prompt_worker_returned_no_result", total_latency, heartbeat)
+        exitcode = getattr(process, "exitcode", None)
+        suffix = f"_exitcode_{exitcode}" if exitcode is not None else ""
+        return _error_row(item, f"prompt_worker_returned_no_result{suffix}", total_latency, heartbeat)
     if not isinstance(payload, dict):
         return _error_row(item, "prompt_worker_returned_non_dict_result", total_latency, _read_heartbeat(report_dir))
     if payload.get("ok") and isinstance(payload.get("row"), dict):
@@ -658,8 +663,8 @@ def _answer_contains_expected(row: dict[str, Any]) -> bool:
 def _final_unavailable_with_runtime_facts(row: dict[str, Any]) -> bool:
     if int(row.get("runtime_fact_count") or 0) <= 0:
         return False
-    answer = str(row.get("final_answer") or "").lower()
-    return "runtime evidence was unavailable" in answer or "no matching runtime evidence was available" in answer
+    answer = str(row.get("final_answer") or "").strip().lower()
+    return answer.startswith("runtime evidence was unavailable") or answer.startswith("no matching runtime evidence was available")
 
 
 def _write_heartbeat(report_dir: Path, prompt_id: Any, current_stage: str, extra: dict[str, Any] | None = None) -> dict[str, Any]:

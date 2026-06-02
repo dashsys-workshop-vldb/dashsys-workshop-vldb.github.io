@@ -1,5 +1,5 @@
 {
-  "answer_time": 10.631090458016843,
+  "answer_time": 18.65115520916879,
   "api_call_count": 0,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-02T08:06:38.202311+00:00"
+      "timestamp": "2026-06-02T09:51:26.502566+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-02T08:06:38.202805+00:00"
+      "timestamp": "2026-06-02T09:51:26.503096+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,7 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-02T08:06:38.203253+00:00"
+      "timestamp": "2026-06-02T09:51:26.503689+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner_start",
@@ -86,7 +86,7 @@
       },
       "stage": "llm-owned planning",
       "technique": "pre-call heartbeat before Unified LLM Planner",
-      "timestamp": "2026-06-02T08:06:38.210205+00:00"
+      "timestamp": "2026-06-02T09:51:26.510654+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -112,7 +112,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 10225,
+        "planner_provider_latency_ms": 12621,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -140,32 +140,32 @@
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
         "semantic_ir_plan_preview": {
-          "aggregation_instruction": "List the schemas found in the local snapshot from the dim_blueprint table, displaying their names, IDs, descriptions, and classes.",
+          "aggregation_instruction": "Return the list of local schemas (blueprints) with their names, IDs, labels, descriptions, and timestamps. If the user wants a count, summarize the total number of records returned.",
           "route": "EVIDENCE",
           "tasks": {
             "items": [
               {
-                "description": "Retrieve the list of schemas (blueprints) from the local dim_blueprint table including their IDs, names, descriptions, and classes.",
+                "description": "List local XDM schemas/blueprints available in the tenant snapshot.",
                 "kind": "LOCAL_QUERY",
                 "local_query": {
                   "count": false,
                   "fields": {
                     "items": [
-                      "BLUEPRINTID",
                       "NAME",
-                      "DESCRIPTION"
+                      "BLUEPRINTID",
+                      "LABELSBLUEPRINT"
                     ],
                     "total_items": 6,
                     "truncated_items": true
                   },
-                  "limit": 100,
+                  "limit": 50,
                   "table": "dim_blueprint"
                 },
                 "operation": "LIST",
                 "reuse_result_from": null,
                 "semantic_cache_key": null,
                 "source": "LOCAL_SNAPSHOT",
-                "task_id": "fetch_local_schemas",
+                "task_id": "t1_local_schemas",
                 "truncated_fields": 7
               }
             ],
@@ -173,7 +173,7 @@
             "truncated_items": false
           }
         },
-        "semantic_ir_provider_latency_ms": 10222,
+        "semantic_ir_provider_latency_ms": 12618,
         "semantic_ir_repair_attempted": false,
         "semantic_ir_repair_latency_ms": 0,
         "semantic_ir_repair_success": false,
@@ -200,20 +200,20 @@
         "v2_semantic_ir_used": true
       },
       "output": {
-        "aggregation_instruction": "List the schemas found in the local snapshot from the dim_blueprint table, displaying their names, IDs, descriptions, and classes.",
+        "aggregation_instruction": "Return the list of local schemas (blueprints) with their names, IDs, labels, descriptions, and timestamps. If the user wants a count, summarize the total number of records returned.",
         "evidence_order": "SQL_FIRST",
-        "model": "[REDACTED]",
+        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "passes": {
           "items": [
             {
-              "pass_id": "fetch_local_schemas",
+              "pass_id": "t1_local_schemas",
               "path": "SQL",
               "raw_sql_fallback_reason": null,
               "raw_sql_fallback_task_id": null,
               "raw_sql_fallback_used": false,
               "reuse_result_from": null,
               "semantic_cache_key": null,
-              "subtask": "Retrieve the list of schemas (blueprints) from the local dim_blueprint table including their IDs, names, descriptions, and classes.",
+              "subtask": "List local XDM schemas/blueprints available in the tenant snapshot.",
               "truncated_fields": 9
             }
           ],
@@ -224,13 +224,13 @@
         "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
         "route": "EVIDENCE_PIPELINE",
         "sql": {
-          "query": "SELECT \"BLUEPRINTID\", \"NAME\", \"DESCRIPTION\", \"CLASS\", \"CREATEDTIME\", \"UPDATEDTIME\" FROM \"dim_blueprint\" LIMIT 100"
+          "query": "SELECT \"NAME\", \"BLUEPRINTID\", \"LABELSBLUEPRINT\", \"DESCRIPTION\", \"CREATEDTIME\", \"UPDATEDTIME\" FROM \"dim_blueprint\" LIMIT 50"
         },
         "truncated_fields": 6
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-02T08:06:48.439852+00:00"
+      "timestamp": "2026-06-02T09:51:39.135799+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
@@ -242,7 +242,7 @@
         "evidence_order": "SQL_FIRST",
         "pass_ids": {
           "items": [
-            "fetch_local_schemas"
+            "t1_local_schemas"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -258,7 +258,7 @@
           "items": [
             {
               "items": [
-                "fetch_local_schemas"
+                "t1_local_schemas"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -270,7 +270,7 @@
         "pass_count": 1,
         "pass_ids": {
           "items": [
-            "fetch_local_schemas"
+            "t1_local_schemas"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -279,7 +279,7 @@
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-02T08:06:48.445489+00:00"
+      "timestamp": "2026-06-02T09:51:39.138607+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -295,7 +295,7 @@
         },
         "pass_ids": {
           "items": [
-            "fetch_local_schemas"
+            "t1_local_schemas"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -318,7 +318,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "fetch_local_schemas"
+            "t1_local_schemas"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -343,7 +343,7 @@
           "items": [
             {
               "items": [
-                "fetch_local_schemas"
+                "t1_local_schemas"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -354,7 +354,7 @@
         },
         "pass_ids": {
           "items": [
-            "fetch_local_schemas"
+            "t1_local_schemas"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -365,7 +365,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-02T08:06:48.447134+00:00"
+      "timestamp": "2026-06-02T09:51:39.140043+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -378,7 +378,7 @@
           "items": [
             {
               "items": [
-                "fetch_local_schemas"
+                "t1_local_schemas"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -389,7 +389,7 @@
         },
         "pass_ids": {
           "items": [
-            "fetch_local_schemas"
+            "t1_local_schemas"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -408,7 +408,7 @@
           "items": [
             {
               "items": [
-                "fetch_local_schemas"
+                "t1_local_schemas"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -419,7 +419,7 @@
         },
         "passes_completed": {
           "items": [
-            "fetch_local_schemas"
+            "t1_local_schemas"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -440,10 +440,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7:fetch_local_schemas",
-              "pass_id": "fetch_local_schemas",
+              "global_pass_id": "run_b8817b1bcf4746068e570281eccf21a7:t1_local_schemas",
+              "pass_id": "t1_local_schemas",
               "plan_version": 1,
-              "run_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7",
+              "run_id": "run_b8817b1bcf4746068e570281eccf21a7",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -451,10 +451,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7:fetch_local_schemas",
-              "pass_id": "fetch_local_schemas",
+              "global_pass_id": "run_b8817b1bcf4746068e570281eccf21a7:t1_local_schemas",
+              "pass_id": "t1_local_schemas",
               "plan_version": 1,
-              "run_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7",
+              "run_id": "run_b8817b1bcf4746068e570281eccf21a7",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -462,10 +462,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7:fetch_local_schemas",
-              "pass_id": "fetch_local_schemas",
+              "global_pass_id": "run_b8817b1bcf4746068e570281eccf21a7:t1_local_schemas",
+              "pass_id": "t1_local_schemas",
               "plan_version": 1,
-              "run_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7",
+              "run_id": "run_b8817b1bcf4746068e570281eccf21a7",
               "stage": "DEPENDENCY_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -479,7 +479,7 @@
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-02T08:06:48.448380+00:00"
+      "timestamp": "2026-06-02T09:51:39.141049+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
@@ -491,7 +491,7 @@
         "multi_pass_enabled": false,
         "pass_ids": {
           "items": [
-            "fetch_local_schemas"
+            "t1_local_schemas"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -520,7 +520,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "fetch_local_schemas"
+            "t1_local_schemas"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -541,7 +541,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_f91cad065ef1491cbc6306ec6b3e2bc7",
+        "evidence_bus_id": "evidence_run_b8817b1bcf4746068e570281eccf21a7",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -556,7 +556,7 @@
           "items": [
             {
               "items": [
-                "fetch_local_schemas"
+                "t1_local_schemas"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -572,7 +572,7 @@
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "fetch_local_schemas"
+            "t1_local_schemas"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -580,7 +580,7 @@
         "pass_results_count": 1,
         "passes_completed": {
           "items": [
-            "fetch_local_schemas"
+            "t1_local_schemas"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -592,7 +592,7 @@
         },
         "passes_executed": {
           "items": [
-            "fetch_local_schemas"
+            "t1_local_schemas"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -614,8 +614,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_f91cad065ef1491cbc6306ec6b3e2bc7",
-        "run_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7",
+        "result_bundle_id": "bundle_run_b8817b1bcf4746068e570281eccf21a7",
+        "run_id": "run_b8817b1bcf4746068e570281eccf21a7",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -625,8 +625,8 @@
         "semantic_alias_materialized_count": 0,
         "semantic_alias_validation_failures": 0,
         "sequential_pass_count": 0,
-        "sql_execution_latency_sec": 0.005,
-        "sql_gate_latency_sec": 0.004,
+        "sql_execution_latency_sec": 0.002,
+        "sql_gate_latency_sec": 0.003,
         "sql_gate_passed": true,
         "sql_repair_attempts": 0,
         "stage_events": {
@@ -634,10 +634,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7:fetch_local_schemas",
-              "pass_id": "fetch_local_schemas",
+              "global_pass_id": "run_b8817b1bcf4746068e570281eccf21a7:t1_local_schemas",
+              "pass_id": "t1_local_schemas",
               "plan_version": 1,
-              "run_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7",
+              "run_id": "run_b8817b1bcf4746068e570281eccf21a7",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -645,10 +645,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7:fetch_local_schemas",
-              "pass_id": "fetch_local_schemas",
+              "global_pass_id": "run_b8817b1bcf4746068e570281eccf21a7:t1_local_schemas",
+              "pass_id": "t1_local_schemas",
               "plan_version": 1,
-              "run_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7",
+              "run_id": "run_b8817b1bcf4746068e570281eccf21a7",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -656,10 +656,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7:fetch_local_schemas",
-              "pass_id": "fetch_local_schemas",
+              "global_pass_id": "run_b8817b1bcf4746068e570281eccf21a7:t1_local_schemas",
+              "pass_id": "t1_local_schemas",
               "plan_version": 1,
-              "run_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7",
+              "run_id": "run_b8817b1bcf4746068e570281eccf21a7",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -675,7 +675,7 @@
       },
       "stage": "llm-owned pass scheduling",
       "technique": "dependency-aware scheduling of LLM-declared evidence passes",
-      "timestamp": "2026-06-02T08:06:48.449499+00:00"
+      "timestamp": "2026-06-02T09:51:39.141878+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -684,7 +684,7 @@
       "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
       "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
       "input_summary": {
-        "pass_id": "fetch_local_schemas"
+        "pass_id": "t1_local_schemas"
       },
       "output": {
         "errors": {
@@ -694,11 +694,11 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7"
+        "run_id": "run_b8817b1bcf4746068e570281eccf21a7"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T08:06:48.450506+00:00"
+      "timestamp": "2026-06-02T09:51:39.142841+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
@@ -707,17 +707,17 @@
       "effect": "checks syntax/database-semantic validity without rewriting SQL",
       "efficiency_role": "prevents executing uncompilable SQL",
       "input_summary": {
-        "pass_id": "fetch_local_schemas",
-        "sql": "SELECT \"BLUEPRINTID\", \"NAME\", \"DESCRIPTION\", \"CLASS\", \"CREATEDTIME\", \"UPDATEDTIME\" FROM \"dim_blueprint\" LIMIT 100"
+        "pass_id": "t1_local_schemas",
+        "sql": "SELECT \"NAME\", \"BLUEPRINTID\", \"LABELSBLUEPRINT\", \"DESCRIPTION\", \"CREATEDTIME\", \"UPDATEDTIME\" FROM \"dim_blueprint\" LIMIT 50"
       },
       "output": {
-        "pass_id": "fetch_local_schemas",
+        "pass_id": "t1_local_schemas",
         "passed": true,
-        "sql": "SELECT \"BLUEPRINTID\", \"NAME\", \"DESCRIPTION\", \"CLASS\", \"CREATEDTIME\", \"UPDATEDTIME\" FROM \"dim_blueprint\" LIMIT 100"
+        "sql": "SELECT \"NAME\", \"BLUEPRINTID\", \"LABELSBLUEPRINT\", \"DESCRIPTION\", \"CREATEDTIME\", \"UPDATEDTIME\" FROM \"dim_blueprint\" LIMIT 50"
       },
       "stage": "llm sql compile gate",
       "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
-      "timestamp": "2026-06-02T08:06:48.455575+00:00"
+      "timestamp": "2026-06-02T09:51:39.147005+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -760,7 +760,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "fetch_local_schemas"
+            "t1_local_schemas"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -781,7 +781,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_f91cad065ef1491cbc6306ec6b3e2bc7",
+        "evidence_bus_id": "evidence_run_b8817b1bcf4746068e570281eccf21a7",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -799,7 +799,7 @@
           "items": [
             {
               "items": [
-                "fetch_local_schemas"
+                "t1_local_schemas"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -815,7 +815,7 @@
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "fetch_local_schemas"
+            "t1_local_schemas"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -823,7 +823,7 @@
         "pass_results_count": 1,
         "passes_completed": {
           "items": [
-            "fetch_local_schemas"
+            "t1_local_schemas"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -835,7 +835,7 @@
         },
         "passes_executed": {
           "items": [
-            "fetch_local_schemas"
+            "t1_local_schemas"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -857,8 +857,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_f91cad065ef1491cbc6306ec6b3e2bc7",
-        "run_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7",
+        "result_bundle_id": "bundle_run_b8817b1bcf4746068e570281eccf21a7",
+        "run_id": "run_b8817b1bcf4746068e570281eccf21a7",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -868,8 +868,8 @@
         "semantic_alias_materialized_count": 0,
         "semantic_alias_validation_failures": 0,
         "sequential_pass_count": 0,
-        "sql_execution_latency_sec": 0.005,
-        "sql_gate_latency_sec": 0.004,
+        "sql_execution_latency_sec": 0.002,
+        "sql_gate_latency_sec": 0.003,
         "sql_gate_passed": true,
         "sql_repair_attempts": 0,
         "stage_events": {
@@ -877,10 +877,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7:fetch_local_schemas",
-              "pass_id": "fetch_local_schemas",
+              "global_pass_id": "run_b8817b1bcf4746068e570281eccf21a7:t1_local_schemas",
+              "pass_id": "t1_local_schemas",
               "plan_version": 1,
-              "run_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7",
+              "run_id": "run_b8817b1bcf4746068e570281eccf21a7",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -888,10 +888,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7:fetch_local_schemas",
-              "pass_id": "fetch_local_schemas",
+              "global_pass_id": "run_b8817b1bcf4746068e570281eccf21a7:t1_local_schemas",
+              "pass_id": "t1_local_schemas",
               "plan_version": 1,
-              "run_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7",
+              "run_id": "run_b8817b1bcf4746068e570281eccf21a7",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -899,10 +899,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7:fetch_local_schemas",
-              "pass_id": "fetch_local_schemas",
+              "global_pass_id": "run_b8817b1bcf4746068e570281eccf21a7:t1_local_schemas",
+              "pass_id": "t1_local_schemas",
               "plan_version": 1,
-              "run_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7",
+              "run_id": "run_b8817b1bcf4746068e570281eccf21a7",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -918,7 +918,7 @@
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-02T08:06:48.462405+00:00"
+      "timestamp": "2026-06-02T09:51:39.150549+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -934,7 +934,7 @@
         "dry_run_status": false,
         "row_counts": {
           "items": [
-            74
+            50
           ],
           "total_items": 1,
           "truncated_items": false
@@ -948,22 +948,22 @@
                 "items": [
                   {
                     "BLUEPRINTID": "8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc",
-                    "CLASS": "https://ns.adobe.com/xdm/context/profile",
                     "CREATEDTIME": "2026-04-15T06:58:17.000+00:00",
+                    "LABELSBLUEPRINT": "[]",
                     "NAME": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c",
                     "UPDATEDTIME": "2026-04-15T06:58:17.000+00:00"
                   },
                   {
                     "BLUEPRINTID": "9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5",
-                    "CLASS": "https://ns.adobe.com/xdm/context/profile",
                     "CREATEDTIME": "2026-04-15T06:58:17.000+00:00",
+                    "LABELSBLUEPRINT": "[]",
                     "NAME": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7",
                     "UPDATEDTIME": "2026-04-15T06:58:17.000+00:00"
                   },
                   {
                     "BLUEPRINTID": "d1f6d78ece9f26680ec81aba98a0e9a0bd30635e991281d",
-                    "CLASS": "https://ns.adobe.com/xdm/context/profile",
                     "CREATEDTIME": "2026-04-15T06:58:17.000+00:00",
+                    "LABELSBLUEPRINT": "[]",
                     "NAME": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355",
                     "UPDATEDTIME": "2026-04-15T06:58:17.000+00:00"
                   }
@@ -971,7 +971,7 @@
                 "total_items": 3,
                 "truncated_items": false
               },
-              "row_count": 74
+              "row_count": 50
             }
           ],
           "total_items": 1,
@@ -980,7 +980,7 @@
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-02T08:06:48.547517+00:00"
+      "timestamp": "2026-06-02T09:51:39.241550+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -1003,7 +1003,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-02T08:06:48.548005+00:00"
+      "timestamp": "2026-06-02T09:51:39.241992+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -1030,13 +1030,13 @@
           },
           "pass_ids": {
             "items": [
-              "fetch_local_schemas"
+              "t1_local_schemas"
             ],
             "total_items": 1,
             "truncated_items": false
           },
           "pass_result_count": 1,
-          "run_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7",
+          "run_id": "run_b8817b1bcf4746068e570281eccf21a7",
           "timestamps": {
             "items": [
               "2026-04-15T06:58:17.000+00:00"
@@ -1048,7 +1048,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-02T08:06:48.549402+00:00"
+      "timestamp": "2026-06-02T09:51:39.242482+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -1066,14 +1066,14 @@
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "fetch_local_schemas"
+              "pass_id": "t1_local_schemas"
             }
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "pass_results_count": 1,
-        "run_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7",
+        "run_id": "run_b8817b1bcf4746068e570281eccf21a7",
         "runtime_passes": {
           "items": [
             {
@@ -1091,13 +1091,13 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7"
+                "run_id": "run_b8817b1bcf4746068e570281eccf21a7"
               },
-              "global_pass_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7:fetch_local_schemas",
-              "pass_id": "fetch_local_schemas",
+              "global_pass_id": "run_b8817b1bcf4746068e570281eccf21a7:t1_local_schemas",
+              "pass_id": "t1_local_schemas",
               "path": "SQL",
               "plan_version": 1,
-              "run_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7",
+              "run_id": "run_b8817b1bcf4746068e570281eccf21a7",
               "status": "SUCCESS",
               "truncated_fields": 6
             }
@@ -1108,7 +1108,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-02T08:06:48.550012+00:00"
+      "timestamp": "2026-06-02T09:51:39.243012+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -1139,7 +1139,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-02T08:06:48.551244+00:00"
+      "timestamp": "2026-06-02T09:51:39.243520+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -1162,7 +1162,7 @@
           "api_error": false,
           "counts": {
             "items": [
-              "74"
+              "50"
             ],
             "total_items": 1,
             "truncated_items": false
@@ -1187,13 +1187,13 @@
             "total_items": 5,
             "truncated_items": true
           },
-          "sql_row_count": 74,
+          "sql_row_count": 50,
           "truncated_fields": 5
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-02T08:06:48.563054+00:00"
+      "timestamp": "2026-06-02T09:51:39.257739+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer_start",
@@ -1209,7 +1209,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "pre-call heartbeat before LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T08:06:48.563443+00:00"
+      "timestamp": "2026-06-02T09:51:39.258299+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -1224,7 +1224,7 @@
           "api_error": false,
           "counts": {
             "items": [
-              "74"
+              "50"
             ],
             "total_items": 1,
             "truncated_items": false
@@ -1249,17 +1249,17 @@
             "total_items": 5,
             "truncated_items": true
           },
-          "sql_row_count": 74,
+          "sql_row_count": 50,
           "truncated_fields": 5
         }
       },
       "output": {
         "backend_unavailable": false,
-        "final_answer": "Based on the local snapshot, you have 74 schemas, all of which use the class \"https://ns.adobe.com/xdm/context/profile\" and have empty descriptions. Some of these schemas include \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\" (ID: 8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc), \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\" (ID: 9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5), and \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355\" (ID: d1f6d78ece9f26680ec81aba98a0e9a0bd30635e991281d).",
-        "model": "[REDACTED]",
+        "final_answer": "You have 50 local XDM schemas in your tenant snapshot. Examples include Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c (ID: 8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc) and Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7 (ID: 9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5). All listed schemas were created and updated on 2026-04-15T06:58:17.000+00:00 and have no labels.",
+        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "parse_error": false,
         "provider": "openai",
-        "raw_preview": "Based on the local snapshot, you have 74 schemas, all of which use the class \"https://ns.adobe.com/xdm/context/profile\" and have empty descriptions. Some of these schemas include \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\" (ID: 8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc), \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\" (ID: 9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5), and \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355\" (ID: d1f6d78ece9f26680ec81aba98a0e9a0bd30635e991281d).",
+        "raw_preview": "You have 50 local XDM schemas in your tenant snapshot. Examples include Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c (ID: 8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc) and Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7 (ID: 9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5). All listed schemas were created and updated on 2026-04-15T06:58:17.000+00:00 and have no labels.",
         "used_pass_ids": {
           "items": [],
           "total_items": 0,
@@ -1268,7 +1268,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T08:06:59.147349+00:00"
+      "timestamp": "2026-06-02T09:51:48.556956+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -1280,12 +1280,12 @@
         "composer": "LLMFinalAnswerComposer"
       },
       "output": {
-        "final_answer": "Based on the local snapshot, you have 74 schemas, all of which use the class \"https://ns.adobe.com/xdm/context/profile\" and have empty descriptions. Some of these schemas include \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\" (ID: 8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc), \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\" (ID: 9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5), and \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355\" (ID: d1f6d78ece9f26680ec81aba98a0e9a0bd30635e991281d).",
+        "final_answer": "You have 50 local XDM schemas in your tenant snapshot. Examples include Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c (ID: 8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc) and Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7 (ID: 9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5). All listed schemas were created and updated on 2026-04-15T06:58:17.000+00:00 and have no labels.",
         "passed": true
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-02T08:06:59.150132+00:00"
+      "timestamp": "2026-06-02T09:51:48.557536+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -1297,13 +1297,22 @@
         "syntax_gate_passed": true
       },
       "output": {
-        "passed": true,
+        "error_message": "Final answer omitted information explicitly requested and present in runtime evidence.",
+        "error_type": "missing_required_info",
+        "missing_required_fields": {
+          "items": [
+            "entity_names"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "passed": false,
         "verifier": {
           "action": "ACCEPT",
           "allowed_fact_index": {
             "counts": {
               "items": [
-                "74"
+                "50"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -1318,9 +1327,9 @@
             },
             "evidence_strings": {
               "items": [
-                "482df6417bca3933f123d0e202df81fece46a5bd6fd9c926",
-                "adhoc xdm schema for dataset jojourneyversionsds_8e9d4f37-a8bf-4085-bfd5-3c893df100e7",
-                "d1f6d78ece9f26680ec81aba98a0e9a0bd30635e991281d"
+                "adhoc xdm schema for dataset jojourneyversionsds_f877134c-9ce5-4ca2-b326-881c75f8a355",
+                "d809e0ddf27c8bf629425b3ee3df2000e2c2de4655bb54b3",
+                "[]"
               ],
               "total_items": 22,
               "truncated_items": true
@@ -1343,32 +1352,32 @@
             }
           },
           "claim_extractor": {
-            "claim_count": 8,
+            "claim_count": 4,
             "claims": {
               "items": [
                 {
                   "hardness": "HARD",
-                  "span": "74",
-                  "text": "74",
+                  "span": "2026-04-15T06:58:17.000+00:00",
+                  "text": "2026-04-15T06:58:17.000+00:00",
+                  "type": "DATE",
+                  "value": "2026-04-15T06:58:17.000+00:00"
+                },
+                {
+                  "hardness": "HARD",
+                  "span": "50",
+                  "text": "50",
                   "type": "COUNT",
-                  "value": "74"
+                  "value": "50"
                 },
                 {
                   "hardness": "HARD",
-                  "span": "\"https://ns.adobe.com/xdm/context/profile\"",
-                  "text": "\"https://ns.adobe.com/xdm/context/profile\"",
+                  "span": "Adhoc XDM Schema",
+                  "text": "Adhoc XDM Schema",
                   "type": "ENTITY_NAME",
-                  "value": "https://ns.adobe.com/xdm/context/profile"
-                },
-                {
-                  "hardness": "HARD",
-                  "span": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\"",
-                  "text": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\"",
-                  "type": "ENTITY_NAME",
-                  "value": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c"
+                  "value": "Adhoc XDM Schema"
                 }
               ],
-              "total_items": 8,
+              "total_items": 4,
               "truncated_items": true
             }
           },
@@ -1378,10 +1387,21 @@
                 {
                   "claim": {
                     "hardness": "HARD",
-                    "span": "74",
-                    "text": "74",
+                    "span": "2026-04-15T06:58:17.000+00:00",
+                    "text": "2026-04-15T06:58:17.000+00:00",
+                    "type": "DATE",
+                    "value": "2026-04-15T06:58:17.000+00:00"
+                  },
+                  "reason": "date",
+                  "status": "SUPPORTED"
+                },
+                {
+                  "claim": {
+                    "hardness": "HARD",
+                    "span": "50",
+                    "text": "50",
                     "type": "COUNT",
-                    "value": "74"
+                    "value": "50"
                   },
                   "reason": "count",
                   "status": "SUPPORTED"
@@ -1389,27 +1409,16 @@
                 {
                   "claim": {
                     "hardness": "HARD",
-                    "span": "\"https://ns.adobe.com/xdm/context/profile\"",
-                    "text": "\"https://ns.adobe.com/xdm/context/profile\"",
+                    "span": "Adhoc XDM Schema",
+                    "text": "Adhoc XDM Schema",
                     "type": "ENTITY_NAME",
-                    "value": "https://ns.adobe.com/xdm/context/profile"
-                  },
-                  "reason": "evidence_string",
-                  "status": "SUPPORTED"
-                },
-                {
-                  "claim": {
-                    "hardness": "HARD",
-                    "span": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\"",
-                    "text": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\"",
-                    "type": "ENTITY_NAME",
-                    "value": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c"
+                    "value": "Adhoc XDM Schema"
                   },
                   "reason": "entity_name",
                   "status": "SUPPORTED"
                 }
               ],
-              "total_items": 8,
+              "total_items": 4,
               "truncated_items": true
             }
           },
@@ -1418,34 +1427,240 @@
             "items": [
               {
                 "hardness": "HARD",
-                "span": "74",
-                "text": "74",
+                "span": "2026-04-15T06:58:17.000+00:00",
+                "text": "2026-04-15T06:58:17.000+00:00",
+                "type": "DATE",
+                "value": "2026-04-15T06:58:17.000+00:00"
+              },
+              {
+                "hardness": "HARD",
+                "span": "50",
+                "text": "50",
                 "type": "COUNT",
-                "value": "74"
+                "value": "50"
               },
               {
                 "hardness": "HARD",
-                "span": "\"https://ns.adobe.com/xdm/context/profile\"",
-                "text": "\"https://ns.adobe.com/xdm/context/profile\"",
+                "span": "Adhoc XDM Schema",
+                "text": "Adhoc XDM Schema",
                 "type": "ENTITY_NAME",
-                "value": "https://ns.adobe.com/xdm/context/profile"
-              },
-              {
-                "hardness": "HARD",
-                "span": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\"",
-                "text": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\"",
-                "type": "ENTITY_NAME",
-                "value": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c"
+                "value": "Adhoc XDM Schema"
               }
             ],
-            "total_items": 8,
+            "total_items": 4,
             "truncated_items": true
           }
         }
       },
       "stage": "answer gate",
       "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-02T08:06:59.169424+00:00"
+      "timestamp": "2026-06-02T09:51:48.562414+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_repair_start",
+      "correctness_role": "diagnostic only; backend still does not repair the answer",
+      "duration_ms": 0.0,
+      "effect": "records the exact boundary before the potentially slow final-answer repair LLM call",
+      "efficiency_role": "enables smoke timeout localization without extra SQL/API calls",
+      "input_summary": {
+        "failed_semantic": true,
+        "failed_syntax": false
+      },
+      "output": {
+        "current_stage": "llm_final_answer_repair_call_start"
+      },
+      "stage": "llm-owned answer repair",
+      "technique": "pre-call heartbeat before final answer repair",
+      "timestamp": "2026-06-02T09:51:48.563047+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_repair",
+      "correctness_role": "preserves LLM ownership while enforcing evidence boundaries",
+      "duration_ms": 0.0,
+      "effect": "returns gate errors to the LLM once; backend does not repair the answer itself",
+      "efficiency_role": "caps answer repair to one LLM call",
+      "input_summary": {
+        "failed_semantic": true,
+        "failed_syntax": false
+      },
+      "output": {
+        "candidate": {
+          "backend_unavailable": false,
+          "final_answer": "You have 50 local XDM schemas in your tenant snapshot. Examples include Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c (ID: 8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc) and Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7 (ID: 9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5). All listed schemas were created and updated on 2026-04-15T06:58:17.000+00:00 and have no labels.",
+          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+          "parse_error": false,
+          "provider": "openai",
+          "raw_preview": "You have 50 local XDM schemas in your tenant snapshot. Examples include Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c (ID: 8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc) and Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7 (ID: 9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5). All listed schemas were created and updated on 2026-04-15T06:58:17.000+00:00 and have no labels.",
+          "used_pass_ids": {
+            "items": [],
+            "total_items": 0,
+            "truncated_items": false
+          }
+        },
+        "semantic_gate": {
+          "error_message": "Final answer omitted information explicitly requested and present in runtime evidence.",
+          "error_type": "missing_required_info",
+          "missing_required_fields": {
+            "items": [
+              "entity_names"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "passed": false,
+          "verifier": {
+            "action": "ACCEPT",
+            "allowed_fact_index": {
+              "counts": {
+                "items": [
+                  "50"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              },
+              "dates": {
+                "items": [
+                  "2026-04-15t06:58:17.000+00:00",
+                  "2026-04-15"
+                ],
+                "total_items": 2,
+                "truncated_items": false
+              },
+              "evidence_strings": {
+                "items": [
+                  "adhoc xdm schema for dataset jojourneyversionsds_f877134c-9ce5-4ca2-b326-881c75f8a355",
+                  "d809e0ddf27c8bf629425b3ee3df2000e2c2de4655bb54b3",
+                  "[]"
+                ],
+                "total_items": 22,
+                "truncated_items": true
+              },
+              "ids": {
+                "items": [
+                  "8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              },
+              "names": {
+                "items": [
+                  "adhoc xdm schema for dataset jojourneyversionsds_e0f2475b-1232-425e-869d-22e671494d5c",
+                  "adhoc xdm schema for dataset jojourneyversionsds_8e9d4f37-a8bf-4085-bfd5-3c893df100e7",
+                  "adhoc xdm schema for dataset jojourneyversionsds_f877134c-9ce5-4ca2-b326-881c75f8a355"
+                ],
+                "total_items": 10,
+                "truncated_items": true
+              }
+            },
+            "claim_extractor": {
+              "claim_count": 4,
+              "claims": {
+                "items": [
+                  {
+                    "hardness": "HARD",
+                    "span": "2026-04-15T06:58:17.000+00:00",
+                    "text": "2026-04-15T06:58:17.000+00:00",
+                    "type": "DATE",
+                    "value": "2026-04-15T06:58:17.000+00:00"
+                  },
+                  {
+                    "hardness": "HARD",
+                    "span": "50",
+                    "text": "50",
+                    "type": "COUNT",
+                    "value": "50"
+                  },
+                  {
+                    "hardness": "HARD",
+                    "span": "Adhoc XDM Schema",
+                    "text": "Adhoc XDM Schema",
+                    "type": "ENTITY_NAME",
+                    "value": "Adhoc XDM Schema"
+                  }
+                ],
+                "total_items": 4,
+                "truncated_items": true
+              }
+            },
+            "claim_matcher": {
+              "matches": {
+                "items": [
+                  {
+                    "claim": {
+                      "hardness": "HARD",
+                      "span": "2026-04-15T06:58:17.000+00:00",
+                      "text": "2026-04-15T06:58:17.000+00:00",
+                      "type": "DATE",
+                      "value": "2026-04-15T06:58:17.000+00:00"
+                    },
+                    "reason": "date",
+                    "status": "SUPPORTED"
+                  },
+                  {
+                    "claim": {
+                      "hardness": "HARD",
+                      "span": "50",
+                      "text": "50",
+                      "type": "COUNT",
+                      "value": "50"
+                    },
+                    "reason": "count",
+                    "status": "SUPPORTED"
+                  },
+                  {
+                    "claim": {
+                      "hardness": "HARD",
+                      "span": "Adhoc XDM Schema",
+                      "text": "Adhoc XDM Schema",
+                      "type": "ENTITY_NAME",
+                      "value": "Adhoc XDM Schema"
+                    },
+                    "reason": "entity_name",
+                    "status": "SUPPORTED"
+                  }
+                ],
+                "total_items": 4,
+                "truncated_items": true
+              }
+            },
+            "ok": true,
+            "supported_claims": {
+              "items": [
+                {
+                  "hardness": "HARD",
+                  "span": "2026-04-15T06:58:17.000+00:00",
+                  "text": "2026-04-15T06:58:17.000+00:00",
+                  "type": "DATE",
+                  "value": "2026-04-15T06:58:17.000+00:00"
+                },
+                {
+                  "hardness": "HARD",
+                  "span": "50",
+                  "text": "50",
+                  "type": "COUNT",
+                  "value": "50"
+                },
+                {
+                  "hardness": "HARD",
+                  "span": "Adhoc XDM Schema",
+                  "text": "Adhoc XDM Schema",
+                  "type": "ENTITY_NAME",
+                  "value": "Adhoc XDM Schema"
+                }
+              ],
+              "total_items": 4,
+              "truncated_items": true
+            }
+          }
+        },
+        "syntax_gate": {
+          "final_answer": "You have 50 local XDM schemas in your tenant snapshot. Examples include Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c (ID: 8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc) and Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7 (ID: 9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5). All listed schemas were created and updated on 2026-04-15T06:58:17.000+00:00 and have no labels.",
+          "passed": true
+        }
+      },
+      "stage": "llm-owned answer repair",
+      "technique": "single LLM-owned final answer repair",
+      "timestamp": "2026-06-02T09:51:57.882839+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -1458,14 +1673,14 @@
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
-        "answer_repair_attempts": 0,
+        "answer_repair_attempts": 1,
         "answer_semantic_gate_passed": true,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
-        "final_answer_repair_latency_sec": 0.0,
+        "final_answer_repair_latency_sec": 9.316,
         "final_answer_supported_by_evidence": true,
-        "final_composer_latency_sec": 10.58,
-        "final_gate_latency_sec": 0.019,
+        "final_composer_latency_sec": 9.298,
+        "final_gate_latency_sec": 0.005,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 2,
@@ -1477,7 +1692,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-02T08:06:59.171689+00:00"
+      "timestamp": "2026-06-02T09:51:57.887094+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -1490,7 +1705,7 @@
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
-        "answer_repair_attempts": 0,
+        "answer_repair_attempts": 1,
         "answer_semantic_gate_passed": true,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
@@ -1506,30 +1721,30 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-02T08:06:59.174597+00:00"
+      "timestamp": "2026-06-02T09:51:57.888248+00:00"
     }
   ],
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 2890,
+  "estimated_tokens": 2801,
   "execution_time": 0.0,
-  "final_answer": "Based on the local snapshot, you have 74 schemas, all of which use the class \"https://ns.adobe.com/xdm/context/profile\" and have empty descriptions. Some of these schemas include \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\" (ID: 8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc), \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\" (ID: 9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5), and \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355\" (ID: d1f6d78ece9f26680ec81aba98a0e9a0bd30635e991281d).",
+  "final_answer": "Local snapshot evidence shows t1_local_schemas/SQL/LOCAL_SNAPSHOT: count: 50; examples include Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c; Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7; Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355; id: 8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc; id: 9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5; id: d1f6d78ece9f26680ec81aba98a0e9a0bd30635e991281d; date: 2026-04-15T06:58:17.000+00:00.",
   "original_query": "What schemas do I have?",
   "planning_time": 0.0,
   "preprocessing_time": 0.0,
   "query_id": "hermes_toolcall_ambiguous_user_schemas",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 10.81429695803672,
+  "runtime": 18.789809875190258,
   "sql_call_count": 1,
   "steps": [
     {
-      "estimated_tokens": 1676,
+      "estimated_tokens": 1712,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/hermes_toolcall_ambiguous_user_schemas/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 2364
+      "prompt_tokens": 2400
     },
     {
-      "aggregation_instruction": "List the schemas found in the local snapshot from the dim_blueprint table, displaying their names, IDs, descriptions, and classes.",
+      "aggregation_instruction": "Return the list of local schemas (blueprints) with their names, IDs, labels, descriptions, and timestamps. If the user wants a count, summarize the total number of records returned.",
       "api_request": null,
       "backend_unavailable": false,
       "diagnostics": {
@@ -1547,7 +1762,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 10225,
+        "planner_provider_latency_ms": 12621,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -1575,32 +1790,32 @@
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
         "semantic_ir_plan_preview": {
-          "aggregation_instruction": "List the schemas found in the local snapshot from the dim_blueprint table, displaying their names, IDs, descriptions, and classes.",
+          "aggregation_instruction": "Return the list of local schemas (blueprints) with their names, IDs, labels, descriptions, and timestamps. If the user wants a count, summarize the total number of records returned.",
           "route": "EVIDENCE",
           "tasks": {
             "items": [
               {
-                "description": "Retrieve the list of schemas (blueprints) from the local dim_blueprint table including their IDs, names, descriptions, and classes.",
+                "description": "List local XDM schemas/blueprints available in the tenant snapshot.",
                 "kind": "LOCAL_QUERY",
                 "local_query": {
                   "count": false,
                   "fields": {
                     "items": [
-                      "BLUEPRINTID",
                       "NAME",
-                      "DESCRIPTION"
+                      "BLUEPRINTID",
+                      "LABELSBLUEPRINT"
                     ],
                     "total_items": 6,
                     "truncated_items": true
                   },
-                  "limit": 100,
+                  "limit": 50,
                   "table": "dim_blueprint"
                 },
                 "operation": "LIST",
                 "reuse_result_from": null,
                 "semantic_cache_key": null,
                 "source": "LOCAL_SNAPSHOT",
-                "task_id": "fetch_local_schemas",
+                "task_id": "t1_local_schemas",
                 "truncated_fields": 7
               }
             ],
@@ -1608,7 +1823,7 @@
             "truncated_items": false
           }
         },
-        "semantic_ir_provider_latency_ms": 10222,
+        "semantic_ir_provider_latency_ms": 12618,
         "semantic_ir_repair_attempted": false,
         "semantic_ir_repair_latency_ms": 0,
         "semantic_ir_repair_success": false,
@@ -1637,7 +1852,7 @@
       "direct_answer": null,
       "evidence_order": "SQL_FIRST",
       "kind": "llm_unified_planner",
-      "model": "[REDACTED]",
+      "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
       "parse_error": false,
       "passes": [
         {
@@ -1645,21 +1860,21 @@
           "can_run_parallel": true,
           "depends_on": [],
           "evidence_order": "SQL_FIRST",
-          "expected_result": "Retrieve the list of schemas (blueprints) from the local dim_blueprint table including their IDs, names, descriptions, and classes.",
+          "expected_result": "List local XDM schemas/blueprints available in the tenant snapshot.",
           "fallback": false,
           "optional": false,
-          "pass_id": "fetch_local_schemas",
+          "pass_id": "t1_local_schemas",
           "path": "SQL",
           "raw_sql_fallback_reason": null,
           "raw_sql_fallback_task_id": null,
           "raw_sql_fallback_used": false,
           "result_contract": {
-            "entity": "schema",
+            "entity": "blueprint",
             "fields": [
-              "BLUEPRINTID",
               "NAME",
+              "BLUEPRINTID",
+              "LABELSBLUEPRINT",
               "DESCRIPTION",
-              "CLASS",
               "CREATEDTIME",
               "UPDATEDTIME"
             ],
@@ -1674,17 +1889,17 @@
           "semantic_cache_key": null,
           "sql": {
             "params": [],
-            "query": "SELECT \"BLUEPRINTID\", \"NAME\", \"DESCRIPTION\", \"CLASS\", \"CREATEDTIME\", \"UPDATEDTIME\" FROM \"dim_blueprint\" LIMIT 100"
+            "query": "SELECT \"NAME\", \"BLUEPRINTID\", \"LABELSBLUEPRINT\", \"DESCRIPTION\", \"CREATEDTIME\", \"UPDATEDTIME\" FROM \"dim_blueprint\" LIMIT 50"
           },
-          "subtask": "Retrieve the list of schemas (blueprints) from the local dim_blueprint table including their IDs, names, descriptions, and classes."
+          "subtask": "List local XDM schemas/blueprints available in the tenant snapshot."
         }
       ],
       "provider": "openai",
       "raw_preview": {
         "semantic_ir_initial": {
-          "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+          "base_url": "[REDACTED]",
           "error": null,
-          "model": "[REDACTED]",
+          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
           "ok": true,
           "provider": "openai",
           "sdk_path_used": true,
@@ -1697,16 +1912,45 @@
       "route": "EVIDENCE_PIPELINE",
       "sql": {
         "params": [],
-        "query": "SELECT \"BLUEPRINTID\", \"NAME\", \"DESCRIPTION\", \"CLASS\", \"CREATEDTIME\", \"UPDATEDTIME\" FROM \"dim_blueprint\" LIMIT 100"
+        "query": "SELECT \"NAME\", \"BLUEPRINTID\", \"LABELSBLUEPRINT\", \"DESCRIPTION\", \"CREATEDTIME\", \"UPDATEDTIME\" FROM \"dim_blueprint\" LIMIT 50"
       }
     },
     {
       "kind": "sql_call",
       "result": {
-        "preview": "{\"error\": null, \"ok\": true, \"rows\": {\"items\": [{\"BLUEPRINTID\": \"8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc\", \"NAME\": \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\", \"CLASS\": \"https://ns.adobe.com/xdm/context/profile\", \"CREATEDTIME\": \"2026-04-15T06:58:17.000+00:00\", \"UPDATEDTIME\": \"2026-04-15T06:58:17.000+00:00\"}, {\"BLUEPRINTID\": \"9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5\", \"NAME\": \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\", \"CLASS\": \"https://ns.adobe.com/xdm/context/profile\", \"CREATEDTIME\": \"2026-04-15T06:58:17.000+00:00\", \"UPDATEDTIME\": \"2026-04-15T06:58:17.000+00:00\"}, {\"BLUEPRINTID\": \"d1f6d78ece9f26680ec81aba98a0e9a0bd30635e991281d\", \"NAME\": \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355\", \"CLASS\": \"https://ns.adobe.com/xdm/context/profile\", \"CREATEDTIME\": \"2026-04-15T06:58:17.000+00:00\", \"UPDATEDTIME\": \"2026-04-15T06:58:17.000+00:00\"}], \"total_i...",
-        "truncated": true
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "row_count": 50,
+        "rows": {
+          "items": [
+            {
+              "BLUEPRINTID": "8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc",
+              "CREATEDTIME": "2026-04-15T06:58:17.000+00:00",
+              "LABELSBLUEPRINT": "[]",
+              "NAME": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c",
+              "UPDATEDTIME": "2026-04-15T06:58:17.000+00:00"
+            },
+            {
+              "BLUEPRINTID": "9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5",
+              "CREATEDTIME": "2026-04-15T06:58:17.000+00:00",
+              "LABELSBLUEPRINT": "[]",
+              "NAME": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7",
+              "UPDATEDTIME": "2026-04-15T06:58:17.000+00:00"
+            },
+            {
+              "BLUEPRINTID": "d1f6d78ece9f26680ec81aba98a0e9a0bd30635e991281d",
+              "CREATEDTIME": "2026-04-15T06:58:17.000+00:00",
+              "LABELSBLUEPRINT": "[]",
+              "NAME": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355",
+              "UPDATEDTIME": "2026-04-15T06:58:17.000+00:00"
+            }
+          ],
+          "total_items": 50,
+          "truncated_items": true
+        }
       },
-      "sql": "SELECT \"BLUEPRINTID\", \"NAME\", \"DESCRIPTION\", \"CLASS\", \"CREATEDTIME\", \"UPDATEDTIME\" FROM \"dim_blueprint\" LIMIT 100",
+      "sql": "SELECT \"NAME\", \"BLUEPRINTID\", \"LABELSBLUEPRINT\", \"DESCRIPTION\", \"CREATEDTIME\", \"UPDATEDTIME\" FROM \"dim_blueprint\" LIMIT 50",
       "validation": {
         "errors": [],
         "ok": true,
@@ -1732,25 +1976,25 @@
       "caveats_included": [],
       "claimed_facts": [],
       "error_message": null,
-      "final_answer": "Based on the local snapshot, you have 74 schemas, all of which use the class \"https://ns.adobe.com/xdm/context/profile\" and have empty descriptions. Some of these schemas include \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\" (ID: 8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc), \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\" (ID: 9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5), and \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355\" (ID: d1f6d78ece9f26680ec81aba98a0e9a0bd30635e991281d).",
+      "final_answer": "You have 50 local XDM schemas in your tenant snapshot. Examples include Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c (ID: 8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc) and Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7 (ID: 9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5). All listed schemas were created and updated on 2026-04-15T06:58:17.000+00:00 and have no labels.",
       "kind": "llm_final_answer_composer",
-      "model": "[REDACTED]",
+      "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
       "parse_error": false,
       "provider": "openai",
-      "raw_preview": "Based on the local snapshot, you have 74 schemas, all of which use the class \"https://ns.adobe.com/xdm/context/profile\" and have empty descriptions. Some of these schemas include \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\" (ID: 8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc), \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\" (ID: 9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5), and \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355\" (ID: d1f6d78ece9f26680ec81aba98a0e9a0bd30635e991281d).",
+      "raw_preview": "You have 50 local XDM schemas in your tenant snapshot. Examples include Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c (ID: 8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc) and Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7 (ID: 9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5). All listed schemas were created and updated on 2026-04-15T06:58:17.000+00:00 and have no labels.",
       "unanswered_subtasks": [],
       "used_pass_ids": []
     },
     {
       "answer_composer_used": "LLMFinalAnswerComposer",
-      "answer_repair_attempts": 0,
+      "answer_repair_attempts": 1,
       "answer_semantic_gate_passed": true,
       "answer_syntax_gate_passed": true,
       "deterministic_answer_template_used": false,
-      "final_answer_repair_latency_sec": 0.0,
+      "final_answer_repair_latency_sec": 9.316,
       "final_answer_supported_by_evidence": true,
-      "final_composer_latency_sec": 10.58,
-      "final_gate_latency_sec": 0.019,
+      "final_composer_latency_sec": 9.298,
+      "final_gate_latency_sec": 0.005,
       "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
       "llm_owned_final_answer": true,
@@ -1767,35 +2011,35 @@
             "allowed_caveats": [],
             "api_error_scopes": [],
             "counts": [
-              "74"
+              "50"
             ],
             "dates": [
               "2026-04-15t06:58:17.000+00:00",
               "2026-04-15"
             ],
             "evidence_strings": [
+              "adhoc xdm schema for dataset jojourneyversionsds_f877134c-9ce5-4ca2-b326-881c75f8a355",
+              "d809e0ddf27c8bf629425b3ee3df2000e2c2de4655bb54b3",
+              "[]",
+              "adhoc xdm schema for dataset jojourneyversionsds_b3db3db4-de1b-4984-9ac0-33e2935d3596",
+              "2026-04-15t06:58:17.000+00:00",
+              "adhoc xdm schema for dataset jojourneyversionsds_10b7f335-021a-4ea3-9520-fa206cee8b69",
+              "46739dcc77a7f06982b831c340c47eac7927b40a7ee3314b",
+              "242035dec594cda7b0da761c3284d3f7291408549be9c6fd",
+              "adhoc xdm schema for dataset jojourneyversionsds_11f2c467-ed7e-4a05-8f50-87067d5d1e90",
+              "8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc",
+              "adhoc xdm schema for dataset jojourneyversionsds_2a3be7fb-d4ff-44b4-96f4-c33801583cf4",
+              "adhoc xdm schema for dataset jojourneyversionsds_27f3f2f7-ccb3-4699-8029-a5d5d1aa6066",
+              "d1f6d78ece9f26680ec81aba98a0e9a0bd30635e991281d",
               "482df6417bca3933f123d0e202df81fece46a5bd6fd9c926",
               "adhoc xdm schema for dataset jojourneyversionsds_8e9d4f37-a8bf-4085-bfd5-3c893df100e7",
-              "d1f6d78ece9f26680ec81aba98a0e9a0bd30635e991281d",
               "adhoc xdm schema for dataset jojourneyversionsds_e0f2475b-1232-425e-869d-22e671494d5c",
-              "46739dcc77a7f06982b831c340c47eac7927b40a7ee3314b",
-              "9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5",
-              "2026-04-15t06:58:17.000+00:00",
-              "adhoc xdm schema for dataset jojourneyversionsds_2a3be7fb-d4ff-44b4-96f4-c33801583cf4",
-              "adhoc xdm schema for dataset jojourneyversionsds_14af09b4-941b-456c-8035-e05742c3d2b7",
-              "adhoc xdm schema for dataset jojourneyversionsds_27f3f2f7-ccb3-4699-8029-a5d5d1aa6066",
-              "adhoc xdm schema for dataset jojourneyversionsds_f877134c-9ce5-4ca2-b326-881c75f8a355",
-              "adhoc xdm schema for dataset jojourneyversionsds_961ddfca-2199-4783-b16c-9226938e0d93",
-              "8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc",
-              "adhoc xdm schema for dataset jojourneyversionsds_b3db3db4-de1b-4984-9ac0-33e2935d3596",
               "f67782126866728013a531ae680c9e9bad9e22259d83fac9",
-              "bab97535ccf8149a6c890b363b2da7e57e23ade653ace175",
               "ce9c03ced11d383065fa28df5505ef0220e13341089e1880",
-              "adhoc xdm schema for dataset jojourneyversionsds_11f2c467-ed7e-4a05-8f50-87067d5d1e90",
-              "d809e0ddf27c8bf629425b3ee3df2000e2c2de4655bb54b3",
-              "adhoc xdm schema for dataset jojourneyversionsds_10b7f335-021a-4ea3-9520-fa206cee8b69",
-              "242035dec594cda7b0da761c3284d3f7291408549be9c6fd",
-              "https://ns.adobe.com/xdm/context/profile"
+              "adhoc xdm schema for dataset jojourneyversionsds_961ddfca-2199-4783-b16c-9226938e0d93",
+              "9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5",
+              "bab97535ccf8149a6c890b363b2da7e57e23ade653ace175",
+              "adhoc xdm schema for dataset jojourneyversionsds_14af09b4-941b-456c-8035-e05742c3d2b7"
             ],
             "ids": [
               "8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc"
@@ -1819,42 +2063,21 @@
           },
           "ambiguous_claims": [],
           "claim_extractor": {
-            "claim_count": 8,
+            "claim_count": 5,
             "claims": [
               {
                 "hardness": "HARD",
-                "span": "74",
-                "text": "74",
+                "span": "2026-04-15T06:58:17.000+00:00",
+                "text": "2026-04-15T06:58:17.000+00:00",
+                "type": "DATE",
+                "value": "2026-04-15T06:58:17.000+00:00"
+              },
+              {
+                "hardness": "HARD",
+                "span": "50",
+                "text": "50",
                 "type": "COUNT",
-                "value": "74"
-              },
-              {
-                "hardness": "HARD",
-                "span": "\"https://ns.adobe.com/xdm/context/profile\"",
-                "text": "\"https://ns.adobe.com/xdm/context/profile\"",
-                "type": "ENTITY_NAME",
-                "value": "https://ns.adobe.com/xdm/context/profile"
-              },
-              {
-                "hardness": "HARD",
-                "span": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\"",
-                "text": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\"",
-                "type": "ENTITY_NAME",
-                "value": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c"
-              },
-              {
-                "hardness": "HARD",
-                "span": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\"",
-                "text": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\"",
-                "type": "ENTITY_NAME",
-                "value": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7"
-              },
-              {
-                "hardness": "HARD",
-                "span": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355\"",
-                "text": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355\"",
-                "type": "ENTITY_NAME",
-                "value": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355"
+                "value": "50"
               },
               {
                 "hardness": "HARD",
@@ -1884,56 +2107,23 @@
               {
                 "claim": {
                   "hardness": "HARD",
-                  "span": "74",
-                  "text": "74",
+                  "span": "2026-04-15T06:58:17.000+00:00",
+                  "text": "2026-04-15T06:58:17.000+00:00",
+                  "type": "DATE",
+                  "value": "2026-04-15T06:58:17.000+00:00"
+                },
+                "reason": "date",
+                "status": "SUPPORTED"
+              },
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "50",
+                  "text": "50",
                   "type": "COUNT",
-                  "value": "74"
+                  "value": "50"
                 },
                 "reason": "count",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "\"https://ns.adobe.com/xdm/context/profile\"",
-                  "text": "\"https://ns.adobe.com/xdm/context/profile\"",
-                  "type": "ENTITY_NAME",
-                  "value": "https://ns.adobe.com/xdm/context/profile"
-                },
-                "reason": "evidence_string",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\"",
-                  "text": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\"",
-                  "type": "ENTITY_NAME",
-                  "value": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\"",
-                  "text": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\"",
-                  "type": "ENTITY_NAME",
-                  "value": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355\"",
-                  "text": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355\"",
-                  "type": "ENTITY_NAME",
-                  "value": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355"
-                },
-                "reason": "entity_name",
                 "status": "SUPPORTED"
               },
               {
@@ -1977,38 +2167,17 @@
           "supported_claims": [
             {
               "hardness": "HARD",
-              "span": "74",
-              "text": "74",
+              "span": "2026-04-15T06:58:17.000+00:00",
+              "text": "2026-04-15T06:58:17.000+00:00",
+              "type": "DATE",
+              "value": "2026-04-15T06:58:17.000+00:00"
+            },
+            {
+              "hardness": "HARD",
+              "span": "50",
+              "text": "50",
               "type": "COUNT",
-              "value": "74"
-            },
-            {
-              "hardness": "HARD",
-              "span": "\"https://ns.adobe.com/xdm/context/profile\"",
-              "text": "\"https://ns.adobe.com/xdm/context/profile\"",
-              "type": "ENTITY_NAME",
-              "value": "https://ns.adobe.com/xdm/context/profile"
-            },
-            {
-              "hardness": "HARD",
-              "span": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\"",
-              "text": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\"",
-              "type": "ENTITY_NAME",
-              "value": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c"
-            },
-            {
-              "hardness": "HARD",
-              "span": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\"",
-              "text": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\"",
-              "type": "ENTITY_NAME",
-              "value": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7"
-            },
-            {
-              "hardness": "HARD",
-              "span": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355\"",
-              "text": "\"Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355\"",
-              "type": "ENTITY_NAME",
-              "value": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355"
+              "value": "50"
             },
             {
               "hardness": "HARD",
@@ -2038,7 +2207,7 @@
       "syntax_gate": {
         "error_message": null,
         "error_type": null,
-        "final_answer": "Based on the local snapshot, you have 74 schemas, all of which use the class \"https://ns.adobe.com/xdm/context/profile\" and have empty descriptions. Some of these schemas include \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c\" (ID: 8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc), \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7\" (ID: 9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5), and \"Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355\" (ID: d1f6d78ece9f26680ec81aba98a0e9a0bd30635e991281d).",
+        "final_answer": "Local snapshot evidence shows t1_local_schemas/SQL/LOCAL_SNAPSHOT: count: 50; examples include Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c; Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7; Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355; id: 8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc; id: 9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5; id: d1f6d78ece9f26680ec81aba98a0e9a0bd30635e991281d; date: 2026-04-15T06:58:17.000+00:00.",
         "passed": true
       },
       "used_pass_ids": []
@@ -2046,7 +2215,7 @@
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 10.631090458016843
+    "answer_time": 18.65115520916879
   },
   "tool_call_count": 1
 }

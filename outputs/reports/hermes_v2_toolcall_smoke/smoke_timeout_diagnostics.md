@@ -18,10 +18,10 @@
 
 | Prompt | Pass | Timeout | Timed Out Stage | Total Sec | Planner Sec | SQL Gate Sec | API Gate Sec | SQL Exec Sec | API Exec Sec | Final Composer Sec | Repair Sec | Final Gate Sec | SQL | API | Facts |
 |---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| pure_concept_schema | True | False | None | 21.2 | 20.719 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0 | 0 | 0 |
-| pure_meta_list_schemas | True | False | None | 15.85 | 15.345 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0 | 0 | 0 |
-| ambiguous_user_schemas | True | False | None | 37.056 | 18.959 | 0.0 | 0.0 | 0.004 | 0.0 | 17.488 | 0.0 | 0.0 | 1 | 0 | 3 |
-| local_schema_count | True | False | None | 37.652 | 32.118 | 0.0 | 0.0 | 0.001 | 0.0 | 4.949 | 0.0 | 0.0 | 1 | 0 | 1 |
-| birthday_message_published | True | False | None | 34.833 | 26.343 | 0.0 | 0.0 | 0.002 | 0.0 | 7.749 | 0.0 | 0.0 | 2 | 0 | 2 |
-| mixed_inactive_journeys | True | False | None | 49.511 | 28.941 | 0.0 | 0.0 | 0.002 | 0.0 | 15.923 | 0.0 | 0.0 | 1 | 1 | 2 |
-| compare_local_live_birthday_status | True | False | None | 39.23 | 30.136 | 0.0 | 0.0 | 0.001 | 0.0 | 8.353 | 0.0 | 0.0 | 1 | 1 | 1 |
+| pure_concept_schema | True | False | None | 18.752 | 18.498 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0 | 0 | 0 |
+| pure_meta_list_schemas | True | False | None | 9.957 | 9.725 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0 | 0 | 0 |
+| ambiguous_user_schemas | True | False | None | 31.587 | 12.621 | 0.0 | 0.0 | 0.002 | 0.0 | 9.298 | 0.0 | 0.0 | 1 | 0 | 3 |
+| local_schema_count | True | False | None | 28.788 | 26.02 | 0.0 | 0.0 | 0.001 | 0.0 | 2.429 | 0.0 | 0.0 | 1 | 0 | 1 |
+| birthday_message_published | True | False | None | 21.815 | 17.486 | 0.0 | 0.0 | 0.001 | 0.0 | 3.69 | 0.0 | 0.0 | 1 | 0 | 1 |
+| mixed_inactive_journeys | True | False | None | 43.162 | 21.981 | 0.0 | 0.0 | 0.001 | 0.0 | 8.62 | 0.0 | 0.0 | 1 | 0 | 2 |
+| compare_local_live_birthday_status | True | False | None | 27.059 | 21.944 | 0.0 | 0.0 | 0.001 | 0.0 | 4.521 | 0.0 | 0.0 | 1 | 1 | 1 |

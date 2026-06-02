@@ -1,5 +1,5 @@
 {
-  "answer_time": 19.30921099986881,
+  "answer_time": 4.563008041586727,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-02T08:08:19.257612+00:00"
+      "timestamp": "2026-06-02T09:53:31.903127+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-02T08:08:19.258185+00:00"
+      "timestamp": "2026-06-02T09:53:31.903733+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,7 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-02T08:08:19.258645+00:00"
+      "timestamp": "2026-06-02T09:53:31.904523+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner_start",
@@ -86,7 +86,7 @@
       },
       "stage": "llm-owned planning",
       "technique": "pre-call heartbeat before Unified LLM Planner",
-      "timestamp": "2026-06-02T08:08:19.266223+00:00"
+      "timestamp": "2026-06-02T09:53:31.912750+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -112,7 +112,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 13152,
+        "planner_provider_latency_ms": 21944,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -140,10 +140,10 @@
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
         "semantic_ir_plan_preview": {
-          "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"local_campaign_status\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"STATUS\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"CAMPAIGNID\", \"NAME\", \"STATUS\"], \"total_items\": 5, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"Birthday Message\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 100}, \"description\": \"Retrieve the status and state of 'Birthday Message' campaign from local dim_campaign table.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"live_journey_status\", \"kind\": \"LIVE_QUERY\", \"operation\": \"STATUS\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"journey_list\", \"method\": \"GET\"}, \"description\": \"Retrieve the real-time list of journeys and campaigns from Adobe Journey Optimizer to inspect the live status of 'Birthday Message'.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"compare_statuses\", \"kind\": \"AGGREGATE\", \"operation\": \"COMPARE\", \"source\": \"BOTH\", \"depends_on\": {\"...",
+          "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_local_status\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"STATUS\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"NAME\", \"STATUS\", \"STATE\"], \"total_items\": 3, \"truncated_items\": false}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"Birthday Message\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 10}, \"description\": \"Get local snapshot status (STATUS/STATE) for the campaign named 'Birthday Message'.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_live_status\", \"kind\": \"LIVE_QUERY\", \"operation\": \"STATUS\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"journey_list\", \"method\": \"GET\", \"query_params\": {\"limit\": 50, \"start\": 0}}, \"description\": \"Get live API status/state for journeys/campaigns to find 'Birthday Message' and its current live status.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t3_aggregate_compare\", \"kind\": \"AGGREGATE\", \"operation\": \"COMPARE\", \"source\": \"BOTH\", \"depends_on\": {\"items...",
           "truncated": true
         },
-        "semantic_ir_provider_latency_ms": 13148,
+        "semantic_ir_provider_latency_ms": 21939,
         "semantic_ir_repair_attempted": false,
         "semantic_ir_repair_latency_ms": 0,
         "semantic_ir_repair_success": false,
@@ -170,42 +170,42 @@
         "v2_semantic_ir_used": true
       },
       "output": {
-        "aggregation_instruction": "Compare the status and state of the 'Birthday Message' campaign from the local snapshot database with its live status retrieved from the real-time Journey Optimizer API.",
+        "aggregation_instruction": "Compare the local status (STATUS/STATE from dim_campaign for NAME='Birthday Message') with the live status (STATUS/STATE from journey_list API for the matching journey). Report both statuses side-by-side. If the local record is not found, report 'not found in local snapshot'. If the live journey is not found, report 'not found in live API'.",
         "evidence_order": "MULTI_PASS",
-        "model": "[REDACTED]",
+        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "passes": {
           "items": [
             {
-              "pass_id": "local_campaign_status",
+              "pass_id": "t1_local_status",
               "path": "SQL",
               "raw_sql_fallback_reason": null,
               "raw_sql_fallback_task_id": null,
               "raw_sql_fallback_used": false,
               "reuse_result_from": null,
               "semantic_cache_key": null,
-              "subtask": "Retrieve the status and state of 'Birthday Message' campaign from local dim_campaign table.",
+              "subtask": "Get local snapshot status (STATUS/STATE) for the campaign named 'Birthday Message'.",
               "truncated_fields": 9
             },
             {
-              "pass_id": "live_journey_status",
+              "pass_id": "t2_live_status",
               "path": "API",
               "raw_sql_fallback_reason": null,
               "raw_sql_fallback_task_id": null,
               "raw_sql_fallback_used": false,
               "reuse_result_from": null,
               "semantic_cache_key": null,
-              "subtask": "Retrieve the real-time list of journeys and campaigns from Adobe Journey Optimizer to inspect the live status of 'Birthday Message'.",
+              "subtask": "Get live API status/state for journeys/campaigns to find 'Birthday Message' and its current live status.",
               "truncated_fields": 9
             },
             {
-              "pass_id": "compare_statuses",
+              "pass_id": "t3_aggregate_compare",
               "path": "AGGREGATION_ONLY",
               "raw_sql_fallback_reason": null,
               "raw_sql_fallback_task_id": null,
               "raw_sql_fallback_used": false,
               "reuse_result_from": null,
               "semantic_cache_key": null,
-              "subtask": "Compare the local campaign status from dim_campaign with the live journey status from the AJO API.",
+              "subtask": "Compare the local status (from t1) and live status (from t2) for 'Birthday Message'.",
               "truncated_fields": 9
             }
           ],
@@ -223,13 +223,13 @@
             "total_items": 1,
             "truncated_items": false
           },
-          "query": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATUS\", \"STATE\", \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 100"
+          "query": "SELECT \"NAME\", \"STATUS\", \"STATE\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 10"
         },
         "truncated_fields": 6
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-02T08:08:32.423354+00:00"
+      "timestamp": "2026-06-02T09:53:53.861470+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
@@ -241,9 +241,9 @@
         "evidence_order": "MULTI_PASS",
         "pass_ids": {
           "items": [
-            "local_campaign_status",
-            "live_journey_status",
-            "compare_statuses"
+            "t1_local_status",
+            "t2_live_status",
+            "t3_aggregate_compare"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -254,16 +254,16 @@
           "items": [
             {
               "items": [
-                "local_campaign_status",
-                "compare_statuses"
+                "t1_local_status",
+                "t3_aggregate_compare"
               ],
               "total_items": 2,
               "truncated_items": false
             },
             {
               "items": [
-                "live_journey_status",
-                "compare_statuses"
+                "t2_live_status",
+                "t3_aggregate_compare"
               ],
               "total_items": 2,
               "truncated_items": false
@@ -276,15 +276,15 @@
           "items": [
             {
               "items": [
-                "local_campaign_status",
-                "live_journey_status"
+                "t1_local_status",
+                "t2_live_status"
               ],
               "total_items": 2,
               "truncated_items": false
             },
             {
               "items": [
-                "compare_statuses"
+                "t3_aggregate_compare"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -296,9 +296,9 @@
         "pass_count": 3,
         "pass_ids": {
           "items": [
-            "local_campaign_status",
-            "live_journey_status",
-            "compare_statuses"
+            "t1_local_status",
+            "t2_live_status",
+            "t3_aggregate_compare"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -307,7 +307,7 @@
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-02T08:08:32.427424+00:00"
+      "timestamp": "2026-06-02T09:53:53.864076+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -320,16 +320,16 @@
           "items": [
             {
               "items": [
-                "local_campaign_status",
-                "compare_statuses"
+                "t1_local_status",
+                "t3_aggregate_compare"
               ],
               "total_items": 2,
               "truncated_items": false
             },
             {
               "items": [
-                "live_journey_status",
-                "compare_statuses"
+                "t2_live_status",
+                "t3_aggregate_compare"
               ],
               "total_items": 2,
               "truncated_items": false
@@ -340,9 +340,9 @@
         },
         "pass_ids": {
           "items": [
-            "local_campaign_status",
-            "live_journey_status",
-            "compare_statuses"
+            "t1_local_status",
+            "t2_live_status",
+            "t3_aggregate_compare"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -365,8 +365,8 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "live_journey_status",
-            "compare_statuses"
+            "t2_live_status",
+            "t3_aggregate_compare"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -380,16 +380,16 @@
           "items": [
             {
               "items": [
-                "local_campaign_status",
-                "compare_statuses"
+                "t1_local_status",
+                "t3_aggregate_compare"
               ],
               "total_items": 2,
               "truncated_items": false
             },
             {
               "items": [
-                "live_journey_status",
-                "compare_statuses"
+                "t2_live_status",
+                "t3_aggregate_compare"
               ],
               "total_items": 2,
               "truncated_items": false
@@ -408,15 +408,15 @@
           "items": [
             {
               "items": [
-                "live_journey_status",
-                "local_campaign_status"
+                "t2_live_status",
+                "t1_local_status"
               ],
               "total_items": 2,
               "truncated_items": false
             },
             {
               "items": [
-                "compare_statuses"
+                "t3_aggregate_compare"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -427,9 +427,9 @@
         },
         "pass_ids": {
           "items": [
-            "local_campaign_status",
-            "live_journey_status",
-            "compare_statuses"
+            "t1_local_status",
+            "t2_live_status",
+            "t3_aggregate_compare"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -440,7 +440,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-02T08:08:32.429112+00:00"
+      "timestamp": "2026-06-02T09:53:53.865579+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -453,15 +453,15 @@
           "items": [
             {
               "items": [
-                "live_journey_status",
-                "local_campaign_status"
+                "t2_live_status",
+                "t1_local_status"
               ],
               "total_items": 2,
               "truncated_items": false
             },
             {
               "items": [
-                "compare_statuses"
+                "t3_aggregate_compare"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -472,9 +472,9 @@
         },
         "pass_ids": {
           "items": [
-            "local_campaign_status",
-            "live_journey_status",
-            "compare_statuses"
+            "t1_local_status",
+            "t2_live_status",
+            "t3_aggregate_compare"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -485,16 +485,16 @@
           "items": [
             {
               "items": [
-                "local_campaign_status",
-                "compare_statuses"
+                "t1_local_status",
+                "t3_aggregate_compare"
               ],
               "total_items": 2,
               "truncated_items": false
             },
             {
               "items": [
-                "live_journey_status",
-                "compare_statuses"
+                "t2_live_status",
+                "t3_aggregate_compare"
               ],
               "total_items": 2,
               "truncated_items": false
@@ -510,15 +510,15 @@
           "items": [
             {
               "items": [
-                "live_journey_status",
-                "local_campaign_status"
+                "t2_live_status",
+                "t1_local_status"
               ],
               "total_items": 2,
               "truncated_items": false
             },
             {
               "items": [
-                "compare_statuses"
+                "t3_aggregate_compare"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -529,9 +529,9 @@
         },
         "passes_completed": {
           "items": [
-            "live_journey_status",
-            "local_campaign_status",
-            "compare_statuses"
+            "t2_live_status",
+            "t1_local_status",
+            "t3_aggregate_compare"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -552,10 +552,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_093892c33437496e892bd1425e70e9a8:live_journey_status",
-              "pass_id": "live_journey_status",
+              "global_pass_id": "run_d4e8dcdac07d437d9b992daafa49d6e5:t2_live_status",
+              "pass_id": "t2_live_status",
               "plan_version": 1,
-              "run_id": "run_093892c33437496e892bd1425e70e9a8",
+              "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -563,10 +563,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_093892c33437496e892bd1425e70e9a8:local_campaign_status",
-              "pass_id": "local_campaign_status",
+              "global_pass_id": "run_d4e8dcdac07d437d9b992daafa49d6e5:t1_local_status",
+              "pass_id": "t1_local_status",
               "plan_version": 1,
-              "run_id": "run_093892c33437496e892bd1425e70e9a8",
+              "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -574,10 +574,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_093892c33437496e892bd1425e70e9a8:live_journey_status",
-              "pass_id": "live_journey_status",
+              "global_pass_id": "run_d4e8dcdac07d437d9b992daafa49d6e5:t2_live_status",
+              "pass_id": "t2_live_status",
               "plan_version": 1,
-              "run_id": "run_093892c33437496e892bd1425e70e9a8",
+              "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -591,7 +591,7 @@
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-02T08:08:32.430335+00:00"
+      "timestamp": "2026-06-02T09:53:53.866843+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
@@ -603,9 +603,9 @@
         "multi_pass_enabled": true,
         "pass_ids": {
           "items": [
-            "local_campaign_status",
-            "live_journey_status",
-            "compare_statuses"
+            "t1_local_status",
+            "t2_live_status",
+            "t3_aggregate_compare"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -634,8 +634,8 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "live_journey_status",
-            "compare_statuses"
+            "t2_live_status",
+            "t3_aggregate_compare"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -649,16 +649,16 @@
           "items": [
             {
               "items": [
-                "local_campaign_status",
-                "compare_statuses"
+                "t1_local_status",
+                "t3_aggregate_compare"
               ],
               "total_items": 2,
               "truncated_items": false
             },
             {
               "items": [
-                "live_journey_status",
-                "compare_statuses"
+                "t2_live_status",
+                "t3_aggregate_compare"
               ],
               "total_items": 2,
               "truncated_items": false
@@ -673,7 +673,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_093892c33437496e892bd1425e70e9a8",
+        "evidence_bus_id": "evidence_run_d4e8dcdac07d437d9b992daafa49d6e5",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -688,15 +688,15 @@
           "items": [
             {
               "items": [
-                "live_journey_status",
-                "local_campaign_status"
+                "t2_live_status",
+                "t1_local_status"
               ],
               "total_items": 2,
               "truncated_items": false
             },
             {
               "items": [
-                "compare_statuses"
+                "t3_aggregate_compare"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -712,9 +712,9 @@
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "local_campaign_status",
-            "live_journey_status",
-            "compare_statuses"
+            "t1_local_status",
+            "t2_live_status",
+            "t3_aggregate_compare"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -722,9 +722,9 @@
         "pass_results_count": 3,
         "passes_completed": {
           "items": [
-            "live_journey_status",
-            "local_campaign_status",
-            "compare_statuses"
+            "t2_live_status",
+            "t1_local_status",
+            "t3_aggregate_compare"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -736,9 +736,9 @@
         },
         "passes_executed": {
           "items": [
-            "live_journey_status",
-            "local_campaign_status",
-            "compare_statuses"
+            "t2_live_status",
+            "t1_local_status",
+            "t3_aggregate_compare"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -760,8 +760,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_093892c33437496e892bd1425e70e9a8",
-        "run_id": "run_093892c33437496e892bd1425e70e9a8",
+        "result_bundle_id": "bundle_run_d4e8dcdac07d437d9b992daafa49d6e5",
+        "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -772,7 +772,7 @@
         "semantic_alias_validation_failures": 0,
         "sequential_pass_count": 1,
         "sql_execution_latency_sec": 0.001,
-        "sql_gate_latency_sec": 0.23,
+        "sql_gate_latency_sec": 0.2,
         "sql_gate_passed": true,
         "sql_repair_attempts": 0,
         "stage_events": {
@@ -780,10 +780,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_093892c33437496e892bd1425e70e9a8:live_journey_status",
-              "pass_id": "live_journey_status",
+              "global_pass_id": "run_d4e8dcdac07d437d9b992daafa49d6e5:t2_live_status",
+              "pass_id": "t2_live_status",
               "plan_version": 1,
-              "run_id": "run_093892c33437496e892bd1425e70e9a8",
+              "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -791,10 +791,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_093892c33437496e892bd1425e70e9a8:live_journey_status",
-              "pass_id": "live_journey_status",
+              "global_pass_id": "run_d4e8dcdac07d437d9b992daafa49d6e5:t2_live_status",
+              "pass_id": "t2_live_status",
               "plan_version": 1,
-              "run_id": "run_093892c33437496e892bd1425e70e9a8",
+              "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -802,10 +802,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_093892c33437496e892bd1425e70e9a8:local_campaign_status",
-              "pass_id": "local_campaign_status",
+              "global_pass_id": "run_d4e8dcdac07d437d9b992daafa49d6e5:t1_local_status",
+              "pass_id": "t1_local_status",
               "plan_version": 1,
-              "run_id": "run_093892c33437496e892bd1425e70e9a8",
+              "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -821,7 +821,7 @@
       },
       "stage": "llm-owned pass scheduling",
       "technique": "dependency-aware scheduling of LLM-declared evidence passes",
-      "timestamp": "2026-06-02T08:08:32.431179+00:00"
+      "timestamp": "2026-06-02T09:53:53.868856+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -830,7 +830,7 @@
       "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
       "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
       "input_summary": {
-        "pass_id": "live_journey_status"
+        "pass_id": "t2_live_status"
       },
       "output": {
         "errors": {
@@ -840,11 +840,11 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_093892c33437496e892bd1425e70e9a8"
+        "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T08:08:32.432212+00:00"
+      "timestamp": "2026-06-02T09:53:53.869814+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_api_request_gate",
@@ -854,18 +854,22 @@
       "efficiency_role": "prevents invalid API calls without planning endpoints",
       "input_summary": {
         "method": "GET",
-        "pass_id": "live_journey_status",
+        "pass_id": "t2_live_status",
         "path": "/ajo/journey"
       },
       "output": {
         "method": "GET",
-        "pass_id": "live_journey_status",
+        "params": {
+          "limit": 50,
+          "start": 0
+        },
+        "pass_id": "t2_live_status",
         "passed": true,
         "path": "/ajo/journey"
       },
       "stage": "llm api request gate",
       "technique": "safe GET request-shape/catalog gate for LLM-owned API pass",
-      "timestamp": "2026-06-02T08:08:32.433413+00:00"
+      "timestamp": "2026-06-02T09:53:53.870820+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -874,7 +878,7 @@
       "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
       "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
       "input_summary": {
-        "pass_id": "local_campaign_status"
+        "pass_id": "t1_local_status"
       },
       "output": {
         "errors": {
@@ -884,11 +888,11 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_093892c33437496e892bd1425e70e9a8"
+        "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T08:08:32.434440+00:00"
+      "timestamp": "2026-06-02T09:53:53.871790+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
@@ -897,8 +901,8 @@
       "effect": "checks syntax/database-semantic validity without rewriting SQL",
       "efficiency_role": "prevents executing uncompilable SQL",
       "input_summary": {
-        "pass_id": "local_campaign_status",
-        "sql": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATUS\", \"STATE\", \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 100"
+        "pass_id": "t1_local_status",
+        "sql": "SELECT \"NAME\", \"STATUS\", \"STATE\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 10"
       },
       "output": {
         "params": {
@@ -908,13 +912,13 @@
           "total_items": 1,
           "truncated_items": false
         },
-        "pass_id": "local_campaign_status",
+        "pass_id": "t1_local_status",
         "passed": true,
-        "sql": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATUS\", \"STATE\", \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 100"
+        "sql": "SELECT \"NAME\", \"STATUS\", \"STATE\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 10"
       },
       "stage": "llm sql compile gate",
       "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
-      "timestamp": "2026-06-02T08:08:32.665336+00:00"
+      "timestamp": "2026-06-02T09:53:54.072861+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -925,13 +929,13 @@
       "input_summary": {
         "depends_on": {
           "items": [
-            "local_campaign_status",
-            "live_journey_status"
+            "t1_local_status",
+            "t2_live_status"
           ],
           "total_items": 2,
           "truncated_items": false
         },
-        "pass_id": "compare_statuses"
+        "pass_id": "t3_aggregate_compare"
       },
       "output": {
         "errors": {
@@ -941,11 +945,11 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_093892c33437496e892bd1425e70e9a8"
+        "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T08:08:32.666660+00:00"
+      "timestamp": "2026-06-02T09:53:54.074475+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -988,8 +992,8 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "live_journey_status",
-            "compare_statuses"
+            "t2_live_status",
+            "t3_aggregate_compare"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -1003,16 +1007,16 @@
           "items": [
             {
               "items": [
-                "local_campaign_status",
-                "compare_statuses"
+                "t1_local_status",
+                "t3_aggregate_compare"
               ],
               "total_items": 2,
               "truncated_items": false
             },
             {
               "items": [
-                "live_journey_status",
-                "compare_statuses"
+                "t2_live_status",
+                "t3_aggregate_compare"
               ],
               "total_items": 2,
               "truncated_items": false
@@ -1027,7 +1031,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_093892c33437496e892bd1425e70e9a8",
+        "evidence_bus_id": "evidence_run_d4e8dcdac07d437d9b992daafa49d6e5",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -1045,15 +1049,15 @@
           "items": [
             {
               "items": [
-                "live_journey_status",
-                "local_campaign_status"
+                "t2_live_status",
+                "t1_local_status"
               ],
               "total_items": 2,
               "truncated_items": false
             },
             {
               "items": [
-                "compare_statuses"
+                "t3_aggregate_compare"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -1069,9 +1073,9 @@
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "local_campaign_status",
-            "live_journey_status",
-            "compare_statuses"
+            "t1_local_status",
+            "t2_live_status",
+            "t3_aggregate_compare"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -1079,9 +1083,9 @@
         "pass_results_count": 3,
         "passes_completed": {
           "items": [
-            "live_journey_status",
-            "local_campaign_status",
-            "compare_statuses"
+            "t2_live_status",
+            "t1_local_status",
+            "t3_aggregate_compare"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -1093,9 +1097,9 @@
         },
         "passes_executed": {
           "items": [
-            "live_journey_status",
-            "local_campaign_status",
-            "compare_statuses"
+            "t2_live_status",
+            "t1_local_status",
+            "t3_aggregate_compare"
           ],
           "total_items": 3,
           "truncated_items": false
@@ -1117,8 +1121,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_093892c33437496e892bd1425e70e9a8",
-        "run_id": "run_093892c33437496e892bd1425e70e9a8",
+        "result_bundle_id": "bundle_run_d4e8dcdac07d437d9b992daafa49d6e5",
+        "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -1129,7 +1133,7 @@
         "semantic_alias_validation_failures": 0,
         "sequential_pass_count": 1,
         "sql_execution_latency_sec": 0.001,
-        "sql_gate_latency_sec": 0.23,
+        "sql_gate_latency_sec": 0.2,
         "sql_gate_passed": true,
         "sql_repair_attempts": 0,
         "stage_events": {
@@ -1137,10 +1141,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_093892c33437496e892bd1425e70e9a8:live_journey_status",
-              "pass_id": "live_journey_status",
+              "global_pass_id": "run_d4e8dcdac07d437d9b992daafa49d6e5:t2_live_status",
+              "pass_id": "t2_live_status",
               "plan_version": 1,
-              "run_id": "run_093892c33437496e892bd1425e70e9a8",
+              "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -1148,10 +1152,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_093892c33437496e892bd1425e70e9a8:live_journey_status",
-              "pass_id": "live_journey_status",
+              "global_pass_id": "run_d4e8dcdac07d437d9b992daafa49d6e5:t2_live_status",
+              "pass_id": "t2_live_status",
               "plan_version": 1,
-              "run_id": "run_093892c33437496e892bd1425e70e9a8",
+              "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -1159,10 +1163,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_093892c33437496e892bd1425e70e9a8:local_campaign_status",
-              "pass_id": "local_campaign_status",
+              "global_pass_id": "run_d4e8dcdac07d437d9b992daafa49d6e5:t1_local_status",
+              "pass_id": "t1_local_status",
               "plan_version": 1,
-              "run_id": "run_093892c33437496e892bd1425e70e9a8",
+              "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -1178,7 +1182,7 @@
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-02T08:08:32.667047+00:00"
+      "timestamp": "2026-06-02T09:53:54.075033+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -1229,11 +1233,9 @@
               "result_preview": {
                 "items": [
                   {
-                    "CAMPAIGNID": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
                     "NAME": "Birthday Message",
                     "STATE": "updated",
-                    "STATUS": "updated",
-                    "UPDATEDTIME": "2026-03-31T06:07:32.838462639Z"
+                    "STATUS": "updated"
                   }
                 ],
                 "total_items": 1,
@@ -1248,7 +1250,7 @@
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-02T08:08:32.739337+00:00"
+      "timestamp": "2026-06-02T09:53:54.160754+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -1271,7 +1273,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-02T08:08:32.739728+00:00"
+      "timestamp": "2026-06-02T09:53:54.161395+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -1284,9 +1286,6 @@
       },
       "output": {
         "evidence": {
-          "ids": {
-            "campaign_id": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
-          },
           "names": {
             "items": [
               "Birthday Message"
@@ -1296,25 +1295,18 @@
           },
           "pass_ids": {
             "items": [
-              "live_journey_status",
-              "local_campaign_status",
-              "compare_statuses"
+              "t2_live_status",
+              "t1_local_status",
+              "t3_aggregate_compare"
             ],
             "total_items": 3,
             "truncated_items": false
           },
           "pass_result_count": 3,
-          "run_id": "run_093892c33437496e892bd1425e70e9a8",
+          "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5",
           "statuses": {
             "items": [
               "updated"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "timestamps": {
-            "items": [
-              "2026-03-31T06:07:32.838462639Z"
             ],
             "total_items": 1,
             "truncated_items": false
@@ -1323,7 +1315,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-02T08:08:32.740163+00:00"
+      "timestamp": "2026-06-02T09:53:54.162090+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -1341,24 +1333,24 @@
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "live_journey_status"
+              "pass_id": "t2_live_status"
             },
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "local_campaign_status"
+              "pass_id": "t1_local_status"
             },
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "compare_statuses"
+              "pass_id": "t3_aggregate_compare"
             }
           ],
           "total_items": 3,
           "truncated_items": false
         },
         "pass_results_count": 3,
-        "run_id": "run_093892c33437496e892bd1425e70e9a8",
+        "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5",
         "runtime_passes": {
           "items": [
             {
@@ -1376,13 +1368,13 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_093892c33437496e892bd1425e70e9a8"
+                "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5"
               },
-              "global_pass_id": "run_093892c33437496e892bd1425e70e9a8:live_journey_status",
-              "pass_id": "live_journey_status",
+              "global_pass_id": "run_d4e8dcdac07d437d9b992daafa49d6e5:t2_live_status",
+              "pass_id": "t2_live_status",
               "path": "API",
               "plan_version": 1,
-              "run_id": "run_093892c33437496e892bd1425e70e9a8",
+              "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5",
               "status": "API_ERROR",
               "truncated_fields": 6
             },
@@ -1401,13 +1393,13 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_093892c33437496e892bd1425e70e9a8"
+                "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5"
               },
-              "global_pass_id": "run_093892c33437496e892bd1425e70e9a8:local_campaign_status",
-              "pass_id": "local_campaign_status",
+              "global_pass_id": "run_d4e8dcdac07d437d9b992daafa49d6e5:t1_local_status",
+              "pass_id": "t1_local_status",
               "path": "SQL",
               "plan_version": 1,
-              "run_id": "run_093892c33437496e892bd1425e70e9a8",
+              "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5",
               "status": "SUCCESS",
               "truncated_fields": 6
             },
@@ -1426,13 +1418,13 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_093892c33437496e892bd1425e70e9a8"
+                "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5"
               },
-              "global_pass_id": "run_093892c33437496e892bd1425e70e9a8:compare_statuses",
-              "pass_id": "compare_statuses",
+              "global_pass_id": "run_d4e8dcdac07d437d9b992daafa49d6e5:t3_aggregate_compare",
+              "pass_id": "t3_aggregate_compare",
               "path": "AGGREGATION_ONLY",
               "plan_version": 1,
-              "run_id": "run_093892c33437496e892bd1425e70e9a8",
+              "run_id": "run_d4e8dcdac07d437d9b992daafa49d6e5",
               "status": "SKIPPED",
               "truncated_fields": 6
             }
@@ -1443,7 +1435,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-02T08:08:32.740742+00:00"
+      "timestamp": "2026-06-02T09:53:54.162773+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -1488,7 +1480,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-02T08:08:32.741139+00:00"
+      "timestamp": "2026-06-02T09:53:54.163305+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -1509,15 +1501,15 @@
         "slots": {
           "answer_family": "generic",
           "api_error": false,
-          "discrepancy": false,
-          "dry_run": true,
-          "entity_ids": {
+          "counts": {
             "items": [
-              "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
+              "1"
             ],
             "total_items": 1,
             "truncated_items": false
           },
+          "discrepancy": false,
+          "dry_run": true,
           "entity_names": {
             "items": [
               "Birthday Message"
@@ -1528,10 +1520,10 @@
           "slots_present": {
             "items": [
               "entity_names",
-              "entity_ids",
-              "counts"
+              "counts",
+              "statuses"
             ],
-            "total_items": 8,
+            "total_items": 6,
             "truncated_items": true
           },
           "sql_row_count": 1,
@@ -1540,7 +1532,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-02T08:08:32.758768+00:00"
+      "timestamp": "2026-06-02T09:53:54.189191+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer_start",
@@ -1556,7 +1548,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "pre-call heartbeat before LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T08:08:32.759187+00:00"
+      "timestamp": "2026-06-02T09:53:54.190274+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -1569,15 +1561,15 @@
         "slot_counts": {
           "answer_family": "generic",
           "api_error": false,
-          "discrepancy": false,
-          "dry_run": true,
-          "entity_ids": {
+          "counts": {
             "items": [
-              "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
+              "1"
             ],
             "total_items": 1,
             "truncated_items": false
           },
+          "discrepancy": false,
+          "dry_run": true,
           "entity_names": {
             "items": [
               "Birthday Message"
@@ -1588,10 +1580,10 @@
           "slots_present": {
             "items": [
               "entity_names",
-              "entity_ids",
-              "counts"
+              "counts",
+              "statuses"
             ],
-            "total_items": 8,
+            "total_items": 6,
             "truncated_items": true
           },
           "sql_row_count": 1,
@@ -1600,11 +1592,11 @@
       },
       "output": {
         "backend_unavailable": false,
-        "final_answer": "According to the local snapshot, the \"Birthday Message\" campaign (ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6) has a status and state of \"updated\" as of March 31, 2026. However, the live status could not be compared because the live Journey Optimizer API evidence was unavailable due to missing Adobe credentials.",
-        "model": "[REDACTED]",
+        "final_answer": "The local snapshot for Birthday Message shows a status of updated. Live API evidence was unavailable or errored for this source.",
+        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "parse_error": false,
         "provider": "openai",
-        "raw_preview": "According to the local snapshot, the \"Birthday Message\" campaign (ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6) has a status and state of \"updated\" as of March 31, 2026. However, the live status could not be compared because the live Journey Optimizer API evidence was unavailable due to missing Adobe credentials.",
+        "raw_preview": "The local snapshot for Birthday Message shows a status of updated. Live API evidence was unavailable or errored for this source.",
         "used_pass_ids": {
           "items": [],
           "total_items": 0,
@@ -1613,7 +1605,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T08:08:41.332750+00:00"
+      "timestamp": "2026-06-02T09:53:58.715319+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -1625,12 +1617,12 @@
         "composer": "LLMFinalAnswerComposer"
       },
       "output": {
-        "final_answer": "According to the local snapshot, the \"Birthday Message\" campaign (ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6) has a status and state of \"updated\" as of March 31, 2026. However, the live status could not be compared because the live Journey Optimizer API evidence was unavailable due to missing Adobe credentials.",
+        "final_answer": "The local snapshot for Birthday Message shows a status of updated. Live API evidence was unavailable or errored for this source.",
         "passed": true
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-02T08:08:41.334197+00:00"
+      "timestamp": "2026-06-02T09:53:58.717452+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -1642,240 +1634,60 @@
         "syntax_gate_passed": true
       },
       "output": {
-        "error_message": "Date claim 'March 31, 2026' contradicts available date evidence.",
-        "error_type": "contradiction",
-        "passed": false,
-        "unsupported_claims": {
-          "items": [
-            {
-              "claim": {
-                "hardness": "HARD",
-                "span": "March 31, 2026",
-                "text": "March 31, 2026",
-                "type": "DATE",
-                "value": "March 31, 2026"
-              },
-              "message": "Date claim 'March 31, 2026' contradicts available date evidence."
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        }
-      },
-      "stage": "answer gate",
-      "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-02T08:08:41.340973+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_final_answer_repair_start",
-      "correctness_role": "diagnostic only; backend still does not repair the answer",
-      "duration_ms": 0.0,
-      "effect": "records the exact boundary before the potentially slow final-answer repair LLM call",
-      "efficiency_role": "enables smoke timeout localization without extra SQL/API calls",
-      "input_summary": {
-        "failed_semantic": true,
-        "failed_syntax": false
-      },
-      "output": {
-        "current_stage": "llm_final_answer_repair_call_start"
-      },
-      "stage": "llm-owned answer repair",
-      "technique": "pre-call heartbeat before final answer repair",
-      "timestamp": "2026-06-02T08:08:41.342358+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_final_answer_repair",
-      "correctness_role": "preserves LLM ownership while enforcing evidence boundaries",
-      "duration_ms": 0.0,
-      "effect": "returns gate errors to the LLM once; backend does not repair the answer itself",
-      "efficiency_role": "caps answer repair to one LLM call",
-      "input_summary": {
-        "failed_semantic": true,
-        "failed_syntax": false
-      },
-      "output": {
-        "candidate": {
-          "backend_unavailable": false,
-          "final_answer": "According to the local snapshot, the Birthday Message campaign, with ID 9f4ebca4-2fdd-4873-95f5-8d66bab358c6, has a status and state of updated as of 2026-03-31T06:07:32.838462639Z. However, the live status comparison could not be completed because the live Journey Optimizer API evidence was unavailable due to missing Adobe credentials.",
-          "model": "[REDACTED]",
-          "parse_error": false,
-          "provider": "openai",
-          "raw_preview": "According to the local snapshot, the Birthday Message campaign, with ID 9f4ebca4-2fdd-4873-95f5-8d66bab358c6, has a status and state of updated as of 2026-03-31T06:07:32.838462639Z. However, the live status comparison could not be completed because the live Journey Optimizer API evidence was unavailable due to missing Adobe credentials.",
-          "used_pass_ids": {
-            "items": [],
-            "total_items": 0,
-            "truncated_items": false
-          }
-        },
-        "semantic_gate": {
-          "error_message": "Final answer contains a hard claim not supported by runtime evidence.",
-          "error_type": "unsupported_claim",
-          "passed": false,
-          "unsupported_claims": {
-            "items": [
-              {
-                "hardness": "HARD",
-                "span": "Journey Optimizer API",
-                "text": "Journey Optimizer API",
-                "type": "ENTITY_NAME",
-                "value": "Journey Optimizer API"
-              }
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "verifier": {
-            "action": "REWRITE_WITH_FEEDBACK",
-            "allowed_fact_index": {
-              "allowed_caveats": {
-                "items": [
-                  "API_ERROR"
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              },
-              "api_error_scopes": {
-                "items": [
-                  "live api verification"
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              },
-              "counts": {
-                "items": [
-                  "1"
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              },
-              "dates": {
-                "items": [
-                  "2026-03-31t06:07:32.838462639z",
-                  "2026-03-31"
-                ],
-                "total_items": 2,
-                "truncated_items": false
-              },
-              "evidence_strings": {
-                "items": [
-                  "2026-03-31t06:07:32.838462639z",
-                  "/ajo/journey",
-                  "updated"
-                ],
-                "total_items": 6,
-                "truncated_items": true
-              },
-              "ids": {
-                "items": [
-                  "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              },
-              "names": {
-                "items": [
-                  "birthday message"
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              },
-              "statuses": {
-                "items": [
-                  "updated",
-                  "live"
-                ],
-                "total_items": 2,
-                "truncated_items": false
-              }
-            },
-            "claim_extractor": {
-              "claim_count": 4,
-              "claims": {
-                "items": [
-                  {
-                    "hardness": "HARD",
-                    "span": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
-                    "text": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
-                    "type": "ID",
-                    "value": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
-                  },
-                  {
-                    "hardness": "HARD",
-                    "span": "2026-03-31T06:07:32.838462639Z",
-                    "text": "2026-03-31T06:07:32.838462639Z",
-                    "type": "DATE",
-                    "value": "2026-03-31T06:07:32.838462639Z"
-                  },
-                  {
-                    "hardness": "HARD",
-                    "span": "Birthday Message",
-                    "text": "Birthday Message",
-                    "type": "ENTITY_NAME",
-                    "value": "Birthday Message"
-                  }
-                ],
-                "total_items": 4,
-                "truncated_items": true
-              }
-            },
-            "claim_matcher": {
-              "matches": {
-                "items": [
-                  {
-                    "claim": {
-                      "hardness": "HARD",
-                      "span": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
-                      "text": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
-                      "type": "ID",
-                      "value": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
-                    },
-                    "reason": "id",
-                    "status": "SUPPORTED"
-                  },
-                  {
-                    "claim": {
-                      "hardness": "HARD",
-                      "span": "2026-03-31T06:07:32.838462639Z",
-                      "text": "2026-03-31T06:07:32.838462639Z",
-                      "type": "DATE",
-                      "value": "2026-03-31T06:07:32.838462639Z"
-                    },
-                    "reason": "date",
-                    "status": "SUPPORTED"
-                  },
-                  {
-                    "claim": {
-                      "hardness": "HARD",
-                      "span": "Birthday Message",
-                      "text": "Birthday Message",
-                      "type": "ENTITY_NAME",
-                      "value": "Birthday Message"
-                    },
-                    "reason": "entity_name",
-                    "status": "SUPPORTED"
-                  }
-                ],
-                "total_items": 4,
-                "truncated_items": true
-              }
-            },
-            "ok": false,
-            "supported_claims": {
+        "passed": true,
+        "verifier": {
+          "action": "ACCEPT",
+          "allowed_fact_index": {
+            "allowed_caveats": {
               "items": [
-                {
-                  "hardness": "HARD",
-                  "span": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
-                  "text": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
-                  "type": "ID",
-                  "value": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
-                },
-                {
-                  "hardness": "HARD",
-                  "span": "2026-03-31T06:07:32.838462639Z",
-                  "text": "2026-03-31T06:07:32.838462639Z",
-                  "type": "DATE",
-                  "value": "2026-03-31T06:07:32.838462639Z"
-                },
+                "API_ERROR"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "api_error_scopes": {
+              "items": [
+                "live api verification"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "counts": {
+              "items": [
+                "1"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "evidence_strings": {
+              "items": [
+                "query_status_filter:live",
+                "birthday message",
+                "/ajo/journey"
+              ],
+              "total_items": 6,
+              "truncated_items": true
+            },
+            "names": {
+              "items": [
+                "birthday message"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "statuses": {
+              "items": [
+                "updated",
+                "live"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            }
+          },
+          "claim_extractor": {
+            "claim_count": 1,
+            "claims": {
+              "items": [
                 {
                   "hardness": "HARD",
                   "span": "Birthday Message",
@@ -1884,32 +1696,48 @@
                   "value": "Birthday Message"
                 }
               ],
-              "total_items": 3,
+              "total_items": 1,
               "truncated_items": false
-            },
-            "unsupported_claims": {
+            }
+          },
+          "claim_matcher": {
+            "matches": {
               "items": [
                 {
-                  "hardness": "HARD",
-                  "span": "Journey Optimizer API",
-                  "text": "Journey Optimizer API",
-                  "type": "ENTITY_NAME",
-                  "value": "Journey Optimizer API"
+                  "claim": {
+                    "hardness": "HARD",
+                    "span": "Birthday Message",
+                    "text": "Birthday Message",
+                    "type": "ENTITY_NAME",
+                    "value": "Birthday Message"
+                  },
+                  "reason": "entity_name",
+                  "status": "SUPPORTED"
                 }
               ],
               "total_items": 1,
               "truncated_items": false
             }
+          },
+          "ok": true,
+          "supported_claims": {
+            "items": [
+              {
+                "hardness": "HARD",
+                "span": "Birthday Message",
+                "text": "Birthday Message",
+                "type": "ENTITY_NAME",
+                "value": "Birthday Message"
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
           }
-        },
-        "syntax_gate": {
-          "final_answer": "According to the local snapshot, the Birthday Message campaign, with ID 9f4ebca4-2fdd-4873-95f5-8d66bab358c6, has a status and state of updated as of 2026-03-31T06:07:32.838462639Z. However, the live status comparison could not be completed because the live Journey Optimizer API evidence was unavailable due to missing Adobe credentials.",
-          "passed": true
         }
       },
-      "stage": "llm-owned answer repair",
-      "technique": "single LLM-owned final answer repair",
-      "timestamp": "2026-06-02T08:08:52.044456+00:00"
+      "stage": "answer gate",
+      "technique": "runtime-evidence semantic grounding gate",
+      "timestamp": "2026-06-02T09:53:58.722686+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -1922,14 +1750,14 @@
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
-        "answer_repair_attempts": 1,
-        "answer_semantic_gate_passed": false,
+        "answer_repair_attempts": 0,
+        "answer_semantic_gate_passed": true,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
-        "final_answer_repair_latency_sec": 10.696,
-        "final_answer_supported_by_evidence": false,
-        "final_composer_latency_sec": 8.571,
-        "final_gate_latency_sec": 0.007,
+        "final_answer_repair_latency_sec": 0.0,
+        "final_answer_supported_by_evidence": true,
+        "final_composer_latency_sec": 4.521,
+        "final_gate_latency_sec": 0.006,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 2,
@@ -1941,7 +1769,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-02T08:08:52.047361+00:00"
+      "timestamp": "2026-06-02T09:53:58.723381+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -1950,15 +1778,15 @@
       "effect": "returns the LLM-composed answer when gates pass, otherwise a safe evidence-state fallback",
       "efficiency_role": "no additional SQL/API calls",
       "input_summary": {
-        "answer_semantic_gate_passed": false
+        "answer_semantic_gate_passed": true
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
-        "answer_repair_attempts": 1,
-        "answer_semantic_gate_passed": false,
+        "answer_repair_attempts": 0,
+        "answer_semantic_gate_passed": true,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
-        "final_answer_supported_by_evidence": false,
+        "final_answer_supported_by_evidence": true,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 3,
@@ -1970,30 +1798,30 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-02T08:08:52.048991+00:00"
+      "timestamp": "2026-06-02T09:53:58.724229+00:00"
     }
   ],
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 2820,
+  "estimated_tokens": 2681,
   "execution_time": 0.0,
-  "final_answer": "I found runtime evidence but could not compose a verified final answer. Available scoped evidence includes: local_campaign_status/SQL/LOCAL_SNAPSHOT: CAMPAIGNID:9f4ebca4-2fdd-4873-95f5-8d66bab358c6; NAME:Birthday Message; STATUS:updated; STATE:updated.",
+  "final_answer": "The local snapshot for Birthday Message shows a status of updated. Live API evidence was unavailable or errored for this source.",
   "original_query": "Compare local and live status of Birthday Message if both are available.",
   "planning_time": 0.0,
   "preprocessing_time": 0.0,
   "query_id": "hermes_toolcall_compare_local_live_birthday_status",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 19.438873999752104,
+  "runtime": 4.708678208291531,
   "sql_call_count": 1,
   "steps": [
     {
-      "estimated_tokens": 2320,
+      "estimated_tokens": 2379,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/hermes_toolcall_compare_local_live_birthday_status/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 3065
+      "prompt_tokens": 3126
     },
     {
-      "aggregation_instruction": "Compare the status and state of the 'Birthday Message' campaign from the local snapshot database with its live status retrieved from the real-time Journey Optimizer API.",
+      "aggregation_instruction": "Compare the local status (STATUS/STATE from dim_campaign for NAME='Birthday Message') with the live status (STATUS/STATE from journey_list API for the matching journey). Report both statuses side-by-side. If the local record is not found, report 'not found in local snapshot'. If the live journey is not found, report 'not found in live API'.",
       "api_request": null,
       "backend_unavailable": false,
       "diagnostics": {
@@ -2011,7 +1839,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 13152,
+        "planner_provider_latency_ms": 21944,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -2039,10 +1867,10 @@
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
         "semantic_ir_plan_preview": {
-          "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"local_campaign_status\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"STATUS\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"CAMPAIGNID\", \"NAME\", \"STATUS\"], \"total_items\": 5, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"Birthday Message\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 100}, \"description\": \"Retrieve the status and state of 'Birthday Message' campaign from local dim_campaign table.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"live_journey_status\", \"kind\": \"LIVE_QUERY\", \"operation\": \"STATUS\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"journey_list\", \"method\": \"GET\"}, \"description\": \"Retrieve the real-time list of journeys and campaigns from Adobe Journey Optimizer to inspect the live status of 'Birthday Message'.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"compare_statuses\", \"kind\": \"AGGREGATE\", \"operation\": \"COMPARE\", \"source\": \"BOTH\", \"depends_on\": {\"...",
+          "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_local_status\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"STATUS\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"NAME\", \"STATUS\", \"STATE\"], \"total_items\": 3, \"truncated_items\": false}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"Birthday Message\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 10}, \"description\": \"Get local snapshot status (STATUS/STATE) for the campaign named 'Birthday Message'.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_live_status\", \"kind\": \"LIVE_QUERY\", \"operation\": \"STATUS\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"journey_list\", \"method\": \"GET\", \"query_params\": {\"limit\": 50, \"start\": 0}}, \"description\": \"Get live API status/state for journeys/campaigns to find 'Birthday Message' and its current live status.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t3_aggregate_compare\", \"kind\": \"AGGREGATE\", \"operation\": \"COMPARE\", \"source\": \"BOTH\", \"depends_on\": {\"items...",
           "truncated": true
         },
-        "semantic_ir_provider_latency_ms": 13148,
+        "semantic_ir_provider_latency_ms": 21939,
         "semantic_ir_repair_attempted": false,
         "semantic_ir_repair_latency_ms": 0,
         "semantic_ir_repair_success": false,
@@ -2071,7 +1899,7 @@
       "direct_answer": null,
       "evidence_order": "MULTI_PASS",
       "kind": "llm_unified_planner",
-      "model": "[REDACTED]",
+      "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
       "parse_error": false,
       "passes": [
         {
@@ -2079,22 +1907,20 @@
           "can_run_parallel": true,
           "depends_on": [],
           "evidence_order": "SQL_FIRST",
-          "expected_result": "Retrieve the status and state of 'Birthday Message' campaign from local dim_campaign table.",
+          "expected_result": "Get local snapshot status (STATUS/STATE) for the campaign named 'Birthday Message'.",
           "fallback": false,
           "optional": false,
-          "pass_id": "local_campaign_status",
+          "pass_id": "t1_local_status",
           "path": "SQL",
           "raw_sql_fallback_reason": null,
           "raw_sql_fallback_task_id": null,
           "raw_sql_fallback_used": false,
           "result_contract": {
-            "entity": "campaign",
+            "entity": "Birthday Message",
             "fields": [
-              "CAMPAIGNID",
               "NAME",
               "STATUS",
-              "STATE",
-              "UPDATEDTIME"
+              "STATE"
             ],
             "filters": [
               {
@@ -2104,7 +1930,7 @@
               }
             ],
             "freshness": "same_run",
-            "object": "dim_campaign",
+            "object": "campaign",
             "operation": "STATUS",
             "scope": "local",
             "source": "LOCAL_SNAPSHOT"
@@ -2115,36 +1941,44 @@
             "params": [
               "Birthday Message"
             ],
-            "query": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATUS\", \"STATE\", \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 100"
+            "query": "SELECT \"NAME\", \"STATUS\", \"STATE\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 10"
           },
-          "subtask": "Retrieve the status and state of 'Birthday Message' campaign from local dim_campaign table."
+          "subtask": "Get local snapshot status (STATUS/STATE) for the campaign named 'Birthday Message'."
         },
         {
           "api_request": {
             "method": "GET",
-            "params": {},
+            "params": {
+              "limit": 50,
+              "start": 0
+            },
             "path": "/ajo/journey"
           },
           "can_run_parallel": true,
           "depends_on": [],
           "evidence_order": "API_FIRST",
-          "expected_result": "Retrieve the real-time list of journeys and campaigns from Adobe Journey Optimizer to inspect the live status of 'Birthday Message'.",
+          "expected_result": "Get live API status/state for journeys/campaigns to find 'Birthday Message' and its current live status.",
           "fallback": false,
           "optional": false,
-          "pass_id": "live_journey_status",
+          "pass_id": "t2_live_status",
           "path": "API",
           "raw_sql_fallback_reason": null,
           "raw_sql_fallback_task_id": null,
           "raw_sql_fallback_used": false,
           "result_contract": {
-            "entity": "journey",
+            "entity": "Birthday Message",
             "fields": [
-              "id",
-              "name",
-              "status",
-              "state"
+              "NAME",
+              "STATUS",
+              "STATE"
             ],
-            "filters": [],
+            "filters": [
+              {
+                "field": "NAME",
+                "op": "=",
+                "value": "Birthday Message"
+              }
+            ],
             "freshness": "same_run",
             "object": "journey",
             "operation": "STATUS",
@@ -2154,46 +1988,37 @@
           "reuse_result_from": null,
           "semantic_cache_key": null,
           "sql": null,
-          "subtask": "Retrieve the real-time list of journeys and campaigns from Adobe Journey Optimizer to inspect the live status of 'Birthday Message'."
+          "subtask": "Get live API status/state for journeys/campaigns to find 'Birthday Message' and its current live status."
         },
         {
           "api_request": null,
           "can_run_parallel": false,
           "depends_on": [
-            "local_campaign_status",
-            "live_journey_status"
+            "t1_local_status",
+            "t2_live_status"
           ],
           "evidence_order": "NO_EVIDENCE",
-          "expected_result": "Compare the local campaign status from dim_campaign with the live journey status from the AJO API.",
+          "expected_result": "Compare the local status (from t1) and live status (from t2) for 'Birthday Message'.",
           "fallback": false,
           "optional": false,
-          "pass_id": "compare_statuses",
+          "pass_id": "t3_aggregate_compare",
           "path": "AGGREGATION_ONLY",
           "raw_sql_fallback_reason": null,
           "raw_sql_fallback_task_id": null,
           "raw_sql_fallback_used": false,
-          "result_contract": {
-            "entity": "comparison",
-            "fields": [],
-            "filters": [],
-            "freshness": "same_run",
-            "object": "campaign_comparison",
-            "operation": "COMPARE",
-            "scope": "both",
-            "source": "BOTH"
-          },
+          "result_contract": null,
           "reuse_result_from": null,
           "semantic_cache_key": null,
           "sql": null,
-          "subtask": "Compare the local campaign status from dim_campaign with the live journey status from the AJO API."
+          "subtask": "Compare the local status (from t1) and live status (from t2) for 'Birthday Message'."
         }
       ],
       "provider": "openai",
       "raw_preview": {
         "semantic_ir_initial": {
-          "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+          "base_url": "[REDACTED]",
           "error": null,
-          "model": "[REDACTED]",
+          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
           "ok": true,
           "provider": "openai",
           "sdk_path_used": true,
@@ -2208,20 +2033,27 @@
         "params": [
           "Birthday Message"
         ],
-        "query": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATUS\", \"STATE\", \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 100"
+        "query": "SELECT \"NAME\", \"STATUS\", \"STATE\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 10"
       }
     },
     {
       "headers": {},
       "kind": "api_call",
       "method": "GET",
-      "params": {},
+      "params": {
+        "limit": 50,
+        "start": 0
+      },
       "result": {
         "dry_run": true,
         "endpoint": "/ajo/journey",
         "error": "Adobe credentials unavailable; API call not executed.",
         "method": "GET",
         "ok": false,
+        "params": {
+          "limit": 50,
+          "start": 0
+        },
         "result_preview": null,
         "url": "https://platform.adobe.io/ajo/journey"
       },
@@ -2252,18 +2084,16 @@
         "rows": {
           "items": [
             {
-              "CAMPAIGNID": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
               "NAME": "Birthday Message",
               "STATE": "updated",
-              "STATUS": "updated",
-              "UPDATEDTIME": "2026-03-31T06:07:32.838462639Z"
+              "STATUS": "updated"
             }
           ],
           "total_items": 1,
           "truncated_items": false
         }
       },
-      "sql": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATUS\", \"STATE\", \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 100",
+      "sql": "SELECT \"NAME\", \"STATUS\", \"STATE\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 10",
       "validation": {
         "errors": [],
         "ok": true,
@@ -2289,52 +2119,115 @@
       "caveats_included": [],
       "claimed_facts": [],
       "error_message": null,
-      "final_answer": "According to the local snapshot, the \"Birthday Message\" campaign (ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6) has a status and state of \"updated\" as of March 31, 2026. However, the live status could not be compared because the live Journey Optimizer API evidence was unavailable due to missing Adobe credentials.",
+      "final_answer": "The local snapshot for Birthday Message shows a status of updated. Live API evidence was unavailable or errored for this source.",
       "kind": "llm_final_answer_composer",
-      "model": "[REDACTED]",
+      "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
       "parse_error": false,
       "provider": "openai",
-      "raw_preview": "According to the local snapshot, the \"Birthday Message\" campaign (ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6) has a status and state of \"updated\" as of March 31, 2026. However, the live status could not be compared because the live Journey Optimizer API evidence was unavailable due to missing Adobe credentials.",
+      "raw_preview": "The local snapshot for Birthday Message shows a status of updated. Live API evidence was unavailable or errored for this source.",
       "unanswered_subtasks": [],
       "used_pass_ids": []
     },
     {
       "answer_composer_used": "LLMFinalAnswerComposer",
-      "answer_repair_attempts": 1,
-      "answer_semantic_gate_passed": false,
+      "answer_repair_attempts": 0,
+      "answer_semantic_gate_passed": true,
       "answer_syntax_gate_passed": true,
       "deterministic_answer_template_used": false,
-      "final_answer_repair_latency_sec": 10.696,
-      "final_answer_supported_by_evidence": false,
-      "final_composer_latency_sec": 8.571,
-      "final_gate_latency_sec": 0.007,
+      "final_answer_repair_latency_sec": 0.0,
+      "final_answer_supported_by_evidence": true,
+      "final_composer_latency_sec": 4.521,
+      "final_gate_latency_sec": 0.006,
       "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
       "llm_owned_final_answer": true,
       "semantic_gate": {
-        "error_message": "Date claim 'March 31, 2026' contradicts available date evidence.",
-        "error_type": "contradiction",
+        "error_message": null,
+        "error_type": null,
         "missing_required_fields": [],
-        "passed": false,
+        "passed": true,
         "scope_errors": [],
-        "unsupported_claims": [
-          {
-            "claim": {
+        "unsupported_claims": [],
+        "verifier": {
+          "action": "ACCEPT",
+          "allowed_fact_index": {
+            "allowed_caveats": [
+              "API_ERROR"
+            ],
+            "api_error_scopes": [
+              "live api verification"
+            ],
+            "counts": [
+              "1"
+            ],
+            "dates": [],
+            "evidence_strings": [
+              "query_status_filter:live",
+              "birthday message",
+              "/ajo/journey",
+              "0",
+              "50",
+              "updated"
+            ],
+            "ids": [],
+            "live_empty_scopes": [],
+            "missing_roles": [],
+            "names": [
+              "birthday message"
+            ],
+            "relationships": [],
+            "statuses": [
+              "updated",
+              "live"
+            ]
+          },
+          "ambiguous_claims": [],
+          "claim_extractor": {
+            "claim_count": 1,
+            "claims": [
+              {
+                "hardness": "HARD",
+                "span": "Birthday Message",
+                "text": "Birthday Message",
+                "type": "ENTITY_NAME",
+                "value": "Birthday Message"
+              }
+            ]
+          },
+          "claim_matcher": {
+            "matches": [
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "Birthday Message",
+                  "text": "Birthday Message",
+                  "type": "ENTITY_NAME",
+                  "value": "Birthday Message"
+                },
+                "reason": "entity_name",
+                "status": "SUPPORTED"
+              }
+            ]
+          },
+          "needs_caveat_claims": [],
+          "ok": true,
+          "over_specified_claims": [],
+          "supported_claims": [
+            {
               "hardness": "HARD",
-              "span": "March 31, 2026",
-              "text": "March 31, 2026",
-              "type": "DATE",
-              "value": "March 31, 2026"
-            },
-            "message": "Date claim 'March 31, 2026' contradicts available date evidence."
-          }
-        ],
-        "verifier": {}
+              "span": "Birthday Message",
+              "text": "Birthday Message",
+              "type": "ENTITY_NAME",
+              "value": "Birthday Message"
+            }
+          ],
+          "unsupported_claims": []
+        }
       },
       "syntax_gate": {
         "error_message": null,
         "error_type": null,
-        "final_answer": "According to the local snapshot, the \"Birthday Message\" campaign (ID: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6) has a status and state of \"updated\" as of March 31, 2026. However, the live status could not be compared because the live Journey Optimizer API evidence was unavailable due to missing Adobe credentials.",
+        "final_answer": "The local snapshot for Birthday Message shows a status of updated. Live API evidence was unavailable or errored for this source.",
         "passed": true
       },
       "used_pass_ids": []
@@ -2342,7 +2235,7 @@
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 19.30921099986881
+    "answer_time": 4.563008041586727
   },
   "tool_call_count": 2
 }

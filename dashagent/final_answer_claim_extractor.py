@@ -127,11 +127,15 @@ def _count_claims(text: str, occupied: list[tuple[int, int]]) -> list[tuple[Fina
             continue
         if _inside_span(match.start(), match.end(), quoted):
             continue
+        value = match.group(0).replace(",", "")
         if _looks_like_url_port(text, match.start(), match.end()):
             continue
         if _looks_like_numbered_list_marker(text, match.start(), match.end()):
             continue
-        value = match.group(0).replace(",", "")
+        if _looks_like_percentage(text, match.end()):
+            continue
+        if _looks_like_entity_code_number(value):
+            continue
         out.append((_claim(text, "COUNT", value, match.start(), match.end()), match.start(), match.end()))
     return out
 
@@ -270,6 +274,16 @@ def _looks_like_numbered_list_marker(text: str, start: int, end: int) -> bool:
     if not suffix or suffix[0] not in {".", ")"}:
         return False
     return bool(re.search(r"(?:^|\n)\s*$", prefix))
+
+
+def _looks_like_percentage(text: str, end: int) -> bool:
+    suffix = text[end : min(len(text), end + 2)]
+    return suffix.startswith("%")
+
+
+def _looks_like_entity_code_number(value: str) -> bool:
+    normalized = str(value or "").replace(",", "")
+    return len(normalized) > 1 and normalized.startswith("0") and normalized.isdigit()
 
 
 def _looks_like_api_caveat_status(text: str, start: int, end: int, status: str) -> bool:

@@ -7,10 +7,10 @@
 | Query | How many schemas do I have? |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
 | Final answer | You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable. |
-| Strict score | 0.7458 |
+| Strict score | 0.7457 |
 | Correctness score | 0.7774 |
 | Answer / SQL / API score | 0.3915 / 0.9 / 1.0 |
-| Tools / tokens / runtime | 2 / 797 / 0.017045207787305117 |
+| Tools / tokens / runtime | 2 / 797 / 0.023507750127464533 |
 
 ## Dataflow Graph
 

@@ -125,6 +125,7 @@ def _endpoint_context() -> list[dict]:
             "path": "/data/foundation/schemaregistry/tenant/schemas",
             "path_params": [],
             "common_params": {"limit": 25},
+            "examples": [{"query": "profile-enabled ExperienceEvent schemas"}],
             "use_when": "List schemas.",
         },
         {
@@ -344,15 +345,39 @@ def test_semantic_ir_rejects_invalid_enum_and_does_not_fill_missing_table():
 
 def test_context_cards_are_mechanical_and_safe_get_only():
     schema_card = build_allowed_local_schema_card(_schema_context())
-    assert schema_card == [
-        {"table": "dim_schema", "columns": ["SCHEMAID", "NAME", "STATUS"]},
-        {"table": "dim_campaign", "columns": ["CAMPAIGNID", "NAME", "STATUS", "PUBLISHEDAT"]},
-    ]
+    assert [row["table"] for row in schema_card] == ["dim_schema", "dim_campaign"]
+    assert schema_card[0]["columns"] == ["SCHEMAID", "NAME", "STATUS"]
+    assert schema_card[1]["columns"] == ["CAMPAIGNID", "NAME", "STATUS", "PUBLISHEDAT"]
 
     api_card = build_allowed_api_context_card(_endpoint_context())
     assert [row["endpoint_id"] for row in api_card] == ["schemas_list", "journey_list"]
     assert api_card[0]["method"] == "GET"
     assert "unsafe_write" not in json.dumps(api_card)
+
+
+def test_context_cards_include_mechanical_role_and_field_hints():
+    schema_card = build_allowed_local_schema_card(_schema_context())
+    schema = next(row for row in schema_card if row["table"] == "dim_schema")
+    campaign = next(row for row in schema_card if row["table"] == "dim_campaign")
+
+    assert "schema" in schema["table_role_hints"]
+    assert "snapshot_record_table" in schema["table_role_hints"]
+    assert schema["field_hints"]["id_fields"] == ["SCHEMAID"]
+    assert schema["field_hints"]["name_fields"] == ["NAME"]
+    assert schema["field_hints"]["status_fields"] == ["STATUS"]
+    assert "journey" in campaign["table_role_hints"]
+    assert "campaign" in campaign["table_role_hints"]
+    assert campaign["field_hints"]["date_fields"] == ["PUBLISHEDAT"]
+
+
+def test_api_context_card_exposes_domains_common_params_and_examples_for_llm_selection():
+    api_card = build_allowed_api_context_card(_endpoint_context())
+    schemas = next(row for row in api_card if row["endpoint_id"] == "schemas_list")
+
+    assert schemas["domains"] == []
+    assert schemas["common_params"] == {"limit": 25}
+    assert schemas["query_params"] == ["limit"]
+    assert schemas["examples"] == [{"query": "profile-enabled ExperienceEvent schemas"}]
 
 
 def test_semantic_ir_validator_checks_existence_without_correction():
@@ -566,12 +591,62 @@ def test_semantic_ir_planner_prompt_keeps_local_source_preference_llm_owned(monk
     assert "SDK toolcall Semantic IR" in system_prompt
     assert "Prefer LOCAL_QUERY" in rules
     assert "LIVE_QUERY is the wrong source" in rules
+    assert "unless the prompt names an API catalog resource" in rules
+    assert "schemas alone" in rules
+    assert "Schema Registry" in rules
     assert "local_query.count=true" in rules
     assert "select all relevant local timestamp candidates" in rules
     assert "unless the prompt explicitly asks for live/current/platform/API" in rules
+    assert "sandbox" in rules
+    assert "batch" in rules
+    assert "segment definitions" in rules
+    assert "endpoint catalog" in rules.lower()
     assert "mixed concept plus data" in rules
     assert "compare local/live" in rules
+    assert "primary_name_fields" in rules
+    assert "label_fields" in rules
+    assert "literal INACTIVE enum" in rules
     assert "backend" not in rules.lower() or "will not choose" in system_prompt
+
+
+def test_context_cards_distinguish_primary_name_and_label_fields():
+    card = build_allowed_local_schema_card(
+        {
+            "tables": {
+                "dim_campaign": {
+                    "columns": [
+                        {"name": "CAMPAIGNID"},
+                        {"name": "NAME"},
+                        {"name": "LABELSCAMPAIGN"},
+                        {"name": "SEMANTICLABELS"},
+                        {"name": "STATUS"},
+                        {"name": "STATE"},
+                    ]
+                }
+            }
+        }
+    )
+
+    hints = card[0]["field_hints"]
+    assert hints["primary_name_fields"] == ["NAME"]
+    assert hints["label_fields"] == ["LABELSCAMPAIGN", "SEMANTICLABELS"]
+    assert hints["entity_lookup_fields"][:2] == ["NAME", "LABELSCAMPAIGN"]
+
+
+def test_missing_toolcall_gets_one_semantic_ir_retry_before_atomic_fallback(monkeypatch):
+    client = ToolCallSemanticIRClient(["plain text without tool call", _direct_plan()])
+    monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+
+    plan = run_llm_unified_planner(user_prompt="What is a schema?", schema_context=_schema_context(), endpoint_context=_endpoint_context())
+
+    assert plan.route == "LLM_DIRECT"
+    assert plan.diagnostics["sdk_toolcall_semantic_ir_used"] is True
+    assert plan.diagnostics["atomic_protocol_fallback_used"] is False
+    assert plan.diagnostics["semantic_ir_repair_attempted"] is True
+    assert plan.diagnostics["semantic_ir_repair_success"] is True
+    assert len(client.calls) == 2
+    assert client.calls[0]["tools"][0]["function"]["name"] == "submit_semantic_ir_plan"
+    assert client.calls[1]["tool_choice"]["function"]["name"] == "submit_semantic_ir_plan"
 
 
 def test_semantic_ir_planner_prompt_examples_mixed_inactive_journeys_as_concept_plus_local_query(monkeypatch):
@@ -766,6 +841,7 @@ def test_atomic_fallback_only_when_toolcall_unavailable_for_non_pioneer_tool_mod
     client = NoToolCallClient(
         [
             "no tool call available",
+            "still no tool call available",
             "RECORDS=0\nLIST=0\nCOUNT=0\nSTATUS=0\nDATE=0\nLOCAL_SNAPSHOT=0\nLIVE_CURRENT=0\nSHOW_ITEMS=0\nMIXED_CONCEPT_DATA=0\nPURE_CONCEPT=1\nDIRECT_ANSWER=A schema defines data structure.",
         ]
     )
@@ -776,9 +852,12 @@ def test_atomic_fallback_only_when_toolcall_unavailable_for_non_pioneer_tool_mod
     assert plan.route == "LLM_DIRECT"
     assert plan.diagnostics["atomic_protocol_fallback_used"] is True
     assert plan.diagnostics["sdk_toolcall_semantic_ir_used"] is False
-    assert len(client.calls) == 2
+    assert plan.diagnostics["semantic_ir_repair_attempted"] is True
+    assert plan.diagnostics["semantic_ir_repair_success"] is False
+    assert len(client.calls) == 3
     assert client.calls[0]["tools"][0]["function"]["name"] == "submit_semantic_ir_plan"
-    assert client.calls[1]["tools"] is None
+    assert client.calls[1]["tools"][0]["function"]["name"] == "submit_semantic_ir_plan"
+    assert client.calls[2]["tools"] is None
 
 
 def test_packaged_default_remains_sql_first_api_verify():

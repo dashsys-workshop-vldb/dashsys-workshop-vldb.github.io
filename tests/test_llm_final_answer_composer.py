@@ -117,6 +117,32 @@ def test_semantic_gate_rejects_missing_required_count_when_evidence_contains_it(
     assert "count" in result.missing_required_fields
 
 
+def test_semantic_gate_allows_published_date_answer_without_repeating_status_word():
+    tool_results = [_sql_tool_result([{"NAME": "Birthday Message", "CREATEDTIME": "2026-03-31T06:07:32.838462639Z"}])]
+    bus, slots = _bus_and_slots('When was the journey "Birthday Message" published?', tool_results)
+    slots.statuses = ["published"]
+
+    result = check_final_answer_semantic_grounding(
+        "Local snapshot evidence shows Birthday Message date: 2026-03-31T06:07:32.838462639Z.",
+        question='When was the journey "Birthday Message" published?',
+        runtime_passes=[
+            {
+                "pass_id": "t1_lookup_journey",
+                "source": "SQL",
+                "path": "SQL",
+                "status": "SUCCESS",
+                "scope": "LOCAL_SNAPSHOT",
+                "facts": ["NAME:Birthday Message", "CREATEDTIME:2026-03-31T06:07:32.838462639Z"],
+                "source_results": [{"source": "SQL", "status": "SUCCESS", "scope": "LOCAL_SNAPSHOT", "result": {"rows": [{"NAME": "Birthday Message", "CREATEDTIME": "2026-03-31T06:07:32.838462639Z"}], "row_count": 1}}],
+            }
+        ],
+        evidence_bus=bus,
+        slots=slots,
+    )
+
+    assert result.passed is True
+
+
 def test_semantic_gate_allows_broad_schema_summary_with_count_and_sample():
     rows = [
         {"NAME": "Schema Alpha"},
@@ -142,6 +168,43 @@ def test_semantic_gate_allows_broad_schema_summary_with_count_and_sample():
                 "scope": "LOCAL_SNAPSHOT",
                 "facts": ["NAME:Schema Alpha", "NAME:Schema Beta", "NAME:Schema Gamma"],
                 "source_results": [{"source": "SQL", "status": "SUCCESS", "scope": "LOCAL_SNAPSHOT", "result": {"rows": rows, "row_count": 74}}],
+            }
+        ],
+        evidence_bus=bus,
+        slots=slots,
+    )
+
+    assert result.passed is True
+
+
+def test_semantic_gate_allows_broad_schema_summary_with_including_word_and_long_names():
+    rows = [
+        {"NAME": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c"},
+        {"NAME": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7"},
+        {"NAME": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355"},
+        {"NAME": "Adhoc XDM Schema for dataset JOJourneyVersionsDs_961ddfca-2199-4783-b16c-9226938e0d93"},
+    ]
+    tool_results = [_sql_tool_result(rows)]
+    bus, slots = _bus_and_slots("What schemas do I have?", tool_results)
+    slots.sql_row_count = 50
+    slots.counts = [50]
+    slots.entity_names = [row["NAME"] for row in rows]
+
+    result = check_final_answer_semantic_grounding(
+        "The local snapshot contains 50 schemas, including "
+        "Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c, "
+        "Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7, and "
+        "Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355.",
+        question="What schemas do I have?",
+        runtime_passes=[
+            {
+                "pass_id": "schema_list",
+                "source": "SQL",
+                "path": "SQL",
+                "status": "SUCCESS",
+                "scope": "LOCAL_SNAPSHOT",
+                "facts": [f"NAME:{row['NAME']}" for row in rows[:3]],
+                "source_results": [{"source": "SQL", "status": "SUCCESS", "scope": "LOCAL_SNAPSHOT", "result": {"rows": rows, "row_count": 50}}],
             }
         ],
         evidence_bus=bus,
@@ -259,6 +322,16 @@ def test_claim_extractor_ignores_numbered_list_markers_as_counts():
     assert "1" not in count_values
     assert "2" not in count_values
     assert "3" not in count_values
+
+
+def test_claim_extractor_ignores_unquoted_numeric_entity_suffixes_and_percent_names():
+    claims = extract_final_answer_claims(
+        "The retrieved segments include Person: Birthday Today 001 and Campaign: 25% Off Purchase Offer Reminder."
+    )
+
+    count_values = {claim.value for claim in claims if claim.type == "COUNT"}
+    assert "001" not in count_values
+    assert "25" not in count_values
 
 
 def test_semantic_gate_allows_draft_as_conceptual_example_when_data_statuses_differ():
@@ -818,6 +891,122 @@ def test_safe_fallback_with_runtime_facts_summarizes_scoped_evidence_not_global_
     assert "count: 74" in answer
     assert "Runtime evidence was unavailable" not in answer
     assert "could not compose a verified final answer" not in answer
+
+
+def test_safe_fallback_prefers_structured_values_over_raw_json_like_facts():
+    answer = safe_llm_final_answer_fallback(
+        [
+            {
+                "pass_id": "segment_defs",
+                "path": "SQL",
+                "source": "SQL",
+                "status": "SUCCESS",
+                "scope": "LOCAL_SNAPSHOT",
+                "facts": [
+                    'DEFINITION: {"nodeType":"fnApply","params":[{"fieldName":"birthDate"}]}',
+                    "NAME: Person: Birthday Today 001",
+                    "LIFECYCLESTATUS: published",
+                ],
+                "source_results": [
+                    {
+                        "source": "SQL",
+                        "status": "SUCCESS",
+                        "scope": "LOCAL_SNAPSHOT",
+                        "result": {
+                            "row_count": 1,
+                            "rows": [
+                                {
+                                    "NAME": "Person: Birthday Today 001",
+                                    "LIFECYCLESTATUS": "published",
+                                }
+                            ],
+                        },
+                    }
+                ],
+            }
+        ]
+    )
+
+    assert "Person: Birthday Today 001" in answer
+    assert "status: published" in answer
+    assert "nodeType" not in answer
+
+
+def test_safe_fallback_broad_schema_list_uses_examples_include_and_passes_gate():
+    rows = [
+        {"NAME": "Schema Alpha", "SCHEMAID": "schema-alpha"},
+        {"NAME": "Schema Beta", "SCHEMAID": "schema-beta"},
+        {"NAME": "Schema Gamma", "SCHEMAID": "schema-gamma"},
+    ]
+    runtime_passes = [
+        {
+            "pass_id": "t1_local_schemas",
+            "path": "SQL",
+            "source": "SQL",
+            "status": "SUCCESS",
+            "scope": "LOCAL_SNAPSHOT",
+            "facts": ["NAME: Schema Alpha", "NAME: Schema Beta", "NAME: Schema Gamma"],
+            "source_results": [{"source": "SQL", "status": "SUCCESS", "scope": "LOCAL_SNAPSHOT", "result": {"rows": rows, "row_count": 50}}],
+        }
+    ]
+    answer = safe_llm_final_answer_fallback(runtime_passes)
+    bus, slots = _bus_and_slots("What schemas do I have?", [_sql_tool_result(rows)])
+    slots.sql_row_count = 50
+    slots.counts = [50]
+    slots.entity_names = [row["NAME"] for row in rows]
+
+    gate = check_final_answer_semantic_grounding(
+        answer,
+        question="What schemas do I have?",
+        runtime_passes=runtime_passes,
+        evidence_bus=bus,
+        slots=slots,
+    )
+
+    assert "examples include" in answer
+    assert gate.passed is True
+
+
+def test_safe_fallback_ignores_failed_direct_concept_task_when_local_data_succeeds():
+    answer = safe_llm_final_answer_fallback(
+        [
+            {
+                "pass_id": "t1_concept",
+                "path": "DIRECT",
+                "source": "DIRECT",
+                "status": "ERROR",
+                "scope": "CONCEPT",
+                "caveats": ["unsafe direct task answer"],
+                "source_results": [{"source": "DIRECT", "status": "ERROR", "scope": "CONCEPT"}],
+            },
+            {
+                "pass_id": "t2_local",
+                "path": "SQL",
+                "source": "SQL",
+                "status": "SUCCESS",
+                "scope": "LOCAL_SNAPSHOT",
+                "facts": ["NAME: Birthday Message", "NAME: Gold Tier Welcome Email", "STATUS: updated"],
+                "source_results": [
+                    {
+                        "source": "SQL",
+                        "status": "SUCCESS",
+                        "scope": "LOCAL_SNAPSHOT",
+                        "result": {
+                            "row_count": 2,
+                            "rows": [
+                                {"NAME": "Birthday Message", "STATUS": "updated"},
+                                {"NAME": "Gold Tier Welcome Email", "STATUS": "created"},
+                            ],
+                        },
+                    }
+                ],
+            },
+        ]
+    )
+
+    assert "Birthday Message" in answer
+    assert "Gold Tier Welcome Email" in answer
+    assert "Some requested runtime evidence was unavailable" not in answer
 
 
 def test_safe_fallback_with_local_status_and_api_error_gives_scoped_evidence_state_answer():

@@ -129,6 +129,42 @@ def test_smoke_row_counts_compacted_sql_success_with_answer_slots_as_runtime_fac
     assert row["pass"] is True
 
 
+def test_smoke_partial_caveat_after_local_facts_is_not_global_unavailable():
+    result = {
+        "final_answer": "Local snapshot evidence shows count: 2; examples include Birthday Message. Some requested runtime evidence was unavailable for this query/scope.",
+        "output_dir": "/tmp/out",
+        "trajectory": {
+            "steps": [
+                {
+                    "kind": "llm_unified_planner",
+                    "route": "EVIDENCE_PIPELINE",
+                    "diagnostics": {
+                        "sdk_toolcall_semantic_ir_used": True,
+                        "semantic_ir_validation_passed": True,
+                        "backend_formal_compilation_used": True,
+                        "atomic_protocol_fallback_used": False,
+                        "compiled_sql_count": 1,
+                        "compiled_api_count": 0,
+                    },
+                    "passes": [{"path": "SQL"}],
+                },
+                {"kind": "sql_call", "result": {"ok": True, "row_count": 2, "rows": [{"NAME": "Birthday Message"}, {"NAME": "Gold Tier Welcome Email"}]}},
+                {"kind": "evidence_boundary", "evidence_pipeline_bypassed": False, "evidence_bus_built": True},
+                {"kind": "answer_diagnostics", "semantic_gate": {"passed": True, "unsupported_claims": []}, "answer_semantic_gate_passed": True},
+            ]
+        },
+        "checkpoints": [
+            {"checkpoint_id": "checkpoint_llm_final_answer_semantic_gate", "output": {"passed": True}},
+            {"checkpoint_id": "checkpoint_llm_owned_final_answer_boundary", "output": {"answer_semantic_gate_passed": True}},
+        ],
+    }
+
+    row = _build_smoke_row({"id": "mixed_inactive_journeys", "prompt": "Explain what inactive journey means and show inactive journeys.", "expected": "EVIDENCE_LOCAL"}, result)
+
+    assert row["runtime_fact_count"] > 0
+    assert row["final_unavailable_with_runtime_facts"] is False
+
+
 def test_smoke_row_fails_local_preference_when_data_prompt_uses_api_only():
     result = {
         "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
@@ -368,6 +404,57 @@ def test_prompt_timeout_escalates_to_kill_when_terminate_does_not_stop_worker(mo
     assert fake_process.terminate_called is True
     assert fake_process.kill_called is True
     assert row["timed_out"] is True
+
+
+def test_prompt_worker_waits_for_queue_payload_after_process_exit(monkeypatch, tiny_project):
+    captured = {}
+
+    class FakeQueue:
+        def get(self, timeout=None):
+            captured["queue_timeout"] = timeout
+            return {
+                "ok": True,
+                "row": {
+                    "prompt_id": "quick_prompt",
+                    "prompt": "What schemas do I have?",
+                    "expected": "EVIDENCE_LOCAL",
+                    "pass": True,
+                    "timed_out": False,
+                },
+            }
+
+    class FakeProcess:
+        exitcode = 0
+
+        def start(self):
+            return None
+
+        def join(self, timeout=None):
+            return None
+
+        def is_alive(self):
+            return False
+
+    class FakeContext:
+        def Queue(self, maxsize=0):
+            return FakeQueue()
+
+        def Process(self, *args, **kwargs):
+            return FakeProcess()
+
+    monkeypatch.setattr(smoke.mp, "get_context", lambda *_args, **_kwargs: FakeContext())
+
+    row = _run_prompt_with_timeout(
+        {"id": "quick_prompt", "prompt": "What schemas do I have?", "expected": "EVIDENCE_LOCAL"},
+        config=tiny_project,
+        report_dir=tiny_project.outputs_dir / "smoke",
+        prompt_timeout_sec=5,
+        llm_call_timeout_sec=1,
+    )
+
+    assert captured["queue_timeout"] == 5
+    assert row["prompt_id"] == "quick_prompt"
+    assert row["pass"] is True
 
 
 def test_smoke_uses_gemini_openai_compat_probe_and_report_name(monkeypatch, tiny_project, tmp_path):

@@ -1,5 +1,5 @@
 {
-  "answer_time": 3.0490248748101294,
+  "answer_time": 2.449672957882285,
   "api_call_count": 0,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-02T08:06:59.401906+00:00"
+      "timestamp": "2026-06-02T09:51:58.119567+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-02T08:06:59.402410+00:00"
+      "timestamp": "2026-06-02T09:51:58.120530+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,7 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-02T08:06:59.402800+00:00"
+      "timestamp": "2026-06-02T09:51:58.121184+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner_start",
@@ -86,7 +86,7 @@
       },
       "stage": "llm-owned planning",
       "technique": "pre-call heartbeat before Unified LLM Planner",
-      "timestamp": "2026-06-02T08:06:59.409770+00:00"
+      "timestamp": "2026-06-02T09:51:58.129482+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -112,7 +112,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 9229,
+        "planner_provider_latency_ms": 26020,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -140,29 +140,22 @@
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
         "semantic_ir_plan_preview": {
-          "aggregation_instruction": "State the total number of local schema records (blueprints) retrieved from the dim_blueprint table count query.",
+          "aggregation_instruction": "Return the count from task_1 as the final answer.",
           "route": "EVIDENCE",
           "tasks": {
             "items": [
               {
-                "description": "Count the number of schema records (blueprints) in the local snapshot.",
+                "description": "Count the number of schema/blueprint records in the local snapshot table dim_blueprint.",
                 "kind": "LOCAL_QUERY",
                 "local_query": {
                   "count": true,
-                  "fields": {
-                    "items": [
-                      "BLUEPRINTID"
-                    ],
-                    "total_items": 1,
-                    "truncated_items": false
-                  },
                   "table": "dim_blueprint"
                 },
                 "operation": "COUNT",
                 "reuse_result_from": null,
                 "semantic_cache_key": null,
                 "source": "LOCAL_SNAPSHOT",
-                "task_id": "count_local_schemas",
+                "task_id": "task_1",
                 "truncated_fields": 7
               }
             ],
@@ -170,10 +163,10 @@
             "truncated_items": false
           }
         },
-        "semantic_ir_provider_latency_ms": 9225,
-        "semantic_ir_repair_attempted": false,
-        "semantic_ir_repair_latency_ms": 0,
-        "semantic_ir_repair_success": false,
+        "semantic_ir_provider_latency_ms": 26018,
+        "semantic_ir_repair_attempted": true,
+        "semantic_ir_repair_latency_ms": 11700,
+        "semantic_ir_repair_success": true,
         "semantic_ir_support_check_latency_ms": 0,
         "semantic_ir_support_checked": true,
         "semantic_ir_support_recommended_action": "COMPILE",
@@ -197,20 +190,20 @@
         "v2_semantic_ir_used": true
       },
       "output": {
-        "aggregation_instruction": "State the total number of local schema records (blueprints) retrieved from the dim_blueprint table count query.",
+        "aggregation_instruction": "Return the count from task_1 as the final answer.",
         "evidence_order": "SQL_FIRST",
-        "model": "[REDACTED]",
+        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "passes": {
           "items": [
             {
-              "pass_id": "count_local_schemas",
+              "pass_id": "task_1",
               "path": "SQL",
               "raw_sql_fallback_reason": null,
               "raw_sql_fallback_task_id": null,
               "raw_sql_fallback_used": false,
               "reuse_result_from": null,
               "semantic_cache_key": null,
-              "subtask": "Count the number of schema records (blueprints) in the local snapshot.",
+              "subtask": "Count the number of schema/blueprint records in the local snapshot table dim_blueprint.",
               "truncated_fields": 9
             }
           ],
@@ -227,7 +220,7 @@
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-02T08:07:08.643558+00:00"
+      "timestamp": "2026-06-02T09:52:24.153952+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
@@ -239,7 +232,7 @@
         "evidence_order": "SQL_FIRST",
         "pass_ids": {
           "items": [
-            "count_local_schemas"
+            "task_1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -255,7 +248,7 @@
           "items": [
             {
               "items": [
-                "count_local_schemas"
+                "task_1"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -267,7 +260,7 @@
         "pass_count": 1,
         "pass_ids": {
           "items": [
-            "count_local_schemas"
+            "task_1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -276,7 +269,7 @@
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-02T08:07:08.649204+00:00"
+      "timestamp": "2026-06-02T09:52:24.157770+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -292,7 +285,7 @@
         },
         "pass_ids": {
           "items": [
-            "count_local_schemas"
+            "task_1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -315,7 +308,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "count_local_schemas"
+            "task_1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -340,7 +333,7 @@
           "items": [
             {
               "items": [
-                "count_local_schemas"
+                "task_1"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -351,7 +344,7 @@
         },
         "pass_ids": {
           "items": [
-            "count_local_schemas"
+            "task_1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -362,7 +355,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-02T08:07:08.652232+00:00"
+      "timestamp": "2026-06-02T09:52:24.159087+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -375,7 +368,7 @@
           "items": [
             {
               "items": [
-                "count_local_schemas"
+                "task_1"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -386,7 +379,7 @@
         },
         "pass_ids": {
           "items": [
-            "count_local_schemas"
+            "task_1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -405,7 +398,7 @@
           "items": [
             {
               "items": [
-                "count_local_schemas"
+                "task_1"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -416,7 +409,7 @@
         },
         "passes_completed": {
           "items": [
-            "count_local_schemas"
+            "task_1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -437,10 +430,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_8f1f489f871c44428898826fb2c79808:count_local_schemas",
-              "pass_id": "count_local_schemas",
+              "global_pass_id": "run_35fd15dcf2d744b5902c66982150ae85:task_1",
+              "pass_id": "task_1",
               "plan_version": 1,
-              "run_id": "run_8f1f489f871c44428898826fb2c79808",
+              "run_id": "run_35fd15dcf2d744b5902c66982150ae85",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -448,10 +441,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_8f1f489f871c44428898826fb2c79808:count_local_schemas",
-              "pass_id": "count_local_schemas",
+              "global_pass_id": "run_35fd15dcf2d744b5902c66982150ae85:task_1",
+              "pass_id": "task_1",
               "plan_version": 1,
-              "run_id": "run_8f1f489f871c44428898826fb2c79808",
+              "run_id": "run_35fd15dcf2d744b5902c66982150ae85",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -459,10 +452,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_8f1f489f871c44428898826fb2c79808:count_local_schemas",
-              "pass_id": "count_local_schemas",
+              "global_pass_id": "run_35fd15dcf2d744b5902c66982150ae85:task_1",
+              "pass_id": "task_1",
               "plan_version": 1,
-              "run_id": "run_8f1f489f871c44428898826fb2c79808",
+              "run_id": "run_35fd15dcf2d744b5902c66982150ae85",
               "stage": "DEPENDENCY_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -476,7 +469,7 @@
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-02T08:07:08.654156+00:00"
+      "timestamp": "2026-06-02T09:52:24.160379+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
@@ -488,7 +481,7 @@
         "multi_pass_enabled": false,
         "pass_ids": {
           "items": [
-            "count_local_schemas"
+            "task_1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -517,7 +510,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "count_local_schemas"
+            "task_1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -538,7 +531,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_8f1f489f871c44428898826fb2c79808",
+        "evidence_bus_id": "evidence_run_35fd15dcf2d744b5902c66982150ae85",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -553,7 +546,7 @@
           "items": [
             {
               "items": [
-                "count_local_schemas"
+                "task_1"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -569,7 +562,7 @@
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "count_local_schemas"
+            "task_1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -577,7 +570,7 @@
         "pass_results_count": 1,
         "passes_completed": {
           "items": [
-            "count_local_schemas"
+            "task_1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -589,7 +582,7 @@
         },
         "passes_executed": {
           "items": [
-            "count_local_schemas"
+            "task_1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -611,8 +604,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_8f1f489f871c44428898826fb2c79808",
-        "run_id": "run_8f1f489f871c44428898826fb2c79808",
+        "result_bundle_id": "bundle_run_35fd15dcf2d744b5902c66982150ae85",
+        "run_id": "run_35fd15dcf2d744b5902c66982150ae85",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -623,7 +616,7 @@
         "semantic_alias_validation_failures": 0,
         "sequential_pass_count": 0,
         "sql_execution_latency_sec": 0.001,
-        "sql_gate_latency_sec": 0.004,
+        "sql_gate_latency_sec": 0.002,
         "sql_gate_passed": true,
         "sql_repair_attempts": 0,
         "stage_events": {
@@ -631,10 +624,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_8f1f489f871c44428898826fb2c79808:count_local_schemas",
-              "pass_id": "count_local_schemas",
+              "global_pass_id": "run_35fd15dcf2d744b5902c66982150ae85:task_1",
+              "pass_id": "task_1",
               "plan_version": 1,
-              "run_id": "run_8f1f489f871c44428898826fb2c79808",
+              "run_id": "run_35fd15dcf2d744b5902c66982150ae85",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -642,10 +635,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_8f1f489f871c44428898826fb2c79808:count_local_schemas",
-              "pass_id": "count_local_schemas",
+              "global_pass_id": "run_35fd15dcf2d744b5902c66982150ae85:task_1",
+              "pass_id": "task_1",
               "plan_version": 1,
-              "run_id": "run_8f1f489f871c44428898826fb2c79808",
+              "run_id": "run_35fd15dcf2d744b5902c66982150ae85",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -653,10 +646,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_8f1f489f871c44428898826fb2c79808:count_local_schemas",
-              "pass_id": "count_local_schemas",
+              "global_pass_id": "run_35fd15dcf2d744b5902c66982150ae85:task_1",
+              "pass_id": "task_1",
               "plan_version": 1,
-              "run_id": "run_8f1f489f871c44428898826fb2c79808",
+              "run_id": "run_35fd15dcf2d744b5902c66982150ae85",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -672,7 +665,7 @@
       },
       "stage": "llm-owned pass scheduling",
       "technique": "dependency-aware scheduling of LLM-declared evidence passes",
-      "timestamp": "2026-06-02T08:07:08.655338+00:00"
+      "timestamp": "2026-06-02T09:52:24.161309+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -681,7 +674,7 @@
       "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
       "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
       "input_summary": {
-        "pass_id": "count_local_schemas"
+        "pass_id": "task_1"
       },
       "output": {
         "errors": {
@@ -691,11 +684,11 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_8f1f489f871c44428898826fb2c79808"
+        "run_id": "run_35fd15dcf2d744b5902c66982150ae85"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T08:07:08.657702+00:00"
+      "timestamp": "2026-06-02T09:52:24.162269+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
@@ -704,17 +697,17 @@
       "effect": "checks syntax/database-semantic validity without rewriting SQL",
       "efficiency_role": "prevents executing uncompilable SQL",
       "input_summary": {
-        "pass_id": "count_local_schemas",
+        "pass_id": "task_1",
         "sql": "SELECT COUNT(*) AS count FROM \"dim_blueprint\""
       },
       "output": {
-        "pass_id": "count_local_schemas",
+        "pass_id": "task_1",
         "passed": true,
         "sql": "SELECT COUNT(*) AS count FROM \"dim_blueprint\""
       },
       "stage": "llm sql compile gate",
       "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
-      "timestamp": "2026-06-02T08:07:08.663177+00:00"
+      "timestamp": "2026-06-02T09:52:24.165390+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -757,7 +750,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "count_local_schemas"
+            "task_1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -778,7 +771,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_8f1f489f871c44428898826fb2c79808",
+        "evidence_bus_id": "evidence_run_35fd15dcf2d744b5902c66982150ae85",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -796,7 +789,7 @@
           "items": [
             {
               "items": [
-                "count_local_schemas"
+                "task_1"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -812,7 +805,7 @@
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "count_local_schemas"
+            "task_1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -820,7 +813,7 @@
         "pass_results_count": 1,
         "passes_completed": {
           "items": [
-            "count_local_schemas"
+            "task_1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -832,7 +825,7 @@
         },
         "passes_executed": {
           "items": [
-            "count_local_schemas"
+            "task_1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -854,8 +847,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_8f1f489f871c44428898826fb2c79808",
-        "run_id": "run_8f1f489f871c44428898826fb2c79808",
+        "result_bundle_id": "bundle_run_35fd15dcf2d744b5902c66982150ae85",
+        "run_id": "run_35fd15dcf2d744b5902c66982150ae85",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -866,7 +859,7 @@
         "semantic_alias_validation_failures": 0,
         "sequential_pass_count": 0,
         "sql_execution_latency_sec": 0.001,
-        "sql_gate_latency_sec": 0.004,
+        "sql_gate_latency_sec": 0.002,
         "sql_gate_passed": true,
         "sql_repair_attempts": 0,
         "stage_events": {
@@ -874,10 +867,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_8f1f489f871c44428898826fb2c79808:count_local_schemas",
-              "pass_id": "count_local_schemas",
+              "global_pass_id": "run_35fd15dcf2d744b5902c66982150ae85:task_1",
+              "pass_id": "task_1",
               "plan_version": 1,
-              "run_id": "run_8f1f489f871c44428898826fb2c79808",
+              "run_id": "run_35fd15dcf2d744b5902c66982150ae85",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -885,10 +878,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_8f1f489f871c44428898826fb2c79808:count_local_schemas",
-              "pass_id": "count_local_schemas",
+              "global_pass_id": "run_35fd15dcf2d744b5902c66982150ae85:task_1",
+              "pass_id": "task_1",
               "plan_version": 1,
-              "run_id": "run_8f1f489f871c44428898826fb2c79808",
+              "run_id": "run_35fd15dcf2d744b5902c66982150ae85",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -896,10 +889,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_8f1f489f871c44428898826fb2c79808:count_local_schemas",
-              "pass_id": "count_local_schemas",
+              "global_pass_id": "run_35fd15dcf2d744b5902c66982150ae85:task_1",
+              "pass_id": "task_1",
               "plan_version": 1,
-              "run_id": "run_8f1f489f871c44428898826fb2c79808",
+              "run_id": "run_35fd15dcf2d744b5902c66982150ae85",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -915,7 +908,7 @@
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-02T08:07:08.665796+00:00"
+      "timestamp": "2026-06-02T09:52:24.167331+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -959,7 +952,7 @@
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-02T08:07:08.749511+00:00"
+      "timestamp": "2026-06-02T09:52:24.267168+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -982,7 +975,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-02T08:07:08.749905+00:00"
+      "timestamp": "2026-06-02T09:52:24.267811+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -1004,18 +997,18 @@
           },
           "pass_ids": {
             "items": [
-              "count_local_schemas"
+              "task_1"
             ],
             "total_items": 1,
             "truncated_items": false
           },
           "pass_result_count": 1,
-          "run_id": "run_8f1f489f871c44428898826fb2c79808"
+          "run_id": "run_35fd15dcf2d744b5902c66982150ae85"
         }
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-02T08:07:08.750349+00:00"
+      "timestamp": "2026-06-02T09:52:24.269091+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -1033,14 +1026,14 @@
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "count_local_schemas"
+              "pass_id": "task_1"
             }
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "pass_results_count": 1,
-        "run_id": "run_8f1f489f871c44428898826fb2c79808",
+        "run_id": "run_35fd15dcf2d744b5902c66982150ae85",
         "runtime_passes": {
           "items": [
             {
@@ -1058,13 +1051,13 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_8f1f489f871c44428898826fb2c79808"
+                "run_id": "run_35fd15dcf2d744b5902c66982150ae85"
               },
-              "global_pass_id": "run_8f1f489f871c44428898826fb2c79808:count_local_schemas",
-              "pass_id": "count_local_schemas",
+              "global_pass_id": "run_35fd15dcf2d744b5902c66982150ae85:task_1",
+              "pass_id": "task_1",
               "path": "SQL",
               "plan_version": 1,
-              "run_id": "run_8f1f489f871c44428898826fb2c79808",
+              "run_id": "run_35fd15dcf2d744b5902c66982150ae85",
               "status": "SUCCESS",
               "truncated_fields": 6
             }
@@ -1075,7 +1068,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-02T08:07:08.750817+00:00"
+      "timestamp": "2026-06-02T09:52:24.270996+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -1106,7 +1099,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-02T08:07:08.751291+00:00"
+      "timestamp": "2026-06-02T09:52:24.271852+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -1150,7 +1143,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-02T08:07:08.759028+00:00"
+      "timestamp": "2026-06-02T09:52:24.281128+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer_start",
@@ -1166,7 +1159,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "pre-call heartbeat before LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T08:07:08.759434+00:00"
+      "timestamp": "2026-06-02T09:52:24.282141+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -1202,11 +1195,11 @@
       },
       "output": {
         "backend_unavailable": false,
-        "final_answer": "There are 74 local schema records (blueprints) in the local snapshot.",
-        "model": "[REDACTED]",
+        "final_answer": "There are 74 schema records in the local snapshot.",
+        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "parse_error": false,
         "provider": "openai",
-        "raw_preview": "There are 74 local schema records (blueprints) in the local snapshot.",
+        "raw_preview": "There are 74 schema records in the local snapshot.",
         "used_pass_ids": {
           "items": [],
           "total_items": 0,
@@ -1215,7 +1208,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T08:07:11.731887+00:00"
+      "timestamp": "2026-06-02T09:52:26.712260+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -1227,12 +1220,12 @@
         "composer": "LLMFinalAnswerComposer"
       },
       "output": {
-        "final_answer": "There are 74 local schema records (blueprints) in the local snapshot.",
+        "final_answer": "There are 74 schema records in the local snapshot.",
         "passed": true
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-02T08:07:11.734291+00:00"
+      "timestamp": "2026-06-02T09:52:26.712790+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -1317,7 +1310,7 @@
       },
       "stage": "answer gate",
       "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-02T08:07:11.797382+00:00"
+      "timestamp": "2026-06-02T09:52:26.716578+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -1336,8 +1329,8 @@
         "deterministic_answer_template_used": false,
         "final_answer_repair_latency_sec": 0.0,
         "final_answer_supported_by_evidence": true,
-        "final_composer_latency_sec": 2.963,
-        "final_gate_latency_sec": 0.063,
+        "final_composer_latency_sec": 2.429,
+        "final_gate_latency_sec": 0.004,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 2,
@@ -1349,7 +1342,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-02T08:07:11.798185+00:00"
+      "timestamp": "2026-06-02T09:52:26.717356+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -1378,30 +1371,30 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-02T08:07:11.798891+00:00"
+      "timestamp": "2026-06-02T09:52:26.718239+00:00"
     }
   ],
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 1630,
+  "estimated_tokens": 1675,
   "execution_time": 0.0,
-  "final_answer": "There are 74 local schema records (blueprints) in the local snapshot.",
+  "final_answer": "There are 74 schema records in the local snapshot.",
   "original_query": "How many schema records are in the local snapshot?",
   "planning_time": 0.0,
   "preprocessing_time": 0.0,
   "query_id": "hermes_toolcall_local_schema_count",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 3.1537097091786563,
+  "runtime": 2.5854050419293344,
   "sql_call_count": 1,
   "steps": [
     {
-      "estimated_tokens": 1564,
+      "estimated_tokens": 1601,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/hermes_toolcall_local_schema_count/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 2246
+      "prompt_tokens": 2270
     },
     {
-      "aggregation_instruction": "State the total number of local schema records (blueprints) retrieved from the dim_blueprint table count query.",
+      "aggregation_instruction": "Return the count from task_1 as the final answer.",
       "api_request": null,
       "backend_unavailable": false,
       "diagnostics": {
@@ -1419,7 +1412,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 9229,
+        "planner_provider_latency_ms": 26020,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -1447,29 +1440,22 @@
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
         "semantic_ir_plan_preview": {
-          "aggregation_instruction": "State the total number of local schema records (blueprints) retrieved from the dim_blueprint table count query.",
+          "aggregation_instruction": "Return the count from task_1 as the final answer.",
           "route": "EVIDENCE",
           "tasks": {
             "items": [
               {
-                "description": "Count the number of schema records (blueprints) in the local snapshot.",
+                "description": "Count the number of schema/blueprint records in the local snapshot table dim_blueprint.",
                 "kind": "LOCAL_QUERY",
                 "local_query": {
                   "count": true,
-                  "fields": {
-                    "items": [
-                      "BLUEPRINTID"
-                    ],
-                    "total_items": 1,
-                    "truncated_items": false
-                  },
                   "table": "dim_blueprint"
                 },
                 "operation": "COUNT",
                 "reuse_result_from": null,
                 "semantic_cache_key": null,
                 "source": "LOCAL_SNAPSHOT",
-                "task_id": "count_local_schemas",
+                "task_id": "task_1",
                 "truncated_fields": 7
               }
             ],
@@ -1477,10 +1463,10 @@
             "truncated_items": false
           }
         },
-        "semantic_ir_provider_latency_ms": 9225,
-        "semantic_ir_repair_attempted": false,
-        "semantic_ir_repair_latency_ms": 0,
-        "semantic_ir_repair_success": false,
+        "semantic_ir_provider_latency_ms": 26018,
+        "semantic_ir_repair_attempted": true,
+        "semantic_ir_repair_latency_ms": 11700,
+        "semantic_ir_repair_success": true,
         "semantic_ir_support_check_latency_ms": 0,
         "semantic_ir_support_checked": true,
         "semantic_ir_support_recommended_action": "COMPILE",
@@ -1506,7 +1492,7 @@
       "direct_answer": null,
       "evidence_order": "SQL_FIRST",
       "kind": "llm_unified_planner",
-      "model": "[REDACTED]",
+      "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
       "parse_error": false,
       "passes": [
         {
@@ -1514,41 +1500,41 @@
           "can_run_parallel": true,
           "depends_on": [],
           "evidence_order": "SQL_FIRST",
-          "expected_result": "Count the number of schema records (blueprints) in the local snapshot.",
+          "expected_result": "Count the number of schema/blueprint records in the local snapshot table dim_blueprint.",
           "fallback": false,
           "optional": false,
-          "pass_id": "count_local_schemas",
+          "pass_id": "task_1",
           "path": "SQL",
           "raw_sql_fallback_reason": null,
           "raw_sql_fallback_task_id": null,
           "raw_sql_fallback_used": false,
-          "result_contract": {
-            "entity": "dim_blueprint",
-            "fields": [
-              "BLUEPRINTID"
-            ],
-            "filters": [],
-            "freshness": "same_run",
-            "object": "schema",
-            "operation": "COUNT",
-            "scope": "local",
-            "source": "LOCAL_SNAPSHOT"
-          },
+          "result_contract": null,
           "reuse_result_from": null,
           "semantic_cache_key": null,
           "sql": {
             "params": [],
             "query": "SELECT COUNT(*) AS count FROM \"dim_blueprint\""
           },
-          "subtask": "Count the number of schema records (blueprints) in the local snapshot."
+          "subtask": "Count the number of schema/blueprint records in the local snapshot table dim_blueprint."
         }
       ],
       "provider": "openai",
       "raw_preview": {
         "semantic_ir_initial": {
-          "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+          "base_url": "[REDACTED]",
           "error": null,
-          "model": "[REDACTED]",
+          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+          "ok": true,
+          "provider": "openai",
+          "sdk_path_used": true,
+          "skipped": false,
+          "transport": "openai_sdk",
+          "truncated_fields": 11
+        },
+        "semantic_ir_missing_toolcall_retry": {
+          "base_url": "[REDACTED]",
+          "error": null,
+          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
           "ok": true,
           "provider": "openai",
           "sdk_path_used": true,
@@ -1607,12 +1593,12 @@
       "caveats_included": [],
       "claimed_facts": [],
       "error_message": null,
-      "final_answer": "There are 74 local schema records (blueprints) in the local snapshot.",
+      "final_answer": "There are 74 schema records in the local snapshot.",
       "kind": "llm_final_answer_composer",
-      "model": "[REDACTED]",
+      "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
       "parse_error": false,
       "provider": "openai",
-      "raw_preview": "There are 74 local schema records (blueprints) in the local snapshot.",
+      "raw_preview": "There are 74 schema records in the local snapshot.",
       "unanswered_subtasks": [],
       "used_pass_ids": []
     },
@@ -1624,8 +1610,8 @@
       "deterministic_answer_template_used": false,
       "final_answer_repair_latency_sec": 0.0,
       "final_answer_supported_by_evidence": true,
-      "final_composer_latency_sec": 2.963,
-      "final_gate_latency_sec": 0.063,
+      "final_composer_latency_sec": 2.429,
+      "final_gate_latency_sec": 0.004,
       "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
       "llm_owned_final_answer": true,
@@ -1702,7 +1688,7 @@
       "syntax_gate": {
         "error_message": null,
         "error_type": null,
-        "final_answer": "There are 74 local schema records (blueprints) in the local snapshot.",
+        "final_answer": "There are 74 schema records in the local snapshot.",
         "passed": true
       },
       "used_pass_ids": []
@@ -1710,7 +1696,7 @@
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 3.0490248748101294
+    "answer_time": 2.449672957882285
   },
   "tool_call_count": 1
 }
