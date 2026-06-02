@@ -126,6 +126,7 @@ def build_llm_final_answer_card(
             "Do not turn LIVE_EMPTY into global absence.",
             "For count prompts, if AVAILABLE_RUNTIME_FACTS includes a count, state that exact count.",
             "For what/list prompts, list or summarize only the names/IDs provided in AVAILABLE_RUNTIME_FACTS.",
+            "If the prompt requests a specific status and runtime rows have a different status, do not list those row IDs/names as if they satisfy the requested status.",
             "For date/when prompts, state the exact date/timestamp from AVAILABLE_RUNTIME_FACTS or say that field was not available in the relevant scope.",
             "For mixed concept plus data prompts, give one concise concept sentence plus the scoped data facts from AVAILABLE_RUNTIME_FACTS.",
             "Keep the final answer concise: usually one to four sentences, no markdown tables, and no long explanatory preamble.",
@@ -318,6 +319,10 @@ def check_final_answer_semantic_grounding(
     if contradiction:
         return FinalAnswerSemanticGateResult(False, "contradiction", contradiction["message"], unsupported_claims=[contradiction])
 
+    status_row_error = _nonmatching_status_row_answer_error(final_answer, question=question, runtime_passes=runtime_passes)
+    if status_row_error:
+        return FinalAnswerSemanticGateResult(False, "contradiction", status_row_error["message"], unsupported_claims=[status_row_error])
+
     verification = verify_evidence_grounded_final_answer(
         final_answer,
         slots=slots,
@@ -466,6 +471,7 @@ def _compact_result_bundle(result_bundle: ResultBundle | None) -> dict[str, Any]
 
 def _available_runtime_facts(runtime_passes: list[dict[str, Any]], answer_slots: AnswerSlots | None) -> list[dict[str, Any]]:
     facts: list[dict[str, Any]] = []
+    id_name_index = _runtime_id_name_index(runtime_passes)
     for item in runtime_passes:
         if not isinstance(item, dict):
             continue
@@ -487,6 +493,7 @@ def _available_runtime_facts(runtime_passes: list[dict[str, Any]], answer_slots:
             "ids": [],
             "statuses": [],
             "dates": [],
+            "relationships": [],
         }
         for source in item.get("source_results", []) if isinstance(item.get("source_results"), list) else []:
             if not isinstance(source, dict):
@@ -499,6 +506,7 @@ def _available_runtime_facts(runtime_passes: list[dict[str, Any]], answer_slots:
             if rows:
                 entry["row_previews"].extend(_strip_sensitive_keys(_compact_rows(rows[:10])))
                 _collect_row_values(entry, rows[:10])
+                _collect_row_relationships(entry, rows[:10], id_name_index)
             row_count = result.get("row_count")
             if row_count not in (None, "", [], {}) and row_count not in entry["counts"]:
                 entry["counts"].append(row_count)
@@ -506,9 +514,9 @@ def _available_runtime_facts(runtime_passes: list[dict[str, Any]], answer_slots:
             _collect_parsed_values(entry, parsed)
         if answer_slots is not None and entry["scope"] == "LOCAL_SNAPSHOT":
             _merge_slot_values(entry, answer_slots)
-        for key in ["row_previews", "counts", "names", "ids", "statuses", "dates", "facts"]:
+        for key in ["row_previews", "counts", "names", "ids", "statuses", "dates", "facts", "relationships"]:
             entry[key] = _dedupe_preserve_order(entry[key])
-        if any(entry[key] for key in ["facts", "row_previews", "counts", "names", "ids", "statuses", "dates"]):
+        if any(entry[key] for key in ["facts", "row_previews", "counts", "names", "ids", "statuses", "dates", "relationships"]):
             facts.append(_strip_sensitive_keys(entry))
     return facts
 
@@ -563,7 +571,7 @@ def _failed_or_unavailable_sources(runtime_passes: list[dict[str, Any]], evidenc
                 )
             )
         item_status = str(item.get("status") or "").upper()
-        if item_status in {"API_ERROR", "ERROR", "LIVE_EMPTY", "EMPTY", "COMPILE_ERROR", "REQUEST_ERROR", "DEPENDENCY_BLOCKED", "BUDGET_EXCEEDED"} and not any(entry.get("task_id") == pass_id for entry in failed):
+        if item_status in {"API_ERROR", "ERROR", "LIVE_EMPTY", "EMPTY", "COMPILE_ERROR", "REQUEST_ERROR", "DEPENDENCY_FAILED", "DEPENDENCY_BLOCKED", "BUDGET_EXCEEDED"} and not any(entry.get("task_id") == pass_id for entry in failed):
             failed.append(
                 _strip_sensitive_keys(
                     {
@@ -738,6 +746,36 @@ def _contradiction(final_answer: str, index: Any) -> dict[str, Any] | None:
     return None
 
 
+def _nonmatching_status_row_answer_error(final_answer: str, *, question: str, runtime_passes: list[dict[str, Any]]) -> dict[str, Any] | None:
+    requested_statuses = _requested_status_terms(question)
+    if not requested_statuses:
+        return None
+    answer = _norm(final_answer)
+    for row in _runtime_rows(runtime_passes):
+        row_statuses = {_norm_status(value) for value in _row_status_values(row)}
+        if not row_statuses or _row_statuses_compatible_with_request(row_statuses, requested_statuses):
+            continue
+        leaked_values = [value for value in _row_identity_values(row) if _value_in_answer(value, answer)]
+        if leaked_values:
+            return {
+                "issue": "nonmatching_status_row_listed",
+                "requested_statuses": sorted(requested_statuses),
+                "row_statuses": sorted(row_statuses),
+                "leaked_values": leaked_values[:5],
+                "message": "Final answer lists row identifiers whose runtime status does not match the requested status.",
+            }
+    return None
+
+
+def _row_statuses_compatible_with_request(row_statuses: set[str], requested_statuses: set[str]) -> bool:
+    if row_statuses & requested_statuses:
+        return True
+    if "inactive" in requested_statuses:
+        active_like = {"active", "running", "enabled"}
+        return not bool(row_statuses & active_like)
+    return False
+
+
 def _missing_required_fields(final_answer: str, *, question: str, index: Any, slots: AnswerSlots, runtime_passes: list[dict[str, Any]] | None = None) -> list[str]:
     answer = _norm(final_answer)
     prompt = _norm(question)
@@ -864,6 +902,78 @@ def _collect_row_values(entry: dict[str, Any], rows: list[dict[str, Any]]) -> No
                 entry["dates"].append(str(value))
 
 
+def _runtime_id_name_index(runtime_passes: list[dict[str, Any]]) -> dict[str, str]:
+    index: dict[str, str] = {}
+    for item in runtime_passes:
+        if not isinstance(item, dict):
+            continue
+        for source in item.get("source_results", []) if isinstance(item.get("source_results"), list) else []:
+            if not isinstance(source, dict) or str(source.get("status") or "").upper() != "SUCCESS":
+                continue
+            result = source.get("result") if isinstance(source.get("result"), dict) else {}
+            for row in _rows_from_result_payload(result):
+                id_values = [_clean_scalar(value) for key, value in row.items() if _is_id_field(key) and _clean_scalar(value)]
+                name_values = [_clean_scalar(value) for key, value in row.items() if _is_name_field(key) and _clean_scalar(value)]
+                if not id_values or not name_values:
+                    continue
+                name = name_values[0]
+                for value in id_values:
+                    index.setdefault(value, name)
+    return index
+
+
+def _collect_row_relationships(entry: dict[str, Any], rows: list[dict[str, Any]], id_name_index: dict[str, str]) -> None:
+    for row in rows:
+        id_fields = [(str(key), _clean_scalar(value)) for key, value in row.items() if _is_id_field(key) and _clean_scalar(value)]
+        relation_fields = [
+            (str(key), _clean_scalar(value))
+            for key, value in row.items()
+            if not _is_id_field(key) and _is_relation_context_field(key) and _clean_scalar(value)
+        ]
+        for left_index, (left_key, left_value) in enumerate(id_fields):
+            for right_key, right_value in id_fields[left_index + 1 :]:
+                left_label = _relationship_label(left_key, left_value, id_name_index)
+                right_label = _relationship_label(right_key, right_value, id_name_index)
+                entry["relationships"].append(f"{left_key}:{left_label} -> {right_key}:{right_label}")
+        for context_key, context_value in relation_fields:
+            for id_key, id_value in id_fields:
+                entry["relationships"].append(f"{context_key}:{context_value} -> {id_key}:{_relationship_label(id_key, id_value, id_name_index)}")
+
+
+def _relationship_label(key: str, value: str, id_name_index: dict[str, str]) -> str:
+    name = id_name_index.get(value)
+    if name and name != value:
+        return f"{value} ({name})"
+    return value
+
+
+def _is_id_field(key: Any) -> bool:
+    normalized = _normalized_field_name(key)
+    return normalized == "id" or normalized.endswith("id")
+
+
+def _is_name_field(key: Any) -> bool:
+    normalized = _normalized_field_name(key)
+    return normalized in {"name", "title", "campaignname", "campaign_name", "blueprintname", "blueprint_name"} or normalized.endswith("name")
+
+
+def _is_relation_context_field(key: Any) -> bool:
+    normalized = _normalized_field_name(key)
+    return any(term in normalized for term in ["class", "schema", "blueprint", "type"])
+
+
+def _normalized_field_name(key: Any) -> str:
+    return re.sub(r"[^a-z0-9_]", "", str(key).lower())
+
+
+def _clean_scalar(value: Any) -> str:
+    if value in (None, "", [], {}):
+        return ""
+    if isinstance(value, (dict, list)):
+        return ""
+    return str(value)
+
+
 def _collect_parsed_values(entry: dict[str, Any], parsed: dict[str, Any]) -> None:
     for key, target in [("names", "names"), ("ids", "ids"), ("statuses", "statuses")]:
         values = parsed.get(key)
@@ -917,6 +1027,8 @@ def _fallback_fact_summary(available: list[dict[str, Any]]) -> str:
         names = [str(value) for value in item.get("names", [])[:3] if value]
         if counts:
             values.append(f"count: {counts[0]}")
+        for value in item.get("relationships", [])[:3]:
+            values.append(f"relationship: {value}")
         if names:
             values.append("examples include " + "; ".join(names))
         for key in ["ids", "statuses", "dates"]:
@@ -1054,6 +1166,59 @@ def _asks_status(prompt: str) -> bool:
 
 def _asks_list(prompt: str) -> bool:
     return bool(re.search(r"\b(list|show|give me|what .+ do i have|which)\b", prompt))
+
+
+def _requested_status_terms(question: str) -> set[str]:
+    prompt = _norm(question)
+    patterns = {
+        "failed": [r"\bfailed\b", r"\bfailure\b", r"\berrored\b"],
+        "succeeded": [r"\bsucceeded\b", r"\bsuccessful\b", r"\bsuccess\b"],
+        "active": [r"\bactive\b", r"\brunning\b"],
+        "inactive": [r"\binactive\b", r"\bnot active\b", r"\bnot running\b"],
+        "enabled": [r"\benabled\b"],
+        "disabled": [r"\bdisabled\b"],
+        "published": [r"\bpublished\b"],
+        "draft": [r"\bdraft\b"],
+    }
+    requested: set[str] = set()
+    for normalized, regexes in patterns.items():
+        if any(re.search(pattern, prompt) for pattern in regexes):
+            requested.add(_norm_status(normalized))
+    if "inactive" in requested:
+        requested.discard("active")
+    return requested
+
+
+def _runtime_rows(runtime_passes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for item in runtime_passes:
+        if not isinstance(item, dict):
+            continue
+        for source in item.get("source_results", []) if isinstance(item.get("source_results"), list) else []:
+            if not isinstance(source, dict) or str(source.get("status") or "").upper() != "SUCCESS":
+                continue
+            result = source.get("result") if isinstance(source.get("result"), dict) else {}
+            rows.extend(_rows_from_result_payload(result))
+    return rows
+
+
+def _row_status_values(row: dict[str, Any]) -> list[str]:
+    values: list[str] = []
+    for key, value in row.items():
+        normalized = _normalized_field_name(key)
+        if normalized in {"status", "state", "lifecyclestatus", "lifecycle_status"} and value not in (None, "", [], {}):
+            values.append(str(value))
+    return values
+
+
+def _row_identity_values(row: dict[str, Any]) -> list[str]:
+    values: list[str] = []
+    for key, value in row.items():
+        if value in (None, "", [], {}) or isinstance(value, (dict, list)):
+            continue
+        if _is_id_field(key) or _is_name_field(key):
+            values.append(str(value))
+    return values
 
 
 def _allows_broad_list_summary(prompt: str, answer: str, slots: AnswerSlots, present_names: list[str]) -> bool:

@@ -1,0 +1,93 @@
+{
+  "generated_at_utc": "2026-06-02T14:49:54Z",
+  "provider": "local_openai_compatible_qwen3_6_35b_sdk_toolcall",
+  "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+  "packaged_default_strategy": "SQL_FIRST_API_VERIFY",
+  "strict_dev_eval_run": false,
+  "strict_dev_eval_skipped_reason": "fresh V2 smoke did not pass the continuation gate",
+  "blockers": [
+    {
+      "id": "example_003",
+      "issue": "timeout at checkpoint_llm_owned_dependency_resolution",
+      "diagnosis": "dependency resolution could enter LLM repair for impossible dependency values after terminal dependency failure",
+      "fix": "mechanical dependency precheck; placeholder-dependent consumers fail closed as DEPENDENCY_FAILED; order-only failed dependencies do not block SQL/API passes",
+      "verification": "unit regression passed; strict eval not run because smoke failed"
+    },
+    {
+      "id": "example_012",
+      "issue": "missing audience-to-destination relation detail",
+      "diagnosis": "runtime evidence can contain ID bridge rows plus separate ID/name rows, but fallback facts did not expose resolved relation",
+      "fix": "cross-pass ID/name relation facts for bridge rows",
+      "verification": "unit regression passed; strict eval not run because smoke failed"
+    },
+    {
+      "id": "example_021",
+      "issue": "missing default merge-policy relation",
+      "diagnosis": "planner needed generic guidance to include relationship-bearing local fields for schema class and merge-policy relation prompts",
+      "fix": "planner rule for relationship/default/schema-class/merge-policy prompts plus relation fallback support",
+      "verification": "unit regression passed; strict eval not run because smoke failed"
+    },
+    {
+      "id": "example_004",
+      "issue": "evidence-selection risk",
+      "diagnosis": "final answer could list row IDs whose runtime status contradicted a requested status",
+      "fix": "final semantic gate blocks nonmatching requested-status rows; inactive prompts allow non-active lifecycle values such as created/updated",
+      "verification": "unit regression passed; mixed inactive smoke row now passes"
+    }
+  ],
+  "fresh_smoke": {
+    "command": "DASHAGENT_LLM_PROVIDER=openai OPENAI_BASE_URL=http://localhost:8000/v1 OPENAI_MODEL=/Users/tanqinyang/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit OPENAI_API_KEY=local-token LLM_TIMEOUT_SECONDS=180 HERMES_LLM_CALL_TIMEOUT_SEC=180 HERMES_SMOKE_PROMPT_TIMEOUT_SEC=120 .venv/bin/python scripts/run_hermes_v2_toolcall_smoke.py",
+    "ok": false,
+    "summary": {
+      "row_count": 7,
+      "passed_count": 6,
+      "failed_count": 1,
+      "timeout_count": 1,
+      "unsupported_claims": 0,
+      "no_tool_fp": 1,
+      "final_semantic_gate_final_failures": 0,
+      "runtime_fact_count": 7,
+      "local_snapshot_fact_count": 7,
+      "live_api_fact_count": 0,
+      "sql_calls": 4,
+      "api_calls": 0,
+      "raw_sql_fallback_used_count": 0
+    },
+    "failing_rows": [
+      {
+        "prompt_id": "compare_local_live_birthday_status",
+        "timed_out": true,
+        "timed_out_stage": "checkpoint_llm_unified_planner_start",
+        "sql_calls": 0,
+        "api_calls": 0,
+        "runtime_fact_count": 0,
+        "note": "local Qwen planner exceeded the 120s per-prompt smoke timeout before producing a plan"
+      }
+    ],
+    "improvements": [
+      "mixed_inactive_journeys now passes",
+      "unsupported_claims remained 0",
+      "final_semantic_gate_final_failures ended at 0"
+    ]
+  },
+  "validation": {
+    "pytest": "1188 passed, 1 skipped",
+    "check_submission_ready": {
+      "ok": true,
+      "default_strategy_is_sql_first_api_verify": true,
+      "query_output_count": 73,
+      "secret_scan_ok": true
+    },
+    "sdk_usage_audit": {
+      "runtime_llm_direct_http_hits": 0
+    },
+    "git_diff_check": "passed"
+  },
+  "recommendation": {
+    "safe_to_keep": true,
+    "safe_to_commit": false,
+    "safe_to_benchmark": false,
+    "safe_to_promote": false,
+    "reason": "narrow regressions pass, but fresh smoke still has one local Qwen planner timeout before strict eval"
+  }
+}

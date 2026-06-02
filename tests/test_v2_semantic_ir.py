@@ -596,6 +596,9 @@ def test_semantic_ir_planner_prompt_keeps_local_source_preference_llm_owned(monk
     assert "Schema Registry" in rules
     assert "local_query.count=true" in rules
     assert "select all relevant local timestamp candidates" in rules
+    assert "relationship-bearing fields" in rules
+    assert "schema class" in rules
+    assert "merge policy" in rules
     assert "unless the prompt explicitly asks for live/current/platform/API" in rules
     assert "sandbox" in rules
     assert "batch" in rules

@@ -100,6 +100,68 @@ def test_semantic_gate_rejects_status_contradiction():
     assert result.error_type == "contradiction"
 
 
+def test_semantic_gate_rejects_listing_rows_with_nonmatching_requested_status():
+    rows = [
+        {"DATAFLOWID": "df_1", "DATAFLOWNAME": "Connector One", "STATE": "enabled"},
+        {"DATAFLOWID": "df_2", "DATAFLOWNAME": "Connector Two", "STATE": "enabled"},
+    ]
+    tool_results = [_sql_tool_result(rows)]
+    bus, slots = _bus_and_slots("Show me the IDs of failed dataflow runs", tool_results)
+    runtime_passes = [
+        {
+            "pass_id": "t1_failed_dataflows",
+            "source": "SQL",
+            "path": "SQL",
+            "status": "SUCCESS",
+            "scope": "LOCAL_SNAPSHOT",
+            "facts": ["DATAFLOWID:df_1", "STATE:enabled", "DATAFLOWID:df_2", "STATE:enabled"],
+            "source_results": [{"source": "SQL", "status": "SUCCESS", "scope": "LOCAL_SNAPSHOT", "result": {"rows": rows, "row_count": 2}}],
+        }
+    ]
+
+    result = check_final_answer_semantic_grounding(
+        "Failed dataflow run IDs: df_1; df_2.",
+        question="Show me the IDs of failed dataflow runs",
+        runtime_passes=runtime_passes,
+        evidence_bus=bus,
+        slots=slots,
+    )
+
+    assert result.passed is False
+    assert result.error_type == "contradiction"
+    assert "requested status" in result.error_message
+
+
+def test_semantic_gate_allows_inactive_prompt_with_non_active_lifecycle_rows():
+    rows = [
+        {"CAMPAIGNID": "campaign_1", "NAME": "Birthday Message", "STATUS": "updated"},
+        {"CAMPAIGNID": "campaign_2", "NAME": "Gold Tier Welcome Email", "STATUS": "created"},
+    ]
+    tool_results = [_sql_tool_result(rows)]
+    bus, slots = _bus_and_slots("Explain what inactive journey means and show inactive journeys.", tool_results)
+    runtime_passes = [
+        {
+            "pass_id": "list_inactive_journeys",
+            "source": "SQL",
+            "path": "SQL",
+            "status": "SUCCESS",
+            "scope": "LOCAL_SNAPSHOT",
+            "facts": ["NAME:Birthday Message", "STATUS:updated", "NAME:Gold Tier Welcome Email", "STATUS:created"],
+            "source_results": [{"source": "SQL", "status": "SUCCESS", "scope": "LOCAL_SNAPSHOT", "result": {"rows": rows, "row_count": 2}}],
+        }
+    ]
+
+    result = check_final_answer_semantic_grounding(
+        "Local snapshot evidence shows inactive journeys: Birthday Message; Gold Tier Welcome Email.",
+        question="Explain what inactive journey means and show inactive journeys.",
+        runtime_passes=runtime_passes,
+        evidence_bus=bus,
+        slots=slots,
+    )
+
+    assert result.passed is True
+
+
 def test_semantic_gate_rejects_missing_required_count_when_evidence_contains_it():
     tool_results = [_sql_tool_result([{"count": 2}])]
     bus, slots = _bus_and_slots("How many campaigns are there?", tool_results)
@@ -115,6 +177,105 @@ def test_semantic_gate_rejects_missing_required_count_when_evidence_contains_it(
     assert result.passed is False
     assert result.error_type == "missing_required_info"
     assert "count" in result.missing_required_fields
+
+
+def test_safe_fallback_surfaces_cross_pass_segment_destination_relationship():
+    segment_id = "f6b93428-c021-4058-a1a2-77c277aab564"
+    target_id = "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
+    runtime_passes = [
+        {
+            "pass_id": "t2_segments",
+            "source": "SQL",
+            "path": "SQL",
+            "status": "SUCCESS",
+            "scope": "LOCAL_SNAPSHOT",
+            "facts": [f"SEGMENTID:{segment_id}", "NAME:Gender: Male"],
+            "source_results": [
+                {
+                    "source": "SQL",
+                    "status": "SUCCESS",
+                    "scope": "LOCAL_SNAPSHOT",
+                    "result": {"rows": [{"SEGMENTID": segment_id, "NAME": "Gender: Male"}], "row_count": 1},
+                }
+            ],
+        },
+        {
+            "pass_id": "t3_targets",
+            "source": "SQL",
+            "path": "SQL",
+            "status": "SUCCESS",
+            "scope": "LOCAL_SNAPSHOT",
+            "facts": [f"TARGETID:{target_id}", "NAME:amazon-s3"],
+            "source_results": [
+                {
+                    "source": "SQL",
+                    "status": "SUCCESS",
+                    "scope": "LOCAL_SNAPSHOT",
+                    "result": {"rows": [{"TARGETID": target_id, "NAME": "amazon-s3"}], "row_count": 1},
+                }
+            ],
+        },
+        {
+            "pass_id": "t4_segment_target_mapping",
+            "source": "SQL",
+            "path": "SQL",
+            "status": "SUCCESS",
+            "scope": "LOCAL_SNAPSHOT",
+            "facts": [f"SEGMENTID:{segment_id}", f"TARGETID:{target_id}"],
+            "depends_on": ["t2_segments", "t3_targets"],
+            "source_results": [
+                {
+                    "source": "SQL",
+                    "status": "SUCCESS",
+                    "scope": "LOCAL_SNAPSHOT",
+                    "result": {"rows": [{"SEGMENTID": segment_id, "TARGETID": target_id}], "row_count": 1},
+                }
+            ],
+        },
+    ]
+
+    answer = safe_llm_final_answer_fallback(runtime_passes)
+
+    assert "Gender: Male" in answer
+    assert "amazon-s3" in answer
+    assert "SEGMENTID" in answer and "TARGETID" in answer
+
+
+def test_safe_fallback_surfaces_schema_class_merge_policy_relationship():
+    runtime_passes = [
+        {
+            "pass_id": "t1_merge_policy",
+            "source": "SQL",
+            "path": "SQL",
+            "status": "SUCCESS",
+            "scope": "LOCAL_SNAPSHOT",
+            "facts": [
+                "SEGMENTBLUEPRINTCLASS:_xdm.context.profile",
+                "MERGEPOLICYID:22a941a9-e598-45f8-846b-c9a8889f5035",
+            ],
+            "source_results": [
+                {
+                    "source": "SQL",
+                    "status": "SUCCESS",
+                    "scope": "LOCAL_SNAPSHOT",
+                    "result": {
+                        "rows": [
+                            {
+                                "SEGMENTBLUEPRINTCLASS": "_xdm.context.profile",
+                                "MERGEPOLICYID": "22a941a9-e598-45f8-846b-c9a8889f5035",
+                            }
+                        ],
+                        "row_count": 1,
+                    },
+                }
+            ],
+        }
+    ]
+
+    answer = safe_llm_final_answer_fallback(runtime_passes)
+
+    assert "_xdm.context.profile" in answer
+    assert "22a941a9-e598-45f8-846b-c9a8889f5035" in answer
 
 
 def test_semantic_gate_allows_published_date_answer_without_repeating_status_word():

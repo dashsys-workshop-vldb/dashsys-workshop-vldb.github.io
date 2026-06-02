@@ -2521,6 +2521,30 @@ class AgentExecutor:
         summary: dict[str, Any],
         run_context: RunContext,
     ) -> tuple[LLMUnifiedPass | None, dict[str, Any]]:
+        precheck = _dependency_precheck(pass_spec, runtime_passes, run_id=run_context.run_id)
+        if not precheck.get("resolved"):
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_llm_owned_dependency_resolution",
+                stage="llm-owned pass dependency resolution",
+                technique="mechanical dependency terminal-state precheck",
+                input_summary={"pass_id": pass_spec.pass_id, "depends_on": pass_spec.depends_on},
+                output=precheck,
+                effect="fails closed when declared dependencies are missing or already terminal-failed",
+                correctness_role="does not infer missing dependency values or ask the backend to add replacement subtasks",
+                efficiency_role="prevents a dependent pass from hanging on impossible dependency repair",
+            )
+            summary["dependency_resolution_errors"] = int(summary.get("dependency_resolution_errors", 0) or 0) + 1
+            summary["dependency_failed_tasks"] = _dedupe_ordered(
+                [*(summary.get("dependency_failed_tasks") or []), *(precheck.get("dependency_failed_tasks") or [])]
+            )
+            summary["missing_dependency_ids"] = _dedupe_ordered(
+                [*(summary.get("missing_dependency_ids") or []), *(precheck.get("missing_dependency_ids") or [])]
+            )
+            summary["blocked_task_ids"] = _dedupe_ordered(
+                [*(summary.get("blocked_task_ids") or []), *(precheck.get("blocked_task_ids") or [])]
+            )
+            return None, precheck
+
         resolved_pass, resolution = _resolve_pass_placeholders(pass_spec, runtime_passes, run_id=run_context.run_id)
         checkpoint_logger.add_checkpoint(
             "checkpoint_llm_owned_dependency_resolution",
@@ -4431,6 +4455,9 @@ def _llm_owned_generation_boundary_summary(summary: dict[str, Any]) -> dict[str,
         "api_repair_attempts",
         "dependency_resolution_errors",
         "dependency_repair_attempts",
+        "dependency_failed_tasks",
+        "missing_dependency_ids",
+        "blocked_task_ids",
         "backend_semantic_decomposition_used",
         "backend_semantic_planning_used",
         "deterministic_answer_template_used",
@@ -4598,7 +4625,7 @@ def _dependency_error_runtime_pass(pass_spec: LLMUnifiedPass, dependency_resolut
         "plan_version": run_context.plan_version if run_context else 1,
         "subtask": pass_spec.subtask,
         "path": pass_spec.path,
-        "status": "DEPENDENCY_BLOCKED",
+        "status": "DEPENDENCY_FAILED",
         "can_run_parallel": pass_spec.can_run_parallel,
         "depends_on": pass_spec.depends_on,
         "expected_result": pass_spec.expected_result,
@@ -4609,7 +4636,7 @@ def _dependency_error_runtime_pass(pass_spec: LLMUnifiedPass, dependency_resolut
         "source_results": [
             {
                 "source": "DEPENDENCY_RESOLUTION",
-                "status": "ERROR",
+                "status": "DEPENDENCY_FAILED",
                 "scope": "RUNTIME",
                 "result": dependency_resolution,
                 "error": error_message,
@@ -4703,6 +4730,101 @@ def _pass_status_from_source_results(source_results: list[dict[str, Any]]) -> st
 
 
 PLACEHOLDER_RE = re.compile(r"\{\{\s*([^{}]+?)\s*\}\}")
+
+
+TERMINAL_DEPENDENCY_FAILURE_STATUSES = {
+    "API_ERROR",
+    "ERROR",
+    "COMPILE_ERROR",
+    "REQUEST_ERROR",
+    "DEPENDENCY_FAILED",
+    "DEPENDENCY_BLOCKED",
+    "BUDGET_EXCEEDED",
+    "TIMEOUT",
+}
+
+
+def _dependency_precheck(pass_spec: LLMUnifiedPass, runtime_passes: list[dict[str, Any]], *, run_id: str | None) -> dict[str, Any]:
+    depends_on = [str(dep) for dep in pass_spec.depends_on if dep]
+    if not depends_on:
+        return {
+            "required": False,
+            "resolved": True,
+            "run_id": run_id,
+            "errors": [],
+            "missing_dependency_ids": [],
+            "dependency_failed_tasks": [],
+            "blocked_task_ids": [],
+            "terminal_dependency_failure": False,
+        }
+
+    missing: list[str] = []
+    failed: list[str] = []
+    ignored_failed_order_only: list[str] = []
+    errors: list[str] = []
+    for dependency_id in depends_on:
+        requires_dependency_value = _pass_references_dependency_placeholder(pass_spec, dependency_id)
+        runtime_pass = _runtime_pass_for_dependency(dependency_id, runtime_passes, run_id=run_id)
+        if runtime_pass is None:
+            missing.append(dependency_id)
+            errors.append(f"Dependency pass '{dependency_id}' has no completed result.")
+            continue
+        status = str(runtime_pass.get("status") or "").upper()
+        source_statuses = {
+            str(source.get("status") or "").upper()
+            for source in runtime_pass.get("source_results", [])
+            if isinstance(source, dict)
+        } if isinstance(runtime_pass.get("source_results"), list) else set()
+        if status in TERMINAL_DEPENDENCY_FAILURE_STATUSES or source_statuses & TERMINAL_DEPENDENCY_FAILURE_STATUSES:
+            if not requires_dependency_value:
+                ignored_failed_order_only.append(dependency_id)
+                continue
+            failed.append(dependency_id)
+            errors.append(f"Dependency pass '{dependency_id}' ended with terminal status '{status or ','.join(sorted(source_statuses))}'.")
+
+    terminal = bool(missing or failed)
+    return {
+        "required": True,
+        "resolved": not terminal,
+        "run_id": run_id,
+        "errors": errors,
+        "missing_dependency_ids": _dedupe_ordered(missing),
+        "dependency_failed_tasks": _dedupe_ordered(failed),
+        "ignored_failed_order_only_dependencies": _dedupe_ordered(ignored_failed_order_only),
+        "blocked_task_ids": [pass_spec.pass_id] if terminal else [],
+        "terminal_dependency_failure": terminal,
+    }
+
+
+def _pass_references_dependency_placeholder(pass_spec: LLMUnifiedPass, dependency_id: str) -> bool:
+    raw = json.dumps(pass_spec.to_dict(), default=str)
+    pattern = re.compile(r"\{\{\s*" + re.escape(str(dependency_id)) + r"(?:\.|\.result\.)")
+    return bool(pattern.search(raw))
+
+
+def _runtime_pass_for_dependency(dependency_id: str, runtime_passes: list[dict[str, Any]], *, run_id: str | None) -> dict[str, Any] | None:
+    for item in runtime_passes:
+        if not isinstance(item, dict):
+            continue
+        if str(item.get("pass_id") or "") != dependency_id:
+            continue
+        item_run_id = item.get("run_id")
+        if run_id and item_run_id and item_run_id != run_id:
+            continue
+        return item
+    return None
+
+
+def _dedupe_ordered(values: list[Any]) -> list[Any]:
+    out: list[Any] = []
+    seen: set[str] = set()
+    for value in values:
+        marker = json.dumps(value, sort_keys=True, default=str) if isinstance(value, (dict, list)) else str(value)
+        if marker in seen:
+            continue
+        seen.add(marker)
+        out.append(value)
+    return out
 
 
 def _resolve_pass_placeholders(pass_spec: LLMUnifiedPass, runtime_passes: list[dict[str, Any]], *, run_id: str | None) -> tuple[LLMUnifiedPass, dict[str, Any]]:

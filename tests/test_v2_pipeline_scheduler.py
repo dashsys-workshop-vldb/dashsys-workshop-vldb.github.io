@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dashagent.executor import _dependency_error_runtime_pass, _dependency_precheck
 from dashagent.llm_unified_planner import normalize_llm_unified_plan
 from dashagent.pass_graph_gate import PassGraphGate
 from dashagent.v2_pipeline_scheduler import V2PipelineScheduler
@@ -122,6 +123,105 @@ def test_scheduler_keeps_dependent_pass_waiting_until_dependency_ready():
     details_ready = _event_index(events, "details", "DEPENDENCY_READY", "completed")
     lookup_result_ready = _event_index(events, "lookup", "RESULTBUNDLE_APPEND", "completed")
     assert lookup_result_ready < details_ready
+
+
+def test_dependency_precheck_marks_failed_dependency_terminal_without_repair():
+    plan = _plan(
+        [
+            {
+                "pass_id": "producer",
+                "subtask": "Lookup producer.",
+                "path": "API",
+                "can_run_parallel": False,
+                "depends_on": [],
+                "api_request": {"method": "GET", "path": "/data/foundation/test", "params": {}},
+            },
+            {
+                "pass_id": "consumer",
+                "subtask": "Use producer result.",
+                "path": "SQL",
+                "can_run_parallel": False,
+                "depends_on": ["producer"],
+                "sql": {"query": "SELECT ? AS id", "params": ["{{producer.result.id}}"]},
+            },
+        ]
+    )
+    runtime_passes = [
+        {
+            "pass_id": "producer",
+            "status": "API_ERROR",
+            "source_results": [{"source": "API", "status": "API_ERROR", "error": "provider unavailable"}],
+        }
+    ]
+
+    precheck = _dependency_precheck(plan.passes[1], runtime_passes, run_id="run_1")
+
+    assert precheck["resolved"] is False
+    assert precheck["terminal_dependency_failure"] is True
+    assert precheck["dependency_failed_tasks"] == ["producer"]
+    assert precheck["blocked_task_ids"] == ["consumer"]
+
+    blocked = _dependency_error_runtime_pass(plan.passes[1], precheck)
+    assert blocked["status"] == "DEPENDENCY_FAILED"
+    assert blocked["source_results"][0]["status"] == "DEPENDENCY_FAILED"
+
+
+def test_dependency_precheck_allows_failed_order_only_dependency_without_placeholder():
+    plan = _plan(
+        [
+            {
+                "pass_id": "concept",
+                "subtask": "Explain a concept.",
+                "path": "DIRECT",
+                "can_run_parallel": True,
+                "depends_on": [],
+            },
+            {
+                "pass_id": "data",
+                "subtask": "Fetch data after concept.",
+                "path": "SQL",
+                "can_run_parallel": False,
+                "depends_on": ["concept"],
+                "sql": {"query": "SELECT name FROM dim_campaign LIMIT 10", "params": []},
+            },
+        ]
+    )
+    runtime_passes = [
+        {
+            "pass_id": "concept",
+            "status": "ERROR",
+            "source_results": [{"source": "DIRECT", "status": "ERROR", "error": "unsafe_direct_task_answer"}],
+        }
+    ]
+
+    precheck = _dependency_precheck(plan.passes[1], runtime_passes, run_id="run_1")
+
+    assert precheck["resolved"] is True
+    assert precheck["terminal_dependency_failure"] is False
+    assert precheck["dependency_failed_tasks"] == []
+    assert precheck["ignored_failed_order_only_dependencies"] == ["concept"]
+
+
+def test_dependency_precheck_marks_missing_dependency_terminal_without_repair():
+    plan = _plan(
+        [
+            {
+                "pass_id": "consumer",
+                "subtask": "Use missing producer result.",
+                "path": "SQL",
+                "can_run_parallel": False,
+                "depends_on": ["missing_producer"],
+                "sql": {"query": "SELECT ? AS id", "params": ["{{missing_producer.result.id}}"]},
+            }
+        ]
+    )
+
+    precheck = _dependency_precheck(plan.passes[0], [], run_id="run_1")
+
+    assert precheck["resolved"] is False
+    assert precheck["terminal_dependency_failure"] is True
+    assert precheck["missing_dependency_ids"] == ["missing_producer"]
+    assert precheck["blocked_task_ids"] == ["consumer"]
 
 
 def _event_index(events: list[dict], pass_id: str, stage: str, event: str) -> int:
