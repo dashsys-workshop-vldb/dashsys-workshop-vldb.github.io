@@ -56,7 +56,14 @@ SMOKE_PROMPTS = [
 ]
 
 
-def run_hermes_v2_toolcall_smoke(config: Config | None = None, *, report_dir: Path | None = None) -> dict[str, Any]:
+def run_hermes_v2_toolcall_smoke(
+    config: Config | None = None,
+    *,
+    report_dir: Path | None = None,
+    probe_runner: Any | None = None,
+    report_name: str = "hermes_v2_toolcall_smoke",
+    report_title: str = "Hermes V2 Toolcall Smoke",
+) -> dict[str, Any]:
     config = config or Config.from_env(ROOT)
     report_dir = report_dir or REPORT_DIR
     report_dir.mkdir(parents=True, exist_ok=True)
@@ -64,9 +71,14 @@ def run_hermes_v2_toolcall_smoke(config: Config | None = None, *, report_dir: Pa
     prompt_timeout_sec = _env_int("HERMES_SMOKE_PROMPT_TIMEOUT_SEC", DEFAULT_PROMPT_TIMEOUT_SEC)
     llm_call_timeout_sec = _env_int("HERMES_LLM_CALL_TIMEOUT_SEC", DEFAULT_LLM_CALL_TIMEOUT_SEC)
     _configure_llm_timeout_env(llm_call_timeout_sec)
-    probe = run_hermes_toolcall_probe(config, report_dir=ROOT / "outputs" / "reports" / "hermes_toolcall_probe")
+    if probe_runner is None:
+        probe = run_hermes_toolcall_probe(config, report_dir=ROOT / "outputs" / "reports" / "hermes_toolcall_probe")
+    else:
+        probe = probe_runner(config)
     report: dict[str, Any] = {
         "ok": False,
+        "report_name": report_name,
+        "report_title": report_title,
         "skipped": False,
         "skip_reason": "",
         "strategy": ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2,
@@ -89,7 +101,7 @@ def run_hermes_v2_toolcall_smoke(config: Config | None = None, *, report_dir: Pa
         "summary": {},
     }
     if not probe.get("toolcall_supported"):
-        report.update({"skipped": True, "skip_reason": "Hermes/OpenAI-compatible model did not return native SDK tool_calls in probe."})
+        report.update({"skipped": True, "skip_reason": f"{report_title} probe did not return native SDK tool/function calls."})
         report["summary"] = _summarize_rows([])
         return _write_report(report_dir, report)
 
@@ -653,8 +665,9 @@ def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
 
 def _write_report(report_dir: Path, report: dict[str, Any]) -> dict[str, Any]:
     safe_report = redact_secrets(report)
-    json_path = report_dir / "hermes_v2_toolcall_smoke.json"
-    md_path = report_dir / "hermes_v2_toolcall_smoke.md"
+    report_name = str(safe_report.get("report_name") or "hermes_v2_toolcall_smoke")
+    json_path = report_dir / f"{report_name}.json"
+    md_path = report_dir / f"{report_name}.md"
     json_path.write_text(json.dumps(safe_report, indent=2, sort_keys=True, default=str), encoding="utf-8")
     md_path.write_text(_markdown(safe_report), encoding="utf-8")
     quality_paths = _write_quality_report(report_dir, safe_report)
@@ -668,7 +681,7 @@ def _write_report(report_dir: Path, report: dict[str, Any]) -> dict[str, Any]:
 
 def _markdown(report: dict[str, Any]) -> str:
     lines = [
-        "# Hermes V2 Toolcall Smoke",
+        f"# {report.get('report_title') or 'Hermes V2 Toolcall Smoke'}",
         "",
         f"- ok: `{report.get('ok')}`",
         f"- skipped: `{report.get('skipped')}`",

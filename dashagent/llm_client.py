@@ -18,6 +18,15 @@ try:  # Optional at import time; Anthropic is a shadow/comparison backend.
 except Exception:  # pragma: no cover - exercised when dependency is absent.
     Anthropic = None  # type: ignore
 
+try:  # Optional at import time; Gemini support is enabled only when configured.
+    from google import genai as _google_genai  # type: ignore
+    from google.genai import types as GeminiTypes  # type: ignore
+
+    GeminiSDKClient = _google_genai.Client  # type: ignore
+except Exception:  # pragma: no cover - exercised when dependency is absent.
+    GeminiSDKClient = None  # type: ignore
+    GeminiTypes = None  # type: ignore
+
 
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o-mini"
@@ -26,6 +35,7 @@ DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1"
 DEFAULT_ANTHROPIC_MODEL = "claude-3-5-sonnet-latest"
 DEFAULT_PIONEER_MODEL = "gpt-4o"
 DEFAULT_PIONEER_BASE_URL = "https://api.pioneer.ai/v1"
+DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
 
 _KEY_LIKE_RE = re.compile(r"sk-[A-Za-z0-9_*.-]{8,}")
 _AUTH_HEADER_RE = re.compile(r"Authorization\s*:\s*" + r"Bearer\s+[^\s,'\"}]+", re.IGNORECASE)
@@ -480,6 +490,138 @@ class PioneerChatLLMClient(OpenAILLMClient):
             return _conservative_json_fallback()
 
 
+class GeminiLLMClient(LLMClient):
+    """Google GenAI SDK client normalized to the shared LLMClient shape."""
+
+    def __init__(
+        self,
+        *,
+        api_key: str | None = None,
+        model: str | None = None,
+        timeout_seconds: int | None = None,
+    ) -> None:
+        self.api_key = api_key if api_key is not None else os.getenv("GEMINI_API_KEY")
+        self.model = model or os.getenv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
+        timeout_value = timeout_seconds if timeout_seconds is not None else int(os.getenv("GEMINI_TIMEOUT_SEC", "60"))
+        self.timeout_seconds = _configured_timeout_seconds(timeout_value, "GEMINI_TIMEOUT_SEC", "HERMES_LLM_CALL_TIMEOUT_SEC", "LLM_TIMEOUT_SECONDS")
+        self.provider = "gemini"
+        self._sdk_client: Any | None = None
+        self.missing_key_reason = self._unavailable_reason()
+
+    def sdk_available(self) -> bool:
+        return GeminiSDKClient is not None and GeminiTypes is not None
+
+    def available(self) -> bool:
+        return bool(self.api_key) and self.sdk_available()
+
+    def provider_name(self) -> str:
+        return self.provider if self.available() else "none"
+
+    def model_name(self) -> str:
+        return self.model
+
+    def generate(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        tools: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        return self.generate_messages(
+            [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            tools=tools,
+            tool_choice="auto" if tools else None,
+        )
+
+    def generate_messages(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+        parallel_tool_calls: bool | None = None,
+    ) -> dict[str, Any]:
+        if not self.available():
+            return NoOpLLMClient(reason=self._unavailable_reason(), model=self.model).generate_messages(
+                messages, tools=tools, tool_choice=tool_choice, parallel_tool_calls=parallel_tool_calls
+            )
+        system_instruction, contents = _gemini_contents(messages)
+        config = _gemini_generate_config(
+            system_instruction=system_instruction,
+            tools=tools,
+            tool_choice=tool_choice,
+            timeout_seconds=self.timeout_seconds,
+            max_tokens=int(os.getenv("LLM_MAX_TOKENS", "2048")),
+        )
+        try:
+            response = self._generate_content_with_sdk(
+                {
+                    "model": self.model,
+                    "contents": contents,
+                    "config": config,
+                }
+            )
+        except Exception as exc:
+            redacted_error = _redact_error_text(str(exc))[:500]
+            return {
+                "ok": False,
+                "skipped": False,
+                "provider": self.provider,
+                "model": self.model_name(),
+                "transport": "gemini_sdk",
+                "backend_type": "gemini_sdk",
+                "sdk_path_used": True,
+                "content": "",
+                "tool_calls": [],
+                "message": {},
+                "finish_reason": None,
+                "usage": {},
+                "error": redacted_error,
+                "error_category": _classify_llm_error_text(str(exc)),
+            }
+        content = str(getattr(response, "text", "") or "")
+        tool_calls = _normalize_gemini_tool_calls(response)
+        finish_reason = _gemini_finish_reason(response, tool_calls)
+        usage = _normalize_gemini_usage(getattr(response, "usage_metadata", None))
+        result = redact_secrets(
+            {
+                "ok": True,
+                "skipped": False,
+                "provider": self.provider,
+                "model": self.model_name(),
+                "transport": "gemini_sdk",
+                "backend_type": "gemini_sdk",
+                "sdk_path_used": True,
+                "content": content,
+                "tool_calls": tool_calls,
+                "message": compact_preview(_gemini_response_preview(response), 2000),
+                "finish_reason": finish_reason,
+                "usage": usage,
+                "raw_preview": compact_preview(_gemini_response_preview(response), 1200),
+                "error": None,
+                "tool_call_warning": _tool_call_warning(tools, tool_choice, tool_calls, True),
+            }
+        )
+        result["provider"] = self.provider
+        result["model"] = self.model_name()
+        return result
+
+    def _generate_content_with_sdk(self, payload: dict[str, Any]) -> Any:
+        if GeminiSDKClient is None:
+            raise RuntimeError("Google Gen AI SDK is not installed")
+        if self._sdk_client is None:
+            self._sdk_client = GeminiSDKClient(api_key=self.api_key)
+        return self._sdk_client.models.generate_content(**payload)
+
+    def _unavailable_reason(self) -> str:
+        if not self.api_key:
+            return "GEMINI_API_KEY is not set"
+        if not self.sdk_available():
+            return "Google Gen AI SDK is not installed"
+        return "Gemini client is unavailable"
+
+
 class AnthropicLLMClient(LLMClient):
     def __init__(
         self,
@@ -839,6 +981,200 @@ def _conservative_json_fallback() -> dict[str, Any]:
     }
 
 
+def _gemini_contents(messages: list[dict[str, Any]]) -> tuple[str | None, str]:
+    system_parts: list[str] = []
+    content_parts: list[str] = []
+    for message in messages:
+        if not isinstance(message, dict):
+            continue
+        role = str(message.get("role") or "user")
+        content = str(message.get("content") or "")
+        if role == "system":
+            if content:
+                system_parts.append(content)
+        elif role == "assistant":
+            content_parts.append(f"Assistant: {content}")
+        elif role == "tool":
+            content_parts.append(f"Tool result: {content}")
+        else:
+            content_parts.append(content)
+    return ("\n\n".join(system_parts) if system_parts else None, "\n\n".join(part for part in content_parts if part).strip())
+
+
+def _gemini_generate_config(
+    *,
+    system_instruction: str | None,
+    tools: list[dict[str, Any]] | None,
+    tool_choice: str | dict[str, Any] | None,
+    timeout_seconds: int,
+    max_tokens: int,
+) -> Any:
+    if GeminiTypes is None:
+        return None
+    kwargs: dict[str, Any] = {
+        "temperature": 0,
+        "max_output_tokens": max_tokens,
+    }
+    if system_instruction:
+        kwargs["system_instruction"] = system_instruction
+    gemini_tools = _gemini_tools(tools)
+    if gemini_tools:
+        kwargs["tools"] = gemini_tools
+    tool_config = _gemini_tool_config(tool_choice)
+    if tool_config is not None:
+        kwargs["tool_config"] = tool_config
+    http_options = _gemini_http_options(timeout_seconds)
+    if http_options is not None:
+        kwargs["http_options"] = http_options
+    return GeminiTypes.GenerateContentConfig(**kwargs)
+
+
+def _gemini_tools(tools: list[dict[str, Any]] | None) -> list[Any]:
+    if GeminiTypes is None:
+        return []
+    declarations: list[Any] = []
+    for tool in tools or []:
+        function = tool.get("function") if isinstance(tool.get("function"), dict) else {}
+        name = function.get("name")
+        if not name:
+            continue
+        declarations.append(
+            GeminiTypes.FunctionDeclaration(
+                name=name,
+                description=function.get("description") or "",
+                parameters_json_schema=function.get("parameters") or {"type": "object", "properties": {}},
+            )
+        )
+    if not declarations:
+        return []
+    return [GeminiTypes.Tool(function_declarations=declarations)]
+
+
+def _gemini_tool_config(tool_choice: str | dict[str, Any] | None) -> Any | None:
+    if GeminiTypes is None or not hasattr(GeminiTypes, "ToolConfig") or not hasattr(GeminiTypes, "FunctionCallingConfig"):
+        return None
+    allowed_names: list[str] | None = None
+    mode = None
+    if tool_choice == "required":
+        mode = "ANY"
+    elif isinstance(tool_choice, dict):
+        function = tool_choice.get("function") if isinstance(tool_choice.get("function"), dict) else {}
+        name = function.get("name")
+        if name:
+            mode = "ANY"
+            allowed_names = [str(name)]
+    elif tool_choice == "none":
+        mode = "NONE"
+    elif tool_choice == "auto":
+        mode = "AUTO"
+    if mode is None:
+        return None
+    try:
+        calling_config_kwargs: dict[str, Any] = {"mode": mode}
+        if allowed_names:
+            calling_config_kwargs["allowed_function_names"] = allowed_names
+        function_calling_config = GeminiTypes.FunctionCallingConfig(**calling_config_kwargs)
+        return GeminiTypes.ToolConfig(function_calling_config=function_calling_config)
+    except Exception:
+        return None
+
+
+def _gemini_http_options(timeout_seconds: int) -> Any | None:
+    if GeminiTypes is None or not hasattr(GeminiTypes, "HttpOptions"):
+        return None
+    try:
+        return GeminiTypes.HttpOptions(timeout=int(timeout_seconds * 1000))
+    except Exception:
+        return None
+
+
+def _normalize_gemini_tool_calls(response: Any) -> list[dict[str, Any]]:
+    calls: list[dict[str, Any]] = []
+    for index, call in enumerate(getattr(response, "function_calls", None) or []):
+        name = getattr(call, "name", None) or _maybe_mapping_get(call, "name")
+        args = getattr(call, "args", None)
+        if args is None:
+            args = _maybe_mapping_get(call, "args") or {}
+        if not isinstance(args, dict):
+            args = dict(args) if hasattr(args, "items") else {"_raw": str(args)}
+        raw_arguments = json.dumps(args, default=str)
+        calls.append(
+            {
+                "id": getattr(call, "id", None) or _maybe_mapping_get(call, "id") or f"gemini_call_{index + 1}",
+                "type": "function",
+                "tool": name,
+                "name": name,
+                "arguments": args,
+                "raw_arguments": raw_arguments,
+            }
+        )
+    return calls
+
+
+def _maybe_mapping_get(value: Any, key: str) -> Any:
+    if isinstance(value, dict):
+        return value.get(key)
+    if hasattr(value, "get"):
+        try:
+            return value.get(key)
+        except Exception:
+            return None
+    return None
+
+
+def _gemini_finish_reason(response: Any, tool_calls: list[dict[str, Any]]) -> str | None:
+    if tool_calls:
+        return "tool_calls"
+    candidates = getattr(response, "candidates", None) or []
+    first = candidates[0] if candidates else None
+    reason = getattr(first, "finish_reason", None) if first is not None else None
+    return str(reason) if reason is not None else None
+
+
+def _normalize_gemini_usage(usage: Any) -> dict[str, Any]:
+    if usage is None:
+        return {}
+    if hasattr(usage, "model_dump"):
+        try:
+            usage = usage.model_dump()
+        except Exception:
+            pass
+    if hasattr(usage, "dict"):
+        try:
+            usage = usage.dict()
+        except Exception:
+            pass
+    if not isinstance(usage, dict):
+        usage = getattr(usage, "__dict__", {})
+    if not isinstance(usage, dict):
+        return {}
+    normalized = dict(usage)
+    input_tokens = normalized.get("prompt_token_count") or normalized.get("input_tokens")
+    output_tokens = normalized.get("candidates_token_count") or normalized.get("output_tokens")
+    total_tokens = normalized.get("total_token_count") or normalized.get("total_tokens")
+    if total_tokens is None and isinstance(input_tokens, (int, float)) and isinstance(output_tokens, (int, float)):
+        total_tokens = int(input_tokens + output_tokens)
+    if total_tokens is not None:
+        normalized["total_tokens"] = int(total_tokens)
+    return normalized
+
+
+def _gemini_response_preview(response: Any) -> dict[str, Any]:
+    if hasattr(response, "model_dump"):
+        try:
+            dumped = response.model_dump()
+            return dumped if isinstance(dumped, dict) else {"response": dumped}
+        except Exception:
+            pass
+    preview: dict[str, Any] = {
+        "text_present": bool(getattr(response, "text", None)),
+        "function_calls_count": len(getattr(response, "function_calls", None) or []),
+        "finish_reason": _gemini_finish_reason(response, _normalize_gemini_tool_calls(response)),
+        "usage": _normalize_gemini_usage(getattr(response, "usage_metadata", None)),
+    }
+    return preview
+
+
 def _pioneer_store_field_rejected(text: str) -> bool:
     lower = str(text or "").lower()
     return "store" in lower and any(marker in lower for marker in ("unknown", "unexpected", "extra", "unrecognized", "not permitted"))
@@ -892,6 +1228,8 @@ def get_llm_client(provider: str | None = None) -> LLMClient:
         client = AnthropicLLMClient()
     elif selected == "pioneer_chat":
         client = PioneerChatLLMClient()
+    elif selected == "gemini":
+        client = GeminiLLMClient()
     else:
         return NoOpLLMClient(reason=f"Unsupported LLM_PROVIDER: {selected}", model=DEFAULT_OPENAI_MODEL)
     if client.available():

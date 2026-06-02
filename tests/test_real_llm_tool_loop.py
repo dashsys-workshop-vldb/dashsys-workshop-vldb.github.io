@@ -35,8 +35,16 @@ class FakeLLMClient:
 
 
 def test_real_llm_two_tools_baseline_skips_without_key(monkeypatch, tiny_project):
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    for key in [
+        "DASHAGENT_LLM_PROVIDER",
+        "LLM_PROVIDER",
+        "OPENAI_API_KEY",
+        "OPENROUTER_API_KEY",
+        "ANTHROPIC_API_KEY",
+        "PIONEER_API_KEY",
+        "GEMINI_API_KEY",
+    ]:
+        monkeypatch.delenv(key, raising=False)
     result = run_real_llm_two_tools_baseline("List all journeys", config=tiny_project)
     assert result["skipped"] is True
     assert result["real_llm_used"] is False

@@ -87,6 +87,7 @@ def test_full_benchmark_reports_all_seven_and_unavailable_is_not_fatal(tmp_path,
         _write_fake_artifacts(Path(env["DASHAGENT_OUTPUTS_DIR"]), tmp_path / "reports", command["name"])
         return {"returncode": 0, "stdout": "ok", "stderr": "", "duration_sec": 0.01}
 
+    monkeypatch.delenv("PIONEER_MODEL_SWEEP", raising=False)
     monkeypatch.setenv("PIONEER_MODEL_ID_MAP_JSON", json.dumps(fullbench.DEFAULT_SELECTED_MODEL_ID_MAP))
     result = fullbench.run_pioneer_model_full_benchmark(
         SimpleNamespace(outputs_dir=tmp_path),

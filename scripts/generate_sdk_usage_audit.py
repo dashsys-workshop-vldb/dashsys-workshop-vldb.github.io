@@ -90,6 +90,7 @@ def generate_sdk_usage_audit(config: Config | None = None) -> dict[str, Any]:
         "allowed_provider_sdks": {
             "openai_compatible": "OpenAI SDK",
             "anthropic": "Anthropic SDK",
+            "gemini": "Google Gen AI SDK",
         },
         "important_distinction": "Adobe REST/API calls are not LLM/model calls and may continue through the Adobe API client path.",
         "hits": hits,
