@@ -718,6 +718,54 @@ def test_v2_dependent_pass_resolves_placeholder_from_dependency_result(tiny_proj
     assert pass_results[1]["dependency_resolution"]["resolved"] is True
 
 
+def test_v2_dependent_pass_resolves_field_shorthand_placeholder_from_dependency_result(tiny_project, monkeypatch):
+    _install_fake_planner(
+        monkeypatch,
+        [
+            {
+                "route": "EVIDENCE_PIPELINE",
+                "evidence_order": "MULTI_PASS",
+                "passes": [
+                    {
+                        "pass_id": "lookup",
+                        "subtask": "Lookup campaign id.",
+                        "path": "SQL",
+                        "can_run_parallel": False,
+                        "depends_on": [],
+                        "sql": {"query": "SELECT campaign_id FROM dim_campaign WHERE name = ?", "params": ["Birthday Message"]},
+                    },
+                    {
+                        "pass_id": "details",
+                        "subtask": "Fetch campaign details using the id.",
+                        "path": "SQL",
+                        "can_run_parallel": False,
+                        "depends_on": ["lookup"],
+                        "sql": {"query": "SELECT name, status FROM dim_campaign WHERE campaign_id = ?", "params": ["{{lookup.campaign_id}}"]},
+                    },
+                ],
+                "aggregation_instruction": "Answer using both lookup and details.",
+            },
+            {
+                "final_answer": "Birthday Message is draft.",
+                "used_pass_ids": ["lookup", "details"],
+                "claimed_facts": [{"claim": "Birthday Message is draft.", "supporting_pass_ids": ["details"]}],
+                "caveats_included": [],
+            },
+        ],
+    )
+
+    result = AgentExecutor(tiny_project).run(
+        "Find Birthday Message by id, then show its status.",
+        strategy=ROBUST_V2,
+        query_id="v2_shorthand_placeholder_dependency",
+    )
+
+    assert [row["pass_id"] for row in result["tool_results"]] == ["lookup", "details"]
+    assert result["tool_results"][1]["payload"]["rows"] == [{"name": "Birthday Message", "status": "draft"}]
+    pass_results = _preview_items(_checkpoint_output(result, "checkpoint_result_bundle")["runtime_passes"])
+    assert pass_results[1]["dependency_resolution"]["resolved"] is True
+
+
 def test_v2_missing_dependency_placeholder_returns_error_to_llm_repair_once(tiny_project, monkeypatch):
     client = _install_fake_planner(
         monkeypatch,

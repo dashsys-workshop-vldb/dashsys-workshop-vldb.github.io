@@ -4759,9 +4759,12 @@ def _resolve_placeholder_token(token: str, runtime_passes: list[dict[str, Any]],
         return {"ok": False, "error": "Placeholder resolution requires run_id."}
     text = str(token or "").strip()
     marker = ".result."
-    if marker not in text:
+    if marker in text:
+        pass_id, field_path = text.split(marker, 1)
+    elif "." in text:
+        pass_id, field_path = text.split(".", 1)
+    else:
         return {"ok": False, "error": f"Unsupported placeholder '{{{{{text}}}}}'."}
-    pass_id, field_path = text.split(marker, 1)
     pass_id = pass_id.strip()
     field_path = field_path.strip()
     runtime_pass = next((item for item in runtime_passes if str(item.get("pass_id")) == pass_id and (not item.get("run_id") or item.get("run_id") == run_id)), None)
@@ -4790,6 +4793,11 @@ def _lookup_result_payload(payload: dict[str, Any], field_path: str) -> tuple[bo
     for row in rows:
         if isinstance(row, dict) and field_path in row and row[field_path] not in (None, ""):
             return True, row[field_path]
+        if isinstance(row, dict):
+            normalized = {str(key).lower(): key for key in row}
+            actual_key = normalized.get(str(field_path).lower())
+            if actual_key is not None and row.get(actual_key) not in (None, ""):
+                return True, row[actual_key]
     parsed = payload.get("parsed_evidence") if isinstance(payload.get("parsed_evidence"), dict) else {}
     field_aliases = {
         "id": "ids",

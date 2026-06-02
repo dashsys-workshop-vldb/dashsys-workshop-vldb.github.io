@@ -6,6 +6,7 @@ from dashagent.answer_slots import extract_answer_slots
 from dashagent.evidence_bus import EvidenceBus
 from dashagent.final_answer_claim_extractor import extract_final_answer_claims
 from dashagent.llm_final_answer_composer import (
+    FINAL_ANSWER_MAX_TOKENS,
     build_llm_final_answer_card,
     check_final_answer_semantic_grounding,
     check_final_answer_syntax,
@@ -43,6 +44,10 @@ def _bus_and_slots(prompt: str, tool_results: list[dict]) -> tuple[EvidenceBus, 
         if item["type"] == "api":
             bus.observe_api(step, item["payload"])
     return bus, extract_answer_slots(prompt, tool_results)
+
+
+def test_final_answer_token_budget_is_bounded_for_local_weak_model_smoke():
+    assert FINAL_ANSWER_MAX_TOKENS <= 300
 
 
 def test_syntax_gate_accepts_valid_wrapper_and_rejects_empty_or_malformed_answer():
@@ -257,7 +262,14 @@ def test_claim_extractor_ignores_numbered_list_markers_as_counts():
 
 
 def test_semantic_gate_allows_draft_as_conceptual_example_when_data_statuses_differ():
-    tool_results = [_sql_tool_result([{"name": "Birthday Message", "status": "updated"}, {"name": "Gold Tier Welcome Email", "status": "created"}])]
+    tool_results = [
+        _sql_tool_result(
+            [
+                {"name": "Birthday Message", "status": "updated", "campaign_id": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"},
+                {"name": "Gold Tier Welcome Email", "status": "created", "campaign_id": "3f277603-ac4d-4022-a993-8cbd3afc0d62"},
+            ]
+        )
+    ]
     bus, slots = _bus_and_slots("Explain inactive journey and show inactive journeys.", tool_results)
 
     result = check_final_answer_semantic_grounding(
@@ -273,6 +285,78 @@ def test_semantic_gate_allows_draft_as_conceptual_example_when_data_statuses_dif
                 "source_results": [{"source": "SQL", "status": "SUCCESS", "scope": "LOCAL_SNAPSHOT"}],
                 "result": {"rows": [{"name": "Birthday Message", "status": "updated"}, {"name": "Gold Tier Welcome Email", "status": "created"}]},
             }
+        ],
+        evidence_bus=bus,
+        slots=slots,
+    )
+
+    assert result.passed is True
+
+
+def test_semantic_gate_allows_active_as_conceptual_contrast_when_data_statuses_differ():
+    tool_results = [_sql_tool_result([{"name": "Birthday Message", "status": "updated"}, {"name": "Gold Tier Welcome Email", "status": "created"}])]
+    bus, slots = _bus_and_slots("Explain inactive journey and show inactive journeys.", tool_results)
+
+    result = check_final_answer_semantic_grounding(
+        'An inactive journey is not currently executing. Unlike active or live journeys, inactive journeys are paused. Local snapshot journeys: Birthday Message has status "updated"; Gold Tier Welcome Email has status "created".',
+        question="Explain inactive journey and show inactive journeys.",
+        runtime_passes=[
+            {
+                "pass_id": "local_inactive",
+                "source": "SQL",
+                "status": "SUCCESS",
+                "scope": "LOCAL_SNAPSHOT",
+                "facts": ["name: Birthday Message", "status: updated", "name: Gold Tier Welcome Email", "status: created"],
+                "source_results": [{"source": "SQL", "status": "SUCCESS", "scope": "LOCAL_SNAPSHOT"}],
+                "result": {"rows": [{"name": "Birthday Message", "status": "updated"}, {"name": "Gold Tier Welcome Email", "status": "created"}]},
+            }
+        ],
+        evidence_bus=bus,
+        slots=slots,
+    )
+
+    assert result.passed is True
+
+
+def test_semantic_gate_allows_product_context_phrase_for_mixed_inactive_answer():
+    tool_results = [
+        _sql_tool_result(
+            [
+                {"name": "Birthday Message", "status": "updated", "campaign_id": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"},
+                {"name": "Gold Tier Welcome Email", "status": "created", "campaign_id": "3f277603-ac4d-4022-a993-8cbd3afc0d62"},
+            ]
+        )
+    ]
+    bus, slots = _bus_and_slots("Explain inactive journey and show inactive journeys.", tool_results)
+
+    result = check_final_answer_semantic_grounding(
+        "An inactive journey in Journey Optimizer refers to a marketing automation workflow that is not currently executing or set to active. "
+        "Based on the local snapshot, there are two such journeys: Birthday Message (ID 9f4ebca4-2fdd-4873-95f5-8d66bab358c6) and Gold Tier Welcome Email (ID 3f277603-ac4d-4022-a993-8cbd3afc0d62). "
+        "Live API evidence was unavailable due to Adobe credentials being unavailable, so no comparison with live state could be performed.",
+        question="Explain inactive journey and show inactive journeys.",
+        runtime_passes=[
+            {
+                "pass_id": "local_inactive",
+                "source": "SQL",
+                "status": "SUCCESS",
+                "scope": "LOCAL_SNAPSHOT",
+                "facts": [
+                    "name: Birthday Message",
+                    "status: updated",
+                    "name: Gold Tier Welcome Email",
+                    "status: created",
+                    "id: 9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+                    "id: 3f277603-ac4d-4022-a993-8cbd3afc0d62",
+                ],
+                "source_results": [{"source": "SQL", "status": "SUCCESS", "scope": "LOCAL_SNAPSHOT"}],
+                "result": {
+                    "rows": [
+                        {"name": "Birthday Message", "status": "updated", "campaign_id": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"},
+                        {"name": "Gold Tier Welcome Email", "status": "created", "campaign_id": "3f277603-ac4d-4022-a993-8cbd3afc0d62"},
+                    ]
+                },
+            },
+            {"pass_id": "live_inactive", "source": "API", "status": "API_ERROR", "scope": "LIVE_API", "result": {}, "caveats": ["Adobe credentials unavailable"]},
         ],
         evidence_bus=bus,
         slots=slots,
@@ -462,6 +546,64 @@ def test_final_answer_card_repair_context_exposes_gate_errors_and_runtime_facts(
     assert "missing_required_info" in serialized
     assert "previous_answer" in serialized
     assert "Runtime evidence was unavailable" in serialized
+
+
+def test_final_answer_card_compacts_large_result_bundle_but_keeps_available_facts():
+    plan = LLMUnifiedPlan(
+        route="EVIDENCE_PIPELINE",
+        evidence_order="SQL_FIRST",
+        direct_answer=None,
+        sql=LLMUnifiedSQLCandidate(query='SELECT "NAME", "STATUS" FROM "dim_campaign"', params=[]),
+        api_request=None,
+        passes=[
+            LLMUnifiedPass(
+                pass_id="local_inactive",
+                subtask="List inactive journeys.",
+                path="SQL",
+                can_run_parallel=True,
+                depends_on=[],
+                evidence_order="SQL_FIRST",
+                sql=LLMUnifiedSQLCandidate(query='SELECT "NAME", "STATUS" FROM "dim_campaign"', params=[]),
+                api_request=None,
+                expected_result="Inactive journeys.",
+            )
+        ],
+        aggregation_instruction="Give a concise concept sentence and local inactive journey list.",
+        reason="test",
+        provider="openai",
+        model="unit",
+    )
+    rows = [{"name": f"Journey {idx}", "status": "created", "notes": "x" * 200} for idx in range(40)]
+    rows[0]["name"] = "Birthday Message"
+    runtime_passes = [
+        {
+            "pass_id": "local_inactive",
+            "source": "SQL",
+            "path": "SQL",
+            "status": "SUCCESS",
+            "scope": "LOCAL_SNAPSHOT",
+            "facts": ["name: Birthday Message", "status: created"],
+            "source_results": [{"source": "SQL", "status": "SUCCESS", "scope": "LOCAL_SNAPSHOT", "result": {"rows": rows, "row_count": len(rows)}}],
+            "result": {"rows": rows, "row_count": len(rows)},
+        }
+    ]
+    evidence_bus = EvidenceBus(run_id="unit")
+    evidence_bus.observe_pass_result(runtime_passes[0])
+    slots = extract_answer_slots("Explain inactive journey and show inactive journeys.", [_sql_tool_result(rows[:2])])
+
+    card = build_llm_final_answer_card(
+        user_prompt="Explain inactive journey and show inactive journeys.",
+        llm_plan=plan,
+        runtime_passes=runtime_passes,
+        evidence_bus=evidence_bus,
+        answer_slots=slots,
+        result_bundle=ResultBundle.from_pass_results(runtime_passes, [{"payload": {"rows": rows}}], run_id="unit"),
+    )
+
+    serialized = json.dumps(card, sort_keys=True)
+    assert len(serialized) < 15000
+    assert "Birthday Message" in json.dumps(card["AVAILABLE_RUNTIME_FACTS"], sort_keys=True)
+    assert serialized.count("x" * 80) < 3
 
 
 def test_direct_concept_pass_is_not_required_as_runtime_evidence():

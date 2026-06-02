@@ -8,7 +8,7 @@ Promotion is not allowed by this pass. The semantic routing harness remains shad
 
 ## Gates
 
-- public_dev_strict_no_regression: `False`
+- public_dev_strict_no_regression: `True`
 - hidden_style_passes: `True`
 - check_submission_ready_passes: `True`
 - generated_prompt_unsupported_claims_zero: `True`

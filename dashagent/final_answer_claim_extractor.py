@@ -40,6 +40,8 @@ GENERIC_ENTITY_TERMS = {
     "Count",
     "Status",
     "ID",
+    "Journey Optimizer",
+    "Adobe Experience Platform",
 }
 GENERIC_ENTITY_PHRASES = {
     "the api",
@@ -52,6 +54,8 @@ GENERIC_ENTITY_PHRASES = {
     "evidence provided",
     "the field",
     "the fields",
+    "journey optimizer",
+    "adobe experience platform",
 }
 
 
@@ -280,9 +284,9 @@ def _looks_like_api_caveat_status(text: str, start: int, end: int, status: str) 
 
 
 def _looks_like_conceptual_status_example(text: str, start: int, end: int, status: str) -> bool:
-    if str(status).lower() not in {"draft", "deployed", "published", "unpublished"}:
+    if str(status).lower() not in {"active", "inactive", "draft", "deployed", "published", "unpublished"}:
         return False
     context = text[max(0, start - 120) : min(len(text), end + 120)].lower()
-    conceptual_signal = bool(re.search(r"\b(refers to|typically|can mean|can include|includes|such as|e\\.g\\.|for example|concept|state encompasses|is considered)\b", context))
+    conceptual_signal = bool(re.search(r"\b(refers to|typically|can mean|can include|includes|such as|e\\.g\\.|for example|concept|state encompasses|is considered|unlike|differs? from|not currently|not running)\b", context))
     data_signal = bool(re.search(r"\b(status|state)\s*[:=]\s*$", context[: max(0, start - max(0, start - 120))]))
     return conceptual_signal and not data_signal

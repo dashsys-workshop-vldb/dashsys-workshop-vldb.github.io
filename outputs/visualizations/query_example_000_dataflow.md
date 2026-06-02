@@ -7,10 +7,10 @@
 | Query | When was the journey 'Birthday Message' published? |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
 | Final answer | The journey "Birthday Message" has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable. |
-| Strict score | unavailable |
-| Correctness score | unavailable |
-| Answer / SQL / API score | unavailable / unavailable / unavailable |
-| Tools / tokens / runtime | 2 / 826 / 0.021087625063955784 |
+| Strict score | 0.6912 |
+| Correctness score | 0.7232 |
+| Answer / SQL / API score | 0.4875 / 0.9 / None |
+| Tools / tokens / runtime | 2 / 826 / 0.0299747078679502 |
 
 ## Dataflow Graph
 

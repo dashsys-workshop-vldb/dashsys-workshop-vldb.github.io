@@ -1,5 +1,5 @@
 {
-  "answer_time": 2.6110330000519753,
+  "answer_time": 17.62854937510565,
   "api_call_count": 0,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-01T02:57:24.915108+00:00"
+      "timestamp": "2026-06-02T01:31:19.224797+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-01T02:57:24.915124+00:00"
+      "timestamp": "2026-06-02T01:31:19.224816+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,25 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-01T02:57:24.915134+00:00"
+      "timestamp": "2026-06-02T01:31:19.224821+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_unified_planner_start",
+      "correctness_role": "diagnostic only; does not alter route, Semantic IR, SQL/API, or answer behavior",
+      "duration_ms": 0.0,
+      "effect": "records the exact boundary before the potentially slow local LLM planner call",
+      "efficiency_role": "enables smoke timeout localization without extra tool calls",
+      "input_summary": {
+        "query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "current_stage": "llm_unified_planner_call_start",
+        "prompt_id": "example_003"
+      },
+      "stage": "llm-owned planning",
+      "technique": "pre-call heartbeat before Unified LLM Planner",
+      "timestamp": "2026-06-02T01:31:19.231228+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -79,29 +97,231 @@
       "input_summary": {
         "query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results."
       },
-      "output": {
-        "backend_unavailable": false,
-        "evidence_order": "SQL_FIRST",
-        "model": "Gpt 4o",
-        "parse_error": false,
-        "provider": "[REDACTED]",
-        "raw_preview": {
-          "backend_type": "openai_sdk",
-          "error": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
-          "model": "Gpt 4o",
-          "ok": false,
-          "provider": "[REDACTED]",
-          "sdk_path_used": true,
-          "skipped": false,
-          "transport": "openai_sdk",
-          "truncated_fields": 1
+      "metrics": {
+        "api_request_gate_failures": 0,
+        "atomic_protocol_fallback_used": false,
+        "backend_formal_compilation_used": true,
+        "backend_generated_sql": false,
+        "backend_semantic_decomposition_used": false,
+        "backend_semantic_planning_used": false,
+        "backend_sql_api_generation_used": false,
+        "compiled_alias_count": 0,
+        "compiled_api_count": 0,
+        "compiled_sql_count": 4,
+        "compiler_latency_ms": 0,
+        "planner_json_fallback_used": false,
+        "planner_json_parse_error": null,
+        "planner_parse_source": "sdk_toolcall_semantic_ir",
+        "planner_provider_latency_ms": 39746,
+        "planner_repair_attempted": false,
+        "planner_success": true,
+        "planner_timeout": false,
+        "planner_toolcall_attempted": true,
+        "planner_toolcall_supported": true,
+        "provider_capabilities": {
+          "requires_json_prompting": false,
+          "supports_json_content_fallback": true,
+          "supports_tool_calls": true
         },
-        "reason": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
-        "route": "EVIDENCE_PIPELINE"
+        "raw_sql_fallback_considered": false,
+        "raw_sql_fallback_gate_error_type": null,
+        "raw_sql_fallback_latency_ms": 0,
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_rejected_reason": null,
+        "raw_sql_fallback_repair_attempted": false,
+        "raw_sql_fallback_repair_success": false,
+        "raw_sql_fallback_success": false,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "sdk_toolcall_semantic_ir_used": true,
+        "semantic_alias_count": 0,
+        "semantic_alias_error_type": null,
+        "semantic_alias_repair_attempted": false,
+        "semantic_alias_validation_passed": true,
+        "semantic_alias_validation_used": true,
+        "semantic_ir_plan_preview": {
+          "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_lookup_sms_target_id\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LOOKUP\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_target\", \"fields\": {\"items\": [\"TARGETID\", \"NAME\"], \"total_items\": 2, \"truncated_items\": false}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"SMS Opt-In\"}], \"total_items\": 1, \"truncated_items\": false}}, \"description\": \"Look up the TARGETID for the destination named 'SMS Opt-In' from the local snapshot.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_list_segment_targets\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LIST\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"hkg_br_segment_target\", \"fields\": {\"items\": [\"SEGMENTID\", \"TARGETID\"], \"total_items\": 2, \"truncated_items\": false}, \"filters\": {\"items\": [{\"field\": \"TARGETID\", \"op\": \"in\", \"value\": {\"items\": [\"{{t1_lookup_sms_target_id.TARGETID}}\"], \"total_items\": 1, \"truncated_items\": false}}], \"total_items\": 1, \"truncated_items\": false}}, \"depends_on\": {\"items\": [\"t1_lookup_sms_target_id\"], \"total_items...",
+          "truncated": true
+        },
+        "semantic_ir_provider_latency_ms": 39741,
+        "semantic_ir_repair_attempted": false,
+        "semantic_ir_repair_latency_ms": 0,
+        "semantic_ir_repair_success": false,
+        "semantic_ir_support_check_latency_ms": 0,
+        "semantic_ir_support_checked": true,
+        "semantic_ir_support_recommended_action": "COMPILE",
+        "semantic_ir_support_repair_attempted": false,
+        "semantic_ir_support_repair_error_message": null,
+        "semantic_ir_support_repair_error_type": null,
+        "semantic_ir_support_repair_latency_ms": 0,
+        "semantic_ir_support_repair_success": false,
+        "semantic_ir_supported": true,
+        "semantic_ir_task_count": 4,
+        "semantic_ir_toolcall_supported": true,
+        "semantic_ir_unsupported_features": [],
+        "semantic_ir_unsupported_operation": null,
+        "semantic_ir_unsupported_reason": null,
+        "semantic_ir_unsupported_task_id": null,
+        "semantic_ir_validation_error_message": null,
+        "semantic_ir_validation_error_type": null,
+        "semantic_ir_validation_latency_ms": 0,
+        "semantic_ir_validation_passed": true,
+        "sql_compile_gate_failures": 0,
+        "v2_semantic_ir_used": true
+      },
+      "output": {
+        "aggregation_instruction": "Join the segment details (t3) with the dependency list (t4). For each audience (segment) from t3, count the number of unique DEPENDENTSEGMENTIDs from t4 where SEGMENTID matches. The final output should include: audienceId (SEGMENTID), name (NAME), totalProfiles (TOTALMEMBERS), createdTime (CREATEDTIME), updatedTime (UPDATEDTIME), and used_in_other_audience_count (count of dependent segments). Ensure no row limit is applied.",
+        "evidence_order": "MULTI_PASS",
+        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+        "passes": {
+          "items": [
+            {
+              "pass_id": "t1_lookup_sms_target_id",
+              "path": "SQL",
+              "raw_sql_fallback_reason": null,
+              "raw_sql_fallback_task_id": null,
+              "raw_sql_fallback_used": false,
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "subtask": "Look up the TARGETID for the destination named 'SMS Opt-In' from the local snapshot.",
+              "truncated_fields": 9
+            },
+            {
+              "pass_id": "t2_list_segment_targets",
+              "path": "SQL",
+              "raw_sql_fallback_reason": null,
+              "raw_sql_fallback_task_id": null,
+              "raw_sql_fallback_used": false,
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "subtask": "Find all segment IDs connected to the 'SMS Opt-In' target.",
+              "truncated_fields": 9
+            },
+            {
+              "pass_id": "t3_get_segment_details",
+              "path": "SQL",
+              "raw_sql_fallback_reason": null,
+              "raw_sql_fallback_task_id": null,
+              "raw_sql_fallback_used": false,
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "subtask": "Retrieve audience details (ID, name, total profiles, created/updated time) for the segments connected to 'SMS Opt-In'.",
+              "truncated_fields": 9
+            }
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "provider": "openai",
+        "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
+        "route": "EVIDENCE_PIPELINE",
+        "sql": {
+          "params": {
+            "items": [
+              "SMS Opt-In"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "query": "SELECT \"TARGETID\", \"NAME\" FROM \"dim_target\" WHERE \"NAME\" = ? LIMIT 50"
+        },
+        "truncated_fields": 6
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-01T02:57:26.236579+00:00"
+      "timestamp": "2026-06-02T01:31:58.980092+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
+      "correctness_role": "blocks malformed dependency graphs before execution",
+      "duration_ms": 0.0,
+      "effect": "validates only graph shape; does not choose subtasks, dependencies, SQL, or API paths",
+      "efficiency_role": "bounds pass scheduling to LLM-declared valid graphs",
+      "input_summary": {
+        "evidence_order": "MULTI_PASS",
+        "pass_ids": {
+          "items": [
+            "t1_lookup_sms_target_id",
+            "t2_list_segment_targets",
+            "t3_get_segment_details"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        }
+      },
+      "output": {
+        "dependency_edges": {
+          "items": [
+            {
+              "items": [
+                "t1_lookup_sms_target_id",
+                "t2_list_segment_targets"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2_list_segment_targets",
+                "t3_get_segment_details"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2_list_segment_targets",
+                "t4_count_dependent_segments"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "parallel_groups": {
+          "items": [
+            {
+              "items": [
+                "t1_lookup_sms_target_id"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2_list_segment_targets"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t3_get_segment_details"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "pass_count": 4,
+        "pass_ids": {
+          "items": [
+            "t1_lookup_sms_target_id",
+            "t2_list_segment_targets",
+            "t3_get_segment_details"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "passed": true
+      },
+      "stage": "llm-owned pass graph validation",
+      "technique": "shape-only PassGraphGate",
+      "timestamp": "2026-06-02T01:31:58.981504+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -111,14 +331,43 @@
       "efficiency_role": "prioritizes critical path and enables exact pass-result reuse",
       "input_summary": {
         "dependency_edges": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "t1_lookup_sms_target_id",
+                "t2_list_segment_targets"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2_list_segment_targets",
+                "t3_get_segment_details"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2_list_segment_targets",
+                "t4_count_dependent_segments"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 3,
           "truncated_items": false
         },
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
+          "items": [
+            "t1_lookup_sms_target_id",
+            "t2_list_segment_targets",
+            "t3_get_segment_details"
+          ],
+          "total_items": 4,
+          "truncated_items": true
         }
       },
       "output": {
@@ -137,8 +386,12 @@
         "cache_hits": 0,
         "checkpoint_resume_used": false,
         "critical_path": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_lookup_sms_target_id",
+            "t2_list_segment_targets",
+            "t3_get_segment_details"
+          ],
+          "total_items": 3,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -147,8 +400,33 @@
           "truncated_items": false
         },
         "dependency_edges": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "t1_lookup_sms_target_id",
+                "t2_list_segment_targets"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2_list_segment_targets",
+                "t3_get_segment_details"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2_list_segment_targets",
+                "t4_count_dependent_segments"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 3,
           "truncated_items": false
         },
         "early_stopped_passes": {
@@ -158,14 +436,40 @@
         },
         "model_cascade_used": false,
         "parallel_groups": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
+          "items": [
+            {
+              "items": [
+                "t1_lookup_sms_target_id"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2_list_segment_targets"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t3_get_segment_details"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 4,
+          "truncated_items": true
         },
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
+          "items": [
+            "t1_lookup_sms_target_id",
+            "t2_list_segment_targets",
+            "t3_get_segment_details"
+          ],
+          "total_items": 4,
+          "truncated_items": true
         },
         "stage_pipeline_used": true,
         "truncated_fields": 1,
@@ -173,7 +477,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-01T02:57:26.237930+00:00"
+      "timestamp": "2026-06-02T01:31:58.981888+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -183,34 +487,111 @@
       "efficiency_role": "allows later passes to enter free stages before earlier passes finish all stages",
       "input_summary": {
         "parallel_groups": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
+          "items": [
+            {
+              "items": [
+                "t1_lookup_sms_target_id"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2_list_segment_targets"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t3_get_segment_details"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 4,
+          "truncated_items": true
         },
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
+          "items": [
+            "t1_lookup_sms_target_id",
+            "t2_list_segment_targets",
+            "t3_get_segment_details"
+          ],
+          "total_items": 4,
+          "truncated_items": true
         }
       },
       "output": {
         "dependency_edges": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "t1_lookup_sms_target_id",
+                "t2_list_segment_targets"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2_list_segment_targets",
+                "t3_get_segment_details"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2_list_segment_targets",
+                "t4_count_dependent_segments"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 3,
           "truncated_items": false
         },
         "max_api_workers": 2,
         "max_parallelism": 4,
         "max_sql_workers": 2,
         "parallel_groups": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
+          "items": [
+            {
+              "items": [
+                "t1_lookup_sms_target_id"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2_list_segment_targets"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t3_get_segment_details"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 4,
+          "truncated_items": true
         },
         "passes_completed": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
+          "items": [
+            "t1_lookup_sms_target_id",
+            "t2_list_segment_targets",
+            "t3_get_segment_details"
+          ],
+          "total_items": 4,
+          "truncated_items": true
         },
         "passes_dependency_blocked": {
           "items": [],
@@ -224,53 +605,50 @@
         },
         "pipeline_stage_count": 8,
         "stage_events": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
+          "items": [
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_117a0dbfc0f64f188e44e8f799c02a98:t1_lookup_sms_target_id",
+              "pass_id": "t1_lookup_sms_target_id",
+              "plan_version": 1,
+              "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98",
+              "stage": "PLAN_READY",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_117a0dbfc0f64f188e44e8f799c02a98:t1_lookup_sms_target_id",
+              "pass_id": "t1_lookup_sms_target_id",
+              "plan_version": 1,
+              "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98",
+              "stage": "PLAN_READY",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_117a0dbfc0f64f188e44e8f799c02a98:t1_lookup_sms_target_id",
+              "pass_id": "t1_lookup_sms_target_id",
+              "plan_version": 1,
+              "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98",
+              "stage": "DEPENDENCY_READY",
+              "status": "OK",
+              "truncated_fields": 3
+            }
+          ],
+          "total_items": 64,
+          "truncated_items": true
         },
         "truncated_fields": 4,
-        "v2_pipeline_scheduler_used": false
+        "v2_pipeline_scheduler_used": true
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-01T02:57:26.237945+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
-      "correctness_role": "blocks malformed dependency graphs before execution",
-      "duration_ms": 0.0,
-      "effect": "validates only graph shape; does not choose subtasks, dependencies, SQL, or API paths",
-      "efficiency_role": "bounds pass scheduling to LLM-declared valid graphs",
-      "input_summary": {
-        "evidence_order": "SQL_FIRST",
-        "pass_ids": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        }
-      },
-      "output": {
-        "dependency_edges": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "parallel_groups": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "pass_count": 0,
-        "pass_ids": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "passed": true
-      },
-      "stage": "llm-owned pass graph validation",
-      "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-01T02:57:26.237952+00:00"
+      "timestamp": "2026-06-02T01:31:58.982270+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
@@ -279,14 +657,21 @@
       "effect": "schedules only LLM-declared passes; does not split prompts or add semantic subtasks",
       "efficiency_role": "groups dependency-free passes without changing their semantics",
       "input_summary": {
-        "multi_pass_enabled": false,
+        "multi_pass_enabled": true,
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
+          "items": [
+            "t1_lookup_sms_target_id",
+            "t2_list_segment_targets",
+            "t3_get_segment_details"
+          ],
+          "total_items": 4,
+          "truncated_items": true
         }
       },
       "output": {
+        "alias_materialized_count": 0,
+        "api_execution_latency_sec": 0.0,
+        "api_gate_latency_sec": 0.0,
         "api_gate_passed": null,
         "api_repair_attempts": 0,
         "backend_semantic_decomposition_used": false,
@@ -305,8 +690,12 @@
         "cache_hits": 0,
         "checkpoint_resume_used": false,
         "critical_path": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_lookup_sms_target_id",
+            "t2_list_segment_targets",
+            "t3_get_segment_details"
+          ],
+          "total_items": 3,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -315,8 +704,33 @@
           "truncated_items": false
         },
         "dependency_edges": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "t1_lookup_sms_target_id",
+                "t2_list_segment_targets"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2_list_segment_targets",
+                "t3_get_segment_details"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2_list_segment_targets",
+                "t4_count_dependent_segments"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 3,
           "truncated_items": false
         },
         "deterministic_answer_template_used": false,
@@ -325,32 +739,67 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_9ea3c262f39c4464a667e850da828bb1",
+        "evidence_bus_id": "evidence_run_117a0dbfc0f64f188e44e8f799c02a98",
+        "exact_pass_cache_hits": 0,
+        "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
-        "llm_pass_count": 0,
-        "llm_pass_graph_used": false,
+        "llm_pass_count": 4,
+        "llm_pass_graph_used": true,
         "max_api_workers": 2,
         "max_parallelism": 4,
         "max_sql_workers": 2,
         "model_cascade_used": false,
-        "multi_pass_enabled": false,
+        "multi_pass_enabled": true,
         "parallel_groups": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
+          "items": [
+            {
+              "items": [
+                "t1_lookup_sms_target_id"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2_list_segment_targets"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t3_get_segment_details"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 4,
+          "truncated_items": true
         },
-        "parallel_pass_count": 0,
+        "parallel_pass_count": 1,
+        "pass_graph_gate_error_type": null,
         "pass_graph_gate_passed": true,
+        "pass_graph_repair_attempted": false,
+        "pass_graph_repair_success": false,
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
+          "items": [
+            "t1_lookup_sms_target_id",
+            "t2_list_segment_targets",
+            "t3_get_segment_details"
+          ],
+          "total_items": 4,
+          "truncated_items": true
         },
-        "pass_results_count": 0,
+        "pass_results_count": 4,
         "passes_completed": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
+          "items": [
+            "t1_lookup_sms_target_id",
+            "t2_list_segment_targets",
+            "t3_get_segment_details"
+          ],
+          "total_items": 4,
+          "truncated_items": true
         },
         "passes_dependency_blocked": {
           "items": [],
@@ -358,8 +807,10 @@
           "truncated_items": false
         },
         "passes_executed": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_lookup_sms_target_id"
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_failed": {
@@ -369,24 +820,556 @@
         },
         "pipeline_stage_count": 8,
         "plan_version": 1,
-        "result_bundle_id": "bundle_run_9ea3c262f39c4464a667e850da828bb1",
-        "run_id": "run_9ea3c262f39c4464a667e850da828bb1",
-        "sequential_pass_count": 0,
-        "sql_gate_passed": null,
-        "sql_repair_attempts": 0,
-        "stage_events": {
+        "raw_sql_fallback_considered": false,
+        "raw_sql_fallback_gate_error_type": null,
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_repair_attempted": false,
+        "raw_sql_fallback_repair_success": false,
+        "raw_sql_fallback_success": false,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "raw_sql_safety_gate_failures": 0,
+        "repaired_pass_count": 0,
+        "result_bundle_id": "bundle_run_117a0dbfc0f64f188e44e8f799c02a98",
+        "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98",
+        "semantic_alias_count": 0,
+        "semantic_alias_materialized": {
           "items": [],
           "total_items": 0,
           "truncated_items": false
         },
+        "semantic_alias_materialized_count": 0,
+        "semantic_alias_validation_failures": 0,
+        "sequential_pass_count": 3,
+        "sql_execution_latency_sec": 0.0,
+        "sql_gate_latency_sec": 0.001,
+        "sql_gate_passed": true,
+        "sql_repair_attempts": 0,
+        "stage_events": {
+          "items": [
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_117a0dbfc0f64f188e44e8f799c02a98:t1_lookup_sms_target_id",
+              "pass_id": "t1_lookup_sms_target_id",
+              "plan_version": 1,
+              "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98",
+              "stage": "SQL_API_GATE",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_117a0dbfc0f64f188e44e8f799c02a98:t1_lookup_sms_target_id",
+              "pass_id": "t1_lookup_sms_target_id",
+              "plan_version": 1,
+              "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98",
+              "stage": "READY_FOR_FINAL_COMPOSITION",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_117a0dbfc0f64f188e44e8f799c02a98:t2_list_segment_targets",
+              "pass_id": "t2_list_segment_targets",
+              "plan_version": 1,
+              "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98",
+              "stage": "READY_FOR_FINAL_COMPOSITION",
+              "status": "OK",
+              "truncated_fields": 3
+            }
+          ],
+          "total_items": 24,
+          "truncated_items": true
+        },
         "stage_pipeline_used": true,
         "truncated_fields": 6,
         "v2_execution_optimizer_used": true,
-        "v2_pipeline_scheduler_used": false
+        "v2_pipeline_scheduler_used": true
       },
       "stage": "llm-owned pass scheduling",
       "technique": "dependency-aware scheduling of LLM-declared evidence passes",
-      "timestamp": "2026-06-01T02:57:26.237954+00:00"
+      "timestamp": "2026-06-02T01:31:58.982274+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
+      "correctness_role": "does not infer missing dependency values or add backend-selected subtasks",
+      "duration_ms": 0.0,
+      "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
+      "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
+      "input_summary": {
+        "pass_id": "t1_lookup_sms_target_id"
+      },
+      "output": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "required": false,
+        "resolved": true,
+        "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98"
+      },
+      "stage": "llm-owned pass dependency resolution",
+      "technique": "placeholder resolution from completed LLM pass results",
+      "timestamp": "2026-06-02T01:31:58.982314+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
+      "correctness_role": "returns compile errors for one LLM repair attempt",
+      "duration_ms": 0.0,
+      "effect": "checks syntax/database-semantic validity without rewriting SQL",
+      "efficiency_role": "prevents executing uncompilable SQL",
+      "input_summary": {
+        "pass_id": "t1_lookup_sms_target_id",
+        "sql": "SELECT \"TARGETID\", \"NAME\" FROM \"dim_target\" WHERE \"NAME\" = ? LIMIT 50"
+      },
+      "output": {
+        "params": {
+          "items": [
+            "SMS Opt-In"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_id": "t1_lookup_sms_target_id",
+        "passed": true,
+        "sql": "SELECT \"TARGETID\", \"NAME\" FROM \"dim_target\" WHERE \"NAME\" = ? LIMIT 50"
+      },
+      "stage": "llm sql compile gate",
+      "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
+      "timestamp": "2026-06-02T01:31:58.983164+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
+      "correctness_role": "does not infer missing dependency values or add backend-selected subtasks",
+      "duration_ms": 0.0,
+      "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
+      "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
+      "input_summary": {
+        "depends_on": {
+          "items": [
+            "t1_lookup_sms_target_id"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_id": "t2_list_segment_targets"
+      },
+      "output": {
+        "errors": {
+          "items": [
+            "Dependency placeholder 't1_lookup_sms_target_id.TARGETID' could not be resolved."
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "required": true,
+        "resolved": false,
+        "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98"
+      },
+      "stage": "llm-owned pass dependency resolution",
+      "technique": "placeholder resolution from completed LLM pass results",
+      "timestamp": "2026-06-02T01:31:58.983828+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution_repair",
+      "correctness_role": "backend supplies only resolution errors and no replacement SQL/API",
+      "duration_ms": 0.0,
+      "effect": "lets the LLM repair its pass placeholders after dependency-resolution feedback",
+      "efficiency_role": "caps dependency repair to one attempt",
+      "input_summary": {
+        "errors": {
+          "items": [
+            "Dependency placeholder 't1_lookup_sms_target_id.TARGETID' could not be resolved."
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_id": "t2_list_segment_targets"
+      },
+      "output": {
+        "aggregation_instruction": "Join the segment details (t3) with the dependency list (t4). For each audience (segment) from t3, count the number of unique DEPENDENTSEGMENTIDs from t4 where SEGMENTID matches. The final output should include: audienceId (SEGMENTID), name (NAME), totalProfiles (TOTALMEMBERS), createdTime (CREATEDTIME), updatedTime (UPDATEDTIME), and used_in_other_audience_count (count of dependent segments). Ensure no row limit is applied.",
+        "evidence_order": "MULTI_PASS",
+        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+        "passes": {
+          "items": [
+            {
+              "pass_id": "t1_lookup_sms_target_id",
+              "path": "SQL",
+              "raw_sql_fallback_reason": null,
+              "raw_sql_fallback_task_id": null,
+              "raw_sql_fallback_used": false,
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "subtask": "Look up the TARGETID for the destination named 'SMS Opt-In' from the local snapshot.",
+              "truncated_fields": 9
+            },
+            {
+              "pass_id": "t2_list_segment_targets",
+              "path": "SQL",
+              "raw_sql_fallback_reason": null,
+              "raw_sql_fallback_task_id": null,
+              "raw_sql_fallback_used": false,
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "subtask": "Find all segment IDs connected to the 'SMS Opt-In' target.",
+              "truncated_fields": 9
+            },
+            {
+              "pass_id": "t3_get_segment_details",
+              "path": "SQL",
+              "raw_sql_fallback_reason": null,
+              "raw_sql_fallback_task_id": null,
+              "raw_sql_fallback_used": false,
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "subtask": "Retrieve audience details (ID, name, total profiles, created/updated time) for the segments connected to 'SMS Opt-In'.",
+              "truncated_fields": 9
+            }
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "provider": "openai",
+        "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
+        "route": "EVIDENCE_PIPELINE",
+        "sql": {
+          "params": {
+            "items": [
+              "SMS Opt-In"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "query": "SELECT \"TARGETID\", \"NAME\" FROM \"dim_target\" WHERE \"NAME\" = ? LIMIT 50"
+        },
+        "truncated_fields": 6
+      },
+      "stage": "llm-owned pass dependency repair",
+      "technique": "single LLM-owned dependency placeholder repair",
+      "timestamp": "2026-06-02T01:32:42.604146+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution_repair_check",
+      "correctness_role": "executes repaired pass only if placeholders resolve from prior pass evidence",
+      "duration_ms": 0.0,
+      "effect": "checks repaired placeholders without backend mutation",
+      "efficiency_role": "stops after one dependency repair",
+      "input_summary": {
+        "depends_on": {
+          "items": [
+            "t1_lookup_sms_target_id"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_id": "t2_list_segment_targets"
+      },
+      "output": {
+        "errors": {
+          "items": [
+            "Dependency placeholder 't1_lookup_sms_target_id.TARGETID' could not be resolved."
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "repair_attempted": true,
+        "required": true,
+        "resolved": false,
+        "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98"
+      },
+      "stage": "llm-owned pass dependency resolution",
+      "technique": "placeholder resolution for repaired LLM pass",
+      "timestamp": "2026-06-02T01:32:42.604226+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
+      "correctness_role": "does not infer missing dependency values or add backend-selected subtasks",
+      "duration_ms": 0.0,
+      "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
+      "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
+      "input_summary": {
+        "depends_on": {
+          "items": [
+            "t2_list_segment_targets"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_id": "t3_get_segment_details"
+      },
+      "output": {
+        "errors": {
+          "items": [
+            "Dependency placeholder 't2_list_segment_targets.SEGMENTID' could not be resolved."
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "required": true,
+        "resolved": false,
+        "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98"
+      },
+      "stage": "llm-owned pass dependency resolution",
+      "technique": "placeholder resolution from completed LLM pass results",
+      "timestamp": "2026-06-02T01:32:42.604285+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution_repair",
+      "correctness_role": "backend supplies only resolution errors and no replacement SQL/API",
+      "duration_ms": 0.0,
+      "effect": "lets the LLM repair its pass placeholders after dependency-resolution feedback",
+      "efficiency_role": "caps dependency repair to one attempt",
+      "input_summary": {
+        "errors": {
+          "items": [
+            "Dependency placeholder 't2_list_segment_targets.SEGMENTID' could not be resolved."
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_id": "t3_get_segment_details"
+      },
+      "output": {
+        "aggregation_instruction": "Join the segment details (t3) with the dependency list (t4). For each audience (segment) from t3, count the number of unique DEPENDENTSEGMENTIDs from t4 where SEGMENTID matches. The final output should include: audienceId (SEGMENTID), name (NAME), totalProfiles (TOTALMEMBERS), createdTime (CREATEDTIME), updatedTime (UPDATEDTIME), and used_in_other_audience_count (count of dependent segments). Ensure no row limit is applied.",
+        "evidence_order": "MULTI_PASS",
+        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+        "passes": {
+          "items": [
+            {
+              "pass_id": "t1_lookup_sms_target_id",
+              "path": "SQL",
+              "raw_sql_fallback_reason": null,
+              "raw_sql_fallback_task_id": null,
+              "raw_sql_fallback_used": false,
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "subtask": "Look up the TARGETID for the destination named 'SMS Opt-In' from the local snapshot.",
+              "truncated_fields": 9
+            },
+            {
+              "pass_id": "t2_list_segment_targets",
+              "path": "SQL",
+              "raw_sql_fallback_reason": null,
+              "raw_sql_fallback_task_id": null,
+              "raw_sql_fallback_used": false,
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "subtask": "Find all segment IDs connected to the 'SMS Opt-In' target.",
+              "truncated_fields": 9
+            },
+            {
+              "pass_id": "t3_get_segment_details",
+              "path": "SQL",
+              "raw_sql_fallback_reason": null,
+              "raw_sql_fallback_task_id": null,
+              "raw_sql_fallback_used": false,
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "subtask": "Retrieve audience details (ID, name, total profiles, created/updated time) for the segments connected to 'SMS Opt-In'.",
+              "truncated_fields": 9
+            }
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "provider": "openai",
+        "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
+        "route": "EVIDENCE_PIPELINE",
+        "sql": {
+          "params": {
+            "items": [
+              "SMS Opt-In"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "query": "SELECT \"TARGETID\", \"NAME\" FROM \"dim_target\" WHERE \"NAME\" = ? LIMIT 50"
+        },
+        "truncated_fields": 6
+      },
+      "stage": "llm-owned pass dependency repair",
+      "technique": "single LLM-owned dependency placeholder repair",
+      "timestamp": "2026-06-02T01:33:24.961171+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution_repair_check",
+      "correctness_role": "executes repaired pass only if placeholders resolve from prior pass evidence",
+      "duration_ms": 0.0,
+      "effect": "checks repaired placeholders without backend mutation",
+      "efficiency_role": "stops after one dependency repair",
+      "input_summary": {
+        "depends_on": {
+          "items": [
+            "t2_list_segment_targets"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_id": "t3_get_segment_details"
+      },
+      "output": {
+        "errors": {
+          "items": [
+            "Dependency placeholder 't2_list_segment_targets.SEGMENTID' could not be resolved."
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "repair_attempted": true,
+        "required": true,
+        "resolved": false,
+        "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98"
+      },
+      "stage": "llm-owned pass dependency resolution",
+      "technique": "placeholder resolution for repaired LLM pass",
+      "timestamp": "2026-06-02T01:33:24.961310+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
+      "correctness_role": "does not infer missing dependency values or add backend-selected subtasks",
+      "duration_ms": 0.0,
+      "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
+      "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
+      "input_summary": {
+        "depends_on": {
+          "items": [
+            "t2_list_segment_targets"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_id": "t4_count_dependent_segments"
+      },
+      "output": {
+        "errors": {
+          "items": [
+            "Dependency placeholder 't2_list_segment_targets.SEGMENTID' could not be resolved."
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "required": true,
+        "resolved": false,
+        "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98"
+      },
+      "stage": "llm-owned pass dependency resolution",
+      "technique": "placeholder resolution from completed LLM pass results",
+      "timestamp": "2026-06-02T01:33:24.961383+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution_repair",
+      "correctness_role": "backend supplies only resolution errors and no replacement SQL/API",
+      "duration_ms": 0.0,
+      "effect": "lets the LLM repair its pass placeholders after dependency-resolution feedback",
+      "efficiency_role": "caps dependency repair to one attempt",
+      "input_summary": {
+        "errors": {
+          "items": [
+            "Dependency placeholder 't2_list_segment_targets.SEGMENTID' could not be resolved."
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_id": "t4_count_dependent_segments"
+      },
+      "output": {
+        "aggregation_instruction": "Join the segment details (t3) with the dependency list (t4). For each audience (segment) from t3, count the number of unique DEPENDENTSEGMENTIDs from t4 where SEGMENTID matches. The final output should include: audienceId (SEGMENTID), name (NAME), totalProfiles (TOTALMEMBERS), createdTime (CREATEDTIME), updatedTime (UPDATEDTIME), and used_in_other_audience_count (count of dependent segments). Ensure no row limit is applied.",
+        "evidence_order": "MULTI_PASS",
+        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+        "passes": {
+          "items": [
+            {
+              "pass_id": "t1_lookup_sms_target_id",
+              "path": "SQL",
+              "raw_sql_fallback_reason": null,
+              "raw_sql_fallback_task_id": null,
+              "raw_sql_fallback_used": false,
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "subtask": "Look up the TARGETID for the destination named 'SMS Opt-In' from the local snapshot.",
+              "truncated_fields": 9
+            },
+            {
+              "pass_id": "t2_list_segment_targets",
+              "path": "SQL",
+              "raw_sql_fallback_reason": null,
+              "raw_sql_fallback_task_id": null,
+              "raw_sql_fallback_used": false,
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "subtask": "Find all segment IDs connected to the 'SMS Opt-In' target.",
+              "truncated_fields": 9
+            },
+            {
+              "pass_id": "t3_get_segment_details",
+              "path": "SQL",
+              "raw_sql_fallback_reason": null,
+              "raw_sql_fallback_task_id": null,
+              "raw_sql_fallback_used": false,
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "subtask": "Retrieve audience details (ID, name, total profiles, created/updated time) for the segments connected to 'SMS Opt-In'.",
+              "truncated_fields": 9
+            }
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "provider": "openai",
+        "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
+        "route": "EVIDENCE_PIPELINE",
+        "sql": {
+          "params": {
+            "items": [
+              "SMS Opt-In"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "query": "SELECT \"TARGETID\", \"NAME\" FROM \"dim_target\" WHERE \"NAME\" = ? LIMIT 1"
+        },
+        "truncated_fields": 6
+      },
+      "stage": "llm-owned pass dependency repair",
+      "technique": "single LLM-owned dependency placeholder repair",
+      "timestamp": "2026-06-02T01:34:10.070862+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution_repair_check",
+      "correctness_role": "executes repaired pass only if placeholders resolve from prior pass evidence",
+      "duration_ms": 0.0,
+      "effect": "checks repaired placeholders without backend mutation",
+      "efficiency_role": "stops after one dependency repair",
+      "input_summary": {
+        "depends_on": {
+          "items": [
+            "t2_list_segment_targets"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_id": "t4_count_dependent_segments"
+      },
+      "output": {
+        "errors": {
+          "items": [
+            "Dependency placeholder 't2_list_segment_targets.SEGMENTID' could not be resolved."
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "repair_attempted": true,
+        "required": true,
+        "resolved": false,
+        "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98"
+      },
+      "stage": "llm-owned pass dependency resolution",
+      "technique": "placeholder resolution for repaired LLM pass",
+      "timestamp": "2026-06-02T01:34:10.070958+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -395,10 +1378,21 @@
       "effect": "records that backend did not replace LLM semantic or SQL/API generation",
       "efficiency_role": "bounds repair attempts before execution",
       "input_summary": {
-        "evidence_order": "SQL_FIRST",
+        "evidence_order": "MULTI_PASS",
         "route": "EVIDENCE_PIPELINE"
       },
+      "metrics": {
+        "alias_materialized_count": 0,
+        "exact_pass_cache_hits": 0,
+        "exact_pass_cache_scope": "single_run",
+        "semantic_alias_count": 0,
+        "semantic_alias_materialized_count": 0,
+        "semantic_alias_validation_failures": 0
+      },
       "output": {
+        "alias_materialized_count": 0,
+        "api_execution_latency_sec": 0.0,
+        "api_gate_latency_sec": 0.0,
         "api_gate_passed": null,
         "api_repair_attempts": 0,
         "backend_semantic_decomposition_used": false,
@@ -417,8 +1411,12 @@
         "cache_hits": 0,
         "checkpoint_resume_used": false,
         "critical_path": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_lookup_sms_target_id",
+            "t2_list_segment_targets",
+            "t3_get_segment_details"
+          ],
+          "total_items": 3,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -427,8 +1425,33 @@
           "truncated_items": false
         },
         "dependency_edges": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "t1_lookup_sms_target_id",
+                "t2_list_segment_targets"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2_list_segment_targets",
+                "t3_get_segment_details"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2_list_segment_targets",
+                "t4_count_dependent_segments"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 3,
           "truncated_items": false
         },
         "deterministic_answer_template_used": false,
@@ -437,35 +1460,70 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_9ea3c262f39c4464a667e850da828bb1",
+        "evidence_bus_id": "evidence_run_117a0dbfc0f64f188e44e8f799c02a98",
+        "exact_pass_cache_hits": 0,
+        "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
-        "llm_evidence_order": "SQL_FIRST",
+        "llm_evidence_order": "MULTI_PASS",
         "llm_owned_generation": true,
-        "llm_pass_count": 0,
-        "llm_pass_graph_used": false,
+        "llm_pass_count": 4,
+        "llm_pass_graph_used": true,
         "llm_route": "EVIDENCE_PIPELINE",
         "max_api_workers": 2,
         "max_parallelism": 4,
         "max_sql_workers": 2,
         "model_cascade_used": false,
-        "multi_pass_enabled": false,
+        "multi_pass_enabled": true,
         "parallel_groups": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
+          "items": [
+            {
+              "items": [
+                "t1_lookup_sms_target_id"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2_list_segment_targets"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t3_get_segment_details"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 4,
+          "truncated_items": true
         },
-        "parallel_pass_count": 0,
+        "parallel_pass_count": 1,
+        "pass_graph_gate_error_type": null,
         "pass_graph_gate_passed": true,
+        "pass_graph_repair_attempted": false,
+        "pass_graph_repair_success": false,
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
+          "items": [
+            "t1_lookup_sms_target_id",
+            "t2_list_segment_targets",
+            "t3_get_segment_details"
+          ],
+          "total_items": 4,
+          "truncated_items": true
         },
-        "pass_results_count": 0,
+        "pass_results_count": 4,
         "passes_completed": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
+          "items": [
+            "t1_lookup_sms_target_id",
+            "t2_list_segment_targets",
+            "t3_get_segment_details"
+          ],
+          "total_items": 4,
+          "truncated_items": true
         },
         "passes_dependency_blocked": {
           "items": [],
@@ -473,8 +1531,10 @@
           "truncated_items": false
         },
         "passes_executed": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_lookup_sms_target_id"
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_failed": {
@@ -484,24 +1544,78 @@
         },
         "pipeline_stage_count": 8,
         "plan_version": 1,
-        "result_bundle_id": "bundle_run_9ea3c262f39c4464a667e850da828bb1",
-        "run_id": "run_9ea3c262f39c4464a667e850da828bb1",
-        "sequential_pass_count": 0,
-        "sql_gate_passed": null,
-        "sql_repair_attempts": 0,
-        "stage_events": {
+        "raw_sql_fallback_considered": false,
+        "raw_sql_fallback_gate_error_type": null,
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_repair_attempted": false,
+        "raw_sql_fallback_repair_success": false,
+        "raw_sql_fallback_success": false,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "raw_sql_safety_gate_failures": 0,
+        "repaired_pass_count": 0,
+        "result_bundle_id": "bundle_run_117a0dbfc0f64f188e44e8f799c02a98",
+        "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98",
+        "semantic_alias_count": 0,
+        "semantic_alias_materialized": {
           "items": [],
           "total_items": 0,
           "truncated_items": false
         },
+        "semantic_alias_materialized_count": 0,
+        "semantic_alias_validation_failures": 0,
+        "sequential_pass_count": 3,
+        "sql_execution_latency_sec": 0.0,
+        "sql_gate_latency_sec": 0.001,
+        "sql_gate_passed": true,
+        "sql_repair_attempts": 0,
+        "stage_events": {
+          "items": [
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_117a0dbfc0f64f188e44e8f799c02a98:t1_lookup_sms_target_id",
+              "pass_id": "t1_lookup_sms_target_id",
+              "plan_version": 1,
+              "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98",
+              "stage": "SQL_API_GATE",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_117a0dbfc0f64f188e44e8f799c02a98:t1_lookup_sms_target_id",
+              "pass_id": "t1_lookup_sms_target_id",
+              "plan_version": 1,
+              "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98",
+              "stage": "READY_FOR_FINAL_COMPOSITION",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_117a0dbfc0f64f188e44e8f799c02a98:t2_list_segment_targets",
+              "pass_id": "t2_list_segment_targets",
+              "plan_version": 1,
+              "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98",
+              "stage": "READY_FOR_FINAL_COMPOSITION",
+              "status": "OK",
+              "truncated_fields": 3
+            }
+          ],
+          "total_items": 24,
+          "truncated_items": true
+        },
         "stage_pipeline_used": true,
         "truncated_fields": 2,
         "v2_execution_optimizer_used": true,
-        "v2_pipeline_scheduler_used": false
+        "v2_pipeline_scheduler_used": true
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-01T02:57:26.237965+00:00"
+      "timestamp": "2026-06-02T01:34:10.071003+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -510,16 +1624,38 @@
       "effect": "executes only LLM-proposed candidates that pass backend gates",
       "efficiency_role": "does not execute alternative backend-generated candidates",
       "input_summary": {
-        "tool_result_count": 0
+        "tool_result_count": 1
       },
       "output": {
         "api_calls_executed": 0,
         "dry_run_status": false,
-        "sql_calls_executed": 0
+        "row_counts": {
+          "items": [
+            0
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_calls_executed": 1,
+        "sql_results": {
+          "items": [
+            {
+              "ok": true,
+              "result_preview": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "row_count": 0
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-01T02:57:26.239008+00:00"
+      "timestamp": "2026-06-02T01:34:10.077645+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -529,20 +1665,20 @@
       "efficiency_role": "makes EvidenceBus construction explicit",
       "input_summary": {
         "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
-        "tool_result_count": 0
+        "tool_result_count": 1
       },
       "output": {
         "evidence_bus_built": true,
         "evidence_pipeline_bypassed": false,
-        "llm_evidence_order": "SQL_FIRST",
+        "llm_evidence_order": "MULTI_PASS",
         "llm_final_answer_composer_ran": true,
         "llm_route": "EVIDENCE_PIPELINE",
-        "pass_results_count": 0,
+        "pass_results_count": 4,
         "post_evidence_answer_router_ran": false
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-01T02:57:26.239013+00:00"
+      "timestamp": "2026-06-02T01:34:10.077666+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -551,22 +1687,26 @@
       "effect": "forwards executed SQL/API evidence into the existing grounded answer pipeline",
       "efficiency_role": "uses collected evidence without extra tool calls",
       "input_summary": {
-        "tool_result_count": 0
+        "tool_result_count": 1
       },
       "output": {
         "evidence": {
           "pass_ids": {
-            "items": [],
-            "total_items": 0,
-            "truncated_items": false
+            "items": [
+              "t1_lookup_sms_target_id",
+              "t2_list_segment_targets",
+              "t3_get_segment_details"
+            ],
+            "total_items": 4,
+            "truncated_items": true
           },
-          "pass_result_count": 0,
-          "run_id": "run_9ea3c262f39c4464a667e850da828bb1"
+          "pass_result_count": 4,
+          "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98"
         }
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-01T02:57:26.239063+00:00"
+      "timestamp": "2026-06-02T01:34:10.077740+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -575,16 +1715,116 @@
       "effect": "stores all LLM-declared pass results before final LLM aggregation",
       "efficiency_role": "reuses executed pass results without extra tools",
       "input_summary": {
-        "pass_results_count": 0,
-        "tool_result_count": 0
+        "pass_results_count": 4,
+        "tool_result_count": 1
       },
       "output": {
-        "pass_results_count": 0,
-        "run_id": "run_9ea3c262f39c4464a667e850da828bb1"
+        "append_events": {
+          "items": [
+            {
+              "appended": true,
+              "attempt_id": 0,
+              "pass_id": "t1_lookup_sms_target_id"
+            },
+            {
+              "appended": true,
+              "attempt_id": 0,
+              "pass_id": "t2_list_segment_targets"
+            },
+            {
+              "appended": true,
+              "attempt_id": 0,
+              "pass_id": "t3_get_segment_details"
+            }
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "pass_results_count": 4,
+        "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98",
+        "runtime_passes": {
+          "items": [
+            {
+              "attempt_id": 0,
+              "cached_sources": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "dependency_resolution": {
+                "errors": {
+                  "items": [],
+                  "total_items": 0,
+                  "truncated_items": false
+                },
+                "required": false,
+                "resolved": true,
+                "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98"
+              },
+              "global_pass_id": "run_117a0dbfc0f64f188e44e8f799c02a98:t1_lookup_sms_target_id",
+              "pass_id": "t1_lookup_sms_target_id",
+              "path": "SQL",
+              "plan_version": 1,
+              "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98",
+              "status": "EMPTY",
+              "truncated_fields": 6
+            },
+            {
+              "attempt_id": 0,
+              "cached_sources": null,
+              "dependency_resolution": {
+                "errors": {
+                  "items": [
+                    "Dependency placeholder 't1_lookup_sms_target_id.TARGETID' could not be resolved."
+                  ],
+                  "total_items": 1,
+                  "truncated_items": false
+                },
+                "repair_attempted": true,
+                "required": true,
+                "resolved": false,
+                "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98"
+              },
+              "global_pass_id": "run_117a0dbfc0f64f188e44e8f799c02a98:t2_list_segment_targets",
+              "pass_id": "t2_list_segment_targets",
+              "path": "SQL",
+              "plan_version": 1,
+              "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98",
+              "status": "DEPENDENCY_BLOCKED",
+              "truncated_fields": 6
+            },
+            {
+              "attempt_id": 0,
+              "cached_sources": null,
+              "dependency_resolution": {
+                "errors": {
+                  "items": [
+                    "Dependency placeholder 't2_list_segment_targets.SEGMENTID' could not be resolved."
+                  ],
+                  "total_items": 1,
+                  "truncated_items": false
+                },
+                "repair_attempted": true,
+                "required": true,
+                "resolved": false,
+                "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98"
+              },
+              "global_pass_id": "run_117a0dbfc0f64f188e44e8f799c02a98:t3_get_segment_details",
+              "pass_id": "t3_get_segment_details",
+              "path": "SQL",
+              "plan_version": 1,
+              "run_id": "run_117a0dbfc0f64f188e44e8f799c02a98",
+              "status": "DEPENDENCY_BLOCKED",
+              "truncated_fields": 6
+            }
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        }
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-01T02:57:26.239072+00:00"
+      "timestamp": "2026-06-02T01:34:10.077781+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -593,7 +1833,7 @@
       "effect": "keeps SQL errors, API errors, live empty, and direct evidence distinct",
       "efficiency_role": "uses existing payloads only",
       "input_summary": {
-        "tool_result_count": 0
+        "tool_result_count": 1
       },
       "output": {
         "api": {
@@ -607,7 +1847,7 @@
         "live_empty_scoped": false,
         "sql": {
           "items": [
-            "SQL_NOT_RUN"
+            "SQL_ZERO_ROWS"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -615,7 +1855,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-01T02:57:26.239074+00:00"
+      "timestamp": "2026-06-02T01:34:10.077788+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -624,7 +1864,7 @@
       "effect": "turns runtime evidence into typed answer fields",
       "efficiency_role": "uses existing slot extraction",
       "input_summary": {
-        "tool_result_count": 0
+        "tool_result_count": 1
       },
       "output": {
         "discrepancy_flags": {
@@ -636,6 +1876,13 @@
         "slots": {
           "answer_family": "segment_destination",
           "api_error": false,
+          "counts": {
+            "items": [
+              "0"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
           "discrepancy": false,
           "dry_run": false,
           "entity_names": {
@@ -647,16 +1894,34 @@
           },
           "slots_present": {
             "items": [
-              "entity_names"
+              "entity_names",
+              "counts"
             ],
-            "total_items": 1,
+            "total_items": 2,
             "truncated_items": false
-          }
+          },
+          "sql_row_count": 0
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-01T02:57:26.239593+00:00"
+      "timestamp": "2026-06-02T01:34:10.099376+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_composer_start",
+      "correctness_role": "diagnostic only; does not alter final answer composition or grounding",
+      "duration_ms": 0.0,
+      "effect": "records the exact boundary before the potentially slow final-answer LLM call",
+      "efficiency_role": "enables smoke timeout localization without extra SQL/API calls",
+      "input_summary": {
+        "runtime_pass_count": 4
+      },
+      "output": {
+        "current_stage": "llm_final_answer_composer_call_start"
+      },
+      "stage": "llm-owned answer synthesis",
+      "technique": "pre-call heartbeat before LLMFinalAnswerComposer",
+      "timestamp": "2026-06-02T01:34:10.099385+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -665,10 +1930,17 @@
       "effect": "lets the LLM own final answer composition from runtime evidence",
       "efficiency_role": "uses one final-answer LLM call after evidence execution",
       "input_summary": {
-        "runtime_pass_count": 0,
+        "runtime_pass_count": 4,
         "slot_counts": {
           "answer_family": "segment_destination",
           "api_error": false,
+          "counts": {
+            "items": [
+              "0"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
           "discrepancy": false,
           "dry_run": false,
           "entity_names": {
@@ -680,30 +1952,22 @@
           },
           "slots_present": {
             "items": [
-              "entity_names"
+              "entity_names",
+              "counts"
             ],
-            "total_items": 1,
+            "total_items": 2,
             "truncated_items": false
-          }
+          },
+          "sql_row_count": 0
         }
       },
       "output": {
         "backend_unavailable": false,
-        "error_message": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
-        "model": "Gpt 4o",
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "parse_error": false,
-        "provider": "[REDACTED]",
-        "raw_preview": {
-          "backend_type": "openai_sdk",
-          "error": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
-          "model": "Gpt 4o",
-          "ok": false,
-          "provider": "[REDACTED]",
-          "sdk_path_used": true,
-          "skipped": false,
-          "transport": "openai_sdk",
-          "truncated_fields": 1
-        },
+        "provider": "openai",
+        "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.",
         "used_pass_ids": {
           "items": [],
           "total_items": 0,
@@ -712,7 +1976,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-01T02:57:27.569399+00:00"
+      "timestamp": "2026-06-02T01:34:18.989664+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -724,13 +1988,12 @@
         "composer": "LLMFinalAnswerComposer"
       },
       "output": {
-        "error_message": "final_answer must be a string.",
-        "error_type": "missing_final_answer",
-        "passed": false
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "passed": true
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-01T02:57:27.569410+00:00"
+      "timestamp": "2026-06-02T01:34:18.989694+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -739,15 +2002,121 @@
       "effect": "checks whether LLM final answer claims are supported by runtime evidence",
       "efficiency_role": "no SQL/API calls",
       "input_summary": {
-        "syntax_gate_passed": false
+        "syntax_gate_passed": true
       },
       "output": {
-        "error_type": "syntax_gate_failed",
-        "passed": false
+        "error_message": "Final answer omitted information explicitly requested and present in runtime evidence.",
+        "error_type": "missing_required_info",
+        "missing_required_fields": {
+          "items": [
+            "count",
+            "entity_names"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "passed": false,
+        "verifier": {
+          "action": "ACCEPT",
+          "allowed_fact_index": {
+            "allowed_caveats": {
+              "items": [
+                "DEPENDENCY PLACEHOLDER 'T1_LOOKUP_SMS_TARGET_ID.TARGETID' COULD NOT BE RESOLVED.",
+                "DEPENDENCY PLACEHOLDER 'T2_LIST_SEGMENT_TARGETS.SEGMENTID' COULD NOT BE RESOLVED."
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            "counts": {
+              "items": [
+                "0"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "evidence_strings": {
+              "items": [
+                "sms opt-in"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "names": {
+              "items": [
+                "sms opt-in"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          },
+          "claim_extractor": {
+            "claim_count": 1,
+            "claims": {
+              "items": [
+                {
+                  "hardness": "SOFT",
+                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "type": "SOFT_TEXT"
+                }
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          },
+          "claim_matcher": {
+            "matches": {
+              "items": [
+                {
+                  "claim": {
+                    "hardness": "SOFT",
+                    "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                    "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                    "type": "SOFT_TEXT"
+                  },
+                  "reason": "soft_text",
+                  "status": "SUPPORTED"
+                }
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          },
+          "ok": true,
+          "supported_claims": {
+            "items": [
+              {
+                "hardness": "SOFT",
+                "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "type": "SOFT_TEXT"
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
       },
       "stage": "answer gate",
       "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-01T02:57:27.569413+00:00"
+      "timestamp": "2026-06-02T01:34:18.990591+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_repair_start",
+      "correctness_role": "diagnostic only; backend still does not repair the answer",
+      "duration_ms": 0.0,
+      "effect": "records the exact boundary before the potentially slow final-answer repair LLM call",
+      "efficiency_role": "enables smoke timeout localization without extra SQL/API calls",
+      "input_summary": {
+        "failed_semantic": true,
+        "failed_syntax": false
+      },
+      "output": {
+        "current_stage": "llm_final_answer_repair_call_start"
+      },
+      "stage": "llm-owned answer repair",
+      "technique": "pre-call heartbeat before final answer repair",
+      "timestamp": "2026-06-02T01:34:18.990666+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_repair",
@@ -756,27 +2125,17 @@
       "effect": "returns gate errors to the LLM once; backend does not repair the answer itself",
       "efficiency_role": "caps answer repair to one LLM call",
       "input_summary": {
-        "failed_semantic": false,
-        "failed_syntax": true
+        "failed_semantic": true,
+        "failed_syntax": false
       },
       "output": {
         "candidate": {
           "backend_unavailable": false,
-          "error_message": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
-          "model": "Gpt 4o",
+          "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
           "parse_error": false,
-          "provider": "[REDACTED]",
-          "raw_preview": {
-            "backend_type": "openai_sdk",
-            "error": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
-            "model": "Gpt 4o",
-            "ok": false,
-            "provider": "[REDACTED]",
-            "sdk_path_used": true,
-            "skipped": false,
-            "transport": "openai_sdk",
-            "truncated_fields": 1
-          },
+          "provider": "openai",
+          "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.",
           "used_pass_ids": {
             "items": [],
             "total_items": 0,
@@ -784,18 +2143,106 @@
           }
         },
         "semantic_gate": {
-          "error_type": "syntax_gate_failed",
-          "passed": false
+          "error_message": "Final answer omitted information explicitly requested and present in runtime evidence.",
+          "error_type": "missing_required_info",
+          "missing_required_fields": {
+            "items": [
+              "count",
+              "entity_names"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "passed": false,
+          "verifier": {
+            "action": "ACCEPT",
+            "allowed_fact_index": {
+              "allowed_caveats": {
+                "items": [
+                  "DEPENDENCY PLACEHOLDER 'T1_LOOKUP_SMS_TARGET_ID.TARGETID' COULD NOT BE RESOLVED.",
+                  "DEPENDENCY PLACEHOLDER 'T2_LIST_SEGMENT_TARGETS.SEGMENTID' COULD NOT BE RESOLVED."
+                ],
+                "total_items": 2,
+                "truncated_items": false
+              },
+              "counts": {
+                "items": [
+                  "0"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              },
+              "evidence_strings": {
+                "items": [
+                  "sms opt-in"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              },
+              "names": {
+                "items": [
+                  "sms opt-in"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              }
+            },
+            "claim_extractor": {
+              "claim_count": 1,
+              "claims": {
+                "items": [
+                  {
+                    "hardness": "SOFT",
+                    "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                    "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                    "type": "SOFT_TEXT"
+                  }
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              }
+            },
+            "claim_matcher": {
+              "matches": {
+                "items": [
+                  {
+                    "claim": {
+                      "hardness": "SOFT",
+                      "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                      "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                      "type": "SOFT_TEXT"
+                    },
+                    "reason": "soft_text",
+                    "status": "SUPPORTED"
+                  }
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              }
+            },
+            "ok": true,
+            "supported_claims": {
+              "items": [
+                {
+                  "hardness": "SOFT",
+                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "type": "SOFT_TEXT"
+                }
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          }
         },
         "syntax_gate": {
-          "error_message": "final_answer must be a string.",
-          "error_type": "missing_final_answer",
-          "passed": false
+          "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+          "passed": true
         }
       },
       "stage": "llm-owned answer repair",
       "technique": "single LLM-owned final answer repair",
-      "timestamp": "2026-06-01T02:57:28.849836+00:00"
+      "timestamp": "2026-06-02T01:34:27.704513+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -804,15 +2251,18 @@
       "effect": "records that V2 did not use deterministic answer templates, renderers, or selectors as competing generators",
       "efficiency_role": "no extra tool calls",
       "input_summary": {
-        "runtime_pass_count": 0
+        "runtime_pass_count": 4
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
         "answer_repair_attempts": 1,
         "answer_semantic_gate_passed": false,
-        "answer_syntax_gate_passed": false,
+        "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
+        "final_answer_repair_latency_sec": 8.713,
         "final_answer_supported_by_evidence": false,
+        "final_composer_latency_sec": 8.89,
+        "final_gate_latency_sec": 0.001,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 2,
@@ -824,7 +2274,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-01T02:57:28.849846+00:00"
+      "timestamp": "2026-06-02T01:34:27.704606+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -839,7 +2289,7 @@
         "answer_composer_used": "LLMFinalAnswerComposer",
         "answer_repair_attempts": 1,
         "answer_semantic_gate_passed": false,
-        "answer_syntax_gate_passed": false,
+        "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
         "final_answer_supported_by_evidence": false,
         "hidden_eval_gold_used": false,
@@ -853,62 +2303,350 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-01T02:57:28.849884+00:00"
+      "timestamp": "2026-06-02T01:34:27.704676+00:00"
     }
   ],
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 798,
+  "estimated_tokens": 3009,
   "execution_time": 0.0,
-  "final_answer": "I could not compose a verified final answer from the available runtime evidence.",
+  "final_answer": "No matching runtime evidence was available for this query/scope.",
   "original_query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
   "planning_time": 0.0,
   "preprocessing_time": 0.0,
   "query_id": "example_003",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 2.621520916931331,
-  "sql_call_count": 0,
+  "runtime": 17.710168833844364,
+  "sql_call_count": 1,
   "steps": [
     {
-      "estimated_tokens": 698,
+      "estimated_tokens": 2961,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_003/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 1212
+      "prompt_tokens": 3799
     },
     {
-      "aggregation_instruction": "",
+      "aggregation_instruction": "Join the segment details (t3) with the dependency list (t4). For each audience (segment) from t3, count the number of unique DEPENDENTSEGMENTIDs from t4 where SEGMENTID matches. The final output should include: audienceId (SEGMENTID), name (NAME), totalProfiles (TOTALMEMBERS), createdTime (CREATEDTIME), updatedTime (UPDATEDTIME), and used_in_other_audience_count (count of dependent segments). Ensure no row limit is applied.",
       "api_request": null,
       "backend_unavailable": false,
-      "direct_answer": null,
-      "evidence_order": "SQL_FIRST",
-      "kind": "llm_unified_planner",
-      "model": "Gpt 4o",
-      "parse_error": false,
-      "passes": [],
-      "provider": "[REDACTED]",
-      "raw_preview": {
-        "backend_type": "openai_sdk",
-        "error": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
-        "model": "Gpt 4o",
-        "ok": false,
-        "provider": "[REDACTED]",
-        "sdk_path_used": true,
-        "skipped": false,
-        "transport": "openai_sdk",
-        "truncated_fields": 7
+      "diagnostics": {
+        "api_request_gate_failures": 0,
+        "atomic_protocol_fallback_used": false,
+        "backend_formal_compilation_used": true,
+        "backend_generated_sql": false,
+        "backend_semantic_decomposition_used": false,
+        "backend_semantic_planning_used": false,
+        "backend_sql_api_generation_used": false,
+        "compiled_alias_count": 0,
+        "compiled_api_count": 0,
+        "compiled_sql_count": 4,
+        "compiler_latency_ms": 0,
+        "planner_json_fallback_used": false,
+        "planner_json_parse_error": null,
+        "planner_parse_source": "sdk_toolcall_semantic_ir",
+        "planner_provider_latency_ms": 39746,
+        "planner_repair_attempted": false,
+        "planner_success": true,
+        "planner_timeout": false,
+        "planner_toolcall_attempted": true,
+        "planner_toolcall_supported": true,
+        "provider_capabilities": {
+          "requires_json_prompting": false,
+          "supports_json_content_fallback": true,
+          "supports_tool_calls": true
+        },
+        "raw_sql_fallback_considered": false,
+        "raw_sql_fallback_gate_error_type": null,
+        "raw_sql_fallback_latency_ms": 0,
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_rejected_reason": null,
+        "raw_sql_fallback_repair_attempted": false,
+        "raw_sql_fallback_repair_success": false,
+        "raw_sql_fallback_success": false,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "sdk_toolcall_semantic_ir_used": true,
+        "semantic_alias_count": 0,
+        "semantic_alias_error_type": null,
+        "semantic_alias_repair_attempted": false,
+        "semantic_alias_validation_passed": true,
+        "semantic_alias_validation_used": true,
+        "semantic_ir_plan_preview": {
+          "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_lookup_sms_target_id\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LOOKUP\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_target\", \"fields\": {\"items\": [\"TARGETID\", \"NAME\"], \"total_items\": 2, \"truncated_items\": false}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"SMS Opt-In\"}], \"total_items\": 1, \"truncated_items\": false}}, \"description\": \"Look up the TARGETID for the destination named 'SMS Opt-In' from the local snapshot.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_list_segment_targets\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LIST\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"hkg_br_segment_target\", \"fields\": {\"items\": [\"SEGMENTID\", \"TARGETID\"], \"total_items\": 2, \"truncated_items\": false}, \"filters\": {\"items\": [{\"field\": \"TARGETID\", \"op\": \"in\", \"value\": {\"items\": [\"{{t1_lookup_sms_target_id.TARGETID}}\"], \"total_items\": 1, \"truncated_items\": false}}], \"total_items\": 1, \"truncated_items\": false}}, \"depends_on\": {\"items\": [\"t1_lookup_sms_target_id\"], \"total_items...",
+          "truncated": true
+        },
+        "semantic_ir_provider_latency_ms": 39741,
+        "semantic_ir_repair_attempted": false,
+        "semantic_ir_repair_latency_ms": 0,
+        "semantic_ir_repair_success": false,
+        "semantic_ir_support_check_latency_ms": 0,
+        "semantic_ir_support_checked": true,
+        "semantic_ir_support_recommended_action": "COMPILE",
+        "semantic_ir_support_repair_attempted": false,
+        "semantic_ir_support_repair_error_message": null,
+        "semantic_ir_support_repair_error_type": null,
+        "semantic_ir_support_repair_latency_ms": 0,
+        "semantic_ir_support_repair_success": false,
+        "semantic_ir_supported": true,
+        "semantic_ir_task_count": 4,
+        "semantic_ir_toolcall_supported": true,
+        "semantic_ir_unsupported_features": [],
+        "semantic_ir_unsupported_operation": null,
+        "semantic_ir_unsupported_reason": null,
+        "semantic_ir_unsupported_task_id": null,
+        "semantic_ir_validation_error_message": null,
+        "semantic_ir_validation_error_type": null,
+        "semantic_ir_validation_latency_ms": 0,
+        "semantic_ir_validation_passed": true,
+        "sql_compile_gate_failures": 0,
+        "v2_semantic_ir_used": true
       },
-      "reason": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
+      "direct_answer": null,
+      "evidence_order": "MULTI_PASS",
+      "kind": "llm_unified_planner",
+      "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+      "parse_error": false,
+      "passes": [
+        {
+          "api_request": null,
+          "can_run_parallel": true,
+          "depends_on": [],
+          "evidence_order": "SQL_FIRST",
+          "expected_result": "Look up the TARGETID for the destination named 'SMS Opt-In' from the local snapshot.",
+          "fallback": false,
+          "optional": false,
+          "pass_id": "t1_lookup_sms_target_id",
+          "path": "SQL",
+          "raw_sql_fallback_reason": null,
+          "raw_sql_fallback_task_id": null,
+          "raw_sql_fallback_used": false,
+          "result_contract": {
+            "entity": "target",
+            "fields": [
+              "TARGETID",
+              "NAME"
+            ],
+            "filters": [
+              {
+                "field": "NAME",
+                "op": "=",
+                "value": "SMS Opt-In"
+              }
+            ],
+            "freshness": "same_run",
+            "object": null,
+            "operation": "LOOKUP",
+            "scope": "local",
+            "source": "LOCAL_SNAPSHOT"
+          },
+          "reuse_result_from": null,
+          "semantic_cache_key": null,
+          "sql": {
+            "params": [
+              "SMS Opt-In"
+            ],
+            "query": "SELECT \"TARGETID\", \"NAME\" FROM \"dim_target\" WHERE \"NAME\" = ? LIMIT 50"
+          },
+          "subtask": "Look up the TARGETID for the destination named 'SMS Opt-In' from the local snapshot."
+        },
+        {
+          "api_request": null,
+          "can_run_parallel": false,
+          "depends_on": [
+            "t1_lookup_sms_target_id"
+          ],
+          "evidence_order": "SQL_FIRST",
+          "expected_result": "Find all segment IDs connected to the 'SMS Opt-In' target.",
+          "fallback": false,
+          "optional": false,
+          "pass_id": "t2_list_segment_targets",
+          "path": "SQL",
+          "raw_sql_fallback_reason": null,
+          "raw_sql_fallback_task_id": null,
+          "raw_sql_fallback_used": false,
+          "result_contract": {
+            "entity": "segment_target_mapping",
+            "fields": [
+              "SEGMENTID",
+              "TARGETID"
+            ],
+            "filters": [
+              {
+                "field": "TARGETID",
+                "op": "in",
+                "value": [
+                  "{{t1_lookup_sms_target_id.TARGETID}}"
+                ]
+              }
+            ],
+            "freshness": "same_run",
+            "object": null,
+            "operation": "LIST",
+            "scope": "local",
+            "source": "LOCAL_SNAPSHOT"
+          },
+          "reuse_result_from": null,
+          "semantic_cache_key": null,
+          "sql": {
+            "params": [
+              "{{t1_lookup_sms_target_id.TARGETID}}"
+            ],
+            "query": "SELECT \"SEGMENTID\", \"TARGETID\" FROM \"hkg_br_segment_target\" WHERE \"TARGETID\" IN (?) LIMIT 50"
+          },
+          "subtask": "Find all segment IDs connected to the 'SMS Opt-In' target."
+        },
+        {
+          "api_request": null,
+          "can_run_parallel": false,
+          "depends_on": [
+            "t2_list_segment_targets"
+          ],
+          "evidence_order": "SQL_FIRST",
+          "expected_result": "Retrieve audience details (ID, name, total profiles, created/updated time) for the segments connected to 'SMS Opt-In'.",
+          "fallback": false,
+          "optional": false,
+          "pass_id": "t3_get_segment_details",
+          "path": "SQL",
+          "raw_sql_fallback_reason": null,
+          "raw_sql_fallback_task_id": null,
+          "raw_sql_fallback_used": false,
+          "result_contract": {
+            "entity": "segment",
+            "fields": [
+              "SEGMENTID",
+              "NAME",
+              "TOTALMEMBERS",
+              "CREATEDTIME",
+              "UPDATEDTIME"
+            ],
+            "filters": [
+              {
+                "field": "SEGMENTID",
+                "op": "in",
+                "value": [
+                  "{{t2_list_segment_targets.SEGMENTID}}"
+                ]
+              }
+            ],
+            "freshness": "same_run",
+            "object": null,
+            "operation": "LIST",
+            "scope": "local",
+            "source": "LOCAL_SNAPSHOT"
+          },
+          "reuse_result_from": null,
+          "semantic_cache_key": null,
+          "sql": {
+            "params": [
+              "{{t2_list_segment_targets.SEGMENTID}}"
+            ],
+            "query": "SELECT \"SEGMENTID\", \"NAME\", \"TOTALMEMBERS\", \"CREATEDTIME\", \"UPDATEDTIME\" FROM \"dim_segment\" WHERE \"SEGMENTID\" IN (?) LIMIT 50"
+          },
+          "subtask": "Retrieve audience details (ID, name, total profiles, created/updated time) for the segments connected to 'SMS Opt-In'."
+        },
+        {
+          "api_request": null,
+          "can_run_parallel": false,
+          "depends_on": [
+            "t2_list_segment_targets"
+          ],
+          "evidence_order": "SQL_FIRST",
+          "expected_result": "Find which other audiences (dependent segments) use the segments connected to 'SMS Opt-In'.",
+          "fallback": false,
+          "optional": false,
+          "pass_id": "t4_count_dependent_segments",
+          "path": "SQL",
+          "raw_sql_fallback_reason": null,
+          "raw_sql_fallback_task_id": null,
+          "raw_sql_fallback_used": false,
+          "result_contract": {
+            "entity": "segment_dependency",
+            "fields": [
+              "DEPENDENTSEGMENTID",
+              "SEGMENTID"
+            ],
+            "filters": [
+              {
+                "field": "SEGMENTID",
+                "op": "in",
+                "value": [
+                  "{{t2_list_segment_targets.SEGMENTID}}"
+                ]
+              }
+            ],
+            "freshness": "same_run",
+            "object": null,
+            "operation": "LIST",
+            "scope": "local",
+            "source": "LOCAL_SNAPSHOT"
+          },
+          "reuse_result_from": null,
+          "semantic_cache_key": null,
+          "sql": {
+            "params": [
+              "{{t2_list_segment_targets.SEGMENTID}}"
+            ],
+            "query": "SELECT \"DEPENDENTSEGMENTID\", \"SEGMENTID\" FROM \"hkg_br_base_segment_used_by_dependent_segment\" WHERE \"SEGMENTID\" IN (?) LIMIT 50"
+          },
+          "subtask": "Find which other audiences (dependent segments) use the segments connected to 'SMS Opt-In'."
+        }
+      ],
+      "provider": "openai",
+      "raw_preview": {
+        "semantic_ir_initial": {
+          "base_url": "[REDACTED]",
+          "error": null,
+          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+          "ok": true,
+          "provider": "openai",
+          "sdk_path_used": true,
+          "skipped": false,
+          "transport": "openai_sdk",
+          "truncated_fields": 8
+        }
+      },
+      "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
       "route": "EVIDENCE_PIPELINE",
-      "sql": null
+      "sql": {
+        "params": [
+          "SMS Opt-In"
+        ],
+        "query": "SELECT \"TARGETID\", \"NAME\" FROM \"dim_target\" WHERE \"NAME\" = ? LIMIT 50"
+      }
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "params": {
+          "items": [
+            "SMS Opt-In"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "row_count": 0
+      },
+      "sql": "SELECT \"TARGETID\", \"NAME\" FROM \"dim_target\" WHERE \"NAME\" = ? LIMIT 50",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": [
+          "LLM SQL pass passed compile gate."
+        ]
+      }
     },
     {
       "evidence_bus_built": true,
       "evidence_pipeline_bypassed": false,
       "kind": "evidence_boundary",
-      "llm_evidence_order": "SQL_FIRST",
+      "llm_evidence_order": "MULTI_PASS",
       "llm_final_answer_composer_ran": true,
       "llm_route": "EVIDENCE_PIPELINE",
-      "pass_results_count": 0,
+      "pass_results_count": 4,
       "post_evidence_answer_router_ran": false
     },
     {
@@ -916,23 +2654,13 @@
       "backend_unavailable": false,
       "caveats_included": [],
       "claimed_facts": [],
-      "error_message": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
-      "final_answer": null,
+      "error_message": null,
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
       "kind": "llm_final_answer_composer",
-      "model": "Gpt 4o",
+      "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
       "parse_error": false,
-      "provider": "[REDACTED]",
-      "raw_preview": {
-        "backend_type": "openai_sdk",
-        "error": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
-        "model": "Gpt 4o",
-        "ok": false,
-        "provider": "[REDACTED]",
-        "sdk_path_used": true,
-        "skipped": false,
-        "transport": "openai_sdk",
-        "truncated_fields": 7
-      },
+      "provider": "openai",
+      "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.",
       "unanswered_subtasks": [],
       "used_pass_ids": []
     },
@@ -940,25 +2668,104 @@
       "answer_composer_used": "LLMFinalAnswerComposer",
       "answer_repair_attempts": 1,
       "answer_semantic_gate_passed": false,
-      "answer_syntax_gate_passed": false,
+      "answer_syntax_gate_passed": true,
       "deterministic_answer_template_used": false,
+      "final_answer_repair_latency_sec": 8.713,
       "final_answer_supported_by_evidence": false,
+      "final_composer_latency_sec": 8.89,
+      "final_gate_latency_sec": 0.001,
       "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
       "llm_owned_final_answer": true,
-      "semantic_gate": null,
+      "semantic_gate": {
+        "error_message": "Final answer omitted information explicitly requested and present in runtime evidence.",
+        "error_type": "missing_required_info",
+        "missing_required_fields": [
+          "count",
+          "entity_names"
+        ],
+        "passed": false,
+        "scope_errors": [],
+        "unsupported_claims": [],
+        "verifier": {
+          "action": "ACCEPT",
+          "allowed_fact_index": {
+            "allowed_caveats": [
+              "DEPENDENCY PLACEHOLDER 'T1_LOOKUP_SMS_TARGET_ID.TARGETID' COULD NOT BE RESOLVED.",
+              "DEPENDENCY PLACEHOLDER 'T2_LIST_SEGMENT_TARGETS.SEGMENTID' COULD NOT BE RESOLVED."
+            ],
+            "api_error_scopes": [],
+            "counts": [
+              "0"
+            ],
+            "dates": [],
+            "evidence_strings": [
+              "sms opt-in"
+            ],
+            "ids": [],
+            "live_empty_scopes": [],
+            "missing_roles": [],
+            "names": [
+              "sms opt-in"
+            ],
+            "relationships": [],
+            "statuses": []
+          },
+          "ambiguous_claims": [],
+          "claim_extractor": {
+            "claim_count": 1,
+            "claims": [
+              {
+                "hardness": "SOFT",
+                "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "type": "SOFT_TEXT",
+                "value": ""
+              }
+            ]
+          },
+          "claim_matcher": {
+            "matches": [
+              {
+                "claim": {
+                  "hardness": "SOFT",
+                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "type": "SOFT_TEXT",
+                  "value": ""
+                },
+                "reason": "soft_text",
+                "status": "SUPPORTED"
+              }
+            ]
+          },
+          "needs_caveat_claims": [],
+          "ok": true,
+          "over_specified_claims": [],
+          "supported_claims": [
+            {
+              "hardness": "SOFT",
+              "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+              "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+              "type": "SOFT_TEXT",
+              "value": ""
+            }
+          ],
+          "unsupported_claims": []
+        }
+      },
       "syntax_gate": {
-        "error_message": "final_answer must be a string.",
-        "error_type": "missing_final_answer",
-        "final_answer": null,
-        "passed": false
+        "error_message": null,
+        "error_type": null,
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "passed": true
       },
       "used_pass_ids": []
     }
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 2.6110330000519753
+    "answer_time": 17.62854937510565
   },
-  "tool_call_count": 0
+  "tool_call_count": 1
 }

@@ -4,12 +4,12 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | initial baseline | unavailable | unavailable | unavailable | LLM-free baseline comparison | False | Baseline only; not packaged. |
 | SQL/API template improvements | unavailable | unavailable | unavailable | Reusable SQL/API templates and deterministic metadata path | False | Competitive but not preferred due to cost/risk tradeoff. |
-| SQL_FIRST_API_VERIFY selection | unavailable | unavailable | unavailable | SQL-first grounding with API verification | True | Current preferred packaged strategy. |
+| SQL_FIRST_API_VERIFY selection | unavailable | 0.6562 | unavailable | SQL-first grounding with API verification | True | Current preferred packaged strategy. |
 | official-token reduction promotion | unavailable | unavailable | unavailable | Official token reduction enabled | True | unavailable |
-| supportable answer rewrite | unavailable | 0.6552 | unavailable | Evidence-cited answer-only rewrite candidates | False | safe_for_autonomous_packaged_trial |
-| LLM rewrite search | unavailable | unavailable | unavailable | OpenRouter rewrite proposals with local validation | False | keep_shadow_only |
+| supportable answer rewrite | 0.6562 | 0.6552 | -0.001 | Evidence-cited answer-only rewrite candidates | False | safe_for_autonomous_packaged_trial |
+| LLM rewrite search | 0.6562 | unavailable | unavailable | OpenRouter rewrite proposals with local validation | False | keep_shadow_only |
 | answer-shape v2 | 0.6491 | 0.6497 | 0.0006 | Row-level answer-shape A/B | False | safe_for_answer_shape_v2_trial |
-| endpoint-family tie-break v2 | unavailable | unavailable | unavailable | Shadow endpoint divergence analysis | False | keep_shadow_only |
+| endpoint-family tie-break v2 | 0.6562 | 0.6562 | 0.0 | Shadow endpoint divergence analysis | False | keep_shadow_only |
 | live-mode readiness | unavailable | unavailable | unavailable | Credential/live API readiness diagnostic | False | diagnostic_only |
 | autonomous packaged trials | 0.6491 | 0.6558 | 0.0067 | Isolated packaged-style bundle trial | False | continue_iteration_target_not_reached |
 

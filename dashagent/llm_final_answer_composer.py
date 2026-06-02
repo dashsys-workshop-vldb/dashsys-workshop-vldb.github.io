@@ -27,7 +27,7 @@ SENSITIVE_CONTEXT_KEYS = {
     "query_id",
     "example_id",
 }
-FINAL_ANSWER_MAX_TOKENS = 500
+FINAL_ANSWER_MAX_TOKENS = 260
 
 
 @dataclass
@@ -102,7 +102,7 @@ def build_llm_final_answer_card(
         "AVAILABLE_RUNTIME_FACTS": _available_runtime_facts(runtime_passes, answer_slots),
         "FAILED_OR_UNAVAILABLE_SOURCES": _failed_or_unavailable_sources(runtime_passes, evidence_bus),
         "pass_result_checklist": _pass_result_checklist(runtime_passes),
-        "result_bundle": result_bundle.to_dict() if result_bundle is not None else None,
+        "result_bundle": _compact_result_bundle(result_bundle) if result_bundle is not None else None,
         "evidence_bus": evidence_bus.compact(),
         "answer_slots": answer_slots.compact(),
         "evidence_quality": compact_preview(evidence_quality or {}, 1800),
@@ -128,6 +128,7 @@ def build_llm_final_answer_card(
             "For what/list prompts, list or summarize only the names/IDs provided in AVAILABLE_RUNTIME_FACTS.",
             "For date/when prompts, state the exact date/timestamp from AVAILABLE_RUNTIME_FACTS or say that field was not available in the relevant scope.",
             "For mixed concept plus data prompts, give one concise concept sentence plus the scoped data facts from AVAILABLE_RUNTIME_FACTS.",
+            "Keep the final answer concise: usually one to four sentences, no markdown tables, and no long explanatory preamble.",
             "If no matching runtime evidence is available, use exactly: No matching runtime evidence was available for this query/scope.",
             "If all required runtime evidence is unavailable or errored, use exactly: Runtime evidence was unavailable; cannot provide a verified answer.",
             "When repairing unsupported claims, remove the unsupported span instead of restating it as a negative fact.",
@@ -214,7 +215,8 @@ def _final_answer_system_prompt(*, requires_json_prompting: bool = False, prefer
             "If no matching runtime evidence is available, use exactly: No matching runtime evidence was available for this query/scope. "
             "If some local evidence succeeded but live/API evidence failed, answer the local evidence first and include the scoped live/API caveat. "
             "Use exactly 'Runtime evidence was unavailable; cannot provide a verified answer.' only when all required runtime evidence is unavailable or errored. "
-            "When repairing unsupported claims, remove the unsupported span instead of restating it as a negative fact."
+            "When repairing unsupported claims, remove the unsupported span instead of restating it as a negative fact. "
+            "Keep the answer concise: usually one to four sentences, no markdown tables, and no long preamble."
         )
     if requires_json_prompting:
         return (
@@ -229,7 +231,8 @@ def _final_answer_system_prompt(*, requires_json_prompting: bool = False, prefer
             "If no matching runtime evidence is available, use exactly: No matching runtime evidence was available for this query/scope. "
             "If some local evidence succeeded but live/API evidence failed, answer the local evidence first and include the scoped live/API caveat. "
             "Use exactly 'Runtime evidence was unavailable; cannot provide a verified answer.' only when all required runtime evidence is unavailable or errored. "
-            "When repairing unsupported claims, remove the unsupported span instead of restating it as a negative fact."
+            "When repairing unsupported claims, remove the unsupported span instead of restating it as a negative fact. "
+            "Keep the answer concise: usually one to four sentences, no markdown tables, and no long preamble."
         )
     return (
         "You are the sole final-answer composer for DASHSys V2. "
@@ -422,7 +425,25 @@ def _final_answer_tool_schema() -> dict[str, Any]:
 
 
 def _safe_pass_payload(item: dict[str, Any]) -> dict[str, Any]:
-    return _strip_sensitive_keys(compact_preview(item, 2200))
+    return _strip_sensitive_keys(compact_preview(_truncate_long_strings(item), 1600))
+
+
+def _compact_result_bundle(result_bundle: ResultBundle | None) -> dict[str, Any] | None:
+    if result_bundle is None:
+        return None
+    data = result_bundle.to_dict()
+    runtime_passes = data.get("runtime_passes") if isinstance(data.get("runtime_passes"), list) else []
+    tool_results = data.get("tool_results") if isinstance(data.get("tool_results"), list) else []
+    append_events = data.get("append_events") if isinstance(data.get("append_events"), list) else []
+    return _strip_sensitive_keys(
+        {
+            "run_id": data.get("run_id"),
+            "pass_results_count": len(runtime_passes),
+            "tool_result_count": len(tool_results),
+            "runtime_passes": [_safe_pass_payload(item) for item in runtime_passes[:12] if isinstance(item, dict)],
+            "append_events": append_events[:20],
+        }
+    )
 
 
 def _available_runtime_facts(runtime_passes: list[dict[str, Any]], answer_slots: AnswerSlots | None) -> list[dict[str, Any]]:
@@ -454,7 +475,7 @@ def _available_runtime_facts(runtime_passes: list[dict[str, Any]], answer_slots:
             result = source.get("result") if isinstance(source.get("result"), dict) else {}
             rows = _rows_from_result_payload(result)
             if rows:
-                entry["row_previews"].extend(_strip_sensitive_keys(rows[:10]))
+                entry["row_previews"].extend(_strip_sensitive_keys(_compact_rows(rows[:10])))
                 _collect_row_values(entry, rows[:10])
                 row_count = result.get("row_count")
                 if row_count not in (None, "", [], {}) and row_count not in entry["counts"]:
@@ -468,6 +489,31 @@ def _available_runtime_facts(runtime_passes: list[dict[str, Any]], answer_slots:
         if any(entry[key] for key in ["facts", "row_previews", "counts", "names", "ids", "statuses", "dates"]):
             facts.append(_strip_sensitive_keys(entry))
     return facts
+
+
+def _compact_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    compacted: list[dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        out: dict[str, Any] = {}
+        for index, (key, value) in enumerate(row.items()):
+            if index >= 12:
+                out["truncated_fields"] = max(0, len(row) - index)
+                break
+            out[str(key)] = _truncate_long_strings(value)
+        compacted.append(out)
+    return compacted
+
+
+def _truncate_long_strings(value: Any, *, limit: int = 60) -> Any:
+    if isinstance(value, str):
+        return value if len(value) <= limit else value[:limit] + "...[truncated]"
+    if isinstance(value, list):
+        return [_truncate_long_strings(item, limit=limit) for item in value[:20]]
+    if isinstance(value, dict):
+        return {str(key): _truncate_long_strings(item, limit=limit) for key, item in list(value.items())[:30]}
+    return value
 
 
 def _failed_or_unavailable_sources(runtime_passes: list[dict[str, Any]], evidence_bus: EvidenceBus | None) -> list[dict[str, Any]]:

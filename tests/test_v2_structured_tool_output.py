@@ -623,7 +623,7 @@ def test_final_answer_composer_uses_json_content_when_toolcalls_unavailable(monk
     assert candidate.final_answer == "There are 3 schema records in the local snapshot."
     assert candidate.used_pass_ids == ["pass_1"]
     assert client.calls[0]["tools"] is None
-    assert client.calls[0]["max_tokens"] == 500
+    assert client.calls[0]["max_tokens"] == 260
 
 
 def test_llm_final_answer_composer_prefers_sdk_toolcall_structured_output(monkeypatch):
@@ -702,7 +702,7 @@ def test_final_answer_card_includes_task_and_evidence_checklist_and_repair_conte
         },
     )
 
-    assert card["final_answer_max_tokens"] == 500
+    assert card["final_answer_max_tokens"] == 260
     assert card["required_task_ids"] == ["t1"]
     assert card["task_checklist"][0]["task_id"] == "t1"
     assert card["pass_result_checklist"][0]["facts"] == ["count: 74"]
@@ -716,4 +716,4 @@ def test_final_answer_card_includes_task_and_evidence_checklist_and_repair_conte
     payload = client.calls[0]["messages"][1]["content"]
     assert '"task_checklist"' in payload
     assert '"pass_result_checklist"' in payload
-    assert client.calls[0]["max_tokens"] == 500
+    assert client.calls[0]["max_tokens"] == 260

@@ -7,10 +7,10 @@
 | Query | Which files are available for download in batch 69de8a0e0cc6102b5d11f01e? |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
 | Final answer | 69de8a0e0cc6102b5d11f01e batch list is unavailable in dry-run mode. Endpoint: GET /data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files. Live API unavailable. |
-| Strict score | unavailable |
-| Correctness score | unavailable |
-| Answer / SQL / API score | unavailable / unavailable / unavailable |
-| Tools / tokens / runtime | 1 / 734 / 0.014722291845828295 |
+| Strict score | 0.6538 |
+| Correctness score | 0.6724 |
+| Answer / SQL / API score | 0.3449 / None / 1.0 |
+| Tools / tokens / runtime | 1 / 734 / 0.021263832692056894 |
 
 ## Dataflow Graph
 

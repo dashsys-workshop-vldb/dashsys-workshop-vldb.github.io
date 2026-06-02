@@ -1,5 +1,5 @@
 {
-  "answer_time": 1.7791978339664638,
+  "answer_time": 5.204662750009447,
   "api_call_count": 0,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-01T02:57:28.874956+00:00"
+      "timestamp": "2026-06-02T01:34:27.854049+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-01T02:57:28.874969+00:00"
+      "timestamp": "2026-06-02T01:34:27.854066+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,25 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-01T02:57:28.874973+00:00"
+      "timestamp": "2026-06-02T01:34:27.854071+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_unified_planner_start",
+      "correctness_role": "diagnostic only; does not alter route, Semantic IR, SQL/API, or answer behavior",
+      "duration_ms": 0.0,
+      "effect": "records the exact boundary before the potentially slow local LLM planner call",
+      "efficiency_role": "enables smoke timeout localization without extra tool calls",
+      "input_summary": {
+        "query": "Show me the IDs of failed dataflow runs",
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "current_stage": "llm_unified_planner_call_start",
+        "prompt_id": "example_004"
+      },
+      "stage": "llm-owned planning",
+      "technique": "pre-call heartbeat before Unified LLM Planner",
+      "timestamp": "2026-06-02T01:34:27.860119+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -79,29 +97,205 @@
       "input_summary": {
         "query": "Show me the IDs of failed dataflow runs"
       },
-      "output": {
-        "backend_unavailable": false,
-        "evidence_order": "SQL_FIRST",
-        "model": "Gpt 4o",
-        "parse_error": false,
-        "provider": "[REDACTED]",
-        "raw_preview": {
-          "backend_type": "openai_sdk",
-          "error": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
-          "model": "Gpt 4o",
-          "ok": false,
-          "provider": "[REDACTED]",
-          "sdk_path_used": true,
-          "skipped": false,
-          "transport": "openai_sdk",
-          "truncated_fields": 1
+      "metrics": {
+        "api_request_gate_failures": 0,
+        "atomic_protocol_fallback_used": false,
+        "backend_formal_compilation_used": true,
+        "backend_generated_sql": false,
+        "backend_semantic_decomposition_used": false,
+        "backend_semantic_planning_used": false,
+        "backend_sql_api_generation_used": false,
+        "compiled_alias_count": 0,
+        "compiled_api_count": 0,
+        "compiled_sql_count": 1,
+        "compiler_latency_ms": 0,
+        "planner_json_fallback_used": false,
+        "planner_json_parse_error": null,
+        "planner_parse_source": "sdk_toolcall_semantic_ir",
+        "planner_provider_latency_ms": 32200,
+        "planner_repair_attempted": false,
+        "planner_success": true,
+        "planner_timeout": false,
+        "planner_toolcall_attempted": true,
+        "planner_toolcall_supported": true,
+        "provider_capabilities": {
+          "requires_json_prompting": false,
+          "supports_json_content_fallback": true,
+          "supports_tool_calls": true
         },
-        "reason": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
-        "route": "EVIDENCE_PIPELINE"
+        "raw_sql_fallback_considered": false,
+        "raw_sql_fallback_gate_error_type": null,
+        "raw_sql_fallback_latency_ms": 0,
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_rejected_reason": null,
+        "raw_sql_fallback_repair_attempted": false,
+        "raw_sql_fallback_repair_success": false,
+        "raw_sql_fallback_success": false,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "sdk_toolcall_semantic_ir_used": true,
+        "semantic_alias_count": 0,
+        "semantic_alias_error_type": null,
+        "semantic_alias_repair_attempted": false,
+        "semantic_alias_validation_passed": true,
+        "semantic_alias_validation_used": true,
+        "semantic_ir_plan_preview": {
+          "aggregation_instruction": "Return the list of run IDs from the failed runs query.",
+          "route": "EVIDENCE",
+          "tasks": {
+            "items": [
+              {
+                "description": "List the IDs of dataflow runs that have a failed status.",
+                "kind": "LOCAL_QUERY",
+                "local_query": {
+                  "count": false,
+                  "fields": {
+                    "items": [
+                      "DATAFLOWID"
+                    ],
+                    "total_items": 1,
+                    "truncated_items": false
+                  },
+                  "filters": {
+                    "items": [
+                      {
+                        "field": "STATE",
+                        "op": "=",
+                        "value": "failed"
+                      }
+                    ],
+                    "total_items": 1,
+                    "truncated_items": false
+                  },
+                  "limit": 100,
+                  "table": "dim_connector"
+                },
+                "operation": "LIST",
+                "reuse_result_from": null,
+                "semantic_cache_key": null,
+                "source": "LOCAL_SNAPSHOT",
+                "task_id": "t1_failed_runs",
+                "truncated_fields": 7
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        },
+        "semantic_ir_provider_latency_ms": 32199,
+        "semantic_ir_repair_attempted": true,
+        "semantic_ir_repair_latency_ms": 15272,
+        "semantic_ir_repair_success": true,
+        "semantic_ir_support_check_latency_ms": 0,
+        "semantic_ir_support_checked": true,
+        "semantic_ir_support_recommended_action": "COMPILE",
+        "semantic_ir_support_repair_attempted": false,
+        "semantic_ir_support_repair_error_message": null,
+        "semantic_ir_support_repair_error_type": null,
+        "semantic_ir_support_repair_latency_ms": 0,
+        "semantic_ir_support_repair_success": false,
+        "semantic_ir_supported": true,
+        "semantic_ir_task_count": 1,
+        "semantic_ir_toolcall_supported": true,
+        "semantic_ir_unsupported_features": [],
+        "semantic_ir_unsupported_operation": null,
+        "semantic_ir_unsupported_reason": null,
+        "semantic_ir_unsupported_task_id": null,
+        "semantic_ir_validation_error_message": "Unknown table: flowservice_runs",
+        "semantic_ir_validation_error_type": "unknown_table",
+        "semantic_ir_validation_latency_ms": 0,
+        "semantic_ir_validation_passed": true,
+        "sql_compile_gate_failures": 0,
+        "v2_semantic_ir_used": true
+      },
+      "output": {
+        "aggregation_instruction": "Return the list of run IDs from the failed runs query.",
+        "evidence_order": "SQL_FIRST",
+        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+        "passes": {
+          "items": [
+            {
+              "pass_id": "t1_failed_runs",
+              "path": "SQL",
+              "raw_sql_fallback_reason": null,
+              "raw_sql_fallback_task_id": null,
+              "raw_sql_fallback_used": false,
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "subtask": "List the IDs of dataflow runs that have a failed status.",
+              "truncated_fields": 9
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "provider": "openai",
+        "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
+        "route": "EVIDENCE_PIPELINE",
+        "sql": {
+          "params": {
+            "items": [
+              "failed"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "query": "SELECT \"DATAFLOWID\" FROM \"dim_connector\" WHERE \"STATE\" = ? LIMIT 100"
+        },
+        "truncated_fields": 6
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-01T02:57:29.847529+00:00"
+      "timestamp": "2026-06-02T01:35:00.061655+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
+      "correctness_role": "blocks malformed dependency graphs before execution",
+      "duration_ms": 0.0,
+      "effect": "validates only graph shape; does not choose subtasks, dependencies, SQL, or API paths",
+      "efficiency_role": "bounds pass scheduling to LLM-declared valid graphs",
+      "input_summary": {
+        "evidence_order": "SQL_FIRST",
+        "pass_ids": {
+          "items": [
+            "t1_failed_runs"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "parallel_groups": {
+          "items": [
+            {
+              "items": [
+                "t1_failed_runs"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_count": 1,
+        "pass_ids": {
+          "items": [
+            "t1_failed_runs"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "passed": true
+      },
+      "stage": "llm-owned pass graph validation",
+      "technique": "shape-only PassGraphGate",
+      "timestamp": "2026-06-02T01:35:00.063826+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -116,8 +310,10 @@
           "truncated_items": false
         },
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_failed_runs"
+          ],
+          "total_items": 1,
           "truncated_items": false
         }
       },
@@ -137,8 +333,10 @@
         "cache_hits": 0,
         "checkpoint_resume_used": false,
         "critical_path": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_failed_runs"
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -158,13 +356,23 @@
         },
         "model_cascade_used": false,
         "parallel_groups": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "t1_failed_runs"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_failed_runs"
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "stage_pipeline_used": true,
@@ -173,7 +381,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-01T02:57:29.849472+00:00"
+      "timestamp": "2026-06-02T01:35:00.064031+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -183,13 +391,23 @@
       "efficiency_role": "allows later passes to enter free stages before earlier passes finish all stages",
       "input_summary": {
         "parallel_groups": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "t1_failed_runs"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_failed_runs"
+          ],
+          "total_items": 1,
           "truncated_items": false
         }
       },
@@ -203,13 +421,23 @@
         "max_parallelism": 4,
         "max_sql_workers": 2,
         "parallel_groups": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "t1_failed_runs"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_completed": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_failed_runs"
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_dependency_blocked": {
@@ -224,53 +452,50 @@
         },
         "pipeline_stage_count": 8,
         "stage_events": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
+          "items": [
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_1a1a20e559f74bc89c6654d4b695c5b2:t1_failed_runs",
+              "pass_id": "t1_failed_runs",
+              "plan_version": 1,
+              "run_id": "run_1a1a20e559f74bc89c6654d4b695c5b2",
+              "stage": "PLAN_READY",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_1a1a20e559f74bc89c6654d4b695c5b2:t1_failed_runs",
+              "pass_id": "t1_failed_runs",
+              "plan_version": 1,
+              "run_id": "run_1a1a20e559f74bc89c6654d4b695c5b2",
+              "stage": "PLAN_READY",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_1a1a20e559f74bc89c6654d4b695c5b2:t1_failed_runs",
+              "pass_id": "t1_failed_runs",
+              "plan_version": 1,
+              "run_id": "run_1a1a20e559f74bc89c6654d4b695c5b2",
+              "stage": "DEPENDENCY_READY",
+              "status": "OK",
+              "truncated_fields": 3
+            }
+          ],
+          "total_items": 16,
+          "truncated_items": true
         },
         "truncated_fields": 4,
-        "v2_pipeline_scheduler_used": false
+        "v2_pipeline_scheduler_used": true
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-01T02:57:29.849484+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
-      "correctness_role": "blocks malformed dependency graphs before execution",
-      "duration_ms": 0.0,
-      "effect": "validates only graph shape; does not choose subtasks, dependencies, SQL, or API paths",
-      "efficiency_role": "bounds pass scheduling to LLM-declared valid graphs",
-      "input_summary": {
-        "evidence_order": "SQL_FIRST",
-        "pass_ids": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        }
-      },
-      "output": {
-        "dependency_edges": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "parallel_groups": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "pass_count": 0,
-        "pass_ids": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "passed": true
-      },
-      "stage": "llm-owned pass graph validation",
-      "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-01T02:57:29.849489+00:00"
+      "timestamp": "2026-06-02T01:35:00.064143+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
@@ -281,12 +506,17 @@
       "input_summary": {
         "multi_pass_enabled": false,
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_failed_runs"
+          ],
+          "total_items": 1,
           "truncated_items": false
         }
       },
       "output": {
+        "alias_materialized_count": 0,
+        "api_execution_latency_sec": 0.0,
+        "api_gate_latency_sec": 0.0,
         "api_gate_passed": null,
         "api_repair_attempts": 0,
         "backend_semantic_decomposition_used": false,
@@ -305,8 +535,10 @@
         "cache_hits": 0,
         "checkpoint_resume_used": false,
         "critical_path": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_failed_runs"
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -325,31 +557,48 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_56eeb63579a14bd28826ef257d5c48ac",
+        "evidence_bus_id": "evidence_run_1a1a20e559f74bc89c6654d4b695c5b2",
+        "exact_pass_cache_hits": 0,
+        "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
-        "llm_pass_count": 0,
-        "llm_pass_graph_used": false,
+        "llm_pass_count": 1,
+        "llm_pass_graph_used": true,
         "max_api_workers": 2,
         "max_parallelism": 4,
         "max_sql_workers": 2,
         "model_cascade_used": false,
         "multi_pass_enabled": false,
         "parallel_groups": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "t1_failed_runs"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
-        "parallel_pass_count": 0,
+        "parallel_pass_count": 1,
+        "pass_graph_gate_error_type": null,
         "pass_graph_gate_passed": true,
+        "pass_graph_repair_attempted": false,
+        "pass_graph_repair_success": false,
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_failed_runs"
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
-        "pass_results_count": 0,
+        "pass_results_count": 1,
         "passes_completed": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_failed_runs"
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_dependency_blocked": {
@@ -358,8 +607,10 @@
           "truncated_items": false
         },
         "passes_executed": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_failed_runs"
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_failed": {
@@ -369,24 +620,127 @@
         },
         "pipeline_stage_count": 8,
         "plan_version": 1,
-        "result_bundle_id": "bundle_run_56eeb63579a14bd28826ef257d5c48ac",
-        "run_id": "run_56eeb63579a14bd28826ef257d5c48ac",
-        "sequential_pass_count": 0,
-        "sql_gate_passed": null,
-        "sql_repair_attempts": 0,
-        "stage_events": {
+        "raw_sql_fallback_considered": false,
+        "raw_sql_fallback_gate_error_type": null,
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_repair_attempted": false,
+        "raw_sql_fallback_repair_success": false,
+        "raw_sql_fallback_success": false,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "raw_sql_safety_gate_failures": 0,
+        "repaired_pass_count": 0,
+        "result_bundle_id": "bundle_run_1a1a20e559f74bc89c6654d4b695c5b2",
+        "run_id": "run_1a1a20e559f74bc89c6654d4b695c5b2",
+        "semantic_alias_count": 0,
+        "semantic_alias_materialized": {
           "items": [],
           "total_items": 0,
           "truncated_items": false
         },
+        "semantic_alias_materialized_count": 0,
+        "semantic_alias_validation_failures": 0,
+        "sequential_pass_count": 0,
+        "sql_execution_latency_sec": 0.0,
+        "sql_gate_latency_sec": 0.001,
+        "sql_gate_passed": true,
+        "sql_repair_attempts": 0,
+        "stage_events": {
+          "items": [
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_1a1a20e559f74bc89c6654d4b695c5b2:t1_failed_runs",
+              "pass_id": "t1_failed_runs",
+              "plan_version": 1,
+              "run_id": "run_1a1a20e559f74bc89c6654d4b695c5b2",
+              "stage": "SQL_API_GATE",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_1a1a20e559f74bc89c6654d4b695c5b2:t1_failed_runs",
+              "pass_id": "t1_failed_runs",
+              "plan_version": 1,
+              "run_id": "run_1a1a20e559f74bc89c6654d4b695c5b2",
+              "stage": "READY_FOR_FINAL_COMPOSITION",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_1a1a20e559f74bc89c6654d4b695c5b2:t1_failed_runs",
+              "pass_id": "t1_failed_runs",
+              "plan_version": 1,
+              "run_id": "run_1a1a20e559f74bc89c6654d4b695c5b2",
+              "stage": "SQL_API_GATE",
+              "status": "OK",
+              "truncated_fields": 3
+            }
+          ],
+          "total_items": 6,
+          "truncated_items": true
+        },
         "stage_pipeline_used": true,
         "truncated_fields": 6,
         "v2_execution_optimizer_used": true,
-        "v2_pipeline_scheduler_used": false
+        "v2_pipeline_scheduler_used": true
       },
       "stage": "llm-owned pass scheduling",
       "technique": "dependency-aware scheduling of LLM-declared evidence passes",
-      "timestamp": "2026-06-01T02:57:29.849491+00:00"
+      "timestamp": "2026-06-02T01:35:00.064149+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
+      "correctness_role": "does not infer missing dependency values or add backend-selected subtasks",
+      "duration_ms": 0.0,
+      "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
+      "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
+      "input_summary": {
+        "pass_id": "t1_failed_runs"
+      },
+      "output": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "required": false,
+        "resolved": true,
+        "run_id": "run_1a1a20e559f74bc89c6654d4b695c5b2"
+      },
+      "stage": "llm-owned pass dependency resolution",
+      "technique": "placeholder resolution from completed LLM pass results",
+      "timestamp": "2026-06-02T01:35:00.064184+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
+      "correctness_role": "returns compile errors for one LLM repair attempt",
+      "duration_ms": 0.0,
+      "effect": "checks syntax/database-semantic validity without rewriting SQL",
+      "efficiency_role": "prevents executing uncompilable SQL",
+      "input_summary": {
+        "pass_id": "t1_failed_runs",
+        "sql": "SELECT \"DATAFLOWID\" FROM \"dim_connector\" WHERE \"STATE\" = ? LIMIT 100"
+      },
+      "output": {
+        "params": {
+          "items": [
+            "failed"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_id": "t1_failed_runs",
+        "passed": true,
+        "sql": "SELECT \"DATAFLOWID\" FROM \"dim_connector\" WHERE \"STATE\" = ? LIMIT 100"
+      },
+      "stage": "llm sql compile gate",
+      "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
+      "timestamp": "2026-06-02T01:35:00.065167+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -398,7 +752,18 @@
         "evidence_order": "SQL_FIRST",
         "route": "EVIDENCE_PIPELINE"
       },
+      "metrics": {
+        "alias_materialized_count": 0,
+        "exact_pass_cache_hits": 0,
+        "exact_pass_cache_scope": "single_run",
+        "semantic_alias_count": 0,
+        "semantic_alias_materialized_count": 0,
+        "semantic_alias_validation_failures": 0
+      },
       "output": {
+        "alias_materialized_count": 0,
+        "api_execution_latency_sec": 0.0,
+        "api_gate_latency_sec": 0.0,
         "api_gate_passed": null,
         "api_repair_attempts": 0,
         "backend_semantic_decomposition_used": false,
@@ -417,8 +782,10 @@
         "cache_hits": 0,
         "checkpoint_resume_used": false,
         "critical_path": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_failed_runs"
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -437,12 +804,14 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_56eeb63579a14bd28826ef257d5c48ac",
+        "evidence_bus_id": "evidence_run_1a1a20e559f74bc89c6654d4b695c5b2",
+        "exact_pass_cache_hits": 0,
+        "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
         "llm_evidence_order": "SQL_FIRST",
         "llm_owned_generation": true,
-        "llm_pass_count": 0,
-        "llm_pass_graph_used": false,
+        "llm_pass_count": 1,
+        "llm_pass_graph_used": true,
         "llm_route": "EVIDENCE_PIPELINE",
         "max_api_workers": 2,
         "max_parallelism": 4,
@@ -450,21 +819,36 @@
         "model_cascade_used": false,
         "multi_pass_enabled": false,
         "parallel_groups": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "t1_failed_runs"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
-        "parallel_pass_count": 0,
+        "parallel_pass_count": 1,
+        "pass_graph_gate_error_type": null,
         "pass_graph_gate_passed": true,
+        "pass_graph_repair_attempted": false,
+        "pass_graph_repair_success": false,
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_failed_runs"
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
-        "pass_results_count": 0,
+        "pass_results_count": 1,
         "passes_completed": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_failed_runs"
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_dependency_blocked": {
@@ -473,8 +857,10 @@
           "truncated_items": false
         },
         "passes_executed": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "t1_failed_runs"
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_failed": {
@@ -484,24 +870,78 @@
         },
         "pipeline_stage_count": 8,
         "plan_version": 1,
-        "result_bundle_id": "bundle_run_56eeb63579a14bd28826ef257d5c48ac",
-        "run_id": "run_56eeb63579a14bd28826ef257d5c48ac",
-        "sequential_pass_count": 0,
-        "sql_gate_passed": null,
-        "sql_repair_attempts": 0,
-        "stage_events": {
+        "raw_sql_fallback_considered": false,
+        "raw_sql_fallback_gate_error_type": null,
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_repair_attempted": false,
+        "raw_sql_fallback_repair_success": false,
+        "raw_sql_fallback_success": false,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "raw_sql_safety_gate_failures": 0,
+        "repaired_pass_count": 0,
+        "result_bundle_id": "bundle_run_1a1a20e559f74bc89c6654d4b695c5b2",
+        "run_id": "run_1a1a20e559f74bc89c6654d4b695c5b2",
+        "semantic_alias_count": 0,
+        "semantic_alias_materialized": {
           "items": [],
           "total_items": 0,
           "truncated_items": false
         },
+        "semantic_alias_materialized_count": 0,
+        "semantic_alias_validation_failures": 0,
+        "sequential_pass_count": 0,
+        "sql_execution_latency_sec": 0.0,
+        "sql_gate_latency_sec": 0.001,
+        "sql_gate_passed": true,
+        "sql_repair_attempts": 0,
+        "stage_events": {
+          "items": [
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_1a1a20e559f74bc89c6654d4b695c5b2:t1_failed_runs",
+              "pass_id": "t1_failed_runs",
+              "plan_version": 1,
+              "run_id": "run_1a1a20e559f74bc89c6654d4b695c5b2",
+              "stage": "SQL_API_GATE",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_1a1a20e559f74bc89c6654d4b695c5b2:t1_failed_runs",
+              "pass_id": "t1_failed_runs",
+              "plan_version": 1,
+              "run_id": "run_1a1a20e559f74bc89c6654d4b695c5b2",
+              "stage": "READY_FOR_FINAL_COMPOSITION",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_1a1a20e559f74bc89c6654d4b695c5b2:t1_failed_runs",
+              "pass_id": "t1_failed_runs",
+              "plan_version": 1,
+              "run_id": "run_1a1a20e559f74bc89c6654d4b695c5b2",
+              "stage": "SQL_API_GATE",
+              "status": "OK",
+              "truncated_fields": 3
+            }
+          ],
+          "total_items": 6,
+          "truncated_items": true
+        },
         "stage_pipeline_used": true,
         "truncated_fields": 2,
         "v2_execution_optimizer_used": true,
-        "v2_pipeline_scheduler_used": false
+        "v2_pipeline_scheduler_used": true
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-01T02:57:29.849500+00:00"
+      "timestamp": "2026-06-02T01:35:00.065805+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -510,16 +950,38 @@
       "effect": "executes only LLM-proposed candidates that pass backend gates",
       "efficiency_role": "does not execute alternative backend-generated candidates",
       "input_summary": {
-        "tool_result_count": 0
+        "tool_result_count": 1
       },
       "output": {
         "api_calls_executed": 0,
         "dry_run_status": false,
-        "sql_calls_executed": 0
+        "row_counts": {
+          "items": [
+            0
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_calls_executed": 1,
+        "sql_results": {
+          "items": [
+            {
+              "ok": true,
+              "result_preview": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "row_count": 0
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-01T02:57:29.850447+00:00"
+      "timestamp": "2026-06-02T01:35:00.069731+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -529,7 +991,7 @@
       "efficiency_role": "makes EvidenceBus construction explicit",
       "input_summary": {
         "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
-        "tool_result_count": 0
+        "tool_result_count": 1
       },
       "output": {
         "evidence_bus_built": true,
@@ -537,12 +999,12 @@
         "llm_evidence_order": "SQL_FIRST",
         "llm_final_answer_composer_ran": true,
         "llm_route": "EVIDENCE_PIPELINE",
-        "pass_results_count": 0,
+        "pass_results_count": 1,
         "post_evidence_answer_router_ran": false
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-01T02:57:29.850450+00:00"
+      "timestamp": "2026-06-02T01:35:00.069744+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -551,22 +1013,24 @@
       "effect": "forwards executed SQL/API evidence into the existing grounded answer pipeline",
       "efficiency_role": "uses collected evidence without extra tool calls",
       "input_summary": {
-        "tool_result_count": 0
+        "tool_result_count": 1
       },
       "output": {
         "evidence": {
           "pass_ids": {
-            "items": [],
-            "total_items": 0,
+            "items": [
+              "t1_failed_runs"
+            ],
+            "total_items": 1,
             "truncated_items": false
           },
-          "pass_result_count": 0,
-          "run_id": "run_56eeb63579a14bd28826ef257d5c48ac"
+          "pass_result_count": 1,
+          "run_id": "run_1a1a20e559f74bc89c6654d4b695c5b2"
         }
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-01T02:57:29.850492+00:00"
+      "timestamp": "2026-06-02T01:35:00.069810+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -575,16 +1039,58 @@
       "effect": "stores all LLM-declared pass results before final LLM aggregation",
       "efficiency_role": "reuses executed pass results without extra tools",
       "input_summary": {
-        "pass_results_count": 0,
-        "tool_result_count": 0
+        "pass_results_count": 1,
+        "tool_result_count": 1
       },
       "output": {
-        "pass_results_count": 0,
-        "run_id": "run_56eeb63579a14bd28826ef257d5c48ac"
+        "append_events": {
+          "items": [
+            {
+              "appended": true,
+              "attempt_id": 0,
+              "pass_id": "t1_failed_runs"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_results_count": 1,
+        "run_id": "run_1a1a20e559f74bc89c6654d4b695c5b2",
+        "runtime_passes": {
+          "items": [
+            {
+              "attempt_id": 0,
+              "cached_sources": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "dependency_resolution": {
+                "errors": {
+                  "items": [],
+                  "total_items": 0,
+                  "truncated_items": false
+                },
+                "required": false,
+                "resolved": true,
+                "run_id": "run_1a1a20e559f74bc89c6654d4b695c5b2"
+              },
+              "global_pass_id": "run_1a1a20e559f74bc89c6654d4b695c5b2:t1_failed_runs",
+              "pass_id": "t1_failed_runs",
+              "path": "SQL",
+              "plan_version": 1,
+              "run_id": "run_1a1a20e559f74bc89c6654d4b695c5b2",
+              "status": "EMPTY",
+              "truncated_fields": 6
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-01T02:57:29.850501+00:00"
+      "timestamp": "2026-06-02T01:35:00.069832+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -593,7 +1099,7 @@
       "effect": "keeps SQL errors, API errors, live empty, and direct evidence distinct",
       "efficiency_role": "uses existing payloads only",
       "input_summary": {
-        "tool_result_count": 0
+        "tool_result_count": 1
       },
       "output": {
         "api": {
@@ -607,7 +1113,7 @@
         "live_empty_scoped": false,
         "sql": {
           "items": [
-            "SQL_NOT_RUN"
+            "SQL_ZERO_ROWS"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -615,7 +1121,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-01T02:57:29.850503+00:00"
+      "timestamp": "2026-06-02T01:35:00.069836+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -624,7 +1130,7 @@
       "effect": "turns runtime evidence into typed answer fields",
       "efficiency_role": "uses existing slot extraction",
       "input_summary": {
-        "tool_result_count": 0
+        "tool_result_count": 1
       },
       "output": {
         "discrepancy_flags": {
@@ -636,13 +1142,44 @@
         "slots": {
           "answer_family": "failed_dataflow_runs",
           "api_error": false,
+          "counts": {
+            "items": [
+              "0"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
           "discrepancy": false,
-          "dry_run": false
+          "dry_run": false,
+          "slots_present": {
+            "items": [
+              "counts"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "sql_row_count": 0
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-01T02:57:29.850970+00:00"
+      "timestamp": "2026-06-02T01:35:00.083172+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_composer_start",
+      "correctness_role": "diagnostic only; does not alter final answer composition or grounding",
+      "duration_ms": 0.0,
+      "effect": "records the exact boundary before the potentially slow final-answer LLM call",
+      "efficiency_role": "enables smoke timeout localization without extra SQL/API calls",
+      "input_summary": {
+        "runtime_pass_count": 1
+      },
+      "output": {
+        "current_stage": "llm_final_answer_composer_call_start"
+      },
+      "stage": "llm-owned answer synthesis",
+      "technique": "pre-call heartbeat before LLMFinalAnswerComposer",
+      "timestamp": "2026-06-02T01:35:00.083185+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -651,31 +1188,36 @@
       "effect": "lets the LLM own final answer composition from runtime evidence",
       "efficiency_role": "uses one final-answer LLM call after evidence execution",
       "input_summary": {
-        "runtime_pass_count": 0,
+        "runtime_pass_count": 1,
         "slot_counts": {
           "answer_family": "failed_dataflow_runs",
           "api_error": false,
+          "counts": {
+            "items": [
+              "0"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
           "discrepancy": false,
-          "dry_run": false
+          "dry_run": false,
+          "slots_present": {
+            "items": [
+              "counts"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "sql_row_count": 0
         }
       },
       "output": {
         "backend_unavailable": false,
-        "error_message": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
-        "model": "Gpt 4o",
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "parse_error": false,
-        "provider": "[REDACTED]",
-        "raw_preview": {
-          "backend_type": "openai_sdk",
-          "error": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
-          "model": "Gpt 4o",
-          "ok": false,
-          "provider": "[REDACTED]",
-          "sdk_path_used": true,
-          "skipped": false,
-          "transport": "openai_sdk",
-          "truncated_fields": 1
-        },
+        "provider": "openai",
+        "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.",
         "used_pass_ids": {
           "items": [],
           "total_items": 0,
@@ -684,7 +1226,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-01T02:57:30.741272+00:00"
+      "timestamp": "2026-06-02T01:35:05.266478+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -696,13 +1238,12 @@
         "composer": "LLMFinalAnswerComposer"
       },
       "output": {
-        "error_message": "final_answer must be a string.",
-        "error_type": "missing_final_answer",
-        "passed": false
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "passed": true
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-01T02:57:30.741284+00:00"
+      "timestamp": "2026-06-02T01:35:05.266517+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -711,63 +1252,72 @@
       "effect": "checks whether LLM final answer claims are supported by runtime evidence",
       "efficiency_role": "no SQL/API calls",
       "input_summary": {
-        "syntax_gate_passed": false
+        "syntax_gate_passed": true
       },
       "output": {
-        "error_type": "syntax_gate_failed",
-        "passed": false
+        "passed": true,
+        "verifier": {
+          "action": "ACCEPT",
+          "allowed_fact_index": {
+            "counts": {
+              "items": [
+                "0"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          },
+          "claim_extractor": {
+            "claim_count": 1,
+            "claims": {
+              "items": [
+                {
+                  "hardness": "SOFT",
+                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "type": "SOFT_TEXT"
+                }
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          },
+          "claim_matcher": {
+            "matches": {
+              "items": [
+                {
+                  "claim": {
+                    "hardness": "SOFT",
+                    "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                    "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                    "type": "SOFT_TEXT"
+                  },
+                  "reason": "soft_text",
+                  "status": "SUPPORTED"
+                }
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          },
+          "ok": true,
+          "supported_claims": {
+            "items": [
+              {
+                "hardness": "SOFT",
+                "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "type": "SOFT_TEXT"
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
       },
       "stage": "answer gate",
       "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-01T02:57:30.741286+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_final_answer_repair",
-      "correctness_role": "preserves LLM ownership while enforcing evidence boundaries",
-      "duration_ms": 0.0,
-      "effect": "returns gate errors to the LLM once; backend does not repair the answer itself",
-      "efficiency_role": "caps answer repair to one LLM call",
-      "input_summary": {
-        "failed_semantic": false,
-        "failed_syntax": true
-      },
-      "output": {
-        "candidate": {
-          "backend_unavailable": false,
-          "error_message": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
-          "model": "Gpt 4o",
-          "parse_error": false,
-          "provider": "[REDACTED]",
-          "raw_preview": {
-            "backend_type": "openai_sdk",
-            "error": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
-            "model": "Gpt 4o",
-            "ok": false,
-            "provider": "[REDACTED]",
-            "sdk_path_used": true,
-            "skipped": false,
-            "transport": "openai_sdk",
-            "truncated_fields": 1
-          },
-          "used_pass_ids": {
-            "items": [],
-            "total_items": 0,
-            "truncated_items": false
-          }
-        },
-        "semantic_gate": {
-          "error_type": "syntax_gate_failed",
-          "passed": false
-        },
-        "syntax_gate": {
-          "error_message": "final_answer must be a string.",
-          "error_type": "missing_final_answer",
-          "passed": false
-        }
-      },
-      "stage": "llm-owned answer repair",
-      "technique": "single LLM-owned final answer repair",
-      "timestamp": "2026-06-01T02:57:31.628788+00:00"
+      "timestamp": "2026-06-02T01:35:05.267061+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -776,15 +1326,18 @@
       "effect": "records that V2 did not use deterministic answer templates, renderers, or selectors as competing generators",
       "efficiency_role": "no extra tool calls",
       "input_summary": {
-        "runtime_pass_count": 0
+        "runtime_pass_count": 1
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
-        "answer_repair_attempts": 1,
-        "answer_semantic_gate_passed": false,
-        "answer_syntax_gate_passed": false,
+        "answer_repair_attempts": 0,
+        "answer_semantic_gate_passed": true,
+        "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
-        "final_answer_supported_by_evidence": false,
+        "final_answer_repair_latency_sec": 0.0,
+        "final_answer_supported_by_evidence": true,
+        "final_composer_latency_sec": 5.183,
+        "final_gate_latency_sec": 0.0,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 2,
@@ -796,7 +1349,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-01T02:57:31.628831+00:00"
+      "timestamp": "2026-06-02T01:35:05.267121+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -805,15 +1358,15 @@
       "effect": "returns the LLM-composed answer when gates pass, otherwise a safe evidence-state fallback",
       "efficiency_role": "no additional SQL/API calls",
       "input_summary": {
-        "answer_semantic_gate_passed": false
+        "answer_semantic_gate_passed": true
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
-        "answer_repair_attempts": 1,
-        "answer_semantic_gate_passed": false,
-        "answer_syntax_gate_passed": false,
+        "answer_repair_attempts": 0,
+        "answer_semantic_gate_passed": true,
+        "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
-        "final_answer_supported_by_evidence": false,
+        "final_answer_supported_by_evidence": true,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 3,
@@ -825,53 +1378,232 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-01T02:57:31.628958+00:00"
+      "timestamp": "2026-06-02T01:35:05.267194+00:00"
     }
   ],
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 761,
+  "estimated_tokens": 1774,
   "execution_time": 0.0,
-  "final_answer": "I could not compose a verified final answer from the available runtime evidence.",
+  "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
   "original_query": "Show me the IDs of failed dataflow runs",
   "planning_time": 0.0,
   "preprocessing_time": 0.0,
   "query_id": "example_004",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 1.8027954581193626,
-  "sql_call_count": 0,
+  "runtime": 5.242867207620293,
+  "sql_call_count": 1,
   "steps": [
     {
-      "estimated_tokens": 621,
+      "estimated_tokens": 1701,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_004/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 1135
+      "prompt_tokens": 2405
     },
     {
-      "aggregation_instruction": "",
+      "aggregation_instruction": "Return the list of run IDs from the failed runs query.",
       "api_request": null,
       "backend_unavailable": false,
+      "diagnostics": {
+        "api_request_gate_failures": 0,
+        "atomic_protocol_fallback_used": false,
+        "backend_formal_compilation_used": true,
+        "backend_generated_sql": false,
+        "backend_semantic_decomposition_used": false,
+        "backend_semantic_planning_used": false,
+        "backend_sql_api_generation_used": false,
+        "compiled_alias_count": 0,
+        "compiled_api_count": 0,
+        "compiled_sql_count": 1,
+        "compiler_latency_ms": 0,
+        "planner_json_fallback_used": false,
+        "planner_json_parse_error": null,
+        "planner_parse_source": "sdk_toolcall_semantic_ir",
+        "planner_provider_latency_ms": 32200,
+        "planner_repair_attempted": false,
+        "planner_success": true,
+        "planner_timeout": false,
+        "planner_toolcall_attempted": true,
+        "planner_toolcall_supported": true,
+        "provider_capabilities": {
+          "requires_json_prompting": false,
+          "supports_json_content_fallback": true,
+          "supports_tool_calls": true
+        },
+        "raw_sql_fallback_considered": false,
+        "raw_sql_fallback_gate_error_type": null,
+        "raw_sql_fallback_latency_ms": 0,
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_rejected_reason": null,
+        "raw_sql_fallback_repair_attempted": false,
+        "raw_sql_fallback_repair_success": false,
+        "raw_sql_fallback_success": false,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "sdk_toolcall_semantic_ir_used": true,
+        "semantic_alias_count": 0,
+        "semantic_alias_error_type": null,
+        "semantic_alias_repair_attempted": false,
+        "semantic_alias_validation_passed": true,
+        "semantic_alias_validation_used": true,
+        "semantic_ir_plan_preview": {
+          "aggregation_instruction": "Return the list of run IDs from the failed runs query.",
+          "route": "EVIDENCE",
+          "tasks": {
+            "items": [
+              {
+                "description": "List the IDs of dataflow runs that have a failed status.",
+                "kind": "LOCAL_QUERY",
+                "local_query": {
+                  "count": false,
+                  "fields": {
+                    "items": [
+                      "DATAFLOWID"
+                    ],
+                    "total_items": 1,
+                    "truncated_items": false
+                  },
+                  "filters": {
+                    "items": [
+                      {
+                        "field": "STATE",
+                        "op": "=",
+                        "value": "failed"
+                      }
+                    ],
+                    "total_items": 1,
+                    "truncated_items": false
+                  },
+                  "limit": 100,
+                  "table": "dim_connector"
+                },
+                "operation": "LIST",
+                "reuse_result_from": null,
+                "semantic_cache_key": null,
+                "source": "LOCAL_SNAPSHOT",
+                "task_id": "t1_failed_runs",
+                "truncated_fields": 7
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        },
+        "semantic_ir_provider_latency_ms": 32199,
+        "semantic_ir_repair_attempted": true,
+        "semantic_ir_repair_latency_ms": 15272,
+        "semantic_ir_repair_success": true,
+        "semantic_ir_support_check_latency_ms": 0,
+        "semantic_ir_support_checked": true,
+        "semantic_ir_support_recommended_action": "COMPILE",
+        "semantic_ir_support_repair_attempted": false,
+        "semantic_ir_support_repair_error_message": null,
+        "semantic_ir_support_repair_error_type": null,
+        "semantic_ir_support_repair_latency_ms": 0,
+        "semantic_ir_support_repair_success": false,
+        "semantic_ir_supported": true,
+        "semantic_ir_task_count": 1,
+        "semantic_ir_toolcall_supported": true,
+        "semantic_ir_unsupported_features": [],
+        "semantic_ir_unsupported_operation": null,
+        "semantic_ir_unsupported_reason": null,
+        "semantic_ir_unsupported_task_id": null,
+        "semantic_ir_validation_error_message": "Unknown table: flowservice_runs",
+        "semantic_ir_validation_error_type": "unknown_table",
+        "semantic_ir_validation_latency_ms": 0,
+        "semantic_ir_validation_passed": true,
+        "sql_compile_gate_failures": 0,
+        "v2_semantic_ir_used": true
+      },
       "direct_answer": null,
       "evidence_order": "SQL_FIRST",
       "kind": "llm_unified_planner",
-      "model": "Gpt 4o",
+      "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
       "parse_error": false,
-      "passes": [],
-      "provider": "[REDACTED]",
+      "passes": [
+        {
+          "api_request": null,
+          "can_run_parallel": true,
+          "depends_on": [],
+          "evidence_order": "SQL_FIRST",
+          "expected_result": "List the IDs of dataflow runs that have a failed status.",
+          "fallback": false,
+          "optional": false,
+          "pass_id": "t1_failed_runs",
+          "path": "SQL",
+          "raw_sql_fallback_reason": null,
+          "raw_sql_fallback_task_id": null,
+          "raw_sql_fallback_used": false,
+          "result_contract": null,
+          "reuse_result_from": null,
+          "semantic_cache_key": null,
+          "sql": {
+            "params": [
+              "failed"
+            ],
+            "query": "SELECT \"DATAFLOWID\" FROM \"dim_connector\" WHERE \"STATE\" = ? LIMIT 100"
+          },
+          "subtask": "List the IDs of dataflow runs that have a failed status."
+        }
+      ],
+      "provider": "openai",
       "raw_preview": {
-        "backend_type": "openai_sdk",
-        "error": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
-        "model": "Gpt 4o",
-        "ok": false,
-        "provider": "[REDACTED]",
-        "sdk_path_used": true,
-        "skipped": false,
-        "transport": "openai_sdk",
-        "truncated_fields": 7
+        "semantic_ir_initial": {
+          "base_url": "[REDACTED]",
+          "error": null,
+          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+          "ok": true,
+          "provider": "openai",
+          "sdk_path_used": true,
+          "skipped": false,
+          "transport": "openai_sdk",
+          "truncated_fields": 8
+        },
+        "semantic_ir_repair": {
+          "base_url": "[REDACTED]",
+          "error": null,
+          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+          "ok": true,
+          "provider": "openai",
+          "sdk_path_used": true,
+          "skipped": false,
+          "transport": "openai_sdk",
+          "truncated_fields": 8
+        }
       },
-      "reason": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
+      "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
       "route": "EVIDENCE_PIPELINE",
-      "sql": null
+      "sql": {
+        "params": [
+          "failed"
+        ],
+        "query": "SELECT \"DATAFLOWID\" FROM \"dim_connector\" WHERE \"STATE\" = ? LIMIT 100"
+      }
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "params": {
+          "items": [
+            "failed"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "row_count": 0
+      },
+      "sql": "SELECT \"DATAFLOWID\" FROM \"dim_connector\" WHERE \"STATE\" = ? LIMIT 100",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": [
+          "LLM SQL pass passed compile gate."
+        ]
+      }
     },
     {
       "evidence_bus_built": true,
@@ -880,7 +1612,7 @@
       "llm_evidence_order": "SQL_FIRST",
       "llm_final_answer_composer_ran": true,
       "llm_route": "EVIDENCE_PIPELINE",
-      "pass_results_count": 0,
+      "pass_results_count": 1,
       "post_evidence_answer_router_ran": false
     },
     {
@@ -888,49 +1620,108 @@
       "backend_unavailable": false,
       "caveats_included": [],
       "claimed_facts": [],
-      "error_message": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
-      "final_answer": null,
+      "error_message": null,
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
       "kind": "llm_final_answer_composer",
-      "model": "Gpt 4o",
+      "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
       "parse_error": false,
-      "provider": "[REDACTED]",
-      "raw_preview": {
-        "backend_type": "openai_sdk",
-        "error": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
-        "model": "Gpt 4o",
-        "ok": false,
-        "provider": "[REDACTED]",
-        "sdk_path_used": true,
-        "skipped": false,
-        "transport": "openai_sdk",
-        "truncated_fields": 7
-      },
+      "provider": "openai",
+      "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.",
       "unanswered_subtasks": [],
       "used_pass_ids": []
     },
     {
       "answer_composer_used": "LLMFinalAnswerComposer",
-      "answer_repair_attempts": 1,
-      "answer_semantic_gate_passed": false,
-      "answer_syntax_gate_passed": false,
+      "answer_repair_attempts": 0,
+      "answer_semantic_gate_passed": true,
+      "answer_syntax_gate_passed": true,
       "deterministic_answer_template_used": false,
-      "final_answer_supported_by_evidence": false,
+      "final_answer_repair_latency_sec": 0.0,
+      "final_answer_supported_by_evidence": true,
+      "final_composer_latency_sec": 5.183,
+      "final_gate_latency_sec": 0.0,
       "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
       "llm_owned_final_answer": true,
-      "semantic_gate": null,
+      "semantic_gate": {
+        "error_message": null,
+        "error_type": null,
+        "missing_required_fields": [],
+        "passed": true,
+        "scope_errors": [],
+        "unsupported_claims": [],
+        "verifier": {
+          "action": "ACCEPT",
+          "allowed_fact_index": {
+            "allowed_caveats": [],
+            "api_error_scopes": [],
+            "counts": [
+              "0"
+            ],
+            "dates": [],
+            "evidence_strings": [],
+            "ids": [],
+            "live_empty_scopes": [],
+            "missing_roles": [],
+            "names": [],
+            "relationships": [],
+            "statuses": []
+          },
+          "ambiguous_claims": [],
+          "claim_extractor": {
+            "claim_count": 1,
+            "claims": [
+              {
+                "hardness": "SOFT",
+                "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "type": "SOFT_TEXT",
+                "value": ""
+              }
+            ]
+          },
+          "claim_matcher": {
+            "matches": [
+              {
+                "claim": {
+                  "hardness": "SOFT",
+                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "type": "SOFT_TEXT",
+                  "value": ""
+                },
+                "reason": "soft_text",
+                "status": "SUPPORTED"
+              }
+            ]
+          },
+          "needs_caveat_claims": [],
+          "ok": true,
+          "over_specified_claims": [],
+          "supported_claims": [
+            {
+              "hardness": "SOFT",
+              "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+              "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+              "type": "SOFT_TEXT",
+              "value": ""
+            }
+          ],
+          "unsupported_claims": []
+        }
+      },
       "syntax_gate": {
-        "error_message": "final_answer must be a string.",
-        "error_type": "missing_final_answer",
-        "final_answer": null,
-        "passed": false
+        "error_message": null,
+        "error_type": null,
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "passed": true
       },
       "used_pass_ids": []
     }
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 1.7791978339664638
+    "answer_time": 5.204662750009447
   },
-  "tool_call_count": 0
+  "tool_call_count": 1
 }
