@@ -36,6 +36,7 @@ DEFAULT_ANTHROPIC_MODEL = "claude-3-5-sonnet-latest"
 DEFAULT_PIONEER_MODEL = "gpt-4o"
 DEFAULT_PIONEER_BASE_URL = "https://api.pioneer.ai/v1"
 DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_OPENAI_COMPAT_HOST = "generativelanguage.googleapis.com"
 
 _KEY_LIKE_RE = re.compile(r"sk-[A-Za-z0-9_*.-]{8,}")
 _AUTH_HEADER_RE = re.compile(r"Authorization\s*:\s*" + r"Bearer\s+[^\s,'\"}]+", re.IGNORECASE)
@@ -191,18 +192,31 @@ class OpenAILLMClient(LLMClient):
             return NoOpLLMClient(reason=self.missing_key_reason, model=self.model).generate_messages(
                 messages, tools=tools, tool_choice=tool_choice, parallel_tool_calls=parallel_tool_calls
             )
+        gemini_openai_compat = is_gemini_openai_compat_base_url(self.base_url)
         payload: dict[str, Any] = {
             "model": self.model,
             "messages": messages,
-            "temperature": 0,
-            "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "2048")),
         }
+        omitted_for_gemini: list[str] = ["temperature", "max_tokens", "parallel_tool_calls"] if gemini_openai_compat else []
+        if gemini_openai_compat:
+            if _env_flag("GEMINI_OPENAI_INCLUDE_TEMPERATURE"):
+                payload["temperature"] = 0
+                omitted_for_gemini.remove("temperature")
+            if _env_flag("GEMINI_OPENAI_INCLUDE_MAX_TOKENS"):
+                payload["max_tokens"] = int(os.getenv("LLM_MAX_TOKENS", "2048"))
+                omitted_for_gemini.remove("max_tokens")
+            compatible_tool_choice = "auto" if tools else None
+        else:
+            payload["temperature"] = 0
+            payload["max_tokens"] = int(os.getenv("LLM_MAX_TOKENS", "2048"))
+            compatible_tool_choice = tool_choice
         if tools:
             payload["tools"] = tools
-            if parallel_tool_calls is not None:
+            if parallel_tool_calls is not None and not gemini_openai_compat:
                 payload["parallel_tool_calls"] = bool(parallel_tool_calls)
-        if tool_choice is not None:
-            payload["tool_choice"] = tool_choice
+        if compatible_tool_choice is not None:
+            payload["tool_choice"] = compatible_tool_choice
+        payload_keys = list(payload.keys())
         try:
             body = self._create_with_sdk(payload)
             response_ok = True
@@ -224,6 +238,9 @@ class OpenAILLMClient(LLMClient):
                 "transport": "openai_sdk",
                 "error": redacted_error,
                 "error_category": _classify_llm_error_text(str(exc)),
+                "gemini_openai_compat_mode": gemini_openai_compat,
+                "payload_keys": payload_keys,
+                "omitted_for_gemini": omitted_for_gemini if gemini_openai_compat else [],
             }
         content = ""
         tool_calls: list[dict[str, Any]] = []
@@ -254,7 +271,10 @@ class OpenAILLMClient(LLMClient):
                 "usage": body.get("usage", {}),
                 "raw_preview": compact_preview(body, 1200),
                 "error": None if response_ok else _redact_error_text(str(body))[:500],
-                "tool_call_warning": _tool_call_warning(tools, tool_choice, tool_calls, response_ok),
+                "tool_call_warning": _tool_call_warning(tools, compatible_tool_choice, tool_calls, response_ok),
+                "gemini_openai_compat_mode": gemini_openai_compat,
+                "payload_keys": payload_keys,
+                "omitted_for_gemini": omitted_for_gemini if gemini_openai_compat else [],
             }
         )
         result["provider"] = self.provider_name()
@@ -763,6 +783,15 @@ def _tool_call_warning(
     if tool_choice == "required" or isinstance(tool_choice, dict):
         return "model_did_not_return_tool_calls"
     return None
+
+
+def is_gemini_openai_compat_base_url(base_url: str | None) -> bool:
+    text = str(base_url or "").lower()
+    return GEMINI_OPENAI_COMPAT_HOST in text and "/openai" in text
+
+
+def _env_flag(name: str) -> bool:
+    return str(os.getenv(name) or "").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _normalize_openai_tool_calls(message: dict[str, Any]) -> list[dict[str, Any]]:

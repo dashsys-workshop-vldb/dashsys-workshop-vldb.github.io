@@ -53,6 +53,46 @@ def test_hermes_toolcall_probe_accepts_native_tool_call(monkeypatch, tmp_path):
     assert report["tool_name"] == "submit_probe_result"
     assert client.calls[0]["tools"][0]["function"]["name"] == "submit_probe_result"
     assert client.calls[0]["tool_choice"]["function"]["name"] == "submit_probe_result"
+    assert client.calls[0]["parallel_tool_calls"] is False
+
+
+def test_hermes_toolcall_probe_uses_minimal_gemini_openai_schema(monkeypatch, tmp_path):
+    monkeypatch.delenv("DASHAGENT_LLM_PROVIDER", raising=False)
+    monkeypatch.delenv("LLM_PROVIDER", raising=False)
+    monkeypatch.setattr("scripts.probe_hermes_sdk_toolcall.load_local_env", lambda *args, **kwargs: {"keys_loaded": []})
+    monkeypatch.setenv("OPENAI_API_KEY", "AIzaUnitTestGeminiSecretValue123456")
+    monkeypatch.setenv("OPENAI_MODEL", "gemini-3.5-flash")
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
+    client = FakeProbeClient(
+        {
+            "ok": True,
+            "provider": "openai",
+            "model": "gemini-3.5-flash",
+            "sdk_path_used": True,
+            "finish_reason": "tool_calls",
+            "tool_calls": [{"name": "submit_probe_result", "arguments": {"route": "DIRECT", "reason": "concept"}}],
+        }
+    )
+
+    report = run_hermes_toolcall_probe(client=client, report_dir=tmp_path)
+
+    parameters = client.calls[0]["tools"][0]["function"]["parameters"]
+    assert report["ok"] is True
+    assert report["openai_compat_provider"] == "gemini"
+    assert report["toolcall_supported"] is True
+    assert client.calls[0]["messages"] == [{"role": "user", "content": "Classify: What is a schema? You must call the tool."}]
+    assert client.calls[0]["tools"][0]["function"]["description"] == "Submit classification"
+    assert parameters == {
+        "type": "object",
+        "properties": {
+            "route": {"type": "string", "enum": ["DIRECT", "EVIDENCE"]},
+            "reason": {"type": "string"},
+        },
+        "required": ["route", "reason"],
+    }
+    assert "additionalProperties" not in parameters
+    assert client.calls[0]["tool_choice"] == "auto"
+    assert client.calls[0]["parallel_tool_calls"] is None
 
 
 def test_hermes_toolcall_probe_rejects_content_only_response(monkeypatch, tmp_path):

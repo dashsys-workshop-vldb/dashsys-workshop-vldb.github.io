@@ -10,6 +10,7 @@ from dashagent.llm_client import (
     OpenRouterLLMClient,
     PioneerChatLLMClient,
     get_llm_client,
+    is_gemini_openai_compat_base_url,
 )
 
 
@@ -499,7 +500,78 @@ def test_openai_client_uses_sdk_base_url_and_model(monkeypatch):
     assert result["model"] == "qwen2.5-32b-instruct"
     assert captured["base_url"] == "https://photos-hewlett-safely-friends.trycloudflare.com/v1"
     assert captured["payload"]["model"] == "qwen2.5-32b-instruct"
+    assert captured["payload"]["temperature"] == 0
+    assert captured["payload"]["max_tokens"] == 2048
     assert "unit-test-openai-key" not in str(result)
+
+
+def test_openai_client_uses_gemini_compat_tool_payload(monkeypatch):
+    from dashagent.llm_client import OpenAILLMClient
+
+    captured = {}
+
+    class FakeCompletion:
+        def model_dump(self):
+            return {
+                "choices": [
+                    {
+                        "finish_reason": "tool_calls",
+                        "message": {
+                            "role": "assistant",
+                            "content": None,
+                            "tool_calls": [
+                                {
+                                    "id": "call_1",
+                                    "type": "function",
+                                    "function": {
+                                        "name": "submit_probe_result",
+                                        "arguments": '{"route":"DIRECT","reason":"concept"}',
+                                    },
+                                }
+                            ],
+                        },
+                    }
+                ],
+                "usage": {"total_tokens": 3},
+            }
+
+    class FakeCompletions:
+        def create(self, **payload):
+            captured["payload"] = payload
+            return FakeCompletion()
+
+    class FakeOpenAI:
+        def __init__(self, *, api_key=None, base_url=None, timeout=None):
+            captured["base_url"] = base_url
+            self.chat = type("Chat", (), {"completions": FakeCompletions()})()
+
+    monkeypatch.setattr("dashagent.llm_client.OpenAI", FakeOpenAI)
+    client = OpenAILLMClient(
+        api_key="unit-test-openai-key",
+        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+        model="gemini-3.5-flash",
+    )
+
+    result = client.generate_messages(
+        [{"role": "user", "content": "Classify this prompt: What is a schema?"}],
+        tools=[{"type": "function", "function": {"name": "submit_probe_result", "parameters": {"type": "object"}}}],
+        tool_choice={"type": "function", "function": {"name": "submit_probe_result"}},
+        parallel_tool_calls=False,
+    )
+
+    assert result["ok"] is True
+    assert is_gemini_openai_compat_base_url("https://generativelanguage.googleapis.com/v1beta/openai/")
+    assert not is_gemini_openai_compat_base_url("https://generativelanguage.googleapis.com/v1beta/models")
+    assert captured["payload"]["model"] == "gemini-3.5-flash"
+    assert list(captured["payload"].keys()) == ["model", "messages", "tools", "tool_choice"]
+    assert captured["payload"]["tool_choice"] == "auto"
+    assert "temperature" not in captured["payload"]
+    assert "max_tokens" not in captured["payload"]
+    assert "parallel_tool_calls" not in captured["payload"]
+    assert result["gemini_openai_compat_mode"] is True
+    assert result["payload_keys"] == ["model", "messages", "tools", "tool_choice"]
+    assert result["omitted_for_gemini"] == ["temperature", "max_tokens", "parallel_tool_calls"]
+    assert result["tool_calls"][0]["name"] == "submit_probe_result"
 
 
 def test_openai_client_uses_hermes_llm_call_timeout_env(monkeypatch):

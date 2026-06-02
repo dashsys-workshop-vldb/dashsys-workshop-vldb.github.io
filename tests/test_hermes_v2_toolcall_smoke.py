@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from scripts.run_hermes_v2_toolcall_smoke import _build_smoke_row, _summarize_rows, _timeout_row
+from pathlib import Path
+
+import scripts.run_hermes_v2_toolcall_smoke as smoke
+from scripts.run_hermes_v2_toolcall_smoke import _build_smoke_row, _run_prompt_with_timeout, _summarize_rows, _timeout_row
 
 
 def test_smoke_row_counts_successful_sql_rows_as_runtime_facts():
@@ -250,3 +253,111 @@ def test_timeout_row_records_stage_and_keeps_summary_partial():
     assert row["pass"] is False
     assert summary["timeout_count"] == 1
     assert summary["passed_count"] == 0
+
+
+def test_prompt_timeout_escalates_to_kill_when_terminate_does_not_stop_worker(monkeypatch, tiny_project):
+    class FakeQueue:
+        pass
+
+    class FakeProcess:
+        def __init__(self, *args, **kwargs):
+            self.terminate_called = False
+            self.kill_called = False
+            self._alive = True
+
+        def start(self):
+            return None
+
+        def join(self, timeout=None):
+            return None
+
+        def is_alive(self):
+            return self._alive
+
+        def terminate(self):
+            self.terminate_called = True
+
+        def kill(self):
+            self.kill_called = True
+            self._alive = False
+
+    fake_process = FakeProcess()
+
+    class FakeContext:
+        def Queue(self, maxsize=0):
+            return FakeQueue()
+
+        def Process(self, *args, **kwargs):
+            return fake_process
+
+    monkeypatch.setattr(smoke.mp, "get_context", lambda *_args, **_kwargs: FakeContext())
+
+    row = _run_prompt_with_timeout(
+        {"id": "slow_prompt", "prompt": "Explain and show data.", "expected": "EVIDENCE_LOCAL"},
+        config=tiny_project,
+        report_dir=tiny_project.outputs_dir / "smoke",
+        prompt_timeout_sec=1,
+        llm_call_timeout_sec=1,
+    )
+
+    assert fake_process.terminate_called is True
+    assert fake_process.kill_called is True
+    assert row["timed_out"] is True
+
+
+def test_smoke_uses_gemini_openai_compat_probe_and_report_name(monkeypatch, tiny_project, tmp_path):
+    monkeypatch.setenv("DASHAGENT_LLM_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
+    monkeypatch.setenv("OPENAI_API_KEY", "AIzaUnitTestGeminiSecretValue123456")
+    monkeypatch.setenv("OPENAI_MODEL", "gemini-3.5-flash")
+    monkeypatch.setattr(smoke, "load_local_env", lambda *args, **kwargs: {"keys_loaded": []})
+
+    captured = {}
+
+    def legacy_probe(*args, **kwargs):
+        raise AssertionError("legacy Hermes probe should not be used for Gemini OpenAI-compatible smoke")
+
+    def gemini_probe(config=None, *, report_dir=None):
+        captured["probe_report_dir"] = Path(report_dir)
+        return {
+            "ok": True,
+            "provider": "openai",
+            "openai_compat_provider": "gemini",
+            "model": "gemini-3.5-flash",
+            "sdk_path_used": True,
+            "toolcall_supported": True,
+            "tool_calls_count": 1,
+            "tool_name": "submit_probe_result",
+            "finish_reason": "tool_calls",
+            "error": "",
+        }
+
+    def fake_prompt(item, **kwargs):
+        return {
+            "prompt_id": item["id"],
+            "prompt": item["prompt"],
+            "expected": item["expected"],
+            "pass": True,
+            "unsupported_claims": 0,
+            "final_semantic_gate_final_failures": 0,
+            "no_tool_fp": False,
+            "runtime_fact_count": 1,
+            "compiled_sql_count": 1,
+            "compiled_api_count": 0,
+            "sql_calls": 1,
+            "api_calls": 0,
+            "sdk_toolcall_semantic_ir_used": True,
+            "atomic_protocol_fallback_used": False,
+        }
+
+    monkeypatch.setattr(smoke, "run_hermes_toolcall_probe", legacy_probe)
+    monkeypatch.setattr(smoke, "run_gemini_openai_toolcall_probe", gemini_probe, raising=False)
+    monkeypatch.setattr(smoke, "_run_prompt_with_timeout", fake_prompt)
+
+    report = smoke.run_hermes_v2_toolcall_smoke(config=tiny_project, report_dir=tmp_path)
+
+    assert report["ok"] is True
+    assert report["report_name"] == "gemini_openai_compat_smoke"
+    assert report["report_title"] == "Gemini OpenAI-Compatible V2 Toolcall Smoke"
+    assert Path(report["json_path"]).name == "gemini_openai_compat_smoke.json"
+    assert captured["probe_report_dir"].name == "gemini_toolcall_probe"

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from dataclasses import replace
 from pathlib import Path
@@ -43,6 +44,18 @@ def main() -> int:
         type=Path,
         help="Optional organizer-style dataset JSON to evaluate instead of the default data/data.json.",
     )
+    parser.add_argument(
+        "--per-query-timeout-sec",
+        type=float,
+        default=None,
+        help="Run each example/strategy row in a child process with this hard timeout.",
+    )
+    parser.add_argument(
+        "--partial-report-dir",
+        type=Path,
+        default=None,
+        help="Directory for timeout-aware partial eval reports.",
+    )
     args = parser.parse_args()
 
     load_local_env(ROOT)
@@ -74,11 +87,15 @@ def main() -> int:
     harness = EvalHarness(config)
     selected = parse_strategies(args.strategy, args.strategies)
     examples = harness.load_examples(args.dataset) if args.dataset else None
+    per_query_timeout_sec = args.per_query_timeout_sec or _float_env("DASHAGENT_DEV_EVAL_QUERY_TIMEOUT_SEC")
+    partial_report_dir = args.partial_report_dir or _path_env("DASHAGENT_DEV_EVAL_PARTIAL_REPORT_DIR")
     result = harness.run(
         strategies=selected or STRATEGIES,
         examples=examples,
         include_live_api_metrics=args.live_api,
         strict=args.strict,
+        per_query_timeout_sec=per_query_timeout_sec,
+        partial_report_dir=partial_report_dir,
     )
     if args.dataset:
         result["dataset_path"] = str(args.dataset)
@@ -98,6 +115,10 @@ def main() -> int:
                 "strict": result.get("strict", False),
                 "dataset_path": str(args.dataset) if args.dataset else None,
                 "live_api_metrics": result.get("live_api_metrics"),
+                "per_query_timeout_sec": per_query_timeout_sec,
+                "partial_report_dir": str(partial_report_dir) if partial_report_dir else None,
+                "timeout_query_ids": result.get("timeout_query_ids"),
+                "failed_query_ids": result.get("failed_query_ids"),
                 "strategy_comparison": str(config.outputs_dir / ("strategy_comparison_strict.md" if args.strict else "strategy_comparison.md")),
                 "live_api_guard": guard,
             },
@@ -118,6 +139,22 @@ def parse_strategies(strategy_args: list[str] | None, strategies_args: list[str]
     if unknown:
         raise SystemExit(f"Unknown strategy {unknown[0]}. Expected one of {ALL_STRATEGIES}.")
     return values or None
+
+
+def _float_env(name: str) -> float | None:
+    raw = os.getenv(name)
+    if not raw:
+        return None
+    try:
+        value = float(raw)
+    except ValueError:
+        return None
+    return value if value > 0 else None
+
+
+def _path_env(name: str) -> Path | None:
+    raw = os.getenv(name)
+    return Path(raw).expanduser() if raw else None
 
 
 def _record_override_outputs(original_config: Config, effective_config: Config, result: dict, guard: dict, *, strict: bool) -> None:

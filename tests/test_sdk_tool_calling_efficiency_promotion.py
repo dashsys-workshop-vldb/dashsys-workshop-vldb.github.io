@@ -106,7 +106,7 @@ def test_openai_payload_can_disable_parallel_tool_calls(monkeypatch):
             self.chat = type("Chat", (), {"completions": FakeCompletions()})()
 
     monkeypatch.setattr("dashagent.llm_client.OpenAI", FakeOpenAI)
-    client = OpenAILLMClient(api_key="unit-test-openai-key")
+    client = OpenAILLMClient(api_key="unit-test-openai-key", base_url="https://api.openai.com/v1")
     result = client.generate_messages(
         [{"role": "user", "content": "count"}],
         tools=_baseline_tool_schemas(),

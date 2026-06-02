@@ -14,30 +14,44 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from dashagent.config import Config
-from dashagent.llm_client import DEFAULT_OPENAI_BASE_URL, DEFAULT_OPENAI_MODEL, get_llm_client
+from dashagent.llm_client import DEFAULT_OPENAI_BASE_URL, DEFAULT_OPENAI_MODEL, get_llm_client, is_gemini_openai_compat_base_url
 from dashagent.trajectory import redact_secrets
 from scripts.load_local_env import load_local_env
 
 
 REPORT_DIR = ROOT / "outputs" / "reports" / "hermes_toolcall_probe"
 PROBE_TOOL_NAME = "submit_probe_result"
+GEMINI_OPENAI_COMPAT_HOST = "generativelanguage.googleapis.com"
 
 
-def probe_tool_schema() -> dict[str, Any]:
+def probe_tool_schema(openai_compat_provider: str | None = None) -> dict[str, Any]:
+    if openai_compat_provider == "gemini":
+        parameters = {
+            "type": "object",
+            "properties": {
+                "route": {"type": "string", "enum": ["DIRECT", "EVIDENCE"]},
+                "reason": {"type": "string"},
+            },
+            "required": ["route", "reason"],
+        }
+        description = "Submit classification"
+    else:
+        parameters = {
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {
+                "route": {"type": "string", "enum": ["DIRECT", "EVIDENCE"]},
+                "reason": {"type": "string"},
+            },
+            "required": ["route", "reason"],
+        }
+        description = "Submit a minimal route classification for the Hermes SDK toolcall probe."
     return {
         "type": "function",
         "function": {
             "name": PROBE_TOOL_NAME,
-            "description": "Submit a minimal route classification for the Hermes SDK toolcall probe.",
-            "parameters": {
-                "type": "object",
-                "additionalProperties": False,
-                "properties": {
-                    "route": {"type": "string", "enum": ["DIRECT", "EVIDENCE"]},
-                    "reason": {"type": "string"},
-                },
-                "required": ["route", "reason"],
-            },
+            "description": description,
+            "parameters": parameters,
         },
     }
 
@@ -50,12 +64,14 @@ def run_hermes_toolcall_probe(config: Config | None = None, *, client: Any | Non
     provider_env = (os.getenv("DASHAGENT_LLM_PROVIDER") or os.getenv("LLM_PROVIDER") or "").strip().lower()
     model = os.getenv("OPENAI_MODEL") or DEFAULT_OPENAI_MODEL
     base_url = os.getenv("OPENAI_BASE_URL") or DEFAULT_OPENAI_BASE_URL
+    openai_compat_provider = _openai_compat_provider(base_url)
     key_present = bool(os.getenv("OPENAI_API_KEY"))
     report: dict[str, Any] = {
         "ok": False,
         "provider_expected": "openai",
         "provider_env": provider_env or "auto",
         "provider": None,
+        "openai_compat_provider": openai_compat_provider,
         "model": model,
         "endpoint_label": os.getenv("LLM_ENDPOINT_LABEL") or "",
         "openai_base_url_present": bool(os.getenv("OPENAI_BASE_URL")),
@@ -67,6 +83,10 @@ def run_hermes_toolcall_probe(config: Config | None = None, *, client: Any | Non
         "tool_calls_count": 0,
         "tool_name": None,
         "finish_reason": None,
+        "tool_call_warning": None,
+        "gemini_openai_compat_mode": openai_compat_provider == "gemini",
+        "payload_keys": [],
+        "omitted_for_gemini": [],
         "error": "",
         "response_summary": {},
         "pioneer_used": False,
@@ -83,13 +103,10 @@ def run_hermes_toolcall_probe(config: Config | None = None, *, client: Any | Non
         report["error"] = "Pioneer provider is not allowed for Hermes SDK toolcall probe."
         return _write_probe_report(report_dir, report)
     response = client.generate_messages(
-        [
-            {"role": "system", "content": "Use the submit_probe_result tool. Do not answer in text."},
-            {"role": "user", "content": "Classify this prompt: What is a schema?"},
-        ],
-        tools=[probe_tool_schema()],
-        tool_choice={"type": "function", "function": {"name": PROBE_TOOL_NAME}},
-        parallel_tool_calls=False,
+        _probe_messages(openai_compat_provider),
+        tools=[probe_tool_schema(openai_compat_provider)],
+        tool_choice=_probe_tool_choice(openai_compat_provider),
+        parallel_tool_calls=_probe_parallel_tool_calls(openai_compat_provider),
     )
     tool_calls = response.get("tool_calls") or []
     first_tool = tool_calls[0] if tool_calls else {}
@@ -101,6 +118,10 @@ def run_hermes_toolcall_probe(config: Config | None = None, *, client: Any | Non
             "tool_calls_count": len(tool_calls),
             "tool_name": first_tool.get("name") or first_tool.get("tool"),
             "finish_reason": response.get("finish_reason"),
+            "tool_call_warning": response.get("tool_call_warning"),
+            "gemini_openai_compat_mode": bool(response.get("gemini_openai_compat_mode")),
+            "payload_keys": response.get("payload_keys") or [],
+            "omitted_for_gemini": response.get("omitted_for_gemini") or [],
             "error": _redact_text(str(response.get("error") or response.get("reason") or ""))[:500],
             "response_summary": {
                 "ok": bool(response.get("ok")),
@@ -108,6 +129,8 @@ def run_hermes_toolcall_probe(config: Config | None = None, *, client: Any | Non
                 "backend_type": response.get("backend_type"),
                 "content_present": bool(response.get("content")),
                 "tool_call_warning": response.get("tool_call_warning"),
+                "payload_keys": response.get("payload_keys") or [],
+                "omitted_for_gemini": response.get("omitted_for_gemini") or [],
             },
         }
     )
@@ -118,8 +141,35 @@ def run_hermes_toolcall_probe(config: Config | None = None, *, client: Any | Non
     return _write_probe_report(report_dir, report)
 
 
+def _openai_compat_provider(base_url: str) -> str:
+    return "gemini" if is_gemini_openai_compat_base_url(base_url) else ""
+
+
+def _probe_messages(openai_compat_provider: str) -> list[dict[str, str]]:
+    if openai_compat_provider == "gemini":
+        return [{"role": "user", "content": "Classify: What is a schema? You must call the tool."}]
+    return [
+        {"role": "system", "content": "Use the submit_probe_result tool. Do not answer in text."},
+        {"role": "user", "content": "Classify this prompt: What is a schema?"},
+    ]
+
+
+def _probe_tool_choice(openai_compat_provider: str) -> str | dict[str, Any]:
+    if openai_compat_provider == "gemini":
+        return "auto"
+    return {"type": "function", "function": {"name": PROBE_TOOL_NAME}}
+
+
+def _probe_parallel_tool_calls(openai_compat_provider: str) -> bool | None:
+    if openai_compat_provider == "gemini":
+        return None
+    return False
+
+
 def _write_probe_report(report_dir: Path, report: dict[str, Any]) -> dict[str, Any]:
     safe_report = redact_secrets(report)
+    if isinstance(safe_report, dict) and report.get("model"):
+        safe_report["model"] = report.get("model")
     json_path = report_dir / "hermes_toolcall_probe.json"
     md_path = report_dir / "hermes_toolcall_probe.md"
     json_path.write_text(json.dumps(safe_report, indent=2, sort_keys=True, default=str), encoding="utf-8")
@@ -135,6 +185,7 @@ def _probe_markdown(report: dict[str, Any]) -> str:
         "",
         f"- ok: `{report.get('ok')}`",
         f"- provider: `{report.get('provider')}`",
+        f"- openai_compat_provider: `{report.get('openai_compat_provider')}`",
         f"- model: `{report.get('model')}`",
         f"- OPENAI_BASE_URL present: `{report.get('openai_base_url_present')}`",
         f"- OPENAI_BASE_URL host: `{report.get('openai_base_url_redacted')}`",
@@ -144,6 +195,10 @@ def _probe_markdown(report: dict[str, Any]) -> str:
         f"- tool_calls_count: `{report.get('tool_calls_count')}`",
         f"- tool_name: `{report.get('tool_name')}`",
         f"- finish_reason: `{report.get('finish_reason')}`",
+        f"- tool_call_warning: `{report.get('tool_call_warning')}`",
+        f"- gemini_openai_compat_mode: `{report.get('gemini_openai_compat_mode')}`",
+        f"- payload_keys: `{report.get('payload_keys')}`",
+        f"- omitted_for_gemini: `{report.get('omitted_for_gemini')}`",
         f"- pioneer_used: `{report.get('pioneer_used')}`",
     ]
     if report.get("error"):

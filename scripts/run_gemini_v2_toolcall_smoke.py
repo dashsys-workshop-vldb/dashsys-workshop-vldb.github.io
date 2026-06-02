@@ -12,10 +12,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from dashagent.config import Config
-from dashagent.llm_client import DEFAULT_GEMINI_MODEL
 from dashagent.trajectory import redact_secrets
-from scripts.load_local_env import load_local_env
-from scripts.probe_gemini_toolcall import run_gemini_toolcall_probe
+from scripts.probe_gemini_openai_toolcall import configure_gemini_openai_compat_env
 from scripts.run_hermes_v2_toolcall_smoke import run_hermes_v2_toolcall_smoke
 
 
@@ -33,21 +31,15 @@ def run_gemini_v2_toolcall_smoke(config: Config | None = None, *, report_dir: Pa
     config = config or Config.from_env(ROOT)
     report_dir = report_dir or REPORT_DIR
     report_dir.mkdir(parents=True, exist_ok=True)
-    load_local_env(config.project_root)
-    os.environ["DASHAGENT_LLM_PROVIDER"] = "gemini"
-    os.environ.setdefault("GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
+    configure_gemini_openai_compat_env(config)
     if os.getenv("GEMINI_TIMEOUT_SEC"):
         os.environ.setdefault("HERMES_LLM_CALL_TIMEOUT_SEC", os.getenv("GEMINI_TIMEOUT_SEC", "60"))
-
-    def probe_runner(inner_config: Config) -> dict[str, Any]:
-        return run_gemini_toolcall_probe(inner_config, report_dir=ROOT / "outputs" / "reports" / "gemini_toolcall_probe")
 
     report = run_hermes_v2_toolcall_smoke(
         config,
         report_dir=report_dir,
-        probe_runner=probe_runner,
-        report_name="gemini_v2_toolcall_smoke",
-        report_title="Gemini V2 Toolcall Smoke",
+        report_name="gemini_openai_compat_smoke",
+        report_title="Gemini OpenAI-Compatible V2 Toolcall Smoke",
     )
     write_gemini_vs_local_qwen_comparison(report, report_dir=report_dir)
     return report

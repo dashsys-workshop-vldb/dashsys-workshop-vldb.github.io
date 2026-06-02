@@ -10,29 +10,167 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
   "backend_semantic_planning_used": false,
   "llm_owned_generation": true,
   "llm_unified_plan": {
-    "aggregation_instruction": "",
+    "aggregation_instruction": "Return the count from t1 as the answer to 'How many schemas do I have?'.",
     "api_request": null,
     "backend_unavailable": false,
+    "diagnostics": {
+      "api_request_gate_failures": 0,
+      "atomic_protocol_fallback_used": false,
+      "backend_formal_compilation_used": true,
+      "backend_generated_sql": false,
+      "backend_semantic_decomposition_used": false,
+      "backend_semantic_planning_used": false,
+      "backend_sql_api_generation_used": false,
+      "compiled_alias_count": 0,
+      "compiled_api_count": 0,
+      "compiled_sql_count": 1,
+      "compiler_latency_ms": 0,
+      "planner_json_fallback_used": false,
+      "planner_json_parse_error": null,
+      "planner_parse_source": "sdk_toolcall_semantic_ir",
+      "planner_provider_latency_ms": 13368,
+      "planner_repair_attempted": false,
+      "planner_success": true,
+      "planner_timeout": false,
+      "planner_toolcall_attempted": true,
+      "planner_toolcall_supported": true,
+      "provider_capabilities": {
+        "requires_json_prompting": false,
+        "supports_json_content_fallback": true,
+        "supports_tool_calls": true
+      },
+      "raw_sql_fallback_considered": false,
+      "raw_sql_fallback_gate_error_type": null,
+      "raw_sql_fallback_latency_ms": 0,
+      "raw_sql_fallback_reason": null,
+      "raw_sql_fallback_rejected_reason": null,
+      "raw_sql_fallback_repair_attempted": false,
+      "raw_sql_fallback_repair_success": false,
+      "raw_sql_fallback_success": false,
+      "raw_sql_fallback_task_id": null,
+      "raw_sql_fallback_used": false,
+      "sdk_toolcall_semantic_ir_used": true,
+      "semantic_alias_count": 0,
+      "semantic_alias_error_type": null,
+      "semantic_alias_repair_attempted": false,
+      "semantic_alias_validation_passed": true,
+      "semantic_alias_validation_used": true,
+      "semantic_ir_plan_preview": {
+        "aggregation_instruction": "Return the count from t1 as the answer to 'How many schemas do I have?'.",
+        "route": "EVIDENCE",
+        "tasks": {
+          "items": [
+            {
+              "description": "Count the total number of schemas (blueprints) in the local snapshot.",
+              "kind": "LOCAL_QUERY",
+              "local_query": {
+                "count": true,
+                "fields": {
+                  "items": [
+                    "BLUEPRINTID"
+                  ],
+                  "total_items": 1,
+                  "truncated_items": false
+                },
+                "table": "dim_blueprint"
+              },
+              "operation": "COUNT",
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "source": "LOCAL_SNAPSHOT",
+              "task_id": "t1_schema_count",
+              "truncated_fields": 7
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "semantic_ir_provider_latency_ms": 13367,
+      "semantic_ir_repair_attempted": false,
+      "semantic_ir_repair_latency_ms": 0,
+      "semantic_ir_repair_success": false,
+      "semantic_ir_support_check_latency_ms": 0,
+      "semantic_ir_support_checked": true,
+      "semantic_ir_support_recommended_action": "COMPILE",
+      "semantic_ir_support_repair_attempted": false,
+      "semantic_ir_support_repair_error_message": null,
+      "semantic_ir_support_repair_error_type": null,
+      "semantic_ir_support_repair_latency_ms": 0,
+      "semantic_ir_support_repair_success": false,
+      "semantic_ir_supported": true,
+      "semantic_ir_task_count": 1,
+      "semantic_ir_toolcall_supported": true,
+      "semantic_ir_unsupported_features": [],
+      "semantic_ir_unsupported_operation": null,
+      "semantic_ir_unsupported_reason": null,
+      "semantic_ir_unsupported_task_id": null,
+      "semantic_ir_validation_error_message": null,
+      "semantic_ir_validation_error_type": null,
+      "semantic_ir_validation_latency_ms": 0,
+      "semantic_ir_validation_passed": true,
+      "sql_compile_gate_failures": 0,
+      "v2_semantic_ir_used": true
+    },
     "direct_answer": null,
     "evidence_order": "SQL_FIRST",
-    "model": "Gpt 4o",
+    "model": "/Users/tanqinyang/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
     "parse_error": false,
-    "passes": [],
-    "provider": "pioneer_chat",
+    "passes": [
+      {
+        "api_request": null,
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "SQL_FIRST",
+        "expected_result": "Count the total number of schemas (blueprints) in the local snapshot.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "t1_schema_count",
+        "path": "SQL",
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "result_contract": {
+          "entity": "schema_count",
+          "fields": [
+            "count"
+          ],
+          "filters": [],
+          "freshness": "same_run",
+          "object": null,
+          "operation": "COUNT",
+          "scope": "local",
+          "source": "LOCAL_SNAPSHOT"
+        },
+        "reuse_result_from": null,
+        "semantic_cache_key": null,
+        "sql": {
+          "params": [],
+          "query": "SELECT COUNT(*) AS count FROM \"dim_blueprint\""
+        },
+        "subtask": "Count the total number of schemas (blueprints) in the local snapshot."
+      }
+    ],
+    "provider": "openai",
     "raw_preview": {
-      "backend_type": "openai_sdk",
-      "error": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
-      "model": "Gpt 4o",
-      "ok": false,
-      "provider": "[REDACTED]",
-      "sdk_path_used": true,
-      "skipped": false,
-      "transport": "openai_sdk",
-      "truncated_fields": 7
+      "semantic_ir_initial": {
+        "base_url": "[REDACTED]",
+        "error": null,
+        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+        "ok": true,
+        "provider": "openai",
+        "sdk_path_used": true,
+        "skipped": false,
+        "transport": "openai_sdk",
+        "truncated_fields": 8
+      }
     },
-    "reason": "Error code: 404 - {'detail': \"Model 'Gpt 4o' is not a recognised model id. Browse available base models with `GET /v1/models` or in the docs at https://docs.pioneer.ai/api-reference. To call a fine-tuned model, pass its training-job UUID.\"}",
+    "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
     "route": "EVIDENCE_PIPELINE",
-    "sql": null
+    "sql": {
+      "params": [],
+      "query": "SELECT COUNT(*) AS count FROM \"dim_blueprint\""
+    }
   },
   "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
   "query": "How many schemas do I have?",
@@ -47,14 +185,14 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "max_sql_workers": 2,
       "run_timeout_ms": 30000
     },
-    "created_at": "2026-06-01T02:57:51.976838+00:00",
-    "deadline_at": "2026-06-01T02:58:21.976838+00:00",
-    "evidence_bus_id": "evidence_run_723721869c2a4f718628d879717f8c94",
+    "created_at": "2026-06-02T06:59:03.813038+00:00",
+    "deadline_at": "2026-06-02T06:59:33.813038+00:00",
+    "evidence_bus_id": "evidence_run_fea09f8d3ecf48a2802a444a01feec3d",
     "original_prompt": "How many schemas do I have?",
     "plan_version": 1,
     "prompt_id": "example_011",
-    "result_bundle_id": "bundle_run_723721869c2a4f718628d879717f8c94",
-    "run_id": "run_723721869c2a4f718628d879717f8c94",
+    "result_bundle_id": "bundle_run_fea09f8d3ecf48a2802a444a01feec3d",
+    "run_id": "run_fea09f8d3ecf48a2802a444a01feec3d",
     "status": "RUNNING"
   },
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"

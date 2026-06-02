@@ -19,10 +19,14 @@ from dashagent.config import Config, ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2
 from dashagent.executor import AgentExecutor
 from dashagent.trajectory import redact_secrets
 from scripts.load_local_env import load_local_env
+from scripts.probe_gemini_openai_toolcall import run_gemini_openai_toolcall_probe
 from scripts.probe_hermes_sdk_toolcall import run_hermes_toolcall_probe
 
 
 REPORT_DIR = ROOT / "outputs" / "reports" / "hermes_v2_toolcall_smoke"
+GEMINI_OPENAI_COMPAT_REPORT_DIR = ROOT / "outputs" / "reports" / "gemini_v2_toolcall_smoke"
+GEMINI_OPENAI_COMPAT_PROBE_DIR = ROOT / "outputs" / "reports" / "gemini_toolcall_probe"
+GEMINI_OPENAI_COMPAT_HOST = "generativelanguage.googleapis.com"
 DEFAULT_PROMPT_TIMEOUT_SEC = 120
 DEFAULT_LLM_CALL_TIMEOUT_SEC = 60
 LATENCY_FIELDS = [
@@ -65,14 +69,22 @@ def run_hermes_v2_toolcall_smoke(
     report_title: str = "Hermes V2 Toolcall Smoke",
 ) -> dict[str, Any]:
     config = config or Config.from_env(ROOT)
-    report_dir = report_dir or REPORT_DIR
-    report_dir.mkdir(parents=True, exist_ok=True)
     load_local_env(config.project_root)
+    gemini_openai_compat = _is_gemini_openai_compat_env()
+    if gemini_openai_compat and report_name == "hermes_v2_toolcall_smoke":
+        report_name = "gemini_openai_compat_smoke"
+    if gemini_openai_compat and report_title == "Hermes V2 Toolcall Smoke":
+        report_title = "Gemini OpenAI-Compatible V2 Toolcall Smoke"
+    report_dir = report_dir or (GEMINI_OPENAI_COMPAT_REPORT_DIR if gemini_openai_compat else REPORT_DIR)
+    report_dir.mkdir(parents=True, exist_ok=True)
     prompt_timeout_sec = _env_int("HERMES_SMOKE_PROMPT_TIMEOUT_SEC", DEFAULT_PROMPT_TIMEOUT_SEC)
     llm_call_timeout_sec = _env_int("HERMES_LLM_CALL_TIMEOUT_SEC", DEFAULT_LLM_CALL_TIMEOUT_SEC)
     _configure_llm_timeout_env(llm_call_timeout_sec)
     if probe_runner is None:
-        probe = run_hermes_toolcall_probe(config, report_dir=ROOT / "outputs" / "reports" / "hermes_toolcall_probe")
+        if gemini_openai_compat:
+            probe = run_gemini_openai_toolcall_probe(config, report_dir=GEMINI_OPENAI_COMPAT_PROBE_DIR)
+        else:
+            probe = run_hermes_toolcall_probe(config, report_dir=ROOT / "outputs" / "reports" / "hermes_toolcall_probe")
     else:
         probe = probe_runner(config)
     report: dict[str, Any] = {
@@ -128,6 +140,10 @@ def run_hermes_v2_toolcall_smoke(
     return _write_report(report_dir, report)
 
 
+def _is_gemini_openai_compat_env() -> bool:
+    return GEMINI_OPENAI_COMPAT_HOST in str(os.getenv("OPENAI_BASE_URL") or "").lower()
+
+
 def _run_prompt_with_timeout(
     item: dict[str, Any],
     *,
@@ -146,6 +162,9 @@ def _run_prompt_with_timeout(
     if process.is_alive():
         process.terminate()
         process.join(5)
+        if process.is_alive():
+            process.kill()
+            process.join(5)
         heartbeat = _read_heartbeat(report_dir)
         return _timeout_row(item, timeout_sec=prompt_timeout_sec, total_latency_sec=total_latency, heartbeat=heartbeat)
     try:
