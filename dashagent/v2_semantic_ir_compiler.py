@@ -17,6 +17,7 @@ def compile_semantic_ir_to_plan_payload(
             "evidence_order": "NO_EVIDENCE",
             "direct_answer": plan.direct_answer,
             "passes": [],
+            "answer_contract": plan.answer_contract.to_dict() if plan.answer_contract else None,
             "aggregation_instruction": plan.aggregation_instruction,
             "reason": "Semantic IR DIRECT route.",
         }
@@ -26,6 +27,7 @@ def compile_semantic_ir_to_plan_payload(
         "evidence_order": _evidence_order_for_passes(passes),
         "direct_answer": None,
         "passes": passes,
+        "answer_contract": plan.answer_contract.to_dict() if plan.answer_contract else None,
         "aggregation_instruction": plan.aggregation_instruction,
         "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
     }

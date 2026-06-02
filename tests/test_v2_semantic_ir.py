@@ -11,11 +11,12 @@ from dashagent.v2_semantic_ir_compiler import compile_semantic_ir_to_plan_payloa
 from dashagent.v2_semantic_ir_context import build_allowed_api_context_card, build_allowed_local_schema_card
 from dashagent.v2_semantic_ir_planner import (
     _build_semantic_ir_prompt_context,
+    _semantic_ir_repair_user_prompt,
     _semantic_ir_source_selection_rules,
     _semantic_ir_user_prompt,
     semantic_ir_tool_schema,
 )
-from dashagent.v2_semantic_ir_validator import SemanticIRValidator
+from dashagent.v2_semantic_ir_validator import SemanticIRValidationResult, SemanticIRValidator
 
 
 class ToolCallSemanticIRClient:
@@ -214,6 +215,31 @@ def _local_count_plan() -> dict:
                 "required": True,
             }
         ],
+        "answer_contract": {
+            "required_slots": [
+                {
+                    "slot_id": "s_count",
+                    "type": "COUNT",
+                    "required": True,
+                    "subject": "schemas",
+                    "object": None,
+                    "relation": None,
+                    "source_scope": "LOCAL_SNAPSHOT",
+                    "satisfied_by_tasks": ["t1"],
+                    "required_fields": ["count"],
+                    "acceptable_fallback_fields": [],
+                    "expected_status_filter": None,
+                    "zero_rows_semantics": "EMPTY_RESULT_IS_ANSWER",
+                    "if_missing": "FAIL_REQUIRED",
+                    "must_not_assert_positive_if_zero_rows": False,
+                    "notes": None,
+                }
+            ],
+            "optional_slots": [],
+            "answer_style": "COUNT_ONLY",
+            "global_scope": "LOCAL_SNAPSHOT",
+            "contract_version": "v1",
+        },
         "aggregation_instruction": "Answer with the count from t1.",
     }
 
@@ -237,6 +263,31 @@ def _unsupported_local_group_plan() -> dict:
             },
         }
     )
+    payload["answer_contract"] = {
+        "required_slots": [
+            {
+                "slot_id": "s_status_groups",
+                "type": "LIST",
+                "required": True,
+                "subject": "campaign status groups",
+                "object": None,
+                "relation": None,
+                "source_scope": "LOCAL_SNAPSHOT",
+                "satisfied_by_tasks": ["group_status"],
+                "required_fields": ["STATUS"],
+                "acceptable_fallback_fields": [],
+                "expected_status_filter": None,
+                "zero_rows_semantics": "NO_MATCH",
+                "if_missing": "SCOPED_UNAVAILABLE_CAVEAT",
+                "must_not_assert_positive_if_zero_rows": True,
+                "notes": None,
+            }
+        ],
+        "optional_slots": [],
+        "answer_style": "LIST",
+        "global_scope": "LOCAL_SNAPSHOT",
+        "contract_version": "v1",
+    }
     payload["aggregation_instruction"] = "Answer with counts grouped by status."
     return payload
 
@@ -292,6 +343,31 @@ def _semantic_alias_plan() -> dict:
             "result_contract": dict(contract),
         },
     ]
+    payload["answer_contract"] = {
+        "required_slots": [
+            {
+                "slot_id": "s_status",
+                "type": "STATUS",
+                "required": True,
+                "subject": "Birthday Message",
+                "object": None,
+                "relation": "local_status",
+                "source_scope": "LOCAL_SNAPSHOT",
+                "satisfied_by_tasks": ["local_status"],
+                "required_fields": ["NAME", "STATUS"],
+                "acceptable_fallback_fields": [],
+                "expected_status_filter": None,
+                "zero_rows_semantics": "NO_MATCH",
+                "if_missing": "SCOPED_UNAVAILABLE_CAVEAT",
+                "must_not_assert_positive_if_zero_rows": True,
+                "notes": None,
+            }
+        ],
+        "optional_slots": [],
+        "answer_style": "CAVEATED",
+        "global_scope": "LOCAL_SNAPSHOT",
+        "contract_version": "v1",
+    }
     payload["aggregation_instruction"] = "Use local_status for the status and local_status_again as the same-run alias."
     return payload
 
@@ -307,6 +383,19 @@ def _live_plan() -> dict:
             "api_query": {"endpoint_id": "schemas_list", "method": "GET", "path_params": {}, "query_params": {"limit": 10}},
         }
     )
+    payload["answer_contract"]["required_slots"][0].update(
+        {
+            "type": "LIST",
+            "source_scope": "LIVE_API",
+            "satisfied_by_tasks": ["t1"],
+            "required_fields": ["id", "name"],
+            "zero_rows_semantics": "NO_MATCH",
+            "if_missing": "SCOPED_UNAVAILABLE_CAVEAT",
+            "must_not_assert_positive_if_zero_rows": True,
+        }
+    )
+    payload["answer_contract"]["answer_style"] = "LIST"
+    payload["answer_contract"]["global_scope"] = "LIVE_API"
     return payload
 
 
@@ -327,6 +416,21 @@ def _local_and_live_plan() -> dict:
             "api_query": {"endpoint_id": "journey_list", "method": "GET", "path_params": {}, "query_params": {"limit": 50}},
         }
     )
+    payload["answer_contract"]["required_slots"][0].update(
+        {
+            "slot_id": "s_compare",
+            "type": "COMPARISON",
+            "subject": "Birthday Message",
+            "source_scope": "BOTH",
+            "satisfied_by_tasks": ["t1"],
+            "required_fields": ["STATUS"],
+            "zero_rows_semantics": "NO_MATCH",
+            "if_missing": "ALLOW_PARTIAL",
+            "must_not_assert_positive_if_zero_rows": False,
+        }
+    )
+    payload["answer_contract"]["answer_style"] = "COMPARISON"
+    payload["answer_contract"]["global_scope"] = "BOTH"
     return payload
 
 
@@ -335,6 +439,7 @@ def test_tool_schema_declares_submit_semantic_ir_plan():
     assert tool["type"] == "function"
     assert tool["function"]["name"] == "submit_semantic_ir_plan"
     assert "tasks" in tool["function"]["parameters"]["properties"]
+    assert "answer_contract" in tool["function"]["parameters"]["properties"]
     task_schema = tool["function"]["parameters"]["properties"]["tasks"]["items"]
     assert "CACHE_ALIAS" in task_schema["properties"]["kind"]["enum"]
     assert "reuse_result_from" in task_schema["properties"]
@@ -354,6 +459,40 @@ def test_semantic_ir_parses_direct_and_local_live_shapes():
 
     live = parse_semantic_ir_from_json_or_line_protocol("The plan is:\n" + json.dumps(_live_plan()))
     assert live.tasks[0].api_query.endpoint_id == "schemas_list"
+
+
+def test_semantic_ir_parses_root_answer_contract_without_backend_inference():
+    payload = _local_count_plan()
+    payload["answer_contract"] = {
+        "required_slots": [
+            {
+                "slot_id": "s_count",
+                "type": "COUNT",
+                "required": True,
+                "subject": "schemas",
+                "object": None,
+                "relation": None,
+                "source_scope": "LOCAL_SNAPSHOT",
+                "satisfied_by_tasks": ["t1"],
+                "required_fields": ["count"],
+                "acceptable_fallback_fields": [],
+                "expected_status_filter": None,
+                "zero_rows_semantics": "EMPTY_RESULT_IS_ANSWER",
+                "if_missing": "FAIL_REQUIRED",
+                "must_not_assert_positive_if_zero_rows": False,
+                "notes": None,
+            }
+        ],
+        "optional_slots": [],
+        "answer_style": "COUNT_ONLY",
+        "global_scope": "LOCAL_SNAPSHOT",
+        "contract_version": "v1",
+    }
+
+    plan = parse_semantic_ir_from_json_or_line_protocol(json.dumps(payload))
+
+    assert plan.answer_contract.required_slots[0].slot_id == "s_count"
+    assert semantic_plan_to_dict(plan)["answer_contract"]["required_slots"][0]["type"] == "COUNT"
 
 
 def test_semantic_ir_parses_cache_alias_contract_and_serializes_it():
@@ -447,6 +586,43 @@ def test_semantic_ir_validator_checks_existence_without_correction():
     bad_endpoint["tasks"][0]["api_query"]["endpoint_id"] = "missing_endpoint"
     failed = validator.validate(parse_semantic_ir_from_json_or_line_protocol(json.dumps(bad_endpoint)))
     assert failed.error_type == "unknown_endpoint"
+
+
+def test_semantic_ir_validator_rejects_evidence_plan_missing_answer_contract():
+    validator = SemanticIRValidator(
+        allowed_schema_card=build_allowed_local_schema_card(_schema_context()),
+        allowed_api_card=build_allowed_api_context_card(_endpoint_context()),
+    )
+    payload = _local_count_plan()
+    payload.pop("answer_contract")
+
+    failed = validator.validate(parse_semantic_ir_from_json_or_line_protocol(json.dumps(payload)))
+
+    assert failed.passed is False
+    assert failed.error_type == "missing_answer_contract"
+
+
+def test_semantic_ir_repair_prompt_requires_answer_contract_for_contract_errors():
+    payload = _local_count_plan()
+    payload.pop("answer_contract")
+
+    repair_prompt = _semantic_ir_repair_user_prompt(
+        user_prompt="How many schema records are in the local snapshot?",
+        previous_args=payload,
+        validation=SemanticIRValidationResult(
+            passed=False,
+            error_type="missing_answer_contract",
+            error_message="EVIDENCE route requires answer_contract.",
+        ),
+        allowed_schema_card=build_allowed_local_schema_card(_schema_context()),
+        allowed_api_card=build_allowed_api_context_card(_endpoint_context()),
+    )
+    repair_payload = json.loads(repair_prompt)
+    rules = " ".join(repair_payload["rules"])
+
+    assert "include root answer_contract" in rules
+    assert "satisfied_by_tasks" in rules
+    assert "COUNT slot" in rules
 
 
 def test_semantic_ir_validator_checks_cycles_and_dependencies():

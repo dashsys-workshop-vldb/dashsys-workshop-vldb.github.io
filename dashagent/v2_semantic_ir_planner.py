@@ -22,9 +22,89 @@ SEMANTIC_IR_TOOL_NAME = "submit_semantic_ir_plan"
 DEFAULT_SEMANTIC_IR_PLANNER_CHAR_BUDGET = 24000
 _SCHEMA_CARD_TARGET_SHARE = 0.58
 _API_CARD_TARGET_SHARE = 0.42
+ANSWER_CONTRACT_VALIDATION_ERROR_TYPES = {
+    "missing_answer_contract",
+    "unknown_slot_task_reference",
+    "slot_scope_task_mismatch",
+    "missing_zero_rows_semantics",
+    "missing_date_fields",
+    "missing_relation_descriptor",
+    "missing_if_missing_policy",
+    "count_slot_task_operation_mismatch",
+    "list_slot_task_operation_mismatch",
+    "status_slot_task_operation_mismatch",
+    "date_slot_task_operation_mismatch",
+}
 
 
 def semantic_ir_tool_schema() -> dict[str, Any]:
+    answer_slot_schema: dict[str, Any] = {
+        "type": "object",
+        "properties": {
+            "slot_id": {"type": "string"},
+            "type": {
+                "type": "string",
+                "enum": [
+                    "COUNT",
+                    "LIST",
+                    "STATUS",
+                    "DATE",
+                    "LOOKUP",
+                    "RELATION",
+                    "COMPARISON",
+                    "CONCEPT",
+                    "CAVEAT",
+                ],
+            },
+            "required": {"type": "boolean"},
+            "subject": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+            "object": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+            "relation": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+            "source_scope": {"type": "string", "enum": ["LOCAL_SNAPSHOT", "LIVE_API", "BOTH", "NONE"]},
+            "satisfied_by_tasks": {"type": "array", "items": {"type": "string"}},
+            "required_fields": {"type": "array", "items": {"type": "string"}},
+            "acceptable_fallback_fields": {"type": "array", "items": {"type": "string"}},
+            "expected_status_filter": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+            "zero_rows_semantics": {
+                "type": "string",
+                "enum": ["NO_MATCH", "EMPTY_RESULT_IS_ANSWER", "UNKNOWN", "NOT_APPLICABLE"],
+            },
+            "if_missing": {
+                "type": "string",
+                "enum": ["FAIL_REQUIRED", "SCOPED_UNAVAILABLE_CAVEAT", "ALLOW_PARTIAL"],
+            },
+            "must_not_assert_positive_if_zero_rows": {"type": "boolean"},
+            "notes": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        },
+        "required": [
+            "slot_id",
+            "type",
+            "required",
+            "subject",
+            "object",
+            "relation",
+            "source_scope",
+            "satisfied_by_tasks",
+            "required_fields",
+            "acceptable_fallback_fields",
+            "expected_status_filter",
+            "zero_rows_semantics",
+            "if_missing",
+            "must_not_assert_positive_if_zero_rows",
+            "notes",
+        ],
+    }
+    answer_contract_schema: dict[str, Any] = {
+        "type": "object",
+        "properties": {
+            "required_slots": {"type": "array", "items": answer_slot_schema},
+            "optional_slots": {"type": "array", "items": {"type": "object"}},
+            "answer_style": {"type": "string", "enum": ["CONCISE", "EXPLANATORY", "LIST", "TABLE", "COMPARISON", "COUNT_ONLY", "CAVEATED"]},
+            "global_scope": {"type": "string", "enum": ["LOCAL_SNAPSHOT", "LIVE_API", "BOTH", "NONE"]},
+            "contract_version": {"type": "string", "enum": ["v1"]},
+        },
+        "required": ["required_slots", "optional_slots", "answer_style", "global_scope", "contract_version"],
+    }
     result_contract_schema: dict[str, Any] = {
         "anyOf": [
             {"type": "null"},
@@ -140,9 +220,10 @@ def semantic_ir_tool_schema() -> dict[str, Any]:
                     "route": {"type": "string", "enum": ["DIRECT", "EVIDENCE"]},
                     "direct_answer": {"anyOf": [{"type": "string"}, {"type": "null"}]},
                     "tasks": {"type": "array", "items": task_schema},
+                    "answer_contract": answer_contract_schema,
                     "aggregation_instruction": {"type": "string"},
                 },
-                "required": ["route", "direct_answer", "tasks", "aggregation_instruction"],
+                "required": ["route", "direct_answer", "tasks", "answer_contract", "aggregation_instruction"],
             },
         },
     }
@@ -188,6 +269,7 @@ def _build_semantic_ir_prompt_context(
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
     """Build compact prompt cards mechanically; does not choose route, source, tables, fields, or endpoints."""
     budget = int(max_total_chars or _configured_semantic_ir_planner_char_budget())
+    budget_user_prompt = user_prompt or ("x" * 512)
     original_schema_card = build_allowed_local_schema_card(schema_context)
     original_api_card = build_allowed_api_context_card(endpoint_context)
     original_schema_chars = _json_char_count(original_schema_card)
@@ -198,7 +280,7 @@ def _build_semantic_ir_prompt_context(
     api_card, api_diag = _compact_api_card(original_api_card, api_budget)
 
     total_chars = _semantic_ir_total_prompt_chars(
-        user_prompt=user_prompt,
+        user_prompt=budget_user_prompt,
         allowed_schema_card=schema_card,
         allowed_api_card=api_card,
         repair_context=repair_context,
@@ -207,7 +289,7 @@ def _build_semantic_ir_prompt_context(
         schema_card, schema_diag = _compact_schema_card(original_schema_card, max(5000, int(schema_budget * 0.76)))
         api_card, api_diag = _compact_api_card(original_api_card, max(3500, int(api_budget * 0.72)))
         total_chars = _semantic_ir_total_prompt_chars(
-            user_prompt=user_prompt,
+            user_prompt=budget_user_prompt,
             allowed_schema_card=schema_card,
             allowed_api_card=api_card,
             repair_context=repair_context,
@@ -216,7 +298,7 @@ def _build_semantic_ir_prompt_context(
         schema_card, schema_diag = _compact_schema_card(original_schema_card, max(3800, int(schema_budget * 0.58)), aggressive=True)
         api_card, api_diag = _compact_api_card(original_api_card, max(2600, int(api_budget * 0.52)), aggressive=True)
         total_chars = _semantic_ir_total_prompt_chars(
-            user_prompt=user_prompt,
+            user_prompt=budget_user_prompt,
             allowed_schema_card=schema_card,
             allowed_api_card=api_card,
             repair_context=repair_context,
@@ -225,7 +307,7 @@ def _build_semantic_ir_prompt_context(
         schema_card, schema_diag = _ultra_compact_schema_card(original_schema_card)
         api_card, api_diag = _ultra_compact_api_card(original_api_card)
         total_chars = _semantic_ir_total_prompt_chars(
-            user_prompt=user_prompt,
+            user_prompt=budget_user_prompt,
             allowed_schema_card=schema_card,
             allowed_api_card=api_card,
             repair_context=repair_context,
@@ -420,6 +502,10 @@ def run_semantic_ir_toolcall_planner(
             "semantic_alias_validation_passed": validation.semantic_alias_validation_passed,
             "semantic_alias_count": validation.semantic_alias_count,
             "semantic_alias_error_type": validation.error_type if validation.error_type == "invalid_semantic_alias" else None,
+            "answer_contract_validation_used": True,
+            "answer_contract_validation_passed": validation.passed and validation.error_type not in ANSWER_CONTRACT_VALIDATION_ERROR_TYPES,
+            "answer_contract_error_type": validation.error_type if validation.error_type in ANSWER_CONTRACT_VALIDATION_ERROR_TYPES else None,
+            "required_slot_count": len(parsed_plan.answer_contract.required_slots) if parsed_plan and parsed_plan.answer_contract else 0,
         }
     )
     if diagnostics.get("semantic_ir_repair_attempted") and validation.passed:
@@ -428,6 +514,8 @@ def run_semantic_ir_toolcall_planner(
         diagnostics["semantic_ir_repair_attempted"] = True
         if validation.error_type == "invalid_semantic_alias":
             diagnostics["semantic_alias_repair_attempted"] = True
+        if validation.error_type in ANSWER_CONTRACT_VALIDATION_ERROR_TYPES:
+            diagnostics["answer_contract_repair_attempted"] = True
         repair_started = time.perf_counter()
         repair_result, repair_error = _call_semantic_ir_tool(
             client,
@@ -467,6 +555,10 @@ def run_semantic_ir_toolcall_planner(
                 "semantic_alias_validation_passed": validation.semantic_alias_validation_passed,
                 "semantic_alias_count": validation.semantic_alias_count,
                 "semantic_alias_error_type": validation.error_type if validation.error_type == "invalid_semantic_alias" else diagnostics.get("semantic_alias_error_type"),
+                "answer_contract_validation_used": True,
+                "answer_contract_validation_passed": validation.passed and validation.error_type not in ANSWER_CONTRACT_VALIDATION_ERROR_TYPES,
+                "answer_contract_error_type": validation.error_type if validation.error_type in ANSWER_CONTRACT_VALIDATION_ERROR_TYPES else diagnostics.get("answer_contract_error_type"),
+                "required_slot_count": len(parsed_plan.answer_contract.required_slots) if parsed_plan and parsed_plan.answer_contract else 0,
             }
         )
         if not parsed_plan or not validation.passed:
@@ -527,6 +619,14 @@ def run_semantic_ir_toolcall_planner(
                 "semantic_ir_validation_error_type": repaired_validation.error_type,
                 "semantic_ir_validation_error_message": repaired_validation.error_message,
                 "semantic_ir_task_count": len(repaired_plan.tasks) if repaired_plan else 0,
+                "semantic_alias_validation_used": repaired_validation.semantic_alias_validation_used,
+                "semantic_alias_validation_passed": repaired_validation.semantic_alias_validation_passed,
+                "semantic_alias_count": repaired_validation.semantic_alias_count,
+                "semantic_alias_error_type": repaired_validation.error_type if repaired_validation.error_type == "invalid_semantic_alias" else diagnostics.get("semantic_alias_error_type"),
+                "answer_contract_validation_used": True,
+                "answer_contract_validation_passed": repaired_validation.passed and repaired_validation.error_type not in ANSWER_CONTRACT_VALIDATION_ERROR_TYPES,
+                "answer_contract_error_type": repaired_validation.error_type if repaired_validation.error_type in ANSWER_CONTRACT_VALIDATION_ERROR_TYPES else diagnostics.get("answer_contract_error_type"),
+                "required_slot_count": len(repaired_plan.answer_contract.required_slots) if repaired_plan and repaired_plan.answer_contract else 0,
             }
         )
         if repaired_plan is None or not repaired_validation.passed:
@@ -668,6 +768,11 @@ def _base_diagnostics() -> dict[str, Any]:
         "semantic_alias_repair_attempted": False,
         "semantic_alias_error_type": None,
         "compiled_alias_count": 0,
+        "answer_contract_validation_used": False,
+        "answer_contract_validation_passed": None,
+        "answer_contract_repair_attempted": False,
+        "answer_contract_error_type": None,
+        "required_slot_count": 0,
     }
 
 
@@ -1058,6 +1163,7 @@ def _semantic_ir_system_prompt() -> str:
         "You are the single Unified LLM Planner facade for DASHSys V2, and SDK toolcall Semantic IR is the primary internal planning contract. "
         "Use the submit_semantic_ir_plan SDK tool. Do not answer in plain text unless tool calls are unavailable. "
         "You own DIRECT vs EVIDENCE routing, task semantics, source, operation, selected table/endpoint IDs, fields, filters, values, dependencies, and aggregation instruction. "
+        "You also own the answer_contract: it declares the required final-answer slots and which tasks satisfy each slot. "
         "Use DIRECT only for pure concept, pure meta-language, or out-of-domain prompts needing no local or live evidence. "
         "Use EVIDENCE for user-specific, local snapshot, live/current/platform/API, list/count/status/date/lookup/compare, mixed concept plus data, or ambiguous data-like prompts. "
         "Choose table and field names only from AllowedLocalSchemaCard and endpoints only from AllowedAPIContextCard. "
@@ -1083,7 +1189,14 @@ def _semantic_ir_user_prompt(
             "LLM owns route, task semantics, source, table, fields, filters, endpoint, dependencies, and aggregation.",
             "Do not invent tables, columns, endpoint IDs, filters, or fields.",
             "DIRECT route: tasks empty, concise direct_answer, pure no-evidence concept/meta only.",
-            "EVIDENCE route: tasks contain the LLM-owned evidence tasks.",
+                "EVIDENCE route: tasks contain the LLM-owned evidence tasks.",
+                "EVIDENCE route requires answer_contract.required_slots; each required slot must reference task IDs in satisfied_by_tasks.",
+                "Every EVIDENCE plan needs root answer_contract with v1, style/scope, required_slots, and optional_slots.",
+                "Each required slot must name its slot_id, type, source_scope, satisfied_by_tasks, fields, zero_rows_semantics, and if_missing policy.",
+                "DIRECT route uses answer_contract with empty slots/NONE scope or a NONE-scope CONCEPT slot.",
+                "answer_contract is a slot checklist, not evidence or final answer.",
+            "Use DATE/RELATION/COUNT/LIST/COMPARISON slots for date, mapping, count, list, and local/live prompts; use zero_rows_semantics and if_missing to force scoped caveats.",
+            "Never allow positive relation/list/status/date assertions from zero rows or missing fields.",
             "Prefer supported Semantic IR operations whenever they can express the requested evidence.",
             "Use LIST/COUNT/LOOKUP/STATUS/DATE LocalQueryIR operations for simple local snapshot requests.",
             "raw SQL fallback is an escape hatch only when required LOCAL_SNAPSHOT evidence cannot be represented by supported Semantic IR.",
@@ -1104,10 +1217,8 @@ def _semantic_ir_user_prompt(
             "If uncertain, do not alias. Do not alias local and live. Do not alias status and date, count/list, concepts/evidence, or different entities/sources/scopes/fields/filters.",
         ],
         "semantic_ir_examples": [
-            {
-                "user_prompt": "Explain what inactive journey means and show inactive journeys.",
-                "shape": "CONCEPT plus LOCAL_QUERY for inactive journeys.",
-            }
+            "Explain what inactive journey means and show inactive journeys -> CONCEPT plus LOCAL_QUERY; contract slots CONCEPT/NONE and LIST/LOCAL_SNAPSHOT.",
+            "Local count -> LOCAL_QUERY COUNT; contract slot COUNT/LOCAL_SNAPSHOT with required_fields ['count'].",
         ],
         "semantic_alias_examples": [],
         "repair_context": redact_secrets(repair_context) if repair_context else None,
@@ -1129,8 +1240,9 @@ def _semantic_ir_source_selection_rules() -> list[str]:
         "Do not invent local table names from endpoint IDs or API nouns; if no matching local table is listed, choose matching LIVE_QUERY instead of fabricating LOCAL_QUERY.",
         "For batch prompts, use catalog_batches, catalog_batch_detail, export_batch_files, or export_batch_failed when user supplies needed path params.",
         "For recent changes, new destinations, or audit-style history prompts, use audit_events or audit_events_short when available.",
-        "For segment definitions as sandbox/platform API resources or bare segment-definition catalog requests, use segment_definitions unless prompt asks local snapshot.",
-        "For segment jobs or evaluation jobs, use segment_jobs unless prompt asks local snapshot.",
+            "For segment definitions as sandbox/platform API resources or bare segment-definition catalog requests, use segment_definitions unless prompt asks local snapshot.",
+            "If a local dimension table can satisfy a local-scoped answer slot and the prompt does not explicitly require live/current/API-only, include the LOCAL_QUERY task.",
+            "For segment jobs or evaluation jobs, use segment_jobs unless prompt asks local snapshot.",
         "For tags and merge policies in this sandbox, use unified_tags or merge_policies rather than LOCAL_QUERY.",
         "For show/list actual records without live/current/platform/API cues, prefer LOCAL_QUERY over LIVE_QUERY unless they name API catalog resources.",
         "For mixed concept plus data prompts without live/current/platform/API cues, include CONCEPT plus LOCAL_QUERY; API only if data part names an API catalog resource.",
@@ -1174,7 +1286,8 @@ def _semantic_ir_repair_system_prompt() -> str:
         "Your previous Semantic IR tool call failed shape or existence validation. "
         "Submit exactly one corrected submit_semantic_ir_plan tool call. "
         "Do not use message content for the plan. Do not let malformed output fail open into DIRECT. "
-        "Do not ask the backend to choose replacements; choose valid IDs from the allowed cards yourself."
+        "Do not ask the backend to choose replacements; choose valid IDs from the allowed cards yourself. "
+        "If the validation error is about answer_contract, repair the root answer_contract yourself and keep all slot semantics LLM-owned."
     )
 
 
@@ -1200,6 +1313,12 @@ def _semantic_ir_repair_user_prompt(
         "rules": [
             "Repair by submitting the SDK tool call again.",
             "Use only exact table, field, and endpoint IDs from allowed cards.",
+            "If route is EVIDENCE, include root answer_contract; do not omit it.",
+            "The root answer_contract must include contract_version='v1', answer_style, global_scope, required_slots, and optional_slots.",
+            "If route is DIRECT, use answer_contract with empty slots and global_scope NONE unless a direct CONCEPT slot is useful.",
+            "Each required slot must include slot_id, type, required, subject, object, relation, source_scope, satisfied_by_tasks, required_fields, acceptable_fallback_fields, expected_status_filter, zero_rows_semantics, if_missing, must_not_assert_positive_if_zero_rows, and notes.",
+            "Each slot's satisfied_by_tasks must reference task IDs in this corrected tool call.",
+            "For COUNT evidence use a COUNT slot with required_fields ['count']; for DATE evidence use DATE with required/fallback date fields; for LIST/LOOKUP/STATUS/RELATION evidence use scoped zero_rows_semantics and if_missing caveat policy.",
             "Do not output narrative text.",
             *_semantic_ir_source_selection_rules(),
         ],
@@ -1212,6 +1331,7 @@ def _semantic_ir_support_repair_system_prompt() -> str:
         "Your previous Semantic IR was valid but used structures the backend compiler does not support. "
         "Submit exactly one corrected submit_semantic_ir_plan tool call. "
         "Keep the same user intent. Prefer supported LIST/COUNT/LOOKUP/STATUS/DATE LocalQueryIR/APIQueryIR if it can express the evidence. "
+        "Preserve and update the root answer_contract so required slots still reference the corrected task IDs. "
         "Only keep requires_raw_sql_fallback=true when the local snapshot task truly requires unsupported SQL structure. "
         "Do not ask the backend to write SQL, choose fields, add filters, or repair your plan."
     )
@@ -1235,6 +1355,8 @@ def _semantic_ir_support_repair_user_prompt(
         "rules": [
             "First try to express the same evidence request using supported Semantic IR.",
             "Supported local operations are LIST, COUNT, LOOKUP, STATUS, and DATE with simple filters.",
+            "Preserve root answer_contract and update satisfied_by_tasks to the corrected task IDs.",
+            "If route is EVIDENCE and answer_contract is missing, add it now with LLM-owned required slots.",
             "Do not choose a different user intent.",
             "Do not choose replacement tables, fields, filters, or endpoints unless they are your LLM-owned corrected plan and appear in the allowed cards.",
             "If supported Semantic IR cannot represent the required local structure, keep the unsupported local task and explicitly set requires_raw_sql_fallback=true, raw_sql_reason, and unsupported_features.",

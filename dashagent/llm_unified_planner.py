@@ -110,6 +110,7 @@ class LLMUnifiedPlan:
     reason: str
     provider: str
     model: str
+    answer_contract: Any | None = None
     parse_error: bool = False
     backend_unavailable: bool = False
     raw_preview: Any | None = None
@@ -127,6 +128,7 @@ class LLMUnifiedPlan:
             "reason": self.reason,
             "provider": self.provider,
             "model": self.model,
+            "answer_contract": self.answer_contract.to_dict() if hasattr(self.answer_contract, "to_dict") else self.answer_contract,
             "parse_error": self.parse_error,
             "backend_unavailable": self.backend_unavailable,
             "raw_preview": self.raw_preview,
@@ -1387,6 +1389,7 @@ def normalize_llm_unified_plan(
         reason=str(payload.get("reason") or ""),
         provider=provider,
         model=model,
+        answer_contract=payload.get("answer_contract"),
         raw_preview=raw_preview,
         diagnostics=diagnostics or {},
     )

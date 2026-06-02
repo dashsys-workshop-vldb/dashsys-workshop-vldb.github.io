@@ -5,6 +5,8 @@ import re
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+from .v2_answer_contract import V2AnswerContract, answer_contract_to_dict, parse_answer_contract
+
 
 ALLOWED_SEMANTIC_IR_ROUTES = {"DIRECT", "EVIDENCE"}
 ALLOWED_SEMANTIC_IR_KINDS = {"CONCEPT", "LOCAL_QUERY", "LIVE_QUERY", "LOCAL_AND_LIVE", "AGGREGATE", "CACHE_ALIAS"}
@@ -121,6 +123,7 @@ class SemanticIRPlan:
     route: str
     direct_answer: str | None = None
     tasks: list[SemanticIRTask] = field(default_factory=list)
+    answer_contract: V2AnswerContract | None = None
     aggregation_instruction: str = ""
 
     def to_dict(self) -> dict[str, Any]:
@@ -132,6 +135,7 @@ def semantic_plan_to_dict(plan: SemanticIRPlan) -> dict[str, Any]:
         "route": plan.route,
         "direct_answer": plan.direct_answer,
         "tasks": [task.to_dict() for task in plan.tasks],
+        "answer_contract": answer_contract_to_dict(plan.answer_contract),
         "aggregation_instruction": plan.aggregation_instruction,
     }
 
@@ -154,6 +158,7 @@ def parse_semantic_ir_from_json_or_line_protocol(raw: str | dict[str, Any]) -> S
         route=route,
         direct_answer=direct_answer,
         tasks=tasks,
+        answer_contract=parse_answer_contract(payload["answer_contract"]) if isinstance(payload.get("answer_contract"), dict) else None,
         aggregation_instruction=str(payload.get("aggregation_instruction") or "").strip(),
     )
 

@@ -62,6 +62,7 @@ from .evidence_grounded_answer_builder import build_evidence_grounded_answer
 from .evidence_grounded_llm_answer_generator import generate_evidence_grounded_llm_answer
 from .evidence_policy import API_SKIP
 from .evidence_quality_classifier import classify_evidence_quality
+from .final_answer_contract_gate import check_final_answer_contract
 from .gated_sql_candidates import hard_case_triggers, select_gated_sql_candidate
 from .hybrid_answer_composer import compose_hybrid_answer
 from .metadata_selector import MetadataSelector
@@ -84,6 +85,7 @@ from .query_tokens import extract_query_tokens
 from .llm_sql_generator import generate_sql_with_llm, repair_sql_with_llm
 from .llm_client import get_llm_client
 from .llm_final_answer_composer import (
+    FinalAnswerSemanticGateResult,
     LLMFinalAnswerCandidate,
     build_llm_final_answer_card,
     check_final_answer_semantic_grounding,
@@ -92,6 +94,8 @@ from .llm_final_answer_composer import (
     safe_llm_final_answer_fallback,
 )
 from .llm_unified_planner import LLMUnifiedAPIRequest, LLMUnifiedPass, LLMUnifiedPlan, LLMUnifiedSQLCandidate, run_llm_unified_planner
+from .v2_answer_contract import V2AnswerContract, parse_answer_contract
+from .v2_evidence_contract import evaluate_evidence_contract, evidence_contract_summary
 from .v2_semantic_ir_planner import semantic_ir_prompt_context_diagnostics
 from .query_decomposer import decompose_query
 from .query_family_examples import examples_for_family, few_shot_public_overlap_check
@@ -178,6 +182,61 @@ def _skipped_llm_answer_payload(skipped: bool) -> dict[str, Any] | None:
             "allowed_fact_index": {},
         },
     }
+
+
+def _plan_answer_contract(plan: LLMUnifiedPlan) -> V2AnswerContract | None:
+    raw = getattr(plan, "answer_contract", None)
+    if raw is None:
+        return None
+    if isinstance(raw, V2AnswerContract):
+        return raw
+    if isinstance(raw, dict):
+        try:
+            return parse_answer_contract(raw)
+        except Exception:
+            return None
+    if hasattr(raw, "to_dict"):
+        try:
+            return parse_answer_contract(raw.to_dict())
+        except Exception:
+            return None
+    return None
+
+
+def _check_v2_contract_then_semantic_gate(
+    final_answer: str,
+    *,
+    question: str,
+    runtime_passes: list[dict[str, Any]],
+    evidence_bus: EvidenceBus,
+    slots: Any,
+    answer_contract: V2AnswerContract | None,
+    evidence_slot_states: list[Any],
+) -> FinalAnswerSemanticGateResult:
+    contract_gate = check_final_answer_contract(
+        final_answer,
+        answer_contract=answer_contract,
+        evidence_slot_states=evidence_slot_states,
+    )
+    if not contract_gate.passed:
+        return FinalAnswerSemanticGateResult(
+            passed=False,
+            error_type=contract_gate.error_type or "answer_contract_error",
+            error_message=contract_gate.message or "Final answer failed answer contract coverage gate.",
+            missing_required_fields=list(contract_gate.failed_slot_ids),
+            verifier={"contract_gate": contract_gate.to_dict()},
+        )
+    semantic = check_final_answer_semantic_grounding(
+        final_answer,
+        question=question,
+        runtime_passes=runtime_passes,
+        evidence_bus=evidence_bus,
+        slots=slots,
+    )
+    if semantic.verifier is None:
+        semantic.verifier = {}
+    semantic.verifier["contract_gate"] = contract_gate.to_dict()
+    return semantic
 
 
 class AgentExecutor:
@@ -1741,6 +1800,9 @@ class AgentExecutor:
         answer_start = time.perf_counter()
         evidence_quality = classify_evidence_quality(tool_results, api_required=any(item.get("type") == "api" for item in tool_results))
         result_bundle = ResultBundle.from_pass_results(runtime_passes, tool_results, run_id=run_context.run_id)
+        answer_contract = _plan_answer_contract(plan)
+        evidence_slot_states = evaluate_evidence_contract(answer_contract, runtime_passes)
+        evidence_contract_payload = evidence_contract_summary(evidence_slot_states)
         checkpoint_logger.add_checkpoint(
             "checkpoint_result_bundle",
             stage="evidence forwarding",
@@ -1750,6 +1812,23 @@ class AgentExecutor:
             effect="stores all LLM-declared pass results before final LLM aggregation",
             correctness_role="keeps pass-level runtime evidence separate from backend answer generation",
             efficiency_role="reuses executed pass results without extra tools",
+        )
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_answer_evidence_contract",
+            stage="answer synthesis",
+            technique="Answer Contract / Evidence Contract",
+            input_summary={
+                "answer_contract_present": answer_contract is not None,
+                "runtime_pass_count": len(runtime_passes),
+            },
+            output={
+                "answer_contract_used": answer_contract is not None,
+                "required_slot_count": len(answer_contract.required_slots) if answer_contract is not None else 0,
+                **evidence_contract_payload,
+            },
+            effect="maps LLM-declared answer slots to runtime evidence states before final answer composition",
+            correctness_role="checks slot coverage and source scope without backend semantic routing",
+            efficiency_role="uses already collected pass results only",
         )
         checkpoint_logger.add_checkpoint(
             "checkpoint_evidence_quality_classifier",
@@ -1771,6 +1850,8 @@ class AgentExecutor:
             evidence_quality=evidence_quality,
             result_bundle=result_bundle,
             aggregation_instruction=plan.aggregation_instruction,
+            answer_contract=answer_contract,
+            evidence_slot_states=evidence_slot_states,
         )
         checkpoint_logger.add_checkpoint(
             "checkpoint_15_answer_slots",
@@ -1822,12 +1903,14 @@ class AgentExecutor:
             efficiency_role="no SQL/API calls",
         )
         if syntax_gate.passed:
-            semantic_gate = check_final_answer_semantic_grounding(
+            semantic_gate = _check_v2_contract_then_semantic_gate(
                 syntax_gate.final_answer or "",
                 question=query,
                 runtime_passes=runtime_passes,
                 evidence_bus=evidence_bus,
                 slots=slots,
+                answer_contract=answer_contract,
+                evidence_slot_states=evidence_slot_states,
             )
         else:
             semantic_gate = None
@@ -1850,6 +1933,11 @@ class AgentExecutor:
             repair_context = {
                 "syntax_gate": syntax_gate.to_dict(),
                 "semantic_gate": semantic_gate.to_dict() if semantic_gate is not None else None,
+                "contract_gate": (semantic_gate.verifier or {}).get("contract_gate") if semantic_gate is not None else None,
+                "failed_slot_ids": list(semantic_gate.missing_required_fields or []) if semantic_gate is not None else [],
+                "evidence_slot_states": [state.to_dict() for state in evidence_slot_states],
+                "AVAILABLE_RUNTIME_FACTS": answer_card.get("AVAILABLE_RUNTIME_FACTS") or [],
+                "FAILED_OR_UNAVAILABLE_SOURCES": answer_card.get("FAILED_OR_UNAVAILABLE_SOURCES") or [],
                 "previous_candidate": candidate.to_dict(),
             }
             checkpoint_logger.add_checkpoint(
@@ -1868,12 +1956,14 @@ class AgentExecutor:
             answer_repair_attempts = 1
             repaired_syntax = check_final_answer_syntax(repaired)
             if repaired_syntax.passed:
-                repaired_semantic = check_final_answer_semantic_grounding(
+                repaired_semantic = _check_v2_contract_then_semantic_gate(
                     repaired_syntax.final_answer or "",
                     question=query,
                     runtime_passes=runtime_passes,
                     evidence_bus=evidence_bus,
                     slots=slots,
+                    answer_contract=answer_contract,
+                    evidence_slot_states=evidence_slot_states,
                 )
             else:
                 repaired_semantic = None
@@ -1910,12 +2000,14 @@ class AgentExecutor:
             fallback_candidate = LLMFinalAnswerCandidate(final_answer=final_answer)
             fallback_syntax_gate = check_final_answer_syntax(fallback_candidate)
             fallback_semantic_gate = (
-                check_final_answer_semantic_grounding(
+                _check_v2_contract_then_semantic_gate(
                     fallback_syntax_gate.final_answer or "",
                     question=query,
                     runtime_passes=runtime_passes,
                     evidence_bus=evidence_bus,
                     slots=slots,
+                    answer_contract=answer_contract,
+                    evidence_slot_states=evidence_slot_states,
                 )
                 if fallback_syntax_gate.passed
                 else None
@@ -1938,6 +2030,10 @@ class AgentExecutor:
             "final_gate_latency_sec": final_gate_latency_sec,
             "syntax_gate": final_syntax_gate.to_dict(),
             "semantic_gate": final_semantic_gate.to_dict() if final_semantic_gate is not None else None,
+            "answer_contract_used": answer_contract is not None,
+            "required_slot_count": len(answer_contract.required_slots) if answer_contract is not None else 0,
+            "evidence_contract_summary": evidence_contract_payload,
+            "evidence_slot_states": [state.to_dict() for state in evidence_slot_states],
         }
         checkpoint_logger.add_checkpoint(
             "checkpoint_llm_owned_final_answer_boundary",

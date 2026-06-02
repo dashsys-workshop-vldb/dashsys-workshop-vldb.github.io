@@ -14,6 +14,7 @@ from .llm_client import get_llm_client
 from .llm_unified_planner import LLMUnifiedPlan, planner_provider_capabilities
 from .result_bundle import ResultBundle
 from .trajectory import compact_preview, redact_secrets
+from .v2_answer_contract import EvidenceSlotState, V2AnswerContract, answer_contract_to_dict, evidence_slot_state_to_dict, parse_answer_contract
 
 
 SENSITIVE_CONTEXT_KEYS = {
@@ -84,8 +85,12 @@ def build_llm_final_answer_card(
     evidence_quality: dict[str, Any] | None = None,
     result_bundle: ResultBundle | None = None,
     aggregation_instruction: str = "",
+    answer_contract: V2AnswerContract | dict[str, Any] | None = None,
+    evidence_slot_states: list[EvidenceSlotState] | list[dict[str, Any]] | None = None,
     repair_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    normalized_contract = _normalize_answer_contract(answer_contract)
+    normalized_states = _normalize_evidence_slot_states(evidence_slot_states)
     card = {
         "task": "LLM_OWNED_FINAL_ANSWER_COMPOSITION",
         "user_prompt": user_prompt,
@@ -107,12 +112,24 @@ def build_llm_final_answer_card(
         "answer_slots": answer_slots.compact(),
         "evidence_quality": compact_preview(evidence_quality or {}, 1800),
         "aggregation_instruction": aggregation_instruction or llm_plan.aggregation_instruction,
+        "ANSWER_CONTRACT_REQUIRED_SLOTS": (
+            [slot.to_dict() for slot in normalized_contract.required_slots] if normalized_contract is not None else []
+        ),
+        "ANSWER_CONTRACT_OPTIONAL_SLOTS": (
+            [slot.to_dict() for slot in normalized_contract.optional_slots] if normalized_contract is not None else []
+        ),
+        "ANSWER_CONTRACT_STYLE": normalized_contract.answer_style if normalized_contract is not None else None,
+        "ANSWER_CONTRACT_GLOBAL_SCOPE": normalized_contract.global_scope if normalized_contract is not None else None,
+        "EVIDENCE_SLOT_STATES": normalized_states,
         "repair_context": _final_answer_repair_context(repair_context) if repair_context else None,
         "required_caveats": _required_caveats(runtime_passes, evidence_bus),
         "scope_labels": ["LOCAL_SNAPSHOT", "LIVE_API", "API_ERROR", "LIVE_EMPTY"],
         "final_answer_max_tokens": FINAL_ANSWER_MAX_TOKENS,
         "constraints": [
             "Generate the final answer using only runtime evidence in this card.",
+            "Answer every required answer contract slot in ANSWER_CONTRACT_REQUIRED_SLOTS.",
+            "Use EVIDENCE_SLOT_STATES as the slot-level evidence contract: SATISFIED means answer with the slot facts; PARTIAL means answer available facts with scoped caveat; ZERO_ROWS means scoped no-match and no positive existence/relation assertion; API_UNAVAILABLE means scoped API unavailable caveat; NO_EVIDENCE/ERROR means scoped unavailable caveat.",
+            "Do not use prompt examples, schema context, task descriptions, or answer contract text as runtime facts.",
             "Treat AVAILABLE_RUNTIME_FACTS as the authoritative facts for the final answer.",
             "If AVAILABLE_RUNTIME_FACTS is non-empty, answer from those facts and do not say runtime evidence is globally unavailable.",
             "If AVAILABLE_RUNTIME_FACTS is non-empty and FAILED_OR_UNAVAILABLE_SOURCES is non-empty, answer the available scoped facts first, then add only the scoped failed-source caveat.",
@@ -662,9 +679,47 @@ def _final_answer_repair_context(repair_context: dict[str, Any] | None) -> dict[
         "missing_required_fields": semantic_gate.get("missing_required_fields") or repair_context.get("missing_required_fields") or [],
         "scope_errors": semantic_gate.get("scope_errors") or repair_context.get("scope_errors") or [],
         "unsupported_claims": semantic_gate.get("unsupported_claims") or repair_context.get("unsupported_claims") or [],
+        "contract_gate": repair_context.get("contract_gate") if isinstance(repair_context.get("contract_gate"), dict) else None,
+        "failed_slot_ids": repair_context.get("failed_slot_ids") or [],
+        "EVIDENCE_SLOT_STATES": repair_context.get("EVIDENCE_SLOT_STATES") or repair_context.get("evidence_slot_states") or [],
+        "AVAILABLE_RUNTIME_FACTS": repair_context.get("AVAILABLE_RUNTIME_FACTS") or [],
+        "FAILED_OR_UNAVAILABLE_SOURCES": repair_context.get("FAILED_OR_UNAVAILABLE_SOURCES") or [],
         "raw": compact_preview(repair_context, 1200),
     }
     return _strip_sensitive_keys(payload)
+
+
+def _normalize_answer_contract(value: V2AnswerContract | dict[str, Any] | None) -> V2AnswerContract | None:
+    if value is None:
+        return None
+    if isinstance(value, V2AnswerContract):
+        return value
+    if isinstance(value, dict):
+        try:
+            return parse_answer_contract(value)
+        except Exception:
+            return None
+    if hasattr(value, "to_dict"):
+        try:
+            return parse_answer_contract(value.to_dict())
+        except Exception:
+            return None
+    return None
+
+
+def _normalize_evidence_slot_states(value: list[EvidenceSlotState] | list[dict[str, Any]] | None) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for item in value or []:
+        if isinstance(item, EvidenceSlotState):
+            out.append(evidence_slot_state_to_dict(item))
+        elif isinstance(item, dict):
+            out.append(_strip_sensitive_keys(dict(item)))
+        elif hasattr(item, "to_dict"):
+            try:
+                out.append(_strip_sensitive_keys(item.to_dict()))
+            except Exception:
+                continue
+    return out
 
 
 def _generate_final_answer_messages(

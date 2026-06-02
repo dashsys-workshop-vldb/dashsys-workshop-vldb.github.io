@@ -10,6 +10,7 @@ from .v2_semantic_ir import (
     SemanticIRPlan,
     SemanticIRTask,
 )
+from .v2_answer_contract_validator import AnswerContractValidator
 from .v2_semantic_alias import validate_semantic_ir_aliases
 
 
@@ -86,6 +87,13 @@ class SemanticIRValidator:
         base.semantic_alias_validation_used = True
         base.semantic_alias_validation_passed = True
         base.semantic_alias_count = alias_result.semantic_alias_count
+        contract_result = AnswerContractValidator().validate(plan)
+        if not contract_result.passed:
+            return self._fail(
+                contract_result.error_type or "invalid_answer_contract",
+                contract_result.error_message or "Invalid answer contract.",
+                contract_result.task_id,
+            )
         return base
 
     def _validate_task(self, task: SemanticIRTask) -> SemanticIRValidationResult:
