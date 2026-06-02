@@ -466,7 +466,8 @@ def _available_runtime_facts(runtime_passes: list[dict[str, Any]], answer_slots:
         path = str(item.get("path") or item.get("source") or "")
         if path.upper() in {"DIRECT", "AGGREGATION_ONLY"}:
             continue
-        if not _pass_has_successful_evidence(item):
+        has_zero_row_evidence = _pass_has_zero_row_evidence(item)
+        if not (_pass_has_successful_evidence(item) or has_zero_row_evidence):
             continue
         entry = {
             "task_id": str(item.get("pass_id") or ""),
@@ -482,16 +483,19 @@ def _available_runtime_facts(runtime_passes: list[dict[str, Any]], answer_slots:
             "dates": [],
         }
         for source in item.get("source_results", []) if isinstance(item.get("source_results"), list) else []:
-            if not isinstance(source, dict) or str(source.get("status") or "").upper() != "SUCCESS":
+            if not isinstance(source, dict):
+                continue
+            source_status = str(source.get("status") or "").upper()
+            if source_status != "SUCCESS" and not _source_has_zero_row_evidence(source, item):
                 continue
             result = source.get("result") if isinstance(source.get("result"), dict) else {}
             rows = _rows_from_result_payload(result)
             if rows:
                 entry["row_previews"].extend(_strip_sensitive_keys(_compact_rows(rows[:10])))
                 _collect_row_values(entry, rows[:10])
-                row_count = result.get("row_count")
-                if row_count not in (None, "", [], {}) and row_count not in entry["counts"]:
-                    entry["counts"].append(row_count)
+            row_count = result.get("row_count")
+            if row_count not in (None, "", [], {}) and row_count not in entry["counts"]:
+                entry["counts"].append(row_count)
             parsed = result.get("parsed_evidence") if isinstance(result.get("parsed_evidence"), dict) else {}
             _collect_parsed_values(entry, parsed)
         if answer_slots is not None and entry["scope"] == "LOCAL_SNAPSHOT":
@@ -745,6 +749,8 @@ def _missing_required_fields(final_answer: str, *, question: str, index: Any, sl
     if _asks_status(prompt) and not date_answer_satisfies_published_prompt and index.statuses and not any(_value_in_answer(value, answer) for value in index.statuses):
         missing.append("status")
     if _asks_list(prompt) and slots.entity_names:
+        if _is_scoped_no_match_answer(answer) and _index_has_zero_count(index):
+            return missing
         names = slots.entity_names[:10]
         present = [name for name in names if _norm(name) in answer]
         absent = [name for name in names if _norm(name) not in answer]
@@ -782,6 +788,25 @@ def _pass_has_successful_evidence(item: dict[str, Any]) -> bool:
     if not isinstance(source_results, list):
         return False
     return any(str(source.get("status") or "").upper() == "SUCCESS" for source in source_results if isinstance(source, dict))
+
+
+def _pass_has_zero_row_evidence(item: dict[str, Any]) -> bool:
+    source_results = item.get("source_results")
+    if not isinstance(source_results, list):
+        return False
+    return any(_source_has_zero_row_evidence(source, item) for source in source_results if isinstance(source, dict))
+
+
+def _source_has_zero_row_evidence(source: dict[str, Any], item: dict[str, Any]) -> bool:
+    status = str(source.get("status") or item.get("status") or "").upper()
+    if status not in {"EMPTY", "LIVE_EMPTY", "SUCCESS"}:
+        return False
+    source_name = str(source.get("source") or item.get("source") or item.get("path") or "").upper()
+    scope = str(source.get("scope") or item.get("scope") or "").upper()
+    if source_name == "API" or scope == "LIVE_API":
+        return False
+    result = source.get("result") if isinstance(source.get("result"), dict) else {}
+    return result.get("row_count") == 0
 
 
 def _scope_from_sources(source_results: Any) -> str:
@@ -977,6 +1002,14 @@ def _is_global_no_data_answer(answer: str) -> bool:
     return any(term in answer for term in global_terms) and not any(term in answer for term in scoped_terms)
 
 
+def _is_scoped_no_match_answer(answer: str) -> bool:
+    return _is_no_data_answer(answer) and any(term in answer for term in ["matching", "query", "scope", "for this"])
+
+
+def _index_has_zero_count(index: Any) -> bool:
+    return any(str(value) in {"0", "0.0"} for value in getattr(index, "counts", []) or [])
+
+
 def _asks_count(prompt: str) -> bool:
     return bool(re.search(r"\b(how many|count|number of|total)\b", prompt))
 
@@ -1012,7 +1045,7 @@ def _value_in_answer(value: Any, answer: str) -> bool:
     if not value_text:
         return False
     if re.fullmatch(r"\d+(?:\.\d+)?", value_text):
-        return bool(re.search(rf"(?<![\w.]){re.escape(value_text)}(?![\w.])", answer))
+        return bool(re.search(rf"(?<![\w.]){re.escape(value_text)}(?!\.\d)(?!\w)", answer))
     return value_text in answer
 
 

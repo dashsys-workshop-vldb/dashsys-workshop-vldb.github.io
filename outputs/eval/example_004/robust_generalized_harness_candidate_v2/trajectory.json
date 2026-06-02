@@ -1,5 +1,5 @@
 {
-  "answer_time": 4.735609167255461,
+  "answer_time": 28.17022233409807,
   "api_call_count": 0,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-02T10:02:57.916898+00:00"
+      "timestamp": "2026-06-02T12:16:04.812831+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-02T10:02:57.919161+00:00"
+      "timestamp": "2026-06-02T12:16:04.813336+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,7 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-02T10:02:57.920967+00:00"
+      "timestamp": "2026-06-02T12:16:04.813835+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner_start",
@@ -86,7 +86,7 @@
       },
       "stage": "llm-owned planning",
       "technique": "pre-call heartbeat before Unified LLM Planner",
-      "timestamp": "2026-06-02T10:02:57.942530+00:00"
+      "timestamp": "2026-06-02T12:16:04.820822+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -98,59 +98,21 @@
         "query": "Show me the IDs of failed dataflow runs"
       },
       "metrics": {
-        "active_task_count": 1,
-        "api_candidate_cards": 0,
-        "api_candidate_success_count": 0,
         "api_request_gate_failures": 0,
-        "atomic_candidate_slots_used": true,
-        "atomic_checklist_used": true,
-        "atomic_protocol_fallback_used": true,
-        "atomic_weak_protocol_used": true,
-        "backend_formal_compilation_used": false,
+        "atomic_protocol_fallback_used": false,
+        "backend_formal_compilation_used": true,
         "backend_generated_sql": false,
-        "backend_route_inference_used": false,
         "backend_semantic_decomposition_used": false,
         "backend_semantic_planning_used": false,
-        "backend_semantic_routing_used": false,
         "backend_sql_api_generation_used": false,
-        "candidate_card_latency_ms": 2684,
-        "candidate_card_max_tokens": 220,
-        "candidate_card_success": 1,
-        "candidate_repair_attempts": 0,
-        "candidate_repair_max_tokens": 220,
-        "checklist_bits": {
-          "COUNT": 0,
-          "DATE": 0,
-          "LIST": 1,
-          "LIVE_CURRENT": 0,
-          "LOCAL_SNAPSHOT": 0,
-          "MIXED_CONCEPT_DATA": 0,
-          "PURE_CONCEPT": 0,
-          "RECORDS": 1,
-          "SHOW_ITEMS": 1,
-          "STATUS": 1
-        },
-        "checklist_latency_ms": 3519,
-        "checklist_parse_success": true,
-        "checklist_repair_attempted": false,
-        "checklist_route": "EVIDENCE_PIPELINE",
         "compiled_alias_count": 0,
         "compiled_api_count": 0,
-        "compiled_sql_count": 0,
+        "compiled_sql_count": 1,
         "compiler_latency_ms": 0,
-        "dependency_edges": [],
-        "direct_route_challenge_needs_evidence": null,
-        "direct_route_challenge_repair_attempted": false,
-        "direct_route_challenge_used": false,
-        "evidence_planner_called": true,
-        "final_answer_max_tokens": 500,
-        "fixed_task_slots_used": true,
-        "llm_route_gate_used": true,
-        "pass_candidate_cards": 1,
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
-        "planner_parse_source": "atomic_protocol_fallback",
-        "planner_provider_latency_ms": 97209,
+        "planner_parse_source": "sdk_toolcall_semantic_ir",
+        "planner_provider_latency_ms": 45094,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -171,73 +133,98 @@
         "raw_sql_fallback_success": false,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
-        "route_card_max_tokens": 80,
-        "route_card_repair_attempted": false,
-        "route_card_route": "EVIDENCE",
-        "route_card_success": true,
-        "route_gate_repair_attempted": false,
-        "route_gate_route": "EVIDENCE_PIPELINE",
-        "route_gate_success": true,
-        "sdk_toolcall_semantic_ir_used": false,
+        "sdk_toolcall_semantic_ir_used": true,
         "semantic_alias_count": 0,
         "semantic_alias_error_type": null,
         "semantic_alias_repair_attempted": false,
-        "semantic_alias_validation_passed": null,
-        "semantic_alias_validation_used": false,
-        "semantic_ir_fallback_reason": "Connection error.",
-        "semantic_ir_provider_latency_ms": 85585,
+        "semantic_alias_validation_passed": true,
+        "semantic_alias_validation_used": true,
+        "semantic_ir_plan_preview": {
+          "aggregation_instruction": "Return the DATAFLOWID and DATAFLOWNAME for all records where STATE is not SUCCESS.",
+          "route": "EVIDENCE",
+          "tasks": {
+            "items": [
+              {
+                "description": "List dataflow runs with non-success states from the local snapshot to identify failed dataflows.",
+                "kind": "LOCAL_QUERY",
+                "local_query": {
+                  "count": false,
+                  "fields": {
+                    "items": [
+                      "DATAFLOWID",
+                      "DATAFLOWNAME",
+                      "STATE"
+                    ],
+                    "total_items": 3,
+                    "truncated_items": false
+                  },
+                  "filters": {
+                    "items": [
+                      {
+                        "field": "STATE",
+                        "op": "!=",
+                        "value": "SUCCESS"
+                      }
+                    ],
+                    "total_items": 1,
+                    "truncated_items": false
+                  },
+                  "limit": 50,
+                  "table": "dim_connector"
+                },
+                "operation": "LIST",
+                "reuse_result_from": null,
+                "semantic_cache_key": null,
+                "source": "LOCAL_SNAPSHOT",
+                "task_id": "t1_failed_dataflow_runs",
+                "truncated_fields": 7
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        },
+        "semantic_ir_provider_latency_ms": 45092,
         "semantic_ir_repair_attempted": false,
         "semantic_ir_repair_latency_ms": 0,
         "semantic_ir_repair_success": false,
         "semantic_ir_support_check_latency_ms": 0,
-        "semantic_ir_support_checked": false,
+        "semantic_ir_support_checked": true,
+        "semantic_ir_support_recommended_action": "COMPILE",
         "semantic_ir_support_repair_attempted": false,
         "semantic_ir_support_repair_error_message": null,
         "semantic_ir_support_repair_error_type": null,
         "semantic_ir_support_repair_latency_ms": 0,
         "semantic_ir_support_repair_success": false,
-        "semantic_ir_supported": null,
-        "semantic_ir_toolcall_error": "Connection error.",
-        "semantic_ir_toolcall_supported": null,
+        "semantic_ir_supported": true,
+        "semantic_ir_task_count": 1,
+        "semantic_ir_toolcall_supported": true,
         "semantic_ir_unsupported_features": [],
+        "semantic_ir_unsupported_operation": null,
         "semantic_ir_unsupported_reason": null,
+        "semantic_ir_unsupported_task_id": null,
         "semantic_ir_validation_error_message": null,
         "semantic_ir_validation_error_type": null,
         "semantic_ir_validation_latency_ms": 0,
-        "semantic_ir_validation_passed": false,
-        "slot_count": 5,
-        "sql_candidate_cards": 1,
-        "sql_candidate_success_count": 1,
+        "semantic_ir_validation_passed": true,
         "sql_compile_gate_failures": 0,
-        "task_count": 1,
-        "task_ledger_latency_ms": 5417,
-        "task_ledger_max_tokens": 300,
-        "task_ledger_repair_attempted": false,
-        "task_ledger_success": true,
-        "task_paths": [
-          "SQL"
-        ],
-        "task_slot_repair_attempted": false,
-        "v2_semantic_ir_used": true,
-        "weak_model_stable_protocol_used": true,
-        "weak_protocol_route_card_used": true,
-        "weak_protocol_task_ledger_used": true
+        "v2_semantic_ir_used": true
       },
       "output": {
-        "aggregation_instruction": "Return the list of run_ids from T1",
+        "aggregation_instruction": "Return the DATAFLOWID and DATAFLOWNAME for all records where STATE is not SUCCESS.",
         "evidence_order": "SQL_FIRST",
         "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "passes": {
           "items": [
             {
-              "pass_id": "T1",
+              "pass_id": "t1_failed_dataflow_runs",
               "path": "SQL",
               "raw_sql_fallback_reason": null,
               "raw_sql_fallback_task_id": null,
               "raw_sql_fallback_used": false,
               "reuse_result_from": null,
               "semantic_cache_key": null,
-              "subtask": "SELECT run_id FROM dataflow_runs WHERE status = 'FAILED'",
+              "subtask": "List dataflow runs with non-success states from the local snapshot to identify failed dataflows.",
               "truncated_fields": 9
             }
           ],
@@ -245,16 +232,23 @@
           "truncated_items": false
         },
         "provider": "openai",
-        "reason": "Atomic checklist selected evidence; fixed task slots supplied LLM-owned tasks.",
+        "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
         "route": "EVIDENCE_PIPELINE",
         "sql": {
-          "query": "SELECT run_id FROM dataflow_runs WHERE status = 'FAILED'"
+          "params": {
+            "items": [
+              "SUCCESS"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "query": "SELECT \"DATAFLOWID\", \"DATAFLOWNAME\", \"STATE\" FROM \"dim_connector\" WHERE \"STATE\" != ? LIMIT 50"
         },
         "truncated_fields": 6
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-02T10:04:35.156825+00:00"
+      "timestamp": "2026-06-02T12:16:49.920201+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
@@ -266,7 +260,7 @@
         "evidence_order": "SQL_FIRST",
         "pass_ids": {
           "items": [
-            "T1"
+            "t1_failed_dataflow_runs"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -282,7 +276,7 @@
           "items": [
             {
               "items": [
-                "T1"
+                "t1_failed_dataflow_runs"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -294,7 +288,7 @@
         "pass_count": 1,
         "pass_ids": {
           "items": [
-            "T1"
+            "t1_failed_dataflow_runs"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -303,7 +297,7 @@
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-02T10:04:35.160272+00:00"
+      "timestamp": "2026-06-02T12:16:49.924119+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -319,7 +313,7 @@
         },
         "pass_ids": {
           "items": [
-            "T1"
+            "t1_failed_dataflow_runs"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -342,7 +336,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "T1"
+            "t1_failed_dataflow_runs"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -367,7 +361,7 @@
           "items": [
             {
               "items": [
-                "T1"
+                "t1_failed_dataflow_runs"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -378,7 +372,7 @@
         },
         "pass_ids": {
           "items": [
-            "T1"
+            "t1_failed_dataflow_runs"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -389,7 +383,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-02T10:04:35.161199+00:00"
+      "timestamp": "2026-06-02T12:16:49.925569+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -402,7 +396,7 @@
           "items": [
             {
               "items": [
-                "T1"
+                "t1_failed_dataflow_runs"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -413,7 +407,7 @@
         },
         "pass_ids": {
           "items": [
-            "T1"
+            "t1_failed_dataflow_runs"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -432,7 +426,7 @@
           "items": [
             {
               "items": [
-                "T1"
+                "t1_failed_dataflow_runs"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -443,7 +437,7 @@
         },
         "passes_completed": {
           "items": [
-            "T1"
+            "t1_failed_dataflow_runs"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -464,10 +458,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_dfe6268e928a411298b25a7ae76a3c4e:T1",
-              "pass_id": "T1",
+              "global_pass_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9:t1_failed_dataflow_runs",
+              "pass_id": "t1_failed_dataflow_runs",
               "plan_version": 1,
-              "run_id": "run_dfe6268e928a411298b25a7ae76a3c4e",
+              "run_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -475,10 +469,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_dfe6268e928a411298b25a7ae76a3c4e:T1",
-              "pass_id": "T1",
+              "global_pass_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9:t1_failed_dataflow_runs",
+              "pass_id": "t1_failed_dataflow_runs",
               "plan_version": 1,
-              "run_id": "run_dfe6268e928a411298b25a7ae76a3c4e",
+              "run_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -486,10 +480,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_dfe6268e928a411298b25a7ae76a3c4e:T1",
-              "pass_id": "T1",
+              "global_pass_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9:t1_failed_dataflow_runs",
+              "pass_id": "t1_failed_dataflow_runs",
               "plan_version": 1,
-              "run_id": "run_dfe6268e928a411298b25a7ae76a3c4e",
+              "run_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9",
               "stage": "DEPENDENCY_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -503,7 +497,7 @@
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-02T10:04:35.161789+00:00"
+      "timestamp": "2026-06-02T12:16:49.926529+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
@@ -515,7 +509,7 @@
         "multi_pass_enabled": false,
         "pass_ids": {
           "items": [
-            "T1"
+            "t1_failed_dataflow_runs"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -544,7 +538,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "T1"
+            "t1_failed_dataflow_runs"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -565,7 +559,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_dfe6268e928a411298b25a7ae76a3c4e",
+        "evidence_bus_id": "evidence_run_d50e3223cb8b4ecaaa30633ad8570bd9",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -580,7 +574,7 @@
           "items": [
             {
               "items": [
-                "T1"
+                "t1_failed_dataflow_runs"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -596,7 +590,7 @@
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "T1"
+            "t1_failed_dataflow_runs"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -604,7 +598,7 @@
         "pass_results_count": 1,
         "passes_completed": {
           "items": [
-            "T1"
+            "t1_failed_dataflow_runs"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -616,7 +610,7 @@
         },
         "passes_executed": {
           "items": [
-            "T1"
+            "t1_failed_dataflow_runs"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -638,8 +632,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_dfe6268e928a411298b25a7ae76a3c4e",
-        "run_id": "run_dfe6268e928a411298b25a7ae76a3c4e",
+        "result_bundle_id": "bundle_run_d50e3223cb8b4ecaaa30633ad8570bd9",
+        "run_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -649,19 +643,19 @@
         "semantic_alias_materialized_count": 0,
         "semantic_alias_validation_failures": 0,
         "sequential_pass_count": 0,
-        "sql_execution_latency_sec": 0.0,
-        "sql_gate_latency_sec": 0.002,
-        "sql_gate_passed": false,
-        "sql_repair_attempts": 1,
+        "sql_execution_latency_sec": 0.003,
+        "sql_gate_latency_sec": 0.648,
+        "sql_gate_passed": true,
+        "sql_repair_attempts": 0,
         "stage_events": {
           "items": [
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_dfe6268e928a411298b25a7ae76a3c4e:T1",
-              "pass_id": "T1",
+              "global_pass_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9:t1_failed_dataflow_runs",
+              "pass_id": "t1_failed_dataflow_runs",
               "plan_version": 1,
-              "run_id": "run_dfe6268e928a411298b25a7ae76a3c4e",
+              "run_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -669,10 +663,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_dfe6268e928a411298b25a7ae76a3c4e:T1",
-              "pass_id": "T1",
+              "global_pass_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9:t1_failed_dataflow_runs",
+              "pass_id": "t1_failed_dataflow_runs",
               "plan_version": 1,
-              "run_id": "run_dfe6268e928a411298b25a7ae76a3c4e",
+              "run_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -680,10 +674,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_dfe6268e928a411298b25a7ae76a3c4e:T1",
-              "pass_id": "T1",
+              "global_pass_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9:t1_failed_dataflow_runs",
+              "pass_id": "t1_failed_dataflow_runs",
               "plan_version": 1,
-              "run_id": "run_dfe6268e928a411298b25a7ae76a3c4e",
+              "run_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -699,7 +693,7 @@
       },
       "stage": "llm-owned pass scheduling",
       "technique": "dependency-aware scheduling of LLM-declared evidence passes",
-      "timestamp": "2026-06-02T10:04:35.162436+00:00"
+      "timestamp": "2026-06-02T12:16:49.927659+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -708,7 +702,7 @@
       "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
       "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
       "input_summary": {
-        "pass_id": "T1"
+        "pass_id": "t1_failed_dataflow_runs"
       },
       "output": {
         "errors": {
@@ -718,11 +712,11 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_dfe6268e928a411298b25a7ae76a3c4e"
+        "run_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T10:04:35.162972+00:00"
+      "timestamp": "2026-06-02T12:16:49.928796+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
@@ -731,67 +725,24 @@
       "effect": "checks syntax/database-semantic validity without rewriting SQL",
       "efficiency_role": "prevents executing uncompilable SQL",
       "input_summary": {
-        "pass_id": "T1",
-        "sql": "SELECT run_id FROM dataflow_runs WHERE status = 'FAILED'"
+        "pass_id": "t1_failed_dataflow_runs",
+        "sql": "SELECT \"DATAFLOWID\", \"DATAFLOWNAME\", \"STATE\" FROM \"dim_connector\" WHERE \"STATE\" != ? LIMIT 50"
       },
       "output": {
-        "error_message": "Catalog Error: Table with name dataflow_runs does not exist!",
-        "error_type": "semantic_error",
-        "pass_id": "T1",
-        "passed": false,
-        "sql": "SELECT run_id FROM dataflow_runs WHERE status = 'FAILED'"
-      },
-      "stage": "llm sql compile gate",
-      "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
-      "timestamp": "2026-06-02T10:04:35.165566+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_sql_repair",
-      "correctness_role": "backend supplies only compile error feedback and no replacement SQL",
-      "duration_ms": 0.0,
-      "effect": "lets the LLM repair its pass SQL after compile feedback",
-      "efficiency_role": "caps repair to one attempt",
-      "input_summary": {
-        "error_type": "semantic_error",
-        "failed_sql": "SELECT run_id FROM dataflow_runs WHERE status = 'FAILED'",
-        "pass_id": "T1"
-      },
-      "output": {
-        "aggregation_instruction": "Filter the returned dataflow runs for those with a failed state and extract their run IDs.",
-        "api_request": {
-          "method": "GET",
-          "params": {
-            "limit": 50
-          },
-          "path": "/data/foundation/flowservice/runs"
-        },
-        "evidence_order": "API_FIRST",
-        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-        "passes": {
+        "params": {
           "items": [
-            {
-              "pass_id": "task_failed_dataflow_runs",
-              "path": "API",
-              "raw_sql_fallback_reason": null,
-              "raw_sql_fallback_task_id": null,
-              "raw_sql_fallback_used": false,
-              "reuse_result_from": null,
-              "semantic_cache_key": null,
-              "subtask": "List dataflow runs to identify failed ones and return their IDs.",
-              "truncated_fields": 9
-            }
+            "SUCCESS"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "provider": "openai",
-        "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
-        "route": "EVIDENCE_PIPELINE",
-        "truncated_fields": 6
+        "pass_id": "t1_failed_dataflow_runs",
+        "passed": true,
+        "sql": "SELECT \"DATAFLOWID\", \"DATAFLOWNAME\", \"STATE\" FROM \"dim_connector\" WHERE \"STATE\" != ? LIMIT 50"
       },
-      "stage": "llm sql repair",
-      "technique": "single LLM-owned SQL pass repair",
-      "timestamp": "2026-06-02T10:05:39.154784+00:00"
+      "stage": "llm sql compile gate",
+      "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
+      "timestamp": "2026-06-02T12:16:50.579730+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -834,7 +785,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "T1"
+            "t1_failed_dataflow_runs"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -855,7 +806,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_dfe6268e928a411298b25a7ae76a3c4e",
+        "evidence_bus_id": "evidence_run_d50e3223cb8b4ecaaa30633ad8570bd9",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -873,7 +824,7 @@
           "items": [
             {
               "items": [
-                "T1"
+                "t1_failed_dataflow_runs"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -889,7 +840,7 @@
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "T1"
+            "t1_failed_dataflow_runs"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -897,7 +848,7 @@
         "pass_results_count": 1,
         "passes_completed": {
           "items": [
-            "T1"
+            "t1_failed_dataflow_runs"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -909,7 +860,7 @@
         },
         "passes_executed": {
           "items": [
-            "T1"
+            "t1_failed_dataflow_runs"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -931,8 +882,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_dfe6268e928a411298b25a7ae76a3c4e",
-        "run_id": "run_dfe6268e928a411298b25a7ae76a3c4e",
+        "result_bundle_id": "bundle_run_d50e3223cb8b4ecaaa30633ad8570bd9",
+        "run_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -942,19 +893,19 @@
         "semantic_alias_materialized_count": 0,
         "semantic_alias_validation_failures": 0,
         "sequential_pass_count": 0,
-        "sql_execution_latency_sec": 0.0,
-        "sql_gate_latency_sec": 0.002,
-        "sql_gate_passed": false,
-        "sql_repair_attempts": 1,
+        "sql_execution_latency_sec": 0.003,
+        "sql_gate_latency_sec": 0.648,
+        "sql_gate_passed": true,
+        "sql_repair_attempts": 0,
         "stage_events": {
           "items": [
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_dfe6268e928a411298b25a7ae76a3c4e:T1",
-              "pass_id": "T1",
+              "global_pass_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9:t1_failed_dataflow_runs",
+              "pass_id": "t1_failed_dataflow_runs",
               "plan_version": 1,
-              "run_id": "run_dfe6268e928a411298b25a7ae76a3c4e",
+              "run_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -962,10 +913,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_dfe6268e928a411298b25a7ae76a3c4e:T1",
-              "pass_id": "T1",
+              "global_pass_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9:t1_failed_dataflow_runs",
+              "pass_id": "t1_failed_dataflow_runs",
               "plan_version": 1,
-              "run_id": "run_dfe6268e928a411298b25a7ae76a3c4e",
+              "run_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -973,10 +924,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_dfe6268e928a411298b25a7ae76a3c4e:T1",
-              "pass_id": "T1",
+              "global_pass_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9:t1_failed_dataflow_runs",
+              "pass_id": "t1_failed_dataflow_runs",
               "plan_version": 1,
-              "run_id": "run_dfe6268e928a411298b25a7ae76a3c4e",
+              "run_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -992,7 +943,7 @@
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-02T10:05:39.156236+00:00"
+      "timestamp": "2026-06-02T12:16:50.585104+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -1008,7 +959,7 @@
         "dry_run_status": false,
         "row_counts": {
           "items": [
-            0
+            16
           ],
           "total_items": 1,
           "truncated_items": false
@@ -1017,13 +968,29 @@
         "sql_results": {
           "items": [
             {
-              "ok": false,
+              "ok": true,
               "result_preview": {
-                "items": [],
-                "total_items": 0,
+                "items": [
+                  {
+                    "DATAFLOWID": "d02b782b-e586-454a-82df-7927d4d27a7c",
+                    "DATAFLOWNAME": "weRetail Events - Apr 2026",
+                    "STATE": "enabled"
+                  },
+                  {
+                    "DATAFLOWID": "ad0f30ac-1d5b-45bb-88db-7ce357b59dc0",
+                    "DATAFLOWNAME": "weRetail CRM - Apr 2026",
+                    "STATE": "enabled"
+                  },
+                  {
+                    "DATAFLOWID": "96dbf952-6ecd-4728-ab92-188a2e77abb0",
+                    "DATAFLOWNAME": "weRetail Events - Mar 2026",
+                    "STATE": "enabled"
+                  }
+                ],
+                "total_items": 3,
                 "truncated_items": false
               },
-              "row_count": 0
+              "row_count": 16
             }
           ],
           "total_items": 1,
@@ -1032,7 +999,7 @@
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-02T10:05:39.262946+00:00"
+      "timestamp": "2026-06-02T12:16:50.783108+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -1055,7 +1022,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-02T10:05:39.263500+00:00"
+      "timestamp": "2026-06-02T12:16:50.784146+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -1070,18 +1037,25 @@
         "evidence": {
           "pass_ids": {
             "items": [
-              "T1"
+              "t1_failed_dataflow_runs"
             ],
             "total_items": 1,
             "truncated_items": false
           },
           "pass_result_count": 1,
-          "run_id": "run_dfe6268e928a411298b25a7ae76a3c4e"
+          "run_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9",
+          "statuses": {
+            "items": [
+              "enabled"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
         }
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-02T10:05:39.264108+00:00"
+      "timestamp": "2026-06-02T12:16:50.786458+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -1099,14 +1073,14 @@
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "T1"
+              "pass_id": "t1_failed_dataflow_runs"
             }
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "pass_results_count": 1,
-        "run_id": "run_dfe6268e928a411298b25a7ae76a3c4e",
+        "run_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9",
         "runtime_passes": {
           "items": [
             {
@@ -1124,14 +1098,14 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_dfe6268e928a411298b25a7ae76a3c4e"
+                "run_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9"
               },
-              "global_pass_id": "run_dfe6268e928a411298b25a7ae76a3c4e:T1",
-              "pass_id": "T1",
+              "global_pass_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9:t1_failed_dataflow_runs",
+              "pass_id": "t1_failed_dataflow_runs",
               "path": "SQL",
               "plan_version": 1,
-              "run_id": "run_dfe6268e928a411298b25a7ae76a3c4e",
-              "status": "COMPILE_ERROR",
+              "run_id": "run_d50e3223cb8b4ecaaa30633ad8570bd9",
+              "status": "SUCCESS",
               "truncated_fields": 6
             }
           ],
@@ -1141,7 +1115,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-02T10:05:39.264665+00:00"
+      "timestamp": "2026-06-02T12:16:50.787775+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -1164,7 +1138,7 @@
         "live_empty_scoped": false,
         "sql": {
           "items": [
-            "SQL_ERROR"
+            "SQL_DIRECT_ANSWER"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -1172,7 +1146,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-02T10:05:39.265721+00:00"
+      "timestamp": "2026-06-02T12:16:50.788867+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -1193,13 +1167,40 @@
         "slots": {
           "answer_family": "failed_dataflow_runs",
           "api_error": false,
+          "counts": {
+            "items": [
+              "16"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
           "discrepancy": false,
-          "dry_run": false
+          "dry_run": false,
+          "entity_ids": {
+            "items": [
+              "d02b782b-e586-454a-82df-7927d4d27a7c",
+              "ad0f30ac-1d5b-45bb-88db-7ce357b59dc0",
+              "96dbf952-6ecd-4728-ab92-188a2e77abb0"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_ids",
+              "counts",
+              "statuses"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "sql_row_count": 16,
+          "truncated_fields": 5
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-02T10:05:39.274563+00:00"
+      "timestamp": "2026-06-02T12:16:50.818205+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer_start",
@@ -1215,7 +1216,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "pre-call heartbeat before LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T10:05:39.275816+00:00"
+      "timestamp": "2026-06-02T12:16:50.819541+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -1228,17 +1229,44 @@
         "slot_counts": {
           "answer_family": "failed_dataflow_runs",
           "api_error": false,
+          "counts": {
+            "items": [
+              "16"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
           "discrepancy": false,
-          "dry_run": false
+          "dry_run": false,
+          "entity_ids": {
+            "items": [
+              "d02b782b-e586-454a-82df-7927d4d27a7c",
+              "ad0f30ac-1d5b-45bb-88db-7ce357b59dc0",
+              "96dbf952-6ecd-4728-ab92-188a2e77abb0"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_ids",
+              "counts",
+              "statuses"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "sql_row_count": 16,
+          "truncated_fields": 5
         }
       },
       "output": {
         "backend_unavailable": false,
-        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "final_answer": "The local snapshot contains 16 dataflow records, but the available evidence only lists three specific dataflows with an enabled state: weRetail Events - Apr 2026 (ID d02b782b-e586-454a-82df-7927d4d27a7c), weRetail CRM - Apr 2026 (ID ad0f30ac-1d5b-45bb-88db-7ce357b59dc0), and weRetail Events - Mar 2026 (ID 96dbf952-6ecd-4728-ab92-188a2e77abb0). No dataflows with a failed or non-success state are explicitly identified in the provided runtime facts.",
         "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "parse_error": false,
         "provider": "openai",
-        "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "raw_preview": "The local snapshot contains 16 dataflow records, but the available evidence only lists three specific dataflows with an enabled state: weRetail Events - Apr 2026 (ID d02b782b-e586-454a-82df-7927d4d27a7c), weRetail CRM - Apr 2026 (ID ad0f30ac-1d5b-45bb-88db-7ce357b59dc0), and weRetail Events - Mar 2026 (ID 96dbf952-6ecd-4728-ab92-188a2e77abb0). No dataflows with a failed or non-success state are explicitly identified in the provided runtime facts.",
         "used_pass_ids": {
           "items": [],
           "total_items": 0,
@@ -1247,7 +1275,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T10:05:43.988806+00:00"
+      "timestamp": "2026-06-02T12:17:04.940548+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -1259,12 +1287,12 @@
         "composer": "LLMFinalAnswerComposer"
       },
       "output": {
-        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "final_answer": "The local snapshot contains 16 dataflow records, but the available evidence only lists three specific dataflows with an enabled state: weRetail Events - Apr 2026 (ID d02b782b-e586-454a-82df-7927d4d27a7c), weRetail CRM - Apr 2026 (ID ad0f30ac-1d5b-45bb-88db-7ce357b59dc0), and weRetail Events - Mar 2026 (ID 96dbf952-6ecd-4728-ab92-188a2e77abb0). No dataflows with a failed or non-success state are explicitly identified in the provided runtime facts.",
         "passed": true
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-02T10:05:43.990508+00:00"
+      "timestamp": "2026-06-02T12:17:04.944967+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -1276,69 +1304,100 @@
         "syntax_gate_passed": true
       },
       "output": {
-        "passed": true,
-        "verifier": {
-          "action": "ACCEPT",
-          "allowed_fact_index": {
-            "allowed_caveats": {
-              "items": [
-                "API_ERROR"
-              ],
-              "total_items": 1,
-              "truncated_items": false
+        "error_message": "Status claim 'success' contradicts available status evidence.",
+        "error_type": "contradiction",
+        "passed": false,
+        "unsupported_claims": {
+          "items": [
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "success",
+                "text": "success",
+                "type": "STATUS",
+                "value": "success"
+              },
+              "message": "Status claim 'success' contradicts available status evidence."
             }
-          },
-          "claim_extractor": {
-            "claim_count": 1,
-            "claims": {
-              "items": [
-                {
-                  "hardness": "SOFT",
-                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                  "type": "SOFT_TEXT"
-                }
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            }
-          },
-          "claim_matcher": {
-            "matches": {
-              "items": [
-                {
-                  "claim": {
-                    "hardness": "SOFT",
-                    "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                    "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                    "type": "SOFT_TEXT"
-                  },
-                  "reason": "soft_text",
-                  "status": "SUPPORTED"
-                }
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            }
-          },
-          "ok": true,
-          "supported_claims": {
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "answer gate",
+      "technique": "runtime-evidence semantic grounding gate",
+      "timestamp": "2026-06-02T12:17:04.953019+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_repair_start",
+      "correctness_role": "diagnostic only; backend still does not repair the answer",
+      "duration_ms": 0.0,
+      "effect": "records the exact boundary before the potentially slow final-answer repair LLM call",
+      "efficiency_role": "enables smoke timeout localization without extra SQL/API calls",
+      "input_summary": {
+        "failed_semantic": true,
+        "failed_syntax": false
+      },
+      "output": {
+        "current_stage": "llm_final_answer_repair_call_start"
+      },
+      "stage": "llm-owned answer repair",
+      "technique": "pre-call heartbeat before final answer repair",
+      "timestamp": "2026-06-02T12:17:04.954626+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_repair",
+      "correctness_role": "preserves LLM ownership while enforcing evidence boundaries",
+      "duration_ms": 0.0,
+      "effect": "returns gate errors to the LLM once; backend does not repair the answer itself",
+      "efficiency_role": "caps answer repair to one LLM call",
+      "input_summary": {
+        "failed_semantic": true,
+        "failed_syntax": false
+      },
+      "output": {
+        "candidate": {
+          "backend_unavailable": false,
+          "final_answer": "The local snapshot contains 16 dataflow records, but the available evidence only lists three specific dataflows with an enabled state: weRetail Events - Apr 2026 (ID d02b782b-e586-454a-82df-7927d4d27a7c), weRetail CRM - Apr 2026 (ID ad0f30ac-1d5b-45bb-88db-7ce357b59dc0), and weRetail Events - Mar 2026 (ID 96dbf952-6ecd-4728-ab92-188a2e77abb0). No dataflows with a failed or non-success state are explicitly identified in the provided runtime facts.",
+          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+          "parse_error": false,
+          "provider": "openai",
+          "raw_preview": "The local snapshot contains 16 dataflow records, but the available evidence only lists three specific dataflows with an enabled state: weRetail Events - Apr 2026 (ID d02b782b-e586-454a-82df-7927d4d27a7c), weRetail CRM - Apr 2026 (ID ad0f30ac-1d5b-45bb-88db-7ce357b59dc0), and weRetail Events - Mar 2026 (ID 96dbf952-6ecd-4728-ab92-188a2e77abb0). No dataflows with a failed or non-success state are explicitly identified in the provided runtime facts.",
+          "used_pass_ids": {
+            "items": [],
+            "total_items": 0,
+            "truncated_items": false
+          }
+        },
+        "semantic_gate": {
+          "error_message": "Status claim 'success' contradicts available status evidence.",
+          "error_type": "contradiction",
+          "passed": false,
+          "unsupported_claims": {
             "items": [
               {
-                "hardness": "SOFT",
-                "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                "type": "SOFT_TEXT"
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "success",
+                  "text": "success",
+                  "type": "STATUS",
+                  "value": "success"
+                },
+                "message": "Status claim 'success' contradicts available status evidence."
               }
             ],
             "total_items": 1,
             "truncated_items": false
           }
+        },
+        "syntax_gate": {
+          "final_answer": "The local snapshot contains 16 dataflow records, but the available evidence only lists three specific dataflows with an enabled state: weRetail Events - Apr 2026 (ID d02b782b-e586-454a-82df-7927d4d27a7c), weRetail CRM - Apr 2026 (ID ad0f30ac-1d5b-45bb-88db-7ce357b59dc0), and weRetail Events - Mar 2026 (ID 96dbf952-6ecd-4728-ab92-188a2e77abb0). No dataflows with a failed or non-success state are explicitly identified in the provided runtime facts.",
+          "passed": true
         }
       },
-      "stage": "answer gate",
-      "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-02T10:05:43.996971+00:00"
+      "stage": "llm-owned answer repair",
+      "technique": "single LLM-owned final answer repair",
+      "timestamp": "2026-06-02T12:17:18.944535+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -1351,14 +1410,14 @@
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
-        "answer_repair_attempts": 0,
-        "answer_semantic_gate_passed": true,
+        "answer_repair_attempts": 1,
+        "answer_semantic_gate_passed": false,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
-        "final_answer_repair_latency_sec": 0.0,
-        "final_answer_supported_by_evidence": true,
-        "final_composer_latency_sec": 4.711,
-        "final_gate_latency_sec": 0.006,
+        "final_answer_repair_latency_sec": 13.983,
+        "final_answer_supported_by_evidence": false,
+        "final_composer_latency_sec": 14.118,
+        "final_gate_latency_sec": 0.011,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 2,
@@ -1370,7 +1429,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-02T10:05:43.997924+00:00"
+      "timestamp": "2026-06-02T12:17:18.950047+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -1379,15 +1438,15 @@
       "effect": "returns the LLM-composed answer when gates pass, otherwise a safe evidence-state fallback",
       "efficiency_role": "no additional SQL/API calls",
       "input_summary": {
-        "answer_semantic_gate_passed": true
+        "answer_semantic_gate_passed": false
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
-        "answer_repair_attempts": 0,
-        "answer_semantic_gate_passed": true,
+        "answer_repair_attempts": 1,
+        "answer_semantic_gate_passed": false,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
-        "final_answer_supported_by_evidence": true,
+        "final_answer_supported_by_evidence": false,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 3,
@@ -1399,86 +1458,48 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-02T10:05:43.998793+00:00"
+      "timestamp": "2026-06-02T12:17:18.951493+00:00"
     }
   ],
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 2183,
+  "estimated_tokens": 2377,
   "execution_time": 0.0,
-  "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+  "final_answer": "Local snapshot evidence shows t1_failed_dataflow_runs/SQL/LOCAL_SNAPSHOT: count: 16; examples include weRetail Events - Apr 2026; weRetail CRM - Apr 2026; weRetail Events - Mar 2026; id: d02b782b-e586-454a-82df-7927d4d27a7c; id: ad0f30ac-1d5b-45bb-88db-7ce357b59dc0; id: 96dbf952-6ecd-4728-ab92-188a2e77abb0; status: enabled.",
   "original_query": "Show me the IDs of failed dataflow runs",
   "planning_time": 0.0,
   "preprocessing_time": 0.0,
   "query_id": "example_004",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 4.879817999899387,
+  "runtime": 28.41874508280307,
   "sql_call_count": 1,
   "steps": [
     {
-      "estimated_tokens": 2061,
+      "estimated_tokens": 1718,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_004/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 2755
+      "prompt_tokens": 2438
     },
     {
-      "aggregation_instruction": "Return the list of run_ids from T1",
+      "aggregation_instruction": "Return the DATAFLOWID and DATAFLOWNAME for all records where STATE is not SUCCESS.",
       "api_request": null,
       "backend_unavailable": false,
       "diagnostics": {
-        "active_task_count": 1,
-        "api_candidate_cards": 0,
-        "api_candidate_success_count": 0,
         "api_request_gate_failures": 0,
-        "atomic_candidate_slots_used": true,
-        "atomic_checklist_used": true,
-        "atomic_protocol_fallback_used": true,
-        "atomic_weak_protocol_used": true,
-        "backend_formal_compilation_used": false,
+        "atomic_protocol_fallback_used": false,
+        "backend_formal_compilation_used": true,
         "backend_generated_sql": false,
-        "backend_route_inference_used": false,
         "backend_semantic_decomposition_used": false,
         "backend_semantic_planning_used": false,
-        "backend_semantic_routing_used": false,
         "backend_sql_api_generation_used": false,
-        "candidate_card_latency_ms": 2684,
-        "candidate_card_max_tokens": 220,
-        "candidate_card_success": 1,
-        "candidate_repair_attempts": 0,
-        "candidate_repair_max_tokens": 220,
-        "checklist_bits": {
-          "COUNT": 0,
-          "DATE": 0,
-          "LIST": 1,
-          "LIVE_CURRENT": 0,
-          "LOCAL_SNAPSHOT": 0,
-          "MIXED_CONCEPT_DATA": 0,
-          "PURE_CONCEPT": 0,
-          "RECORDS": 1,
-          "SHOW_ITEMS": 1,
-          "STATUS": 1
-        },
-        "checklist_latency_ms": 3519,
-        "checklist_parse_success": true,
-        "checklist_repair_attempted": false,
-        "checklist_route": "EVIDENCE_PIPELINE",
         "compiled_alias_count": 0,
         "compiled_api_count": 0,
-        "compiled_sql_count": 0,
+        "compiled_sql_count": 1,
         "compiler_latency_ms": 0,
-        "dependency_edges": [],
-        "direct_route_challenge_needs_evidence": null,
-        "direct_route_challenge_repair_attempted": false,
-        "direct_route_challenge_used": false,
-        "evidence_planner_called": true,
-        "final_answer_max_tokens": 500,
-        "fixed_task_slots_used": true,
-        "llm_route_gate_used": true,
-        "pass_candidate_cards": 1,
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
-        "planner_parse_source": "atomic_protocol_fallback",
-        "planner_provider_latency_ms": 97209,
+        "planner_parse_source": "sdk_toolcall_semantic_ir",
+        "planner_provider_latency_ms": 45094,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -1499,57 +1520,82 @@
         "raw_sql_fallback_success": false,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
-        "route_card_max_tokens": 80,
-        "route_card_repair_attempted": false,
-        "route_card_route": "EVIDENCE",
-        "route_card_success": true,
-        "route_gate_repair_attempted": false,
-        "route_gate_route": "EVIDENCE_PIPELINE",
-        "route_gate_success": true,
-        "sdk_toolcall_semantic_ir_used": false,
+        "sdk_toolcall_semantic_ir_used": true,
         "semantic_alias_count": 0,
         "semantic_alias_error_type": null,
         "semantic_alias_repair_attempted": false,
-        "semantic_alias_validation_passed": null,
-        "semantic_alias_validation_used": false,
-        "semantic_ir_fallback_reason": "Connection error.",
-        "semantic_ir_provider_latency_ms": 85585,
+        "semantic_alias_validation_passed": true,
+        "semantic_alias_validation_used": true,
+        "semantic_ir_plan_preview": {
+          "aggregation_instruction": "Return the DATAFLOWID and DATAFLOWNAME for all records where STATE is not SUCCESS.",
+          "route": "EVIDENCE",
+          "tasks": {
+            "items": [
+              {
+                "description": "List dataflow runs with non-success states from the local snapshot to identify failed dataflows.",
+                "kind": "LOCAL_QUERY",
+                "local_query": {
+                  "count": false,
+                  "fields": {
+                    "items": [
+                      "DATAFLOWID",
+                      "DATAFLOWNAME",
+                      "STATE"
+                    ],
+                    "total_items": 3,
+                    "truncated_items": false
+                  },
+                  "filters": {
+                    "items": [
+                      {
+                        "field": "STATE",
+                        "op": "!=",
+                        "value": "SUCCESS"
+                      }
+                    ],
+                    "total_items": 1,
+                    "truncated_items": false
+                  },
+                  "limit": 50,
+                  "table": "dim_connector"
+                },
+                "operation": "LIST",
+                "reuse_result_from": null,
+                "semantic_cache_key": null,
+                "source": "LOCAL_SNAPSHOT",
+                "task_id": "t1_failed_dataflow_runs",
+                "truncated_fields": 7
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        },
+        "semantic_ir_provider_latency_ms": 45092,
         "semantic_ir_repair_attempted": false,
         "semantic_ir_repair_latency_ms": 0,
         "semantic_ir_repair_success": false,
         "semantic_ir_support_check_latency_ms": 0,
-        "semantic_ir_support_checked": false,
+        "semantic_ir_support_checked": true,
+        "semantic_ir_support_recommended_action": "COMPILE",
         "semantic_ir_support_repair_attempted": false,
         "semantic_ir_support_repair_error_message": null,
         "semantic_ir_support_repair_error_type": null,
         "semantic_ir_support_repair_latency_ms": 0,
         "semantic_ir_support_repair_success": false,
-        "semantic_ir_supported": null,
-        "semantic_ir_toolcall_error": "Connection error.",
-        "semantic_ir_toolcall_supported": null,
+        "semantic_ir_supported": true,
+        "semantic_ir_task_count": 1,
+        "semantic_ir_toolcall_supported": true,
         "semantic_ir_unsupported_features": [],
+        "semantic_ir_unsupported_operation": null,
         "semantic_ir_unsupported_reason": null,
+        "semantic_ir_unsupported_task_id": null,
         "semantic_ir_validation_error_message": null,
         "semantic_ir_validation_error_type": null,
         "semantic_ir_validation_latency_ms": 0,
-        "semantic_ir_validation_passed": false,
-        "slot_count": 5,
-        "sql_candidate_cards": 1,
-        "sql_candidate_success_count": 1,
+        "semantic_ir_validation_passed": true,
         "sql_compile_gate_failures": 0,
-        "task_count": 1,
-        "task_ledger_latency_ms": 5417,
-        "task_ledger_max_tokens": 300,
-        "task_ledger_repair_attempted": false,
-        "task_ledger_success": true,
-        "task_paths": [
-          "SQL"
-        ],
-        "task_slot_repair_attempted": false,
-        "v2_semantic_ir_used": true,
-        "weak_model_stable_protocol_used": true,
-        "weak_protocol_route_card_used": true,
-        "weak_protocol_task_ledger_used": true
+        "v2_semantic_ir_used": true
       },
       "direct_answer": null,
       "evidence_order": "SQL_FIRST",
@@ -1562,74 +1608,112 @@
           "can_run_parallel": true,
           "depends_on": [],
           "evidence_order": "SQL_FIRST",
-          "expected_result": "SELECT run_id FROM dataflow_runs WHERE status = 'FAILED'",
+          "expected_result": "List dataflow runs with non-success states from the local snapshot to identify failed dataflows.",
           "fallback": false,
           "optional": false,
-          "pass_id": "T1",
+          "pass_id": "t1_failed_dataflow_runs",
           "path": "SQL",
           "raw_sql_fallback_reason": null,
           "raw_sql_fallback_task_id": null,
           "raw_sql_fallback_used": false,
-          "result_contract": null,
+          "result_contract": {
+            "entity": "dataflow",
+            "fields": [
+              "DATAFLOWID",
+              "DATAFLOWNAME",
+              "STATE"
+            ],
+            "filters": [
+              {
+                "field": "STATE",
+                "op": "!=",
+                "value": "SUCCESS"
+              }
+            ],
+            "freshness": "same_run",
+            "object": "dataflow_runs",
+            "operation": "LIST",
+            "scope": "local",
+            "source": "LOCAL_SNAPSHOT"
+          },
           "reuse_result_from": null,
           "semantic_cache_key": null,
           "sql": {
-            "params": [],
-            "query": "SELECT run_id FROM dataflow_runs WHERE status = 'FAILED'"
+            "params": [
+              "SUCCESS"
+            ],
+            "query": "SELECT \"DATAFLOWID\", \"DATAFLOWNAME\", \"STATE\" FROM \"dim_connector\" WHERE \"STATE\" != ? LIMIT 50"
           },
-          "subtask": "SELECT run_id FROM dataflow_runs WHERE status = 'FAILED'"
+          "subtask": "List dataflow runs with non-success states from the local snapshot to identify failed dataflows."
         }
       ],
       "provider": "openai",
       "raw_preview": {
-        "atomic": {
-          "atomic_checklist": "RECORDS=1\nLIST=1\nCOUNT=0\nSTATUS=1\nDATE=0\nLOCAL_SNAPSHOT=0\nLIVE_CURRENT=0\nSHOW_ITEMS=1\nMIXED_CONCEPT_DATA=0\nPURE_CONCEPT=0\nDIRECT_ANSWER=",
-          "atomic_sql_candidate_T1": "SQL_QUERY=SELECT run_id FROM dataflow_runs WHERE status = 'FAILED'\nPARAMS_JSON=[]",
-          "fixed_task_slots": "T1_PATH=SQL\nT1_DEPS=[]\nT1_DESC=SELECT run_id FROM dataflow_runs WHERE status = 'FAILED'\nT2_PATH=NONE\nT2_DEPS=[]\nT2_DESC=\nT3_PATH=NONE\nT3_DEPS=[]\nT3_DESC=\nT4_PATH=NONE\nT4_DEPS=[]\nT4_DESC=\nT5_PATH=NONE\nT5_DEPS=[]\nT5_DESC=\nAGGREGATE=Return the list of run_ids from T1"
-        },
-        "semantic_ir": {
-          "semantic_ir_initial": {
-            "backend_type": "openai_sdk",
-            "error": "Connection error.",
-            "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-            "ok": false,
-            "provider": "openai",
-            "sdk_path_used": true,
-            "skipped": false,
-            "transport": "openai_sdk",
-            "truncated_fields": 9
-          }
+        "semantic_ir_initial": {
+          "base_url": "[REDACTED]",
+          "error": null,
+          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+          "ok": true,
+          "provider": "openai",
+          "sdk_path_used": true,
+          "skipped": false,
+          "transport": "openai_sdk",
+          "truncated_fields": 11
         }
       },
-      "reason": "Atomic checklist selected evidence; fixed task slots supplied LLM-owned tasks.",
+      "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
       "route": "EVIDENCE_PIPELINE",
       "sql": {
-        "params": [],
-        "query": "SELECT run_id FROM dataflow_runs WHERE status = 'FAILED'"
+        "params": [
+          "SUCCESS"
+        ],
+        "query": "SELECT \"DATAFLOWID\", \"DATAFLOWNAME\", \"STATE\" FROM \"dim_connector\" WHERE \"STATE\" != ? LIMIT 50"
       }
     },
     {
       "kind": "sql_call",
       "result": {
-        "compile_gate": {
-          "error_message": "Catalog Error: Table with name dataflow_runs does not exist!",
-          "error_type": "semantic_error",
-          "passed": false,
-          "sql": "SELECT run_id FROM dataflow_runs WHERE status = 'FAILED'"
-        },
-        "error": "Catalog Error: Table with name dataflow_runs does not exist!",
+        "error": null,
         "limited": false,
-        "ok": false,
-        "row_count": 0
+        "ok": true,
+        "params": {
+          "items": [
+            "SUCCESS"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "row_count": 16,
+        "rows": {
+          "items": [
+            {
+              "DATAFLOWID": "d02b782b-e586-454a-82df-7927d4d27a7c",
+              "DATAFLOWNAME": "weRetail Events - Apr 2026",
+              "STATE": "enabled"
+            },
+            {
+              "DATAFLOWID": "ad0f30ac-1d5b-45bb-88db-7ce357b59dc0",
+              "DATAFLOWNAME": "weRetail CRM - Apr 2026",
+              "STATE": "enabled"
+            },
+            {
+              "DATAFLOWID": "96dbf952-6ecd-4728-ab92-188a2e77abb0",
+              "DATAFLOWNAME": "weRetail Events - Mar 2026",
+              "STATE": "enabled"
+            }
+          ],
+          "total_items": 16,
+          "truncated_items": true
+        }
       },
-      "sql": "SELECT run_id FROM dataflow_runs WHERE status = 'FAILED'",
+      "sql": "SELECT \"DATAFLOWID\", \"DATAFLOWNAME\", \"STATE\" FROM \"dim_connector\" WHERE \"STATE\" != ? LIMIT 50",
       "validation": {
-        "errors": [
-          "Catalog Error: Table with name dataflow_runs does not exist!"
-        ],
-        "ok": false,
+        "errors": [],
+        "ok": true,
         "repaired": false,
-        "warnings": []
+        "warnings": [
+          "LLM SQL pass passed compile gate."
+        ]
       }
     },
     {
@@ -1648,62 +1732,163 @@
       "caveats_included": [],
       "claimed_facts": [],
       "error_message": null,
-      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "final_answer": "The local snapshot contains 16 dataflow records, but the available evidence only lists three specific dataflows with an enabled state: weRetail Events - Apr 2026 (ID d02b782b-e586-454a-82df-7927d4d27a7c), weRetail CRM - Apr 2026 (ID ad0f30ac-1d5b-45bb-88db-7ce357b59dc0), and weRetail Events - Mar 2026 (ID 96dbf952-6ecd-4728-ab92-188a2e77abb0). No dataflows with a failed or non-success state are explicitly identified in the provided runtime facts.",
       "kind": "llm_final_answer_composer",
       "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
       "parse_error": false,
       "provider": "openai",
-      "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "raw_preview": "The local snapshot contains 16 dataflow records, but the available evidence only lists three specific dataflows with an enabled state: weRetail Events - Apr 2026 (ID d02b782b-e586-454a-82df-7927d4d27a7c), weRetail CRM - Apr 2026 (ID ad0f30ac-1d5b-45bb-88db-7ce357b59dc0), and weRetail Events - Mar 2026 (ID 96dbf952-6ecd-4728-ab92-188a2e77abb0). No dataflows with a failed or non-success state are explicitly identified in the provided runtime facts.",
       "unanswered_subtasks": [],
       "used_pass_ids": []
     },
     {
       "answer_composer_used": "LLMFinalAnswerComposer",
-      "answer_repair_attempts": 0,
-      "answer_semantic_gate_passed": true,
+      "answer_repair_attempts": 1,
+      "answer_semantic_gate_passed": false,
       "answer_syntax_gate_passed": true,
       "deterministic_answer_template_used": false,
-      "final_answer_repair_latency_sec": 0.0,
-      "final_answer_supported_by_evidence": true,
-      "final_composer_latency_sec": 4.711,
-      "final_gate_latency_sec": 0.006,
+      "final_answer_repair_latency_sec": 13.983,
+      "final_answer_supported_by_evidence": false,
+      "final_composer_latency_sec": 14.118,
+      "final_gate_latency_sec": 0.011,
       "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
       "llm_owned_final_answer": true,
       "semantic_gate": {
-        "error_message": null,
-        "error_type": null,
+        "error_message": "Final answer contains a hard claim not supported by runtime evidence.",
+        "error_type": "unsupported_claim",
         "missing_required_fields": [],
-        "passed": true,
+        "passed": false,
         "scope_errors": [],
-        "unsupported_claims": [],
+        "unsupported_claims": [
+          {
+            "hardness": "HARD",
+            "span": "2026",
+            "text": "2026",
+            "type": "COUNT",
+            "value": "2026"
+          },
+          {
+            "hardness": "HARD",
+            "span": "2026",
+            "text": "2026",
+            "type": "COUNT",
+            "value": "2026"
+          },
+          {
+            "hardness": "HARD",
+            "span": "2026",
+            "text": "2026",
+            "type": "COUNT",
+            "value": "2026"
+          }
+        ],
         "verifier": {
-          "action": "ACCEPT",
+          "action": "FALLBACK_DETERMINISTIC",
           "allowed_fact_index": {
-            "allowed_caveats": [
-              "API_ERROR"
-            ],
+            "allowed_caveats": [],
             "api_error_scopes": [],
-            "counts": [],
+            "counts": [
+              "16"
+            ],
             "dates": [],
-            "evidence_strings": [],
-            "ids": [],
+            "evidence_strings": [
+              "weretail events - apr 2026",
+              "f115f216-cfcd-4601-8824-424bcc3b2a3d",
+              "70bad5c9-87b3-4c85-a0eb-8f2e830eb439",
+              "dataflow for actions computed data via aws s3 - 2026",
+              "d02b782b-e586-454a-82df-7927d4d27a7c",
+              "96dbf952-6ecd-4728-ab92-188a2e77abb0",
+              "d3f36c87-88dc-4e94-999e-242928b76d9b",
+              "ad0f30ac-1d5b-45bb-88db-7ce357b59dc0",
+              "89dd2400-2ac0-4660-a0c2-dcb9e15a66b6",
+              "weretail events - feb 2026",
+              "weretail crm - jan 2026",
+              "f971dedc-8837-4234-94c9-8074f372636e",
+              "weretail crm - feb 2026",
+              "920a46e3-003b-436f-81df-4a4e2aa398df",
+              "weretail events - mar 2026",
+              "weretail crm - apr 2026",
+              "weretail crm - mar 2026",
+              "query_status_filter:failed",
+              "5a161a32-2af2-455a-80b8-64e3d4316dc7",
+              "enabled",
+              "weretail crm - dec 2025",
+              "weretail events - dec 2025"
+            ],
+            "ids": [
+              "d02b782b-e586-454a-82df-7927d4d27a7c",
+              "ad0f30ac-1d5b-45bb-88db-7ce357b59dc0",
+              "96dbf952-6ecd-4728-ab92-188a2e77abb0",
+              "920a46e3-003b-436f-81df-4a4e2aa398df",
+              "f971dedc-8837-4234-94c9-8074f372636e",
+              "f115f216-cfcd-4601-8824-424bcc3b2a3d",
+              "5a161a32-2af2-455a-80b8-64e3d4316dc7",
+              "70bad5c9-87b3-4c85-a0eb-8f2e830eb439",
+              "d3f36c87-88dc-4e94-999e-242928b76d9b",
+              "89dd2400-2ac0-4660-a0c2-dcb9e15a66b6"
+            ],
             "live_empty_scopes": [],
             "missing_roles": [],
             "names": [],
             "relationships": [],
-            "statuses": []
+            "statuses": [
+              "enabled",
+              "failed"
+            ]
           },
           "ambiguous_claims": [],
           "claim_extractor": {
-            "claim_count": 1,
+            "claim_count": 7,
             "claims": [
               {
-                "hardness": "SOFT",
-                "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                "type": "SOFT_TEXT",
-                "value": ""
+                "hardness": "HARD",
+                "span": "d02b782b-e586-454a-82df-7927d4d27a7c",
+                "text": "d02b782b-e586-454a-82df-7927d4d27a7c",
+                "type": "ID",
+                "value": "d02b782b-e586-454a-82df-7927d4d27a7c"
+              },
+              {
+                "hardness": "HARD",
+                "span": "ad0f30ac-1d5b-45bb-88db-7ce357b59dc0",
+                "text": "ad0f30ac-1d5b-45bb-88db-7ce357b59dc0",
+                "type": "ID",
+                "value": "ad0f30ac-1d5b-45bb-88db-7ce357b59dc0"
+              },
+              {
+                "hardness": "HARD",
+                "span": "96dbf952-6ecd-4728-ab92-188a2e77abb0",
+                "text": "96dbf952-6ecd-4728-ab92-188a2e77abb0",
+                "type": "ID",
+                "value": "96dbf952-6ecd-4728-ab92-188a2e77abb0"
+              },
+              {
+                "hardness": "HARD",
+                "span": "16",
+                "text": "16",
+                "type": "COUNT",
+                "value": "16"
+              },
+              {
+                "hardness": "HARD",
+                "span": "2026",
+                "text": "2026",
+                "type": "COUNT",
+                "value": "2026"
+              },
+              {
+                "hardness": "HARD",
+                "span": "2026",
+                "text": "2026",
+                "type": "COUNT",
+                "value": "2026"
+              },
+              {
+                "hardness": "HARD",
+                "span": "2026",
+                "text": "2026",
+                "type": "COUNT",
+                "value": "2026"
               }
             ]
           },
@@ -1711,36 +1896,145 @@
             "matches": [
               {
                 "claim": {
-                  "hardness": "SOFT",
-                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                  "type": "SOFT_TEXT",
-                  "value": ""
+                  "hardness": "HARD",
+                  "span": "d02b782b-e586-454a-82df-7927d4d27a7c",
+                  "text": "d02b782b-e586-454a-82df-7927d4d27a7c",
+                  "type": "ID",
+                  "value": "d02b782b-e586-454a-82df-7927d4d27a7c"
                 },
-                "reason": "soft_text",
+                "reason": "id",
                 "status": "SUPPORTED"
+              },
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "ad0f30ac-1d5b-45bb-88db-7ce357b59dc0",
+                  "text": "ad0f30ac-1d5b-45bb-88db-7ce357b59dc0",
+                  "type": "ID",
+                  "value": "ad0f30ac-1d5b-45bb-88db-7ce357b59dc0"
+                },
+                "reason": "id",
+                "status": "SUPPORTED"
+              },
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "96dbf952-6ecd-4728-ab92-188a2e77abb0",
+                  "text": "96dbf952-6ecd-4728-ab92-188a2e77abb0",
+                  "type": "ID",
+                  "value": "96dbf952-6ecd-4728-ab92-188a2e77abb0"
+                },
+                "reason": "id",
+                "status": "SUPPORTED"
+              },
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "16",
+                  "text": "16",
+                  "type": "COUNT",
+                  "value": "16"
+                },
+                "reason": "count",
+                "status": "SUPPORTED"
+              },
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "2026",
+                  "text": "2026",
+                  "type": "COUNT",
+                  "value": "2026"
+                },
+                "reason": "count_not_in_allowed_facts",
+                "status": "UNSUPPORTED"
+              },
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "2026",
+                  "text": "2026",
+                  "type": "COUNT",
+                  "value": "2026"
+                },
+                "reason": "count_not_in_allowed_facts",
+                "status": "UNSUPPORTED"
+              },
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "2026",
+                  "text": "2026",
+                  "type": "COUNT",
+                  "value": "2026"
+                },
+                "reason": "count_not_in_allowed_facts",
+                "status": "UNSUPPORTED"
               }
             ]
           },
           "needs_caveat_claims": [],
-          "ok": true,
+          "ok": false,
           "over_specified_claims": [],
           "supported_claims": [
             {
-              "hardness": "SOFT",
-              "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
-              "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
-              "type": "SOFT_TEXT",
-              "value": ""
+              "hardness": "HARD",
+              "span": "d02b782b-e586-454a-82df-7927d4d27a7c",
+              "text": "d02b782b-e586-454a-82df-7927d4d27a7c",
+              "type": "ID",
+              "value": "d02b782b-e586-454a-82df-7927d4d27a7c"
+            },
+            {
+              "hardness": "HARD",
+              "span": "ad0f30ac-1d5b-45bb-88db-7ce357b59dc0",
+              "text": "ad0f30ac-1d5b-45bb-88db-7ce357b59dc0",
+              "type": "ID",
+              "value": "ad0f30ac-1d5b-45bb-88db-7ce357b59dc0"
+            },
+            {
+              "hardness": "HARD",
+              "span": "96dbf952-6ecd-4728-ab92-188a2e77abb0",
+              "text": "96dbf952-6ecd-4728-ab92-188a2e77abb0",
+              "type": "ID",
+              "value": "96dbf952-6ecd-4728-ab92-188a2e77abb0"
+            },
+            {
+              "hardness": "HARD",
+              "span": "16",
+              "text": "16",
+              "type": "COUNT",
+              "value": "16"
             }
           ],
-          "unsupported_claims": []
+          "unsupported_claims": [
+            {
+              "hardness": "HARD",
+              "span": "2026",
+              "text": "2026",
+              "type": "COUNT",
+              "value": "2026"
+            },
+            {
+              "hardness": "HARD",
+              "span": "2026",
+              "text": "2026",
+              "type": "COUNT",
+              "value": "2026"
+            },
+            {
+              "hardness": "HARD",
+              "span": "2026",
+              "text": "2026",
+              "type": "COUNT",
+              "value": "2026"
+            }
+          ]
         }
       },
       "syntax_gate": {
         "error_message": null,
         "error_type": null,
-        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "final_answer": "Local snapshot evidence shows t1_failed_dataflow_runs/SQL/LOCAL_SNAPSHOT: count: 16; examples include weRetail Events - Apr 2026; weRetail CRM - Apr 2026; weRetail Events - Mar 2026; id: d02b782b-e586-454a-82df-7927d4d27a7c; id: ad0f30ac-1d5b-45bb-88db-7ce357b59dc0; id: 96dbf952-6ecd-4728-ab92-188a2e77abb0; status: enabled.",
         "passed": true
       },
       "used_pass_ids": []
@@ -1748,7 +2042,7 @@
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 4.735609167255461
+    "answer_time": 28.17022233409807
   },
   "tool_call_count": 1
 }

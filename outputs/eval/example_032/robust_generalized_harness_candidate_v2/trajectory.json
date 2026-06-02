@@ -1,6 +1,6 @@
 {
-  "answer_time": 4.156176915857941,
-  "api_call_count": 0,
+  "answer_time": 5.234293125104159,
+  "api_call_count": 2,
   "checkpoints": [
     {
       "checkpoint_id": "checkpoint_01_raw_query",
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-02T10:29:20.580246+00:00"
+      "timestamp": "2026-06-02T12:39:18.773598+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-02T10:29:20.580737+00:00"
+      "timestamp": "2026-06-02T12:39:18.774258+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,7 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-02T10:29:20.581187+00:00"
+      "timestamp": "2026-06-02T12:39:18.774858+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner_start",
@@ -86,7 +86,7 @@
       },
       "stage": "llm-owned planning",
       "technique": "pre-call heartbeat before Unified LLM Planner",
-      "timestamp": "2026-06-02T10:29:20.587929+00:00"
+      "timestamp": "2026-06-02T12:39:18.782765+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -112,7 +112,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "semantic_ir_validation_error",
-        "planner_provider_latency_ms": 56210,
+        "planner_provider_latency_ms": 56187,
         "planner_repair_attempted": false,
         "planner_success": false,
         "planner_timeout": false,
@@ -139,9 +139,9 @@
         "semantic_alias_repair_attempted": false,
         "semantic_alias_validation_passed": null,
         "semantic_alias_validation_used": false,
-        "semantic_ir_provider_latency_ms": 56208,
+        "semantic_ir_provider_latency_ms": 56186,
         "semantic_ir_repair_attempted": true,
-        "semantic_ir_repair_latency_ms": 25941,
+        "semantic_ir_repair_latency_ms": 27031,
         "semantic_ir_repair_success": false,
         "semantic_ir_support_check_latency_ms": 0,
         "semantic_ir_support_checked": false,
@@ -198,7 +198,7 @@
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-02T10:30:16.800000+00:00"
+      "timestamp": "2026-06-02T12:40:14.972545+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
@@ -237,7 +237,7 @@
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-02T10:30:16.801983+00:00"
+      "timestamp": "2026-06-02T12:40:14.974658+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_repair",
@@ -252,46 +252,53 @@
       "output": {
         "pass_graph_gate_error_type": "empty_evidence_plan",
         "pass_graph_repair_attempted": true,
-        "pass_graph_repair_success": false,
+        "pass_graph_repair_success": true,
         "repair_plan": {
-          "backend_unavailable": false,
-          "evidence_order": "SQL_FIRST",
-          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-          "parse_error": true,
-          "provider": "openai",
-          "raw_preview": {
-            "semantic_ir_initial": {
-              "base_url": "[REDACTED]",
-              "error": null,
-              "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-              "ok": true,
-              "provider": "openai",
-              "sdk_path_used": true,
-              "skipped": false,
-              "transport": "openai_sdk",
-              "truncated_fields": 1
-            },
-            "semantic_ir_repair": {
-              "base_url": "[REDACTED]",
-              "error": null,
-              "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-              "ok": true,
-              "provider": "openai",
-              "sdk_path_used": true,
-              "skipped": false,
-              "transport": "openai_sdk",
-              "truncated_fields": 1
-            }
+          "aggregation_instruction": "Retrieve the batch metadata first to confirm the batch exists. Then, use the batch ID to fetch the list of failed files from the export_batch_failed API endpoint. Present the list of failed files to the user.",
+          "api_request": {
+            "method": "GET",
+            "path": "/data/foundation/catalog/batches/01KP6MNQ3X71RP6MNH6FHWGHVE"
           },
-          "reason": "semantic_ir_validation_error: Unknown table: catalog_batches",
+          "evidence_order": "MULTI_PASS",
+          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+          "passes": {
+            "items": [
+              {
+                "pass_id": "task_batch_check",
+                "path": "API",
+                "raw_sql_fallback_reason": null,
+                "raw_sql_fallback_task_id": null,
+                "raw_sql_fallback_used": false,
+                "reuse_result_from": null,
+                "semantic_cache_key": null,
+                "subtask": "Retrieve batch metadata for batch 01KP6MNQ3X71RP6MNH6FHWGHVE to confirm its existence and status before fetching failed files.",
+                "truncated_fields": 9
+              },
+              {
+                "pass_id": "task_failed_files_list",
+                "path": "API",
+                "raw_sql_fallback_reason": null,
+                "raw_sql_fallback_task_id": null,
+                "raw_sql_fallback_used": false,
+                "reuse_result_from": null,
+                "semantic_cache_key": null,
+                "subtask": "Fetch the list of failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
+                "truncated_fields": 9
+              }
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "provider": "openai",
+          "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
           "route": "EVIDENCE_PIPELINE",
           "truncated_fields": 6
         },
-        "repaired_pass_count": 0
+        "repaired_pass_count": 2
       },
       "stage": "llm-owned pass graph repair",
       "technique": "single LLM-owned pass graph repair",
-      "timestamp": "2026-06-02T10:31:18.630106+00:00"
+      "timestamp": "2026-06-02T12:41:18.862140+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate_repair",
@@ -300,37 +307,65 @@
       "effect": "executes repaired plan only if the LLM supplied a valid graph",
       "efficiency_role": "stops after one graph repair attempt",
       "input_summary": {
-        "evidence_order": "SQL_FIRST",
+        "evidence_order": "MULTI_PASS",
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "task_batch_check",
+            "task_failed_files_list"
+          ],
+          "total_items": 2,
           "truncated_items": false
         }
       },
       "output": {
         "dependency_edges": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "task_batch_check",
+                "task_failed_files_list"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
-        "error_message": "EVIDENCE_PIPELINE plans must declare at least one pass.",
-        "error_type": "empty_evidence_plan",
         "parallel_groups": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "task_batch_check"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "task_failed_files_list"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 2,
           "truncated_items": false
         },
-        "pass_count": 0,
+        "pass_count": 2,
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "task_batch_check",
+            "task_failed_files_list"
+          ],
+          "total_items": 2,
           "truncated_items": false
         },
-        "passed": false
+        "passed": true
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate on repaired plan",
-      "timestamp": "2026-06-02T10:31:18.631778+00:00"
+      "timestamp": "2026-06-02T12:41:18.863098+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -340,13 +375,25 @@
       "efficiency_role": "prioritizes critical path and enables exact pass-result reuse",
       "input_summary": {
         "dependency_edges": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "task_batch_check",
+                "task_failed_files_list"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "task_batch_check",
+            "task_failed_files_list"
+          ],
+          "total_items": 2,
           "truncated_items": false
         }
       },
@@ -366,8 +413,11 @@
         "cache_hits": 0,
         "checkpoint_resume_used": false,
         "critical_path": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "task_batch_check",
+            "task_failed_files_list"
+          ],
+          "total_items": 2,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -376,8 +426,17 @@
           "truncated_items": false
         },
         "dependency_edges": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "task_batch_check",
+                "task_failed_files_list"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "early_stopped_passes": {
@@ -387,13 +446,31 @@
         },
         "model_cascade_used": false,
         "parallel_groups": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "task_batch_check"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "task_failed_files_list"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 2,
           "truncated_items": false
         },
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "task_batch_check",
+            "task_failed_files_list"
+          ],
+          "total_items": 2,
           "truncated_items": false
         },
         "stage_pipeline_used": true,
@@ -402,7 +479,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-02T10:31:18.633254+00:00"
+      "timestamp": "2026-06-02T12:41:18.864395+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -412,33 +489,78 @@
       "efficiency_role": "allows later passes to enter free stages before earlier passes finish all stages",
       "input_summary": {
         "parallel_groups": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "task_batch_check"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "task_failed_files_list"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 2,
           "truncated_items": false
         },
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "task_batch_check",
+            "task_failed_files_list"
+          ],
+          "total_items": 2,
           "truncated_items": false
         }
       },
       "output": {
         "dependency_edges": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "task_batch_check",
+                "task_failed_files_list"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "max_api_workers": 2,
         "max_parallelism": 4,
         "max_sql_workers": 2,
         "parallel_groups": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "task_batch_check"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "task_failed_files_list"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 2,
           "truncated_items": false
         },
         "passes_completed": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "task_batch_check",
+            "task_failed_files_list"
+          ],
+          "total_items": 2,
           "truncated_items": false
         },
         "passes_dependency_blocked": {
@@ -453,16 +575,362 @@
         },
         "pipeline_stage_count": 8,
         "stage_events": {
+          "items": [
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_9a293166fccf437a9172563113e0e1bd:task_batch_check",
+              "pass_id": "task_batch_check",
+              "plan_version": 1,
+              "run_id": "run_9a293166fccf437a9172563113e0e1bd",
+              "stage": "PLAN_READY",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_9a293166fccf437a9172563113e0e1bd:task_batch_check",
+              "pass_id": "task_batch_check",
+              "plan_version": 1,
+              "run_id": "run_9a293166fccf437a9172563113e0e1bd",
+              "stage": "PLAN_READY",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_9a293166fccf437a9172563113e0e1bd:task_batch_check",
+              "pass_id": "task_batch_check",
+              "plan_version": 1,
+              "run_id": "run_9a293166fccf437a9172563113e0e1bd",
+              "stage": "DEPENDENCY_READY",
+              "status": "OK",
+              "truncated_fields": 3
+            }
+          ],
+          "total_items": 32,
+          "truncated_items": true
+        },
+        "truncated_fields": 4,
+        "v2_pipeline_scheduler_used": true
+      },
+      "stage": "llm-owned pipeline scheduling",
+      "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
+      "timestamp": "2026-06-02T12:41:18.865519+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
+      "correctness_role": "keeps decomposition owned by the LLM and backend role limited to scheduling/gates/execution",
+      "duration_ms": 0.0,
+      "effect": "schedules only LLM-declared passes; does not split prompts or add semantic subtasks",
+      "efficiency_role": "groups dependency-free passes without changing their semantics",
+      "input_summary": {
+        "multi_pass_enabled": true,
+        "pass_ids": {
+          "items": [
+            "task_batch_check",
+            "task_failed_files_list"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "alias_materialized_count": 0,
+        "api_execution_latency_sec": 0.0,
+        "api_gate_latency_sec": 0.001,
+        "api_gate_passed": true,
+        "api_repair_attempts": 0,
+        "backend_semantic_decomposition_used": false,
+        "backend_semantic_planning_used": false,
+        "budget_error": null,
+        "budget_exceeded": false,
+        "budget_limits": {
+          "max_api_workers": 2,
+          "max_llm_calls": 8,
+          "max_parallelism": 4,
+          "max_passes": 6,
+          "max_repair_attempts": 1,
+          "max_sql_workers": 2,
+          "timeout_seconds": 30.0
+        },
+        "cache_hits": 0,
+        "checkpoint_resume_used": false,
+        "critical_path": {
+          "items": [
+            "task_batch_check",
+            "task_failed_files_list"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "deduped_passes": {
           "items": [],
           "total_items": 0,
           "truncated_items": false
         },
-        "truncated_fields": 4,
-        "v2_pipeline_scheduler_used": false
+        "dependency_edges": {
+          "items": [
+            {
+              "items": [
+                "task_batch_check",
+                "task_failed_files_list"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "deterministic_answer_template_used": false,
+        "early_stopped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "evidence_bus_id": "evidence_run_9a293166fccf437a9172563113e0e1bd",
+        "exact_pass_cache_hits": 0,
+        "exact_pass_cache_scope": "single_run",
+        "hidden_eval_gold_used": false,
+        "llm_pass_count": 2,
+        "llm_pass_graph_used": true,
+        "max_api_workers": 2,
+        "max_parallelism": 4,
+        "max_sql_workers": 2,
+        "model_cascade_used": false,
+        "multi_pass_enabled": true,
+        "parallel_groups": {
+          "items": [
+            {
+              "items": [
+                "task_batch_check"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "task_failed_files_list"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "parallel_pass_count": 1,
+        "pass_graph_gate_error_type": "empty_evidence_plan",
+        "pass_graph_gate_passed": true,
+        "pass_graph_repair_attempted": true,
+        "pass_graph_repair_success": true,
+        "pass_ids": {
+          "items": [
+            "task_batch_check",
+            "task_failed_files_list"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "pass_results_count": 2,
+        "passes_completed": {
+          "items": [
+            "task_batch_check",
+            "task_failed_files_list"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "passes_dependency_blocked": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_executed": {
+          "items": [
+            "task_batch_check",
+            "task_failed_files_list"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "passes_failed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pipeline_stage_count": 8,
+        "plan_version": 1,
+        "raw_sql_fallback_considered": false,
+        "raw_sql_fallback_gate_error_type": null,
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_repair_attempted": false,
+        "raw_sql_fallback_repair_success": false,
+        "raw_sql_fallback_success": false,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "raw_sql_safety_gate_failures": 0,
+        "repaired_pass_count": 2,
+        "result_bundle_id": "bundle_run_9a293166fccf437a9172563113e0e1bd",
+        "run_id": "run_9a293166fccf437a9172563113e0e1bd",
+        "semantic_alias_count": 0,
+        "semantic_alias_materialized": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "semantic_alias_materialized_count": 0,
+        "semantic_alias_validation_failures": 0,
+        "sequential_pass_count": 1,
+        "sql_execution_latency_sec": 0.0,
+        "sql_gate_latency_sec": 0.0,
+        "sql_gate_passed": null,
+        "sql_repair_attempts": 0,
+        "stage_events": {
+          "items": [
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_9a293166fccf437a9172563113e0e1bd:task_batch_check",
+              "pass_id": "task_batch_check",
+              "plan_version": 1,
+              "run_id": "run_9a293166fccf437a9172563113e0e1bd",
+              "stage": "SQL_API_GATE",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_9a293166fccf437a9172563113e0e1bd:task_batch_check",
+              "pass_id": "task_batch_check",
+              "plan_version": 1,
+              "run_id": "run_9a293166fccf437a9172563113e0e1bd",
+              "stage": "READY_FOR_FINAL_COMPOSITION",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_9a293166fccf437a9172563113e0e1bd:task_failed_files_list",
+              "pass_id": "task_failed_files_list",
+              "plan_version": 1,
+              "run_id": "run_9a293166fccf437a9172563113e0e1bd",
+              "stage": "READY_FOR_FINAL_COMPOSITION",
+              "status": "OK",
+              "truncated_fields": 3
+            }
+          ],
+          "total_items": 12,
+          "truncated_items": true
+        },
+        "stage_pipeline_used": true,
+        "truncated_fields": 6,
+        "v2_execution_optimizer_used": true,
+        "v2_pipeline_scheduler_used": true
       },
-      "stage": "llm-owned pipeline scheduling",
-      "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-02T10:31:18.634663+00:00"
+      "stage": "llm-owned pass scheduling",
+      "technique": "dependency-aware scheduling of LLM-declared evidence passes",
+      "timestamp": "2026-06-02T12:41:18.866380+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
+      "correctness_role": "does not infer missing dependency values or add backend-selected subtasks",
+      "duration_ms": 0.0,
+      "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
+      "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
+      "input_summary": {
+        "pass_id": "task_batch_check"
+      },
+      "output": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "required": false,
+        "resolved": true,
+        "run_id": "run_9a293166fccf437a9172563113e0e1bd"
+      },
+      "stage": "llm-owned pass dependency resolution",
+      "technique": "placeholder resolution from completed LLM pass results",
+      "timestamp": "2026-06-02T12:41:18.867336+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_api_request_gate",
+      "correctness_role": "blocks unsafe method, unknown endpoint, unresolved path, or malformed params",
+      "duration_ms": 0.0,
+      "effect": "checks only executable API request shape before runtime execution",
+      "efficiency_role": "prevents invalid API calls without planning endpoints",
+      "input_summary": {
+        "method": "GET",
+        "pass_id": "task_batch_check",
+        "path": "/data/foundation/catalog/batches/01KP6MNQ3X71RP6MNH6FHWGHVE"
+      },
+      "output": {
+        "method": "GET",
+        "pass_id": "task_batch_check",
+        "passed": true,
+        "path": "/data/foundation/catalog/batches/01KP6MNQ3X71RP6MNH6FHWGHVE"
+      },
+      "stage": "llm api request gate",
+      "technique": "safe GET request-shape/catalog gate for LLM-owned API pass",
+      "timestamp": "2026-06-02T12:41:18.869500+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
+      "correctness_role": "does not infer missing dependency values or add backend-selected subtasks",
+      "duration_ms": 0.0,
+      "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
+      "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
+      "input_summary": {
+        "depends_on": {
+          "items": [
+            "task_batch_check"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_id": "task_failed_files_list"
+      },
+      "output": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "required": false,
+        "resolved": true,
+        "run_id": "run_9a293166fccf437a9172563113e0e1bd"
+      },
+      "stage": "llm-owned pass dependency resolution",
+      "technique": "placeholder resolution from completed LLM pass results",
+      "timestamp": "2026-06-02T12:41:18.870916+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_api_request_gate",
+      "correctness_role": "blocks unsafe method, unknown endpoint, unresolved path, or malformed params",
+      "duration_ms": 0.0,
+      "effect": "checks only executable API request shape before runtime execution",
+      "efficiency_role": "prevents invalid API calls without planning endpoints",
+      "input_summary": {
+        "method": "GET",
+        "pass_id": "task_failed_files_list",
+        "path": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
+      },
+      "output": {
+        "method": "GET",
+        "pass_id": "task_failed_files_list",
+        "passed": true,
+        "path": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
+      },
+      "stage": "llm api request gate",
+      "technique": "safe GET request-shape/catalog gate for LLM-owned API pass",
+      "timestamp": "2026-06-02T12:41:18.872051+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -485,8 +953,8 @@
       "output": {
         "alias_materialized_count": 0,
         "api_execution_latency_sec": 0.0,
-        "api_gate_latency_sec": 0.0,
-        "api_gate_passed": null,
+        "api_gate_latency_sec": 0.001,
+        "api_gate_passed": true,
         "api_repair_attempts": 0,
         "backend_semantic_decomposition_used": false,
         "backend_semantic_planning_used": false,
@@ -504,8 +972,11 @@
         "cache_hits": 0,
         "checkpoint_resume_used": false,
         "critical_path": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "task_batch_check",
+            "task_failed_files_list"
+          ],
+          "total_items": 2,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -514,8 +985,17 @@
           "truncated_items": false
         },
         "dependency_edges": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "task_batch_check",
+                "task_failed_files_list"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "deterministic_answer_template_used": false,
@@ -524,39 +1004,60 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_2f41e7a9ba294851b567dadcbc8994a1",
+        "evidence_bus_id": "evidence_run_9a293166fccf437a9172563113e0e1bd",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
         "llm_evidence_order": "SQL_FIRST",
         "llm_owned_generation": true,
-        "llm_pass_count": 0,
-        "llm_pass_graph_used": false,
+        "llm_pass_count": 2,
+        "llm_pass_graph_used": true,
         "llm_route": "EVIDENCE_PIPELINE",
         "max_api_workers": 2,
         "max_parallelism": 4,
         "max_sql_workers": 2,
         "model_cascade_used": false,
-        "multi_pass_enabled": false,
+        "multi_pass_enabled": true,
         "parallel_groups": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "task_batch_check"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "task_failed_files_list"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 2,
           "truncated_items": false
         },
-        "parallel_pass_count": 0,
+        "parallel_pass_count": 1,
         "pass_graph_gate_error_type": "empty_evidence_plan",
-        "pass_graph_gate_passed": false,
+        "pass_graph_gate_passed": true,
         "pass_graph_repair_attempted": true,
-        "pass_graph_repair_success": false,
+        "pass_graph_repair_success": true,
         "pass_ids": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "task_batch_check",
+            "task_failed_files_list"
+          ],
+          "total_items": 2,
           "truncated_items": false
         },
-        "pass_results_count": 1,
+        "pass_results_count": 2,
         "passes_completed": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "task_batch_check",
+            "task_failed_files_list"
+          ],
+          "total_items": 2,
           "truncated_items": false
         },
         "passes_dependency_blocked": {
@@ -565,8 +1066,11 @@
           "truncated_items": false
         },
         "passes_executed": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            "task_batch_check",
+            "task_failed_files_list"
+          ],
+          "total_items": 2,
           "truncated_items": false
         },
         "passes_failed": {
@@ -585,9 +1089,9 @@
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
-        "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_2f41e7a9ba294851b567dadcbc8994a1",
-        "run_id": "run_2f41e7a9ba294851b567dadcbc8994a1",
+        "repaired_pass_count": 2,
+        "result_bundle_id": "bundle_run_9a293166fccf437a9172563113e0e1bd",
+        "run_id": "run_9a293166fccf437a9172563113e0e1bd",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -596,24 +1100,58 @@
         },
         "semantic_alias_materialized_count": 0,
         "semantic_alias_validation_failures": 0,
-        "sequential_pass_count": 0,
+        "sequential_pass_count": 1,
         "sql_execution_latency_sec": 0.0,
         "sql_gate_latency_sec": 0.0,
         "sql_gate_passed": null,
         "sql_repair_attempts": 0,
         "stage_events": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
+          "items": [
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_9a293166fccf437a9172563113e0e1bd:task_batch_check",
+              "pass_id": "task_batch_check",
+              "plan_version": 1,
+              "run_id": "run_9a293166fccf437a9172563113e0e1bd",
+              "stage": "SQL_API_GATE",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_9a293166fccf437a9172563113e0e1bd:task_batch_check",
+              "pass_id": "task_batch_check",
+              "plan_version": 1,
+              "run_id": "run_9a293166fccf437a9172563113e0e1bd",
+              "stage": "READY_FOR_FINAL_COMPOSITION",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_9a293166fccf437a9172563113e0e1bd:task_failed_files_list",
+              "pass_id": "task_failed_files_list",
+              "plan_version": 1,
+              "run_id": "run_9a293166fccf437a9172563113e0e1bd",
+              "stage": "READY_FOR_FINAL_COMPOSITION",
+              "status": "OK",
+              "truncated_fields": 3
+            }
+          ],
+          "total_items": 12,
+          "truncated_items": true
         },
         "stage_pipeline_used": true,
         "truncated_fields": 2,
         "v2_execution_optimizer_used": true,
-        "v2_pipeline_scheduler_used": false
+        "v2_pipeline_scheduler_used": true
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-02T10:31:18.635963+00:00"
+      "timestamp": "2026-06-02T12:41:18.873006+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -622,16 +1160,54 @@
       "effect": "executes only LLM-proposed candidates that pass backend gates",
       "efficiency_role": "does not execute alternative backend-generated candidates",
       "input_summary": {
-        "tool_result_count": 0
+        "tool_result_count": 2
       },
       "output": {
-        "api_calls_executed": 0,
-        "dry_run_status": false,
+        "api_calls_executed": 2,
+        "api_results": {
+          "items": [
+            {
+              "dry_run": true,
+              "method": "GET",
+              "ok": false,
+              "result_preview": {
+                "caveat": "Adobe credentials unavailable; API call not executed.",
+                "dry_run": true,
+                "endpoint_family": "/data/foundation/catalog/batches/01KP6MNQ3X71RP6MNH6FHWGHVE",
+                "error_category": "dry_run_unavailable",
+                "evidence_state": "dry_run_unavailable",
+                "live_success": false,
+                "ok": false,
+                "usable_evidence": false
+              },
+              "url": "/data/foundation/catalog/batches/01KP6MNQ3X71RP6MNH6FHWGHVE"
+            },
+            {
+              "dry_run": true,
+              "method": "GET",
+              "ok": false,
+              "result_preview": {
+                "caveat": "Adobe credentials unavailable; API call not executed.",
+                "dry_run": true,
+                "endpoint_family": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed",
+                "error_category": "dry_run_unavailable",
+                "evidence_state": "dry_run_unavailable",
+                "live_success": false,
+                "ok": false,
+                "usable_evidence": false
+              },
+              "url": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "dry_run_status": true,
         "sql_calls_executed": 0
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-02T10:31:18.755188+00:00"
+      "timestamp": "2026-06-02T12:41:18.993937+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -641,7 +1217,7 @@
       "efficiency_role": "makes EvidenceBus construction explicit",
       "input_summary": {
         "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
-        "tool_result_count": 0
+        "tool_result_count": 2
       },
       "output": {
         "evidence_bus_built": true,
@@ -649,12 +1225,12 @@
         "llm_evidence_order": "SQL_FIRST",
         "llm_final_answer_composer_ran": true,
         "llm_route": "EVIDENCE_PIPELINE",
-        "pass_results_count": 1,
+        "pass_results_count": 2,
         "post_evidence_answer_router_ran": false
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-02T10:31:18.756106+00:00"
+      "timestamp": "2026-06-02T12:41:18.994523+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -663,24 +1239,25 @@
       "effect": "forwards executed SQL/API evidence into the existing grounded answer pipeline",
       "efficiency_role": "uses collected evidence without extra tool calls",
       "input_summary": {
-        "tool_result_count": 0
+        "tool_result_count": 2
       },
       "output": {
         "evidence": {
           "pass_ids": {
             "items": [
-              "pass_graph_gate"
+              "task_batch_check",
+              "task_failed_files_list"
             ],
-            "total_items": 1,
+            "total_items": 2,
             "truncated_items": false
           },
-          "pass_result_count": 1,
-          "run_id": "run_2f41e7a9ba294851b567dadcbc8994a1"
+          "pass_result_count": 2,
+          "run_id": "run_9a293166fccf437a9172563113e0e1bd"
         }
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-02T10:31:18.756747+00:00"
+      "timestamp": "2026-06-02T12:41:18.995137+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -689,8 +1266,8 @@
       "effect": "stores all LLM-declared pass results before final LLM aggregation",
       "efficiency_role": "reuses executed pass results without extra tools",
       "input_summary": {
-        "pass_results_count": 1,
-        "tool_result_count": 0
+        "pass_results_count": 2,
+        "tool_result_count": 2
       },
       "output": {
         "append_events": {
@@ -698,19 +1275,28 @@
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "pass_graph_gate"
+              "pass_id": "task_batch_check"
+            },
+            {
+              "appended": true,
+              "attempt_id": 0,
+              "pass_id": "task_failed_files_list"
             }
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         },
-        "pass_results_count": 1,
-        "run_id": "run_2f41e7a9ba294851b567dadcbc8994a1",
+        "pass_results_count": 2,
+        "run_id": "run_9a293166fccf437a9172563113e0e1bd",
         "runtime_passes": {
           "items": [
             {
               "attempt_id": 0,
-              "cached_sources": null,
+              "cached_sources": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
               "dependency_resolution": {
                 "errors": {
                   "items": [],
@@ -718,24 +1304,50 @@
                   "truncated_items": false
                 },
                 "required": false,
-                "resolved": true
+                "resolved": true,
+                "run_id": "run_9a293166fccf437a9172563113e0e1bd"
               },
-              "global_pass_id": "run_2f41e7a9ba294851b567dadcbc8994a1:pass_graph_gate",
-              "pass_id": "pass_graph_gate",
-              "path": "AGGREGATION_ONLY",
+              "global_pass_id": "run_9a293166fccf437a9172563113e0e1bd:task_batch_check",
+              "pass_id": "task_batch_check",
+              "path": "API",
               "plan_version": 1,
-              "run_id": "run_2f41e7a9ba294851b567dadcbc8994a1",
-              "status": "ERROR",
+              "run_id": "run_9a293166fccf437a9172563113e0e1bd",
+              "status": "API_ERROR",
+              "truncated_fields": 6
+            },
+            {
+              "attempt_id": 0,
+              "cached_sources": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "dependency_resolution": {
+                "errors": {
+                  "items": [],
+                  "total_items": 0,
+                  "truncated_items": false
+                },
+                "required": false,
+                "resolved": true,
+                "run_id": "run_9a293166fccf437a9172563113e0e1bd"
+              },
+              "global_pass_id": "run_9a293166fccf437a9172563113e0e1bd:task_failed_files_list",
+              "pass_id": "task_failed_files_list",
+              "path": "API",
+              "plan_version": 1,
+              "run_id": "run_9a293166fccf437a9172563113e0e1bd",
+              "status": "API_ERROR",
               "truncated_fields": 6
             }
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         }
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-02T10:31:18.757506+00:00"
+      "timestamp": "2026-06-02T12:41:18.995787+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -744,17 +1356,24 @@
       "effect": "keeps SQL errors, API errors, live empty, and direct evidence distinct",
       "efficiency_role": "uses existing payloads only",
       "input_summary": {
-        "tool_result_count": 0
+        "tool_result_count": 2
       },
       "output": {
         "api": {
           "items": [
-            "API_NOT_RUN"
+            "API_ERROR"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "api_error_is_unavailable": false,
+        "api_error_is_unavailable": true,
+        "caveats": {
+          "items": [
+            "api_error_is_unavailable_not_no_data"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
         "live_empty_scoped": false,
         "sql": {
           "items": [
@@ -766,7 +1385,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-02T10:31:18.758437+00:00"
+      "timestamp": "2026-06-02T12:41:18.996413+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -775,20 +1394,20 @@
       "effect": "turns runtime evidence into typed answer fields",
       "efficiency_role": "uses existing slot extraction",
       "input_summary": {
-        "tool_result_count": 0
+        "tool_result_count": 2
       },
       "output": {
         "discrepancy_flags": {
           "sql_api_discrepancy": false
         },
         "dry_run_flags": {
-          "dry_run": false
+          "dry_run": true
         },
         "slots": {
           "answer_family": "failed_dataflow_runs",
           "api_error": false,
           "discrepancy": false,
-          "dry_run": false,
+          "dry_run": true,
           "entity_ids": {
             "items": [
               "01KP6MNQ3X71RP6MNH6FHWGHVE"
@@ -798,16 +1417,17 @@
           },
           "slots_present": {
             "items": [
-              "entity_ids"
+              "entity_ids",
+              "dry_run"
             ],
-            "total_items": 1,
+            "total_items": 2,
             "truncated_items": false
           }
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-02T10:31:18.763071+00:00"
+      "timestamp": "2026-06-02T12:41:19.013072+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer_start",
@@ -816,14 +1436,14 @@
       "effect": "records the exact boundary before the potentially slow final-answer LLM call",
       "efficiency_role": "enables smoke timeout localization without extra SQL/API calls",
       "input_summary": {
-        "runtime_pass_count": 1
+        "runtime_pass_count": 2
       },
       "output": {
         "current_stage": "llm_final_answer_composer_call_start"
       },
       "stage": "llm-owned answer synthesis",
       "technique": "pre-call heartbeat before LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T10:31:18.763859+00:00"
+      "timestamp": "2026-06-02T12:41:19.013690+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -832,12 +1452,12 @@
       "effect": "lets the LLM own final answer composition from runtime evidence",
       "efficiency_role": "uses one final-answer LLM call after evidence execution",
       "input_summary": {
-        "runtime_pass_count": 1,
+        "runtime_pass_count": 2,
         "slot_counts": {
           "answer_family": "failed_dataflow_runs",
           "api_error": false,
           "discrepancy": false,
-          "dry_run": false,
+          "dry_run": true,
           "entity_ids": {
             "items": [
               "01KP6MNQ3X71RP6MNH6FHWGHVE"
@@ -847,9 +1467,10 @@
           },
           "slots_present": {
             "items": [
-              "entity_ids"
+              "entity_ids",
+              "dry_run"
             ],
-            "total_items": 1,
+            "total_items": 2,
             "truncated_items": false
           }
         }
@@ -869,7 +1490,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T10:31:22.900168+00:00"
+      "timestamp": "2026-06-02T12:41:24.222895+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -886,7 +1507,7 @@
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-02T10:31:22.901759+00:00"
+      "timestamp": "2026-06-02T12:41:24.223511+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -904,17 +1525,25 @@
           "allowed_fact_index": {
             "allowed_caveats": {
               "items": [
-                "API_ERROR",
-                "EVIDENCE_PIPELINE PLANS MUST DECLARE AT LEAST ONE PASS."
+                "API_ERROR"
               ],
-              "total_items": 2,
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "api_error_scopes": {
+              "items": [
+                "live api verification"
+              ],
+              "total_items": 1,
               "truncated_items": false
             },
             "evidence_strings": {
               "items": [
-                "01kp6mnq3x71rp6mnh6fhwghve"
+                "01kp6mnq3x71rp6mnh6fhwghve",
+                "/data/foundation/catalog/batches/01kp6mnq3x71rp6mnh6fhwghve",
+                "/data/foundation/export/batches/01kp6mnq3x71rp6mnh6fhwghve/failed"
               ],
-              "total_items": 1,
+              "total_items": 3,
               "truncated_items": false
             },
             "ids": {
@@ -975,7 +1604,7 @@
       },
       "stage": "answer gate",
       "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-02T10:31:22.909497+00:00"
+      "timestamp": "2026-06-02T12:41:24.227594+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -984,7 +1613,7 @@
       "effect": "records that V2 did not use deterministic answer templates, renderers, or selectors as competing generators",
       "efficiency_role": "no extra tool calls",
       "input_summary": {
-        "runtime_pass_count": 1
+        "runtime_pass_count": 2
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
@@ -994,8 +1623,8 @@
         "deterministic_answer_template_used": false,
         "final_answer_repair_latency_sec": 0.0,
         "final_answer_supported_by_evidence": true,
-        "final_composer_latency_sec": 4.134,
-        "final_gate_latency_sec": 0.007,
+        "final_composer_latency_sec": 5.208,
+        "final_gate_latency_sec": 0.004,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 2,
@@ -1007,7 +1636,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-02T10:31:22.910501+00:00"
+      "timestamp": "2026-06-02T12:41:24.228185+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -1036,12 +1665,12 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-02T10:31:22.911809+00:00"
+      "timestamp": "2026-06-02T12:41:24.228781+00:00"
     }
   ],
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 1225,
+  "estimated_tokens": 1603,
   "execution_time": 0.0,
   "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
   "original_query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
@@ -1049,14 +1678,14 @@
   "preprocessing_time": 0.0,
   "query_id": "example_032",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 4.299221499823034,
+  "runtime": 5.407997750211507,
   "sql_call_count": 0,
   "steps": [
     {
-      "estimated_tokens": 1265,
+      "estimated_tokens": 1262,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_032/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 1864
+      "prompt_tokens": 1861
     },
     {
       "aggregation_instruction": "",
@@ -1077,7 +1706,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "semantic_ir_validation_error",
-        "planner_provider_latency_ms": 56210,
+        "planner_provider_latency_ms": 56187,
         "planner_repair_attempted": false,
         "planner_success": false,
         "planner_timeout": false,
@@ -1104,9 +1733,9 @@
         "semantic_alias_repair_attempted": false,
         "semantic_alias_validation_passed": null,
         "semantic_alias_validation_used": false,
-        "semantic_ir_provider_latency_ms": 56208,
+        "semantic_ir_provider_latency_ms": 56186,
         "semantic_ir_repair_attempted": true,
-        "semantic_ir_repair_latency_ms": 25941,
+        "semantic_ir_repair_latency_ms": 27031,
         "semantic_ir_repair_success": false,
         "semantic_ir_support_check_latency_ms": 0,
         "semantic_ir_support_checked": false,
@@ -1163,13 +1792,61 @@
       "sql": null
     },
     {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {},
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/catalog/batches/01KP6MNQ3X71RP6MNH6FHWGHVE",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/foundation/catalog/batches/01KP6MNQ3X71RP6MNH6FHWGHVE"
+      },
+      "url": "/data/foundation/catalog/batches/01KP6MNQ3X71RP6MNH6FHWGHVE",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": [
+          "LLM API request pass passed request gate."
+        ]
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {},
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
+      },
+      "url": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": [
+          "LLM API request pass passed request gate."
+        ]
+      }
+    },
+    {
       "evidence_bus_built": true,
       "evidence_pipeline_bypassed": false,
       "kind": "evidence_boundary",
       "llm_evidence_order": "SQL_FIRST",
       "llm_final_answer_composer_ran": true,
       "llm_route": "EVIDENCE_PIPELINE",
-      "pass_results_count": 1,
+      "pass_results_count": 2,
       "post_evidence_answer_router_ran": false
     },
     {
@@ -1195,8 +1872,8 @@
       "deterministic_answer_template_used": false,
       "final_answer_repair_latency_sec": 0.0,
       "final_answer_supported_by_evidence": true,
-      "final_composer_latency_sec": 4.134,
-      "final_gate_latency_sec": 0.007,
+      "final_composer_latency_sec": 5.208,
+      "final_gate_latency_sec": 0.004,
       "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
       "llm_owned_final_answer": true,
@@ -1211,14 +1888,17 @@
           "action": "ACCEPT",
           "allowed_fact_index": {
             "allowed_caveats": [
-              "API_ERROR",
-              "EVIDENCE_PIPELINE PLANS MUST DECLARE AT LEAST ONE PASS."
+              "API_ERROR"
             ],
-            "api_error_scopes": [],
+            "api_error_scopes": [
+              "live api verification"
+            ],
             "counts": [],
             "dates": [],
             "evidence_strings": [
-              "01kp6mnq3x71rp6mnh6fhwghve"
+              "01kp6mnq3x71rp6mnh6fhwghve",
+              "/data/foundation/catalog/batches/01kp6mnq3x71rp6mnh6fhwghve",
+              "/data/foundation/export/batches/01kp6mnq3x71rp6mnh6fhwghve/failed"
             ],
             "ids": [
               "01kp6mnq3x71rp6mnh6fhwghve"
@@ -1283,7 +1963,7 @@
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 4.156176915857941
+    "answer_time": 5.234293125104159
   },
-  "tool_call_count": 0
+  "tool_call_count": 2
 }

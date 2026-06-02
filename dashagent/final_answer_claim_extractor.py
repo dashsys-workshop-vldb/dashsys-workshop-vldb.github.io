@@ -136,6 +136,10 @@ def _count_claims(text: str, occupied: list[tuple[int, int]]) -> list[tuple[Fina
             continue
         if _looks_like_entity_code_number(value):
             continue
+        if _looks_like_prompt_time_window(text, match.start(), match.end()):
+            continue
+        if _looks_like_interval_value(text, match.start(), match.end()):
+            continue
         out.append((_claim(text, "COUNT", value, match.start(), match.end()), match.start(), match.end()))
     return out
 
@@ -284,6 +288,19 @@ def _looks_like_percentage(text: str, end: int) -> bool:
 def _looks_like_entity_code_number(value: str) -> bool:
     normalized = str(value or "").replace(",", "")
     return len(normalized) > 1 and normalized.startswith("0") and normalized.isdigit()
+
+
+def _looks_like_prompt_time_window(text: str, start: int, end: int) -> bool:
+    prefix = text[max(0, start - 32) : start].lower()
+    suffix = text[end : min(len(text), end + 16)].lower()
+    if not re.match(r"\s*(?:days?|weeks?|months?|hours?|minutes?)\b", suffix):
+        return False
+    return bool(re.search(r"\b(last|past|previous|next|prior)\s+$", prefix))
+
+
+def _looks_like_interval_value(text: str, start: int, end: int) -> bool:
+    prefix = text[max(0, start - 32) : start].lower()
+    return bool(re.search(r"\binterval\s+of\s+$", prefix))
 
 
 def _looks_like_api_caveat_status(text: str, start: int, end: int, status: str) -> bool:

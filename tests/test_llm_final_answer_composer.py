@@ -252,6 +252,33 @@ def test_semantic_gate_rejects_api_error_as_no_data():
     assert result.error_type == "caveat_error"
 
 
+def test_semantic_gate_allows_scoped_no_match_for_empty_local_filtered_list():
+    tool_results = [_sql_tool_result([])]
+    bus, slots = _bus_and_slots("List all datasets that use the schema 'hkg_adls_profile_count_history'.", tool_results)
+    slots.counts = [0]
+    slots.sql_row_count = 0
+    slots.entity_names = ["hkg_adls_profile_count_history"]
+
+    result = check_final_answer_semantic_grounding(
+        "No matching runtime evidence was available for this query/scope.",
+        question="List all datasets that use the schema 'hkg_adls_profile_count_history'.",
+        runtime_passes=[
+            {
+                "pass_id": "local_schema_dataset_lookup",
+                "source": "SQL",
+                "path": "SQL",
+                "status": "EMPTY",
+                "scope": "LOCAL_SNAPSHOT",
+                "source_results": [{"source": "SQL", "status": "EMPTY", "scope": "LOCAL_SNAPSHOT", "result": {"rows": [], "row_count": 0}}],
+            }
+        ],
+        evidence_bus=bus,
+        slots=slots,
+    )
+
+    assert result.passed is True
+
+
 def test_semantic_gate_allows_api_failed_wording_as_caveat_not_status_claim():
     tool_results = [
         _sql_tool_result([{"name": "Birthday Message", "status": "updated"}]),
@@ -332,6 +359,18 @@ def test_claim_extractor_ignores_unquoted_numeric_entity_suffixes_and_percent_na
     count_values = {claim.value for claim in claims if claim.type == "COUNT"}
     assert "001" not in count_values
     assert "25" not in count_values
+
+
+def test_claim_extractor_ignores_prompt_time_window_and_interval_values_as_counts():
+    claims = extract_final_answer_claims(
+        "The local snapshot shows 0 ingestion records for the last 90 days. "
+        "The destination operates on a daily frequency with an interval of 0."
+    )
+
+    count_values = [claim.value for claim in claims if claim.type == "COUNT"]
+    assert "0" in count_values
+    assert "90" not in count_values
+    assert count_values.count("0") == 1
 
 
 def test_semantic_gate_allows_draft_as_conceptual_example_when_data_statuses_differ():
@@ -891,6 +930,67 @@ def test_safe_fallback_with_runtime_facts_summarizes_scoped_evidence_not_global_
     assert "count: 74" in answer
     assert "Runtime evidence was unavailable" not in answer
     assert "could not compose a verified final answer" not in answer
+
+
+def test_safe_fallback_with_empty_local_count_and_api_error_keeps_zero_count_scope():
+    runtime_passes = [
+        {
+            "pass_id": "local_daily_values",
+            "path": "SQL",
+            "source": "SQL",
+            "status": "EMPTY",
+            "scope": "LOCAL_SNAPSHOT",
+            "facts": [],
+            "source_results": [
+                {
+                    "source": "SQL",
+                    "status": "EMPTY",
+                    "scope": "LOCAL_SNAPSHOT",
+                    "result": {"rows": [], "row_count": 0},
+                }
+            ],
+        },
+        {
+            "pass_id": "live_daily_values",
+            "path": "API",
+            "source": "API",
+            "status": "API_ERROR",
+            "scope": "LIVE_API",
+            "caveats": ["Adobe credentials unavailable; API call not executed."],
+            "source_results": [
+                {
+                    "source": "API",
+                    "status": "API_ERROR",
+                    "scope": "LIVE_API",
+                    "error": "Adobe credentials unavailable; API call not executed.",
+                }
+            ],
+        },
+    ]
+    answer = safe_llm_final_answer_fallback(runtime_passes)
+
+    lowered = answer.lower()
+    assert "local snapshot evidence shows" in lowered
+    assert "0" in lowered
+    assert "live api evidence was unavailable" in lowered
+    assert "runtime evidence was unavailable" not in lowered
+
+    bus, slots = _bus_and_slots(
+        "What are the daily record success count values between 2026-03-15 and 2026-03-31?",
+        [_sql_tool_result([])],
+    )
+    slots.counts = [0]
+    slots.sql_row_count = 0
+    bus.api_errors.append("Adobe credentials unavailable; API call not executed.")
+    gate = check_final_answer_semantic_grounding(
+        answer,
+        question="What are the daily record success count values between 2026-03-15 and 2026-03-31?",
+        runtime_passes=runtime_passes,
+        evidence_bus=bus,
+        slots=slots,
+    )
+
+    assert gate.passed is True
 
 
 def test_safe_fallback_prefers_structured_values_over_raw_json_like_facts():

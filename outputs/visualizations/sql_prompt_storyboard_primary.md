@@ -63,7 +63,7 @@ flowchart TD
 
   subgraph O["8. Output + Trace"]
     O0["Trajectory output<br/>strategy = SQL_FIRST_API_VERIFY<br/>plan = generic_sql_first"]:::output
-    O1["Efficiency metrics<br/>tools = 2<br/>tokens = 797<br/>runtime ≈ 0.024s"]:::output
+    O1["Efficiency metrics<br/>tools = 2<br/>tokens = 797<br/>runtime ≈ 0.017s"]:::output
   end
 
   U0 -->|"schema-count question"| P0

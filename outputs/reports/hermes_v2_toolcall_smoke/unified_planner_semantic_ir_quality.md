@@ -19,4 +19,4 @@
 | local_schema_count | EVIDENCE_SQL | 1 | 0 | 1 | 1 | 0 | 0 | 0 | False | True | There are 74 schema records in the local snapshot. |
 | birthday_message_published | EVIDENCE_LOCAL | 1 | 0 | 1 | 1 | 0 | 0 | 0 | False | True | The journey "Birthday Message" was created and updated on 2026-03-31T06:07:32.838462639Z. |
 | mixed_inactive_journeys | EVIDENCE_LOCAL | 1 | 0 | 2 | 2 | 1 | 0 | 1 | False | True | Local snapshot evidence shows t2_list_inactive_journeys_local/SQL/LOCAL_SNAPSHOT: count: 2; examples include Birthday Message; Gold Tier Welcome Email; id: 9f4ebca4-2fdd-4873-95f5- |
-| compare_local_live_birthday_status | EVIDENCE_LIVE_IF_AVAILABLE | 1 | 1 | 1 | 1 | 0 | 0 | 0 | False | True | The local snapshot for Birthday Message shows a status of updated. Live API evidence was unavailable or errored for this source. |
+| compare_local_live_birthday_status | EVIDENCE_LIVE_IF_AVAILABLE | 1 | 1 | 1 | 1 | 0 | 0 | 0 | False | True | For the campaign named Birthday Message, the local snapshot status is updated. Live API evidence was unavailable due to Adobe credentials being unavailable, so the live status coul |
