@@ -156,7 +156,8 @@ def _run_prompt_with_timeout(
     llm_call_timeout_sec: int,
 ) -> dict[str, Any]:
     started = time.perf_counter()
-    ctx = mp.get_context("fork" if sys.platform != "win32" else "spawn")
+    start_method = os.getenv("HERMES_SMOKE_MP_START_METHOD") or ("fork" if sys.platform != "win32" else "spawn")
+    ctx = mp.get_context(start_method)
     queue: Any = ctx.Queue(maxsize=1)
     process = ctx.Process(target=_prompt_worker, args=(item, config, str(report_dir), llm_call_timeout_sec, queue))
     process.start()
@@ -247,6 +248,13 @@ def _build_smoke_row(item: dict[str, Any], result: dict[str, Any]) -> dict[str, 
         "answer_contract_secondary_call_used": bool(diagnostics.get("answer_contract_secondary_call_used")),
         "answer_contract_secondary_call_success": bool(diagnostics.get("answer_contract_secondary_call_success")),
         "answer_contract_secondary_error_type": diagnostics.get("answer_contract_secondary_error_type"),
+        "schema_binding_used": bool(diagnostics.get("schema_binding_used")),
+        "schema_binding_count": int(diagnostics.get("schema_binding_count") or 0),
+        "schema_binding_ids": _list_diagnostic(diagnostics.get("schema_binding_ids")),
+        "schema_binding_validation_passed": diagnostics.get("schema_binding_validation_passed"),
+        "schema_binding_error_type": diagnostics.get("schema_binding_error_type"),
+        "schema_binding_repair_attempted": bool(diagnostics.get("schema_binding_repair_attempted")),
+        "schema_binding_repair_success": bool(diagnostics.get("schema_binding_repair_success")),
         "semantic_ir_repair_attempted": diagnostics.get("semantic_ir_repair_attempted"),
         "backend_formal_compilation_used": diagnostics.get("backend_formal_compilation_used"),
         "backend_semantic_planning_used": diagnostics.get("backend_semantic_planning_used"),
@@ -365,6 +373,13 @@ def _timeout_row(item: dict[str, Any], *, timeout_sec: int, total_latency_sec: f
         "answer_contract_secondary_call_used": False,
         "answer_contract_secondary_call_success": False,
         "answer_contract_secondary_error_type": None,
+        "schema_binding_used": False,
+        "schema_binding_count": 0,
+        "schema_binding_ids": [],
+        "schema_binding_validation_passed": None,
+        "schema_binding_error_type": None,
+        "schema_binding_repair_attempted": False,
+        "schema_binding_repair_success": False,
         "task_count": None,
         "plan_paths": [],
         "compiled_sql_count": 0,
@@ -420,10 +435,18 @@ def _error_row(
 
 def _classify_row_error_type(error: str | None) -> str:
     text = str(error or "").lower()
-    for key in ["missing_answer_contract", "unknown_table", "unknown_field", "unknown_endpoint", "timeout"]:
+    for key in ["schema_binding", "missing_answer_contract", "unknown_table", "unknown_field", "unknown_endpoint", "timeout"]:
         if key in text:
             return key
     return "row_error"
+
+
+def _list_diagnostic(value: Any) -> list[Any]:
+    if isinstance(value, list):
+        return value
+    if value in (None, ""):
+        return []
+    return [value]
 
 
 def _flatten_diagnostics(trajectory: dict[str, Any]) -> dict[str, Any]:
@@ -434,6 +457,8 @@ def _flatten_diagnostics(trajectory: dict[str, Any]) -> dict[str, Any]:
             for key, item in value.items():
                 if key not in merged and isinstance(item, (str, int, float, bool, type(None))):
                     merged[key] = item
+                elif key == "schema_binding_ids" and key not in merged and isinstance(item, list):
+                    merged[key] = list(item)
                 visit(item)
         elif isinstance(value, list):
             for item in value:
@@ -757,6 +782,16 @@ def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "final_unavailable_with_runtime_facts": sum(1 for row in rows if row.get("final_unavailable_with_runtime_facts")),
         "atomic_protocol_fallback_count": sum(1 for row in rows if row.get("atomic_protocol_fallback_used")),
         "raw_sql_fallback_used_count": sum(1 for row in rows if row.get("raw_sql_fallback_used")),
+        "schema_binding_used_count": sum(1 for row in rows if row.get("schema_binding_used")),
+        "schema_binding_validation_failure_count": sum(
+            1
+            for row in rows
+            if row.get("schema_binding_validation_passed") is False
+            or bool(row.get("schema_binding_error_type"))
+            or row.get("error_type") == "schema_binding"
+        ),
+        "schema_binding_repair_attempt_count": sum(1 for row in rows if row.get("schema_binding_repair_attempted")),
+        "schema_binding_repair_success_count": sum(1 for row in rows if row.get("schema_binding_repair_success")),
         "missing_answer_contract_count": sum(
             1
             for row in rows

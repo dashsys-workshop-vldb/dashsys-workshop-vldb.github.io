@@ -89,6 +89,13 @@ def build_allowed_api_context_card(endpoint_context: list[dict[str, Any]]) -> li
 def _table_role_hints(table: str, columns: list[str]) -> list[str]:
     text = " ".join([table, *columns]).lower()
     hints: list[str] = []
+    table_norm = table.lower()
+    if table_norm == "dim_blueprint" or "blueprint" in table_norm:
+        hints.extend(["schema", "blueprint", "xdm_schema"])
+    if table_norm == "dim_segment" or "segment" in table_norm:
+        hints.extend(["segment", "audience", "segment_definition"])
+    if table_norm == "dim_campaign" or "campaign" in table_norm:
+        hints.extend(["campaign", "journey"])
     mapping = [
         ("campaign", ["campaign", "journey"]),
         ("journey", ["journey", "campaign"]),
@@ -122,24 +129,43 @@ def _field_hints(columns: list[str]) -> dict[str, list[str]]:
     primary_name_fields = [
         column
         for column in columns
-        if ("name" in _norm(column) or "title" in _norm(column))
+        if (
+            "name" in _norm(column)
+            or "title" in _norm(column)
+            or _norm(column) in {"displayname", "label", "altid"}
+            or "displayname" in _norm(column)
+        )
         and column not in label_fields
     ]
+    status_tokens = {"status", "state", "lifecyclestatus", "lifecycle_status", "enabled", "active"}
     return {
-        "id_fields": [column for column in columns if _norm(column).endswith("id") or _norm(column) == "id"],
-        "name_fields": [column for column in columns if "name" in _norm(column) or "title" in _norm(column) or "label" in _norm(column)],
+        "id_fields": [column for column in columns if _norm(column).endswith("id") or "_id" in str(column).lower() or _norm(column) == "id"],
+        "name_fields": [
+            column
+            for column in columns
+            if (
+                "name" in _norm(column)
+                or "title" in _norm(column)
+                or "label" in _norm(column)
+                or "displayname" in _norm(column)
+                or "altid" in _norm(column)
+            )
+        ],
         "primary_name_fields": primary_name_fields,
         "label_fields": label_fields,
         "entity_lookup_fields": [*primary_name_fields, *label_fields],
         "status_fields": [
             column
             for column in columns
-            if _norm(column) in {"status", "state", "lifecyclestatus", "lifecycle_status"} or "status" in _norm(column)
+            if _norm(column) in status_tokens or "status" in _norm(column) or "state" in _norm(column)
         ],
         "date_fields": [
             column
             for column in columns
-            if any(token in _norm(column) for token in ["time", "date", "created", "updated", "modified", "published", "deployed", "finished", "stopped"])
+            if any(
+                token in _norm(column)
+                for token in ["time", "date", "created", "updated", "modified", "published", "deployed", "finished", "stopped", "start", "end"]
+            )
         ],
         "count_fields": [column for column in columns if "count" in _norm(column) or _norm(column) in {"total", "rowcount"}],
     }

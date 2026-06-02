@@ -35,6 +35,12 @@ class ToolCallSemanticIRClient:
 
     def generate_messages(self, messages, tools=None, tool_choice=None, parallel_tool_calls=None, **kwargs):
         self.calls.append({"messages": messages, "tools": tools, "tool_choice": tool_choice, "parallel_tool_calls": parallel_tool_calls, **kwargs})
+        requested_tool = (tool_choice or {}).get("function", {}).get("name")
+        if requested_tool == "submit_schema_binding_plan":
+            if self.responses and isinstance(self.responses[0], dict) and self.responses[0].get("tool_name") == requested_tool:
+                response = self.responses.pop(0)
+                return _tool_response(requested_tool, response.get("arguments", response))
+            return _schema_binding_tool_response_from_messages(messages)
         if not self.responses:
             raise AssertionError("LLM called more times than expected")
         payload = self.responses.pop(0)
@@ -71,6 +77,12 @@ class NoToolCallClient(ToolCallSemanticIRClient):
 class ToolNameAwareClient(ToolCallSemanticIRClient):
     def generate_messages(self, messages, tools=None, tool_choice=None, parallel_tool_calls=None, **kwargs):
         self.calls.append({"messages": messages, "tools": tools, "tool_choice": tool_choice, "parallel_tool_calls": parallel_tool_calls, **kwargs})
+        requested_tool = (tool_choice or {}).get("function", {}).get("name")
+        if requested_tool == "submit_schema_binding_plan":
+            if self.responses and isinstance(self.responses[0], dict) and self.responses[0].get("tool_name") == requested_tool:
+                response = self.responses.pop(0)
+                return _tool_response(requested_tool, response.get("arguments", response))
+            return _schema_binding_tool_response_from_messages(messages)
         if not self.responses:
             raise AssertionError("LLM called more times than expected")
         response = self.responses.pop(0)
@@ -99,6 +111,90 @@ class ToolNameAwareClient(ToolCallSemanticIRClient):
             ],
             "finish_reason": "tool_calls",
         }
+
+
+def _tool_response(tool_name: str, arguments: dict) -> dict:
+    return {
+        "ok": True,
+        "provider": "openai",
+        "model": "hermes-test-model",
+        "content": "",
+        "tool_calls": [{"id": "call_1", "name": tool_name, "arguments": arguments}],
+        "finish_reason": "tool_calls",
+    }
+
+
+def _schema_binding_tool_response(binding_id: str = "b_schema", table: str = "dim_schema") -> dict:
+    return _schema_binding_tool_response_for(binding_id=binding_id, table=table, required_for_slots=["s_count"])
+
+
+def _schema_binding_tool_response_from_messages(messages) -> dict:
+    try:
+        payload = json.loads(messages[-1]["content"])
+    except Exception:
+        return _schema_binding_tool_response()
+    slots = [
+        slot
+        for slot in ((payload.get("answer_contract") or {}).get("required_slots") or [])
+        if str(slot.get("source_scope") or "") in {"LOCAL_SNAPSHOT", "BOTH"}
+    ]
+    required_for_slots = [str(slot.get("slot_id")) for slot in slots if str(slot.get("slot_id") or "")]
+    local_tasks = [
+        task
+        for task in payload.get("semantic_ir_tasks_do_not_change") or []
+        if isinstance(task, dict) and isinstance(task.get("local_query"), dict)
+    ]
+    local_query = local_tasks[0].get("local_query") if local_tasks else {}
+    table = str((local_query or {}).get("table") or "dim_schema")
+    binding_id = str(local_tasks[0].get("binding_id") or (local_query or {}).get("binding_id") or "b_schema") if local_tasks else "b_schema"
+    return _schema_binding_tool_response_for(
+        binding_id=binding_id,
+        table=table,
+        required_for_slots=required_for_slots or ["s_count"],
+    )
+
+
+def _schema_binding_tool_response_for(*, binding_id: str, table: str, required_for_slots: list[str]) -> dict:
+    if table == "dim_campaign":
+        primary_ids = ["CAMPAIGNID"]
+        status_fields = ["STATUS"]
+        date_fields = ["PUBLISHEDAT"]
+    else:
+        primary_ids = ["SCHEMAID"]
+        status_fields = ["STATUS"]
+        date_fields = []
+    return {
+        "ok": True,
+        "provider": "openai",
+        "model": "hermes-test-model",
+        "content": "",
+        "tool_calls": [
+            {
+                "id": "call_binding",
+                "name": "submit_schema_binding_plan",
+                "arguments": {
+                    "binding_version": "v1",
+                    "bindings": [
+                        {
+                            "binding_id": binding_id,
+                            "semantic_object": "schema records",
+                            "object_type": "campaign" if table == "dim_campaign" else "schema",
+                            "source_scope": "LOCAL_SNAPSHOT",
+                            "table": table,
+                            "primary_id_fields": primary_ids,
+                            "name_fields": ["NAME"],
+                            "status_fields": status_fields,
+                            "date_fields": date_fields,
+                            "relation_tables": [],
+                            "required_for_slots": required_for_slots,
+                            "confidence_note": None,
+                        }
+                    ],
+                },
+            }
+        ],
+        "finish_reason": "tool_calls",
+    }
 
 
 def _schema_context() -> dict:
@@ -445,6 +541,8 @@ def test_tool_schema_declares_submit_semantic_ir_plan():
     assert "reuse_result_from" in task_schema["properties"]
     assert "semantic_cache_key" in task_schema["properties"]
     assert "result_contract" in task_schema["properties"]
+    assert "binding_id" in task_schema["properties"]
+    assert "binding_id" in task_schema["properties"]["local_query"]["anyOf"][1]["properties"]
 
 
 def test_semantic_ir_parses_direct_and_local_live_shapes():
@@ -459,6 +557,24 @@ def test_semantic_ir_parses_direct_and_local_live_shapes():
 
     live = parse_semantic_ir_from_json_or_line_protocol("The plan is:\n" + json.dumps(_live_plan()))
     assert live.tasks[0].api_query.endpoint_id == "schemas_list"
+
+
+def test_semantic_ir_parses_task_and_local_query_binding_ids_without_backend_fill():
+    payload = _local_count_plan()
+    payload["tasks"][0]["binding_id"] = "b_schema"
+    payload["tasks"][0]["local_query"]["binding_id"] = "b_schema"
+
+    plan = parse_semantic_ir_from_json_or_line_protocol(json.dumps(payload))
+
+    assert plan.tasks[0].binding_id == "b_schema"
+    assert plan.tasks[0].local_query.binding_id == "b_schema"
+    assert semantic_plan_to_dict(plan)["tasks"][0]["local_query"]["binding_id"] == "b_schema"
+
+    missing = _local_count_plan()
+    missing["tasks"][0]["binding_id"] = "b_schema"
+    missing["tasks"][0]["local_query"].pop("table")
+    plan = parse_semantic_ir_from_json_or_line_protocol(json.dumps(missing))
+    assert plan.tasks[0].local_query.table == ""
 
 
 def test_semantic_ir_parses_root_answer_contract_without_backend_inference():
@@ -550,6 +666,29 @@ def test_context_cards_include_mechanical_role_and_field_hints():
     assert "journey" in campaign["table_role_hints"]
     assert "campaign" in campaign["table_role_hints"]
     assert campaign["field_hints"]["date_fields"] == ["PUBLISHEDAT"]
+
+
+def test_context_cards_include_blueprint_segment_campaign_binding_hints_and_budget():
+    card = build_allowed_local_schema_card(
+        {
+            "tables": {
+                "dim_blueprint": {"columns": [{"name": "BLUEPRINTID"}, {"name": "NAME"}, {"name": "UPDATEDAT"}]},
+                "dim_segment": {"columns": [{"name": "SEGMENTID"}, {"name": "NAME"}, {"name": "STATE"}]},
+                "dim_campaign": {"columns": [{"name": "CAMPAIGNID"}, {"name": "NAME"}, {"name": "LASTDEPLOYEDTIME"}]},
+            }
+        }
+    )
+    blueprint = next(row for row in card if row["table"] == "dim_blueprint")
+    segment = next(row for row in card if row["table"] == "dim_segment")
+    campaign = next(row for row in card if row["table"] == "dim_campaign")
+
+    assert {"schema", "blueprint", "xdm_schema"} <= set(blueprint["table_role_hints"])
+    assert "segment_definition" in segment["table_role_hints"]
+    assert {"journey", "campaign"} <= set(campaign["table_role_hints"])
+    assert blueprint["field_hints"]["name_fields"] == ["NAME"]
+    assert segment["field_hints"]["status_fields"] == ["STATE"]
+    assert campaign["field_hints"]["date_fields"] == ["LASTDEPLOYEDTIME"]
+    assert len(json.dumps(card)) < 4000
 
 
 def test_api_context_card_exposes_domains_common_params_and_examples_for_llm_selection():
@@ -790,9 +929,10 @@ def test_llm_unified_planner_uses_sdk_toolcall_semantic_ir_primary_path(monkeypa
     assert plan.diagnostics["backend_semantic_planning_used"] is False
     assert plan.diagnostics["backend_formal_compilation_used"] is True
     assert plan.diagnostics["atomic_protocol_fallback_used"] is False
-    assert len(client.calls) == 1
+    assert len(client.calls) == 2
     assert client.calls[0]["tools"][0]["function"]["name"] == "submit_semantic_ir_plan"
     assert client.calls[0]["tool_choice"]["function"]["name"] == "submit_semantic_ir_plan"
+    assert client.calls[1]["tool_choice"]["function"]["name"] == "submit_schema_binding_plan"
 
 
 def test_semantic_ir_planner_prompt_keeps_local_source_preference_llm_owned(monkeypatch):
@@ -985,8 +1125,14 @@ def test_unsupported_semantic_ir_repairs_to_supported_ir_before_raw_sql(monkeypa
     assert plan.diagnostics["semantic_ir_support_repair_attempted"] is True
     assert plan.diagnostics["semantic_ir_support_repair_success"] is True
     assert plan.diagnostics["raw_sql_fallback_used"] is False
-    assert len(client.calls) == 2
-    assert "unsupported_ir" in client.calls[1]["messages"][1]["content"]
+    assert len(client.calls) == 4
+    assert [call["tool_choice"]["function"]["name"] for call in client.calls] == [
+        "submit_semantic_ir_plan",
+        "submit_schema_binding_plan",
+        "submit_semantic_ir_plan",
+        "submit_schema_binding_plan",
+    ]
+    assert "unsupported_ir" in client.calls[2]["messages"][1]["content"]
 
 
 def test_unsupported_semantic_ir_uses_llm_owned_raw_sql_fallback_after_repair(monkeypatch):
@@ -1019,7 +1165,9 @@ def test_unsupported_semantic_ir_uses_llm_owned_raw_sql_fallback_after_repair(mo
     assert plan.diagnostics["backend_generated_sql"] is False
     assert [call["tool_choice"]["function"]["name"] for call in client.calls] == [
         "submit_semantic_ir_plan",
+        "submit_schema_binding_plan",
         "submit_semantic_ir_plan",
+        "submit_schema_binding_plan",
         "submit_raw_sql_fallback",
     ]
 
@@ -1107,6 +1255,7 @@ def test_missing_answer_contract_uses_secondary_contract_toolcall(monkeypatch):
     assert [call["tool_choice"]["function"]["name"] for call in client.calls] == [
         "submit_semantic_ir_plan",
         "submit_answer_contract",
+        "submit_schema_binding_plan",
     ]
 
 

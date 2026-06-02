@@ -11,6 +11,7 @@ from .v2_semantic_ir import (
     SemanticIRTask,
 )
 from .v2_answer_contract_validator import AnswerContractValidator
+from .v2_schema_binding_validator import SchemaBindingValidator
 from .v2_semantic_alias import validate_semantic_ir_aliases
 
 
@@ -23,6 +24,8 @@ class SemanticIRValidationResult:
     bad_table: str | None = None
     bad_field: str | None = None
     bad_endpoint: str | None = None
+    bad_value: str | None = None
+    binding_id: str | None = None
     allowed_tables: list[str] = field(default_factory=list)
     allowed_fields_for_table: list[str] = field(default_factory=list)
     allowed_endpoints: list[str] = field(default_factory=list)
@@ -98,6 +101,17 @@ class SemanticIRValidator:
                     contract_result.error_type or "invalid_answer_contract",
                     contract_result.error_message or "Invalid answer contract.",
                     contract_result.task_id,
+                )
+        if plan.schema_binding is not None:
+            binding_result = SchemaBindingValidator(self.allowed_schema_card, plan.answer_contract).validate(plan.schema_binding, semantic_plan=plan)
+            if not binding_result.passed:
+                return self._fail(
+                    binding_result.error_type or "invalid_schema_binding",
+                    binding_result.error_message or "Invalid schema binding.",
+                    binding_result.task_id,
+                    binding_result.allowed_fields_for_table,
+                    bad_value=binding_result.bad_value,
+                    binding_id=binding_result.binding_id,
                 )
         return base
 
@@ -224,6 +238,8 @@ class SemanticIRValidator:
         bad_table: str | None = None,
         bad_field: str | None = None,
         bad_endpoint: str | None = None,
+        bad_value: str | None = None,
+        binding_id: str | None = None,
         semantic_alias_validation_used: bool = False,
         semantic_alias_validation_passed: bool | None = None,
         semantic_alias_count: int = 0,
@@ -239,6 +255,8 @@ class SemanticIRValidator:
             bad_table=bad_table,
             bad_field=bad_field,
             bad_endpoint=bad_endpoint,
+            bad_value=bad_value,
+            binding_id=binding_id,
             allowed_tables=list(self._tables.keys()),
             allowed_fields_for_table=list(allowed_fields or []),
             allowed_endpoints=list(self._endpoints.keys()),

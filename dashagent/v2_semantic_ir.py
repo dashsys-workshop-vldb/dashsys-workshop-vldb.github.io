@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from .v2_answer_contract import V2AnswerContract, answer_contract_to_dict, parse_answer_contract
+from .v2_schema_binding import SchemaBindingPlan, parse_schema_binding_plan, schema_binding_plan_to_dict
 
 
 ALLOWED_SEMANTIC_IR_ROUTES = {"DIRECT", "EVIDENCE"}
@@ -34,9 +35,11 @@ class LocalQueryIR:
     filters: list[SemanticIRFilter] = field(default_factory=list)
     limit: int | None = 50
     count: bool = False
+    binding_id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "binding_id": self.binding_id,
             "table": self.table,
             "fields": list(self.fields),
             "filters": [item.to_dict() for item in self.filters],
@@ -86,6 +89,7 @@ class SemanticIRTask:
     kind: str
     operation: str
     source: str
+    binding_id: str | None = None
     local_query: LocalQueryIR | None = None
     api_query: APIQueryIR | None = None
     depends_on: list[str] = field(default_factory=list)
@@ -104,6 +108,7 @@ class SemanticIRTask:
             "kind": self.kind,
             "operation": self.operation,
             "source": self.source,
+            "binding_id": self.binding_id,
             "local_query": self.local_query.to_dict() if self.local_query else None,
             "api_query": self.api_query.to_dict() if self.api_query else None,
             "depends_on": list(self.depends_on),
@@ -124,6 +129,7 @@ class SemanticIRPlan:
     direct_answer: str | None = None
     tasks: list[SemanticIRTask] = field(default_factory=list)
     answer_contract: V2AnswerContract | None = None
+    schema_binding: SchemaBindingPlan | None = None
     aggregation_instruction: str = ""
 
     def to_dict(self) -> dict[str, Any]:
@@ -136,6 +142,7 @@ def semantic_plan_to_dict(plan: SemanticIRPlan) -> dict[str, Any]:
         "direct_answer": plan.direct_answer,
         "tasks": [task.to_dict() for task in plan.tasks],
         "answer_contract": answer_contract_to_dict(plan.answer_contract),
+        "schema_binding": schema_binding_plan_to_dict(plan.schema_binding),
         "aggregation_instruction": plan.aggregation_instruction,
     }
 
@@ -159,6 +166,7 @@ def parse_semantic_ir_from_json_or_line_protocol(raw: str | dict[str, Any]) -> S
         direct_answer=direct_answer,
         tasks=tasks,
         answer_contract=parse_answer_contract(payload["answer_contract"]) if isinstance(payload.get("answer_contract"), dict) else None,
+        schema_binding=parse_schema_binding_plan(payload["schema_binding"]) if isinstance(payload.get("schema_binding"), dict) else None,
         aggregation_instruction=str(payload.get("aggregation_instruction") or "").strip(),
     )
 
@@ -170,6 +178,7 @@ def _parse_task(item: Any, index: int) -> SemanticIRTask:
     kind = _enum(item.get("kind"), ALLOWED_SEMANTIC_IR_KINDS, "kind")
     operation = _enum(item.get("operation"), ALLOWED_SEMANTIC_IR_OPERATIONS, "operation")
     source = _enum(item.get("source"), ALLOWED_SEMANTIC_IR_SOURCES, "source")
+    binding_id = str(item.get("binding_id") or "").strip() or None
     depends_on_raw = item.get("depends_on") if isinstance(item.get("depends_on"), list) else []
     local_query = _parse_local_query(item.get("local_query"))
     api_query = _parse_api_query(item.get("api_query"))
@@ -183,6 +192,7 @@ def _parse_task(item: Any, index: int) -> SemanticIRTask:
         kind=kind,
         operation=operation,
         source=source,
+        binding_id=binding_id,
         local_query=local_query,
         api_query=api_query,
         depends_on=[str(dep).strip() for dep in depends_on_raw if str(dep).strip()],
@@ -211,6 +221,7 @@ def _parse_local_query(raw: Any) -> LocalQueryIR | None:
         except Exception as exc:
             raise ValueError("local_query.limit must be an integer or null.") from exc
     return LocalQueryIR(
+        binding_id=str(raw.get("binding_id") or "").strip() or None,
         table=str(raw.get("table") or "").strip(),
         fields=[str(field).strip() for field in fields_raw if str(field).strip()],
         filters=[_parse_filter(item) for item in filters_raw],

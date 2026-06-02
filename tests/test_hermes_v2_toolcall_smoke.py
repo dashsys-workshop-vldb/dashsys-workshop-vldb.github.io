@@ -569,3 +569,50 @@ def test_smoke_records_row_failure_and_continues_all_prompts(monkeypatch, tiny_p
     assert failed["error_type"] == "missing_answer_contract"
     assert report["summary"]["row_count"] == len(smoke.SMOKE_PROMPTS)
     assert report["summary"]["failed_count"] == 1
+
+
+def test_smoke_row_and_summary_record_schema_binding_diagnostics():
+    result = {
+        "final_answer": "There are 74 schema records in the local snapshot.",
+        "output_dir": "/tmp/out",
+        "trajectory": {
+            "steps": [
+                {
+                    "kind": "llm_unified_planner",
+                    "route": "EVIDENCE_PIPELINE",
+                    "diagnostics": {
+                        "sdk_toolcall_semantic_ir_used": True,
+                        "semantic_ir_validation_passed": True,
+                        "backend_formal_compilation_used": True,
+                        "atomic_protocol_fallback_used": False,
+                        "compiled_sql_count": 1,
+                        "compiled_api_count": 0,
+                        "schema_binding_used": True,
+                        "schema_binding_count": 1,
+                        "schema_binding_validation_passed": True,
+                        "schema_binding_repair_attempted": True,
+                        "schema_binding_repair_success": True,
+                        "schema_binding_error_type": None,
+                        "schema_binding_ids": ["b_schema"],
+                    },
+                },
+                {"kind": "sql_call", "result": {"ok": True, "row_count": 1, "rows": [{"count": 74}]}},
+                {"kind": "evidence_boundary", "evidence_pipeline_bypassed": False, "evidence_bus_built": True},
+            ]
+        },
+        "checkpoints": [
+            {"checkpoint_id": "checkpoint_llm_final_answer_semantic_gate", "output": {"passed": True}},
+            {"checkpoint_id": "checkpoint_llm_owned_final_answer_boundary", "output": {"answer_semantic_gate_passed": True, "answer_repair_attempts": 0}},
+        ],
+    }
+
+    row = _build_smoke_row({"id": "local_schema_count", "prompt": "How many schema records are in the local snapshot?", "expected": "EVIDENCE_SQL"}, result)
+    summary = _summarize_rows([row, {**row, "schema_binding_validation_passed": False, "schema_binding_error_type": "unknown_field"}])
+
+    assert row["schema_binding_used"] is True
+    assert row["schema_binding_validation_passed"] is True
+    assert row["schema_binding_repair_attempted"] is True
+    assert row["schema_binding_repair_success"] is True
+    assert row["schema_binding_ids"] == ["b_schema"]
+    assert summary["schema_binding_used_count"] == 2
+    assert summary["schema_binding_validation_failure_count"] == 1

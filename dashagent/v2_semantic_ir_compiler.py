@@ -81,6 +81,7 @@ def _compile_task(task: SemanticIRTask, allowed_schema_card: list[dict[str, Any]
             "pass_id": task.task_id,
             "task_id": task.task_id,
             "kind": "CACHE_ALIAS",
+            "binding_id": task.binding_id,
             "subtask": task.description,
             "path": "CACHE_ALIAS",
             "can_run_parallel": False,
@@ -101,6 +102,7 @@ def _compile_task(task: SemanticIRTask, allowed_schema_card: list[dict[str, Any]
         api_request = compile_api_query_to_request(task.api_query, allowed_api_card)
     return {
         "pass_id": task.task_id,
+        "binding_id": task.binding_id or (task.local_query.binding_id if task.local_query else None),
         "subtask": task.description,
         "path": _path_for_task(task, sql, api_request),
         "can_run_parallel": not bool(task.depends_on),

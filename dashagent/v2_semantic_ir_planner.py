@@ -10,6 +10,7 @@ from .raw_sql_safety_gate import RawSQLSafetyGate
 from .v2_atomic_weak_protocol import run_atomic_weak_protocol
 from .v2_answer_contract_planner import run_answer_contract_planner
 from .v2_answer_contract_validator import AnswerContractValidator
+from .v2_schema_binding_planner import run_schema_binding_planner
 from .v2_raw_sql_fallback import RawSQLFallbackResult, run_raw_sql_fallback_planner
 from .v2_semantic_ir import SemanticIRPlan, parse_semantic_ir_from_json_or_line_protocol, semantic_plan_to_dict
 from .v2_semantic_ir_compiler import compile_semantic_ir_to_plan_payload
@@ -36,6 +37,20 @@ ANSWER_CONTRACT_VALIDATION_ERROR_TYPES = {
     "list_slot_task_operation_mismatch",
     "status_slot_task_operation_mismatch",
     "date_slot_task_operation_mismatch",
+}
+SCHEMA_BINDING_VALIDATION_ERROR_TYPES = {
+    "missing_schema_binding",
+    "missing_binding_id",
+    "duplicate_binding_id",
+    "missing_table",
+    "unknown_table",
+    "unknown_field",
+    "invalid_relation_table",
+    "invalid_slot_reference",
+    "scope_mismatch",
+    "binding_reference_mismatch",
+    "invalid_binding_reference",
+    "binding_table_conflict",
 }
 
 
@@ -154,6 +169,7 @@ def semantic_ir_tool_schema() -> dict[str, Any]:
                         "type": "object",
                         "additionalProperties": False,
                         "properties": {
+                            "binding_id": {"anyOf": [{"type": "string"}, {"type": "null"}]},
                             "table": {"type": "string"},
                             "fields": {"type": "array", "items": {"type": "string"}},
                             "filters": {
@@ -195,6 +211,7 @@ def semantic_ir_tool_schema() -> dict[str, Any]:
             "depends_on": {"type": "array", "items": {"type": "string"}},
             "description": {"type": "string"},
             "required": {"type": "boolean"},
+            "binding_id": {"anyOf": [{"type": "string"}, {"type": "null"}]},
             "reuse_result_from": {"anyOf": [{"type": "string"}, {"type": "null"}]},
             "semantic_cache_key": {"anyOf": [{"type": "string"}, {"type": "null"}]},
             "result_contract": result_contract_schema,
@@ -516,6 +533,16 @@ def run_semantic_ir_toolcall_planner(
         schema_card=schema_card,
         api_card=api_card,
     )
+    parsed_plan, validation = _ensure_schema_binding(
+        client=client,
+        user_prompt=user_prompt,
+        parsed_plan=parsed_plan,
+        validation=validation,
+        diagnostics=diagnostics,
+        raw_previews=raw_previews,
+        schema_card=schema_card,
+        validator=validator,
+    )
     diagnostics.update(
         {
             "semantic_ir_validation_passed": validation.passed,
@@ -587,6 +614,16 @@ def run_semantic_ir_toolcall_planner(
             raw_previews=raw_previews,
             schema_card=schema_card,
             api_card=api_card,
+        )
+        parsed_plan, validation = _ensure_schema_binding(
+            client=client,
+            user_prompt=user_prompt,
+            parsed_plan=parsed_plan,
+            validation=validation,
+            diagnostics=diagnostics,
+            raw_previews=raw_previews,
+            schema_card=schema_card,
+            validator=validator,
         )
         diagnostics.update(
             {
@@ -668,6 +705,16 @@ def run_semantic_ir_toolcall_planner(
             raw_previews=raw_previews,
             schema_card=schema_card,
             api_card=api_card,
+        )
+        repaired_plan, repaired_validation = _ensure_schema_binding(
+            client=client,
+            user_prompt=user_prompt,
+            parsed_plan=repaired_plan,
+            validation=repaired_validation,
+            diagnostics=diagnostics,
+            raw_previews=raw_previews,
+            schema_card=schema_card,
+            validator=validator,
         )
         diagnostics.update(
             {
@@ -828,6 +875,16 @@ def _base_diagnostics() -> dict[str, Any]:
         "answer_contract_secondary_call_latency_ms": 0,
         "backend_answer_contract_inference_used": False,
         "required_slot_count": 0,
+        "schema_binding_used": False,
+        "schema_binding_count": 0,
+        "schema_binding_ids": [],
+        "schema_binding_validation_passed": None,
+        "schema_binding_error_type": None,
+        "schema_binding_error_message": None,
+        "schema_binding_repair_attempted": False,
+        "schema_binding_repair_success": False,
+        "schema_binding_call_latency_ms": 0,
+        "backend_schema_binding_inference_used": False,
     }
 
 
@@ -989,6 +1046,90 @@ def _ensure_answer_contract(
         return parsed_plan, final_contract_validation
     diagnostics["answer_contract_secondary_call_success"] = True
     return parsed_plan, validation
+
+
+def _ensure_schema_binding(
+    *,
+    client: Any,
+    user_prompt: str,
+    parsed_plan: SemanticIRPlan | None,
+    validation: SemanticIRValidationResult,
+    diagnostics: dict[str, Any],
+    raw_previews: dict[str, Any],
+    schema_card: list[dict[str, Any]],
+    validator: SemanticIRValidator,
+) -> tuple[SemanticIRPlan | None, SemanticIRValidationResult]:
+    if parsed_plan is None or not validation.passed:
+        return parsed_plan, validation
+    if not _plan_needs_schema_binding(parsed_plan):
+        diagnostics["schema_binding_used"] = False
+        diagnostics["schema_binding_validation_passed"] = None
+        return parsed_plan, validation
+
+    if parsed_plan.schema_binding is not None:
+        final_validation = validator.validate(parsed_plan, require_answer_contract=True)
+        _record_schema_binding_validation_diagnostics(diagnostics, parsed_plan, final_validation)
+        if final_validation.passed:
+            return parsed_plan, final_validation
+
+    binding_result = run_schema_binding_planner(
+        client=client,
+        user_prompt=user_prompt,
+        semantic_plan=parsed_plan,
+        answer_contract=parsed_plan.answer_contract,
+        allowed_schema_card=schema_card,
+        validation_error=validation,
+    )
+    diagnostics["schema_binding_call_latency_ms"] = binding_result.latency_ms
+    if binding_result.diagnostics:
+        diagnostics.update(binding_result.diagnostics)
+    raw_previews["schema_binding"] = compact_preview(binding_result.raw_preview, 1200)
+    if not binding_result.ok or binding_result.binding_plan is None:
+        failed = SemanticIRValidationResult(
+            passed=False,
+            error_type=binding_result.error_type or "invalid_schema_binding",
+            error_message=binding_result.error_message or "Schema binding planner failed.",
+        )
+        _record_schema_binding_validation_diagnostics(diagnostics, parsed_plan, failed)
+        return parsed_plan, failed
+
+    parsed_plan.schema_binding = binding_result.binding_plan
+    final_validation = validator.validate(parsed_plan, require_answer_contract=True)
+    _record_schema_binding_validation_diagnostics(diagnostics, parsed_plan, final_validation)
+    return parsed_plan, final_validation
+
+
+def _plan_needs_schema_binding(plan: SemanticIRPlan) -> bool:
+    if plan.route != "EVIDENCE":
+        return False
+    for task in plan.tasks:
+        if task.kind in {"LOCAL_QUERY", "LOCAL_AND_LIVE"} or task.local_query is not None:
+            return True
+    if plan.answer_contract is not None:
+        for slot in [*plan.answer_contract.required_slots, *plan.answer_contract.optional_slots]:
+            if slot.source_scope in {"LOCAL_SNAPSHOT", "BOTH"}:
+                return True
+    return False
+
+
+def _record_schema_binding_validation_diagnostics(
+    diagnostics: dict[str, Any],
+    plan: SemanticIRPlan | None,
+    validation: SemanticIRValidationResult,
+) -> None:
+    binding_plan = plan.schema_binding if plan is not None else None
+    binding_error = validation.error_type if validation.error_type in SCHEMA_BINDING_VALIDATION_ERROR_TYPES else None
+    diagnostics.update(
+        {
+            "schema_binding_used": bool(binding_plan),
+            "schema_binding_count": len(binding_plan.bindings) if binding_plan else 0,
+            "schema_binding_ids": [binding.binding_id for binding in binding_plan.bindings] if binding_plan else [],
+            "schema_binding_validation_passed": validation.passed and binding_error is None,
+            "schema_binding_error_type": binding_error,
+            "schema_binding_error_message": validation.error_message if binding_error else None,
+            "backend_schema_binding_inference_used": False,
+        }
+    )
 
 
 def _record_support_result(diagnostics: dict[str, Any], support_result: IRSupportResult) -> None:
@@ -1311,6 +1452,7 @@ def _semantic_ir_system_prompt() -> str:
         "Use the submit_semantic_ir_plan SDK tool. Do not answer in plain text unless tool calls are unavailable. "
         "You own DIRECT vs EVIDENCE routing, task semantics, source, operation, selected table/endpoint IDs, fields, filters, values, dependencies, and aggregation instruction. "
         "You also own the answer_contract: it declares the required final-answer slots and which tasks satisfy each slot. "
+        "Schema/table/field binding is LLM-owned too; the backend validates binding shape and existence only. "
         "Use DIRECT only for pure concept, pure meta-language, or out-of-domain prompts needing no local or live evidence. "
         "Use EVIDENCE for user-specific, local snapshot, live/current/platform/API, list/count/status/date/lookup/compare, mixed concept plus data, or ambiguous data-like prompts. "
         "Choose table and field names only from AllowedLocalSchemaCard and endpoints only from AllowedAPIContextCard. "
@@ -1334,6 +1476,8 @@ def _semantic_ir_user_prompt(
             "Return one submit_semantic_ir_plan tool call.",
             "No plan in message content.",
             "LLM owns route, task semantics, source, table, fields, filters, endpoint, dependencies, and aggregation.",
+            "If you know a schema binding ID from repair context, put it on task.binding_id and local_query.binding_id.",
+            "Backend may reject conflicts between binding_id and local_query table/fields, but it will not substitute a table or field for you.",
             "Do not invent tables, columns, endpoint IDs, filters, or fields.",
             "DIRECT route: tasks empty, concise direct_answer, pure no-evidence concept/meta only.",
                 "EVIDENCE route: tasks contain the LLM-owned evidence tasks.",
@@ -1376,27 +1520,27 @@ def _semantic_ir_user_prompt(
 def _semantic_ir_source_selection_rules() -> list[str]:
     return [
         "Prefer LOCAL_QUERY for user-specific local or ambiguous data-like prompts unless the prompt explicitly asks for live/current/platform/API or names an API catalog resource.",
-        "If no live/current/platform/API cue asks for records, count, date, status, or list, LIVE_QUERY is the wrong source; choose LOCAL_QUERY unless the prompt names an API catalog resource.",
+        "If no live/current/platform/API cue asks for records/count/date/status/list, LIVE_QUERY is the wrong source; choose LOCAL_QUERY unless the prompt names an API catalog resource.",
         "'do I have', 'my', show/list/give me records, and bare entity lookups without live/current/platform/API cues are LOCAL_SNAPSHOT unless they name API catalog resources.",
         "Bare 'schema' or 'schemas' plus 'do I have' or 'my' is LOCAL_SNAPSHOT; do not treat schemas alone as a Schema Registry cue.",
-        "Use schema registry/schema API only for Schema Registry, API, live, current, platform, Adobe Experience Platform, or compare local/live schemas.",
+        "Use schema registry/schema API only for Schema Registry, API, live/current/platform/AEP, or schemas.",
         "Do not choose LIVE_QUERY merely because a live endpoint exists for the object family.",
-        "Use LIVE_QUERY for explicit live/current/platform/API state, compare local/live evidence, or a named API catalog resource with a matching AllowedAPIContextCard endpoint.",
+        "Use LIVE_QUERY for explicit live/current/platform/API state, compare local/live evidence, or a named API catalog resource with a matching endpoint.",
         "Treat sandbox/sandbox-name prompts as live/API cues for API catalog resources unless prompt says local snapshot.",
         "Endpoint catalog resources such as tags, merge policies, segment definitions, segment jobs, catalog batches/files, audit events, dataflow runs/flows, and recent platform changes use LIVE_QUERY when matched.",
-        "Do not invent local table names from endpoint IDs or API nouns; if no matching local table is listed, choose matching LIVE_QUERY instead of fabricating LOCAL_QUERY.",
-        "For batch prompts, use catalog_batches, catalog_batch_detail, export_batch_files, or export_batch_failed when user supplies needed path params.",
+        "Do not invent local table names from endpoint IDs/API nouns; if no local table is listed, choose matching LIVE_QUERY.",
+        "For batch prompts, use catalog_batches/detail/files/failed when user supplies needed path params.",
         "For recent changes, new destinations, or audit-style history prompts, use audit_events or audit_events_short when available.",
-            "For segment definitions as sandbox/platform API resources or bare segment-definition catalog requests, use segment_definitions unless prompt asks local snapshot.",
-            "If a local dimension table can satisfy a local-scoped answer slot and the prompt does not explicitly require live/current/API-only, include the LOCAL_QUERY task.",
+            "For segment definitions as sandbox/platform API resources or bare segment-definition catalog requests, use segment_definitions unless local snapshot.",
+            "If local dimension table can satisfy local-scoped answer slot and prompt does not require live/current/API-only, include LOCAL_QUERY.",
             "For segment jobs or evaluation jobs, use segment_jobs unless prompt asks local snapshot.",
         "For tags and merge policies in this sandbox, use unified_tags or merge_policies rather than LOCAL_QUERY.",
-        "For show/list actual records without live/current/platform/API cues, prefer LOCAL_QUERY over LIVE_QUERY unless they name API catalog resources.",
-        "For mixed concept plus data prompts without live/current/platform/API cues, include CONCEPT plus LOCAL_QUERY; API only if data part names an API catalog resource.",
+        "For show/list actual records without live/current/platform/API cues, prefer LOCAL_QUERY unless they name API catalog resources.",
+        "For mixed concept plus data without live/current/platform/API cues, include CONCEPT plus LOCAL_QUERY; API only for named API catalog data.",
         "For inactive journeys without live/current/platform/API cues, use local snapshot journey/campaign records when an allowed local table is available.",
-        "For inactive journey/campaign local tasks, do not invent literal INACTIVE enum unless known; select NAME plus STATUS/STATE for safe non-active records.",
+        "For inactive journey/campaign local tasks, do not invent INACTIVE enum unless known; select NAME plus STATUS/STATE.",
         "For quoted/named entity filters, prefer primary_name_fields or title/name fields over label_fields; use label_fields for labels/tags/semantic labels.",
-        "For relationship-bearing fields, schema class, or merge policy prompts, select existing allowed local fields; do not ask backend to infer links.",
+        "For relationship-bearing fields, schema class, or merge policy prompts, select existing allowed local fields; backend will not infer links.",
         ]
 
 
@@ -1434,7 +1578,8 @@ def _semantic_ir_repair_system_prompt() -> str:
         "Submit exactly one corrected submit_semantic_ir_plan tool call. "
         "Do not use message content for the plan. Do not let malformed output fail open into DIRECT. "
         "Do not ask the backend to choose replacements; choose valid IDs from the allowed cards yourself. "
-        "If the validation error is about answer_contract, repair the root answer_contract yourself and keep all slot semantics LLM-owned."
+        "If the validation error is about answer_contract, repair the root answer_contract yourself and keep all slot semantics LLM-owned. "
+        "If the validation error is about schema_binding, keep binding semantics LLM-owned and correct the Semantic IR table/field/binding IDs yourself."
     )
 
 
@@ -1462,6 +1607,7 @@ def _semantic_ir_repair_user_prompt(
             "Repair by submitting the SDK tool call again.",
             "Use only exact table, field, and endpoint IDs from allowed cards.",
             "Choose table only from allowed_tables. Do not invent semantic table names.",
+            "If previous_tool_arguments include schema_binding, keep or correct binding_id references explicitly; backend will not apply binding fields automatically.",
             "If route is EVIDENCE, include root answer_contract; do not omit it.",
             "The root answer_contract must include contract_version='v1', answer_style, global_scope, required_slots, and optional_slots.",
             "If route is DIRECT, use answer_contract with empty slots and global_scope NONE unless a direct CONCEPT slot is useful.",
