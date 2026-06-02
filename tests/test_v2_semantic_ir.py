@@ -9,7 +9,12 @@ from dashagent.planner import PACKAGED_DEFAULT_STRATEGY
 from dashagent.v2_semantic_ir import parse_semantic_ir_from_json_or_line_protocol, semantic_plan_to_dict
 from dashagent.v2_semantic_ir_compiler import compile_semantic_ir_to_plan_payload
 from dashagent.v2_semantic_ir_context import build_allowed_api_context_card, build_allowed_local_schema_card
-from dashagent.v2_semantic_ir_planner import semantic_ir_tool_schema
+from dashagent.v2_semantic_ir_planner import (
+    _build_semantic_ir_prompt_context,
+    _semantic_ir_source_selection_rules,
+    _semantic_ir_user_prompt,
+    semantic_ir_tool_schema,
+)
 from dashagent.v2_semantic_ir_validator import SemanticIRValidator
 
 
@@ -143,6 +148,44 @@ def _endpoint_context() -> list[dict]:
             "path_params": [],
         },
     ]
+
+
+def _large_schema_context() -> dict:
+    tables: dict[str, dict] = {}
+    for table_idx in range(28):
+        columns = [
+            {"name": "ID", "type": "VARCHAR"},
+            {"name": "NAME", "type": "VARCHAR"},
+            {"name": "STATUS", "type": "VARCHAR"},
+            {"name": "CREATEDTIME", "type": "VARCHAR"},
+            {"name": "UPDATEDTIME", "type": "VARCHAR"},
+            {"name": f"RELATIONSHIP_SOURCE_ID_{table_idx}", "type": "VARCHAR"},
+            {"name": f"RELATIONSHIP_TARGET_ID_{table_idx}", "type": "VARCHAR"},
+        ]
+        columns.extend({"name": f"EXTRA_COLUMN_{table_idx}_{col_idx}", "type": "VARCHAR"} for col_idx in range(24))
+        tables[f"dim_large_entity_{table_idx}"] = {
+            "columns": columns,
+            "description": "large schema row " * 40,
+        }
+    return {"tables": tables}
+
+
+def _large_endpoint_context() -> list[dict]:
+    endpoints: list[dict] = []
+    for idx in range(34):
+        endpoints.append(
+            {
+                "id": f"large_endpoint_{idx}",
+                "method": "GET",
+                "path": f"/large/resource/{idx}",
+                "path_params": [],
+                "common_params": {f"param_{i}": f"value_{i}" for i in range(10)},
+                "domains": [f"domain_{i}" for i in range(8)],
+                "examples": [{"query": f"example query {idx} " * 20, "params": {"limit": 50}}],
+                "use_when": "large endpoint description " * 60,
+            }
+        )
+    return endpoints
 
 
 def _direct_plan() -> dict:
@@ -610,6 +653,42 @@ def test_semantic_ir_planner_prompt_keeps_local_source_preference_llm_owned(monk
     assert "label_fields" in rules
     assert "literal INACTIVE enum" in rules
     assert "backend" not in rules.lower() or "will not choose" in system_prompt
+
+
+def test_semantic_ir_prompt_context_is_compacted_without_losing_formal_shape():
+    schema_card, api_card, diagnostics = _build_semantic_ir_prompt_context(
+        _large_schema_context(),
+        _large_endpoint_context(),
+        max_total_chars=22000,
+    )
+
+    user_prompt = _semantic_ir_user_prompt(
+        user_prompt='Compare local and live status for "Birthday Message".',
+        allowed_schema_card=schema_card,
+        allowed_api_card=api_card,
+        repair_context=None,
+    )
+    total_chars = len(user_prompt) + len(json.dumps(semantic_ir_tool_schema(), sort_keys=True, separators=(",", ":")))
+
+    assert total_chars <= 22000
+    assert diagnostics["semantic_ir_context_truncated"] is True
+    assert diagnostics["schema_card_original_char_count"] > diagnostics["schema_card_final_char_count"]
+    assert diagnostics["api_card_original_char_count"] > diagnostics["api_card_final_char_count"]
+    assert diagnostics["semantic_ir_planner_char_budget"] == 22000
+    assert diagnostics["schema_card_row_count"] == diagnostics["schema_card_original_row_count"]
+    assert diagnostics["api_card_row_count"] == diagnostics["api_card_original_row_count"]
+    assert schema_card and api_card
+    assert all({"table", "columns", "table_role_hints", "field_hints"} <= set(row) for row in schema_card)
+    assert all({"endpoint_id", "method", "path", "path_params", "query_params"} <= set(row) for row in api_card)
+
+
+def test_semantic_ir_relationship_source_rule_stays_compact_but_preserves_required_terms():
+    relationship_rule = next(rule for rule in _semantic_ir_source_selection_rules() if "relationship-bearing fields" in rule)
+
+    assert "relationship-bearing fields" in relationship_rule
+    assert "schema class" in relationship_rule
+    assert "merge policy" in relationship_rule
+    assert len(relationship_rule) <= 180
 
 
 def test_context_cards_distinguish_primary_name_and_label_fields():

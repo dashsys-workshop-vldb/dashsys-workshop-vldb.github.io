@@ -1,5 +1,5 @@
 {
-  "answer_time": 5.55505241593346,
+  "answer_time": 4.334537665825337,
   "api_call_count": 0,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-02T13:41:53.068683+00:00"
+      "timestamp": "2026-06-02T16:09:50.194922+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-02T13:41:53.069559+00:00"
+      "timestamp": "2026-06-02T16:09:50.196148+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,7 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-02T13:41:53.070284+00:00"
+      "timestamp": "2026-06-02T16:09:50.196775+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner_start",
@@ -82,11 +82,22 @@
       },
       "output": {
         "current_stage": "llm_unified_planner_call_start",
-        "prompt_id": "example_005"
+        "prompt_id": "example_005",
+        "semantic_ir_prompt_diagnostics": {
+          "schema_card_original_row_count": 18,
+          "schema_card_row_count": 18,
+          "semantic_ir_context_truncated": true,
+          "semantic_ir_planner_char_budget": 24000,
+          "semantic_ir_prompt_system_chars": 907,
+          "semantic_ir_prompt_total_chars": 23567,
+          "semantic_ir_prompt_user_chars": 19332,
+          "semantic_ir_tool_schema_chars": 3328,
+          "truncated_fields": 9
+        }
       },
       "stage": "llm-owned planning",
       "technique": "pre-call heartbeat before Unified LLM Planner",
-      "timestamp": "2026-06-02T13:41:53.080099+00:00"
+      "timestamp": "2026-06-02T16:09:50.347015+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -98,6 +109,11 @@
         "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation."
       },
       "metrics": {
+        "api_card_detail_truncated": true,
+        "api_card_final_char_count": 5261,
+        "api_card_original_char_count": 6967,
+        "api_card_original_row_count": 20,
+        "api_card_row_count": 20,
         "api_request_gate_failures": 0,
         "atomic_protocol_fallback_used": false,
         "backend_formal_compilation_used": true,
@@ -112,7 +128,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 40602,
+        "planner_provider_latency_ms": 38216,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -133,39 +149,60 @@
         "raw_sql_fallback_success": false,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
+        "schema_card_columns_truncated": true,
+        "schema_card_final_char_count": 7826,
+        "schema_card_original_char_count": 10765,
+        "schema_card_original_row_count": 18,
+        "schema_card_row_count": 18,
         "sdk_toolcall_semantic_ir_used": true,
         "semantic_alias_count": 0,
         "semantic_alias_error_type": null,
         "semantic_alias_repair_attempted": false,
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
+        "semantic_ir_context_truncated": true,
+        "semantic_ir_context_truncated_sections": [
+          "schema_card",
+          "api_card"
+        ],
         "semantic_ir_plan_preview": {
-          "aggregation_instruction": "Return the list of destinations from t1, sorted by UPDATEDTIME descending (most recently modified first), including all selected columns.",
+          "aggregation_instruction": "Return the list of destinations from dim_target filtered by STATE='ACTIVE', sorted by UPDATEDTIME descending. Include all requested columns: TARGETID, DATAFLOWNAME, INTERVAL, UPDATEDTIME, DESCRIPTION, FREQUENCY, LABELSTARGET, STATE, CONNECTIONSPECID, NAME. The UPDATEDTIME column serves as the 'modified' column for validation.",
           "route": "EVIDENCE",
           "tasks": {
             "items": [
               {
-                "description": "List all destination/target records from the local snapshot, including all available columns and the UPDATEDTIME (modified) column for validation.",
+                "description": "List all destinations (targets) with all associated columns, sorted by most recently modified.",
                 "kind": "LOCAL_QUERY",
                 "local_query": {
                   "count": false,
                   "fields": {
                     "items": [
                       "TARGETID",
-                      "NAME",
-                      "DATAFLOWNAME"
+                      "DATAFLOWNAME",
+                      "INTERVAL"
                     ],
-                    "total_items": 11,
+                    "total_items": 10,
                     "truncated_items": true
                   },
-                  "limit": 100,
+                  "filters": {
+                    "items": [
+                      {
+                        "field": "STATE",
+                        "op": "=",
+                        "value": "ACTIVE"
+                      }
+                    ],
+                    "total_items": 1,
+                    "truncated_items": false
+                  },
+                  "limit": 1000,
                   "table": "dim_target"
                 },
                 "operation": "LIST",
                 "reuse_result_from": null,
                 "semantic_cache_key": null,
                 "source": "LOCAL_SNAPSHOT",
-                "task_id": "t1_list_destinations",
+                "task_id": "destinations_list",
                 "truncated_fields": 7
               }
             ],
@@ -173,9 +210,13 @@
             "truncated_items": false
           }
         },
-        "semantic_ir_provider_latency_ms": 40600,
+        "semantic_ir_planner_char_budget": 24000,
+        "semantic_ir_prompt_system_chars": 907,
+        "semantic_ir_prompt_total_chars": 23567,
+        "semantic_ir_prompt_user_chars": 19332,
+        "semantic_ir_provider_latency_ms": 38213,
         "semantic_ir_repair_attempted": true,
-        "semantic_ir_repair_latency_ms": 17377,
+        "semantic_ir_repair_latency_ms": 18545,
         "semantic_ir_repair_success": true,
         "semantic_ir_support_check_latency_ms": 0,
         "semantic_ir_support_checked": true,
@@ -187,6 +228,7 @@
         "semantic_ir_support_repair_success": false,
         "semantic_ir_supported": true,
         "semantic_ir_task_count": 1,
+        "semantic_ir_tool_schema_chars": 3328,
         "semantic_ir_toolcall_supported": true,
         "semantic_ir_unsupported_features": [],
         "semantic_ir_unsupported_operation": null,
@@ -200,20 +242,20 @@
         "v2_semantic_ir_used": true
       },
       "output": {
-        "aggregation_instruction": "Return the list of destinations from t1, sorted by UPDATEDTIME descending (most recently modified first), including all selected columns.",
+        "aggregation_instruction": "Return the list of destinations from dim_target filtered by STATE='ACTIVE', sorted by UPDATEDTIME descending. Include all requested columns: TARGETID, DATAFLOWNAME, INTERVAL, UPDATEDTIME, DESCRIPTION, FREQUENCY, LABELSTARGET, STATE, CONNECTIONSPECID, NAME. The UPDATEDTIME column serves as the 'modified' column for validation.",
         "evidence_order": "SQL_FIRST",
         "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "passes": {
           "items": [
             {
-              "pass_id": "t1_list_destinations",
+              "pass_id": "destinations_list",
               "path": "SQL",
               "raw_sql_fallback_reason": null,
               "raw_sql_fallback_task_id": null,
               "raw_sql_fallback_used": false,
               "reuse_result_from": null,
               "semantic_cache_key": null,
-              "subtask": "List all destination/target records from the local snapshot, including all available columns and the UPDATEDTIME (modified) column for validation.",
+              "subtask": "List all destinations (targets) with all associated columns, sorted by most recently modified.",
               "truncated_fields": 9
             }
           ],
@@ -224,13 +266,20 @@
         "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
         "route": "EVIDENCE_PIPELINE",
         "sql": {
-          "query": "SELECT \"TARGETID\", \"NAME\", \"DATAFLOWNAME\", \"INTERVAL\", \"UPDATEDTIME\", \"DESCRIPTION\", \"FREQUENCY\", \"LABELSTARGET\", \"STATE\", \"CREATEDTIME\", \"CONNECTIONSPECID\" FROM \"dim_target\" LIMIT 100"
+          "params": {
+            "items": [
+              "ACTIVE"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "query": "SELECT \"TARGETID\", \"DATAFLOWNAME\", \"INTERVAL\", \"UPDATEDTIME\", \"DESCRIPTION\", \"FREQUENCY\", \"LABELSTARGET\", \"STATE\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE \"STATE\" = ? LIMIT 1000"
         },
         "truncated_fields": 6
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-02T13:42:33.686843+00:00"
+      "timestamp": "2026-06-02T16:10:28.569147+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
@@ -242,7 +291,7 @@
         "evidence_order": "SQL_FIRST",
         "pass_ids": {
           "items": [
-            "t1_list_destinations"
+            "destinations_list"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -258,7 +307,7 @@
           "items": [
             {
               "items": [
-                "t1_list_destinations"
+                "destinations_list"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -270,7 +319,7 @@
         "pass_count": 1,
         "pass_ids": {
           "items": [
-            "t1_list_destinations"
+            "destinations_list"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -279,7 +328,7 @@
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-02T13:42:33.690061+00:00"
+      "timestamp": "2026-06-02T16:10:28.573164+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -295,7 +344,7 @@
         },
         "pass_ids": {
           "items": [
-            "t1_list_destinations"
+            "destinations_list"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -318,7 +367,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t1_list_destinations"
+            "destinations_list"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -343,7 +392,7 @@
           "items": [
             {
               "items": [
-                "t1_list_destinations"
+                "destinations_list"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -354,7 +403,7 @@
         },
         "pass_ids": {
           "items": [
-            "t1_list_destinations"
+            "destinations_list"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -365,7 +414,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-02T13:42:33.691619+00:00"
+      "timestamp": "2026-06-02T16:10:28.574923+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -378,7 +427,7 @@
           "items": [
             {
               "items": [
-                "t1_list_destinations"
+                "destinations_list"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -389,7 +438,7 @@
         },
         "pass_ids": {
           "items": [
-            "t1_list_destinations"
+            "destinations_list"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -408,7 +457,7 @@
           "items": [
             {
               "items": [
-                "t1_list_destinations"
+                "destinations_list"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -419,7 +468,7 @@
         },
         "passes_completed": {
           "items": [
-            "t1_list_destinations"
+            "destinations_list"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -440,10 +489,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_16e485426062473eb2e54925ebef7644:t1_list_destinations",
-              "pass_id": "t1_list_destinations",
+              "global_pass_id": "run_5d5536ae7f794293832341b9518a64ca:destinations_list",
+              "pass_id": "destinations_list",
               "plan_version": 1,
-              "run_id": "run_16e485426062473eb2e54925ebef7644",
+              "run_id": "run_5d5536ae7f794293832341b9518a64ca",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -451,10 +500,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_16e485426062473eb2e54925ebef7644:t1_list_destinations",
-              "pass_id": "t1_list_destinations",
+              "global_pass_id": "run_5d5536ae7f794293832341b9518a64ca:destinations_list",
+              "pass_id": "destinations_list",
               "plan_version": 1,
-              "run_id": "run_16e485426062473eb2e54925ebef7644",
+              "run_id": "run_5d5536ae7f794293832341b9518a64ca",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -462,10 +511,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_16e485426062473eb2e54925ebef7644:t1_list_destinations",
-              "pass_id": "t1_list_destinations",
+              "global_pass_id": "run_5d5536ae7f794293832341b9518a64ca:destinations_list",
+              "pass_id": "destinations_list",
               "plan_version": 1,
-              "run_id": "run_16e485426062473eb2e54925ebef7644",
+              "run_id": "run_5d5536ae7f794293832341b9518a64ca",
               "stage": "DEPENDENCY_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -479,7 +528,7 @@
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-02T13:42:33.692761+00:00"
+      "timestamp": "2026-06-02T16:10:28.576562+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
@@ -491,7 +540,7 @@
         "multi_pass_enabled": false,
         "pass_ids": {
           "items": [
-            "t1_list_destinations"
+            "destinations_list"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -520,7 +569,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t1_list_destinations"
+            "destinations_list"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -541,7 +590,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_16e485426062473eb2e54925ebef7644",
+        "evidence_bus_id": "evidence_run_5d5536ae7f794293832341b9518a64ca",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -556,7 +605,7 @@
           "items": [
             {
               "items": [
-                "t1_list_destinations"
+                "destinations_list"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -572,7 +621,7 @@
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "t1_list_destinations"
+            "destinations_list"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -580,7 +629,7 @@
         "pass_results_count": 1,
         "passes_completed": {
           "items": [
-            "t1_list_destinations"
+            "destinations_list"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -592,7 +641,7 @@
         },
         "passes_executed": {
           "items": [
-            "t1_list_destinations"
+            "destinations_list"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -614,8 +663,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_16e485426062473eb2e54925ebef7644",
-        "run_id": "run_16e485426062473eb2e54925ebef7644",
+        "result_bundle_id": "bundle_run_5d5536ae7f794293832341b9518a64ca",
+        "run_id": "run_5d5536ae7f794293832341b9518a64ca",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -625,8 +674,8 @@
         "semantic_alias_materialized_count": 0,
         "semantic_alias_validation_failures": 0,
         "sequential_pass_count": 0,
-        "sql_execution_latency_sec": 0.002,
-        "sql_gate_latency_sec": 0.003,
+        "sql_execution_latency_sec": 0.001,
+        "sql_gate_latency_sec": 0.37,
         "sql_gate_passed": true,
         "sql_repair_attempts": 0,
         "stage_events": {
@@ -634,10 +683,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_16e485426062473eb2e54925ebef7644:t1_list_destinations",
-              "pass_id": "t1_list_destinations",
+              "global_pass_id": "run_5d5536ae7f794293832341b9518a64ca:destinations_list",
+              "pass_id": "destinations_list",
               "plan_version": 1,
-              "run_id": "run_16e485426062473eb2e54925ebef7644",
+              "run_id": "run_5d5536ae7f794293832341b9518a64ca",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -645,10 +694,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_16e485426062473eb2e54925ebef7644:t1_list_destinations",
-              "pass_id": "t1_list_destinations",
+              "global_pass_id": "run_5d5536ae7f794293832341b9518a64ca:destinations_list",
+              "pass_id": "destinations_list",
               "plan_version": 1,
-              "run_id": "run_16e485426062473eb2e54925ebef7644",
+              "run_id": "run_5d5536ae7f794293832341b9518a64ca",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -656,10 +705,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_16e485426062473eb2e54925ebef7644:t1_list_destinations",
-              "pass_id": "t1_list_destinations",
+              "global_pass_id": "run_5d5536ae7f794293832341b9518a64ca:destinations_list",
+              "pass_id": "destinations_list",
               "plan_version": 1,
-              "run_id": "run_16e485426062473eb2e54925ebef7644",
+              "run_id": "run_5d5536ae7f794293832341b9518a64ca",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -675,7 +724,7 @@
       },
       "stage": "llm-owned pass scheduling",
       "technique": "dependency-aware scheduling of LLM-declared evidence passes",
-      "timestamp": "2026-06-02T13:42:33.693584+00:00"
+      "timestamp": "2026-06-02T16:10:28.578028+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -684,7 +733,7 @@
       "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
       "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
       "input_summary": {
-        "pass_id": "t1_list_destinations"
+        "pass_id": "destinations_list"
       },
       "output": {
         "errors": {
@@ -694,11 +743,11 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_16e485426062473eb2e54925ebef7644"
+        "run_id": "run_5d5536ae7f794293832341b9518a64ca"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T13:42:33.694491+00:00"
+      "timestamp": "2026-06-02T16:10:28.579608+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
@@ -707,17 +756,24 @@
       "effect": "checks syntax/database-semantic validity without rewriting SQL",
       "efficiency_role": "prevents executing uncompilable SQL",
       "input_summary": {
-        "pass_id": "t1_list_destinations",
-        "sql": "SELECT \"TARGETID\", \"NAME\", \"DATAFLOWNAME\", \"INTERVAL\", \"UPDATEDTIME\", \"DESCRIPTION\", \"FREQUENCY\", \"LABELSTARGET\", \"STATE\", \"CREATEDTIME\", \"CONNECTIONSPECID\" FROM \"dim_target\" LIMIT 100"
+        "pass_id": "destinations_list",
+        "sql": "SELECT \"TARGETID\", \"DATAFLOWNAME\", \"INTERVAL\", \"UPDATEDTIME\", \"DESCRIPTION\", \"FREQUENCY\", \"LABELSTARGET\", \"STATE\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE \"STATE\" = ? LIMIT 1000"
       },
       "output": {
-        "pass_id": "t1_list_destinations",
+        "params": {
+          "items": [
+            "ACTIVE"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_id": "destinations_list",
         "passed": true,
-        "sql": "SELECT \"TARGETID\", \"NAME\", \"DATAFLOWNAME\", \"INTERVAL\", \"UPDATEDTIME\", \"DESCRIPTION\", \"FREQUENCY\", \"LABELSTARGET\", \"STATE\", \"CREATEDTIME\", \"CONNECTIONSPECID\" FROM \"dim_target\" LIMIT 100"
+        "sql": "SELECT \"TARGETID\", \"DATAFLOWNAME\", \"INTERVAL\", \"UPDATEDTIME\", \"DESCRIPTION\", \"FREQUENCY\", \"LABELSTARGET\", \"STATE\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE \"STATE\" = ? LIMIT 1000"
       },
       "stage": "llm sql compile gate",
       "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
-      "timestamp": "2026-06-02T13:42:33.698722+00:00"
+      "timestamp": "2026-06-02T16:10:28.951871+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -760,7 +816,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t1_list_destinations"
+            "destinations_list"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -781,7 +837,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_16e485426062473eb2e54925ebef7644",
+        "evidence_bus_id": "evidence_run_5d5536ae7f794293832341b9518a64ca",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -799,7 +855,7 @@
           "items": [
             {
               "items": [
-                "t1_list_destinations"
+                "destinations_list"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -815,7 +871,7 @@
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "t1_list_destinations"
+            "destinations_list"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -823,7 +879,7 @@
         "pass_results_count": 1,
         "passes_completed": {
           "items": [
-            "t1_list_destinations"
+            "destinations_list"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -835,7 +891,7 @@
         },
         "passes_executed": {
           "items": [
-            "t1_list_destinations"
+            "destinations_list"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -857,8 +913,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_16e485426062473eb2e54925ebef7644",
-        "run_id": "run_16e485426062473eb2e54925ebef7644",
+        "result_bundle_id": "bundle_run_5d5536ae7f794293832341b9518a64ca",
+        "run_id": "run_5d5536ae7f794293832341b9518a64ca",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -868,8 +924,8 @@
         "semantic_alias_materialized_count": 0,
         "semantic_alias_validation_failures": 0,
         "sequential_pass_count": 0,
-        "sql_execution_latency_sec": 0.002,
-        "sql_gate_latency_sec": 0.003,
+        "sql_execution_latency_sec": 0.001,
+        "sql_gate_latency_sec": 0.37,
         "sql_gate_passed": true,
         "sql_repair_attempts": 0,
         "stage_events": {
@@ -877,10 +933,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_16e485426062473eb2e54925ebef7644:t1_list_destinations",
-              "pass_id": "t1_list_destinations",
+              "global_pass_id": "run_5d5536ae7f794293832341b9518a64ca:destinations_list",
+              "pass_id": "destinations_list",
               "plan_version": 1,
-              "run_id": "run_16e485426062473eb2e54925ebef7644",
+              "run_id": "run_5d5536ae7f794293832341b9518a64ca",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -888,10 +944,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_16e485426062473eb2e54925ebef7644:t1_list_destinations",
-              "pass_id": "t1_list_destinations",
+              "global_pass_id": "run_5d5536ae7f794293832341b9518a64ca:destinations_list",
+              "pass_id": "destinations_list",
               "plan_version": 1,
-              "run_id": "run_16e485426062473eb2e54925ebef7644",
+              "run_id": "run_5d5536ae7f794293832341b9518a64ca",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -899,10 +955,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_16e485426062473eb2e54925ebef7644:t1_list_destinations",
-              "pass_id": "t1_list_destinations",
+              "global_pass_id": "run_5d5536ae7f794293832341b9518a64ca:destinations_list",
+              "pass_id": "destinations_list",
               "plan_version": 1,
-              "run_id": "run_16e485426062473eb2e54925ebef7644",
+              "run_id": "run_5d5536ae7f794293832341b9518a64ca",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -912,13 +968,13 @@
           "truncated_items": true
         },
         "stage_pipeline_used": true,
-        "truncated_fields": 2,
+        "truncated_fields": 5,
         "v2_execution_optimizer_used": true,
         "v2_pipeline_scheduler_used": true
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-02T13:42:33.702408+00:00"
+      "timestamp": "2026-06-02T16:10:28.953876+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -934,7 +990,7 @@
         "dry_run_status": false,
         "row_counts": {
           "items": [
-            1
+            0
           ],
           "total_items": 1,
           "truncated_items": false
@@ -945,23 +1001,11 @@
             {
               "ok": true,
               "result_preview": {
-                "items": [
-                  {
-                    "DATAFLOWNAME": "Activate segments to S3 Feed",
-                    "DESCRIPTION": "This operation creates a dataflow S3 Feed",
-                    "FREQUENCY": "DAILY",
-                    "INTERVAL": 0,
-                    "LABELSTARGET": "[]",
-                    "NAME": "amazon-s3",
-                    "TARGETID": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
-                    "UPDATEDTIME": "2026-04-14T16:15:03.000+00:00",
-                    "truncated_fields": 3
-                  }
-                ],
-                "total_items": 1,
+                "items": [],
+                "total_items": 0,
                 "truncated_items": false
               },
-              "row_count": 1
+              "row_count": 0
             }
           ],
           "total_items": 1,
@@ -970,7 +1014,7 @@
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-02T13:42:33.789324+00:00"
+      "timestamp": "2026-06-02T16:10:29.038795+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -993,7 +1037,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-02T13:42:33.789804+00:00"
+      "timestamp": "2026-06-02T16:10:29.039965+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -1006,45 +1050,20 @@
       },
       "output": {
         "evidence": {
-          "ids": {
-            "target_id": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
-          },
-          "names": {
-            "items": [
-              "amazon-s3"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
           "pass_ids": {
             "items": [
-              "t1_list_destinations"
+              "destinations_list"
             ],
             "total_items": 1,
             "truncated_items": false
           },
           "pass_result_count": 1,
-          "run_id": "run_16e485426062473eb2e54925ebef7644",
-          "statuses": {
-            "items": [
-              "enabled"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "timestamps": {
-            "items": [
-              "2026-04-14T16:15:03.000+00:00",
-              "2026-03-29T07:54:13.000+00:00"
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          }
+          "run_id": "run_5d5536ae7f794293832341b9518a64ca"
         }
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-02T13:42:33.790323+00:00"
+      "timestamp": "2026-06-02T16:10:29.040776+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -1062,14 +1081,14 @@
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "t1_list_destinations"
+              "pass_id": "destinations_list"
             }
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "pass_results_count": 1,
-        "run_id": "run_16e485426062473eb2e54925ebef7644",
+        "run_id": "run_5d5536ae7f794293832341b9518a64ca",
         "runtime_passes": {
           "items": [
             {
@@ -1087,14 +1106,14 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_16e485426062473eb2e54925ebef7644"
+                "run_id": "run_5d5536ae7f794293832341b9518a64ca"
               },
-              "global_pass_id": "run_16e485426062473eb2e54925ebef7644:t1_list_destinations",
-              "pass_id": "t1_list_destinations",
+              "global_pass_id": "run_5d5536ae7f794293832341b9518a64ca:destinations_list",
+              "pass_id": "destinations_list",
               "path": "SQL",
               "plan_version": 1,
-              "run_id": "run_16e485426062473eb2e54925ebef7644",
-              "status": "SUCCESS",
+              "run_id": "run_5d5536ae7f794293832341b9518a64ca",
+              "status": "EMPTY",
               "truncated_fields": 6
             }
           ],
@@ -1104,7 +1123,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-02T13:42:33.790809+00:00"
+      "timestamp": "2026-06-02T16:10:29.041472+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -1127,7 +1146,7 @@
         "live_empty_scoped": false,
         "sql": {
           "items": [
-            "SQL_DIRECT_ANSWER"
+            "SQL_ZERO_ROWS"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -1135,7 +1154,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-02T13:42:33.791263+00:00"
+      "timestamp": "2026-06-02T16:10:29.042092+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -1156,40 +1175,36 @@
         "slots": {
           "answer_family": "destination_export",
           "api_error": false,
-          "discrepancy": false,
-          "dry_run": false,
-          "entity_ids": {
+          "counts": {
             "items": [
-              "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
-              "4890fc95-5a1f-4983-94bb-e060c08e3f81"
+              "0"
             ],
-            "total_items": 2,
+            "total_items": 1,
             "truncated_items": false
           },
+          "discrepancy": false,
+          "dry_run": false,
           "entity_names": {
             "items": [
-              "modified",
-              "amazon-s3"
+              "modified"
             ],
-            "total_items": 2,
+            "total_items": 1,
             "truncated_items": false
           },
           "slots_present": {
             "items": [
               "entity_names",
-              "entity_ids",
               "counts"
             ],
-            "total_items": 7,
-            "truncated_items": true
+            "total_items": 2,
+            "truncated_items": false
           },
-          "sql_row_count": 1,
-          "truncated_fields": 5
+          "sql_row_count": 0
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-02T13:42:33.801808+00:00"
+      "timestamp": "2026-06-02T16:10:29.052028+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer_start",
@@ -1205,7 +1220,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "pre-call heartbeat before LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T13:42:33.802245+00:00"
+      "timestamp": "2026-06-02T16:10:29.052528+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -1218,44 +1233,40 @@
         "slot_counts": {
           "answer_family": "destination_export",
           "api_error": false,
-          "discrepancy": false,
-          "dry_run": false,
-          "entity_ids": {
+          "counts": {
             "items": [
-              "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
-              "4890fc95-5a1f-4983-94bb-e060c08e3f81"
+              "0"
             ],
-            "total_items": 2,
+            "total_items": 1,
             "truncated_items": false
           },
+          "discrepancy": false,
+          "dry_run": false,
           "entity_names": {
             "items": [
-              "modified",
-              "amazon-s3"
+              "modified"
             ],
-            "total_items": 2,
+            "total_items": 1,
             "truncated_items": false
           },
           "slots_present": {
             "items": [
               "entity_names",
-              "entity_ids",
               "counts"
             ],
-            "total_items": 7,
-            "truncated_items": true
+            "total_items": 2,
+            "truncated_items": false
           },
-          "sql_row_count": 1,
-          "truncated_fields": 5
+          "sql_row_count": 0
         }
       },
       "output": {
         "backend_unavailable": false,
-        "final_answer": "The list of destinations in the b2b-prod sandbox contains one entry, sorted by most recently modified. The destination is named amazon-s3 with the dataflow name Activate segments to S3 Feed, which is enabled, runs daily, and was last updated on 2026-04-14T16:15:03.000+00:00.",
+        "final_answer": "No matching runtime evidence was available for this query/scope.",
         "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "parse_error": false,
         "provider": "openai",
-        "raw_preview": "The list of destinations in the b2b-prod sandbox contains one entry, sorted by most recently modified. The destination is named amazon-s3 with the dataflow name Activate segments to S3 Feed, which is enabled, runs daily, and was last updated on 2026-04-14T16:15:03.000+00:00.",
+        "raw_preview": "No matching runtime evidence was available for this query/scope.",
         "used_pass_ids": {
           "items": [],
           "total_items": 0,
@@ -1264,7 +1275,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T13:42:39.330042+00:00"
+      "timestamp": "2026-06-02T16:10:33.367573+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -1276,12 +1287,12 @@
         "composer": "LLMFinalAnswerComposer"
       },
       "output": {
-        "final_answer": "The list of destinations in the b2b-prod sandbox contains one entry, sorted by most recently modified. The destination is named amazon-s3 with the dataflow name Activate segments to S3 Feed, which is enabled, runs daily, and was last updated on 2026-04-14T16:15:03.000+00:00.",
+        "final_answer": "No matching runtime evidence was available for this query/scope.",
         "passed": true
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-02T13:42:39.331568+00:00"
+      "timestamp": "2026-06-02T16:10:33.368516+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -1299,73 +1310,38 @@
           "allowed_fact_index": {
             "counts": {
               "items": [
-                "1"
+                "0"
               ],
               "total_items": 1,
               "truncated_items": false
             },
-            "dates": {
-              "items": [
-                "2026-04-14t16:15:03.000+00:00",
-                "2026-04-14",
-                "2026-03-29t07:54:13.000+00:00"
-              ],
-              "total_items": 4,
-              "truncated_items": true
-            },
             "evidence_strings": {
               "items": [
-                "[]",
-                "amazon-s3",
-                "2026-03-29t07:54:13.000+00:00"
+                "modified"
               ],
-              "total_items": 12,
-              "truncated_items": true
-            },
-            "ids": {
-              "items": [
-                "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
-                "4890fc95-5a1f-4983-94bb-e060c08e3f81"
-              ],
-              "total_items": 2,
+              "total_items": 1,
               "truncated_items": false
             },
             "names": {
               "items": [
-                "modified",
-                "amazon-s3"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            },
-            "statuses": {
-              "items": [
-                "enabled"
+                "modified"
               ],
               "total_items": 1,
               "truncated_items": false
             }
           },
           "claim_extractor": {
-            "claim_count": 2,
+            "claim_count": 1,
             "claims": {
               "items": [
                 {
-                  "hardness": "HARD",
-                  "span": "2026-04-14T16:15:03.000+00:00",
-                  "text": "2026-04-14T16:15:03.000+00:00",
-                  "type": "DATE",
-                  "value": "2026-04-14T16:15:03.000+00:00"
-                },
-                {
-                  "hardness": "HARD",
-                  "span": "S3 Feed",
-                  "text": "S3 Feed",
-                  "type": "ENTITY_NAME",
-                  "value": "S3 Feed"
+                  "hardness": "SOFT",
+                  "span": "No matching runtime evidence was available for this query/scope.",
+                  "text": "No matching runtime evidence was available for this query/scope.",
+                  "type": "SOFT_TEXT"
                 }
               ],
-              "total_items": 2,
+              "total_items": 1,
               "truncated_items": false
             }
           },
@@ -1374,28 +1350,16 @@
               "items": [
                 {
                   "claim": {
-                    "hardness": "HARD",
-                    "span": "2026-04-14T16:15:03.000+00:00",
-                    "text": "2026-04-14T16:15:03.000+00:00",
-                    "type": "DATE",
-                    "value": "2026-04-14T16:15:03.000+00:00"
+                    "hardness": "SOFT",
+                    "span": "No matching runtime evidence was available for this query/scope.",
+                    "text": "No matching runtime evidence was available for this query/scope.",
+                    "type": "SOFT_TEXT"
                   },
-                  "reason": "date",
-                  "status": "SUPPORTED"
-                },
-                {
-                  "claim": {
-                    "hardness": "HARD",
-                    "span": "S3 Feed",
-                    "text": "S3 Feed",
-                    "type": "ENTITY_NAME",
-                    "value": "S3 Feed"
-                  },
-                  "reason": "evidence_string",
+                  "reason": "soft_text",
                   "status": "SUPPORTED"
                 }
               ],
-              "total_items": 2,
+              "total_items": 1,
               "truncated_items": false
             }
           },
@@ -1403,28 +1367,20 @@
           "supported_claims": {
             "items": [
               {
-                "hardness": "HARD",
-                "span": "2026-04-14T16:15:03.000+00:00",
-                "text": "2026-04-14T16:15:03.000+00:00",
-                "type": "DATE",
-                "value": "2026-04-14T16:15:03.000+00:00"
-              },
-              {
-                "hardness": "HARD",
-                "span": "S3 Feed",
-                "text": "S3 Feed",
-                "type": "ENTITY_NAME",
-                "value": "S3 Feed"
+                "hardness": "SOFT",
+                "span": "No matching runtime evidence was available for this query/scope.",
+                "text": "No matching runtime evidence was available for this query/scope.",
+                "type": "SOFT_TEXT"
               }
             ],
-            "total_items": 2,
+            "total_items": 1,
             "truncated_items": false
           }
         }
       },
       "stage": "answer gate",
       "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-02T13:42:39.341164+00:00"
+      "timestamp": "2026-06-02T16:10:33.373245+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -1443,8 +1399,8 @@
         "deterministic_answer_template_used": false,
         "final_answer_repair_latency_sec": 0.0,
         "final_answer_supported_by_evidence": true,
-        "final_composer_latency_sec": 5.526,
-        "final_gate_latency_sec": 0.009,
+        "final_composer_latency_sec": 4.314,
+        "final_gate_latency_sec": 0.005,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 2,
@@ -1456,7 +1412,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-02T13:42:39.342245+00:00"
+      "timestamp": "2026-06-02T16:10:33.374024+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -1485,33 +1441,38 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-02T13:42:39.343219+00:00"
+      "timestamp": "2026-06-02T16:10:33.374736+00:00"
     }
   ],
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 2250,
+  "estimated_tokens": 2340,
   "execution_time": 0.0,
-  "final_answer": "The list of destinations in the b2b-prod sandbox contains one entry, sorted by most recently modified. The destination is named amazon-s3 with the dataflow name Activate segments to S3 Feed, which is enabled, runs daily, and was last updated on 2026-04-14T16:15:03.000+00:00.",
+  "final_answer": "No matching runtime evidence was available for this query/scope.",
   "original_query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
   "planning_time": 0.0,
   "preprocessing_time": 0.0,
   "query_id": "example_005",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 5.684554499574006,
+  "runtime": 4.4529364998452365,
   "sql_call_count": 1,
   "steps": [
     {
-      "estimated_tokens": 1846,
+      "estimated_tokens": 2240,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_005/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 2527
+      "prompt_tokens": 3002
     },
     {
-      "aggregation_instruction": "Return the list of destinations from t1, sorted by UPDATEDTIME descending (most recently modified first), including all selected columns.",
+      "aggregation_instruction": "Return the list of destinations from dim_target filtered by STATE='ACTIVE', sorted by UPDATEDTIME descending. Include all requested columns: TARGETID, DATAFLOWNAME, INTERVAL, UPDATEDTIME, DESCRIPTION, FREQUENCY, LABELSTARGET, STATE, CONNECTIONSPECID, NAME. The UPDATEDTIME column serves as the 'modified' column for validation.",
       "api_request": null,
       "backend_unavailable": false,
       "diagnostics": {
+        "api_card_detail_truncated": true,
+        "api_card_final_char_count": 5261,
+        "api_card_original_char_count": 6967,
+        "api_card_original_row_count": 20,
+        "api_card_row_count": 20,
         "api_request_gate_failures": 0,
         "atomic_protocol_fallback_used": false,
         "backend_formal_compilation_used": true,
@@ -1526,7 +1487,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 40602,
+        "planner_provider_latency_ms": 38216,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -1547,39 +1508,60 @@
         "raw_sql_fallback_success": false,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
+        "schema_card_columns_truncated": true,
+        "schema_card_final_char_count": 7826,
+        "schema_card_original_char_count": 10765,
+        "schema_card_original_row_count": 18,
+        "schema_card_row_count": 18,
         "sdk_toolcall_semantic_ir_used": true,
         "semantic_alias_count": 0,
         "semantic_alias_error_type": null,
         "semantic_alias_repair_attempted": false,
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
+        "semantic_ir_context_truncated": true,
+        "semantic_ir_context_truncated_sections": [
+          "schema_card",
+          "api_card"
+        ],
         "semantic_ir_plan_preview": {
-          "aggregation_instruction": "Return the list of destinations from t1, sorted by UPDATEDTIME descending (most recently modified first), including all selected columns.",
+          "aggregation_instruction": "Return the list of destinations from dim_target filtered by STATE='ACTIVE', sorted by UPDATEDTIME descending. Include all requested columns: TARGETID, DATAFLOWNAME, INTERVAL, UPDATEDTIME, DESCRIPTION, FREQUENCY, LABELSTARGET, STATE, CONNECTIONSPECID, NAME. The UPDATEDTIME column serves as the 'modified' column for validation.",
           "route": "EVIDENCE",
           "tasks": {
             "items": [
               {
-                "description": "List all destination/target records from the local snapshot, including all available columns and the UPDATEDTIME (modified) column for validation.",
+                "description": "List all destinations (targets) with all associated columns, sorted by most recently modified.",
                 "kind": "LOCAL_QUERY",
                 "local_query": {
                   "count": false,
                   "fields": {
                     "items": [
                       "TARGETID",
-                      "NAME",
-                      "DATAFLOWNAME"
+                      "DATAFLOWNAME",
+                      "INTERVAL"
                     ],
-                    "total_items": 11,
+                    "total_items": 10,
                     "truncated_items": true
                   },
-                  "limit": 100,
+                  "filters": {
+                    "items": [
+                      {
+                        "field": "STATE",
+                        "op": "=",
+                        "value": "ACTIVE"
+                      }
+                    ],
+                    "total_items": 1,
+                    "truncated_items": false
+                  },
+                  "limit": 1000,
                   "table": "dim_target"
                 },
                 "operation": "LIST",
                 "reuse_result_from": null,
                 "semantic_cache_key": null,
                 "source": "LOCAL_SNAPSHOT",
-                "task_id": "t1_list_destinations",
+                "task_id": "destinations_list",
                 "truncated_fields": 7
               }
             ],
@@ -1587,9 +1569,13 @@
             "truncated_items": false
           }
         },
-        "semantic_ir_provider_latency_ms": 40600,
+        "semantic_ir_planner_char_budget": 24000,
+        "semantic_ir_prompt_system_chars": 907,
+        "semantic_ir_prompt_total_chars": 23567,
+        "semantic_ir_prompt_user_chars": 19332,
+        "semantic_ir_provider_latency_ms": 38213,
         "semantic_ir_repair_attempted": true,
-        "semantic_ir_repair_latency_ms": 17377,
+        "semantic_ir_repair_latency_ms": 18545,
         "semantic_ir_repair_success": true,
         "semantic_ir_support_check_latency_ms": 0,
         "semantic_ir_support_checked": true,
@@ -1601,6 +1587,7 @@
         "semantic_ir_support_repair_success": false,
         "semantic_ir_supported": true,
         "semantic_ir_task_count": 1,
+        "semantic_ir_tool_schema_chars": 3328,
         "semantic_ir_toolcall_supported": true,
         "semantic_ir_unsupported_features": [],
         "semantic_ir_unsupported_operation": null,
@@ -1624,22 +1611,50 @@
           "can_run_parallel": true,
           "depends_on": [],
           "evidence_order": "SQL_FIRST",
-          "expected_result": "List all destination/target records from the local snapshot, including all available columns and the UPDATEDTIME (modified) column for validation.",
+          "expected_result": "List all destinations (targets) with all associated columns, sorted by most recently modified.",
           "fallback": false,
           "optional": false,
-          "pass_id": "t1_list_destinations",
+          "pass_id": "destinations_list",
           "path": "SQL",
           "raw_sql_fallback_reason": null,
           "raw_sql_fallback_task_id": null,
           "raw_sql_fallback_used": false,
-          "result_contract": null,
+          "result_contract": {
+            "entity": "destination",
+            "fields": [
+              "TARGETID",
+              "DATAFLOWNAME",
+              "INTERVAL",
+              "UPDATEDTIME",
+              "DESCRIPTION",
+              "FREQUENCY",
+              "LABELSTARGET",
+              "STATE",
+              "CONNECTIONSPECID",
+              "NAME"
+            ],
+            "filters": [
+              {
+                "field": "STATE",
+                "op": "=",
+                "value": "ACTIVE"
+              }
+            ],
+            "freshness": "same_run",
+            "object": "list",
+            "operation": "LIST",
+            "scope": "local",
+            "source": "LOCAL_SNAPSHOT"
+          },
           "reuse_result_from": null,
           "semantic_cache_key": null,
           "sql": {
-            "params": [],
-            "query": "SELECT \"TARGETID\", \"NAME\", \"DATAFLOWNAME\", \"INTERVAL\", \"UPDATEDTIME\", \"DESCRIPTION\", \"FREQUENCY\", \"LABELSTARGET\", \"STATE\", \"CREATEDTIME\", \"CONNECTIONSPECID\" FROM \"dim_target\" LIMIT 100"
+            "params": [
+              "ACTIVE"
+            ],
+            "query": "SELECT \"TARGETID\", \"DATAFLOWNAME\", \"INTERVAL\", \"UPDATEDTIME\", \"DESCRIPTION\", \"FREQUENCY\", \"LABELSTARGET\", \"STATE\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE \"STATE\" = ? LIMIT 1000"
           },
-          "subtask": "List all destination/target records from the local snapshot, including all available columns and the UPDATEDTIME (modified) column for validation."
+          "subtask": "List all destinations (targets) with all associated columns, sorted by most recently modified."
         }
       ],
       "provider": "openai",
@@ -1670,8 +1685,10 @@
       "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
       "route": "EVIDENCE_PIPELINE",
       "sql": {
-        "params": [],
-        "query": "SELECT \"TARGETID\", \"NAME\", \"DATAFLOWNAME\", \"INTERVAL\", \"UPDATEDTIME\", \"DESCRIPTION\", \"FREQUENCY\", \"LABELSTARGET\", \"STATE\", \"CREATEDTIME\", \"CONNECTIONSPECID\" FROM \"dim_target\" LIMIT 100"
+        "params": [
+          "ACTIVE"
+        ],
+        "query": "SELECT \"TARGETID\", \"DATAFLOWNAME\", \"INTERVAL\", \"UPDATEDTIME\", \"DESCRIPTION\", \"FREQUENCY\", \"LABELSTARGET\", \"STATE\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE \"STATE\" = ? LIMIT 1000"
       }
     },
     {
@@ -1680,26 +1697,16 @@
         "error": null,
         "limited": false,
         "ok": true,
-        "row_count": 1,
-        "rows": {
+        "params": {
           "items": [
-            {
-              "DATAFLOWNAME": "Activate segments to S3 Feed",
-              "DESCRIPTION": "This operation creates a dataflow S3 Feed",
-              "FREQUENCY": "DAILY",
-              "INTERVAL": 0,
-              "LABELSTARGET": "[]",
-              "NAME": "amazon-s3",
-              "TARGETID": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
-              "UPDATEDTIME": "2026-04-14T16:15:03.000+00:00",
-              "truncated_fields": 3
-            }
+            "ACTIVE"
           ],
           "total_items": 1,
           "truncated_items": false
-        }
+        },
+        "row_count": 0
       },
-      "sql": "SELECT \"TARGETID\", \"NAME\", \"DATAFLOWNAME\", \"INTERVAL\", \"UPDATEDTIME\", \"DESCRIPTION\", \"FREQUENCY\", \"LABELSTARGET\", \"STATE\", \"CREATEDTIME\", \"CONNECTIONSPECID\" FROM \"dim_target\" LIMIT 100",
+      "sql": "SELECT \"TARGETID\", \"DATAFLOWNAME\", \"INTERVAL\", \"UPDATEDTIME\", \"DESCRIPTION\", \"FREQUENCY\", \"LABELSTARGET\", \"STATE\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE \"STATE\" = ? LIMIT 1000",
       "validation": {
         "errors": [],
         "ok": true,
@@ -1725,12 +1732,12 @@
       "caveats_included": [],
       "claimed_facts": [],
       "error_message": null,
-      "final_answer": "The list of destinations in the b2b-prod sandbox contains one entry, sorted by most recently modified. The destination is named amazon-s3 with the dataflow name Activate segments to S3 Feed, which is enabled, runs daily, and was last updated on 2026-04-14T16:15:03.000+00:00.",
+      "final_answer": "No matching runtime evidence was available for this query/scope.",
       "kind": "llm_final_answer_composer",
       "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
       "parse_error": false,
       "provider": "openai",
-      "raw_preview": "The list of destinations in the b2b-prod sandbox contains one entry, sorted by most recently modified. The destination is named amazon-s3 with the dataflow name Activate segments to S3 Feed, which is enabled, runs daily, and was last updated on 2026-04-14T16:15:03.000+00:00.",
+      "raw_preview": "No matching runtime evidence was available for this query/scope.",
       "unanswered_subtasks": [],
       "used_pass_ids": []
     },
@@ -1742,8 +1749,8 @@
       "deterministic_answer_template_used": false,
       "final_answer_repair_latency_sec": 0.0,
       "final_answer_supported_by_evidence": true,
-      "final_composer_latency_sec": 5.526,
-      "final_gate_latency_sec": 0.009,
+      "final_composer_latency_sec": 4.314,
+      "final_gate_latency_sec": 0.005,
       "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
       "llm_owned_final_answer": true,
@@ -1760,60 +1767,31 @@
             "allowed_caveats": [],
             "api_error_scopes": [],
             "counts": [
-              "1"
+              "0"
             ],
-            "dates": [
-              "2026-04-14t16:15:03.000+00:00",
-              "2026-04-14",
-              "2026-03-29t07:54:13.000+00:00",
-              "2026-03-29"
-            ],
+            "dates": [],
             "evidence_strings": [
-              "[]",
-              "amazon-s3",
-              "2026-03-29t07:54:13.000+00:00",
-              "enabled",
-              "activate segments to s3 feed",
-              "0",
-              "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
-              "daily",
-              "4890fc95-5a1f-4983-94bb-e060c08e3f81",
-              "modified",
-              "this operation creates a dataflow s3 feed",
-              "2026-04-14t16:15:03.000+00:00"
+              "modified"
             ],
-            "ids": [
-              "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
-              "4890fc95-5a1f-4983-94bb-e060c08e3f81"
-            ],
+            "ids": [],
             "live_empty_scopes": [],
             "missing_roles": [],
             "names": [
-              "modified",
-              "amazon-s3"
+              "modified"
             ],
             "relationships": [],
-            "statuses": [
-              "enabled"
-            ]
+            "statuses": []
           },
           "ambiguous_claims": [],
           "claim_extractor": {
-            "claim_count": 2,
+            "claim_count": 1,
             "claims": [
               {
-                "hardness": "HARD",
-                "span": "2026-04-14T16:15:03.000+00:00",
-                "text": "2026-04-14T16:15:03.000+00:00",
-                "type": "DATE",
-                "value": "2026-04-14T16:15:03.000+00:00"
-              },
-              {
-                "hardness": "HARD",
-                "span": "S3 Feed",
-                "text": "S3 Feed",
-                "type": "ENTITY_NAME",
-                "value": "S3 Feed"
+                "hardness": "SOFT",
+                "span": "No matching runtime evidence was available for this query/scope.",
+                "text": "No matching runtime evidence was available for this query/scope.",
+                "type": "SOFT_TEXT",
+                "value": ""
               }
             ]
           },
@@ -1821,24 +1799,13 @@
             "matches": [
               {
                 "claim": {
-                  "hardness": "HARD",
-                  "span": "2026-04-14T16:15:03.000+00:00",
-                  "text": "2026-04-14T16:15:03.000+00:00",
-                  "type": "DATE",
-                  "value": "2026-04-14T16:15:03.000+00:00"
+                  "hardness": "SOFT",
+                  "span": "No matching runtime evidence was available for this query/scope.",
+                  "text": "No matching runtime evidence was available for this query/scope.",
+                  "type": "SOFT_TEXT",
+                  "value": ""
                 },
-                "reason": "date",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "S3 Feed",
-                  "text": "S3 Feed",
-                  "type": "ENTITY_NAME",
-                  "value": "S3 Feed"
-                },
-                "reason": "evidence_string",
+                "reason": "soft_text",
                 "status": "SUPPORTED"
               }
             ]
@@ -1848,18 +1815,11 @@
           "over_specified_claims": [],
           "supported_claims": [
             {
-              "hardness": "HARD",
-              "span": "2026-04-14T16:15:03.000+00:00",
-              "text": "2026-04-14T16:15:03.000+00:00",
-              "type": "DATE",
-              "value": "2026-04-14T16:15:03.000+00:00"
-            },
-            {
-              "hardness": "HARD",
-              "span": "S3 Feed",
-              "text": "S3 Feed",
-              "type": "ENTITY_NAME",
-              "value": "S3 Feed"
+              "hardness": "SOFT",
+              "span": "No matching runtime evidence was available for this query/scope.",
+              "text": "No matching runtime evidence was available for this query/scope.",
+              "type": "SOFT_TEXT",
+              "value": ""
             }
           ],
           "unsupported_claims": []
@@ -1868,7 +1828,7 @@
       "syntax_gate": {
         "error_message": null,
         "error_type": null,
-        "final_answer": "The list of destinations in the b2b-prod sandbox contains one entry, sorted by most recently modified. The destination is named amazon-s3 with the dataflow name Activate segments to S3 Feed, which is enabled, runs daily, and was last updated on 2026-04-14T16:15:03.000+00:00.",
+        "final_answer": "No matching runtime evidence was available for this query/scope.",
         "passed": true
       },
       "used_pass_ids": []
@@ -1876,7 +1836,7 @@
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 5.55505241593346
+    "answer_time": 4.334537665825337
   },
   "tool_call_count": 1
 }

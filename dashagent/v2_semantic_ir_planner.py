@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 from typing import Any
 
@@ -18,6 +19,9 @@ from .v2_weak_model_protocol import _legacy_full_plan_payload
 
 
 SEMANTIC_IR_TOOL_NAME = "submit_semantic_ir_plan"
+DEFAULT_SEMANTIC_IR_PLANNER_CHAR_BUDGET = 24000
+_SCHEMA_CARD_TARGET_SHARE = 0.58
+_API_CARD_TARGET_SHARE = 0.42
 
 
 def semantic_ir_tool_schema() -> dict[str, Any]:
@@ -144,6 +148,132 @@ def semantic_ir_tool_schema() -> dict[str, Any]:
     }
 
 
+def _configured_semantic_ir_planner_char_budget(default: int = DEFAULT_SEMANTIC_IR_PLANNER_CHAR_BUDGET) -> int:
+    raw = os.getenv("DASHAGENT_SEMANTIC_IR_PLANNER_CHAR_BUDGET")
+    if not raw:
+        return int(default)
+    try:
+        value = int(raw)
+    except Exception:
+        return int(default)
+    return value if value >= 12000 else int(default)
+
+
+def semantic_ir_prompt_context_diagnostics(
+    *,
+    user_prompt: str,
+    schema_context: dict[str, Any],
+    endpoint_context: list[dict[str, Any]],
+    repair_context: dict[str, Any] | None = None,
+    max_total_chars: int | None = None,
+) -> dict[str, Any]:
+    """Return pre-call Semantic IR prompt-size diagnostics without invoking the LLM."""
+    _, _, diagnostics = _build_semantic_ir_prompt_context(
+        schema_context,
+        endpoint_context,
+        user_prompt=user_prompt,
+        repair_context=repair_context,
+        max_total_chars=max_total_chars,
+    )
+    return diagnostics
+
+
+def _build_semantic_ir_prompt_context(
+    schema_context: dict[str, Any],
+    endpoint_context: list[dict[str, Any]],
+    *,
+    user_prompt: str = "",
+    repair_context: dict[str, Any] | None = None,
+    max_total_chars: int | None = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+    """Build compact prompt cards mechanically; does not choose route, source, tables, fields, or endpoints."""
+    budget = int(max_total_chars or _configured_semantic_ir_planner_char_budget())
+    original_schema_card = build_allowed_local_schema_card(schema_context)
+    original_api_card = build_allowed_api_context_card(endpoint_context)
+    original_schema_chars = _json_char_count(original_schema_card)
+    original_api_chars = _json_char_count(original_api_card)
+
+    schema_budget, api_budget = _card_budgets_for_total(budget)
+    schema_card, schema_diag = _compact_schema_card(original_schema_card, schema_budget)
+    api_card, api_diag = _compact_api_card(original_api_card, api_budget)
+
+    total_chars = _semantic_ir_total_prompt_chars(
+        user_prompt=user_prompt,
+        allowed_schema_card=schema_card,
+        allowed_api_card=api_card,
+        repair_context=repair_context,
+    )
+    if total_chars > budget:
+        schema_card, schema_diag = _compact_schema_card(original_schema_card, max(5000, int(schema_budget * 0.76)))
+        api_card, api_diag = _compact_api_card(original_api_card, max(3500, int(api_budget * 0.72)))
+        total_chars = _semantic_ir_total_prompt_chars(
+            user_prompt=user_prompt,
+            allowed_schema_card=schema_card,
+            allowed_api_card=api_card,
+            repair_context=repair_context,
+        )
+    if total_chars > budget:
+        schema_card, schema_diag = _compact_schema_card(original_schema_card, max(3800, int(schema_budget * 0.58)), aggressive=True)
+        api_card, api_diag = _compact_api_card(original_api_card, max(2600, int(api_budget * 0.52)), aggressive=True)
+        total_chars = _semantic_ir_total_prompt_chars(
+            user_prompt=user_prompt,
+            allowed_schema_card=schema_card,
+            allowed_api_card=api_card,
+            repair_context=repair_context,
+        )
+    if total_chars > budget:
+        schema_card, schema_diag = _ultra_compact_schema_card(original_schema_card)
+        api_card, api_diag = _ultra_compact_api_card(original_api_card)
+        total_chars = _semantic_ir_total_prompt_chars(
+            user_prompt=user_prompt,
+            allowed_schema_card=schema_card,
+            allowed_api_card=api_card,
+            repair_context=repair_context,
+        )
+
+    final_schema_chars = _json_char_count(schema_card)
+    final_api_chars = _json_char_count(api_card)
+    diagnostics = {
+        "semantic_ir_planner_char_budget": budget,
+        "semantic_ir_context_truncated": bool(
+            schema_diag.get("truncated")
+            or api_diag.get("truncated")
+            or final_schema_chars < original_schema_chars
+            or final_api_chars < original_api_chars
+        ),
+        "semantic_ir_prompt_total_chars": total_chars,
+        "semantic_ir_prompt_user_chars": len(
+            _semantic_ir_user_prompt(
+                user_prompt=user_prompt,
+                allowed_schema_card=schema_card,
+                allowed_api_card=api_card,
+                repair_context=repair_context,
+            )
+        ),
+        "semantic_ir_prompt_system_chars": len(_semantic_ir_system_prompt()),
+        "semantic_ir_tool_schema_chars": len(json.dumps(semantic_ir_tool_schema(), ensure_ascii=False, sort_keys=True, separators=(",", ":"))),
+        "schema_card_original_row_count": len(original_schema_card),
+        "schema_card_row_count": len(schema_card),
+        "api_card_original_row_count": len(original_api_card),
+        "api_card_row_count": len(api_card),
+        "schema_card_original_char_count": original_schema_chars,
+        "schema_card_final_char_count": final_schema_chars,
+        "api_card_original_char_count": original_api_chars,
+        "api_card_final_char_count": final_api_chars,
+        "schema_card_columns_truncated": bool(schema_diag.get("columns_truncated")),
+        "api_card_detail_truncated": bool(api_diag.get("detail_truncated")),
+        "semantic_ir_context_truncated_sections": [
+            section
+            for section, flag in [
+                ("schema_card", bool(schema_diag.get("truncated"))),
+                ("api_card", bool(api_diag.get("truncated"))),
+            ]
+            if flag
+        ],
+    }
+    return schema_card, api_card, diagnostics
+
+
 def run_semantic_ir_toolcall_planner(
     *,
     client: Any,
@@ -154,10 +284,15 @@ def run_semantic_ir_toolcall_planner(
     fallback_to_atomic: bool = True,
 ) -> WeakProtocolResult:
     started = time.perf_counter()
-    schema_card = build_allowed_local_schema_card(schema_context)
-    api_card = build_allowed_api_context_card(endpoint_context)
+    schema_card, api_card, context_diagnostics = _build_semantic_ir_prompt_context(
+        schema_context,
+        endpoint_context,
+        user_prompt=user_prompt,
+        repair_context=repair_context,
+    )
     validator = SemanticIRValidator(schema_card, api_card)
     diagnostics: dict[str, Any] = _base_diagnostics()
+    diagnostics.update(context_diagnostics)
     raw_previews: dict[str, Any] = {}
 
     result, call_error = _call_semantic_ir_tool(
@@ -751,6 +886,173 @@ def _failed_semantic_ir_result(
     )
 
 
+def _card_budgets_for_total(total_budget: int) -> tuple[int, int]:
+    tool_chars = len(json.dumps(semantic_ir_tool_schema(), ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+    fixed_payload_chars = _semantic_ir_total_prompt_chars(user_prompt="", allowed_schema_card=[], allowed_api_card=[], repair_context=None)
+    remaining = max(7000, int(total_budget) - tool_chars - fixed_payload_chars)
+    return max(3800, int(remaining * _SCHEMA_CARD_TARGET_SHARE)), max(2600, int(remaining * _API_CARD_TARGET_SHARE))
+
+
+def _compact_schema_card(rows: list[dict[str, Any]], target_chars: int, *, aggressive: bool = False) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    max_columns_steps = [64, 48, 36, 28, 20, 14] if not aggressive else [32, 24, 18, 12, 8, 5]
+    max_hint_items = 10 if not aggressive else 4
+    best = [_compact_schema_row(row, max_columns=max_columns_steps[0], max_hint_items=max_hint_items) for row in rows]
+    columns_truncated = any(len(best_row.get("columns", [])) < len((row.get("columns") or [])) for row, best_row in zip(rows, best))
+    for max_columns in max_columns_steps:
+        candidate = [_compact_schema_row(row, max_columns=max_columns, max_hint_items=max_hint_items) for row in rows]
+        best = candidate
+        columns_truncated = columns_truncated or any(
+            len(candidate_row.get("columns", [])) < len((row.get("columns") or [])) for row, candidate_row in zip(rows, candidate)
+        )
+        if _json_char_count(candidate) <= target_chars:
+            break
+    final_chars = _json_char_count(best)
+    return best, {"truncated": final_chars < _json_char_count(rows), "columns_truncated": columns_truncated, "char_count": final_chars}
+
+
+def _compact_schema_row(row: dict[str, Any], *, max_columns: int, max_hint_items: int) -> dict[str, Any]:
+    columns = [str(item) for item in row.get("columns", []) if str(item)]
+    field_hints = row.get("field_hints") if isinstance(row.get("field_hints"), dict) else {}
+    priority_columns = _schema_priority_columns(columns, field_hints)
+    if len(columns) > max_columns:
+        kept: list[str] = []
+        for column in [*priority_columns, *columns]:
+            if column in kept:
+                continue
+            kept.append(column)
+            if len(kept) >= max_columns:
+                break
+        columns = kept
+    compact_hints: dict[str, list[str]] = {}
+    for key in ["id_fields", "primary_name_fields", "label_fields", "entity_lookup_fields", "status_fields", "date_fields", "count_fields"]:
+        values = field_hints.get(key)
+        if not isinstance(values, list):
+            continue
+        compact_values = [str(value) for value in values[:max_hint_items] if str(value)]
+        if compact_values:
+            compact_hints[str(key)] = compact_values
+    return {
+        "table": row.get("table"),
+        "columns": columns,
+        "table_role_hints": [str(value) for value in (row.get("table_role_hints") or [])[: min(max_hint_items, 3)]],
+        "field_hints": compact_hints,
+    }
+
+
+def _schema_priority_columns(columns: list[str], field_hints: dict[str, Any]) -> list[str]:
+    priority: list[str] = []
+    for key in ["id_fields", "primary_name_fields", "entity_lookup_fields", "status_fields", "date_fields", "count_fields", "label_fields"]:
+        values = field_hints.get(key) if isinstance(field_hints, dict) else []
+        if isinstance(values, list):
+            priority.extend(str(value) for value in values)
+    priority.extend(column for column in columns if any(token in column.lower() for token in ("id", "name", "status", "state", "date", "time", "published", "created", "updated")))
+    out: list[str] = []
+    seen: set[str] = set()
+    for column in priority:
+        if column not in columns or column in seen:
+            continue
+        seen.add(column)
+        out.append(column)
+    return out
+
+
+def _compact_api_card(rows: list[dict[str, Any]], target_chars: int, *, aggressive: bool = False) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    description_steps = [180, 120, 80, 40, 0] if not aggressive else [80, 40, 0]
+    param_steps = [16, 12, 8, 5] if not aggressive else [8, 5, 3, 1]
+    best = [_compact_api_row(row, description_limit=description_steps[0], param_limit=param_steps[0], keep_examples=not aggressive) for row in rows]
+    for description_limit in description_steps:
+        for param_limit in param_steps:
+            candidate = [_compact_api_row(row, description_limit=description_limit, param_limit=param_limit, keep_examples=False) for row in rows]
+            best = candidate
+            if _json_char_count(candidate) <= target_chars:
+                final_chars = _json_char_count(candidate)
+                return candidate, {"truncated": final_chars < _json_char_count(rows), "detail_truncated": True, "char_count": final_chars}
+    final_chars = _json_char_count(best)
+    return best, {"truncated": final_chars < _json_char_count(rows), "detail_truncated": True, "char_count": final_chars}
+
+
+def _compact_api_row(row: dict[str, Any], *, description_limit: int, param_limit: int, keep_examples: bool) -> dict[str, Any]:
+    description = str(row.get("description") or "")
+    if description_limit <= 0:
+        description = ""
+    elif len(description) > description_limit:
+        description = description[:description_limit].rstrip()
+    return {
+        "endpoint_id": row.get("endpoint_id"),
+        "method": row.get("method"),
+        "path": row.get("path"),
+        "path_params": [str(value) for value in (row.get("path_params") or [])[:param_limit]],
+        "query_params": [str(value) for value in (row.get("query_params") or [])[:param_limit]],
+        "common_params": {},
+        "domains": [],
+        "examples": row.get("examples", [])[:1] if keep_examples else [],
+        "endpoint_role_hints": [str(value) for value in (row.get("endpoint_role_hints") or [])[:param_limit]],
+        "description": description,
+    }
+
+
+def _ultra_compact_schema_card(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    compact: list[dict[str, Any]] = []
+    for row in rows:
+        columns = [str(item) for item in row.get("columns", []) if str(item)]
+        field_hints = row.get("field_hints") if isinstance(row.get("field_hints"), dict) else {}
+        priority = _schema_priority_columns(columns, field_hints)
+        compact.append(
+            {
+                "table": row.get("table"),
+                "columns": (priority or columns)[:1],
+                "table_role_hints": [],
+                "field_hints": {},
+            }
+        )
+    return compact, {"truncated": True, "columns_truncated": True, "char_count": _json_char_count(compact)}
+
+
+def _ultra_compact_api_card(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    compact: list[dict[str, Any]] = []
+    for row in rows:
+        compact.append(
+            {
+                "endpoint_id": row.get("endpoint_id"),
+                "method": row.get("method"),
+                "path": row.get("path"),
+                "path_params": [str(value) for value in (row.get("path_params") or [])[:1]],
+                "query_params": [str(value) for value in (row.get("query_params") or [])[:1]],
+                "common_params": {},
+                "domains": [],
+                "examples": [],
+                "endpoint_role_hints": [],
+                "description": "",
+            }
+        )
+    return compact, {"truncated": True, "detail_truncated": True, "char_count": _json_char_count(compact)}
+
+
+def _semantic_ir_total_prompt_chars(
+    *,
+    user_prompt: str,
+    allowed_schema_card: list[dict[str, Any]],
+    allowed_api_card: list[dict[str, Any]],
+    repair_context: dict[str, Any] | None,
+) -> int:
+    return (
+        len(_semantic_ir_system_prompt())
+        + len(
+            _semantic_ir_user_prompt(
+                user_prompt=user_prompt,
+                allowed_schema_card=allowed_schema_card,
+                allowed_api_card=allowed_api_card,
+                repair_context=repair_context,
+            )
+        )
+        + len(json.dumps(semantic_ir_tool_schema(), ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+    )
+
+
+def _json_char_count(value: Any) -> int:
+    return len(json.dumps(redact_secrets(value), ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+
+
 def _semantic_ir_system_prompt() -> str:
     return (
         "You are the single Unified LLM Planner facade for DASHSys V2, and SDK toolcall Semantic IR is the primary internal planning contract. "
@@ -776,93 +1078,66 @@ def _semantic_ir_user_prompt(
         "AllowedLocalSchemaCard": allowed_schema_card,
         "AllowedAPIContextCard": allowed_api_card,
         "rules": [
-            "Return exactly one submit_semantic_ir_plan tool call.",
-            "Do not put the plan in message content.",
-            "Do not invent table names, column names, or endpoint IDs.",
-            "Do not ask the backend to infer missing filters or fields.",
-            "For DIRECT route, tasks must be empty and direct_answer must be concise.",
-            "For EVIDENCE route, tasks must contain the LLM-owned evidence tasks.",
+            "Return one submit_semantic_ir_plan tool call.",
+            "No plan in message content.",
+            "LLM owns route, task semantics, source, table, fields, filters, endpoint, dependencies, and aggregation.",
+            "Do not invent tables, columns, endpoint IDs, filters, or fields.",
+            "DIRECT route: tasks empty, concise direct_answer, pure no-evidence concept/meta only.",
+            "EVIDENCE route: tasks contain the LLM-owned evidence tasks.",
             "Prefer supported Semantic IR operations whenever they can express the requested evidence.",
-            "Use LIST/COUNT/LOOKUP/STATUS/DATE LocalQueryIR operations for simple local snapshot data requests.",
-            "raw SQL fallback is an escape hatch only when a required LOCAL_SNAPSHOT task cannot be represented by supported Semantic IR.",
+            "Use LIST/COUNT/LOOKUP/STATUS/DATE LocalQueryIR operations for simple local snapshot requests.",
+            "raw SQL fallback is an escape hatch only when required LOCAL_SNAPSHOT evidence cannot be represented by supported Semantic IR.",
             "Do not ask the backend to write SQL, infer SQL, choose SQL tables, choose SQL fields, or repair SQL for you.",
-            "Do not request unsupported JOIN/GROUP/window SQL in Semantic IR unless the user request truly requires it and supported IR cannot represent it.",
-            "If unsupported local SQL structure is truly required, set requires_raw_sql_fallback=true, raw_sql_reason, and unsupported_features on that LOCAL_SNAPSHOT task.",
+            "If unsupported JOIN/GROUP/window local SQL is truly required, set requires_raw_sql_fallback=true, raw_sql_reason, and unsupported_features.",
             *_semantic_ir_source_selection_rules(),
-            "For any how many/count/number of/total prompt, use operation COUNT and local_query.count=true; do not list rows and count the displayed limit.",
-            "For local snapshot counts, use LOCAL_QUERY with operation COUNT.",
-            "Do not represent a requested COUNT as an AGGREGATE task over a sampled LIST task; sampled rows are not a count.",
-            "If a COUNT answer is requested for LOCAL_SNAPSHOT, the required evidence task itself must be kind LOCAL_QUERY, source LOCAL_SNAPSHOT, operation COUNT, and local_query.count=true.",
-            "For date or published/created/updated lookup prompts without live/current/platform/API cues, use LOCAL_QUERY with DATE or LOOKUP when an allowed local table has a relevant date/timestamp field; do not make API a prerequisite.",
-            "For published/date prompts, select all relevant local timestamp candidates available in the allowed table, such as CREATEDTIME, UPDATEDTIME, STARTDATE, LASTDEPLOYEDTIME, STOPPEDTIME, or FINISHEDTIME, instead of selecting only one nullable timestamp.",
-            "For relationship, mapping, connected-to, default-relation, schema class, or merge policy prompts, include relationship-bearing fields that exist in the selected allowed table, such as source/target IDs, schema/class/blueprint fields, merge policy IDs, and primary name fields.",
-            "Do not make a local lookup depend on a live API task unless the local filter literally needs an ID returned by the live task.",
-            "For lifecycle words such as active/inactive/status/state, choose filters only on allowed local fields and values you can justify from schema context; if exact enum values are unknown, prefer a broader LOCAL_QUERY over an invented literal enum like INACTIVE.",
-            "For compare local/live prompts, include both LOCAL_QUERY and LIVE_QUERY tasks when both are available, then aggregate.",
+            "For how many/count/number/total prompts, use operation COUNT and local_query.count=true; sampled LIST rows are not a count.",
+            "For LOCAL_SNAPSHOT COUNT, required evidence task must be LOCAL_QUERY, source LOCAL_SNAPSHOT, operation COUNT, local_query.count=true.",
+            "For date/published/created/updated without live/current/platform/API, use LOCAL_QUERY DATE/LOOKUP when local timestamp fields exist.",
+            "For published/date prompts, select all relevant local timestamp candidates available, e.g. CREATEDTIME, UPDATEDTIME, STARTDATE, LASTDEPLOYEDTIME, STOPPEDTIME, FINISHEDTIME.",
+            "Do not make local lookup depend on live API unless the local filter literally needs an ID returned by live task.",
+            "For lifecycle active/inactive/status/state, use allowed fields/known values; if enum unknown, prefer broader LOCAL_QUERY over invented literal INACTIVE enum.",
+            "For compare local/live prompts, include LOCAL_QUERY and LIVE_QUERY tasks when both are available, then aggregate.",
             "If two tasks require exactly the same runtime evidence, you may declare a CACHE_ALIAS task instead of repeating SQL/API.",
             "LLM owns semantic equivalence; the backend will not infer aliases from natural language, task descriptions, SQL, or API similarity.",
-            "A CACHE_ALIAS must set reuse_result_from to the producer task ID, include depends_on for that producer, contain no local_query/api_query, and include an identical result_contract.",
+            "A CACHE_ALIAS must set reuse_result_from, depends_on producer, no local_query/api_query, and identical result_contract.",
             "Only alias when source, scope, operation, object, entity, fields, filters, freshness, and answer contract are identical.",
-            "If uncertain, do not alias.",
-            "Do not alias local and live evidence.",
-            "Do not alias status and date evidence.",
-            "Do not alias count and list evidence.",
-            "Do not alias concept explanations to runtime evidence.",
-            "Do not alias different entities, different sources, different scopes, different fields, or different filters.",
-            "Alias reuse is same-run only.",
+            "If uncertain, do not alias. Do not alias local and live. Do not alias status and date, count/list, concepts/evidence, or different entities/sources/scopes/fields/filters.",
         ],
         "semantic_ir_examples": [
             {
                 "user_prompt": "Explain what inactive journey means and show inactive journeys.",
-                "shape": "CONCEPT task explains inactive journey; LOCAL_QUERY task lists inactive/local journey records from an allowed local table.",
-                "reason": "The prompt asks for a concept plus actual records but has no live/current/platform/API cue.",
+                "shape": "CONCEPT plus LOCAL_QUERY for inactive journeys.",
             }
         ],
-        "semantic_alias_examples": [
-            {
-                "case": "repeated_local_status",
-                "shape": "t1 LOCAL_QUERY gets local Birthday Message status; t2 CACHE_ALIAS reuses t1 with identical result_contract.",
-            },
-            {
-                "case": "local_live_compare_negative",
-                "shape": "A local status task and a live status task must not be aliased because source/scope differ.",
-            },
-            {
-                "case": "status_date_negative",
-                "shape": "A local status task and a published-date task must not be aliased because operation/fields differ.",
-            },
-            {
-                "case": "count_list_negative",
-                "shape": "A schema count task and schema list task must not be aliased because COUNT and LIST contracts differ.",
-            },
-        ],
+        "semantic_alias_examples": [],
         "repair_context": redact_secrets(repair_context) if repair_context else None,
     }
-    return json.dumps(payload, ensure_ascii=False, sort_keys=True)
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
 def _semantic_ir_source_selection_rules() -> list[str]:
     return [
-        "Prefer LOCAL_QUERY for user-specific local or ambiguous data-like prompts unless the prompt explicitly asks for live/current/platform/API evidence or unless the prompt names an API catalog resource.",
-        "Hard source contract: if the prompt has no live/current/platform/API cue and asks what records exist, what records the user has, a count, date, status, or list, LIVE_QUERY is the wrong source; choose LOCAL_QUERY unless the prompt names an API catalog resource.",
-        "Phrases like 'do I have', 'my', 'show/list/give me records', and bare entity lookups without live/current/platform/API cues are LOCAL_SNAPSHOT requests unless they name API catalog resources.",
-        "Bare 'schema' or 'schemas' plus 'do I have' or 'my' is a LOCAL_SNAPSHOT request; do not treat schemas alone as a Schema Registry API cue.",
-        "Use the schema registry/schema API only when the prompt explicitly says Schema Registry, API, live, current, platform, Adobe Experience Platform, or asks to compare local and live schemas.",
+        "Prefer LOCAL_QUERY for user-specific local or ambiguous data-like prompts unless the prompt explicitly asks for live/current/platform/API or names an API catalog resource.",
+        "If no live/current/platform/API cue asks for records, count, date, status, or list, LIVE_QUERY is the wrong source; choose LOCAL_QUERY unless the prompt names an API catalog resource.",
+        "'do I have', 'my', show/list/give me records, and bare entity lookups without live/current/platform/API cues are LOCAL_SNAPSHOT unless they name API catalog resources.",
+        "Bare 'schema' or 'schemas' plus 'do I have' or 'my' is LOCAL_SNAPSHOT; do not treat schemas alone as a Schema Registry cue.",
+        "Use schema registry/schema API only for Schema Registry, API, live, current, platform, Adobe Experience Platform, or compare local/live schemas.",
         "Do not choose LIVE_QUERY merely because a live endpoint exists for the object family.",
-        "Use LIVE_QUERY when the prompt explicitly asks for live/current/platform/API state, when comparing local/live evidence, or when the prompt names an API catalog resource with a matching AllowedAPIContextCard endpoint.",
-        "Treat sandbox/sandbox-name prompts as live/API evidence cues for API catalog resources unless the prompt explicitly says local snapshot.",
-        "Endpoint catalog resources such as tags, tag categories, merge policies, segment definitions, segment jobs, catalog batches, batch files, audit events, dataflow runs, dataflow flows, and recent platform changes should use LIVE_QUERY when a matching AllowedAPIContextCard endpoint exists.",
-        "Do not invent local table names from endpoint IDs or API nouns; if a matching local table is not listed in AllowedLocalSchemaCard, choose the matching LIVE_QUERY endpoint instead of fabricating a LOCAL_QUERY table.",
-        "For batch prompts, use catalog_batches for batch lists/counts, catalog_batch_detail for one batch, export_batch_files for downloadable files, and export_batch_failed for failed files when path parameters are provided by the user.",
+        "Use LIVE_QUERY for explicit live/current/platform/API state, compare local/live evidence, or a named API catalog resource with a matching AllowedAPIContextCard endpoint.",
+        "Treat sandbox/sandbox-name prompts as live/API cues for API catalog resources unless prompt says local snapshot.",
+        "Endpoint catalog resources such as tags, merge policies, segment definitions, segment jobs, catalog batches/files, audit events, dataflow runs/flows, and recent platform changes use LIVE_QUERY when matched.",
+        "Do not invent local table names from endpoint IDs or API nouns; if no matching local table is listed, choose matching LIVE_QUERY instead of fabricating LOCAL_QUERY.",
+        "For batch prompts, use catalog_batches, catalog_batch_detail, export_batch_files, or export_batch_failed when user supplies needed path params.",
         "For recent changes, new destinations, or audit-style history prompts, use audit_events or audit_events_short when available.",
-        "For segment definitions as sandbox/platform API resources or bare segment-definition catalog requests, use segment_definitions unless the prompt explicitly asks for the local snapshot.",
-        "For segment jobs or evaluation jobs, use segment_jobs unless the prompt explicitly asks for the local snapshot.",
+        "For segment definitions as sandbox/platform API resources or bare segment-definition catalog requests, use segment_definitions unless prompt asks local snapshot.",
+        "For segment jobs or evaluation jobs, use segment_jobs unless prompt asks local snapshot.",
         "For tags and merge policies in this sandbox, use unified_tags or merge_policies rather than LOCAL_QUERY.",
-        "For prompts that ask to show/list actual records without live/current/platform/API cues, prefer LOCAL_QUERY over LIVE_QUERY unless they name API catalog resources.",
-            "For mixed concept plus data prompts without live/current/platform/API cues, include a CONCEPT task and a LOCAL_QUERY data task; do not use API as the primary data source unless the data part names an API catalog resource.",
-            "For inactive journeys without live/current/platform/API cues, use local snapshot journey/campaign records when an allowed local table is available.",
-            "For inactive journey/campaign local tasks, do not invent a literal INACTIVE enum unless that exact value is known from evidence context; prefer selecting NAME plus STATUS/STATE so the final answer can show non-active/non-running local records safely.",
-            "For quoted or named entity filters, prefer primary_name_fields or title/name fields over label_fields such as LABELS*; use label fields only when the user asks for labels, tags, or semantic labels.",
+        "For show/list actual records without live/current/platform/API cues, prefer LOCAL_QUERY over LIVE_QUERY unless they name API catalog resources.",
+        "For mixed concept plus data prompts without live/current/platform/API cues, include CONCEPT plus LOCAL_QUERY; API only if data part names an API catalog resource.",
+        "For inactive journeys without live/current/platform/API cues, use local snapshot journey/campaign records when an allowed local table is available.",
+        "For inactive journey/campaign local tasks, do not invent literal INACTIVE enum unless known; select NAME plus STATUS/STATE for safe non-active records.",
+        "For quoted/named entity filters, prefer primary_name_fields or title/name fields over label_fields; use label_fields for labels/tags/semantic labels.",
+        "For relationship-bearing fields, schema class, or merge policy prompts, select existing allowed local fields; do not ask backend to infer links.",
         ]
 
 
@@ -891,7 +1166,7 @@ def _semantic_ir_missing_toolcall_retry_user_prompt(
             *_semantic_ir_source_selection_rules(),
         ],
     }
-    return json.dumps(redact_secrets(payload), ensure_ascii=False, sort_keys=True)
+    return json.dumps(redact_secrets(payload), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
 def _semantic_ir_repair_system_prompt() -> str:
@@ -929,7 +1204,7 @@ def _semantic_ir_repair_user_prompt(
             *_semantic_ir_source_selection_rules(),
         ],
     }
-    return json.dumps(payload, ensure_ascii=False, sort_keys=True)
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
 def _semantic_ir_support_repair_system_prompt() -> str:
@@ -967,4 +1242,4 @@ def _semantic_ir_support_repair_user_prompt(
             *_semantic_ir_source_selection_rules(),
         ],
     }
-    return json.dumps(redact_secrets(payload), ensure_ascii=False, sort_keys=True)
+    return json.dumps(redact_secrets(payload), ensure_ascii=False, sort_keys=True, separators=(",", ":"))

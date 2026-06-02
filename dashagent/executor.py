@@ -92,6 +92,7 @@ from .llm_final_answer_composer import (
     safe_llm_final_answer_fallback,
 )
 from .llm_unified_planner import LLMUnifiedAPIRequest, LLMUnifiedPass, LLMUnifiedPlan, LLMUnifiedSQLCandidate, run_llm_unified_planner
+from .v2_semantic_ir_planner import semantic_ir_prompt_context_diagnostics
 from .query_decomposer import decompose_query
 from .query_family_examples import examples_for_family, few_shot_public_overlap_check
 from .query_analysis import analyze_query
@@ -1549,12 +1550,24 @@ class AgentExecutor:
             ),
         )
         planner_context = self._llm_owned_planner_context()
+        try:
+            planner_prompt_diagnostics = semantic_ir_prompt_context_diagnostics(
+                user_prompt=query,
+                schema_context=planner_context["schema_context"],
+                endpoint_context=planner_context["endpoint_context"],
+            )
+        except Exception as exc:
+            planner_prompt_diagnostics = {"semantic_ir_prompt_diagnostics_error": str(exc)[:300]}
         checkpoint_logger.add_checkpoint(
             "checkpoint_llm_unified_planner_start",
             stage="llm-owned planning",
             technique="pre-call heartbeat before Unified LLM Planner",
             input_summary={"query": query, "strategy": strategy},
-            output={"current_stage": "llm_unified_planner_call_start", "prompt_id": qid},
+            output={
+                "current_stage": "llm_unified_planner_call_start",
+                "prompt_id": qid,
+                "semantic_ir_prompt_diagnostics": planner_prompt_diagnostics,
+            },
             effect="records the exact boundary before the potentially slow local LLM planner call",
             correctness_role="diagnostic only; does not alter route, Semantic IR, SQL/API, or answer behavior",
             efficiency_role="enables smoke timeout localization without extra tool calls",

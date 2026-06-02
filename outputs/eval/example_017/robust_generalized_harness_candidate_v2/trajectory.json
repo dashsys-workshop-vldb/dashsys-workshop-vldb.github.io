@@ -1,5 +1,5 @@
 {
-  "answer_time": 5.455594874918461,
+  "answer_time": 5.72129024984315,
   "api_call_count": 2,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-02T13:50:07.126833+00:00"
+      "timestamp": "2026-06-02T16:16:49.589413+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-02T13:50:07.127471+00:00"
+      "timestamp": "2026-06-02T16:16:49.590272+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,7 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-02T13:50:07.128241+00:00"
+      "timestamp": "2026-06-02T16:16:49.590888+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner_start",
@@ -82,11 +82,22 @@
       },
       "output": {
         "current_stage": "llm_unified_planner_call_start",
-        "prompt_id": "example_017"
+        "prompt_id": "example_017",
+        "semantic_ir_prompt_diagnostics": {
+          "schema_card_original_row_count": 18,
+          "schema_card_row_count": 18,
+          "semantic_ir_context_truncated": true,
+          "semantic_ir_planner_char_budget": 24000,
+          "semantic_ir_prompt_system_chars": 907,
+          "semantic_ir_prompt_total_chars": 23419,
+          "semantic_ir_prompt_user_chars": 19184,
+          "semantic_ir_tool_schema_chars": 3328,
+          "truncated_fields": 9
+        }
       },
       "stage": "llm-owned planning",
       "technique": "pre-call heartbeat before Unified LLM Planner",
-      "timestamp": "2026-06-02T13:50:07.135465+00:00"
+      "timestamp": "2026-06-02T16:16:49.744763+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -98,6 +109,11 @@
         "query": "Which tags belong to the category 'Uncategorized'?"
       },
       "metrics": {
+        "api_card_detail_truncated": true,
+        "api_card_final_char_count": 5261,
+        "api_card_original_char_count": 6967,
+        "api_card_original_row_count": 20,
+        "api_card_row_count": 20,
         "api_request_gate_failures": 0,
         "atomic_protocol_fallback_used": false,
         "backend_formal_compilation_used": true,
@@ -112,7 +128,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 24351,
+        "planner_provider_latency_ms": 24067,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -133,34 +149,27 @@
         "raw_sql_fallback_success": false,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
+        "schema_card_columns_truncated": true,
+        "schema_card_final_char_count": 7826,
+        "schema_card_original_char_count": 10765,
+        "schema_card_original_row_count": 18,
+        "schema_card_row_count": 18,
         "sdk_toolcall_semantic_ir_used": true,
         "semantic_alias_count": 0,
         "semantic_alias_error_type": null,
         "semantic_alias_repair_attempted": false,
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
+        "semantic_ir_context_truncated": true,
+        "semantic_ir_context_truncated_sections": [
+          "schema_card",
+          "api_card"
+        ],
         "semantic_ir_plan_preview": {
-          "aggregation_instruction": "Use the results from t1 to filter tags where the category is 'Uncategorized'. If t2 is used, match the category name 'Uncategorized' to the relevant tags in t1. Return the list of tag names or IDs belonging to that category.",
+          "aggregation_instruction": "First, query unified_tag_categories to find the category ID for 'Uncategorized'. Then, query unified_tags filtering by that category_id to list the tags. Return the list of tag titles.",
           "route": "EVIDENCE",
           "tasks": {
             "items": [
-              {
-                "api_query": {
-                  "endpoint_id": "unified_tags",
-                  "method": "GET",
-                  "query_params": {
-                    "limit": 100
-                  }
-                },
-                "description": "List all tags from the unified tags API to identify which ones belong to the 'Uncategorized' category.",
-                "kind": "LIVE_QUERY",
-                "operation": "LIST",
-                "reuse_result_from": null,
-                "semantic_cache_key": null,
-                "source": "LIVE_API",
-                "task_id": "t1_list_tags",
-                "truncated_fields": 7
-              },
               {
                 "api_query": {
                   "endpoint_id": "unified_tag_categories",
@@ -169,13 +178,36 @@
                     "limit": 100
                   }
                 },
-                "description": "List tag categories to find the category ID or name for 'Uncategorized' if needed for filtering.",
+                "description": "List tag categories to find the ID for 'Uncategorized'",
                 "kind": "LIVE_QUERY",
                 "operation": "LIST",
                 "reuse_result_from": null,
                 "semantic_cache_key": null,
                 "source": "LIVE_API",
-                "task_id": "t2_list_tag_categories",
+                "task_id": "t1",
+                "truncated_fields": 7
+              },
+              {
+                "api_query": {
+                  "endpoint_id": "unified_tags",
+                  "method": "GET",
+                  "query_params": {
+                    "limit": 100
+                  }
+                },
+                "depends_on": {
+                  "items": [
+                    "t1"
+                  ],
+                  "total_items": 1,
+                  "truncated_items": false
+                },
+                "kind": "LIVE_QUERY",
+                "operation": "LIST",
+                "reuse_result_from": null,
+                "semantic_cache_key": null,
+                "source": "LIVE_API",
+                "task_id": "t2",
                 "truncated_fields": 7
               }
             ],
@@ -183,7 +215,11 @@
             "truncated_items": false
           }
         },
-        "semantic_ir_provider_latency_ms": 24349,
+        "semantic_ir_planner_char_budget": 24000,
+        "semantic_ir_prompt_system_chars": 907,
+        "semantic_ir_prompt_total_chars": 23419,
+        "semantic_ir_prompt_user_chars": 19184,
+        "semantic_ir_provider_latency_ms": 24064,
         "semantic_ir_repair_attempted": false,
         "semantic_ir_repair_latency_ms": 0,
         "semantic_ir_repair_success": false,
@@ -197,6 +233,7 @@
         "semantic_ir_support_repair_success": false,
         "semantic_ir_supported": true,
         "semantic_ir_task_count": 2,
+        "semantic_ir_tool_schema_chars": 3328,
         "semantic_ir_toolcall_supported": true,
         "semantic_ir_unsupported_features": [],
         "semantic_ir_unsupported_operation": null,
@@ -210,38 +247,38 @@
         "v2_semantic_ir_used": true
       },
       "output": {
-        "aggregation_instruction": "Use the results from t1 to filter tags where the category is 'Uncategorized'. If t2 is used, match the category name 'Uncategorized' to the relevant tags in t1. Return the list of tag names or IDs belonging to that category.",
+        "aggregation_instruction": "First, query unified_tag_categories to find the category ID for 'Uncategorized'. Then, query unified_tags filtering by that category_id to list the tags. Return the list of tag titles.",
         "api_request": {
           "method": "GET",
           "params": {
             "limit": 100
           },
-          "path": "https://experience.adobe.io/unifiedtags/tags"
+          "path": "https://experience.adobe.io/unifiedtags/tagCategory"
         },
         "evidence_order": "MULTI_PASS",
         "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "passes": {
           "items": [
             {
-              "pass_id": "t1_list_tags",
+              "pass_id": "t1",
               "path": "API",
               "raw_sql_fallback_reason": null,
               "raw_sql_fallback_task_id": null,
               "raw_sql_fallback_used": false,
               "reuse_result_from": null,
               "semantic_cache_key": null,
-              "subtask": "List all tags from the unified tags API to identify which ones belong to the 'Uncategorized' category.",
+              "subtask": "List tag categories to find the ID for 'Uncategorized'",
               "truncated_fields": 9
             },
             {
-              "pass_id": "t2_list_tag_categories",
+              "pass_id": "t2",
               "path": "API",
               "raw_sql_fallback_reason": null,
               "raw_sql_fallback_task_id": null,
               "raw_sql_fallback_used": false,
               "reuse_result_from": null,
               "semantic_cache_key": null,
-              "subtask": "List tag categories to find the category ID or name for 'Uncategorized' if needed for filtering.",
+              "subtask": "List tags belonging to the 'Uncategorized' category",
               "truncated_fields": 9
             }
           ],
@@ -255,7 +292,7 @@
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-02T13:50:31.490297+00:00"
+      "timestamp": "2026-06-02T16:17:13.815938+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
@@ -267,8 +304,8 @@
         "evidence_order": "MULTI_PASS",
         "pass_ids": {
           "items": [
-            "t1_list_tags",
-            "t2_list_tag_categories"
+            "t1",
+            "t2"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -276,16 +313,11 @@
       },
       "output": {
         "dependency_edges": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "parallel_groups": {
           "items": [
             {
               "items": [
-                "t1_list_tags",
-                "t2_list_tag_categories"
+                "t1",
+                "t2"
               ],
               "total_items": 2,
               "truncated_items": false
@@ -294,11 +326,31 @@
           "total_items": 1,
           "truncated_items": false
         },
+        "parallel_groups": {
+          "items": [
+            {
+              "items": [
+                "t1"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
         "pass_count": 2,
         "pass_ids": {
           "items": [
-            "t1_list_tags",
-            "t2_list_tag_categories"
+            "t1",
+            "t2"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -307,7 +359,7 @@
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-02T13:50:31.492704+00:00"
+      "timestamp": "2026-06-02T16:17:13.819734+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -317,14 +369,23 @@
       "efficiency_role": "prioritizes critical path and enables exact pass-result reuse",
       "input_summary": {
         "dependency_edges": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "t1",
+                "t2"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "pass_ids": {
           "items": [
-            "t1_list_tags",
-            "t2_list_tag_categories"
+            "t1",
+            "t2"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -347,9 +408,10 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t1_list_tags"
+            "t1",
+            "t2"
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -358,8 +420,17 @@
           "truncated_items": false
         },
         "dependency_edges": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "t1",
+                "t2"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "early_stopped_passes": {
@@ -372,20 +443,26 @@
           "items": [
             {
               "items": [
-                "t1_list_tags",
-                "t2_list_tag_categories"
+                "t1"
               ],
-              "total_items": 2,
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2"
+              ],
+              "total_items": 1,
               "truncated_items": false
             }
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         },
         "pass_ids": {
           "items": [
-            "t1_list_tags",
-            "t2_list_tag_categories"
+            "t1",
+            "t2"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -396,7 +473,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-02T13:50:31.493887+00:00"
+      "timestamp": "2026-06-02T16:17:13.821450+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -409,20 +486,26 @@
           "items": [
             {
               "items": [
-                "t1_list_tags",
-                "t2_list_tag_categories"
+                "t1"
               ],
-              "total_items": 2,
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2"
+              ],
+              "total_items": 1,
               "truncated_items": false
             }
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         },
         "pass_ids": {
           "items": [
-            "t1_list_tags",
-            "t2_list_tag_categories"
+            "t1",
+            "t2"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -430,8 +513,17 @@
       },
       "output": {
         "dependency_edges": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "t1",
+                "t2"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "max_api_workers": 2,
@@ -441,20 +533,26 @@
           "items": [
             {
               "items": [
-                "t1_list_tags",
-                "t2_list_tag_categories"
+                "t1"
               ],
-              "total_items": 2,
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2"
+              ],
+              "total_items": 1,
               "truncated_items": false
             }
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         },
         "passes_completed": {
           "items": [
-            "t1_list_tags",
-            "t2_list_tag_categories"
+            "t1",
+            "t2"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -475,21 +573,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_38bf1d727cd948a980301deeb02ef04a:t1_list_tags",
-              "pass_id": "t1_list_tags",
+              "global_pass_id": "run_d610a1b0334a4785986d07dd4c8a3b76:t1",
+              "pass_id": "t1",
               "plan_version": 1,
-              "run_id": "run_38bf1d727cd948a980301deeb02ef04a",
-              "stage": "PLAN_READY",
-              "status": "OK",
-              "truncated_fields": 3
-            },
-            {
-              "attempt_id": 0,
-              "event": "started",
-              "global_pass_id": "run_38bf1d727cd948a980301deeb02ef04a:t2_list_tag_categories",
-              "pass_id": "t2_list_tag_categories",
-              "plan_version": 1,
-              "run_id": "run_38bf1d727cd948a980301deeb02ef04a",
+              "run_id": "run_d610a1b0334a4785986d07dd4c8a3b76",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -497,11 +584,22 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_38bf1d727cd948a980301deeb02ef04a:t1_list_tags",
-              "pass_id": "t1_list_tags",
+              "global_pass_id": "run_d610a1b0334a4785986d07dd4c8a3b76:t1",
+              "pass_id": "t1",
               "plan_version": 1,
-              "run_id": "run_38bf1d727cd948a980301deeb02ef04a",
+              "run_id": "run_d610a1b0334a4785986d07dd4c8a3b76",
               "stage": "PLAN_READY",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "started",
+              "global_pass_id": "run_d610a1b0334a4785986d07dd4c8a3b76:t1",
+              "pass_id": "t1",
+              "plan_version": 1,
+              "run_id": "run_d610a1b0334a4785986d07dd4c8a3b76",
+              "stage": "DEPENDENCY_READY",
               "status": "OK",
               "truncated_fields": 3
             }
@@ -514,7 +612,7 @@
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-02T13:50:31.494870+00:00"
+      "timestamp": "2026-06-02T16:17:13.823187+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
@@ -526,8 +624,8 @@
         "multi_pass_enabled": true,
         "pass_ids": {
           "items": [
-            "t1_list_tags",
-            "t2_list_tag_categories"
+            "t1",
+            "t2"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -556,9 +654,10 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t1_list_tags"
+            "t1",
+            "t2"
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -567,8 +666,17 @@
           "truncated_items": false
         },
         "dependency_edges": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "t1",
+                "t2"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "deterministic_answer_template_used": false,
@@ -577,7 +685,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_38bf1d727cd948a980301deeb02ef04a",
+        "evidence_bus_id": "evidence_run_d610a1b0334a4785986d07dd4c8a3b76",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -592,25 +700,31 @@
           "items": [
             {
               "items": [
-                "t1_list_tags",
-                "t2_list_tag_categories"
+                "t1"
               ],
-              "total_items": 2,
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2"
+              ],
+              "total_items": 1,
               "truncated_items": false
             }
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         },
-        "parallel_pass_count": 2,
+        "parallel_pass_count": 1,
         "pass_graph_gate_error_type": null,
         "pass_graph_gate_passed": true,
         "pass_graph_repair_attempted": false,
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "t1_list_tags",
-            "t2_list_tag_categories"
+            "t1",
+            "t2"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -618,8 +732,8 @@
         "pass_results_count": 2,
         "passes_completed": {
           "items": [
-            "t1_list_tags",
-            "t2_list_tag_categories"
+            "t1",
+            "t2"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -631,8 +745,8 @@
         },
         "passes_executed": {
           "items": [
-            "t1_list_tags",
-            "t2_list_tag_categories"
+            "t1",
+            "t2"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -654,8 +768,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_38bf1d727cd948a980301deeb02ef04a",
-        "run_id": "run_38bf1d727cd948a980301deeb02ef04a",
+        "result_bundle_id": "bundle_run_d610a1b0334a4785986d07dd4c8a3b76",
+        "run_id": "run_d610a1b0334a4785986d07dd4c8a3b76",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -664,7 +778,7 @@
         },
         "semantic_alias_materialized_count": 0,
         "semantic_alias_validation_failures": 0,
-        "sequential_pass_count": 0,
+        "sequential_pass_count": 1,
         "sql_execution_latency_sec": 0.0,
         "sql_gate_latency_sec": 0.0,
         "sql_gate_passed": null,
@@ -674,10 +788,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_38bf1d727cd948a980301deeb02ef04a:t1_list_tags",
-              "pass_id": "t1_list_tags",
+              "global_pass_id": "run_d610a1b0334a4785986d07dd4c8a3b76:t1",
+              "pass_id": "t1",
               "plan_version": 1,
-              "run_id": "run_38bf1d727cd948a980301deeb02ef04a",
+              "run_id": "run_d610a1b0334a4785986d07dd4c8a3b76",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -685,10 +799,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_38bf1d727cd948a980301deeb02ef04a:t1_list_tags",
-              "pass_id": "t1_list_tags",
+              "global_pass_id": "run_d610a1b0334a4785986d07dd4c8a3b76:t1",
+              "pass_id": "t1",
               "plan_version": 1,
-              "run_id": "run_38bf1d727cd948a980301deeb02ef04a",
+              "run_id": "run_d610a1b0334a4785986d07dd4c8a3b76",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -696,10 +810,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_38bf1d727cd948a980301deeb02ef04a:t2_list_tag_categories",
-              "pass_id": "t2_list_tag_categories",
+              "global_pass_id": "run_d610a1b0334a4785986d07dd4c8a3b76:t2",
+              "pass_id": "t2",
               "plan_version": 1,
-              "run_id": "run_38bf1d727cd948a980301deeb02ef04a",
+              "run_id": "run_d610a1b0334a4785986d07dd4c8a3b76",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -715,7 +829,7 @@
       },
       "stage": "llm-owned pass scheduling",
       "technique": "dependency-aware scheduling of LLM-declared evidence passes",
-      "timestamp": "2026-06-02T13:50:31.495655+00:00"
+      "timestamp": "2026-06-02T16:17:13.825438+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -724,7 +838,7 @@
       "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
       "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
       "input_summary": {
-        "pass_id": "t1_list_tags"
+        "pass_id": "t1"
       },
       "output": {
         "errors": {
@@ -734,11 +848,11 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_38bf1d727cd948a980301deeb02ef04a"
+        "run_id": "run_d610a1b0334a4785986d07dd4c8a3b76"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T13:50:31.496442+00:00"
+      "timestamp": "2026-06-02T16:17:13.826938+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_api_request_gate",
@@ -748,21 +862,21 @@
       "efficiency_role": "prevents invalid API calls without planning endpoints",
       "input_summary": {
         "method": "GET",
-        "pass_id": "t1_list_tags",
-        "path": "https://experience.adobe.io/unifiedtags/tags"
+        "pass_id": "t1",
+        "path": "https://experience.adobe.io/unifiedtags/tagCategory"
       },
       "output": {
         "method": "GET",
         "params": {
           "limit": 100
         },
-        "pass_id": "t1_list_tags",
+        "pass_id": "t1",
         "passed": true,
-        "path": "https://experience.adobe.io/unifiedtags/tags"
+        "path": "https://experience.adobe.io/unifiedtags/tagCategory"
       },
       "stage": "llm api request gate",
       "technique": "safe GET request-shape/catalog gate for LLM-owned API pass",
-      "timestamp": "2026-06-02T13:50:31.498040+00:00"
+      "timestamp": "2026-06-02T16:17:13.829101+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -771,7 +885,14 @@
       "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
       "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
       "input_summary": {
-        "pass_id": "t2_list_tag_categories"
+        "depends_on": {
+          "items": [
+            "t1"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_id": "t2"
       },
       "output": {
         "errors": {
@@ -781,11 +902,11 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_38bf1d727cd948a980301deeb02ef04a"
+        "run_id": "run_d610a1b0334a4785986d07dd4c8a3b76"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T13:50:31.499111+00:00"
+      "timestamp": "2026-06-02T16:17:13.830400+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_api_request_gate",
@@ -795,21 +916,21 @@
       "efficiency_role": "prevents invalid API calls without planning endpoints",
       "input_summary": {
         "method": "GET",
-        "pass_id": "t2_list_tag_categories",
-        "path": "https://experience.adobe.io/unifiedtags/tagCategory"
+        "pass_id": "t2",
+        "path": "https://experience.adobe.io/unifiedtags/tags"
       },
       "output": {
         "method": "GET",
         "params": {
           "limit": 100
         },
-        "pass_id": "t2_list_tag_categories",
+        "pass_id": "t2",
         "passed": true,
-        "path": "https://experience.adobe.io/unifiedtags/tagCategory"
+        "path": "https://experience.adobe.io/unifiedtags/tags"
       },
       "stage": "llm api request gate",
       "technique": "safe GET request-shape/catalog gate for LLM-owned API pass",
-      "timestamp": "2026-06-02T13:50:31.500145+00:00"
+      "timestamp": "2026-06-02T16:17:13.831555+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -852,9 +973,10 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t1_list_tags"
+            "t1",
+            "t2"
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -863,8 +985,17 @@
           "truncated_items": false
         },
         "dependency_edges": {
-          "items": [],
-          "total_items": 0,
+          "items": [
+            {
+              "items": [
+                "t1",
+                "t2"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            }
+          ],
+          "total_items": 1,
           "truncated_items": false
         },
         "deterministic_answer_template_used": false,
@@ -873,7 +1004,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_38bf1d727cd948a980301deeb02ef04a",
+        "evidence_bus_id": "evidence_run_d610a1b0334a4785986d07dd4c8a3b76",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -891,25 +1022,31 @@
           "items": [
             {
               "items": [
-                "t1_list_tags",
-                "t2_list_tag_categories"
+                "t1"
               ],
-              "total_items": 2,
+              "total_items": 1,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t2"
+              ],
+              "total_items": 1,
               "truncated_items": false
             }
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         },
-        "parallel_pass_count": 2,
+        "parallel_pass_count": 1,
         "pass_graph_gate_error_type": null,
         "pass_graph_gate_passed": true,
         "pass_graph_repair_attempted": false,
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "t1_list_tags",
-            "t2_list_tag_categories"
+            "t1",
+            "t2"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -917,8 +1054,8 @@
         "pass_results_count": 2,
         "passes_completed": {
           "items": [
-            "t1_list_tags",
-            "t2_list_tag_categories"
+            "t1",
+            "t2"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -930,8 +1067,8 @@
         },
         "passes_executed": {
           "items": [
-            "t1_list_tags",
-            "t2_list_tag_categories"
+            "t1",
+            "t2"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -953,8 +1090,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_38bf1d727cd948a980301deeb02ef04a",
-        "run_id": "run_38bf1d727cd948a980301deeb02ef04a",
+        "result_bundle_id": "bundle_run_d610a1b0334a4785986d07dd4c8a3b76",
+        "run_id": "run_d610a1b0334a4785986d07dd4c8a3b76",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -963,7 +1100,7 @@
         },
         "semantic_alias_materialized_count": 0,
         "semantic_alias_validation_failures": 0,
-        "sequential_pass_count": 0,
+        "sequential_pass_count": 1,
         "sql_execution_latency_sec": 0.0,
         "sql_gate_latency_sec": 0.0,
         "sql_gate_passed": null,
@@ -973,10 +1110,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_38bf1d727cd948a980301deeb02ef04a:t1_list_tags",
-              "pass_id": "t1_list_tags",
+              "global_pass_id": "run_d610a1b0334a4785986d07dd4c8a3b76:t1",
+              "pass_id": "t1",
               "plan_version": 1,
-              "run_id": "run_38bf1d727cd948a980301deeb02ef04a",
+              "run_id": "run_d610a1b0334a4785986d07dd4c8a3b76",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -984,10 +1121,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_38bf1d727cd948a980301deeb02ef04a:t1_list_tags",
-              "pass_id": "t1_list_tags",
+              "global_pass_id": "run_d610a1b0334a4785986d07dd4c8a3b76:t1",
+              "pass_id": "t1",
               "plan_version": 1,
-              "run_id": "run_38bf1d727cd948a980301deeb02ef04a",
+              "run_id": "run_d610a1b0334a4785986d07dd4c8a3b76",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -995,10 +1132,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_38bf1d727cd948a980301deeb02ef04a:t2_list_tag_categories",
-              "pass_id": "t2_list_tag_categories",
+              "global_pass_id": "run_d610a1b0334a4785986d07dd4c8a3b76:t2",
+              "pass_id": "t2",
               "plan_version": 1,
-              "run_id": "run_38bf1d727cd948a980301deeb02ef04a",
+              "run_id": "run_d610a1b0334a4785986d07dd4c8a3b76",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -1008,13 +1145,13 @@
           "truncated_items": true
         },
         "stage_pipeline_used": true,
-        "truncated_fields": 2,
+        "truncated_fields": 5,
         "v2_execution_optimizer_used": true,
         "v2_pipeline_scheduler_used": true
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-02T13:50:31.500965+00:00"
+      "timestamp": "2026-06-02T16:17:13.832909+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -1036,22 +1173,6 @@
               "result_preview": {
                 "caveat": "Adobe credentials unavailable; API call not executed.",
                 "dry_run": true,
-                "endpoint_family": "/unifiedtags/tags",
-                "error_category": "dry_run_unavailable",
-                "evidence_state": "dry_run_unavailable",
-                "live_success": false,
-                "ok": false,
-                "usable_evidence": false
-              },
-              "url": "https://experience.adobe.io/unifiedtags/tags"
-            },
-            {
-              "dry_run": true,
-              "method": "GET",
-              "ok": false,
-              "result_preview": {
-                "caveat": "Adobe credentials unavailable; API call not executed.",
-                "dry_run": true,
                 "endpoint_family": "/unifiedtags/tagCategory",
                 "error_category": "dry_run_unavailable",
                 "evidence_state": "dry_run_unavailable",
@@ -1060,6 +1181,22 @@
                 "usable_evidence": false
               },
               "url": "https://experience.adobe.io/unifiedtags/tagCategory"
+            },
+            {
+              "dry_run": true,
+              "method": "GET",
+              "ok": false,
+              "result_preview": {
+                "caveat": "Adobe credentials unavailable; API call not executed.",
+                "dry_run": true,
+                "endpoint_family": "/unifiedtags/tags",
+                "error_category": "dry_run_unavailable",
+                "evidence_state": "dry_run_unavailable",
+                "live_success": false,
+                "ok": false,
+                "usable_evidence": false
+              },
+              "url": "https://experience.adobe.io/unifiedtags/tags"
             }
           ],
           "total_items": 2,
@@ -1070,7 +1207,7 @@
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-02T13:50:31.593466+00:00"
+      "timestamp": "2026-06-02T16:17:13.943660+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -1093,7 +1230,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-02T13:50:31.593936+00:00"
+      "timestamp": "2026-06-02T16:17:13.944153+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -1108,19 +1245,19 @@
         "evidence": {
           "pass_ids": {
             "items": [
-              "t1_list_tags",
-              "t2_list_tag_categories"
+              "t1",
+              "t2"
             ],
             "total_items": 2,
             "truncated_items": false
           },
           "pass_result_count": 2,
-          "run_id": "run_38bf1d727cd948a980301deeb02ef04a"
+          "run_id": "run_d610a1b0334a4785986d07dd4c8a3b76"
         }
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-02T13:50:31.594454+00:00"
+      "timestamp": "2026-06-02T16:17:13.944682+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -1138,19 +1275,19 @@
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "t1_list_tags"
+              "pass_id": "t1"
             },
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "t2_list_tag_categories"
+              "pass_id": "t2"
             }
           ],
           "total_items": 2,
           "truncated_items": false
         },
         "pass_results_count": 2,
-        "run_id": "run_38bf1d727cd948a980301deeb02ef04a",
+        "run_id": "run_d610a1b0334a4785986d07dd4c8a3b76",
         "runtime_passes": {
           "items": [
             {
@@ -1168,13 +1305,13 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_38bf1d727cd948a980301deeb02ef04a"
+                "run_id": "run_d610a1b0334a4785986d07dd4c8a3b76"
               },
-              "global_pass_id": "run_38bf1d727cd948a980301deeb02ef04a:t1_list_tags",
-              "pass_id": "t1_list_tags",
+              "global_pass_id": "run_d610a1b0334a4785986d07dd4c8a3b76:t1",
+              "pass_id": "t1",
               "path": "API",
               "plan_version": 1,
-              "run_id": "run_38bf1d727cd948a980301deeb02ef04a",
+              "run_id": "run_d610a1b0334a4785986d07dd4c8a3b76",
               "status": "API_ERROR",
               "truncated_fields": 6
             },
@@ -1193,13 +1330,13 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_38bf1d727cd948a980301deeb02ef04a"
+                "run_id": "run_d610a1b0334a4785986d07dd4c8a3b76"
               },
-              "global_pass_id": "run_38bf1d727cd948a980301deeb02ef04a:t2_list_tag_categories",
-              "pass_id": "t2_list_tag_categories",
+              "global_pass_id": "run_d610a1b0334a4785986d07dd4c8a3b76:t2",
+              "pass_id": "t2",
               "path": "API",
               "plan_version": 1,
-              "run_id": "run_38bf1d727cd948a980301deeb02ef04a",
+              "run_id": "run_d610a1b0334a4785986d07dd4c8a3b76",
               "status": "API_ERROR",
               "truncated_fields": 6
             }
@@ -1210,7 +1347,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-02T13:50:31.594952+00:00"
+      "timestamp": "2026-06-02T16:17:13.945364+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -1248,7 +1385,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-02T13:50:31.595476+00:00"
+      "timestamp": "2026-06-02T16:17:13.945901+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -1290,7 +1427,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-02T13:50:31.610143+00:00"
+      "timestamp": "2026-06-02T16:17:13.961474+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer_start",
@@ -1306,7 +1443,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "pre-call heartbeat before LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T13:50:31.610601+00:00"
+      "timestamp": "2026-06-02T16:17:13.962083+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -1353,7 +1490,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T13:50:37.044469+00:00"
+      "timestamp": "2026-06-02T16:17:19.654780+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -1370,7 +1507,7 @@
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-02T13:50:37.045004+00:00"
+      "timestamp": "2026-06-02T16:17:19.656376+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -1402,9 +1539,9 @@
             },
             "evidence_strings": {
               "items": [
-                "uncategorized",
+                "https://experience.adobe.io/unifiedtags/tagcategory",
                 "100",
-                "https://experience.adobe.io/unifiedtags/tagcategory"
+                "https://experience.adobe.io/unifiedtags/tags"
               ],
               "total_items": 4,
               "truncated_items": true
@@ -1467,7 +1604,7 @@
       },
       "stage": "answer gate",
       "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-02T13:50:37.048350+00:00"
+      "timestamp": "2026-06-02T16:17:19.663687+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -1486,8 +1623,8 @@
         "deterministic_answer_template_used": false,
         "final_answer_repair_latency_sec": 0.0,
         "final_answer_supported_by_evidence": true,
-        "final_composer_latency_sec": 5.433,
-        "final_gate_latency_sec": 0.003,
+        "final_composer_latency_sec": 5.691,
+        "final_gate_latency_sec": 0.008,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 2,
@@ -1499,7 +1636,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-02T13:50:37.048916+00:00"
+      "timestamp": "2026-06-02T16:17:19.664540+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -1528,12 +1665,12 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-02T13:50:37.049474+00:00"
+      "timestamp": "2026-06-02T16:17:19.665236+00:00"
     }
   ],
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 2309,
+  "estimated_tokens": 2422,
   "execution_time": 0.0,
   "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
   "original_query": "Which tags belong to the category 'Uncategorized'?",
@@ -1541,26 +1678,31 @@
   "preprocessing_time": 0.0,
   "query_id": "example_017",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 5.590403500013053,
+  "runtime": 5.884937792085111,
   "sql_call_count": 0,
   "steps": [
     {
-      "estimated_tokens": 2034,
+      "estimated_tokens": 2159,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_017/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 2792
+      "prompt_tokens": 2962
     },
     {
-      "aggregation_instruction": "Use the results from t1 to filter tags where the category is 'Uncategorized'. If t2 is used, match the category name 'Uncategorized' to the relevant tags in t1. Return the list of tag names or IDs belonging to that category.",
+      "aggregation_instruction": "First, query unified_tag_categories to find the category ID for 'Uncategorized'. Then, query unified_tags filtering by that category_id to list the tags. Return the list of tag titles.",
       "api_request": {
         "method": "GET",
         "params": {
           "limit": 100
         },
-        "path": "https://experience.adobe.io/unifiedtags/tags"
+        "path": "https://experience.adobe.io/unifiedtags/tagCategory"
       },
       "backend_unavailable": false,
       "diagnostics": {
+        "api_card_detail_truncated": true,
+        "api_card_final_char_count": 5261,
+        "api_card_original_char_count": 6967,
+        "api_card_original_row_count": 20,
+        "api_card_row_count": 20,
         "api_request_gate_failures": 0,
         "atomic_protocol_fallback_used": false,
         "backend_formal_compilation_used": true,
@@ -1575,7 +1717,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 24351,
+        "planner_provider_latency_ms": 24067,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -1596,34 +1738,27 @@
         "raw_sql_fallback_success": false,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
+        "schema_card_columns_truncated": true,
+        "schema_card_final_char_count": 7826,
+        "schema_card_original_char_count": 10765,
+        "schema_card_original_row_count": 18,
+        "schema_card_row_count": 18,
         "sdk_toolcall_semantic_ir_used": true,
         "semantic_alias_count": 0,
         "semantic_alias_error_type": null,
         "semantic_alias_repair_attempted": false,
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
+        "semantic_ir_context_truncated": true,
+        "semantic_ir_context_truncated_sections": [
+          "schema_card",
+          "api_card"
+        ],
         "semantic_ir_plan_preview": {
-          "aggregation_instruction": "Use the results from t1 to filter tags where the category is 'Uncategorized'. If t2 is used, match the category name 'Uncategorized' to the relevant tags in t1. Return the list of tag names or IDs belonging to that category.",
+          "aggregation_instruction": "First, query unified_tag_categories to find the category ID for 'Uncategorized'. Then, query unified_tags filtering by that category_id to list the tags. Return the list of tag titles.",
           "route": "EVIDENCE",
           "tasks": {
             "items": [
-              {
-                "api_query": {
-                  "endpoint_id": "unified_tags",
-                  "method": "GET",
-                  "query_params": {
-                    "limit": 100
-                  }
-                },
-                "description": "List all tags from the unified tags API to identify which ones belong to the 'Uncategorized' category.",
-                "kind": "LIVE_QUERY",
-                "operation": "LIST",
-                "reuse_result_from": null,
-                "semantic_cache_key": null,
-                "source": "LIVE_API",
-                "task_id": "t1_list_tags",
-                "truncated_fields": 7
-              },
               {
                 "api_query": {
                   "endpoint_id": "unified_tag_categories",
@@ -1632,13 +1767,36 @@
                     "limit": 100
                   }
                 },
-                "description": "List tag categories to find the category ID or name for 'Uncategorized' if needed for filtering.",
+                "description": "List tag categories to find the ID for 'Uncategorized'",
                 "kind": "LIVE_QUERY",
                 "operation": "LIST",
                 "reuse_result_from": null,
                 "semantic_cache_key": null,
                 "source": "LIVE_API",
-                "task_id": "t2_list_tag_categories",
+                "task_id": "t1",
+                "truncated_fields": 7
+              },
+              {
+                "api_query": {
+                  "endpoint_id": "unified_tags",
+                  "method": "GET",
+                  "query_params": {
+                    "limit": 100
+                  }
+                },
+                "depends_on": {
+                  "items": [
+                    "t1"
+                  ],
+                  "total_items": 1,
+                  "truncated_items": false
+                },
+                "kind": "LIVE_QUERY",
+                "operation": "LIST",
+                "reuse_result_from": null,
+                "semantic_cache_key": null,
+                "source": "LIVE_API",
+                "task_id": "t2",
                 "truncated_fields": 7
               }
             ],
@@ -1646,7 +1804,11 @@
             "truncated_items": false
           }
         },
-        "semantic_ir_provider_latency_ms": 24349,
+        "semantic_ir_planner_char_budget": 24000,
+        "semantic_ir_prompt_system_chars": 907,
+        "semantic_ir_prompt_total_chars": 23419,
+        "semantic_ir_prompt_user_chars": 19184,
+        "semantic_ir_provider_latency_ms": 24064,
         "semantic_ir_repair_attempted": false,
         "semantic_ir_repair_latency_ms": 0,
         "semantic_ir_repair_success": false,
@@ -1660,6 +1822,7 @@
         "semantic_ir_support_repair_success": false,
         "semantic_ir_supported": true,
         "semantic_ir_task_count": 2,
+        "semantic_ir_tool_schema_chars": 3328,
         "semantic_ir_toolcall_supported": true,
         "semantic_ir_unsupported_features": [],
         "semantic_ir_unsupported_operation": null,
@@ -1684,53 +1847,15 @@
             "params": {
               "limit": 100
             },
-            "path": "https://experience.adobe.io/unifiedtags/tags"
-          },
-          "can_run_parallel": true,
-          "depends_on": [],
-          "evidence_order": "API_FIRST",
-          "expected_result": "List all tags from the unified tags API to identify which ones belong to the 'Uncategorized' category.",
-          "fallback": false,
-          "optional": false,
-          "pass_id": "t1_list_tags",
-          "path": "API",
-          "raw_sql_fallback_reason": null,
-          "raw_sql_fallback_task_id": null,
-          "raw_sql_fallback_used": false,
-          "result_contract": {
-            "entity": "tag",
-            "fields": [
-              "tag_id",
-              "name",
-              "category"
-            ],
-            "filters": [],
-            "freshness": "same_run",
-            "object": "tags",
-            "operation": "LIST",
-            "scope": "live",
-            "source": "LIVE_API"
-          },
-          "reuse_result_from": null,
-          "semantic_cache_key": null,
-          "sql": null,
-          "subtask": "List all tags from the unified tags API to identify which ones belong to the 'Uncategorized' category."
-        },
-        {
-          "api_request": {
-            "method": "GET",
-            "params": {
-              "limit": 100
-            },
             "path": "https://experience.adobe.io/unifiedtags/tagCategory"
           },
           "can_run_parallel": true,
           "depends_on": [],
           "evidence_order": "API_FIRST",
-          "expected_result": "List tag categories to find the category ID or name for 'Uncategorized' if needed for filtering.",
+          "expected_result": "List tag categories to find the ID for 'Uncategorized'",
           "fallback": false,
-          "optional": true,
-          "pass_id": "t2_list_tag_categories",
+          "optional": false,
+          "pass_id": "t1",
           "path": "API",
           "raw_sql_fallback_reason": null,
           "raw_sql_fallback_task_id": null,
@@ -1738,12 +1863,12 @@
           "result_contract": {
             "entity": "tag_category",
             "fields": [
-              "category_id",
-              "name"
+              "id",
+              "title"
             ],
             "filters": [],
             "freshness": "same_run",
-            "object": "tag_categories",
+            "object": null,
             "operation": "LIST",
             "scope": "live",
             "source": "LIVE_API"
@@ -1751,7 +1876,52 @@
           "reuse_result_from": null,
           "semantic_cache_key": null,
           "sql": null,
-          "subtask": "List tag categories to find the category ID or name for 'Uncategorized' if needed for filtering."
+          "subtask": "List tag categories to find the ID for 'Uncategorized'"
+        },
+        {
+          "api_request": {
+            "method": "GET",
+            "params": {
+              "limit": 100
+            },
+            "path": "https://experience.adobe.io/unifiedtags/tags"
+          },
+          "can_run_parallel": false,
+          "depends_on": [
+            "t1"
+          ],
+          "evidence_order": "API_FIRST",
+          "expected_result": "List tags belonging to the 'Uncategorized' category",
+          "fallback": false,
+          "optional": false,
+          "pass_id": "t2",
+          "path": "API",
+          "raw_sql_fallback_reason": null,
+          "raw_sql_fallback_task_id": null,
+          "raw_sql_fallback_used": false,
+          "result_contract": {
+            "entity": "tag",
+            "fields": [
+              "id",
+              "title"
+            ],
+            "filters": [
+              {
+                "field": "category_id",
+                "op": "=",
+                "value": "placeholder_category_id"
+              }
+            ],
+            "freshness": "same_run",
+            "object": null,
+            "operation": "LIST",
+            "scope": "live",
+            "source": "LIVE_API"
+          },
+          "reuse_result_from": null,
+          "semantic_cache_key": null,
+          "sql": null,
+          "subtask": "List tags belonging to the 'Uncategorized' category"
         }
       ],
       "provider": "openai",
@@ -1781,7 +1951,7 @@
       },
       "result": {
         "dry_run": true,
-        "endpoint": "/unifiedtags/tags",
+        "endpoint": "/unifiedtags/tagCategory",
         "error": "Adobe credentials unavailable; API call not executed.",
         "method": "GET",
         "ok": false,
@@ -1789,9 +1959,9 @@
           "limit": 100
         },
         "result_preview": null,
-        "url": "https://experience.adobe.io/unifiedtags/tags"
+        "url": "https://experience.adobe.io/unifiedtags/tagCategory"
       },
-      "url": "https://experience.adobe.io/unifiedtags/tags",
+      "url": "https://experience.adobe.io/unifiedtags/tagCategory",
       "validation": {
         "errors": [],
         "ok": true,
@@ -1810,7 +1980,7 @@
       },
       "result": {
         "dry_run": true,
-        "endpoint": "/unifiedtags/tagCategory",
+        "endpoint": "/unifiedtags/tags",
         "error": "Adobe credentials unavailable; API call not executed.",
         "method": "GET",
         "ok": false,
@@ -1818,9 +1988,9 @@
           "limit": 100
         },
         "result_preview": null,
-        "url": "https://experience.adobe.io/unifiedtags/tagCategory"
+        "url": "https://experience.adobe.io/unifiedtags/tags"
       },
-      "url": "https://experience.adobe.io/unifiedtags/tagCategory",
+      "url": "https://experience.adobe.io/unifiedtags/tags",
       "validation": {
         "errors": [],
         "ok": true,
@@ -1863,8 +2033,8 @@
       "deterministic_answer_template_used": false,
       "final_answer_repair_latency_sec": 0.0,
       "final_answer_supported_by_evidence": true,
-      "final_composer_latency_sec": 5.433,
-      "final_gate_latency_sec": 0.003,
+      "final_composer_latency_sec": 5.691,
+      "final_gate_latency_sec": 0.008,
       "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
       "llm_owned_final_answer": true,
@@ -1887,10 +2057,10 @@
             "counts": [],
             "dates": [],
             "evidence_strings": [
-              "uncategorized",
-              "100",
               "https://experience.adobe.io/unifiedtags/tagcategory",
-              "https://experience.adobe.io/unifiedtags/tags"
+              "100",
+              "https://experience.adobe.io/unifiedtags/tags",
+              "uncategorized"
             ],
             "ids": [],
             "live_empty_scopes": [],
@@ -1955,7 +2125,7 @@
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 5.455594874918461
+    "answer_time": 5.72129024984315
   },
   "tool_call_count": 2
 }

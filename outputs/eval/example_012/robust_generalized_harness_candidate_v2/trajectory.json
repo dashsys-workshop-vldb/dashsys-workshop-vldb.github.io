@@ -1,6 +1,6 @@
 {
-  "answer_time": 20.128941665869206,
-  "api_call_count": 1,
+  "answer_time": 7.082182290963829,
+  "api_call_count": 3,
   "checkpoints": [
     {
       "checkpoint_id": "checkpoint_01_raw_query",
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-02T13:46:47.599395+00:00"
+      "timestamp": "2026-06-02T16:14:21.448639+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-02T13:46:47.599911+00:00"
+      "timestamp": "2026-06-02T16:14:21.449138+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,7 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-02T13:46:47.600432+00:00"
+      "timestamp": "2026-06-02T16:14:21.449621+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner_start",
@@ -82,11 +82,22 @@
       },
       "output": {
         "current_stage": "llm_unified_planner_call_start",
-        "prompt_id": "example_012"
+        "prompt_id": "example_012",
+        "semantic_ir_prompt_diagnostics": {
+          "schema_card_original_row_count": 18,
+          "schema_card_row_count": 18,
+          "semantic_ir_context_truncated": true,
+          "semantic_ir_planner_char_budget": 24000,
+          "semantic_ir_prompt_system_chars": 907,
+          "semantic_ir_prompt_total_chars": 23466,
+          "semantic_ir_prompt_user_chars": 19231,
+          "semantic_ir_tool_schema_chars": 3328,
+          "truncated_fields": 9
+        }
       },
       "stage": "llm-owned planning",
       "technique": "pre-call heartbeat before Unified LLM Planner",
-      "timestamp": "2026-06-02T13:46:47.607326+00:00"
+      "timestamp": "2026-06-02T16:14:21.597595+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -98,6 +109,11 @@
         "query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months."
       },
       "metrics": {
+        "api_card_detail_truncated": true,
+        "api_card_final_char_count": 5261,
+        "api_card_original_char_count": 6967,
+        "api_card_original_row_count": 20,
+        "api_card_row_count": 20,
         "api_request_gate_failures": 0,
         "atomic_protocol_fallback_used": false,
         "backend_formal_compilation_used": true,
@@ -106,13 +122,13 @@
         "backend_semantic_planning_used": false,
         "backend_sql_api_generation_used": false,
         "compiled_alias_count": 0,
-        "compiled_api_count": 1,
-        "compiled_sql_count": 3,
+        "compiled_api_count": 3,
+        "compiled_sql_count": 0,
         "compiler_latency_ms": 0,
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 53331,
+        "planner_provider_latency_ms": 29246,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -133,20 +149,34 @@
         "raw_sql_fallback_success": false,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
+        "schema_card_columns_truncated": true,
+        "schema_card_final_char_count": 7826,
+        "schema_card_original_char_count": 10765,
+        "schema_card_original_row_count": 18,
+        "schema_card_row_count": 18,
         "sdk_toolcall_semantic_ir_used": true,
         "semantic_alias_count": 0,
         "semantic_alias_error_type": null,
         "semantic_alias_repair_attempted": false,
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
+        "semantic_ir_context_truncated": true,
+        "semantic_ir_context_truncated_sections": [
+          "schema_card",
+          "api_card"
+        ],
         "semantic_ir_plan_preview": {
-          "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_audit_recent_changes\", \"kind\": \"LIVE_QUERY\", \"operation\": \"LIST\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"audit_events_short\", \"method\": \"GET\", \"query_params\": {\"limit\": 100}}, \"description\": \"List recent audit events to identify audience/segment and destination/target mappings or changes in the last 3 months.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_segments_list\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LIST\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_segment\", \"fields\": {\"items\": [\"SEGMENTID\", \"NAME\", \"LABELSSEGMENT\"], \"total_items\": 3, \"truncated_items\": false}, \"limit\": 50}, \"description\": \"List all audiences (segments) available in the local snapshot to cross-reference with audit events.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t3_targets_list\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LIST\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_target\", \"fields\": {\"items\": [\"TARGETID\", \"NAME\", \"LABELS...",
+          "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_recent_changes\", \"kind\": \"LIVE_QUERY\", \"operation\": \"LIST\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"audit_events\", \"method\": \"GET\", \"query_params\": {\"limit\": 100}}, \"description\": \"Retrieve recent audit events to identify new destination mappings or segment-to-destination assignments in the last 3 months.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_destinations\", \"kind\": \"LIVE_QUERY\", \"operation\": \"LIST\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"flowservice_flows\", \"method\": \"GET\", \"query_params\": {\"limit\": 100}}, \"description\": \"List all destination dataflows to identify destination entities.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t3_segments\", \"kind\": \"LIVE_QUERY\", \"operation\": \"LIST\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"segment_definitions\", \"method\": \"GET\", \"query_params\": {\"limit\": 100}}, \"description\": \"List all segment definitions to identify audience entities.\", \"truncated_fields\": 7}], \"total_items\": 4, \"truncated_ite...",
           "truncated": true
         },
-        "semantic_ir_provider_latency_ms": 53327,
-        "semantic_ir_repair_attempted": true,
-        "semantic_ir_repair_latency_ms": 24925,
-        "semantic_ir_repair_success": true,
+        "semantic_ir_planner_char_budget": 24000,
+        "semantic_ir_prompt_system_chars": 907,
+        "semantic_ir_prompt_total_chars": 23466,
+        "semantic_ir_prompt_user_chars": 19231,
+        "semantic_ir_provider_latency_ms": 29243,
+        "semantic_ir_repair_attempted": false,
+        "semantic_ir_repair_latency_ms": 0,
+        "semantic_ir_repair_success": false,
         "semantic_ir_support_check_latency_ms": 0,
         "semantic_ir_support_checked": true,
         "semantic_ir_support_recommended_action": "COMPILE",
@@ -157,20 +187,21 @@
         "semantic_ir_support_repair_success": false,
         "semantic_ir_supported": true,
         "semantic_ir_task_count": 4,
+        "semantic_ir_tool_schema_chars": 3328,
         "semantic_ir_toolcall_supported": true,
         "semantic_ir_unsupported_features": [],
         "semantic_ir_unsupported_operation": null,
         "semantic_ir_unsupported_reason": null,
         "semantic_ir_unsupported_task_id": null,
-        "semantic_ir_validation_error_message": "Unknown table: audit_events",
-        "semantic_ir_validation_error_type": "unknown_table",
+        "semantic_ir_validation_error_message": null,
+        "semantic_ir_validation_error_type": null,
         "semantic_ir_validation_latency_ms": 0,
         "semantic_ir_validation_passed": true,
         "sql_compile_gate_failures": 0,
         "v2_semantic_ir_used": true
       },
       "output": {
-        "aggregation_instruction": "Use the audit events (t1) to find recent changes involving segments and targets. Cross-reference segment IDs and target IDs from the audit events with the segment-target mapping (t4) and the segment/target lists (t2, t3) to identify which audiences have been mapped to new destinations. Report the audience names and destination names for any mappings that appear in recent audit events.",
+        "aggregation_instruction": "From the audit events (t1), filter for events occurring in the last 3 months that indicate a mapping or association between a segment (audience) and a destination. Use the segment definitions (t3) to identify audience names and the destination flows (t2) to identify destination names. Return a list of unique audiences that have been mapped to new destinations within this timeframe. If the audit events do not explicitly contain segment-to-destination mapping details, return an empty list or indicate that the specific mapping relationship is not directly available in the provided audit logs.",
         "api_request": {
           "method": "GET",
           "params": {
@@ -183,36 +214,36 @@
         "passes": {
           "items": [
             {
-              "pass_id": "t1_audit_recent_changes",
+              "pass_id": "t1_recent_changes",
               "path": "API",
               "raw_sql_fallback_reason": null,
               "raw_sql_fallback_task_id": null,
               "raw_sql_fallback_used": false,
               "reuse_result_from": null,
               "semantic_cache_key": null,
-              "subtask": "List recent audit events to identify audience/segment and destination/target mappings or changes in the last 3 months.",
+              "subtask": "Retrieve recent audit events to identify new destination mappings or segment-to-destination assignments in the last 3 months.",
               "truncated_fields": 9
             },
             {
-              "pass_id": "t2_segments_list",
-              "path": "SQL",
+              "pass_id": "t2_destinations",
+              "path": "API",
               "raw_sql_fallback_reason": null,
               "raw_sql_fallback_task_id": null,
               "raw_sql_fallback_used": false,
               "reuse_result_from": null,
               "semantic_cache_key": null,
-              "subtask": "List all audiences (segments) available in the local snapshot to cross-reference with audit events.",
+              "subtask": "List all destination dataflows to identify destination entities.",
               "truncated_fields": 9
             },
             {
-              "pass_id": "t3_targets_list",
-              "path": "SQL",
+              "pass_id": "t3_segments",
+              "path": "API",
               "raw_sql_fallback_reason": null,
               "raw_sql_fallback_task_id": null,
               "raw_sql_fallback_used": false,
               "reuse_result_from": null,
               "semantic_cache_key": null,
-              "subtask": "List all destinations (targets) available in the local snapshot to cross-reference with audit events.",
+              "subtask": "List all segment definitions to identify audience entities.",
               "truncated_fields": 9
             }
           ],
@@ -226,7 +257,7 @@
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-02T13:47:40.942791+00:00"
+      "timestamp": "2026-06-02T16:14:50.847809+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
@@ -238,9 +269,9 @@
         "evidence_order": "MULTI_PASS",
         "pass_ids": {
           "items": [
-            "t1_audit_recent_changes",
-            "t2_segments_list",
-            "t3_targets_list"
+            "t1_recent_changes",
+            "t2_destinations",
+            "t3_segments"
           ],
           "total_items": 4,
           "truncated_items": true
@@ -251,38 +282,46 @@
           "items": [
             {
               "items": [
-                "t2_segments_list",
-                "t4_segment_target_mapping"
+                "t1_recent_changes",
+                "t4_aggregate"
               ],
               "total_items": 2,
               "truncated_items": false
             },
             {
               "items": [
-                "t3_targets_list",
-                "t4_segment_target_mapping"
+                "t2_destinations",
+                "t4_aggregate"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t3_segments",
+                "t4_aggregate"
               ],
               "total_items": 2,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 3,
           "truncated_items": false
         },
         "parallel_groups": {
           "items": [
             {
               "items": [
-                "t1_audit_recent_changes",
-                "t2_segments_list",
-                "t3_targets_list"
+                "t1_recent_changes",
+                "t2_destinations",
+                "t3_segments"
               ],
               "total_items": 3,
               "truncated_items": false
             },
             {
               "items": [
-                "t4_segment_target_mapping"
+                "t4_aggregate"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -294,9 +333,9 @@
         "pass_count": 4,
         "pass_ids": {
           "items": [
-            "t1_audit_recent_changes",
-            "t2_segments_list",
-            "t3_targets_list"
+            "t1_recent_changes",
+            "t2_destinations",
+            "t3_segments"
           ],
           "total_items": 4,
           "truncated_items": true
@@ -305,7 +344,7 @@
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-02T13:47:40.946029+00:00"
+      "timestamp": "2026-06-02T16:14:50.850373+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -318,29 +357,37 @@
           "items": [
             {
               "items": [
-                "t2_segments_list",
-                "t4_segment_target_mapping"
+                "t1_recent_changes",
+                "t4_aggregate"
               ],
               "total_items": 2,
               "truncated_items": false
             },
             {
               "items": [
-                "t3_targets_list",
-                "t4_segment_target_mapping"
+                "t2_destinations",
+                "t4_aggregate"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t3_segments",
+                "t4_aggregate"
               ],
               "total_items": 2,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 3,
           "truncated_items": false
         },
         "pass_ids": {
           "items": [
-            "t1_audit_recent_changes",
-            "t2_segments_list",
-            "t3_targets_list"
+            "t1_recent_changes",
+            "t2_destinations",
+            "t3_segments"
           ],
           "total_items": 4,
           "truncated_items": true
@@ -363,9 +410,10 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t1_audit_recent_changes"
+            "t1_recent_changes",
+            "t4_aggregate"
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -377,22 +425,30 @@
           "items": [
             {
               "items": [
-                "t2_segments_list",
-                "t4_segment_target_mapping"
+                "t1_recent_changes",
+                "t4_aggregate"
               ],
               "total_items": 2,
               "truncated_items": false
             },
             {
               "items": [
-                "t3_targets_list",
-                "t4_segment_target_mapping"
+                "t2_destinations",
+                "t4_aggregate"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t3_segments",
+                "t4_aggregate"
               ],
               "total_items": 2,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 3,
           "truncated_items": false
         },
         "early_stopped_passes": {
@@ -405,16 +461,16 @@
           "items": [
             {
               "items": [
-                "t1_audit_recent_changes",
-                "t2_segments_list",
-                "t3_targets_list"
+                "t1_recent_changes",
+                "t2_destinations",
+                "t3_segments"
               ],
               "total_items": 3,
               "truncated_items": false
             },
             {
               "items": [
-                "t4_segment_target_mapping"
+                "t4_aggregate"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -425,9 +481,9 @@
         },
         "pass_ids": {
           "items": [
-            "t1_audit_recent_changes",
-            "t2_segments_list",
-            "t3_targets_list"
+            "t1_recent_changes",
+            "t2_destinations",
+            "t3_segments"
           ],
           "total_items": 4,
           "truncated_items": true
@@ -438,7 +494,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-02T13:47:40.947553+00:00"
+      "timestamp": "2026-06-02T16:14:50.851710+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -451,16 +507,16 @@
           "items": [
             {
               "items": [
-                "t1_audit_recent_changes",
-                "t2_segments_list",
-                "t3_targets_list"
+                "t1_recent_changes",
+                "t2_destinations",
+                "t3_segments"
               ],
               "total_items": 3,
               "truncated_items": false
             },
             {
               "items": [
-                "t4_segment_target_mapping"
+                "t4_aggregate"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -471,9 +527,9 @@
         },
         "pass_ids": {
           "items": [
-            "t1_audit_recent_changes",
-            "t2_segments_list",
-            "t3_targets_list"
+            "t1_recent_changes",
+            "t2_destinations",
+            "t3_segments"
           ],
           "total_items": 4,
           "truncated_items": true
@@ -484,22 +540,30 @@
           "items": [
             {
               "items": [
-                "t2_segments_list",
-                "t4_segment_target_mapping"
+                "t1_recent_changes",
+                "t4_aggregate"
               ],
               "total_items": 2,
               "truncated_items": false
             },
             {
               "items": [
-                "t3_targets_list",
-                "t4_segment_target_mapping"
+                "t2_destinations",
+                "t4_aggregate"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t3_segments",
+                "t4_aggregate"
               ],
               "total_items": 2,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 3,
           "truncated_items": false
         },
         "max_api_workers": 2,
@@ -509,16 +573,16 @@
           "items": [
             {
               "items": [
-                "t1_audit_recent_changes",
-                "t2_segments_list",
-                "t3_targets_list"
+                "t1_recent_changes",
+                "t2_destinations",
+                "t3_segments"
               ],
               "total_items": 3,
               "truncated_items": false
             },
             {
               "items": [
-                "t4_segment_target_mapping"
+                "t4_aggregate"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -529,9 +593,9 @@
         },
         "passes_completed": {
           "items": [
-            "t1_audit_recent_changes",
-            "t2_segments_list",
-            "t3_targets_list"
+            "t1_recent_changes",
+            "t2_destinations",
+            "t3_segments"
           ],
           "total_items": 4,
           "truncated_items": true
@@ -552,10 +616,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_2c86d7869e514dce9e5821800c3cf2ce:t1_audit_recent_changes",
-              "pass_id": "t1_audit_recent_changes",
+              "global_pass_id": "run_dda436a73adf456495d7bfd79bf1c560:t1_recent_changes",
+              "pass_id": "t1_recent_changes",
               "plan_version": 1,
-              "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce",
+              "run_id": "run_dda436a73adf456495d7bfd79bf1c560",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -563,10 +627,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_2c86d7869e514dce9e5821800c3cf2ce:t2_segments_list",
-              "pass_id": "t2_segments_list",
+              "global_pass_id": "run_dda436a73adf456495d7bfd79bf1c560:t2_destinations",
+              "pass_id": "t2_destinations",
               "plan_version": 1,
-              "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce",
+              "run_id": "run_dda436a73adf456495d7bfd79bf1c560",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -574,10 +638,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_2c86d7869e514dce9e5821800c3cf2ce:t3_targets_list",
-              "pass_id": "t3_targets_list",
+              "global_pass_id": "run_dda436a73adf456495d7bfd79bf1c560:t3_segments",
+              "pass_id": "t3_segments",
               "plan_version": 1,
-              "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce",
+              "run_id": "run_dda436a73adf456495d7bfd79bf1c560",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -591,7 +655,7 @@
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-02T13:47:40.948758+00:00"
+      "timestamp": "2026-06-02T16:14:50.853502+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
@@ -603,9 +667,9 @@
         "multi_pass_enabled": true,
         "pass_ids": {
           "items": [
-            "t1_audit_recent_changes",
-            "t2_segments_list",
-            "t3_targets_list"
+            "t1_recent_changes",
+            "t2_destinations",
+            "t3_segments"
           ],
           "total_items": 4,
           "truncated_items": true
@@ -634,9 +698,10 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t1_audit_recent_changes"
+            "t1_recent_changes",
+            "t4_aggregate"
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -648,22 +713,30 @@
           "items": [
             {
               "items": [
-                "t2_segments_list",
-                "t4_segment_target_mapping"
+                "t1_recent_changes",
+                "t4_aggregate"
               ],
               "total_items": 2,
               "truncated_items": false
             },
             {
               "items": [
-                "t3_targets_list",
-                "t4_segment_target_mapping"
+                "t2_destinations",
+                "t4_aggregate"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t3_segments",
+                "t4_aggregate"
               ],
               "total_items": 2,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 3,
           "truncated_items": false
         },
         "deterministic_answer_template_used": false,
@@ -672,7 +745,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_2c86d7869e514dce9e5821800c3cf2ce",
+        "evidence_bus_id": "evidence_run_dda436a73adf456495d7bfd79bf1c560",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -687,16 +760,16 @@
           "items": [
             {
               "items": [
-                "t1_audit_recent_changes",
-                "t2_segments_list",
-                "t3_targets_list"
+                "t1_recent_changes",
+                "t2_destinations",
+                "t3_segments"
               ],
               "total_items": 3,
               "truncated_items": false
             },
             {
               "items": [
-                "t4_segment_target_mapping"
+                "t4_aggregate"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -712,9 +785,9 @@
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "t1_audit_recent_changes",
-            "t2_segments_list",
-            "t3_targets_list"
+            "t1_recent_changes",
+            "t2_destinations",
+            "t3_segments"
           ],
           "total_items": 4,
           "truncated_items": true
@@ -722,9 +795,9 @@
         "pass_results_count": 4,
         "passes_completed": {
           "items": [
-            "t1_audit_recent_changes",
-            "t2_segments_list",
-            "t3_targets_list"
+            "t1_recent_changes",
+            "t2_destinations",
+            "t3_segments"
           ],
           "total_items": 4,
           "truncated_items": true
@@ -736,9 +809,9 @@
         },
         "passes_executed": {
           "items": [
-            "t1_audit_recent_changes",
-            "t2_segments_list",
-            "t3_targets_list"
+            "t1_recent_changes",
+            "t2_destinations",
+            "t3_segments"
           ],
           "total_items": 4,
           "truncated_items": true
@@ -760,8 +833,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_2c86d7869e514dce9e5821800c3cf2ce",
-        "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce",
+        "result_bundle_id": "bundle_run_dda436a73adf456495d7bfd79bf1c560",
+        "run_id": "run_dda436a73adf456495d7bfd79bf1c560",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -771,19 +844,19 @@
         "semantic_alias_materialized_count": 0,
         "semantic_alias_validation_failures": 0,
         "sequential_pass_count": 1,
-        "sql_execution_latency_sec": 0.003,
-        "sql_gate_latency_sec": 0.004,
-        "sql_gate_passed": true,
+        "sql_execution_latency_sec": 0.0,
+        "sql_gate_latency_sec": 0.0,
+        "sql_gate_passed": null,
         "sql_repair_attempts": 0,
         "stage_events": {
           "items": [
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_2c86d7869e514dce9e5821800c3cf2ce:t1_audit_recent_changes",
-              "pass_id": "t1_audit_recent_changes",
+              "global_pass_id": "run_dda436a73adf456495d7bfd79bf1c560:t1_recent_changes",
+              "pass_id": "t1_recent_changes",
               "plan_version": 1,
-              "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce",
+              "run_id": "run_dda436a73adf456495d7bfd79bf1c560",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -791,10 +864,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_2c86d7869e514dce9e5821800c3cf2ce:t1_audit_recent_changes",
-              "pass_id": "t1_audit_recent_changes",
+              "global_pass_id": "run_dda436a73adf456495d7bfd79bf1c560:t1_recent_changes",
+              "pass_id": "t1_recent_changes",
               "plan_version": 1,
-              "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce",
+              "run_id": "run_dda436a73adf456495d7bfd79bf1c560",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -802,10 +875,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_2c86d7869e514dce9e5821800c3cf2ce:t2_segments_list",
-              "pass_id": "t2_segments_list",
+              "global_pass_id": "run_dda436a73adf456495d7bfd79bf1c560:t2_destinations",
+              "pass_id": "t2_destinations",
               "plan_version": 1,
-              "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce",
+              "run_id": "run_dda436a73adf456495d7bfd79bf1c560",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -821,7 +894,7 @@
       },
       "stage": "llm-owned pass scheduling",
       "technique": "dependency-aware scheduling of LLM-declared evidence passes",
-      "timestamp": "2026-06-02T13:47:40.949895+00:00"
+      "timestamp": "2026-06-02T16:14:50.854266+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -830,7 +903,7 @@
       "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
       "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
       "input_summary": {
-        "pass_id": "t1_audit_recent_changes"
+        "pass_id": "t1_recent_changes"
       },
       "output": {
         "errors": {
@@ -840,11 +913,11 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce"
+        "run_id": "run_dda436a73adf456495d7bfd79bf1c560"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T13:47:40.950856+00:00"
+      "timestamp": "2026-06-02T16:14:50.855113+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_api_request_gate",
@@ -854,7 +927,7 @@
       "efficiency_role": "prevents invalid API calls without planning endpoints",
       "input_summary": {
         "method": "GET",
-        "pass_id": "t1_audit_recent_changes",
+        "pass_id": "t1_recent_changes",
         "path": "/data/foundation/audit/events"
       },
       "output": {
@@ -862,13 +935,13 @@
         "params": {
           "limit": 100
         },
-        "pass_id": "t1_audit_recent_changes",
+        "pass_id": "t1_recent_changes",
         "passed": true,
         "path": "/data/foundation/audit/events"
       },
       "stage": "llm api request gate",
       "technique": "safe GET request-shape/catalog gate for LLM-owned API pass",
-      "timestamp": "2026-06-02T13:47:40.952351+00:00"
+      "timestamp": "2026-06-02T16:14:50.856695+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -877,7 +950,7 @@
       "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
       "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
       "input_summary": {
-        "pass_id": "t2_segments_list"
+        "pass_id": "t2_destinations"
       },
       "output": {
         "errors": {
@@ -887,30 +960,35 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce"
+        "run_id": "run_dda436a73adf456495d7bfd79bf1c560"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T13:47:40.953351+00:00"
+      "timestamp": "2026-06-02T16:14:50.858206+00:00"
     },
     {
-      "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
-      "correctness_role": "returns compile errors for one LLM repair attempt",
+      "checkpoint_id": "checkpoint_llm_owned_api_request_gate",
+      "correctness_role": "blocks unsafe method, unknown endpoint, unresolved path, or malformed params",
       "duration_ms": 0.0,
-      "effect": "checks syntax/database-semantic validity without rewriting SQL",
-      "efficiency_role": "prevents executing uncompilable SQL",
+      "effect": "checks only executable API request shape before runtime execution",
+      "efficiency_role": "prevents invalid API calls without planning endpoints",
       "input_summary": {
-        "pass_id": "t2_segments_list",
-        "sql": "SELECT \"SEGMENTID\", \"NAME\", \"LABELSSEGMENT\" FROM \"dim_segment\" LIMIT 50"
+        "method": "GET",
+        "pass_id": "t2_destinations",
+        "path": "/data/foundation/flowservice/flows"
       },
       "output": {
-        "pass_id": "t2_segments_list",
+        "method": "GET",
+        "params": {
+          "limit": 100
+        },
+        "pass_id": "t2_destinations",
         "passed": true,
-        "sql": "SELECT \"SEGMENTID\", \"NAME\", \"LABELSSEGMENT\" FROM \"dim_segment\" LIMIT 50"
+        "path": "/data/foundation/flowservice/flows"
       },
-      "stage": "llm sql compile gate",
-      "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
-      "timestamp": "2026-06-02T13:47:40.956007+00:00"
+      "stage": "llm api request gate",
+      "technique": "safe GET request-shape/catalog gate for LLM-owned API pass",
+      "timestamp": "2026-06-02T16:14:50.859187+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -919,7 +997,7 @@
       "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
       "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
       "input_summary": {
-        "pass_id": "t3_targets_list"
+        "pass_id": "t3_segments"
       },
       "output": {
         "errors": {
@@ -929,30 +1007,35 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce"
+        "run_id": "run_dda436a73adf456495d7bfd79bf1c560"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T13:47:40.958300+00:00"
+      "timestamp": "2026-06-02T16:14:50.860379+00:00"
     },
     {
-      "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
-      "correctness_role": "returns compile errors for one LLM repair attempt",
+      "checkpoint_id": "checkpoint_llm_owned_api_request_gate",
+      "correctness_role": "blocks unsafe method, unknown endpoint, unresolved path, or malformed params",
       "duration_ms": 0.0,
-      "effect": "checks syntax/database-semantic validity without rewriting SQL",
-      "efficiency_role": "prevents executing uncompilable SQL",
+      "effect": "checks only executable API request shape before runtime execution",
+      "efficiency_role": "prevents invalid API calls without planning endpoints",
       "input_summary": {
-        "pass_id": "t3_targets_list",
-        "sql": "SELECT \"TARGETID\", \"NAME\", \"LABELSTARGET\" FROM \"dim_target\" LIMIT 50"
+        "method": "GET",
+        "pass_id": "t3_segments",
+        "path": "/data/core/ups/segment/definitions"
       },
       "output": {
-        "pass_id": "t3_targets_list",
+        "method": "GET",
+        "params": {
+          "limit": 100
+        },
+        "pass_id": "t3_segments",
         "passed": true,
-        "sql": "SELECT \"TARGETID\", \"NAME\", \"LABELSTARGET\" FROM \"dim_target\" LIMIT 50"
+        "path": "/data/core/ups/segment/definitions"
       },
-      "stage": "llm sql compile gate",
-      "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
-      "timestamp": "2026-06-02T13:47:40.959936+00:00"
+      "stage": "llm api request gate",
+      "technique": "safe GET request-shape/catalog gate for LLM-owned API pass",
+      "timestamp": "2026-06-02T16:14:50.861226+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -963,13 +1046,14 @@
       "input_summary": {
         "depends_on": {
           "items": [
-            "t2_segments_list",
-            "t3_targets_list"
+            "t1_recent_changes",
+            "t2_destinations",
+            "t3_segments"
           ],
-          "total_items": 2,
+          "total_items": 3,
           "truncated_items": false
         },
-        "pass_id": "t4_segment_target_mapping"
+        "pass_id": "t4_aggregate"
       },
       "output": {
         "errors": {
@@ -979,30 +1063,11 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce"
+        "run_id": "run_dda436a73adf456495d7bfd79bf1c560"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T13:47:40.961492+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
-      "correctness_role": "returns compile errors for one LLM repair attempt",
-      "duration_ms": 0.0,
-      "effect": "checks syntax/database-semantic validity without rewriting SQL",
-      "efficiency_role": "prevents executing uncompilable SQL",
-      "input_summary": {
-        "pass_id": "t4_segment_target_mapping",
-        "sql": "SELECT \"SEGMENTID\", \"LABELSSEGMENT\", \"TARGETID\", \"LABELSTARGET\" FROM \"hkg_br_segment_target\" LIMIT 100"
-      },
-      "output": {
-        "pass_id": "t4_segment_target_mapping",
-        "passed": true,
-        "sql": "SELECT \"SEGMENTID\", \"LABELSSEGMENT\", \"TARGETID\", \"LABELSTARGET\" FROM \"hkg_br_segment_target\" LIMIT 100"
-      },
-      "stage": "llm sql compile gate",
-      "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
-      "timestamp": "2026-06-02T13:47:40.962939+00:00"
+      "timestamp": "2026-06-02T16:14:50.862457+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -1045,9 +1110,10 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t1_audit_recent_changes"
+            "t1_recent_changes",
+            "t4_aggregate"
           ],
-          "total_items": 1,
+          "total_items": 2,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -1059,22 +1125,30 @@
           "items": [
             {
               "items": [
-                "t2_segments_list",
-                "t4_segment_target_mapping"
+                "t1_recent_changes",
+                "t4_aggregate"
               ],
               "total_items": 2,
               "truncated_items": false
             },
             {
               "items": [
-                "t3_targets_list",
-                "t4_segment_target_mapping"
+                "t2_destinations",
+                "t4_aggregate"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            {
+              "items": [
+                "t3_segments",
+                "t4_aggregate"
               ],
               "total_items": 2,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 3,
           "truncated_items": false
         },
         "deterministic_answer_template_used": false,
@@ -1083,7 +1157,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_2c86d7869e514dce9e5821800c3cf2ce",
+        "evidence_bus_id": "evidence_run_dda436a73adf456495d7bfd79bf1c560",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -1101,16 +1175,16 @@
           "items": [
             {
               "items": [
-                "t1_audit_recent_changes",
-                "t2_segments_list",
-                "t3_targets_list"
+                "t1_recent_changes",
+                "t2_destinations",
+                "t3_segments"
               ],
               "total_items": 3,
               "truncated_items": false
             },
             {
               "items": [
-                "t4_segment_target_mapping"
+                "t4_aggregate"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -1126,9 +1200,9 @@
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "t1_audit_recent_changes",
-            "t2_segments_list",
-            "t3_targets_list"
+            "t1_recent_changes",
+            "t2_destinations",
+            "t3_segments"
           ],
           "total_items": 4,
           "truncated_items": true
@@ -1136,9 +1210,9 @@
         "pass_results_count": 4,
         "passes_completed": {
           "items": [
-            "t1_audit_recent_changes",
-            "t2_segments_list",
-            "t3_targets_list"
+            "t1_recent_changes",
+            "t2_destinations",
+            "t3_segments"
           ],
           "total_items": 4,
           "truncated_items": true
@@ -1150,9 +1224,9 @@
         },
         "passes_executed": {
           "items": [
-            "t1_audit_recent_changes",
-            "t2_segments_list",
-            "t3_targets_list"
+            "t1_recent_changes",
+            "t2_destinations",
+            "t3_segments"
           ],
           "total_items": 4,
           "truncated_items": true
@@ -1174,8 +1248,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_2c86d7869e514dce9e5821800c3cf2ce",
-        "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce",
+        "result_bundle_id": "bundle_run_dda436a73adf456495d7bfd79bf1c560",
+        "run_id": "run_dda436a73adf456495d7bfd79bf1c560",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -1185,19 +1259,19 @@
         "semantic_alias_materialized_count": 0,
         "semantic_alias_validation_failures": 0,
         "sequential_pass_count": 1,
-        "sql_execution_latency_sec": 0.003,
-        "sql_gate_latency_sec": 0.004,
-        "sql_gate_passed": true,
+        "sql_execution_latency_sec": 0.0,
+        "sql_gate_latency_sec": 0.0,
+        "sql_gate_passed": null,
         "sql_repair_attempts": 0,
         "stage_events": {
           "items": [
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_2c86d7869e514dce9e5821800c3cf2ce:t1_audit_recent_changes",
-              "pass_id": "t1_audit_recent_changes",
+              "global_pass_id": "run_dda436a73adf456495d7bfd79bf1c560:t1_recent_changes",
+              "pass_id": "t1_recent_changes",
               "plan_version": 1,
-              "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce",
+              "run_id": "run_dda436a73adf456495d7bfd79bf1c560",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -1205,10 +1279,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_2c86d7869e514dce9e5821800c3cf2ce:t1_audit_recent_changes",
-              "pass_id": "t1_audit_recent_changes",
+              "global_pass_id": "run_dda436a73adf456495d7bfd79bf1c560:t1_recent_changes",
+              "pass_id": "t1_recent_changes",
               "plan_version": 1,
-              "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce",
+              "run_id": "run_dda436a73adf456495d7bfd79bf1c560",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -1216,10 +1290,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_2c86d7869e514dce9e5821800c3cf2ce:t2_segments_list",
-              "pass_id": "t2_segments_list",
+              "global_pass_id": "run_dda436a73adf456495d7bfd79bf1c560:t2_destinations",
+              "pass_id": "t2_destinations",
               "plan_version": 1,
-              "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce",
+              "run_id": "run_dda436a73adf456495d7bfd79bf1c560",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -1229,13 +1303,13 @@
           "truncated_items": true
         },
         "stage_pipeline_used": true,
-        "truncated_fields": 2,
+        "truncated_fields": 5,
         "v2_execution_optimizer_used": true,
         "v2_pipeline_scheduler_used": true
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-02T13:47:40.965058+00:00"
+      "timestamp": "2026-06-02T16:14:50.863292+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -1244,10 +1318,10 @@
       "effect": "executes only LLM-proposed candidates that pass backend gates",
       "efficiency_role": "does not execute alternative backend-generated candidates",
       "input_summary": {
-        "tool_result_count": 4
+        "tool_result_count": 3
       },
       "output": {
-        "api_calls_executed": 1,
+        "api_calls_executed": 3,
         "api_results": {
           "items": [
             {
@@ -1265,88 +1339,49 @@
                 "usable_evidence": false
               },
               "url": "/data/foundation/audit/events"
+            },
+            {
+              "dry_run": true,
+              "method": "GET",
+              "ok": false,
+              "result_preview": {
+                "caveat": "Adobe credentials unavailable; API call not executed.",
+                "dry_run": true,
+                "endpoint_family": "/data/foundation/flowservice/flows",
+                "error_category": "dry_run_unavailable",
+                "evidence_state": "dry_run_unavailable",
+                "live_success": false,
+                "ok": false,
+                "usable_evidence": false
+              },
+              "url": "/data/foundation/flowservice/flows"
+            },
+            {
+              "dry_run": true,
+              "method": "GET",
+              "ok": false,
+              "result_preview": {
+                "caveat": "Adobe credentials unavailable; API call not executed.",
+                "dry_run": true,
+                "endpoint_family": "/data/core/ups/segment/definitions",
+                "error_category": "dry_run_unavailable",
+                "evidence_state": "dry_run_unavailable",
+                "live_success": false,
+                "ok": false,
+                "usable_evidence": false
+              },
+              "url": "/data/core/ups/segment/definitions"
             }
           ],
-          "total_items": 1,
+          "total_items": 3,
           "truncated_items": false
         },
         "dry_run_status": true,
-        "row_counts": {
-          "items": [
-            13,
-            1,
-            1
-          ],
-          "total_items": 3,
-          "truncated_items": false
-        },
-        "sql_calls_executed": 3,
-        "sql_results": {
-          "items": [
-            {
-              "ok": true,
-              "result_preview": {
-                "items": [
-                  {
-                    "LABELSSEGMENT": "[]",
-                    "NAME": "Person: Birthday Today 001",
-                    "SEGMENTID": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-                  },
-                  {
-                    "LABELSSEGMENT": "[]",
-                    "NAME": "Campaign: 25% Off Purchase Offer Reminder",
-                    "SEGMENTID": "574372f1-7b74-489c-b77f-139024b083a5"
-                  },
-                  {
-                    "LABELSSEGMENT": "[]",
-                    "NAME": "Campaign: New Application Credit Card Offer",
-                    "SEGMENTID": "7e7b3d71-ae29-4c97-8b24-99905ea6bf68"
-                  }
-                ],
-                "total_items": 3,
-                "truncated_items": false
-              },
-              "row_count": 13
-            },
-            {
-              "ok": true,
-              "result_preview": {
-                "items": [
-                  {
-                    "LABELSTARGET": "[]",
-                    "NAME": "amazon-s3",
-                    "TARGETID": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
-                  }
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              },
-              "row_count": 1
-            },
-            {
-              "ok": true,
-              "result_preview": {
-                "items": [
-                  {
-                    "LABELSSEGMENT": "[]",
-                    "LABELSTARGET": "[]",
-                    "SEGMENTID": "f6b93428-c021-4058-a1a2-77c277aab564",
-                    "TARGETID": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
-                  }
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              },
-              "row_count": 1
-            }
-          ],
-          "total_items": 3,
-          "truncated_items": false
-        }
+        "sql_calls_executed": 0
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-02T13:47:41.050540+00:00"
+      "timestamp": "2026-06-02T16:14:50.975128+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -1356,7 +1391,7 @@
       "efficiency_role": "makes EvidenceBus construction explicit",
       "input_summary": {
         "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
-        "tool_result_count": 4
+        "tool_result_count": 3
       },
       "output": {
         "evidence_bus_built": true,
@@ -1369,7 +1404,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-02T13:47:41.050976+00:00"
+      "timestamp": "2026-06-02T16:14:50.975726+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -1378,39 +1413,26 @@
       "effect": "forwards executed SQL/API evidence into the existing grounded answer pipeline",
       "efficiency_role": "uses collected evidence without extra tool calls",
       "input_summary": {
-        "tool_result_count": 4
+        "tool_result_count": 3
       },
       "output": {
         "evidence": {
-          "ids": {
-            "segment_id": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-            "target_id": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
-          },
-          "names": {
-            "items": [
-              "Person: Birthday Today 001",
-              "Campaign: 25% Off Purchase Offer Reminder",
-              "Campaign: New Application Credit Card Offer"
-            ],
-            "total_items": 3,
-            "truncated_items": false
-          },
           "pass_ids": {
             "items": [
-              "t1_audit_recent_changes",
-              "t2_segments_list",
-              "t3_targets_list"
+              "t1_recent_changes",
+              "t2_destinations",
+              "t3_segments"
             ],
             "total_items": 4,
             "truncated_items": true
           },
           "pass_result_count": 4,
-          "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce"
+          "run_id": "run_dda436a73adf456495d7bfd79bf1c560"
         }
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-02T13:47:41.051478+00:00"
+      "timestamp": "2026-06-02T16:14:50.976333+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -1420,7 +1442,7 @@
       "efficiency_role": "reuses executed pass results without extra tools",
       "input_summary": {
         "pass_results_count": 4,
-        "tool_result_count": 4
+        "tool_result_count": 3
       },
       "output": {
         "append_events": {
@@ -1428,24 +1450,24 @@
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "t1_audit_recent_changes"
+              "pass_id": "t1_recent_changes"
             },
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "t2_segments_list"
+              "pass_id": "t2_destinations"
             },
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "t3_targets_list"
+              "pass_id": "t3_segments"
             }
           ],
           "total_items": 4,
           "truncated_items": true
         },
         "pass_results_count": 4,
-        "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce",
+        "run_id": "run_dda436a73adf456495d7bfd79bf1c560",
         "runtime_passes": {
           "items": [
             {
@@ -1463,13 +1485,13 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce"
+                "run_id": "run_dda436a73adf456495d7bfd79bf1c560"
               },
-              "global_pass_id": "run_2c86d7869e514dce9e5821800c3cf2ce:t1_audit_recent_changes",
-              "pass_id": "t1_audit_recent_changes",
+              "global_pass_id": "run_dda436a73adf456495d7bfd79bf1c560:t1_recent_changes",
+              "pass_id": "t1_recent_changes",
               "path": "API",
               "plan_version": 1,
-              "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce",
+              "run_id": "run_dda436a73adf456495d7bfd79bf1c560",
               "status": "API_ERROR",
               "truncated_fields": 6
             },
@@ -1488,14 +1510,14 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce"
+                "run_id": "run_dda436a73adf456495d7bfd79bf1c560"
               },
-              "global_pass_id": "run_2c86d7869e514dce9e5821800c3cf2ce:t2_segments_list",
-              "pass_id": "t2_segments_list",
-              "path": "SQL",
+              "global_pass_id": "run_dda436a73adf456495d7bfd79bf1c560:t2_destinations",
+              "pass_id": "t2_destinations",
+              "path": "API",
               "plan_version": 1,
-              "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce",
-              "status": "SUCCESS",
+              "run_id": "run_dda436a73adf456495d7bfd79bf1c560",
+              "status": "API_ERROR",
               "truncated_fields": 6
             },
             {
@@ -1513,14 +1535,14 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce"
+                "run_id": "run_dda436a73adf456495d7bfd79bf1c560"
               },
-              "global_pass_id": "run_2c86d7869e514dce9e5821800c3cf2ce:t3_targets_list",
-              "pass_id": "t3_targets_list",
-              "path": "SQL",
+              "global_pass_id": "run_dda436a73adf456495d7bfd79bf1c560:t3_segments",
+              "pass_id": "t3_segments",
+              "path": "API",
               "plan_version": 1,
-              "run_id": "run_2c86d7869e514dce9e5821800c3cf2ce",
-              "status": "SUCCESS",
+              "run_id": "run_dda436a73adf456495d7bfd79bf1c560",
+              "status": "API_ERROR",
               "truncated_fields": 6
             }
           ],
@@ -1530,7 +1552,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-02T13:47:41.052020+00:00"
+      "timestamp": "2026-06-02T16:14:50.976887+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -1539,7 +1561,7 @@
       "effect": "keeps SQL errors, API errors, live empty, and direct evidence distinct",
       "efficiency_role": "uses existing payloads only",
       "input_summary": {
-        "tool_result_count": 4
+        "tool_result_count": 3
       },
       "output": {
         "api": {
@@ -1557,17 +1579,10 @@
           "total_items": 1,
           "truncated_items": false
         },
-        "conflict": {
-          "items": [
-            "SQL_SUCCESS_API_ERROR"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
         "live_empty_scoped": false,
         "sql": {
           "items": [
-            "SQL_DIRECT_ANSWER"
+            "SQL_NOT_RUN"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -1575,7 +1590,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-02T13:47:41.053054+00:00"
+      "timestamp": "2026-06-02T16:14:50.977925+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -1584,7 +1599,7 @@
       "effect": "turns runtime evidence into typed answer fields",
       "efficiency_role": "uses existing slot extraction",
       "input_summary": {
-        "tool_result_count": 4
+        "tool_result_count": 3
       },
       "output": {
         "discrepancy_flags": {
@@ -1598,40 +1613,18 @@
           "api_error": false,
           "discrepancy": false,
           "dry_run": true,
-          "entity_ids": {
-            "items": [
-              "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-              "574372f1-7b74-489c-b77f-139024b083a5",
-              "7e7b3d71-ae29-4c97-8b24-99905ea6bf68"
-            ],
-            "total_items": 3,
-            "truncated_items": false
-          },
-          "entity_names": {
-            "items": [
-              "Person: Birthday Today 001",
-              "Campaign: 25% Off Purchase Offer Reminder",
-              "Campaign: New Application Credit Card Offer"
-            ],
-            "total_items": 3,
-            "truncated_items": false
-          },
           "slots_present": {
             "items": [
-              "entity_names",
-              "entity_ids",
-              "counts"
+              "dry_run"
             ],
-            "total_items": 6,
-            "truncated_items": true
-          },
-          "sql_row_count": 1,
-          "truncated_fields": 5
+            "total_items": 1,
+            "truncated_items": false
+          }
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-02T13:47:41.084500+00:00"
+      "timestamp": "2026-06-02T16:14:51.010165+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer_start",
@@ -1647,7 +1640,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "pre-call heartbeat before LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T13:47:41.084961+00:00"
+      "timestamp": "2026-06-02T16:14:51.010859+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -1662,44 +1655,22 @@
           "api_error": false,
           "discrepancy": false,
           "dry_run": true,
-          "entity_ids": {
-            "items": [
-              "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-              "574372f1-7b74-489c-b77f-139024b083a5",
-              "7e7b3d71-ae29-4c97-8b24-99905ea6bf68"
-            ],
-            "total_items": 3,
-            "truncated_items": false
-          },
-          "entity_names": {
-            "items": [
-              "Person: Birthday Today 001",
-              "Campaign: 25% Off Purchase Offer Reminder",
-              "Campaign: New Application Credit Card Offer"
-            ],
-            "total_items": 3,
-            "truncated_items": false
-          },
           "slots_present": {
             "items": [
-              "entity_names",
-              "entity_ids",
-              "counts"
+              "dry_run"
             ],
-            "total_items": 6,
-            "truncated_items": true
-          },
-          "sql_row_count": 1,
-          "truncated_fields": 5
+            "total_items": 1,
+            "truncated_items": false
+          }
         }
       },
       "output": {
         "backend_unavailable": false,
-        "final_answer": "The local snapshot identifies three audiences: Person: Birthday Today 001, Campaign: 25% Off Purchase Offer Reminder, and Campaign: New Application Credit Card Offer. However, live API evidence was unavailable due to Adobe credentials being unavailable, so no recent audit events or new destination mappings could be verified.",
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
         "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "parse_error": false,
         "provider": "openai",
-        "raw_preview": "The local snapshot identifies three audiences: Person: Birthday Today 001, Campaign: 25% Off Purchase Offer Reminder, and Campaign: New Application Credit Card Offer. However, live API evidence was unavailable due to Adobe credentials being unavailable, so no recent audit events or new destination mappings could be verified.",
+        "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.",
         "used_pass_ids": {
           "items": [],
           "total_items": 0,
@@ -1708,7 +1679,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T13:47:51.556404+00:00"
+      "timestamp": "2026-06-02T16:14:58.052393+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -1720,12 +1691,12 @@
         "composer": "LLMFinalAnswerComposer"
       },
       "output": {
-        "final_answer": "The local snapshot identifies three audiences: Person: Birthday Today 001, Campaign: 25% Off Purchase Offer Reminder, and Campaign: New Application Credit Card Offer. However, live API evidence was unavailable due to Adobe credentials being unavailable, so no recent audit events or new destination mappings could be verified.",
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
         "passed": true
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-02T13:47:51.558796+00:00"
+      "timestamp": "2026-06-02T16:14:58.053103+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -1737,17 +1708,7 @@
         "syntax_gate_passed": true
       },
       "output": {
-        "error_message": "Final answer omitted information explicitly requested and present in runtime evidence.",
-        "error_type": "missing_required_info",
-        "missing_required_fields": {
-          "items": [
-            "entity_names",
-            "pass:t4_segment_target_mapping"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
-        "passed": false,
+        "passed": true,
         "verifier": {
           "action": "ACCEPT",
           "allowed_fact_index": {
@@ -1765,69 +1726,28 @@
               "total_items": 1,
               "truncated_items": false
             },
-            "counts": {
-              "items": [
-                "13",
-                "1"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            },
             "evidence_strings": {
               "items": [
-                "c6691f4b-ba38-4308-8364-593d23a6a09f",
-                "bd33fef0-c2d1-4e30-bb6a-a46e6b4579a8",
-                "gender: male"
+                "100",
+                "/data/foundation/flowservice/flows",
+                "/data/core/ups/segment/definitions"
               ],
-              "total_items": 25,
-              "truncated_items": true
-            },
-            "ids": {
-              "items": [
-                "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                "574372f1-7b74-489c-b77f-139024b083a5",
-                "7e7b3d71-ae29-4c97-8b24-99905ea6bf68"
-              ],
-              "total_items": 11,
-              "truncated_items": true
-            },
-            "names": {
-              "items": [
-                "person: birthday today 001",
-                "campaign: 25% off purchase offer reminder",
-                "campaign: new application credit card offer"
-              ],
-              "total_items": 11,
+              "total_items": 4,
               "truncated_items": true
             }
           },
           "claim_extractor": {
-            "claim_count": 3,
+            "claim_count": 1,
             "claims": {
               "items": [
                 {
-                  "hardness": "HARD",
-                  "span": "Birthday Today",
-                  "text": "Birthday Today",
-                  "type": "ENTITY_NAME",
-                  "value": "Birthday Today"
-                },
-                {
-                  "hardness": "HARD",
-                  "span": "Off Purchase Offer Reminder",
-                  "text": "Off Purchase Offer Reminder",
-                  "type": "ENTITY_NAME",
-                  "value": "Off Purchase Offer Reminder"
-                },
-                {
-                  "hardness": "HARD",
-                  "span": "New Application Credit Card Offer",
-                  "text": "New Application Credit Card Offer",
-                  "type": "ENTITY_NAME",
-                  "value": "New Application Credit Card Offer"
+                  "hardness": "SOFT",
+                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "type": "SOFT_TEXT"
                 }
               ],
-              "total_items": 3,
+              "total_items": 1,
               "truncated_items": false
             }
           },
@@ -1836,39 +1756,16 @@
               "items": [
                 {
                   "claim": {
-                    "hardness": "HARD",
-                    "span": "Birthday Today",
-                    "text": "Birthday Today",
-                    "type": "ENTITY_NAME",
-                    "value": "Birthday Today"
+                    "hardness": "SOFT",
+                    "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                    "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                    "type": "SOFT_TEXT"
                   },
-                  "reason": "entity_name",
-                  "status": "SUPPORTED"
-                },
-                {
-                  "claim": {
-                    "hardness": "HARD",
-                    "span": "Off Purchase Offer Reminder",
-                    "text": "Off Purchase Offer Reminder",
-                    "type": "ENTITY_NAME",
-                    "value": "Off Purchase Offer Reminder"
-                  },
-                  "reason": "entity_name",
-                  "status": "SUPPORTED"
-                },
-                {
-                  "claim": {
-                    "hardness": "HARD",
-                    "span": "New Application Credit Card Offer",
-                    "text": "New Application Credit Card Offer",
-                    "type": "ENTITY_NAME",
-                    "value": "New Application Credit Card Offer"
-                  },
-                  "reason": "entity_name",
+                  "reason": "soft_text",
                   "status": "SUPPORTED"
                 }
               ],
-              "total_items": 3,
+              "total_items": 1,
               "truncated_items": false
             }
           },
@@ -1876,251 +1773,20 @@
           "supported_claims": {
             "items": [
               {
-                "hardness": "HARD",
-                "span": "Birthday Today",
-                "text": "Birthday Today",
-                "type": "ENTITY_NAME",
-                "value": "Birthday Today"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Off Purchase Offer Reminder",
-                "text": "Off Purchase Offer Reminder",
-                "type": "ENTITY_NAME",
-                "value": "Off Purchase Offer Reminder"
-              },
-              {
-                "hardness": "HARD",
-                "span": "New Application Credit Card Offer",
-                "text": "New Application Credit Card Offer",
-                "type": "ENTITY_NAME",
-                "value": "New Application Credit Card Offer"
+                "hardness": "SOFT",
+                "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "type": "SOFT_TEXT"
               }
             ],
-            "total_items": 3,
+            "total_items": 1,
             "truncated_items": false
           }
         }
       },
       "stage": "answer gate",
       "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-02T13:47:51.567726+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_final_answer_repair_start",
-      "correctness_role": "diagnostic only; backend still does not repair the answer",
-      "duration_ms": 0.0,
-      "effect": "records the exact boundary before the potentially slow final-answer repair LLM call",
-      "efficiency_role": "enables smoke timeout localization without extra SQL/API calls",
-      "input_summary": {
-        "failed_semantic": true,
-        "failed_syntax": false
-      },
-      "output": {
-        "current_stage": "llm_final_answer_repair_call_start"
-      },
-      "stage": "llm-owned answer repair",
-      "technique": "pre-call heartbeat before final answer repair",
-      "timestamp": "2026-06-02T13:47:51.568915+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_final_answer_repair",
-      "correctness_role": "preserves LLM ownership while enforcing evidence boundaries",
-      "duration_ms": 0.0,
-      "effect": "returns gate errors to the LLM once; backend does not repair the answer itself",
-      "efficiency_role": "caps answer repair to one LLM call",
-      "input_summary": {
-        "failed_semantic": true,
-        "failed_syntax": false
-      },
-      "output": {
-        "candidate": {
-          "backend_unavailable": false,
-          "final_answer": "The local snapshot identifies three audiences: Person: Birthday Today 001, Campaign: 25% Off Purchase Offer Reminder, and Campaign: New Application Credit Card Offer. However, live API evidence was unavailable due to Adobe credentials being unavailable, so no recent audit events or new destination mappings could be verified.",
-          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-          "parse_error": false,
-          "provider": "openai",
-          "raw_preview": "The local snapshot identifies three audiences: Person: Birthday Today 001, Campaign: 25% Off Purchase Offer Reminder, and Campaign: New Application Credit Card Offer. However, live API evidence was unavailable due to Adobe credentials being unavailable, so no recent audit events or new destination mappings could be verified.",
-          "used_pass_ids": {
-            "items": [],
-            "total_items": 0,
-            "truncated_items": false
-          }
-        },
-        "semantic_gate": {
-          "error_message": "Final answer omitted information explicitly requested and present in runtime evidence.",
-          "error_type": "missing_required_info",
-          "missing_required_fields": {
-            "items": [
-              "entity_names",
-              "pass:t4_segment_target_mapping"
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          },
-          "passed": false,
-          "verifier": {
-            "action": "ACCEPT",
-            "allowed_fact_index": {
-              "allowed_caveats": {
-                "items": [
-                  "API_ERROR"
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              },
-              "api_error_scopes": {
-                "items": [
-                  "live api verification"
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              },
-              "counts": {
-                "items": [
-                  "13",
-                  "1"
-                ],
-                "total_items": 2,
-                "truncated_items": false
-              },
-              "evidence_strings": {
-                "items": [
-                  "c6691f4b-ba38-4308-8364-593d23a6a09f",
-                  "bd33fef0-c2d1-4e30-bb6a-a46e6b4579a8",
-                  "gender: male"
-                ],
-                "total_items": 25,
-                "truncated_items": true
-              },
-              "ids": {
-                "items": [
-                  "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                  "574372f1-7b74-489c-b77f-139024b083a5",
-                  "7e7b3d71-ae29-4c97-8b24-99905ea6bf68"
-                ],
-                "total_items": 11,
-                "truncated_items": true
-              },
-              "names": {
-                "items": [
-                  "person: birthday today 001",
-                  "campaign: 25% off purchase offer reminder",
-                  "campaign: new application credit card offer"
-                ],
-                "total_items": 11,
-                "truncated_items": true
-              }
-            },
-            "claim_extractor": {
-              "claim_count": 3,
-              "claims": {
-                "items": [
-                  {
-                    "hardness": "HARD",
-                    "span": "Birthday Today",
-                    "text": "Birthday Today",
-                    "type": "ENTITY_NAME",
-                    "value": "Birthday Today"
-                  },
-                  {
-                    "hardness": "HARD",
-                    "span": "Off Purchase Offer Reminder",
-                    "text": "Off Purchase Offer Reminder",
-                    "type": "ENTITY_NAME",
-                    "value": "Off Purchase Offer Reminder"
-                  },
-                  {
-                    "hardness": "HARD",
-                    "span": "New Application Credit Card Offer",
-                    "text": "New Application Credit Card Offer",
-                    "type": "ENTITY_NAME",
-                    "value": "New Application Credit Card Offer"
-                  }
-                ],
-                "total_items": 3,
-                "truncated_items": false
-              }
-            },
-            "claim_matcher": {
-              "matches": {
-                "items": [
-                  {
-                    "claim": {
-                      "hardness": "HARD",
-                      "span": "Birthday Today",
-                      "text": "Birthday Today",
-                      "type": "ENTITY_NAME",
-                      "value": "Birthday Today"
-                    },
-                    "reason": "entity_name",
-                    "status": "SUPPORTED"
-                  },
-                  {
-                    "claim": {
-                      "hardness": "HARD",
-                      "span": "Off Purchase Offer Reminder",
-                      "text": "Off Purchase Offer Reminder",
-                      "type": "ENTITY_NAME",
-                      "value": "Off Purchase Offer Reminder"
-                    },
-                    "reason": "entity_name",
-                    "status": "SUPPORTED"
-                  },
-                  {
-                    "claim": {
-                      "hardness": "HARD",
-                      "span": "New Application Credit Card Offer",
-                      "text": "New Application Credit Card Offer",
-                      "type": "ENTITY_NAME",
-                      "value": "New Application Credit Card Offer"
-                    },
-                    "reason": "entity_name",
-                    "status": "SUPPORTED"
-                  }
-                ],
-                "total_items": 3,
-                "truncated_items": false
-              }
-            },
-            "ok": true,
-            "supported_claims": {
-              "items": [
-                {
-                  "hardness": "HARD",
-                  "span": "Birthday Today",
-                  "text": "Birthday Today",
-                  "type": "ENTITY_NAME",
-                  "value": "Birthday Today"
-                },
-                {
-                  "hardness": "HARD",
-                  "span": "Off Purchase Offer Reminder",
-                  "text": "Off Purchase Offer Reminder",
-                  "type": "ENTITY_NAME",
-                  "value": "Off Purchase Offer Reminder"
-                },
-                {
-                  "hardness": "HARD",
-                  "span": "New Application Credit Card Offer",
-                  "text": "New Application Credit Card Offer",
-                  "type": "ENTITY_NAME",
-                  "value": "New Application Credit Card Offer"
-                }
-              ],
-              "total_items": 3,
-              "truncated_items": false
-            }
-          }
-        },
-        "syntax_gate": {
-          "final_answer": "The local snapshot identifies three audiences: Person: Birthday Today 001, Campaign: 25% Off Purchase Offer Reminder, and Campaign: New Application Credit Card Offer. However, live API evidence was unavailable due to Adobe credentials being unavailable, so no recent audit events or new destination mappings could be verified.",
-          "passed": true
-        }
-      },
-      "stage": "llm-owned answer repair",
-      "technique": "single LLM-owned final answer repair",
-      "timestamp": "2026-06-02T13:48:01.154396+00:00"
+      "timestamp": "2026-06-02T16:14:58.056854+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -2133,14 +1799,14 @@
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
-        "answer_repair_attempts": 1,
-        "answer_semantic_gate_passed": false,
+        "answer_repair_attempts": 0,
+        "answer_semantic_gate_passed": true,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
-        "final_answer_repair_latency_sec": 9.582,
-        "final_answer_supported_by_evidence": false,
-        "final_composer_latency_sec": 10.47,
-        "final_gate_latency_sec": 0.01,
+        "final_answer_repair_latency_sec": 0.0,
+        "final_answer_supported_by_evidence": true,
+        "final_composer_latency_sec": 7.04,
+        "final_gate_latency_sec": 0.004,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 2,
@@ -2152,7 +1818,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-02T13:48:01.167542+00:00"
+      "timestamp": "2026-06-02T16:14:58.057416+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -2161,15 +1827,15 @@
       "effect": "returns the LLM-composed answer when gates pass, otherwise a safe evidence-state fallback",
       "efficiency_role": "no additional SQL/API calls",
       "input_summary": {
-        "answer_semantic_gate_passed": false
+        "answer_semantic_gate_passed": true
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
-        "answer_repair_attempts": 1,
-        "answer_semantic_gate_passed": false,
+        "answer_repair_attempts": 0,
+        "answer_semantic_gate_passed": true,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
-        "final_answer_supported_by_evidence": false,
+        "final_answer_supported_by_evidence": true,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 3,
@@ -2181,30 +1847,30 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-02T13:48:01.168741+00:00"
+      "timestamp": "2026-06-02T16:14:58.057943+00:00"
     }
   ],
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 3681,
+  "estimated_tokens": 3193,
   "execution_time": 0.0,
-  "final_answer": "Local snapshot evidence shows t2_segments_list/SQL/LOCAL_SNAPSHOT: count: 13; examples include Person: Birthday Today 001; Campaign: 25% Off Purchase Offer Reminder; Campaign: New Application Credit Card Offer; id: 2fdfefe1-04d0-46ce-9fbd-7611e311dd26; id: 574372f1-7b74-489c-b77f-139024b083a5; id: 7e7b3d71-ae29-4c97-8b24-99905ea6bf68 | t3_targets_list/SQL/LOCAL_SNAPSHOT: count: 1; examples include amazon-s3; Person: Birthday Today 001; Campaign: 25% Off Purchase Offer Reminder; id: 139bece0-5266-46bd-8ed3-fc1dd5eb5dd4; id: 2fdfefe1-04d0-46ce-9fbd-7611e311dd26; id: 574372f1-7b74-489c-b77f-139024b083a5 | t4_segment_target_mapping/SQL/LOCAL_SNAPSHOT: count: 1; examples include Person: Birthday Today 001; Campaign: 25% Off Purchase Offer Reminder; Campaign: New Application Credit Card Offer; id: f6b93428-c021-4058-a1a2-77c277aab564; id: 139bece0-5266-46bd-8ed3-fc1dd5eb5dd4; id: 2fdfefe1-04d0-46ce-9fbd-7611e311dd26. Live API evidence was unavailable, so a live comparison cannot be completed.",
+  "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
   "original_query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
   "planning_time": 0.0,
   "preprocessing_time": 0.0,
   "query_id": "example_012",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 20.29708662489429,
-  "sql_call_count": 3,
+  "runtime": 7.259744375012815,
+  "sql_call_count": 0,
   "steps": [
     {
-      "estimated_tokens": 2497,
+      "estimated_tokens": 2769,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_012/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 3229
+      "prompt_tokens": 3587
     },
     {
-      "aggregation_instruction": "Use the audit events (t1) to find recent changes involving segments and targets. Cross-reference segment IDs and target IDs from the audit events with the segment-target mapping (t4) and the segment/target lists (t2, t3) to identify which audiences have been mapped to new destinations. Report the audience names and destination names for any mappings that appear in recent audit events.",
+      "aggregation_instruction": "From the audit events (t1), filter for events occurring in the last 3 months that indicate a mapping or association between a segment (audience) and a destination. Use the segment definitions (t3) to identify audience names and the destination flows (t2) to identify destination names. Return a list of unique audiences that have been mapped to new destinations within this timeframe. If the audit events do not explicitly contain segment-to-destination mapping details, return an empty list or indicate that the specific mapping relationship is not directly available in the provided audit logs.",
       "api_request": {
         "method": "GET",
         "params": {
@@ -2214,6 +1880,11 @@
       },
       "backend_unavailable": false,
       "diagnostics": {
+        "api_card_detail_truncated": true,
+        "api_card_final_char_count": 5261,
+        "api_card_original_char_count": 6967,
+        "api_card_original_row_count": 20,
+        "api_card_row_count": 20,
         "api_request_gate_failures": 0,
         "atomic_protocol_fallback_used": false,
         "backend_formal_compilation_used": true,
@@ -2222,13 +1893,13 @@
         "backend_semantic_planning_used": false,
         "backend_sql_api_generation_used": false,
         "compiled_alias_count": 0,
-        "compiled_api_count": 1,
-        "compiled_sql_count": 3,
+        "compiled_api_count": 3,
+        "compiled_sql_count": 0,
         "compiler_latency_ms": 0,
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 53331,
+        "planner_provider_latency_ms": 29246,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -2249,20 +1920,34 @@
         "raw_sql_fallback_success": false,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
+        "schema_card_columns_truncated": true,
+        "schema_card_final_char_count": 7826,
+        "schema_card_original_char_count": 10765,
+        "schema_card_original_row_count": 18,
+        "schema_card_row_count": 18,
         "sdk_toolcall_semantic_ir_used": true,
         "semantic_alias_count": 0,
         "semantic_alias_error_type": null,
         "semantic_alias_repair_attempted": false,
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
+        "semantic_ir_context_truncated": true,
+        "semantic_ir_context_truncated_sections": [
+          "schema_card",
+          "api_card"
+        ],
         "semantic_ir_plan_preview": {
-          "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_audit_recent_changes\", \"kind\": \"LIVE_QUERY\", \"operation\": \"LIST\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"audit_events_short\", \"method\": \"GET\", \"query_params\": {\"limit\": 100}}, \"description\": \"List recent audit events to identify audience/segment and destination/target mappings or changes in the last 3 months.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_segments_list\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LIST\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_segment\", \"fields\": {\"items\": [\"SEGMENTID\", \"NAME\", \"LABELSSEGMENT\"], \"total_items\": 3, \"truncated_items\": false}, \"limit\": 50}, \"description\": \"List all audiences (segments) available in the local snapshot to cross-reference with audit events.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t3_targets_list\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LIST\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_target\", \"fields\": {\"items\": [\"TARGETID\", \"NAME\", \"LABELS...",
+          "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_recent_changes\", \"kind\": \"LIVE_QUERY\", \"operation\": \"LIST\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"audit_events\", \"method\": \"GET\", \"query_params\": {\"limit\": 100}}, \"description\": \"Retrieve recent audit events to identify new destination mappings or segment-to-destination assignments in the last 3 months.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_destinations\", \"kind\": \"LIVE_QUERY\", \"operation\": \"LIST\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"flowservice_flows\", \"method\": \"GET\", \"query_params\": {\"limit\": 100}}, \"description\": \"List all destination dataflows to identify destination entities.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t3_segments\", \"kind\": \"LIVE_QUERY\", \"operation\": \"LIST\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"segment_definitions\", \"method\": \"GET\", \"query_params\": {\"limit\": 100}}, \"description\": \"List all segment definitions to identify audience entities.\", \"truncated_fields\": 7}], \"total_items\": 4, \"truncated_ite...",
           "truncated": true
         },
-        "semantic_ir_provider_latency_ms": 53327,
-        "semantic_ir_repair_attempted": true,
-        "semantic_ir_repair_latency_ms": 24925,
-        "semantic_ir_repair_success": true,
+        "semantic_ir_planner_char_budget": 24000,
+        "semantic_ir_prompt_system_chars": 907,
+        "semantic_ir_prompt_total_chars": 23466,
+        "semantic_ir_prompt_user_chars": 19231,
+        "semantic_ir_provider_latency_ms": 29243,
+        "semantic_ir_repair_attempted": false,
+        "semantic_ir_repair_latency_ms": 0,
+        "semantic_ir_repair_success": false,
         "semantic_ir_support_check_latency_ms": 0,
         "semantic_ir_support_checked": true,
         "semantic_ir_support_recommended_action": "COMPILE",
@@ -2273,13 +1958,14 @@
         "semantic_ir_support_repair_success": false,
         "semantic_ir_supported": true,
         "semantic_ir_task_count": 4,
+        "semantic_ir_tool_schema_chars": 3328,
         "semantic_ir_toolcall_supported": true,
         "semantic_ir_unsupported_features": [],
         "semantic_ir_unsupported_operation": null,
         "semantic_ir_unsupported_reason": null,
         "semantic_ir_unsupported_task_id": null,
-        "semantic_ir_validation_error_message": "Unknown table: audit_events",
-        "semantic_ir_validation_error_type": "unknown_table",
+        "semantic_ir_validation_error_message": null,
+        "semantic_ir_validation_error_type": null,
         "semantic_ir_validation_latency_ms": 0,
         "semantic_ir_validation_passed": true,
         "sql_compile_gate_failures": 0,
@@ -2302,104 +1988,149 @@
           "can_run_parallel": true,
           "depends_on": [],
           "evidence_order": "API_FIRST",
-          "expected_result": "List recent audit events to identify audience/segment and destination/target mappings or changes in the last 3 months.",
+          "expected_result": "Retrieve recent audit events to identify new destination mappings or segment-to-destination assignments in the last 3 months.",
           "fallback": false,
           "optional": false,
-          "pass_id": "t1_audit_recent_changes",
+          "pass_id": "t1_recent_changes",
           "path": "API",
           "raw_sql_fallback_reason": null,
           "raw_sql_fallback_task_id": null,
           "raw_sql_fallback_used": false,
-          "result_contract": null,
+          "result_contract": {
+            "entity": "audit_event",
+            "fields": [
+              "eventType",
+              "entityType",
+              "entityName",
+              "targetEntityName",
+              "createdDate"
+            ],
+            "filters": [],
+            "freshness": "same_run",
+            "object": null,
+            "operation": "LIST",
+            "scope": "live",
+            "source": "LIVE_API"
+          },
           "reuse_result_from": null,
           "semantic_cache_key": null,
           "sql": null,
-          "subtask": "List recent audit events to identify audience/segment and destination/target mappings or changes in the last 3 months."
+          "subtask": "Retrieve recent audit events to identify new destination mappings or segment-to-destination assignments in the last 3 months."
         },
         {
-          "api_request": null,
+          "api_request": {
+            "method": "GET",
+            "params": {
+              "limit": 100
+            },
+            "path": "/data/foundation/flowservice/flows"
+          },
           "can_run_parallel": true,
           "depends_on": [],
-          "evidence_order": "SQL_FIRST",
-          "expected_result": "List all audiences (segments) available in the local snapshot to cross-reference with audit events.",
+          "evidence_order": "API_FIRST",
+          "expected_result": "List all destination dataflows to identify destination entities.",
           "fallback": false,
           "optional": false,
-          "pass_id": "t2_segments_list",
-          "path": "SQL",
+          "pass_id": "t2_destinations",
+          "path": "API",
           "raw_sql_fallback_reason": null,
           "raw_sql_fallback_task_id": null,
           "raw_sql_fallback_used": false,
-          "result_contract": null,
+          "result_contract": {
+            "entity": "destination_flow",
+            "fields": [
+              "name",
+              "id"
+            ],
+            "filters": [],
+            "freshness": "same_run",
+            "object": null,
+            "operation": "LIST",
+            "scope": "live",
+            "source": "LIVE_API"
+          },
           "reuse_result_from": null,
           "semantic_cache_key": null,
-          "sql": {
-            "params": [],
-            "query": "SELECT \"SEGMENTID\", \"NAME\", \"LABELSSEGMENT\" FROM \"dim_segment\" LIMIT 50"
-          },
-          "subtask": "List all audiences (segments) available in the local snapshot to cross-reference with audit events."
+          "sql": null,
+          "subtask": "List all destination dataflows to identify destination entities."
         },
         {
-          "api_request": null,
+          "api_request": {
+            "method": "GET",
+            "params": {
+              "limit": 100
+            },
+            "path": "/data/core/ups/segment/definitions"
+          },
           "can_run_parallel": true,
           "depends_on": [],
-          "evidence_order": "SQL_FIRST",
-          "expected_result": "List all destinations (targets) available in the local snapshot to cross-reference with audit events.",
+          "evidence_order": "API_FIRST",
+          "expected_result": "List all segment definitions to identify audience entities.",
           "fallback": false,
           "optional": false,
-          "pass_id": "t3_targets_list",
-          "path": "SQL",
+          "pass_id": "t3_segments",
+          "path": "API",
           "raw_sql_fallback_reason": null,
           "raw_sql_fallback_task_id": null,
           "raw_sql_fallback_used": false,
-          "result_contract": null,
+          "result_contract": {
+            "entity": "segment_definition",
+            "fields": [
+              "name",
+              "id"
+            ],
+            "filters": [],
+            "freshness": "same_run",
+            "object": null,
+            "operation": "LIST",
+            "scope": "live",
+            "source": "LIVE_API"
+          },
           "reuse_result_from": null,
           "semantic_cache_key": null,
-          "sql": {
-            "params": [],
-            "query": "SELECT \"TARGETID\", \"NAME\", \"LABELSTARGET\" FROM \"dim_target\" LIMIT 50"
-          },
-          "subtask": "List all destinations (targets) available in the local snapshot to cross-reference with audit events."
+          "sql": null,
+          "subtask": "List all segment definitions to identify audience entities."
         },
         {
           "api_request": null,
           "can_run_parallel": false,
           "depends_on": [
-            "t2_segments_list",
-            "t3_targets_list"
+            "t1_recent_changes",
+            "t2_destinations",
+            "t3_segments"
           ],
-          "evidence_order": "SQL_FIRST",
-          "expected_result": "List segment-to-target mappings to correlate segments with destinations.",
+          "evidence_order": "NO_EVIDENCE",
+          "expected_result": "Aggregate audit events with destination and segment lists to find audiences (segments) mapped to new destinations in the last 3 months.",
           "fallback": false,
           "optional": false,
-          "pass_id": "t4_segment_target_mapping",
-          "path": "SQL",
+          "pass_id": "t4_aggregate",
+          "path": "AGGREGATION_ONLY",
           "raw_sql_fallback_reason": null,
           "raw_sql_fallback_task_id": null,
           "raw_sql_fallback_used": false,
-          "result_contract": null,
+          "result_contract": {
+            "entity": "audience_destination_mapping",
+            "fields": [
+              "audience_name",
+              "destination_name",
+              "mapping_date"
+            ],
+            "filters": [],
+            "freshness": "same_run",
+            "object": null,
+            "operation": "LIST",
+            "scope": "both",
+            "source": "BOTH"
+          },
           "reuse_result_from": null,
           "semantic_cache_key": null,
-          "sql": {
-            "params": [],
-            "query": "SELECT \"SEGMENTID\", \"LABELSSEGMENT\", \"TARGETID\", \"LABELSTARGET\" FROM \"hkg_br_segment_target\" LIMIT 100"
-          },
-          "subtask": "List segment-to-target mappings to correlate segments with destinations."
+          "sql": null,
+          "subtask": "Aggregate audit events with destination and segment lists to find audiences (segments) mapped to new destinations in the last 3 months."
         }
       ],
       "provider": "openai",
       "raw_preview": {
         "semantic_ir_initial": {
-          "base_url": "[REDACTED]",
-          "error": null,
-          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-          "ok": true,
-          "provider": "openai",
-          "sdk_path_used": true,
-          "skipped": false,
-          "transport": "openai_sdk",
-          "truncated_fields": 11
-        },
-        "semantic_ir_repair": {
           "base_url": "[REDACTED]",
           "error": null,
           "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
@@ -2445,100 +2176,60 @@
       }
     },
     {
-      "kind": "sql_call",
-      "result": {
-        "error": null,
-        "limited": false,
-        "ok": true,
-        "row_count": 13,
-        "rows": {
-          "items": [
-            {
-              "LABELSSEGMENT": "[]",
-              "NAME": "Person: Birthday Today 001",
-              "SEGMENTID": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-            },
-            {
-              "LABELSSEGMENT": "[]",
-              "NAME": "Campaign: 25% Off Purchase Offer Reminder",
-              "SEGMENTID": "574372f1-7b74-489c-b77f-139024b083a5"
-            },
-            {
-              "LABELSSEGMENT": "[]",
-              "NAME": "Campaign: New Application Credit Card Offer",
-              "SEGMENTID": "7e7b3d71-ae29-4c97-8b24-99905ea6bf68"
-            }
-          ],
-          "total_items": 13,
-          "truncated_items": true
-        }
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": 100
       },
-      "sql": "SELECT \"SEGMENTID\", \"NAME\", \"LABELSSEGMENT\" FROM \"dim_segment\" LIMIT 50",
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/flowservice/flows",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": 100
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/foundation/flowservice/flows"
+      },
+      "url": "/data/foundation/flowservice/flows",
       "validation": {
         "errors": [],
         "ok": true,
         "repaired": false,
         "warnings": [
-          "LLM SQL pass passed compile gate."
+          "LLM API request pass passed request gate."
         ]
       }
     },
     {
-      "kind": "sql_call",
-      "result": {
-        "error": null,
-        "limited": false,
-        "ok": true,
-        "row_count": 1,
-        "rows": {
-          "items": [
-            {
-              "LABELSTARGET": "[]",
-              "NAME": "amazon-s3",
-              "TARGETID": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        }
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": 100
       },
-      "sql": "SELECT \"TARGETID\", \"NAME\", \"LABELSTARGET\" FROM \"dim_target\" LIMIT 50",
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/core/ups/segment/definitions",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": 100
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/core/ups/segment/definitions"
+      },
+      "url": "/data/core/ups/segment/definitions",
       "validation": {
         "errors": [],
         "ok": true,
         "repaired": false,
         "warnings": [
-          "LLM SQL pass passed compile gate."
-        ]
-      }
-    },
-    {
-      "kind": "sql_call",
-      "result": {
-        "error": null,
-        "limited": false,
-        "ok": true,
-        "row_count": 1,
-        "rows": {
-          "items": [
-            {
-              "LABELSSEGMENT": "[]",
-              "LABELSTARGET": "[]",
-              "SEGMENTID": "f6b93428-c021-4058-a1a2-77c277aab564",
-              "TARGETID": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        }
-      },
-      "sql": "SELECT \"SEGMENTID\", \"LABELSSEGMENT\", \"TARGETID\", \"LABELSTARGET\" FROM \"hkg_br_segment_target\" LIMIT 100",
-      "validation": {
-        "errors": [],
-        "ok": true,
-        "repaired": false,
-        "warnings": [
-          "LLM SQL pass passed compile gate."
+          "LLM API request pass passed request gate."
         ]
       }
     },
@@ -2558,35 +2249,33 @@
       "caveats_included": [],
       "claimed_facts": [],
       "error_message": null,
-      "final_answer": "The local snapshot identifies three audiences: Person: Birthday Today 001, Campaign: 25% Off Purchase Offer Reminder, and Campaign: New Application Credit Card Offer. However, live API evidence was unavailable due to Adobe credentials being unavailable, so no recent audit events or new destination mappings could be verified.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
       "kind": "llm_final_answer_composer",
       "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
       "parse_error": false,
       "provider": "openai",
-      "raw_preview": "The local snapshot identifies three audiences: Person: Birthday Today 001, Campaign: 25% Off Purchase Offer Reminder, and Campaign: New Application Credit Card Offer. However, live API evidence was unavailable due to Adobe credentials being unavailable, so no recent audit events or new destination mappings could be verified.",
+      "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.",
       "unanswered_subtasks": [],
       "used_pass_ids": []
     },
     {
       "answer_composer_used": "LLMFinalAnswerComposer",
-      "answer_repair_attempts": 1,
-      "answer_semantic_gate_passed": false,
+      "answer_repair_attempts": 0,
+      "answer_semantic_gate_passed": true,
       "answer_syntax_gate_passed": true,
       "deterministic_answer_template_used": false,
-      "final_answer_repair_latency_sec": 9.582,
-      "final_answer_supported_by_evidence": false,
-      "final_composer_latency_sec": 10.47,
-      "final_gate_latency_sec": 0.01,
+      "final_answer_repair_latency_sec": 0.0,
+      "final_answer_supported_by_evidence": true,
+      "final_composer_latency_sec": 7.04,
+      "final_gate_latency_sec": 0.004,
       "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
       "llm_owned_final_answer": true,
       "semantic_gate": {
-        "error_message": "Final answer omitted information explicitly requested and present in runtime evidence.",
-        "error_type": "missing_required_info",
-        "missing_required_fields": [
-          "entity_names"
-        ],
-        "passed": false,
+        "error_message": null,
+        "error_type": null,
+        "missing_required_fields": [],
+        "passed": true,
         "scope_errors": [],
         "unsupported_claims": [],
         "verifier": {
@@ -2598,212 +2287,31 @@
             "api_error_scopes": [
               "live api verification"
             ],
-            "counts": [
-              "13",
-              "1"
-            ],
+            "counts": [],
             "dates": [],
             "evidence_strings": [
-              "c6691f4b-ba38-4308-8364-593d23a6a09f",
-              "bd33fef0-c2d1-4e30-bb6a-a46e6b4579a8",
-              "gender: male",
-              "lives on east coast",
-              "amazon-s3",
-              "person: birthday today 001",
-              "lives on west coast",
-              "78acb3db-39ef-4be9-aa24-b62d82293136",
-              "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
               "100",
-              "sms opt-in",
-              "/data/foundation/audit/events",
-              "campaign: 25% off purchase offer reminder",
-              "[]",
-              "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
-              "f6b93428-c021-4058-a1a2-77c277aab564",
-              "283f4eab-183b-40b9-bc07-3c92cbad824c",
-              "7e7b3d71-ae29-4c97-8b24-99905ea6bf68",
-              "2869d771-1546-4458-a2cd-fb7235a69c94",
-              "38bdeb6d-1788-46e9-b68e-ac10b68640d9",
-              "gender: female",
-              "email opt-in",
-              "person: birthday in next 30 days",
-              "campaign: new application credit card offer",
-              "574372f1-7b74-489c-b77f-139024b083a5"
+              "/data/foundation/flowservice/flows",
+              "/data/core/ups/segment/definitions",
+              "/data/foundation/audit/events"
             ],
-            "ids": [
-              "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-              "574372f1-7b74-489c-b77f-139024b083a5",
-              "7e7b3d71-ae29-4c97-8b24-99905ea6bf68",
-              "78acb3db-39ef-4be9-aa24-b62d82293136",
-              "38bdeb6d-1788-46e9-b68e-ac10b68640d9",
-              "283f4eab-183b-40b9-bc07-3c92cbad824c",
-              "f6b93428-c021-4058-a1a2-77c277aab564",
-              "bd33fef0-c2d1-4e30-bb6a-a46e6b4579a8",
-              "2869d771-1546-4458-a2cd-fb7235a69c94",
-              "c6691f4b-ba38-4308-8364-593d23a6a09f",
-              "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
-            ],
+            "ids": [],
             "live_empty_scopes": [],
             "missing_roles": [],
-            "names": [
-              "person: birthday today 001",
-              "campaign: 25% off purchase offer reminder",
-              "campaign: new application credit card offer",
-              "sms opt-in",
-              "email opt-in",
-              "gender: female",
-              "gender: male",
-              "lives on west coast",
-              "lives on east coast",
-              "person: birthday in next 30 days",
-              "amazon-s3"
-            ],
+            "names": [],
             "relationships": [],
             "statuses": []
           },
           "ambiguous_claims": [],
           "claim_extractor": {
-            "claim_count": 20,
+            "claim_count": 1,
             "claims": [
               {
-                "hardness": "HARD",
-                "span": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                "text": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                "type": "ID",
-                "value": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-              },
-              {
-                "hardness": "HARD",
-                "span": "574372f1-7b74-489c-b77f-139024b083a5",
-                "text": "574372f1-7b74-489c-b77f-139024b083a5",
-                "type": "ID",
-                "value": "574372f1-7b74-489c-b77f-139024b083a5"
-              },
-              {
-                "hardness": "HARD",
-                "span": "7e7b3d71-ae29-4c97-8b24-99905ea6bf68",
-                "text": "7e7b3d71-ae29-4c97-8b24-99905ea6bf68",
-                "type": "ID",
-                "value": "7e7b3d71-ae29-4c97-8b24-99905ea6bf68"
-              },
-              {
-                "hardness": "HARD",
-                "span": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
-                "text": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
-                "type": "ID",
-                "value": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
-              },
-              {
-                "hardness": "HARD",
-                "span": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                "text": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                "type": "ID",
-                "value": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-              },
-              {
-                "hardness": "HARD",
-                "span": "574372f1-7b74-489c-b77f-139024b083a5",
-                "text": "574372f1-7b74-489c-b77f-139024b083a5",
-                "type": "ID",
-                "value": "574372f1-7b74-489c-b77f-139024b083a5"
-              },
-              {
-                "hardness": "HARD",
-                "span": "f6b93428-c021-4058-a1a2-77c277aab564",
-                "text": "f6b93428-c021-4058-a1a2-77c277aab564",
-                "type": "ID",
-                "value": "f6b93428-c021-4058-a1a2-77c277aab564"
-              },
-              {
-                "hardness": "HARD",
-                "span": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
-                "text": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
-                "type": "ID",
-                "value": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
-              },
-              {
-                "hardness": "HARD",
-                "span": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                "text": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                "type": "ID",
-                "value": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-              },
-              {
-                "hardness": "HARD",
-                "span": "13",
-                "text": "13",
-                "type": "COUNT",
-                "value": "13"
-              },
-              {
-                "hardness": "HARD",
-                "span": "1",
-                "text": "1",
-                "type": "COUNT",
-                "value": "1"
-              },
-              {
-                "hardness": "HARD",
-                "span": "1",
-                "text": "1",
-                "type": "COUNT",
-                "value": "1"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Birthday Today",
-                "text": "Birthday Today",
-                "type": "ENTITY_NAME",
-                "value": "Birthday Today"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Off Purchase Offer Reminder",
-                "text": "Off Purchase Offer Reminder",
-                "type": "ENTITY_NAME",
-                "value": "Off Purchase Offer Reminder"
-              },
-              {
-                "hardness": "HARD",
-                "span": "New Application Credit Card Offer",
-                "text": "New Application Credit Card Offer",
-                "type": "ENTITY_NAME",
-                "value": "New Application Credit Card Offer"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Birthday Today",
-                "text": "Birthday Today",
-                "type": "ENTITY_NAME",
-                "value": "Birthday Today"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Off Purchase Offer Reminder",
-                "text": "Off Purchase Offer Reminder",
-                "type": "ENTITY_NAME",
-                "value": "Off Purchase Offer Reminder"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Birthday Today",
-                "text": "Birthday Today",
-                "type": "ENTITY_NAME",
-                "value": "Birthday Today"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Off Purchase Offer Reminder",
-                "text": "Off Purchase Offer Reminder",
-                "type": "ENTITY_NAME",
-                "value": "Off Purchase Offer Reminder"
-              },
-              {
-                "hardness": "HARD",
-                "span": "New Application Credit Card Offer",
-                "text": "New Application Credit Card Offer",
-                "type": "ENTITY_NAME",
-                "value": "New Application Credit Card Offer"
+                "hardness": "SOFT",
+                "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "type": "SOFT_TEXT",
+                "value": ""
               }
             ]
           },
@@ -2811,222 +2319,13 @@
             "matches": [
               {
                 "claim": {
-                  "hardness": "HARD",
-                  "span": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                  "text": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                  "type": "ID",
-                  "value": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
+                  "hardness": "SOFT",
+                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "type": "SOFT_TEXT",
+                  "value": ""
                 },
-                "reason": "id",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "574372f1-7b74-489c-b77f-139024b083a5",
-                  "text": "574372f1-7b74-489c-b77f-139024b083a5",
-                  "type": "ID",
-                  "value": "574372f1-7b74-489c-b77f-139024b083a5"
-                },
-                "reason": "id",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "7e7b3d71-ae29-4c97-8b24-99905ea6bf68",
-                  "text": "7e7b3d71-ae29-4c97-8b24-99905ea6bf68",
-                  "type": "ID",
-                  "value": "7e7b3d71-ae29-4c97-8b24-99905ea6bf68"
-                },
-                "reason": "id",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
-                  "text": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
-                  "type": "ID",
-                  "value": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
-                },
-                "reason": "id",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                  "text": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                  "type": "ID",
-                  "value": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-                },
-                "reason": "id",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "574372f1-7b74-489c-b77f-139024b083a5",
-                  "text": "574372f1-7b74-489c-b77f-139024b083a5",
-                  "type": "ID",
-                  "value": "574372f1-7b74-489c-b77f-139024b083a5"
-                },
-                "reason": "id",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "f6b93428-c021-4058-a1a2-77c277aab564",
-                  "text": "f6b93428-c021-4058-a1a2-77c277aab564",
-                  "type": "ID",
-                  "value": "f6b93428-c021-4058-a1a2-77c277aab564"
-                },
-                "reason": "id",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
-                  "text": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
-                  "type": "ID",
-                  "value": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
-                },
-                "reason": "id",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                  "text": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                  "type": "ID",
-                  "value": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-                },
-                "reason": "id",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "13",
-                  "text": "13",
-                  "type": "COUNT",
-                  "value": "13"
-                },
-                "reason": "count",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "1",
-                  "text": "1",
-                  "type": "COUNT",
-                  "value": "1"
-                },
-                "reason": "count",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "1",
-                  "text": "1",
-                  "type": "COUNT",
-                  "value": "1"
-                },
-                "reason": "count",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Birthday Today",
-                  "text": "Birthday Today",
-                  "type": "ENTITY_NAME",
-                  "value": "Birthday Today"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Off Purchase Offer Reminder",
-                  "text": "Off Purchase Offer Reminder",
-                  "type": "ENTITY_NAME",
-                  "value": "Off Purchase Offer Reminder"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "New Application Credit Card Offer",
-                  "text": "New Application Credit Card Offer",
-                  "type": "ENTITY_NAME",
-                  "value": "New Application Credit Card Offer"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Birthday Today",
-                  "text": "Birthday Today",
-                  "type": "ENTITY_NAME",
-                  "value": "Birthday Today"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Off Purchase Offer Reminder",
-                  "text": "Off Purchase Offer Reminder",
-                  "type": "ENTITY_NAME",
-                  "value": "Off Purchase Offer Reminder"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Birthday Today",
-                  "text": "Birthday Today",
-                  "type": "ENTITY_NAME",
-                  "value": "Birthday Today"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Off Purchase Offer Reminder",
-                  "text": "Off Purchase Offer Reminder",
-                  "type": "ENTITY_NAME",
-                  "value": "Off Purchase Offer Reminder"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "New Application Credit Card Offer",
-                  "text": "New Application Credit Card Offer",
-                  "type": "ENTITY_NAME",
-                  "value": "New Application Credit Card Offer"
-                },
-                "reason": "entity_name",
+                "reason": "soft_text",
                 "status": "SUPPORTED"
               }
             ]
@@ -3036,144 +2335,11 @@
           "over_specified_claims": [],
           "supported_claims": [
             {
-              "hardness": "HARD",
-              "span": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-              "text": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-              "type": "ID",
-              "value": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-            },
-            {
-              "hardness": "HARD",
-              "span": "574372f1-7b74-489c-b77f-139024b083a5",
-              "text": "574372f1-7b74-489c-b77f-139024b083a5",
-              "type": "ID",
-              "value": "574372f1-7b74-489c-b77f-139024b083a5"
-            },
-            {
-              "hardness": "HARD",
-              "span": "7e7b3d71-ae29-4c97-8b24-99905ea6bf68",
-              "text": "7e7b3d71-ae29-4c97-8b24-99905ea6bf68",
-              "type": "ID",
-              "value": "7e7b3d71-ae29-4c97-8b24-99905ea6bf68"
-            },
-            {
-              "hardness": "HARD",
-              "span": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
-              "text": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
-              "type": "ID",
-              "value": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
-            },
-            {
-              "hardness": "HARD",
-              "span": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-              "text": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-              "type": "ID",
-              "value": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-            },
-            {
-              "hardness": "HARD",
-              "span": "574372f1-7b74-489c-b77f-139024b083a5",
-              "text": "574372f1-7b74-489c-b77f-139024b083a5",
-              "type": "ID",
-              "value": "574372f1-7b74-489c-b77f-139024b083a5"
-            },
-            {
-              "hardness": "HARD",
-              "span": "f6b93428-c021-4058-a1a2-77c277aab564",
-              "text": "f6b93428-c021-4058-a1a2-77c277aab564",
-              "type": "ID",
-              "value": "f6b93428-c021-4058-a1a2-77c277aab564"
-            },
-            {
-              "hardness": "HARD",
-              "span": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
-              "text": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
-              "type": "ID",
-              "value": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
-            },
-            {
-              "hardness": "HARD",
-              "span": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-              "text": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-              "type": "ID",
-              "value": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-            },
-            {
-              "hardness": "HARD",
-              "span": "13",
-              "text": "13",
-              "type": "COUNT",
-              "value": "13"
-            },
-            {
-              "hardness": "HARD",
-              "span": "1",
-              "text": "1",
-              "type": "COUNT",
-              "value": "1"
-            },
-            {
-              "hardness": "HARD",
-              "span": "1",
-              "text": "1",
-              "type": "COUNT",
-              "value": "1"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Birthday Today",
-              "text": "Birthday Today",
-              "type": "ENTITY_NAME",
-              "value": "Birthday Today"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Off Purchase Offer Reminder",
-              "text": "Off Purchase Offer Reminder",
-              "type": "ENTITY_NAME",
-              "value": "Off Purchase Offer Reminder"
-            },
-            {
-              "hardness": "HARD",
-              "span": "New Application Credit Card Offer",
-              "text": "New Application Credit Card Offer",
-              "type": "ENTITY_NAME",
-              "value": "New Application Credit Card Offer"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Birthday Today",
-              "text": "Birthday Today",
-              "type": "ENTITY_NAME",
-              "value": "Birthday Today"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Off Purchase Offer Reminder",
-              "text": "Off Purchase Offer Reminder",
-              "type": "ENTITY_NAME",
-              "value": "Off Purchase Offer Reminder"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Birthday Today",
-              "text": "Birthday Today",
-              "type": "ENTITY_NAME",
-              "value": "Birthday Today"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Off Purchase Offer Reminder",
-              "text": "Off Purchase Offer Reminder",
-              "type": "ENTITY_NAME",
-              "value": "Off Purchase Offer Reminder"
-            },
-            {
-              "hardness": "HARD",
-              "span": "New Application Credit Card Offer",
-              "text": "New Application Credit Card Offer",
-              "type": "ENTITY_NAME",
-              "value": "New Application Credit Card Offer"
+              "hardness": "SOFT",
+              "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+              "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+              "type": "SOFT_TEXT",
+              "value": ""
             }
           ],
           "unsupported_claims": []
@@ -3182,7 +2348,7 @@
       "syntax_gate": {
         "error_message": null,
         "error_type": null,
-        "final_answer": "Local snapshot evidence shows t2_segments_list/SQL/LOCAL_SNAPSHOT: count: 13; examples include Person: Birthday Today 001; Campaign: 25% Off Purchase Offer Reminder; Campaign: New Application Credit Card Offer; id: 2fdfefe1-04d0-46ce-9fbd-7611e311dd26; id: 574372f1-7b74-489c-b77f-139024b083a5; id: 7e7b3d71-ae29-4c97-8b24-99905ea6bf68 | t3_targets_list/SQL/LOCAL_SNAPSHOT: count: 1; examples include amazon-s3; Person: Birthday Today 001; Campaign: 25% Off Purchase Offer Reminder; id: 139bece0-5266-46bd-8ed3-fc1dd5eb5dd4; id: 2fdfefe1-04d0-46ce-9fbd-7611e311dd26; id: 574372f1-7b74-489c-b77f-139024b083a5 | t4_segment_target_mapping/SQL/LOCAL_SNAPSHOT: count: 1; examples include Person: Birthday Today 001; Campaign: 25% Off Purchase Offer Reminder; Campaign: New Application Credit Card Offer; id: f6b93428-c021-4058-a1a2-77c277aab564; id: 139bece0-5266-46bd-8ed3-fc1dd5eb5dd4; id: 2fdfefe1-04d0-46ce-9fbd-7611e311dd26. Live API evidence was unavailable, so a live comparison cannot be completed.",
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
         "passed": true
       },
       "used_pass_ids": []
@@ -3190,7 +2356,7 @@
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 20.128941665869206
+    "answer_time": 7.082182290963829
   },
-  "tool_call_count": 4
+  "tool_call_count": 3
 }

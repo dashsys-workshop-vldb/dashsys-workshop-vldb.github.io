@@ -1,5 +1,5 @@
 {
-  "answer_time": 18.038167541846633,
+  "answer_time": 10.67375195864588,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-02T13:52:08.244449+00:00"
+      "timestamp": "2026-06-02T16:18:51.694733+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-02T13:52:08.244928+00:00"
+      "timestamp": "2026-06-02T16:18:51.695176+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,7 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-02T13:52:08.245416+00:00"
+      "timestamp": "2026-06-02T16:18:51.695633+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner_start",
@@ -82,11 +82,22 @@
       },
       "output": {
         "current_stage": "llm_unified_planner_call_start",
-        "prompt_id": "example_021"
+        "prompt_id": "example_021",
+        "semantic_ir_prompt_diagnostics": {
+          "schema_card_original_row_count": 18,
+          "schema_card_row_count": 18,
+          "semantic_ir_context_truncated": true,
+          "semantic_ir_planner_char_budget": 24000,
+          "semantic_ir_prompt_system_chars": 907,
+          "semantic_ir_prompt_total_chars": 23439,
+          "semantic_ir_prompt_user_chars": 19204,
+          "semantic_ir_tool_schema_chars": 3328,
+          "truncated_fields": 9
+        }
       },
       "stage": "llm-owned planning",
       "technique": "pre-call heartbeat before Unified LLM Planner",
-      "timestamp": "2026-06-02T13:52:08.252114+00:00"
+      "timestamp": "2026-06-02T16:18:51.840073+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -98,6 +109,11 @@
         "query": "Show the default merge policy for schema class '_xdm.context.profile'."
       },
       "metrics": {
+        "api_card_detail_truncated": true,
+        "api_card_final_char_count": 5261,
+        "api_card_original_char_count": 6967,
+        "api_card_original_row_count": 20,
+        "api_card_row_count": 20,
         "api_request_gate_failures": 0,
         "atomic_protocol_fallback_used": false,
         "backend_formal_compilation_used": true,
@@ -112,7 +128,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 28185,
+        "planner_provider_latency_ms": 24533,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -133,17 +149,31 @@
         "raw_sql_fallback_success": false,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
+        "schema_card_columns_truncated": true,
+        "schema_card_final_char_count": 7826,
+        "schema_card_original_char_count": 10765,
+        "schema_card_original_row_count": 18,
+        "schema_card_row_count": 18,
         "sdk_toolcall_semantic_ir_used": true,
         "semantic_alias_count": 0,
         "semantic_alias_error_type": null,
         "semantic_alias_repair_attempted": false,
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
+        "semantic_ir_context_truncated": true,
+        "semantic_ir_context_truncated_sections": [
+          "schema_card",
+          "api_card"
+        ],
         "semantic_ir_plan_preview": {
-          "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_merge_policies\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LIST\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_segment\", \"fields\": {\"items\": [\"NAME\", \"MERGEPOLICYID\"], \"total_items\": 2, \"truncated_items\": false}, \"limit\": 50}, \"description\": \"List segments with their merge policy IDs to identify which merge policy is associated with the profile schema class.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_merge_policy_details\", \"kind\": \"LIVE_QUERY\", \"operation\": \"LIST\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"merge_policies\", \"method\": \"GET\", \"query_params\": {\"limit\": 100}}, \"depends_on\": {\"items\": [\"t1_merge_policies\"], \"total_items\": 1, \"truncated_items\": false}, \"truncated_fields\": 7}], \"total_items\": 2, \"truncated_items\": false}, \"aggregation_instruction\": \"First, retrieve the list of merge policies from the live API (t2). Then, look at the local segment data (t1) to see which merge policy ID is associated with segments using the '_xdm.context.profile' schema class (if such associati...",
+          "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"task_merge_policies_list\", \"kind\": \"LIVE_QUERY\", \"operation\": \"LIST\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"merge_policies\", \"method\": \"GET\", \"query_params\": {\"limit\": 100}}, \"description\": \"List all merge policies from the live API to identify the default one.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"task_schema_lookup\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LOOKUP\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_blueprint\", \"fields\": {\"items\": [\"BLUEPRINTID\", \"NAME\", \"CLASS\"], \"total_items\": 3, \"truncated_items\": false}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"_xdm.context.profile\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 1}, \"description\": \"Look up the blueprint ID for the schema class '_xdm.context.profile' in the local snapshot.\", \"truncated_fields\": 7}], \"total_items\": 2, \"truncated_items\": false}, \"aggregation_instruction\": \"Find the merge policy where 'defaultMergePolicy' is true or 'id' matches the default policy ID from the list. If a s...",
           "truncated": true
         },
-        "semantic_ir_provider_latency_ms": 28182,
+        "semantic_ir_planner_char_budget": 24000,
+        "semantic_ir_prompt_system_chars": 907,
+        "semantic_ir_prompt_total_chars": 23439,
+        "semantic_ir_prompt_user_chars": 19204,
+        "semantic_ir_provider_latency_ms": 24530,
         "semantic_ir_repair_attempted": false,
         "semantic_ir_repair_latency_ms": 0,
         "semantic_ir_repair_success": false,
@@ -157,6 +187,7 @@
         "semantic_ir_support_repair_success": false,
         "semantic_ir_supported": true,
         "semantic_ir_task_count": 2,
+        "semantic_ir_tool_schema_chars": 3328,
         "semantic_ir_toolcall_supported": true,
         "semantic_ir_unsupported_features": [],
         "semantic_ir_unsupported_operation": null,
@@ -170,31 +201,38 @@
         "v2_semantic_ir_used": true
       },
       "output": {
-        "aggregation_instruction": "First, retrieve the list of merge policies from the live API (t2). Then, look at the local segment data (t1) to see which merge policy ID is associated with segments using the '_xdm.context.profile' schema class (if such association exists in the local snapshot). However, the primary source for 'default merge policy' is typically the live API merge policy list where one is marked as 'default'. Identify the merge policy from t2 that is marked as default or specifically named/associated with '_xdm.context.profile'. If the local snapshot provides a specific merge policy ID for profile segments, cross-reference it with t2 to get its details. Return the name and details of the default merge policy for the profile schema class.",
+        "aggregation_instruction": "Find the merge policy where 'defaultMergePolicy' is true or 'id' matches the default policy ID from the list. If a specific default policy is identified by the API, return its name and ID. If the prompt implies a relationship between the schema class and a specific merge policy, check if any merge policy is associated with that schema class in the API response or local data. Otherwise, simply return the default merge policy found in the live API list.",
+        "api_request": {
+          "method": "GET",
+          "params": {
+            "limit": 100
+          },
+          "path": "/data/core/ups/config/mergePolicies"
+        },
         "evidence_order": "MULTI_PASS",
         "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "passes": {
           "items": [
             {
-              "pass_id": "t1_merge_policies",
-              "path": "SQL",
-              "raw_sql_fallback_reason": null,
-              "raw_sql_fallback_task_id": null,
-              "raw_sql_fallback_used": false,
-              "reuse_result_from": null,
-              "semantic_cache_key": null,
-              "subtask": "List segments with their merge policy IDs to identify which merge policy is associated with the profile schema class.",
-              "truncated_fields": 9
-            },
-            {
-              "pass_id": "t2_merge_policy_details",
+              "pass_id": "task_merge_policies_list",
               "path": "API",
               "raw_sql_fallback_reason": null,
               "raw_sql_fallback_task_id": null,
               "raw_sql_fallback_used": false,
               "reuse_result_from": null,
               "semantic_cache_key": null,
-              "subtask": "Fetch all merge policies from the live API to find the default one for _xdm.context.profile.",
+              "subtask": "List all merge policies from the live API to identify the default one.",
+              "truncated_fields": 9
+            },
+            {
+              "pass_id": "task_schema_lookup",
+              "path": "SQL",
+              "raw_sql_fallback_reason": null,
+              "raw_sql_fallback_task_id": null,
+              "raw_sql_fallback_used": false,
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "subtask": "Look up the blueprint ID for the schema class '_xdm.context.profile' in the local snapshot.",
               "truncated_fields": 9
             }
           ],
@@ -204,14 +242,11 @@
         "provider": "openai",
         "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
         "route": "EVIDENCE_PIPELINE",
-        "sql": {
-          "query": "SELECT \"NAME\", \"MERGEPOLICYID\" FROM \"dim_segment\" LIMIT 50"
-        },
         "truncated_fields": 6
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-02T13:52:36.440618+00:00"
+      "timestamp": "2026-06-02T16:19:16.377628+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
@@ -223,8 +258,8 @@
         "evidence_order": "MULTI_PASS",
         "pass_ids": {
           "items": [
-            "t1_merge_policies",
-            "t2_merge_policy_details"
+            "task_merge_policies_list",
+            "task_schema_lookup"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -232,11 +267,16 @@
       },
       "output": {
         "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "parallel_groups": {
           "items": [
             {
               "items": [
-                "t1_merge_policies",
-                "t2_merge_policy_details"
+                "task_merge_policies_list",
+                "task_schema_lookup"
               ],
               "total_items": 2,
               "truncated_items": false
@@ -245,31 +285,11 @@
           "total_items": 1,
           "truncated_items": false
         },
-        "parallel_groups": {
-          "items": [
-            {
-              "items": [
-                "t1_merge_policies"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "t2_merge_policy_details"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
         "pass_count": 2,
         "pass_ids": {
           "items": [
-            "t1_merge_policies",
-            "t2_merge_policy_details"
+            "task_merge_policies_list",
+            "task_schema_lookup"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -278,7 +298,7 @@
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-02T13:52:36.442919+00:00"
+      "timestamp": "2026-06-02T16:19:16.381017+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -288,23 +308,14 @@
       "efficiency_role": "prioritizes critical path and enables exact pass-result reuse",
       "input_summary": {
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "t1_merge_policies",
-                "t2_merge_policy_details"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "pass_ids": {
           "items": [
-            "t1_merge_policies",
-            "t2_merge_policy_details"
+            "task_merge_policies_list",
+            "task_schema_lookup"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -327,10 +338,9 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t1_merge_policies",
-            "t2_merge_policy_details"
+            "task_merge_policies_list"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -339,17 +349,8 @@
           "truncated_items": false
         },
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "t1_merge_policies",
-                "t2_merge_policy_details"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "early_stopped_passes": {
@@ -362,26 +363,20 @@
           "items": [
             {
               "items": [
-                "t1_merge_policies"
+                "task_merge_policies_list",
+                "task_schema_lookup"
               ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "t2_merge_policy_details"
-              ],
-              "total_items": 1,
+              "total_items": 2,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "pass_ids": {
           "items": [
-            "t1_merge_policies",
-            "t2_merge_policy_details"
+            "task_merge_policies_list",
+            "task_schema_lookup"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -392,7 +387,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-02T13:52:36.444140+00:00"
+      "timestamp": "2026-06-02T16:19:16.383068+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -405,26 +400,20 @@
           "items": [
             {
               "items": [
-                "t1_merge_policies"
+                "task_merge_policies_list",
+                "task_schema_lookup"
               ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "t2_merge_policy_details"
-              ],
-              "total_items": 1,
+              "total_items": 2,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "pass_ids": {
           "items": [
-            "t1_merge_policies",
-            "t2_merge_policy_details"
+            "task_merge_policies_list",
+            "task_schema_lookup"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -432,17 +421,8 @@
       },
       "output": {
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "t1_merge_policies",
-                "t2_merge_policy_details"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "max_api_workers": 2,
@@ -452,26 +432,20 @@
           "items": [
             {
               "items": [
-                "t1_merge_policies"
+                "task_merge_policies_list",
+                "task_schema_lookup"
               ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "t2_merge_policy_details"
-              ],
-              "total_items": 1,
+              "total_items": 2,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_completed": {
           "items": [
-            "t1_merge_policies",
-            "t2_merge_policy_details"
+            "task_merge_policies_list",
+            "task_schema_lookup"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -492,21 +466,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_2d20e38f097f4712851d1094c05a74b6:t1_merge_policies",
-              "pass_id": "t1_merge_policies",
+              "global_pass_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d:task_merge_policies_list",
+              "pass_id": "task_merge_policies_list",
               "plan_version": 1,
-              "run_id": "run_2d20e38f097f4712851d1094c05a74b6",
-              "stage": "PLAN_READY",
-              "status": "OK",
-              "truncated_fields": 3
-            },
-            {
-              "attempt_id": 0,
-              "event": "completed",
-              "global_pass_id": "run_2d20e38f097f4712851d1094c05a74b6:t1_merge_policies",
-              "pass_id": "t1_merge_policies",
-              "plan_version": 1,
-              "run_id": "run_2d20e38f097f4712851d1094c05a74b6",
+              "run_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -514,11 +477,22 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_2d20e38f097f4712851d1094c05a74b6:t1_merge_policies",
-              "pass_id": "t1_merge_policies",
+              "global_pass_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d:task_schema_lookup",
+              "pass_id": "task_schema_lookup",
               "plan_version": 1,
-              "run_id": "run_2d20e38f097f4712851d1094c05a74b6",
-              "stage": "DEPENDENCY_READY",
+              "run_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d",
+              "stage": "PLAN_READY",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d:task_merge_policies_list",
+              "pass_id": "task_merge_policies_list",
+              "plan_version": 1,
+              "run_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d",
+              "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
             }
@@ -531,7 +505,7 @@
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-02T13:52:36.445238+00:00"
+      "timestamp": "2026-06-02T16:19:16.384548+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
@@ -543,8 +517,8 @@
         "multi_pass_enabled": true,
         "pass_ids": {
           "items": [
-            "t1_merge_policies",
-            "t2_merge_policy_details"
+            "task_merge_policies_list",
+            "task_schema_lookup"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -573,10 +547,9 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t1_merge_policies",
-            "t2_merge_policy_details"
+            "task_merge_policies_list"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -585,17 +558,8 @@
           "truncated_items": false
         },
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "t1_merge_policies",
-                "t2_merge_policy_details"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "deterministic_answer_template_used": false,
@@ -604,7 +568,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_2d20e38f097f4712851d1094c05a74b6",
+        "evidence_bus_id": "evidence_run_1b1fa084df0841e8b79acdc0f4d3da2d",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -619,31 +583,25 @@
           "items": [
             {
               "items": [
-                "t1_merge_policies"
+                "task_merge_policies_list",
+                "task_schema_lookup"
               ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "t2_merge_policy_details"
-              ],
-              "total_items": 1,
+              "total_items": 2,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
-        "parallel_pass_count": 1,
+        "parallel_pass_count": 2,
         "pass_graph_gate_error_type": null,
         "pass_graph_gate_passed": true,
         "pass_graph_repair_attempted": false,
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "t1_merge_policies",
-            "t2_merge_policy_details"
+            "task_merge_policies_list",
+            "task_schema_lookup"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -651,8 +609,8 @@
         "pass_results_count": 2,
         "passes_completed": {
           "items": [
-            "t1_merge_policies",
-            "t2_merge_policy_details"
+            "task_merge_policies_list",
+            "task_schema_lookup"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -664,8 +622,8 @@
         },
         "passes_executed": {
           "items": [
-            "t1_merge_policies",
-            "t2_merge_policy_details"
+            "task_merge_policies_list",
+            "task_schema_lookup"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -687,8 +645,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_2d20e38f097f4712851d1094c05a74b6",
-        "run_id": "run_2d20e38f097f4712851d1094c05a74b6",
+        "result_bundle_id": "bundle_run_1b1fa084df0841e8b79acdc0f4d3da2d",
+        "run_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -697,9 +655,9 @@
         },
         "semantic_alias_materialized_count": 0,
         "semantic_alias_validation_failures": 0,
-        "sequential_pass_count": 1,
+        "sequential_pass_count": 0,
         "sql_execution_latency_sec": 0.001,
-        "sql_gate_latency_sec": 0.002,
+        "sql_gate_latency_sec": 0.352,
         "sql_gate_passed": true,
         "sql_repair_attempts": 0,
         "stage_events": {
@@ -707,10 +665,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_2d20e38f097f4712851d1094c05a74b6:t1_merge_policies",
-              "pass_id": "t1_merge_policies",
+              "global_pass_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d:task_merge_policies_list",
+              "pass_id": "task_merge_policies_list",
               "plan_version": 1,
-              "run_id": "run_2d20e38f097f4712851d1094c05a74b6",
+              "run_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -718,10 +676,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_2d20e38f097f4712851d1094c05a74b6:t1_merge_policies",
-              "pass_id": "t1_merge_policies",
+              "global_pass_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d:task_merge_policies_list",
+              "pass_id": "task_merge_policies_list",
               "plan_version": 1,
-              "run_id": "run_2d20e38f097f4712851d1094c05a74b6",
+              "run_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -729,10 +687,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_2d20e38f097f4712851d1094c05a74b6:t2_merge_policy_details",
-              "pass_id": "t2_merge_policy_details",
+              "global_pass_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d:task_schema_lookup",
+              "pass_id": "task_schema_lookup",
               "plan_version": 1,
-              "run_id": "run_2d20e38f097f4712851d1094c05a74b6",
+              "run_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -748,7 +706,7 @@
       },
       "stage": "llm-owned pass scheduling",
       "technique": "dependency-aware scheduling of LLM-declared evidence passes",
-      "timestamp": "2026-06-02T13:52:36.445947+00:00"
+      "timestamp": "2026-06-02T16:19:16.386356+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -757,7 +715,7 @@
       "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
       "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
       "input_summary": {
-        "pass_id": "t1_merge_policies"
+        "pass_id": "task_merge_policies_list"
       },
       "output": {
         "errors": {
@@ -767,60 +725,11 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_2d20e38f097f4712851d1094c05a74b6"
+        "run_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T13:52:36.446726+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
-      "correctness_role": "returns compile errors for one LLM repair attempt",
-      "duration_ms": 0.0,
-      "effect": "checks syntax/database-semantic validity without rewriting SQL",
-      "efficiency_role": "prevents executing uncompilable SQL",
-      "input_summary": {
-        "pass_id": "t1_merge_policies",
-        "sql": "SELECT \"NAME\", \"MERGEPOLICYID\" FROM \"dim_segment\" LIMIT 50"
-      },
-      "output": {
-        "pass_id": "t1_merge_policies",
-        "passed": true,
-        "sql": "SELECT \"NAME\", \"MERGEPOLICYID\" FROM \"dim_segment\" LIMIT 50"
-      },
-      "stage": "llm sql compile gate",
-      "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
-      "timestamp": "2026-06-02T13:52:36.449604+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
-      "correctness_role": "does not infer missing dependency values or add backend-selected subtasks",
-      "duration_ms": 0.0,
-      "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
-      "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
-      "input_summary": {
-        "depends_on": {
-          "items": [
-            "t1_merge_policies"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "pass_id": "t2_merge_policy_details"
-      },
-      "output": {
-        "errors": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "required": false,
-        "resolved": true,
-        "run_id": "run_2d20e38f097f4712851d1094c05a74b6"
-      },
-      "stage": "llm-owned pass dependency resolution",
-      "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T13:52:36.451452+00:00"
+      "timestamp": "2026-06-02T16:19:16.387762+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_api_request_gate",
@@ -830,7 +739,7 @@
       "efficiency_role": "prevents invalid API calls without planning endpoints",
       "input_summary": {
         "method": "GET",
-        "pass_id": "t2_merge_policy_details",
+        "pass_id": "task_merge_policies_list",
         "path": "/data/core/ups/config/mergePolicies"
       },
       "output": {
@@ -838,13 +747,62 @@
         "params": {
           "limit": 100
         },
-        "pass_id": "t2_merge_policy_details",
+        "pass_id": "task_merge_policies_list",
         "passed": true,
         "path": "/data/core/ups/config/mergePolicies"
       },
       "stage": "llm api request gate",
       "technique": "safe GET request-shape/catalog gate for LLM-owned API pass",
-      "timestamp": "2026-06-02T13:52:36.452824+00:00"
+      "timestamp": "2026-06-02T16:19:16.390063+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
+      "correctness_role": "does not infer missing dependency values or add backend-selected subtasks",
+      "duration_ms": 0.0,
+      "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
+      "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
+      "input_summary": {
+        "pass_id": "task_schema_lookup"
+      },
+      "output": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "required": false,
+        "resolved": true,
+        "run_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d"
+      },
+      "stage": "llm-owned pass dependency resolution",
+      "technique": "placeholder resolution from completed LLM pass results",
+      "timestamp": "2026-06-02T16:19:16.391668+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
+      "correctness_role": "returns compile errors for one LLM repair attempt",
+      "duration_ms": 0.0,
+      "effect": "checks syntax/database-semantic validity without rewriting SQL",
+      "efficiency_role": "prevents executing uncompilable SQL",
+      "input_summary": {
+        "pass_id": "task_schema_lookup",
+        "sql": "SELECT \"BLUEPRINTID\", \"NAME\", \"CLASS\" FROM \"dim_blueprint\" WHERE \"NAME\" = ? LIMIT 1"
+      },
+      "output": {
+        "params": {
+          "items": [
+            "_xdm.context.profile"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_id": "task_schema_lookup",
+        "passed": true,
+        "sql": "SELECT \"BLUEPRINTID\", \"NAME\", \"CLASS\" FROM \"dim_blueprint\" WHERE \"NAME\" = ? LIMIT 1"
+      },
+      "stage": "llm sql compile gate",
+      "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
+      "timestamp": "2026-06-02T16:19:16.744523+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -887,10 +845,9 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t1_merge_policies",
-            "t2_merge_policy_details"
+            "task_merge_policies_list"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -899,17 +856,8 @@
           "truncated_items": false
         },
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "t1_merge_policies",
-                "t2_merge_policy_details"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "deterministic_answer_template_used": false,
@@ -918,7 +866,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_2d20e38f097f4712851d1094c05a74b6",
+        "evidence_bus_id": "evidence_run_1b1fa084df0841e8b79acdc0f4d3da2d",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -936,31 +884,25 @@
           "items": [
             {
               "items": [
-                "t1_merge_policies"
+                "task_merge_policies_list",
+                "task_schema_lookup"
               ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "t2_merge_policy_details"
-              ],
-              "total_items": 1,
+              "total_items": 2,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
-        "parallel_pass_count": 1,
+        "parallel_pass_count": 2,
         "pass_graph_gate_error_type": null,
         "pass_graph_gate_passed": true,
         "pass_graph_repair_attempted": false,
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "t1_merge_policies",
-            "t2_merge_policy_details"
+            "task_merge_policies_list",
+            "task_schema_lookup"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -968,8 +910,8 @@
         "pass_results_count": 2,
         "passes_completed": {
           "items": [
-            "t1_merge_policies",
-            "t2_merge_policy_details"
+            "task_merge_policies_list",
+            "task_schema_lookup"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -981,8 +923,8 @@
         },
         "passes_executed": {
           "items": [
-            "t1_merge_policies",
-            "t2_merge_policy_details"
+            "task_merge_policies_list",
+            "task_schema_lookup"
           ],
           "total_items": 2,
           "truncated_items": false
@@ -1004,8 +946,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_2d20e38f097f4712851d1094c05a74b6",
-        "run_id": "run_2d20e38f097f4712851d1094c05a74b6",
+        "result_bundle_id": "bundle_run_1b1fa084df0841e8b79acdc0f4d3da2d",
+        "run_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -1014,9 +956,9 @@
         },
         "semantic_alias_materialized_count": 0,
         "semantic_alias_validation_failures": 0,
-        "sequential_pass_count": 1,
+        "sequential_pass_count": 0,
         "sql_execution_latency_sec": 0.001,
-        "sql_gate_latency_sec": 0.002,
+        "sql_gate_latency_sec": 0.352,
         "sql_gate_passed": true,
         "sql_repair_attempts": 0,
         "stage_events": {
@@ -1024,10 +966,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_2d20e38f097f4712851d1094c05a74b6:t1_merge_policies",
-              "pass_id": "t1_merge_policies",
+              "global_pass_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d:task_merge_policies_list",
+              "pass_id": "task_merge_policies_list",
               "plan_version": 1,
-              "run_id": "run_2d20e38f097f4712851d1094c05a74b6",
+              "run_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -1035,10 +977,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_2d20e38f097f4712851d1094c05a74b6:t1_merge_policies",
-              "pass_id": "t1_merge_policies",
+              "global_pass_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d:task_merge_policies_list",
+              "pass_id": "task_merge_policies_list",
               "plan_version": 1,
-              "run_id": "run_2d20e38f097f4712851d1094c05a74b6",
+              "run_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -1046,10 +988,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_2d20e38f097f4712851d1094c05a74b6:t2_merge_policy_details",
-              "pass_id": "t2_merge_policy_details",
+              "global_pass_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d:task_schema_lookup",
+              "pass_id": "task_schema_lookup",
               "plan_version": 1,
-              "run_id": "run_2d20e38f097f4712851d1094c05a74b6",
+              "run_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -1059,13 +1001,13 @@
           "truncated_items": true
         },
         "stage_pipeline_used": true,
-        "truncated_fields": 2,
+        "truncated_fields": 5,
         "v2_execution_optimizer_used": true,
         "v2_pipeline_scheduler_used": true
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-02T13:52:36.453749+00:00"
+      "timestamp": "2026-06-02T16:19:16.746069+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -1103,7 +1045,7 @@
         "dry_run_status": true,
         "row_counts": {
           "items": [
-            13
+            0
           ],
           "total_items": 1,
           "truncated_items": false
@@ -1114,24 +1056,11 @@
             {
               "ok": true,
               "result_preview": {
-                "items": [
-                  {
-                    "MERGEPOLICYID": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                    "NAME": "Person: Birthday Today 001"
-                  },
-                  {
-                    "MERGEPOLICYID": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                    "NAME": "Campaign: 25% Off Purchase Offer Reminder"
-                  },
-                  {
-                    "MERGEPOLICYID": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                    "NAME": "Campaign: New Application Credit Card Offer"
-                  }
-                ],
-                "total_items": 3,
+                "items": [],
+                "total_items": 0,
                 "truncated_items": false
               },
-              "row_count": 13
+              "row_count": 0
             }
           ],
           "total_items": 1,
@@ -1140,7 +1069,7 @@
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-02T13:52:36.546769+00:00"
+      "timestamp": "2026-06-02T16:19:16.827581+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -1163,7 +1092,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-02T13:52:36.547273+00:00"
+      "timestamp": "2026-06-02T16:19:16.828068+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -1176,30 +1105,21 @@
       },
       "output": {
         "evidence": {
-          "names": {
-            "items": [
-              "Person: Birthday Today 001",
-              "Campaign: 25% Off Purchase Offer Reminder",
-              "Campaign: New Application Credit Card Offer"
-            ],
-            "total_items": 3,
-            "truncated_items": false
-          },
           "pass_ids": {
             "items": [
-              "t1_merge_policies",
-              "t2_merge_policy_details"
+              "task_merge_policies_list",
+              "task_schema_lookup"
             ],
             "total_items": 2,
             "truncated_items": false
           },
           "pass_result_count": 2,
-          "run_id": "run_2d20e38f097f4712851d1094c05a74b6"
+          "run_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d"
         }
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-02T13:52:36.548036+00:00"
+      "timestamp": "2026-06-02T16:19:16.828612+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -1217,19 +1137,19 @@
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "t1_merge_policies"
+              "pass_id": "task_merge_policies_list"
             },
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "t2_merge_policy_details"
+              "pass_id": "task_schema_lookup"
             }
           ],
           "total_items": 2,
           "truncated_items": false
         },
         "pass_results_count": 2,
-        "run_id": "run_2d20e38f097f4712851d1094c05a74b6",
+        "run_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d",
         "runtime_passes": {
           "items": [
             {
@@ -1247,14 +1167,14 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_2d20e38f097f4712851d1094c05a74b6"
+                "run_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d"
               },
-              "global_pass_id": "run_2d20e38f097f4712851d1094c05a74b6:t1_merge_policies",
-              "pass_id": "t1_merge_policies",
-              "path": "SQL",
+              "global_pass_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d:task_merge_policies_list",
+              "pass_id": "task_merge_policies_list",
+              "path": "API",
               "plan_version": 1,
-              "run_id": "run_2d20e38f097f4712851d1094c05a74b6",
-              "status": "SUCCESS",
+              "run_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d",
+              "status": "API_ERROR",
               "truncated_fields": 6
             },
             {
@@ -1272,14 +1192,14 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_2d20e38f097f4712851d1094c05a74b6"
+                "run_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d"
               },
-              "global_pass_id": "run_2d20e38f097f4712851d1094c05a74b6:t2_merge_policy_details",
-              "pass_id": "t2_merge_policy_details",
-              "path": "API",
+              "global_pass_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d:task_schema_lookup",
+              "pass_id": "task_schema_lookup",
+              "path": "SQL",
               "plan_version": 1,
-              "run_id": "run_2d20e38f097f4712851d1094c05a74b6",
-              "status": "API_ERROR",
+              "run_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d",
+              "status": "EMPTY",
               "truncated_fields": 6
             }
           ],
@@ -1289,7 +1209,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-02T13:52:36.548642+00:00"
+      "timestamp": "2026-06-02T16:19:16.829143+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -1316,17 +1236,10 @@
           "total_items": 1,
           "truncated_items": false
         },
-        "conflict": {
-          "items": [
-            "SQL_SUCCESS_API_ERROR"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
         "live_empty_scoped": false,
         "sql": {
           "items": [
-            "SQL_DIRECT_ANSWER"
+            "SQL_ZERO_ROWS"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -1334,7 +1247,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-02T13:52:36.549211+00:00"
+      "timestamp": "2026-06-02T16:19:16.829658+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -1355,40 +1268,37 @@
         "slots": {
           "answer_family": "merge_policy",
           "api_error": false,
-          "discrepancy": false,
-          "dry_run": true,
-          "entity_ids": {
+          "counts": {
             "items": [
-              "22a941a9-e598-45f8-846b-c9a8889f5035"
+              "0"
             ],
             "total_items": 1,
             "truncated_items": false
           },
+          "discrepancy": false,
+          "dry_run": true,
           "entity_names": {
             "items": [
-              "_xdm.context.profile",
-              "Person: Birthday Today 001",
-              "Campaign: 25% Off Purchase Offer Reminder"
+              "_xdm.context.profile"
             ],
-            "total_items": 3,
+            "total_items": 1,
             "truncated_items": false
           },
           "slots_present": {
             "items": [
               "entity_names",
-              "entity_ids",
-              "counts"
+              "counts",
+              "dry_run"
             ],
-            "total_items": 6,
-            "truncated_items": true
+            "total_items": 3,
+            "truncated_items": false
           },
-          "sql_row_count": 13,
-          "truncated_fields": 5
+          "sql_row_count": 0
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-02T13:52:36.568126+00:00"
+      "timestamp": "2026-06-02T16:19:16.845272+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer_start",
@@ -1404,7 +1314,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "pre-call heartbeat before LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T13:52:36.568596+00:00"
+      "timestamp": "2026-06-02T16:19:16.845741+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -1417,44 +1327,41 @@
         "slot_counts": {
           "answer_family": "merge_policy",
           "api_error": false,
-          "discrepancy": false,
-          "dry_run": true,
-          "entity_ids": {
+          "counts": {
             "items": [
-              "22a941a9-e598-45f8-846b-c9a8889f5035"
+              "0"
             ],
             "total_items": 1,
             "truncated_items": false
           },
+          "discrepancy": false,
+          "dry_run": true,
           "entity_names": {
             "items": [
-              "_xdm.context.profile",
-              "Person: Birthday Today 001",
-              "Campaign: 25% Off Purchase Offer Reminder"
+              "_xdm.context.profile"
             ],
-            "total_items": 3,
+            "total_items": 1,
             "truncated_items": false
           },
           "slots_present": {
             "items": [
               "entity_names",
-              "entity_ids",
-              "counts"
+              "counts",
+              "dry_run"
             ],
-            "total_items": 6,
-            "truncated_items": true
+            "total_items": 3,
+            "truncated_items": false
           },
-          "sql_row_count": 13,
-          "truncated_fields": 5
+          "sql_row_count": 0
         }
       },
       "output": {
         "backend_unavailable": false,
-        "final_answer": "The local snapshot shows that the merge policy with ID 22a941a9-e598-45f8-846b-c9a8889f5035 is associated with segments including Person: Birthday Today 001, Campaign: 25% Off Purchase Offer Reminder, and Campaign: New Application Credit Card Offer. However, live API evidence was unavailable due to unavailable Adobe credentials, so the specific default merge policy for the _xdm.context.profile schema class could not be verified from the live system.",
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
         "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "parse_error": false,
         "provider": "openai",
-        "raw_preview": "The local snapshot shows that the merge policy with ID 22a941a9-e598-45f8-846b-c9a8889f5035 is associated with segments including Person: Birthday Today 001, Campaign: 25% Off Purchase Offer Reminder, and Campaign: New Application Credit Card Offer. However, live API evidence was unavailable due to unavailable Adobe credentials, so the specific default merge policy for the _xdm.context.profile schema class could not be verified from the live system.",
+        "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.",
         "used_pass_ids": {
           "items": [],
           "total_items": 0,
@@ -1463,7 +1370,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T13:52:45.196551+00:00"
+      "timestamp": "2026-06-02T16:19:22.163006+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -1475,12 +1382,12 @@
         "composer": "LLMFinalAnswerComposer"
       },
       "output": {
-        "final_answer": "The local snapshot shows that the merge policy with ID 22a941a9-e598-45f8-846b-c9a8889f5035 is associated with segments including Person: Birthday Today 001, Campaign: 25% Off Purchase Offer Reminder, and Campaign: New Application Credit Card Offer. However, live API evidence was unavailable due to unavailable Adobe credentials, so the specific default merge policy for the _xdm.context.profile schema class could not be verified from the live system.",
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
         "passed": true
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-02T13:52:45.197356+00:00"
+      "timestamp": "2026-06-02T16:19:22.165866+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -1521,65 +1428,41 @@
             },
             "counts": {
               "items": [
-                "13"
+                "0"
               ],
               "total_items": 1,
               "truncated_items": false
             },
             "evidence_strings": {
               "items": [
-                "sms opt-in",
-                "gender: female",
-                "lives on west coast"
+                "_xdm.context.profile",
+                "100",
+                "/data/core/ups/config/mergepolicies"
               ],
-              "total_items": 14,
-              "truncated_items": true
-            },
-            "ids": {
-              "items": [
-                "22a941a9-e598-45f8-846b-c9a8889f5035"
-              ],
-              "total_items": 1,
+              "total_items": 3,
               "truncated_items": false
             },
             "names": {
               "items": [
-                "_xdm.context.profile",
-                "person: birthday today 001",
-                "campaign: 25% off purchase offer reminder"
+                "_xdm.context.profile"
               ],
-              "total_items": 11,
-              "truncated_items": true
+              "total_items": 1,
+              "truncated_items": false
             }
           },
           "claim_extractor": {
-            "claim_count": 5,
+            "claim_count": 1,
             "claims": {
               "items": [
                 {
-                  "hardness": "HARD",
-                  "span": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                  "text": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                  "type": "ID",
-                  "value": "22a941a9-e598-45f8-846b-c9a8889f5035"
-                },
-                {
-                  "hardness": "HARD",
-                  "span": "could not be verified",
-                  "text": "could not be verified",
-                  "type": "CAVEAT",
-                  "value": "could not be verified"
-                },
-                {
-                  "hardness": "HARD",
-                  "span": "Birthday Today",
-                  "text": "Birthday Today",
-                  "type": "ENTITY_NAME",
-                  "value": "Birthday Today"
+                  "hardness": "SOFT",
+                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "type": "SOFT_TEXT"
                 }
               ],
-              "total_items": 5,
-              "truncated_items": true
+              "total_items": 1,
+              "truncated_items": false
             }
           },
           "claim_matcher": {
@@ -1587,75 +1470,37 @@
               "items": [
                 {
                   "claim": {
-                    "hardness": "HARD",
-                    "span": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                    "text": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                    "type": "ID",
-                    "value": "22a941a9-e598-45f8-846b-c9a8889f5035"
+                    "hardness": "SOFT",
+                    "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                    "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                    "type": "SOFT_TEXT"
                   },
-                  "reason": "id",
-                  "status": "SUPPORTED"
-                },
-                {
-                  "claim": {
-                    "hardness": "HARD",
-                    "span": "could not be verified",
-                    "text": "could not be verified",
-                    "type": "CAVEAT",
-                    "value": "could not be verified"
-                  },
-                  "reason": "api_error_or_unavailable_caveat",
-                  "status": "SUPPORTED"
-                },
-                {
-                  "claim": {
-                    "hardness": "HARD",
-                    "span": "Birthday Today",
-                    "text": "Birthday Today",
-                    "type": "ENTITY_NAME",
-                    "value": "Birthday Today"
-                  },
-                  "reason": "entity_name",
+                  "reason": "soft_text",
                   "status": "SUPPORTED"
                 }
               ],
-              "total_items": 5,
-              "truncated_items": true
+              "total_items": 1,
+              "truncated_items": false
             }
           },
           "ok": true,
           "supported_claims": {
             "items": [
               {
-                "hardness": "HARD",
-                "span": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                "text": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                "type": "ID",
-                "value": "22a941a9-e598-45f8-846b-c9a8889f5035"
-              },
-              {
-                "hardness": "HARD",
-                "span": "could not be verified",
-                "text": "could not be verified",
-                "type": "CAVEAT",
-                "value": "could not be verified"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Birthday Today",
-                "text": "Birthday Today",
-                "type": "ENTITY_NAME",
-                "value": "Birthday Today"
+                "hardness": "SOFT",
+                "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "type": "SOFT_TEXT"
               }
             ],
-            "total_items": 5,
-            "truncated_items": true
+            "total_items": 1,
+            "truncated_items": false
           }
         }
       },
       "stage": "answer gate",
       "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-02T13:52:45.203391+00:00"
+      "timestamp": "2026-06-02T16:19:22.172521+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_repair_start",
@@ -1672,7 +1517,7 @@
       },
       "stage": "llm-owned answer repair",
       "technique": "pre-call heartbeat before final answer repair",
-      "timestamp": "2026-06-02T13:52:45.204659+00:00"
+      "timestamp": "2026-06-02T16:19:22.173704+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_repair",
@@ -1687,11 +1532,11 @@
       "output": {
         "candidate": {
           "backend_unavailable": false,
-          "final_answer": "The local snapshot shows that the merge policy with ID 22a941a9-e598-45f8-846b-c9a8889f5035 is associated with segments including Person: Birthday Today 001, Campaign: 25% Off Purchase Offer Reminder, and Campaign: New Application Credit Card Offer. However, live API evidence was unavailable due to unavailable Adobe credentials, so the specific default merge policy for the _xdm.context.profile schema class could not be verified from the live system.",
+          "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
           "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
           "parse_error": false,
           "provider": "openai",
-          "raw_preview": "The local snapshot shows that the merge policy with ID 22a941a9-e598-45f8-846b-c9a8889f5035 is associated with segments including Person: Birthday Today 001, Campaign: 25% Off Purchase Offer Reminder, and Campaign: New Application Credit Card Offer. However, live API evidence was unavailable due to unavailable Adobe credentials, so the specific default merge policy for the _xdm.context.profile schema class could not be verified from the live system.",
+          "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.",
           "used_pass_ids": {
             "items": [],
             "total_items": 0,
@@ -1728,65 +1573,41 @@
               },
               "counts": {
                 "items": [
-                  "13"
+                  "0"
                 ],
                 "total_items": 1,
                 "truncated_items": false
               },
               "evidence_strings": {
                 "items": [
-                  "sms opt-in",
-                  "gender: female",
-                  "lives on west coast"
+                  "_xdm.context.profile",
+                  "100",
+                  "/data/core/ups/config/mergepolicies"
                 ],
-                "total_items": 14,
-                "truncated_items": true
-              },
-              "ids": {
-                "items": [
-                  "22a941a9-e598-45f8-846b-c9a8889f5035"
-                ],
-                "total_items": 1,
+                "total_items": 3,
                 "truncated_items": false
               },
               "names": {
                 "items": [
-                  "_xdm.context.profile",
-                  "person: birthday today 001",
-                  "campaign: 25% off purchase offer reminder"
+                  "_xdm.context.profile"
                 ],
-                "total_items": 11,
-                "truncated_items": true
+                "total_items": 1,
+                "truncated_items": false
               }
             },
             "claim_extractor": {
-              "claim_count": 5,
+              "claim_count": 1,
               "claims": {
                 "items": [
                   {
-                    "hardness": "HARD",
-                    "span": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                    "text": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                    "type": "ID",
-                    "value": "22a941a9-e598-45f8-846b-c9a8889f5035"
-                  },
-                  {
-                    "hardness": "HARD",
-                    "span": "could not be verified",
-                    "text": "could not be verified",
-                    "type": "CAVEAT",
-                    "value": "could not be verified"
-                  },
-                  {
-                    "hardness": "HARD",
-                    "span": "Birthday Today",
-                    "text": "Birthday Today",
-                    "type": "ENTITY_NAME",
-                    "value": "Birthday Today"
+                    "hardness": "SOFT",
+                    "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                    "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                    "type": "SOFT_TEXT"
                   }
                 ],
-                "total_items": 5,
-                "truncated_items": true
+                "total_items": 1,
+                "truncated_items": false
               }
             },
             "claim_matcher": {
@@ -1794,80 +1615,42 @@
                 "items": [
                   {
                     "claim": {
-                      "hardness": "HARD",
-                      "span": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                      "text": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                      "type": "ID",
-                      "value": "22a941a9-e598-45f8-846b-c9a8889f5035"
+                      "hardness": "SOFT",
+                      "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                      "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                      "type": "SOFT_TEXT"
                     },
-                    "reason": "id",
-                    "status": "SUPPORTED"
-                  },
-                  {
-                    "claim": {
-                      "hardness": "HARD",
-                      "span": "could not be verified",
-                      "text": "could not be verified",
-                      "type": "CAVEAT",
-                      "value": "could not be verified"
-                    },
-                    "reason": "api_error_or_unavailable_caveat",
-                    "status": "SUPPORTED"
-                  },
-                  {
-                    "claim": {
-                      "hardness": "HARD",
-                      "span": "Birthday Today",
-                      "text": "Birthday Today",
-                      "type": "ENTITY_NAME",
-                      "value": "Birthday Today"
-                    },
-                    "reason": "entity_name",
+                    "reason": "soft_text",
                     "status": "SUPPORTED"
                   }
                 ],
-                "total_items": 5,
-                "truncated_items": true
+                "total_items": 1,
+                "truncated_items": false
               }
             },
             "ok": true,
             "supported_claims": {
               "items": [
                 {
-                  "hardness": "HARD",
-                  "span": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                  "text": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                  "type": "ID",
-                  "value": "22a941a9-e598-45f8-846b-c9a8889f5035"
-                },
-                {
-                  "hardness": "HARD",
-                  "span": "could not be verified",
-                  "text": "could not be verified",
-                  "type": "CAVEAT",
-                  "value": "could not be verified"
-                },
-                {
-                  "hardness": "HARD",
-                  "span": "Birthday Today",
-                  "text": "Birthday Today",
-                  "type": "ENTITY_NAME",
-                  "value": "Birthday Today"
+                  "hardness": "SOFT",
+                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "type": "SOFT_TEXT"
                 }
               ],
-              "total_items": 5,
-              "truncated_items": true
+              "total_items": 1,
+              "truncated_items": false
             }
           }
         },
         "syntax_gate": {
-          "final_answer": "The local snapshot shows that the merge policy with ID 22a941a9-e598-45f8-846b-c9a8889f5035 is associated with segments including Person: Birthday Today 001, Campaign: 25% Off Purchase Offer Reminder, and Campaign: New Application Credit Card Offer. However, live API evidence was unavailable due to unavailable Adobe credentials, so the specific default merge policy for the _xdm.context.profile schema class could not be verified from the live system.",
+          "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
           "passed": true
         }
       },
       "stage": "llm-owned answer repair",
       "technique": "single LLM-owned final answer repair",
-      "timestamp": "2026-06-02T13:52:54.575419+00:00"
+      "timestamp": "2026-06-02T16:19:27.494857+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -1881,13 +1664,13 @@
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
         "answer_repair_attempts": 1,
-        "answer_semantic_gate_passed": false,
+        "answer_semantic_gate_passed": true,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
-        "final_answer_repair_latency_sec": 9.368,
-        "final_answer_supported_by_evidence": false,
-        "final_composer_latency_sec": 8.627,
-        "final_gate_latency_sec": 0.006,
+        "final_answer_repair_latency_sec": 5.318,
+        "final_answer_supported_by_evidence": true,
+        "final_composer_latency_sec": 5.315,
+        "final_gate_latency_sec": 0.008,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 2,
@@ -1899,7 +1682,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-02T13:52:54.580130+00:00"
+      "timestamp": "2026-06-02T16:19:27.499727+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -1908,15 +1691,15 @@
       "effect": "returns the LLM-composed answer when gates pass, otherwise a safe evidence-state fallback",
       "efficiency_role": "no additional SQL/API calls",
       "input_summary": {
-        "answer_semantic_gate_passed": false
+        "answer_semantic_gate_passed": true
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
         "answer_repair_attempts": 1,
-        "answer_semantic_gate_passed": false,
+        "answer_semantic_gate_passed": true,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
-        "final_answer_supported_by_evidence": false,
+        "final_answer_supported_by_evidence": true,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 3,
@@ -1928,33 +1711,44 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-02T13:52:54.581624+00:00"
+      "timestamp": "2026-06-02T16:19:27.501113+00:00"
     }
   ],
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 2879,
+  "estimated_tokens": 2617,
   "execution_time": 0.0,
-  "final_answer": "Local snapshot evidence shows t1_merge_policies/SQL/LOCAL_SNAPSHOT: count: 13; examples include Person: Birthday Today 001; Campaign: 25% Off Purchase Offer Reminder; Campaign: New Application Credit Card Offer; id: 22a941a9-e598-45f8-846b-c9a8889f5035; NAME:Person: Birthday Today 001; MERGEPOLICYID:22a941a9-e598-45f8-846b-c9a8889f5035; NAME:Campaign: 25% Off Purchase Offer Reminder. Live API evidence was unavailable, so a live comparison cannot be completed.",
+  "final_answer": "Local snapshot evidence shows task_schema_lookup/SQL/LOCAL_SNAPSHOT: count: 0; examples include _xdm.context.profile. Live API evidence was unavailable, so a live comparison cannot be completed.",
   "original_query": "Show the default merge policy for schema class '_xdm.context.profile'.",
   "planning_time": 0.0,
   "preprocessing_time": 0.0,
   "query_id": "example_021",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 18.20684262504801,
+  "runtime": 10.809138541575521,
   "sql_call_count": 1,
   "steps": [
     {
-      "estimated_tokens": 2210,
+      "estimated_tokens": 2353,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_021/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 2906
+      "prompt_tokens": 3086
     },
     {
-      "aggregation_instruction": "First, retrieve the list of merge policies from the live API (t2). Then, look at the local segment data (t1) to see which merge policy ID is associated with segments using the '_xdm.context.profile' schema class (if such association exists in the local snapshot). However, the primary source for 'default merge policy' is typically the live API merge policy list where one is marked as 'default'. Identify the merge policy from t2 that is marked as default or specifically named/associated with '_xdm.context.profile'. If the local snapshot provides a specific merge policy ID for profile segments, cross-reference it with t2 to get its details. Return the name and details of the default merge policy for the profile schema class.",
-      "api_request": null,
+      "aggregation_instruction": "Find the merge policy where 'defaultMergePolicy' is true or 'id' matches the default policy ID from the list. If a specific default policy is identified by the API, return its name and ID. If the prompt implies a relationship between the schema class and a specific merge policy, check if any merge policy is associated with that schema class in the API response or local data. Otherwise, simply return the default merge policy found in the live API list.",
+      "api_request": {
+        "method": "GET",
+        "params": {
+          "limit": 100
+        },
+        "path": "/data/core/ups/config/mergePolicies"
+      },
       "backend_unavailable": false,
       "diagnostics": {
+        "api_card_detail_truncated": true,
+        "api_card_final_char_count": 5261,
+        "api_card_original_char_count": 6967,
+        "api_card_original_row_count": 20,
+        "api_card_row_count": 20,
         "api_request_gate_failures": 0,
         "atomic_protocol_fallback_used": false,
         "backend_formal_compilation_used": true,
@@ -1969,7 +1763,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 28185,
+        "planner_provider_latency_ms": 24533,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -1990,17 +1784,31 @@
         "raw_sql_fallback_success": false,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
+        "schema_card_columns_truncated": true,
+        "schema_card_final_char_count": 7826,
+        "schema_card_original_char_count": 10765,
+        "schema_card_original_row_count": 18,
+        "schema_card_row_count": 18,
         "sdk_toolcall_semantic_ir_used": true,
         "semantic_alias_count": 0,
         "semantic_alias_error_type": null,
         "semantic_alias_repair_attempted": false,
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
+        "semantic_ir_context_truncated": true,
+        "semantic_ir_context_truncated_sections": [
+          "schema_card",
+          "api_card"
+        ],
         "semantic_ir_plan_preview": {
-          "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_merge_policies\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LIST\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_segment\", \"fields\": {\"items\": [\"NAME\", \"MERGEPOLICYID\"], \"total_items\": 2, \"truncated_items\": false}, \"limit\": 50}, \"description\": \"List segments with their merge policy IDs to identify which merge policy is associated with the profile schema class.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_merge_policy_details\", \"kind\": \"LIVE_QUERY\", \"operation\": \"LIST\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"merge_policies\", \"method\": \"GET\", \"query_params\": {\"limit\": 100}}, \"depends_on\": {\"items\": [\"t1_merge_policies\"], \"total_items\": 1, \"truncated_items\": false}, \"truncated_fields\": 7}], \"total_items\": 2, \"truncated_items\": false}, \"aggregation_instruction\": \"First, retrieve the list of merge policies from the live API (t2). Then, look at the local segment data (t1) to see which merge policy ID is associated with segments using the '_xdm.context.profile' schema class (if such associati...",
+          "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"task_merge_policies_list\", \"kind\": \"LIVE_QUERY\", \"operation\": \"LIST\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"merge_policies\", \"method\": \"GET\", \"query_params\": {\"limit\": 100}}, \"description\": \"List all merge policies from the live API to identify the default one.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"task_schema_lookup\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LOOKUP\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_blueprint\", \"fields\": {\"items\": [\"BLUEPRINTID\", \"NAME\", \"CLASS\"], \"total_items\": 3, \"truncated_items\": false}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"_xdm.context.profile\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 1}, \"description\": \"Look up the blueprint ID for the schema class '_xdm.context.profile' in the local snapshot.\", \"truncated_fields\": 7}], \"total_items\": 2, \"truncated_items\": false}, \"aggregation_instruction\": \"Find the merge policy where 'defaultMergePolicy' is true or 'id' matches the default policy ID from the list. If a s...",
           "truncated": true
         },
-        "semantic_ir_provider_latency_ms": 28182,
+        "semantic_ir_planner_char_budget": 24000,
+        "semantic_ir_prompt_system_chars": 907,
+        "semantic_ir_prompt_total_chars": 23439,
+        "semantic_ir_prompt_user_chars": 19204,
+        "semantic_ir_provider_latency_ms": 24530,
         "semantic_ir_repair_attempted": false,
         "semantic_ir_repair_latency_ms": 0,
         "semantic_ir_repair_success": false,
@@ -2014,6 +1822,7 @@
         "semantic_ir_support_repair_success": false,
         "semantic_ir_supported": true,
         "semantic_ir_task_count": 2,
+        "semantic_ir_tool_schema_chars": 3328,
         "semantic_ir_toolcall_supported": true,
         "semantic_ir_unsupported_features": [],
         "semantic_ir_unsupported_operation": null,
@@ -2033,40 +1842,6 @@
       "parse_error": false,
       "passes": [
         {
-          "api_request": null,
-          "can_run_parallel": true,
-          "depends_on": [],
-          "evidence_order": "SQL_FIRST",
-          "expected_result": "List segments with their merge policy IDs to identify which merge policy is associated with the profile schema class.",
-          "fallback": false,
-          "optional": false,
-          "pass_id": "t1_merge_policies",
-          "path": "SQL",
-          "raw_sql_fallback_reason": null,
-          "raw_sql_fallback_task_id": null,
-          "raw_sql_fallback_used": false,
-          "result_contract": {
-            "entity": "segment",
-            "fields": [
-              "NAME",
-              "MERGEPOLICYID"
-            ],
-            "filters": [],
-            "freshness": "same_run",
-            "object": "segment",
-            "operation": "LIST",
-            "scope": "local",
-            "source": "LOCAL_SNAPSHOT"
-          },
-          "reuse_result_from": null,
-          "semantic_cache_key": null,
-          "sql": {
-            "params": [],
-            "query": "SELECT \"NAME\", \"MERGEPOLICYID\" FROM \"dim_segment\" LIMIT 50"
-          },
-          "subtask": "List segments with their merge policy IDs to identify which merge policy is associated with the profile schema class."
-        },
-        {
           "api_request": {
             "method": "GET",
             "params": {
@@ -2074,15 +1849,13 @@
             },
             "path": "/data/core/ups/config/mergePolicies"
           },
-          "can_run_parallel": false,
-          "depends_on": [
-            "t1_merge_policies"
-          ],
+          "can_run_parallel": true,
+          "depends_on": [],
           "evidence_order": "API_FIRST",
-          "expected_result": "Fetch all merge policies from the live API to find the default one for _xdm.context.profile.",
+          "expected_result": "List all merge policies from the live API to identify the default one.",
           "fallback": false,
           "optional": false,
-          "pass_id": "t2_merge_policy_details",
+          "pass_id": "task_merge_policies_list",
           "path": "API",
           "raw_sql_fallback_reason": null,
           "raw_sql_fallback_task_id": null,
@@ -2092,12 +1865,11 @@
             "fields": [
               "id",
               "name",
-              "default",
-              "description"
+              "defaultMergePolicy"
             ],
             "filters": [],
             "freshness": "same_run",
-            "object": "merge_policy",
+            "object": null,
             "operation": "LIST",
             "scope": "live",
             "source": "LIVE_API"
@@ -2105,7 +1877,50 @@
           "reuse_result_from": null,
           "semantic_cache_key": null,
           "sql": null,
-          "subtask": "Fetch all merge policies from the live API to find the default one for _xdm.context.profile."
+          "subtask": "List all merge policies from the live API to identify the default one."
+        },
+        {
+          "api_request": null,
+          "can_run_parallel": true,
+          "depends_on": [],
+          "evidence_order": "SQL_FIRST",
+          "expected_result": "Look up the blueprint ID for the schema class '_xdm.context.profile' in the local snapshot.",
+          "fallback": false,
+          "optional": false,
+          "pass_id": "task_schema_lookup",
+          "path": "SQL",
+          "raw_sql_fallback_reason": null,
+          "raw_sql_fallback_task_id": null,
+          "raw_sql_fallback_used": false,
+          "result_contract": {
+            "entity": "blueprint",
+            "fields": [
+              "BLUEPRINTID",
+              "NAME",
+              "CLASS"
+            ],
+            "filters": [
+              {
+                "field": "NAME",
+                "op": "=",
+                "value": "_xdm.context.profile"
+              }
+            ],
+            "freshness": "same_run",
+            "object": null,
+            "operation": "LOOKUP",
+            "scope": "local",
+            "source": "LOCAL_SNAPSHOT"
+          },
+          "reuse_result_from": null,
+          "semantic_cache_key": null,
+          "sql": {
+            "params": [
+              "_xdm.context.profile"
+            ],
+            "query": "SELECT \"BLUEPRINTID\", \"NAME\", \"CLASS\" FROM \"dim_blueprint\" WHERE \"NAME\" = ? LIMIT 1"
+          },
+          "subtask": "Look up the blueprint ID for the schema class '_xdm.context.profile' in the local snapshot."
         }
       ],
       "provider": "openai",
@@ -2124,46 +1939,7 @@
       },
       "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
       "route": "EVIDENCE_PIPELINE",
-      "sql": {
-        "params": [],
-        "query": "SELECT \"NAME\", \"MERGEPOLICYID\" FROM \"dim_segment\" LIMIT 50"
-      }
-    },
-    {
-      "kind": "sql_call",
-      "result": {
-        "error": null,
-        "limited": false,
-        "ok": true,
-        "row_count": 13,
-        "rows": {
-          "items": [
-            {
-              "MERGEPOLICYID": "22a941a9-e598-45f8-846b-c9a8889f5035",
-              "NAME": "Person: Birthday Today 001"
-            },
-            {
-              "MERGEPOLICYID": "22a941a9-e598-45f8-846b-c9a8889f5035",
-              "NAME": "Campaign: 25% Off Purchase Offer Reminder"
-            },
-            {
-              "MERGEPOLICYID": "22a941a9-e598-45f8-846b-c9a8889f5035",
-              "NAME": "Campaign: New Application Credit Card Offer"
-            }
-          ],
-          "total_items": 13,
-          "truncated_items": true
-        }
-      },
-      "sql": "SELECT \"NAME\", \"MERGEPOLICYID\" FROM \"dim_segment\" LIMIT 50",
-      "validation": {
-        "errors": [],
-        "ok": true,
-        "repaired": false,
-        "warnings": [
-          "LLM SQL pass passed compile gate."
-        ]
-      }
+      "sql": null
     },
     {
       "headers": {},
@@ -2195,6 +1971,31 @@
       }
     },
     {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "params": {
+          "items": [
+            "_xdm.context.profile"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "row_count": 0
+      },
+      "sql": "SELECT \"BLUEPRINTID\", \"NAME\", \"CLASS\" FROM \"dim_blueprint\" WHERE \"NAME\" = ? LIMIT 1",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": [
+          "LLM SQL pass passed compile gate."
+        ]
+      }
+    },
+    {
       "evidence_bus_built": true,
       "evidence_pipeline_bypassed": false,
       "kind": "evidence_boundary",
@@ -2210,35 +2011,33 @@
       "caveats_included": [],
       "claimed_facts": [],
       "error_message": null,
-      "final_answer": "The local snapshot shows that the merge policy with ID 22a941a9-e598-45f8-846b-c9a8889f5035 is associated with segments including Person: Birthday Today 001, Campaign: 25% Off Purchase Offer Reminder, and Campaign: New Application Credit Card Offer. However, live API evidence was unavailable due to unavailable Adobe credentials, so the specific default merge policy for the _xdm.context.profile schema class could not be verified from the live system.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
       "kind": "llm_final_answer_composer",
       "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
       "parse_error": false,
       "provider": "openai",
-      "raw_preview": "The local snapshot shows that the merge policy with ID 22a941a9-e598-45f8-846b-c9a8889f5035 is associated with segments including Person: Birthday Today 001, Campaign: 25% Off Purchase Offer Reminder, and Campaign: New Application Credit Card Offer. However, live API evidence was unavailable due to unavailable Adobe credentials, so the specific default merge policy for the _xdm.context.profile schema class could not be verified from the live system.",
+      "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.",
       "unanswered_subtasks": [],
       "used_pass_ids": []
     },
     {
       "answer_composer_used": "LLMFinalAnswerComposer",
       "answer_repair_attempts": 1,
-      "answer_semantic_gate_passed": false,
+      "answer_semantic_gate_passed": true,
       "answer_syntax_gate_passed": true,
       "deterministic_answer_template_used": false,
-      "final_answer_repair_latency_sec": 9.368,
-      "final_answer_supported_by_evidence": false,
-      "final_composer_latency_sec": 8.627,
-      "final_gate_latency_sec": 0.006,
+      "final_answer_repair_latency_sec": 5.318,
+      "final_answer_supported_by_evidence": true,
+      "final_composer_latency_sec": 5.315,
+      "final_gate_latency_sec": 0.008,
       "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
       "llm_owned_final_answer": true,
       "semantic_gate": {
-        "error_message": "Final answer omitted information explicitly requested and present in runtime evidence.",
-        "error_type": "missing_required_info",
-        "missing_required_fields": [
-          "entity_names"
-        ],
-        "passed": false,
+        "error_message": null,
+        "error_type": null,
+        "missing_required_fields": [],
+        "passed": true,
         "scope_errors": [],
         "unsupported_claims": [],
         "verifier": {
@@ -2251,105 +2050,33 @@
               "live api verification"
             ],
             "counts": [
-              "13"
+              "0"
             ],
             "dates": [],
             "evidence_strings": [
-              "sms opt-in",
-              "gender: female",
-              "lives on west coast",
-              "person: birthday in next 30 days",
               "_xdm.context.profile",
               "100",
-              "email opt-in",
-              "campaign: new application credit card offer",
-              "gender: male",
-              "lives on east coast",
-              "person: birthday today 001",
-              "campaign: 25% off purchase offer reminder",
-              "/data/core/ups/config/mergepolicies",
-              "22a941a9-e598-45f8-846b-c9a8889f5035"
+              "/data/core/ups/config/mergepolicies"
             ],
-            "ids": [
-              "22a941a9-e598-45f8-846b-c9a8889f5035"
-            ],
+            "ids": [],
             "live_empty_scopes": [],
             "missing_roles": [],
             "names": [
-              "_xdm.context.profile",
-              "person: birthday today 001",
-              "campaign: 25% off purchase offer reminder",
-              "campaign: new application credit card offer",
-              "sms opt-in",
-              "email opt-in",
-              "gender: female",
-              "gender: male",
-              "lives on west coast",
-              "lives on east coast",
-              "person: birthday in next 30 days"
+              "_xdm.context.profile"
             ],
             "relationships": [],
             "statuses": []
           },
           "ambiguous_claims": [],
           "claim_extractor": {
-            "claim_count": 8,
+            "claim_count": 1,
             "claims": [
               {
                 "hardness": "HARD",
-                "span": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                "text": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                "type": "ID",
-                "value": "22a941a9-e598-45f8-846b-c9a8889f5035"
-              },
-              {
-                "hardness": "HARD",
-                "span": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                "text": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                "type": "ID",
-                "value": "22a941a9-e598-45f8-846b-c9a8889f5035"
-              },
-              {
-                "hardness": "HARD",
-                "span": "13",
-                "text": "13",
+                "span": "0",
+                "text": "0",
                 "type": "COUNT",
-                "value": "13"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Birthday Today",
-                "text": "Birthday Today",
-                "type": "ENTITY_NAME",
-                "value": "Birthday Today"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Off Purchase Offer Reminder",
-                "text": "Off Purchase Offer Reminder",
-                "type": "ENTITY_NAME",
-                "value": "Off Purchase Offer Reminder"
-              },
-              {
-                "hardness": "HARD",
-                "span": "New Application Credit Card Offer",
-                "text": "New Application Credit Card Offer",
-                "type": "ENTITY_NAME",
-                "value": "New Application Credit Card Offer"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Birthday Today",
-                "text": "Birthday Today",
-                "type": "ENTITY_NAME",
-                "value": "Birthday Today"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Off Purchase Offer Reminder",
-                "text": "Off Purchase Offer Reminder",
-                "type": "ENTITY_NAME",
-                "value": "Off Purchase Offer Reminder"
+                "value": "0"
               }
             ]
           },
@@ -2358,89 +2085,12 @@
               {
                 "claim": {
                   "hardness": "HARD",
-                  "span": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                  "text": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                  "type": "ID",
-                  "value": "22a941a9-e598-45f8-846b-c9a8889f5035"
-                },
-                "reason": "id",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                  "text": "22a941a9-e598-45f8-846b-c9a8889f5035",
-                  "type": "ID",
-                  "value": "22a941a9-e598-45f8-846b-c9a8889f5035"
-                },
-                "reason": "id",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "13",
-                  "text": "13",
+                  "span": "0",
+                  "text": "0",
                   "type": "COUNT",
-                  "value": "13"
+                  "value": "0"
                 },
                 "reason": "count",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Birthday Today",
-                  "text": "Birthday Today",
-                  "type": "ENTITY_NAME",
-                  "value": "Birthday Today"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Off Purchase Offer Reminder",
-                  "text": "Off Purchase Offer Reminder",
-                  "type": "ENTITY_NAME",
-                  "value": "Off Purchase Offer Reminder"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "New Application Credit Card Offer",
-                  "text": "New Application Credit Card Offer",
-                  "type": "ENTITY_NAME",
-                  "value": "New Application Credit Card Offer"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Birthday Today",
-                  "text": "Birthday Today",
-                  "type": "ENTITY_NAME",
-                  "value": "Birthday Today"
-                },
-                "reason": "entity_name",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Off Purchase Offer Reminder",
-                  "text": "Off Purchase Offer Reminder",
-                  "type": "ENTITY_NAME",
-                  "value": "Off Purchase Offer Reminder"
-                },
-                "reason": "entity_name",
                 "status": "SUPPORTED"
               }
             ]
@@ -2451,59 +2101,10 @@
           "supported_claims": [
             {
               "hardness": "HARD",
-              "span": "22a941a9-e598-45f8-846b-c9a8889f5035",
-              "text": "22a941a9-e598-45f8-846b-c9a8889f5035",
-              "type": "ID",
-              "value": "22a941a9-e598-45f8-846b-c9a8889f5035"
-            },
-            {
-              "hardness": "HARD",
-              "span": "22a941a9-e598-45f8-846b-c9a8889f5035",
-              "text": "22a941a9-e598-45f8-846b-c9a8889f5035",
-              "type": "ID",
-              "value": "22a941a9-e598-45f8-846b-c9a8889f5035"
-            },
-            {
-              "hardness": "HARD",
-              "span": "13",
-              "text": "13",
+              "span": "0",
+              "text": "0",
               "type": "COUNT",
-              "value": "13"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Birthday Today",
-              "text": "Birthday Today",
-              "type": "ENTITY_NAME",
-              "value": "Birthday Today"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Off Purchase Offer Reminder",
-              "text": "Off Purchase Offer Reminder",
-              "type": "ENTITY_NAME",
-              "value": "Off Purchase Offer Reminder"
-            },
-            {
-              "hardness": "HARD",
-              "span": "New Application Credit Card Offer",
-              "text": "New Application Credit Card Offer",
-              "type": "ENTITY_NAME",
-              "value": "New Application Credit Card Offer"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Birthday Today",
-              "text": "Birthday Today",
-              "type": "ENTITY_NAME",
-              "value": "Birthday Today"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Off Purchase Offer Reminder",
-              "text": "Off Purchase Offer Reminder",
-              "type": "ENTITY_NAME",
-              "value": "Off Purchase Offer Reminder"
+              "value": "0"
             }
           ],
           "unsupported_claims": []
@@ -2512,7 +2113,7 @@
       "syntax_gate": {
         "error_message": null,
         "error_type": null,
-        "final_answer": "Local snapshot evidence shows t1_merge_policies/SQL/LOCAL_SNAPSHOT: count: 13; examples include Person: Birthday Today 001; Campaign: 25% Off Purchase Offer Reminder; Campaign: New Application Credit Card Offer; id: 22a941a9-e598-45f8-846b-c9a8889f5035; NAME:Person: Birthday Today 001; MERGEPOLICYID:22a941a9-e598-45f8-846b-c9a8889f5035; NAME:Campaign: 25% Off Purchase Offer Reminder. Live API evidence was unavailable, so a live comparison cannot be completed.",
+        "final_answer": "Local snapshot evidence shows task_schema_lookup/SQL/LOCAL_SNAPSHOT: count: 0; examples include _xdm.context.profile. Live API evidence was unavailable, so a live comparison cannot be completed.",
         "passed": true
       },
       "used_pass_ids": []
@@ -2520,7 +2121,7 @@
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 18.038167541846633
+    "answer_time": 10.67375195864588
   },
   "tool_call_count": 2
 }

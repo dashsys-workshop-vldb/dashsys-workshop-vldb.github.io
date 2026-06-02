@@ -2,10 +2,15 @@
   "backend_semantic_planning_used": false,
   "llm_owned_generation": true,
   "llm_unified_plan": {
-    "aggregation_instruction": "Return the single count value from t1_count_profile_enabled_xdm as the final answer.",
+    "aggregation_instruction": "The user asks for a count of XDM Experience Event schemas enabled for profile. Task t1 provides the concept. Task t2 counts all collections named 'XDM Experience Event'. Task t3 lists them with the ISPROFILEENABLED flag. The final answer should be the count of records from t3 where ISPROFILEENABLED is true (or 'true'/'1' depending on local data representation). If t3 returns no records or the field is not indicative, report the total count from t2 and note the profile status.",
     "api_request": null,
     "backend_unavailable": false,
     "diagnostics": {
+      "api_card_detail_truncated": true,
+      "api_card_final_char_count": 5261,
+      "api_card_original_char_count": 6967,
+      "api_card_original_row_count": 20,
+      "api_card_row_count": 20,
       "api_request_gate_failures": 0,
       "atomic_protocol_fallback_used": false,
       "backend_formal_compilation_used": true,
@@ -15,12 +20,12 @@
       "backend_sql_api_generation_used": false,
       "compiled_alias_count": 0,
       "compiled_api_count": 0,
-      "compiled_sql_count": 1,
+      "compiled_sql_count": 2,
       "compiler_latency_ms": 0,
       "planner_json_fallback_used": false,
       "planner_json_parse_error": null,
       "planner_parse_source": "sdk_toolcall_semantic_ir",
-      "planner_provider_latency_ms": 14980,
+      "planner_provider_latency_ms": 25560,
       "planner_repair_attempted": false,
       "planner_success": true,
       "planner_timeout": false,
@@ -41,48 +46,31 @@
       "raw_sql_fallback_success": false,
       "raw_sql_fallback_task_id": null,
       "raw_sql_fallback_used": false,
+      "schema_card_columns_truncated": true,
+      "schema_card_final_char_count": 7826,
+      "schema_card_original_char_count": 10765,
+      "schema_card_original_row_count": 18,
+      "schema_card_row_count": 18,
       "sdk_toolcall_semantic_ir_used": true,
       "semantic_alias_count": 0,
       "semantic_alias_error_type": null,
       "semantic_alias_repair_attempted": false,
       "semantic_alias_validation_passed": true,
       "semantic_alias_validation_used": true,
+      "semantic_ir_context_truncated": true,
+      "semantic_ir_context_truncated_sections": [
+        "schema_card",
+        "api_card"
+      ],
       "semantic_ir_plan_preview": {
-        "aggregation_instruction": "Return the single count value from t1_count_profile_enabled_xdm as the final answer.",
-        "route": "EVIDENCE",
-        "tasks": {
-          "items": [
-            {
-              "description": "Count XDM Experience Event schemas (blueprints) that are enabled for profile (ISPROFILEENABLED=true).",
-              "kind": "LOCAL_QUERY",
-              "local_query": {
-                "count": true,
-                "filters": {
-                  "items": [
-                    {
-                      "field": "ISPROFILEENABLED",
-                      "op": "=",
-                      "value": true
-                    }
-                  ],
-                  "total_items": 1,
-                  "truncated_items": false
-                },
-                "table": "dim_blueprint"
-              },
-              "operation": "COUNT",
-              "reuse_result_from": null,
-              "semantic_cache_key": null,
-              "source": "LOCAL_SNAPSHOT",
-              "task_id": "t1_count_profile_enabled_xdm",
-              "truncated_fields": 7
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        }
+        "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1\", \"kind\": \"CONCEPT\", \"operation\": \"EXPLAIN\", \"source\": \"NONE\", \"description\": \"Explain what XDM Experience Event schema is and what it means for a schema to be enabled for profile in Adobe Experience Platform.\", \"required\": true, \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"COUNT\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": true, \"table\": \"dim_collection\", \"fields\": {\"items\": [\"COLLECTIONID\"], \"total_items\": 1, \"truncated_items\": false}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"XDM Experience Event\"}], \"total_items\": 1, \"truncated_items\": false}}, \"description\": \"Count the number of local snapshot collections (schemas) named 'XDM Experience Event'.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t3\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LIST\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_collection\", \"fields\": {\"items\": [\"COLLECTIONID\", \"NAME\", \"ISPROFILEENABLED\"], \"total_items\": ...",
+        "truncated": true
       },
-      "semantic_ir_provider_latency_ms": 14978,
+      "semantic_ir_planner_char_budget": 24000,
+      "semantic_ir_prompt_system_chars": 907,
+      "semantic_ir_prompt_total_chars": 23447,
+      "semantic_ir_prompt_user_chars": 19212,
+      "semantic_ir_provider_latency_ms": 25558,
       "semantic_ir_repair_attempted": false,
       "semantic_ir_repair_latency_ms": 0,
       "semantic_ir_repair_success": false,
@@ -95,7 +83,8 @@
       "semantic_ir_support_repair_latency_ms": 0,
       "semantic_ir_support_repair_success": false,
       "semantic_ir_supported": true,
-      "semantic_ir_task_count": 1,
+      "semantic_ir_task_count": 3,
+      "semantic_ir_tool_schema_chars": 3328,
       "semantic_ir_toolcall_supported": true,
       "semantic_ir_unsupported_features": [],
       "semantic_ir_unsupported_operation": null,
@@ -109,7 +98,7 @@
       "v2_semantic_ir_used": true
     },
     "direct_answer": null,
-    "evidence_order": "SQL_FIRST",
+    "evidence_order": "MULTI_PASS",
     "model": "/Users/tanqinyang/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
     "parse_error": false,
     "passes": [
@@ -117,25 +106,104 @@
         "api_request": null,
         "can_run_parallel": true,
         "depends_on": [],
-        "evidence_order": "SQL_FIRST",
-        "expected_result": "Count XDM Experience Event schemas (blueprints) that are enabled for profile (ISPROFILEENABLED=true).",
+        "evidence_order": "NO_EVIDENCE",
+        "expected_result": "Explain what XDM Experience Event schema is and what it means for a schema to be enabled for profile in Adobe Experience Platform.",
         "fallback": false,
         "optional": false,
-        "pass_id": "t1_count_profile_enabled_xdm",
-        "path": "SQL",
+        "pass_id": "t1",
+        "path": "DIRECT",
         "raw_sql_fallback_reason": null,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
         "result_contract": null,
         "reuse_result_from": null,
         "semantic_cache_key": null,
+        "sql": null,
+        "subtask": "Explain what XDM Experience Event schema is and what it means for a schema to be enabled for profile in Adobe Experience Platform."
+      },
+      {
+        "api_request": null,
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "SQL_FIRST",
+        "expected_result": "Count the number of local snapshot collections (schemas) named 'XDM Experience Event'.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "t2",
+        "path": "SQL",
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "result_contract": {
+          "entity": "collection",
+          "fields": [
+            "COLLECTIONID"
+          ],
+          "filters": [
+            {
+              "field": "NAME",
+              "op": "=",
+              "value": "XDM Experience Event"
+            }
+          ],
+          "freshness": "same_run",
+          "object": "count",
+          "operation": "COUNT",
+          "scope": "local",
+          "source": "LOCAL_SNAPSHOT"
+        },
+        "reuse_result_from": null,
+        "semantic_cache_key": null,
         "sql": {
           "params": [
-            true
+            "XDM Experience Event"
           ],
-          "query": "SELECT COUNT(*) AS count FROM \"dim_blueprint\" WHERE \"ISPROFILEENABLED\" = ?"
+          "query": "SELECT COUNT(*) AS count FROM \"dim_collection\" WHERE \"NAME\" = ?"
         },
-        "subtask": "Count XDM Experience Event schemas (blueprints) that are enabled for profile (ISPROFILEENABLED=true)."
+        "subtask": "Count the number of local snapshot collections (schemas) named 'XDM Experience Event'."
+      },
+      {
+        "api_request": null,
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "SQL_FIRST",
+        "expected_result": "List the XDM Experience Event collections and their ISPROFILEENABLED status to determine which are enabled for profile.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "t3",
+        "path": "SQL",
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "result_contract": {
+          "entity": "collection",
+          "fields": [
+            "COLLECTIONID",
+            "NAME",
+            "ISPROFILEENABLED"
+          ],
+          "filters": [
+            {
+              "field": "NAME",
+              "op": "=",
+              "value": "XDM Experience Event"
+            }
+          ],
+          "freshness": "same_run",
+          "object": "list",
+          "operation": "LIST",
+          "scope": "local",
+          "source": "LOCAL_SNAPSHOT"
+        },
+        "reuse_result_from": null,
+        "semantic_cache_key": null,
+        "sql": {
+          "params": [
+            "XDM Experience Event"
+          ],
+          "query": "SELECT \"COLLECTIONID\", \"NAME\", \"ISPROFILEENABLED\" FROM \"dim_collection\" WHERE \"NAME\" = ? LIMIT 100"
+        },
+        "subtask": "List the XDM Experience Event collections and their ISPROFILEENABLED status to determine which are enabled for profile."
       }
     ],
     "provider": "openai",
@@ -154,12 +222,7 @@
     },
     "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
     "route": "EVIDENCE_PIPELINE",
-    "sql": {
-      "params": [
-        true
-      ],
-      "query": "SELECT COUNT(*) AS count FROM \"dim_blueprint\" WHERE \"ISPROFILEENABLED\" = ?"
-    }
+    "sql": null
   },
   "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
   "query": "Count the number of XDM Experience Event schemas that are enabled for profile.",
@@ -174,14 +237,14 @@
       "max_sql_workers": 2,
       "run_timeout_ms": 30000
     },
-    "created_at": "2026-06-02T13:45:53.758120+00:00",
-    "deadline_at": "2026-06-02T13:46:23.758120+00:00",
-    "evidence_bus_id": "evidence_run_512a4c37fd7140b8bdae228f91824f08",
+    "created_at": "2026-06-02T16:13:22.316992+00:00",
+    "deadline_at": "2026-06-02T16:13:52.316992+00:00",
+    "evidence_bus_id": "evidence_run_72a5ba7378f746409d007f7aa40d525d",
     "original_prompt": "Count the number of XDM Experience Event schemas that are enabled for profile.",
     "plan_version": 1,
     "prompt_id": "example_010",
-    "result_bundle_id": "bundle_run_512a4c37fd7140b8bdae228f91824f08",
-    "run_id": "run_512a4c37fd7140b8bdae228f91824f08",
+    "result_bundle_id": "bundle_run_72a5ba7378f746409d007f7aa40d525d",
+    "run_id": "run_72a5ba7378f746409d007f7aa40d525d",
     "status": "RUNNING"
   },
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"

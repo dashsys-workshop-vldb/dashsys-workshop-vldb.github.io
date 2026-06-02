@@ -2,10 +2,21 @@
   "backend_semantic_planning_used": false,
   "llm_owned_generation": true,
   "llm_unified_plan": {
-    "aggregation_instruction": "First, retrieve the list of merge policies from the live API (t2). Then, look at the local segment data (t1) to see which merge policy ID is associated with segments using the '_xdm.context.profile' schema class (if such association exists in the local snapshot). However, the primary source for 'default merge policy' is typically the live API merge policy list where one is marked as 'default'. Identify the merge policy from t2 that is marked as default or specifically named/associated with '_xdm.context.profile'. If the local snapshot provides a specific merge policy ID for profile segments, cross-reference it with t2 to get its details. Return the name and details of the default merge policy for the profile schema class.",
-    "api_request": null,
+    "aggregation_instruction": "Find the merge policy where 'defaultMergePolicy' is true or 'id' matches the default policy ID from the list. If a specific default policy is identified by the API, return its name and ID. If the prompt implies a relationship between the schema class and a specific merge policy, check if any merge policy is associated with that schema class in the API response or local data. Otherwise, simply return the default merge policy found in the live API list.",
+    "api_request": {
+      "method": "GET",
+      "params": {
+        "limit": 100
+      },
+      "path": "/data/core/ups/config/mergePolicies"
+    },
     "backend_unavailable": false,
     "diagnostics": {
+      "api_card_detail_truncated": true,
+      "api_card_final_char_count": 5261,
+      "api_card_original_char_count": 6967,
+      "api_card_original_row_count": 20,
+      "api_card_row_count": 20,
       "api_request_gate_failures": 0,
       "atomic_protocol_fallback_used": false,
       "backend_formal_compilation_used": true,
@@ -20,7 +31,7 @@
       "planner_json_fallback_used": false,
       "planner_json_parse_error": null,
       "planner_parse_source": "sdk_toolcall_semantic_ir",
-      "planner_provider_latency_ms": 28185,
+      "planner_provider_latency_ms": 24533,
       "planner_repair_attempted": false,
       "planner_success": true,
       "planner_timeout": false,
@@ -41,17 +52,31 @@
       "raw_sql_fallback_success": false,
       "raw_sql_fallback_task_id": null,
       "raw_sql_fallback_used": false,
+      "schema_card_columns_truncated": true,
+      "schema_card_final_char_count": 7826,
+      "schema_card_original_char_count": 10765,
+      "schema_card_original_row_count": 18,
+      "schema_card_row_count": 18,
       "sdk_toolcall_semantic_ir_used": true,
       "semantic_alias_count": 0,
       "semantic_alias_error_type": null,
       "semantic_alias_repair_attempted": false,
       "semantic_alias_validation_passed": true,
       "semantic_alias_validation_used": true,
+      "semantic_ir_context_truncated": true,
+      "semantic_ir_context_truncated_sections": [
+        "schema_card",
+        "api_card"
+      ],
       "semantic_ir_plan_preview": {
-        "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_merge_policies\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LIST\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_segment\", \"fields\": {\"items\": [\"NAME\", \"MERGEPOLICYID\"], \"total_items\": 2, \"truncated_items\": false}, \"limit\": 50}, \"description\": \"List segments with their merge policy IDs to identify which merge policy is associated with the profile schema class.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_merge_policy_details\", \"kind\": \"LIVE_QUERY\", \"operation\": \"LIST\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"merge_policies\", \"method\": \"GET\", \"query_params\": {\"limit\": 100}}, \"depends_on\": {\"items\": [\"t1_merge_policies\"], \"total_items\": 1, \"truncated_items\": false}, \"truncated_fields\": 7}], \"total_items\": 2, \"truncated_items\": false}, \"aggregation_instruction\": \"First, retrieve the list of merge policies from the live API (t2). Then, look at the local segment data (t1) to see which merge policy ID is associated with segments using the '_xdm.context.profile' schema class (if such associati...",
+        "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"task_merge_policies_list\", \"kind\": \"LIVE_QUERY\", \"operation\": \"LIST\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"merge_policies\", \"method\": \"GET\", \"query_params\": {\"limit\": 100}}, \"description\": \"List all merge policies from the live API to identify the default one.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"task_schema_lookup\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LOOKUP\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_blueprint\", \"fields\": {\"items\": [\"BLUEPRINTID\", \"NAME\", \"CLASS\"], \"total_items\": 3, \"truncated_items\": false}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"_xdm.context.profile\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 1}, \"description\": \"Look up the blueprint ID for the schema class '_xdm.context.profile' in the local snapshot.\", \"truncated_fields\": 7}], \"total_items\": 2, \"truncated_items\": false}, \"aggregation_instruction\": \"Find the merge policy where 'defaultMergePolicy' is true or 'id' matches the default policy ID from the list. If a s...",
         "truncated": true
       },
-      "semantic_ir_provider_latency_ms": 28182,
+      "semantic_ir_planner_char_budget": 24000,
+      "semantic_ir_prompt_system_chars": 907,
+      "semantic_ir_prompt_total_chars": 23439,
+      "semantic_ir_prompt_user_chars": 19204,
+      "semantic_ir_provider_latency_ms": 24530,
       "semantic_ir_repair_attempted": false,
       "semantic_ir_repair_latency_ms": 0,
       "semantic_ir_repair_success": false,
@@ -65,6 +90,7 @@
       "semantic_ir_support_repair_success": false,
       "semantic_ir_supported": true,
       "semantic_ir_task_count": 2,
+      "semantic_ir_tool_schema_chars": 3328,
       "semantic_ir_toolcall_supported": true,
       "semantic_ir_unsupported_features": [],
       "semantic_ir_unsupported_operation": null,
@@ -83,40 +109,6 @@
     "parse_error": false,
     "passes": [
       {
-        "api_request": null,
-        "can_run_parallel": true,
-        "depends_on": [],
-        "evidence_order": "SQL_FIRST",
-        "expected_result": "List segments with their merge policy IDs to identify which merge policy is associated with the profile schema class.",
-        "fallback": false,
-        "optional": false,
-        "pass_id": "t1_merge_policies",
-        "path": "SQL",
-        "raw_sql_fallback_reason": null,
-        "raw_sql_fallback_task_id": null,
-        "raw_sql_fallback_used": false,
-        "result_contract": {
-          "entity": "segment",
-          "fields": [
-            "NAME",
-            "MERGEPOLICYID"
-          ],
-          "filters": [],
-          "freshness": "same_run",
-          "object": "segment",
-          "operation": "LIST",
-          "scope": "local",
-          "source": "LOCAL_SNAPSHOT"
-        },
-        "reuse_result_from": null,
-        "semantic_cache_key": null,
-        "sql": {
-          "params": [],
-          "query": "SELECT \"NAME\", \"MERGEPOLICYID\" FROM \"dim_segment\" LIMIT 50"
-        },
-        "subtask": "List segments with their merge policy IDs to identify which merge policy is associated with the profile schema class."
-      },
-      {
         "api_request": {
           "method": "GET",
           "params": {
@@ -124,15 +116,13 @@
           },
           "path": "/data/core/ups/config/mergePolicies"
         },
-        "can_run_parallel": false,
-        "depends_on": [
-          "t1_merge_policies"
-        ],
+        "can_run_parallel": true,
+        "depends_on": [],
         "evidence_order": "API_FIRST",
-        "expected_result": "Fetch all merge policies from the live API to find the default one for _xdm.context.profile.",
+        "expected_result": "List all merge policies from the live API to identify the default one.",
         "fallback": false,
         "optional": false,
-        "pass_id": "t2_merge_policy_details",
+        "pass_id": "task_merge_policies_list",
         "path": "API",
         "raw_sql_fallback_reason": null,
         "raw_sql_fallback_task_id": null,
@@ -142,12 +132,11 @@
           "fields": [
             "id",
             "name",
-            "default",
-            "description"
+            "defaultMergePolicy"
           ],
           "filters": [],
           "freshness": "same_run",
-          "object": "merge_policy",
+          "object": null,
           "operation": "LIST",
           "scope": "live",
           "source": "LIVE_API"
@@ -155,7 +144,50 @@
         "reuse_result_from": null,
         "semantic_cache_key": null,
         "sql": null,
-        "subtask": "Fetch all merge policies from the live API to find the default one for _xdm.context.profile."
+        "subtask": "List all merge policies from the live API to identify the default one."
+      },
+      {
+        "api_request": null,
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "SQL_FIRST",
+        "expected_result": "Look up the blueprint ID for the schema class '_xdm.context.profile' in the local snapshot.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "task_schema_lookup",
+        "path": "SQL",
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "result_contract": {
+          "entity": "blueprint",
+          "fields": [
+            "BLUEPRINTID",
+            "NAME",
+            "CLASS"
+          ],
+          "filters": [
+            {
+              "field": "NAME",
+              "op": "=",
+              "value": "_xdm.context.profile"
+            }
+          ],
+          "freshness": "same_run",
+          "object": null,
+          "operation": "LOOKUP",
+          "scope": "local",
+          "source": "LOCAL_SNAPSHOT"
+        },
+        "reuse_result_from": null,
+        "semantic_cache_key": null,
+        "sql": {
+          "params": [
+            "_xdm.context.profile"
+          ],
+          "query": "SELECT \"BLUEPRINTID\", \"NAME\", \"CLASS\" FROM \"dim_blueprint\" WHERE \"NAME\" = ? LIMIT 1"
+        },
+        "subtask": "Look up the blueprint ID for the schema class '_xdm.context.profile' in the local snapshot."
       }
     ],
     "provider": "openai",
@@ -174,10 +206,7 @@
     },
     "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
     "route": "EVIDENCE_PIPELINE",
-    "sql": {
-      "params": [],
-      "query": "SELECT \"NAME\", \"MERGEPOLICYID\" FROM \"dim_segment\" LIMIT 50"
-    }
+    "sql": null
   },
   "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
   "query": "Show the default merge policy for schema class '_xdm.context.profile'.",
@@ -192,14 +221,14 @@
       "max_sql_workers": 2,
       "run_timeout_ms": 30000
     },
-    "created_at": "2026-06-02T13:52:08.245422+00:00",
-    "deadline_at": "2026-06-02T13:52:38.245422+00:00",
-    "evidence_bus_id": "evidence_run_2d20e38f097f4712851d1094c05a74b6",
+    "created_at": "2026-06-02T16:18:51.695638+00:00",
+    "deadline_at": "2026-06-02T16:19:21.695638+00:00",
+    "evidence_bus_id": "evidence_run_1b1fa084df0841e8b79acdc0f4d3da2d",
     "original_prompt": "Show the default merge policy for schema class '_xdm.context.profile'.",
     "plan_version": 1,
     "prompt_id": "example_021",
-    "result_bundle_id": "bundle_run_2d20e38f097f4712851d1094c05a74b6",
-    "run_id": "run_2d20e38f097f4712851d1094c05a74b6",
+    "result_bundle_id": "bundle_run_1b1fa084df0841e8b79acdc0f4d3da2d",
+    "run_id": "run_1b1fa084df0841e8b79acdc0f4d3da2d",
     "status": "RUNNING"
   },
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"

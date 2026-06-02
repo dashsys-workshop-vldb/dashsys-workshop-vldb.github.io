@@ -1,6 +1,6 @@
 {
-  "answer_time": 16.755363167263567,
-  "api_call_count": 1,
+  "answer_time": 3.243333292193711,
+  "api_call_count": 0,
   "checkpoints": [
     {
       "checkpoint_id": "checkpoint_01_raw_query",
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-02T13:44:33.777841+00:00"
+      "timestamp": "2026-06-02T16:11:56.466547+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-02T13:44:33.778366+00:00"
+      "timestamp": "2026-06-02T16:11:56.467036+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,7 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-02T13:44:33.779169+00:00"
+      "timestamp": "2026-06-02T16:11:56.467522+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner_start",
@@ -82,11 +82,22 @@
       },
       "output": {
         "current_stage": "llm_unified_planner_call_start",
-        "prompt_id": "example_008"
+        "prompt_id": "example_008",
+        "semantic_ir_prompt_diagnostics": {
+          "schema_card_original_row_count": 18,
+          "schema_card_row_count": 18,
+          "semantic_ir_context_truncated": true,
+          "semantic_ir_planner_char_budget": 24000,
+          "semantic_ir_prompt_system_chars": 907,
+          "semantic_ir_prompt_total_chars": 23417,
+          "semantic_ir_prompt_user_chars": 19182,
+          "semantic_ir_tool_schema_chars": 3328,
+          "truncated_fields": 9
+        }
       },
       "stage": "llm-owned planning",
       "technique": "pre-call heartbeat before Unified LLM Planner",
-      "timestamp": "2026-06-02T13:44:33.786443+00:00"
+      "timestamp": "2026-06-02T16:11:56.618236+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -98,6 +109,11 @@
         "query": "show me the field for Person: Birthday Today 001"
       },
       "metrics": {
+        "api_card_detail_truncated": true,
+        "api_card_final_char_count": 5261,
+        "api_card_original_char_count": 6967,
+        "api_card_original_row_count": 20,
+        "api_card_row_count": 20,
         "api_request_gate_failures": 0,
         "atomic_protocol_fallback_used": false,
         "backend_formal_compilation_used": true,
@@ -106,13 +122,13 @@
         "backend_semantic_planning_used": false,
         "backend_sql_api_generation_used": false,
         "compiled_alias_count": 0,
-        "compiled_api_count": 1,
+        "compiled_api_count": 0,
         "compiled_sql_count": 1,
         "compiler_latency_ms": 0,
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 27271,
+        "planner_provider_latency_ms": 17088,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -133,17 +149,72 @@
         "raw_sql_fallback_success": false,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
+        "schema_card_columns_truncated": true,
+        "schema_card_final_char_count": 7826,
+        "schema_card_original_char_count": 10765,
+        "schema_card_original_row_count": 18,
+        "schema_card_row_count": 18,
         "sdk_toolcall_semantic_ir_used": true,
         "semantic_alias_count": 0,
         "semantic_alias_error_type": null,
         "semantic_alias_repair_attempted": false,
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
+        "semantic_ir_context_truncated": true,
+        "semantic_ir_context_truncated_sections": [
+          "schema_card",
+          "api_card"
+        ],
         "semantic_ir_plan_preview": {
-          "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_concept_person_birthday\", \"kind\": \"CONCEPT\", \"operation\": \"EXPLAIN\", \"source\": \"NONE\", \"description\": \"Explain the concept of 'Person: Birthday Today 001' as a segment or audience definition in Adobe Experience Platform, including its purpose and typical usage.\", \"required\": true, \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_lookup_person_birthday_segment\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LOOKUP\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_segment\", \"fields\": {\"items\": [\"SEGMENTID\", \"NAME\", \"LABELSSEGMENT\"], \"total_items\": 5, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"Person: Birthday Today 001\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 1}, \"description\": \"Look up the local segment record for 'Person: Birthday Today 001' to retrieve its ID, name, labels, definition, and lifecycle status.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t3_lookup_person_birthday_api\", \"kind\": \"LIVE_QUE...",
-          "truncated": true
+          "aggregation_instruction": "Return the field details (ID, title, description, type) for the property named 'Person: Birthday Today 001'.",
+          "route": "EVIDENCE",
+          "tasks": {
+            "items": [
+              {
+                "description": "Lookup the field definition for 'Person: Birthday Today 001' from the local property snapshot.",
+                "kind": "LOCAL_QUERY",
+                "local_query": {
+                  "count": false,
+                  "fields": {
+                    "items": [
+                      "PROPERTYID",
+                      "ALTDISPLAYTITLE",
+                      "DESCRIPTION"
+                    ],
+                    "total_items": 5,
+                    "truncated_items": true
+                  },
+                  "filters": {
+                    "items": [
+                      {
+                        "field": "ALTDISPLAYTITLE",
+                        "op": "=",
+                        "value": "Person: Birthday Today 001"
+                      }
+                    ],
+                    "total_items": 1,
+                    "truncated_items": false
+                  },
+                  "limit": 1,
+                  "table": "dim_property"
+                },
+                "operation": "LOOKUP",
+                "reuse_result_from": null,
+                "semantic_cache_key": null,
+                "source": "LOCAL_SNAPSHOT",
+                "task_id": "task_field_lookup",
+                "truncated_fields": 7
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
         },
-        "semantic_ir_provider_latency_ms": 27269,
+        "semantic_ir_planner_char_budget": 24000,
+        "semantic_ir_prompt_system_chars": 907,
+        "semantic_ir_prompt_total_chars": 23417,
+        "semantic_ir_prompt_user_chars": 19182,
+        "semantic_ir_provider_latency_ms": 17085,
         "semantic_ir_repair_attempted": false,
         "semantic_ir_repair_latency_ms": 0,
         "semantic_ir_repair_success": false,
@@ -156,7 +227,8 @@
         "semantic_ir_support_repair_latency_ms": 0,
         "semantic_ir_support_repair_success": false,
         "semantic_ir_supported": true,
-        "semantic_ir_task_count": 3,
+        "semantic_ir_task_count": 1,
+        "semantic_ir_tool_schema_chars": 3328,
         "semantic_ir_toolcall_supported": true,
         "semantic_ir_unsupported_features": [],
         "semantic_ir_unsupported_operation": null,
@@ -170,57 +242,44 @@
         "v2_semantic_ir_used": true
       },
       "output": {
-        "aggregation_instruction": "Combine the concept explanation with the local segment lookup result. If the local lookup finds a record, present its ID, name, definition, and status. If the local lookup finds nothing, state that the segment is not found in the local snapshot. The live API lookup is secondary evidence; if the local record exists, prioritize it for the primary answer but mention if live metadata differs.",
-        "evidence_order": "MULTI_PASS",
+        "aggregation_instruction": "Return the field details (ID, title, description, type) for the property named 'Person: Birthday Today 001'.",
+        "evidence_order": "SQL_FIRST",
         "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-        "parse_error": false,
         "passes": {
           "items": [
             {
-              "pass_id": "t1_concept_person_birthday",
-              "path": "DIRECT",
-              "raw_sql_fallback_reason": null,
-              "raw_sql_fallback_task_id": null,
-              "raw_sql_fallback_used": false,
-              "reuse_result_from": null,
-              "semantic_cache_key": null,
-              "subtask": "Explain the concept of 'Person: Birthday Today 001' as a segment or audience definition in Adobe Experience Platform, including its purpose and typical usage.",
-              "truncated_fields": 9
-            },
-            {
-              "pass_id": "t2_lookup_person_birthday_segment",
+              "pass_id": "task_field_lookup",
               "path": "SQL",
               "raw_sql_fallback_reason": null,
               "raw_sql_fallback_task_id": null,
               "raw_sql_fallback_used": false,
               "reuse_result_from": null,
               "semantic_cache_key": null,
-              "subtask": "Look up the local segment record for 'Person: Birthday Today 001' to retrieve its ID, name, labels, definition, and lifecycle status.",
-              "truncated_fields": 9
-            },
-            {
-              "pass_id": "t3_lookup_person_birthday_api",
-              "path": "API",
-              "raw_sql_fallback_reason": null,
-              "raw_sql_fallback_task_id": null,
-              "raw_sql_fallback_used": false,
-              "reuse_result_from": null,
-              "semantic_cache_key": null,
-              "subtask": "Look up the live segment definition for 'Person: Birthday Today 001' from the Segment Definitions API to retrieve current platform metadata.",
+              "subtask": "Lookup the field definition for 'Person: Birthday Today 001' from the local property snapshot.",
               "truncated_fields": 9
             }
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         },
         "provider": "openai",
         "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
         "route": "EVIDENCE_PIPELINE",
+        "sql": {
+          "params": {
+            "items": [
+              "Person: Birthday Today 001"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "query": "SELECT \"PROPERTYID\", \"ALTDISPLAYTITLE\", \"DESCRIPTION\", \"TYPE\", \"LABELSPROPERTY\" FROM \"dim_property\" WHERE \"ALTDISPLAYTITLE\" = ? LIMIT 1"
+        },
         "truncated_fields": 6
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-02T13:45:01.061043+00:00"
+      "timestamp": "2026-06-02T16:12:13.709494+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
@@ -229,14 +288,12 @@
       "effect": "validates only graph shape; does not choose subtasks, dependencies, SQL, or API paths",
       "efficiency_role": "bounds pass scheduling to LLM-declared valid graphs",
       "input_summary": {
-        "evidence_order": "MULTI_PASS",
+        "evidence_order": "SQL_FIRST",
         "pass_ids": {
           "items": [
-            "t1_concept_person_birthday",
-            "t2_lookup_person_birthday_segment",
-            "t3_lookup_person_birthday_api"
+            "task_field_lookup"
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         }
       },
@@ -250,32 +307,28 @@
           "items": [
             {
               "items": [
-                "t1_concept_person_birthday",
-                "t2_lookup_person_birthday_segment",
-                "t3_lookup_person_birthday_api"
+                "task_field_lookup"
               ],
-              "total_items": 3,
+              "total_items": 1,
               "truncated_items": false
             }
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "pass_count": 3,
+        "pass_count": 1,
         "pass_ids": {
           "items": [
-            "t1_concept_person_birthday",
-            "t2_lookup_person_birthday_segment",
-            "t3_lookup_person_birthday_api"
+            "task_field_lookup"
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         },
         "passed": true
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-02T13:45:01.062858+00:00"
+      "timestamp": "2026-06-02T16:12:13.712617+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -291,11 +344,9 @@
         },
         "pass_ids": {
           "items": [
-            "t1_concept_person_birthday",
-            "t2_lookup_person_birthday_segment",
-            "t3_lookup_person_birthday_api"
+            "task_field_lookup"
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         }
       },
@@ -316,7 +367,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t3_lookup_person_birthday_api"
+            "task_field_lookup"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -341,11 +392,9 @@
           "items": [
             {
               "items": [
-                "t3_lookup_person_birthday_api",
-                "t1_concept_person_birthday",
-                "t2_lookup_person_birthday_segment"
+                "task_field_lookup"
               ],
-              "total_items": 3,
+              "total_items": 1,
               "truncated_items": false
             }
           ],
@@ -354,11 +403,9 @@
         },
         "pass_ids": {
           "items": [
-            "t1_concept_person_birthday",
-            "t2_lookup_person_birthday_segment",
-            "t3_lookup_person_birthday_api"
+            "task_field_lookup"
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         },
         "stage_pipeline_used": true,
@@ -367,7 +414,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-02T13:45:01.063974+00:00"
+      "timestamp": "2026-06-02T16:12:13.714218+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -380,11 +427,9 @@
           "items": [
             {
               "items": [
-                "t3_lookup_person_birthday_api",
-                "t1_concept_person_birthday",
-                "t2_lookup_person_birthday_segment"
+                "task_field_lookup"
               ],
-              "total_items": 3,
+              "total_items": 1,
               "truncated_items": false
             }
           ],
@@ -393,11 +438,9 @@
         },
         "pass_ids": {
           "items": [
-            "t1_concept_person_birthday",
-            "t2_lookup_person_birthday_segment",
-            "t3_lookup_person_birthday_api"
+            "task_field_lookup"
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         }
       },
@@ -414,11 +457,9 @@
           "items": [
             {
               "items": [
-                "t3_lookup_person_birthday_api",
-                "t1_concept_person_birthday",
-                "t2_lookup_person_birthday_segment"
+                "task_field_lookup"
               ],
-              "total_items": 3,
+              "total_items": 1,
               "truncated_items": false
             }
           ],
@@ -427,11 +468,9 @@
         },
         "passes_completed": {
           "items": [
-            "t3_lookup_person_birthday_api",
-            "t1_concept_person_birthday",
-            "t2_lookup_person_birthday_segment"
+            "task_field_lookup"
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_dependency_blocked": {
@@ -450,10 +489,21 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1:t3_lookup_person_birthday_api",
-              "pass_id": "t3_lookup_person_birthday_api",
+              "global_pass_id": "run_82dfede10a164133af4fcd227d58c591:task_field_lookup",
+              "pass_id": "task_field_lookup",
               "plan_version": 1,
-              "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1",
+              "run_id": "run_82dfede10a164133af4fcd227d58c591",
+              "stage": "PLAN_READY",
+              "status": "OK",
+              "truncated_fields": 3
+            },
+            {
+              "attempt_id": 0,
+              "event": "completed",
+              "global_pass_id": "run_82dfede10a164133af4fcd227d58c591:task_field_lookup",
+              "pass_id": "task_field_lookup",
+              "plan_version": 1,
+              "run_id": "run_82dfede10a164133af4fcd227d58c591",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -461,27 +511,16 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1:t1_concept_person_birthday",
-              "pass_id": "t1_concept_person_birthday",
+              "global_pass_id": "run_82dfede10a164133af4fcd227d58c591:task_field_lookup",
+              "pass_id": "task_field_lookup",
               "plan_version": 1,
-              "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1",
-              "stage": "PLAN_READY",
-              "status": "OK",
-              "truncated_fields": 3
-            },
-            {
-              "attempt_id": 0,
-              "event": "started",
-              "global_pass_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1:t2_lookup_person_birthday_segment",
-              "pass_id": "t2_lookup_person_birthday_segment",
-              "plan_version": 1,
-              "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1",
-              "stage": "PLAN_READY",
+              "run_id": "run_82dfede10a164133af4fcd227d58c591",
+              "stage": "DEPENDENCY_READY",
               "status": "OK",
               "truncated_fields": 3
             }
           ],
-          "total_items": 48,
+          "total_items": 16,
           "truncated_items": true
         },
         "truncated_fields": 4,
@@ -489,7 +528,7 @@
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-02T13:45:01.064858+00:00"
+      "timestamp": "2026-06-02T16:12:13.715827+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
@@ -498,14 +537,12 @@
       "effect": "schedules only LLM-declared passes; does not split prompts or add semantic subtasks",
       "efficiency_role": "groups dependency-free passes without changing their semantics",
       "input_summary": {
-        "multi_pass_enabled": true,
+        "multi_pass_enabled": false,
         "pass_ids": {
           "items": [
-            "t1_concept_person_birthday",
-            "t2_lookup_person_birthday_segment",
-            "t3_lookup_person_birthday_api"
+            "task_field_lookup"
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         }
       },
@@ -513,7 +550,7 @@
         "alias_materialized_count": 0,
         "api_execution_latency_sec": 0.0,
         "api_gate_latency_sec": 0.0,
-        "api_gate_passed": true,
+        "api_gate_passed": null,
         "api_repair_attempts": 0,
         "backend_semantic_decomposition_used": false,
         "backend_semantic_planning_used": false,
@@ -532,7 +569,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t3_lookup_person_birthday_api"
+            "task_field_lookup"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -553,54 +590,48 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_8cbfa963e3034e52a35b6bfc20f4ffc1",
+        "evidence_bus_id": "evidence_run_82dfede10a164133af4fcd227d58c591",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
-        "llm_pass_count": 3,
+        "llm_pass_count": 1,
         "llm_pass_graph_used": true,
         "max_api_workers": 2,
         "max_parallelism": 4,
         "max_sql_workers": 2,
         "model_cascade_used": false,
-        "multi_pass_enabled": true,
+        "multi_pass_enabled": false,
         "parallel_groups": {
           "items": [
             {
               "items": [
-                "t3_lookup_person_birthday_api",
-                "t1_concept_person_birthday",
-                "t2_lookup_person_birthday_segment"
+                "task_field_lookup"
               ],
-              "total_items": 3,
+              "total_items": 1,
               "truncated_items": false
             }
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "parallel_pass_count": 3,
+        "parallel_pass_count": 1,
         "pass_graph_gate_error_type": null,
         "pass_graph_gate_passed": true,
         "pass_graph_repair_attempted": false,
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "t1_concept_person_birthday",
-            "t2_lookup_person_birthday_segment",
-            "t3_lookup_person_birthday_api"
+            "task_field_lookup"
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         },
-        "pass_results_count": 3,
+        "pass_results_count": 1,
         "passes_completed": {
           "items": [
-            "t3_lookup_person_birthday_api",
-            "t1_concept_person_birthday",
-            "t2_lookup_person_birthday_segment"
+            "task_field_lookup"
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_dependency_blocked": {
@@ -610,11 +641,9 @@
         },
         "passes_executed": {
           "items": [
-            "t3_lookup_person_birthday_api",
-            "t1_concept_person_birthday",
-            "t2_lookup_person_birthday_segment"
+            "task_field_lookup"
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_failed": {
@@ -634,8 +663,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_8cbfa963e3034e52a35b6bfc20f4ffc1",
-        "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1",
+        "result_bundle_id": "bundle_run_82dfede10a164133af4fcd227d58c591",
+        "run_id": "run_82dfede10a164133af4fcd227d58c591",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -646,7 +675,7 @@
         "semantic_alias_validation_failures": 0,
         "sequential_pass_count": 0,
         "sql_execution_latency_sec": 0.001,
-        "sql_gate_latency_sec": 0.239,
+        "sql_gate_latency_sec": 0.269,
         "sql_gate_passed": true,
         "sql_repair_attempts": 0,
         "stage_events": {
@@ -654,10 +683,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1:t3_lookup_person_birthday_api",
-              "pass_id": "t3_lookup_person_birthday_api",
+              "global_pass_id": "run_82dfede10a164133af4fcd227d58c591:task_field_lookup",
+              "pass_id": "task_field_lookup",
               "plan_version": 1,
-              "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1",
+              "run_id": "run_82dfede10a164133af4fcd227d58c591",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -665,10 +694,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1:t3_lookup_person_birthday_api",
-              "pass_id": "t3_lookup_person_birthday_api",
+              "global_pass_id": "run_82dfede10a164133af4fcd227d58c591:task_field_lookup",
+              "pass_id": "task_field_lookup",
               "plan_version": 1,
-              "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1",
+              "run_id": "run_82dfede10a164133af4fcd227d58c591",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -676,26 +705,26 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1:t1_concept_person_birthday",
-              "pass_id": "t1_concept_person_birthday",
+              "global_pass_id": "run_82dfede10a164133af4fcd227d58c591:task_field_lookup",
+              "pass_id": "task_field_lookup",
               "plan_version": 1,
-              "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1",
-              "stage": "READY_FOR_FINAL_COMPOSITION",
+              "run_id": "run_82dfede10a164133af4fcd227d58c591",
+              "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
             }
           ],
-          "total_items": 18,
+          "total_items": 6,
           "truncated_items": true
         },
         "stage_pipeline_used": true,
-        "truncated_fields": 7,
+        "truncated_fields": 6,
         "v2_execution_optimizer_used": true,
         "v2_pipeline_scheduler_used": true
       },
       "stage": "llm-owned pass scheduling",
       "technique": "dependency-aware scheduling of LLM-declared evidence passes",
-      "timestamp": "2026-06-02T13:45:01.065676+00:00"
+      "timestamp": "2026-06-02T16:12:13.716962+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -704,7 +733,7 @@
       "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
       "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
       "input_summary": {
-        "pass_id": "t3_lookup_person_birthday_api"
+        "pass_id": "task_field_lookup"
       },
       "output": {
         "errors": {
@@ -714,107 +743,11 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1"
+        "run_id": "run_82dfede10a164133af4fcd227d58c591"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T13:45:01.066717+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_api_request_gate",
-      "correctness_role": "blocks unsafe method, unknown endpoint, unresolved path, or malformed params",
-      "duration_ms": 0.0,
-      "effect": "checks only executable API request shape before runtime execution",
-      "efficiency_role": "prevents invalid API calls without planning endpoints",
-      "input_summary": {
-        "method": "GET",
-        "pass_id": "t3_lookup_person_birthday_api",
-        "path": "/data/core/ups/segment/definitions"
-      },
-      "output": {
-        "method": "GET",
-        "params": {
-          "limit": 10
-        },
-        "pass_id": "t3_lookup_person_birthday_api",
-        "passed": true,
-        "path": "/data/core/ups/segment/definitions"
-      },
-      "stage": "llm api request gate",
-      "technique": "safe GET request-shape/catalog gate for LLM-owned API pass",
-      "timestamp": "2026-06-02T13:45:01.067715+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
-      "correctness_role": "does not infer missing dependency values or add backend-selected subtasks",
-      "duration_ms": 0.0,
-      "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
-      "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
-      "input_summary": {
-        "pass_id": "t1_concept_person_birthday"
-      },
-      "output": {
-        "errors": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "required": false,
-        "resolved": true,
-        "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1"
-      },
-      "stage": "llm-owned pass dependency resolution",
-      "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T13:45:01.068535+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_direct_task",
-      "correctness_role": "keeps mixed-prompt concept text separate from grounded SQL/API evidence",
-      "duration_ms": 0.0,
-      "effect": "executes LLM-owned concept subtasks without SQL/API calls",
-      "efficiency_role": "does not invoke SQL/API tools",
-      "input_summary": {
-        "pass_id": "t1_concept_person_birthday",
-        "subtask": "Explain the concept of 'Person: Birthday Today 001' as a segment or audience definition in Adobe Experience Platform, including its purpose and typical usage."
-      },
-      "output": {
-        "answer_preview": {
-          "preview": "\"The concept 'Person: Birthday Today 001' refers to a dynamic audience segment in Adobe Experience Platform (AEP) that identifies individuals whose birthday falls on the current date. This segment is typically used for real-time personalization and marketing automation, enabling businesses to deliver targeted birthday greetings, special offers, or loyalty rewards to customers on their specific birthday. The '001' suffix often denotes a specific instance, version, or unique identifier for that pa...",
-          "truncated": true
-        },
-        "latency_ms": 2467,
-        "ok": true,
-        "pass_id": "t1_concept_person_birthday",
-        "safe_direct_check": {
-          "ok": true
-        }
-      },
-      "stage": "llm-owned direct subtask",
-      "technique": "concept-only DIRECT task execution inside evidence plan",
-      "timestamp": "2026-06-02T13:45:03.537159+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
-      "correctness_role": "does not infer missing dependency values or add backend-selected subtasks",
-      "duration_ms": 0.0,
-      "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
-      "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
-      "input_summary": {
-        "pass_id": "t2_lookup_person_birthday_segment"
-      },
-      "output": {
-        "errors": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "required": false,
-        "resolved": true,
-        "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1"
-      },
-      "stage": "llm-owned pass dependency resolution",
-      "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T13:45:03.538045+00:00"
+      "timestamp": "2026-06-02T16:12:13.718148+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
@@ -823,8 +756,8 @@
       "effect": "checks syntax/database-semantic validity without rewriting SQL",
       "efficiency_role": "prevents executing uncompilable SQL",
       "input_summary": {
-        "pass_id": "t2_lookup_person_birthday_segment",
-        "sql": "SELECT \"SEGMENTID\", \"NAME\", \"LABELSSEGMENT\", \"DEFINITION\", \"LIFECYCLESTATUS\" FROM \"dim_segment\" WHERE \"NAME\" = ? LIMIT 1"
+        "pass_id": "task_field_lookup",
+        "sql": "SELECT \"PROPERTYID\", \"ALTDISPLAYTITLE\", \"DESCRIPTION\", \"TYPE\", \"LABELSPROPERTY\" FROM \"dim_property\" WHERE \"ALTDISPLAYTITLE\" = ? LIMIT 1"
       },
       "output": {
         "params": {
@@ -834,13 +767,13 @@
           "total_items": 1,
           "truncated_items": false
         },
-        "pass_id": "t2_lookup_person_birthday_segment",
+        "pass_id": "task_field_lookup",
         "passed": true,
-        "sql": "SELECT \"SEGMENTID\", \"NAME\", \"LABELSSEGMENT\", \"DEFINITION\", \"LIFECYCLESTATUS\" FROM \"dim_segment\" WHERE \"NAME\" = ? LIMIT 1"
+        "sql": "SELECT \"PROPERTYID\", \"ALTDISPLAYTITLE\", \"DESCRIPTION\", \"TYPE\", \"LABELSPROPERTY\" FROM \"dim_property\" WHERE \"ALTDISPLAYTITLE\" = ? LIMIT 1"
       },
       "stage": "llm sql compile gate",
       "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
-      "timestamp": "2026-06-02T13:45:03.778349+00:00"
+      "timestamp": "2026-06-02T16:12:13.987455+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -849,7 +782,7 @@
       "effect": "records that backend did not replace LLM semantic or SQL/API generation",
       "efficiency_role": "bounds repair attempts before execution",
       "input_summary": {
-        "evidence_order": "MULTI_PASS",
+        "evidence_order": "SQL_FIRST",
         "route": "EVIDENCE_PIPELINE"
       },
       "metrics": {
@@ -864,7 +797,7 @@
         "alias_materialized_count": 0,
         "api_execution_latency_sec": 0.0,
         "api_gate_latency_sec": 0.0,
-        "api_gate_passed": true,
+        "api_gate_passed": null,
         "api_repair_attempts": 0,
         "backend_semantic_decomposition_used": false,
         "backend_semantic_planning_used": false,
@@ -883,7 +816,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t3_lookup_person_birthday_api"
+            "task_field_lookup"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -904,57 +837,51 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_8cbfa963e3034e52a35b6bfc20f4ffc1",
+        "evidence_bus_id": "evidence_run_82dfede10a164133af4fcd227d58c591",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
-        "llm_evidence_order": "MULTI_PASS",
+        "llm_evidence_order": "SQL_FIRST",
         "llm_owned_generation": true,
-        "llm_pass_count": 3,
+        "llm_pass_count": 1,
         "llm_pass_graph_used": true,
         "llm_route": "EVIDENCE_PIPELINE",
         "max_api_workers": 2,
         "max_parallelism": 4,
         "max_sql_workers": 2,
         "model_cascade_used": false,
-        "multi_pass_enabled": true,
+        "multi_pass_enabled": false,
         "parallel_groups": {
           "items": [
             {
               "items": [
-                "t3_lookup_person_birthday_api",
-                "t1_concept_person_birthday",
-                "t2_lookup_person_birthday_segment"
+                "task_field_lookup"
               ],
-              "total_items": 3,
+              "total_items": 1,
               "truncated_items": false
             }
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "parallel_pass_count": 3,
+        "parallel_pass_count": 1,
         "pass_graph_gate_error_type": null,
         "pass_graph_gate_passed": true,
         "pass_graph_repair_attempted": false,
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "t1_concept_person_birthday",
-            "t2_lookup_person_birthday_segment",
-            "t3_lookup_person_birthday_api"
+            "task_field_lookup"
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         },
-        "pass_results_count": 3,
+        "pass_results_count": 1,
         "passes_completed": {
           "items": [
-            "t3_lookup_person_birthday_api",
-            "t1_concept_person_birthday",
-            "t2_lookup_person_birthday_segment"
+            "task_field_lookup"
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_dependency_blocked": {
@@ -964,11 +891,9 @@
         },
         "passes_executed": {
           "items": [
-            "t3_lookup_person_birthday_api",
-            "t1_concept_person_birthday",
-            "t2_lookup_person_birthday_segment"
+            "task_field_lookup"
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_failed": {
@@ -988,8 +913,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_8cbfa963e3034e52a35b6bfc20f4ffc1",
-        "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1",
+        "result_bundle_id": "bundle_run_82dfede10a164133af4fcd227d58c591",
+        "run_id": "run_82dfede10a164133af4fcd227d58c591",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -1000,7 +925,7 @@
         "semantic_alias_validation_failures": 0,
         "sequential_pass_count": 0,
         "sql_execution_latency_sec": 0.001,
-        "sql_gate_latency_sec": 0.239,
+        "sql_gate_latency_sec": 0.269,
         "sql_gate_passed": true,
         "sql_repair_attempts": 0,
         "stage_events": {
@@ -1008,10 +933,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1:t3_lookup_person_birthday_api",
-              "pass_id": "t3_lookup_person_birthday_api",
+              "global_pass_id": "run_82dfede10a164133af4fcd227d58c591:task_field_lookup",
+              "pass_id": "task_field_lookup",
               "plan_version": 1,
-              "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1",
+              "run_id": "run_82dfede10a164133af4fcd227d58c591",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -1019,10 +944,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1:t3_lookup_person_birthday_api",
-              "pass_id": "t3_lookup_person_birthday_api",
+              "global_pass_id": "run_82dfede10a164133af4fcd227d58c591:task_field_lookup",
+              "pass_id": "task_field_lookup",
               "plan_version": 1,
-              "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1",
+              "run_id": "run_82dfede10a164133af4fcd227d58c591",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -1030,26 +955,26 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1:t1_concept_person_birthday",
-              "pass_id": "t1_concept_person_birthday",
+              "global_pass_id": "run_82dfede10a164133af4fcd227d58c591:task_field_lookup",
+              "pass_id": "task_field_lookup",
               "plan_version": 1,
-              "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1",
-              "stage": "READY_FOR_FINAL_COMPOSITION",
+              "run_id": "run_82dfede10a164133af4fcd227d58c591",
+              "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
             }
           ],
-          "total_items": 18,
+          "total_items": 6,
           "truncated_items": true
         },
         "stage_pipeline_used": true,
-        "truncated_fields": 2,
+        "truncated_fields": 5,
         "v2_execution_optimizer_used": true,
         "v2_pipeline_scheduler_used": true
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-02T13:45:03.780307+00:00"
+      "timestamp": "2026-06-02T16:12:13.988961+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -1058,36 +983,14 @@
       "effect": "executes only LLM-proposed candidates that pass backend gates",
       "efficiency_role": "does not execute alternative backend-generated candidates",
       "input_summary": {
-        "tool_result_count": 2
+        "tool_result_count": 1
       },
       "output": {
-        "api_calls_executed": 1,
-        "api_results": {
-          "items": [
-            {
-              "dry_run": true,
-              "method": "GET",
-              "ok": false,
-              "result_preview": {
-                "caveat": "Adobe credentials unavailable; API call not executed.",
-                "dry_run": true,
-                "endpoint_family": "/data/core/ups/segment/definitions",
-                "error_category": "dry_run_unavailable",
-                "evidence_state": "dry_run_unavailable",
-                "live_success": false,
-                "ok": false,
-                "usable_evidence": false
-              },
-              "url": "/data/core/ups/segment/definitions"
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "dry_run_status": true,
+        "api_calls_executed": 0,
+        "dry_run_status": false,
         "row_counts": {
           "items": [
-            1
+            0
           ],
           "total_items": 1,
           "truncated_items": false
@@ -1098,19 +1001,11 @@
             {
               "ok": true,
               "result_preview": {
-                "items": [
-                  {
-                    "DEFINITION": "{\"nodeType\":\"fnApply\",\"fnName\":\"and\",\"params\":[{\"nodeType\":\"fnApply\",\"fnName\":\"=\",\"params\":[{\"nodeType\":\"fnApply\",\"fnName\":\"getDayOfMonth\",\"params\":[{\"nodeType\":\"fieldLookup\",\"fieldName\":\"birthDate\",\"object\":{\"nodeType\":\"fieldLookup\",\"fieldName\":\"person\",\"object\":{\"nodeType\":\"parameterReference\",\"position\":1}}}]},{\"nodeType\":\"fnApply\",\"fnName\":\"getDayOfMonth\",\"params\":[{\"nodeType\":\"literal\",\"literalType\":\"Timestamp\",\"value\":\"today\"}]}]},{\"nodeType\":\"fnApply\",\"fnName\":\"=\",\"params\":[{\"nodeType\":\"fnApply\",\"fnName\":\"getMonth\",\"params\":[{\"nodeType\":\"fieldLookup\",\"fieldName\":\"birthDate\",\"object\":{\"nodeType\":\"fieldLookup\",\"fieldName\":\"person\",\"object\":{\"nodeType\":\"parameterReference\",\"position\":1}}}]},{\"nodeType\":\"fnApply\",\"fnName\":\"getMonth\",\"params\":[{\"nodeType\":\"literal\",\"literalType\":\"Timestamp\",\"value\":\"today\"}]}]}]}",
-                    "LABELSSEGMENT": "[]",
-                    "LIFECYCLESTATUS": "published",
-                    "NAME": "Person: Birthday Today 001",
-                    "SEGMENTID": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-                  }
-                ],
-                "total_items": 1,
+                "items": [],
+                "total_items": 0,
                 "truncated_items": false
               },
-              "row_count": 1
+              "row_count": 0
             }
           ],
           "total_items": 1,
@@ -1119,7 +1014,7 @@
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-02T13:45:03.861919+00:00"
+      "timestamp": "2026-06-02T16:12:14.073282+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -1129,20 +1024,20 @@
       "efficiency_role": "makes EvidenceBus construction explicit",
       "input_summary": {
         "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
-        "tool_result_count": 2
+        "tool_result_count": 1
       },
       "output": {
         "evidence_bus_built": true,
         "evidence_pipeline_bypassed": false,
-        "llm_evidence_order": "MULTI_PASS",
+        "llm_evidence_order": "SQL_FIRST",
         "llm_final_answer_composer_ran": true,
         "llm_route": "EVIDENCE_PIPELINE",
-        "pass_results_count": 3,
+        "pass_results_count": 1,
         "post_evidence_answer_router_ran": false
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-02T13:45:03.862735+00:00"
+      "timestamp": "2026-06-02T16:12:14.073870+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -1151,43 +1046,24 @@
       "effect": "forwards executed SQL/API evidence into the existing grounded answer pipeline",
       "efficiency_role": "uses collected evidence without extra tool calls",
       "input_summary": {
-        "tool_result_count": 2
+        "tool_result_count": 1
       },
       "output": {
         "evidence": {
-          "ids": {
-            "segment_id": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-          },
-          "names": {
-            "items": [
-              "Person: Birthday Today 001"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
           "pass_ids": {
             "items": [
-              "t3_lookup_person_birthday_api",
-              "t1_concept_person_birthday",
-              "t2_lookup_person_birthday_segment"
-            ],
-            "total_items": 3,
-            "truncated_items": false
-          },
-          "pass_result_count": 3,
-          "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1",
-          "statuses": {
-            "items": [
-              "published"
+              "task_field_lookup"
             ],
             "total_items": 1,
             "truncated_items": false
-          }
+          },
+          "pass_result_count": 1,
+          "run_id": "run_82dfede10a164133af4fcd227d58c591"
         }
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-02T13:45:03.863433+00:00"
+      "timestamp": "2026-06-02T16:12:14.074518+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -1196,8 +1072,8 @@
       "effect": "stores all LLM-declared pass results before final LLM aggregation",
       "efficiency_role": "reuses executed pass results without extra tools",
       "input_summary": {
-        "pass_results_count": 3,
-        "tool_result_count": 2
+        "pass_results_count": 1,
+        "tool_result_count": 1
       },
       "output": {
         "append_events": {
@@ -1205,24 +1081,14 @@
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "t3_lookup_person_birthday_api"
-            },
-            {
-              "appended": true,
-              "attempt_id": 0,
-              "pass_id": "t1_concept_person_birthday"
-            },
-            {
-              "appended": true,
-              "attempt_id": 0,
-              "pass_id": "t2_lookup_person_birthday_segment"
+              "pass_id": "task_field_lookup"
             }
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         },
-        "pass_results_count": 3,
-        "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1",
+        "pass_results_count": 1,
+        "run_id": "run_82dfede10a164133af4fcd227d58c591",
         "runtime_passes": {
           "items": [
             {
@@ -1240,74 +1106,24 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1"
+                "run_id": "run_82dfede10a164133af4fcd227d58c591"
               },
-              "global_pass_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1:t3_lookup_person_birthday_api",
-              "pass_id": "t3_lookup_person_birthday_api",
-              "path": "API",
-              "plan_version": 1,
-              "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1",
-              "status": "API_ERROR",
-              "truncated_fields": 6
-            },
-            {
-              "attempt_id": 0,
-              "cached_sources": {
-                "items": [],
-                "total_items": 0,
-                "truncated_items": false
-              },
-              "dependency_resolution": {
-                "errors": {
-                  "items": [],
-                  "total_items": 0,
-                  "truncated_items": false
-                },
-                "required": false,
-                "resolved": true,
-                "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1"
-              },
-              "global_pass_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1:t1_concept_person_birthday",
-              "pass_id": "t1_concept_person_birthday",
-              "path": "DIRECT",
-              "plan_version": 1,
-              "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1",
-              "status": "SUCCESS",
-              "truncated_fields": 6
-            },
-            {
-              "attempt_id": 0,
-              "cached_sources": {
-                "items": [],
-                "total_items": 0,
-                "truncated_items": false
-              },
-              "dependency_resolution": {
-                "errors": {
-                  "items": [],
-                  "total_items": 0,
-                  "truncated_items": false
-                },
-                "required": false,
-                "resolved": true,
-                "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1"
-              },
-              "global_pass_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1:t2_lookup_person_birthday_segment",
-              "pass_id": "t2_lookup_person_birthday_segment",
+              "global_pass_id": "run_82dfede10a164133af4fcd227d58c591:task_field_lookup",
+              "pass_id": "task_field_lookup",
               "path": "SQL",
               "plan_version": 1,
-              "run_id": "run_8cbfa963e3034e52a35b6bfc20f4ffc1",
-              "status": "SUCCESS",
+              "run_id": "run_82dfede10a164133af4fcd227d58c591",
+              "status": "EMPTY",
               "truncated_fields": 6
             }
           ],
-          "total_items": 3,
+          "total_items": 1,
           "truncated_items": false
         }
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-02T13:45:03.864121+00:00"
+      "timestamp": "2026-06-02T16:12:14.075105+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -1316,35 +1132,21 @@
       "effect": "keeps SQL errors, API errors, live empty, and direct evidence distinct",
       "efficiency_role": "uses existing payloads only",
       "input_summary": {
-        "tool_result_count": 2
+        "tool_result_count": 1
       },
       "output": {
         "api": {
           "items": [
-            "API_ERROR"
+            "API_NOT_RUN"
           ],
           "total_items": 1,
           "truncated_items": false
         },
-        "api_error_is_unavailable": true,
-        "caveats": {
-          "items": [
-            "api_error_is_unavailable_not_no_data"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "conflict": {
-          "items": [
-            "SQL_SUCCESS_API_ERROR"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
+        "api_error_is_unavailable": false,
         "live_empty_scoped": false,
         "sql": {
           "items": [
-            "SQL_DIRECT_ANSWER"
+            "SQL_ZERO_ROWS"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -1352,7 +1154,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-02T13:45:03.864745+00:00"
+      "timestamp": "2026-06-02T16:12:14.075625+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -1361,50 +1163,40 @@
       "effect": "turns runtime evidence into typed answer fields",
       "efficiency_role": "uses existing slot extraction",
       "input_summary": {
-        "tool_result_count": 2
+        "tool_result_count": 1
       },
       "output": {
         "discrepancy_flags": {
           "sql_api_discrepancy": false
         },
         "dry_run_flags": {
-          "dry_run": true
+          "dry_run": false
         },
         "slots": {
           "answer_family": "property_field",
           "api_error": false,
+          "counts": {
+            "items": [
+              "0"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
           "discrepancy": false,
-          "dry_run": true,
-          "entity_ids": {
-            "items": [
-              "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "entity_names": {
-            "items": [
-              "Person: Birthday Today 001"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
+          "dry_run": false,
           "slots_present": {
             "items": [
-              "entity_names",
-              "entity_ids",
               "counts"
             ],
-            "total_items": 7,
-            "truncated_items": true
+            "total_items": 1,
+            "truncated_items": false
           },
-          "sql_row_count": 1,
-          "truncated_fields": 5
+          "sql_row_count": 0
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-02T13:45:03.887341+00:00"
+      "timestamp": "2026-06-02T16:12:14.084967+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer_start",
@@ -1413,14 +1205,14 @@
       "effect": "records the exact boundary before the potentially slow final-answer LLM call",
       "efficiency_role": "enables smoke timeout localization without extra SQL/API calls",
       "input_summary": {
-        "runtime_pass_count": 3
+        "runtime_pass_count": 1
       },
       "output": {
         "current_stage": "llm_final_answer_composer_call_start"
       },
       "stage": "llm-owned answer synthesis",
       "technique": "pre-call heartbeat before LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T13:45:03.887982+00:00"
+      "timestamp": "2026-06-02T16:12:14.085445+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -1429,46 +1221,36 @@
       "effect": "lets the LLM own final answer composition from runtime evidence",
       "efficiency_role": "uses one final-answer LLM call after evidence execution",
       "input_summary": {
-        "runtime_pass_count": 3,
+        "runtime_pass_count": 1,
         "slot_counts": {
           "answer_family": "property_field",
           "api_error": false,
+          "counts": {
+            "items": [
+              "0"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
           "discrepancy": false,
-          "dry_run": true,
-          "entity_ids": {
-            "items": [
-              "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "entity_names": {
-            "items": [
-              "Person: Birthday Today 001"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
+          "dry_run": false,
           "slots_present": {
             "items": [
-              "entity_names",
-              "entity_ids",
               "counts"
             ],
-            "total_items": 7,
-            "truncated_items": true
+            "total_items": 1,
+            "truncated_items": false
           },
-          "sql_row_count": 1,
-          "truncated_fields": 5
+          "sql_row_count": 0
         }
       },
       "output": {
         "backend_unavailable": false,
-        "final_answer": "The segment named \"Person: Birthday Today 001\" has the ID 2fdfefe1-04d0-46ce-9fbd-7611e311dd26 and is currently in a published lifecycle status. Its definition uses a logical AND function to match individuals whose birth date's day and month correspond to today's date. Live API evidence was unavailable due to missing Adobe credentials, so the provided details are based on the local snapshot.",
+        "final_answer": "No matching runtime evidence was available for this query/scope.",
         "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
         "parse_error": false,
         "provider": "openai",
-        "raw_preview": "The segment named \"Person: Birthday Today 001\" has the ID 2fdfefe1-04d0-46ce-9fbd-7611e311dd26 and is currently in a published lifecycle status. Its definition uses a logical AND function to match individuals whose birth date's day and month correspond to today's date. Live API evidence was unavailable due to missing Adobe credentials, so the provided details are based on the local snapshot.",
+        "raw_preview": "No matching runtime evidence was available for this query/scope.",
         "used_pass_ids": {
           "items": [],
           "total_items": 0,
@@ -1477,7 +1259,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T13:45:12.031588+00:00"
+      "timestamp": "2026-06-02T16:12:17.310457+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -1489,12 +1271,12 @@
         "composer": "LLMFinalAnswerComposer"
       },
       "output": {
-        "final_answer": "The segment named \"Person: Birthday Today 001\" has the ID 2fdfefe1-04d0-46ce-9fbd-7611e311dd26 and is currently in a published lifecycle status. Its definition uses a logical AND function to match individuals whose birth date's day and month correspond to today's date. Live API evidence was unavailable due to missing Adobe credentials, so the provided details are based on the local snapshot.",
+        "final_answer": "No matching runtime evidence was available for this query/scope.",
         "passed": true
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-02T13:45:12.032256+00:00"
+      "timestamp": "2026-06-02T16:12:17.311159+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -1506,105 +1288,31 @@
         "syntax_gate_passed": true
       },
       "output": {
-        "error_message": "Final answer contains a hard claim not supported by runtime evidence.",
-        "error_type": "unsupported_claim",
-        "passed": false,
-        "unsupported_claims": {
-          "items": [
-            {
-              "hardness": "HARD",
-              "span": "'s day and month correspond to today'",
-              "text": "'s day and month correspond to today'",
-              "type": "ENTITY_NAME",
-              "value": "s day and month correspond to today"
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
+        "passed": true,
         "verifier": {
-          "action": "REWRITE_WITH_FEEDBACK",
+          "action": "ACCEPT",
           "allowed_fact_index": {
-            "allowed_caveats": {
-              "items": [
-                "API_ERROR"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            "api_error_scopes": {
-              "items": [
-                "live api verification"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
             "counts": {
               "items": [
-                "1"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            "evidence_strings": {
-              "items": [
-                "[]",
-                "person: birthday today 001",
-                "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-              ],
-              "total_items": 7,
-              "truncated_items": true
-            },
-            "ids": {
-              "items": [
-                "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            "names": {
-              "items": [
-                "person: birthday today 001"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            "statuses": {
-              "items": [
-                "published"
+                "0"
               ],
               "total_items": 1,
               "truncated_items": false
             }
           },
           "claim_extractor": {
-            "claim_count": 5,
+            "claim_count": 1,
             "claims": {
               "items": [
                 {
-                  "hardness": "HARD",
-                  "span": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                  "text": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                  "type": "ID",
-                  "value": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-                },
-                {
-                  "hardness": "HARD",
-                  "span": "published",
-                  "text": "published",
-                  "type": "STATUS",
-                  "value": "published"
-                },
-                {
-                  "hardness": "HARD",
-                  "span": "\"Person: Birthday Today 001\"",
-                  "text": "\"Person: Birthday Today 001\"",
-                  "type": "ENTITY_NAME",
-                  "value": "Person: Birthday Today 001"
+                  "hardness": "SOFT",
+                  "span": "No matching runtime evidence was available for this query/scope.",
+                  "text": "No matching runtime evidence was available for this query/scope.",
+                  "type": "SOFT_TEXT"
                 }
               ],
-              "total_items": 5,
-              "truncated_items": true
+              "total_items": 1,
+              "truncated_items": false
             }
           },
           "claim_matcher": {
@@ -1612,78 +1320,27 @@
               "items": [
                 {
                   "claim": {
-                    "hardness": "HARD",
-                    "span": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                    "text": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                    "type": "ID",
-                    "value": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
+                    "hardness": "SOFT",
+                    "span": "No matching runtime evidence was available for this query/scope.",
+                    "text": "No matching runtime evidence was available for this query/scope.",
+                    "type": "SOFT_TEXT"
                   },
-                  "reason": "id",
-                  "status": "SUPPORTED"
-                },
-                {
-                  "claim": {
-                    "hardness": "HARD",
-                    "span": "published",
-                    "text": "published",
-                    "type": "STATUS",
-                    "value": "published"
-                  },
-                  "reason": "status",
-                  "status": "SUPPORTED"
-                },
-                {
-                  "claim": {
-                    "hardness": "HARD",
-                    "span": "\"Person: Birthday Today 001\"",
-                    "text": "\"Person: Birthday Today 001\"",
-                    "type": "ENTITY_NAME",
-                    "value": "Person: Birthday Today 001"
-                  },
-                  "reason": "entity_name",
+                  "reason": "soft_text",
                   "status": "SUPPORTED"
                 }
               ],
-              "total_items": 5,
-              "truncated_items": true
+              "total_items": 1,
+              "truncated_items": false
             }
           },
-          "ok": false,
+          "ok": true,
           "supported_claims": {
             "items": [
               {
-                "hardness": "HARD",
-                "span": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                "text": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                "type": "ID",
-                "value": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-              },
-              {
-                "hardness": "HARD",
-                "span": "published",
-                "text": "published",
-                "type": "STATUS",
-                "value": "published"
-              },
-              {
-                "hardness": "HARD",
-                "span": "\"Person: Birthday Today 001\"",
-                "text": "\"Person: Birthday Today 001\"",
-                "type": "ENTITY_NAME",
-                "value": "Person: Birthday Today 001"
-              }
-            ],
-            "total_items": 4,
-            "truncated_items": true
-          },
-          "unsupported_claims": {
-            "items": [
-              {
-                "hardness": "HARD",
-                "span": "'s day and month correspond to today'",
-                "text": "'s day and month correspond to today'",
-                "type": "ENTITY_NAME",
-                "value": "s day and month correspond to today"
+                "hardness": "SOFT",
+                "span": "No matching runtime evidence was available for this query/scope.",
+                "text": "No matching runtime evidence was available for this query/scope.",
+                "type": "SOFT_TEXT"
               }
             ],
             "total_items": 1,
@@ -1693,243 +1350,7 @@
       },
       "stage": "answer gate",
       "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-02T13:45:12.036443+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_final_answer_repair_start",
-      "correctness_role": "diagnostic only; backend still does not repair the answer",
-      "duration_ms": 0.0,
-      "effect": "records the exact boundary before the potentially slow final-answer repair LLM call",
-      "efficiency_role": "enables smoke timeout localization without extra SQL/API calls",
-      "input_summary": {
-        "failed_semantic": true,
-        "failed_syntax": false
-      },
-      "output": {
-        "current_stage": "llm_final_answer_repair_call_start"
-      },
-      "stage": "llm-owned answer repair",
-      "technique": "pre-call heartbeat before final answer repair",
-      "timestamp": "2026-06-02T13:45:12.037176+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_final_answer_repair",
-      "correctness_role": "preserves LLM ownership while enforcing evidence boundaries",
-      "duration_ms": 0.0,
-      "effect": "returns gate errors to the LLM once; backend does not repair the answer itself",
-      "efficiency_role": "caps answer repair to one LLM call",
-      "input_summary": {
-        "failed_semantic": true,
-        "failed_syntax": false
-      },
-      "output": {
-        "candidate": {
-          "backend_unavailable": false,
-          "final_answer": "The segment named \"Person: Birthday Today 001\" has the ID 2fdfefe1-04d0-46ce-9fbd-7611e311dd26 and is currently in a published lifecycle status. Its definition uses a logical AND function to match individuals whose birth date's day and month correspond to today's date. Live API evidence was unavailable due to missing Adobe credentials, so the provided details are based on the local snapshot.",
-          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-          "parse_error": false,
-          "provider": "openai",
-          "raw_preview": "The segment named \"Person: Birthday Today 001\" has the ID 2fdfefe1-04d0-46ce-9fbd-7611e311dd26 and is currently in a published lifecycle status. Its definition uses a logical AND function to match individuals whose birth date's day and month correspond to today's date. Live API evidence was unavailable due to missing Adobe credentials, so the provided details are based on the local snapshot.",
-          "used_pass_ids": {
-            "items": [],
-            "total_items": 0,
-            "truncated_items": false
-          }
-        },
-        "semantic_gate": {
-          "error_message": "Final answer contains a hard claim not supported by runtime evidence.",
-          "error_type": "unsupported_claim",
-          "passed": false,
-          "unsupported_claims": {
-            "items": [
-              {
-                "hardness": "HARD",
-                "span": "'s day and month correspond to today'",
-                "text": "'s day and month correspond to today'",
-                "type": "ENTITY_NAME",
-                "value": "s day and month correspond to today"
-              }
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "verifier": {
-            "action": "REWRITE_WITH_FEEDBACK",
-            "allowed_fact_index": {
-              "allowed_caveats": {
-                "items": [
-                  "API_ERROR"
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              },
-              "api_error_scopes": {
-                "items": [
-                  "live api verification"
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              },
-              "counts": {
-                "items": [
-                  "1"
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              },
-              "evidence_strings": {
-                "items": [
-                  "[]",
-                  "person: birthday today 001",
-                  "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-                ],
-                "total_items": 7,
-                "truncated_items": true
-              },
-              "ids": {
-                "items": [
-                  "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              },
-              "names": {
-                "items": [
-                  "person: birthday today 001"
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              },
-              "statuses": {
-                "items": [
-                  "published"
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              }
-            },
-            "claim_extractor": {
-              "claim_count": 5,
-              "claims": {
-                "items": [
-                  {
-                    "hardness": "HARD",
-                    "span": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                    "text": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                    "type": "ID",
-                    "value": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-                  },
-                  {
-                    "hardness": "HARD",
-                    "span": "published",
-                    "text": "published",
-                    "type": "STATUS",
-                    "value": "published"
-                  },
-                  {
-                    "hardness": "HARD",
-                    "span": "\"Person: Birthday Today 001\"",
-                    "text": "\"Person: Birthday Today 001\"",
-                    "type": "ENTITY_NAME",
-                    "value": "Person: Birthday Today 001"
-                  }
-                ],
-                "total_items": 5,
-                "truncated_items": true
-              }
-            },
-            "claim_matcher": {
-              "matches": {
-                "items": [
-                  {
-                    "claim": {
-                      "hardness": "HARD",
-                      "span": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                      "text": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                      "type": "ID",
-                      "value": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-                    },
-                    "reason": "id",
-                    "status": "SUPPORTED"
-                  },
-                  {
-                    "claim": {
-                      "hardness": "HARD",
-                      "span": "published",
-                      "text": "published",
-                      "type": "STATUS",
-                      "value": "published"
-                    },
-                    "reason": "status",
-                    "status": "SUPPORTED"
-                  },
-                  {
-                    "claim": {
-                      "hardness": "HARD",
-                      "span": "\"Person: Birthday Today 001\"",
-                      "text": "\"Person: Birthday Today 001\"",
-                      "type": "ENTITY_NAME",
-                      "value": "Person: Birthday Today 001"
-                    },
-                    "reason": "entity_name",
-                    "status": "SUPPORTED"
-                  }
-                ],
-                "total_items": 5,
-                "truncated_items": true
-              }
-            },
-            "ok": false,
-            "supported_claims": {
-              "items": [
-                {
-                  "hardness": "HARD",
-                  "span": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                  "text": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                  "type": "ID",
-                  "value": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-                },
-                {
-                  "hardness": "HARD",
-                  "span": "published",
-                  "text": "published",
-                  "type": "STATUS",
-                  "value": "published"
-                },
-                {
-                  "hardness": "HARD",
-                  "span": "\"Person: Birthday Today 001\"",
-                  "text": "\"Person: Birthday Today 001\"",
-                  "type": "ENTITY_NAME",
-                  "value": "Person: Birthday Today 001"
-                }
-              ],
-              "total_items": 4,
-              "truncated_items": true
-            },
-            "unsupported_claims": {
-              "items": [
-                {
-                  "hardness": "HARD",
-                  "span": "'s day and month correspond to today'",
-                  "text": "'s day and month correspond to today'",
-                  "type": "ENTITY_NAME",
-                  "value": "s day and month correspond to today"
-                }
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            }
-          }
-        },
-        "syntax_gate": {
-          "final_answer": "The segment named \"Person: Birthday Today 001\" has the ID 2fdfefe1-04d0-46ce-9fbd-7611e311dd26 and is currently in a published lifecycle status. Its definition uses a logical AND function to match individuals whose birth date's day and month correspond to today's date. Live API evidence was unavailable due to missing Adobe credentials, so the provided details are based on the local snapshot.",
-          "passed": true
-        }
-      },
-      "stage": "llm-owned answer repair",
-      "technique": "single LLM-owned final answer repair",
-      "timestamp": "2026-06-02T13:45:20.606774+00:00"
+      "timestamp": "2026-06-02T16:12:17.315656+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -1938,17 +1359,17 @@
       "effect": "records that V2 did not use deterministic answer templates, renderers, or selectors as competing generators",
       "efficiency_role": "no extra tool calls",
       "input_summary": {
-        "runtime_pass_count": 3
+        "runtime_pass_count": 1
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
-        "answer_repair_attempts": 1,
+        "answer_repair_attempts": 0,
         "answer_semantic_gate_passed": true,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
-        "final_answer_repair_latency_sec": 8.567,
+        "final_answer_repair_latency_sec": 0.0,
         "final_answer_supported_by_evidence": true,
-        "final_composer_latency_sec": 8.142,
+        "final_composer_latency_sec": 3.224,
         "final_gate_latency_sec": 0.004,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
@@ -1961,7 +1382,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-02T13:45:20.611305+00:00"
+      "timestamp": "2026-06-02T16:12:17.316462+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -1974,7 +1395,7 @@
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
-        "answer_repair_attempts": 1,
+        "answer_repair_attempts": 0,
         "answer_semantic_gate_passed": true,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
@@ -1990,33 +1411,38 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-02T13:45:20.616195+00:00"
+      "timestamp": "2026-06-02T16:12:17.317231+00:00"
     }
   ],
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 3290,
+  "estimated_tokens": 2091,
   "execution_time": 0.0,
-  "final_answer": "Local snapshot evidence shows t2_lookup_person_birthday_segment/SQL/LOCAL_SNAPSHOT: count: 1; examples include Person: Birthday Today 001; id: 2fdfefe1-04d0-46ce-9fbd-7611e311dd26; status: published. Live API evidence was unavailable, so a live comparison cannot be completed.",
+  "final_answer": "No matching runtime evidence was available for this query/scope.",
   "original_query": "show me the field for Person: Birthday Today 001",
   "planning_time": 0.0,
   "preprocessing_time": 0.0,
   "query_id": "example_008",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 16.925134624820203,
+  "runtime": 3.362509125377983,
   "sql_call_count": 1,
   "steps": [
     {
-      "estimated_tokens": 2413,
+      "estimated_tokens": 1973,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_008/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 3150
+      "prompt_tokens": 2717
     },
     {
-      "aggregation_instruction": "Combine the concept explanation with the local segment lookup result. If the local lookup finds a record, present its ID, name, definition, and status. If the local lookup finds nothing, state that the segment is not found in the local snapshot. The live API lookup is secondary evidence; if the local record exists, prioritize it for the primary answer but mention if live metadata differs.",
+      "aggregation_instruction": "Return the field details (ID, title, description, type) for the property named 'Person: Birthday Today 001'.",
       "api_request": null,
       "backend_unavailable": false,
       "diagnostics": {
+        "api_card_detail_truncated": true,
+        "api_card_final_char_count": 5261,
+        "api_card_original_char_count": 6967,
+        "api_card_original_row_count": 20,
+        "api_card_row_count": 20,
         "api_request_gate_failures": 0,
         "atomic_protocol_fallback_used": false,
         "backend_formal_compilation_used": true,
@@ -2025,13 +1451,13 @@
         "backend_semantic_planning_used": false,
         "backend_sql_api_generation_used": false,
         "compiled_alias_count": 0,
-        "compiled_api_count": 1,
+        "compiled_api_count": 0,
         "compiled_sql_count": 1,
         "compiler_latency_ms": 0,
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 27271,
+        "planner_provider_latency_ms": 17088,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -2052,17 +1478,72 @@
         "raw_sql_fallback_success": false,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
+        "schema_card_columns_truncated": true,
+        "schema_card_final_char_count": 7826,
+        "schema_card_original_char_count": 10765,
+        "schema_card_original_row_count": 18,
+        "schema_card_row_count": 18,
         "sdk_toolcall_semantic_ir_used": true,
         "semantic_alias_count": 0,
         "semantic_alias_error_type": null,
         "semantic_alias_repair_attempted": false,
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
+        "semantic_ir_context_truncated": true,
+        "semantic_ir_context_truncated_sections": [
+          "schema_card",
+          "api_card"
+        ],
         "semantic_ir_plan_preview": {
-          "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_concept_person_birthday\", \"kind\": \"CONCEPT\", \"operation\": \"EXPLAIN\", \"source\": \"NONE\", \"description\": \"Explain the concept of 'Person: Birthday Today 001' as a segment or audience definition in Adobe Experience Platform, including its purpose and typical usage.\", \"required\": true, \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_lookup_person_birthday_segment\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LOOKUP\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_segment\", \"fields\": {\"items\": [\"SEGMENTID\", \"NAME\", \"LABELSSEGMENT\"], \"total_items\": 5, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"Person: Birthday Today 001\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 1}, \"description\": \"Look up the local segment record for 'Person: Birthday Today 001' to retrieve its ID, name, labels, definition, and lifecycle status.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t3_lookup_person_birthday_api\", \"kind\": \"LIVE_QUE...",
-          "truncated": true
+          "aggregation_instruction": "Return the field details (ID, title, description, type) for the property named 'Person: Birthday Today 001'.",
+          "route": "EVIDENCE",
+          "tasks": {
+            "items": [
+              {
+                "description": "Lookup the field definition for 'Person: Birthday Today 001' from the local property snapshot.",
+                "kind": "LOCAL_QUERY",
+                "local_query": {
+                  "count": false,
+                  "fields": {
+                    "items": [
+                      "PROPERTYID",
+                      "ALTDISPLAYTITLE",
+                      "DESCRIPTION"
+                    ],
+                    "total_items": 5,
+                    "truncated_items": true
+                  },
+                  "filters": {
+                    "items": [
+                      {
+                        "field": "ALTDISPLAYTITLE",
+                        "op": "=",
+                        "value": "Person: Birthday Today 001"
+                      }
+                    ],
+                    "total_items": 1,
+                    "truncated_items": false
+                  },
+                  "limit": 1,
+                  "table": "dim_property"
+                },
+                "operation": "LOOKUP",
+                "reuse_result_from": null,
+                "semantic_cache_key": null,
+                "source": "LOCAL_SNAPSHOT",
+                "task_id": "task_field_lookup",
+                "truncated_fields": 7
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
         },
-        "semantic_ir_provider_latency_ms": 27269,
+        "semantic_ir_planner_char_budget": 24000,
+        "semantic_ir_prompt_system_chars": 907,
+        "semantic_ir_prompt_total_chars": 23417,
+        "semantic_ir_prompt_user_chars": 19182,
+        "semantic_ir_provider_latency_ms": 17085,
         "semantic_ir_repair_attempted": false,
         "semantic_ir_repair_latency_ms": 0,
         "semantic_ir_repair_success": false,
@@ -2075,7 +1556,8 @@
         "semantic_ir_support_repair_latency_ms": 0,
         "semantic_ir_support_repair_success": false,
         "semantic_ir_supported": true,
-        "semantic_ir_task_count": 3,
+        "semantic_ir_task_count": 1,
+        "semantic_ir_tool_schema_chars": 3328,
         "semantic_ir_toolcall_supported": true,
         "semantic_ir_unsupported_features": [],
         "semantic_ir_unsupported_operation": null,
@@ -2089,7 +1571,7 @@
         "v2_semantic_ir_used": true
       },
       "direct_answer": null,
-      "evidence_order": "MULTI_PASS",
+      "evidence_order": "SQL_FIRST",
       "kind": "llm_unified_planner",
       "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
       "parse_error": false,
@@ -2098,52 +1580,33 @@
           "api_request": null,
           "can_run_parallel": true,
           "depends_on": [],
-          "evidence_order": "NO_EVIDENCE",
-          "expected_result": "Explain the concept of 'Person: Birthday Today 001' as a segment or audience definition in Adobe Experience Platform, including its purpose and typical usage.",
-          "fallback": false,
-          "optional": false,
-          "pass_id": "t1_concept_person_birthday",
-          "path": "DIRECT",
-          "raw_sql_fallback_reason": null,
-          "raw_sql_fallback_task_id": null,
-          "raw_sql_fallback_used": false,
-          "result_contract": null,
-          "reuse_result_from": null,
-          "semantic_cache_key": null,
-          "sql": null,
-          "subtask": "Explain the concept of 'Person: Birthday Today 001' as a segment or audience definition in Adobe Experience Platform, including its purpose and typical usage."
-        },
-        {
-          "api_request": null,
-          "can_run_parallel": true,
-          "depends_on": [],
           "evidence_order": "SQL_FIRST",
-          "expected_result": "Look up the local segment record for 'Person: Birthday Today 001' to retrieve its ID, name, labels, definition, and lifecycle status.",
+          "expected_result": "Lookup the field definition for 'Person: Birthday Today 001' from the local property snapshot.",
           "fallback": false,
           "optional": false,
-          "pass_id": "t2_lookup_person_birthday_segment",
+          "pass_id": "task_field_lookup",
           "path": "SQL",
           "raw_sql_fallback_reason": null,
           "raw_sql_fallback_task_id": null,
           "raw_sql_fallback_used": false,
           "result_contract": {
-            "entity": "dim_segment",
+            "entity": "property",
             "fields": [
-              "SEGMENTID",
-              "NAME",
-              "LABELSSEGMENT",
-              "DEFINITION",
-              "LIFECYCLESTATUS"
+              "PROPERTYID",
+              "ALTDISPLAYTITLE",
+              "DESCRIPTION",
+              "TYPE",
+              "LABELSPROPERTY"
             ],
             "filters": [
               {
-                "field": "NAME",
+                "field": "ALTDISPLAYTITLE",
                 "op": "=",
                 "value": "Person: Birthday Today 001"
               }
             ],
             "freshness": "same_run",
-            "object": "segment",
+            "object": "property",
             "operation": "LOOKUP",
             "scope": "local",
             "source": "LOCAL_SNAPSHOT"
@@ -2154,55 +1617,9 @@
             "params": [
               "Person: Birthday Today 001"
             ],
-            "query": "SELECT \"SEGMENTID\", \"NAME\", \"LABELSSEGMENT\", \"DEFINITION\", \"LIFECYCLESTATUS\" FROM \"dim_segment\" WHERE \"NAME\" = ? LIMIT 1"
+            "query": "SELECT \"PROPERTYID\", \"ALTDISPLAYTITLE\", \"DESCRIPTION\", \"TYPE\", \"LABELSPROPERTY\" FROM \"dim_property\" WHERE \"ALTDISPLAYTITLE\" = ? LIMIT 1"
           },
-          "subtask": "Look up the local segment record for 'Person: Birthday Today 001' to retrieve its ID, name, labels, definition, and lifecycle status."
-        },
-        {
-          "api_request": {
-            "method": "GET",
-            "params": {
-              "limit": 10
-            },
-            "path": "/data/core/ups/segment/definitions"
-          },
-          "can_run_parallel": true,
-          "depends_on": [],
-          "evidence_order": "API_FIRST",
-          "expected_result": "Look up the live segment definition for 'Person: Birthday Today 001' from the Segment Definitions API to retrieve current platform metadata.",
-          "fallback": false,
-          "optional": false,
-          "pass_id": "t3_lookup_person_birthday_api",
-          "path": "API",
-          "raw_sql_fallback_reason": null,
-          "raw_sql_fallback_task_id": null,
-          "raw_sql_fallback_used": false,
-          "result_contract": {
-            "entity": "segment_definitions",
-            "fields": [
-              "id",
-              "name",
-              "description",
-              "schemaRef",
-              "evaluationInfo"
-            ],
-            "filters": [
-              {
-                "field": "name",
-                "op": "=",
-                "value": "Person: Birthday Today 001"
-              }
-            ],
-            "freshness": "same_run",
-            "object": "segment_definition",
-            "operation": "LOOKUP",
-            "scope": "live",
-            "source": "LIVE_API"
-          },
-          "reuse_result_from": null,
-          "semantic_cache_key": null,
-          "sql": null,
-          "subtask": "Look up the live segment definition for 'Person: Birthday Today 001' from the Segment Definitions API to retrieve current platform metadata."
+          "subtask": "Lookup the field definition for 'Person: Birthday Today 001' from the local property snapshot."
         }
       ],
       "provider": "openai",
@@ -2221,44 +1638,29 @@
       },
       "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
       "route": "EVIDENCE_PIPELINE",
-      "sql": null
-    },
-    {
-      "headers": {},
-      "kind": "api_call",
-      "method": "GET",
-      "params": {
-        "limit": 10
-      },
-      "result": {
-        "dry_run": true,
-        "endpoint": "/data/core/ups/segment/definitions",
-        "error": "Adobe credentials unavailable; API call not executed.",
-        "method": "GET",
-        "ok": false,
-        "params": {
-          "limit": 10
-        },
-        "result_preview": null,
-        "url": "https://platform.adobe.io/data/core/ups/segment/definitions"
-      },
-      "url": "/data/core/ups/segment/definitions",
-      "validation": {
-        "errors": [],
-        "ok": true,
-        "repaired": false,
-        "warnings": [
-          "LLM API request pass passed request gate."
-        ]
+      "sql": {
+        "params": [
+          "Person: Birthday Today 001"
+        ],
+        "query": "SELECT \"PROPERTYID\", \"ALTDISPLAYTITLE\", \"DESCRIPTION\", \"TYPE\", \"LABELSPROPERTY\" FROM \"dim_property\" WHERE \"ALTDISPLAYTITLE\" = ? LIMIT 1"
       }
     },
     {
       "kind": "sql_call",
       "result": {
-        "preview": "{\"error\": null, \"ok\": true, \"params\": {\"items\": [\"Person: Birthday Today 001\"], \"total_items\": 1, \"truncated_items\": false}, \"rows\": {\"items\": [{\"SEGMENTID\": \"2fdfefe1-04d0-46ce-9fbd-7611e311dd26\", \"NAME\": \"Person: Birthday Today 001\", \"LABELSSEGMENT\": \"[]\", \"DEFINITION\": \"{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"and\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"=\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getDayOfMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"birthDate\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"person\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"parameterReference\\\",\\\"position\\\":1}}}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getDayOfMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"literal\\\",\\\"literalType\\\":\\\"Timestamp\\\",\\\"value\\\":\\\"today\\\"}]}]},{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"=\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fnApply\\\",\\\"fnName\\\":\\\"getMonth\\\",\\\"params\\\":[{\\\"nodeType\\\":\\\"fieldLookup\\\",\\\"fieldName\\\":\\\"birthDate\\\",\\\"object\\\":{\\\"nodeType\\\":\\\"field...",
-        "truncated": true
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "params": {
+          "items": [
+            "Person: Birthday Today 001"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "row_count": 0
       },
-      "sql": "SELECT \"SEGMENTID\", \"NAME\", \"LABELSSEGMENT\", \"DEFINITION\", \"LIFECYCLESTATUS\" FROM \"dim_segment\" WHERE \"NAME\" = ? LIMIT 1",
+      "sql": "SELECT \"PROPERTYID\", \"ALTDISPLAYTITLE\", \"DESCRIPTION\", \"TYPE\", \"LABELSPROPERTY\" FROM \"dim_property\" WHERE \"ALTDISPLAYTITLE\" = ? LIMIT 1",
       "validation": {
         "errors": [],
         "ok": true,
@@ -2272,10 +1674,10 @@
       "evidence_bus_built": true,
       "evidence_pipeline_bypassed": false,
       "kind": "evidence_boundary",
-      "llm_evidence_order": "MULTI_PASS",
+      "llm_evidence_order": "SQL_FIRST",
       "llm_final_answer_composer_ran": true,
       "llm_route": "EVIDENCE_PIPELINE",
-      "pass_results_count": 3,
+      "pass_results_count": 1,
       "post_evidence_answer_router_ran": false
     },
     {
@@ -2284,24 +1686,24 @@
       "caveats_included": [],
       "claimed_facts": [],
       "error_message": null,
-      "final_answer": "The segment named \"Person: Birthday Today 001\" has the ID 2fdfefe1-04d0-46ce-9fbd-7611e311dd26 and is currently in a published lifecycle status. Its definition uses a logical AND function to match individuals whose birth date's day and month correspond to today's date. Live API evidence was unavailable due to missing Adobe credentials, so the provided details are based on the local snapshot.",
+      "final_answer": "No matching runtime evidence was available for this query/scope.",
       "kind": "llm_final_answer_composer",
       "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
       "parse_error": false,
       "provider": "openai",
-      "raw_preview": "The segment named \"Person: Birthday Today 001\" has the ID 2fdfefe1-04d0-46ce-9fbd-7611e311dd26 and is currently in a published lifecycle status. Its definition uses a logical AND function to match individuals whose birth date's day and month correspond to today's date. Live API evidence was unavailable due to missing Adobe credentials, so the provided details are based on the local snapshot.",
+      "raw_preview": "No matching runtime evidence was available for this query/scope.",
       "unanswered_subtasks": [],
       "used_pass_ids": []
     },
     {
       "answer_composer_used": "LLMFinalAnswerComposer",
-      "answer_repair_attempts": 1,
+      "answer_repair_attempts": 0,
       "answer_semantic_gate_passed": true,
       "answer_syntax_gate_passed": true,
       "deterministic_answer_template_used": false,
-      "final_answer_repair_latency_sec": 8.567,
+      "final_answer_repair_latency_sec": 0.0,
       "final_answer_supported_by_evidence": true,
-      "final_composer_latency_sec": 8.142,
+      "final_composer_latency_sec": 3.224,
       "final_gate_latency_sec": 0.004,
       "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
@@ -2316,69 +1718,30 @@
         "verifier": {
           "action": "ACCEPT",
           "allowed_fact_index": {
-            "allowed_caveats": [
-              "API_ERROR"
-            ],
-            "api_error_scopes": [
-              "live api verification"
-            ],
+            "allowed_caveats": [],
+            "api_error_scopes": [],
             "counts": [
-              "1"
+              "0"
             ],
             "dates": [],
-            "evidence_strings": [
-              "[]",
-              "person: birthday today 001",
-              "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-              "10",
-              "/data/core/ups/segment/definitions",
-              "published",
-              "{\"nodetype\":\"fnapply\",\"fnname\":\"and\",\"params\":[{\"nodetype\":\"fnapply\",\"fnname\":\"=\",\"params\":[{\"nodetype\":\"fnapply\",\"fnname\":\"getdayofmonth\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"birthdate\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"person\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}]},{\"nodetype\":\"fnapply\",\"fnname\":\"getdayofmonth\",\"params\":[{\"nodetype\":\"literal\",\"literaltype\":\"timestamp\",\"value\":\"today\"}]}]},{\"nodetype\":\"fnapply\",\"fnname\":\"=\",\"params\":[{\"nodetype\":\"fnapply\",\"fnname\":\"getmonth\",\"params\":[{\"nodetype\":\"fieldlookup\",\"fieldname\":\"birthdate\",\"object\":{\"nodetype\":\"fieldlookup\",\"fieldname\":\"person\",\"object\":{\"nodetype\":\"parameterreference\",\"position\":1}}}]},{\"nodetype\":\"fnapply\",\"fnname\":\"getmonth\",\"params\":[{\"nodetype\":\"literal\",\"literaltype\":\"timestamp\",\"value\":\"today\"}]}]}]}"
-            ],
-            "ids": [
-              "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-            ],
+            "evidence_strings": [],
+            "ids": [],
             "live_empty_scopes": [],
             "missing_roles": [],
-            "names": [
-              "person: birthday today 001"
-            ],
+            "names": [],
             "relationships": [],
-            "statuses": [
-              "published"
-            ]
+            "statuses": []
           },
           "ambiguous_claims": [],
           "claim_extractor": {
-            "claim_count": 4,
+            "claim_count": 1,
             "claims": [
               {
-                "hardness": "HARD",
-                "span": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                "text": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                "type": "ID",
-                "value": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-              },
-              {
-                "hardness": "HARD",
-                "span": "1",
-                "text": "1",
-                "type": "COUNT",
-                "value": "1"
-              },
-              {
-                "hardness": "HARD",
-                "span": "published",
-                "text": "published",
-                "type": "STATUS",
-                "value": "published"
-              },
-              {
-                "hardness": "HARD",
-                "span": "Birthday Today",
-                "text": "Birthday Today",
-                "type": "ENTITY_NAME",
-                "value": "Birthday Today"
+                "hardness": "SOFT",
+                "span": "No matching runtime evidence was available for this query/scope.",
+                "text": "No matching runtime evidence was available for this query/scope.",
+                "type": "SOFT_TEXT",
+                "value": ""
               }
             ]
           },
@@ -2386,46 +1749,13 @@
             "matches": [
               {
                 "claim": {
-                  "hardness": "HARD",
-                  "span": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                  "text": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-                  "type": "ID",
-                  "value": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
+                  "hardness": "SOFT",
+                  "span": "No matching runtime evidence was available for this query/scope.",
+                  "text": "No matching runtime evidence was available for this query/scope.",
+                  "type": "SOFT_TEXT",
+                  "value": ""
                 },
-                "reason": "id",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "1",
-                  "text": "1",
-                  "type": "COUNT",
-                  "value": "1"
-                },
-                "reason": "count",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "published",
-                  "text": "published",
-                  "type": "STATUS",
-                  "value": "published"
-                },
-                "reason": "status",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "Birthday Today",
-                  "text": "Birthday Today",
-                  "type": "ENTITY_NAME",
-                  "value": "Birthday Today"
-                },
-                "reason": "entity_name",
+                "reason": "soft_text",
                 "status": "SUPPORTED"
               }
             ]
@@ -2435,32 +1765,11 @@
           "over_specified_claims": [],
           "supported_claims": [
             {
-              "hardness": "HARD",
-              "span": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-              "text": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
-              "type": "ID",
-              "value": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
-            },
-            {
-              "hardness": "HARD",
-              "span": "1",
-              "text": "1",
-              "type": "COUNT",
-              "value": "1"
-            },
-            {
-              "hardness": "HARD",
-              "span": "published",
-              "text": "published",
-              "type": "STATUS",
-              "value": "published"
-            },
-            {
-              "hardness": "HARD",
-              "span": "Birthday Today",
-              "text": "Birthday Today",
-              "type": "ENTITY_NAME",
-              "value": "Birthday Today"
+              "hardness": "SOFT",
+              "span": "No matching runtime evidence was available for this query/scope.",
+              "text": "No matching runtime evidence was available for this query/scope.",
+              "type": "SOFT_TEXT",
+              "value": ""
             }
           ],
           "unsupported_claims": []
@@ -2469,7 +1778,7 @@
       "syntax_gate": {
         "error_message": null,
         "error_type": null,
-        "final_answer": "Local snapshot evidence shows t2_lookup_person_birthday_segment/SQL/LOCAL_SNAPSHOT: count: 1; examples include Person: Birthday Today 001; id: 2fdfefe1-04d0-46ce-9fbd-7611e311dd26; status: published. Live API evidence was unavailable, so a live comparison cannot be completed.",
+        "final_answer": "No matching runtime evidence was available for this query/scope.",
         "passed": true
       },
       "used_pass_ids": []
@@ -2477,7 +1786,7 @@
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 16.755363167263567
+    "answer_time": 3.243333292193711
   },
-  "tool_call_count": 2
+  "tool_call_count": 1
 }

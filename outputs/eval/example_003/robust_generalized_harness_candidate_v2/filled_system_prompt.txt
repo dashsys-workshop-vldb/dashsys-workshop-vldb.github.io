@@ -10,10 +10,15 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
   "backend_semantic_planning_used": false,
   "llm_owned_generation": true,
   "llm_unified_plan": {
-    "aggregation_instruction": "Join the segment details (t3) with the segment-target relationships (t2) to get the audienceId (SEGMENTID) and name. Include totalProfiles (TOTALMEMBERS), createdTime (CREATEDTIME), and updatedTime (UPDATEDTIME) from t3. For the 'used in other audience count', use the count results from t4. Note: The local schema does not support a direct JOIN operation to merge these tables in a single query. The backend will need to perform the join logically using the provided task dependencies and result contracts. Specifically, map SEGMENTID from t2 to t3 and t4. The final output should list: audienceId (SEGMENTID), name (NAME), totalProfiles (TOTALMEMBERS), createdTime (CREATEDTIME), updatedTime (UPDATEDTIME), and used_in_other_audience_count (count from t4).",
+    "aggregation_instruction": "Join the results from t3 (segment details) with the counts from t4. The count from t4 represents how many other audiences use the segment. Since t4 is a COUNT over the whole set of segment IDs, you may need to group by SEGMENTID in t4 or join back. Specifically: 1. Get list of SEGMENTIDs from t2. 2. For each SEGMENTID in that list, get NAME, CREATEDTIME, UPDATEDTIME from t3. 3. For each SEGMENTID, count the rows in hkg_br_base_segment_used_by_dependent_segment where SEGMENTID matches. 4. Present the final list with columns: audienceId (SEGMENTID), name (NAME), totalProfiles (not available in local schema, omit or note as unavailable), createdTime (CREATEDTIME), updatedTime (UPDATEDTIME), used_in_other_audience_count (count from step 3). Note: 'totalProfiles' is not a field in dim_segment; omit it from the output or state it's unavailable. The prompt asks for 'used in other audience count', which corresponds to the count of dependent segments.",
     "api_request": null,
     "backend_unavailable": false,
     "diagnostics": {
+      "api_card_detail_truncated": true,
+      "api_card_final_char_count": 5261,
+      "api_card_original_char_count": 6967,
+      "api_card_original_row_count": 20,
+      "api_card_row_count": 20,
       "api_request_gate_failures": 0,
       "atomic_protocol_fallback_used": false,
       "backend_formal_compilation_used": true,
@@ -28,7 +33,7 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "planner_json_fallback_used": false,
       "planner_json_parse_error": null,
       "planner_parse_source": "sdk_toolcall_semantic_ir",
-      "planner_provider_latency_ms": 38315,
+      "planner_provider_latency_ms": 139630,
       "planner_repair_attempted": false,
       "planner_success": true,
       "planner_timeout": false,
@@ -49,20 +54,34 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "raw_sql_fallback_success": false,
       "raw_sql_fallback_task_id": null,
       "raw_sql_fallback_used": false,
+      "schema_card_columns_truncated": true,
+      "schema_card_final_char_count": 7826,
+      "schema_card_original_char_count": 10765,
+      "schema_card_original_row_count": 18,
+      "schema_card_row_count": 18,
       "sdk_toolcall_semantic_ir_used": true,
       "semantic_alias_count": 0,
       "semantic_alias_error_type": null,
       "semantic_alias_repair_attempted": false,
       "semantic_alias_validation_passed": true,
       "semantic_alias_validation_used": true,
+      "semantic_ir_context_truncated": true,
+      "semantic_ir_context_truncated_sections": [
+        "schema_card",
+        "api_card"
+      ],
       "semantic_ir_plan_preview": {
-        "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_lookup_sms_target_id\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LOOKUP\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_target\", \"fields\": {\"items\": [\"TARGETID\", \"NAME\"], \"total_items\": 2, \"truncated_items\": false}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"SMS Opt-In\"}], \"total_items\": 1, \"truncated_items\": false}}, \"description\": \"Look up the TARGETID for the destination named 'SMS Opt-In' from the local snapshot.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_list_segment_audiences\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LIST\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"hkg_br_segment_target\", \"fields\": {\"items\": [\"SEGMENTID\", \"LABELSSEGMENT\"], \"total_items\": 2, \"truncated_items\": false}, \"filters\": {\"items\": [{\"field\": \"TARGETID\", \"op\": \"=\", \"value\": \"{{t1_lookup_sms_target_id.TARGETID}}\"}], \"total_items\": 1, \"truncated_items\": false}}, \"depends_on\": {\"items\": [\"t1_lookup_sms_target_id\"], \"total_items\": 1, \"truncated_items\": false}, \"truncated_fields\"...",
+        "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_lookup_target\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LOOKUP\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_target\", \"fields\": {\"items\": [\"TARGETID\", \"NAME\"], \"total_items\": 2, \"truncated_items\": false}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"SMS Opt-In\"}], \"total_items\": 1, \"truncated_items\": false}}, \"description\": \"Lookup the TARGETID for the destination named 'SMS Opt-In' from the local dim_target table.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_list_segments\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LIST\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"hkg_br_segment_target\", \"fields\": {\"items\": [\"SEGMENTID\"], \"total_items\": 1, \"truncated_items\": false}, \"filters\": {\"items\": [{\"field\": \"TARGETID\", \"op\": \"=\", \"value\": \"PLACEHOLDER_T1_TARGETID\"}], \"total_items\": 1, \"truncated_items\": false}}, \"depends_on\": {\"items\": [\"t1_lookup_target\"], \"total_items\": 1, \"truncated_items\": false}, \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_ca...",
         "truncated": true
       },
-      "semantic_ir_provider_latency_ms": 38312,
-      "semantic_ir_repair_attempted": false,
-      "semantic_ir_repair_latency_ms": 0,
-      "semantic_ir_repair_success": false,
+      "semantic_ir_planner_char_budget": 24000,
+      "semantic_ir_prompt_system_chars": 907,
+      "semantic_ir_prompt_total_chars": 23602,
+      "semantic_ir_prompt_user_chars": 19367,
+      "semantic_ir_provider_latency_ms": 139626,
+      "semantic_ir_repair_attempted": true,
+      "semantic_ir_repair_latency_ms": 29297,
+      "semantic_ir_repair_success": true,
       "semantic_ir_support_check_latency_ms": 0,
       "semantic_ir_support_checked": true,
       "semantic_ir_support_recommended_action": "COMPILE",
@@ -73,13 +92,14 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "semantic_ir_support_repair_success": false,
       "semantic_ir_supported": true,
       "semantic_ir_task_count": 4,
+      "semantic_ir_tool_schema_chars": 3328,
       "semantic_ir_toolcall_supported": true,
       "semantic_ir_unsupported_features": [],
       "semantic_ir_unsupported_operation": null,
       "semantic_ir_unsupported_reason": null,
       "semantic_ir_unsupported_task_id": null,
-      "semantic_ir_validation_error_message": null,
-      "semantic_ir_validation_error_type": null,
+      "semantic_ir_validation_error_message": "Unknown field totalProfiles for table dim_segment.",
+      "semantic_ir_validation_error_type": "unknown_field",
       "semantic_ir_validation_latency_ms": 0,
       "semantic_ir_validation_passed": true,
       "sql_compile_gate_failures": 0,
@@ -95,33 +115,15 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
         "can_run_parallel": true,
         "depends_on": [],
         "evidence_order": "SQL_FIRST",
-        "expected_result": "Look up the TARGETID for the destination named 'SMS Opt-In' from the local snapshot.",
+        "expected_result": "Lookup the TARGETID for the destination named 'SMS Opt-In' from the local dim_target table.",
         "fallback": false,
         "optional": false,
-        "pass_id": "t1_lookup_sms_target_id",
+        "pass_id": "t1_lookup_target",
         "path": "SQL",
         "raw_sql_fallback_reason": null,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
-        "result_contract": {
-          "entity": "TARGETID",
-          "fields": [
-            "TARGETID",
-            "NAME"
-          ],
-          "filters": [
-            {
-              "field": "NAME",
-              "op": "=",
-              "value": "SMS Opt-In"
-            }
-          ],
-          "freshness": "same_run",
-          "object": "target",
-          "operation": "LOOKUP",
-          "scope": "local",
-          "source": "LOCAL_SNAPSHOT"
-        },
+        "result_contract": null,
         "reuse_result_from": null,
         "semantic_cache_key": null,
         "sql": {
@@ -130,60 +132,42 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
           ],
           "query": "SELECT \"TARGETID\", \"NAME\" FROM \"dim_target\" WHERE \"NAME\" = ? LIMIT 50"
         },
-        "subtask": "Look up the TARGETID for the destination named 'SMS Opt-In' from the local snapshot."
+        "subtask": "Lookup the TARGETID for the destination named 'SMS Opt-In' from the local dim_target table."
       },
       {
         "api_request": null,
         "can_run_parallel": false,
         "depends_on": [
-          "t1_lookup_sms_target_id"
+          "t1_lookup_target"
         ],
         "evidence_order": "SQL_FIRST",
-        "expected_result": "List all SEGMENTIDs connected to the 'SMS Opt-In' target using the bridge table.",
+        "expected_result": "List all SEGMENTIDs connected to the TARGETID found in t1.",
         "fallback": false,
         "optional": false,
-        "pass_id": "t2_list_segment_audiences",
+        "pass_id": "t2_list_segments",
         "path": "SQL",
         "raw_sql_fallback_reason": null,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
-        "result_contract": {
-          "entity": "SEGMENTID",
-          "fields": [
-            "SEGMENTID",
-            "LABELSSEGMENT"
-          ],
-          "filters": [
-            {
-              "field": "TARGETID",
-              "op": "=",
-              "value": "{{t1_lookup_sms_target_id.TARGETID}}"
-            }
-          ],
-          "freshness": "same_run",
-          "object": "segment_target_relationship",
-          "operation": "LIST",
-          "scope": "local",
-          "source": "LOCAL_SNAPSHOT"
-        },
+        "result_contract": null,
         "reuse_result_from": null,
         "semantic_cache_key": null,
         "sql": {
           "params": [
-            "{{t1_lookup_sms_target_id.TARGETID}}"
+            "PLACEHOLDER_T1_TARGETID"
           ],
-          "query": "SELECT \"SEGMENTID\", \"LABELSSEGMENT\" FROM \"hkg_br_segment_target\" WHERE \"TARGETID\" = ? LIMIT 50"
+          "query": "SELECT \"SEGMENTID\" FROM \"hkg_br_segment_target\" WHERE \"TARGETID\" = ? LIMIT 50"
         },
-        "subtask": "List all SEGMENTIDs connected to the 'SMS Opt-In' target using the bridge table."
+        "subtask": "List all SEGMENTIDs connected to the TARGETID found in t1."
       },
       {
         "api_request": null,
         "can_run_parallel": false,
         "depends_on": [
-          "t2_list_segment_audiences"
+          "t2_list_segments"
         ],
         "evidence_order": "SQL_FIRST",
-        "expected_result": "Get audience details (name, totalProfiles, createdTime, updatedTime) for the segments connected to 'SMS Opt-In'.",
+        "expected_result": "Get details (ID, name, created time, updated time) for the segments found in t2.",
         "fallback": false,
         "optional": false,
         "pass_id": "t3_get_segment_details",
@@ -191,85 +175,58 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
         "raw_sql_fallback_reason": null,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
-        "result_contract": {
-          "entity": "SEGMENTID",
-          "fields": [
-            "SEGMENTID",
-            "NAME",
-            "TOTALMEMBERS",
-            "CREATEDTIME",
-            "UPDATEDTIME"
-          ],
-          "filters": [
-            {
-              "field": "SEGMENTID",
-              "op": "in",
-              "value": "{{t2_list_segment_audiences.SEGMENTID}}"
-            }
-          ],
-          "freshness": "same_run",
-          "object": "segment",
-          "operation": "LIST",
-          "scope": "local",
-          "source": "LOCAL_SNAPSHOT"
-        },
+        "result_contract": null,
         "reuse_result_from": null,
         "semantic_cache_key": null,
         "sql": {
           "params": [
-            "{{t2_list_segment_audiences.SEGMENTID}}"
+            "PLACEHOLDER_T2_SEGMENTIDS"
           ],
-          "query": "SELECT \"SEGMENTID\", \"NAME\", \"TOTALMEMBERS\", \"CREATEDTIME\", \"UPDATEDTIME\" FROM \"dim_segment\" WHERE \"SEGMENTID\" IN (?) LIMIT 50"
+          "query": "SELECT \"SEGMENTID\", \"NAME\", \"CREATEDTIME\", \"UPDATEDTIME\" FROM \"dim_segment\" WHERE \"SEGMENTID\" IN (?) LIMIT 50"
         },
-        "subtask": "Get audience details (name, totalProfiles, createdTime, updatedTime) for the segments connected to 'SMS Opt-In'."
+        "subtask": "Get details (ID, name, created time, updated time) for the segments found in t2."
       },
       {
         "api_request": null,
         "can_run_parallel": false,
         "depends_on": [
-          "t2_list_segment_audiences"
+          "t2_list_segments"
         ],
         "evidence_order": "SQL_FIRST",
-        "expected_result": "Count how many other audiences each segment is used in (dependent segments).",
+        "expected_result": "Count how many times each segment from t2 appears as a dependent segment in hkg_br_base_segment_used_by_dependent_segment.",
         "fallback": false,
         "optional": false,
-        "pass_id": "t4_count_dependent_segments",
+        "pass_id": "t4_count_dependents",
         "path": "SQL",
         "raw_sql_fallback_reason": null,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
-        "result_contract": {
-          "entity": "SEGMENTID",
-          "fields": [
-            "DEPENDENTSEGMENTID"
-          ],
-          "filters": [
-            {
-              "field": "SEGMENTID",
-              "op": "in",
-              "value": "{{t2_list_segment_audiences.SEGMENTID}}"
-            }
-          ],
-          "freshness": "same_run",
-          "object": "segment_dependency_count",
-          "operation": "COUNT",
-          "scope": "local",
-          "source": "LOCAL_SNAPSHOT"
-        },
+        "result_contract": null,
         "reuse_result_from": null,
         "semantic_cache_key": null,
         "sql": {
           "params": [
-            "{{t2_list_segment_audiences.SEGMENTID}}"
+            "PLACEHOLDER_T2_SEGMENTIDS"
           ],
           "query": "SELECT COUNT(*) AS count FROM \"hkg_br_base_segment_used_by_dependent_segment\" WHERE \"SEGMENTID\" IN (?)"
         },
-        "subtask": "Count how many other audiences each segment is used in (dependent segments)."
+        "subtask": "Count how many times each segment from t2 appears as a dependent segment in hkg_br_base_segment_used_by_dependent_segment."
       }
     ],
     "provider": "openai",
     "raw_preview": {
       "semantic_ir_initial": {
+        "base_url": "[REDACTED]",
+        "error": null,
+        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+        "ok": true,
+        "provider": "openai",
+        "sdk_path_used": true,
+        "skipped": false,
+        "transport": "openai_sdk",
+        "truncated_fields": 11
+      },
+      "semantic_ir_repair": {
         "base_url": "[REDACTED]",
         "error": null,
         "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
@@ -303,14 +260,14 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "max_sql_workers": 2,
       "run_timeout_ms": 30000
     },
-    "created_at": "2026-06-02T13:38:12.575865+00:00",
-    "deadline_at": "2026-06-02T13:38:42.575865+00:00",
-    "evidence_bus_id": "evidence_run_a6210eb1b5764590a2a2829ae4562b0f",
+    "created_at": "2026-06-02T16:06:49.180629+00:00",
+    "deadline_at": "2026-06-02T16:07:19.180629+00:00",
+    "evidence_bus_id": "evidence_run_36926375f731443cb02c87a80ec64adc",
     "original_prompt": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
     "plan_version": 1,
     "prompt_id": "example_003",
-    "result_bundle_id": "bundle_run_a6210eb1b5764590a2a2829ae4562b0f",
-    "run_id": "run_a6210eb1b5764590a2a2829ae4562b0f",
+    "result_bundle_id": "bundle_run_36926375f731443cb02c87a80ec64adc",
+    "run_id": "run_36926375f731443cb02c87a80ec64adc",
     "status": "RUNNING"
   },
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"

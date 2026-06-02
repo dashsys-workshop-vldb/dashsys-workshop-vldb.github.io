@@ -2,10 +2,15 @@
   "backend_semantic_planning_used": false,
   "llm_owned_generation": true,
   "llm_unified_plan": {
-    "aggregation_instruction": "Aggregate t1 for total ingestion record counts (sum of ROWCOUNT or count of records) over the last 90 days from local snapshot. Aggregate t2 and t3 for batch and dataflow run success counts from live API. Combine results to present ingestion record counts and batch success counts for the last 90 days. Note: The live API endpoints may not directly provide a 'success count' filter; the backend will return counts which may need post-processing for success status if not directly filterable.",
+    "aggregation_instruction": "Sum the count from task_ingestion_counts and the count from task_batch_success_counts to provide the total ingestion and batch success counts for the last 90 days.",
     "api_request": null,
     "backend_unavailable": false,
     "diagnostics": {
+      "api_card_detail_truncated": true,
+      "api_card_final_char_count": 5261,
+      "api_card_original_char_count": 6967,
+      "api_card_original_row_count": 20,
+      "api_card_row_count": 20,
       "api_request_gate_failures": 0,
       "atomic_protocol_fallback_used": false,
       "backend_formal_compilation_used": true,
@@ -14,13 +19,13 @@
       "backend_semantic_planning_used": false,
       "backend_sql_api_generation_used": false,
       "compiled_alias_count": 0,
-      "compiled_api_count": 2,
+      "compiled_api_count": 1,
       "compiled_sql_count": 1,
       "compiler_latency_ms": 0,
       "planner_json_fallback_used": false,
       "planner_json_parse_error": null,
       "planner_parse_source": "sdk_toolcall_semantic_ir",
-      "planner_provider_latency_ms": 33774,
+      "planner_provider_latency_ms": 14700,
       "planner_repair_attempted": false,
       "planner_success": true,
       "planner_timeout": false,
@@ -41,17 +46,86 @@
       "raw_sql_fallback_success": false,
       "raw_sql_fallback_task_id": null,
       "raw_sql_fallback_used": false,
+      "schema_card_columns_truncated": true,
+      "schema_card_final_char_count": 7826,
+      "schema_card_original_char_count": 10765,
+      "schema_card_original_row_count": 18,
+      "schema_card_row_count": 18,
       "sdk_toolcall_semantic_ir_used": true,
       "semantic_alias_count": 0,
       "semantic_alias_error_type": null,
       "semantic_alias_repair_attempted": false,
       "semantic_alias_validation_passed": true,
       "semantic_alias_validation_used": true,
+      "semantic_ir_context_truncated": true,
+      "semantic_ir_context_truncated_sections": [
+        "schema_card",
+        "api_card"
+      ],
       "semantic_ir_plan_preview": {
-        "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_ingestion_counts\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"COUNT\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": true, \"table\": \"dim_collection\", \"fields\": {\"items\": [\"COLLECTIONID\", \"NAME\", \"ROWCOUNT\"], \"total_items\": 4, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"UPDATEDTIME\", \"op\": \">=\", \"value\": \"90 days ago\"}], \"total_items\": 1, \"truncated_items\": false}}, \"description\": \"Count ingestion records (rows) per collection/dataset for the last 90 days using local snapshot dim_collection.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_batch_success_counts\", \"kind\": \"LIVE_QUERY\", \"operation\": \"COUNT\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"catalog_batches\", \"method\": \"GET\", \"query_params\": {\"limit\": 50}}, \"description\": \"Count catalog batches from the live API to determine batch success counts. Note: The live API endpoint returns batch metadata; success status may require filtering on returned status fields or using flowservice_runs for dataflow run success. This task retrieves the batch list ...",
-        "truncated": true
+        "aggregation_instruction": "Sum the count from task_ingestion_counts and the count from task_batch_success_counts to provide the total ingestion and batch success counts for the last 90 days.",
+        "route": "EVIDENCE",
+        "tasks": {
+          "items": [
+            {
+              "description": "Count of ingestion records (collections) updated in the last 90 days.",
+              "kind": "LOCAL_QUERY",
+              "local_query": {
+                "count": true,
+                "fields": {
+                  "items": [
+                    "COLLECTIONID"
+                  ],
+                  "total_items": 1,
+                  "truncated_items": false
+                },
+                "filters": {
+                  "items": [
+                    {
+                      "field": "UPDATEDTIME",
+                      "op": ">=",
+                      "value": "90 days ago"
+                    }
+                  ],
+                  "total_items": 1,
+                  "truncated_items": false
+                },
+                "table": "dim_collection"
+              },
+              "operation": "COUNT",
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "source": "LOCAL_SNAPSHOT",
+              "task_id": "task_ingestion_counts",
+              "truncated_fields": 7
+            },
+            {
+              "api_query": {
+                "endpoint_id": "catalog_batches",
+                "method": "GET",
+                "query_params": {
+                  "limit": 1
+                }
+              },
+              "description": "Count of successful batches from the last 90 days via catalog API.",
+              "kind": "LIVE_QUERY",
+              "operation": "COUNT",
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "source": "LIVE_API",
+              "task_id": "task_batch_success_counts",
+              "truncated_fields": 7
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
       },
-      "semantic_ir_provider_latency_ms": 33770,
+      "semantic_ir_planner_char_budget": 24000,
+      "semantic_ir_prompt_system_chars": 907,
+      "semantic_ir_prompt_total_chars": 23444,
+      "semantic_ir_prompt_user_chars": 19209,
+      "semantic_ir_provider_latency_ms": 14699,
       "semantic_ir_repair_attempted": false,
       "semantic_ir_repair_latency_ms": 0,
       "semantic_ir_repair_success": false,
@@ -64,7 +138,8 @@
       "semantic_ir_support_repair_latency_ms": 0,
       "semantic_ir_support_repair_success": false,
       "semantic_ir_supported": true,
-      "semantic_ir_task_count": 3,
+      "semantic_ir_task_count": 2,
+      "semantic_ir_tool_schema_chars": 3328,
       "semantic_ir_toolcall_supported": true,
       "semantic_ir_unsupported_features": [],
       "semantic_ir_unsupported_operation": null,
@@ -87,35 +162,15 @@
         "can_run_parallel": true,
         "depends_on": [],
         "evidence_order": "SQL_FIRST",
-        "expected_result": "Count ingestion records (rows) per collection/dataset for the last 90 days using local snapshot dim_collection.",
+        "expected_result": "Count of ingestion records (collections) updated in the last 90 days.",
         "fallback": false,
         "optional": false,
-        "pass_id": "t1_ingestion_counts",
+        "pass_id": "task_ingestion_counts",
         "path": "SQL",
         "raw_sql_fallback_reason": null,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
-        "result_contract": {
-          "entity": "collection",
-          "fields": [
-            "COLLECTIONID",
-            "NAME",
-            "ROWCOUNT",
-            "UPDATEDTIME"
-          ],
-          "filters": [
-            {
-              "field": "UPDATEDTIME",
-              "op": ">=",
-              "value": "90 days ago"
-            }
-          ],
-          "freshness": "same_run",
-          "object": "count",
-          "operation": "COUNT",
-          "scope": "local",
-          "source": "LOCAL_SNAPSHOT"
-        },
+        "result_contract": null,
         "reuse_result_from": null,
         "semantic_cache_key": null,
         "sql": {
@@ -124,75 +179,32 @@
           ],
           "query": "SELECT COUNT(*) AS count FROM \"dim_collection\" WHERE \"UPDATEDTIME\" >= ?"
         },
-        "subtask": "Count ingestion records (rows) per collection/dataset for the last 90 days using local snapshot dim_collection."
+        "subtask": "Count of ingestion records (collections) updated in the last 90 days."
       },
       {
         "api_request": {
           "method": "GET",
           "params": {
-            "limit": 50
+            "limit": 1
           },
           "path": "/data/foundation/catalog/batches"
         },
         "can_run_parallel": true,
         "depends_on": [],
         "evidence_order": "API_FIRST",
-        "expected_result": "Count catalog batches from the live API to determine batch success counts. Note: The live API endpoint returns batch metadata; success status may require filtering on returned status fields or using flowservice_runs for dataflow run success. This task retrieves the batch list to enable counting.",
+        "expected_result": "Count of successful batches from the last 90 days via catalog API.",
         "fallback": false,
         "optional": false,
-        "pass_id": "t2_batch_success_counts",
+        "pass_id": "task_batch_success_counts",
         "path": "API",
         "raw_sql_fallback_reason": null,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
-        "result_contract": {
-          "entity": "batch",
-          "fields": [],
-          "filters": [],
-          "freshness": "same_run",
-          "object": "count",
-          "operation": "COUNT",
-          "scope": "live",
-          "source": "LIVE_API"
-        },
+        "result_contract": null,
         "reuse_result_from": null,
         "semantic_cache_key": null,
         "sql": null,
-        "subtask": "Count catalog batches from the live API to determine batch success counts. Note: The live API endpoint returns batch metadata; success status may require filtering on returned status fields or using flowservice_runs for dataflow run success. This task retrieves the batch list to enable counting."
-      },
-      {
-        "api_request": {
-          "method": "GET",
-          "params": {
-            "limit": 50
-          },
-          "path": "/data/foundation/flowservice/runs"
-        },
-        "can_run_parallel": true,
-        "depends_on": [],
-        "evidence_order": "API_FIRST",
-        "expected_result": "Count dataflow runs from the live API to determine batch/dataflow success counts. This complements t2 by providing run-level success/failure status.",
-        "fallback": false,
-        "optional": false,
-        "pass_id": "t3_dataflow_run_success_counts",
-        "path": "API",
-        "raw_sql_fallback_reason": null,
-        "raw_sql_fallback_task_id": null,
-        "raw_sql_fallback_used": false,
-        "result_contract": {
-          "entity": "dataflow_run",
-          "fields": [],
-          "filters": [],
-          "freshness": "same_run",
-          "object": "count",
-          "operation": "COUNT",
-          "scope": "live",
-          "source": "LIVE_API"
-        },
-        "reuse_result_from": null,
-        "semantic_cache_key": null,
-        "sql": null,
-        "subtask": "Count dataflow runs from the live API to determine batch/dataflow success counts. This complements t2 by providing run-level success/failure status."
+        "subtask": "Count of successful batches from the last 90 days via catalog API."
       }
     ],
     "provider": "openai",
@@ -231,14 +243,14 @@
       "max_sql_workers": 2,
       "run_timeout_ms": 30000
     },
-    "created_at": "2026-06-02T14:01:13.337381+00:00",
-    "deadline_at": "2026-06-02T14:01:43.337381+00:00",
-    "evidence_bus_id": "evidence_run_38f532026ffa4dbf962263aea18d166d",
+    "created_at": "2026-06-02T16:25:42.061518+00:00",
+    "deadline_at": "2026-06-02T16:26:12.061518+00:00",
+    "evidence_bus_id": "evidence_run_7650858527fb41148adfe9676563d2c0",
     "original_prompt": "Show ingestion record counts and batch success counts for the last 90 days.",
     "plan_version": 1,
     "prompt_id": "example_034",
-    "result_bundle_id": "bundle_run_38f532026ffa4dbf962263aea18d166d",
-    "run_id": "run_38f532026ffa4dbf962263aea18d166d",
+    "result_bundle_id": "bundle_run_7650858527fb41148adfe9676563d2c0",
+    "run_id": "run_7650858527fb41148adfe9676563d2c0",
     "status": "RUNNING"
   },
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"

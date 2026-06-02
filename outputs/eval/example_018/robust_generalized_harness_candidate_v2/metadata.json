@@ -2,16 +2,19 @@
   "backend_semantic_planning_used": false,
   "llm_owned_generation": true,
   "llm_unified_plan": {
-    "aggregation_instruction": "Return the details of the tag named 'cool' found via the unified_tags API lookup.",
+    "aggregation_instruction": "Return the details of the tag named 'cool' as retrieved from the unified tag detail API.",
     "api_request": {
       "method": "GET",
-      "params": {
-        "limit": 50
-      },
-      "path": "https://experience.adobe.io/unifiedtags/tags"
+      "params": {},
+      "path": "https://experience.adobe.io/unifiedtags/tags/cool"
     },
     "backend_unavailable": false,
     "diagnostics": {
+      "api_card_detail_truncated": true,
+      "api_card_final_char_count": 5261,
+      "api_card_original_char_count": 6967,
+      "api_card_original_row_count": 20,
+      "api_card_row_count": 20,
       "api_request_gate_failures": 0,
       "atomic_protocol_fallback_used": false,
       "backend_formal_compilation_used": true,
@@ -26,7 +29,7 @@
       "planner_json_fallback_used": false,
       "planner_json_parse_error": null,
       "planner_parse_source": "sdk_toolcall_semantic_ir",
-      "planner_provider_latency_ms": 38767,
+      "planner_provider_latency_ms": 29987,
       "planner_repair_attempted": false,
       "planner_success": true,
       "planner_timeout": false,
@@ -47,32 +50,42 @@
       "raw_sql_fallback_success": false,
       "raw_sql_fallback_task_id": null,
       "raw_sql_fallback_used": false,
+      "schema_card_columns_truncated": true,
+      "schema_card_final_char_count": 7826,
+      "schema_card_original_char_count": 10765,
+      "schema_card_original_row_count": 18,
+      "schema_card_row_count": 18,
       "sdk_toolcall_semantic_ir_used": true,
       "semantic_alias_count": 0,
       "semantic_alias_error_type": null,
       "semantic_alias_repair_attempted": false,
       "semantic_alias_validation_passed": true,
       "semantic_alias_validation_used": true,
+      "semantic_ir_context_truncated": true,
+      "semantic_ir_context_truncated_sections": [
+        "schema_card",
+        "api_card"
+      ],
       "semantic_ir_plan_preview": {
-        "aggregation_instruction": "Return the details of the tag named 'cool' found via the unified_tags API lookup.",
+        "aggregation_instruction": "Return the details of the tag named 'cool' as retrieved from the unified tag detail API.",
         "route": "EVIDENCE",
         "tasks": {
           "items": [
             {
               "api_query": {
-                "endpoint_id": "unified_tags",
+                "endpoint_id": "unified_tag_detail",
                 "method": "GET",
-                "query_params": {
-                  "limit": 50
+                "path_params": {
+                  "tag_id": "cool"
                 }
               },
-              "description": "Look up the tag named 'cool' from the unified tags API to retrieve its details.",
+              "description": "Retrieve details for the tag named 'cool' using the unified tag detail API.",
               "kind": "LIVE_QUERY",
               "operation": "LOOKUP",
               "reuse_result_from": null,
               "semantic_cache_key": null,
               "source": "LIVE_API",
-              "task_id": "t1_lookup_tag",
+              "task_id": "tag_lookup",
               "truncated_fields": 7
             }
           ],
@@ -80,9 +93,13 @@
           "truncated_items": false
         }
       },
-      "semantic_ir_provider_latency_ms": 38765,
+      "semantic_ir_planner_char_budget": 24000,
+      "semantic_ir_prompt_system_chars": 907,
+      "semantic_ir_prompt_total_chars": 23413,
+      "semantic_ir_prompt_user_chars": 19178,
+      "semantic_ir_provider_latency_ms": 29985,
       "semantic_ir_repair_attempted": true,
-      "semantic_ir_repair_latency_ms": 18466,
+      "semantic_ir_repair_latency_ms": 13597,
       "semantic_ir_repair_success": true,
       "semantic_ir_support_check_latency_ms": 0,
       "semantic_ir_support_checked": true,
@@ -94,13 +111,14 @@
       "semantic_ir_support_repair_success": false,
       "semantic_ir_supported": true,
       "semantic_ir_task_count": 1,
+      "semantic_ir_tool_schema_chars": 3328,
       "semantic_ir_toolcall_supported": true,
       "semantic_ir_unsupported_features": [],
       "semantic_ir_unsupported_operation": null,
       "semantic_ir_unsupported_reason": null,
       "semantic_ir_unsupported_task_id": null,
-      "semantic_ir_validation_error_message": "Unknown table: unified_tags",
-      "semantic_ir_validation_error_type": "unknown_table",
+      "semantic_ir_validation_error_message": "LOCAL_QUERY task requires local_query.",
+      "semantic_ir_validation_error_type": "missing_local_query",
       "semantic_ir_validation_latency_ms": 0,
       "semantic_ir_validation_passed": true,
       "sql_compile_gate_failures": 0,
@@ -114,46 +132,25 @@
       {
         "api_request": {
           "method": "GET",
-          "params": {
-            "limit": 50
-          },
-          "path": "https://experience.adobe.io/unifiedtags/tags"
+          "params": {},
+          "path": "https://experience.adobe.io/unifiedtags/tags/cool"
         },
         "can_run_parallel": true,
         "depends_on": [],
         "evidence_order": "API_FIRST",
-        "expected_result": "Look up the tag named 'cool' from the unified tags API to retrieve its details.",
+        "expected_result": "Retrieve details for the tag named 'cool' using the unified tag detail API.",
         "fallback": false,
         "optional": false,
-        "pass_id": "t1_lookup_tag",
+        "pass_id": "tag_lookup",
         "path": "API",
         "raw_sql_fallback_reason": null,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
-        "result_contract": {
-          "entity": "tag",
-          "fields": [
-            "tag_id",
-            "name",
-            "description"
-          ],
-          "filters": [
-            {
-              "field": "name",
-              "op": "=",
-              "value": "cool"
-            }
-          ],
-          "freshness": "same_run",
-          "object": null,
-          "operation": "LOOKUP",
-          "scope": "live",
-          "source": "LIVE_API"
-        },
+        "result_contract": null,
         "reuse_result_from": null,
         "semantic_cache_key": null,
         "sql": null,
-        "subtask": "Look up the tag named 'cool' from the unified tags API to retrieve its details."
+        "subtask": "Retrieve details for the tag named 'cool' using the unified tag detail API."
       }
     ],
     "provider": "openai",
@@ -198,14 +195,14 @@
       "max_sql_workers": 2,
       "run_timeout_ms": 30000
     },
-    "created_at": "2026-06-02T13:50:37.764433+00:00",
-    "deadline_at": "2026-06-02T13:51:07.764433+00:00",
-    "evidence_bus_id": "evidence_run_e7d74bde11454754ba48ab66bd294330",
+    "created_at": "2026-06-02T16:17:20.383487+00:00",
+    "deadline_at": "2026-06-02T16:17:50.383487+00:00",
+    "evidence_bus_id": "evidence_run_39aea21ecc154bfb8e69d8dd028a15d3",
     "original_prompt": "Show me the details of the tag named 'cool'.",
     "plan_version": 1,
     "prompt_id": "example_018",
-    "result_bundle_id": "bundle_run_e7d74bde11454754ba48ab66bd294330",
-    "run_id": "run_e7d74bde11454754ba48ab66bd294330",
+    "result_bundle_id": "bundle_run_39aea21ecc154bfb8e69d8dd028a15d3",
+    "run_id": "run_39aea21ecc154bfb8e69d8dd028a15d3",
     "status": "RUNNING"
   },
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"

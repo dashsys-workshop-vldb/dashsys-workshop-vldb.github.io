@@ -10,10 +10,15 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
   "backend_semantic_planning_used": false,
   "llm_owned_generation": true,
   "llm_unified_plan": {
-    "aggregation_instruction": "Return the list of journeys retrieved from the local dim_campaign table.",
+    "aggregation_instruction": "Return the list of journeys retrieved from the local snapshot.",
     "api_request": null,
     "backend_unavailable": false,
     "diagnostics": {
+      "api_card_detail_truncated": true,
+      "api_card_final_char_count": 5261,
+      "api_card_original_char_count": 6967,
+      "api_card_original_row_count": 20,
+      "api_card_row_count": 20,
       "api_request_gate_failures": 0,
       "atomic_protocol_fallback_used": false,
       "backend_formal_compilation_used": true,
@@ -28,7 +33,7 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "planner_json_fallback_used": false,
       "planner_json_parse_error": null,
       "planner_parse_source": "sdk_toolcall_semantic_ir",
-      "planner_provider_latency_ms": 16644,
+      "planner_provider_latency_ms": 19926,
       "planner_repair_attempted": false,
       "planner_success": true,
       "planner_timeout": false,
@@ -49,39 +54,49 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "raw_sql_fallback_success": false,
       "raw_sql_fallback_task_id": null,
       "raw_sql_fallback_used": false,
+      "schema_card_columns_truncated": true,
+      "schema_card_final_char_count": 7826,
+      "schema_card_original_char_count": 10765,
+      "schema_card_original_row_count": 18,
+      "schema_card_row_count": 18,
       "sdk_toolcall_semantic_ir_used": true,
       "semantic_alias_count": 0,
       "semantic_alias_error_type": null,
       "semantic_alias_repair_attempted": false,
       "semantic_alias_validation_passed": true,
       "semantic_alias_validation_used": true,
+      "semantic_ir_context_truncated": true,
+      "semantic_ir_context_truncated_sections": [
+        "schema_card",
+        "api_card"
+      ],
       "semantic_ir_plan_preview": {
-        "aggregation_instruction": "Return the list of journeys retrieved from the local dim_campaign table.",
+        "aggregation_instruction": "Return the list of journeys retrieved from the local snapshot.",
         "route": "EVIDENCE",
         "tasks": {
           "items": [
             {
-              "description": "List all journey/campaign records from the local snapshot, including their IDs, names, labels, status/state, type, and timestamps.",
+              "description": "List all journeys (campaigns) from the local snapshot, including their names, IDs, and current state/status.",
               "kind": "LOCAL_QUERY",
               "local_query": {
                 "count": false,
                 "fields": {
                   "items": [
-                    "CAMPAIGNID",
                     "NAME",
-                    "LABELSCAMPAIGN"
+                    "CAMPAIGNID",
+                    "STATE"
                   ],
-                  "total_items": 8,
+                  "total_items": 4,
                   "truncated_items": true
                 },
-                "limit": 50,
+                "limit": 100,
                 "table": "dim_campaign"
               },
               "operation": "LIST",
               "reuse_result_from": null,
               "semantic_cache_key": null,
               "source": "LOCAL_SNAPSHOT",
-              "task_id": "t1_list_journeys",
+              "task_id": "list_journeys",
               "truncated_fields": 7
             }
           ],
@@ -89,7 +104,11 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
           "truncated_items": false
         }
       },
-      "semantic_ir_provider_latency_ms": 16642,
+      "semantic_ir_planner_char_budget": 24000,
+      "semantic_ir_prompt_system_chars": 907,
+      "semantic_ir_prompt_total_chars": 23386,
+      "semantic_ir_prompt_user_chars": 19151,
+      "semantic_ir_provider_latency_ms": 19924,
       "semantic_ir_repair_attempted": false,
       "semantic_ir_repair_latency_ms": 0,
       "semantic_ir_repair_success": false,
@@ -103,6 +122,7 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "semantic_ir_support_repair_success": false,
       "semantic_ir_supported": true,
       "semantic_ir_task_count": 1,
+      "semantic_ir_tool_schema_chars": 3328,
       "semantic_ir_toolcall_supported": true,
       "semantic_ir_unsupported_features": [],
       "semantic_ir_unsupported_operation": null,
@@ -125,40 +145,22 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
         "can_run_parallel": true,
         "depends_on": [],
         "evidence_order": "SQL_FIRST",
-        "expected_result": "List all journey/campaign records from the local snapshot, including their IDs, names, labels, status/state, type, and timestamps.",
+        "expected_result": "List all journeys (campaigns) from the local snapshot, including their names, IDs, and current state/status.",
         "fallback": false,
         "optional": false,
-        "pass_id": "t1_list_journeys",
+        "pass_id": "list_journeys",
         "path": "SQL",
         "raw_sql_fallback_reason": null,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
-        "result_contract": {
-          "entity": "campaign",
-          "fields": [
-            "CAMPAIGNID",
-            "NAME",
-            "LABELSCAMPAIGN",
-            "STATUS",
-            "STATE",
-            "CAMPAIGNTYPE",
-            "CREATEDTIME",
-            "UPDATEDTIME"
-          ],
-          "filters": [],
-          "freshness": "same_run",
-          "object": "journey",
-          "operation": "LIST",
-          "scope": "local",
-          "source": "LOCAL_SNAPSHOT"
-        },
+        "result_contract": null,
         "reuse_result_from": null,
         "semantic_cache_key": null,
         "sql": {
           "params": [],
-          "query": "SELECT \"CAMPAIGNID\", \"NAME\", \"LABELSCAMPAIGN\", \"STATUS\", \"STATE\", \"CAMPAIGNTYPE\", \"CREATEDTIME\", \"UPDATEDTIME\" FROM \"dim_campaign\" LIMIT 50"
+          "query": "SELECT \"NAME\", \"CAMPAIGNID\", \"STATE\", \"STATUS\" FROM \"dim_campaign\" LIMIT 100"
         },
-        "subtask": "List all journey/campaign records from the local snapshot, including their IDs, names, labels, status/state, type, and timestamps."
+        "subtask": "List all journeys (campaigns) from the local snapshot, including their names, IDs, and current state/status."
       }
     ],
     "provider": "openai",
@@ -179,7 +181,7 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
     "route": "EVIDENCE_PIPELINE",
     "sql": {
       "params": [],
-      "query": "SELECT \"CAMPAIGNID\", \"NAME\", \"LABELSCAMPAIGN\", \"STATUS\", \"STATE\", \"CAMPAIGNTYPE\", \"CREATEDTIME\", \"UPDATEDTIME\" FROM \"dim_campaign\" LIMIT 50"
+      "query": "SELECT \"NAME\", \"CAMPAIGNID\", \"STATE\", \"STATUS\" FROM \"dim_campaign\" LIMIT 100"
     }
   },
   "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
@@ -195,14 +197,14 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "max_sql_workers": 2,
       "run_timeout_ms": 30000
     },
-    "created_at": "2026-06-02T13:37:48.703040+00:00",
-    "deadline_at": "2026-06-02T13:38:18.703040+00:00",
-    "evidence_bus_id": "evidence_run_f9de190333a546b9ba62d143a7562b84",
+    "created_at": "2026-06-02T16:06:18.796500+00:00",
+    "deadline_at": "2026-06-02T16:06:48.796500+00:00",
+    "evidence_bus_id": "evidence_run_c22763c2e7204822b7b13e414edc3df6",
     "original_prompt": "List all journeys",
     "plan_version": 1,
     "prompt_id": "example_002",
-    "result_bundle_id": "bundle_run_f9de190333a546b9ba62d143a7562b84",
-    "run_id": "run_f9de190333a546b9ba62d143a7562b84",
+    "result_bundle_id": "bundle_run_c22763c2e7204822b7b13e414edc3df6",
+    "run_id": "run_c22763c2e7204822b7b13e414edc3df6",
     "status": "RUNNING"
   },
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"

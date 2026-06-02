@@ -1,5 +1,5 @@
 {
-  "answer_time": 4.432892041280866,
+  "answer_time": 3.4436048748902977,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-02T13:56:13.690376+00:00"
+      "timestamp": "2026-06-02T16:21:25.603227+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-02T13:56:13.690845+00:00"
+      "timestamp": "2026-06-02T16:21:25.603700+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,7 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-02T13:56:13.691352+00:00"
+      "timestamp": "2026-06-02T16:21:25.604179+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner_start",
@@ -82,11 +82,22 @@
       },
       "output": {
         "current_stage": "llm_unified_planner_call_start",
-        "prompt_id": "example_028"
+        "prompt_id": "example_028",
+        "semantic_ir_prompt_diagnostics": {
+          "schema_card_original_row_count": 18,
+          "schema_card_row_count": 18,
+          "semantic_ir_context_truncated": true,
+          "semantic_ir_planner_char_budget": 24000,
+          "semantic_ir_prompt_system_chars": 907,
+          "semantic_ir_prompt_total_chars": 23408,
+          "semantic_ir_prompt_user_chars": 19173,
+          "semantic_ir_tool_schema_chars": 3328,
+          "truncated_fields": 9
+        }
       },
       "stage": "llm-owned planning",
       "technique": "pre-call heartbeat before Unified LLM Planner",
-      "timestamp": "2026-06-02T13:56:13.698244+00:00"
+      "timestamp": "2026-06-02T16:21:25.750855+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -98,6 +109,11 @@
         "query": "List the most recently created batches."
       },
       "metrics": {
+        "api_card_detail_truncated": true,
+        "api_card_final_char_count": 5261,
+        "api_card_original_char_count": 6967,
+        "api_card_original_row_count": 20,
+        "api_card_row_count": 20,
         "api_request_gate_failures": 0,
         "atomic_protocol_fallback_used": false,
         "backend_formal_compilation_used": true,
@@ -112,7 +128,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 36542,
+        "planner_provider_latency_ms": 13906,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -133,14 +149,24 @@
         "raw_sql_fallback_success": false,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
+        "schema_card_columns_truncated": true,
+        "schema_card_final_char_count": 7826,
+        "schema_card_original_char_count": 10765,
+        "schema_card_original_row_count": 18,
+        "schema_card_row_count": 18,
         "sdk_toolcall_semantic_ir_used": true,
         "semantic_alias_count": 0,
         "semantic_alias_error_type": null,
         "semantic_alias_repair_attempted": false,
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
+        "semantic_ir_context_truncated": true,
+        "semantic_ir_context_truncated_sections": [
+          "schema_card",
+          "api_card"
+        ],
         "semantic_ir_plan_preview": {
-          "aggregation_instruction": "Sort the returned batches by createdTime descending and return the top results as the most recently created batches.",
+          "aggregation_instruction": "Return the list of batches sorted by creation time descending, limited to the most recent entries.",
           "route": "EVIDENCE",
           "tasks": {
             "items": [
@@ -149,16 +175,17 @@
                   "endpoint_id": "catalog_batches",
                   "method": "GET",
                   "query_params": {
-                    "limit": 50
+                    "limit": 100,
+                    "start": 0
                   }
                 },
-                "description": "List catalog batches to identify the most recently created ones.",
+                "description": "Retrieve the most recently created batches from the catalog API.",
                 "kind": "LIVE_QUERY",
                 "operation": "LIST",
                 "reuse_result_from": null,
                 "semantic_cache_key": null,
                 "source": "LIVE_API",
-                "task_id": "t1_list_batches",
+                "task_id": "t1",
                 "truncated_fields": 7
               }
             ],
@@ -166,10 +193,14 @@
             "truncated_items": false
           }
         },
-        "semantic_ir_provider_latency_ms": 36540,
-        "semantic_ir_repair_attempted": true,
-        "semantic_ir_repair_latency_ms": 15506,
-        "semantic_ir_repair_success": true,
+        "semantic_ir_planner_char_budget": 24000,
+        "semantic_ir_prompt_system_chars": 907,
+        "semantic_ir_prompt_total_chars": 23408,
+        "semantic_ir_prompt_user_chars": 19173,
+        "semantic_ir_provider_latency_ms": 13905,
+        "semantic_ir_repair_attempted": false,
+        "semantic_ir_repair_latency_ms": 0,
+        "semantic_ir_repair_success": false,
         "semantic_ir_support_check_latency_ms": 0,
         "semantic_ir_support_checked": true,
         "semantic_ir_support_recommended_action": "COMPILE",
@@ -180,24 +211,26 @@
         "semantic_ir_support_repair_success": false,
         "semantic_ir_supported": true,
         "semantic_ir_task_count": 1,
+        "semantic_ir_tool_schema_chars": 3328,
         "semantic_ir_toolcall_supported": true,
         "semantic_ir_unsupported_features": [],
         "semantic_ir_unsupported_operation": null,
         "semantic_ir_unsupported_reason": null,
         "semantic_ir_unsupported_task_id": null,
-        "semantic_ir_validation_error_message": "Unknown table: catalog_batches",
-        "semantic_ir_validation_error_type": "unknown_table",
+        "semantic_ir_validation_error_message": null,
+        "semantic_ir_validation_error_type": null,
         "semantic_ir_validation_latency_ms": 0,
         "semantic_ir_validation_passed": true,
         "sql_compile_gate_failures": 0,
         "v2_semantic_ir_used": true
       },
       "output": {
-        "aggregation_instruction": "Sort the returned batches by createdTime descending and return the top results as the most recently created batches.",
+        "aggregation_instruction": "Return the list of batches sorted by creation time descending, limited to the most recent entries.",
         "api_request": {
           "method": "GET",
           "params": {
-            "limit": 50
+            "limit": 100,
+            "start": 0
           },
           "path": "/data/foundation/catalog/batches"
         },
@@ -206,14 +239,14 @@
         "passes": {
           "items": [
             {
-              "pass_id": "t1_list_batches",
+              "pass_id": "t1",
               "path": "API",
               "raw_sql_fallback_reason": null,
               "raw_sql_fallback_task_id": null,
               "raw_sql_fallback_used": false,
               "reuse_result_from": null,
               "semantic_cache_key": null,
-              "subtask": "List catalog batches to identify the most recently created ones.",
+              "subtask": "Retrieve the most recently created batches from the catalog API.",
               "truncated_fields": 9
             }
           ],
@@ -227,7 +260,7 @@
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-02T13:56:50.242793+00:00"
+      "timestamp": "2026-06-02T16:21:39.659516+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
@@ -239,7 +272,7 @@
         "evidence_order": "API_FIRST",
         "pass_ids": {
           "items": [
-            "t1_list_batches"
+            "t1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -255,7 +288,7 @@
           "items": [
             {
               "items": [
-                "t1_list_batches"
+                "t1"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -267,7 +300,7 @@
         "pass_count": 1,
         "pass_ids": {
           "items": [
-            "t1_list_batches"
+            "t1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -276,7 +309,7 @@
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-02T13:56:50.245257+00:00"
+      "timestamp": "2026-06-02T16:21:39.662060+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -292,7 +325,7 @@
         },
         "pass_ids": {
           "items": [
-            "t1_list_batches"
+            "t1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -315,7 +348,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t1_list_batches"
+            "t1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -340,7 +373,7 @@
           "items": [
             {
               "items": [
-                "t1_list_batches"
+                "t1"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -351,7 +384,7 @@
         },
         "pass_ids": {
           "items": [
-            "t1_list_batches"
+            "t1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -362,7 +395,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-02T13:56:50.246394+00:00"
+      "timestamp": "2026-06-02T16:21:39.663111+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -375,7 +408,7 @@
           "items": [
             {
               "items": [
-                "t1_list_batches"
+                "t1"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -386,7 +419,7 @@
         },
         "pass_ids": {
           "items": [
-            "t1_list_batches"
+            "t1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -405,7 +438,7 @@
           "items": [
             {
               "items": [
-                "t1_list_batches"
+                "t1"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -416,7 +449,7 @@
         },
         "passes_completed": {
           "items": [
-            "t1_list_batches"
+            "t1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -437,10 +470,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_3f20d51b1133496c9ce902671702098a:t1_list_batches",
-              "pass_id": "t1_list_batches",
+              "global_pass_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0:t1",
+              "pass_id": "t1",
               "plan_version": 1,
-              "run_id": "run_3f20d51b1133496c9ce902671702098a",
+              "run_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -448,10 +481,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_3f20d51b1133496c9ce902671702098a:t1_list_batches",
-              "pass_id": "t1_list_batches",
+              "global_pass_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0:t1",
+              "pass_id": "t1",
               "plan_version": 1,
-              "run_id": "run_3f20d51b1133496c9ce902671702098a",
+              "run_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -459,10 +492,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_3f20d51b1133496c9ce902671702098a:t1_list_batches",
-              "pass_id": "t1_list_batches",
+              "global_pass_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0:t1",
+              "pass_id": "t1",
               "plan_version": 1,
-              "run_id": "run_3f20d51b1133496c9ce902671702098a",
+              "run_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0",
               "stage": "DEPENDENCY_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -476,7 +509,7 @@
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-02T13:56:50.247438+00:00"
+      "timestamp": "2026-06-02T16:21:39.663854+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
@@ -488,7 +521,7 @@
         "multi_pass_enabled": false,
         "pass_ids": {
           "items": [
-            "t1_list_batches"
+            "t1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -517,7 +550,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t1_list_batches"
+            "t1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -538,7 +571,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_3f20d51b1133496c9ce902671702098a",
+        "evidence_bus_id": "evidence_run_9c14b0110e5c4cb9a8dbba21e030aca0",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -553,7 +586,7 @@
           "items": [
             {
               "items": [
-                "t1_list_batches"
+                "t1"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -569,7 +602,7 @@
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "t1_list_batches"
+            "t1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -577,7 +610,7 @@
         "pass_results_count": 1,
         "passes_completed": {
           "items": [
-            "t1_list_batches"
+            "t1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -589,7 +622,7 @@
         },
         "passes_executed": {
           "items": [
-            "t1_list_batches"
+            "t1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -611,8 +644,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_3f20d51b1133496c9ce902671702098a",
-        "run_id": "run_3f20d51b1133496c9ce902671702098a",
+        "result_bundle_id": "bundle_run_9c14b0110e5c4cb9a8dbba21e030aca0",
+        "run_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -631,10 +664,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_3f20d51b1133496c9ce902671702098a:t1_list_batches",
-              "pass_id": "t1_list_batches",
+              "global_pass_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0:t1",
+              "pass_id": "t1",
               "plan_version": 1,
-              "run_id": "run_3f20d51b1133496c9ce902671702098a",
+              "run_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -642,10 +675,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_3f20d51b1133496c9ce902671702098a:t1_list_batches",
-              "pass_id": "t1_list_batches",
+              "global_pass_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0:t1",
+              "pass_id": "t1",
               "plan_version": 1,
-              "run_id": "run_3f20d51b1133496c9ce902671702098a",
+              "run_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -653,10 +686,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_3f20d51b1133496c9ce902671702098a:t1_list_batches",
-              "pass_id": "t1_list_batches",
+              "global_pass_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0:t1",
+              "pass_id": "t1",
               "plan_version": 1,
-              "run_id": "run_3f20d51b1133496c9ce902671702098a",
+              "run_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -672,7 +705,7 @@
       },
       "stage": "llm-owned pass scheduling",
       "technique": "dependency-aware scheduling of LLM-declared evidence passes",
-      "timestamp": "2026-06-02T13:56:50.248279+00:00"
+      "timestamp": "2026-06-02T16:21:39.664451+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -681,7 +714,7 @@
       "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
       "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
       "input_summary": {
-        "pass_id": "t1_list_batches"
+        "pass_id": "t1"
       },
       "output": {
         "errors": {
@@ -691,11 +724,11 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_3f20d51b1133496c9ce902671702098a"
+        "run_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T13:56:50.249080+00:00"
+      "timestamp": "2026-06-02T16:21:39.665254+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_api_request_gate",
@@ -705,21 +738,22 @@
       "efficiency_role": "prevents invalid API calls without planning endpoints",
       "input_summary": {
         "method": "GET",
-        "pass_id": "t1_list_batches",
+        "pass_id": "t1",
         "path": "/data/foundation/catalog/batches"
       },
       "output": {
         "method": "GET",
         "params": {
-          "limit": 50
+          "limit": 100,
+          "start": 0
         },
-        "pass_id": "t1_list_batches",
+        "pass_id": "t1",
         "passed": true,
         "path": "/data/foundation/catalog/batches"
       },
       "stage": "llm api request gate",
       "technique": "safe GET request-shape/catalog gate for LLM-owned API pass",
-      "timestamp": "2026-06-02T13:56:50.250829+00:00"
+      "timestamp": "2026-06-02T16:21:39.666643+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -762,7 +796,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t1_list_batches"
+            "t1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -783,7 +817,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_3f20d51b1133496c9ce902671702098a",
+        "evidence_bus_id": "evidence_run_9c14b0110e5c4cb9a8dbba21e030aca0",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -801,7 +835,7 @@
           "items": [
             {
               "items": [
-                "t1_list_batches"
+                "t1"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -817,7 +851,7 @@
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "t1_list_batches"
+            "t1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -825,7 +859,7 @@
         "pass_results_count": 1,
         "passes_completed": {
           "items": [
-            "t1_list_batches"
+            "t1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -837,7 +871,7 @@
         },
         "passes_executed": {
           "items": [
-            "t1_list_batches"
+            "t1"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -859,8 +893,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_3f20d51b1133496c9ce902671702098a",
-        "run_id": "run_3f20d51b1133496c9ce902671702098a",
+        "result_bundle_id": "bundle_run_9c14b0110e5c4cb9a8dbba21e030aca0",
+        "run_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -879,10 +913,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_3f20d51b1133496c9ce902671702098a:t1_list_batches",
-              "pass_id": "t1_list_batches",
+              "global_pass_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0:t1",
+              "pass_id": "t1",
               "plan_version": 1,
-              "run_id": "run_3f20d51b1133496c9ce902671702098a",
+              "run_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -890,10 +924,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_3f20d51b1133496c9ce902671702098a:t1_list_batches",
-              "pass_id": "t1_list_batches",
+              "global_pass_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0:t1",
+              "pass_id": "t1",
               "plan_version": 1,
-              "run_id": "run_3f20d51b1133496c9ce902671702098a",
+              "run_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -901,10 +935,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_3f20d51b1133496c9ce902671702098a:t1_list_batches",
-              "pass_id": "t1_list_batches",
+              "global_pass_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0:t1",
+              "pass_id": "t1",
               "plan_version": 1,
-              "run_id": "run_3f20d51b1133496c9ce902671702098a",
+              "run_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -914,13 +948,13 @@
           "truncated_items": true
         },
         "stage_pipeline_used": true,
-        "truncated_fields": 2,
+        "truncated_fields": 5,
         "v2_execution_optimizer_used": true,
         "v2_pipeline_scheduler_used": true
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-02T13:56:50.251828+00:00"
+      "timestamp": "2026-06-02T16:21:39.667533+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -960,7 +994,7 @@
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-02T13:56:50.348376+00:00"
+      "timestamp": "2026-06-02T16:21:39.767827+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -983,7 +1017,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-02T13:56:50.348961+00:00"
+      "timestamp": "2026-06-02T16:21:39.768502+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -998,18 +1032,18 @@
         "evidence": {
           "pass_ids": {
             "items": [
-              "t1_list_batches"
+              "t1"
             ],
             "total_items": 1,
             "truncated_items": false
           },
           "pass_result_count": 1,
-          "run_id": "run_3f20d51b1133496c9ce902671702098a"
+          "run_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0"
         }
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-02T13:56:50.349567+00:00"
+      "timestamp": "2026-06-02T16:21:39.769182+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -1027,14 +1061,14 @@
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "t1_list_batches"
+              "pass_id": "t1"
             }
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "pass_results_count": 1,
-        "run_id": "run_3f20d51b1133496c9ce902671702098a",
+        "run_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0",
         "runtime_passes": {
           "items": [
             {
@@ -1052,13 +1086,13 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_3f20d51b1133496c9ce902671702098a"
+                "run_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0"
               },
-              "global_pass_id": "run_3f20d51b1133496c9ce902671702098a:t1_list_batches",
-              "pass_id": "t1_list_batches",
+              "global_pass_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0:t1",
+              "pass_id": "t1",
               "path": "API",
               "plan_version": 1,
-              "run_id": "run_3f20d51b1133496c9ce902671702098a",
+              "run_id": "run_9c14b0110e5c4cb9a8dbba21e030aca0",
               "status": "API_ERROR",
               "truncated_fields": 6
             }
@@ -1069,7 +1103,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-02T13:56:50.350121+00:00"
+      "timestamp": "2026-06-02T16:21:39.770117+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -1107,7 +1141,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-02T13:56:50.350688+00:00"
+      "timestamp": "2026-06-02T16:21:39.770895+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -1141,7 +1175,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-02T13:56:50.359555+00:00"
+      "timestamp": "2026-06-02T16:21:39.781058+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer_start",
@@ -1157,7 +1191,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "pre-call heartbeat before LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T13:56:50.360080+00:00"
+      "timestamp": "2026-06-02T16:21:39.781564+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -1196,7 +1230,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T13:56:54.775709+00:00"
+      "timestamp": "2026-06-02T16:21:43.204795+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -1213,7 +1247,7 @@
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-02T13:56:54.776521+00:00"
+      "timestamp": "2026-06-02T16:21:43.205583+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -1245,10 +1279,11 @@
             },
             "evidence_strings": {
               "items": [
+                "100",
                 "/data/foundation/catalog/batches",
-                "50"
+                "0"
               ],
-              "total_items": 2,
+              "total_items": 3,
               "truncated_items": false
             }
           },
@@ -1302,7 +1337,7 @@
       },
       "stage": "answer gate",
       "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-02T13:56:54.780256+00:00"
+      "timestamp": "2026-06-02T16:21:43.210380+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -1321,8 +1356,8 @@
         "deterministic_answer_template_used": false,
         "final_answer_repair_latency_sec": 0.0,
         "final_answer_supported_by_evidence": true,
-        "final_composer_latency_sec": 4.415,
-        "final_gate_latency_sec": 0.004,
+        "final_composer_latency_sec": 3.422,
+        "final_gate_latency_sec": 0.005,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 2,
@@ -1334,7 +1369,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-02T13:56:54.780930+00:00"
+      "timestamp": "2026-06-02T16:21:43.211097+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -1363,12 +1398,12 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-02T13:56:54.781754+00:00"
+      "timestamp": "2026-06-02T16:21:43.212051+00:00"
     }
   ],
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 1748,
+  "estimated_tokens": 1906,
   "execution_time": 0.0,
   "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
   "original_query": "List the most recently created batches.",
@@ -1376,26 +1411,32 @@
   "preprocessing_time": 0.0,
   "query_id": "example_028",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 4.563581624999642,
+  "runtime": 3.5791489579714835,
   "sql_call_count": 0,
   "steps": [
     {
-      "estimated_tokens": 1622,
+      "estimated_tokens": 1780,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_028/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 2306
+      "prompt_tokens": 2494
     },
     {
-      "aggregation_instruction": "Sort the returned batches by createdTime descending and return the top results as the most recently created batches.",
+      "aggregation_instruction": "Return the list of batches sorted by creation time descending, limited to the most recent entries.",
       "api_request": {
         "method": "GET",
         "params": {
-          "limit": 50
+          "limit": 100,
+          "start": 0
         },
         "path": "/data/foundation/catalog/batches"
       },
       "backend_unavailable": false,
       "diagnostics": {
+        "api_card_detail_truncated": true,
+        "api_card_final_char_count": 5261,
+        "api_card_original_char_count": 6967,
+        "api_card_original_row_count": 20,
+        "api_card_row_count": 20,
         "api_request_gate_failures": 0,
         "atomic_protocol_fallback_used": false,
         "backend_formal_compilation_used": true,
@@ -1410,7 +1451,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 36542,
+        "planner_provider_latency_ms": 13906,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -1431,14 +1472,24 @@
         "raw_sql_fallback_success": false,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
+        "schema_card_columns_truncated": true,
+        "schema_card_final_char_count": 7826,
+        "schema_card_original_char_count": 10765,
+        "schema_card_original_row_count": 18,
+        "schema_card_row_count": 18,
         "sdk_toolcall_semantic_ir_used": true,
         "semantic_alias_count": 0,
         "semantic_alias_error_type": null,
         "semantic_alias_repair_attempted": false,
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
+        "semantic_ir_context_truncated": true,
+        "semantic_ir_context_truncated_sections": [
+          "schema_card",
+          "api_card"
+        ],
         "semantic_ir_plan_preview": {
-          "aggregation_instruction": "Sort the returned batches by createdTime descending and return the top results as the most recently created batches.",
+          "aggregation_instruction": "Return the list of batches sorted by creation time descending, limited to the most recent entries.",
           "route": "EVIDENCE",
           "tasks": {
             "items": [
@@ -1447,16 +1498,17 @@
                   "endpoint_id": "catalog_batches",
                   "method": "GET",
                   "query_params": {
-                    "limit": 50
+                    "limit": 100,
+                    "start": 0
                   }
                 },
-                "description": "List catalog batches to identify the most recently created ones.",
+                "description": "Retrieve the most recently created batches from the catalog API.",
                 "kind": "LIVE_QUERY",
                 "operation": "LIST",
                 "reuse_result_from": null,
                 "semantic_cache_key": null,
                 "source": "LIVE_API",
-                "task_id": "t1_list_batches",
+                "task_id": "t1",
                 "truncated_fields": 7
               }
             ],
@@ -1464,10 +1516,14 @@
             "truncated_items": false
           }
         },
-        "semantic_ir_provider_latency_ms": 36540,
-        "semantic_ir_repair_attempted": true,
-        "semantic_ir_repair_latency_ms": 15506,
-        "semantic_ir_repair_success": true,
+        "semantic_ir_planner_char_budget": 24000,
+        "semantic_ir_prompt_system_chars": 907,
+        "semantic_ir_prompt_total_chars": 23408,
+        "semantic_ir_prompt_user_chars": 19173,
+        "semantic_ir_provider_latency_ms": 13905,
+        "semantic_ir_repair_attempted": false,
+        "semantic_ir_repair_latency_ms": 0,
+        "semantic_ir_repair_success": false,
         "semantic_ir_support_check_latency_ms": 0,
         "semantic_ir_support_checked": true,
         "semantic_ir_support_recommended_action": "COMPILE",
@@ -1478,13 +1534,14 @@
         "semantic_ir_support_repair_success": false,
         "semantic_ir_supported": true,
         "semantic_ir_task_count": 1,
+        "semantic_ir_tool_schema_chars": 3328,
         "semantic_ir_toolcall_supported": true,
         "semantic_ir_unsupported_features": [],
         "semantic_ir_unsupported_operation": null,
         "semantic_ir_unsupported_reason": null,
         "semantic_ir_unsupported_task_id": null,
-        "semantic_ir_validation_error_message": "Unknown table: catalog_batches",
-        "semantic_ir_validation_error_type": "unknown_table",
+        "semantic_ir_validation_error_message": null,
+        "semantic_ir_validation_error_type": null,
         "semantic_ir_validation_latency_ms": 0,
         "semantic_ir_validation_passed": true,
         "sql_compile_gate_failures": 0,
@@ -1500,42 +1557,46 @@
           "api_request": {
             "method": "GET",
             "params": {
-              "limit": 50
+              "limit": 100,
+              "start": 0
             },
             "path": "/data/foundation/catalog/batches"
           },
           "can_run_parallel": true,
           "depends_on": [],
           "evidence_order": "API_FIRST",
-          "expected_result": "List catalog batches to identify the most recently created ones.",
+          "expected_result": "Retrieve the most recently created batches from the catalog API.",
           "fallback": false,
           "optional": false,
-          "pass_id": "t1_list_batches",
+          "pass_id": "t1",
           "path": "API",
           "raw_sql_fallback_reason": null,
           "raw_sql_fallback_task_id": null,
           "raw_sql_fallback_used": false,
-          "result_contract": null,
+          "result_contract": {
+            "entity": "batch",
+            "fields": [
+              "id",
+              "name",
+              "createdTime",
+              "status"
+            ],
+            "filters": [],
+            "freshness": "same_run",
+            "object": null,
+            "operation": "LIST",
+            "scope": "live",
+            "source": "LIVE_API"
+          },
           "reuse_result_from": null,
           "semantic_cache_key": null,
           "sql": null,
-          "subtask": "List catalog batches to identify the most recently created ones."
+          "subtask": "Retrieve the most recently created batches from the catalog API."
         }
       ],
       "provider": "openai",
       "raw_preview": {
         "semantic_ir_initial": {
-          "base_url": "[REDACTED]",
-          "error": null,
-          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-          "ok": true,
-          "provider": "openai",
-          "sdk_path_used": true,
-          "skipped": false,
-          "transport": "openai_sdk",
-          "truncated_fields": 11
-        },
-        "semantic_ir_repair": {
           "base_url": "[REDACTED]",
           "error": null,
           "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
@@ -1556,7 +1617,8 @@
       "kind": "api_call",
       "method": "GET",
       "params": {
-        "limit": 50
+        "limit": 100,
+        "start": 0
       },
       "result": {
         "dry_run": true,
@@ -1565,7 +1627,8 @@
         "method": "GET",
         "ok": false,
         "params": {
-          "limit": 50
+          "limit": 100,
+          "start": 0
         },
         "result_preview": null,
         "url": "https://platform.adobe.io/data/foundation/catalog/batches"
@@ -1613,8 +1676,8 @@
       "deterministic_answer_template_used": false,
       "final_answer_repair_latency_sec": 0.0,
       "final_answer_supported_by_evidence": true,
-      "final_composer_latency_sec": 4.415,
-      "final_gate_latency_sec": 0.004,
+      "final_composer_latency_sec": 3.422,
+      "final_gate_latency_sec": 0.005,
       "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
       "llm_owned_final_answer": true,
@@ -1637,8 +1700,9 @@
             "counts": [],
             "dates": [],
             "evidence_strings": [
+              "100",
               "/data/foundation/catalog/batches",
-              "50"
+              "0"
             ],
             "ids": [],
             "live_empty_scopes": [],
@@ -1701,7 +1765,7 @@
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 4.432892041280866
+    "answer_time": 3.4436048748902977
   },
   "tool_call_count": 1
 }

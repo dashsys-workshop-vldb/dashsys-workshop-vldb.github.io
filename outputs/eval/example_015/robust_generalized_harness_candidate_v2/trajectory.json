@@ -1,5 +1,5 @@
 {
-  "answer_time": 3.522229625377804,
+  "answer_time": 4.400185124948621,
   "api_call_count": 1,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-02T13:49:08.209616+00:00"
+      "timestamp": "2026-06-02T16:15:38.280581+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-02T13:49:08.210186+00:00"
+      "timestamp": "2026-06-02T16:15:38.281068+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,7 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-02T13:49:08.210702+00:00"
+      "timestamp": "2026-06-02T16:15:38.281789+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner_start",
@@ -82,11 +82,22 @@
       },
       "output": {
         "current_stage": "llm_unified_planner_call_start",
-        "prompt_id": "example_015"
+        "prompt_id": "example_015",
+        "semantic_ir_prompt_diagnostics": {
+          "schema_card_original_row_count": 18,
+          "schema_card_row_count": 18,
+          "semantic_ir_context_truncated": true,
+          "semantic_ir_planner_char_budget": 24000,
+          "semantic_ir_prompt_system_chars": 907,
+          "semantic_ir_prompt_total_chars": 23405,
+          "semantic_ir_prompt_user_chars": 19170,
+          "semantic_ir_tool_schema_chars": 3328,
+          "truncated_fields": 9
+        }
       },
       "stage": "llm-owned planning",
       "technique": "pre-call heartbeat before Unified LLM Planner",
-      "timestamp": "2026-06-02T13:49:08.217658+00:00"
+      "timestamp": "2026-06-02T16:15:38.432032+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -98,6 +109,11 @@
         "query": "How many tags exist in this sandbox?"
       },
       "metrics": {
+        "api_card_detail_truncated": true,
+        "api_card_final_char_count": 5261,
+        "api_card_original_char_count": 6967,
+        "api_card_original_row_count": 20,
+        "api_card_row_count": 20,
         "api_request_gate_failures": 0,
         "atomic_protocol_fallback_used": false,
         "backend_formal_compilation_used": true,
@@ -112,7 +128,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 32257,
+        "planner_provider_latency_ms": 29861,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -133,14 +149,24 @@
         "raw_sql_fallback_success": false,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
+        "schema_card_columns_truncated": true,
+        "schema_card_final_char_count": 7826,
+        "schema_card_original_char_count": 10765,
+        "schema_card_original_row_count": 18,
+        "schema_card_row_count": 18,
         "sdk_toolcall_semantic_ir_used": true,
         "semantic_alias_count": 0,
         "semantic_alias_error_type": null,
         "semantic_alias_repair_attempted": false,
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
+        "semantic_ir_context_truncated": true,
+        "semantic_ir_context_truncated_sections": [
+          "schema_card",
+          "api_card"
+        ],
         "semantic_ir_plan_preview": {
-          "aggregation_instruction": "Return the count of tags from the unified_tags API response.",
+          "aggregation_instruction": "Return the count from the unified_tags API task.",
           "route": "EVIDENCE",
           "tasks": {
             "items": [
@@ -152,13 +178,13 @@
                     "limit": 1
                   }
                 },
-                "description": "Count the total number of tags in the sandbox by fetching the first page of tags and reading the total count from the API response.",
+                "description": "Count the number of tags in this sandbox using the unified_tags API.",
                 "kind": "LIVE_QUERY",
                 "operation": "COUNT",
                 "reuse_result_from": null,
                 "semantic_cache_key": null,
                 "source": "LIVE_API",
-                "task_id": "tag_count",
+                "task_id": "count_tags",
                 "truncated_fields": 7
               }
             ],
@@ -166,9 +192,13 @@
             "truncated_items": false
           }
         },
-        "semantic_ir_provider_latency_ms": 32255,
+        "semantic_ir_planner_char_budget": 24000,
+        "semantic_ir_prompt_system_chars": 907,
+        "semantic_ir_prompt_total_chars": 23405,
+        "semantic_ir_prompt_user_chars": 19170,
+        "semantic_ir_provider_latency_ms": 29859,
         "semantic_ir_repair_attempted": true,
-        "semantic_ir_repair_latency_ms": 14857,
+        "semantic_ir_repair_latency_ms": 13371,
         "semantic_ir_repair_success": true,
         "semantic_ir_support_check_latency_ms": 0,
         "semantic_ir_support_checked": true,
@@ -180,20 +210,21 @@
         "semantic_ir_support_repair_success": false,
         "semantic_ir_supported": true,
         "semantic_ir_task_count": 1,
+        "semantic_ir_tool_schema_chars": 3328,
         "semantic_ir_toolcall_supported": true,
         "semantic_ir_unsupported_features": [],
         "semantic_ir_unsupported_operation": null,
         "semantic_ir_unsupported_reason": null,
         "semantic_ir_unsupported_task_id": null,
-        "semantic_ir_validation_error_message": null,
-        "semantic_ir_validation_error_type": null,
+        "semantic_ir_validation_error_message": "COUNT tasks over LIVE_API must include an api_query.",
+        "semantic_ir_validation_error_type": "live_count_requires_api_query",
         "semantic_ir_validation_latency_ms": 0,
         "semantic_ir_validation_passed": true,
         "sql_compile_gate_failures": 0,
         "v2_semantic_ir_used": true
       },
       "output": {
-        "aggregation_instruction": "Return the count of tags from the unified_tags API response.",
+        "aggregation_instruction": "Return the count from the unified_tags API task.",
         "api_request": {
           "method": "GET",
           "params": {
@@ -206,14 +237,14 @@
         "passes": {
           "items": [
             {
-              "pass_id": "tag_count",
+              "pass_id": "count_tags",
               "path": "API",
               "raw_sql_fallback_reason": null,
               "raw_sql_fallback_task_id": null,
               "raw_sql_fallback_used": false,
               "reuse_result_from": null,
               "semantic_cache_key": null,
-              "subtask": "Count the total number of tags in the sandbox by fetching the first page of tags and reading the total count from the API response.",
+              "subtask": "Count the number of tags in this sandbox using the unified_tags API.",
               "truncated_fields": 9
             }
           ],
@@ -227,7 +258,7 @@
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-02T13:49:40.478123+00:00"
+      "timestamp": "2026-06-02T16:16:08.296696+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
@@ -239,7 +270,7 @@
         "evidence_order": "API_FIRST",
         "pass_ids": {
           "items": [
-            "tag_count"
+            "count_tags"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -255,7 +286,7 @@
           "items": [
             {
               "items": [
-                "tag_count"
+                "count_tags"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -267,7 +298,7 @@
         "pass_count": 1,
         "pass_ids": {
           "items": [
-            "tag_count"
+            "count_tags"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -276,7 +307,7 @@
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-02T13:49:40.481181+00:00"
+      "timestamp": "2026-06-02T16:16:08.301120+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -292,7 +323,7 @@
         },
         "pass_ids": {
           "items": [
-            "tag_count"
+            "count_tags"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -315,7 +346,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "tag_count"
+            "count_tags"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -340,7 +371,7 @@
           "items": [
             {
               "items": [
-                "tag_count"
+                "count_tags"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -351,7 +382,7 @@
         },
         "pass_ids": {
           "items": [
-            "tag_count"
+            "count_tags"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -362,7 +393,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-02T13:49:40.482415+00:00"
+      "timestamp": "2026-06-02T16:16:08.303016+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -375,7 +406,7 @@
           "items": [
             {
               "items": [
-                "tag_count"
+                "count_tags"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -386,7 +417,7 @@
         },
         "pass_ids": {
           "items": [
-            "tag_count"
+            "count_tags"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -405,7 +436,7 @@
           "items": [
             {
               "items": [
-                "tag_count"
+                "count_tags"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -416,7 +447,7 @@
         },
         "passes_completed": {
           "items": [
-            "tag_count"
+            "count_tags"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -437,10 +468,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_601597de21f8480086867cf07a6ddf26:tag_count",
-              "pass_id": "tag_count",
+              "global_pass_id": "run_11d5c8ca217645b6add6c702fecbcd62:count_tags",
+              "pass_id": "count_tags",
               "plan_version": 1,
-              "run_id": "run_601597de21f8480086867cf07a6ddf26",
+              "run_id": "run_11d5c8ca217645b6add6c702fecbcd62",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -448,10 +479,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_601597de21f8480086867cf07a6ddf26:tag_count",
-              "pass_id": "tag_count",
+              "global_pass_id": "run_11d5c8ca217645b6add6c702fecbcd62:count_tags",
+              "pass_id": "count_tags",
               "plan_version": 1,
-              "run_id": "run_601597de21f8480086867cf07a6ddf26",
+              "run_id": "run_11d5c8ca217645b6add6c702fecbcd62",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -459,10 +490,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_601597de21f8480086867cf07a6ddf26:tag_count",
-              "pass_id": "tag_count",
+              "global_pass_id": "run_11d5c8ca217645b6add6c702fecbcd62:count_tags",
+              "pass_id": "count_tags",
               "plan_version": 1,
-              "run_id": "run_601597de21f8480086867cf07a6ddf26",
+              "run_id": "run_11d5c8ca217645b6add6c702fecbcd62",
               "stage": "DEPENDENCY_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -476,7 +507,7 @@
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-02T13:49:40.483378+00:00"
+      "timestamp": "2026-06-02T16:16:08.304670+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
@@ -488,7 +519,7 @@
         "multi_pass_enabled": false,
         "pass_ids": {
           "items": [
-            "tag_count"
+            "count_tags"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -517,7 +548,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "tag_count"
+            "count_tags"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -538,7 +569,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_601597de21f8480086867cf07a6ddf26",
+        "evidence_bus_id": "evidence_run_11d5c8ca217645b6add6c702fecbcd62",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -553,7 +584,7 @@
           "items": [
             {
               "items": [
-                "tag_count"
+                "count_tags"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -569,7 +600,7 @@
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "tag_count"
+            "count_tags"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -577,7 +608,7 @@
         "pass_results_count": 1,
         "passes_completed": {
           "items": [
-            "tag_count"
+            "count_tags"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -589,7 +620,7 @@
         },
         "passes_executed": {
           "items": [
-            "tag_count"
+            "count_tags"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -611,8 +642,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_601597de21f8480086867cf07a6ddf26",
-        "run_id": "run_601597de21f8480086867cf07a6ddf26",
+        "result_bundle_id": "bundle_run_11d5c8ca217645b6add6c702fecbcd62",
+        "run_id": "run_11d5c8ca217645b6add6c702fecbcd62",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -631,10 +662,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_601597de21f8480086867cf07a6ddf26:tag_count",
-              "pass_id": "tag_count",
+              "global_pass_id": "run_11d5c8ca217645b6add6c702fecbcd62:count_tags",
+              "pass_id": "count_tags",
               "plan_version": 1,
-              "run_id": "run_601597de21f8480086867cf07a6ddf26",
+              "run_id": "run_11d5c8ca217645b6add6c702fecbcd62",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -642,10 +673,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_601597de21f8480086867cf07a6ddf26:tag_count",
-              "pass_id": "tag_count",
+              "global_pass_id": "run_11d5c8ca217645b6add6c702fecbcd62:count_tags",
+              "pass_id": "count_tags",
               "plan_version": 1,
-              "run_id": "run_601597de21f8480086867cf07a6ddf26",
+              "run_id": "run_11d5c8ca217645b6add6c702fecbcd62",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -653,10 +684,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_601597de21f8480086867cf07a6ddf26:tag_count",
-              "pass_id": "tag_count",
+              "global_pass_id": "run_11d5c8ca217645b6add6c702fecbcd62:count_tags",
+              "pass_id": "count_tags",
               "plan_version": 1,
-              "run_id": "run_601597de21f8480086867cf07a6ddf26",
+              "run_id": "run_11d5c8ca217645b6add6c702fecbcd62",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -672,7 +703,7 @@
       },
       "stage": "llm-owned pass scheduling",
       "technique": "dependency-aware scheduling of LLM-declared evidence passes",
-      "timestamp": "2026-06-02T13:49:40.484075+00:00"
+      "timestamp": "2026-06-02T16:16:08.306172+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -681,7 +712,7 @@
       "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
       "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
       "input_summary": {
-        "pass_id": "tag_count"
+        "pass_id": "count_tags"
       },
       "output": {
         "errors": {
@@ -691,11 +722,11 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_601597de21f8480086867cf07a6ddf26"
+        "run_id": "run_11d5c8ca217645b6add6c702fecbcd62"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T13:49:40.484836+00:00"
+      "timestamp": "2026-06-02T16:16:08.307631+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_api_request_gate",
@@ -705,7 +736,7 @@
       "efficiency_role": "prevents invalid API calls without planning endpoints",
       "input_summary": {
         "method": "GET",
-        "pass_id": "tag_count",
+        "pass_id": "count_tags",
         "path": "https://experience.adobe.io/unifiedtags/tags"
       },
       "output": {
@@ -713,13 +744,13 @@
         "params": {
           "limit": 1
         },
-        "pass_id": "tag_count",
+        "pass_id": "count_tags",
         "passed": true,
         "path": "https://experience.adobe.io/unifiedtags/tags"
       },
       "stage": "llm api request gate",
       "technique": "safe GET request-shape/catalog gate for LLM-owned API pass",
-      "timestamp": "2026-06-02T13:49:40.486239+00:00"
+      "timestamp": "2026-06-02T16:16:08.310615+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -762,7 +793,7 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "tag_count"
+            "count_tags"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -783,7 +814,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_601597de21f8480086867cf07a6ddf26",
+        "evidence_bus_id": "evidence_run_11d5c8ca217645b6add6c702fecbcd62",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -801,7 +832,7 @@
           "items": [
             {
               "items": [
-                "tag_count"
+                "count_tags"
               ],
               "total_items": 1,
               "truncated_items": false
@@ -817,7 +848,7 @@
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "tag_count"
+            "count_tags"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -825,7 +856,7 @@
         "pass_results_count": 1,
         "passes_completed": {
           "items": [
-            "tag_count"
+            "count_tags"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -837,7 +868,7 @@
         },
         "passes_executed": {
           "items": [
-            "tag_count"
+            "count_tags"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -859,8 +890,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_601597de21f8480086867cf07a6ddf26",
-        "run_id": "run_601597de21f8480086867cf07a6ddf26",
+        "result_bundle_id": "bundle_run_11d5c8ca217645b6add6c702fecbcd62",
+        "run_id": "run_11d5c8ca217645b6add6c702fecbcd62",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -879,10 +910,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_601597de21f8480086867cf07a6ddf26:tag_count",
-              "pass_id": "tag_count",
+              "global_pass_id": "run_11d5c8ca217645b6add6c702fecbcd62:count_tags",
+              "pass_id": "count_tags",
               "plan_version": 1,
-              "run_id": "run_601597de21f8480086867cf07a6ddf26",
+              "run_id": "run_11d5c8ca217645b6add6c702fecbcd62",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -890,10 +921,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_601597de21f8480086867cf07a6ddf26:tag_count",
-              "pass_id": "tag_count",
+              "global_pass_id": "run_11d5c8ca217645b6add6c702fecbcd62:count_tags",
+              "pass_id": "count_tags",
               "plan_version": 1,
-              "run_id": "run_601597de21f8480086867cf07a6ddf26",
+              "run_id": "run_11d5c8ca217645b6add6c702fecbcd62",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -901,10 +932,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_601597de21f8480086867cf07a6ddf26:tag_count",
-              "pass_id": "tag_count",
+              "global_pass_id": "run_11d5c8ca217645b6add6c702fecbcd62:count_tags",
+              "pass_id": "count_tags",
               "plan_version": 1,
-              "run_id": "run_601597de21f8480086867cf07a6ddf26",
+              "run_id": "run_11d5c8ca217645b6add6c702fecbcd62",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -914,13 +945,13 @@
           "truncated_items": true
         },
         "stage_pipeline_used": true,
-        "truncated_fields": 2,
+        "truncated_fields": 5,
         "v2_execution_optimizer_used": true,
         "v2_pipeline_scheduler_used": true
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-02T13:49:40.487293+00:00"
+      "timestamp": "2026-06-02T16:16:08.312457+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -960,7 +991,7 @@
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-02T13:49:40.573392+00:00"
+      "timestamp": "2026-06-02T16:16:08.444641+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -983,7 +1014,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-02T13:49:40.573888+00:00"
+      "timestamp": "2026-06-02T16:16:08.445440+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -998,18 +1029,18 @@
         "evidence": {
           "pass_ids": {
             "items": [
-              "tag_count"
+              "count_tags"
             ],
             "total_items": 1,
             "truncated_items": false
           },
           "pass_result_count": 1,
-          "run_id": "run_601597de21f8480086867cf07a6ddf26"
+          "run_id": "run_11d5c8ca217645b6add6c702fecbcd62"
         }
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-02T13:49:40.574444+00:00"
+      "timestamp": "2026-06-02T16:16:08.446225+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -1027,14 +1058,14 @@
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "tag_count"
+              "pass_id": "count_tags"
             }
           ],
           "total_items": 1,
           "truncated_items": false
         },
         "pass_results_count": 1,
-        "run_id": "run_601597de21f8480086867cf07a6ddf26",
+        "run_id": "run_11d5c8ca217645b6add6c702fecbcd62",
         "runtime_passes": {
           "items": [
             {
@@ -1052,13 +1083,13 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_601597de21f8480086867cf07a6ddf26"
+                "run_id": "run_11d5c8ca217645b6add6c702fecbcd62"
               },
-              "global_pass_id": "run_601597de21f8480086867cf07a6ddf26:tag_count",
-              "pass_id": "tag_count",
+              "global_pass_id": "run_11d5c8ca217645b6add6c702fecbcd62:count_tags",
+              "pass_id": "count_tags",
               "path": "API",
               "plan_version": 1,
-              "run_id": "run_601597de21f8480086867cf07a6ddf26",
+              "run_id": "run_11d5c8ca217645b6add6c702fecbcd62",
               "status": "API_ERROR",
               "truncated_fields": 6
             }
@@ -1069,7 +1100,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-02T13:49:40.574965+00:00"
+      "timestamp": "2026-06-02T16:16:08.447352+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -1107,7 +1138,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-02T13:49:40.575513+00:00"
+      "timestamp": "2026-06-02T16:16:08.448353+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -1141,7 +1172,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-02T13:49:40.583490+00:00"
+      "timestamp": "2026-06-02T16:16:08.459678+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer_start",
@@ -1157,7 +1188,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "pre-call heartbeat before LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T13:49:40.583937+00:00"
+      "timestamp": "2026-06-02T16:16:08.460431+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -1196,7 +1227,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T13:49:44.091390+00:00"
+      "timestamp": "2026-06-02T16:16:12.833651+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -1213,7 +1244,7 @@
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-02T13:49:44.091899+00:00"
+      "timestamp": "2026-06-02T16:16:12.836102+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -1302,7 +1333,7 @@
       },
       "stage": "answer gate",
       "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-02T13:49:44.094993+00:00"
+      "timestamp": "2026-06-02T16:16:12.844136+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -1321,8 +1352,8 @@
         "deterministic_answer_template_used": false,
         "final_answer_repair_latency_sec": 0.0,
         "final_answer_supported_by_evidence": true,
-        "final_composer_latency_sec": 3.507,
-        "final_gate_latency_sec": 0.003,
+        "final_composer_latency_sec": 4.371,
+        "final_gate_latency_sec": 0.009,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 2,
@@ -1334,7 +1365,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-02T13:49:44.095529+00:00"
+      "timestamp": "2026-06-02T16:16:12.845022+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -1363,12 +1394,12 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-02T13:49:44.096175+00:00"
+      "timestamp": "2026-06-02T16:16:12.845693+00:00"
     }
   ],
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 1825,
+  "estimated_tokens": 1931,
   "execution_time": 0.0,
   "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
   "original_query": "How many tags exist in this sandbox?",
@@ -1376,17 +1407,17 @@
   "preprocessing_time": 0.0,
   "query_id": "example_015",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 3.6343700420111418,
+  "runtime": 4.571750292088836,
   "sql_call_count": 0,
   "steps": [
     {
-      "estimated_tokens": 1694,
+      "estimated_tokens": 1806,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_015/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 2393
+      "prompt_tokens": 2512
     },
     {
-      "aggregation_instruction": "Return the count of tags from the unified_tags API response.",
+      "aggregation_instruction": "Return the count from the unified_tags API task.",
       "api_request": {
         "method": "GET",
         "params": {
@@ -1396,6 +1427,11 @@
       },
       "backend_unavailable": false,
       "diagnostics": {
+        "api_card_detail_truncated": true,
+        "api_card_final_char_count": 5261,
+        "api_card_original_char_count": 6967,
+        "api_card_original_row_count": 20,
+        "api_card_row_count": 20,
         "api_request_gate_failures": 0,
         "atomic_protocol_fallback_used": false,
         "backend_formal_compilation_used": true,
@@ -1410,7 +1446,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 32257,
+        "planner_provider_latency_ms": 29861,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -1431,14 +1467,24 @@
         "raw_sql_fallback_success": false,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
+        "schema_card_columns_truncated": true,
+        "schema_card_final_char_count": 7826,
+        "schema_card_original_char_count": 10765,
+        "schema_card_original_row_count": 18,
+        "schema_card_row_count": 18,
         "sdk_toolcall_semantic_ir_used": true,
         "semantic_alias_count": 0,
         "semantic_alias_error_type": null,
         "semantic_alias_repair_attempted": false,
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
+        "semantic_ir_context_truncated": true,
+        "semantic_ir_context_truncated_sections": [
+          "schema_card",
+          "api_card"
+        ],
         "semantic_ir_plan_preview": {
-          "aggregation_instruction": "Return the count of tags from the unified_tags API response.",
+          "aggregation_instruction": "Return the count from the unified_tags API task.",
           "route": "EVIDENCE",
           "tasks": {
             "items": [
@@ -1450,13 +1496,13 @@
                     "limit": 1
                   }
                 },
-                "description": "Count the total number of tags in the sandbox by fetching the first page of tags and reading the total count from the API response.",
+                "description": "Count the number of tags in this sandbox using the unified_tags API.",
                 "kind": "LIVE_QUERY",
                 "operation": "COUNT",
                 "reuse_result_from": null,
                 "semantic_cache_key": null,
                 "source": "LIVE_API",
-                "task_id": "tag_count",
+                "task_id": "count_tags",
                 "truncated_fields": 7
               }
             ],
@@ -1464,9 +1510,13 @@
             "truncated_items": false
           }
         },
-        "semantic_ir_provider_latency_ms": 32255,
+        "semantic_ir_planner_char_budget": 24000,
+        "semantic_ir_prompt_system_chars": 907,
+        "semantic_ir_prompt_total_chars": 23405,
+        "semantic_ir_prompt_user_chars": 19170,
+        "semantic_ir_provider_latency_ms": 29859,
         "semantic_ir_repair_attempted": true,
-        "semantic_ir_repair_latency_ms": 14857,
+        "semantic_ir_repair_latency_ms": 13371,
         "semantic_ir_repair_success": true,
         "semantic_ir_support_check_latency_ms": 0,
         "semantic_ir_support_checked": true,
@@ -1478,13 +1528,14 @@
         "semantic_ir_support_repair_success": false,
         "semantic_ir_supported": true,
         "semantic_ir_task_count": 1,
+        "semantic_ir_tool_schema_chars": 3328,
         "semantic_ir_toolcall_supported": true,
         "semantic_ir_unsupported_features": [],
         "semantic_ir_unsupported_operation": null,
         "semantic_ir_unsupported_reason": null,
         "semantic_ir_unsupported_task_id": null,
-        "semantic_ir_validation_error_message": null,
-        "semantic_ir_validation_error_type": null,
+        "semantic_ir_validation_error_message": "COUNT tasks over LIVE_API must include an api_query.",
+        "semantic_ir_validation_error_type": "live_count_requires_api_query",
         "semantic_ir_validation_latency_ms": 0,
         "semantic_ir_validation_passed": true,
         "sql_compile_gate_failures": 0,
@@ -1507,30 +1558,19 @@
           "can_run_parallel": true,
           "depends_on": [],
           "evidence_order": "API_FIRST",
-          "expected_result": "Count the total number of tags in the sandbox by fetching the first page of tags and reading the total count from the API response.",
+          "expected_result": "Count the number of tags in this sandbox using the unified_tags API.",
           "fallback": false,
           "optional": false,
-          "pass_id": "tag_count",
+          "pass_id": "count_tags",
           "path": "API",
           "raw_sql_fallback_reason": null,
           "raw_sql_fallback_task_id": null,
           "raw_sql_fallback_used": false,
-          "result_contract": {
-            "entity": "tag",
-            "fields": [
-              "count"
-            ],
-            "filters": [],
-            "freshness": "same_run",
-            "object": null,
-            "operation": "COUNT",
-            "scope": "live",
-            "source": "LIVE_API"
-          },
+          "result_contract": null,
           "reuse_result_from": null,
           "semantic_cache_key": null,
           "sql": null,
-          "subtask": "Count the total number of tags in the sandbox by fetching the first page of tags and reading the total count from the API response."
+          "subtask": "Count the number of tags in this sandbox using the unified_tags API."
         }
       ],
       "provider": "openai",
@@ -1546,7 +1586,7 @@
           "transport": "openai_sdk",
           "truncated_fields": 11
         },
-        "semantic_ir_missing_toolcall_retry": {
+        "semantic_ir_repair": {
           "base_url": "[REDACTED]",
           "error": null,
           "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
@@ -1624,8 +1664,8 @@
       "deterministic_answer_template_used": false,
       "final_answer_repair_latency_sec": 0.0,
       "final_answer_supported_by_evidence": true,
-      "final_composer_latency_sec": 3.507,
-      "final_gate_latency_sec": 0.003,
+      "final_composer_latency_sec": 4.371,
+      "final_gate_latency_sec": 0.009,
       "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
       "llm_owned_final_answer": true,
@@ -1712,7 +1752,7 @@
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 3.522229625377804
+    "answer_time": 4.400185124948621
   },
   "tool_call_count": 1
 }

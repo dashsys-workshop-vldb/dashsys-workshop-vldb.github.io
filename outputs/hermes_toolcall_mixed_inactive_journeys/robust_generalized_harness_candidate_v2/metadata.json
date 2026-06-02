@@ -2,10 +2,15 @@
   "backend_semantic_planning_used": false,
   "llm_owned_generation": true,
   "llm_unified_plan": {
-    "aggregation_instruction": "Combine the concept explanation with the list of inactive journeys to provide a complete answer.",
+    "aggregation_instruction": "Present the concept explanation first, then provide the list of inactive journeys with their names, status, state, and last update time.",
     "api_request": null,
     "backend_unavailable": false,
     "diagnostics": {
+      "api_card_detail_truncated": true,
+      "api_card_final_char_count": 5261,
+      "api_card_original_char_count": 6967,
+      "api_card_original_row_count": 20,
+      "api_card_row_count": 20,
       "api_request_gate_failures": 0,
       "atomic_protocol_fallback_used": false,
       "backend_formal_compilation_used": true,
@@ -20,7 +25,7 @@
       "planner_json_fallback_used": false,
       "planner_json_parse_error": null,
       "planner_parse_source": "sdk_toolcall_semantic_ir",
-      "planner_provider_latency_ms": 70643,
+      "planner_provider_latency_ms": 12499,
       "planner_repair_attempted": false,
       "planner_success": true,
       "planner_timeout": false,
@@ -41,20 +46,34 @@
       "raw_sql_fallback_success": false,
       "raw_sql_fallback_task_id": null,
       "raw_sql_fallback_used": false,
+      "schema_card_columns_truncated": true,
+      "schema_card_final_char_count": 7826,
+      "schema_card_original_char_count": 10765,
+      "schema_card_original_row_count": 18,
+      "schema_card_row_count": 18,
       "sdk_toolcall_semantic_ir_used": true,
       "semantic_alias_count": 0,
       "semantic_alias_error_type": null,
       "semantic_alias_repair_attempted": false,
       "semantic_alias_validation_passed": true,
       "semantic_alias_validation_used": true,
+      "semantic_ir_context_truncated": true,
+      "semantic_ir_context_truncated_sections": [
+        "schema_card",
+        "api_card"
+      ],
       "semantic_ir_plan_preview": {
-        "preview": "{\"route\": \"EVIDENCE\", \"direct_answer\": \"An inactive journey refers to a Journey Optimizer campaign that is not currently active, running, or deployed. This typically includes journeys that are in draft state, stopped, paused, or otherwise not delivering messages to customers. Inactive journeys are often those that have been created but not yet published, or those that have been manually stopped or have completed their execution.\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"concept_inactive_journey\", \"kind\": \"CONCEPT\", \"operation\": \"EXPLAIN\", \"source\": \"NONE\", \"description\": \"Explain the concept of an inactive journey in Adobe Experience Platform Journey Optimizer.\", \"required\": true, \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"list_inactive_journeys\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LIST\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"CAMPAIGNID\", \"NAME\", \"LABELSCAMPAIGN\"], \"total_items\": 5, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"STATUS\", \"op\": \"!=\", \"value\": \"ACTIVE\"}, {\"field\": \"STATE\", \"op\": \"!=\", \"valu...",
+        "preview": "{\"route\": \"EVIDENCE\", \"direct_answer\": \"An inactive journey (or campaign) is a journey/campaign that is not currently active or running. In the system, this is typically indicated by a status or state field that signifies the journey is stopped, paused, or finished, rather than being in an active or deployed state.\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"concept_inactive_journey\", \"kind\": \"CONCEPT\", \"operation\": \"EXPLAIN\", \"source\": \"NONE\", \"description\": \"Explain the concept of an inactive journey.\", \"required\": true, \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"list_inactive_journeys\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LIST\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"NAME\", \"STATUS\", \"STATE\"], \"total_items\": 4, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"STATE\", \"op\": \"!=\", \"value\": \"ACTIVE\"}, {\"field\": \"STATUS\", \"op\": \"!=\", \"value\": \"ACTIVE\"}], \"total_items\": 2, \"truncated_items\": false}, \"limit\": 50}, \"depends_on\": {\"items\": [\"concept_inactive_journey\"], \"total_items\": 1, \"truncated_items\": false}, \"t...",
         "truncated": true
       },
-      "semantic_ir_provider_latency_ms": 70642,
-      "semantic_ir_repair_attempted": true,
-      "semantic_ir_repair_latency_ms": 27189,
-      "semantic_ir_repair_success": true,
+      "semantic_ir_planner_char_budget": 24000,
+      "semantic_ir_prompt_system_chars": 907,
+      "semantic_ir_prompt_total_chars": 23432,
+      "semantic_ir_prompt_user_chars": 19197,
+      "semantic_ir_provider_latency_ms": 12496,
+      "semantic_ir_repair_attempted": false,
+      "semantic_ir_repair_latency_ms": 0,
+      "semantic_ir_repair_success": false,
       "semantic_ir_support_check_latency_ms": 0,
       "semantic_ir_support_checked": true,
       "semantic_ir_support_recommended_action": "COMPILE",
@@ -65,6 +84,7 @@
       "semantic_ir_support_repair_success": false,
       "semantic_ir_supported": true,
       "semantic_ir_task_count": 2,
+      "semantic_ir_tool_schema_chars": 3328,
       "semantic_ir_toolcall_supported": true,
       "semantic_ir_unsupported_features": [],
       "semantic_ir_unsupported_operation": null,
@@ -87,7 +107,7 @@
         "can_run_parallel": true,
         "depends_on": [],
         "evidence_order": "NO_EVIDENCE",
-        "expected_result": "Explain the concept of an inactive journey in Adobe Experience Platform Journey Optimizer.",
+        "expected_result": "Explain the concept of an inactive journey.",
         "fallback": false,
         "optional": false,
         "pass_id": "concept_inactive_journey",
@@ -99,7 +119,7 @@
         "reuse_result_from": null,
         "semantic_cache_key": null,
         "sql": null,
-        "subtask": "Explain the concept of an inactive journey in Adobe Experience Platform Journey Optimizer."
+        "subtask": "Explain the concept of an inactive journey."
       },
       {
         "api_request": null,
@@ -108,7 +128,7 @@
           "concept_inactive_journey"
         ],
         "evidence_order": "SQL_FIRST",
-        "expected_result": "List inactive journeys from the local snapshot by filtering for campaigns that are not in an active status or state.",
+        "expected_result": "List inactive journeys/campaigns from the local snapshot.",
         "fallback": false,
         "optional": false,
         "pass_id": "list_inactive_journeys",
@@ -124,25 +144,14 @@
             "ACTIVE",
             "ACTIVE"
           ],
-          "query": "SELECT \"CAMPAIGNID\", \"NAME\", \"LABELSCAMPAIGN\", \"STATUS\", \"STATE\" FROM \"dim_campaign\" WHERE \"STATUS\" != ? AND \"STATE\" != ? LIMIT 50"
+          "query": "SELECT \"NAME\", \"STATUS\", \"STATE\", \"UPDATEDTIME\" FROM \"dim_campaign\" WHERE \"STATE\" != ? AND \"STATUS\" != ? LIMIT 50"
         },
-        "subtask": "List inactive journeys from the local snapshot by filtering for campaigns that are not in an active status or state."
+        "subtask": "List inactive journeys/campaigns from the local snapshot."
       }
     ],
     "provider": "openai",
     "raw_preview": {
       "semantic_ir_initial": {
-        "base_url": "[REDACTED]",
-        "error": null,
-        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-        "ok": true,
-        "provider": "openai",
-        "sdk_path_used": true,
-        "skipped": false,
-        "transport": "openai_sdk",
-        "truncated_fields": 11
-      },
-      "semantic_ir_missing_toolcall_retry": {
         "base_url": "[REDACTED]",
         "error": null,
         "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
@@ -171,14 +180,14 @@
       "max_sql_workers": 2,
       "run_timeout_ms": 30000
     },
-    "created_at": "2026-06-02T14:43:28.791691+00:00",
-    "deadline_at": "2026-06-02T14:43:58.791691+00:00",
-    "evidence_bus_id": "evidence_run_60d894be6eb24bcfa37d20687107924e",
+    "created_at": "2026-06-02T16:03:43.901819+00:00",
+    "deadline_at": "2026-06-02T16:04:13.901819+00:00",
+    "evidence_bus_id": "evidence_run_6c1e901cd28f4abbb413bab3657b645f",
     "original_prompt": "Explain what inactive journey means and show inactive journeys.",
     "plan_version": 1,
     "prompt_id": "hermes_toolcall_mixed_inactive_journeys",
-    "result_bundle_id": "bundle_run_60d894be6eb24bcfa37d20687107924e",
-    "run_id": "run_60d894be6eb24bcfa37d20687107924e",
+    "result_bundle_id": "bundle_run_6c1e901cd28f4abbb413bab3657b645f",
+    "run_id": "run_6c1e901cd28f4abbb413bab3657b645f",
     "status": "RUNNING"
   },
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"

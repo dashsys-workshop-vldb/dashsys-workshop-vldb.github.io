@@ -2,10 +2,15 @@
   "backend_semantic_planning_used": false,
   "llm_owned_generation": true,
   "llm_unified_plan": {
-    "aggregation_instruction": "Return the details from the local blueprint lookup (t1). If t2 (live API) succeeds, append or merge the live schema registry details to provide a complete picture. If t1 fails to find the schema by name, report that the schema was not found in the local snapshot.",
+    "aggregation_instruction": "Use the result from task_2 to populate the direct_answer fields.",
     "api_request": null,
     "backend_unavailable": false,
     "diagnostics": {
+      "api_card_detail_truncated": true,
+      "api_card_final_char_count": 5261,
+      "api_card_original_char_count": 6967,
+      "api_card_original_row_count": 20,
+      "api_card_row_count": 20,
       "api_request_gate_failures": 0,
       "atomic_protocol_fallback_used": false,
       "backend_formal_compilation_used": true,
@@ -14,13 +19,13 @@
       "backend_semantic_planning_used": false,
       "backend_sql_api_generation_used": false,
       "compiled_alias_count": 0,
-      "compiled_api_count": 1,
+      "compiled_api_count": 0,
       "compiled_sql_count": 1,
       "compiler_latency_ms": 0,
       "planner_json_fallback_used": false,
       "planner_json_parse_error": null,
       "planner_parse_source": "sdk_toolcall_semantic_ir",
-      "planner_provider_latency_ms": 23814,
+      "planner_provider_latency_ms": 43743,
       "planner_repair_attempted": false,
       "planner_success": true,
       "planner_timeout": false,
@@ -41,20 +46,34 @@
       "raw_sql_fallback_success": false,
       "raw_sql_fallback_task_id": null,
       "raw_sql_fallback_used": false,
+      "schema_card_columns_truncated": true,
+      "schema_card_final_char_count": 7826,
+      "schema_card_original_char_count": 10765,
+      "schema_card_original_row_count": 18,
+      "schema_card_row_count": 18,
       "sdk_toolcall_semantic_ir_used": true,
       "semantic_alias_count": 0,
       "semantic_alias_error_type": null,
       "semantic_alias_repair_attempted": false,
       "semantic_alias_validation_passed": true,
       "semantic_alias_validation_used": true,
+      "semantic_ir_context_truncated": true,
+      "semantic_ir_context_truncated_sections": [
+        "schema_card",
+        "api_card"
+      ],
       "semantic_ir_plan_preview": {
-        "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_lookup_schema_local\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LOOKUP\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_blueprint\", \"fields\": {\"items\": [\"BLUEPRINTID\", \"NAME\", \"DESCRIPTION\"], \"total_items\": 10, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"weRetail: Customer Actions\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 1}, \"description\": \"Look up the local snapshot record for the schema/blueprint named 'weRetail: Customer Actions' to provide details.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_lookup_schema_live\", \"kind\": \"LIVE_QUERY\", \"operation\": \"LOOKUP\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"schema_registry_schema\", \"method\": \"GET\", \"path_params\": {\"schema_id\": \"REUSE_FROM_t1_lookup_schema_local_BLUEPRINTID\"}}, \"depends_on\": {\"items\": [\"t1_lookup_schema_local\"], \"total_items\": 1, \"truncated_items\": false}, \"truncated_fields\": 7}], \"total_items\": 2, \"truncated_items\": false}, \"aggregation_instruction\": \"Return the detai...",
+        "preview": "{\"route\": \"EVIDENCE\", \"direct_answer\": \"The schema 'weRetail: Customer Actions' is a blueprint in Adobe Experience Platform. Its ID is {BLUEPRINTID}, it was created on {CREATEDTIME} by {CREATEDBY}, and last updated on {UPDATEDTIME} by {UPDATEDBY}. It is of type {BLUEPRINTTYPE} and its labels are {LABELSBLUEPRINT}.\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"task_1\", \"kind\": \"CONCEPT\", \"operation\": \"EXPLAIN\", \"source\": \"NONE\", \"description\": \"Explain the concept of a schema (blueprint) in Adobe Experience Platform, including its role in defining data structures (XDM schemas) and how it relates to collections (datasets).\", \"required\": true, \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"task_2\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LOOKUP\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_blueprint\", \"fields\": {\"items\": [\"BLUEPRINTID\", \"NAME\", \"LABELSBLUEPRINT\"], \"total_items\": 8, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"weRetail: Customer Actions\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 1}, \"description\": \"...",
         "truncated": true
       },
-      "semantic_ir_provider_latency_ms": 23812,
-      "semantic_ir_repair_attempted": false,
-      "semantic_ir_repair_latency_ms": 0,
-      "semantic_ir_repair_success": false,
+      "semantic_ir_planner_char_budget": 24000,
+      "semantic_ir_prompt_system_chars": 907,
+      "semantic_ir_prompt_total_chars": 23433,
+      "semantic_ir_prompt_user_chars": 19198,
+      "semantic_ir_provider_latency_ms": 43741,
+      "semantic_ir_repair_attempted": true,
+      "semantic_ir_repair_latency_ms": 15960,
+      "semantic_ir_repair_success": true,
       "semantic_ir_support_check_latency_ms": 0,
       "semantic_ir_support_checked": true,
       "semantic_ir_support_recommended_action": "COMPILE",
@@ -65,13 +84,14 @@
       "semantic_ir_support_repair_success": false,
       "semantic_ir_supported": true,
       "semantic_ir_task_count": 2,
+      "semantic_ir_tool_schema_chars": 3328,
       "semantic_ir_toolcall_supported": true,
       "semantic_ir_unsupported_features": [],
       "semantic_ir_unsupported_operation": null,
       "semantic_ir_unsupported_reason": null,
       "semantic_ir_unsupported_task_id": null,
-      "semantic_ir_validation_error_message": null,
-      "semantic_ir_validation_error_type": null,
+      "semantic_ir_validation_error_message": "Unknown field DESCRIPTION for table dim_blueprint.",
+      "semantic_ir_validation_error_type": "unknown_field",
       "semantic_ir_validation_latency_ms": 0,
       "semantic_ir_validation_passed": true,
       "sql_compile_gate_failures": 0,
@@ -86,85 +106,44 @@
         "api_request": null,
         "can_run_parallel": true,
         "depends_on": [],
-        "evidence_order": "SQL_FIRST",
-        "expected_result": "Look up the local snapshot record for the schema/blueprint named 'weRetail: Customer Actions' to provide details.",
+        "evidence_order": "NO_EVIDENCE",
+        "expected_result": "Explain the concept of a schema (blueprint) in Adobe Experience Platform, including its role in defining data structures (XDM schemas) and how it relates to collections (datasets).",
         "fallback": false,
         "optional": false,
-        "pass_id": "t1_lookup_schema_local",
+        "pass_id": "task_1",
+        "path": "DIRECT",
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "result_contract": null,
+        "reuse_result_from": null,
+        "semantic_cache_key": null,
+        "sql": null,
+        "subtask": "Explain the concept of a schema (blueprint) in Adobe Experience Platform, including its role in defining data structures (XDM schemas) and how it relates to collections (datasets)."
+      },
+      {
+        "api_request": null,
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "SQL_FIRST",
+        "expected_result": "Look up the local snapshot record for the schema/blueprint named 'weRetail: Customer Actions' to provide details like ID, type, creation info, and labels.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "task_2",
         "path": "SQL",
         "raw_sql_fallback_reason": null,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
-        "result_contract": {
-          "entity": "blueprint",
-          "fields": [
-            "BLUEPRINTID",
-            "NAME",
-            "DESCRIPTION",
-            "LABELSBLUEPRINT",
-            "CLASS",
-            "ISPROFILEENABLED",
-            "CREATEDTIME",
-            "UPDATEDTIME",
-            "CREATEDBY",
-            "UPDATEDBY"
-          ],
-          "filters": [
-            {
-              "field": "NAME",
-              "op": "=",
-              "value": "weRetail: Customer Actions"
-            }
-          ],
-          "freshness": "same_run",
-          "object": "blueprint",
-          "operation": "LOOKUP",
-          "scope": "local",
-          "source": "LOCAL_SNAPSHOT"
-        },
+        "result_contract": null,
         "reuse_result_from": null,
         "semantic_cache_key": null,
         "sql": {
           "params": [
             "weRetail: Customer Actions"
           ],
-          "query": "SELECT \"BLUEPRINTID\", \"NAME\", \"DESCRIPTION\", \"LABELSBLUEPRINT\", \"CLASS\", \"ISPROFILEENABLED\", \"CREATEDTIME\", \"UPDATEDTIME\", \"CREATEDBY\", \"UPDATEDBY\" FROM \"dim_blueprint\" WHERE \"NAME\" = ? LIMIT 1"
+          "query": "SELECT \"BLUEPRINTID\", \"NAME\", \"LABELSBLUEPRINT\", \"BLUEPRINTTYPE\", \"CREATEDTIME\", \"CREATEDBY\", \"UPDATEDTIME\", \"UPDATEDBY\" FROM \"dim_blueprint\" WHERE \"NAME\" = ? LIMIT 1"
         },
-        "subtask": "Look up the local snapshot record for the schema/blueprint named 'weRetail: Customer Actions' to provide details."
-      },
-      {
-        "api_request": {
-          "method": "GET",
-          "params": {},
-          "path": "/data/foundation/schemaregistry/tenant/schemas/REUSE_FROM_t1_lookup_schema_local_BLUEPRINTID"
-        },
-        "can_run_parallel": false,
-        "depends_on": [
-          "t1_lookup_schema_local"
-        ],
-        "evidence_order": "API_FIRST",
-        "expected_result": "Fetch live schema registry details for the schema ID found in the local lookup to provide comprehensive details.",
-        "fallback": false,
-        "optional": true,
-        "pass_id": "t2_lookup_schema_live",
-        "path": "API",
-        "raw_sql_fallback_reason": null,
-        "raw_sql_fallback_task_id": null,
-        "raw_sql_fallback_used": false,
-        "result_contract": {
-          "entity": "schema",
-          "fields": [],
-          "filters": [],
-          "freshness": "same_run",
-          "object": "schema",
-          "operation": "LOOKUP",
-          "scope": "live",
-          "source": "LIVE_API"
-        },
-        "reuse_result_from": null,
-        "semantic_cache_key": null,
-        "sql": null,
-        "subtask": "Fetch live schema registry details for the schema ID found in the local lookup to provide comprehensive details."
+        "subtask": "Look up the local snapshot record for the schema/blueprint named 'weRetail: Customer Actions' to provide details like ID, type, creation info, and labels."
       }
     ],
     "provider": "openai",
@@ -179,16 +158,22 @@
         "skipped": false,
         "transport": "openai_sdk",
         "truncated_fields": 11
+      },
+      "semantic_ir_repair": {
+        "base_url": "[REDACTED]",
+        "error": null,
+        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+        "ok": true,
+        "provider": "openai",
+        "sdk_path_used": true,
+        "skipped": false,
+        "transport": "openai_sdk",
+        "truncated_fields": 11
       }
     },
     "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
     "route": "EVIDENCE_PIPELINE",
-    "sql": {
-      "params": [
-        "weRetail: Customer Actions"
-      ],
-      "query": "SELECT \"BLUEPRINTID\", \"NAME\", \"DESCRIPTION\", \"LABELSBLUEPRINT\", \"CLASS\", \"ISPROFILEENABLED\", \"CREATEDTIME\", \"UPDATEDTIME\", \"CREATEDBY\", \"UPDATEDBY\" FROM \"dim_blueprint\" WHERE \"NAME\" = ? LIMIT 1"
-    }
+    "sql": null
   },
   "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
   "query": "Provide more details for the schema 'weRetail: Customer Actions'",
@@ -203,14 +188,14 @@
       "max_sql_workers": 2,
       "run_timeout_ms": 30000
     },
-    "created_at": "2026-06-02T13:45:21.457460+00:00",
-    "deadline_at": "2026-06-02T13:45:51.457460+00:00",
-    "evidence_bus_id": "evidence_run_2e0d71d9199a465481e477971194840a",
+    "created_at": "2026-06-02T16:12:18.292734+00:00",
+    "deadline_at": "2026-06-02T16:12:48.292734+00:00",
+    "evidence_bus_id": "evidence_run_fd1e921a053441b6b47ab9603d5dd93b",
     "original_prompt": "Provide more details for the schema 'weRetail: Customer Actions'",
     "plan_version": 1,
     "prompt_id": "example_009",
-    "result_bundle_id": "bundle_run_2e0d71d9199a465481e477971194840a",
-    "run_id": "run_2e0d71d9199a465481e477971194840a",
+    "result_bundle_id": "bundle_run_fd1e921a053441b6b47ab9603d5dd93b",
+    "run_id": "run_fd1e921a053441b6b47ab9603d5dd93b",
     "status": "RUNNING"
   },
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
