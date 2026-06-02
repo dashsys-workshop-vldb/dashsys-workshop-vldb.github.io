@@ -284,12 +284,12 @@ def test_per_model_report_includes_model_usage_counts(tmp_path, monkeypatch) -> 
 
 
 def test_full_benchmark_redacts_api_key_from_logs(tmp_path, monkeypatch) -> None:
-    monkeypatch.setenv("PIONEER_API_KEY", "sk-test-secret-value-123456")
+    monkeypatch.setenv("PIONEER_API_KEY", "unit-pioneer-key")
     monkeypatch.setenv("PIONEER_MODEL_ID_MAP_JSON", '{"ModelA":"id-a"}')
 
     def leaking_runner(command, env, cwd, timeout_sec):
         _write_fake_artifacts(Path(env["DASHAGENT_OUTPUTS_DIR"]), tmp_path / "reports", command["name"])
-        return {"returncode": 0, "stdout": "using sk-test-secret-value-123456", "stderr": "", "duration_sec": 0.01}
+        return {"returncode": 0, "stdout": "using unit-pioneer-key", "stderr": "", "duration_sec": 0.01}
 
     fullbench.run_pioneer_model_full_benchmark(
         SimpleNamespace(outputs_dir=tmp_path),
@@ -302,7 +302,7 @@ def test_full_benchmark_redacts_api_key_from_logs(tmp_path, monkeypatch) -> None
     )
 
     text = (tmp_path / "per_model_modela_benchmark.log").read_text(encoding="utf-8")
-    assert "sk-test-secret-value-123456" not in text
+    assert "unit-pioneer-key" not in text
     assert "[REDACTED]" in text
 
 

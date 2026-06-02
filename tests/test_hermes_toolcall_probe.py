@@ -31,7 +31,7 @@ def test_hermes_toolcall_probe_accepts_native_tool_call(monkeypatch, tmp_path):
     monkeypatch.delenv("DASHAGENT_LLM_PROVIDER", raising=False)
     monkeypatch.delenv("LLM_PROVIDER", raising=False)
     monkeypatch.setattr("scripts.probe_hermes_sdk_toolcall.load_local_env", lambda *args, **kwargs: {"keys_loaded": []})
-    monkeypatch.setenv("OPENAI_API_KEY", "sk-test-secret-value-123456")
+    monkeypatch.setenv("OPENAI_API_KEY", "unit-pioneer-key")
     monkeypatch.setenv("OPENAI_MODEL", "hermes-qianwan")
     monkeypatch.setenv("OPENAI_BASE_URL", "https://senior.example/v1")
     client = FakeProbeClient(
@@ -60,7 +60,7 @@ def test_hermes_toolcall_probe_uses_minimal_gemini_openai_schema(monkeypatch, tm
     monkeypatch.delenv("DASHAGENT_LLM_PROVIDER", raising=False)
     monkeypatch.delenv("LLM_PROVIDER", raising=False)
     monkeypatch.setattr("scripts.probe_hermes_sdk_toolcall.load_local_env", lambda *args, **kwargs: {"keys_loaded": []})
-    monkeypatch.setenv("OPENAI_API_KEY", "AIzaUnitTestGeminiSecretValue123456")
+    monkeypatch.setenv("OPENAI_API_KEY", "unit-gemini-key")
     monkeypatch.setenv("OPENAI_MODEL", "gemini-3.5-flash")
     monkeypatch.setenv("OPENAI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
     client = FakeProbeClient(
@@ -99,7 +99,7 @@ def test_hermes_toolcall_probe_rejects_content_only_response(monkeypatch, tmp_pa
     monkeypatch.delenv("DASHAGENT_LLM_PROVIDER", raising=False)
     monkeypatch.delenv("LLM_PROVIDER", raising=False)
     monkeypatch.setattr("scripts.probe_hermes_sdk_toolcall.load_local_env", lambda *args, **kwargs: {"keys_loaded": []})
-    monkeypatch.setenv("OPENAI_API_KEY", "sk-test-secret-value-123456")
+    monkeypatch.setenv("OPENAI_API_KEY", "unit-pioneer-key")
     client = FakeProbeClient(
         {
             "ok": True,
@@ -123,7 +123,7 @@ def test_hermes_toolcall_probe_redacts_key_and_does_not_use_pioneer(monkeypatch,
     monkeypatch.delenv("DASHAGENT_LLM_PROVIDER", raising=False)
     monkeypatch.delenv("LLM_PROVIDER", raising=False)
     monkeypatch.setattr("scripts.probe_hermes_sdk_toolcall.load_local_env", lambda *args, **kwargs: {"keys_loaded": []})
-    monkeypatch.setenv("OPENAI_API_KEY", "sk-test-secret-value-123456")
+    monkeypatch.setenv("OPENAI_API_KEY", "unit-pioneer-key")
     monkeypatch.setenv("OPENAI_BASE_URL", "https://user:secret@senior.example/v1")
     report = run_hermes_toolcall_probe(client=FakePioneerClient({"ok": True}), report_dir=tmp_path)
 
@@ -139,7 +139,7 @@ def test_hermes_toolcall_probe_report_files_are_json_and_md(monkeypatch, tmp_pat
     monkeypatch.delenv("DASHAGENT_LLM_PROVIDER", raising=False)
     monkeypatch.delenv("LLM_PROVIDER", raising=False)
     monkeypatch.setattr("scripts.probe_hermes_sdk_toolcall.load_local_env", lambda *args, **kwargs: {"keys_loaded": []})
-    monkeypatch.setenv("OPENAI_API_KEY", "sk-test-secret-value-123456")
+    monkeypatch.setenv("OPENAI_API_KEY", "unit-pioneer-key")
     client = FakeProbeClient(
         {
             "ok": True,

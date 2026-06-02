@@ -460,7 +460,7 @@ def test_prompt_worker_waits_for_queue_payload_after_process_exit(monkeypatch, t
 def test_smoke_uses_gemini_openai_compat_probe_and_report_name(monkeypatch, tiny_project, tmp_path):
     monkeypatch.setenv("DASHAGENT_LLM_PROVIDER", "openai")
     monkeypatch.setenv("OPENAI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
-    monkeypatch.setenv("OPENAI_API_KEY", "AIzaUnitTestGeminiSecretValue123456")
+    monkeypatch.setenv("OPENAI_API_KEY", "unit-gemini-key")
     monkeypatch.setenv("OPENAI_MODEL", "gemini-3.5-flash")
     monkeypatch.setattr(smoke, "load_local_env", lambda *args, **kwargs: {"keys_loaded": []})
 

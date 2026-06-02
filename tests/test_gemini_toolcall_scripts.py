@@ -68,7 +68,7 @@ def test_gemini_smoke_sets_provider_and_uses_gemini_report_dir(monkeypatch, tmp_
         }
 
     monkeypatch.setenv("GEMINI_MODEL", "gemini-2.5-flash")
-    monkeypatch.setenv("GEMINI_API_KEY", "AIzaUnitTestGeminiSecretValue123456")
+    monkeypatch.setenv("GEMINI_API_KEY", "unit-gemini-key")
     monkeypatch.delenv("DASHAGENT_LLM_PROVIDER", raising=False)
     monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
@@ -110,7 +110,7 @@ def test_gemini_openai_probe_sets_openai_compat_env(monkeypatch, tmp_path):
             "error": "",
         }
 
-    monkeypatch.setenv("GEMINI_API_KEY", "AIzaUnitTestGeminiSecretValue123456")
+    monkeypatch.setenv("GEMINI_API_KEY", "unit-gemini-key")
     monkeypatch.delenv("DASHAGENT_LLM_PROVIDER", raising=False)
     monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
@@ -125,20 +125,20 @@ def test_gemini_openai_probe_sets_openai_compat_env(monkeypatch, tmp_path):
     assert report["tool_calls_count"] == 1
     assert captured["provider"] == "openai"
     assert captured["base_url"] == "https://generativelanguage.googleapis.com/v1beta/openai/"
-    assert captured["api_key"] == "AIzaUnitTestGeminiSecretValue123456"
+    assert captured["api_key"] == "unit-gemini-key"
     assert captured["model"] == "gemini-3.5-flash"
     assert (tmp_path / "gemini_openai_toolcall_probe.json").exists()
-    assert "AIzaUnitTestGeminiSecretValue123456" not in (tmp_path / "gemini_openai_toolcall_probe.json").read_text()
+    assert "unit-gemini-key" not in (tmp_path / "gemini_openai_toolcall_probe.json").read_text()
 
 
 def test_gemini_openai_sdk_payload_debug_reports_payload_key_diff(monkeypatch, tmp_path):
     import scripts.debug_gemini_openai_sdk_payload as debug
 
-    monkeypatch.setenv("GEMINI_API_KEY", "AIzaUnitTestGeminiSecretValue123456")
+    monkeypatch.setenv("GEMINI_API_KEY", "unit-gemini-key")
     monkeypatch.setattr(debug, "load_local_env", lambda *args, **kwargs: {"keys_loaded": ["GEMINI_API_KEY"]})
 
     def fake_raw_sender(api_key, payload):
-        assert api_key == "AIzaUnitTestGeminiSecretValue123456"
+        assert api_key == "unit-gemini-key"
         return {
             "choices": [
                 {
@@ -155,7 +155,7 @@ def test_gemini_openai_sdk_payload_debug_reports_payload_key_diff(monkeypatch, t
     def fake_sdk_sender(api_key, base_url, model, messages, tools):
         return {
             "ok": False,
-            "error": "400 Bad Request Authorization: Bearer AIzaUnitTestGeminiSecretValue123456",
+            "error": "400 Bad Request Authorization: Bearer test-token",
             "tool_calls": [],
             "finish_reason": None,
             "payload_keys": ["model", "messages", "tools", "tool_choice", "temperature"],
@@ -174,7 +174,7 @@ def test_gemini_openai_sdk_payload_debug_reports_payload_key_diff(monkeypatch, t
     assert report["raw_rest_payload_keys"] == ["model", "messages", "tools", "tool_choice"]
     assert report["sdk_payload_keys"] == ["model", "messages", "tools", "tool_choice", "temperature"]
     assert report["payload_key_difference"]["sdk_extra_keys"] == ["temperature"]
-    assert "AIzaUnitTestGeminiSecretValue123456" not in (tmp_path / "gemini_openai_sdk_payload_debug.json").read_text()
+    assert "unit-gemini-key" not in (tmp_path / "gemini_openai_sdk_payload_debug.json").read_text()
 
 
 def test_gemini_vs_qwen_comparison_uses_objective_metrics(tmp_path):
@@ -219,13 +219,13 @@ class FakeHTTPError(Exception):
 def test_gemini_openai_compat_debug_forced_tool_choice_not_supported(monkeypatch, tmp_path):
     import scripts.debug_gemini_openai_compat as debug
 
-    monkeypatch.setenv("GEMINI_API_KEY", "AIzaUnitTestGeminiSecretValue123456")
+    monkeypatch.setenv("GEMINI_API_KEY", "unit-gemini-key")
     monkeypatch.setattr(debug, "load_local_env", lambda *args, **kwargs: {"keys_loaded": ["GEMINI_API_KEY"]})
 
     def fake_runner(api_key, base_url, case, model):
-        assert api_key == "AIzaUnitTestGeminiSecretValue123456"
+        assert api_key == "unit-gemini-key"
         if case.payload_type == "tool_forced":
-            raise FakeHTTPError("Error code: 400 - Bad Request Authorization: Bearer AIzaUnitTestGeminiSecretValue123456", 400)
+            raise FakeHTTPError("Error code: 400 - Bad Request Authorization: Bearer test-token", 400)
         tool_calls = []
         finish_reason = "stop"
         content = "hello"
@@ -243,8 +243,8 @@ def test_gemini_openai_compat_debug_forced_tool_choice_not_supported(monkeypatch
     assert report["tool_call_any_returned"] is True
     assert report["v2_smoke_should_run"] is False
     assert (tmp_path / "gemini_openai_compat_debug.json").exists()
-    assert "AIzaUnitTestGeminiSecretValue123456" not in (tmp_path / "gemini_openai_compat_debug.json").read_text()
-    assert "AIzaUnitTestGeminiSecretValue123456" not in (tmp_path / "gemini_openai_compat_debug.md").read_text()
+    assert "unit-gemini-key" not in (tmp_path / "gemini_openai_compat_debug.json").read_text()
+    assert "unit-gemini-key" not in (tmp_path / "gemini_openai_compat_debug.md").read_text()
 
 
 def test_gemini_openai_compat_debug_classifies_endpoint_contract_problem(monkeypatch, tmp_path):
