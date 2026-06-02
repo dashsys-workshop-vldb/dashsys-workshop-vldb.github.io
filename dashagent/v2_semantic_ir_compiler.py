@@ -74,6 +74,25 @@ def compile_api_query_to_request(query: APIQueryIR, allowed_api_card: list[dict[
 def _compile_task(task: SemanticIRTask, allowed_schema_card: list[dict[str, Any]], allowed_api_card: list[dict[str, Any]]) -> dict[str, Any]:
     sql = None
     api_request = None
+    if task.kind == "CACHE_ALIAS":
+        return {
+            "pass_id": task.task_id,
+            "task_id": task.task_id,
+            "kind": "CACHE_ALIAS",
+            "subtask": task.description,
+            "path": "CACHE_ALIAS",
+            "can_run_parallel": False,
+            "depends_on": list(task.depends_on),
+            "evidence_order": "NO_EVIDENCE",
+            "sql": None,
+            "api_request": None,
+            "expected_result": task.description,
+            "optional": not bool(task.required),
+            "fallback": False,
+            "reuse_result_from": task.reuse_result_from,
+            "semantic_cache_key": task.semantic_cache_key,
+            "result_contract": task.result_contract.to_dict() if task.result_contract else None,
+        }
     if task.local_query is not None and task.kind in {"LOCAL_QUERY", "LOCAL_AND_LIVE"}:
         sql = compile_local_query_to_sql(task.local_query)
     if task.api_query is not None and task.kind in {"LIVE_QUERY", "LOCAL_AND_LIVE"}:
@@ -90,6 +109,9 @@ def _compile_task(task: SemanticIRTask, allowed_schema_card: list[dict[str, Any]
         "expected_result": task.description,
         "optional": not bool(task.required),
         "fallback": False,
+        "reuse_result_from": task.reuse_result_from,
+        "semantic_cache_key": task.semantic_cache_key,
+        "result_contract": task.result_contract.to_dict() if task.result_contract else None,
     }
 
 

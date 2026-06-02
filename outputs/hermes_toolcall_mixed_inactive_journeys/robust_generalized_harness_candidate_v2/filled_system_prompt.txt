@@ -10,22 +10,95 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
   "backend_semantic_planning_used": false,
   "llm_owned_generation": true,
   "llm_unified_plan": {
-    "aggregation_instruction": "Combine the concept explanation with the list of inactive journeys found in the local snapshot. Use the live API list as supplementary evidence if needed to confirm current state, but prioritize the local snapshot for the 'show inactive journeys' request as it represents the user's specific data records.",
+    "aggregation_instruction": "Synthesize the conceptual definition from T1 with the specific data points from T2 (local) and T3 (live), using the comparison in T4 to highlight any data drift or real-time changes, resulting in a complete report on inactive journeys.",
     "api_request": null,
     "backend_unavailable": false,
     "diagnostics": {
+      "active_task_count": 5,
+      "api_candidate_cards": 2,
+      "api_candidate_success_count": 2,
       "api_request_gate_failures": 0,
-      "atomic_protocol_fallback_used": false,
-      "backend_formal_compilation_used": true,
+      "atomic_candidate_slots_used": true,
+      "atomic_checklist_used": true,
+      "atomic_protocol_fallback_used": true,
+      "atomic_weak_protocol_used": true,
+      "backend_formal_compilation_used": false,
+      "backend_generated_sql": false,
+      "backend_route_inference_used": false,
       "backend_semantic_decomposition_used": false,
       "backend_semantic_planning_used": false,
+      "backend_semantic_routing_used": false,
       "backend_sql_api_generation_used": false,
-      "compiled_api_count": 1,
-      "compiled_sql_count": 1,
+      "candidate_card_latency_ms": 11210,
+      "candidate_card_max_tokens": 220,
+      "candidate_card_success": 4,
+      "candidate_repair_attempts": 0,
+      "candidate_repair_max_tokens": 220,
+      "checklist_bits": {
+        "COUNT": 0,
+        "DATE": 0,
+        "LIST": 1,
+        "LIVE_CURRENT": 0,
+        "LOCAL_SNAPSHOT": 0,
+        "MIXED_CONCEPT_DATA": 1,
+        "PURE_CONCEPT": 0,
+        "RECORDS": 0,
+        "SHOW_ITEMS": 1,
+        "STATUS": 1
+      },
+      "checklist_latency_ms": 7141,
+      "checklist_parse_success": true,
+      "checklist_repair_attempted": false,
+      "checklist_route": "EVIDENCE_PIPELINE",
+      "compiled_alias_count": 0,
+      "compiled_api_count": 0,
+      "compiled_sql_count": 0,
+      "dependency_edges": [
+        [
+          "T1",
+          "T2"
+        ],
+        [
+          "T1",
+          "T3"
+        ],
+        [
+          "T2",
+          "T4"
+        ],
+        [
+          "T3",
+          "T4"
+        ],
+        [
+          "T1",
+          "T5"
+        ],
+        [
+          "T2",
+          "T5"
+        ],
+        [
+          "T3",
+          "T5"
+        ],
+        [
+          "T4",
+          "T5"
+        ]
+      ],
+      "direct_route_challenge_needs_evidence": null,
+      "direct_route_challenge_repair_attempted": false,
+      "direct_route_challenge_used": false,
+      "evidence_planner_called": true,
+      "final_answer_max_tokens": 500,
+      "fixed_task_slots_used": true,
+      "llm_route_gate_used": true,
+      "pass_candidate_cards": 4,
       "planner_json_fallback_used": false,
       "planner_json_parse_error": null,
-      "planner_parse_source": "sdk_toolcall_semantic_ir",
-      "planner_provider_latency_ms": 18061,
+      "planner_parse_source": "atomic_protocol_fallback",
+      "planner_provider_latency_ms": 221990,
       "planner_repair_attempted": false,
       "planner_success": true,
       "planner_timeout": false,
@@ -36,21 +109,66 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
         "supports_json_content_fallback": true,
         "supports_tool_calls": true
       },
-      "sdk_toolcall_semantic_ir_used": true,
-      "semantic_ir_plan_preview": {
-        "preview": "{\"route\": \"EVIDENCE\", \"direct_answer\": \"An inactive journey is a Journey Optimizer campaign that is not currently active, running, or deployed. It typically refers to journeys in a draft, stopped, or finished state, as opposed to those that are live or published.\", \"tasks\": {\"items\": [{\"task_id\": \"concept_inactive_journey\", \"kind\": \"CONCEPT\", \"operation\": \"EXPLAIN\", \"source\": \"NONE\", \"description\": \"Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context.\", \"required\": true}, {\"task_id\": \"list_inactive_journeys\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LIST\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"CAMPAIGNID\", \"NAME\", \"STATE\"], \"total_items\": 7, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"STATE\", \"op\": \"!=\", \"value\": \"ACTIVE\"}, {\"field\": \"STATUS\", \"op\": \"!=\", \"value\": \"LIVE\"}], \"total_items\": 2, \"truncated_items\": false}, \"limit\": 50}, \"description\": \"List campaigns/journeys from the local snapshot that are not in an active or live state to identify inactive journeys.\", \"required\": true}, {\"task_id\": \"verify_inactive_via_api\", \"kind\": \"LIVE_QUERY\", \"operation\": \"LIST\", \"source\": ...",
-        "truncated": true
-      },
-      "semantic_ir_provider_latency_ms": 18058,
+      "raw_sql_fallback_considered": false,
+      "raw_sql_fallback_gate_error_type": null,
+      "raw_sql_fallback_reason": null,
+      "raw_sql_fallback_rejected_reason": null,
+      "raw_sql_fallback_repair_attempted": false,
+      "raw_sql_fallback_repair_success": false,
+      "raw_sql_fallback_success": false,
+      "raw_sql_fallback_task_id": null,
+      "raw_sql_fallback_used": false,
+      "route_card_max_tokens": 80,
+      "route_card_repair_attempted": false,
+      "route_card_route": "EVIDENCE",
+      "route_card_success": true,
+      "route_gate_repair_attempted": false,
+      "route_gate_route": "EVIDENCE_PIPELINE",
+      "route_gate_success": true,
+      "sdk_toolcall_semantic_ir_used": false,
+      "semantic_alias_count": 0,
+      "semantic_alias_error_type": null,
+      "semantic_alias_repair_attempted": false,
+      "semantic_alias_validation_passed": null,
+      "semantic_alias_validation_used": false,
+      "semantic_ir_fallback_reason": "Request timed out.",
+      "semantic_ir_provider_latency_ms": 181358,
       "semantic_ir_repair_attempted": false,
       "semantic_ir_repair_success": false,
-      "semantic_ir_task_count": 3,
-      "semantic_ir_toolcall_supported": true,
+      "semantic_ir_support_checked": false,
+      "semantic_ir_support_repair_attempted": false,
+      "semantic_ir_support_repair_error_message": null,
+      "semantic_ir_support_repair_error_type": null,
+      "semantic_ir_support_repair_success": false,
+      "semantic_ir_supported": null,
+      "semantic_ir_toolcall_error": "Request timed out.",
+      "semantic_ir_toolcall_supported": null,
+      "semantic_ir_unsupported_features": [],
+      "semantic_ir_unsupported_reason": null,
       "semantic_ir_validation_error_message": null,
       "semantic_ir_validation_error_type": null,
-      "semantic_ir_validation_passed": true,
+      "semantic_ir_validation_passed": false,
+      "slot_count": 5,
+      "sql_candidate_cards": 2,
+      "sql_candidate_success_count": 2,
       "sql_compile_gate_failures": 0,
-      "v2_semantic_ir_used": true
+      "task_count": 5,
+      "task_ledger_latency_ms": 22276,
+      "task_ledger_max_tokens": 300,
+      "task_ledger_repair_attempted": false,
+      "task_ledger_success": true,
+      "task_paths": [
+        "DIRECT",
+        "SQL",
+        "API",
+        "SQL_AND_API",
+        "AGGREGATE"
+      ],
+      "task_slot_repair_attempted": false,
+      "v2_semantic_ir_used": true,
+      "weak_model_stable_protocol_used": true,
+      "weak_protocol_route_card_used": true,
+      "weak_protocol_task_ledger_used": true
     },
     "direct_answer": null,
     "evidence_order": "MULTI_PASS",
@@ -62,69 +180,153 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
         "can_run_parallel": true,
         "depends_on": [],
         "evidence_order": "NO_EVIDENCE",
-        "expected_result": "Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context.",
+        "expected_result": "Explain the concept of an 'inactive journey' in the context of user engagement or analytics, defining it as a user path that has stalled, failed to convert, or shown no activity for a specified period.",
         "fallback": false,
         "optional": false,
-        "pass_id": "concept_inactive_journey",
+        "pass_id": "T1",
         "path": "DIRECT",
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "result_contract": null,
+        "reuse_result_from": null,
+        "semantic_cache_key": null,
         "sql": null,
-        "subtask": "Explain the concept of an 'inactive journey' in Adobe Journey Optimizer context."
+        "subtask": "Explain the concept of an 'inactive journey' in the context of user engagement or analytics, defining it as a user path that has stalled, failed to convert, or shown no activity for a specified period."
       },
       {
         "api_request": null,
-        "can_run_parallel": true,
-        "depends_on": [],
+        "can_run_parallel": false,
+        "depends_on": [
+          "T1"
+        ],
         "evidence_order": "SQL_FIRST",
-        "expected_result": "List campaigns/journeys from the local snapshot that are not in an active or live state to identify inactive journeys.",
+        "expected_result": "Retrieve a local snapshot of inactive journeys by querying the database for user sessions or events where the last activity timestamp is older than a defined threshold (e.g., 30 days) and no conversion event occurred.",
         "fallback": false,
         "optional": false,
-        "pass_id": "list_inactive_journeys",
+        "pass_id": "T2",
         "path": "SQL",
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "result_contract": null,
+        "reuse_result_from": null,
+        "semantic_cache_key": null,
         "sql": {
-          "params": [
-            "ACTIVE",
-            "LIVE"
-          ],
-          "query": "SELECT \"CAMPAIGNID\", \"NAME\", \"STATE\", \"STATUS\", \"LASTDEPLOYEDTIME\", \"STOPPEDTIME\", \"FINISHEDTIME\" FROM \"dim_campaign\" WHERE \"STATE\" != ? AND \"STATUS\" != ? LIMIT 50"
+          "params": [],
+          "query": "SELECT s.SEGMENTID, s.NAME, s.TOTALMEMBERS, s.LIFECYCLESTATUS, s.UPDATEDTIME FROM dim_segment s WHERE s.ISPEOPLESEGMENT = 1 AND s.LIFECYCLESTATUS = 'INACTIVE'"
         },
-        "subtask": "List campaigns/journeys from the local snapshot that are not in an active or live state to identify inactive journeys."
+        "subtask": "Retrieve a local snapshot of inactive journeys by querying the database for user sessions or events where the last activity timestamp is older than a defined threshold (e.g., 30 days) and no conversion event occurred."
+      },
+      {
+        "api_request": {
+          "method": "GET",
+          "params": {},
+          "path": "/ajo/journey"
+        },
+        "can_run_parallel": false,
+        "depends_on": [
+          "T1"
+        ],
+        "evidence_order": "API_FIRST",
+        "expected_result": "Fetch live/current platform data via API to identify active vs. inactive user segments in real-time, ensuring the definition of 'inactive' aligns with current system configurations and live user status.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "T3",
+        "path": "API",
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "result_contract": null,
+        "reuse_result_from": null,
+        "semantic_cache_key": null,
+        "sql": null,
+        "subtask": "Fetch live/current platform data via API to identify active vs. inactive user segments in real-time, ensuring the definition of 'inactive' aligns with current system configurations and live user status."
       },
       {
         "api_request": {
           "method": "GET",
           "params": {
-            "limit": 50,
-            "start": 0
+            "status": "inactive"
           },
           "path": "/ajo/journey"
         },
-        "can_run_parallel": true,
-        "depends_on": [],
-        "evidence_order": "API_FIRST",
-        "expected_result": "Fetch current live journey list to cross-reference and confirm which ones are not currently active/live.",
+        "can_run_parallel": false,
+        "depends_on": [
+          "T2",
+          "T3"
+        ],
+        "evidence_order": "PARALLEL",
+        "expected_result": "Compare local historical snapshots (SQL) with live platform status (API) to validate inactive journeys, highlighting discrepancies between stored records and current real-time user states.",
         "fallback": false,
-        "optional": true,
-        "pass_id": "verify_inactive_via_api",
-        "path": "API",
+        "optional": false,
+        "pass_id": "T4",
+        "path": "SQL_AND_API",
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "result_contract": null,
+        "reuse_result_from": null,
+        "semantic_cache_key": null,
+        "sql": {
+          "params": [],
+          "query": "SELECT s.SEGMENTID, s.NAME, s.LIFECYCLESTATUS, s.TOTALMEMBERS, s.UPDATEDTIME FROM dim_segment s WHERE s.LIFECYCLESTATUS = 'INACTIVE'"
+        },
+        "subtask": "Compare local historical snapshots (SQL) with live platform status (API) to validate inactive journeys, highlighting discrepancies between stored records and current real-time user states."
+      },
+      {
+        "api_request": null,
+        "can_run_parallel": false,
+        "depends_on": [
+          "T1",
+          "T2",
+          "T3",
+          "T4"
+        ],
+        "evidence_order": "NO_EVIDENCE",
+        "expected_result": "Combine the conceptual explanation, local historical data, live API data, and comparative analysis to provide a comprehensive view of inactive journeys, including definitions, specific examples, and current status validation.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "T5",
+        "path": "AGGREGATION_ONLY",
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "result_contract": null,
+        "reuse_result_from": null,
+        "semantic_cache_key": null,
         "sql": null,
-        "subtask": "Fetch current live journey list to cross-reference and confirm which ones are not currently active/live."
+        "subtask": "Combine the conceptual explanation, local historical data, live API data, and comparative analysis to provide a comprehensive view of inactive journeys, including definitions, specific examples, and current status validation."
       }
     ],
     "provider": "openai",
     "raw_preview": {
-      "semantic_ir_initial": {
-        "base_url": "[REDACTED]",
-        "error": null,
-        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-        "ok": true,
-        "provider": "openai",
-        "sdk_path_used": true,
-        "skipped": false,
-        "transport": "openai_sdk",
-        "truncated_fields": 8
+      "atomic": {
+        "atomic_api_candidate_T3": "METHOD=GET\nAPI_PATH=/ajo/journey\nPARAMS_JSON={}",
+        "atomic_api_candidate_T4": "METHOD=GET\nAPI_PATH=/ajo/journey\nPARAMS_JSON={\"status\": \"inactive\"}",
+        "atomic_checklist": "RECORDS=0\nLIST=1\nCOUNT=0\nSTATUS=1\nDATE=0\nLOCAL_SNAPSHOT=0\nLIVE_CURRENT=0\nSHOW_ITEMS=1\nMIXED_CONCEPT_DATA=1\nPURE_CONCEPT=0\nDIRECT_ANSWER=",
+        "atomic_sql_candidate_T2": "SQL_QUERY=SELECT s.SEGMENTID, s.NAME, s.TOTALMEMBERS, s.LIFECYCLESTATUS, s.UPDATEDTIME FROM dim_segment s WHERE s.ISPEOPLESEGMENT = 1 AND s.LIFECYCLESTATUS = 'INACTIVE'\nPARAMS_JSON=[]",
+        "atomic_sql_candidate_T4": "SQL_QUERY=SELECT s.SEGMENTID, s.NAME, s.LIFECYCLESTATUS, s.TOTALMEMBERS, s.UPDATEDTIME FROM dim_segment s WHERE s.LIFECYCLESTATUS = 'INACTIVE'\nPARAMS_JSON=[]",
+        "fixed_task_slots": {
+          "preview": "\"T1_PATH=DIRECT\\nT1_DEPS=[]\\nT1_DESC=Explain the concept of an 'inactive journey' in the context of user engagement or analytics, defining it as a user path that has stalled, failed to convert, or shown no activity for a specified period.\\n\\nT2_PATH=SQL\\nT2_DEPS=[T1]\\nT2_DESC=Retrieve a local snapshot of inactive journeys by querying the database for user sessions or events where the last activity timestamp is older than a defined threshold (e.g., 30 days) and no conversion event occurred.\\n\\nT3_PATH=API\\nT3_DEPS=[T1]\\nT3_DESC=Fetch live/current platform data via API to identify active vs. inactive user segments in real-time, ensuring the definition of 'inactive' aligns with current system configurations and live user status.\\n\\nT4_PATH=SQL_AND_API\\nT4_DEPS=[T2, T3]\\nT4_DESC=Compare local historical snapshots (SQL) with live platform status (API) to validate inactive journeys, highlighting discrepancies between stored records and current real-time user states.\\n\\nT5_PATH=AGGREGATE\\nT5_DEPS=[T1, T2, T3, T4]\\nT5_DESC=Combine the conceptual explanation, local historical data, live API data, and comparative analysis to provide a comprehensive view of inactive journeys, including definitions, specific examples, and current status validation.\\n\\nAGGREGATE=Synthesize the conceptual definition from T1 with the specific data points from T2 (local) and T3 (live), using the comparison in ...",
+          "truncated": true
+        }
+      },
+      "semantic_ir": {
+        "semantic_ir_initial": {
+          "backend_type": "openai_sdk",
+          "error": "Request timed out.",
+          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+          "ok": false,
+          "provider": "openai",
+          "sdk_path_used": true,
+          "skipped": false,
+          "transport": "openai_sdk",
+          "truncated_fields": 6
+        }
       }
     },
-    "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
+    "reason": "Atomic checklist selected evidence; fixed task slots supplied LLM-owned tasks.",
     "route": "EVIDENCE_PIPELINE",
     "sql": null
   },
@@ -141,14 +343,14 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "max_sql_workers": 2,
       "run_timeout_ms": 30000
     },
-    "created_at": "2026-06-01T23:16:02.903136+00:00",
-    "deadline_at": "2026-06-01T23:16:32.903136+00:00",
-    "evidence_bus_id": "evidence_run_65242ba5687f4749868b979b1e5402a2",
+    "created_at": "2026-06-02T00:06:41.713121+00:00",
+    "deadline_at": "2026-06-02T00:07:11.713121+00:00",
+    "evidence_bus_id": "evidence_run_80a98cd0df6943a4ab797438c9be7381",
     "original_prompt": "Explain what inactive journey means and show inactive journeys.",
     "plan_version": 1,
     "prompt_id": "hermes_toolcall_mixed_inactive_journeys",
-    "result_bundle_id": "bundle_run_65242ba5687f4749868b979b1e5402a2",
-    "run_id": "run_65242ba5687f4749868b979b1e5402a2",
+    "result_bundle_id": "bundle_run_80a98cd0df6943a4ab797438c9be7381",
+    "run_id": "run_80a98cd0df6943a4ab797438c9be7381",
     "status": "RUNNING"
   },
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"

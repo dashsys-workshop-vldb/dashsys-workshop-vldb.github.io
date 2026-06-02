@@ -79,6 +79,7 @@ from .planner import (
 )
 from .pre_evidence_routing_boundary import should_bypass_evidence_for_llm_direct
 from .query_normalizer import normalize_query
+from .raw_sql_safety_gate import RawSQLSafetyGate, RawSQLSafetyGateResult
 from .query_tokens import extract_query_tokens
 from .llm_sql_generator import generate_sql_with_llm, repair_sql_with_llm
 from .llm_client import get_llm_client
@@ -124,6 +125,7 @@ from .validators import APIValidator, SQLValidator, ValidationResult
 from .v2_execution_optimizer import BudgetLimits, V2ExecutionOptimizer
 from .v2_pipeline_scheduler import V2PipelineScheduler
 from .v2_run_context import RunBudget, RunContext, create_run_context
+from .v2_semantic_alias import materialize_semantic_alias_pass
 from .value_retrieval import build_value_index, extract_query_values, retrieve_value_matches, value_retrieval_summary
 
 
@@ -203,6 +205,7 @@ class AgentExecutor:
         self.planner = StrategyPlanner(self.schema_index, self.config)
         self.sql_validator = SQLValidator(self.schema_index, enable_ast_validation=self.config.enable_sql_ast_validation)
         self.sql_compile_gate = SQLCompileGate(self.db)
+        self.raw_sql_safety_gate = RawSQLSafetyGate()
         self.pass_graph_gate = PassGraphGate()
         self.api_validator = APIValidator(
             self.endpoint_catalog,
@@ -262,7 +265,7 @@ class AgentExecutor:
         out_dir.mkdir(parents=True, exist_ok=True)
         checkpoint_preview_chars = self.config.max_preview_chars
         if strategy == ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2:
-            checkpoint_preview_chars = max(checkpoint_preview_chars, 4000)
+            checkpoint_preview_chars = max(checkpoint_preview_chars, 12000)
         checkpoint_logger = CheckpointLogger(max_preview_chars=checkpoint_preview_chars)
         checkpoint_logger.add_checkpoint(
             "checkpoint_01_raw_query",
@@ -1609,6 +1612,14 @@ class AgentExecutor:
             technique="LLM-owned candidate generation with backend-only gates",
             input_summary={"route": plan.route, "evidence_order": plan.evidence_order},
             output=boundary_summary,
+            metrics={
+                "semantic_alias_count": boundary_summary.get("semantic_alias_count", 0),
+                "alias_materialized_count": boundary_summary.get("alias_materialized_count", 0),
+                "semantic_alias_materialized_count": boundary_summary.get("semantic_alias_materialized_count", 0),
+                "semantic_alias_validation_failures": boundary_summary.get("semantic_alias_validation_failures", 0),
+                "exact_pass_cache_hits": boundary_summary.get("exact_pass_cache_hits", 0),
+                "exact_pass_cache_scope": boundary_summary.get("exact_pass_cache_scope"),
+            },
             effect="records that backend did not replace LLM semantic or SQL/API generation",
             correctness_role="separates LLM ownership from compile/request/runtime safety checks",
             efficiency_role="bounds repair attempts before execution",
@@ -2172,6 +2183,22 @@ class AgentExecutor:
             "passes_executed": [],
             "dependency_resolution_errors": 0,
             "dependency_repair_attempts": 0,
+            "semantic_alias_count": sum(1 for item in pass_specs if item.path == "CACHE_ALIAS"),
+            "alias_materialized_count": 0,
+            "semantic_alias_materialized_count": 0,
+            "semantic_alias_validation_failures": int(active_plan.diagnostics.get("semantic_alias_validation_passed") is False),
+            "semantic_alias_materialized": [],
+            "exact_pass_cache_hits": 0,
+            "exact_pass_cache_scope": "single_run",
+            "raw_sql_fallback_considered": False,
+            "raw_sql_fallback_used": False,
+            "raw_sql_fallback_success": False,
+            "raw_sql_fallback_repair_attempted": False,
+            "raw_sql_fallback_repair_success": False,
+            "raw_sql_fallback_gate_error_type": None,
+            "raw_sql_fallback_task_id": None,
+            "raw_sql_fallback_reason": None,
+            "raw_sql_safety_gate_failures": 0,
             "backend_semantic_decomposition_used": False,
             "deterministic_answer_template_used": False,
             "hidden_eval_gold_used": False,
@@ -2235,6 +2262,42 @@ class AgentExecutor:
                 if resolved_pass is None:
                     runtime_passes.append(_dependency_error_runtime_pass(pass_spec, dependency_resolution, run_context=run_context))
                     continue
+                if resolved_pass.path == "CACHE_ALIAS":
+                    alias_pass = materialize_semantic_alias_pass(
+                        resolved_pass,
+                        runtime_passes,
+                        run_id=run_context.run_id,
+                        plan_version=run_context.plan_version,
+                        stage_history=pipeline_schedule.pass_stage_history.get(resolved_pass.pass_id, []),
+                        dependency_resolution=dependency_resolution,
+                    )
+                    runtime_passes.append(alias_pass)
+                    materialized = bool(alias_pass.get("alias_materialized"))
+                    summary["alias_materialized_count"] = int(summary.get("alias_materialized_count", 0) or 0) + int(materialized)
+                    summary["semantic_alias_materialized_count"] = summary["alias_materialized_count"]
+                    event = {
+                        "semantic_alias_materialized": materialized,
+                        "alias_task_id": resolved_pass.pass_id,
+                        "reuse_result_from": resolved_pass.reuse_result_from,
+                        "shared_execution_id": alias_pass.get("shared_execution_id"),
+                        "alias_source_status": alias_pass.get("alias_source_status"),
+                    }
+                    summary.setdefault("semantic_alias_materialized", []).append(event)
+                    checkpoint_logger.add_checkpoint(
+                        "checkpoint_semantic_alias_materialized",
+                        stage="llm-declared semantic alias materialization",
+                        technique="same-run alias PassResult materialization",
+                        input_summary={
+                            "alias_task_id": resolved_pass.pass_id,
+                            "reuse_result_from": resolved_pass.reuse_result_from,
+                            "semantic_cache_key": resolved_pass.semantic_cache_key,
+                        },
+                        output=event,
+                        effect="reuses the LLM-declared producer result without executing SQL/API for the alias task",
+                        correctness_role="preserves LLM-owned semantic equivalence and explicit provenance",
+                        efficiency_role="avoids duplicate SQL/API work for declared same-run alias tasks",
+                    )
+                    continue
                 pass_tool_results: list[dict[str, Any]] = []
                 if resolved_pass.path == "DIRECT":
                     direct_result = self._run_llm_owned_direct_for_pass(
@@ -2292,6 +2355,7 @@ class AgentExecutor:
                 summary["passes_executed"].append(resolved_pass.pass_id)
         summary["pass_results_count"] = len(runtime_passes)
         summary["cache_hits"] = run_optimizer.trace.get("cache_hits", summary.get("cache_hits", 0))
+        summary["exact_pass_cache_hits"] = summary.get("cache_hits", 0)
         summary["checkpoint_resume_used"] = run_optimizer.trace.get("checkpoint_resume_used", summary.get("checkpoint_resume_used", False))
         return tool_results, runtime_passes, summary
 
@@ -2462,6 +2526,28 @@ class AgentExecutor:
         candidate = pass_spec.sql
         if candidate is None:
             return None
+        if pass_spec.raw_sql_fallback_used:
+            raw_gate = self.raw_sql_safety_gate.check(candidate.query, candidate.params)
+            summary["raw_sql_fallback_considered"] = True
+            summary["raw_sql_fallback_used"] = raw_gate.passed
+            summary["raw_sql_fallback_success"] = raw_gate.passed
+            summary["raw_sql_fallback_task_id"] = pass_spec.raw_sql_fallback_task_id or pass_spec.pass_id
+            summary["raw_sql_fallback_reason"] = pass_spec.raw_sql_fallback_reason
+            summary["raw_sql_fallback_gate_error_type"] = raw_gate.error_type
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_raw_sql_safety_gate",
+                stage="llm raw sql fallback safety gate",
+                technique="read-only RawSQLSafetyGate before SQLCompileGate",
+                input_summary={"pass_id": pass_spec.pass_id, "sql": candidate.query},
+                output=raw_gate.to_dict(),
+                effect="blocks unsafe LLM-owned raw SQL fallback before compile or execution",
+                correctness_role="enforces read-only, single-statement, bounded SELECT fallback SQL",
+                efficiency_role="prevents executing unsafe fallback SQL",
+            )
+            if not raw_gate.passed:
+                summary["raw_sql_safety_gate_failures"] = int(summary.get("raw_sql_safety_gate_failures", 0) or 0) + 1
+                return _blocked_raw_sql_tool_result(candidate.query, candidate.params, raw_gate, pass_id=pass_spec.pass_id, subtask=pass_spec.subtask)
+            candidate = LLMUnifiedSQLCandidate(query=raw_gate.sql, params=raw_gate.params)
         compile_result = self.sql_compile_gate.check(candidate.query, candidate.params)
         summary["sql_gate_passed"] = compile_result.passed
         summary["sql_compile_gate_passed"] = compile_result.passed
@@ -2502,22 +2588,52 @@ class AgentExecutor:
             repaired_pass = _repaired_pass_for(repair_plan, pass_spec.pass_id, source="sql")
             if repaired_pass is None or repaired_pass.sql is None:
                 return _blocked_sql_tool_result(candidate.query, candidate.params, compile_result, pass_id=pass_spec.pass_id, subtask=pass_spec.subtask)
-            repaired_compile = self.sql_compile_gate.check(repaired_pass.sql.query, repaired_pass.sql.params)
+            repaired_candidate = repaired_pass.sql
+            if pass_spec.raw_sql_fallback_used or repaired_pass.raw_sql_fallback_used:
+                summary["raw_sql_fallback_repair_attempted"] = True
+                repaired_raw_gate = self.raw_sql_safety_gate.check(repaired_candidate.query, repaired_candidate.params)
+                summary["raw_sql_fallback_gate_error_type"] = repaired_raw_gate.error_type
+                checkpoint_logger.add_checkpoint(
+                    "checkpoint_raw_sql_safety_gate_repair",
+                    stage="llm raw sql fallback safety gate",
+                    technique="read-only RawSQLSafetyGate for repaired raw SQL fallback",
+                    input_summary={"pass_id": repaired_pass.pass_id, "sql": repaired_candidate.query},
+                    output=repaired_raw_gate.to_dict(),
+                    effect="blocks unsafe repaired LLM-owned raw SQL fallback before compile or execution",
+                    correctness_role="enforces the same read-only fallback constraints after LLM repair",
+                    efficiency_role="prevents executing unsafe repaired fallback SQL",
+                )
+                if not repaired_raw_gate.passed:
+                    summary["raw_sql_fallback_repair_success"] = False
+                    summary["raw_sql_safety_gate_failures"] = int(summary.get("raw_sql_safety_gate_failures", 0) or 0) + 1
+                    return _blocked_raw_sql_tool_result(
+                        repaired_candidate.query,
+                        repaired_candidate.params,
+                        repaired_raw_gate,
+                        pass_id=repaired_pass.pass_id,
+                        subtask=repaired_pass.subtask,
+                    )
+                repaired_candidate = LLMUnifiedSQLCandidate(query=repaired_raw_gate.sql, params=repaired_raw_gate.params)
+            repaired_compile = self.sql_compile_gate.check(repaired_candidate.query, repaired_candidate.params)
             summary["sql_gate_passed"] = repaired_compile.passed
             summary["sql_compile_gate_passed"] = repaired_compile.passed
             checkpoint_logger.add_checkpoint(
                 "checkpoint_llm_owned_sql_compile_gate_repair",
                 stage="llm sql compile gate",
                 technique="DuckDB EXPLAIN compile check for repaired LLM-owned SQL pass",
-                input_summary={"pass_id": pass_spec.pass_id, "sql": repaired_pass.sql.query},
+                input_summary={"pass_id": pass_spec.pass_id, "sql": repaired_candidate.query},
                 output={"pass_id": pass_spec.pass_id, **repaired_compile.to_dict()},
                 effect="checks the LLM repair without backend mutation",
                 correctness_role="executes repaired SQL only if it compiles",
                 efficiency_role="stops after one repair",
             )
             if not repaired_compile.passed:
-                return _blocked_sql_tool_result(repaired_pass.sql.query, repaired_pass.sql.params, repaired_compile, pass_id=pass_spec.pass_id, subtask=pass_spec.subtask)
-            candidate = repaired_pass.sql
+                if pass_spec.raw_sql_fallback_used or repaired_pass.raw_sql_fallback_used:
+                    summary["raw_sql_fallback_repair_success"] = False
+                return _blocked_sql_tool_result(repaired_candidate.query, repaired_candidate.params, repaired_compile, pass_id=pass_spec.pass_id, subtask=pass_spec.subtask)
+            if pass_spec.raw_sql_fallback_used or repaired_pass.raw_sql_fallback_used:
+                summary["raw_sql_fallback_repair_success"] = True
+            candidate = repaired_candidate
         payload = self.db.execute_sql(candidate.query, params=candidate.params, allow_full_result=True)
         summary["sql_executed"] = True
         validation = ValidationResult(True, warnings=["LLM SQL pass passed compile gate."], errors=[])
@@ -2533,6 +2649,9 @@ class AgentExecutor:
             "pass_id": pass_spec.pass_id,
             "subtask": pass_spec.subtask,
             "expected_result": pass_spec.expected_result,
+            "raw_sql_fallback_used": pass_spec.raw_sql_fallback_used,
+            "raw_sql_fallback_task_id": pass_spec.raw_sql_fallback_task_id,
+            "raw_sql_fallback_reason": pass_spec.raw_sql_fallback_reason,
             "step": step.to_dict(),
             "validation": validation.to_dict(),
             "payload": payload,
@@ -2795,6 +2914,8 @@ class AgentExecutor:
         return ["sql", "api"]
 
     def _llm_owned_pass_execution_order(self, pass_spec: LLMUnifiedPass) -> list[str]:
+        if pass_spec.path == "CACHE_ALIAS":
+            return []
         if pass_spec.path == "SQL":
             return ["sql"]
         if pass_spec.path == "API":
@@ -4171,6 +4292,22 @@ def _llm_owned_generation_boundary_summary(summary: dict[str, Any]) -> dict[str,
         "result_bundle_id",
         "evidence_bus_id",
         "plan_version",
+        "semantic_alias_count",
+        "alias_materialized_count",
+        "semantic_alias_materialized_count",
+        "semantic_alias_validation_failures",
+        "semantic_alias_materialized",
+        "exact_pass_cache_hits",
+        "exact_pass_cache_scope",
+        "raw_sql_fallback_considered",
+        "raw_sql_fallback_used",
+        "raw_sql_fallback_success",
+        "raw_sql_fallback_repair_attempted",
+        "raw_sql_fallback_repair_success",
+        "raw_sql_fallback_gate_error_type",
+        "raw_sql_fallback_task_id",
+        "raw_sql_fallback_reason",
+        "raw_sql_safety_gate_failures",
         "multi_pass_enabled",
         "llm_pass_graph_used",
         "v2_execution_optimizer_used",
@@ -4281,6 +4418,12 @@ def _runtime_pass_from_pass_spec(
         "path": pass_spec.path,
         "status": status,
         "cached_sources": cached_sources,
+        "reuse_result_from": pass_spec.reuse_result_from,
+        "semantic_cache_key": pass_spec.semantic_cache_key,
+        "result_contract": copy.deepcopy(pass_spec.result_contract) if isinstance(pass_spec.result_contract, dict) else pass_spec.result_contract,
+        "raw_sql_fallback_used": pass_spec.raw_sql_fallback_used,
+        "raw_sql_fallback_reason": pass_spec.raw_sql_fallback_reason,
+        "raw_sql_fallback_task_id": pass_spec.raw_sql_fallback_task_id,
         "can_run_parallel": pass_spec.can_run_parallel,
         "depends_on": pass_spec.depends_on,
         "expected_result": pass_spec.expected_result,
@@ -4432,6 +4575,41 @@ def _early_stopped_runtime_pass(pass_spec: LLMUnifiedPass, decision: dict[str, A
     }
 
 
+def _blocked_raw_sql_tool_result(
+    query: str,
+    params: list[Any] | None,
+    gate_result: RawSQLSafetyGateResult,
+    *,
+    pass_id: str | None = None,
+    subtask: str | None = None,
+) -> dict[str, Any]:
+    validation = ValidationResult(
+        ok=False,
+        errors=[gate_result.error_message or "Raw SQL safety gate failed."],
+        warnings=[],
+    )
+    step = PlanStep(
+        action="sql",
+        purpose="Blocked V2 raw SQL fallback.",
+        sql=query,
+        allow_full_result=True,
+        family="llm_owned_v2_raw_sql_fallback",
+    )
+    return {
+        "type": "sql",
+        "pass_id": pass_id,
+        "subtask": subtask,
+        "step": step.to_dict(),
+        "validation": validation.to_dict(),
+        "payload": {
+            "ok": False,
+            "error": gate_result.error_message,
+            "raw_sql_safety_gate": gate_result.to_dict(),
+            "raw_sql_fallback_used": True,
+        },
+    }
+
+
 def _pass_status_from_source_results(source_results: list[dict[str, Any]]) -> str:
     statuses = {str(item.get("status") or "").upper() for item in source_results if isinstance(item, dict)}
     if not statuses:
@@ -4498,6 +4676,12 @@ def _resolve_pass_placeholders(pass_spec: LLMUnifiedPass, runtime_passes: list[d
         expected_result=pass_spec.expected_result,
         optional=pass_spec.optional,
         fallback=pass_spec.fallback,
+        reuse_result_from=pass_spec.reuse_result_from,
+        semantic_cache_key=pass_spec.semantic_cache_key,
+        result_contract=copy.deepcopy(pass_spec.result_contract) if isinstance(pass_spec.result_contract, dict) else pass_spec.result_contract,
+        raw_sql_fallback_used=pass_spec.raw_sql_fallback_used,
+        raw_sql_fallback_reason=pass_spec.raw_sql_fallback_reason,
+        raw_sql_fallback_task_id=pass_spec.raw_sql_fallback_task_id,
     )
     required = bool(PLACEHOLDER_RE.search(json.dumps(pass_spec.to_dict(), default=str)))
     return resolved_pass, {
@@ -4607,12 +4791,20 @@ def _source_result_from_tool_result(item: dict[str, Any]) -> dict[str, Any]:
             status = "COMPILE_ERROR"
         else:
             status = "SUCCESS" if payload.get("ok") and rows else ("EMPTY" if payload.get("ok") else "ERROR")
+        raw_fallback = bool(item.get("raw_sql_fallback_used") or payload.get("raw_sql_fallback_used"))
         return {
-            "source": "cached" if item.get("cached") else "SQL",
-            "cached_source": "SQL" if item.get("cached") else None,
+            "source": "cached" if item.get("cached") else ("RAW_SQL_FALLBACK" if raw_fallback else "SQL"),
+            "cached_source": ("RAW_SQL_FALLBACK" if raw_fallback else "SQL") if item.get("cached") else None,
             "status": status,
             "scope": "LOCAL_SNAPSHOT",
-            "result": {"rows": rows[:5], "row_count": payload.get("row_count", len(rows)), "sql": payload.get("sql")},
+            "result": {
+                "rows": rows[:5],
+                "row_count": payload.get("row_count", len(rows)),
+                "sql": payload.get("sql"),
+                "raw_sql_fallback_used": raw_fallback,
+                "raw_sql_fallback_task_id": item.get("raw_sql_fallback_task_id"),
+                "raw_sql_fallback_reason": item.get("raw_sql_fallback_reason"),
+            },
             "error": payload.get("error"),
             "gate_passed": None if compile_gate is None else bool(compile_gate.get("passed")),
             "repair_attempts": 0,

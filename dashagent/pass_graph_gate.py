@@ -7,6 +7,7 @@ import re
 
 from .llm_unified_planner import ALLOWED_PASS_PATHS, LLMUnifiedPass, LLMUnifiedPlan, MAX_LLM_OWNED_PASSES
 from .trajectory import redact_secrets
+from .v2_semantic_alias import validate_unified_plan_semantic_aliases
 
 
 @dataclass
@@ -59,6 +60,9 @@ class PassGraphGate:
                     return _fail("unknown_placeholder_dependency", f"Pass '{item.pass_id}' references unknown placeholder pass '{ref}'.", **base)
         if _has_cycle(passes):
             return _fail("dependency_cycle", "LLM pass dependency graph contains a cycle.", **base)
+        alias_gate = validate_unified_plan_semantic_aliases(plan)
+        if not alias_gate.passed:
+            return _fail(alias_gate.error_type or "invalid_semantic_alias", alias_gate.message or "Invalid semantic alias.", **base)
         for item in passes:
             if item.path == "AGGREGATION_ONLY" and len(passes) == 1:
                 return _fail("aggregation_only_without_evidence", "AGGREGATION_ONLY cannot be the only pass.", **base)
@@ -86,6 +90,11 @@ def _pass_shape_error(item: LLMUnifiedPass) -> tuple[str, str] | None:
         return "path_mismatch", f"Pass '{item.pass_id}' path API must contain only api_request."
     if item.path == "SQL_AND_API" and (not has_sql or not has_api):
         return "path_mismatch", f"Pass '{item.pass_id}' path SQL_AND_API must contain both sql and api_request."
+    if item.path == "CACHE_ALIAS":
+        if has_sql or has_api:
+            return "path_mismatch", f"Pass '{item.pass_id}' path CACHE_ALIAS must not contain sql or api_request."
+        if not str(getattr(item, "reuse_result_from", "") or "").strip():
+            return "invalid_semantic_alias", f"Pass '{item.pass_id}' path CACHE_ALIAS must declare reuse_result_from."
     if item.path in {"DIRECT", "AGGREGATION_ONLY"} and (has_sql or has_api):
         return "path_mismatch", f"Pass '{item.pass_id}' path {item.path} must not contain sql or api_request."
     if item.path == "AGGREGATION_ONLY" and not item.depends_on:

@@ -248,6 +248,54 @@ def test_pass_graph_gate_accepts_evidence_pipeline_with_direct_and_sql_passes():
     assert result.passed is True
 
 
+def test_pass_graph_gate_accepts_declared_cache_alias_with_executable_producer():
+    contract = {
+        "source": "LOCAL_SNAPSHOT",
+        "object": "journey",
+        "entity": "Birthday Message",
+        "operation": "STATUS",
+        "fields": ["NAME", "STATUS"],
+        "filters": [{"field": "NAME", "op": "=", "value": "Birthday Message"}],
+        "scope": "local",
+        "freshness": "same_run",
+    }
+    plan = normalize_llm_unified_plan(
+        {
+            "route": "EVIDENCE_PIPELINE",
+            "evidence_order": "MULTI_PASS",
+            "passes": [
+                {
+                    "pass_id": "local_status",
+                    "path": "SQL",
+                    "can_run_parallel": True,
+                    "depends_on": [],
+                    "sql": {"query": "SELECT name, status FROM dim_campaign", "params": []},
+                    "semantic_cache_key": "local_status:Birthday Message",
+                    "result_contract": contract,
+                },
+                {
+                    "pass_id": "local_status_again",
+                    "path": "CACHE_ALIAS",
+                    "can_run_parallel": False,
+                    "depends_on": ["local_status"],
+                    "reuse_result_from": "local_status",
+                    "semantic_cache_key": "local_status:Birthday Message",
+                    "result_contract": contract,
+                    "sql": None,
+                    "api_request": None,
+                },
+            ],
+        },
+        provider="fake",
+        model="fake",
+    )
+
+    result = PassGraphGate(max_passes=4).check(plan)
+
+    assert result.passed is True
+    assert result.dependency_edges == [["local_status", "local_status_again"]]
+
+
 def test_pass_graph_gate_allows_llm_direct_without_passes():
     plan = normalize_llm_unified_plan(
         {

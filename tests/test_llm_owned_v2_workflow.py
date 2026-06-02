@@ -6,6 +6,8 @@ import pytest
 
 from dashagent.config import ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2
 from dashagent.executor import AgentExecutor
+from dashagent.llm_final_answer_composer import LLMFinalAnswerCandidate
+from dashagent.llm_unified_planner import LLMUnifiedPass, LLMUnifiedPlan, LLMUnifiedSQLCandidate
 
 
 ROBUST_V2 = ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2
@@ -91,6 +93,14 @@ def _checkpoint_names(result: dict) -> set[str]:
 def _checkpoint_output(result: dict, checkpoint_id: str) -> dict:
     return next(
         checkpoint["output"]
+        for checkpoint in result["checkpoints"]
+        if checkpoint["checkpoint_id"] == checkpoint_id
+    )
+
+
+def _checkpoint_metrics(result: dict, checkpoint_id: str) -> dict:
+    return next(
+        checkpoint.get("metrics") or {}
         for checkpoint in result["checkpoints"]
         if checkpoint["checkpoint_id"] == checkpoint_id
     )
@@ -185,6 +195,92 @@ def test_v2_valid_llm_sql_passes_compile_gate_and_executes(tiny_project, monkeyp
     boundary = _checkpoint_output(result, "checkpoint_evidence_pipeline_boundary")
     assert boundary["evidence_pipeline_bypassed"] is False
     assert boundary["evidence_bus_built"] is True
+
+
+def test_v2_semantic_alias_materializes_without_extra_sql_or_api_call(tiny_project, monkeypatch):
+    contract = {
+        "source": "LOCAL_SNAPSHOT",
+        "object": "journey",
+        "entity": "Birthday Message",
+        "operation": "STATUS",
+        "fields": ["name", "status"],
+        "filters": [{"field": "name", "op": "=", "value": "Birthday Message"}],
+        "scope": "local",
+        "freshness": "same_run",
+    }
+    plan = LLMUnifiedPlan(
+        route="EVIDENCE_PIPELINE",
+        evidence_order="MULTI_PASS",
+        direct_answer=None,
+        sql=None,
+        api_request=None,
+        passes=[
+            LLMUnifiedPass(
+                pass_id="local_status",
+                subtask="Get local status.",
+                path="SQL",
+                can_run_parallel=True,
+                depends_on=[],
+                evidence_order="SQL_FIRST",
+                sql=LLMUnifiedSQLCandidate(
+                    query="SELECT name, status FROM dim_campaign WHERE name = ? LIMIT 1",
+                    params=["Birthday Message"],
+                ),
+                api_request=None,
+                expected_result="Local status.",
+                semantic_cache_key="local_status:Birthday Message",
+                result_contract=contract,
+            ),
+            LLMUnifiedPass(
+                pass_id="local_status_again",
+                subtask="Reuse the local status.",
+                path="CACHE_ALIAS",
+                can_run_parallel=False,
+                depends_on=["local_status"],
+                evidence_order="NO_EVIDENCE",
+                sql=None,
+                api_request=None,
+                expected_result="Same local status.",
+                reuse_result_from="local_status",
+                semantic_cache_key="local_status:Birthday Message",
+                result_contract=dict(contract),
+            ),
+        ],
+        aggregation_instruction="Answer the local status once and note it is reused for the summary.",
+        reason="test semantic alias",
+        provider="fake",
+        model="fake",
+        diagnostics={"semantic_alias_validation_passed": True},
+    )
+
+    monkeypatch.setattr("dashagent.executor.run_llm_unified_planner", lambda **kwargs: plan)
+    monkeypatch.setattr(
+        "dashagent.executor.compose_llm_final_answer",
+        lambda **kwargs: LLMFinalAnswerCandidate(
+            final_answer="Birthday Message has local status draft.",
+            used_pass_ids=["local_status", "local_status_again"],
+            claimed_facts=[{"claim": "Birthday Message has local status draft.", "supporting_pass_ids": ["local_status", "local_status_again"]}],
+            caveats_included=[],
+            provider="fake",
+            model="fake",
+        ),
+    )
+
+    result = AgentExecutor(tiny_project).run(
+        "Show the local status of Birthday Message, then use the same local status again in the final summary.",
+        strategy=ROBUST_V2,
+        query_id="v2_semantic_alias",
+    )
+
+    assert [row["type"] for row in result["tool_results"]] == ["sql"]
+    assert result["tool_results"][0]["pass_id"] == "local_status"
+    assert result["final_answer"] == "Birthday Message has local status draft."
+    summary = _checkpoint_metrics(result, "checkpoint_llm_owned_generation_boundary")
+    assert summary["semantic_alias_count"] == 1
+    assert summary["alias_materialized_count"] == 1
+    alias_event = _checkpoint_output(result, "checkpoint_semantic_alias_materialized")
+    assert alias_event["semantic_alias_materialized"] is True
+    assert alias_event["alias_task_id"] == "local_status_again"
 
 
 def test_v2_empty_evidence_plan_triggers_pass_graph_repair_once(tiny_project, monkeypatch):

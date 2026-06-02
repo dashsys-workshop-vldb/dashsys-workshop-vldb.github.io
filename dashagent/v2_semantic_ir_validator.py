@@ -10,6 +10,7 @@ from .v2_semantic_ir import (
     SemanticIRPlan,
     SemanticIRTask,
 )
+from .v2_semantic_alias import validate_semantic_ir_aliases
 
 
 @dataclass
@@ -21,6 +22,12 @@ class SemanticIRValidationResult:
     allowed_tables: list[str] = field(default_factory=list)
     allowed_fields_for_table: list[str] = field(default_factory=list)
     allowed_endpoints: list[str] = field(default_factory=list)
+    semantic_alias_validation_used: bool = False
+    semantic_alias_validation_passed: bool | None = None
+    semantic_alias_count: int = 0
+    reuse_result_from: str | None = None
+    alias_contract: dict[str, Any] | None = None
+    producer_contract: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -63,9 +70,33 @@ class SemanticIRValidator:
             result = self._validate_task(task)
             if not result.passed:
                 return result
+        alias_result = validate_semantic_ir_aliases(plan)
+        if not alias_result.passed:
+            return self._fail(
+                "invalid_semantic_alias",
+                alias_result.message,
+                alias_result.task_id,
+                semantic_alias_validation_used=True,
+                semantic_alias_validation_passed=False,
+                semantic_alias_count=alias_result.semantic_alias_count,
+                reuse_result_from=alias_result.reuse_result_from,
+                alias_contract=alias_result.alias_contract,
+                producer_contract=alias_result.producer_contract,
+            )
+        base.semantic_alias_validation_used = True
+        base.semantic_alias_validation_passed = True
+        base.semantic_alias_count = alias_result.semantic_alias_count
         return base
 
     def _validate_task(self, task: SemanticIRTask) -> SemanticIRValidationResult:
+        if task.kind == "CACHE_ALIAS":
+            if task.local_query is not None or task.api_query is not None:
+                return self._fail("invalid_semantic_alias", "CACHE_ALIAS task must not contain local_query or api_query.", task.task_id)
+            if not task.reuse_result_from:
+                return self._fail("invalid_semantic_alias", "CACHE_ALIAS task requires reuse_result_from.", task.task_id)
+            if task.result_contract is None:
+                return self._fail("invalid_semantic_alias", "CACHE_ALIAS task requires result_contract.", task.task_id)
+            return self._ok_context()
         count_shape = self._validate_count_task_shape(task)
         if not count_shape.passed:
             return count_shape
@@ -176,6 +207,12 @@ class SemanticIRValidator:
         error_message: str,
         task_id: str | None = None,
         allowed_fields: list[str] | None = None,
+        semantic_alias_validation_used: bool = False,
+        semantic_alias_validation_passed: bool | None = None,
+        semantic_alias_count: int = 0,
+        reuse_result_from: str | None = None,
+        alias_contract: dict[str, Any] | None = None,
+        producer_contract: dict[str, Any] | None = None,
     ) -> SemanticIRValidationResult:
         return SemanticIRValidationResult(
             passed=False,
@@ -185,4 +222,10 @@ class SemanticIRValidator:
             allowed_tables=list(self._tables.keys()),
             allowed_fields_for_table=list(allowed_fields or []),
             allowed_endpoints=list(self._endpoints.keys()),
+            semantic_alias_validation_used=semantic_alias_validation_used,
+            semantic_alias_validation_passed=semantic_alias_validation_passed,
+            semantic_alias_count=semantic_alias_count,
+            reuse_result_from=reuse_result_from,
+            alias_contract=alias_contract,
+            producer_contract=producer_contract,
         )

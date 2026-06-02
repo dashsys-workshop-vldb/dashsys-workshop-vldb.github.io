@@ -24,7 +24,7 @@ ALLOWED_EVIDENCE_ORDERS = {
     "MULTI_PASS",
 }
 MAX_LLM_OWNED_PASSES = 6
-ALLOWED_PASS_PATHS = {"SQL", "API", "SQL_AND_API", "DIRECT", "AGGREGATION_ONLY"}
+ALLOWED_PASS_PATHS = {"SQL", "API", "SQL_AND_API", "DIRECT", "AGGREGATION_ONLY", "CACHE_ALIAS"}
 
 
 @dataclass
@@ -69,6 +69,12 @@ class LLMUnifiedPass:
     expected_result: str = ""
     optional: bool = False
     fallback: bool = False
+    reuse_result_from: str | None = None
+    semantic_cache_key: str | None = None
+    result_contract: dict[str, Any] | None = None
+    raw_sql_fallback_used: bool = False
+    raw_sql_fallback_reason: str | None = None
+    raw_sql_fallback_task_id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -83,6 +89,12 @@ class LLMUnifiedPass:
             "expected_result": self.expected_result,
             "optional": self.optional,
             "fallback": self.fallback,
+            "reuse_result_from": self.reuse_result_from,
+            "semantic_cache_key": self.semantic_cache_key,
+            "result_contract": self.result_contract,
+            "raw_sql_fallback_used": self.raw_sql_fallback_used,
+            "raw_sql_fallback_reason": self.raw_sql_fallback_reason,
+            "raw_sql_fallback_task_id": self.raw_sql_fallback_task_id,
         }
 
 
@@ -1469,6 +1481,12 @@ def _normalize_pass(value: Any, *, index: int) -> LLMUnifiedPass | None:
         expected_result=str(value.get("expected_result") or "").strip(),
         optional=bool(value.get("optional", False)),
         fallback=bool(value.get("fallback", False)),
+        reuse_result_from=str(value.get("reuse_result_from") or "").strip() or None,
+        semantic_cache_key=str(value.get("semantic_cache_key") or "").strip() or None,
+        result_contract=dict(value.get("result_contract")) if isinstance(value.get("result_contract"), dict) else None,
+        raw_sql_fallback_used=bool(value.get("raw_sql_fallback_used", False)),
+        raw_sql_fallback_reason=str(value.get("raw_sql_fallback_reason") or "").strip() or None,
+        raw_sql_fallback_task_id=str(value.get("raw_sql_fallback_task_id") or "").strip() or None,
     )
 
 
@@ -1494,6 +1512,12 @@ def _dedupe_pass_ids(passes: list[LLMUnifiedPass]) -> list[LLMUnifiedPass]:
                     expected_result=item.expected_result,
                     optional=item.optional,
                     fallback=item.fallback,
+                    reuse_result_from=item.reuse_result_from,
+                    semantic_cache_key=item.semantic_cache_key,
+                    result_contract=dict(item.result_contract) if isinstance(item.result_contract, dict) else None,
+                    raw_sql_fallback_used=item.raw_sql_fallback_used,
+                    raw_sql_fallback_reason=item.raw_sql_fallback_reason,
+                    raw_sql_fallback_task_id=item.raw_sql_fallback_task_id,
                 )
             )
     return out

@@ -10,22 +10,24 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
   "backend_semantic_planning_used": false,
   "llm_owned_generation": true,
   "llm_unified_plan": {
-    "aggregation_instruction": "Use t1 to find the LASTDEPLOYEDTIME (or STARTDATE if LASTDEPLOYEDTIME is null) for the campaign named 'Birthday Message'. This represents when it was published/deployed. If t1 returns no results, use t2 to check if it exists as a live journey and report its state. If both fail, state that the journey was not found.",
+    "aggregation_instruction": "Extract the LASTDEPLOYEDTIME from t2_get_published_date as the primary 'published' date. If LASTDEPLOYEDTIME is null, fallback to CREATEDTIME. Present the date clearly to the user.",
     "api_request": null,
     "backend_unavailable": false,
     "diagnostics": {
       "api_request_gate_failures": 0,
       "atomic_protocol_fallback_used": false,
       "backend_formal_compilation_used": true,
+      "backend_generated_sql": false,
       "backend_semantic_decomposition_used": false,
       "backend_semantic_planning_used": false,
       "backend_sql_api_generation_used": false,
-      "compiled_api_count": 1,
-      "compiled_sql_count": 1,
+      "compiled_alias_count": 0,
+      "compiled_api_count": 0,
+      "compiled_sql_count": 2,
       "planner_json_fallback_used": false,
       "planner_json_parse_error": null,
       "planner_parse_source": "sdk_toolcall_semantic_ir",
-      "planner_provider_latency_ms": 14876,
+      "planner_provider_latency_ms": 19786,
       "planner_repair_attempted": false,
       "planner_success": true,
       "planner_timeout": false,
@@ -36,16 +38,41 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
         "supports_json_content_fallback": true,
         "supports_tool_calls": true
       },
+      "raw_sql_fallback_considered": false,
+      "raw_sql_fallback_gate_error_type": null,
+      "raw_sql_fallback_reason": null,
+      "raw_sql_fallback_rejected_reason": null,
+      "raw_sql_fallback_repair_attempted": false,
+      "raw_sql_fallback_repair_success": false,
+      "raw_sql_fallback_success": false,
+      "raw_sql_fallback_task_id": null,
+      "raw_sql_fallback_used": false,
       "sdk_toolcall_semantic_ir_used": true,
+      "semantic_alias_count": 0,
+      "semantic_alias_error_type": null,
+      "semantic_alias_repair_attempted": false,
+      "semantic_alias_validation_passed": true,
+      "semantic_alias_validation_used": true,
       "semantic_ir_plan_preview": {
-        "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"task_id\": \"t1\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LOOKUP\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"NAME\", \"LASTDEPLOYEDTIME\", \"STARTDATE\"], \"total_items\": 7, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"Birthday Message\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 10}, \"description\": \"Look up the 'Birthday Message' campaign in the local snapshot to find its publication/deployment timestamp.\", \"required\": true}, {\"task_id\": \"t2\", \"kind\": \"LIVE_QUERY\", \"operation\": \"LOOKUP\", \"source\": \"LIVE_API\", \"api_query\": {\"endpoint_id\": \"journey_list\", \"method\": \"GET\", \"query_params\": {\"limit\": 50, \"start\": 0}}, \"description\": \"Check live Journey Optimizer journeys to see if 'Birthday Message' exists as a journey and retrieve its live state/published status.\", \"required\": false}], \"total_items\": 2, \"truncated_items\": false}, \"aggregation_instruction\": \"Use t1 to find the LASTDEPLOYEDTIME (or STARTDATE if LASTDEPLOYEDTIME is null) for the campaign named 'Birthday Message'. This represents when it was published/deployed. If t1 retu...",
+        "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_lookup_journey_id\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LOOKUP\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"CAMPAIGNID\", \"NAME\"], \"total_items\": 2, \"truncated_items\": false}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"Birthday Message\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 1}, \"description\": \"Look up the Campaign ID for the journey named 'Birthday Message' from the local campaign snapshot.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_get_published_date\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"DATE\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"LASTDEPLOYEDTIME\", \"CREATEDTIME\", \"UPDATEDTIME\"], \"total_items\": 4, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"CAMPAIGNID\", \"op\": \"=\", \"value\": \"{{t1_lookup_journey_id.CAMPAIGNID}}\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 1}, \"depends_on\": {\"items\": [\"t1_lookup_journey_id\"], \"total_items\":...",
         "truncated": true
       },
-      "semantic_ir_provider_latency_ms": 14873,
+      "semantic_ir_provider_latency_ms": 19785,
       "semantic_ir_repair_attempted": false,
       "semantic_ir_repair_success": false,
+      "semantic_ir_support_checked": true,
+      "semantic_ir_support_recommended_action": "COMPILE",
+      "semantic_ir_support_repair_attempted": false,
+      "semantic_ir_support_repair_error_message": null,
+      "semantic_ir_support_repair_error_type": null,
+      "semantic_ir_support_repair_success": false,
+      "semantic_ir_supported": true,
       "semantic_ir_task_count": 2,
       "semantic_ir_toolcall_supported": true,
+      "semantic_ir_unsupported_features": [],
+      "semantic_ir_unsupported_operation": null,
+      "semantic_ir_unsupported_reason": null,
+      "semantic_ir_unsupported_task_id": null,
       "semantic_ir_validation_error_message": null,
       "semantic_ir_validation_error_type": null,
       "semantic_ir_validation_passed": true,
@@ -62,38 +89,88 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
         "can_run_parallel": true,
         "depends_on": [],
         "evidence_order": "SQL_FIRST",
-        "expected_result": "Look up the 'Birthday Message' campaign in the local snapshot to find its publication/deployment timestamp.",
+        "expected_result": "Look up the Campaign ID for the journey named 'Birthday Message' from the local campaign snapshot.",
         "fallback": false,
         "optional": false,
-        "pass_id": "t1",
+        "pass_id": "t1_lookup_journey_id",
         "path": "SQL",
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "result_contract": {
+          "entity": "dim_campaign",
+          "fields": [
+            "CAMPAIGNID",
+            "NAME"
+          ],
+          "filters": [
+            {
+              "field": "NAME",
+              "op": "=",
+              "value": "Birthday Message"
+            }
+          ],
+          "freshness": "same_run",
+          "object": "campaign",
+          "operation": "LOOKUP",
+          "scope": "local",
+          "source": "LOCAL_SNAPSHOT"
+        },
+        "reuse_result_from": null,
+        "semantic_cache_key": null,
         "sql": {
           "params": [
             "Birthday Message"
           ],
-          "query": "SELECT \"NAME\", \"LASTDEPLOYEDTIME\", \"STARTDATE\", \"CREATEDTIME\", \"UPDATEDTIME\", \"STATE\", \"STATUS\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 10"
+          "query": "SELECT \"CAMPAIGNID\", \"NAME\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 1"
         },
-        "subtask": "Look up the 'Birthday Message' campaign in the local snapshot to find its publication/deployment timestamp."
+        "subtask": "Look up the Campaign ID for the journey named 'Birthday Message' from the local campaign snapshot."
       },
       {
-        "api_request": {
-          "method": "GET",
-          "params": {
-            "limit": 50,
-            "start": 0
-          },
-          "path": "/ajo/journey"
-        },
-        "can_run_parallel": true,
-        "depends_on": [],
-        "evidence_order": "API_FIRST",
-        "expected_result": "Check live Journey Optimizer journeys to see if 'Birthday Message' exists as a journey and retrieve its live state/published status.",
+        "api_request": null,
+        "can_run_parallel": false,
+        "depends_on": [
+          "t1_lookup_journey_id"
+        ],
+        "evidence_order": "SQL_FIRST",
+        "expected_result": "Retrieve the published/deployed date (LASTDEPLOYEDTIME) for the 'Birthday Message' campaign. Also fetch CREATEDTIME and UPDATEDTIME for context.",
         "fallback": false,
-        "optional": true,
-        "pass_id": "t2",
-        "path": "API",
-        "sql": null,
-        "subtask": "Check live Journey Optimizer journeys to see if 'Birthday Message' exists as a journey and retrieve its live state/published status."
+        "optional": false,
+        "pass_id": "t2_get_published_date",
+        "path": "SQL",
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "result_contract": {
+          "entity": "dim_campaign",
+          "fields": [
+            "LASTDEPLOYEDTIME",
+            "CREATEDTIME",
+            "UPDATEDTIME",
+            "STARTDATE"
+          ],
+          "filters": [
+            {
+              "field": "CAMPAIGNID",
+              "op": "=",
+              "value": "{{t1_lookup_journey_id.CAMPAIGNID}}"
+            }
+          ],
+          "freshness": "same_run",
+          "object": "campaign_dates",
+          "operation": "DATE",
+          "scope": "local",
+          "source": "LOCAL_SNAPSHOT"
+        },
+        "reuse_result_from": null,
+        "semantic_cache_key": null,
+        "sql": {
+          "params": [
+            "{{t1_lookup_journey_id.CAMPAIGNID}}"
+          ],
+          "query": "SELECT \"LASTDEPLOYEDTIME\", \"CREATEDTIME\", \"UPDATEDTIME\", \"STARTDATE\" FROM \"dim_campaign\" WHERE \"CAMPAIGNID\" = ? LIMIT 1"
+        },
+        "subtask": "Retrieve the published/deployed date (LASTDEPLOYEDTIME) for the 'Birthday Message' campaign. Also fetch CREATEDTIME and UPDATEDTIME for context."
       }
     ],
     "provider": "openai",
@@ -116,7 +193,7 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "params": [
         "Birthday Message"
       ],
-      "query": "SELECT \"NAME\", \"LASTDEPLOYEDTIME\", \"STARTDATE\", \"CREATEDTIME\", \"UPDATEDTIME\", \"STATE\", \"STATUS\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 10"
+      "query": "SELECT \"CAMPAIGNID\", \"NAME\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 1"
     }
   },
   "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
@@ -132,14 +209,14 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "max_sql_workers": 2,
       "run_timeout_ms": 30000
     },
-    "created_at": "2026-06-01T23:15:32.272703+00:00",
-    "deadline_at": "2026-06-01T23:16:02.272703+00:00",
-    "evidence_bus_id": "evidence_run_5d67f48034ad4ec197d73d2973994e50",
+    "created_at": "2026-06-02T00:05:07.897156+00:00",
+    "deadline_at": "2026-06-02T00:05:37.897156+00:00",
+    "evidence_bus_id": "evidence_run_c30b330060c246369d0628fd9832d40e",
     "original_prompt": "When was the journey \"Birthday Message\" published?",
     "plan_version": 1,
     "prompt_id": "hermes_toolcall_birthday_message_published",
-    "result_bundle_id": "bundle_run_5d67f48034ad4ec197d73d2973994e50",
-    "run_id": "run_5d67f48034ad4ec197d73d2973994e50",
+    "result_bundle_id": "bundle_run_c30b330060c246369d0628fd9832d40e",
+    "run_id": "run_c30b330060c246369d0628fd9832d40e",
     "status": "RUNNING"
   },
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"

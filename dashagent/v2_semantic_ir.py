@@ -7,10 +7,12 @@ from typing import Any
 
 
 ALLOWED_SEMANTIC_IR_ROUTES = {"DIRECT", "EVIDENCE"}
-ALLOWED_SEMANTIC_IR_KINDS = {"CONCEPT", "LOCAL_QUERY", "LIVE_QUERY", "LOCAL_AND_LIVE", "AGGREGATE"}
+ALLOWED_SEMANTIC_IR_KINDS = {"CONCEPT", "LOCAL_QUERY", "LIVE_QUERY", "LOCAL_AND_LIVE", "AGGREGATE", "CACHE_ALIAS"}
 ALLOWED_SEMANTIC_IR_OPERATIONS = {"EXPLAIN", "LIST", "COUNT", "LOOKUP", "STATUS", "DATE", "COMPARE"}
 ALLOWED_SEMANTIC_IR_SOURCES = {"NONE", "LOCAL_SNAPSHOT", "LIVE_API", "BOTH"}
 ALLOWED_SEMANTIC_IR_FILTER_OPS = {"=", "!=", "contains", "in", ">=", "<=", ">", "<"}
+ALLOWED_RESULT_CONTRACT_SCOPES = {"concept", "local", "live", "both"}
+ALLOWED_RESULT_CONTRACT_FRESHNESS = {"same_run"}
 
 
 @dataclass
@@ -53,6 +55,30 @@ class APIQueryIR:
 
 
 @dataclass
+class ResultContractIR:
+    source: str
+    object: str | None
+    entity: str | None
+    operation: str
+    fields: list[str] = field(default_factory=list)
+    filters: list[SemanticIRFilter] = field(default_factory=list)
+    scope: str = "local"
+    freshness: str = "same_run"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "source": self.source,
+            "object": self.object,
+            "entity": self.entity,
+            "operation": self.operation,
+            "fields": list(self.fields),
+            "filters": [item.to_dict() for item in self.filters],
+            "scope": self.scope,
+            "freshness": self.freshness,
+        }
+
+
+@dataclass
 class SemanticIRTask:
     task_id: str
     kind: str
@@ -63,6 +89,12 @@ class SemanticIRTask:
     depends_on: list[str] = field(default_factory=list)
     description: str = ""
     required: bool = True
+    reuse_result_from: str | None = None
+    semantic_cache_key: str | None = None
+    result_contract: ResultContractIR | None = None
+    requires_raw_sql_fallback: bool = False
+    raw_sql_reason: str | None = None
+    unsupported_features: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -75,6 +107,12 @@ class SemanticIRTask:
             "depends_on": list(self.depends_on),
             "description": self.description,
             "required": self.required,
+            "reuse_result_from": self.reuse_result_from,
+            "semantic_cache_key": self.semantic_cache_key,
+            "result_contract": self.result_contract.to_dict() if self.result_contract else None,
+            "requires_raw_sql_fallback": self.requires_raw_sql_fallback,
+            "raw_sql_reason": self.raw_sql_reason,
+            "unsupported_features": list(self.unsupported_features),
         }
 
 
@@ -130,6 +168,11 @@ def _parse_task(item: Any, index: int) -> SemanticIRTask:
     depends_on_raw = item.get("depends_on") if isinstance(item.get("depends_on"), list) else []
     local_query = _parse_local_query(item.get("local_query"))
     api_query = _parse_api_query(item.get("api_query"))
+    reuse_result_from = str(item.get("reuse_result_from") or "").strip() or None
+    semantic_cache_key = str(item.get("semantic_cache_key") or "").strip() or None
+    result_contract = _parse_result_contract(item.get("result_contract"))
+    raw_sql_reason = str(item.get("raw_sql_reason") or "").strip() or None
+    unsupported_raw = item.get("unsupported_features") if isinstance(item.get("unsupported_features"), list) else []
     return SemanticIRTask(
         task_id=task_id,
         kind=kind,
@@ -140,6 +183,12 @@ def _parse_task(item: Any, index: int) -> SemanticIRTask:
         depends_on=[str(dep).strip() for dep in depends_on_raw if str(dep).strip()],
         description=str(item.get("description") or "").strip(),
         required=bool(item.get("required", True)),
+        reuse_result_from=reuse_result_from,
+        semantic_cache_key=semantic_cache_key,
+        result_contract=result_contract,
+        requires_raw_sql_fallback=bool(item.get("requires_raw_sql_fallback", False)),
+        raw_sql_reason=raw_sql_reason,
+        unsupported_features=[str(feature).strip().upper() for feature in unsupported_raw if str(feature).strip()],
     )
 
 
@@ -186,6 +235,33 @@ def _parse_api_query(raw: Any) -> APIQueryIR | None:
         method=str(raw.get("method") or "GET").strip().upper(),
         path_params=dict(path_params),
         query_params=dict(query_params),
+    )
+
+
+def _parse_result_contract(raw: Any) -> ResultContractIR | None:
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise ValueError("result_contract must be an object or null.")
+    fields_raw = raw.get("fields") if isinstance(raw.get("fields"), list) else []
+    filters_raw = raw.get("filters") if isinstance(raw.get("filters"), list) else []
+    scope = str(raw.get("scope") or "").strip().lower()
+    if scope not in ALLOWED_RESULT_CONTRACT_SCOPES:
+        raise ValueError(f"result_contract.scope must be one of {sorted(ALLOWED_RESULT_CONTRACT_SCOPES)}.")
+    freshness = str(raw.get("freshness") or "").strip().lower()
+    if freshness not in ALLOWED_RESULT_CONTRACT_FRESHNESS:
+        raise ValueError(f"result_contract.freshness must be one of {sorted(ALLOWED_RESULT_CONTRACT_FRESHNESS)}.")
+    obj = raw.get("object")
+    entity = raw.get("entity")
+    return ResultContractIR(
+        source=_enum(raw.get("source"), ALLOWED_SEMANTIC_IR_SOURCES, "result_contract.source"),
+        object=str(obj).strip() if obj is not None and str(obj).strip() else None,
+        entity=str(entity).strip() if entity is not None and str(entity).strip() else None,
+        operation=_enum(raw.get("operation"), ALLOWED_SEMANTIC_IR_OPERATIONS, "result_contract.operation"),
+        fields=[str(field).strip() for field in fields_raw if str(field).strip()],
+        filters=[_parse_filter(item) for item in filters_raw],
+        scope=scope,
+        freshness=freshness,
     )
 
 

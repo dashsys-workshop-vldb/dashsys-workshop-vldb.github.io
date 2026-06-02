@@ -62,6 +62,39 @@ class NoToolCallClient(ToolCallSemanticIRClient):
         return "openai"
 
 
+class ToolNameAwareClient(ToolCallSemanticIRClient):
+    def generate_messages(self, messages, tools=None, tool_choice=None, parallel_tool_calls=None, **kwargs):
+        self.calls.append({"messages": messages, "tools": tools, "tool_choice": tool_choice, "parallel_tool_calls": parallel_tool_calls, **kwargs})
+        if not self.responses:
+            raise AssertionError("LLM called more times than expected")
+        response = self.responses.pop(0)
+        if isinstance(response, str):
+            return {
+                "ok": True,
+                "provider": self.provider_name(),
+                "model": self.model_name(),
+                "content": response,
+                "tool_calls": [],
+                "finish_reason": "stop",
+            }
+        expected_tool = response.get("tool_name") or (tool_choice or {}).get("function", {}).get("name") or "submit_semantic_ir_plan"
+        arguments = response.get("arguments", response)
+        return {
+            "ok": True,
+            "provider": self.provider_name(),
+            "model": self.model_name(),
+            "content": "",
+            "tool_calls": [
+                {
+                    "id": "call_1",
+                    "name": expected_tool,
+                    "arguments": arguments,
+                }
+            ],
+            "finish_reason": "tool_calls",
+        }
+
+
 def _schema_context() -> dict:
     return {
         "tables": {
@@ -141,6 +174,84 @@ def _local_count_plan() -> dict:
     }
 
 
+def _unsupported_local_group_plan() -> dict:
+    payload = _local_count_plan()
+    payload["tasks"][0].update(
+        {
+            "task_id": "group_status",
+            "operation": "LIST",
+            "description": "Count campaigns grouped by status.",
+            "requires_raw_sql_fallback": True,
+            "raw_sql_reason": "Needs GROUP BY status, which LocalQueryIR v1 cannot represent.",
+            "unsupported_features": ["GROUP_BY"],
+            "local_query": {
+                "table": "dim_campaign",
+                "fields": ["STATUS"],
+                "filters": [],
+                "limit": 50,
+                "count": False,
+            },
+        }
+    )
+    payload["aggregation_instruction"] = "Answer with counts grouped by status."
+    return payload
+
+
+def _alias_contract(*, operation: str = "STATUS", fields: list[str] | None = None) -> dict:
+    return {
+        "source": "LOCAL_SNAPSHOT",
+        "object": "journey",
+        "entity": "Birthday Message",
+        "operation": operation,
+        "fields": fields or ["NAME", "STATUS"],
+        "filters": [{"field": "NAME", "op": "=", "value": "Birthday Message"}],
+        "scope": "local",
+        "freshness": "same_run",
+    }
+
+
+def _semantic_alias_plan() -> dict:
+    contract = _alias_contract()
+    payload = _local_count_plan()
+    payload["tasks"] = [
+        {
+            "task_id": "local_status",
+            "kind": "LOCAL_QUERY",
+            "operation": "STATUS",
+            "source": "LOCAL_SNAPSHOT",
+            "local_query": {
+                "table": "dim_campaign",
+                "fields": ["NAME", "STATUS"],
+                "filters": [{"field": "NAME", "op": "=", "value": "Birthday Message"}],
+                "limit": 1,
+                "count": False,
+            },
+            "api_query": None,
+            "depends_on": [],
+            "description": "Get local status.",
+            "required": True,
+            "semantic_cache_key": "local_status:Birthday Message",
+            "result_contract": contract,
+        },
+        {
+            "task_id": "local_status_again",
+            "kind": "CACHE_ALIAS",
+            "operation": "STATUS",
+            "source": "LOCAL_SNAPSHOT",
+            "local_query": None,
+            "api_query": None,
+            "depends_on": ["local_status"],
+            "description": "Reuse the same local status result.",
+            "required": True,
+            "reuse_result_from": "local_status",
+            "semantic_cache_key": "local_status:Birthday Message",
+            "result_contract": dict(contract),
+        },
+    ]
+    payload["aggregation_instruction"] = "Use local_status for the status and local_status_again as the same-run alias."
+    return payload
+
+
 def _live_plan() -> dict:
     payload = _local_count_plan()
     payload["tasks"][0].update(
@@ -180,6 +291,11 @@ def test_tool_schema_declares_submit_semantic_ir_plan():
     assert tool["type"] == "function"
     assert tool["function"]["name"] == "submit_semantic_ir_plan"
     assert "tasks" in tool["function"]["parameters"]["properties"]
+    task_schema = tool["function"]["parameters"]["properties"]["tasks"]["items"]
+    assert "CACHE_ALIAS" in task_schema["properties"]["kind"]["enum"]
+    assert "reuse_result_from" in task_schema["properties"]
+    assert "semantic_cache_key" in task_schema["properties"]
+    assert "result_contract" in task_schema["properties"]
 
 
 def test_semantic_ir_parses_direct_and_local_live_shapes():
@@ -194,6 +310,24 @@ def test_semantic_ir_parses_direct_and_local_live_shapes():
 
     live = parse_semantic_ir_from_json_or_line_protocol("The plan is:\n" + json.dumps(_live_plan()))
     assert live.tasks[0].api_query.endpoint_id == "schemas_list"
+
+
+def test_semantic_ir_parses_cache_alias_contract_and_serializes_it():
+    plan = parse_semantic_ir_from_json_or_line_protocol(json.dumps(_semantic_alias_plan()))
+
+    alias = plan.tasks[1]
+    assert alias.kind == "CACHE_ALIAS"
+    assert alias.reuse_result_from == "local_status"
+    assert alias.semantic_cache_key == "local_status:Birthday Message"
+    assert alias.result_contract.source == "LOCAL_SNAPSHOT"
+    assert alias.result_contract.operation == "STATUS"
+    assert alias.result_contract.fields == ["NAME", "STATUS"]
+
+    serialized = semantic_plan_to_dict(plan)
+    assert serialized["tasks"][1]["reuse_result_from"] == "local_status"
+    assert serialized["tasks"][1]["local_query"] is None
+    assert serialized["tasks"][1]["api_query"] is None
+    assert serialized["tasks"][1]["result_contract"]["scope"] == "local"
 
 
 def test_semantic_ir_rejects_invalid_enum_and_does_not_fill_missing_table():
@@ -272,6 +406,26 @@ def test_semantic_ir_validator_checks_cycles_and_dependencies():
     assert failed.error_type == "dependency_cycle"
 
 
+def test_semantic_ir_validator_accepts_valid_alias_and_rejects_invalid_alias_contract():
+    validator = SemanticIRValidator(build_allowed_local_schema_card(_schema_context()), build_allowed_api_context_card(_endpoint_context()))
+
+    valid = validator.validate(parse_semantic_ir_from_json_or_line_protocol(json.dumps(_semantic_alias_plan())))
+    assert valid.passed is True
+    assert valid.semantic_alias_validation_used is True
+    assert valid.semantic_alias_validation_passed is True
+    assert valid.semantic_alias_count == 1
+
+    invalid = _semantic_alias_plan()
+    invalid["tasks"][1]["result_contract"]["operation"] = "DATE"
+    failed = validator.validate(parse_semantic_ir_from_json_or_line_protocol(json.dumps(invalid)))
+    assert failed.passed is False
+    assert failed.error_type == "invalid_semantic_alias"
+    assert failed.task_id == "local_status_again"
+    assert failed.reuse_result_from == "local_status"
+    assert failed.semantic_alias_validation_used is True
+    assert failed.semantic_alias_validation_passed is False
+
+
 def test_semantic_ir_validator_rejects_local_count_without_count_query():
     payload = _local_count_plan()
     payload["tasks"][0] = {
@@ -341,6 +495,24 @@ def test_semantic_ir_compiler_mechanically_compiles_sql_and_api():
     }
 
 
+def test_semantic_ir_compiler_compiles_cache_alias_without_sql_or_api():
+    compiled = compile_semantic_ir_to_plan_payload(
+        parse_semantic_ir_from_json_or_line_protocol(json.dumps(_semantic_alias_plan())),
+        build_allowed_local_schema_card(_schema_context()),
+        build_allowed_api_context_card(_endpoint_context()),
+    )
+
+    alias = compiled["passes"][1]
+    assert alias["path"] == "CACHE_ALIAS"
+    assert alias["sql"] is None
+    assert alias["api_request"] is None
+    assert alias["reuse_result_from"] == "local_status"
+    assert alias["semantic_cache_key"] == "local_status:Birthday Message"
+    assert alias["result_contract"]["operation"] == "STATUS"
+    assert sum(1 for item in compiled["passes"] if item.get("sql")) == 1
+    assert sum(1 for item in compiled["passes"] if item.get("api_request")) == 0
+
+
 def test_local_and_live_compiles_both_without_backend_path_choice():
     compiled = compile_semantic_ir_to_plan_payload(
         parse_semantic_ir_from_json_or_line_protocol(json.dumps(_local_and_live_plan())),
@@ -402,6 +574,98 @@ def test_semantic_ir_planner_prompt_keeps_local_source_preference_llm_owned(monk
     assert "backend" not in rules.lower() or "will not choose" in system_prompt
 
 
+def test_semantic_ir_planner_prompt_declares_llm_owned_alias_rules(monkeypatch):
+    client = ToolCallSemanticIRClient([_semantic_alias_plan()])
+    monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+
+    run_llm_unified_planner(
+        user_prompt="Show the local status of Birthday Message, then use the same local status again.",
+        schema_context=_schema_context(),
+        endpoint_context=_endpoint_context(),
+    )
+
+    user_payload = json.loads(client.calls[0]["messages"][1]["content"])
+    rules = " ".join(user_payload["rules"])
+    assert "CACHE_ALIAS" in rules
+    assert "LLM owns semantic equivalence" in rules
+    assert "Do not alias local and live" in rules
+    assert "Do not alias status and date" in rules
+    assert "result_contract" in rules
+
+
+def test_semantic_ir_planner_prompt_declares_ir_support_and_raw_sql_escape_hatch(monkeypatch):
+    client = ToolCallSemanticIRClient([_local_count_plan()])
+    monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+
+    run_llm_unified_planner(
+        user_prompt="Count campaigns by status.",
+        schema_context=_schema_context(),
+        endpoint_context=_endpoint_context(),
+    )
+
+    user_payload = json.loads(client.calls[0]["messages"][1]["content"])
+    rules = " ".join(user_payload["rules"])
+    assert "Prefer supported Semantic IR operations" in rules
+    assert "raw SQL fallback is an escape hatch" in rules
+    assert "Do not ask the backend to write SQL" in rules
+    assert "LIST/COUNT/LOOKUP/STATUS/DATE" in rules
+
+
+def test_unsupported_semantic_ir_repairs_to_supported_ir_before_raw_sql(monkeypatch):
+    client = ToolCallSemanticIRClient([_unsupported_local_group_plan(), _local_count_plan()])
+    monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+
+    plan = run_llm_unified_planner(
+        user_prompt="How many schema records are in the local snapshot?",
+        schema_context=_schema_context(),
+        endpoint_context=_endpoint_context(),
+    )
+
+    assert plan.passes[0].sql.query == 'SELECT COUNT(*) AS count FROM "dim_schema"'
+    assert plan.passes[0].raw_sql_fallback_used is False
+    assert plan.diagnostics["semantic_ir_support_checked"] is True
+    assert plan.diagnostics["semantic_ir_support_repair_attempted"] is True
+    assert plan.diagnostics["semantic_ir_support_repair_success"] is True
+    assert plan.diagnostics["raw_sql_fallback_used"] is False
+    assert len(client.calls) == 2
+    assert "unsupported_ir" in client.calls[1]["messages"][1]["content"]
+
+
+def test_unsupported_semantic_ir_uses_llm_owned_raw_sql_fallback_after_repair(monkeypatch):
+    raw_sql_response = {
+        "tool_name": "submit_raw_sql_fallback",
+        "arguments": {
+            "task_id": "group_status",
+            "reason": "Use GROUP BY for status counts.",
+            "sql": "SELECT STATUS, COUNT(*) AS count FROM dim_campaign GROUP BY STATUS LIMIT 10",
+            "params": [],
+        },
+    }
+    client = ToolNameAwareClient([_unsupported_local_group_plan(), _unsupported_local_group_plan(), raw_sql_response])
+    monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+
+    plan = run_llm_unified_planner(
+        user_prompt="Count campaigns by status.",
+        schema_context=_schema_context(),
+        endpoint_context=_endpoint_context(),
+    )
+
+    assert plan.passes[0].raw_sql_fallback_used is True
+    assert plan.passes[0].raw_sql_fallback_task_id == "group_status"
+    assert plan.passes[0].sql.query == "SELECT STATUS, COUNT(*) AS count FROM dim_campaign GROUP BY STATUS LIMIT 10"
+    assert plan.diagnostics["semantic_ir_support_checked"] is True
+    assert plan.diagnostics["semantic_ir_support_repair_attempted"] is True
+    assert plan.diagnostics["semantic_ir_support_repair_success"] is False
+    assert plan.diagnostics["raw_sql_fallback_considered"] is True
+    assert plan.diagnostics["raw_sql_fallback_used"] is True
+    assert plan.diagnostics["backend_generated_sql"] is False
+    assert [call["tool_choice"]["function"]["name"] for call in client.calls] == [
+        "submit_semantic_ir_plan",
+        "submit_semantic_ir_plan",
+        "submit_raw_sql_fallback",
+    ]
+
+
 def test_direct_toolcall_route_skips_sql_api_passes(monkeypatch):
     client = ToolCallSemanticIRClient([_direct_plan()])
     monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
@@ -436,6 +700,26 @@ def test_llm_unified_planner_repairs_invalid_semantic_ir_once(monkeypatch):
     assert "unknown_table" in repair_prompt
     assert "allowed_tables" in repair_prompt
     assert "schemas" in repair_prompt
+
+
+def test_llm_unified_planner_repairs_invalid_semantic_alias_once(monkeypatch):
+    broken = _semantic_alias_plan()
+    broken["tasks"][1]["result_contract"]["source"] = "LIVE_API"
+    client = ToolCallSemanticIRClient([broken, _semantic_alias_plan()])
+    monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+
+    plan = run_llm_unified_planner(
+        user_prompt="Show the local status of Birthday Message, then use the same local status again.",
+        schema_context=_schema_context(),
+        endpoint_context=_endpoint_context(),
+    )
+
+    assert [item.path for item in plan.passes] == ["SQL", "CACHE_ALIAS"]
+    assert plan.diagnostics["semantic_alias_validation_used"] is True
+    assert plan.diagnostics["semantic_alias_validation_passed"] is True
+    assert plan.diagnostics["semantic_alias_repair_attempted"] is True
+    assert plan.diagnostics["semantic_alias_count"] == 1
+    assert "invalid_semantic_alias" in client.calls[1]["messages"][1]["content"]
 
 
 def test_unknown_endpoint_repairs_once_and_backend_does_not_choose_replacement(monkeypatch):

@@ -523,6 +523,124 @@ def test_direct_concept_pass_is_not_required_as_runtime_evidence():
     assert "local_rows" in card["required_task_ids"]
 
 
+def test_semantic_alias_pass_is_satisfied_by_same_reused_fact_once():
+    plan = LLMUnifiedPlan(
+        route="EVIDENCE_PIPELINE",
+        evidence_order="MULTI_PASS",
+        direct_answer=None,
+        sql=LLMUnifiedSQLCandidate(query='SELECT "NAME", "STATUS" FROM "dim_campaign"', params=[]),
+        api_request=None,
+        passes=[
+            LLMUnifiedPass(
+                pass_id="local_status",
+                subtask="Retrieve local status.",
+                path="SQL",
+                can_run_parallel=True,
+                depends_on=[],
+                evidence_order="SQL_FIRST",
+                sql=LLMUnifiedSQLCandidate(query='SELECT "NAME", "STATUS" FROM "dim_campaign"', params=[]),
+                api_request=None,
+                expected_result="Local status.",
+                semantic_cache_key="local_status:Birthday Message",
+                result_contract={
+                    "source": "LOCAL_SNAPSHOT",
+                    "object": "journey",
+                    "entity": "Birthday Message",
+                    "operation": "STATUS",
+                    "fields": ["NAME", "STATUS"],
+                    "filters": [{"field": "NAME", "op": "=", "value": "Birthday Message"}],
+                    "scope": "local",
+                    "freshness": "same_run",
+                },
+            ),
+            LLMUnifiedPass(
+                pass_id="local_status_again",
+                subtask="Reuse local status.",
+                path="CACHE_ALIAS",
+                can_run_parallel=False,
+                depends_on=["local_status"],
+                evidence_order="NO_EVIDENCE",
+                sql=None,
+                api_request=None,
+                expected_result="Same local status.",
+                reuse_result_from="local_status",
+                semantic_cache_key="local_status:Birthday Message",
+                result_contract={
+                    "source": "LOCAL_SNAPSHOT",
+                    "object": "journey",
+                    "entity": "Birthday Message",
+                    "operation": "STATUS",
+                    "fields": ["NAME", "STATUS"],
+                    "filters": [{"field": "NAME", "op": "=", "value": "Birthday Message"}],
+                    "scope": "local",
+                    "freshness": "same_run",
+                },
+            ),
+        ],
+        aggregation_instruction="Use the local status once; the second task is a same-run alias.",
+        reason="test",
+        provider="openai",
+        model="unit",
+    )
+    runtime_passes = [
+        {
+            "pass_id": "local_status",
+            "source": "SQL",
+            "path": "SQL",
+            "status": "SUCCESS",
+            "scope": "LOCAL_SNAPSHOT",
+            "facts": ["name: Birthday Message", "status: active"],
+            "source_results": [{"source": "SQL", "status": "SUCCESS", "scope": "LOCAL_SNAPSHOT", "result": {"rows": [{"NAME": "Birthday Message", "STATUS": "active"}]}}],
+        },
+        {
+            "pass_id": "local_status_again",
+            "source": "SEMANTIC_CACHE_ALIAS",
+            "path": "CACHE_ALIAS",
+            "status": "SUCCESS",
+            "scope": "LOCAL_SNAPSHOT",
+            "facts": ["name: Birthday Message", "status: active"],
+            "depends_on": ["local_status"],
+            "reuse_result_from": "local_status",
+            "semantic_cache_key": "local_status:Birthday Message",
+            "alias_materialized": True,
+            "shared_execution_id": "unit:local_status",
+            "source_results": [
+                {
+                    "source": "SEMANTIC_CACHE_ALIAS",
+                    "status": "SUCCESS",
+                    "scope": "LOCAL_SNAPSHOT",
+                    "result": {"producer_pass_id": "local_status"},
+                }
+            ],
+        },
+    ]
+    bus = EvidenceBus(run_id="unit")
+    for item in runtime_passes:
+        bus.observe_pass_result(item)
+    slots = extract_answer_slots("Show the local status of Birthday Message, then use the same local status again.", [_sql_tool_result([{"NAME": "Birthday Message", "STATUS": "active"}])])
+
+    card = build_llm_final_answer_card(
+        user_prompt="Show the local status of Birthday Message, then use the same local status again.",
+        llm_plan=plan,
+        runtime_passes=runtime_passes,
+        evidence_bus=bus,
+        answer_slots=slots,
+        result_bundle=ResultBundle.from_pass_results(runtime_passes, [], run_id="unit"),
+    )
+    gate = check_final_answer_semantic_grounding(
+        "Birthday Message has local status active.",
+        question="Show the local status of Birthday Message, then use the same local status again.",
+        runtime_passes=runtime_passes,
+        evidence_bus=bus,
+        slots=slots,
+    )
+
+    assert card["pass_result_checklist"][1]["alias_materialized"] is True
+    assert card["pass_result_checklist"][1]["reuse_result_from"] == "local_status"
+    assert card["AVAILABLE_RUNTIME_FACTS"][1]["source"] == "CACHE_ALIAS"
+    assert gate.passed is True
+
+
 def test_safe_error_fallback_uses_semantic_gate_safe_wording():
     answer = safe_llm_final_answer_fallback([{"status": "ERROR"}])
     bus, slots = _bus_and_slots("When was the journey Birthday Message published?", [])

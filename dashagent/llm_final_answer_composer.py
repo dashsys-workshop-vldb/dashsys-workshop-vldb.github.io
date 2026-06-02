@@ -523,6 +523,9 @@ def _task_checklist(llm_plan: LLMUnifiedPlan) -> list[dict[str, Any]]:
                 "subtask": item.subtask,
                 "path": item.path,
                 "depends_on": list(item.depends_on),
+                "reuse_result_from": getattr(item, "reuse_result_from", None),
+                "semantic_cache_key": getattr(item, "semantic_cache_key", None),
+                "result_contract": getattr(item, "result_contract", None),
                 "expected_result": item.expected_result,
                 "required": not bool(getattr(item, "optional", False) or getattr(item, "fallback", False)),
             }
@@ -555,6 +558,10 @@ def _pass_result_checklist(runtime_passes: list[dict[str, Any]]) -> list[dict[st
                 "facts": [str(value) for value in item.get("facts", [])[:10] if value] if isinstance(item.get("facts"), list) else [],
                 "caveats": [str(value) for value in item.get("caveats", [])[:8] if value] if isinstance(item.get("caveats"), list) else [],
                 "depends_on": list(item.get("depends_on") or []) if isinstance(item.get("depends_on"), list) else [],
+                "reuse_result_from": item.get("reuse_result_from"),
+                "semantic_cache_key": item.get("semantic_cache_key"),
+                "alias_materialized": item.get("alias_materialized"),
+                "shared_execution_id": item.get("shared_execution_id"),
             }
         )
     return _strip_sensitive_keys(checklist)
