@@ -354,7 +354,14 @@ def safe_llm_final_answer_fallback(runtime_passes: list[dict[str, Any]], *, synt
     available = _available_runtime_facts(runtime_passes, None)
     if available:
         summary = _fallback_fact_summary(available)
-        return f"I found runtime evidence but could not compose a verified final answer. Available scoped evidence includes: {summary}."
+        prefix = "Local snapshot evidence shows" if any(str(item.get("scope") or "").upper() == "LOCAL_SNAPSHOT" for item in available) else "Runtime evidence shows"
+        answer = f"{prefix} {summary}."
+        failed = _failed_or_unavailable_sources(runtime_passes, None)
+        if any(str(item.get("source") or item.get("status") or "").upper() in {"API", "LIVE_API", "API_ERROR"} for item in failed):
+            answer += " Live API evidence was unavailable, so a live comparison cannot be completed."
+        elif failed:
+            answer += " Some requested runtime evidence was unavailable for this query/scope."
+        return answer
     statuses = {str(item.get("status") or "").upper() for item in runtime_passes}
     has_success = "SUCCESS" in statuses or any(_pass_has_successful_evidence(item) for item in runtime_passes)
     if has_success:

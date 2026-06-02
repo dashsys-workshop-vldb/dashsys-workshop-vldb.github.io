@@ -750,7 +750,9 @@ def _semantic_ir_user_prompt(
             "Phrases like 'do I have', 'my', 'show/list/give me records', and bare entity lookups without live/current/platform/API cues are LOCAL_SNAPSHOT requests.",
             "Do not choose LIVE_QUERY merely because a live endpoint exists for the object family.",
             "Use LIVE_QUERY only when the prompt explicitly asks for live/current/platform/API state or when comparing local/live evidence.",
+            "For prompts that ask to show/list actual records without live/current/platform/API cues, prefer LOCAL_QUERY over LIVE_QUERY.",
             "For mixed concept plus data prompts without live/current/platform/API cues, include a CONCEPT task and a LOCAL_QUERY data task; do not use API as the primary data source.",
+            "For inactive journeys without live/current/platform/API cues, use local snapshot journey/campaign records when an allowed local table is available.",
             "For any how many/count/number of/total prompt, use operation COUNT and local_query.count=true; do not list rows and count the displayed limit.",
             "For local snapshot counts, use LOCAL_QUERY with operation COUNT.",
             "Do not represent a requested COUNT as an AGGREGATE task over a sampled LIST task; sampled rows are not a count.",
@@ -771,6 +773,13 @@ def _semantic_ir_user_prompt(
             "Do not alias concept explanations to runtime evidence.",
             "Do not alias different entities, different sources, different scopes, different fields, or different filters.",
             "Alias reuse is same-run only.",
+        ],
+        "semantic_ir_examples": [
+            {
+                "user_prompt": "Explain what inactive journey means and show inactive journeys.",
+                "shape": "CONCEPT task explains inactive journey; LOCAL_QUERY task lists inactive/local journey records from an allowed local table.",
+                "reason": "The prompt asks for a concept plus actual records but has no live/current/platform/API cue.",
+            }
         ],
         "semantic_alias_examples": [
             {

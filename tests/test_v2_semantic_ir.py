@@ -574,6 +574,28 @@ def test_semantic_ir_planner_prompt_keeps_local_source_preference_llm_owned(monk
     assert "backend" not in rules.lower() or "will not choose" in system_prompt
 
 
+def test_semantic_ir_planner_prompt_examples_mixed_inactive_journeys_as_concept_plus_local_query(monkeypatch):
+    client = ToolCallSemanticIRClient([_local_count_plan()])
+    monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+
+    run_llm_unified_planner(
+        user_prompt="Explain what inactive journey means and show inactive journeys.",
+        schema_context=_schema_context(),
+        endpoint_context=_endpoint_context(),
+    )
+
+    user_payload = json.loads(client.calls[0]["messages"][1]["content"])
+    examples = json.dumps(user_payload.get("semantic_ir_examples"), sort_keys=True)
+    rules = " ".join(user_payload["rules"])
+
+    assert "Explain what inactive journey means and show inactive journeys" in examples
+    assert "CONCEPT" in examples
+    assert "LOCAL_QUERY" in examples
+    assert "LIVE_QUERY" not in examples
+    assert "show/list actual records" in rules
+    assert "inactive journeys" in rules
+
+
 def test_semantic_ir_planner_prompt_declares_llm_owned_alias_rules(monkeypatch):
     client = ToolCallSemanticIRClient([_semantic_alias_plan()])
     monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)

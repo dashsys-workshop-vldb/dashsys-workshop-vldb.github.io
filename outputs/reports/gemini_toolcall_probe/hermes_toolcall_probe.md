@@ -13,6 +13,9 @@
 - tool_name: `None`
 - finish_reason: `None`
 - tool_call_warning: `None`
+- gemini_openai_compat_mode: `True`
+- payload_keys: `['model', 'messages', 'tools', 'tool_choice']`
+- omitted_for_gemini: `['temperature', 'max_tokens', 'parallel_tool_calls']`
 - pioneer_used: `False`
 
 Error: `<html><title>Error 400 (Bad Request)!!1</title></html>`

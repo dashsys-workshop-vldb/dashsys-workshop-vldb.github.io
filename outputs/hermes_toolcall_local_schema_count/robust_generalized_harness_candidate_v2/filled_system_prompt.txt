@@ -10,7 +10,7 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
   "backend_semantic_planning_used": false,
   "llm_owned_generation": true,
   "llm_unified_plan": {
-    "aggregation_instruction": "Return the count from t1.",
+    "aggregation_instruction": "State the total number of local schema records (blueprints) retrieved from the dim_blueprint table count query.",
     "api_request": null,
     "backend_unavailable": false,
     "diagnostics": {
@@ -28,7 +28,7 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "planner_json_fallback_used": false,
       "planner_json_parse_error": null,
       "planner_parse_source": "sdk_toolcall_semantic_ir",
-      "planner_provider_latency_ms": 32118,
+      "planner_provider_latency_ms": 9229,
       "planner_repair_attempted": false,
       "planner_success": true,
       "planner_timeout": false,
@@ -56,12 +56,12 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "semantic_alias_validation_passed": true,
       "semantic_alias_validation_used": true,
       "semantic_ir_plan_preview": {
-        "aggregation_instruction": "Return the count from t1.",
+        "aggregation_instruction": "State the total number of local schema records (blueprints) retrieved from the dim_blueprint table count query.",
         "route": "EVIDENCE",
         "tasks": {
           "items": [
             {
-              "description": "Count the number of schema records in the local snapshot using the dim_blueprint table.",
+              "description": "Count the number of schema records (blueprints) in the local snapshot.",
               "kind": "LOCAL_QUERY",
               "local_query": {
                 "count": true,
@@ -72,14 +72,13 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
                   "total_items": 1,
                   "truncated_items": false
                 },
-                "limit": 1,
                 "table": "dim_blueprint"
               },
               "operation": "COUNT",
               "reuse_result_from": null,
               "semantic_cache_key": null,
               "source": "LOCAL_SNAPSHOT",
-              "task_id": "t1_schema_count",
+              "task_id": "count_local_schemas",
               "truncated_fields": 7
             }
           ],
@@ -87,10 +86,10 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
           "truncated_items": false
         }
       },
-      "semantic_ir_provider_latency_ms": 32116,
-      "semantic_ir_repair_attempted": true,
-      "semantic_ir_repair_latency_ms": 15683,
-      "semantic_ir_repair_success": true,
+      "semantic_ir_provider_latency_ms": 9225,
+      "semantic_ir_repair_attempted": false,
+      "semantic_ir_repair_latency_ms": 0,
+      "semantic_ir_repair_success": false,
       "semantic_ir_support_check_latency_ms": 0,
       "semantic_ir_support_checked": true,
       "semantic_ir_support_recommended_action": "COMPILE",
@@ -106,8 +105,8 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "semantic_ir_unsupported_operation": null,
       "semantic_ir_unsupported_reason": null,
       "semantic_ir_unsupported_task_id": null,
-      "semantic_ir_validation_error_message": "Unknown table: schema_registry_schemas",
-      "semantic_ir_validation_error_type": "unknown_table",
+      "semantic_ir_validation_error_message": null,
+      "semantic_ir_validation_error_type": null,
       "semantic_ir_validation_latency_ms": 0,
       "semantic_ir_validation_passed": true,
       "sql_compile_gate_failures": 0,
@@ -115,7 +114,7 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
     },
     "direct_answer": null,
     "evidence_order": "SQL_FIRST",
-    "model": "/Users/tanqinyang/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+    "model": "gemini-3.5-flash",
     "parse_error": false,
     "passes": [
       {
@@ -123,47 +122,47 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
         "can_run_parallel": true,
         "depends_on": [],
         "evidence_order": "SQL_FIRST",
-        "expected_result": "Count the number of schema records in the local snapshot using the dim_blueprint table.",
+        "expected_result": "Count the number of schema records (blueprints) in the local snapshot.",
         "fallback": false,
         "optional": false,
-        "pass_id": "t1_schema_count",
+        "pass_id": "count_local_schemas",
         "path": "SQL",
         "raw_sql_fallback_reason": null,
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
-        "result_contract": null,
+        "result_contract": {
+          "entity": "dim_blueprint",
+          "fields": [
+            "BLUEPRINTID"
+          ],
+          "filters": [],
+          "freshness": "same_run",
+          "object": "schema",
+          "operation": "COUNT",
+          "scope": "local",
+          "source": "LOCAL_SNAPSHOT"
+        },
         "reuse_result_from": null,
         "semantic_cache_key": null,
         "sql": {
           "params": [],
           "query": "SELECT COUNT(*) AS count FROM \"dim_blueprint\""
         },
-        "subtask": "Count the number of schema records in the local snapshot using the dim_blueprint table."
+        "subtask": "Count the number of schema records (blueprints) in the local snapshot."
       }
     ],
     "provider": "openai",
     "raw_preview": {
       "semantic_ir_initial": {
-        "base_url": "[REDACTED]",
+        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
         "error": null,
-        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+        "model": "[REDACTED]",
         "ok": true,
         "provider": "openai",
         "sdk_path_used": true,
         "skipped": false,
         "transport": "openai_sdk",
-        "truncated_fields": 8
-      },
-      "semantic_ir_repair": {
-        "base_url": "[REDACTED]",
-        "error": null,
-        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-        "ok": true,
-        "provider": "openai",
-        "sdk_path_used": true,
-        "skipped": false,
-        "transport": "openai_sdk",
-        "truncated_fields": 8
+        "truncated_fields": 11
       }
     },
     "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
@@ -186,14 +185,14 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "max_sql_workers": 2,
       "run_timeout_ms": 30000
     },
-    "created_at": "2026-06-02T06:33:18.349186+00:00",
-    "deadline_at": "2026-06-02T06:33:48.349186+00:00",
-    "evidence_bus_id": "evidence_run_3d9e88b956bd4f04a8285ffcf2b15adb",
+    "created_at": "2026-06-02T08:06:59.402810+00:00",
+    "deadline_at": "2026-06-02T08:07:29.402810+00:00",
+    "evidence_bus_id": "evidence_run_8f1f489f871c44428898826fb2c79808",
     "original_prompt": "How many schema records are in the local snapshot?",
     "plan_version": 1,
     "prompt_id": "hermes_toolcall_local_schema_count",
-    "result_bundle_id": "bundle_run_3d9e88b956bd4f04a8285ffcf2b15adb",
-    "run_id": "run_3d9e88b956bd4f04a8285ffcf2b15adb",
+    "result_bundle_id": "bundle_run_8f1f489f871c44428898826fb2c79808",
+    "run_id": "run_8f1f489f871c44428898826fb2c79808",
     "status": "RUNNING"
   },
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"

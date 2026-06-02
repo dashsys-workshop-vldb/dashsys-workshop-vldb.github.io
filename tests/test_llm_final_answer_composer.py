@@ -814,9 +814,102 @@ def test_safe_fallback_with_runtime_facts_summarizes_scoped_evidence_not_global_
         ]
     )
 
-    assert answer.startswith("I found runtime evidence but could not compose a verified final answer.")
+    assert answer.startswith("Local snapshot evidence shows")
     assert "count: 74" in answer
     assert "Runtime evidence was unavailable" not in answer
+    assert "could not compose a verified final answer" not in answer
+
+
+def test_safe_fallback_with_local_status_and_api_error_gives_scoped_evidence_state_answer():
+    runtime_passes = [
+            {
+                "pass_id": "local_campaign_status",
+                "path": "SQL",
+                "source": "SQL",
+                "status": "SUCCESS",
+                "scope": "LOCAL_SNAPSHOT",
+                "facts": ["name: Birthday Message", "status: updated"],
+                "source_results": [
+                    {
+                        "source": "SQL",
+                        "status": "SUCCESS",
+                        "scope": "LOCAL_SNAPSHOT",
+                        "result": {
+                            "row_count": 1,
+                            "rows": [
+                                {
+                                    "NAME": "Birthday Message",
+                                    "STATUS": "updated",
+                                    "STATE": "updated",
+                                    "CAMPAIGNID": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+                                }
+                            ],
+                        },
+                    }
+                ],
+            },
+            {
+                "pass_id": "live_journey_status",
+                "path": "API",
+                "source": "API",
+                "status": "API_ERROR",
+                "scope": "LIVE_API",
+                "caveats": ["Adobe credentials unavailable; API call not executed."],
+                "source_results": [
+                    {
+                        "source": "API",
+                        "status": "API_ERROR",
+                        "scope": "LIVE_API",
+                        "error": "Adobe credentials unavailable; API call not executed.",
+                    }
+                ],
+            },
+        ]
+    answer = safe_llm_final_answer_fallback(runtime_passes)
+
+    lowered = answer.lower()
+    assert "local snapshot evidence shows" in lowered
+    assert "birthday message" in lowered
+    assert "updated" in lowered
+    assert "live" in lowered
+    assert "unavailable" in lowered or "api" in lowered
+    assert "could not compose a verified final answer" not in lowered
+    assert "runtime evidence was unavailable" not in lowered
+
+    bus, slots = _bus_and_slots(
+        "Compare local and live status of Birthday Message if both are available.",
+        [
+            _sql_tool_result(
+                [
+                    {
+                        "NAME": "Birthday Message",
+                        "STATUS": "updated",
+                        "STATE": "updated",
+                        "CAMPAIGNID": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+                    }
+                ]
+            )
+        ],
+    )
+    bus.api_errors.append("Adobe credentials unavailable; API call not executed.")
+
+    fallback_gate = check_final_answer_semantic_grounding(
+        answer,
+        question="Compare local and live status of Birthday Message if both are available.",
+        runtime_passes=runtime_passes,
+        evidence_bus=bus,
+        slots=slots,
+    )
+    fabricated_live_gate = check_final_answer_semantic_grounding(
+        "Local status is updated, and the live status is active.",
+        question="Compare local and live status of Birthday Message if both are available.",
+        runtime_passes=runtime_passes,
+        evidence_bus=bus,
+        slots=slots,
+    )
+
+    assert fallback_gate.passed is True
+    assert fabricated_live_gate.passed is False
 
 
 def test_semantic_gate_allows_extra_correct_context_without_gold_wording():

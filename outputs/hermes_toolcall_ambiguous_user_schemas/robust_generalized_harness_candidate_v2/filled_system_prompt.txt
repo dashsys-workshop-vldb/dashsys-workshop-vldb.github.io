@@ -10,7 +10,7 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
   "backend_semantic_planning_used": false,
   "llm_owned_generation": true,
   "llm_unified_plan": {
-    "aggregation_instruction": "Return the list of schemas (blueprints) with their IDs and names retrieved from the local snapshot.",
+    "aggregation_instruction": "List the schemas found in the local snapshot from the dim_blueprint table, displaying their names, IDs, descriptions, and classes.",
     "api_request": null,
     "backend_unavailable": false,
     "diagnostics": {
@@ -28,7 +28,7 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "planner_json_fallback_used": false,
       "planner_json_parse_error": null,
       "planner_parse_source": "sdk_toolcall_semantic_ir",
-      "planner_provider_latency_ms": 18959,
+      "planner_provider_latency_ms": 10225,
       "planner_repair_attempted": false,
       "planner_success": true,
       "planner_timeout": false,
@@ -56,22 +56,23 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "semantic_alias_validation_passed": true,
       "semantic_alias_validation_used": true,
       "semantic_ir_plan_preview": {
-        "aggregation_instruction": "Return the list of schemas (blueprints) with their IDs and names retrieved from the local snapshot.",
+        "aggregation_instruction": "List the schemas found in the local snapshot from the dim_blueprint table, displaying their names, IDs, descriptions, and classes.",
         "route": "EVIDENCE",
         "tasks": {
           "items": [
             {
-              "description": "List the schema blueprints (schemas) available in the local snapshot by retrieving their IDs and names from the dim_blueprint table.",
+              "description": "Retrieve the list of schemas (blueprints) from the local dim_blueprint table including their IDs, names, descriptions, and classes.",
               "kind": "LOCAL_QUERY",
               "local_query": {
                 "count": false,
                 "fields": {
                   "items": [
                     "BLUEPRINTID",
-                    "NAME"
+                    "NAME",
+                    "DESCRIPTION"
                   ],
-                  "total_items": 2,
-                  "truncated_items": false
+                  "total_items": 6,
+                  "truncated_items": true
                 },
                 "limit": 100,
                 "table": "dim_blueprint"
@@ -80,7 +81,7 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
               "reuse_result_from": null,
               "semantic_cache_key": null,
               "source": "LOCAL_SNAPSHOT",
-              "task_id": "t1_list_schemas",
+              "task_id": "fetch_local_schemas",
               "truncated_fields": 7
             }
           ],
@@ -88,7 +89,7 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
           "truncated_items": false
         }
       },
-      "semantic_ir_provider_latency_ms": 18957,
+      "semantic_ir_provider_latency_ms": 10222,
       "semantic_ir_repair_attempted": false,
       "semantic_ir_repair_latency_ms": 0,
       "semantic_ir_repair_success": false,
@@ -116,7 +117,7 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
     },
     "direct_answer": null,
     "evidence_order": "SQL_FIRST",
-    "model": "/Users/tanqinyang/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+    "model": "gemini-3.5-flash",
     "parse_error": false,
     "passes": [
       {
@@ -124,10 +125,10 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
         "can_run_parallel": true,
         "depends_on": [],
         "evidence_order": "SQL_FIRST",
-        "expected_result": "List the schema blueprints (schemas) available in the local snapshot by retrieving their IDs and names from the dim_blueprint table.",
+        "expected_result": "Retrieve the list of schemas (blueprints) from the local dim_blueprint table including their IDs, names, descriptions, and classes.",
         "fallback": false,
         "optional": false,
-        "pass_id": "t1_list_schemas",
+        "pass_id": "fetch_local_schemas",
         "path": "SQL",
         "raw_sql_fallback_reason": null,
         "raw_sql_fallback_task_id": null,
@@ -136,11 +137,15 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
           "entity": "schema",
           "fields": [
             "BLUEPRINTID",
-            "NAME"
+            "NAME",
+            "DESCRIPTION",
+            "CLASS",
+            "CREATEDTIME",
+            "UPDATEDTIME"
           ],
           "filters": [],
           "freshness": "same_run",
-          "object": null,
+          "object": "schema",
           "operation": "LIST",
           "scope": "local",
           "source": "LOCAL_SNAPSHOT"
@@ -149,30 +154,30 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
         "semantic_cache_key": null,
         "sql": {
           "params": [],
-          "query": "SELECT \"BLUEPRINTID\", \"NAME\" FROM \"dim_blueprint\" LIMIT 100"
+          "query": "SELECT \"BLUEPRINTID\", \"NAME\", \"DESCRIPTION\", \"CLASS\", \"CREATEDTIME\", \"UPDATEDTIME\" FROM \"dim_blueprint\" LIMIT 100"
         },
-        "subtask": "List the schema blueprints (schemas) available in the local snapshot by retrieving their IDs and names from the dim_blueprint table."
+        "subtask": "Retrieve the list of schemas (blueprints) from the local dim_blueprint table including their IDs, names, descriptions, and classes."
       }
     ],
     "provider": "openai",
     "raw_preview": {
       "semantic_ir_initial": {
-        "base_url": "[REDACTED]",
+        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
         "error": null,
-        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+        "model": "[REDACTED]",
         "ok": true,
         "provider": "openai",
         "sdk_path_used": true,
         "skipped": false,
         "transport": "openai_sdk",
-        "truncated_fields": 8
+        "truncated_fields": 11
       }
     },
     "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
     "route": "EVIDENCE_PIPELINE",
     "sql": {
       "params": [],
-      "query": "SELECT \"BLUEPRINTID\", \"NAME\" FROM \"dim_blueprint\" LIMIT 100"
+      "query": "SELECT \"BLUEPRINTID\", \"NAME\", \"DESCRIPTION\", \"CLASS\", \"CREATEDTIME\", \"UPDATEDTIME\" FROM \"dim_blueprint\" LIMIT 100"
     }
   },
   "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
@@ -188,14 +193,14 @@ Use the selected metadata exactly. Do not invent tables, columns, joins, endpoin
       "max_sql_workers": 2,
       "run_timeout_ms": 30000
     },
-    "created_at": "2026-06-02T06:32:41.374173+00:00",
-    "deadline_at": "2026-06-02T06:33:11.374173+00:00",
-    "evidence_bus_id": "evidence_run_07ffcd0c4ec444c5b67909d564b6c3b5",
+    "created_at": "2026-06-02T08:06:38.203266+00:00",
+    "deadline_at": "2026-06-02T08:07:08.203266+00:00",
+    "evidence_bus_id": "evidence_run_f91cad065ef1491cbc6306ec6b3e2bc7",
     "original_prompt": "What schemas do I have?",
     "plan_version": 1,
     "prompt_id": "hermes_toolcall_ambiguous_user_schemas",
-    "result_bundle_id": "bundle_run_07ffcd0c4ec444c5b67909d564b6c3b5",
-    "run_id": "run_07ffcd0c4ec444c5b67909d564b6c3b5",
+    "result_bundle_id": "bundle_run_f91cad065ef1491cbc6306ec6b3e2bc7",
+    "run_id": "run_f91cad065ef1491cbc6306ec6b3e2bc7",
     "status": "RUNNING"
   },
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"

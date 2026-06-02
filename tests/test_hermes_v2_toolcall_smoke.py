@@ -64,6 +64,71 @@ def test_smoke_row_counts_successful_sql_rows_as_runtime_facts():
     assert row["pass"] is True
 
 
+def test_smoke_row_counts_compacted_sql_success_with_answer_slots_as_runtime_facts():
+    result = {
+        "final_answer": "Based on the local snapshot, you have 74 schemas. Examples include Schema Alpha and Schema Beta.",
+        "output_dir": "/tmp/out",
+        "trajectory": {
+            "steps": [
+                {
+                    "kind": "llm_unified_planner",
+                    "route": "EVIDENCE_PIPELINE",
+                    "diagnostics": {
+                        "sdk_toolcall_semantic_ir_used": True,
+                        "semantic_ir_validation_passed": True,
+                        "backend_formal_compilation_used": True,
+                        "atomic_protocol_fallback_used": False,
+                        "compiled_sql_count": 1,
+                        "compiled_api_count": 0,
+                    },
+                    "passes": [{"path": "SQL"}],
+                },
+                {
+                    "kind": "sql_call",
+                    "result": {
+                        "preview": '{"ok":true,"rows":{"items":[{"NAME":"Schema Alpha"},{"NAME":"Schema Beta"}],"total_items":74',
+                        "truncated": True,
+                    },
+                },
+                {"kind": "evidence_boundary", "evidence_pipeline_bypassed": False, "evidence_bus_built": True},
+                {"kind": "answer_diagnostics", "semantic_gate": {"passed": True, "unsupported_claims": []}},
+            ]
+        },
+        "checkpoints": [
+            {
+                "checkpoint_id": "checkpoint_result_bundle",
+                "output": {
+                    "runtime_passes": {
+                        "items": [{"pass_id": "fetch_local_schemas", "path": "SQL", "status": "SUCCESS"}],
+                        "total_items": 1,
+                        "truncated_items": False,
+                    }
+                },
+            },
+            {
+                "checkpoint_id": "checkpoint_llm_final_answer_composer",
+                "input_summary": {
+                    "runtime_pass_count": 1,
+                    "slot_counts": {
+                        "sql_row_count": 74,
+                        "counts": {"items": ["74"], "total_items": 1, "truncated_items": False},
+                        "entity_names": {"items": ["Schema Alpha", "Schema Beta"], "total_items": 2, "truncated_items": False},
+                    },
+                },
+            },
+            {"checkpoint_id": "checkpoint_llm_final_answer_semantic_gate", "output": {"passed": True}},
+            {"checkpoint_id": "checkpoint_llm_owned_final_answer_boundary", "output": {"answer_semantic_gate_passed": True}},
+        ],
+    }
+
+    row = _build_smoke_row({"id": "ambiguous_user_schemas", "prompt": "What schemas do I have?", "expected": "EVIDENCE_LOCAL"}, result)
+
+    assert row["runtime_fact_count"] > 0
+    assert row["local_snapshot_fact_count"] > 0
+    assert row["matches_expectation"] is True
+    assert row["pass"] is True
+
+
 def test_smoke_row_fails_local_preference_when_data_prompt_uses_api_only():
     result = {
         "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",

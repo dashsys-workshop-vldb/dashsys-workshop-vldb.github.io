@@ -84,6 +84,7 @@ from .query_tokens import extract_query_tokens
 from .llm_sql_generator import generate_sql_with_llm, repair_sql_with_llm
 from .llm_client import get_llm_client
 from .llm_final_answer_composer import (
+    LLMFinalAnswerCandidate,
     build_llm_final_answer_card,
     check_final_answer_semantic_grounding,
     check_final_answer_syntax,
@@ -1884,11 +1885,26 @@ class AgentExecutor:
         else:
             final_answer_repair_latency_sec = 0.0
         final_answer_supported = bool(final_syntax_gate.passed and final_semantic_gate is not None and final_semantic_gate.passed)
-        final_answer = (
-            final_syntax_gate.final_answer
-            if final_answer_supported and final_syntax_gate.final_answer is not None
-            else safe_llm_final_answer_fallback(runtime_passes, syntax_gate=final_syntax_gate, semantic_gate=final_semantic_gate)
-        )
+        if final_answer_supported and final_syntax_gate.final_answer is not None:
+            final_answer = final_syntax_gate.final_answer
+        else:
+            final_answer = safe_llm_final_answer_fallback(runtime_passes, syntax_gate=final_syntax_gate, semantic_gate=final_semantic_gate)
+            fallback_candidate = LLMFinalAnswerCandidate(final_answer=final_answer)
+            fallback_syntax_gate = check_final_answer_syntax(fallback_candidate)
+            fallback_semantic_gate = (
+                check_final_answer_semantic_grounding(
+                    fallback_syntax_gate.final_answer or "",
+                    question=query,
+                    runtime_passes=runtime_passes,
+                    evidence_bus=evidence_bus,
+                    slots=slots,
+                )
+                if fallback_syntax_gate.passed
+                else None
+            )
+            final_syntax_gate = fallback_syntax_gate
+            final_semantic_gate = fallback_semantic_gate
+            final_answer_supported = bool(final_syntax_gate.passed and final_semantic_gate is not None and final_semantic_gate.passed)
         answer_diagnostics = {
             "llm_owned_final_answer": True,
             "answer_composer_used": "LLMFinalAnswerComposer",

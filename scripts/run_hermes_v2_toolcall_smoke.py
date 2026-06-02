@@ -475,6 +475,7 @@ def _fact_metrics(result: dict[str, Any]) -> dict[str, int]:
                     metrics["local_snapshot_fact_count"] += missing
         if status in {"API_ERROR", "ERROR", "LIVE_EMPTY", "EMPTY"} and facts == 0:
             metrics["caveat_or_error_only_count"] += 1
+    _apply_compacted_slot_fact_metrics(result, metrics)
     return metrics
 
 
@@ -536,7 +537,55 @@ def _checkpoint_runtime_passes(result: dict[str, Any]) -> list[dict[str, Any]]:
         runtime_passes = output.get("runtime_passes")
         if isinstance(runtime_passes, list):
             out.extend(item for item in runtime_passes if isinstance(item, dict))
+        elif isinstance(runtime_passes, dict) and isinstance(runtime_passes.get("items"), list):
+            out.extend(item for item in runtime_passes["items"] if isinstance(item, dict))
     return out
+
+
+def _apply_compacted_slot_fact_metrics(result: dict[str, Any], metrics: dict[str, int]) -> None:
+    if metrics["runtime_fact_count"] > 0:
+        return
+    successful_local_pass = any(
+        str(item.get("status") or "").upper() == "SUCCESS"
+        and str(item.get("path") or item.get("source") or "").upper() in {"SQL", "LOCAL_QUERY", "LOCAL_SNAPSHOT"}
+        for item in _checkpoint_runtime_passes(result)
+        if isinstance(item, dict)
+    )
+    if not successful_local_pass:
+        return
+    slot_counts = _final_answer_slot_counts(result)
+    fact_count = _slot_fact_count(slot_counts)
+    if fact_count <= 0:
+        return
+    metrics["runtime_fact_count"] += fact_count
+    metrics["local_snapshot_fact_count"] += fact_count
+
+
+def _final_answer_slot_counts(result: dict[str, Any]) -> dict[str, Any]:
+    for checkpoint in result.get("checkpoints") or []:
+        if checkpoint.get("checkpoint_id") != "checkpoint_llm_final_answer_composer":
+            continue
+        input_summary = checkpoint.get("input_summary") if isinstance(checkpoint.get("input_summary"), dict) else {}
+        slot_counts = input_summary.get("slot_counts")
+        if isinstance(slot_counts, dict):
+            return slot_counts
+    return {}
+
+
+def _slot_fact_count(slot_counts: dict[str, Any]) -> int:
+    count = 0
+    for key in ("counts", "entity_names", "entity_ids", "statuses", "timestamps", "dates", "relationships"):
+        value = slot_counts.get(key)
+        if isinstance(value, dict):
+            count += len(value.get("items") or [])
+        elif isinstance(value, list):
+            count += len(value)
+    try:
+        if int(slot_counts.get("sql_row_count") or 0) > 0:
+            count = max(count, 1)
+    except Exception:
+        pass
+    return count
 
 
 def _final_gate_metrics(result: dict[str, Any]) -> dict[str, int]:

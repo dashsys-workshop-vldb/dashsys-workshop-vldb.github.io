@@ -1,5 +1,5 @@
 {
-  "answer_time": 7.787397417239845,
+  "answer_time": 6.33357329107821,
   "api_call_count": 0,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-02T06:33:56.029394+00:00"
+      "timestamp": "2026-06-02T08:07:11.950671+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-02T06:33:56.029973+00:00"
+      "timestamp": "2026-06-02T08:07:11.951295+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,7 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-02T06:33:56.030481+00:00"
+      "timestamp": "2026-06-02T08:07:11.951982+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner_start",
@@ -86,7 +86,7 @@
       },
       "stage": "llm-owned planning",
       "technique": "pre-call heartbeat before Unified LLM Planner",
-      "timestamp": "2026-06-02T06:33:56.037983+00:00"
+      "timestamp": "2026-06-02T08:07:11.959434+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -107,12 +107,12 @@
         "backend_sql_api_generation_used": false,
         "compiled_alias_count": 0,
         "compiled_api_count": 0,
-        "compiled_sql_count": 2,
+        "compiled_sql_count": 1,
         "compiler_latency_ms": 0,
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 26343,
+        "planner_provider_latency_ms": 33424,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -140,10 +140,51 @@
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
         "semantic_ir_plan_preview": {
-          "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_lookup_journey_id\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LOOKUP\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"CAMPAIGNID\", \"NAME\"], \"total_items\": 2, \"truncated_items\": false}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"Birthday Message\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 1}, \"description\": \"Look up the Campaign ID for the journey named 'Birthday Message' from the local campaign snapshot.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_get_published_date\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"DATE\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"LASTDEPLOYEDTIME\", \"CREATEDTIME\", \"UPDATEDTIME\"], \"total_items\": 4, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"CAMPAIGNID\", \"op\": \"=\", \"value\": \"{{t1_lookup_journey_id.CAMPAIGNID}}\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 1}, \"depends_on\": {\"items\": [\"t1_lookup_journey_id\"], \"total_items\":...",
-          "truncated": true
+          "aggregation_instruction": "Extract and display the date when the journey 'Birthday Message' was published, using fields such as LASTDEPLOYEDTIME, STARTDATE, CREATEDTIME, and UPDATEDTIME from the local dim_campaign table.",
+          "route": "EVIDENCE",
+          "tasks": {
+            "items": [
+              {
+                "description": "Retrieve date/time metadata for the campaign named 'Birthday Message' from dim_campaign table.",
+                "kind": "LOCAL_QUERY",
+                "local_query": {
+                  "count": false,
+                  "fields": {
+                    "items": [
+                      "NAME",
+                      "CREATEDTIME",
+                      "UPDATEDTIME"
+                    ],
+                    "total_items": 9,
+                    "truncated_items": true
+                  },
+                  "filters": {
+                    "items": [
+                      {
+                        "field": "NAME",
+                        "op": "=",
+                        "value": "Birthday Message"
+                      }
+                    ],
+                    "total_items": 1,
+                    "truncated_items": false
+                  },
+                  "limit": 1,
+                  "table": "dim_campaign"
+                },
+                "operation": "DATE",
+                "reuse_result_from": null,
+                "semantic_cache_key": null,
+                "source": "LOCAL_SNAPSHOT",
+                "task_id": "get_journey_publish_date",
+                "truncated_fields": 7
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
         },
-        "semantic_ir_provider_latency_ms": 26341,
+        "semantic_ir_provider_latency_ms": 33416,
         "semantic_ir_repair_attempted": false,
         "semantic_ir_repair_latency_ms": 0,
         "semantic_ir_repair_success": false,
@@ -156,7 +197,7 @@
         "semantic_ir_support_repair_latency_ms": 0,
         "semantic_ir_support_repair_success": false,
         "semantic_ir_supported": true,
-        "semantic_ir_task_count": 2,
+        "semantic_ir_task_count": 1,
         "semantic_ir_toolcall_supported": true,
         "semantic_ir_unsupported_features": [],
         "semantic_ir_unsupported_operation": null,
@@ -164,41 +205,30 @@
         "semantic_ir_unsupported_task_id": null,
         "semantic_ir_validation_error_message": null,
         "semantic_ir_validation_error_type": null,
-        "semantic_ir_validation_latency_ms": 0,
+        "semantic_ir_validation_latency_ms": 6,
         "semantic_ir_validation_passed": true,
         "sql_compile_gate_failures": 0,
         "v2_semantic_ir_used": true
       },
       "output": {
-        "aggregation_instruction": "Extract the LASTDEPLOYEDTIME from t2_get_published_date as the primary 'published' date. If LASTDEPLOYEDTIME is null, fallback to CREATEDTIME. Present the date clearly to the user.",
-        "evidence_order": "MULTI_PASS",
-        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+        "aggregation_instruction": "Extract and display the date when the journey 'Birthday Message' was published, using fields such as LASTDEPLOYEDTIME, STARTDATE, CREATEDTIME, and UPDATEDTIME from the local dim_campaign table.",
+        "evidence_order": "SQL_FIRST",
+        "model": "[REDACTED]",
         "passes": {
           "items": [
             {
-              "pass_id": "t1_lookup_journey_id",
+              "pass_id": "get_journey_publish_date",
               "path": "SQL",
               "raw_sql_fallback_reason": null,
               "raw_sql_fallback_task_id": null,
               "raw_sql_fallback_used": false,
               "reuse_result_from": null,
               "semantic_cache_key": null,
-              "subtask": "Look up the Campaign ID for the journey named 'Birthday Message' from the local campaign snapshot.",
-              "truncated_fields": 9
-            },
-            {
-              "pass_id": "t2_get_published_date",
-              "path": "SQL",
-              "raw_sql_fallback_reason": null,
-              "raw_sql_fallback_task_id": null,
-              "raw_sql_fallback_used": false,
-              "reuse_result_from": null,
-              "semantic_cache_key": null,
-              "subtask": "Retrieve the published/deployed date (LASTDEPLOYEDTIME) for the 'Birthday Message' campaign. Also fetch CREATEDTIME and UPDATEDTIME for context.",
+              "subtask": "Retrieve date/time metadata for the campaign named 'Birthday Message' from dim_campaign table.",
               "truncated_fields": 9
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "provider": "openai",
@@ -212,13 +242,13 @@
             "total_items": 1,
             "truncated_items": false
           },
-          "query": "SELECT \"CAMPAIGNID\", \"NAME\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 1"
+          "query": "SELECT \"NAME\", \"CREATEDTIME\", \"UPDATEDTIME\", \"STARTDATE\", \"LASTDEPLOYEDTIME\", \"STOPPEDTIME\", \"FINISHEDTIME\", \"STATUS\", \"STATE\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 1"
         },
         "truncated_fields": 6
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-02T06:34:22.384462+00:00"
+      "timestamp": "2026-06-02T08:07:45.391751+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
@@ -227,65 +257,47 @@
       "effect": "validates only graph shape; does not choose subtasks, dependencies, SQL, or API paths",
       "efficiency_role": "bounds pass scheduling to LLM-declared valid graphs",
       "input_summary": {
-        "evidence_order": "MULTI_PASS",
+        "evidence_order": "SQL_FIRST",
         "pass_ids": {
           "items": [
-            "t1_lookup_journey_id",
-            "t2_get_published_date"
+            "get_journey_publish_date"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         }
       },
       "output": {
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "t1_lookup_journey_id",
-                "t2_get_published_date"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "parallel_groups": {
           "items": [
             {
               "items": [
-                "t1_lookup_journey_id"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "t2_get_published_date"
+                "get_journey_publish_date"
               ],
               "total_items": 1,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
-        "pass_count": 2,
+        "pass_count": 1,
         "pass_ids": {
           "items": [
-            "t1_lookup_journey_id",
-            "t2_get_published_date"
+            "get_journey_publish_date"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "passed": true
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-02T06:34:22.386636+00:00"
+      "timestamp": "2026-06-02T08:07:45.398620+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -295,25 +307,15 @@
       "efficiency_role": "prioritizes critical path and enables exact pass-result reuse",
       "input_summary": {
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "t1_lookup_journey_id",
-                "t2_get_published_date"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "pass_ids": {
           "items": [
-            "t1_lookup_journey_id",
-            "t2_get_published_date"
+            "get_journey_publish_date"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         }
       },
@@ -334,10 +336,9 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t1_lookup_journey_id",
-            "t2_get_published_date"
+            "get_journey_publish_date"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -346,17 +347,8 @@
           "truncated_items": false
         },
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "t1_lookup_journey_id",
-                "t2_get_published_date"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "early_stopped_passes": {
@@ -369,28 +361,20 @@
           "items": [
             {
               "items": [
-                "t1_lookup_journey_id"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "t2_get_published_date"
+                "get_journey_publish_date"
               ],
               "total_items": 1,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "pass_ids": {
           "items": [
-            "t1_lookup_journey_id",
-            "t2_get_published_date"
+            "get_journey_publish_date"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "stage_pipeline_used": true,
@@ -399,7 +383,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-02T06:34:22.388072+00:00"
+      "timestamp": "2026-06-02T08:07:45.401598+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -412,44 +396,27 @@
           "items": [
             {
               "items": [
-                "t1_lookup_journey_id"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "t2_get_published_date"
+                "get_journey_publish_date"
               ],
               "total_items": 1,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "pass_ids": {
           "items": [
-            "t1_lookup_journey_id",
-            "t2_get_published_date"
+            "get_journey_publish_date"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         }
       },
       "output": {
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "t1_lookup_journey_id",
-                "t2_get_published_date"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "max_api_workers": 2,
@@ -459,28 +426,20 @@
           "items": [
             {
               "items": [
-                "t1_lookup_journey_id"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "t2_get_published_date"
+                "get_journey_publish_date"
               ],
               "total_items": 1,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_completed": {
           "items": [
-            "t1_lookup_journey_id",
-            "t2_get_published_date"
+            "get_journey_publish_date"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_dependency_blocked": {
@@ -499,10 +458,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_7fd1e998b6f543a794f3c285a6387660:t1_lookup_journey_id",
-              "pass_id": "t1_lookup_journey_id",
+              "global_pass_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21:get_journey_publish_date",
+              "pass_id": "get_journey_publish_date",
               "plan_version": 1,
-              "run_id": "run_7fd1e998b6f543a794f3c285a6387660",
+              "run_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -510,10 +469,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_7fd1e998b6f543a794f3c285a6387660:t1_lookup_journey_id",
-              "pass_id": "t1_lookup_journey_id",
+              "global_pass_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21:get_journey_publish_date",
+              "pass_id": "get_journey_publish_date",
               "plan_version": 1,
-              "run_id": "run_7fd1e998b6f543a794f3c285a6387660",
+              "run_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -521,16 +480,16 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_7fd1e998b6f543a794f3c285a6387660:t1_lookup_journey_id",
-              "pass_id": "t1_lookup_journey_id",
+              "global_pass_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21:get_journey_publish_date",
+              "pass_id": "get_journey_publish_date",
               "plan_version": 1,
-              "run_id": "run_7fd1e998b6f543a794f3c285a6387660",
+              "run_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21",
               "stage": "DEPENDENCY_READY",
               "status": "OK",
               "truncated_fields": 3
             }
           ],
-          "total_items": 32,
+          "total_items": 16,
           "truncated_items": true
         },
         "truncated_fields": 4,
@@ -538,7 +497,7 @@
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-02T06:34:22.389316+00:00"
+      "timestamp": "2026-06-02T08:07:45.403618+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
@@ -547,13 +506,12 @@
       "effect": "schedules only LLM-declared passes; does not split prompts or add semantic subtasks",
       "efficiency_role": "groups dependency-free passes without changing their semantics",
       "input_summary": {
-        "multi_pass_enabled": true,
+        "multi_pass_enabled": false,
         "pass_ids": {
           "items": [
-            "t1_lookup_journey_id",
-            "t2_get_published_date"
+            "get_journey_publish_date"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         }
       },
@@ -580,10 +538,9 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t1_lookup_journey_id",
-            "t2_get_published_date"
+            "get_journey_publish_date"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -592,17 +549,8 @@
           "truncated_items": false
         },
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "t1_lookup_journey_id",
-                "t2_get_published_date"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "deterministic_answer_template_used": false,
@@ -611,35 +559,28 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_7fd1e998b6f543a794f3c285a6387660",
+        "evidence_bus_id": "evidence_run_3cdda6e3410d4a11b71dfbb3cefeee21",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
-        "llm_pass_count": 2,
+        "llm_pass_count": 1,
         "llm_pass_graph_used": true,
         "max_api_workers": 2,
         "max_parallelism": 4,
         "max_sql_workers": 2,
         "model_cascade_used": false,
-        "multi_pass_enabled": true,
+        "multi_pass_enabled": false,
         "parallel_groups": {
           "items": [
             {
               "items": [
-                "t1_lookup_journey_id"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "t2_get_published_date"
+                "get_journey_publish_date"
               ],
               "total_items": 1,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "parallel_pass_count": 1,
@@ -649,19 +590,17 @@
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "t1_lookup_journey_id",
-            "t2_get_published_date"
+            "get_journey_publish_date"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
-        "pass_results_count": 2,
+        "pass_results_count": 1,
         "passes_completed": {
           "items": [
-            "t1_lookup_journey_id",
-            "t2_get_published_date"
+            "get_journey_publish_date"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_dependency_blocked": {
@@ -671,10 +610,9 @@
         },
         "passes_executed": {
           "items": [
-            "t1_lookup_journey_id",
-            "t2_get_published_date"
+            "get_journey_publish_date"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_failed": {
@@ -694,8 +632,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_7fd1e998b6f543a794f3c285a6387660",
-        "run_id": "run_7fd1e998b6f543a794f3c285a6387660",
+        "result_bundle_id": "bundle_run_3cdda6e3410d4a11b71dfbb3cefeee21",
+        "run_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -704,9 +642,9 @@
         },
         "semantic_alias_materialized_count": 0,
         "semantic_alias_validation_failures": 0,
-        "sequential_pass_count": 1,
-        "sql_execution_latency_sec": 0.002,
-        "sql_gate_latency_sec": 0.314,
+        "sequential_pass_count": 0,
+        "sql_execution_latency_sec": 0.001,
+        "sql_gate_latency_sec": 1.191,
         "sql_gate_passed": true,
         "sql_repair_attempts": 0,
         "stage_events": {
@@ -714,10 +652,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_7fd1e998b6f543a794f3c285a6387660:t1_lookup_journey_id",
-              "pass_id": "t1_lookup_journey_id",
+              "global_pass_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21:get_journey_publish_date",
+              "pass_id": "get_journey_publish_date",
               "plan_version": 1,
-              "run_id": "run_7fd1e998b6f543a794f3c285a6387660",
+              "run_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -725,10 +663,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_7fd1e998b6f543a794f3c285a6387660:t1_lookup_journey_id",
-              "pass_id": "t1_lookup_journey_id",
+              "global_pass_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21:get_journey_publish_date",
+              "pass_id": "get_journey_publish_date",
               "plan_version": 1,
-              "run_id": "run_7fd1e998b6f543a794f3c285a6387660",
+              "run_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -736,16 +674,16 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_7fd1e998b6f543a794f3c285a6387660:t2_get_published_date",
-              "pass_id": "t2_get_published_date",
+              "global_pass_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21:get_journey_publish_date",
+              "pass_id": "get_journey_publish_date",
               "plan_version": 1,
-              "run_id": "run_7fd1e998b6f543a794f3c285a6387660",
-              "stage": "READY_FOR_FINAL_COMPOSITION",
+              "run_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21",
+              "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
             }
           ],
-          "total_items": 12,
+          "total_items": 6,
           "truncated_items": true
         },
         "stage_pipeline_used": true,
@@ -755,7 +693,7 @@
       },
       "stage": "llm-owned pass scheduling",
       "technique": "dependency-aware scheduling of LLM-declared evidence passes",
-      "timestamp": "2026-06-02T06:34:22.390128+00:00"
+      "timestamp": "2026-06-02T08:07:45.405315+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -764,7 +702,7 @@
       "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
       "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
       "input_summary": {
-        "pass_id": "t1_lookup_journey_id"
+        "pass_id": "get_journey_publish_date"
       },
       "output": {
         "errors": {
@@ -774,11 +712,11 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_7fd1e998b6f543a794f3c285a6387660"
+        "run_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T06:34:22.391394+00:00"
+      "timestamp": "2026-06-02T08:07:45.405930+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
@@ -787,8 +725,8 @@
       "effect": "checks syntax/database-semantic validity without rewriting SQL",
       "efficiency_role": "prevents executing uncompilable SQL",
       "input_summary": {
-        "pass_id": "t1_lookup_journey_id",
-        "sql": "SELECT \"CAMPAIGNID\", \"NAME\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 1"
+        "pass_id": "get_journey_publish_date",
+        "sql": "SELECT \"NAME\", \"CREATEDTIME\", \"UPDATEDTIME\", \"STARTDATE\", \"LASTDEPLOYEDTIME\", \"STOPPEDTIME\", \"FINISHEDTIME\", \"STATUS\", \"STATE\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 1"
       },
       "output": {
         "params": {
@@ -798,79 +736,13 @@
           "total_items": 1,
           "truncated_items": false
         },
-        "pass_id": "t1_lookup_journey_id",
+        "pass_id": "get_journey_publish_date",
         "passed": true,
-        "sql": "SELECT \"CAMPAIGNID\", \"NAME\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 1"
+        "sql": "SELECT \"NAME\", \"CREATEDTIME\", \"UPDATEDTIME\", \"STARTDATE\", \"LASTDEPLOYEDTIME\", \"STOPPEDTIME\", \"FINISHEDTIME\", \"STATUS\", \"STATE\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 1"
       },
       "stage": "llm sql compile gate",
       "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
-      "timestamp": "2026-06-02T06:34:22.704972+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
-      "correctness_role": "does not infer missing dependency values or add backend-selected subtasks",
-      "duration_ms": 0.0,
-      "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
-      "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
-      "input_summary": {
-        "depends_on": {
-          "items": [
-            "t1_lookup_journey_id"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "pass_id": "t2_get_published_date"
-      },
-      "output": {
-        "errors": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "replacements": {
-          "items": [
-            {
-              "placeholder": "{{t1_lookup_journey_id.CAMPAIGNID}}",
-              "value_preview": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "required": true,
-        "resolved": true,
-        "run_id": "run_7fd1e998b6f543a794f3c285a6387660"
-      },
-      "stage": "llm-owned pass dependency resolution",
-      "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T06:34:22.707304+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
-      "correctness_role": "returns compile errors for one LLM repair attempt",
-      "duration_ms": 0.0,
-      "effect": "checks syntax/database-semantic validity without rewriting SQL",
-      "efficiency_role": "prevents executing uncompilable SQL",
-      "input_summary": {
-        "pass_id": "t2_get_published_date",
-        "sql": "SELECT \"LASTDEPLOYEDTIME\", \"CREATEDTIME\", \"UPDATEDTIME\", \"STARTDATE\" FROM \"dim_campaign\" WHERE \"CAMPAIGNID\" = ? LIMIT 1"
-      },
-      "output": {
-        "params": {
-          "items": [
-            "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "pass_id": "t2_get_published_date",
-        "passed": true,
-        "sql": "SELECT \"LASTDEPLOYEDTIME\", \"CREATEDTIME\", \"UPDATEDTIME\", \"STARTDATE\" FROM \"dim_campaign\" WHERE \"CAMPAIGNID\" = ? LIMIT 1"
-      },
-      "stage": "llm sql compile gate",
-      "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
-      "timestamp": "2026-06-02T06:34:22.708604+00:00"
+      "timestamp": "2026-06-02T08:07:46.597336+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -879,7 +751,7 @@
       "effect": "records that backend did not replace LLM semantic or SQL/API generation",
       "efficiency_role": "bounds repair attempts before execution",
       "input_summary": {
-        "evidence_order": "MULTI_PASS",
+        "evidence_order": "SQL_FIRST",
         "route": "EVIDENCE_PIPELINE"
       },
       "metrics": {
@@ -913,10 +785,9 @@
         "checkpoint_resume_used": false,
         "critical_path": {
           "items": [
-            "t1_lookup_journey_id",
-            "t2_get_published_date"
+            "get_journey_publish_date"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -925,17 +796,8 @@
           "truncated_items": false
         },
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "t1_lookup_journey_id",
-                "t2_get_published_date"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "deterministic_answer_template_used": false,
@@ -944,38 +806,31 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_7fd1e998b6f543a794f3c285a6387660",
+        "evidence_bus_id": "evidence_run_3cdda6e3410d4a11b71dfbb3cefeee21",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
-        "llm_evidence_order": "MULTI_PASS",
+        "llm_evidence_order": "SQL_FIRST",
         "llm_owned_generation": true,
-        "llm_pass_count": 2,
+        "llm_pass_count": 1,
         "llm_pass_graph_used": true,
         "llm_route": "EVIDENCE_PIPELINE",
         "max_api_workers": 2,
         "max_parallelism": 4,
         "max_sql_workers": 2,
         "model_cascade_used": false,
-        "multi_pass_enabled": true,
+        "multi_pass_enabled": false,
         "parallel_groups": {
           "items": [
             {
               "items": [
-                "t1_lookup_journey_id"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "t2_get_published_date"
+                "get_journey_publish_date"
               ],
               "total_items": 1,
               "truncated_items": false
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "parallel_pass_count": 1,
@@ -985,19 +840,17 @@
         "pass_graph_repair_success": false,
         "pass_ids": {
           "items": [
-            "t1_lookup_journey_id",
-            "t2_get_published_date"
+            "get_journey_publish_date"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
-        "pass_results_count": 2,
+        "pass_results_count": 1,
         "passes_completed": {
           "items": [
-            "t1_lookup_journey_id",
-            "t2_get_published_date"
+            "get_journey_publish_date"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_dependency_blocked": {
@@ -1007,10 +860,9 @@
         },
         "passes_executed": {
           "items": [
-            "t1_lookup_journey_id",
-            "t2_get_published_date"
+            "get_journey_publish_date"
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
         "passes_failed": {
@@ -1030,8 +882,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_7fd1e998b6f543a794f3c285a6387660",
-        "run_id": "run_7fd1e998b6f543a794f3c285a6387660",
+        "result_bundle_id": "bundle_run_3cdda6e3410d4a11b71dfbb3cefeee21",
+        "run_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -1040,9 +892,9 @@
         },
         "semantic_alias_materialized_count": 0,
         "semantic_alias_validation_failures": 0,
-        "sequential_pass_count": 1,
-        "sql_execution_latency_sec": 0.002,
-        "sql_gate_latency_sec": 0.314,
+        "sequential_pass_count": 0,
+        "sql_execution_latency_sec": 0.001,
+        "sql_gate_latency_sec": 1.191,
         "sql_gate_passed": true,
         "sql_repair_attempts": 0,
         "stage_events": {
@@ -1050,10 +902,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_7fd1e998b6f543a794f3c285a6387660:t1_lookup_journey_id",
-              "pass_id": "t1_lookup_journey_id",
+              "global_pass_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21:get_journey_publish_date",
+              "pass_id": "get_journey_publish_date",
               "plan_version": 1,
-              "run_id": "run_7fd1e998b6f543a794f3c285a6387660",
+              "run_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -1061,10 +913,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_7fd1e998b6f543a794f3c285a6387660:t1_lookup_journey_id",
-              "pass_id": "t1_lookup_journey_id",
+              "global_pass_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21:get_journey_publish_date",
+              "pass_id": "get_journey_publish_date",
               "plan_version": 1,
-              "run_id": "run_7fd1e998b6f543a794f3c285a6387660",
+              "run_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -1072,16 +924,16 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_7fd1e998b6f543a794f3c285a6387660:t2_get_published_date",
-              "pass_id": "t2_get_published_date",
+              "global_pass_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21:get_journey_publish_date",
+              "pass_id": "get_journey_publish_date",
               "plan_version": 1,
-              "run_id": "run_7fd1e998b6f543a794f3c285a6387660",
-              "stage": "READY_FOR_FINAL_COMPOSITION",
+              "run_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21",
+              "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
             }
           ],
-          "total_items": 12,
+          "total_items": 6,
           "truncated_items": true
         },
         "stage_pipeline_used": true,
@@ -1091,7 +943,7 @@
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-02T06:34:22.709930+00:00"
+      "timestamp": "2026-06-02T08:07:46.599200+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -1100,20 +952,19 @@
       "effect": "executes only LLM-proposed candidates that pass backend gates",
       "efficiency_role": "does not execute alternative backend-generated candidates",
       "input_summary": {
-        "tool_result_count": 2
+        "tool_result_count": 1
       },
       "output": {
         "api_calls_executed": 0,
         "dry_run_status": false,
         "row_counts": {
           "items": [
-            1,
             1
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
-        "sql_calls_executed": 2,
+        "sql_calls_executed": 1,
         "sql_results": {
           "items": [
             {
@@ -1121,21 +972,10 @@
               "result_preview": {
                 "items": [
                   {
-                    "CAMPAIGNID": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
-                    "NAME": "Birthday Message"
-                  }
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              },
-              "row_count": 1
-            },
-            {
-              "ok": true,
-              "result_preview": {
-                "items": [
-                  {
                     "CREATEDTIME": "2026-03-31T06:07:32.838462639Z",
+                    "NAME": "Birthday Message",
+                    "STATE": "updated",
+                    "STATUS": "updated",
                     "UPDATEDTIME": "2026-03-31T06:07:32.838462639Z"
                   }
                 ],
@@ -1145,13 +985,13 @@
               "row_count": 1
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         }
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-02T06:34:22.794158+00:00"
+      "timestamp": "2026-06-02T08:07:46.679629+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -1161,20 +1001,20 @@
       "efficiency_role": "makes EvidenceBus construction explicit",
       "input_summary": {
         "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
-        "tool_result_count": 2
+        "tool_result_count": 1
       },
       "output": {
         "evidence_bus_built": true,
         "evidence_pipeline_bypassed": false,
-        "llm_evidence_order": "MULTI_PASS",
+        "llm_evidence_order": "SQL_FIRST",
         "llm_final_answer_composer_ran": true,
         "llm_route": "EVIDENCE_PIPELINE",
-        "pass_results_count": 2,
+        "pass_results_count": 1,
         "post_evidence_answer_router_ran": false
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-02T06:34:22.794649+00:00"
+      "timestamp": "2026-06-02T08:07:46.680027+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -1183,13 +1023,10 @@
       "effect": "forwards executed SQL/API evidence into the existing grounded answer pipeline",
       "efficiency_role": "uses collected evidence without extra tool calls",
       "input_summary": {
-        "tool_result_count": 2
+        "tool_result_count": 1
       },
       "output": {
         "evidence": {
-          "ids": {
-            "campaign_id": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
-          },
           "names": {
             "items": [
               "Birthday Message"
@@ -1199,14 +1036,20 @@
           },
           "pass_ids": {
             "items": [
-              "t1_lookup_journey_id",
-              "t2_get_published_date"
+              "get_journey_publish_date"
             ],
-            "total_items": 2,
+            "total_items": 1,
             "truncated_items": false
           },
-          "pass_result_count": 2,
-          "run_id": "run_7fd1e998b6f543a794f3c285a6387660",
+          "pass_result_count": 1,
+          "run_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21",
+          "statuses": {
+            "items": [
+              "updated"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
           "timestamps": {
             "items": [
               "2026-03-31T06:07:32.838462639Z"
@@ -1218,7 +1061,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-02T06:34:22.795249+00:00"
+      "timestamp": "2026-06-02T08:07:46.680432+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -1227,8 +1070,8 @@
       "effect": "stores all LLM-declared pass results before final LLM aggregation",
       "efficiency_role": "reuses executed pass results without extra tools",
       "input_summary": {
-        "pass_results_count": 2,
-        "tool_result_count": 2
+        "pass_results_count": 1,
+        "tool_result_count": 1
       },
       "output": {
         "append_events": {
@@ -1236,19 +1079,14 @@
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "t1_lookup_journey_id"
-            },
-            {
-              "appended": true,
-              "attempt_id": 0,
-              "pass_id": "t2_get_published_date"
+              "pass_id": "get_journey_publish_date"
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
-        "pass_results_count": 2,
-        "run_id": "run_7fd1e998b6f543a794f3c285a6387660",
+        "pass_results_count": 1,
+        "run_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21",
         "runtime_passes": {
           "items": [
             {
@@ -1266,59 +1104,24 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_7fd1e998b6f543a794f3c285a6387660"
+                "run_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21"
               },
-              "global_pass_id": "run_7fd1e998b6f543a794f3c285a6387660:t1_lookup_journey_id",
-              "pass_id": "t1_lookup_journey_id",
+              "global_pass_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21:get_journey_publish_date",
+              "pass_id": "get_journey_publish_date",
               "path": "SQL",
               "plan_version": 1,
-              "run_id": "run_7fd1e998b6f543a794f3c285a6387660",
-              "status": "SUCCESS",
-              "truncated_fields": 6
-            },
-            {
-              "attempt_id": 0,
-              "cached_sources": {
-                "items": [],
-                "total_items": 0,
-                "truncated_items": false
-              },
-              "dependency_resolution": {
-                "errors": {
-                  "items": [],
-                  "total_items": 0,
-                  "truncated_items": false
-                },
-                "replacements": {
-                  "items": [
-                    {
-                      "placeholder": "{{t1_lookup_journey_id.CAMPAIGNID}}",
-                      "value_preview": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
-                    }
-                  ],
-                  "total_items": 1,
-                  "truncated_items": false
-                },
-                "required": true,
-                "resolved": true,
-                "run_id": "run_7fd1e998b6f543a794f3c285a6387660"
-              },
-              "global_pass_id": "run_7fd1e998b6f543a794f3c285a6387660:t2_get_published_date",
-              "pass_id": "t2_get_published_date",
-              "path": "SQL",
-              "plan_version": 1,
-              "run_id": "run_7fd1e998b6f543a794f3c285a6387660",
+              "run_id": "run_3cdda6e3410d4a11b71dfbb3cefeee21",
               "status": "SUCCESS",
               "truncated_fields": 6
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         }
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-02T06:34:22.795794+00:00"
+      "timestamp": "2026-06-02T08:07:46.680935+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -1327,7 +1130,7 @@
       "effect": "keeps SQL errors, API errors, live empty, and direct evidence distinct",
       "efficiency_role": "uses existing payloads only",
       "input_summary": {
-        "tool_result_count": 2
+        "tool_result_count": 1
       },
       "output": {
         "api": {
@@ -1349,7 +1152,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-02T06:34:22.796359+00:00"
+      "timestamp": "2026-06-02T08:07:46.681349+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -1358,7 +1161,7 @@
       "effect": "turns runtime evidence into typed answer fields",
       "efficiency_role": "uses existing slot extraction",
       "input_summary": {
-        "tool_result_count": 2
+        "tool_result_count": 1
       },
       "output": {
         "discrepancy_flags": {
@@ -1370,15 +1173,15 @@
         "slots": {
           "answer_family": "journey_published",
           "api_error": false,
-          "discrepancy": false,
-          "dry_run": false,
-          "entity_ids": {
+          "counts": {
             "items": [
-              "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
+              "1"
             ],
             "total_items": 1,
             "truncated_items": false
           },
+          "discrepancy": false,
+          "dry_run": false,
           "entity_names": {
             "items": [
               "Birthday Message"
@@ -1389,10 +1192,10 @@
           "slots_present": {
             "items": [
               "entity_names",
-              "entity_ids",
-              "counts"
+              "counts",
+              "statuses"
             ],
-            "total_items": 7,
+            "total_items": 6,
             "truncated_items": true
           },
           "sql_row_count": 1,
@@ -1401,7 +1204,7 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-02T06:34:22.813928+00:00"
+      "timestamp": "2026-06-02T08:07:46.689566+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer_start",
@@ -1410,14 +1213,14 @@
       "effect": "records the exact boundary before the potentially slow final-answer LLM call",
       "efficiency_role": "enables smoke timeout localization without extra SQL/API calls",
       "input_summary": {
-        "runtime_pass_count": 2
+        "runtime_pass_count": 1
       },
       "output": {
         "current_stage": "llm_final_answer_composer_call_start"
       },
       "stage": "llm-owned answer synthesis",
       "technique": "pre-call heartbeat before LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T06:34:22.814461+00:00"
+      "timestamp": "2026-06-02T08:07:46.690004+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -1426,19 +1229,19 @@
       "effect": "lets the LLM own final answer composition from runtime evidence",
       "efficiency_role": "uses one final-answer LLM call after evidence execution",
       "input_summary": {
-        "runtime_pass_count": 2,
+        "runtime_pass_count": 1,
         "slot_counts": {
           "answer_family": "journey_published",
           "api_error": false,
-          "discrepancy": false,
-          "dry_run": false,
-          "entity_ids": {
+          "counts": {
             "items": [
-              "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
+              "1"
             ],
             "total_items": 1,
             "truncated_items": false
           },
+          "discrepancy": false,
+          "dry_run": false,
           "entity_names": {
             "items": [
               "Birthday Message"
@@ -1449,10 +1252,10 @@
           "slots_present": {
             "items": [
               "entity_names",
-              "entity_ids",
-              "counts"
+              "counts",
+              "statuses"
             ],
-            "total_items": 7,
+            "total_items": 6,
             "truncated_items": true
           },
           "sql_row_count": 1,
@@ -1461,11 +1264,11 @@
       },
       "output": {
         "backend_unavailable": false,
-        "final_answer": "The journey \"Birthday Message\" was published on 2026-03-31T06:07:32.838462639Z.",
-        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+        "final_answer": "According to the local snapshot, the journey \"Birthday Message\" was created and updated on 2026-03-31T06:07:32.838462639Z. Other publication-related fields, such as the last deployed time and start date, are not available.",
+        "model": "[REDACTED]",
         "parse_error": false,
         "provider": "openai",
-        "raw_preview": "The journey \"Birthday Message\" was published on 2026-03-31T06:07:32.838462639Z.",
+        "raw_preview": "According to the local snapshot, the journey \"Birthday Message\" was created and updated on 2026-03-31T06:07:32.838462639Z. Other publication-related fields, such as the last deployed time and start date, are not available.",
         "used_pass_ids": {
           "items": [],
           "total_items": 0,
@@ -1474,7 +1277,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T06:34:30.565635+00:00"
+      "timestamp": "2026-06-02T08:07:52.992474+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -1486,12 +1289,12 @@
         "composer": "LLMFinalAnswerComposer"
       },
       "output": {
-        "final_answer": "The journey \"Birthday Message\" was published on 2026-03-31T06:07:32.838462639Z.",
+        "final_answer": "According to the local snapshot, the journey \"Birthday Message\" was created and updated on 2026-03-31T06:07:32.838462639Z. Other publication-related fields, such as the last deployed time and start date, are not available.",
         "passed": true
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-02T06:34:30.570068+00:00"
+      "timestamp": "2026-06-02T08:07:52.994894+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -1524,19 +1327,12 @@
             },
             "evidence_strings": {
               "items": [
-                "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
                 "2026-03-31t06:07:32.838462639z",
+                "query_status_filter:published",
                 "birthday message"
               ],
               "total_items": 4,
               "truncated_items": true
-            },
-            "ids": {
-              "items": [
-                "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
-              ],
-              "total_items": 1,
-              "truncated_items": false
             },
             "names": {
               "items": [
@@ -1547,14 +1343,15 @@
             },
             "statuses": {
               "items": [
+                "updated",
                 "published"
               ],
-              "total_items": 1,
+              "total_items": 2,
               "truncated_items": false
             }
           },
           "claim_extractor": {
-            "claim_count": 4,
+            "claim_count": 3,
             "claims": {
               "items": [
                 {
@@ -1566,21 +1363,21 @@
                 },
                 {
                   "hardness": "HARD",
-                  "span": "published",
-                  "text": "published",
-                  "type": "STATUS",
-                  "value": "published"
-                },
-                {
-                  "hardness": "HARD",
                   "span": "\"Birthday Message\"",
                   "text": "\"Birthday Message\"",
                   "type": "ENTITY_NAME",
                   "value": "Birthday Message"
+                },
+                {
+                  "hardness": "HARD",
+                  "span": "Birthday Message",
+                  "text": "Birthday Message",
+                  "type": "ENTITY_NAME",
+                  "value": "Birthday Message"
                 }
               ],
-              "total_items": 4,
-              "truncated_items": true
+              "total_items": 3,
+              "truncated_items": false
             }
           },
           "claim_matcher": {
@@ -1600,17 +1397,6 @@
                 {
                   "claim": {
                     "hardness": "HARD",
-                    "span": "published",
-                    "text": "published",
-                    "type": "STATUS",
-                    "value": "published"
-                  },
-                  "reason": "status",
-                  "status": "SUPPORTED"
-                },
-                {
-                  "claim": {
-                    "hardness": "HARD",
                     "span": "\"Birthday Message\"",
                     "text": "\"Birthday Message\"",
                     "type": "ENTITY_NAME",
@@ -1618,10 +1404,21 @@
                   },
                   "reason": "entity_name",
                   "status": "SUPPORTED"
+                },
+                {
+                  "claim": {
+                    "hardness": "HARD",
+                    "span": "Birthday Message",
+                    "text": "Birthday Message",
+                    "type": "ENTITY_NAME",
+                    "value": "Birthday Message"
+                  },
+                  "reason": "entity_name",
+                  "status": "SUPPORTED"
                 }
               ],
-              "total_items": 4,
-              "truncated_items": true
+              "total_items": 3,
+              "truncated_items": false
             }
           },
           "ok": true,
@@ -1636,27 +1433,27 @@
               },
               {
                 "hardness": "HARD",
-                "span": "published",
-                "text": "published",
-                "type": "STATUS",
-                "value": "published"
-              },
-              {
-                "hardness": "HARD",
                 "span": "\"Birthday Message\"",
                 "text": "\"Birthday Message\"",
                 "type": "ENTITY_NAME",
                 "value": "Birthday Message"
+              },
+              {
+                "hardness": "HARD",
+                "span": "Birthday Message",
+                "text": "Birthday Message",
+                "type": "ENTITY_NAME",
+                "value": "Birthday Message"
               }
             ],
-            "total_items": 4,
-            "truncated_items": true
+            "total_items": 3,
+            "truncated_items": false
           }
         }
       },
       "stage": "answer gate",
       "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-02T06:34:30.577628+00:00"
+      "timestamp": "2026-06-02T08:07:53.004500+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -1665,7 +1462,7 @@
       "effect": "records that V2 did not use deterministic answer templates, renderers, or selectors as competing generators",
       "efficiency_role": "no extra tool calls",
       "input_summary": {
-        "runtime_pass_count": 2
+        "runtime_pass_count": 1
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
@@ -1675,8 +1472,8 @@
         "deterministic_answer_template_used": false,
         "final_answer_repair_latency_sec": 0.0,
         "final_answer_supported_by_evidence": true,
-        "final_composer_latency_sec": 7.749,
-        "final_gate_latency_sec": 0.011,
+        "final_composer_latency_sec": 6.3,
+        "final_gate_latency_sec": 0.009,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 2,
@@ -1688,7 +1485,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-02T06:34:30.578567+00:00"
+      "timestamp": "2026-06-02T08:07:53.007185+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -1717,30 +1514,30 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-02T06:34:30.579609+00:00"
+      "timestamp": "2026-06-02T08:07:53.010355+00:00"
     }
   ],
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 2677,
+  "estimated_tokens": 2125,
   "execution_time": 0.0,
-  "final_answer": "The journey \"Birthday Message\" was published on 2026-03-31T06:07:32.838462639Z.",
+  "final_answer": "According to the local snapshot, the journey \"Birthday Message\" was created and updated on 2026-03-31T06:07:32.838462639Z. Other publication-related fields, such as the last deployed time and start date, are not available.",
   "original_query": "When was the journey \"Birthday Message\" published?",
   "planning_time": 0.0,
   "preprocessing_time": 0.0,
   "query_id": "hermes_toolcall_birthday_message_published",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 7.9442305830307305,
-  "sql_call_count": 2,
+  "runtime": 6.458998749963939,
+  "sql_call_count": 1,
   "steps": [
     {
-      "estimated_tokens": 2263,
+      "estimated_tokens": 1822,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/hermes_toolcall_birthday_message_published/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 2982
+      "prompt_tokens": 2548
     },
     {
-      "aggregation_instruction": "Extract the LASTDEPLOYEDTIME from t2_get_published_date as the primary 'published' date. If LASTDEPLOYEDTIME is null, fallback to CREATEDTIME. Present the date clearly to the user.",
+      "aggregation_instruction": "Extract and display the date when the journey 'Birthday Message' was published, using fields such as LASTDEPLOYEDTIME, STARTDATE, CREATEDTIME, and UPDATEDTIME from the local dim_campaign table.",
       "api_request": null,
       "backend_unavailable": false,
       "diagnostics": {
@@ -1753,12 +1550,12 @@
         "backend_sql_api_generation_used": false,
         "compiled_alias_count": 0,
         "compiled_api_count": 0,
-        "compiled_sql_count": 2,
+        "compiled_sql_count": 1,
         "compiler_latency_ms": 0,
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 26343,
+        "planner_provider_latency_ms": 33424,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -1786,10 +1583,51 @@
         "semantic_alias_validation_passed": true,
         "semantic_alias_validation_used": true,
         "semantic_ir_plan_preview": {
-          "preview": "{\"route\": \"EVIDENCE\", \"tasks\": {\"items\": [{\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t1_lookup_journey_id\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"LOOKUP\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"CAMPAIGNID\", \"NAME\"], \"total_items\": 2, \"truncated_items\": false}, \"filters\": {\"items\": [{\"field\": \"NAME\", \"op\": \"=\", \"value\": \"Birthday Message\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 1}, \"description\": \"Look up the Campaign ID for the journey named 'Birthday Message' from the local campaign snapshot.\", \"truncated_fields\": 7}, {\"reuse_result_from\": null, \"semantic_cache_key\": null, \"task_id\": \"t2_get_published_date\", \"kind\": \"LOCAL_QUERY\", \"operation\": \"DATE\", \"source\": \"LOCAL_SNAPSHOT\", \"local_query\": {\"count\": false, \"table\": \"dim_campaign\", \"fields\": {\"items\": [\"LASTDEPLOYEDTIME\", \"CREATEDTIME\", \"UPDATEDTIME\"], \"total_items\": 4, \"truncated_items\": true}, \"filters\": {\"items\": [{\"field\": \"CAMPAIGNID\", \"op\": \"=\", \"value\": \"{{t1_lookup_journey_id.CAMPAIGNID}}\"}], \"total_items\": 1, \"truncated_items\": false}, \"limit\": 1}, \"depends_on\": {\"items\": [\"t1_lookup_journey_id\"], \"total_items\":...",
-          "truncated": true
+          "aggregation_instruction": "Extract and display the date when the journey 'Birthday Message' was published, using fields such as LASTDEPLOYEDTIME, STARTDATE, CREATEDTIME, and UPDATEDTIME from the local dim_campaign table.",
+          "route": "EVIDENCE",
+          "tasks": {
+            "items": [
+              {
+                "description": "Retrieve date/time metadata for the campaign named 'Birthday Message' from dim_campaign table.",
+                "kind": "LOCAL_QUERY",
+                "local_query": {
+                  "count": false,
+                  "fields": {
+                    "items": [
+                      "NAME",
+                      "CREATEDTIME",
+                      "UPDATEDTIME"
+                    ],
+                    "total_items": 9,
+                    "truncated_items": true
+                  },
+                  "filters": {
+                    "items": [
+                      {
+                        "field": "NAME",
+                        "op": "=",
+                        "value": "Birthday Message"
+                      }
+                    ],
+                    "total_items": 1,
+                    "truncated_items": false
+                  },
+                  "limit": 1,
+                  "table": "dim_campaign"
+                },
+                "operation": "DATE",
+                "reuse_result_from": null,
+                "semantic_cache_key": null,
+                "source": "LOCAL_SNAPSHOT",
+                "task_id": "get_journey_publish_date",
+                "truncated_fields": 7
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
         },
-        "semantic_ir_provider_latency_ms": 26341,
+        "semantic_ir_provider_latency_ms": 33416,
         "semantic_ir_repair_attempted": false,
         "semantic_ir_repair_latency_ms": 0,
         "semantic_ir_repair_success": false,
@@ -1802,7 +1640,7 @@
         "semantic_ir_support_repair_latency_ms": 0,
         "semantic_ir_support_repair_success": false,
         "semantic_ir_supported": true,
-        "semantic_ir_task_count": 2,
+        "semantic_ir_task_count": 1,
         "semantic_ir_toolcall_supported": true,
         "semantic_ir_unsupported_features": [],
         "semantic_ir_unsupported_operation": null,
@@ -1810,15 +1648,15 @@
         "semantic_ir_unsupported_task_id": null,
         "semantic_ir_validation_error_message": null,
         "semantic_ir_validation_error_type": null,
-        "semantic_ir_validation_latency_ms": 0,
+        "semantic_ir_validation_latency_ms": 6,
         "semantic_ir_validation_passed": true,
         "sql_compile_gate_failures": 0,
         "v2_semantic_ir_used": true
       },
       "direct_answer": null,
-      "evidence_order": "MULTI_PASS",
+      "evidence_order": "SQL_FIRST",
       "kind": "llm_unified_planner",
-      "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+      "model": "[REDACTED]",
       "parse_error": false,
       "passes": [
         {
@@ -1826,10 +1664,10 @@
           "can_run_parallel": true,
           "depends_on": [],
           "evidence_order": "SQL_FIRST",
-          "expected_result": "Look up the Campaign ID for the journey named 'Birthday Message' from the local campaign snapshot.",
+          "expected_result": "Retrieve date/time metadata for the campaign named 'Birthday Message' from dim_campaign table.",
           "fallback": false,
           "optional": false,
-          "pass_id": "t1_lookup_journey_id",
+          "pass_id": "get_journey_publish_date",
           "path": "SQL",
           "raw_sql_fallback_reason": null,
           "raw_sql_fallback_task_id": null,
@@ -1837,8 +1675,15 @@
           "result_contract": {
             "entity": "dim_campaign",
             "fields": [
-              "CAMPAIGNID",
-              "NAME"
+              "NAME",
+              "CREATEDTIME",
+              "UPDATEDTIME",
+              "STARTDATE",
+              "LASTDEPLOYEDTIME",
+              "STOPPEDTIME",
+              "FINISHEDTIME",
+              "STATUS",
+              "STATE"
             ],
             "filters": [
               {
@@ -1848,8 +1693,8 @@
               }
             ],
             "freshness": "same_run",
-            "object": "campaign",
-            "operation": "LOOKUP",
+            "object": "journey",
+            "operation": "DATE",
             "scope": "local",
             "source": "LOCAL_SNAPSHOT"
           },
@@ -1859,69 +1704,23 @@
             "params": [
               "Birthday Message"
             ],
-            "query": "SELECT \"CAMPAIGNID\", \"NAME\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 1"
+            "query": "SELECT \"NAME\", \"CREATEDTIME\", \"UPDATEDTIME\", \"STARTDATE\", \"LASTDEPLOYEDTIME\", \"STOPPEDTIME\", \"FINISHEDTIME\", \"STATUS\", \"STATE\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 1"
           },
-          "subtask": "Look up the Campaign ID for the journey named 'Birthday Message' from the local campaign snapshot."
-        },
-        {
-          "api_request": null,
-          "can_run_parallel": false,
-          "depends_on": [
-            "t1_lookup_journey_id"
-          ],
-          "evidence_order": "SQL_FIRST",
-          "expected_result": "Retrieve the published/deployed date (LASTDEPLOYEDTIME) for the 'Birthday Message' campaign. Also fetch CREATEDTIME and UPDATEDTIME for context.",
-          "fallback": false,
-          "optional": false,
-          "pass_id": "t2_get_published_date",
-          "path": "SQL",
-          "raw_sql_fallback_reason": null,
-          "raw_sql_fallback_task_id": null,
-          "raw_sql_fallback_used": false,
-          "result_contract": {
-            "entity": "dim_campaign",
-            "fields": [
-              "LASTDEPLOYEDTIME",
-              "CREATEDTIME",
-              "UPDATEDTIME",
-              "STARTDATE"
-            ],
-            "filters": [
-              {
-                "field": "CAMPAIGNID",
-                "op": "=",
-                "value": "{{t1_lookup_journey_id.CAMPAIGNID}}"
-              }
-            ],
-            "freshness": "same_run",
-            "object": "campaign_dates",
-            "operation": "DATE",
-            "scope": "local",
-            "source": "LOCAL_SNAPSHOT"
-          },
-          "reuse_result_from": null,
-          "semantic_cache_key": null,
-          "sql": {
-            "params": [
-              "{{t1_lookup_journey_id.CAMPAIGNID}}"
-            ],
-            "query": "SELECT \"LASTDEPLOYEDTIME\", \"CREATEDTIME\", \"UPDATEDTIME\", \"STARTDATE\" FROM \"dim_campaign\" WHERE \"CAMPAIGNID\" = ? LIMIT 1"
-          },
-          "subtask": "Retrieve the published/deployed date (LASTDEPLOYEDTIME) for the 'Birthday Message' campaign. Also fetch CREATEDTIME and UPDATEDTIME for context."
+          "subtask": "Retrieve date/time metadata for the campaign named 'Birthday Message' from dim_campaign table."
         }
       ],
       "provider": "openai",
       "raw_preview": {
         "semantic_ir_initial": {
-          "base_url": "[REDACTED]",
+          "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
           "error": null,
-          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+          "model": "[REDACTED]",
           "ok": true,
           "provider": "openai",
           "sdk_path_used": true,
           "skipped": false,
           "transport": "openai_sdk",
-          "truncated_fields": 8
+          "truncated_fields": 11
         }
       },
       "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
@@ -1930,7 +1729,7 @@
         "params": [
           "Birthday Message"
         ],
-        "query": "SELECT \"CAMPAIGNID\", \"NAME\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 1"
+        "query": "SELECT \"NAME\", \"CREATEDTIME\", \"UPDATEDTIME\", \"STARTDATE\", \"LASTDEPLOYEDTIME\", \"STOPPEDTIME\", \"FINISHEDTIME\", \"STATUS\", \"STATE\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 1"
       }
     },
     {
@@ -1950,42 +1749,10 @@
         "rows": {
           "items": [
             {
-              "CAMPAIGNID": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
-              "NAME": "Birthday Message"
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        }
-      },
-      "sql": "SELECT \"CAMPAIGNID\", \"NAME\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 1",
-      "validation": {
-        "errors": [],
-        "ok": true,
-        "repaired": false,
-        "warnings": [
-          "LLM SQL pass passed compile gate."
-        ]
-      }
-    },
-    {
-      "kind": "sql_call",
-      "result": {
-        "error": null,
-        "limited": false,
-        "ok": true,
-        "params": {
-          "items": [
-            "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "row_count": 1,
-        "rows": {
-          "items": [
-            {
               "CREATEDTIME": "2026-03-31T06:07:32.838462639Z",
+              "NAME": "Birthday Message",
+              "STATE": "updated",
+              "STATUS": "updated",
               "UPDATEDTIME": "2026-03-31T06:07:32.838462639Z"
             }
           ],
@@ -1993,7 +1760,7 @@
           "truncated_items": false
         }
       },
-      "sql": "SELECT \"LASTDEPLOYEDTIME\", \"CREATEDTIME\", \"UPDATEDTIME\", \"STARTDATE\" FROM \"dim_campaign\" WHERE \"CAMPAIGNID\" = ? LIMIT 1",
+      "sql": "SELECT \"NAME\", \"CREATEDTIME\", \"UPDATEDTIME\", \"STARTDATE\", \"LASTDEPLOYEDTIME\", \"STOPPEDTIME\", \"FINISHEDTIME\", \"STATUS\", \"STATE\" FROM \"dim_campaign\" WHERE \"NAME\" = ? LIMIT 1",
       "validation": {
         "errors": [],
         "ok": true,
@@ -2007,10 +1774,10 @@
       "evidence_bus_built": true,
       "evidence_pipeline_bypassed": false,
       "kind": "evidence_boundary",
-      "llm_evidence_order": "MULTI_PASS",
+      "llm_evidence_order": "SQL_FIRST",
       "llm_final_answer_composer_ran": true,
       "llm_route": "EVIDENCE_PIPELINE",
-      "pass_results_count": 2,
+      "pass_results_count": 1,
       "post_evidence_answer_router_ran": false
     },
     {
@@ -2019,12 +1786,12 @@
       "caveats_included": [],
       "claimed_facts": [],
       "error_message": null,
-      "final_answer": "The journey \"Birthday Message\" was published on 2026-03-31T06:07:32.838462639Z.",
+      "final_answer": "According to the local snapshot, the journey \"Birthday Message\" was created and updated on 2026-03-31T06:07:32.838462639Z. Other publication-related fields, such as the last deployed time and start date, are not available.",
       "kind": "llm_final_answer_composer",
-      "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+      "model": "[REDACTED]",
       "parse_error": false,
       "provider": "openai",
-      "raw_preview": "The journey \"Birthday Message\" was published on 2026-03-31T06:07:32.838462639Z.",
+      "raw_preview": "According to the local snapshot, the journey \"Birthday Message\" was created and updated on 2026-03-31T06:07:32.838462639Z. Other publication-related fields, such as the last deployed time and start date, are not available.",
       "unanswered_subtasks": [],
       "used_pass_ids": []
     },
@@ -2036,8 +1803,8 @@
       "deterministic_answer_template_used": false,
       "final_answer_repair_latency_sec": 0.0,
       "final_answer_supported_by_evidence": true,
-      "final_composer_latency_sec": 7.749,
-      "final_gate_latency_sec": 0.011,
+      "final_composer_latency_sec": 6.3,
+      "final_gate_latency_sec": 0.009,
       "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
       "llm_owned_final_answer": true,
@@ -2061,14 +1828,12 @@
               "2026-03-31"
             ],
             "evidence_strings": [
-              "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
               "2026-03-31t06:07:32.838462639z",
+              "query_status_filter:published",
               "birthday message",
-              "query_status_filter:published"
+              "updated"
             ],
-            "ids": [
-              "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
-            ],
+            "ids": [],
             "live_empty_scopes": [],
             "missing_roles": [],
             "names": [
@@ -2076,12 +1841,13 @@
             ],
             "relationships": [],
             "statuses": [
+              "updated",
               "published"
             ]
           },
           "ambiguous_claims": [],
           "claim_extractor": {
-            "claim_count": 4,
+            "claim_count": 3,
             "claims": [
               {
                 "hardness": "HARD",
@@ -2089,13 +1855,6 @@
                 "text": "2026-03-31T06:07:32.838462639Z",
                 "type": "DATE",
                 "value": "2026-03-31T06:07:32.838462639Z"
-              },
-              {
-                "hardness": "HARD",
-                "span": "published",
-                "text": "published",
-                "type": "STATUS",
-                "value": "published"
               },
               {
                 "hardness": "HARD",
@@ -2124,17 +1883,6 @@
                   "value": "2026-03-31T06:07:32.838462639Z"
                 },
                 "reason": "date",
-                "status": "SUPPORTED"
-              },
-              {
-                "claim": {
-                  "hardness": "HARD",
-                  "span": "published",
-                  "text": "published",
-                  "type": "STATUS",
-                  "value": "published"
-                },
-                "reason": "status",
                 "status": "SUPPORTED"
               },
               {
@@ -2174,13 +1922,6 @@
             },
             {
               "hardness": "HARD",
-              "span": "published",
-              "text": "published",
-              "type": "STATUS",
-              "value": "published"
-            },
-            {
-              "hardness": "HARD",
               "span": "\"Birthday Message\"",
               "text": "\"Birthday Message\"",
               "type": "ENTITY_NAME",
@@ -2200,7 +1941,7 @@
       "syntax_gate": {
         "error_message": null,
         "error_type": null,
-        "final_answer": "The journey \"Birthday Message\" was published on 2026-03-31T06:07:32.838462639Z.",
+        "final_answer": "According to the local snapshot, the journey \"Birthday Message\" was created and updated on 2026-03-31T06:07:32.838462639Z. Other publication-related fields, such as the last deployed time and start date, are not available.",
         "passed": true
       },
       "used_pass_ids": []
@@ -2208,7 +1949,7 @@
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 7.787397417239845
+    "answer_time": 6.33357329107821
   },
-  "tool_call_count": 2
+  "tool_call_count": 1
 }
