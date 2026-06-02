@@ -993,6 +993,175 @@ def test_safe_fallback_with_empty_local_count_and_api_error_keeps_zero_count_sco
     assert gate.passed is True
 
 
+def test_safe_fallback_with_empty_local_status_filter_mentions_requested_status():
+    runtime_passes = [
+        {
+            "pass_id": "local_inactive_lookup",
+            "path": "SQL",
+            "source": "SQL",
+            "status": "EMPTY",
+            "scope": "LOCAL_SNAPSHOT",
+            "facts": [],
+            "source_results": [
+                {
+                    "source": "SQL",
+                    "status": "EMPTY",
+                    "scope": "LOCAL_SNAPSHOT",
+                    "result": {"rows": [], "row_count": 0},
+                }
+            ],
+        },
+        {
+            "pass_id": "live_inactive_lookup",
+            "path": "API",
+            "source": "API",
+            "status": "API_ERROR",
+            "scope": "LIVE_API",
+            "source_results": [
+                {
+                    "source": "API",
+                    "status": "API_ERROR",
+                    "scope": "LIVE_API",
+                    "error": "Adobe credentials unavailable; API call not executed.",
+                }
+            ],
+        },
+    ]
+    bus, slots = _bus_and_slots("Give me inactive journeys", [_sql_tool_result([])])
+    slots.counts = [0]
+    slots.sql_row_count = 0
+    slots.statuses = ["inactive"]
+    bus.api_errors.append("Adobe credentials unavailable; API call not executed.")
+
+    answer = safe_llm_final_answer_fallback(runtime_passes, slots=slots)
+    gate = check_final_answer_semantic_grounding(
+        answer,
+        question="Give me inactive journeys",
+        runtime_passes=runtime_passes,
+        evidence_bus=bus,
+        slots=slots,
+    )
+
+    assert "inactive" in answer.lower()
+    assert "0" in answer
+    assert "Runtime evidence was unavailable" not in answer
+    assert gate.passed is True
+
+
+def test_semantic_gate_allows_api_error_caveat_without_repeating_prompt_filter_value():
+    runtime_passes = [
+        {
+            "pass_id": "queued_segment_jobs_live",
+            "path": "API",
+            "source": "API",
+            "status": "API_ERROR",
+            "scope": "LIVE_API",
+            "source_results": [
+                {
+                    "source": "API",
+                    "status": "API_ERROR",
+                    "scope": "LIVE_API",
+                    "error": "Adobe credentials unavailable; API call not executed.",
+                }
+            ],
+        }
+    ]
+    bus, slots = _bus_and_slots("Show all segment jobs with status 'QUEUED'.", [])
+    slots.entity_names = ["QUEUED"]
+    bus.api_errors.append("Adobe credentials unavailable; API call not executed.")
+
+    result = check_final_answer_semantic_grounding(
+        "Runtime evidence was unavailable; cannot provide a verified answer.",
+        question="Show all segment jobs with status 'QUEUED'.",
+        runtime_passes=runtime_passes,
+        evidence_bus=bus,
+        slots=slots,
+    )
+
+    assert result.passed is True
+
+
+def test_semantic_gate_allows_live_api_unavailable_caveat_without_live_data_claim():
+    rows = [
+        {"NAME": "Audience A", "ID": "aud-a"},
+        {"NAME": "Audience B", "ID": "aud-b"},
+    ]
+    runtime_passes = [
+        {
+            "pass_id": "local_audience_mapping",
+            "path": "SQL",
+            "source": "SQL",
+            "status": "SUCCESS",
+            "scope": "LOCAL_SNAPSHOT",
+            "source_results": [{"source": "SQL", "status": "SUCCESS", "scope": "LOCAL_SNAPSHOT", "result": {"rows": rows, "row_count": 2}}],
+        },
+        {
+            "pass_id": "live_destination_lookup",
+            "path": "API",
+            "source": "API",
+            "status": "API_ERROR",
+            "scope": "LIVE_API",
+            "source_results": [{"source": "API", "status": "API_ERROR", "scope": "LIVE_API", "error": "Adobe credentials unavailable."}],
+        },
+    ]
+    bus, slots = _bus_and_slots(
+        "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
+        [_sql_tool_result(rows)],
+    )
+    bus.api_errors.append("Adobe credentials unavailable.")
+
+    result = check_final_answer_semantic_grounding(
+        "Local snapshot evidence shows Audience A and Audience B. Live API evidence was unavailable, so live verification could not be completed.",
+        question="List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
+        runtime_passes=runtime_passes,
+        evidence_bus=bus,
+        slots=slots,
+    )
+
+    assert result.passed is True
+
+
+def test_semantic_gate_allows_ranked_most_recent_summary_without_all_entity_names():
+    rows = [
+        {"NAME": "Person: Birthday Today 001", "UPDATEDTIME": "2026-04-05T04:33:25.000+00:00"},
+        {"NAME": "Campaign: 25% Off Purchase Offer Reminder", "UPDATEDTIME": "2026-03-29T07:52:25.000+00:00"},
+        {"NAME": "Campaign: New Application Credit Card Offer", "UPDATEDTIME": "2026-03-29T07:52:17.000+00:00"},
+    ]
+    runtime_passes = [
+        {
+            "pass_id": "segment_defs_recent",
+            "path": "SQL",
+            "source": "SQL",
+            "status": "SUCCESS",
+            "scope": "LOCAL_SNAPSHOT",
+            "source_results": [{"source": "SQL", "status": "SUCCESS", "scope": "LOCAL_SNAPSHOT", "result": {"rows": rows, "row_count": 13}}],
+        }
+    ]
+    bus, slots = _bus_and_slots("Which segment definitions were updated most recently?", [_sql_tool_result(rows)])
+    slots.sql_row_count = 13
+    slots.counts = [13]
+    slots.entity_names = [row["NAME"] for row in rows]
+    slots.timestamps = [row["UPDATEDTIME"] for row in rows]
+
+    result = check_final_answer_semantic_grounding(
+        "The most recently updated segment definition is Person: Birthday Today 001, updated on 2026-04-05T04:33:25.000+00:00.",
+        question="Which segment definitions were updated most recently?",
+        runtime_passes=runtime_passes,
+        evidence_bus=bus,
+        slots=slots,
+    )
+
+    assert result.passed is True
+
+
+def test_claim_extractor_does_not_treat_non_success_contrast_as_status_claim():
+    claims = extract_final_answer_claims("No dataflows with a failed or non-success state are explicitly identified.")
+    statuses = [claim.value for claim in claims if claim.type == "STATUS"]
+
+    assert "success" not in statuses
+    assert "failed" not in statuses
+
+
 def test_safe_fallback_prefers_structured_values_over_raw_json_like_facts():
     answer = safe_llm_final_answer_fallback(
         [

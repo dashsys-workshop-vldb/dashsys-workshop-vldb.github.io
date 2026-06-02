@@ -160,6 +160,8 @@ def _status_claims(text: str, occupied: list[tuple[int, int]]) -> list[tuple[Fin
                 continue
             if _looks_like_api_caveat_status(text, match.start(), match.end(), status):
                 continue
+            if _looks_like_negative_unavailable_status_context(text, match.start(), match.end()):
+                continue
             out.append((_claim(text, "STATUS", match.group(0), match.start(), match.end()), match.start(), match.end()))
     return out
 
@@ -301,6 +303,16 @@ def _looks_like_prompt_time_window(text: str, start: int, end: int) -> bool:
 def _looks_like_interval_value(text: str, start: int, end: int) -> bool:
     prefix = text[max(0, start - 32) : start].lower()
     return bool(re.search(r"\binterval\s+of\s+$", prefix))
+
+
+def _looks_like_negative_unavailable_status_context(text: str, start: int, end: int) -> bool:
+    prefix = text[max(0, start - 48) : start].lower()
+    suffix = text[end : min(len(text), end + 48)].lower()
+    if prefix.endswith("non-") or prefix.endswith("non "):
+        return True
+    if re.search(r"\b(no|not|without)\s+[\w\s-]{0,32}$", prefix) and re.search(r"\b(explicitly\s+)?(identified|available|found|returned|present)\b", suffix):
+        return True
+    return False
 
 
 def _looks_like_api_caveat_status(text: str, start: int, end: int, status: str) -> bool:

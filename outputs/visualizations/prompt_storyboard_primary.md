@@ -18,8 +18,8 @@
 
 | Metric | Value | Note |
 | --- | --- | --- |
-| **API score** | `1.0` | The selected API call is scored as correct. |
-| **Answer score** | `0.3915` | The final answer is weak because live file payload is unavailable. |
+| **API score** | `unavailable` | The selected API call is scored as correct. |
+| **Answer score** | `unavailable` | The final answer is weak because live file payload is unavailable. |
 | **Main bottleneck** | `SQL provides the answer source; API verification is dry-run/unavailable in the packaged trace.` | No file list can be safely stated from dry-run evidence. |
 | **Dry-run status** | `API verification attempted as dry-run; live API payload unavailable.` | Credentials were not available for live API payloads. |
 

@@ -336,7 +336,7 @@ def check_final_answer_semantic_grounding(
             verifier=verification.to_dict(),
         )
 
-    missing = _missing_required_fields(final_answer, question=question, index=index, slots=slots)
+    missing = _missing_required_fields(final_answer, question=question, index=index, slots=slots, runtime_passes=runtime_passes)
     missing.extend(_missing_required_pass_results(final_answer, runtime_passes=runtime_passes))
     if missing:
         return FinalAnswerSemanticGateResult(
@@ -350,8 +350,14 @@ def check_final_answer_semantic_grounding(
     return FinalAnswerSemanticGateResult(True, None, None, verifier=verification.to_dict())
 
 
-def safe_llm_final_answer_fallback(runtime_passes: list[dict[str, Any]], *, syntax_gate: FinalAnswerSyntaxGateResult | None = None, semantic_gate: FinalAnswerSemanticGateResult | None = None) -> str:
-    available = _available_runtime_facts(runtime_passes, None)
+def safe_llm_final_answer_fallback(
+    runtime_passes: list[dict[str, Any]],
+    *,
+    syntax_gate: FinalAnswerSyntaxGateResult | None = None,
+    semantic_gate: FinalAnswerSemanticGateResult | None = None,
+    slots: AnswerSlots | None = None,
+) -> str:
+    available = _available_runtime_facts(runtime_passes, slots)
     if available:
         summary = _fallback_fact_summary(available)
         prefix = "Local snapshot evidence shows" if any(str(item.get("scope") or "").upper() == "LOCAL_SNAPSHOT" for item in available) else "Runtime evidence shows"
@@ -732,10 +738,13 @@ def _contradiction(final_answer: str, index: Any) -> dict[str, Any] | None:
     return None
 
 
-def _missing_required_fields(final_answer: str, *, question: str, index: Any, slots: AnswerSlots) -> list[str]:
+def _missing_required_fields(final_answer: str, *, question: str, index: Any, slots: AnswerSlots, runtime_passes: list[dict[str, Any]] | None = None) -> list[str]:
     answer = _norm(final_answer)
     prompt = _norm(question)
     missing: list[str] = []
+    runtime_passes = runtime_passes or []
+    if _is_runtime_unavailable_answer(answer) and _all_required_runtime_evidence_failed(runtime_passes):
+        return missing
     if _asks_count(prompt) and index.counts and not any(_value_in_answer(value, answer) for value in index.counts):
         missing.append("count")
     if _asks_date(prompt) and index.dates and not any(_date_value_in_answer(value, answer) for value in index.dates):
@@ -754,7 +763,10 @@ def _missing_required_fields(final_answer: str, *, question: str, index: Any, sl
         names = slots.entity_names[:10]
         present = [name for name in names if _norm(name) in answer]
         absent = [name for name in names if _norm(name) not in answer]
-        if absent and not _allows_broad_list_summary(prompt, answer, slots, present):
+        if absent and not (
+            _allows_broad_list_summary(prompt, answer, slots, present)
+            or _allows_ranked_recent_summary(prompt, answer, slots, present)
+        ):
             missing.append("entity_names")
     return missing
 
@@ -1006,6 +1018,24 @@ def _is_scoped_no_match_answer(answer: str) -> bool:
     return _is_no_data_answer(answer) and any(term in answer for term in ["matching", "query", "scope", "for this"])
 
 
+def _is_runtime_unavailable_answer(answer: str) -> bool:
+    return "runtime evidence was unavailable" in answer or "live api evidence was unavailable" in answer or "api evidence was unavailable" in answer
+
+
+def _all_required_runtime_evidence_failed(runtime_passes: list[dict[str, Any]]) -> bool:
+    saw_runtime = False
+    for item in runtime_passes:
+        if not isinstance(item, dict):
+            continue
+        path = str(item.get("path") or item.get("source") or "").upper()
+        if path in {"DIRECT", "AGGREGATION_ONLY", ""}:
+            continue
+        saw_runtime = True
+        if _pass_has_successful_evidence(item) or _pass_has_zero_row_evidence(item):
+            return False
+    return saw_runtime
+
+
 def _index_has_zero_count(index: Any) -> bool:
     return any(str(value) in {"0", "0.0"} for value in getattr(index, "counts", []) or [])
 
@@ -1038,6 +1068,16 @@ def _allows_broad_list_summary(prompt: str, answer: str, slots: AnswerSlots, pre
         return False
     sample_signal = bool(re.search(r"\b(sample|examples?|includ(?:e|es|ed|ing)|first few|first \w+)\b", answer))
     return sample_signal and len(present_names) >= min(3, len(slots.entity_names))
+
+
+def _allows_ranked_recent_summary(prompt: str, answer: str, slots: AnswerSlots, present_names: list[str]) -> bool:
+    if not present_names:
+        return False
+    if not re.search(r"\b(most recent|most recently|latest|updated most recently|recently updated)\b", prompt):
+        return False
+    if not re.search(r"\b(most recent|most recently|latest|updated)\b", answer):
+        return False
+    return bool(slots.timestamps and any(_date_value_in_answer(value, answer) for value in slots.timestamps))
 
 
 def _value_in_answer(value: Any, answer: str) -> bool:

@@ -7,9 +7,9 @@
 | Query | Show the default merge policy for schema class '_xdm.context.profile'. |
 | Current packaged strategy | SQL_FIRST_API_VERIFY |
 | Final answer | The default merge policy requires live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable. |
-| Strict score | 0.5401 |
-| Correctness score | 0.5585 |
-| Answer / SQL / API score | 0.117 / None / 1.0 |
+| Strict score | unavailable |
+| Correctness score | unavailable |
+| Answer / SQL / API score | unavailable / unavailable / unavailable |
 | Tools / tokens / runtime | 1 / 700 / 0.016453875228762627 |
 
 ## Dataflow Graph

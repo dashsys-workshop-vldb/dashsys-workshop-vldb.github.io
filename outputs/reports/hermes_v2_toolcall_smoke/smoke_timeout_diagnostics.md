@@ -18,10 +18,10 @@
 
 | Prompt | Pass | Timeout | Timed Out Stage | Total Sec | Planner Sec | SQL Gate Sec | API Gate Sec | SQL Exec Sec | API Exec Sec | Final Composer Sec | Repair Sec | Final Gate Sec | SQL | API | Facts |
 |---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| pure_concept_schema | True | False | None | 16.801 | 16.454 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0 | 0 | 0 |
-| pure_meta_list_schemas | True | False | None | 9.643 | 9.41 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0 | 0 | 0 |
-| ambiguous_user_schemas | True | False | None | 32.336 | 12.38 | 0.0 | 0.0 | 0.004 | 0.0 | 9.867 | 0.0 | 0.0 | 1 | 0 | 3 |
-| local_schema_count | True | False | None | 29.456 | 26.291 | 0.0 | 0.0 | 0.001 | 0.0 | 2.82 | 0.0 | 0.0 | 1 | 0 | 1 |
-| birthday_message_published | True | False | None | 22.967 | 18.644 | 0.0 | 0.0 | 0.002 | 0.0 | 3.603 | 0.0 | 0.0 | 1 | 0 | 1 |
-| mixed_inactive_journeys | True | False | None | 46.676 | 21.808 | 0.0 | 0.0 | 0.003 | 0.0 | 10.093 | 0.0 | 0.0 | 1 | 0 | 2 |
-| compare_local_live_birthday_status | True | False | None | 38.636 | 29.816 | 0.0 | 0.0 | 0.001 | 0.0 | 8.003 | 0.0 | 0.0 | 1 | 1 | 1 |
+| pure_concept_schema | True | False | None | 18.81 | 18.578 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0 | 0 | 0 |
+| pure_meta_list_schemas | True | False | None | 10.07 | 9.865 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0 | 0 | 0 |
+| ambiguous_user_schemas | True | False | None | 30.724 | 12.68 | 0.0 | 0.0 | 0.001 | 0.0 | 8.769 | 0.0 | 0.0 | 1 | 0 | 3 |
+| local_schema_count | True | False | None | 26.308 | 23.737 | 0.0 | 0.0 | 0.001 | 0.0 | 2.301 | 0.0 | 0.0 | 1 | 0 | 1 |
+| birthday_message_published | True | False | None | 20.772 | 16.298 | 0.0 | 0.0 | 0.001 | 0.0 | 3.889 | 0.0 | 0.0 | 1 | 0 | 1 |
+| mixed_inactive_journeys | True | False | None | 41.966 | 20.455 | 0.0 | 0.0 | 0.001 | 0.0 | 8.907 | 0.0 | 0.0 | 1 | 0 | 2 |
+| compare_local_live_birthday_status | True | False | None | 27.715 | 22.478 | 0.0 | 0.0 | 0.001 | 0.0 | 4.663 | 0.0 | 0.0 | 1 | 1 | 1 |

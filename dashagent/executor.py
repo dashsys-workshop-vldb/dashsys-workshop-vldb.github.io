@@ -1888,7 +1888,12 @@ class AgentExecutor:
         if final_answer_supported and final_syntax_gate.final_answer is not None:
             final_answer = final_syntax_gate.final_answer
         else:
-            final_answer = safe_llm_final_answer_fallback(runtime_passes, syntax_gate=final_syntax_gate, semantic_gate=final_semantic_gate)
+            final_answer = safe_llm_final_answer_fallback(
+                runtime_passes,
+                syntax_gate=final_syntax_gate,
+                semantic_gate=final_semantic_gate,
+                slots=slots,
+            )
             fallback_candidate = LLMFinalAnswerCandidate(final_answer=final_answer)
             fallback_syntax_gate = check_final_answer_syntax(fallback_candidate)
             fallback_semantic_gate = (

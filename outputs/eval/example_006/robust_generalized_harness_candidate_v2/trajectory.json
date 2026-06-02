@@ -1,5 +1,5 @@
 {
-  "answer_time": 9.701710083056241,
+  "answer_time": 2.52959791617468,
   "api_call_count": 0,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-02T12:18:32.840698+00:00"
+      "timestamp": "2026-06-02T13:42:40.001728+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-02T12:18:32.841195+00:00"
+      "timestamp": "2026-06-02T13:42:40.002310+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,7 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-02T12:18:32.841629+00:00"
+      "timestamp": "2026-06-02T13:42:40.003023+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner_start",
@@ -86,7 +86,7 @@
       },
       "stage": "llm-owned planning",
       "technique": "pre-call heartbeat before Unified LLM Planner",
-      "timestamp": "2026-06-02T12:18:32.848683+00:00"
+      "timestamp": "2026-06-02T13:42:40.010425+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -112,7 +112,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "semantic_ir_validation_error",
-        "planner_provider_latency_ms": 58352,
+        "planner_provider_latency_ms": 44739,
         "planner_repair_attempted": false,
         "planner_success": false,
         "planner_timeout": false,
@@ -139,9 +139,9 @@
         "semantic_alias_repair_attempted": false,
         "semantic_alias_validation_passed": null,
         "semantic_alias_validation_used": false,
-        "semantic_ir_provider_latency_ms": 58349,
+        "semantic_ir_provider_latency_ms": 44738,
         "semantic_ir_repair_attempted": true,
-        "semantic_ir_repair_latency_ms": 26392,
+        "semantic_ir_repair_latency_ms": 20477,
         "semantic_ir_repair_success": false,
         "semantic_ir_support_check_latency_ms": 0,
         "semantic_ir_support_checked": false,
@@ -198,7 +198,7 @@
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-02T12:19:31.203495+00:00"
+      "timestamp": "2026-06-02T13:43:24.751250+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
@@ -237,7 +237,7 @@
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-02T12:19:31.206730+00:00"
+      "timestamp": "2026-06-02T13:43:24.752721+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_repair",
@@ -252,59 +252,46 @@
       "output": {
         "pass_graph_gate_error_type": "empty_evidence_plan",
         "pass_graph_repair_attempted": true,
-        "pass_graph_repair_success": true,
+        "pass_graph_repair_success": false,
         "repair_plan": {
-          "aggregation_instruction": "Count datasets in the prod sandbox grouped by schema/blueprint. If the local dim_collection table does not have a direct schema_id column, use the available fields to infer schema grouping or report the total count of prod datasets as a fallback.",
-          "evidence_order": "MULTI_PASS",
+          "backend_unavailable": false,
+          "evidence_order": "SQL_FIRST",
           "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-          "passes": {
-            "items": [
-              {
-                "pass_id": "t1_list_prod_datasets",
-                "path": "SQL",
-                "raw_sql_fallback_reason": null,
-                "raw_sql_fallback_task_id": null,
-                "raw_sql_fallback_used": false,
-                "reuse_result_from": null,
-                "semantic_cache_key": null,
-                "subtask": "List datasets (collections) in the prod sandbox to inspect their schemas.",
-                "truncated_fields": 9
-              },
-              {
-                "pass_id": "t2_count_by_schema",
-                "path": "AGGREGATION_ONLY",
-                "raw_sql_fallback_reason": null,
-                "raw_sql_fallback_task_id": null,
-                "raw_sql_fallback_used": false,
-                "reuse_result_from": null,
-                "semantic_cache_key": null,
-                "subtask": "Aggregate the list of prod datasets to count how many share the same schema/blueprint. Note: The local dim_collection table does not expose a direct schema_id or blueprint_id column, so this task will return a count of datasets grouped by available schema-related fields if present, or fall back to counting total datasets if schema grouping is not possible in the local snapshot.",
-                "truncated_fields": 9
-              }
-            ],
-            "total_items": 2,
-            "truncated_items": false
-          },
+          "parse_error": true,
           "provider": "openai",
-          "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
-          "route": "EVIDENCE_PIPELINE",
-          "sql": {
-            "params": {
-              "items": [
-                "prod"
-              ],
-              "total_items": 1,
-              "truncated_items": false
+          "raw_preview": {
+            "semantic_ir_initial": {
+              "base_url": "[REDACTED]",
+              "error": null,
+              "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+              "ok": true,
+              "provider": "openai",
+              "sdk_path_used": true,
+              "skipped": false,
+              "transport": "openai_sdk",
+              "truncated_fields": 1
             },
-            "query": "SELECT \"NAME\", \"COLLECTIONID\", \"LABELSCOLLECTION\", \"CREATEDCLIENTID\" FROM \"dim_collection\" WHERE \"CREATEDCLIENTID\" = ? LIMIT 50"
+            "semantic_ir_repair": {
+              "base_url": "[REDACTED]",
+              "error": null,
+              "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+              "ok": true,
+              "provider": "openai",
+              "sdk_path_used": true,
+              "skipped": false,
+              "transport": "openai_sdk",
+              "truncated_fields": 1
+            }
           },
+          "reason": "semantic_ir_validation_error: Unknown table: hkg_br_collection_blueprint",
+          "route": "EVIDENCE_PIPELINE",
           "truncated_fields": 6
         },
-        "repaired_pass_count": 2
+        "repaired_pass_count": 0
       },
       "stage": "llm-owned pass graph repair",
       "technique": "single LLM-owned pass graph repair",
-      "timestamp": "2026-06-02T12:20:33.718340+00:00"
+      "timestamp": "2026-06-02T13:44:09.381544+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate_repair",
@@ -313,65 +300,37 @@
       "effect": "executes repaired plan only if the LLM supplied a valid graph",
       "efficiency_role": "stops after one graph repair attempt",
       "input_summary": {
-        "evidence_order": "MULTI_PASS",
+        "evidence_order": "SQL_FIRST",
         "pass_ids": {
-          "items": [
-            "t1_list_prod_datasets",
-            "t2_count_by_schema"
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         }
       },
       "output": {
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "t1_list_prod_datasets",
-                "t2_count_by_schema"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
+        "error_message": "EVIDENCE_PIPELINE plans must declare at least one pass.",
+        "error_type": "empty_evidence_plan",
         "parallel_groups": {
-          "items": [
-            {
-              "items": [
-                "t1_list_prod_datasets"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "t2_count_by_schema"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
-        "pass_count": 2,
+        "pass_count": 0,
         "pass_ids": {
-          "items": [
-            "t1_list_prod_datasets",
-            "t2_count_by_schema"
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
-        "passed": true
+        "passed": false
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate on repaired plan",
-      "timestamp": "2026-06-02T12:20:33.719173+00:00"
+      "timestamp": "2026-06-02T13:44:09.382472+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -381,25 +340,13 @@
       "efficiency_role": "prioritizes critical path and enables exact pass-result reuse",
       "input_summary": {
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "t1_list_prod_datasets",
-                "t2_count_by_schema"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "pass_ids": {
-          "items": [
-            "t1_list_prod_datasets",
-            "t2_count_by_schema"
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         }
       },
@@ -419,11 +366,8 @@
         "cache_hits": 0,
         "checkpoint_resume_used": false,
         "critical_path": {
-          "items": [
-            "t1_list_prod_datasets",
-            "t2_count_by_schema"
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -432,17 +376,8 @@
           "truncated_items": false
         },
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "t1_list_prod_datasets",
-                "t2_count_by_schema"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "early_stopped_passes": {
@@ -452,31 +387,13 @@
         },
         "model_cascade_used": false,
         "parallel_groups": {
-          "items": [
-            {
-              "items": [
-                "t1_list_prod_datasets"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "t2_count_by_schema"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "pass_ids": {
-          "items": [
-            "t1_list_prod_datasets",
-            "t2_count_by_schema"
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "stage_pipeline_used": true,
@@ -485,7 +402,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-02T12:20:33.720467+00:00"
+      "timestamp": "2026-06-02T13:44:09.383588+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -495,78 +412,33 @@
       "efficiency_role": "allows later passes to enter free stages before earlier passes finish all stages",
       "input_summary": {
         "parallel_groups": {
-          "items": [
-            {
-              "items": [
-                "t1_list_prod_datasets"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "t2_count_by_schema"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "pass_ids": {
-          "items": [
-            "t1_list_prod_datasets",
-            "t2_count_by_schema"
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         }
       },
       "output": {
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "t1_list_prod_datasets",
-                "t2_count_by_schema"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "max_api_workers": 2,
         "max_parallelism": 4,
         "max_sql_workers": 2,
         "parallel_groups": {
-          "items": [
-            {
-              "items": [
-                "t1_list_prod_datasets"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "t2_count_by_schema"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "passes_completed": {
-          "items": [
-            "t1_list_prod_datasets",
-            "t2_count_by_schema"
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "passes_dependency_blocked": {
@@ -581,346 +453,16 @@
         },
         "pipeline_stage_count": 8,
         "stage_events": {
-          "items": [
-            {
-              "attempt_id": 0,
-              "event": "started",
-              "global_pass_id": "run_195cefb6ea2b44aba5ea133a6e483a07:t1_list_prod_datasets",
-              "pass_id": "t1_list_prod_datasets",
-              "plan_version": 1,
-              "run_id": "run_195cefb6ea2b44aba5ea133a6e483a07",
-              "stage": "PLAN_READY",
-              "status": "OK",
-              "truncated_fields": 3
-            },
-            {
-              "attempt_id": 0,
-              "event": "completed",
-              "global_pass_id": "run_195cefb6ea2b44aba5ea133a6e483a07:t1_list_prod_datasets",
-              "pass_id": "t1_list_prod_datasets",
-              "plan_version": 1,
-              "run_id": "run_195cefb6ea2b44aba5ea133a6e483a07",
-              "stage": "PLAN_READY",
-              "status": "OK",
-              "truncated_fields": 3
-            },
-            {
-              "attempt_id": 0,
-              "event": "started",
-              "global_pass_id": "run_195cefb6ea2b44aba5ea133a6e483a07:t1_list_prod_datasets",
-              "pass_id": "t1_list_prod_datasets",
-              "plan_version": 1,
-              "run_id": "run_195cefb6ea2b44aba5ea133a6e483a07",
-              "stage": "DEPENDENCY_READY",
-              "status": "OK",
-              "truncated_fields": 3
-            }
-          ],
-          "total_items": 32,
-          "truncated_items": true
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
         },
         "truncated_fields": 4,
-        "v2_pipeline_scheduler_used": true
+        "v2_pipeline_scheduler_used": false
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-02T12:20:33.721543+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
-      "correctness_role": "keeps decomposition owned by the LLM and backend role limited to scheduling/gates/execution",
-      "duration_ms": 0.0,
-      "effect": "schedules only LLM-declared passes; does not split prompts or add semantic subtasks",
-      "efficiency_role": "groups dependency-free passes without changing their semantics",
-      "input_summary": {
-        "multi_pass_enabled": true,
-        "pass_ids": {
-          "items": [
-            "t1_list_prod_datasets",
-            "t2_count_by_schema"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        }
-      },
-      "output": {
-        "alias_materialized_count": 0,
-        "api_execution_latency_sec": 0.0,
-        "api_gate_latency_sec": 0.0,
-        "api_gate_passed": null,
-        "api_repair_attempts": 0,
-        "backend_semantic_decomposition_used": false,
-        "backend_semantic_planning_used": false,
-        "budget_error": null,
-        "budget_exceeded": false,
-        "budget_limits": {
-          "max_api_workers": 2,
-          "max_llm_calls": 8,
-          "max_parallelism": 4,
-          "max_passes": 6,
-          "max_repair_attempts": 1,
-          "max_sql_workers": 2,
-          "timeout_seconds": 30.0
-        },
-        "cache_hits": 0,
-        "checkpoint_resume_used": false,
-        "critical_path": {
-          "items": [
-            "t1_list_prod_datasets",
-            "t2_count_by_schema"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
-        "deduped_passes": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "t1_list_prod_datasets",
-                "t2_count_by_schema"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "deterministic_answer_template_used": false,
-        "early_stopped_passes": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "evidence_bus_id": "evidence_run_195cefb6ea2b44aba5ea133a6e483a07",
-        "exact_pass_cache_hits": 0,
-        "exact_pass_cache_scope": "single_run",
-        "hidden_eval_gold_used": false,
-        "llm_pass_count": 2,
-        "llm_pass_graph_used": true,
-        "max_api_workers": 2,
-        "max_parallelism": 4,
-        "max_sql_workers": 2,
-        "model_cascade_used": false,
-        "multi_pass_enabled": true,
-        "parallel_groups": {
-          "items": [
-            {
-              "items": [
-                "t1_list_prod_datasets"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "t2_count_by_schema"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
-        "parallel_pass_count": 1,
-        "pass_graph_gate_error_type": "empty_evidence_plan",
-        "pass_graph_gate_passed": true,
-        "pass_graph_repair_attempted": true,
-        "pass_graph_repair_success": true,
-        "pass_ids": {
-          "items": [
-            "t1_list_prod_datasets",
-            "t2_count_by_schema"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
-        "pass_results_count": 2,
-        "passes_completed": {
-          "items": [
-            "t1_list_prod_datasets",
-            "t2_count_by_schema"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
-        "passes_dependency_blocked": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "passes_executed": {
-          "items": [
-            "t1_list_prod_datasets",
-            "t2_count_by_schema"
-          ],
-          "total_items": 2,
-          "truncated_items": false
-        },
-        "passes_failed": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "pipeline_stage_count": 8,
-        "plan_version": 1,
-        "raw_sql_fallback_considered": false,
-        "raw_sql_fallback_gate_error_type": null,
-        "raw_sql_fallback_reason": null,
-        "raw_sql_fallback_repair_attempted": false,
-        "raw_sql_fallback_repair_success": false,
-        "raw_sql_fallback_success": false,
-        "raw_sql_fallback_task_id": null,
-        "raw_sql_fallback_used": false,
-        "raw_sql_safety_gate_failures": 0,
-        "repaired_pass_count": 2,
-        "result_bundle_id": "bundle_run_195cefb6ea2b44aba5ea133a6e483a07",
-        "run_id": "run_195cefb6ea2b44aba5ea133a6e483a07",
-        "semantic_alias_count": 0,
-        "semantic_alias_materialized": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "semantic_alias_materialized_count": 0,
-        "semantic_alias_validation_failures": 0,
-        "sequential_pass_count": 1,
-        "sql_execution_latency_sec": 0.001,
-        "sql_gate_latency_sec": 0.318,
-        "sql_gate_passed": true,
-        "sql_repair_attempts": 0,
-        "stage_events": {
-          "items": [
-            {
-              "attempt_id": 0,
-              "event": "started",
-              "global_pass_id": "run_195cefb6ea2b44aba5ea133a6e483a07:t1_list_prod_datasets",
-              "pass_id": "t1_list_prod_datasets",
-              "plan_version": 1,
-              "run_id": "run_195cefb6ea2b44aba5ea133a6e483a07",
-              "stage": "SQL_API_GATE",
-              "status": "OK",
-              "truncated_fields": 3
-            },
-            {
-              "attempt_id": 0,
-              "event": "completed",
-              "global_pass_id": "run_195cefb6ea2b44aba5ea133a6e483a07:t1_list_prod_datasets",
-              "pass_id": "t1_list_prod_datasets",
-              "plan_version": 1,
-              "run_id": "run_195cefb6ea2b44aba5ea133a6e483a07",
-              "stage": "READY_FOR_FINAL_COMPOSITION",
-              "status": "OK",
-              "truncated_fields": 3
-            },
-            {
-              "attempt_id": 0,
-              "event": "completed",
-              "global_pass_id": "run_195cefb6ea2b44aba5ea133a6e483a07:t2_count_by_schema",
-              "pass_id": "t2_count_by_schema",
-              "plan_version": 1,
-              "run_id": "run_195cefb6ea2b44aba5ea133a6e483a07",
-              "stage": "READY_FOR_FINAL_COMPOSITION",
-              "status": "OK",
-              "truncated_fields": 3
-            }
-          ],
-          "total_items": 12,
-          "truncated_items": true
-        },
-        "stage_pipeline_used": true,
-        "truncated_fields": 6,
-        "v2_execution_optimizer_used": true,
-        "v2_pipeline_scheduler_used": true
-      },
-      "stage": "llm-owned pass scheduling",
-      "technique": "dependency-aware scheduling of LLM-declared evidence passes",
-      "timestamp": "2026-06-02T12:20:33.722394+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
-      "correctness_role": "does not infer missing dependency values or add backend-selected subtasks",
-      "duration_ms": 0.0,
-      "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
-      "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
-      "input_summary": {
-        "pass_id": "t1_list_prod_datasets"
-      },
-      "output": {
-        "errors": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "required": false,
-        "resolved": true,
-        "run_id": "run_195cefb6ea2b44aba5ea133a6e483a07"
-      },
-      "stage": "llm-owned pass dependency resolution",
-      "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T12:20:33.723221+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
-      "correctness_role": "returns compile errors for one LLM repair attempt",
-      "duration_ms": 0.0,
-      "effect": "checks syntax/database-semantic validity without rewriting SQL",
-      "efficiency_role": "prevents executing uncompilable SQL",
-      "input_summary": {
-        "pass_id": "t1_list_prod_datasets",
-        "sql": "SELECT \"NAME\", \"COLLECTIONID\", \"LABELSCOLLECTION\", \"CREATEDCLIENTID\" FROM \"dim_collection\" WHERE \"CREATEDCLIENTID\" = ? LIMIT 50"
-      },
-      "output": {
-        "params": {
-          "items": [
-            "prod"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "pass_id": "t1_list_prod_datasets",
-        "passed": true,
-        "sql": "SELECT \"NAME\", \"COLLECTIONID\", \"LABELSCOLLECTION\", \"CREATEDCLIENTID\" FROM \"dim_collection\" WHERE \"CREATEDCLIENTID\" = ? LIMIT 50"
-      },
-      "stage": "llm sql compile gate",
-      "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
-      "timestamp": "2026-06-02T12:20:34.042041+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
-      "correctness_role": "does not infer missing dependency values or add backend-selected subtasks",
-      "duration_ms": 0.0,
-      "effect": "resolves only placeholders explicitly declared by the LLM pass graph",
-      "efficiency_role": "prevents executing unresolved placeholder SQL/API calls",
-      "input_summary": {
-        "depends_on": {
-          "items": [
-            "t1_list_prod_datasets"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "pass_id": "t2_count_by_schema"
-      },
-      "output": {
-        "errors": {
-          "items": [],
-          "total_items": 0,
-          "truncated_items": false
-        },
-        "required": false,
-        "resolved": true,
-        "run_id": "run_195cefb6ea2b44aba5ea133a6e483a07"
-      },
-      "stage": "llm-owned pass dependency resolution",
-      "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T12:20:34.043444+00:00"
+      "timestamp": "2026-06-02T13:44:09.384470+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -962,11 +504,8 @@
         "cache_hits": 0,
         "checkpoint_resume_used": false,
         "critical_path": {
-          "items": [
-            "t1_list_prod_datasets",
-            "t2_count_by_schema"
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "deduped_passes": {
@@ -975,17 +514,8 @@
           "truncated_items": false
         },
         "dependency_edges": {
-          "items": [
-            {
-              "items": [
-                "t1_list_prod_datasets",
-                "t2_count_by_schema"
-              ],
-              "total_items": 2,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 1,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "deterministic_answer_template_used": false,
@@ -994,60 +524,39 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_195cefb6ea2b44aba5ea133a6e483a07",
+        "evidence_bus_id": "evidence_run_47ab4617ce6b46659eaf27a2a9fc237c",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
         "llm_evidence_order": "SQL_FIRST",
         "llm_owned_generation": true,
-        "llm_pass_count": 2,
-        "llm_pass_graph_used": true,
+        "llm_pass_count": 0,
+        "llm_pass_graph_used": false,
         "llm_route": "EVIDENCE_PIPELINE",
         "max_api_workers": 2,
         "max_parallelism": 4,
         "max_sql_workers": 2,
         "model_cascade_used": false,
-        "multi_pass_enabled": true,
+        "multi_pass_enabled": false,
         "parallel_groups": {
-          "items": [
-            {
-              "items": [
-                "t1_list_prod_datasets"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            },
-            {
-              "items": [
-                "t2_count_by_schema"
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            }
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
-        "parallel_pass_count": 1,
+        "parallel_pass_count": 0,
         "pass_graph_gate_error_type": "empty_evidence_plan",
-        "pass_graph_gate_passed": true,
+        "pass_graph_gate_passed": false,
         "pass_graph_repair_attempted": true,
-        "pass_graph_repair_success": true,
+        "pass_graph_repair_success": false,
         "pass_ids": {
-          "items": [
-            "t1_list_prod_datasets",
-            "t2_count_by_schema"
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
-        "pass_results_count": 2,
+        "pass_results_count": 1,
         "passes_completed": {
-          "items": [
-            "t1_list_prod_datasets",
-            "t2_count_by_schema"
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "passes_dependency_blocked": {
@@ -1056,11 +565,8 @@
           "truncated_items": false
         },
         "passes_executed": {
-          "items": [
-            "t1_list_prod_datasets",
-            "t2_count_by_schema"
-          ],
-          "total_items": 2,
+          "items": [],
+          "total_items": 0,
           "truncated_items": false
         },
         "passes_failed": {
@@ -1079,9 +585,9 @@
         "raw_sql_fallback_task_id": null,
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
-        "repaired_pass_count": 2,
-        "result_bundle_id": "bundle_run_195cefb6ea2b44aba5ea133a6e483a07",
-        "run_id": "run_195cefb6ea2b44aba5ea133a6e483a07",
+        "repaired_pass_count": 0,
+        "result_bundle_id": "bundle_run_47ab4617ce6b46659eaf27a2a9fc237c",
+        "run_id": "run_47ab4617ce6b46659eaf27a2a9fc237c",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -1090,58 +596,24 @@
         },
         "semantic_alias_materialized_count": 0,
         "semantic_alias_validation_failures": 0,
-        "sequential_pass_count": 1,
-        "sql_execution_latency_sec": 0.001,
-        "sql_gate_latency_sec": 0.318,
-        "sql_gate_passed": true,
+        "sequential_pass_count": 0,
+        "sql_execution_latency_sec": 0.0,
+        "sql_gate_latency_sec": 0.0,
+        "sql_gate_passed": null,
         "sql_repair_attempts": 0,
         "stage_events": {
-          "items": [
-            {
-              "attempt_id": 0,
-              "event": "started",
-              "global_pass_id": "run_195cefb6ea2b44aba5ea133a6e483a07:t1_list_prod_datasets",
-              "pass_id": "t1_list_prod_datasets",
-              "plan_version": 1,
-              "run_id": "run_195cefb6ea2b44aba5ea133a6e483a07",
-              "stage": "SQL_API_GATE",
-              "status": "OK",
-              "truncated_fields": 3
-            },
-            {
-              "attempt_id": 0,
-              "event": "completed",
-              "global_pass_id": "run_195cefb6ea2b44aba5ea133a6e483a07:t1_list_prod_datasets",
-              "pass_id": "t1_list_prod_datasets",
-              "plan_version": 1,
-              "run_id": "run_195cefb6ea2b44aba5ea133a6e483a07",
-              "stage": "READY_FOR_FINAL_COMPOSITION",
-              "status": "OK",
-              "truncated_fields": 3
-            },
-            {
-              "attempt_id": 0,
-              "event": "completed",
-              "global_pass_id": "run_195cefb6ea2b44aba5ea133a6e483a07:t2_count_by_schema",
-              "pass_id": "t2_count_by_schema",
-              "plan_version": 1,
-              "run_id": "run_195cefb6ea2b44aba5ea133a6e483a07",
-              "stage": "READY_FOR_FINAL_COMPOSITION",
-              "status": "OK",
-              "truncated_fields": 3
-            }
-          ],
-          "total_items": 12,
-          "truncated_items": true
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
         },
         "stage_pipeline_used": true,
         "truncated_fields": 2,
         "v2_execution_optimizer_used": true,
-        "v2_pipeline_scheduler_used": true
+        "v2_pipeline_scheduler_used": false
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-02T12:20:34.043961+00:00"
+      "timestamp": "2026-06-02T13:44:09.385383+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -1150,38 +622,16 @@
       "effect": "executes only LLM-proposed candidates that pass backend gates",
       "efficiency_role": "does not execute alternative backend-generated candidates",
       "input_summary": {
-        "tool_result_count": 1
+        "tool_result_count": 0
       },
       "output": {
         "api_calls_executed": 0,
         "dry_run_status": false,
-        "row_counts": {
-          "items": [
-            0
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "sql_calls_executed": 1,
-        "sql_results": {
-          "items": [
-            {
-              "ok": true,
-              "result_preview": {
-                "items": [],
-                "total_items": 0,
-                "truncated_items": false
-              },
-              "row_count": 0
-            }
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        }
+        "sql_calls_executed": 0
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-02T12:20:34.127526+00:00"
+      "timestamp": "2026-06-02T13:44:09.474153+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -1191,7 +641,7 @@
       "efficiency_role": "makes EvidenceBus construction explicit",
       "input_summary": {
         "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
-        "tool_result_count": 1
+        "tool_result_count": 0
       },
       "output": {
         "evidence_bus_built": true,
@@ -1199,12 +649,12 @@
         "llm_evidence_order": "SQL_FIRST",
         "llm_final_answer_composer_ran": true,
         "llm_route": "EVIDENCE_PIPELINE",
-        "pass_results_count": 2,
+        "pass_results_count": 1,
         "post_evidence_answer_router_ran": false
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-02T12:20:34.127965+00:00"
+      "timestamp": "2026-06-02T13:44:09.474662+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -1213,25 +663,24 @@
       "effect": "forwards executed SQL/API evidence into the existing grounded answer pipeline",
       "efficiency_role": "uses collected evidence without extra tool calls",
       "input_summary": {
-        "tool_result_count": 1
+        "tool_result_count": 0
       },
       "output": {
         "evidence": {
           "pass_ids": {
             "items": [
-              "t1_list_prod_datasets",
-              "t2_count_by_schema"
+              "pass_graph_gate"
             ],
-            "total_items": 2,
+            "total_items": 1,
             "truncated_items": false
           },
-          "pass_result_count": 2,
-          "run_id": "run_195cefb6ea2b44aba5ea133a6e483a07"
+          "pass_result_count": 1,
+          "run_id": "run_47ab4617ce6b46659eaf27a2a9fc237c"
         }
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-02T12:20:34.128474+00:00"
+      "timestamp": "2026-06-02T13:44:09.475260+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -1240,8 +689,8 @@
       "effect": "stores all LLM-declared pass results before final LLM aggregation",
       "efficiency_role": "reuses executed pass results without extra tools",
       "input_summary": {
-        "pass_results_count": 2,
-        "tool_result_count": 1
+        "pass_results_count": 1,
+        "tool_result_count": 0
       },
       "output": {
         "append_events": {
@@ -1249,28 +698,19 @@
             {
               "appended": true,
               "attempt_id": 0,
-              "pass_id": "t1_list_prod_datasets"
-            },
-            {
-              "appended": true,
-              "attempt_id": 0,
-              "pass_id": "t2_count_by_schema"
+              "pass_id": "pass_graph_gate"
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         },
-        "pass_results_count": 2,
-        "run_id": "run_195cefb6ea2b44aba5ea133a6e483a07",
+        "pass_results_count": 1,
+        "run_id": "run_47ab4617ce6b46659eaf27a2a9fc237c",
         "runtime_passes": {
           "items": [
             {
               "attempt_id": 0,
-              "cached_sources": {
-                "items": [],
-                "total_items": 0,
-                "truncated_items": false
-              },
+              "cached_sources": null,
               "dependency_resolution": {
                 "errors": {
                   "items": [],
@@ -1278,50 +718,24 @@
                   "truncated_items": false
                 },
                 "required": false,
-                "resolved": true,
-                "run_id": "run_195cefb6ea2b44aba5ea133a6e483a07"
+                "resolved": true
               },
-              "global_pass_id": "run_195cefb6ea2b44aba5ea133a6e483a07:t1_list_prod_datasets",
-              "pass_id": "t1_list_prod_datasets",
-              "path": "SQL",
-              "plan_version": 1,
-              "run_id": "run_195cefb6ea2b44aba5ea133a6e483a07",
-              "status": "EMPTY",
-              "truncated_fields": 6
-            },
-            {
-              "attempt_id": 0,
-              "cached_sources": {
-                "items": [],
-                "total_items": 0,
-                "truncated_items": false
-              },
-              "dependency_resolution": {
-                "errors": {
-                  "items": [],
-                  "total_items": 0,
-                  "truncated_items": false
-                },
-                "required": false,
-                "resolved": true,
-                "run_id": "run_195cefb6ea2b44aba5ea133a6e483a07"
-              },
-              "global_pass_id": "run_195cefb6ea2b44aba5ea133a6e483a07:t2_count_by_schema",
-              "pass_id": "t2_count_by_schema",
+              "global_pass_id": "run_47ab4617ce6b46659eaf27a2a9fc237c:pass_graph_gate",
+              "pass_id": "pass_graph_gate",
               "path": "AGGREGATION_ONLY",
               "plan_version": 1,
-              "run_id": "run_195cefb6ea2b44aba5ea133a6e483a07",
-              "status": "SKIPPED",
+              "run_id": "run_47ab4617ce6b46659eaf27a2a9fc237c",
+              "status": "ERROR",
               "truncated_fields": 6
             }
           ],
-          "total_items": 2,
+          "total_items": 1,
           "truncated_items": false
         }
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-02T12:20:34.129006+00:00"
+      "timestamp": "2026-06-02T13:44:09.475817+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -1330,7 +744,7 @@
       "effect": "keeps SQL errors, API errors, live empty, and direct evidence distinct",
       "efficiency_role": "uses existing payloads only",
       "input_summary": {
-        "tool_result_count": 1
+        "tool_result_count": 0
       },
       "output": {
         "api": {
@@ -1344,7 +758,7 @@
         "live_empty_scoped": false,
         "sql": {
           "items": [
-            "SQL_ZERO_ROWS"
+            "SQL_NOT_RUN"
           ],
           "total_items": 1,
           "truncated_items": false
@@ -1352,7 +766,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-02T12:20:34.129452+00:00"
+      "timestamp": "2026-06-02T13:44:09.476296+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -1361,7 +775,7 @@
       "effect": "turns runtime evidence into typed answer fields",
       "efficiency_role": "uses existing slot extraction",
       "input_summary": {
-        "tool_result_count": 1
+        "tool_result_count": 0
       },
       "output": {
         "discrepancy_flags": {
@@ -1373,28 +787,13 @@
         "slots": {
           "answer_family": "schema_dataset",
           "api_error": false,
-          "counts": {
-            "items": [
-              "0"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
           "discrepancy": false,
-          "dry_run": false,
-          "slots_present": {
-            "items": [
-              "counts"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "sql_row_count": 0
+          "dry_run": false
         }
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-02T12:20:34.142769+00:00"
+      "timestamp": "2026-06-02T13:44:09.479352+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer_start",
@@ -1403,14 +802,14 @@
       "effect": "records the exact boundary before the potentially slow final-answer LLM call",
       "efficiency_role": "enables smoke timeout localization without extra SQL/API calls",
       "input_summary": {
-        "runtime_pass_count": 2
+        "runtime_pass_count": 1
       },
       "output": {
         "current_stage": "llm_final_answer_composer_call_start"
       },
       "stage": "llm-owned answer synthesis",
       "technique": "pre-call heartbeat before LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T12:20:34.143256+00:00"
+      "timestamp": "2026-06-02T13:44:09.479851+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -1419,27 +818,12 @@
       "effect": "lets the LLM own final answer composition from runtime evidence",
       "efficiency_role": "uses one final-answer LLM call after evidence execution",
       "input_summary": {
-        "runtime_pass_count": 2,
+        "runtime_pass_count": 1,
         "slot_counts": {
           "answer_family": "schema_dataset",
           "api_error": false,
-          "counts": {
-            "items": [
-              "0"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
           "discrepancy": false,
-          "dry_run": false,
-          "slots_present": {
-            "items": [
-              "counts"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "sql_row_count": 0
+          "dry_run": false
         }
       },
       "output": {
@@ -1457,7 +841,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T12:20:38.834948+00:00"
+      "timestamp": "2026-06-02T13:44:11.995026+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -1474,7 +858,7 @@
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-02T12:20:38.836302+00:00"
+      "timestamp": "2026-06-02T13:44:11.996177+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -1486,24 +870,16 @@
         "syntax_gate_passed": true
       },
       "output": {
-        "error_message": "Final answer omitted information explicitly requested and present in runtime evidence.",
-        "error_type": "missing_required_info",
-        "missing_required_fields": {
-          "items": [
-            "count"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "passed": false,
+        "passed": true,
         "verifier": {
           "action": "ACCEPT",
           "allowed_fact_index": {
-            "counts": {
+            "allowed_caveats": {
               "items": [
-                "0"
+                "API_ERROR",
+                "EVIDENCE_PIPELINE PLANS MUST DECLARE AT LEAST ONE PASS."
               ],
-              "total_items": 1,
+              "total_items": 2,
               "truncated_items": false
             }
           },
@@ -1557,127 +933,7 @@
       },
       "stage": "answer gate",
       "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-02T12:20:38.844462+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_final_answer_repair_start",
-      "correctness_role": "diagnostic only; backend still does not repair the answer",
-      "duration_ms": 0.0,
-      "effect": "records the exact boundary before the potentially slow final-answer repair LLM call",
-      "efficiency_role": "enables smoke timeout localization without extra SQL/API calls",
-      "input_summary": {
-        "failed_semantic": true,
-        "failed_syntax": false
-      },
-      "output": {
-        "current_stage": "llm_final_answer_repair_call_start"
-      },
-      "stage": "llm-owned answer repair",
-      "technique": "pre-call heartbeat before final answer repair",
-      "timestamp": "2026-06-02T12:20:38.845755+00:00"
-    },
-    {
-      "checkpoint_id": "checkpoint_llm_final_answer_repair",
-      "correctness_role": "preserves LLM ownership while enforcing evidence boundaries",
-      "duration_ms": 0.0,
-      "effect": "returns gate errors to the LLM once; backend does not repair the answer itself",
-      "efficiency_role": "caps answer repair to one LLM call",
-      "input_summary": {
-        "failed_semantic": true,
-        "failed_syntax": false
-      },
-      "output": {
-        "candidate": {
-          "backend_unavailable": false,
-          "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
-          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-          "parse_error": false,
-          "provider": "openai",
-          "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.",
-          "used_pass_ids": {
-            "items": [],
-            "total_items": 0,
-            "truncated_items": false
-          }
-        },
-        "semantic_gate": {
-          "error_message": "Final answer omitted information explicitly requested and present in runtime evidence.",
-          "error_type": "missing_required_info",
-          "missing_required_fields": {
-            "items": [
-              "count"
-            ],
-            "total_items": 1,
-            "truncated_items": false
-          },
-          "passed": false,
-          "verifier": {
-            "action": "ACCEPT",
-            "allowed_fact_index": {
-              "counts": {
-                "items": [
-                  "0"
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              }
-            },
-            "claim_extractor": {
-              "claim_count": 1,
-              "claims": {
-                "items": [
-                  {
-                    "hardness": "SOFT",
-                    "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                    "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                    "type": "SOFT_TEXT"
-                  }
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              }
-            },
-            "claim_matcher": {
-              "matches": {
-                "items": [
-                  {
-                    "claim": {
-                      "hardness": "SOFT",
-                      "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                      "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                      "type": "SOFT_TEXT"
-                    },
-                    "reason": "soft_text",
-                    "status": "SUPPORTED"
-                  }
-                ],
-                "total_items": 1,
-                "truncated_items": false
-              }
-            },
-            "ok": true,
-            "supported_claims": {
-              "items": [
-                {
-                  "hardness": "SOFT",
-                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
-                  "type": "SOFT_TEXT"
-                }
-              ],
-              "total_items": 1,
-              "truncated_items": false
-            }
-          }
-        },
-        "syntax_gate": {
-          "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
-          "passed": true
-        }
-      },
-      "stage": "llm-owned answer repair",
-      "technique": "single LLM-owned final answer repair",
-      "timestamp": "2026-06-02T12:20:43.822290+00:00"
+      "timestamp": "2026-06-02T13:44:12.002472+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -1686,18 +942,18 @@
       "effect": "records that V2 did not use deterministic answer templates, renderers, or selectors as competing generators",
       "efficiency_role": "no extra tool calls",
       "input_summary": {
-        "runtime_pass_count": 2
+        "runtime_pass_count": 1
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
-        "answer_repair_attempts": 1,
+        "answer_repair_attempts": 0,
         "answer_semantic_gate_passed": true,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
-        "final_answer_repair_latency_sec": 4.974,
+        "final_answer_repair_latency_sec": 0.0,
         "final_answer_supported_by_evidence": true,
-        "final_composer_latency_sec": 4.69,
-        "final_gate_latency_sec": 0.008,
+        "final_composer_latency_sec": 2.513,
+        "final_gate_latency_sec": 0.005,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 2,
@@ -1709,7 +965,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-02T12:20:43.826733+00:00"
+      "timestamp": "2026-06-02T13:44:12.003289+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -1722,7 +978,7 @@
       },
       "output": {
         "answer_composer_used": "LLMFinalAnswerComposer",
-        "answer_repair_attempts": 1,
+        "answer_repair_attempts": 0,
         "answer_semantic_gate_passed": true,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
@@ -1738,27 +994,27 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-02T12:20:43.829051+00:00"
+      "timestamp": "2026-06-02T13:44:12.003881+00:00"
     }
   ],
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 1378,
+  "estimated_tokens": 1227,
   "execution_time": 0.0,
-  "final_answer": "Local snapshot evidence shows t1_list_prod_datasets/SQL/LOCAL_SNAPSHOT: count: 0. Some requested runtime evidence was unavailable for this query/scope.",
+  "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
   "original_query": "How many datasets have been ingested using the same schema in the prod sandbox?",
   "planning_time": 0.0,
   "preprocessing_time": 0.0,
   "query_id": "example_006",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 9.837451583240181,
-  "sql_call_count": 1,
+  "runtime": 2.640538957901299,
+  "sql_call_count": 0,
   "steps": [
     {
-      "estimated_tokens": 1259,
+      "estimated_tokens": 1262,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_006/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 1858
+      "prompt_tokens": 1861
     },
     {
       "aggregation_instruction": "",
@@ -1779,7 +1035,7 @@
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "semantic_ir_validation_error",
-        "planner_provider_latency_ms": 58352,
+        "planner_provider_latency_ms": 44739,
         "planner_repair_attempted": false,
         "planner_success": false,
         "planner_timeout": false,
@@ -1806,9 +1062,9 @@
         "semantic_alias_repair_attempted": false,
         "semantic_alias_validation_passed": null,
         "semantic_alias_validation_used": false,
-        "semantic_ir_provider_latency_ms": 58349,
+        "semantic_ir_provider_latency_ms": 44738,
         "semantic_ir_repair_attempted": true,
-        "semantic_ir_repair_latency_ms": 26392,
+        "semantic_ir_repair_latency_ms": 20477,
         "semantic_ir_repair_success": false,
         "semantic_ir_support_check_latency_ms": 0,
         "semantic_ir_support_checked": false,
@@ -1865,38 +1121,13 @@
       "sql": null
     },
     {
-      "kind": "sql_call",
-      "result": {
-        "error": null,
-        "limited": false,
-        "ok": true,
-        "params": {
-          "items": [
-            "prod"
-          ],
-          "total_items": 1,
-          "truncated_items": false
-        },
-        "row_count": 0
-      },
-      "sql": "SELECT \"NAME\", \"COLLECTIONID\", \"LABELSCOLLECTION\", \"CREATEDCLIENTID\" FROM \"dim_collection\" WHERE \"CREATEDCLIENTID\" = ? LIMIT 50",
-      "validation": {
-        "errors": [],
-        "ok": true,
-        "repaired": false,
-        "warnings": [
-          "LLM SQL pass passed compile gate."
-        ]
-      }
-    },
-    {
       "evidence_bus_built": true,
       "evidence_pipeline_bypassed": false,
       "kind": "evidence_boundary",
       "llm_evidence_order": "SQL_FIRST",
       "llm_final_answer_composer_ran": true,
       "llm_route": "EVIDENCE_PIPELINE",
-      "pass_results_count": 2,
+      "pass_results_count": 1,
       "post_evidence_answer_router_ran": false
     },
     {
@@ -1916,14 +1147,14 @@
     },
     {
       "answer_composer_used": "LLMFinalAnswerComposer",
-      "answer_repair_attempts": 1,
+      "answer_repair_attempts": 0,
       "answer_semantic_gate_passed": true,
       "answer_syntax_gate_passed": true,
       "deterministic_answer_template_used": false,
-      "final_answer_repair_latency_sec": 4.974,
+      "final_answer_repair_latency_sec": 0.0,
       "final_answer_supported_by_evidence": true,
-      "final_composer_latency_sec": 4.69,
-      "final_gate_latency_sec": 0.008,
+      "final_composer_latency_sec": 2.513,
+      "final_gate_latency_sec": 0.005,
       "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
       "llm_owned_final_answer": true,
@@ -1937,11 +1168,12 @@
         "verifier": {
           "action": "ACCEPT",
           "allowed_fact_index": {
-            "allowed_caveats": [],
-            "api_error_scopes": [],
-            "counts": [
-              "0"
+            "allowed_caveats": [
+              "API_ERROR",
+              "EVIDENCE_PIPELINE PLANS MUST DECLARE AT LEAST ONE PASS."
             ],
+            "api_error_scopes": [],
+            "counts": [],
             "dates": [],
             "evidence_strings": [],
             "ids": [],
@@ -1956,11 +1188,11 @@
             "claim_count": 1,
             "claims": [
               {
-                "hardness": "HARD",
-                "span": "0",
-                "text": "0",
-                "type": "COUNT",
-                "value": "0"
+                "hardness": "SOFT",
+                "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "type": "SOFT_TEXT",
+                "value": ""
               }
             ]
           },
@@ -1968,13 +1200,13 @@
             "matches": [
               {
                 "claim": {
-                  "hardness": "HARD",
-                  "span": "0",
-                  "text": "0",
-                  "type": "COUNT",
-                  "value": "0"
+                  "hardness": "SOFT",
+                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "type": "SOFT_TEXT",
+                  "value": ""
                 },
-                "reason": "count",
+                "reason": "soft_text",
                 "status": "SUPPORTED"
               }
             ]
@@ -1984,11 +1216,11 @@
           "over_specified_claims": [],
           "supported_claims": [
             {
-              "hardness": "HARD",
-              "span": "0",
-              "text": "0",
-              "type": "COUNT",
-              "value": "0"
+              "hardness": "SOFT",
+              "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+              "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+              "type": "SOFT_TEXT",
+              "value": ""
             }
           ],
           "unsupported_claims": []
@@ -1997,7 +1229,7 @@
       "syntax_gate": {
         "error_message": null,
         "error_type": null,
-        "final_answer": "Local snapshot evidence shows t1_list_prod_datasets/SQL/LOCAL_SNAPSHOT: count: 0. Some requested runtime evidence was unavailable for this query/scope.",
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
         "passed": true
       },
       "used_pass_ids": []
@@ -2005,7 +1237,7 @@
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 9.701710083056241
+    "answer_time": 2.52959791617468
   },
-  "tool_call_count": 1
+  "tool_call_count": 0
 }
