@@ -229,7 +229,9 @@ def run_semantic_ir_toolcall_planner(
             started=started,
         )
 
+    validation_started = time.perf_counter()
     parsed_plan, validation = _parse_validate(tool_args, validator)
+    diagnostics["semantic_ir_validation_latency_ms"] = _elapsed_ms(validation_started)
     diagnostics.update(
         {
             "semantic_ir_toolcall_supported": True,
@@ -248,6 +250,7 @@ def run_semantic_ir_toolcall_planner(
         diagnostics["semantic_ir_repair_attempted"] = True
         if validation.error_type == "invalid_semantic_alias":
             diagnostics["semantic_alias_repair_attempted"] = True
+        repair_started = time.perf_counter()
         repair_result, repair_error = _call_semantic_ir_tool(
             client,
             system_prompt=_semantic_ir_repair_system_prompt(),
@@ -260,6 +263,7 @@ def run_semantic_ir_toolcall_planner(
             ),
         )
         diagnostics["semantic_ir_provider_latency_ms"] = _elapsed_ms(started)
+        diagnostics["semantic_ir_repair_latency_ms"] = _elapsed_ms(repair_started)
         raw_previews["semantic_ir_repair"] = compact_preview(repair_result or repair_error, 1200)
         if repair_error:
             diagnostics["semantic_ir_repair_success"] = False
@@ -273,7 +277,9 @@ def run_semantic_ir_toolcall_planner(
                 reason="Semantic IR repair did not return submit_semantic_ir_plan tool call.",
                 started=started,
             )
+        validation_started = time.perf_counter()
         parsed_plan, validation = _parse_validate(repair_args, validator)
+        diagnostics["semantic_ir_validation_latency_ms"] = diagnostics.get("semantic_ir_validation_latency_ms", 0) + _elapsed_ms(validation_started)
         diagnostics.update(
             {
                 "semantic_ir_validation_passed": validation.passed,
@@ -299,10 +305,13 @@ def run_semantic_ir_toolcall_planner(
                 started=started,
             )
 
+    support_started = time.perf_counter()
     support_result = check_semantic_ir_support(parsed_plan, schema_card, api_card)
+    diagnostics["semantic_ir_support_check_latency_ms"] = _elapsed_ms(support_started)
     _record_support_result(diagnostics, support_result)
     if not support_result.supported:
         diagnostics["semantic_ir_support_repair_attempted"] = True
+        support_repair_started = time.perf_counter()
         support_repair_result, support_repair_error = _call_semantic_ir_tool(
             client,
             system_prompt=_semantic_ir_support_repair_system_prompt(),
@@ -315,6 +324,7 @@ def run_semantic_ir_toolcall_planner(
             ),
         )
         diagnostics["semantic_ir_provider_latency_ms"] = _elapsed_ms(started)
+        diagnostics["semantic_ir_support_repair_latency_ms"] = _elapsed_ms(support_repair_started)
         raw_previews["semantic_ir_support_repair"] = compact_preview(support_repair_result or support_repair_error, 1200)
         if support_repair_error:
             diagnostics["semantic_ir_support_repair_success"] = False
@@ -330,7 +340,9 @@ def run_semantic_ir_toolcall_planner(
                 reason="Semantic IR support repair did not return submit_semantic_ir_plan tool call.",
                 started=started,
             )
+        validation_started = time.perf_counter()
         repaired_plan, repaired_validation = _parse_validate(support_repair_args, validator)
+        diagnostics["semantic_ir_validation_latency_ms"] = diagnostics.get("semantic_ir_validation_latency_ms", 0) + _elapsed_ms(validation_started)
         diagnostics.update(
             {
                 "semantic_ir_validation_passed": repaired_validation.passed,
@@ -349,7 +361,9 @@ def run_semantic_ir_toolcall_planner(
                 reason=repaired_validation.error_message or "Semantic IR support repair failed validation.",
                 started=started,
             )
+        support_started = time.perf_counter()
         repaired_support = check_semantic_ir_support(repaired_plan, schema_card, api_card)
+        diagnostics["semantic_ir_support_check_latency_ms"] = diagnostics.get("semantic_ir_support_check_latency_ms", 0) + _elapsed_ms(support_started)
         if repaired_support.supported:
             parsed_plan = repaired_plan
             support_result = repaired_support
@@ -373,6 +387,7 @@ def run_semantic_ir_toolcall_planner(
                 allowed_schema_card=schema_card,
                 safety_gate=RawSQLSafetyGate(),
             )
+            diagnostics["raw_sql_fallback_latency_ms"] = raw_fallback.latency_ms
             raw_previews["raw_sql_fallback"] = compact_preview(raw_fallback.raw_preview, 1200)
             _record_raw_sql_fallback_result(diagnostics, raw_fallback)
             if not raw_fallback.ok or not raw_fallback.sql:
@@ -382,7 +397,9 @@ def run_semantic_ir_toolcall_planner(
                     reason=raw_fallback.rejected_reason or "Raw SQL fallback was rejected.",
                     started=started,
                 )
+            compiler_started = time.perf_counter()
             plan_payload = _raw_sql_fallback_plan_payload(repaired_plan, raw_fallback)
+            diagnostics["compiler_latency_ms"] = _elapsed_ms(compiler_started)
             diagnostics.update(
                 {
                     "planner_success": True,
@@ -400,7 +417,9 @@ def run_semantic_ir_toolcall_planner(
             )
             return WeakProtocolResult(plan_payload=plan_payload, diagnostics=diagnostics, raw_preview=redact_secrets(raw_previews))
 
+    compiler_started = time.perf_counter()
     plan_payload = compile_semantic_ir_to_plan_payload(parsed_plan, schema_card, api_card)
+    diagnostics["compiler_latency_ms"] = _elapsed_ms(compiler_started)
     diagnostics.update(
         {
             "planner_success": True,
@@ -441,6 +460,12 @@ def _base_diagnostics() -> dict[str, Any]:
         "compiled_api_count": 0,
         "sql_compile_gate_failures": 0,
         "api_request_gate_failures": 0,
+        "semantic_ir_validation_latency_ms": 0,
+        "semantic_ir_repair_latency_ms": 0,
+        "semantic_ir_support_check_latency_ms": 0,
+        "semantic_ir_support_repair_latency_ms": 0,
+        "raw_sql_fallback_latency_ms": 0,
+        "compiler_latency_ms": 0,
         "semantic_ir_support_checked": False,
         "semantic_ir_supported": None,
         "semantic_ir_unsupported_reason": None,

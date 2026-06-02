@@ -502,6 +502,37 @@ def test_openai_client_uses_sdk_base_url_and_model(monkeypatch):
     assert "unit-test-openai-key" not in str(result)
 
 
+def test_openai_client_uses_hermes_llm_call_timeout_env(monkeypatch):
+    captured = {}
+
+    class FakeCompletion:
+        def model_dump(self):
+            return {
+                "choices": [{"finish_reason": "stop", "message": {"role": "assistant", "content": "ok"}}],
+                "usage": {"total_tokens": 1},
+            }
+
+    class FakeCompletions:
+        def create(self, **payload):
+            return FakeCompletion()
+
+    class FakeChat:
+        completions = FakeCompletions()
+
+    class FakeOpenAI:
+        def __init__(self, *, api_key=None, base_url=None, timeout=None):
+            captured["timeout"] = timeout
+            self.chat = FakeChat()
+
+    monkeypatch.setattr("dashagent.llm_client.OpenAI", FakeOpenAI)
+    monkeypatch.setenv("HERMES_LLM_CALL_TIMEOUT_SEC", "7")
+
+    client = OpenAILLMClient(api_key="unit-test-openai-key")
+    client.generate_messages([{"role": "user", "content": "hello"}])
+
+    assert captured["timeout"] == 7
+
+
 def test_openai_client_normalizes_qwen_hermes_tool_calls_from_sdk(monkeypatch):
     class FakeCompletion:
         def model_dump(self):

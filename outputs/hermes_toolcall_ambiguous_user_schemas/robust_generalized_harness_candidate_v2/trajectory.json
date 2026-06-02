@@ -1,5 +1,5 @@
 {
-  "answer_time": 26.74127954058349,
+  "answer_time": 32.70741245802492,
   "api_call_count": 0,
   "checkpoints": [
     {
@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-02T00:04:06.350424+00:00"
+      "timestamp": "2026-06-02T00:50:27.182997+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-02T00:04:06.350442+00:00"
+      "timestamp": "2026-06-02T00:50:27.183524+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,25 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-02T00:04:06.350446+00:00"
+      "timestamp": "2026-06-02T00:50:27.184033+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_unified_planner_start",
+      "correctness_role": "diagnostic only; does not alter route, Semantic IR, SQL/API, or answer behavior",
+      "duration_ms": 0.0,
+      "effect": "records the exact boundary before the potentially slow local LLM planner call",
+      "efficiency_role": "enables smoke timeout localization without extra tool calls",
+      "input_summary": {
+        "query": "What schemas do I have?",
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "current_stage": "llm_unified_planner_call_start",
+        "prompt_id": "hermes_toolcall_ambiguous_user_schemas"
+      },
+      "stage": "llm-owned planning",
+      "technique": "pre-call heartbeat before Unified LLM Planner",
+      "timestamp": "2026-06-02T00:50:27.191031+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -90,10 +108,11 @@
         "compiled_alias_count": 0,
         "compiled_api_count": 0,
         "compiled_sql_count": 1,
+        "compiler_latency_ms": 0,
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 8372,
+        "planner_provider_latency_ms": 12120,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -106,6 +125,7 @@
         },
         "raw_sql_fallback_considered": false,
         "raw_sql_fallback_gate_error_type": null,
+        "raw_sql_fallback_latency_ms": 0,
         "raw_sql_fallback_reason": null,
         "raw_sql_fallback_rejected_reason": null,
         "raw_sql_fallback_repair_attempted": false,
@@ -152,14 +172,17 @@
             "truncated_items": false
           }
         },
-        "semantic_ir_provider_latency_ms": 8370,
+        "semantic_ir_provider_latency_ms": 12119,
         "semantic_ir_repair_attempted": false,
+        "semantic_ir_repair_latency_ms": 0,
         "semantic_ir_repair_success": false,
+        "semantic_ir_support_check_latency_ms": 0,
         "semantic_ir_support_checked": true,
         "semantic_ir_support_recommended_action": "COMPILE",
         "semantic_ir_support_repair_attempted": false,
         "semantic_ir_support_repair_error_message": null,
         "semantic_ir_support_repair_error_type": null,
+        "semantic_ir_support_repair_latency_ms": 0,
         "semantic_ir_support_repair_success": false,
         "semantic_ir_supported": true,
         "semantic_ir_task_count": 1,
@@ -170,6 +193,7 @@
         "semantic_ir_unsupported_task_id": null,
         "semantic_ir_validation_error_message": null,
         "semantic_ir_validation_error_type": null,
+        "semantic_ir_validation_latency_ms": 0,
         "semantic_ir_validation_passed": true,
         "sql_compile_gate_failures": 0,
         "v2_semantic_ir_used": true
@@ -205,7 +229,7 @@
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-02T00:04:14.731429+00:00"
+      "timestamp": "2026-06-02T00:50:39.314692+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
@@ -254,7 +278,7 @@
       },
       "stage": "llm-owned pass graph validation",
       "technique": "shape-only PassGraphGate",
-      "timestamp": "2026-06-02T00:04:14.735917+00:00"
+      "timestamp": "2026-06-02T00:50:39.316884+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_execution_optimizer",
@@ -340,7 +364,7 @@
       },
       "stage": "llm-owned execution optimization",
       "technique": "backend-only scheduling/cache/budget optimizer",
-      "timestamp": "2026-06-02T00:04:14.736367+00:00"
+      "timestamp": "2026-06-02T00:50:39.318111+00:00"
     },
     {
       "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
@@ -415,10 +439,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_74ad80c3d9894985b54cd3a63ca8e812:t1_list_schemas",
+              "global_pass_id": "run_a002a348cb104e238929a3e99b6c0c07:t1_list_schemas",
               "pass_id": "t1_list_schemas",
               "plan_version": 1,
-              "run_id": "run_74ad80c3d9894985b54cd3a63ca8e812",
+              "run_id": "run_a002a348cb104e238929a3e99b6c0c07",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -426,10 +450,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_74ad80c3d9894985b54cd3a63ca8e812:t1_list_schemas",
+              "global_pass_id": "run_a002a348cb104e238929a3e99b6c0c07:t1_list_schemas",
               "pass_id": "t1_list_schemas",
               "plan_version": 1,
-              "run_id": "run_74ad80c3d9894985b54cd3a63ca8e812",
+              "run_id": "run_a002a348cb104e238929a3e99b6c0c07",
               "stage": "PLAN_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -437,10 +461,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_74ad80c3d9894985b54cd3a63ca8e812:t1_list_schemas",
+              "global_pass_id": "run_a002a348cb104e238929a3e99b6c0c07:t1_list_schemas",
               "pass_id": "t1_list_schemas",
               "plan_version": 1,
-              "run_id": "run_74ad80c3d9894985b54cd3a63ca8e812",
+              "run_id": "run_a002a348cb104e238929a3e99b6c0c07",
               "stage": "DEPENDENCY_READY",
               "status": "OK",
               "truncated_fields": 3
@@ -454,7 +478,7 @@
       },
       "stage": "llm-owned pipeline scheduling",
       "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
-      "timestamp": "2026-06-02T00:04:14.736553+00:00"
+      "timestamp": "2026-06-02T00:50:39.319149+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_pass_scheduler",
@@ -474,6 +498,8 @@
       },
       "output": {
         "alias_materialized_count": 0,
+        "api_execution_latency_sec": 0.0,
+        "api_gate_latency_sec": 0.0,
         "api_gate_passed": null,
         "api_repair_attempts": 0,
         "backend_semantic_decomposition_used": false,
@@ -514,7 +540,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_74ad80c3d9894985b54cd3a63ca8e812",
+        "evidence_bus_id": "evidence_run_a002a348cb104e238929a3e99b6c0c07",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -587,8 +613,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_74ad80c3d9894985b54cd3a63ca8e812",
-        "run_id": "run_74ad80c3d9894985b54cd3a63ca8e812",
+        "result_bundle_id": "bundle_run_a002a348cb104e238929a3e99b6c0c07",
+        "run_id": "run_a002a348cb104e238929a3e99b6c0c07",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -598,6 +624,8 @@
         "semantic_alias_materialized_count": 0,
         "semantic_alias_validation_failures": 0,
         "sequential_pass_count": 0,
+        "sql_execution_latency_sec": 0.002,
+        "sql_gate_latency_sec": 0.002,
         "sql_gate_passed": true,
         "sql_repair_attempts": 0,
         "stage_events": {
@@ -605,10 +633,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_74ad80c3d9894985b54cd3a63ca8e812:t1_list_schemas",
+              "global_pass_id": "run_a002a348cb104e238929a3e99b6c0c07:t1_list_schemas",
               "pass_id": "t1_list_schemas",
               "plan_version": 1,
-              "run_id": "run_74ad80c3d9894985b54cd3a63ca8e812",
+              "run_id": "run_a002a348cb104e238929a3e99b6c0c07",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -616,10 +644,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_74ad80c3d9894985b54cd3a63ca8e812:t1_list_schemas",
+              "global_pass_id": "run_a002a348cb104e238929a3e99b6c0c07:t1_list_schemas",
               "pass_id": "t1_list_schemas",
               "plan_version": 1,
-              "run_id": "run_74ad80c3d9894985b54cd3a63ca8e812",
+              "run_id": "run_a002a348cb104e238929a3e99b6c0c07",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -627,10 +655,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_74ad80c3d9894985b54cd3a63ca8e812:t1_list_schemas",
+              "global_pass_id": "run_a002a348cb104e238929a3e99b6c0c07:t1_list_schemas",
               "pass_id": "t1_list_schemas",
               "plan_version": 1,
-              "run_id": "run_74ad80c3d9894985b54cd3a63ca8e812",
+              "run_id": "run_a002a348cb104e238929a3e99b6c0c07",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -646,7 +674,7 @@
       },
       "stage": "llm-owned pass scheduling",
       "technique": "dependency-aware scheduling of LLM-declared evidence passes",
-      "timestamp": "2026-06-02T00:04:14.736558+00:00"
+      "timestamp": "2026-06-02T00:50:39.320203+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_dependency_resolution",
@@ -665,11 +693,11 @@
         },
         "required": false,
         "resolved": true,
-        "run_id": "run_74ad80c3d9894985b54cd3a63ca8e812"
+        "run_id": "run_a002a348cb104e238929a3e99b6c0c07"
       },
       "stage": "llm-owned pass dependency resolution",
       "technique": "placeholder resolution from completed LLM pass results",
-      "timestamp": "2026-06-02T00:04:14.736641+00:00"
+      "timestamp": "2026-06-02T00:50:39.321351+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_sql_compile_gate",
@@ -688,7 +716,7 @@
       },
       "stage": "llm sql compile gate",
       "technique": "DuckDB EXPLAIN compile check for LLM-owned SQL pass",
-      "timestamp": "2026-06-02T00:04:14.742799+00:00"
+      "timestamp": "2026-06-02T00:50:39.324312+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -710,6 +738,8 @@
       },
       "output": {
         "alias_materialized_count": 0,
+        "api_execution_latency_sec": 0.0,
+        "api_gate_latency_sec": 0.0,
         "api_gate_passed": null,
         "api_repair_attempts": 0,
         "backend_semantic_decomposition_used": false,
@@ -750,7 +780,7 @@
           "total_items": 0,
           "truncated_items": false
         },
-        "evidence_bus_id": "evidence_run_74ad80c3d9894985b54cd3a63ca8e812",
+        "evidence_bus_id": "evidence_run_a002a348cb104e238929a3e99b6c0c07",
         "exact_pass_cache_hits": 0,
         "exact_pass_cache_scope": "single_run",
         "hidden_eval_gold_used": false,
@@ -826,8 +856,8 @@
         "raw_sql_fallback_used": false,
         "raw_sql_safety_gate_failures": 0,
         "repaired_pass_count": 0,
-        "result_bundle_id": "bundle_run_74ad80c3d9894985b54cd3a63ca8e812",
-        "run_id": "run_74ad80c3d9894985b54cd3a63ca8e812",
+        "result_bundle_id": "bundle_run_a002a348cb104e238929a3e99b6c0c07",
+        "run_id": "run_a002a348cb104e238929a3e99b6c0c07",
         "semantic_alias_count": 0,
         "semantic_alias_materialized": {
           "items": [],
@@ -837,6 +867,8 @@
         "semantic_alias_materialized_count": 0,
         "semantic_alias_validation_failures": 0,
         "sequential_pass_count": 0,
+        "sql_execution_latency_sec": 0.002,
+        "sql_gate_latency_sec": 0.002,
         "sql_gate_passed": true,
         "sql_repair_attempts": 0,
         "stage_events": {
@@ -844,10 +876,10 @@
             {
               "attempt_id": 0,
               "event": "started",
-              "global_pass_id": "run_74ad80c3d9894985b54cd3a63ca8e812:t1_list_schemas",
+              "global_pass_id": "run_a002a348cb104e238929a3e99b6c0c07:t1_list_schemas",
               "pass_id": "t1_list_schemas",
               "plan_version": 1,
-              "run_id": "run_74ad80c3d9894985b54cd3a63ca8e812",
+              "run_id": "run_a002a348cb104e238929a3e99b6c0c07",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -855,10 +887,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_74ad80c3d9894985b54cd3a63ca8e812:t1_list_schemas",
+              "global_pass_id": "run_a002a348cb104e238929a3e99b6c0c07:t1_list_schemas",
               "pass_id": "t1_list_schemas",
               "plan_version": 1,
-              "run_id": "run_74ad80c3d9894985b54cd3a63ca8e812",
+              "run_id": "run_a002a348cb104e238929a3e99b6c0c07",
               "stage": "READY_FOR_FINAL_COMPOSITION",
               "status": "OK",
               "truncated_fields": 3
@@ -866,10 +898,10 @@
             {
               "attempt_id": 0,
               "event": "completed",
-              "global_pass_id": "run_74ad80c3d9894985b54cd3a63ca8e812:t1_list_schemas",
+              "global_pass_id": "run_a002a348cb104e238929a3e99b6c0c07:t1_list_schemas",
               "pass_id": "t1_list_schemas",
               "plan_version": 1,
-              "run_id": "run_74ad80c3d9894985b54cd3a63ca8e812",
+              "run_id": "run_a002a348cb104e238929a3e99b6c0c07",
               "stage": "SQL_API_GATE",
               "status": "OK",
               "truncated_fields": 3
@@ -885,7 +917,7 @@
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned candidate generation with backend-only gates",
-      "timestamp": "2026-06-02T00:04:14.750465+00:00"
+      "timestamp": "2026-06-02T00:50:39.327825+00:00"
     },
     {
       "checkpoint_id": "checkpoint_13_tool_execution",
@@ -938,7 +970,7 @@
       },
       "stage": "execution",
       "technique": "LLM-owned SQL/API tool execution",
-      "timestamp": "2026-06-02T00:04:14.758894+00:00"
+      "timestamp": "2026-06-02T00:50:39.447318+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
@@ -961,7 +993,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "V2 evidence boundary",
-      "timestamp": "2026-06-02T00:04:14.758908+00:00"
+      "timestamp": "2026-06-02T00:50:39.447929+00:00"
     },
     {
       "checkpoint_id": "checkpoint_14_evidence_bus",
@@ -994,12 +1026,12 @@
             "truncated_items": false
           },
           "pass_result_count": 1,
-          "run_id": "run_74ad80c3d9894985b54cd3a63ca8e812"
+          "run_id": "run_a002a348cb104e238929a3e99b6c0c07"
         }
       },
       "stage": "evidence forwarding",
       "technique": "EvidenceBus",
-      "timestamp": "2026-06-02T00:04:14.758976+00:00"
+      "timestamp": "2026-06-02T00:50:39.448633+00:00"
     },
     {
       "checkpoint_id": "checkpoint_result_bundle",
@@ -1024,7 +1056,7 @@
           "truncated_items": false
         },
         "pass_results_count": 1,
-        "run_id": "run_74ad80c3d9894985b54cd3a63ca8e812",
+        "run_id": "run_a002a348cb104e238929a3e99b6c0c07",
         "runtime_passes": {
           "items": [
             {
@@ -1042,13 +1074,13 @@
                 },
                 "required": false,
                 "resolved": true,
-                "run_id": "run_74ad80c3d9894985b54cd3a63ca8e812"
+                "run_id": "run_a002a348cb104e238929a3e99b6c0c07"
               },
-              "global_pass_id": "run_74ad80c3d9894985b54cd3a63ca8e812:t1_list_schemas",
+              "global_pass_id": "run_a002a348cb104e238929a3e99b6c0c07:t1_list_schemas",
               "pass_id": "t1_list_schemas",
               "path": "SQL",
               "plan_version": 1,
-              "run_id": "run_74ad80c3d9894985b54cd3a63ca8e812",
+              "run_id": "run_a002a348cb104e238929a3e99b6c0c07",
               "status": "SUCCESS",
               "truncated_fields": 6
             }
@@ -1059,7 +1091,7 @@
       },
       "stage": "evidence forwarding",
       "technique": "ResultBundle",
-      "timestamp": "2026-06-02T00:04:14.759044+00:00"
+      "timestamp": "2026-06-02T00:50:39.449264+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_quality_classifier",
@@ -1090,7 +1122,7 @@
       },
       "stage": "answer synthesis",
       "technique": "SQL/API evidence quality classification",
-      "timestamp": "2026-06-02T00:04:14.759048+00:00"
+      "timestamp": "2026-06-02T00:50:39.449901+00:00"
     },
     {
       "checkpoint_id": "checkpoint_15_answer_slots",
@@ -1143,7 +1175,23 @@
       },
       "stage": "answer synthesis",
       "technique": "structured answer slot extraction",
-      "timestamp": "2026-06-02T00:04:14.775313+00:00"
+      "timestamp": "2026-06-02T00:50:39.465585+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_composer_start",
+      "correctness_role": "diagnostic only; does not alter final answer composition or grounding",
+      "duration_ms": 0.0,
+      "effect": "records the exact boundary before the potentially slow final-answer LLM call",
+      "efficiency_role": "enables smoke timeout localization without extra SQL/API calls",
+      "input_summary": {
+        "runtime_pass_count": 1
+      },
+      "output": {
+        "current_stage": "llm_final_answer_composer_call_start"
+      },
+      "stage": "llm-owned answer synthesis",
+      "technique": "pre-call heartbeat before LLMFinalAnswerComposer",
+      "timestamp": "2026-06-02T00:50:39.466141+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_composer",
@@ -1201,7 +1249,7 @@
       },
       "stage": "llm-owned answer synthesis",
       "technique": "LLMFinalAnswerComposer",
-      "timestamp": "2026-06-02T00:04:41.492407+00:00"
+      "timestamp": "2026-06-02T00:51:12.141485+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
@@ -1218,7 +1266,7 @@
       },
       "stage": "answer gate",
       "technique": "minimal final-answer syntax gate",
-      "timestamp": "2026-06-02T00:04:41.492421+00:00"
+      "timestamp": "2026-06-02T00:51:12.142523+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
@@ -1243,9 +1291,9 @@
             },
             "evidence_strings": {
               "items": [
-                "adhoc xdm schema for dataset jojourneyversionsds_b3db3db4-de1b-4984-9ac0-33e2935d3596",
-                "adhoc xdm schema for dataset jojourneyversionsds_14af09b4-941b-456c-8035-e05742c3d2b7",
-                "482df6417bca3933f123d0e202df81fece46a5bd6fd9c926"
+                "ce9c03ced11d383065fa28df5505ef0220e13341089e1880",
+                "adhoc xdm schema for dataset jojourneyversionsds_2a3be7fb-d4ff-44b4-96f4-c33801583cf4",
+                "adhoc xdm schema for dataset jojourneyversionsds_961ddfca-2199-4783-b16c-9226938e0d93"
               ],
               "total_items": 20,
               "truncated_items": true
@@ -1370,7 +1418,7 @@
       },
       "stage": "answer gate",
       "technique": "runtime-evidence semantic grounding gate",
-      "timestamp": "2026-06-02T00:04:41.496850+00:00"
+      "timestamp": "2026-06-02T00:51:12.150600+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
@@ -1387,7 +1435,10 @@
         "answer_semantic_gate_passed": true,
         "answer_syntax_gate_passed": true,
         "deterministic_answer_template_used": false,
+        "final_answer_repair_latency_sec": 0.0,
         "final_answer_supported_by_evidence": true,
+        "final_composer_latency_sec": 32.673,
+        "final_gate_latency_sec": 0.008,
         "hidden_eval_gold_used": false,
         "llm_owned_final_answer": true,
         "truncated_fields": 2,
@@ -1399,7 +1450,7 @@
       },
       "stage": "answer ownership boundary",
       "technique": "LLM-owned final answer with backend gates",
-      "timestamp": "2026-06-02T00:04:41.496910+00:00"
+      "timestamp": "2026-06-02T00:51:12.151674+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -1428,12 +1479,12 @@
       },
       "stage": "final response",
       "technique": "LLM-owned final response",
-      "timestamp": "2026-06-02T00:04:41.497140+00:00"
+      "timestamp": "2026-06-02T00:51:12.152732+00:00"
     }
   ],
   "domain_type": "LLM_OWNED_V2",
   "errors": [],
-  "estimated_tokens": 2964,
+  "estimated_tokens": 3027,
   "execution_time": 0.0,
   "final_answer": "The local snapshot contains 74 schemas. The first five retrieved are:\n\n1. Adhoc XDM Schema for dataset JOJourneyVersionsDs_e0f2475b-1232-425e-869d-22e671494d5c (ID: 8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc)\n2. Adhoc XDM Schema for dataset JOJourneyVersionsDs_8e9d4f37-a8bf-4085-bfd5-3c893df100e7 (ID: 9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5)\n3. Adhoc XDM Schema for dataset JOJourneyVersionsDs_f877134c-9ce5-4ca2-b326-881c75f8a355 (ID: d1f6d78ece9f26680ec81aba98a0e9a0bd30635e991281d)\n4. Adhoc XDM Schema for dataset JOJourneyVersionsDs_961ddfca-2199-4783-b16c-9226938e0d93 (ID: 46739dcc77a7f06982b831c340c47eac7927b40a7ee3314b)\n5. Adhoc XDM Schema for dataset JOJourneyVersionsDs_10b7f335-021a-4ea3-9520-fa206cee8b69 (ID: d809e0ddf27c8bf629425b3ee3df2000e2c2de4655bb54b3)",
   "original_query": "What schemas do I have?",
@@ -1441,14 +1492,14 @@
   "preprocessing_time": 0.0,
   "query_id": "hermes_toolcall_ambiguous_user_schemas",
   "route_type": "EVIDENCE_PIPELINE",
-  "runtime": 26.792441541329026,
+  "runtime": 32.87088708393276,
   "sql_call_count": 1,
   "steps": [
     {
-      "estimated_tokens": 1593,
+      "estimated_tokens": 1653,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/hermes_toolcall_ambiguous_user_schemas/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 2270
+      "prompt_tokens": 2336
     },
     {
       "aggregation_instruction": "Return the list of schemas (blueprints) with their IDs and names retrieved from the local snapshot.",
@@ -1465,10 +1516,11 @@
         "compiled_alias_count": 0,
         "compiled_api_count": 0,
         "compiled_sql_count": 1,
+        "compiler_latency_ms": 0,
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 8372,
+        "planner_provider_latency_ms": 12120,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -1481,6 +1533,7 @@
         },
         "raw_sql_fallback_considered": false,
         "raw_sql_fallback_gate_error_type": null,
+        "raw_sql_fallback_latency_ms": 0,
         "raw_sql_fallback_reason": null,
         "raw_sql_fallback_rejected_reason": null,
         "raw_sql_fallback_repair_attempted": false,
@@ -1527,14 +1580,17 @@
             "truncated_items": false
           }
         },
-        "semantic_ir_provider_latency_ms": 8370,
+        "semantic_ir_provider_latency_ms": 12119,
         "semantic_ir_repair_attempted": false,
+        "semantic_ir_repair_latency_ms": 0,
         "semantic_ir_repair_success": false,
+        "semantic_ir_support_check_latency_ms": 0,
         "semantic_ir_support_checked": true,
         "semantic_ir_support_recommended_action": "COMPILE",
         "semantic_ir_support_repair_attempted": false,
         "semantic_ir_support_repair_error_message": null,
         "semantic_ir_support_repair_error_type": null,
+        "semantic_ir_support_repair_latency_ms": 0,
         "semantic_ir_support_repair_success": false,
         "semantic_ir_supported": true,
         "semantic_ir_task_count": 1,
@@ -1545,6 +1601,7 @@
         "semantic_ir_unsupported_task_id": null,
         "semantic_ir_validation_error_message": null,
         "semantic_ir_validation_error_type": null,
+        "semantic_ir_validation_latency_ms": 0,
         "semantic_ir_validation_passed": true,
         "sql_compile_gate_failures": 0,
         "v2_semantic_ir_used": true
@@ -1678,7 +1735,10 @@
       "answer_semantic_gate_passed": true,
       "answer_syntax_gate_passed": true,
       "deterministic_answer_template_used": false,
+      "final_answer_repair_latency_sec": 0.0,
       "final_answer_supported_by_evidence": true,
+      "final_composer_latency_sec": 32.673,
+      "final_gate_latency_sec": 0.008,
       "hidden_eval_gold_used": false,
       "kind": "answer_diagnostics",
       "llm_owned_final_answer": true,
@@ -1699,26 +1759,26 @@
             ],
             "dates": [],
             "evidence_strings": [
-              "adhoc xdm schema for dataset jojourneyversionsds_b3db3db4-de1b-4984-9ac0-33e2935d3596",
-              "adhoc xdm schema for dataset jojourneyversionsds_14af09b4-941b-456c-8035-e05742c3d2b7",
-              "482df6417bca3933f123d0e202df81fece46a5bd6fd9c926",
-              "f67782126866728013a531ae680c9e9bad9e22259d83fac9",
-              "bab97535ccf8149a6c890b363b2da7e57e23ade653ace175",
-              "adhoc xdm schema for dataset jojourneyversionsds_10b7f335-021a-4ea3-9520-fa206cee8b69",
-              "adhoc xdm schema for dataset jojourneyversionsds_11f2c467-ed7e-4a05-8f50-87067d5d1e90",
-              "d1f6d78ece9f26680ec81aba98a0e9a0bd30635e991281d",
               "ce9c03ced11d383065fa28df5505ef0220e13341089e1880",
-              "adhoc xdm schema for dataset jojourneyversionsds_961ddfca-2199-4783-b16c-9226938e0d93",
-              "242035dec594cda7b0da761c3284d3f7291408549be9c6fd",
-              "adhoc xdm schema for dataset jojourneyversionsds_e0f2475b-1232-425e-869d-22e671494d5c",
-              "9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5",
-              "adhoc xdm schema for dataset jojourneyversionsds_f877134c-9ce5-4ca2-b326-881c75f8a355",
               "adhoc xdm schema for dataset jojourneyversionsds_2a3be7fb-d4ff-44b4-96f4-c33801583cf4",
+              "adhoc xdm schema for dataset jojourneyversionsds_961ddfca-2199-4783-b16c-9226938e0d93",
+              "d1f6d78ece9f26680ec81aba98a0e9a0bd30635e991281d",
               "d809e0ddf27c8bf629425b3ee3df2000e2c2de4655bb54b3",
               "adhoc xdm schema for dataset jojourneyversionsds_27f3f2f7-ccb3-4699-8029-a5d5d1aa6066",
-              "8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc",
+              "adhoc xdm schema for dataset jojourneyversionsds_e0f2475b-1232-425e-869d-22e671494d5c",
+              "adhoc xdm schema for dataset jojourneyversionsds_b3db3db4-de1b-4984-9ac0-33e2935d3596",
+              "f67782126866728013a531ae680c9e9bad9e22259d83fac9",
+              "9e98e89d2e5f55aa8f1dc5560ce93a95433604b566e375c5",
               "adhoc xdm schema for dataset jojourneyversionsds_8e9d4f37-a8bf-4085-bfd5-3c893df100e7",
-              "46739dcc77a7f06982b831c340c47eac7927b40a7ee3314b"
+              "242035dec594cda7b0da761c3284d3f7291408549be9c6fd",
+              "482df6417bca3933f123d0e202df81fece46a5bd6fd9c926",
+              "adhoc xdm schema for dataset jojourneyversionsds_f877134c-9ce5-4ca2-b326-881c75f8a355",
+              "adhoc xdm schema for dataset jojourneyversionsds_11f2c467-ed7e-4a05-8f50-87067d5d1e90",
+              "8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc",
+              "bab97535ccf8149a6c890b363b2da7e57e23ade653ace175",
+              "46739dcc77a7f06982b831c340c47eac7927b40a7ee3314b",
+              "adhoc xdm schema for dataset jojourneyversionsds_14af09b4-941b-456c-8035-e05742c3d2b7",
+              "adhoc xdm schema for dataset jojourneyversionsds_10b7f335-021a-4ea3-9520-fa206cee8b69"
             ],
             "ids": [
               "8f2838c4eb4311be76d64e2684c4895648fb9344cf751bfc"
@@ -1919,7 +1979,7 @@
   ],
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
   "timings": {
-    "answer_time": 26.74127954058349
+    "answer_time": 32.70741245802492
   },
   "tool_call_count": 1
 }

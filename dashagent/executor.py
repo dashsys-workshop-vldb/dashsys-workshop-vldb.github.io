@@ -1548,6 +1548,16 @@ class AgentExecutor:
             ),
         )
         planner_context = self._llm_owned_planner_context()
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_llm_unified_planner_start",
+            stage="llm-owned planning",
+            technique="pre-call heartbeat before Unified LLM Planner",
+            input_summary={"query": query, "strategy": strategy},
+            output={"current_stage": "llm_unified_planner_call_start", "prompt_id": qid},
+            effect="records the exact boundary before the potentially slow local LLM planner call",
+            correctness_role="diagnostic only; does not alter route, Semantic IR, SQL/API, or answer behavior",
+            efficiency_role="enables smoke timeout localization without extra tool calls",
+        )
         plan = run_llm_unified_planner(
             user_prompt=query,
             schema_context=planner_context["schema_context"],
@@ -1762,7 +1772,19 @@ class AgentExecutor:
             correctness_role="provides runtime facts to the LLM-owned final answer composer",
             efficiency_role="uses existing slot extraction",
         )
+        checkpoint_logger.add_checkpoint(
+            "checkpoint_llm_final_answer_composer_start",
+            stage="llm-owned answer synthesis",
+            technique="pre-call heartbeat before LLMFinalAnswerComposer",
+            input_summary={"runtime_pass_count": len(runtime_passes)},
+            output={"current_stage": "llm_final_answer_composer_call_start"},
+            effect="records the exact boundary before the potentially slow final-answer LLM call",
+            correctness_role="diagnostic only; does not alter final answer composition or grounding",
+            efficiency_role="enables smoke timeout localization without extra SQL/API calls",
+        )
+        composer_started = time.perf_counter()
         candidate = compose_llm_final_answer(card=answer_card)
+        final_composer_latency_sec = round(time.perf_counter() - composer_started, 3)
         checkpoint_logger.add_checkpoint(
             "checkpoint_llm_final_answer_composer",
             stage="llm-owned answer synthesis",
@@ -1773,6 +1795,7 @@ class AgentExecutor:
             correctness_role="backend does not render deterministic templates or select competing answers",
             efficiency_role="uses one final-answer LLM call after evidence execution",
         )
+        final_gate_started = time.perf_counter()
         syntax_gate = check_final_answer_syntax(candidate)
         checkpoint_logger.add_checkpoint(
             "checkpoint_llm_final_answer_syntax_gate",
@@ -1794,6 +1817,7 @@ class AgentExecutor:
             )
         else:
             semantic_gate = None
+        final_gate_latency_sec = round(time.perf_counter() - final_gate_started, 3)
         checkpoint_logger.add_checkpoint(
             "checkpoint_llm_final_answer_semantic_gate",
             stage="answer gate",
@@ -1814,7 +1838,19 @@ class AgentExecutor:
                 "semantic_gate": semantic_gate.to_dict() if semantic_gate is not None else None,
                 "previous_candidate": candidate.to_dict(),
             }
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_llm_final_answer_repair_start",
+                stage="llm-owned answer repair",
+                technique="pre-call heartbeat before final answer repair",
+                input_summary={"failed_syntax": not syntax_gate.passed, "failed_semantic": semantic_gate is not None and not semantic_gate.passed},
+                output={"current_stage": "llm_final_answer_repair_call_start"},
+                effect="records the exact boundary before the potentially slow final-answer repair LLM call",
+                correctness_role="diagnostic only; backend still does not repair the answer",
+                efficiency_role="enables smoke timeout localization without extra SQL/API calls",
+            )
+            repair_started = time.perf_counter()
             repaired = compose_llm_final_answer(card=answer_card, repair_context=repair_context)
+            final_answer_repair_latency_sec = round(time.perf_counter() - repair_started, 3)
             answer_repair_attempts = 1
             repaired_syntax = check_final_answer_syntax(repaired)
             if repaired_syntax.passed:
@@ -1845,6 +1881,8 @@ class AgentExecutor:
                 final_candidate = repaired
                 final_syntax_gate = repaired_syntax
                 final_semantic_gate = repaired_semantic
+        else:
+            final_answer_repair_latency_sec = 0.0
         final_answer_supported = bool(final_syntax_gate.passed and final_semantic_gate is not None and final_semantic_gate.passed)
         final_answer = (
             final_syntax_gate.final_answer
@@ -1861,6 +1899,9 @@ class AgentExecutor:
             "final_answer_supported_by_evidence": final_answer_supported,
             "hidden_eval_gold_used": False,
             "deterministic_answer_template_used": False,
+            "final_composer_latency_sec": final_composer_latency_sec,
+            "final_answer_repair_latency_sec": final_answer_repair_latency_sec,
+            "final_gate_latency_sec": final_gate_latency_sec,
             "syntax_gate": final_syntax_gate.to_dict(),
             "semantic_gate": final_semantic_gate.to_dict() if final_semantic_gate is not None else None,
         }
@@ -2199,6 +2240,10 @@ class AgentExecutor:
             "raw_sql_fallback_task_id": None,
             "raw_sql_fallback_reason": None,
             "raw_sql_safety_gate_failures": 0,
+            "sql_gate_latency_sec": 0.0,
+            "api_gate_latency_sec": 0.0,
+            "sql_execution_latency_sec": 0.0,
+            "api_execution_latency_sec": 0.0,
             "backend_semantic_decomposition_used": False,
             "deterministic_answer_template_used": False,
             "hidden_eval_gold_used": False,
@@ -2548,7 +2593,9 @@ class AgentExecutor:
                 summary["raw_sql_safety_gate_failures"] = int(summary.get("raw_sql_safety_gate_failures", 0) or 0) + 1
                 return _blocked_raw_sql_tool_result(candidate.query, candidate.params, raw_gate, pass_id=pass_spec.pass_id, subtask=pass_spec.subtask)
             candidate = LLMUnifiedSQLCandidate(query=raw_gate.sql, params=raw_gate.params)
+        gate_started = time.perf_counter()
         compile_result = self.sql_compile_gate.check(candidate.query, candidate.params)
+        summary["sql_gate_latency_sec"] = round(float(summary.get("sql_gate_latency_sec", 0.0) or 0.0) + (time.perf_counter() - gate_started), 3)
         summary["sql_gate_passed"] = compile_result.passed
         summary["sql_compile_gate_passed"] = compile_result.passed
         checkpoint_logger.add_checkpoint(
@@ -2614,7 +2661,9 @@ class AgentExecutor:
                         subtask=repaired_pass.subtask,
                     )
                 repaired_candidate = LLMUnifiedSQLCandidate(query=repaired_raw_gate.sql, params=repaired_raw_gate.params)
+            gate_started = time.perf_counter()
             repaired_compile = self.sql_compile_gate.check(repaired_candidate.query, repaired_candidate.params)
+            summary["sql_gate_latency_sec"] = round(float(summary.get("sql_gate_latency_sec", 0.0) or 0.0) + (time.perf_counter() - gate_started), 3)
             summary["sql_gate_passed"] = repaired_compile.passed
             summary["sql_compile_gate_passed"] = repaired_compile.passed
             checkpoint_logger.add_checkpoint(
@@ -2634,7 +2683,9 @@ class AgentExecutor:
             if pass_spec.raw_sql_fallback_used or repaired_pass.raw_sql_fallback_used:
                 summary["raw_sql_fallback_repair_success"] = True
             candidate = repaired_candidate
+        execution_started = time.perf_counter()
         payload = self.db.execute_sql(candidate.query, params=candidate.params, allow_full_result=True)
+        summary["sql_execution_latency_sec"] = round(float(summary.get("sql_execution_latency_sec", 0.0) or 0.0) + (time.perf_counter() - execution_started), 3)
         summary["sql_executed"] = True
         validation = ValidationResult(True, warnings=["LLM SQL pass passed compile gate."], errors=[])
         step = PlanStep(
@@ -2670,7 +2721,9 @@ class AgentExecutor:
         request = pass_spec.api_request
         if request is None:
             return None
+        gate_started = time.perf_counter()
         gate_result = self.api_request_gate.check(request)
+        summary["api_gate_latency_sec"] = round(float(summary.get("api_gate_latency_sec", 0.0) or 0.0) + (time.perf_counter() - gate_started), 3)
         summary["api_gate_passed"] = gate_result.passed
         summary["api_request_gate_passed"] = gate_result.passed
         checkpoint_logger.add_checkpoint(
@@ -2710,7 +2763,9 @@ class AgentExecutor:
             repaired_pass = _repaired_pass_for(repair_plan, pass_spec.pass_id, source="api")
             if repaired_pass is None or repaired_pass.api_request is None:
                 return _blocked_api_tool_result(gate_result, pass_id=pass_spec.pass_id, subtask=pass_spec.subtask)
+            gate_started = time.perf_counter()
             repaired_gate = self.api_request_gate.check(repaired_pass.api_request)
+            summary["api_gate_latency_sec"] = round(float(summary.get("api_gate_latency_sec", 0.0) or 0.0) + (time.perf_counter() - gate_started), 3)
             summary["api_gate_passed"] = repaired_gate.passed
             summary["api_request_gate_passed"] = repaired_gate.passed
             checkpoint_logger.add_checkpoint(
@@ -2730,7 +2785,9 @@ class AgentExecutor:
         method = str(gate_result.method or request.method)
         path = str(gate_result.path or request.path)
         params = dict(gate_result.params or request.params or {})
+        execution_started = time.perf_counter()
         payload = self.api_client.call_api(method, path, params, {})
+        summary["api_execution_latency_sec"] = round(float(summary.get("api_execution_latency_sec", 0.0) or 0.0) + (time.perf_counter() - execution_started), 3)
         summary["api_executed"] = True
         validation = ValidationResult(True, warnings=["LLM API request pass passed request gate."], errors=[])
         step = PlanStep(
@@ -4308,6 +4365,10 @@ def _llm_owned_generation_boundary_summary(summary: dict[str, Any]) -> dict[str,
         "raw_sql_fallback_task_id",
         "raw_sql_fallback_reason",
         "raw_sql_safety_gate_failures",
+        "sql_gate_latency_sec",
+        "api_gate_latency_sec",
+        "sql_execution_latency_sec",
+        "api_execution_latency_sec",
         "multi_pass_enabled",
         "llm_pass_graph_used",
         "v2_execution_optimizer_used",

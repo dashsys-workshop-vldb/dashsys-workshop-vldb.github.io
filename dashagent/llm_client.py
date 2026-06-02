@@ -32,6 +32,20 @@ _AUTH_HEADER_RE = re.compile(r"Authorization\s*:\s*" + r"Bearer\s+[^\s,'\"}]+", 
 _BEARER_RE = re.compile(r"Bearer\s+[A-Za-z0-9._-]{12,}", re.IGNORECASE)
 
 
+def _configured_timeout_seconds(default: int, *env_names: str) -> int:
+    for name in env_names:
+        raw = os.getenv(name)
+        if not raw:
+            continue
+        try:
+            value = int(raw)
+        except Exception:
+            continue
+        if value > 0:
+            return value
+    return int(default)
+
+
 class LLMClient:
     def available(self) -> bool:
         raise NotImplementedError
@@ -123,7 +137,7 @@ class OpenAILLMClient(LLMClient):
     ) -> None:
         self.api_key = api_key if api_key is not None else os.getenv("OPENAI_API_KEY")
         self.model = model or os.getenv("OPENAI_MODEL", DEFAULT_OPENAI_MODEL)
-        self.timeout_seconds = timeout_seconds
+        self.timeout_seconds = _configured_timeout_seconds(timeout_seconds, "HERMES_LLM_CALL_TIMEOUT_SEC", "LLM_TIMEOUT_SECONDS")
         self.base_url = (base_url or os.getenv("OPENAI_BASE_URL") or DEFAULT_OPENAI_BASE_URL).rstrip("/")
         self.provider = "openai"
         self.missing_key_reason = "OPENAI_API_KEY is not set"

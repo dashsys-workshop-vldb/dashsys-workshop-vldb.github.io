@@ -15,7 +15,7 @@
       },
       "stage": "input",
       "technique": "raw user query capture",
-      "timestamp": "2026-06-02T00:04:01.210945+00:00"
+      "timestamp": "2026-06-02T00:50:19.229674+00:00"
     },
     {
       "checkpoint_id": "checkpoint_runtime_leakage_guard",
@@ -45,7 +45,7 @@
       },
       "stage": "runtime safety",
       "technique": "runtime input isolation guard",
-      "timestamp": "2026-06-02T00:04:01.210959+00:00"
+      "timestamp": "2026-06-02T00:50:19.230212+00:00"
     },
     {
       "checkpoint_id": "checkpoint_score_provenance_guard",
@@ -68,7 +68,25 @@
       },
       "stage": "runtime safety",
       "technique": "score provenance guard",
-      "timestamp": "2026-06-02T00:04:01.210962+00:00"
+      "timestamp": "2026-06-02T00:50:19.230778+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_unified_planner_start",
+      "correctness_role": "diagnostic only; does not alter route, Semantic IR, SQL/API, or answer behavior",
+      "duration_ms": 0.0,
+      "effect": "records the exact boundary before the potentially slow local LLM planner call",
+      "efficiency_role": "enables smoke timeout localization without extra tool calls",
+      "input_summary": {
+        "query": "In the phrase \"list schemas\", what does \"list\" mean?",
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "current_stage": "llm_unified_planner_call_start",
+        "prompt_id": "hermes_toolcall_pure_meta_list_schemas"
+      },
+      "stage": "llm-owned planning",
+      "technique": "pre-call heartbeat before Unified LLM Planner",
+      "timestamp": "2026-06-02T00:50:19.237620+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_unified_planner",
@@ -90,10 +108,11 @@
         "compiled_alias_count": 0,
         "compiled_api_count": 0,
         "compiled_sql_count": 0,
+        "compiler_latency_ms": 0,
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 5113,
+        "planner_provider_latency_ms": 7728,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -106,6 +125,7 @@
         },
         "raw_sql_fallback_considered": false,
         "raw_sql_fallback_gate_error_type": null,
+        "raw_sql_fallback_latency_ms": 0,
         "raw_sql_fallback_reason": null,
         "raw_sql_fallback_rejected_reason": null,
         "raw_sql_fallback_repair_attempted": false,
@@ -124,14 +144,17 @@
           "direct_answer": "In the phrase \"list schemas\", \"list\" is a verb meaning to display, enumerate, or provide a catalog of schema records. It indicates an action to retrieve and show multiple schema entries rather than a single specific schema.",
           "route": "DIRECT"
         },
-        "semantic_ir_provider_latency_ms": 5112,
+        "semantic_ir_provider_latency_ms": 7726,
         "semantic_ir_repair_attempted": false,
+        "semantic_ir_repair_latency_ms": 0,
         "semantic_ir_repair_success": false,
+        "semantic_ir_support_check_latency_ms": 0,
         "semantic_ir_support_checked": true,
         "semantic_ir_support_recommended_action": "COMPILE",
         "semantic_ir_support_repair_attempted": false,
         "semantic_ir_support_repair_error_message": null,
         "semantic_ir_support_repair_error_type": null,
+        "semantic_ir_support_repair_latency_ms": 0,
         "semantic_ir_support_repair_success": false,
         "semantic_ir_supported": true,
         "semantic_ir_task_count": 0,
@@ -142,6 +165,7 @@
         "semantic_ir_unsupported_task_id": null,
         "semantic_ir_validation_error_message": null,
         "semantic_ir_validation_error_type": null,
+        "semantic_ir_validation_latency_ms": 0,
         "semantic_ir_validation_passed": true,
         "sql_compile_gate_failures": 0,
         "v2_semantic_ir_used": true
@@ -159,7 +183,7 @@
       },
       "stage": "llm-owned planning",
       "technique": "single unified LLM route/evidence/sql/api planner",
-      "timestamp": "2026-06-02T00:04:06.331349+00:00"
+      "timestamp": "2026-06-02T00:50:26.968077+00:00"
     },
     {
       "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
@@ -253,7 +277,7 @@
           "truncated_items": false
         },
         "pipeline_stage_count": 0,
-        "run_id": "run_ed42893d48234a34b56bda5fcc0f4677",
+        "run_id": "run_a8af368192bc47939736c734701fcc06",
         "sequential_pass_count": 0,
         "sql_gate_passed": null,
         "sql_repair_attempts": 0,
@@ -269,7 +293,7 @@
       },
       "stage": "llm/backend boundary",
       "technique": "LLM-owned direct route",
-      "timestamp": "2026-06-02T00:04:06.333456+00:00"
+      "timestamp": "2026-06-02T00:50:26.971488+00:00"
     },
     {
       "checkpoint_id": "checkpoint_evidence_pipeline_bypass",
@@ -291,7 +315,7 @@
       },
       "stage": "pre-evidence routing",
       "technique": "LLM-owned high-confidence direct routing boundary",
-      "timestamp": "2026-06-02T00:04:06.333464+00:00"
+      "timestamp": "2026-06-02T00:50:26.972527+00:00"
     },
     {
       "checkpoint_id": "checkpoint_safe_direct_answer_verifier",
@@ -307,7 +331,7 @@
       },
       "stage": "answer verification",
       "technique": "safe-direct answer verifier",
-      "timestamp": "2026-06-02T00:04:06.333467+00:00"
+      "timestamp": "2026-06-02T00:50:26.973411+00:00"
     },
     {
       "checkpoint_id": "checkpoint_18_final_answer",
@@ -322,12 +346,12 @@
       },
       "stage": "final response",
       "technique": "LLM-owned direct concept answer",
-      "timestamp": "2026-06-02T00:04:06.333574+00:00"
+      "timestamp": "2026-06-02T00:50:27.072842+00:00"
     }
   ],
   "domain_type": "CONCEPTUAL",
   "errors": [],
-  "estimated_tokens": 1130,
+  "estimated_tokens": 1193,
   "execution_time": 0.0,
   "final_answer": "In the phrase \"list schemas\", \"list\" is a verb meaning to display, enumerate, or provide a catalog of schema records. It indicates an action to retrieve and show multiple schema entries rather than a single specific schema.",
   "original_query": "In the phrase \"list schemas\", what does \"list\" mean?",
@@ -335,14 +359,14 @@
   "preprocessing_time": 0.0,
   "query_id": "hermes_toolcall_pure_meta_list_schemas",
   "route_type": "LLM_DIRECT",
-  "runtime": 0.008467916864901781,
+  "runtime": 0.00735695892944932,
   "sql_call_count": 0,
   "steps": [
     {
-      "estimated_tokens": 1236,
+      "estimated_tokens": 1287,
       "kind": "metadata",
       "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/hermes_toolcall_pure_meta_list_schemas/robust_generalized_harness_candidate_v2/metadata.json",
-      "prompt_tokens": 1826
+      "prompt_tokens": 1883
     },
     {
       "aggregation_instruction": "none",
@@ -359,10 +383,11 @@
         "compiled_alias_count": 0,
         "compiled_api_count": 0,
         "compiled_sql_count": 0,
+        "compiler_latency_ms": 0,
         "planner_json_fallback_used": false,
         "planner_json_parse_error": null,
         "planner_parse_source": "sdk_toolcall_semantic_ir",
-        "planner_provider_latency_ms": 5113,
+        "planner_provider_latency_ms": 7728,
         "planner_repair_attempted": false,
         "planner_success": true,
         "planner_timeout": false,
@@ -375,6 +400,7 @@
         },
         "raw_sql_fallback_considered": false,
         "raw_sql_fallback_gate_error_type": null,
+        "raw_sql_fallback_latency_ms": 0,
         "raw_sql_fallback_reason": null,
         "raw_sql_fallback_rejected_reason": null,
         "raw_sql_fallback_repair_attempted": false,
@@ -393,14 +419,17 @@
           "direct_answer": "In the phrase \"list schemas\", \"list\" is a verb meaning to display, enumerate, or provide a catalog of schema records. It indicates an action to retrieve and show multiple schema entries rather than a single specific schema.",
           "route": "DIRECT"
         },
-        "semantic_ir_provider_latency_ms": 5112,
+        "semantic_ir_provider_latency_ms": 7726,
         "semantic_ir_repair_attempted": false,
+        "semantic_ir_repair_latency_ms": 0,
         "semantic_ir_repair_success": false,
+        "semantic_ir_support_check_latency_ms": 0,
         "semantic_ir_support_checked": true,
         "semantic_ir_support_recommended_action": "COMPILE",
         "semantic_ir_support_repair_attempted": false,
         "semantic_ir_support_repair_error_message": null,
         "semantic_ir_support_repair_error_type": null,
+        "semantic_ir_support_repair_latency_ms": 0,
         "semantic_ir_support_repair_success": false,
         "semantic_ir_supported": true,
         "semantic_ir_task_count": 0,
@@ -411,6 +440,7 @@
         "semantic_ir_unsupported_task_id": null,
         "semantic_ir_validation_error_message": null,
         "semantic_ir_validation_error_type": null,
+        "semantic_ir_validation_latency_ms": 0,
         "semantic_ir_validation_passed": true,
         "sql_compile_gate_failures": 0,
         "v2_semantic_ir_used": true
