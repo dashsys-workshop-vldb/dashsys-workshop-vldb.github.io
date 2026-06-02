@@ -120,13 +120,16 @@ def run_hermes_v2_toolcall_smoke(
     rows: list[dict[str, Any]] = []
     for item in SMOKE_PROMPTS:
         _write_heartbeat(report_dir, item["id"], "parent_prompt_start")
-        row = _run_prompt_with_timeout(
-            item,
-            config=config,
-            report_dir=report_dir,
-            prompt_timeout_sec=prompt_timeout_sec,
-            llm_call_timeout_sec=llm_call_timeout_sec,
-        )
+        try:
+            row = _run_prompt_with_timeout(
+                item,
+                config=config,
+                report_dir=report_dir,
+                prompt_timeout_sec=prompt_timeout_sec,
+                llm_call_timeout_sec=llm_call_timeout_sec,
+            )
+        except Exception as exc:
+            row = _error_row(item, str(exc), 0.0, _read_heartbeat(report_dir), traceback_text=traceback.format_exc(limit=20))
         rows.append(row)
         report["rows"] = rows
         report["summary"] = _summarize_rows(rows)
@@ -238,6 +241,12 @@ def _build_smoke_row(item: dict[str, Any], result: dict[str, Any]) -> dict[str, 
         "route": diagnostics.get("route") or diagnostics.get("route_gate_route") or diagnostics.get("checklist_route"),
         "sdk_toolcall_semantic_ir_used": diagnostics.get("sdk_toolcall_semantic_ir_used"),
         "semantic_ir_validation_passed": diagnostics.get("semantic_ir_validation_passed"),
+        "semantic_ir_validation_error_type": diagnostics.get("semantic_ir_validation_error_type"),
+        "answer_contract_error_type": diagnostics.get("answer_contract_error_type"),
+        "answer_contract_missing_initially": bool(diagnostics.get("answer_contract_missing_initially")),
+        "answer_contract_secondary_call_used": bool(diagnostics.get("answer_contract_secondary_call_used")),
+        "answer_contract_secondary_call_success": bool(diagnostics.get("answer_contract_secondary_call_success")),
+        "answer_contract_secondary_error_type": diagnostics.get("answer_contract_secondary_error_type"),
         "semantic_ir_repair_attempted": diagnostics.get("semantic_ir_repair_attempted"),
         "backend_formal_compilation_used": diagnostics.get("backend_formal_compilation_used"),
         "backend_semantic_planning_used": diagnostics.get("backend_semantic_planning_used"),
@@ -350,6 +359,12 @@ def _timeout_row(item: dict[str, Any], *, timeout_sec: int, total_latency_sec: f
         "raw_sql_fallback_used": False,
         "raw_sql_fallback_success": False,
         "raw_sql_fallback_gate_error_type": None,
+        "semantic_ir_validation_error_type": None,
+        "answer_contract_error_type": None,
+        "answer_contract_missing_initially": False,
+        "answer_contract_secondary_call_used": False,
+        "answer_contract_secondary_call_success": False,
+        "answer_contract_secondary_error_type": None,
         "task_count": None,
         "plan_paths": [],
         "compiled_sql_count": 0,
@@ -397,9 +412,18 @@ def _error_row(
     row["timed_out"] = False
     row["timeout_error"] = ""
     row["error"] = error
+    row["error_type"] = _classify_row_error_type(error)
     row["traceback"] = traceback_text
     row["timed_out_stage"] = (heartbeat or {}).get("current_stage")
     return redact_secrets(row)
+
+
+def _classify_row_error_type(error: str | None) -> str:
+    text = str(error or "").lower()
+    for key in ["missing_answer_contract", "unknown_table", "unknown_field", "unknown_endpoint", "timeout"]:
+        if key in text:
+            return key
+    return "row_error"
 
 
 def _flatten_diagnostics(trajectory: dict[str, Any]) -> dict[str, Any]:
@@ -733,6 +757,18 @@ def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "final_unavailable_with_runtime_facts": sum(1 for row in rows if row.get("final_unavailable_with_runtime_facts")),
         "atomic_protocol_fallback_count": sum(1 for row in rows if row.get("atomic_protocol_fallback_used")),
         "raw_sql_fallback_used_count": sum(1 for row in rows if row.get("raw_sql_fallback_used")),
+        "missing_answer_contract_count": sum(
+            1
+            for row in rows
+            if row.get("answer_contract_error_type") == "missing_answer_contract"
+            or row.get("answer_contract_secondary_error_type") == "missing_answer_contract"
+            or row.get("error_type") == "missing_answer_contract"
+        ),
+        "unknown_table_count": sum(
+            1
+            for row in rows
+            if row.get("semantic_ir_validation_error_type") == "unknown_table" or row.get("error_type") == "unknown_table"
+        ),
     }
 
 

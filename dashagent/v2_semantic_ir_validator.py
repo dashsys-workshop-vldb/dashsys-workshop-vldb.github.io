@@ -20,9 +20,13 @@ class SemanticIRValidationResult:
     error_type: str | None = None
     error_message: str | None = None
     task_id: str | None = None
+    bad_table: str | None = None
+    bad_field: str | None = None
+    bad_endpoint: str | None = None
     allowed_tables: list[str] = field(default_factory=list)
     allowed_fields_for_table: list[str] = field(default_factory=list)
     allowed_endpoints: list[str] = field(default_factory=list)
+    table_role_cards: list[dict[str, Any]] = field(default_factory=list)
     semantic_alias_validation_used: bool = False
     semantic_alias_validation_passed: bool | None = None
     semantic_alias_count: int = 0
@@ -43,7 +47,7 @@ class SemanticIRValidator:
         self._endpoints = {str(row.get("endpoint_id") or ""): row for row in allowed_api_card}
         self._endpoint_key = {name.lower(): name for name in self._endpoints}
 
-    def validate(self, plan: SemanticIRPlan) -> SemanticIRValidationResult:
+    def validate(self, plan: SemanticIRPlan, *, require_answer_contract: bool = True) -> SemanticIRValidationResult:
         base = self._ok_context()
         if plan.route == "DIRECT":
             executable = [task for task in plan.tasks if task.kind in {"LOCAL_QUERY", "LIVE_QUERY", "LOCAL_AND_LIVE"}]
@@ -87,13 +91,14 @@ class SemanticIRValidator:
         base.semantic_alias_validation_used = True
         base.semantic_alias_validation_passed = True
         base.semantic_alias_count = alias_result.semantic_alias_count
-        contract_result = AnswerContractValidator().validate(plan)
-        if not contract_result.passed:
-            return self._fail(
-                contract_result.error_type or "invalid_answer_contract",
-                contract_result.error_message or "Invalid answer contract.",
-                contract_result.task_id,
-            )
+        if require_answer_contract:
+            contract_result = AnswerContractValidator().validate(plan)
+            if not contract_result.passed:
+                return self._fail(
+                    contract_result.error_type or "invalid_answer_contract",
+                    contract_result.error_message or "Invalid answer contract.",
+                    contract_result.task_id,
+                )
         return base
 
     def _validate_task(self, task: SemanticIRTask) -> SemanticIRValidationResult:
@@ -158,15 +163,15 @@ class SemanticIRValidator:
     def _validate_local(self, task_id: str, query: LocalQueryIR) -> SemanticIRValidationResult:
         table = self._table_key.get(query.table.lower())
         if not table:
-            return self._fail("unknown_table", f"Unknown table: {query.table}", task_id)
+            return self._fail("unknown_table", f"Unknown table: {query.table}", task_id, bad_table=query.table)
         allowed_fields = self._tables.get(table, [])
         field_lookup = {field.lower(): field for field in allowed_fields}
         for field in query.fields:
             if field.lower() not in field_lookup:
-                return self._fail("unknown_field", f"Unknown field {field} for table {query.table}.", task_id, allowed_fields)
+                return self._fail("unknown_field", f"Unknown field {field} for table {query.table}.", task_id, allowed_fields, bad_field=field)
         for item in query.filters:
             if item.field.lower() not in field_lookup:
-                return self._fail("unknown_filter_field", f"Unknown filter field {item.field} for table {query.table}.", task_id, allowed_fields)
+                return self._fail("unknown_filter_field", f"Unknown filter field {item.field} for table {query.table}.", task_id, allowed_fields, bad_field=item.field)
             if item.op not in ALLOWED_SEMANTIC_IR_FILTER_OPS:
                 return self._fail("invalid_filter_op", f"Invalid filter op: {item.op}", task_id, allowed_fields)
         return self._ok_context(allowed_fields)
@@ -174,7 +179,7 @@ class SemanticIRValidator:
     def _validate_api(self, task_id: str, query: APIQueryIR) -> SemanticIRValidationResult:
         endpoint = self._endpoint_key.get(query.endpoint_id.lower())
         if not endpoint:
-            return self._fail("unknown_endpoint", f"Unknown endpoint_id: {query.endpoint_id}", task_id)
+            return self._fail("unknown_endpoint", f"Unknown endpoint_id: {query.endpoint_id}", task_id, bad_endpoint=query.endpoint_id)
         if query.method.upper() != "GET":
             return self._fail("non_get_api_method", f"Only GET is allowed, got {query.method}.", task_id)
         if not isinstance(query.path_params, dict) or not isinstance(query.query_params, dict):
@@ -207,6 +212,7 @@ class SemanticIRValidator:
             allowed_tables=list(self._tables.keys()),
             allowed_fields_for_table=list(allowed_fields or []),
             allowed_endpoints=list(self._endpoints.keys()),
+            table_role_cards=self._table_role_cards(),
         )
 
     def _fail(
@@ -215,6 +221,9 @@ class SemanticIRValidator:
         error_message: str,
         task_id: str | None = None,
         allowed_fields: list[str] | None = None,
+        bad_table: str | None = None,
+        bad_field: str | None = None,
+        bad_endpoint: str | None = None,
         semantic_alias_validation_used: bool = False,
         semantic_alias_validation_passed: bool | None = None,
         semantic_alias_count: int = 0,
@@ -227,9 +236,13 @@ class SemanticIRValidator:
             error_type=error_type,
             error_message=error_message,
             task_id=task_id,
+            bad_table=bad_table,
+            bad_field=bad_field,
+            bad_endpoint=bad_endpoint,
             allowed_tables=list(self._tables.keys()),
             allowed_fields_for_table=list(allowed_fields or []),
             allowed_endpoints=list(self._endpoints.keys()),
+            table_role_cards=self._table_role_cards(),
             semantic_alias_validation_used=semantic_alias_validation_used,
             semantic_alias_validation_passed=semantic_alias_validation_passed,
             semantic_alias_count=semantic_alias_count,
@@ -237,3 +250,19 @@ class SemanticIRValidator:
             alias_contract=alias_contract,
             producer_contract=producer_contract,
         )
+
+    def _table_role_cards(self) -> list[dict[str, Any]]:
+        cards: list[dict[str, Any]] = []
+        for row in self.allowed_schema_card:
+            table = str(row.get("table") or "")
+            if not table:
+                continue
+            cards.append(
+                {
+                    "table": table,
+                    "table_role_hints": list(row.get("table_role_hints") or []),
+                    "field_hints": row.get("field_hints") if isinstance(row.get("field_hints"), dict) else {},
+                    "columns": list(row.get("columns") or [])[:24],
+                }
+            )
+        return cards

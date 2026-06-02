@@ -247,5 +247,112 @@ def test_answer_contract_from_plan_dict_does_not_infer_from_prompt():
     assert answer_contract_from_plan_dict({"route": "EVIDENCE", "tasks": []}) is None
 
 
+def test_compact_count_slot_normalizes_mechanical_defaults():
+    contract = parse_answer_contract(
+        {
+            "required_slots": [
+                {
+                    "slot_id": "s_count",
+                    "type": "COUNT",
+                    "required": True,
+                    "subject": "schemas",
+                    "source_scope": "LOCAL_SNAPSHOT",
+                    "satisfied_by_tasks": ["t1"],
+                    "required_fields": ["count"],
+                    "if_missing": "FAIL_REQUIRED",
+                    "zero_rows_semantics": "EMPTY_RESULT_IS_ANSWER",
+                }
+            ]
+        }
+    )
+
+    slot = contract.required_slots[0]
+    assert contract.contract_version == "v1"
+    assert contract.answer_style == "COUNT_ONLY"
+    assert contract.optional_slots == []
+    assert slot.acceptable_fallback_fields == []
+    assert slot.must_not_assert_positive_if_zero_rows is False
+
+
+def test_compact_list_and_relation_slots_normalize_positive_assertion_guard():
+    list_contract = parse_answer_contract(
+        {
+            "required_slots": [
+                {
+                    "slot_id": "s_list",
+                    "type": "LIST",
+                    "required": True,
+                    "subject": "journeys",
+                    "source_scope": "LOCAL_SNAPSHOT",
+                    "satisfied_by_tasks": ["t1"],
+                    "zero_rows_semantics": "NO_MATCH",
+                    "if_missing": "SCOPED_UNAVAILABLE_CAVEAT",
+                }
+            ]
+        }
+    )
+    relation_contract = parse_answer_contract(
+        {
+            "required_slots": [
+                {
+                    "slot_id": "s_relation",
+                    "type": "RELATION",
+                    "required": True,
+                    "subject": "schema",
+                    "object": "dataset",
+                    "relation": "schema_to_dataset",
+                    "source_scope": "LOCAL_SNAPSHOT",
+                    "satisfied_by_tasks": ["t1"],
+                    "zero_rows_semantics": "NO_MATCH",
+                    "if_missing": "SCOPED_UNAVAILABLE_CAVEAT",
+                }
+            ]
+        }
+    )
+
+    assert list_contract.answer_style == "LIST"
+    assert list_contract.required_slots[0].must_not_assert_positive_if_zero_rows is True
+    assert relation_contract.answer_style == "CAVEATED"
+    assert relation_contract.required_slots[0].must_not_assert_positive_if_zero_rows is True
+
+
+def test_compact_slot_still_requires_task_reference_and_source_scope():
+    missing_task = parse_answer_contract(
+        {
+            "required_slots": [
+                {
+                    "slot_id": "s_count",
+                    "type": "COUNT",
+                    "required": True,
+                    "subject": "schemas",
+                    "source_scope": "LOCAL_SNAPSHOT",
+                    "required_fields": ["count"],
+                    "if_missing": "FAIL_REQUIRED",
+                    "zero_rows_semantics": "EMPTY_RESULT_IS_ANSWER",
+                }
+            ]
+        }
+    )
+    assert validate_answer_contract_shape(missing_task, task_ids=["t1"], route="EVIDENCE")["error_type"] == "missing_slot_task_reference"
+
+    with pytest.raises(ValueError, match="source_scope"):
+        parse_answer_contract(
+            {
+                "required_slots": [
+                    {
+                        "slot_id": "s_count",
+                        "type": "COUNT",
+                        "required": True,
+                        "subject": "schemas",
+                        "satisfied_by_tasks": ["t1"],
+                        "required_fields": ["count"],
+                        "if_missing": "FAIL_REQUIRED",
+                        "zero_rows_semantics": "EMPTY_RESULT_IS_ANSWER",
+                    }
+                ]
+            }
+        )
+
+
 def test_packaged_default_remains_sql_first_api_verify():
     assert PACKAGED_DEFAULT_STRATEGY == "SQL_FIRST_API_VERIFY"

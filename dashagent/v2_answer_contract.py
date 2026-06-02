@@ -87,7 +87,7 @@ def parse_answer_contract(raw: Any) -> V2AnswerContract:
         raise ValueError("answer_contract must be an object or null.")
     required_slots = [_parse_slot(item, required_default=True, label="required_slots") for item in _list(raw.get("required_slots"))]
     optional_slots = [_parse_slot(item, required_default=False, label="optional_slots") for item in _list(raw.get("optional_slots"))]
-    answer_style = _enum(raw.get("answer_style") or "CONCISE", ANSWER_STYLES, "answer_style")
+    answer_style = _enum(raw.get("answer_style") or _default_answer_style(required_slots), ANSWER_STYLES, "answer_style")
     global_scope = _enum(raw.get("global_scope") or "NONE", ANSWER_SCOPES, "global_scope")
     version = str(raw.get("contract_version") or "v1").strip() or "v1"
     return V2AnswerContract(
@@ -160,9 +160,14 @@ def _parse_slot(raw: Any, *, required_default: bool, label: str) -> RequiredAnsw
     if not slot_id:
         raise ValueError("slot_id is required.")
     slot_type = _enum(raw.get("type"), ANSWER_SLOT_TYPES, "type")
-    source_scope = _enum(raw.get("source_scope") or raw.get("scope") or "LOCAL_SNAPSHOT", ANSWER_SCOPES, "source_scope")
+    if not (raw.get("source_scope") or raw.get("scope")):
+        raise ValueError("source_scope is required.")
+    source_scope = _enum(raw.get("source_scope") or raw.get("scope"), ANSWER_SCOPES, "source_scope")
     zero_rows = _enum(raw.get("zero_rows_semantics") or "NOT_APPLICABLE", ZERO_ROWS_SEMANTICS, "zero_rows_semantics")
     if_missing = _enum(raw.get("if_missing") or "SCOPED_UNAVAILABLE_CAVEAT", IF_MISSING_POLICIES, "if_missing")
+    must_not_assert = raw.get("must_not_assert_positive_if_zero_rows")
+    if must_not_assert is None:
+        must_not_assert = slot_type in {"RELATION", "LIST", "LOOKUP", "STATUS"}
     return RequiredAnswerSlot(
         slot_id=slot_id,
         type=slot_type,
@@ -177,9 +182,22 @@ def _parse_slot(raw: Any, *, required_default: bool, label: str) -> RequiredAnsw
         expected_status_filter=_text_or_none(raw.get("expected_status_filter")),
         zero_rows_semantics=zero_rows,
         if_missing=if_missing,
-        must_not_assert_positive_if_zero_rows=bool(raw.get("must_not_assert_positive_if_zero_rows", False)),
+        must_not_assert_positive_if_zero_rows=bool(must_not_assert),
         notes=_text_or_none(raw.get("notes")),
     )
+
+
+def _default_answer_style(required_slots: list[RequiredAnswerSlot]) -> str:
+    slot_types = {slot.type for slot in required_slots}
+    if slot_types == {"COUNT"}:
+        return "COUNT_ONLY"
+    if slot_types and slot_types <= {"LIST", "LOOKUP", "STATUS"}:
+        return "LIST"
+    if "COMPARISON" in slot_types:
+        return "COMPARISON"
+    if slot_types & {"RELATION", "DATE", "CAVEAT"}:
+        return "CAVEATED"
+    return "CONCISE"
 
 
 def _enum(value: Any, allowed: set[str], field_name: str) -> str:

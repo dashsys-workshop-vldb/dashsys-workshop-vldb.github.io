@@ -8,6 +8,8 @@ from typing import Any
 from .trajectory import compact_preview, redact_secrets
 from .raw_sql_safety_gate import RawSQLSafetyGate
 from .v2_atomic_weak_protocol import run_atomic_weak_protocol
+from .v2_answer_contract_planner import run_answer_contract_planner
+from .v2_answer_contract_validator import AnswerContractValidator
 from .v2_raw_sql_fallback import RawSQLFallbackResult, run_raw_sql_fallback_planner
 from .v2_semantic_ir import SemanticIRPlan, parse_semantic_ir_from_json_or_line_protocol, semantic_plan_to_dict
 from .v2_semantic_ir_compiler import compile_semantic_ir_to_plan_payload
@@ -223,7 +225,7 @@ def semantic_ir_tool_schema() -> dict[str, Any]:
                     "answer_contract": answer_contract_schema,
                     "aggregation_instruction": {"type": "string"},
                 },
-                "required": ["route", "direct_answer", "tasks", "answer_contract", "aggregation_instruction"],
+                "required": ["route", "direct_answer", "tasks", "aggregation_instruction"],
             },
         },
     }
@@ -488,7 +490,7 @@ def run_semantic_ir_toolcall_planner(
         tool_args = retry_args
 
     validation_started = time.perf_counter()
-    parsed_plan, validation = _parse_validate(tool_args, validator)
+    parsed_plan, validation = _parse_validate(tool_args, validator, require_answer_contract=False)
     diagnostics["semantic_ir_validation_latency_ms"] = _elapsed_ms(validation_started)
     diagnostics.update(
         {
@@ -502,10 +504,24 @@ def run_semantic_ir_toolcall_planner(
             "semantic_alias_validation_passed": validation.semantic_alias_validation_passed,
             "semantic_alias_count": validation.semantic_alias_count,
             "semantic_alias_error_type": validation.error_type if validation.error_type == "invalid_semantic_alias" else None,
-            "answer_contract_validation_used": True,
-            "answer_contract_validation_passed": validation.passed and validation.error_type not in ANSWER_CONTRACT_VALIDATION_ERROR_TYPES,
-            "answer_contract_error_type": validation.error_type if validation.error_type in ANSWER_CONTRACT_VALIDATION_ERROR_TYPES else None,
-            "required_slot_count": len(parsed_plan.answer_contract.required_slots) if parsed_plan and parsed_plan.answer_contract else 0,
+        }
+    )
+    parsed_plan, validation = _ensure_answer_contract(
+        client=client,
+        user_prompt=user_prompt,
+        parsed_plan=parsed_plan,
+        validation=validation,
+        diagnostics=diagnostics,
+        raw_previews=raw_previews,
+        schema_card=schema_card,
+        api_card=api_card,
+    )
+    diagnostics.update(
+        {
+            "semantic_ir_validation_passed": validation.passed,
+            "semantic_ir_validation_error_type": validation.error_type,
+            "semantic_ir_validation_error_message": validation.error_message,
+            "semantic_ir_task_count": len(parsed_plan.tasks) if parsed_plan else 0,
         }
     )
     if diagnostics.get("semantic_ir_repair_attempted") and validation.passed:
@@ -515,7 +531,13 @@ def run_semantic_ir_toolcall_planner(
         if validation.error_type == "invalid_semantic_alias":
             diagnostics["semantic_alias_repair_attempted"] = True
         if validation.error_type in ANSWER_CONTRACT_VALIDATION_ERROR_TYPES:
-            diagnostics["answer_contract_repair_attempted"] = True
+            diagnostics["semantic_ir_repair_attempted"] = False
+            return _failed_semantic_ir_result(
+                diagnostics,
+                raw_previews,
+                reason=validation.error_message or "Answer contract validation failed after secondary call.",
+                started=started,
+            )
         repair_started = time.perf_counter()
         repair_result, repair_error = _call_semantic_ir_tool(
             client,
@@ -544,21 +566,33 @@ def run_semantic_ir_toolcall_planner(
                 started=started,
             )
         validation_started = time.perf_counter()
-        parsed_plan, validation = _parse_validate(repair_args, validator)
+        parsed_plan, validation = _parse_validate(repair_args, validator, require_answer_contract=False)
         diagnostics["semantic_ir_validation_latency_ms"] = diagnostics.get("semantic_ir_validation_latency_ms", 0) + _elapsed_ms(validation_started)
         diagnostics.update(
             {
                 "semantic_ir_validation_passed": validation.passed,
-                "semantic_ir_repair_success": bool(parsed_plan is not None and validation.passed),
                 "semantic_ir_task_count": len(parsed_plan.tasks) if parsed_plan else 0,
                 "semantic_alias_validation_used": validation.semantic_alias_validation_used,
                 "semantic_alias_validation_passed": validation.semantic_alias_validation_passed,
                 "semantic_alias_count": validation.semantic_alias_count,
                 "semantic_alias_error_type": validation.error_type if validation.error_type == "invalid_semantic_alias" else diagnostics.get("semantic_alias_error_type"),
-                "answer_contract_validation_used": True,
-                "answer_contract_validation_passed": validation.passed and validation.error_type not in ANSWER_CONTRACT_VALIDATION_ERROR_TYPES,
-                "answer_contract_error_type": validation.error_type if validation.error_type in ANSWER_CONTRACT_VALIDATION_ERROR_TYPES else diagnostics.get("answer_contract_error_type"),
-                "required_slot_count": len(parsed_plan.answer_contract.required_slots) if parsed_plan and parsed_plan.answer_contract else 0,
+            }
+        )
+        parsed_plan, validation = _ensure_answer_contract(
+            client=client,
+            user_prompt=user_prompt,
+            parsed_plan=parsed_plan,
+            validation=validation,
+            diagnostics=diagnostics,
+            raw_previews=raw_previews,
+            schema_card=schema_card,
+            api_card=api_card,
+        )
+        diagnostics.update(
+            {
+                "semantic_ir_validation_passed": validation.passed,
+                "semantic_ir_repair_success": bool(parsed_plan is not None and validation.passed),
+                "semantic_ir_task_count": len(parsed_plan.tasks) if parsed_plan else 0,
             }
         )
         if not parsed_plan or not validation.passed:
@@ -611,7 +645,7 @@ def run_semantic_ir_toolcall_planner(
                 started=started,
             )
         validation_started = time.perf_counter()
-        repaired_plan, repaired_validation = _parse_validate(support_repair_args, validator)
+        repaired_plan, repaired_validation = _parse_validate(support_repair_args, validator, require_answer_contract=False)
         diagnostics["semantic_ir_validation_latency_ms"] = diagnostics.get("semantic_ir_validation_latency_ms", 0) + _elapsed_ms(validation_started)
         diagnostics.update(
             {
@@ -623,10 +657,24 @@ def run_semantic_ir_toolcall_planner(
                 "semantic_alias_validation_passed": repaired_validation.semantic_alias_validation_passed,
                 "semantic_alias_count": repaired_validation.semantic_alias_count,
                 "semantic_alias_error_type": repaired_validation.error_type if repaired_validation.error_type == "invalid_semantic_alias" else diagnostics.get("semantic_alias_error_type"),
-                "answer_contract_validation_used": True,
-                "answer_contract_validation_passed": repaired_validation.passed and repaired_validation.error_type not in ANSWER_CONTRACT_VALIDATION_ERROR_TYPES,
-                "answer_contract_error_type": repaired_validation.error_type if repaired_validation.error_type in ANSWER_CONTRACT_VALIDATION_ERROR_TYPES else diagnostics.get("answer_contract_error_type"),
-                "required_slot_count": len(repaired_plan.answer_contract.required_slots) if repaired_plan and repaired_plan.answer_contract else 0,
+            }
+        )
+        repaired_plan, repaired_validation = _ensure_answer_contract(
+            client=client,
+            user_prompt=user_prompt,
+            parsed_plan=repaired_plan,
+            validation=repaired_validation,
+            diagnostics=diagnostics,
+            raw_previews=raw_previews,
+            schema_card=schema_card,
+            api_card=api_card,
+        )
+        diagnostics.update(
+            {
+                "semantic_ir_validation_passed": repaired_validation.passed,
+                "semantic_ir_validation_error_type": repaired_validation.error_type,
+                "semantic_ir_validation_error_message": repaired_validation.error_message,
+                "semantic_ir_task_count": len(repaired_plan.tasks) if repaired_plan else 0,
             }
         )
         if repaired_plan is None or not repaired_validation.passed:
@@ -772,6 +820,13 @@ def _base_diagnostics() -> dict[str, Any]:
         "answer_contract_validation_passed": None,
         "answer_contract_repair_attempted": False,
         "answer_contract_error_type": None,
+        "answer_contract_missing_initially": False,
+        "answer_contract_secondary_call_used": False,
+        "answer_contract_secondary_call_success": False,
+        "answer_contract_secondary_error": None,
+        "answer_contract_secondary_error_type": None,
+        "answer_contract_secondary_call_latency_ms": 0,
+        "backend_answer_contract_inference_used": False,
         "required_slot_count": 0,
     }
 
@@ -836,12 +891,104 @@ def _extract_legacy_planner_payload(result: dict[str, Any]) -> dict[str, Any] | 
     return None
 
 
-def _parse_validate(tool_args: dict[str, Any], validator: SemanticIRValidator) -> tuple[SemanticIRPlan | None, SemanticIRValidationResult]:
+def _parse_validate(
+    tool_args: dict[str, Any],
+    validator: SemanticIRValidator,
+    *,
+    require_answer_contract: bool = True,
+) -> tuple[SemanticIRPlan | None, SemanticIRValidationResult]:
     try:
         parsed_plan = parse_semantic_ir_from_json_or_line_protocol(tool_args)
     except Exception as exc:
         return None, SemanticIRValidationResult(passed=False, error_type="parse_error", error_message=str(exc))
-    return parsed_plan, validator.validate(parsed_plan)
+    return parsed_plan, validator.validate(parsed_plan, require_answer_contract=require_answer_contract)
+
+
+def _answer_contract_validation(plan: SemanticIRPlan | None) -> SemanticIRValidationResult:
+    if plan is None:
+        return SemanticIRValidationResult(passed=False, error_type="parse_error", error_message="Semantic IR plan was not parsed.")
+    result = AnswerContractValidator().validate(plan)
+    if result.passed:
+        return SemanticIRValidationResult(passed=True)
+    return SemanticIRValidationResult(
+        passed=False,
+        error_type=result.error_type or "invalid_answer_contract",
+        error_message=result.error_message or "Invalid answer contract.",
+        task_id=result.task_id,
+    )
+
+
+def _record_contract_validation_diagnostics(
+    diagnostics: dict[str, Any],
+    *,
+    plan: SemanticIRPlan | None,
+    validation: SemanticIRValidationResult,
+) -> None:
+    diagnostics.update(
+        {
+            "answer_contract_validation_used": True,
+            "answer_contract_validation_passed": validation.passed and validation.error_type not in ANSWER_CONTRACT_VALIDATION_ERROR_TYPES,
+            "answer_contract_error_type": validation.error_type if validation.error_type in ANSWER_CONTRACT_VALIDATION_ERROR_TYPES else None,
+            "required_slot_count": len(plan.answer_contract.required_slots) if plan and plan.answer_contract else 0,
+        }
+    )
+
+
+def _ensure_answer_contract(
+    *,
+    client: Any,
+    user_prompt: str,
+    parsed_plan: SemanticIRPlan | None,
+    validation: SemanticIRValidationResult,
+    diagnostics: dict[str, Any],
+    raw_previews: dict[str, Any],
+    schema_card: list[dict[str, Any]],
+    api_card: list[dict[str, Any]],
+) -> tuple[SemanticIRPlan | None, SemanticIRValidationResult]:
+    if parsed_plan is None or not validation.passed:
+        return parsed_plan, validation
+    if parsed_plan.route != "EVIDENCE":
+        diagnostics["answer_contract_secondary_call_used"] = False
+        diagnostics["answer_contract_missing_initially"] = False
+        return parsed_plan, validation
+    contract_validation = _answer_contract_validation(parsed_plan)
+    _record_contract_validation_diagnostics(diagnostics, plan=parsed_plan, validation=contract_validation)
+    if contract_validation.passed:
+        diagnostics["answer_contract_secondary_call_used"] = False
+        diagnostics["answer_contract_missing_initially"] = False
+        return parsed_plan, validation
+
+    diagnostics["answer_contract_missing_initially"] = parsed_plan.answer_contract is None
+    diagnostics["answer_contract_repair_attempted"] = True
+    contract_result = run_answer_contract_planner(
+        client=client,
+        user_prompt=user_prompt,
+        semantic_plan=parsed_plan,
+        allowed_schema_card=schema_card,
+        allowed_api_card=api_card,
+        validation_error=contract_validation,
+    )
+    diagnostics["answer_contract_secondary_call_latency_ms"] = contract_result.latency_ms
+    if contract_result.diagnostics:
+        diagnostics.update(contract_result.diagnostics)
+    raw_previews["answer_contract_secondary"] = compact_preview(contract_result.raw_preview, 1200)
+    if not contract_result.ok or contract_result.answer_contract is None:
+        failed = SemanticIRValidationResult(
+            passed=False,
+            error_type=contract_result.error_type or "invalid_answer_contract",
+            error_message=contract_result.error_message or "Answer contract secondary call failed.",
+        )
+        _record_contract_validation_diagnostics(diagnostics, plan=parsed_plan, validation=failed)
+        return parsed_plan, failed
+
+    parsed_plan.answer_contract = contract_result.answer_contract
+    final_contract_validation = _answer_contract_validation(parsed_plan)
+    _record_contract_validation_diagnostics(diagnostics, plan=parsed_plan, validation=final_contract_validation)
+    if not final_contract_validation.passed:
+        diagnostics["answer_contract_secondary_call_success"] = False
+        return parsed_plan, final_contract_validation
+    diagnostics["answer_contract_secondary_call_success"] = True
+    return parsed_plan, validation
 
 
 def _record_support_result(diagnostics: dict[str, Any], support_result: IRSupportResult) -> None:
@@ -1307,12 +1454,14 @@ def _semantic_ir_repair_user_prompt(
         "previous_tool_arguments": compact_preview(previous_args, 1600),
         "validation_error": validation.to_dict(),
         "allowed_tables": allowed_tables,
+        "table_role_cards": validation.table_role_cards or _table_role_cards_for_repair(allowed_schema_card),
         "allowed_schema_card": allowed_schema_card,
         "allowed_endpoints": allowed_endpoints,
         "allowed_api_card": allowed_api_card,
         "rules": [
             "Repair by submitting the SDK tool call again.",
             "Use only exact table, field, and endpoint IDs from allowed cards.",
+            "Choose table only from allowed_tables. Do not invent semantic table names.",
             "If route is EVIDENCE, include root answer_contract; do not omit it.",
             "The root answer_contract must include contract_version='v1', answer_style, global_scope, required_slots, and optional_slots.",
             "If route is DIRECT, use answer_contract with empty slots and global_scope NONE unless a direct CONCEPT slot is useful.",
@@ -1324,6 +1473,23 @@ def _semantic_ir_repair_user_prompt(
         ],
     }
     return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def _table_role_cards_for_repair(allowed_schema_card: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    cards: list[dict[str, Any]] = []
+    for row in allowed_schema_card:
+        table = str(row.get("table") or "")
+        if not table:
+            continue
+        cards.append(
+            {
+                "table": table,
+                "table_role_hints": list(row.get("table_role_hints") or []),
+                "field_hints": row.get("field_hints") if isinstance(row.get("field_hints"), dict) else {},
+                "columns": list(row.get("columns") or [])[:24],
+            }
+        )
+    return cards
 
 
 def _semantic_ir_support_repair_system_prompt() -> str:

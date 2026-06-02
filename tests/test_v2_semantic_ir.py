@@ -575,6 +575,9 @@ def test_semantic_ir_validator_checks_existence_without_correction():
     failed = validator.validate(parse_semantic_ir_from_json_or_line_protocol(json.dumps(bad_table)))
     assert failed.passed is False
     assert failed.error_type == "unknown_table"
+    assert failed.bad_table == "schemas"
+    assert failed.allowed_tables == ["dim_schema", "dim_campaign"]
+    assert failed.table_role_cards
     assert bad_table["tasks"][0]["local_query"]["table"] == "schemas"
 
     bad_field = _local_count_plan()
@@ -1054,7 +1057,111 @@ def test_llm_unified_planner_repairs_invalid_semantic_ir_once(monkeypatch):
     repair_prompt = client.calls[1]["messages"][1]["content"]
     assert "unknown_table" in repair_prompt
     assert "allowed_tables" in repair_prompt
+    assert "table_role_cards" in repair_prompt
+    assert "Do not invent semantic table names" in repair_prompt
     assert "schemas" in repair_prompt
+
+
+def test_missing_answer_contract_uses_secondary_contract_toolcall(monkeypatch):
+    initial = _local_count_plan()
+    initial.pop("answer_contract")
+    client = ToolNameAwareClient(
+        [
+            initial,
+            {
+                "tool_name": "submit_answer_contract",
+                "arguments": {
+                    "answer_contract": {
+                        "required_slots": [
+                            {
+                                "slot_id": "s_count",
+                                "type": "COUNT",
+                                "required": True,
+                                "subject": "schemas",
+                                "source_scope": "LOCAL_SNAPSHOT",
+                                "satisfied_by_tasks": ["t1"],
+                                "required_fields": ["count"],
+                                "if_missing": "FAIL_REQUIRED",
+                                "zero_rows_semantics": "EMPTY_RESULT_IS_ANSWER",
+                            }
+                        ]
+                    }
+                },
+            },
+        ]
+    )
+    monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+
+    plan = run_llm_unified_planner(
+        user_prompt="How many schema records are in the local snapshot?",
+        schema_context=_schema_context(),
+        endpoint_context=_endpoint_context(),
+    )
+
+    assert plan.passes[0].sql.query == 'SELECT COUNT(*) AS count FROM "dim_schema"'
+    assert plan.answer_contract["required_slots"][0]["slot_id"] == "s_count"
+    assert plan.diagnostics["answer_contract_missing_initially"] is True
+    assert plan.diagnostics["answer_contract_secondary_call_used"] is True
+    assert plan.diagnostics["answer_contract_secondary_call_success"] is True
+    assert plan.diagnostics["semantic_ir_validation_passed"] is True
+    assert [call["tool_choice"]["function"]["name"] for call in client.calls] == [
+        "submit_semantic_ir_plan",
+        "submit_answer_contract",
+    ]
+
+
+def test_invalid_secondary_answer_contract_fails_closed_without_atomic_fallback(monkeypatch):
+    initial = _local_count_plan()
+    initial.pop("answer_contract")
+    client = ToolNameAwareClient(
+        [
+            initial,
+            {
+                "tool_name": "submit_answer_contract",
+                "arguments": {
+                    "answer_contract": {
+                        "required_slots": [
+                            {
+                                "slot_id": "s_count",
+                                "type": "COUNT",
+                                "required": True,
+                                "subject": "schemas",
+                                "source_scope": "LOCAL_SNAPSHOT",
+                                "satisfied_by_tasks": ["missing_task"],
+                                "required_fields": ["count"],
+                                "if_missing": "FAIL_REQUIRED",
+                                "zero_rows_semantics": "EMPTY_RESULT_IS_ANSWER",
+                            }
+                        ]
+                    }
+                },
+            },
+        ]
+    )
+    monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+
+    plan = run_llm_unified_planner(
+        user_prompt="How many schema records are in the local snapshot?",
+        schema_context=_schema_context(),
+        endpoint_context=_endpoint_context(),
+    )
+
+    assert plan.route == "EVIDENCE_PIPELINE"
+    assert plan.parse_error is True
+    assert plan.diagnostics["answer_contract_secondary_call_used"] is True
+    assert plan.diagnostics["answer_contract_secondary_call_success"] is False
+    assert plan.diagnostics["atomic_protocol_fallback_used"] is False
+
+
+def test_direct_route_does_not_require_secondary_answer_contract(monkeypatch):
+    client = ToolCallSemanticIRClient([_direct_plan()])
+    monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+
+    plan = run_llm_unified_planner(user_prompt="What is a schema?", schema_context=_schema_context(), endpoint_context=_endpoint_context())
+
+    assert plan.route == "LLM_DIRECT"
+    assert plan.diagnostics["answer_contract_secondary_call_used"] is False
+    assert len(client.calls) == 1
 
 
 def test_llm_unified_planner_repairs_invalid_semantic_alias_once(monkeypatch):

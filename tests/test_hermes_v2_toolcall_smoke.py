@@ -513,3 +513,59 @@ def test_smoke_uses_gemini_openai_compat_probe_and_report_name(monkeypatch, tiny
     assert report["report_title"] == "Gemini OpenAI-Compatible V2 Toolcall Smoke"
     assert Path(report["json_path"]).name == "gemini_openai_compat_smoke.json"
     assert captured["probe_report_dir"].name == "gemini_toolcall_probe"
+
+
+def test_smoke_records_row_failure_and_continues_all_prompts(monkeypatch, tiny_project, tmp_path):
+    monkeypatch.setenv("DASHAGENT_LLM_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_BASE_URL", "http://localhost:8000/v1")
+    monkeypatch.setattr(smoke, "load_local_env", lambda *args, **kwargs: {"keys_loaded": []})
+    monkeypatch.setattr(
+        smoke,
+        "run_hermes_toolcall_probe",
+        lambda *args, **kwargs: {
+            "ok": True,
+            "provider": "openai",
+            "model": "unit-model",
+            "sdk_path_used": True,
+            "toolcall_supported": True,
+            "tool_calls_count": 1,
+            "tool_name": "submit_probe_result",
+            "finish_reason": "tool_calls",
+            "error": "",
+        },
+    )
+    seen: list[str] = []
+
+    def fake_prompt(item, **kwargs):
+        seen.append(item["id"])
+        if item["id"] == "ambiguous_user_schemas":
+            raise RuntimeError("missing_answer_contract")
+        return {
+            "prompt_id": item["id"],
+            "prompt": item["prompt"],
+            "expected": item["expected"],
+            "pass": True,
+            "unsupported_claims": 0,
+            "final_semantic_gate_final_failures": 0,
+            "no_tool_fp": False,
+            "runtime_fact_count": 1,
+            "compiled_sql_count": 1 if item["expected"] != "DIRECT" else 0,
+            "compiled_api_count": 0,
+            "sql_calls": 1 if item["expected"] != "DIRECT" else 0,
+            "api_calls": 0,
+            "sdk_toolcall_semantic_ir_used": True,
+            "atomic_protocol_fallback_used": False,
+            "timed_out": False,
+        }
+
+    monkeypatch.setattr(smoke, "_run_prompt_with_timeout", fake_prompt)
+
+    report = smoke.run_hermes_v2_toolcall_smoke(config=tiny_project, report_dir=tmp_path)
+
+    assert len(seen) == len(smoke.SMOKE_PROMPTS)
+    assert len(report["rows"]) == len(smoke.SMOKE_PROMPTS)
+    failed = next(row for row in report["rows"] if row["prompt_id"] == "ambiguous_user_schemas")
+    assert failed["pass"] is False
+    assert failed["error_type"] == "missing_answer_contract"
+    assert report["summary"]["row_count"] == len(smoke.SMOKE_PROMPTS)
+    assert report["summary"]["failed_count"] == 1
