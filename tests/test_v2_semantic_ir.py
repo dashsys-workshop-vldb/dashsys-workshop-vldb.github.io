@@ -13,6 +13,7 @@ from dashagent.v2_semantic_ir_planner import (
     _build_semantic_ir_prompt_context,
     _semantic_ir_repair_user_prompt,
     _semantic_ir_source_selection_rules,
+    _semantic_ir_system_prompt,
     _semantic_ir_user_prompt,
     semantic_ir_tool_schema,
 )
@@ -912,6 +913,7 @@ def test_local_and_live_compiles_both_without_backend_path_choice():
 
 
 def test_llm_unified_planner_uses_sdk_toolcall_semantic_ir_primary_path(monkeypatch):
+    monkeypatch.delenv("V2_ENABLE_SCHEMA_BINDING", raising=False)
     client = ToolCallSemanticIRClient([_local_count_plan()])
     monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
 
@@ -929,13 +931,37 @@ def test_llm_unified_planner_uses_sdk_toolcall_semantic_ir_primary_path(monkeypa
     assert plan.diagnostics["backend_semantic_planning_used"] is False
     assert plan.diagnostics["backend_formal_compilation_used"] is True
     assert plan.diagnostics["atomic_protocol_fallback_used"] is False
-    assert len(client.calls) == 2
+    assert plan.diagnostics["schema_binding_enabled"] is False
+    assert plan.diagnostics["schema_binding_used"] is False
+    assert plan.diagnostics["schema_binding_mode"] == "repair_hint_only"
+    assert len(client.calls) == 1
     assert client.calls[0]["tools"][0]["function"]["name"] == "submit_semantic_ir_plan"
     assert client.calls[0]["tool_choice"]["function"]["name"] == "submit_semantic_ir_plan"
-    assert client.calls[1]["tool_choice"]["function"]["name"] == "submit_schema_binding_plan"
+
+
+def test_schema_binding_toolcall_is_experimental_and_env_gated(monkeypatch):
+    monkeypatch.setenv("V2_ENABLE_SCHEMA_BINDING", "1")
+    client = ToolCallSemanticIRClient([_local_count_plan()])
+    monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+
+    plan = run_llm_unified_planner(
+        user_prompt="How many schema records are in the local snapshot?",
+        schema_context=_schema_context(),
+        endpoint_context=_endpoint_context(),
+    )
+
+    assert plan.route == "EVIDENCE_PIPELINE"
+    assert plan.diagnostics["schema_binding_enabled"] is True
+    assert plan.diagnostics["schema_binding_used"] is True
+    assert plan.diagnostics["schema_binding_mode"] == "experimental_toolcall"
+    assert [call["tool_choice"]["function"]["name"] for call in client.calls] == [
+        "submit_semantic_ir_plan",
+        "submit_schema_binding_plan",
+    ]
 
 
 def test_semantic_ir_planner_prompt_keeps_local_source_preference_llm_owned(monkeypatch):
+    monkeypatch.delenv("V2_ENABLE_SCHEMA_BINDING", raising=False)
     client = ToolCallSemanticIRClient([_local_count_plan()])
     monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
 
@@ -971,7 +997,30 @@ def test_semantic_ir_planner_prompt_keeps_local_source_preference_llm_owned(monk
     assert "primary_name_fields" in rules
     assert "label_fields" in rules
     assert "literal INACTIVE enum" in rules
+    assert "actual records" in rules
+    assert "What schemas do I have?" in rules
+    assert "not a pure concept question" in rules
+    assert "submit_schema_binding_plan" not in json.dumps(user_payload)
     assert "backend" not in rules.lower() or "will not choose" in system_prompt
+
+
+def test_default_prompt_keeps_schema_binding_examples_off_but_answer_contract_active(monkeypatch):
+    monkeypatch.delenv("V2_ENABLE_SCHEMA_BINDING", raising=False)
+    system_prompt = _semantic_ir_system_prompt()
+    user_payload = json.loads(
+        _semantic_ir_user_prompt(
+            user_prompt="What schemas do I have?",
+            allowed_schema_card=build_allowed_local_schema_card(_schema_context()),
+            allowed_api_card=build_allowed_api_context_card(_endpoint_context()),
+            repair_context=None,
+        )
+    )
+    serialized = json.dumps(user_payload)
+
+    assert "separate schema binding" not in system_prompt.lower()
+    assert "submit_schema_binding_plan" not in serialized
+    assert "answer_contract" in serialized
+    assert "Every EVIDENCE plan needs root answer_contract" in " ".join(user_payload["rules"])
 
 
 def test_semantic_ir_prompt_context_is_compacted_without_losing_formal_shape():
@@ -1110,6 +1159,7 @@ def test_semantic_ir_planner_prompt_declares_ir_support_and_raw_sql_escape_hatch
 
 
 def test_unsupported_semantic_ir_repairs_to_supported_ir_before_raw_sql(monkeypatch):
+    monkeypatch.delenv("V2_ENABLE_SCHEMA_BINDING", raising=False)
     client = ToolCallSemanticIRClient([_unsupported_local_group_plan(), _local_count_plan()])
     monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
 
@@ -1125,17 +1175,16 @@ def test_unsupported_semantic_ir_repairs_to_supported_ir_before_raw_sql(monkeypa
     assert plan.diagnostics["semantic_ir_support_repair_attempted"] is True
     assert plan.diagnostics["semantic_ir_support_repair_success"] is True
     assert plan.diagnostics["raw_sql_fallback_used"] is False
-    assert len(client.calls) == 4
+    assert len(client.calls) == 2
     assert [call["tool_choice"]["function"]["name"] for call in client.calls] == [
         "submit_semantic_ir_plan",
-        "submit_schema_binding_plan",
         "submit_semantic_ir_plan",
-        "submit_schema_binding_plan",
     ]
-    assert "unsupported_ir" in client.calls[2]["messages"][1]["content"]
+    assert "unsupported_ir" in client.calls[1]["messages"][1]["content"]
 
 
 def test_unsupported_semantic_ir_uses_llm_owned_raw_sql_fallback_after_repair(monkeypatch):
+    monkeypatch.delenv("V2_ENABLE_SCHEMA_BINDING", raising=False)
     raw_sql_response = {
         "tool_name": "submit_raw_sql_fallback",
         "arguments": {
@@ -1165,9 +1214,7 @@ def test_unsupported_semantic_ir_uses_llm_owned_raw_sql_fallback_after_repair(mo
     assert plan.diagnostics["backend_generated_sql"] is False
     assert [call["tool_choice"]["function"]["name"] for call in client.calls] == [
         "submit_semantic_ir_plan",
-        "submit_schema_binding_plan",
         "submit_semantic_ir_plan",
-        "submit_schema_binding_plan",
         "submit_raw_sql_fallback",
     ]
 
@@ -1187,6 +1234,7 @@ def test_direct_toolcall_route_skips_sql_api_passes(monkeypatch):
 
 
 def test_llm_unified_planner_repairs_invalid_semantic_ir_once(monkeypatch):
+    monkeypatch.delenv("V2_ENABLE_SCHEMA_BINDING", raising=False)
     broken = _local_count_plan()
     broken["tasks"][0]["local_query"]["table"] = "schemas"
     client = ToolCallSemanticIRClient([broken, _local_count_plan()])
@@ -1206,11 +1254,46 @@ def test_llm_unified_planner_repairs_invalid_semantic_ir_once(monkeypatch):
     assert "unknown_table" in repair_prompt
     assert "allowed_tables" in repair_prompt
     assert "table_role_cards" in repair_prompt
+    assert "field_role_cards" in repair_prompt
+    assert "relationship_cards" in repair_prompt
+    assert "Choose exact table and field IDs from allowed cards" in repair_prompt
     assert "Do not invent semantic table names" in repair_prompt
     assert "schemas" in repair_prompt
 
+    assert broken["tasks"][0]["local_query"]["table"] == "schemas"
+
+
+def test_unknown_field_repair_prompt_includes_allowed_fields_without_backend_rewrite():
+    broken = _local_count_plan()
+    broken["tasks"][0]["local_query"]["fields"] = ["DISPLAY_NAME"]
+    validation = SemanticIRValidationResult(
+        passed=False,
+        error_type="unknown_field",
+        error_message="Unknown field DISPLAY_NAME for table dim_schema.",
+        task_id="t1",
+        bad_field="DISPLAY_NAME",
+        allowed_tables=["dim_schema", "dim_campaign"],
+        allowed_fields_for_table=["SCHEMAID", "NAME", "STATUS"],
+    )
+
+    prompt = _semantic_ir_repair_user_prompt(
+        user_prompt="What schemas do I have?",
+        previous_args=broken,
+        validation=validation,
+        allowed_schema_card=build_allowed_local_schema_card(_schema_context()),
+        allowed_api_card=build_allowed_api_context_card(_endpoint_context()),
+    )
+    payload = json.loads(prompt)
+    rules = " ".join(payload["rules"])
+
+    assert payload["allowed_fields_for_error_table"] == ["SCHEMAID", "NAME", "STATUS"]
+    assert payload["field_role_cards"]
+    assert "Choose exact table and field IDs from allowed cards" in rules
+    assert broken["tasks"][0]["local_query"]["fields"] == ["DISPLAY_NAME"]
+
 
 def test_missing_answer_contract_uses_secondary_contract_toolcall(monkeypatch):
+    monkeypatch.delenv("V2_ENABLE_SCHEMA_BINDING", raising=False)
     initial = _local_count_plan()
     initial.pop("answer_contract")
     client = ToolNameAwareClient(
@@ -1255,8 +1338,9 @@ def test_missing_answer_contract_uses_secondary_contract_toolcall(monkeypatch):
     assert [call["tool_choice"]["function"]["name"] for call in client.calls] == [
         "submit_semantic_ir_plan",
         "submit_answer_contract",
-        "submit_schema_binding_plan",
     ]
+    assert plan.diagnostics["schema_binding_enabled"] is False
+    assert plan.diagnostics["schema_binding_used"] is False
 
 
 def test_invalid_secondary_answer_contract_fails_closed_without_atomic_fallback(monkeypatch):

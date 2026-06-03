@@ -248,6 +248,8 @@ def _build_smoke_row(item: dict[str, Any], result: dict[str, Any]) -> dict[str, 
         "answer_contract_secondary_call_used": bool(diagnostics.get("answer_contract_secondary_call_used")),
         "answer_contract_secondary_call_success": bool(diagnostics.get("answer_contract_secondary_call_success")),
         "answer_contract_secondary_error_type": diagnostics.get("answer_contract_secondary_error_type"),
+        "schema_binding_enabled": bool(diagnostics.get("schema_binding_enabled")),
+        "schema_binding_mode": diagnostics.get("schema_binding_mode"),
         "schema_binding_used": bool(diagnostics.get("schema_binding_used")),
         "schema_binding_count": int(diagnostics.get("schema_binding_count") or 0),
         "schema_binding_ids": _list_diagnostic(diagnostics.get("schema_binding_ids")),
@@ -373,6 +375,8 @@ def _timeout_row(item: dict[str, Any], *, timeout_sec: int, total_latency_sec: f
         "answer_contract_secondary_call_used": False,
         "answer_contract_secondary_call_success": False,
         "answer_contract_secondary_error_type": None,
+        "schema_binding_enabled": False,
+        "schema_binding_mode": "unknown",
         "schema_binding_used": False,
         "schema_binding_count": 0,
         "schema_binding_ids": [],
@@ -447,6 +451,14 @@ def _list_diagnostic(value: Any) -> list[Any]:
     if value in (None, ""):
         return []
     return [value]
+
+
+def _count_values(values) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for value in values:
+        key = str(value)
+        counts[key] = counts.get(key, 0) + 1
+    return counts
 
 
 def _flatten_diagnostics(trajectory: dict[str, Any]) -> dict[str, Any]:
@@ -782,6 +794,8 @@ def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "final_unavailable_with_runtime_facts": sum(1 for row in rows if row.get("final_unavailable_with_runtime_facts")),
         "atomic_protocol_fallback_count": sum(1 for row in rows if row.get("atomic_protocol_fallback_used")),
         "raw_sql_fallback_used_count": sum(1 for row in rows if row.get("raw_sql_fallback_used")),
+        "schema_binding_enabled_count": sum(1 for row in rows if row.get("schema_binding_enabled")),
+        "schema_binding_mode_counts": _count_values(row.get("schema_binding_mode") for row in rows if row.get("schema_binding_mode")),
         "schema_binding_used_count": sum(1 for row in rows if row.get("schema_binding_used")),
         "schema_binding_validation_failure_count": sum(
             1

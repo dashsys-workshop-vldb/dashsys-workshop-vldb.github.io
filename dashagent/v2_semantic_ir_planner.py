@@ -259,6 +259,11 @@ def _configured_semantic_ir_planner_char_budget(default: int = DEFAULT_SEMANTIC_
     return value if value >= 12000 else int(default)
 
 
+def _schema_binding_toolcall_enabled() -> bool:
+    raw = os.getenv("V2_ENABLE_SCHEMA_BINDING", "0")
+    return str(raw).strip().lower() in {"1", "true", "yes", "on"}
+
+
 def semantic_ir_prompt_context_diagnostics(
     *,
     user_prompt: str,
@@ -815,6 +820,7 @@ def run_semantic_ir_toolcall_planner(
 
 
 def _base_diagnostics() -> dict[str, Any]:
+    schema_binding_enabled = _schema_binding_toolcall_enabled()
     return {
         "v2_semantic_ir_used": True,
         "sdk_toolcall_semantic_ir_used": False,
@@ -875,6 +881,8 @@ def _base_diagnostics() -> dict[str, Any]:
         "answer_contract_secondary_call_latency_ms": 0,
         "backend_answer_contract_inference_used": False,
         "required_slot_count": 0,
+        "schema_binding_enabled": schema_binding_enabled,
+        "schema_binding_mode": "experimental_toolcall" if schema_binding_enabled else "repair_hint_only",
         "schema_binding_used": False,
         "schema_binding_count": 0,
         "schema_binding_ids": [],
@@ -1059,6 +1067,22 @@ def _ensure_schema_binding(
     schema_card: list[dict[str, Any]],
     validator: SemanticIRValidator,
 ) -> tuple[SemanticIRPlan | None, SemanticIRValidationResult]:
+    if not _schema_binding_toolcall_enabled():
+        diagnostics.update(
+            {
+                "schema_binding_enabled": False,
+                "schema_binding_mode": "repair_hint_only",
+                "schema_binding_used": False,
+                "schema_binding_validation_passed": None,
+                "schema_binding_error_type": None,
+                "schema_binding_error_message": None,
+                "schema_binding_call_latency_ms": 0,
+                "backend_schema_binding_inference_used": False,
+            }
+        )
+        return parsed_plan, validation
+
+    diagnostics.update({"schema_binding_enabled": True, "schema_binding_mode": "experimental_toolcall"})
     if parsed_plan is None or not validation.passed:
         return parsed_plan, validation
     if not _plan_needs_schema_binding(parsed_plan):
@@ -1452,7 +1476,6 @@ def _semantic_ir_system_prompt() -> str:
         "Use the submit_semantic_ir_plan SDK tool. Do not answer in plain text unless tool calls are unavailable. "
         "You own DIRECT vs EVIDENCE routing, task semantics, source, operation, selected table/endpoint IDs, fields, filters, values, dependencies, and aggregation instruction. "
         "You also own the answer_contract: it declares the required final-answer slots and which tasks satisfy each slot. "
-        "Schema/table/field binding is LLM-owned too; the backend validates binding shape and existence only. "
         "Use DIRECT only for pure concept, pure meta-language, or out-of-domain prompts needing no local or live evidence. "
         "Use EVIDENCE for user-specific, local snapshot, live/current/platform/API, list/count/status/date/lookup/compare, mixed concept plus data, or ambiguous data-like prompts. "
         "Choose table and field names only from AllowedLocalSchemaCard and endpoints only from AllowedAPIContextCard. "
@@ -1467,6 +1490,12 @@ def _semantic_ir_user_prompt(
     allowed_api_card: list[dict[str, Any]],
     repair_context: dict[str, Any] | None,
 ) -> str:
+    binding_rules = []
+    if _schema_binding_toolcall_enabled():
+        binding_rules = [
+            "Experimental schema binding is enabled: if you know a binding ID from repair context, put it on task.binding_id and local_query.binding_id.",
+            "Backend may reject conflicts between binding_id and local_query table/fields, but it will not substitute a table or field for you.",
+        ]
     payload = {
         "task": "SUBMIT_DASHSYS_V2_SEMANTIC_IR",
         "user_prompt": user_prompt,
@@ -1476,8 +1505,7 @@ def _semantic_ir_user_prompt(
             "Return one submit_semantic_ir_plan tool call.",
             "No plan in message content.",
             "LLM owns route, task semantics, source, table, fields, filters, endpoint, dependencies, and aggregation.",
-            "If you know a schema binding ID from repair context, put it on task.binding_id and local_query.binding_id.",
-            "Backend may reject conflicts between binding_id and local_query table/fields, but it will not substitute a table or field for you.",
+            *binding_rules,
             "Do not invent tables, columns, endpoint IDs, filters, or fields.",
             "DIRECT route: tasks empty, concise direct_answer, pure no-evidence concept/meta only.",
                 "EVIDENCE route: tasks contain the LLM-owned evidence tasks.",
@@ -1519,6 +1547,8 @@ def _semantic_ir_user_prompt(
 
 def _semantic_ir_source_selection_rules() -> list[str]:
     return [
+        "'What schemas do I have?' asks for actual records and is not a pure concept question; route EVIDENCE.",
+        "Local snapshot schema counts are COUNT over LOCAL_SNAPSHOT; show/list actual records is EVIDENCE.",
         "Prefer LOCAL_QUERY for user-specific local or ambiguous data-like prompts unless the prompt explicitly asks for live/current/platform/API or names an API catalog resource.",
         "If no live/current/platform/API cue asks for records/count/date/status/list, LIVE_QUERY is the wrong source; choose LOCAL_QUERY unless the prompt names an API catalog resource.",
         "'do I have', 'my', show/list/give me records, and bare entity lookups without live/current/platform/API cues are LOCAL_SNAPSHOT unless they name API catalog resources.",
@@ -1599,13 +1629,17 @@ def _semantic_ir_repair_user_prompt(
         "previous_tool_arguments": compact_preview(previous_args, 1600),
         "validation_error": validation.to_dict(),
         "allowed_tables": allowed_tables,
+        "allowed_fields_for_error_table": list(validation.allowed_fields_for_table or []),
         "table_role_cards": validation.table_role_cards or _table_role_cards_for_repair(allowed_schema_card),
+        "field_role_cards": _field_role_cards_for_repair(allowed_schema_card, validation),
+        "relationship_cards": _relationship_cards_for_repair(allowed_schema_card),
         "allowed_schema_card": allowed_schema_card,
         "allowed_endpoints": allowed_endpoints,
         "allowed_api_card": allowed_api_card,
         "rules": [
             "Repair by submitting the SDK tool call again.",
             "Use only exact table, field, and endpoint IDs from allowed cards.",
+            "Choose exact table and field IDs from allowed cards. Do not invent semantic table names.",
             "Choose table only from allowed_tables. Do not invent semantic table names.",
             "If previous_tool_arguments include schema_binding, keep or correct binding_id references explicitly; backend will not apply binding fields automatically.",
             "If route is EVIDENCE, include root answer_contract; do not omit it.",
@@ -1635,6 +1669,54 @@ def _table_role_cards_for_repair(allowed_schema_card: list[dict[str, Any]]) -> l
                 "columns": list(row.get("columns") or [])[:24],
             }
         )
+    return cards
+
+
+def _field_role_cards_for_repair(
+    allowed_schema_card: list[dict[str, Any]],
+    validation: SemanticIRValidationResult,
+) -> list[dict[str, Any]]:
+    cards: list[dict[str, Any]] = []
+    preferred_fields = set(validation.allowed_fields_for_table or [])
+    for row in allowed_schema_card:
+        table = str(row.get("table") or "")
+        if not table:
+            continue
+        columns = list(row.get("columns") or [])
+        if preferred_fields and not any(column in preferred_fields for column in columns):
+            continue
+        cards.append(
+            {
+                "table": table,
+                "allowed_fields": columns[:32],
+                "field_hints": row.get("field_hints") if isinstance(row.get("field_hints"), dict) else {},
+            }
+        )
+    return cards or [
+        {
+            "table": None,
+            "allowed_fields": list(validation.allowed_fields_for_table or []),
+            "field_hints": {},
+        }
+    ]
+
+
+def _relationship_cards_for_repair(allowed_schema_card: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    cards: list[dict[str, Any]] = []
+    for row in allowed_schema_card:
+        table = str(row.get("table") or "")
+        if not table:
+            continue
+        hints = row.get("field_hints") if isinstance(row.get("field_hints"), dict) else {}
+        id_fields = list(hints.get("id_fields") or [])
+        relation_fields = [
+            field
+            for field in list(row.get("columns") or [])
+            if "relationship" in str(field).lower() or str(field).lower().endswith("id") or "_id" in str(field).lower()
+        ][:16]
+        if not id_fields and not relation_fields:
+            continue
+        cards.append({"table": table, "id_fields": id_fields[:16], "relationship_like_fields": relation_fields})
     return cards
 
 

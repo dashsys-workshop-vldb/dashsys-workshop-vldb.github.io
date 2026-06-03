@@ -2,9 +2,44 @@
   "backend_semantic_planning_used": false,
   "llm_owned_generation": true,
   "llm_unified_plan": {
-    "aggregation_instruction": "",
-    "answer_contract": null,
-    "api_request": null,
+    "aggregation_instruction": "Return the list of schemas retrieved from the schema registry API.",
+    "answer_contract": {
+      "answer_style": "LIST",
+      "contract_version": "v1",
+      "global_scope": "LIVE_API",
+      "optional_slots": [],
+      "required_slots": [
+        {
+          "acceptable_fallback_fields": [],
+          "expected_status_filter": null,
+          "if_missing": "FAIL_REQUIRED",
+          "must_not_assert_positive_if_zero_rows": true,
+          "notes": "List of actual schemas from the Schema Registry API.",
+          "object": null,
+          "relation": null,
+          "required": true,
+          "required_fields": [
+            "title",
+            "schemaId"
+          ],
+          "satisfied_by_tasks": [
+            "list_schemas"
+          ],
+          "slot_id": "schema_list",
+          "source_scope": "LIVE_API",
+          "subject": "schemas",
+          "type": "LIST",
+          "zero_rows_semantics": "EMPTY_RESULT_IS_ANSWER"
+        }
+      ]
+    },
+    "api_request": {
+      "method": "GET",
+      "params": {
+        "limit": 100
+      },
+      "path": "/data/foundation/schemaregistry/tenant/schemas"
+    },
     "backend_unavailable": false,
     "diagnostics": {
       "answer_contract_error_type": null,
@@ -15,8 +50,8 @@
       "answer_contract_secondary_call_used": false,
       "answer_contract_secondary_error": null,
       "answer_contract_secondary_error_type": null,
-      "answer_contract_validation_passed": null,
-      "answer_contract_validation_used": false,
+      "answer_contract_validation_passed": true,
+      "answer_contract_validation_used": true,
       "api_card_detail_truncated": true,
       "api_card_final_char_count": 4579,
       "api_card_original_char_count": 6967,
@@ -32,13 +67,13 @@
       "backend_semantic_planning_used": false,
       "backend_sql_api_generation_used": false,
       "compiled_alias_count": 0,
-      "compiled_api_count": 0,
+      "compiled_api_count": 1,
       "compiled_sql_count": 0,
       "compiler_latency_ms": 0,
       "planner_json_fallback_used": false,
       "planner_json_parse_error": null,
       "planner_parse_source": "sdk_toolcall_semantic_ir",
-      "planner_provider_latency_ms": 48090,
+      "planner_provider_latency_ms": 9514,
       "planner_repair_attempted": false,
       "planner_success": true,
       "planner_timeout": false,
@@ -59,12 +94,14 @@
       "raw_sql_fallback_success": false,
       "raw_sql_fallback_task_id": null,
       "raw_sql_fallback_used": false,
-      "required_slot_count": 0,
+      "required_slot_count": 1,
       "schema_binding_call_latency_ms": 0,
       "schema_binding_count": 0,
+      "schema_binding_enabled": false,
       "schema_binding_error_message": null,
       "schema_binding_error_type": null,
       "schema_binding_ids": [],
+      "schema_binding_mode": "repair_hint_only",
       "schema_binding_repair_attempted": false,
       "schema_binding_repair_success": false,
       "schema_binding_used": false,
@@ -78,25 +115,83 @@
       "semantic_alias_count": 0,
       "semantic_alias_error_type": null,
       "semantic_alias_repair_attempted": false,
-      "semantic_alias_validation_passed": null,
-      "semantic_alias_validation_used": false,
+      "semantic_alias_validation_passed": true,
+      "semantic_alias_validation_used": true,
       "semantic_ir_context_truncated": true,
       "semantic_ir_context_truncated_sections": [
         "schema_card",
         "api_card"
       ],
       "semantic_ir_plan_preview": {
-        "direct_answer": "I do not have access to a list of schemas in my current local data snapshot. To see your schemas, you would need to query the Adobe Experience Platform Schema Registry API.",
-        "route": "DIRECT"
+        "aggregation_instruction": "Return the list of schemas retrieved from the schema registry API.",
+        "answer_contract": {
+          "answer_style": "LIST",
+          "contract_version": "v1",
+          "global_scope": "LIVE_API",
+          "required_slots": {
+            "items": [
+              {
+                "required": true,
+                "required_fields": {
+                  "items": [
+                    "title",
+                    "schemaId"
+                  ],
+                  "total_items": 2,
+                  "truncated_items": false
+                },
+                "satisfied_by_tasks": {
+                  "items": [
+                    "list_schemas"
+                  ],
+                  "total_items": 1,
+                  "truncated_items": false
+                },
+                "slot_id": "schema_list",
+                "source_scope": "LIVE_API",
+                "subject": "schemas",
+                "truncated_fields": 7,
+                "type": "LIST",
+                "zero_rows_semantics": "EMPTY_RESULT_IS_ANSWER"
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        },
+        "route": "EVIDENCE",
+        "tasks": {
+          "items": [
+            {
+              "api_query": {
+                "endpoint_id": "schema_registry_schemas",
+                "method": "GET",
+                "query_params": {
+                  "limit": 100
+                }
+              },
+              "description": "List actual schema registry schemas available in the platform.",
+              "kind": "LIVE_QUERY",
+              "operation": "LIST",
+              "reuse_result_from": null,
+              "semantic_cache_key": null,
+              "source": "LIVE_API",
+              "task_id": "list_schemas",
+              "truncated_fields": 8
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
       },
       "semantic_ir_planner_char_budget": 24000,
-      "semantic_ir_prompt_system_chars": 1121,
-      "semantic_ir_prompt_total_chars": 19830,
-      "semantic_ir_prompt_user_chars": 13446,
-      "semantic_ir_provider_latency_ms": 48088,
-      "semantic_ir_repair_attempted": true,
-      "semantic_ir_repair_latency_ms": 7045,
-      "semantic_ir_repair_success": true,
+      "semantic_ir_prompt_system_chars": 1020,
+      "semantic_ir_prompt_total_chars": 19691,
+      "semantic_ir_prompt_user_chars": 13408,
+      "semantic_ir_provider_latency_ms": 9511,
+      "semantic_ir_repair_attempted": false,
+      "semantic_ir_repair_latency_ms": 0,
+      "semantic_ir_repair_success": false,
       "semantic_ir_support_check_latency_ms": 0,
       "semantic_ir_support_checked": true,
       "semantic_ir_support_recommended_action": "COMPILE",
@@ -106,7 +201,7 @@
       "semantic_ir_support_repair_latency_ms": 0,
       "semantic_ir_support_repair_success": false,
       "semantic_ir_supported": true,
-      "semantic_ir_task_count": 0,
+      "semantic_ir_task_count": 1,
       "semantic_ir_tool_schema_chars": 5263,
       "semantic_ir_toolcall_supported": true,
       "semantic_ir_unsupported_features": [],
@@ -120,11 +215,37 @@
       "sql_compile_gate_failures": 0,
       "v2_semantic_ir_used": true
     },
-    "direct_answer": "I do not have access to a list of schemas in my current local data snapshot. To see your schemas, you would need to query the Adobe Experience Platform Schema Registry API.",
-    "evidence_order": "NO_EVIDENCE",
+    "direct_answer": null,
+    "evidence_order": "API_FIRST",
     "model": "/Users/tanqinyang/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
     "parse_error": false,
-    "passes": [],
+    "passes": [
+      {
+        "api_request": {
+          "method": "GET",
+          "params": {
+            "limit": 100
+          },
+          "path": "/data/foundation/schemaregistry/tenant/schemas"
+        },
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "API_FIRST",
+        "expected_result": "List actual schema registry schemas available in the platform.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "list_schemas",
+        "path": "API",
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "result_contract": null,
+        "reuse_result_from": null,
+        "semantic_cache_key": null,
+        "sql": null,
+        "subtask": "List actual schema registry schemas available in the platform."
+      }
+    ],
     "provider": "openai",
     "raw_preview": {
       "semantic_ir_initial": {
@@ -137,21 +258,10 @@
         "skipped": false,
         "transport": "openai_sdk",
         "truncated_fields": 11
-      },
-      "semantic_ir_missing_toolcall_retry": {
-        "base_url": "[REDACTED]",
-        "error": null,
-        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
-        "ok": true,
-        "provider": "openai",
-        "sdk_path_used": true,
-        "skipped": false,
-        "transport": "openai_sdk",
-        "truncated_fields": 11
       }
     },
-    "reason": "Semantic IR DIRECT route.",
-    "route": "LLM_DIRECT",
+    "reason": "Compiled mechanically from SDK toolcall Semantic IR.",
+    "route": "EVIDENCE_PIPELINE",
     "sql": null
   },
   "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
@@ -167,14 +277,14 @@
       "max_sql_workers": 2,
       "run_timeout_ms": 30000
     },
-    "created_at": "2026-06-02T23:06:07.752939+00:00",
-    "deadline_at": "2026-06-02T23:06:37.752939+00:00",
-    "evidence_bus_id": "evidence_run_a767859368904b2e9b88b931f1d0bc09",
+    "created_at": "2026-06-03T02:38:40.839053+00:00",
+    "deadline_at": "2026-06-03T02:39:10.839053+00:00",
+    "evidence_bus_id": "evidence_run_16416de4637f493192d745d8d2361b89",
     "original_prompt": "What schemas do I have?",
     "plan_version": 1,
     "prompt_id": "hermes_toolcall_ambiguous_user_schemas",
-    "result_bundle_id": "bundle_run_a767859368904b2e9b88b931f1d0bc09",
-    "run_id": "run_a767859368904b2e9b88b931f1d0bc09",
+    "result_bundle_id": "bundle_run_16416de4637f493192d745d8d2361b89",
+    "run_id": "run_16416de4637f493192d745d8d2361b89",
     "status": "RUNNING"
   },
   "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"

@@ -587,6 +587,8 @@ def test_smoke_row_and_summary_record_schema_binding_diagnostics():
                         "atomic_protocol_fallback_used": False,
                         "compiled_sql_count": 1,
                         "compiled_api_count": 0,
+                        "schema_binding_enabled": True,
+                        "schema_binding_mode": "experimental_toolcall",
                         "schema_binding_used": True,
                         "schema_binding_count": 1,
                         "schema_binding_validation_passed": True,
@@ -610,9 +612,13 @@ def test_smoke_row_and_summary_record_schema_binding_diagnostics():
     summary = _summarize_rows([row, {**row, "schema_binding_validation_passed": False, "schema_binding_error_type": "unknown_field"}])
 
     assert row["schema_binding_used"] is True
+    assert row["schema_binding_enabled"] is True
+    assert row["schema_binding_mode"] == "experimental_toolcall"
     assert row["schema_binding_validation_passed"] is True
     assert row["schema_binding_repair_attempted"] is True
     assert row["schema_binding_repair_success"] is True
     assert row["schema_binding_ids"] == ["b_schema"]
     assert summary["schema_binding_used_count"] == 2
+    assert summary["schema_binding_enabled_count"] == 2
+    assert summary["schema_binding_mode_counts"] == {"experimental_toolcall": 2}
     assert summary["schema_binding_validation_failure_count"] == 1
