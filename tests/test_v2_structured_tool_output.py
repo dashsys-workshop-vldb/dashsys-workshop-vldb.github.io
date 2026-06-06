@@ -136,7 +136,7 @@ def _planner_json(**overrides) -> str:
     return json.dumps(payload)
 
 
-def test_llm_unified_planner_accepts_legacy_toolcall_arguments_as_diagnostic_fallback(monkeypatch):
+def test_llm_unified_planner_rejects_legacy_toolcall_arguments_without_text_fallback(monkeypatch):
     client = ToolCallClient(
         "submit_v2_plan",
         {
@@ -153,11 +153,12 @@ def test_llm_unified_planner_accepts_legacy_toolcall_arguments_as_diagnostic_fal
 
     plan = run_llm_unified_planner(user_prompt="What is a schema?", schema_context={}, endpoint_context=[])
 
-    assert plan.route == "LLM_DIRECT"
-    assert plan.direct_answer == "A schema defines data structure."
+    assert plan.route == "EVIDENCE_PIPELINE"
+    assert plan.direct_answer is None
+    assert plan.parse_error is True
     assert client.calls[0]["tools"][0]["function"]["name"] == "submit_semantic_ir_plan"
     assert client.calls[0]["tool_choice"]["function"]["name"] == "submit_semantic_ir_plan"
-    assert plan.diagnostics["planner_parse_source"] == "legacy_planner_payload_fallback"
+    assert plan.diagnostics["planner_parse_source"] == "semantic_ir_validation_error"
     assert plan.diagnostics["atomic_protocol_fallback_used"] is False
 
 
@@ -380,7 +381,7 @@ def test_malformed_planner_json_triggers_one_repair(monkeypatch):
 
 
 def test_lack_of_toolcall_is_not_fatal_when_content_json_is_valid(monkeypatch):
-    client = ContentOnlyPlannerClient([_planner_json()], provider="fake_no_tool_provider")
+    client = ContentOnlyPlannerClient([_planner_json()], provider="pioneer_chat")
     monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
 
     plan = run_llm_unified_planner(user_prompt="How many schemas do I have?", schema_context={}, endpoint_context=[])

@@ -155,6 +155,52 @@ def test_contract_gate_allows_scoped_no_match_and_api_unavailable_caveats():
     ).passed is True
 
 
+def test_contract_gate_allows_concept_plus_zero_row_no_found_wording():
+    concept = _contract("CONCEPT", subject="inactive journey", source_scope="NONE", satisfied_by_tasks=["t1"])
+    data = _contract("LIST", subject="inactive journeys", required_fields=["NAME", "STATUS"], satisfied_by_tasks=["t2"])
+    contract = parse_answer_contract(
+        {
+            "required_slots": [
+                concept.required_slots[0].to_dict(),
+                data.required_slots[0].to_dict(),
+            ],
+            "optional_slots": [],
+            "answer_style": "EXPLANATORY",
+            "global_scope": "LOCAL_SNAPSHOT",
+            "contract_version": "v1",
+        }
+    )
+    states = evaluate_evidence_contract(
+        contract,
+        [
+            {
+                "pass_id": "t1",
+                "path": "DIRECT",
+                "source": "DIRECT",
+                "status": "SUCCESS",
+                "scope": "NO_EVIDENCE_CONCEPT",
+                "source_results": [
+                    {
+                        "source": "DIRECT",
+                        "status": "SUCCESS",
+                        "scope": "NO_EVIDENCE_CONCEPT",
+                        "result": {"answer": "An inactive journey is a journey that is not currently active or running."},
+                    }
+                ],
+            },
+            _runtime_pass([], status="EMPTY", row_count=0, pass_id="t2"),
+        ],
+    )
+
+    result = check_final_answer_contract(
+        "An inactive journey is a journey that is not currently active or running. No inactive journeys were found.",
+        answer_contract=contract,
+        evidence_slot_states=states,
+    )
+
+    assert result.passed is True
+
+
 def test_final_answer_card_includes_contract_and_evidence_slot_states():
     contract = _contract("COUNT", subject="schemas", required_fields=["count"], zero_rows_semantics="EMPTY_RESULT_IS_ANSWER")
     states = evaluate_evidence_contract(contract, [_runtime_pass([{"count": 74}], row_count=1)])

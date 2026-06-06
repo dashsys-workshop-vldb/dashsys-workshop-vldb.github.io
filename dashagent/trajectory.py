@@ -125,6 +125,7 @@ IMPORTANT_PREVIEW_KEYS = [
     "pass_graph_gate_passed",
     "pass_graph_repair_attempted",
     "pass_graph_repair_success",
+    "pass_graph_repair_skipped_reason",
     "pass_graph_gate_error_type",
     "repaired_pass_count",
     "v2_execution_optimizer_used",

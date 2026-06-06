@@ -53,6 +53,9 @@ class SemanticIRValidator:
     def validate(self, plan: SemanticIRPlan, *, require_answer_contract: bool = True) -> SemanticIRValidationResult:
         base = self._ok_context()
         if plan.route == "DIRECT":
+            contract_result = self._validate_direct_route_contract(plan)
+            if not contract_result.passed:
+                return contract_result
             executable = [task for task in plan.tasks if task.kind in {"LOCAL_QUERY", "LIVE_QUERY", "LOCAL_AND_LIVE"}]
             if executable:
                 return self._fail("direct_route_with_evidence_tasks", "DIRECT route cannot include evidence tasks.", executable[0].task_id)
@@ -151,6 +154,21 @@ class SemanticIRValidator:
                 return local_result
             return self._validate_api(task.task_id, task.api_query)
         return self._fail("invalid_kind", f"Invalid task kind: {task.kind}", task.task_id)
+
+    def _validate_direct_route_contract(self, plan: SemanticIRPlan) -> SemanticIRValidationResult:
+        contract = plan.answer_contract
+        if contract is None:
+            return self._ok_context()
+        for slot in [*contract.required_slots, *contract.optional_slots]:
+            if not bool(getattr(slot, "required", False)):
+                continue
+            if str(getattr(slot, "source_scope", "") or "").upper() in {"LOCAL_SNAPSHOT", "LIVE_API", "BOTH"}:
+                return self._fail(
+                    "direct_route_with_evidence_contract",
+                    "DIRECT route cannot satisfy required LOCAL_SNAPSHOT/LIVE_API/BOTH answer-contract slots.",
+                    next((task.task_id for task in plan.tasks), None),
+                )
+        return self._ok_context()
 
     def _validate_count_task_shape(self, task: SemanticIRTask) -> SemanticIRValidationResult:
         if task.operation != "COUNT":

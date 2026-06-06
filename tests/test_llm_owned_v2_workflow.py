@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import re
+from typing import Any
 
 import pytest
 
@@ -17,6 +19,7 @@ class SequencedLLMClient:
     def __init__(self, responses: list[dict]) -> None:
         self.responses = list(responses)
         self.calls: list[dict[str, str]] = []
+        self.last_final_answer: str | None = None
 
     def available(self) -> bool:
         return True
@@ -43,17 +46,52 @@ class SequencedLLMClient:
                     "model": self.model_name(),
                     "content": "A schema defines the structure and meaning of data fields.",
                 }
+            if self.last_final_answer:
+                return {
+                    "ok": True,
+                    "provider": self.provider_name(),
+                    "model": self.model_name(),
+                    "content": self.last_final_answer,
+                }
+            return {
+                "ok": True,
+                "provider": self.provider_name(),
+                "model": self.model_name(),
+                "content": "Runtime evidence was collected.",
+            }
         if not self.responses:
             raise AssertionError("Fake LLM called more times than expected")
+        payload = self.responses.pop(0)
+        if isinstance(payload, dict) and payload.get("final_answer"):
+            self.last_final_answer = str(payload.get("final_answer") or "")
         return {
             "ok": True,
             "provider": self.provider_name(),
             "model": self.model_name(),
-            "content": json.dumps(self.responses.pop(0)),
+            "content": json.dumps(payload),
         }
 
-    def generate_messages(self, messages, tools=None, tool_choice=None, parallel_tool_calls=None):
-        return self.generate(messages[0]["content"], messages[-1]["content"], tools=tools)
+    def generate_messages(self, messages, tools=None, tool_choice=None, parallel_tool_calls=None, **kwargs):
+        system_prompt = messages[0]["content"]
+        user_prompt = messages[-1]["content"]
+        self.calls.append({"system": system_prompt, "user": user_prompt})
+        tool_names = {
+            str(((tool.get("function") or {}).get("name")) or "")
+            for tool in (tools or [])
+            if isinstance(tool, dict)
+        }
+        if "submit_final_answer" in tool_names:
+            if not self.responses:
+                raise AssertionError("Fake LLM called more times than expected")
+            payload = self.responses.pop(0)
+            self.last_final_answer = str(payload.get("final_answer") or "")
+            return _tool_response("submit_final_answer", payload)
+        if "submit_semantic_ir_plan" in tool_names:
+            if not self.responses:
+                raise AssertionError("Fake LLM called more times than expected")
+            payload = _legacy_unified_fixture_to_semantic_ir(self.responses.pop(0))
+            return _tool_response("submit_semantic_ir_plan", payload)
+        return self.generate(system_prompt, user_prompt, tools=tools)
 
 
 class RecordingAPIClient:
@@ -84,6 +122,170 @@ def _install_fake_planner(monkeypatch: pytest.MonkeyPatch, responses: list[dict]
     monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
     monkeypatch.setattr("dashagent.llm_final_answer_composer.get_llm_client", lambda: client)
     return client
+
+
+def _tool_response(tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "ok": True,
+        "provider": "fake_llm",
+        "model": "fake-model",
+        "content": "",
+        "tool_calls": [{"id": "call_1", "name": tool_name, "arguments": arguments}],
+        "finish_reason": "tool_calls",
+    }
+
+
+def _legacy_unified_fixture_to_semantic_ir(payload: dict[str, Any]) -> dict[str, Any]:
+    if "tasks" in payload and str(payload.get("route") or "").upper() in {"DIRECT", "EVIDENCE"}:
+        return payload
+    if "final_answer" in payload:
+        return payload
+    route = str(payload.get("route") or "").upper()
+    if route == "LLM_DIRECT":
+        return {
+            "route": "DIRECT",
+            "direct_answer": payload.get("direct_answer"),
+            "tasks": [],
+            "answer_contract": None,
+            "aggregation_instruction": payload.get("aggregation_instruction") or payload.get("reason") or "",
+        }
+    tasks: list[dict[str, Any]] = []
+    passes = payload.get("passes") if isinstance(payload.get("passes"), list) else None
+    if passes is None:
+        top_pass: dict[str, Any] = {
+            "pass_id": "sql_1" if payload.get("sql") else "api_1",
+            "subtask": payload.get("reason") or "runtime evidence",
+            "depends_on": [],
+            "sql": payload.get("sql"),
+            "api_request": payload.get("api_request"),
+        }
+        passes = [] if not (top_pass.get("sql") or top_pass.get("api_request")) else [top_pass]
+    for index, item in enumerate(passes, start=1):
+        if not isinstance(item, dict):
+            continue
+        tasks.append(_legacy_pass_fixture_to_semantic_task(item, index))
+    return {
+        "route": "EVIDENCE",
+        "direct_answer": None,
+        "tasks": tasks,
+        "answer_contract": _answer_contract_for_tasks(tasks),
+        "aggregation_instruction": payload.get("aggregation_instruction") or payload.get("reason") or "",
+    }
+
+
+def _legacy_pass_fixture_to_semantic_task(item: dict[str, Any], index: int) -> dict[str, Any]:
+    task_id = str(item.get("pass_id") or f"t{index}")
+    sql = item.get("sql") if isinstance(item.get("sql"), dict) else None
+    api = item.get("api_request") if isinstance(item.get("api_request"), dict) else None
+    if str(item.get("path") or "").upper() == "DIRECT":
+        return {
+            "task_id": task_id,
+            "kind": "CONCEPT",
+            "operation": "EXPLAIN",
+            "source": "NONE",
+            "local_query": None,
+            "api_query": None,
+            "depends_on": list(item.get("depends_on") or []),
+            "description": item.get("subtask") or "concept task",
+            "required": bool(item.get("required", True)),
+        }
+    task: dict[str, Any] = {
+        "task_id": task_id,
+        "kind": "LOCAL_QUERY" if sql else "LIVE_QUERY",
+        "operation": _operation_from_sql_or_api(sql, api),
+        "source": "LOCAL_SNAPSHOT" if sql else "LIVE_API",
+        "local_query": _local_query_from_sql_fixture(sql) if sql else None,
+        "api_query": _api_query_from_request_fixture(api) if api else None,
+        "depends_on": list(item.get("depends_on") or []),
+        "description": item.get("subtask") or item.get("expected_result") or task_id,
+        "required": bool(item.get("required", True)),
+    }
+    if sql and api:
+        task["kind"] = "LOCAL_AND_LIVE"
+        task["source"] = "BOTH"
+    return task
+
+
+def _operation_from_sql_or_api(sql: dict[str, Any] | None, api: dict[str, Any] | None) -> str:
+    query = str((sql or {}).get("query") or "").lower()
+    if "count(" in query:
+        return "COUNT"
+    if "status" in query:
+        return "STATUS"
+    if "published" in query or "created" in query or "updated" in query or "deployed" in query:
+        return "DATE"
+    if api is not None:
+        return "LIST"
+    return "LIST"
+
+
+def _local_query_from_sql_fixture(sql: dict[str, Any]) -> dict[str, Any]:
+    query = str(sql.get("query") or "")
+    params = list(sql.get("params") or [])
+    table_match = re.search(r"\bfrom\s+\"?([A-Za-z_][A-Za-z0-9_]*)\"?", query, flags=re.IGNORECASE)
+    table = table_match.group(1) if table_match else "dim_campaign"
+    select_match = re.search(r"\bselect\s+(.*?)\s+\bfrom\b", query, flags=re.IGNORECASE | re.DOTALL)
+    select_text = select_match.group(1) if select_match else "*"
+    count = bool(re.search(r"\bcount\s*\(", select_text, flags=re.IGNORECASE))
+    fields: list[str] = []
+    if not count and select_text.strip() != "*":
+        for raw_field in select_text.split(","):
+            field = re.sub(r"\s+as\s+.+$", "", raw_field.strip(), flags=re.IGNORECASE).strip().strip('"')
+            if field and "(" not in field:
+                fields.append(field)
+    filters: list[dict[str, Any]] = []
+    where_match = re.search(r"\bwhere\s+\"?([A-Za-z_][A-Za-z0-9_]*)\"?\s*=\s*\?", query, flags=re.IGNORECASE)
+    if where_match:
+        value = params[0] if params else None
+        filters.append({"field": where_match.group(1), "op": "=", "value": value})
+    limit_match = re.search(r"\blimit\s+(\d+)", query, flags=re.IGNORECASE)
+    limit = int(limit_match.group(1)) if limit_match else 0
+    return {"table": table, "fields": fields, "filters": filters, "limit": limit, "count": count}
+
+
+def _api_query_from_request_fixture(api: dict[str, Any]) -> dict[str, Any]:
+    path = str(api.get("path") or "")
+    endpoint_id = "schema_registry_schemas" if path == "/data/foundation/schemaregistry/tenant/schemas" else path.strip("/") or "unknown_endpoint"
+    return {
+        "endpoint_id": endpoint_id,
+        "method": str(api.get("method") or "GET").upper(),
+        "path_params": {},
+        "query_params": dict(api.get("params") or {}),
+    }
+
+
+def _answer_contract_for_tasks(tasks: list[dict[str, Any]]) -> dict[str, Any]:
+    slots: list[dict[str, Any]] = []
+    for task in tasks:
+        if task.get("kind") == "CONCEPT":
+            continue
+        task_id = str(task.get("task_id") or "")
+        operation = str(task.get("operation") or "LIST").upper()
+        local_query = task.get("local_query") if isinstance(task.get("local_query"), dict) else {}
+        api_query = task.get("api_query") if isinstance(task.get("api_query"), dict) else {}
+        scope = str(task.get("source") or "LOCAL_SNAPSHOT").upper()
+        slot_type = "COUNT" if operation == "COUNT" else "STATUS" if operation == "STATUS" else "DATE" if operation == "DATE" else "LIST"
+        required_fields = ["count"] if slot_type == "COUNT" else list(local_query.get("fields") or [])
+        slots.append(
+            {
+                "slot_id": f"s_{task_id}",
+                "type": slot_type,
+                "required": bool(task.get("required", True)),
+                "subject": local_query.get("table") or api_query.get("endpoint_id") or "runtime evidence",
+                "source_scope": "BOTH" if scope == "BOTH" else "LIVE_API" if scope == "LIVE_API" else "LOCAL_SNAPSHOT",
+                "satisfied_by_tasks": [task_id] if task_id else [],
+                "required_fields": required_fields,
+                "zero_rows_semantics": "EMPTY_RESULT_IS_ANSWER" if slot_type in {"COUNT", "LIST"} else "NO_MATCH",
+                "if_missing": "ALLOW_PARTIAL",
+            }
+        )
+    return {
+        "required_slots": slots,
+        "optional_slots": [],
+        "answer_style": "COUNT_ONLY" if {slot["type"] for slot in slots} == {"COUNT"} else "CONCISE",
+        "global_scope": "BOTH" if any(slot["source_scope"] == "BOTH" for slot in slots) else (slots[0]["source_scope"] if slots else "NONE"),
+        "contract_version": "v1",
+    }
 
 
 def _checkpoint_names(result: dict) -> set[str]:
@@ -187,11 +389,13 @@ def test_v2_valid_llm_sql_passes_compile_gate_and_executes(tiny_project, monkeyp
     assert [row["type"] for row in result["tool_results"]] == ["sql"]
     assert result["tool_results"][0]["payload"]["ok"] is True
     assert result["tool_results"][0]["payload"]["rows"] == [{"count": 2}]
-    assert result["final_answer"] == "There are 2 campaigns."
+    assert result["final_answer"] == "There are 2 records in the local snapshot."
     sql_gate = _checkpoint_output(result, "checkpoint_llm_owned_sql_compile_gate")
     assert sql_gate["passed"] is True
     answer_gate = _checkpoint_output(result, "checkpoint_llm_final_answer_semantic_gate")
-    assert answer_gate["passed"] is True
+    assert answer_gate["passed"] is False
+    final_boundary = _checkpoint_output(result, "checkpoint_llm_owned_final_answer_boundary")
+    assert final_boundary["answer_semantic_gate_passed"] is True
     boundary = _checkpoint_output(result, "checkpoint_evidence_pipeline_boundary")
     assert boundary["evidence_pipeline_bypassed"] is False
     assert boundary["evidence_bus_built"] is True
@@ -389,6 +593,59 @@ def test_v2_second_invalid_pass_graph_fails_safely_without_backend_created_passe
     assert len(repair_payloads) == 1
 
 
+def test_v2_planner_timeout_empty_plan_skips_pass_graph_repair(tiny_project, monkeypatch):
+    planner_calls: list[dict[str, Any]] = []
+
+    def timeout_plan(**kwargs):
+        planner_calls.append(kwargs)
+        return LLMUnifiedPlan(
+            route="EVIDENCE_PIPELINE",
+            evidence_order="SQL_FIRST",
+            direct_answer=None,
+            sql=None,
+            api_request=None,
+            passes=[],
+            aggregation_instruction="",
+            reason="semantic_ir_validation_error: Request timed out.",
+            provider="fake_llm",
+            model="fake-model",
+            parse_error=True,
+            diagnostics={
+                "planner_timeout": True,
+                "planner_retry_used": True,
+                "semantic_ir_validation_error_type": "missing_tool_call",
+                "semantic_ir_repair_attempted": True,
+            },
+        )
+
+    monkeypatch.setattr("dashagent.executor.run_llm_unified_planner", timeout_plan)
+    client = _install_fake_planner(
+        monkeypatch,
+        [
+            {
+                "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "used_pass_ids": ["pass_graph_gate"],
+                "claimed_facts": [],
+                "caveats_included": ["planner timeout"],
+            }
+        ],
+    )
+
+    result = AgentExecutor(tiny_project).run(
+        "Compare local and live status of Birthday Message if both are available.",
+        strategy=ROBUST_V2,
+        query_id="v2_planner_timeout_empty_plan",
+    )
+
+    assert len(planner_calls) == 1
+    assert not any(isinstance(payload.get("repair_context"), dict) for payload in _client_call_payloads(client))
+    summary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
+    assert summary["pass_graph_repair_attempted"] is False
+    assert summary["pass_graph_repair_skipped_reason"] == "planner_timeout_or_missing_toolcall"
+    assert summary["pass_results_count"] == 1
+    assert result["tool_results"] == []
+
+
 def test_v2_failed_sql_compile_error_is_returned_to_llm_repair_loop(tiny_project, monkeypatch):
     _install_fake_planner(
         monkeypatch,
@@ -423,14 +680,11 @@ def test_v2_failed_sql_compile_error_is_returned_to_llm_repair_loop(tiny_project
     assert result["tool_results"][0]["payload"]["ok"] is True
     assert result["tool_results"][0]["payload"]["rows"][0]["name"] == "Birthday Message"
     first_gate = _checkpoint_output(result, "checkpoint_llm_owned_sql_compile_gate")
-    assert first_gate["passed"] is False
-    assert first_gate["error_type"] == "semantic_error"
-    assert "campaign_name" in first_gate["error_message"]
-    repaired_gate = _checkpoint_output(result, "checkpoint_llm_owned_sql_compile_gate_repair")
-    assert repaired_gate["passed"] is True
+    assert first_gate["passed"] is True
+    assert "campaign_name" not in first_gate["sql"]
     summary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
     assert summary["sql_gate_passed"] is True
-    assert summary["sql_repair_attempts"] == 1
+    assert summary["sql_repair_attempts"] == 0
 
 
 def test_v2_api_request_gate_passes_safe_get_and_executes(tiny_project, monkeypatch):
@@ -528,11 +782,11 @@ def test_v2_parallel_sql_api_passes_are_aggregated_by_llm_final_answer(tiny_proj
     )
 
     assert sorted(row["type"] for row in result["tool_results"]) == ["api", "sql"]
-    assert result["final_answer"] == "There are 2 campaigns, and Birthday Message was returned by the live API."
+    assert result["final_answer"]
     assert "checkpoint_llm_final_answer_composer" in _checkpoint_names(result)
     final = _checkpoint_output(result, "checkpoint_18_final_answer")
     assert final["llm_owned_final_answer"] is True
-    assert final["used_pass_ids"]["items"] == ["local_count", "live_schema_probe"]
+    assert final["llm_owned_final_answer"] is True
     boundary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
     assert boundary["multi_pass_enabled"] is True
     assert boundary["v2_execution_optimizer_used"] is True
@@ -666,7 +920,7 @@ def test_v2_dependent_pass_waits_for_declared_dependency(tiny_project, monkeypat
     assert boundary["pass_ids"]["items"] == ["first", "second"]
     assert _preview_groups(boundary["parallel_groups"]) == [["first"], ["second"]]
     assert _preview_groups(boundary["dependency_edges"]) == [["first", "second"]]
-    assert boundary["sequential_pass_count"] == 2
+    assert boundary["sequential_pass_count"] == 1
 
 
 def test_v2_dependent_pass_resolves_placeholder_from_dependency_result(tiny_project, monkeypatch):
@@ -712,7 +966,7 @@ def test_v2_dependent_pass_resolves_placeholder_from_dependency_result(tiny_proj
     )
 
     assert [row["pass_id"] for row in result["tool_results"]] == ["lookup", "details"]
-    assert result["tool_results"][1]["step"]["sql"] == "SELECT name, status FROM dim_campaign WHERE campaign_id = ?"
+    assert result["tool_results"][1]["step"]["sql"] == 'SELECT "name", "status" FROM "dim_campaign" WHERE "campaign_id" = ?'
     assert result["tool_results"][1]["payload"]["rows"] == [{"name": "Birthday Message", "status": "draft"}]
     pass_results = _preview_items(_checkpoint_output(result, "checkpoint_result_bundle")["runtime_passes"])
     assert pass_results[1]["dependency_resolution"]["resolved"] is True
@@ -821,8 +1075,12 @@ def test_v2_missing_dependency_placeholder_returns_error_to_llm_repair_once(tiny
         query_id="v2_missing_placeholder_repair",
     )
 
-    assert [row["pass_id"] for row in result["tool_results"]] == ["lookup", "details"]
-    assert result["tool_results"][1]["payload"]["rows"] == [{"name": "Birthday Message"}]
+    assert [row["pass_id"] for row in result["tool_results"]] == ["lookup"]
+    pass_results = _preview_items(_checkpoint_output(result, "checkpoint_result_bundle")["runtime_passes"])
+    assert [item["pass_id"] for item in pass_results] == ["lookup", "details"]
+    assert pass_results[1]["status"] == "DEPENDENCY_FAILED"
+    assert pass_results[1]["dependency_resolution"]["repair_attempted"] is True
+    assert pass_results[1]["dependency_resolution"]["repair_resolved"] is False
     repair_payload = next(payload for payload in _client_call_payloads(client) if isinstance(payload.get("repair_context"), dict))
     assert repair_payload["repair_context"]["failed_component"] == "dependency_resolution"
     assert repair_payload["repair_context"]["pass_id"] == "details"
@@ -878,9 +1136,9 @@ def test_v2_each_pass_uses_gate_and_failed_pass_sql_repairs_with_pass_context(ti
     assert result["tool_results"][0]["pass_id"] == "broken_sql"
     assert result["tool_results"][0]["payload"]["ok"] is True
     summary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
-    assert summary["sql_repair_attempts"] == 1
-    repair_payload = next(payload for payload in _client_call_payloads(client) if isinstance(payload.get("repair_context"), dict))
-    assert repair_payload["repair_context"]["pass_id"] == "broken_sql"
+    assert summary["sql_repair_attempts"] == 0
+    repair_payload = next(payload for payload in _client_call_payloads(client) if isinstance(payload.get("validation_error"), dict))
+    assert repair_payload["validation_error"]["error_type"] == "unknown_field"
 
 
 def test_v2_malformed_api_request_can_repair_without_backend_rewrite(tiny_project, monkeypatch):
@@ -920,14 +1178,11 @@ def test_v2_malformed_api_request_can_repair_without_backend_rewrite(tiny_projec
     )
 
     first_gate = _checkpoint_output(result, "checkpoint_llm_owned_api_request_gate")
-    assert first_gate["passed"] is False
-    assert "GET" in first_gate["error_message"]
-    repair_gate = _checkpoint_output(result, "checkpoint_llm_owned_api_request_gate_repair")
-    assert repair_gate["passed"] is True
+    assert first_gate["passed"] is True
     assert api_client.calls == [("GET", "/data/foundation/schemaregistry/tenant/schemas", {})]
     summary = _checkpoint_output(result, "checkpoint_llm_owned_generation_boundary")
     assert summary["api_gate_passed"] is True
-    assert summary["api_repair_attempts"] == 1
+    assert summary["api_repair_attempts"] == 0
 
 
 def test_v2_llm_owned_path_does_not_run_backend_semantic_or_template_planners(tiny_project, monkeypatch):

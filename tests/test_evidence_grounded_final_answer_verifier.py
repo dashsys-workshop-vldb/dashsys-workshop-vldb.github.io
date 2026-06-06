@@ -363,6 +363,20 @@ def test_claim_extractor_ignores_generic_sql_api_evidence_phrases() -> None:
     assert "The API evidence" not in entity_values
 
 
+def test_claim_extractor_does_not_extend_entity_name_across_newline_into_sentence() -> None:
+    answer = (
+        "Here are some of the schemas you have:\n"
+        "- Adhoc XDM Schema for dataset JOJourneyVersionsDs_10b7a67d-7a5d-47bf-8ccc-f130ea4b7103\n\n"
+        "There are 50 schemas in total."
+    )
+
+    claims = extract_final_answer_claims(answer)
+    entity_values = {claim.value for claim in claims if claim.type == "ENTITY_NAME"}
+
+    assert "JOJourneyVersionsDs_10b7a67d-7a5d-47bf-8ccc-f130ea4b7103" in entity_values
+    assert not any("\n" in value or " There" in value for value in entity_values)
+
+
 def test_claim_extractor_does_not_count_numbers_inside_quoted_names() -> None:
     claims = extract_final_answer_claims('The field for "Person: Birthday Today 001" is person.birthDate.')
 

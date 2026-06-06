@@ -48,6 +48,17 @@ def _evaluate_slot(slot: RequiredAnswerSlot, pass_lookup: dict[str, dict[str, An
             positive_assertion_allowed=False,
         )
 
+    if slot.type == "CONCEPT" and _has_direct_concept_pass(supporting):
+        answers = _direct_answers_from_passes(supporting)
+        return EvidenceSlotState(
+            slot_id=slot.slot_id,
+            status="SATISFIED",
+            source_scope=slot.source_scope,
+            supporting_task_ids=[str(item.get("pass_id") or "") for item in supporting],
+            facts=[{"answer": answer} for answer in answers[:3]],
+            positive_assertion_allowed=True,
+        )
+
     statuses = {_status(item) for item in supporting}
     if statuses & {"DEPENDENCY_FAILED", "DEPENDENCY_BLOCKED", "BUDGET_EXCEEDED"}:
         return _state(slot, "DEPENDENCY_FAILED", supporting, caveats=["Required dependency failed."], positive=False)
@@ -106,9 +117,9 @@ def _state_from_rows(
             missing = required or ["count"]
             positive = False
     elif slot.type == "DATE":
-        if _has_any_field(rows, required):
+        if date_values and _has_any_date_field(rows, required):
             status = "SATISFIED"
-        elif fallback and _has_any_field(rows, fallback):
+        elif date_values and fallback and _has_any_date_field(rows, fallback):
             status = "PARTIAL"
         else:
             status = "PARTIAL"
@@ -193,6 +204,43 @@ def _rows_from_result(result: dict[str, Any]) -> list[dict[str, Any]]:
     return []
 
 
+def _direct_answers_from_passes(passes: list[dict[str, Any]]) -> list[str]:
+    answers: list[str] = []
+    for item in passes:
+        for source in item.get("source_results", []) if isinstance(item.get("source_results"), list) else []:
+            if not isinstance(source, dict):
+                continue
+            if str(source.get("source") or item.get("path") or "").upper() != "DIRECT":
+                continue
+            if str(source.get("status") or "").upper() != "SUCCESS":
+                continue
+            result = source.get("result") if isinstance(source.get("result"), dict) else {}
+            answer = str(result.get("answer") or "").strip()
+            if answer:
+                answers.append(answer)
+        result = item.get("result") if isinstance(item.get("result"), dict) else {}
+        if str(item.get("path") or item.get("source") or "").upper() == "DIRECT" and str(item.get("status") or "").upper() == "SUCCESS":
+            answer = str(result.get("answer") or "").strip()
+            if answer:
+                answers.append(answer)
+    return _dedupe(answers)
+
+
+def _has_direct_concept_pass(passes: list[dict[str, Any]]) -> bool:
+    for item in passes:
+        if str(item.get("path") or item.get("source") or "").upper() in {"DIRECT", "CONCEPT", "NO_EVIDENCE_CONCEPT", "NONE"}:
+            return True
+        for source in item.get("source_results", []) if isinstance(item.get("source_results"), list) else []:
+            if isinstance(source, dict) and str(source.get("source") or source.get("scope") or "").upper() in {
+                "DIRECT",
+                "CONCEPT",
+                "NO_EVIDENCE_CONCEPT",
+                "NONE",
+            }:
+                return True
+    return False
+
+
 def _has_zero_rows(passes: list[dict[str, Any]]) -> bool:
     for item in passes:
         if _status(item) in {"EMPTY", "LIVE_EMPTY"}:
@@ -233,9 +281,10 @@ def _date_values(rows: list[dict[str, Any]], field_names: list[str]) -> list[str
     for row in rows:
         for key, value in row.items():
             norm = _norm_key(key)
-            if norm in wanted or any(token in norm for token in ["date", "time", "created", "updated", "modified", "deployed", "published", "start", "end"]):
-                if value not in (None, ""):
-                    values.append(str(value))
+            if value in (None, ""):
+                continue
+            if _is_date_like_field(norm) or (norm in wanted and _looks_like_date_value(value)):
+                values.append(str(value))
     return _dedupe(values)
 
 
@@ -265,6 +314,34 @@ def _has_any_field(rows: list[dict[str, Any]], fields: list[str]) -> bool:
             if _norm_key(key) in wanted and value not in (None, ""):
                 return True
     return False
+
+
+def _has_any_date_field(rows: list[dict[str, Any]], fields: list[str]) -> bool:
+    wanted = {_norm_key(field) for field in fields if field}
+    if not wanted:
+        return False
+    for row in rows:
+        for key, value in row.items():
+            norm = _norm_key(key)
+            if norm not in wanted or value in (None, ""):
+                continue
+            if _is_date_like_field(norm) or _looks_like_date_value(value):
+                return True
+    return False
+
+
+def _is_date_like_field(norm_key: str) -> bool:
+    return any(token in norm_key for token in ["date", "time", "created", "updated", "modified", "deployed", "published", "start", "end"])
+
+
+def _looks_like_date_value(value: Any) -> bool:
+    text = str(value or "").strip()
+    if not text:
+        return False
+    return bool(
+        re.search(r"\b20\d{2}-\d{2}-\d{2}(?:[T ][0-9:.+-]+Z?)?\b", text)
+        or re.search(r"\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2},?\s+20\d{2}\b", text, flags=re.I)
+    )
 
 
 def _rows_look_like_relationship(rows: list[dict[str, Any]]) -> bool:

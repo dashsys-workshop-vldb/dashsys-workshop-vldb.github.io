@@ -231,7 +231,11 @@ def _entity_name_claims(text: str, occupied: list[tuple[int, int]]) -> list[tupl
         value = (match.group(1) or match.group(2)).strip()
         if value:
             out.append((_claim(text, "ENTITY_NAME", value, match.start(), match.end()), match.start(), match.end()))
-    for match in re.finditer(r"\b[A-Z][A-Za-z0-9_-]+(?:\s+[A-Z][A-Za-z0-9_-]+){1,5}\b", text):
+    for match in re.finditer(r"\b[A-Z][A-Za-z0-9_-]*_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", text, flags=re.I):
+        if _overlaps(match.start(), match.end(), occupied):
+            continue
+        out.append((_claim(text, "ENTITY_NAME", match.group(0).strip(), match.start(), match.end()), match.start(), match.end()))
+    for match in re.finditer(r"\b[A-Z][A-Za-z0-9_-]+(?:[ \t]+[A-Z][A-Za-z0-9_-]+){1,5}\b", text):
         if _overlaps(match.start(), match.end(), occupied):
             continue
         value = match.group(0).strip()
@@ -330,6 +334,10 @@ def _looks_like_conceptual_status_example(text: str, start: int, end: int, statu
     if str(status).lower() not in {"active", "inactive", "draft", "deployed", "published", "unpublished"}:
         return False
     context = text[max(0, start - 120) : min(len(text), end + 120)].lower()
-    conceptual_signal = bool(re.search(r"\b(refers to|typically|can mean|can include|includes|such as|e\\.g\\.|for example|concept|state encompasses|is considered|unlike|differs? from|not currently|not running)\b", context))
+    status_text = re.escape(str(status).lower())
+    conceptual_signal = bool(
+        re.search(r"\b(refers to|typically|can mean|can include|includes|such as|e\\.g\\.|for example|concept|state encompasses|is considered|unlike|differs? from|not currently|not running)\b", context)
+        or re.search(rf"\b{status_text}\s+[a-z][\w-]*\s+(?:is|means|refers to)\s+(?:a|an|the|that)\b", context)
+    )
     data_signal = bool(re.search(r"\b(status|state)\s*[:=]\s*$", context[: max(0, start - max(0, start - 120))]))
     return conceptual_signal and not data_signal

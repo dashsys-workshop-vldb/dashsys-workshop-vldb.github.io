@@ -56,12 +56,12 @@ def _check_slot(answer: str, normalized: str, slot: Any, state: EvidenceSlotStat
             return True, None, None
         return False, "missing_slot_coverage", "Partial slot requires available facts and a scoped caveat."
     if state.status == "ZERO_ROWS":
+        if _has_no_match_caveat(normalized):
+            return True, None, None
         if _contains_positive_existence_claim(normalized, slot):
             if slot.type == "RELATION":
                 return False, "relation_claim_unsupported", "Positive relation claim is not allowed for zero-row relation evidence."
             return False, "zero_row_positive_claim", "Positive existence/example claim is not allowed for zero-row evidence."
-        if _has_no_match_caveat(normalized):
-            return True, None, None
         return False, "missing_slot_coverage", "Zero-row slot requires scoped no-match wording."
     if state.status == "API_UNAVAILABLE":
         if _turns_api_error_into_no_data(normalized):
@@ -141,7 +141,14 @@ def _has_scoped_caveat(normalized: str, state: EvidenceSlotState) -> bool:
 
 
 def _has_no_match_caveat(normalized: str) -> bool:
-    return "no matching" in normalized or "no match" in normalized or "zero matching" in normalized
+    return bool(
+        "no matching" in normalized
+        or "no match" in normalized
+        or "zero matching" in normalized
+        or "not found" in normalized
+        or "none found" in normalized
+        or re.search(r"\bno\b.{0,80}\bfound\b", normalized)
+    )
 
 
 def _has_api_unavailable_caveat(normalized: str) -> bool:

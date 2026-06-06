@@ -10,14 +10,37 @@ from dashagent.v2_semantic_ir import parse_semantic_ir_from_json_or_line_protoco
 from dashagent.v2_semantic_ir_compiler import compile_semantic_ir_to_plan_payload
 from dashagent.v2_semantic_ir_context import build_allowed_api_context_card, build_allowed_local_schema_card
 from dashagent.v2_semantic_ir_planner import (
+    MICRO_DIRECT_TOOL_NAME,
+    MICRO_API_TOOL_NAME,
+    MICRO_LOCAL_COUNT_TOOL_NAME,
+    MICRO_LOCAL_QUERY_TOOL_NAME,
+    MICRO_MIXED_TOOL_NAME,
+    PLANNER_PROFILE_DEEPSEEK_AUTO_TOOL,
+    PLANNER_PROFILE_DEEPSEEK_JSON_TOOL,
+    PLANNER_PROFILE_DEEPSEEK_MICRO_TOOLS,
+    PLANNER_PROFILE_DEEPSEEK_REQUIRED_TOOL,
+    SEMANTIC_IR_JSON_TOOL_NAME,
     _build_semantic_ir_prompt_context,
+    _planner_extra_body,
+    _planner_max_tokens,
+    _planner_profile,
+    _planner_schema_profile,
     _semantic_ir_repair_user_prompt,
     _semantic_ir_source_selection_rules,
     _semantic_ir_system_prompt,
     _semantic_ir_user_prompt,
+    _ultra_compact_schema_card,
+    run_semantic_ir_toolcall_planner,
     semantic_ir_tool_schema,
 )
 from dashagent.v2_semantic_ir_validator import SemanticIRValidationResult, SemanticIRValidator
+
+
+@pytest.fixture(autouse=True)
+def _clear_planner_profile_env(monkeypatch):
+    monkeypatch.delenv("HERMES_V2_PLANNER_PROFILE", raising=False)
+    monkeypatch.delenv("HERMES_V2_DEEPSEEK_DEFAULT_PLANNER_PROFILE", raising=False)
+    monkeypatch.delenv("LLM_ENDPOINT_LABEL", raising=False)
 
 
 class ToolCallSemanticIRClient:
@@ -36,7 +59,7 @@ class ToolCallSemanticIRClient:
 
     def generate_messages(self, messages, tools=None, tool_choice=None, parallel_tool_calls=None, **kwargs):
         self.calls.append({"messages": messages, "tools": tools, "tool_choice": tool_choice, "parallel_tool_calls": parallel_tool_calls, **kwargs})
-        requested_tool = (tool_choice or {}).get("function", {}).get("name")
+        requested_tool = _requested_tool_name(tool_choice)
         if requested_tool == "submit_schema_binding_plan":
             if self.responses and isinstance(self.responses[0], dict) and self.responses[0].get("tool_name") == requested_tool:
                 response = self.responses.pop(0)
@@ -70,6 +93,11 @@ class ToolCallSemanticIRClient:
         }
 
 
+class DeepSeekToolCallSemanticIRClient(ToolCallSemanticIRClient):
+    def model_name(self) -> str:
+        return "deepseek-v4-flash-local"
+
+
 class NoToolCallClient(ToolCallSemanticIRClient):
     def provider_name(self) -> str:
         return "openai"
@@ -78,7 +106,7 @@ class NoToolCallClient(ToolCallSemanticIRClient):
 class ToolNameAwareClient(ToolCallSemanticIRClient):
     def generate_messages(self, messages, tools=None, tool_choice=None, parallel_tool_calls=None, **kwargs):
         self.calls.append({"messages": messages, "tools": tools, "tool_choice": tool_choice, "parallel_tool_calls": parallel_tool_calls, **kwargs})
-        requested_tool = (tool_choice or {}).get("function", {}).get("name")
+        requested_tool = _requested_tool_name(tool_choice)
         if requested_tool == "submit_schema_binding_plan":
             if self.responses and isinstance(self.responses[0], dict) and self.responses[0].get("tool_name") == requested_tool:
                 response = self.responses.pop(0)
@@ -96,7 +124,9 @@ class ToolNameAwareClient(ToolCallSemanticIRClient):
                 "tool_calls": [],
                 "finish_reason": "stop",
             }
-        expected_tool = response.get("tool_name") or (tool_choice or {}).get("function", {}).get("name") or "submit_semantic_ir_plan"
+        if isinstance(response.get("raw_result"), dict):
+            return response["raw_result"]
+        expected_tool = response.get("tool_name") or _requested_tool_name(tool_choice) or "submit_semantic_ir_plan"
         arguments = response.get("arguments", response)
         return {
             "ok": True,
@@ -122,7 +152,22 @@ def _tool_response(tool_name: str, arguments: dict) -> dict:
         "content": "",
         "tool_calls": [{"id": "call_1", "name": tool_name, "arguments": arguments}],
         "finish_reason": "tool_calls",
-    }
+        }
+
+
+def _requested_tool_name(tool_choice) -> str | None:
+    if isinstance(tool_choice, dict):
+        return (tool_choice.get("function") or {}).get("name")
+    return None
+
+
+class TimeoutThenToolCallClient(ToolCallSemanticIRClient):
+    def generate_messages(self, messages, tools=None, tool_choice=None, parallel_tool_calls=None, **kwargs):
+        self.calls.append({"messages": messages, "tools": tools, "tool_choice": tool_choice, "parallel_tool_calls": parallel_tool_calls, **kwargs})
+        if len(self.calls) == 1:
+            raise TimeoutError("semantic_ir_planner_timeout_after_45s")
+        payload = self.responses.pop(0)
+        return _tool_response("submit_semantic_ir_plan", payload)
 
 
 def _schema_binding_tool_response(binding_id: str = "b_schema", table: str = "dim_schema") -> dict:
@@ -290,7 +335,19 @@ def _direct_plan() -> dict:
     return {
         "route": "DIRECT",
         "direct_answer": "A schema defines the structure and meaning of data fields.",
-        "tasks": [],
+        "tasks": [
+            {
+                "task_id": "t_direct",
+                "kind": "CONCEPT",
+                "operation": "EXPLAIN",
+                "source": "NONE",
+                "local_query": None,
+                "api_query": None,
+                "depends_on": [],
+                "description": "Explain schema concept.",
+                "required": True,
+            }
+        ],
         "aggregation_instruction": "Return the direct answer.",
     }
 
@@ -339,6 +396,160 @@ def _local_count_plan() -> dict:
         },
         "aggregation_instruction": "Answer with the count from t1.",
     }
+
+
+def _local_campaign_date_plan() -> dict:
+    return {
+        "route": "EVIDENCE",
+        "direct_answer": None,
+        "tasks": [
+            {
+                "task_id": "t_campaign_date",
+                "kind": "LOCAL_QUERY",
+                "operation": "DATE",
+                "source": "LOCAL_SNAPSHOT",
+                "local_query": {
+                    "table": "dim_campaign",
+                    "fields": ["PUBLISHEDAT"],
+                    "filters": [{"field": "NAME", "op": "=", "value": "Birthday Message"}],
+                    "limit": 1,
+                    "count": False,
+                },
+                "api_query": None,
+                "depends_on": [],
+                "description": "Find the local published date for Birthday Message.",
+                "required": True,
+            }
+        ],
+        "answer_contract": {
+            "required_slots": [
+                {
+                    "slot_id": "s_published_date",
+                    "type": "DATE",
+                    "required": True,
+                    "subject": "Birthday Message",
+                    "object": "journey",
+                    "relation": "published",
+                    "source_scope": "LOCAL_SNAPSHOT",
+                    "satisfied_by_tasks": ["t_campaign_date"],
+                    "required_fields": ["PUBLISHEDAT"],
+                    "acceptable_fallback_fields": [],
+                    "expected_status_filter": None,
+                    "zero_rows_semantics": "NO_MATCH",
+                    "if_missing": "FAIL_REQUIRED",
+                    "must_not_assert_positive_if_zero_rows": True,
+                    "notes": None,
+                }
+            ],
+            "optional_slots": [],
+            "answer_style": "CONCISE",
+            "global_scope": "LOCAL_SNAPSHOT",
+            "contract_version": "v1",
+        },
+        "aggregation_instruction": "Answer with the published date from t_campaign_date.",
+    }
+
+
+def _mixed_inactive_api_only_plan() -> dict:
+    return {
+        "direct_answer": None,
+        "tasks": [
+            {
+                "task_id": "t1",
+                "kind": "CONCEPT",
+                "operation": "EXPLAIN",
+                "source": "NONE",
+                "local_query": None,
+                "api_query": None,
+                "depends_on": [],
+                "description": "Explain inactive journey.",
+                "required": True,
+            },
+            {
+                "task_id": "t2",
+                "kind": "LIVE_QUERY",
+                "operation": "LIST",
+                "source": "LIVE_API",
+                "local_query": None,
+                "api_query": {"endpoint_id": "journey_list", "method": "GET", "path_params": {}, "query_params": {"limit": 100}},
+                "depends_on": [],
+                "description": "List inactive journeys from the live API.",
+                "required": True,
+            },
+        ],
+        "answer_contract": {
+            "required_slots": [
+                {
+                    "slot_id": "s_concept",
+                    "type": "CONCEPT",
+                    "required": True,
+                    "subject": "inactive journey",
+                    "object": "definition",
+                    "relation": "means",
+                    "source_scope": "NONE",
+                    "satisfied_by_tasks": ["t1"],
+                    "required_fields": [],
+                    "acceptable_fallback_fields": [],
+                    "expected_status_filter": None,
+                    "zero_rows_semantics": "NOT_APPLICABLE",
+                    "if_missing": "SCOPED_UNAVAILABLE_CAVEAT",
+                    "must_not_assert_positive_if_zero_rows": False,
+                    "notes": None,
+                },
+                {
+                    "slot_id": "s_inactive_journeys",
+                    "type": "LIST",
+                    "required": True,
+                    "subject": "inactive journeys",
+                    "object": "journeys",
+                    "relation": "list",
+                    "source_scope": "LIVE_API",
+                    "satisfied_by_tasks": ["t2"],
+                    "required_fields": ["id", "name", "status"],
+                    "acceptable_fallback_fields": [],
+                    "expected_status_filter": None,
+                    "zero_rows_semantics": "NO_MATCH",
+                    "if_missing": "SCOPED_UNAVAILABLE_CAVEAT",
+                    "must_not_assert_positive_if_zero_rows": True,
+                    "notes": None,
+                },
+            ],
+            "optional_slots": [],
+            "answer_style": "CONCISE",
+            "global_scope": "NONE",
+            "contract_version": "v1",
+        },
+        "aggregation_instruction": "Explain inactive journey and list inactive journeys.",
+    }
+
+
+def _mixed_inactive_local_plan() -> dict:
+    payload = _mixed_inactive_api_only_plan()
+    payload["tasks"][1] = {
+        "task_id": "t2",
+        "kind": "LOCAL_QUERY",
+        "operation": "LIST",
+        "source": "LOCAL_SNAPSHOT",
+        "local_query": {
+            "table": "dim_campaign",
+            "fields": ["NAME", "STATUS"],
+            "filters": [],
+            "limit": 50,
+            "count": False,
+        },
+        "api_query": None,
+        "depends_on": [],
+        "description": "List local journey records and statuses.",
+        "required": True,
+    }
+    payload["answer_contract"]["required_slots"][1].update(
+        {
+            "source_scope": "LOCAL_SNAPSHOT",
+            "satisfied_by_tasks": ["t2"],
+            "required_fields": ["NAME", "STATUS"],
+        }
+    )
+    return payload
 
 
 def _unsupported_local_group_plan() -> dict:
@@ -496,6 +707,58 @@ def _live_plan() -> dict:
     return payload
 
 
+def _schema_api_only_plan() -> dict:
+    payload = _live_plan()
+    payload["tasks"][0]["task_id"] = "live_schemas"
+    payload["tasks"][0]["description"] = "List schemas from the live API."
+    payload["answer_contract"]["required_slots"][0].update(
+        {
+            "slot_id": "s_schemas",
+            "type": "LIST",
+            "subject": "schemas",
+            "source_scope": "LIVE_API",
+            "satisfied_by_tasks": ["live_schemas"],
+            "required_fields": ["id", "name"],
+            "zero_rows_semantics": "NO_MATCH",
+            "if_missing": "SCOPED_UNAVAILABLE_CAVEAT",
+        }
+    )
+    return payload
+
+
+def _birthday_api_only_plan() -> dict:
+    payload = _live_plan()
+    payload["tasks"][0]["task_id"] = "live_birthday_published"
+    payload["tasks"][0].update(
+        {
+            "kind": "LIVE_QUERY",
+            "operation": "DATE",
+            "source": "LIVE_API",
+            "local_query": None,
+            "api_query": {"endpoint_id": "journey_list", "method": "GET", "path_params": {}, "query_params": {"name": "Birthday Message"}},
+            "description": "Find Birthday Message published date from live journeys API.",
+        }
+    )
+    payload["answer_contract"]["required_slots"][0].update(
+        {
+            "slot_id": "s_birthday_published",
+            "type": "DATE",
+            "subject": "Birthday Message",
+            "object": "journey",
+            "relation": "published",
+            "source_scope": "LIVE_API",
+            "satisfied_by_tasks": ["live_birthday_published"],
+            "required_fields": ["published_at"],
+            "acceptable_fallback_fields": [],
+            "zero_rows_semantics": "NO_MATCH",
+            "if_missing": "SCOPED_UNAVAILABLE_CAVEAT",
+        }
+    )
+    payload["answer_contract"]["answer_style"] = "CONCISE"
+    payload["answer_contract"]["global_scope"] = "LIVE_API"
+    return payload
+
+
 def _local_and_live_plan() -> dict:
     payload = _local_count_plan()
     payload["tasks"][0].update(
@@ -546,10 +809,199 @@ def test_tool_schema_declares_submit_semantic_ir_plan():
     assert "binding_id" in task_schema["properties"]["local_query"]["anyOf"][1]["properties"]
 
 
+def test_deepseek_compact_profile_uses_smaller_required_tool_schema(monkeypatch):
+    monkeypatch.setenv("DASHAGENT_LLM_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_MODEL", "deepseek-v4-flash-local")
+    profile = _planner_schema_profile()
+    tool = semantic_ir_tool_schema(profile)
+    task_schema = tool["function"]["parameters"]["properties"]["tasks"]["items"]
+
+    assert profile == "deepseek_compact"
+    assert tool["function"]["name"] == "submit_semantic_ir_plan"
+    assert task_schema["required"] == ["task_id", "kind", "operation", "source", "local_query", "api_query", "depends_on", "description", "required"]
+    assert "result_contract" not in task_schema["properties"]
+    assert "requires_raw_sql_fallback" not in task_schema["properties"]
+    assert len(json.dumps(tool, sort_keys=True)) < len(json.dumps(semantic_ir_tool_schema("default"), sort_keys=True))
+    assert _planner_max_tokens(profile) == 512
+    assert _planner_max_tokens("deepseek_ultra_compact") == 384
+    assert _planner_extra_body(profile) == {"chat_template_kwargs": {"enable_thinking": False}}
+
+
+def test_planner_profile_env_controls_tool_choice_without_changing_schema_profile(monkeypatch):
+    monkeypatch.setenv("DASHAGENT_LLM_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_MODEL", "deepseek-v4-flash-local")
+    monkeypatch.setenv("HERMES_V2_PLANNER_PROFILE", PLANNER_PROFILE_DEEPSEEK_AUTO_TOOL)
+    client = ToolCallSemanticIRClient([_local_count_plan()])
+
+    result = run_semantic_ir_toolcall_planner(
+        client=client,
+        user_prompt="How many schema records are in the local snapshot?",
+        schema_context=_schema_context(),
+        endpoint_context=_endpoint_context(),
+        fallback_to_atomic=False,
+    )
+
+    assert _planner_profile(client) == PLANNER_PROFILE_DEEPSEEK_AUTO_TOOL
+    assert result.plan_payload["passes"][0]["sql"]["query"] == 'SELECT COUNT(*) AS count FROM "dim_schema"'
+    assert result.diagnostics["planner_schema_profile"] == "default"
+    assert result.diagnostics["planner_profile"] == PLANNER_PROFILE_DEEPSEEK_AUTO_TOOL
+    assert result.diagnostics["planner_tool_choice"] == "auto"
+    assert client.calls[0]["tool_choice"] == "auto"
+
+
+def test_deepseek_local_defaults_to_sweep_selected_micro_tools(monkeypatch):
+    monkeypatch.delenv("HERMES_V2_PLANNER_PROFILE", raising=False)
+    monkeypatch.delenv("HERMES_V2_DEEPSEEK_DEFAULT_PLANNER_PROFILE", raising=False)
+    client = DeepSeekToolCallSemanticIRClient([])
+
+    assert _planner_profile(client) == PLANNER_PROFILE_DEEPSEEK_MICRO_TOOLS
+    assert _planner_profile(ToolCallSemanticIRClient([])) == "current"
+
+
+def test_local_qwen_native_baseline_profile_is_isolated_from_deepseek(monkeypatch):
+    monkeypatch.delenv("HERMES_V2_PLANNER_PROFILE", raising=False)
+    monkeypatch.delenv("HERMES_V2_DEEPSEEK_DEFAULT_PLANNER_PROFILE", raising=False)
+    monkeypatch.setenv("DASHAGENT_LLM_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_MODEL", "local-qwen-native-baseline")
+    monkeypatch.setenv("LLM_ENDPOINT_LABEL", "local_qwen_native_baseline")
+
+    assert _planner_profile() == "current"
+    assert _planner_schema_profile() == "default"
+
+    monkeypatch.setenv("OPENAI_MODEL", "deepseek-v4-flash-local")
+    monkeypatch.setenv("LLM_ENDPOINT_LABEL", "msi_deepseek_v4_flash_non_thinking")
+
+    assert _planner_profile() == PLANNER_PROFILE_DEEPSEEK_MICRO_TOOLS
+    assert _planner_schema_profile() == "deepseek_compact"
+
+
+def test_required_tool_planner_profile_uses_required_tool_choice(monkeypatch):
+    monkeypatch.setenv("HERMES_V2_PLANNER_PROFILE", PLANNER_PROFILE_DEEPSEEK_REQUIRED_TOOL)
+    client = ToolCallSemanticIRClient([_local_count_plan()])
+
+    result = run_semantic_ir_toolcall_planner(
+        client=client,
+        user_prompt="How many schema records are in the local snapshot?",
+        schema_context=_schema_context(),
+        endpoint_context=_endpoint_context(),
+        fallback_to_atomic=False,
+    )
+
+    assert result.diagnostics["planner_profile"] == PLANNER_PROFILE_DEEPSEEK_REQUIRED_TOOL
+    assert result.diagnostics["planner_tool_choice"] == "required"
+    assert client.calls[0]["tool_choice"] == "required"
+
+
+def test_json_string_tool_profile_normalizes_into_semantic_ir(monkeypatch):
+    monkeypatch.setenv("HERMES_V2_PLANNER_PROFILE", PLANNER_PROFILE_DEEPSEEK_JSON_TOOL)
+    client = ToolNameAwareClient(
+        [
+            {
+                "tool_name": SEMANTIC_IR_JSON_TOOL_NAME,
+                "arguments": {"semantic_ir_json": json.dumps(_local_count_plan())},
+            }
+        ]
+    )
+
+    result = run_semantic_ir_toolcall_planner(
+        client=client,
+        user_prompt="How many schema records are in the local snapshot?",
+        schema_context=_schema_context(),
+        endpoint_context=_endpoint_context(),
+        fallback_to_atomic=False,
+    )
+
+    assert result.plan_payload["passes"][0]["sql"]["query"] == 'SELECT COUNT(*) AS count FROM "dim_schema"'
+    assert result.diagnostics["planner_profile"] == PLANNER_PROFILE_DEEPSEEK_JSON_TOOL
+    assert result.diagnostics["planner_tool_name"] == SEMANTIC_IR_JSON_TOOL_NAME
+    assert result.diagnostics["sdk_toolcall_semantic_ir_used"] is True
+    assert client.calls[0]["tools"][0]["function"]["name"] == SEMANTIC_IR_JSON_TOOL_NAME
+
+
+def test_micro_tool_profile_normalizes_direct_and_local_count(monkeypatch):
+    monkeypatch.setenv("HERMES_V2_PLANNER_PROFILE", PLANNER_PROFILE_DEEPSEEK_MICRO_TOOLS)
+    client = ToolNameAwareClient(
+        [
+            {
+                "tool_name": MICRO_DIRECT_TOOL_NAME,
+                "arguments": {
+                    "direct_answer": "A schema defines the structure and meaning of data fields.",
+                    "description": "Explain schema concept.",
+                },
+            }
+        ]
+    )
+    direct = run_semantic_ir_toolcall_planner(
+        client=client,
+        user_prompt="What is a schema?",
+        schema_context=_schema_context(),
+        endpoint_context=_endpoint_context(),
+        fallback_to_atomic=False,
+    )
+    assert direct.plan_payload["route"] == "LLM_DIRECT"
+    assert direct.plan_payload["passes"][0]["path"] == "DIRECT"
+
+    client = ToolNameAwareClient(
+        [
+            {
+                "tool_name": MICRO_LOCAL_COUNT_TOOL_NAME,
+                "arguments": {
+                    "table": "dim_schema",
+                    "filters": [],
+                    "description": "Count schema records.",
+                    "answer_contract": _local_count_plan()["answer_contract"],
+                },
+            }
+        ]
+    )
+    count = run_semantic_ir_toolcall_planner(
+        client=client,
+        user_prompt="How many schema records are in the local snapshot?",
+        schema_context=_schema_context(),
+        endpoint_context=_endpoint_context(),
+        fallback_to_atomic=False,
+    )
+
+    assert count.plan_payload["passes"][0]["sql"]["query"] == 'SELECT COUNT(*) AS count FROM "dim_schema"'
+    assert count.diagnostics["planner_profile"] == PLANNER_PROFILE_DEEPSEEK_MICRO_TOOLS
+    assert count.diagnostics["planner_tool_name"] == MICRO_LOCAL_COUNT_TOOL_NAME
+    assert MICRO_LOCAL_COUNT_TOOL_NAME in count.diagnostics["planner_tool_names"]
+
+
+def test_micro_evidence_tools_keep_answer_contract_optional_for_secondary_checker():
+    from dashagent.v2_semantic_ir_planner import semantic_ir_micro_tool_schemas
+
+    by_name = {tool["function"]["name"]: tool for tool in semantic_ir_micro_tool_schemas()}
+
+    assert "answer_contract" not in by_name[MICRO_DIRECT_TOOL_NAME]["function"]["parameters"]["required"]
+    assert "answer_contract" not in by_name[MICRO_LOCAL_COUNT_TOOL_NAME]["function"]["parameters"]["required"]
+    assert "answer_contract" in by_name[MICRO_LOCAL_COUNT_TOOL_NAME]["function"]["parameters"]["properties"]
+
+
+def test_deepseek_micro_mixed_tool_schema_stays_compact_for_toolcall_reliability():
+    from dashagent.v2_semantic_ir_planner import semantic_ir_micro_tool_schemas
+
+    by_name = {tool["function"]["name"]: tool for tool in semantic_ir_micro_tool_schemas()}
+    mixed = by_name[MICRO_MIXED_TOOL_NAME]
+    tasks_schema = mixed["function"]["parameters"]["properties"]["tasks"]["items"]
+
+    assert len(json.dumps(mixed, sort_keys=True)) < 3600
+    assert "local_query" in tasks_schema["properties"]
+    assert "api_query" in tasks_schema["properties"]
+    assert "result_contract" not in tasks_schema["properties"]
+
+
+def test_deepseek_micro_tool_bundle_stays_compact_for_local_toolcall_model():
+    from dashagent.v2_semantic_ir_planner import semantic_ir_micro_tool_schemas
+
+    assert len(json.dumps(semantic_ir_micro_tool_schemas(), sort_keys=True, separators=(",", ":"))) < 5600
+
+
 def test_semantic_ir_parses_direct_and_local_live_shapes():
     direct = parse_semantic_ir_from_json_or_line_protocol(json.dumps(_direct_plan()))
     assert direct.route == "DIRECT"
-    assert direct.tasks == []
+    assert direct.tasks[0].kind == "CONCEPT"
+    assert direct.tasks[0].source == "NONE"
 
     local = parse_semantic_ir_from_json_or_line_protocol("```json\n" + json.dumps(_local_count_plan()) + "\n```")
     assert local.tasks[0].kind == "LOCAL_QUERY"
@@ -610,6 +1062,32 @@ def test_semantic_ir_parses_root_answer_contract_without_backend_inference():
 
     assert plan.answer_contract.required_slots[0].slot_id == "s_count"
     assert semantic_plan_to_dict(plan)["answer_contract"]["required_slots"][0]["type"] == "COUNT"
+
+
+def test_answer_contract_enum_aliases_fail_closed_to_safe_policies():
+    payload = _local_count_plan()
+    slot = payload["answer_contract"]["required_slots"][0]
+    slot["zero_rows_semantics"] = "no data"
+    slot["if_missing"] = "caveat"
+
+    plan = parse_semantic_ir_from_json_or_line_protocol(json.dumps(payload))
+
+    normalized = plan.answer_contract.required_slots[0]
+    assert normalized.zero_rows_semantics == "NO_MATCH"
+    assert normalized.if_missing == "SCOPED_UNAVAILABLE_CAVEAT"
+
+
+def test_unknown_answer_contract_enum_defaults_to_safe_unknown_not_parse_error():
+    payload = _local_count_plan()
+    slot = payload["answer_contract"]["required_slots"][0]
+    slot["zero_rows_semantics"] = "model-specific-zero-policy"
+    slot["if_missing"] = "model-specific-missing-policy"
+
+    plan = parse_semantic_ir_from_json_or_line_protocol(json.dumps(payload))
+
+    normalized = plan.answer_contract.required_slots[0]
+    assert normalized.zero_rows_semantics == "UNKNOWN"
+    assert normalized.if_missing == "SCOPED_UNAVAILABLE_CAVEAT"
 
 
 def test_semantic_ir_parses_cache_alias_contract_and_serializes_it():
@@ -729,6 +1207,18 @@ def test_semantic_ir_validator_checks_existence_without_correction():
     bad_endpoint["tasks"][0]["api_query"]["endpoint_id"] = "missing_endpoint"
     failed = validator.validate(parse_semantic_ir_from_json_or_line_protocol(json.dumps(bad_endpoint)))
     assert failed.error_type == "unknown_endpoint"
+
+
+def test_direct_route_with_local_answer_contract_is_rejected():
+    payload = _direct_plan()
+    payload["answer_contract"] = _local_count_plan()["answer_contract"]
+    payload["answer_contract"]["required_slots"][0]["satisfied_by_tasks"] = ["t_direct"]
+    validator = SemanticIRValidator(build_allowed_local_schema_card(_schema_context()), build_allowed_api_context_card(_endpoint_context()))
+
+    failed = validator.validate(parse_semantic_ir_from_json_or_line_protocol(json.dumps(payload)))
+
+    assert failed.passed is False
+    assert failed.error_type == "direct_route_with_evidence_contract"
 
 
 def test_semantic_ir_validator_rejects_evidence_plan_missing_answer_contract():
@@ -931,8 +1421,9 @@ def test_llm_unified_planner_uses_sdk_toolcall_semantic_ir_primary_path(monkeypa
     assert plan.diagnostics["backend_semantic_planning_used"] is False
     assert plan.diagnostics["backend_formal_compilation_used"] is True
     assert plan.diagnostics["atomic_protocol_fallback_used"] is False
-    assert plan.diagnostics["schema_binding_enabled"] is False
-    assert plan.diagnostics["schema_binding_used"] is False
+    assert plan.diagnostics["schema_binding_enabled"] is True
+    assert plan.diagnostics["schema_binding_toolcall_enabled"] is False
+    assert plan.diagnostics["schema_binding_used"] is True
     assert plan.diagnostics["schema_binding_mode"] == "repair_hint_only"
     assert len(client.calls) == 1
     assert client.calls[0]["tools"][0]["function"]["name"] == "submit_semantic_ir_plan"
@@ -952,6 +1443,7 @@ def test_schema_binding_toolcall_is_experimental_and_env_gated(monkeypatch):
 
     assert plan.route == "EVIDENCE_PIPELINE"
     assert plan.diagnostics["schema_binding_enabled"] is True
+    assert plan.diagnostics["schema_binding_toolcall_enabled"] is True
     assert plan.diagnostics["schema_binding_used"] is True
     assert plan.diagnostics["schema_binding_mode"] == "experimental_toolcall"
     assert [call["tool_choice"]["function"]["name"] for call in client.calls] == [
@@ -983,7 +1475,7 @@ def test_semantic_ir_planner_prompt_keeps_local_source_preference_llm_owned(monk
     assert "schemas alone" in rules
     assert "Schema Registry" in rules
     assert "local_query.count=true" in rules
-    assert "select all relevant local timestamp candidates" in rules
+    assert "select only exact timestamp/date fields" in rules
     assert "relationship-bearing fields" in rules
     assert "schema class" in rules
     assert "merge policy" in rules
@@ -1023,11 +1515,28 @@ def test_default_prompt_keeps_schema_binding_examples_off_but_answer_contract_ac
     assert "Every EVIDENCE plan needs root answer_contract" in " ".join(user_payload["rules"])
 
 
+def test_prompt_requires_direct_prompts_to_use_semantic_ir_toolcall(monkeypatch):
+    monkeypatch.delenv("V2_ENABLE_SCHEMA_BINDING", raising=False)
+    user_payload = json.loads(
+        _semantic_ir_user_prompt(
+            user_prompt="What is a schema?",
+            allowed_schema_card=build_allowed_local_schema_card(_schema_context()),
+            allowed_api_card=build_allowed_api_context_card(_endpoint_context()),
+            repair_context=None,
+        )
+    )
+    rules = " ".join(user_payload["rules"])
+
+    assert "DIRECT prompts must also be submitted through the SDK tool call" in rules
+    assert "one non-executable CONCEPT task" in rules
+
+
 def test_semantic_ir_prompt_context_is_compacted_without_losing_formal_shape():
     schema_card, api_card, diagnostics = _build_semantic_ir_prompt_context(
         _large_schema_context(),
         _large_endpoint_context(),
         max_total_chars=22000,
+        schema_profile="default",
     )
 
     user_prompt = _semantic_ir_user_prompt(
@@ -1035,6 +1544,7 @@ def test_semantic_ir_prompt_context_is_compacted_without_losing_formal_shape():
         allowed_schema_card=schema_card,
         allowed_api_card=api_card,
         repair_context=None,
+        schema_profile="default",
     )
     total_chars = len(user_prompt) + len(json.dumps(semantic_ir_tool_schema(), sort_keys=True, separators=(",", ":")))
 
@@ -1050,6 +1560,60 @@ def test_semantic_ir_prompt_context_is_compacted_without_losing_formal_shape():
     assert all({"endpoint_id", "method", "path", "path_params", "query_params"} <= set(row) for row in api_card)
 
 
+def test_deepseek_compact_prompt_profile_stays_under_smaller_budget(monkeypatch):
+    monkeypatch.setenv("DASHAGENT_LLM_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_MODEL", "deepseek-v4-flash-local")
+
+    schema_card, api_card, diagnostics = _build_semantic_ir_prompt_context(
+        _large_schema_context(),
+        _large_endpoint_context(),
+        user_prompt='When was the journey "Birthday Message" published?',
+        schema_profile="deepseek_compact",
+    )
+
+    assert diagnostics["planner_schema_profile"] == "deepseek_compact"
+    assert diagnostics["semantic_ir_prompt_total_chars"] <= 10500
+    assert diagnostics["semantic_ir_tool_schema_chars"] < 2600
+    assert diagnostics["semantic_ir_context_truncated"] is True
+    assert schema_card and api_card
+    assert all(len(row["columns"]) <= 4 for row in schema_card)
+    assert all(len(row.get("query_params", [])) <= 2 for row in api_card)
+
+
+def test_ultra_compact_schema_card_preserves_role_bearing_local_fields():
+    schema_card = build_allowed_local_schema_card(
+        {
+            "tables": {
+                "dim_campaign": {
+                    "columns": [
+                        {"name": "IMSORGID"},
+                        {"name": "LASTDEPLOYEDTIME"},
+                        {"name": "STATE"},
+                        {"name": "STATUS"},
+                        {"name": "NAME"},
+                        {"name": "UPDATEDTIME"},
+                        {"name": "SANDBOXNAME"},
+                    ]
+                },
+                "dim_blueprint": {
+                    "columns": [
+                        {"name": "UPDATEDCLIENTID"},
+                        {"name": "NAME"},
+                        {"name": "BLUEPRINTID"},
+                        {"name": "UPDATEDTIME"},
+                    ]
+                },
+            }
+        }
+    )
+
+    compact, _ = _ultra_compact_schema_card(schema_card)
+    by_table = {row["table"]: row for row in compact}
+
+    assert by_table["dim_campaign"]["columns"] == ["NAME", "STATUS", "UPDATEDTIME"]
+    assert by_table["dim_blueprint"]["columns"] == ["NAME", "UPDATEDTIME", "BLUEPRINTID"]
+
+
 def test_semantic_ir_relationship_source_rule_stays_compact_but_preserves_required_terms():
     relationship_rule = next(rule for rule in _semantic_ir_source_selection_rules() if "relationship-bearing fields" in rule)
 
@@ -1057,6 +1621,64 @@ def test_semantic_ir_relationship_source_rule_stays_compact_but_preserves_requir
     assert "schema class" in relationship_rule
     assert "merge policy" in relationship_rule
     assert len(relationship_rule) <= 180
+
+
+def test_semantic_ir_prompt_forces_toolcall_local_evidence_and_avoids_bridge_count(monkeypatch):
+    monkeypatch.delenv("V2_ENABLE_SCHEMA_BINDING", raising=False)
+    user_payload = json.loads(
+        _semantic_ir_user_prompt(
+            user_prompt="How many schema records are in the local snapshot?",
+            allowed_schema_card=build_allowed_local_schema_card(
+                {
+                    "tables": {
+                        "dim_blueprint": {"columns": [{"name": "ID"}, {"name": "NAME"}, {"name": "SCHEMA_ID"}]},
+                        "hkg_br_base_segment_used_by_dependent_segment": {
+                            "columns": [{"name": "BASESEGMENTID"}, {"name": "DEPENDENTSEGMENTID"}]
+                        },
+                    }
+                }
+            ),
+            allowed_api_card=build_allowed_api_context_card(_endpoint_context()),
+            repair_context=None,
+        )
+    )
+    rules = " ".join(user_payload["rules"])
+
+    assert "EVIDENCE tasks must be submitted through the SDK tool call" in rules
+    assert "never as plain text or message content" in rules
+    assert "bridge_table" in json.dumps(user_payload["AllowedLocalSchemaCard"])
+    assert "Do not count bridge_table or relationship_table rows for entity record counts" in rules
+    assert "schema/blueprint table_role_hints" in rules
+
+
+def test_unknown_date_field_repair_prompt_forbids_generic_timestamp_names():
+    broken = _local_campaign_date_plan()
+    broken["tasks"][0]["local_query"]["fields"] = ["LASTDEPLOYEDTIME"]
+    validation = SemanticIRValidationResult(
+        passed=False,
+        error_type="unknown_field",
+        error_message="Unknown field LASTDEPLOYEDTIME for table dim_campaign.",
+        task_id="t_campaign_date",
+        bad_field="LASTDEPLOYEDTIME",
+        allowed_tables=["dim_schema", "dim_campaign"],
+        allowed_fields_for_table=["CAMPAIGNID", "NAME", "STATUS", "PUBLISHEDAT"],
+    )
+
+    prompt = _semantic_ir_repair_user_prompt(
+        user_prompt='When was the journey "Birthday Message" published?',
+        previous_args=broken,
+        validation=validation,
+        allowed_schema_card=build_allowed_local_schema_card(_schema_context()),
+        allowed_api_card=build_allowed_api_context_card(_endpoint_context()),
+    )
+    payload = json.loads(prompt)
+    rules = " ".join(payload["rules"])
+
+    assert payload["allowed_fields_for_error_table"] == ["CAMPAIGNID", "NAME", "STATUS", "PUBLISHEDAT"]
+    assert "LASTDEPLOYEDTIME" in json.dumps(payload["validation_error"])
+    assert "Do not retry generic timestamp names" in rules
+    assert "choose only from allowed_fields_for_error_table" in rules
+    assert "PUBLISHEDAT" in json.dumps(payload["field_role_cards"])
 
 
 def test_context_cards_distinguish_primary_name_and_label_fields():
@@ -1119,6 +1741,7 @@ def test_semantic_ir_planner_prompt_examples_mixed_inactive_journeys_as_concept_
     assert "LIVE_QUERY" not in examples
     assert "show/list actual records" in rules
     assert "inactive journeys" in rules
+    assert "LIVE_QUERY cannot replace the local task" in rules
 
 
 def test_semantic_ir_planner_prompt_declares_llm_owned_alias_rules(monkeypatch):
@@ -1183,6 +1806,141 @@ def test_unsupported_semantic_ir_repairs_to_supported_ir_before_raw_sql(monkeypa
     assert "unsupported_ir" in client.calls[1]["messages"][1]["content"]
 
 
+def test_mixed_inactive_journey_api_only_micro_plan_repairs_to_local_query(monkeypatch):
+    monkeypatch.setenv("HERMES_V2_PLANNER_PROFILE", PLANNER_PROFILE_DEEPSEEK_MICRO_TOOLS)
+    monkeypatch.setenv("HERMES_V2_PLANNER_SCHEMA_PROFILE", "deepseek_compact")
+    monkeypatch.setenv("V2_ENABLE_SCHEMA_BINDING", "0")
+    client = ToolNameAwareClient(
+        [
+            {"tool_name": "submit_mixed_evidence_plan", "arguments": _mixed_inactive_api_only_plan()},
+            {"tool_name": "submit_mixed_evidence_plan", "arguments": _mixed_inactive_local_plan()},
+        ]
+    )
+    monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+
+    plan = run_llm_unified_planner(
+        user_prompt="Explain what inactive journey means and show inactive journeys.",
+        schema_context=_schema_context(),
+        endpoint_context=_endpoint_context(),
+    )
+
+    assert plan.diagnostics["semantic_ir_support_checked"] is True
+    assert plan.diagnostics["semantic_ir_support_repair_attempted"] is True
+    assert plan.diagnostics["semantic_ir_support_repair_success"] is True
+    assert plan.diagnostics["semantic_ir_unsupported_features"] == []
+    assert any(item.path == "SQL" and item.sql and '"dim_campaign"' in item.sql.query for item in plan.passes)
+    assert not any(item.path == "API" for item in plan.passes)
+    repair_prompt = client.calls[1]["messages"][1]["content"]
+    assert "MISSING_LOCAL_JOURNEY_QUERY" in repair_prompt
+    assert "LOCAL_QUERY/LOCAL_SNAPSHOT" in repair_prompt
+
+
+def test_schema_data_prompt_api_only_plan_repairs_to_local_query(monkeypatch):
+    monkeypatch.setenv("HERMES_V2_PLANNER_PROFILE", PLANNER_PROFILE_DEEPSEEK_MICRO_TOOLS)
+    monkeypatch.setenv("HERMES_V2_PLANNER_SCHEMA_PROFILE", "deepseek_compact")
+    monkeypatch.setenv("V2_ENABLE_SCHEMA_BINDING", "0")
+    client = ToolNameAwareClient(
+        [
+            {"tool_name": MICRO_API_TOOL_NAME, "arguments": _schema_api_only_plan()["tasks"][0] | {"answer_contract": _schema_api_only_plan()["answer_contract"]}},
+            {"tool_name": MICRO_LOCAL_QUERY_TOOL_NAME, "arguments": _local_count_plan()["tasks"][0] | {"answer_contract": _local_count_plan()["answer_contract"]}},
+        ]
+    )
+    monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+
+    plan = run_llm_unified_planner(
+        user_prompt="What schemas do I have?",
+        schema_context=_schema_context(),
+        endpoint_context=_endpoint_context(),
+    )
+
+    assert any(item.path == "SQL" for item in plan.passes)
+    assert plan.diagnostics["semantic_ir_support_repair_attempted"] is True
+    assert plan.diagnostics["semantic_ir_support_repair_success"] is True
+    assert "MISSING_LOCAL_SCHEMA_QUERY" in client.calls[1]["messages"][1]["content"]
+
+
+def test_local_published_date_prompt_api_only_plan_repairs_to_local_query(monkeypatch):
+    monkeypatch.setenv("V2_ENABLE_SCHEMA_BINDING", "0")
+    client = ToolCallSemanticIRClient([_birthday_api_only_plan(), _local_campaign_date_plan()])
+    monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+
+    plan = run_llm_unified_planner(
+        user_prompt='When was the journey "Birthday Message" published?',
+        schema_context=_schema_context(),
+        endpoint_context=_endpoint_context(),
+    )
+
+    assert any(item.path == "SQL" and item.sql and '"dim_campaign"' in item.sql.query for item in plan.passes)
+    assert not any(item.path == "API" for item in plan.passes)
+    assert plan.diagnostics["semantic_ir_support_repair_attempted"] is True
+    assert plan.diagnostics["semantic_ir_support_repair_success"] is True
+    assert "MISSING_LOCAL_DATE_QUERY" in client.calls[1]["messages"][1]["content"]
+
+
+def test_deepseek_micro_missing_toolcall_retries_json_tool_without_text_fallback(monkeypatch):
+    monkeypatch.setenv("HERMES_V2_PLANNER_PROFILE", PLANNER_PROFILE_DEEPSEEK_MICRO_TOOLS)
+    monkeypatch.setenv("HERMES_V2_PLANNER_SCHEMA_PROFILE", "deepseek_compact")
+    client = ToolNameAwareClient(
+        [
+            {
+                "raw_result": {
+                    "ok": True,
+                    "provider": "openai",
+                    "model": "deepseek-v4-flash-local",
+                    "content": "",
+                    "tool_calls": [],
+                    "finish_reason": "length",
+                }
+            },
+            {
+                "tool_name": SEMANTIC_IR_JSON_TOOL_NAME,
+                "arguments": {"semantic_ir_json": json.dumps(_local_count_plan())},
+            },
+        ]
+    )
+    monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
+
+    plan = run_llm_unified_planner(
+        user_prompt="How many schema records are in the local snapshot?",
+        schema_context=_schema_context(),
+        endpoint_context=_endpoint_context(),
+    )
+
+    assert plan.passes[0].sql.query == 'SELECT COUNT(*) AS count FROM "dim_schema"'
+    assert plan.diagnostics["sdk_toolcall_semantic_ir_used"] is True
+    assert plan.diagnostics["planner_retry_used"] is True
+    assert plan.diagnostics["planner_retry_reason"] == "micro_missing_toolcall_json_tool_retry"
+    assert plan.diagnostics["atomic_protocol_fallback_used"] is False
+    assert [call["tool_choice"]["function"]["name"] if isinstance(call["tool_choice"], dict) else call["tool_choice"] for call in client.calls] == [
+        "required",
+        SEMANTIC_IR_JSON_TOOL_NAME,
+    ]
+
+def test_planner_timeout_retries_once_with_ultra_compact_schema(monkeypatch):
+    monkeypatch.setenv("HERMES_V2_PLANNER_MODEL_TIMEOUT_SEC", "45")
+    client = TimeoutThenToolCallClient([_local_count_plan()])
+
+    result = run_semantic_ir_toolcall_planner(
+        client=client,
+        user_prompt="How many schema records are in the local snapshot?",
+        schema_context=_schema_context(),
+        endpoint_context=_endpoint_context(),
+        fallback_to_atomic=False,
+    )
+
+    assert result.diagnostics["planner_retry_used"] is True
+    assert result.diagnostics["planner_retry_reason"] == "initial_planner_timeout"
+    assert result.diagnostics["planner_schema_profile"] == "deepseek_ultra_compact"
+    assert result.diagnostics["planner_tool_choice"] == "submit_semantic_ir_plan"
+    assert result.diagnostics["planner_model_timeout_sec"] == 45
+    assert result.diagnostics["planner_tool_calls_count"] == 1
+    assert result.diagnostics["planner_finish_reason"] == "tool_calls"
+    assert result.diagnostics["atomic_protocol_fallback_used"] is False
+    assert result.plan_payload["passes"][0]["sql"]["query"] == 'SELECT COUNT(*) AS count FROM "dim_schema"'
+    assert len(client.calls) == 2
+    assert "retry_reason" in client.calls[1]["messages"][1]["content"]
+
+
 def test_unsupported_semantic_ir_uses_llm_owned_raw_sql_fallback_after_repair(monkeypatch):
     monkeypatch.delenv("V2_ENABLE_SCHEMA_BINDING", raising=False)
     raw_sql_response = {
@@ -1230,7 +1988,10 @@ def test_direct_toolcall_route_skips_sql_api_passes(monkeypatch):
     assert plan.direct_answer == "A schema defines the structure and meaning of data fields."
     assert plan.sql is None
     assert plan.api_request is None
-    assert plan.passes == []
+    assert len(plan.passes) == 1
+    assert plan.passes[0].path == "DIRECT"
+    assert plan.passes[0].sql is None
+    assert plan.passes[0].api_request is None
 
 
 def test_llm_unified_planner_repairs_invalid_semantic_ir_once(monkeypatch):
@@ -1339,8 +2100,9 @@ def test_missing_answer_contract_uses_secondary_contract_toolcall(monkeypatch):
         "submit_semantic_ir_plan",
         "submit_answer_contract",
     ]
-    assert plan.diagnostics["schema_binding_enabled"] is False
-    assert plan.diagnostics["schema_binding_used"] is False
+    assert plan.diagnostics["schema_binding_enabled"] is True
+    assert plan.diagnostics["schema_binding_toolcall_enabled"] is False
+    assert plan.diagnostics["schema_binding_used"] is True
 
 
 def test_invalid_secondary_answer_contract_fails_closed_without_atomic_fallback(monkeypatch):
@@ -1435,27 +2197,26 @@ def test_unknown_endpoint_repairs_once_and_backend_does_not_choose_replacement(m
     assert "schema_endpoint_guess" in client.calls[1]["messages"][1]["content"]
 
 
-def test_atomic_fallback_only_when_toolcall_unavailable_for_non_pioneer_tool_model(monkeypatch):
+def test_sdk_toolcall_path_fails_closed_without_atomic_text_fallback(monkeypatch):
     client = NoToolCallClient(
         [
             "no tool call available",
             "still no tool call available",
-            "RECORDS=0\nLIST=0\nCOUNT=0\nSTATUS=0\nDATE=0\nLOCAL_SNAPSHOT=0\nLIVE_CURRENT=0\nSHOW_ITEMS=0\nMIXED_CONCEPT_DATA=0\nPURE_CONCEPT=1\nDIRECT_ANSWER=A schema defines data structure.",
         ]
     )
     monkeypatch.setattr("dashagent.llm_unified_planner.get_llm_client", lambda: client)
 
     plan = run_llm_unified_planner(user_prompt="What is a schema?", schema_context={"tables": []}, endpoint_context=[])
 
-    assert plan.route == "LLM_DIRECT"
-    assert plan.diagnostics["atomic_protocol_fallback_used"] is True
+    assert plan.route == "EVIDENCE_PIPELINE"
+    assert plan.parse_error is True
+    assert plan.diagnostics["atomic_protocol_fallback_used"] is False
     assert plan.diagnostics["sdk_toolcall_semantic_ir_used"] is False
     assert plan.diagnostics["semantic_ir_repair_attempted"] is True
     assert plan.diagnostics["semantic_ir_repair_success"] is False
-    assert len(client.calls) == 3
+    assert len(client.calls) == 2
     assert client.calls[0]["tools"][0]["function"]["name"] == "submit_semantic_ir_plan"
     assert client.calls[1]["tools"][0]["function"]["name"] == "submit_semantic_ir_plan"
-    assert client.calls[2]["tools"] is None
 
 
 def test_packaged_default_remains_sql_first_api_verify():

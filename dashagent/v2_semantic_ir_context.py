@@ -4,6 +4,7 @@ import re
 from typing import Any
 
 from .trajectory import redact_secrets
+from .v2_schema_grounding import table_aliases_for
 
 
 def build_allowed_local_schema_card(schema_context: dict[str, Any]) -> list[dict[str, Any]]:
@@ -33,10 +34,13 @@ def build_allowed_local_schema_card(schema_context: dict[str, Any]) -> list[dict
                 text = str(value or "").strip()
                 if text:
                     columns.append(text)
+        if table.get("load_error") or columns == ['__empty_parquet_placeholder']:
+            continue
         rows.append(
             {
                 "table": name,
                 "columns": columns,
+                "table_aliases": table_aliases_for(name),
                 "table_role_hints": _table_role_hints(name, columns),
                 "field_hints": _field_hints(columns),
             }
@@ -130,9 +134,10 @@ def _field_hints(columns: list[str]) -> dict[str, list[str]]:
         column
         for column in columns
         if (
-            "name" in _norm(column)
+            _norm(column) in {"name", "displayname", "title", "altid"}
+            or ("name" in _norm(column) and _norm(column) not in {"sandboxname", "imsorgname"})
             or "title" in _norm(column)
-            or _norm(column) in {"displayname", "label", "altid"}
+            or _norm(column) in {"label"}
             or "displayname" in _norm(column)
         )
         and column not in label_fields
@@ -162,10 +167,7 @@ def _field_hints(columns: list[str]) -> dict[str, list[str]]:
         "date_fields": [
             column
             for column in columns
-            if any(
-                token in _norm(column)
-                for token in ["time", "date", "created", "updated", "modified", "published", "deployed", "finished", "stopped", "start", "end"]
-            )
+            if _looks_like_date_field(column)
         ],
         "count_fields": [column for column in columns if "count" in _norm(column) or _norm(column) in {"total", "rowcount"}],
     }
@@ -205,6 +207,16 @@ def _compact_examples(value: Any) -> list[dict[str, Any]]:
 
 def _norm(value: str) -> str:
     return re.sub(r"[^a-z0-9_]", "", str(value).lower())
+
+
+def _looks_like_date_field(column: str) -> bool:
+    norm = _norm(column)
+    if norm.endswith("id") or norm.endswith("by") or "clientid" in norm or "orgid" in norm:
+        return False
+    return any(
+        token in norm
+        for token in ["time", "date", "created", "updated", "modified", "published", "deployed", "finished", "stopped", "start", "end"]
+    )
 
 
 def _dedupe(values: list[str]) -> list[str]:

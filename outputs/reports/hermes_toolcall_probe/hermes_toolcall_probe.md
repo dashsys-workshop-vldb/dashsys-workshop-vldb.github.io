@@ -3,7 +3,7 @@
 - ok: `True`
 - provider: `openai`
 - openai_compat_provider: ``
-- model: `/Users/tanqinyang/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit`
+- model: `mlx-community/Qwen2.5-3B-Instruct-4bit`
 - OPENAI_BASE_URL present: `True`
 - OPENAI_BASE_URL host: `http://localhost:8000`
 - OPENAI_API_KEY present: `True`

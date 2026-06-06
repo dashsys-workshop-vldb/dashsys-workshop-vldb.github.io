@@ -7,6 +7,7 @@ import os
 import sys
 import time
 import traceback
+from contextlib import redirect_stderr, redirect_stdout
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -18,6 +19,7 @@ if str(ROOT) not in sys.path:
 from dashagent.config import Config, ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2
 from dashagent.executor import AgentExecutor
 from dashagent.trajectory import redact_secrets
+from dashagent.v2_dbsnapshot_preflight import check_v2_dbsnapshot_preflight
 from scripts.load_local_env import load_local_env
 from scripts.probe_gemini_openai_toolcall import run_gemini_openai_toolcall_probe
 from scripts.probe_hermes_sdk_toolcall import run_hermes_toolcall_probe
@@ -79,7 +81,9 @@ def run_hermes_v2_toolcall_smoke(
     report_dir.mkdir(parents=True, exist_ok=True)
     prompt_timeout_sec = _env_int("HERMES_SMOKE_PROMPT_TIMEOUT_SEC", DEFAULT_PROMPT_TIMEOUT_SEC)
     llm_call_timeout_sec = _env_int("HERMES_LLM_CALL_TIMEOUT_SEC", DEFAULT_LLM_CALL_TIMEOUT_SEC)
-    _configure_llm_timeout_env(llm_call_timeout_sec)
+    effective_llm_call_timeout_sec = _bounded_child_llm_timeout(prompt_timeout_sec, llm_call_timeout_sec)
+    _configure_llm_timeout_env(effective_llm_call_timeout_sec)
+    dbsnapshot_preflight = check_v2_dbsnapshot_preflight(config)
     if probe_runner is None:
         if gemini_openai_compat:
             probe = run_gemini_openai_toolcall_probe(config, report_dir=GEMINI_OPENAI_COMPAT_PROBE_DIR)
@@ -96,8 +100,11 @@ def run_hermes_v2_toolcall_smoke(
         "strategy": ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2,
         "prompt_timeout_sec": prompt_timeout_sec,
         "llm_call_timeout_sec": llm_call_timeout_sec,
+        "effective_llm_call_timeout_sec": effective_llm_call_timeout_sec,
+        "worker_start_method": _worker_start_method(),
         "partial_report": True,
         "last_stage_heartbeat": {},
+        "dbsnapshot_preflight": dbsnapshot_preflight.to_dict(),
         "probe": {
             "ok": probe.get("ok"),
             "provider": probe.get("provider"),
@@ -112,6 +119,10 @@ def run_hermes_v2_toolcall_smoke(
         "rows": [],
         "summary": {},
     }
+    if not dbsnapshot_preflight.passed and _strict_dbsnapshot_preflight_required(config):
+        report.update({"skipped": True, "skip_reason": "V2 DBSnapshot preflight failed: " + "; ".join(dbsnapshot_preflight.errors)})
+        report["summary"] = _summarize_rows([])
+        return _write_report(report_dir, report)
     if not probe.get("toolcall_supported"):
         report.update({"skipped": True, "skip_reason": f"{report_title} probe did not return native SDK tool/function calls."})
         report["summary"] = _summarize_rows([])
@@ -126,7 +137,7 @@ def run_hermes_v2_toolcall_smoke(
                 config=config,
                 report_dir=report_dir,
                 prompt_timeout_sec=prompt_timeout_sec,
-                llm_call_timeout_sec=llm_call_timeout_sec,
+                llm_call_timeout_sec=effective_llm_call_timeout_sec,
             )
         except Exception as exc:
             row = _error_row(item, str(exc), 0.0, _read_heartbeat(report_dir), traceback_text=traceback.format_exc(limit=20))
@@ -147,6 +158,13 @@ def _is_gemini_openai_compat_env() -> bool:
     return GEMINI_OPENAI_COMPAT_HOST in str(os.getenv("OPENAI_BASE_URL") or "").lower()
 
 
+def _strict_dbsnapshot_preflight_required(config: Config) -> bool:
+    try:
+        return Path(config.project_root).resolve() == ROOT.resolve()
+    except Exception:
+        return True
+
+
 def _run_prompt_with_timeout(
     item: dict[str, Any],
     *,
@@ -156,10 +174,12 @@ def _run_prompt_with_timeout(
     llm_call_timeout_sec: int,
 ) -> dict[str, Any]:
     started = time.perf_counter()
-    start_method = os.getenv("HERMES_SMOKE_MP_START_METHOD") or ("fork" if sys.platform != "win32" else "spawn")
+    child_llm_timeout_sec = _bounded_child_llm_timeout(prompt_timeout_sec, llm_call_timeout_sec)
+    start_method = _worker_start_method()
     ctx = mp.get_context(start_method)
     queue: Any = ctx.Queue(maxsize=1)
-    process = ctx.Process(target=_prompt_worker, args=(item, config, str(report_dir), llm_call_timeout_sec, queue))
+    child_log_path = _child_log_path(report_dir, str(item["id"]))
+    process = ctx.Process(target=_prompt_worker, args=(item, config, str(report_dir), child_llm_timeout_sec, queue, str(child_log_path)))
     process.start()
     process.join(prompt_timeout_sec)
     total_latency = round(time.perf_counter() - started, 3)
@@ -170,7 +190,19 @@ def _run_prompt_with_timeout(
             process.kill()
             process.join(5)
         heartbeat = _read_heartbeat(report_dir)
-        return _timeout_row(item, timeout_sec=prompt_timeout_sec, total_latency_sec=total_latency, heartbeat=heartbeat)
+        row = _timeout_row(item, timeout_sec=prompt_timeout_sec, total_latency_sec=total_latency, heartbeat=heartbeat)
+        row["child_exitcode"] = getattr(process, "exitcode", None)
+        row["child_log_path"] = str(child_log_path)
+        row["child_stderr_tail"] = _read_text_tail(child_log_path)
+        return row
+    exitcode = getattr(process, "exitcode", None)
+    if exitcode not in (0, None):
+        heartbeat = _read_heartbeat(report_dir)
+        row = _error_row(item, f"prompt_worker_exited_nonzero_exitcode_{exitcode}", total_latency, heartbeat)
+        row["child_exitcode"] = exitcode
+        row["child_log_path"] = str(child_log_path)
+        row["child_stderr_tail"] = _read_text_tail(child_log_path)
+        return row
     try:
         if hasattr(queue, "get"):
             payload = queue.get(timeout=5)
@@ -180,18 +212,82 @@ def _run_prompt_with_timeout(
         heartbeat = _read_heartbeat(report_dir)
         exitcode = getattr(process, "exitcode", None)
         suffix = f"_exitcode_{exitcode}" if exitcode is not None else ""
-        return _error_row(item, f"prompt_worker_returned_no_result{suffix}", total_latency, heartbeat)
+        child_log_tail = _read_text_tail(child_log_path)
+        row = _error_row(item, f"prompt_worker_returned_no_result{suffix}", total_latency, heartbeat)
+        row["child_exitcode"] = exitcode
+        row["child_log_path"] = str(child_log_path)
+        row["child_stderr_tail"] = child_log_tail
+        return row
     if not isinstance(payload, dict):
-        return _error_row(item, "prompt_worker_returned_non_dict_result", total_latency, _read_heartbeat(report_dir))
+        row = _error_row(item, "prompt_worker_returned_non_dict_result", total_latency, _read_heartbeat(report_dir))
+        row["child_exitcode"] = getattr(process, "exitcode", None)
+        row["child_log_path"] = str(child_log_path)
+        row["child_stderr_tail"] = _read_text_tail(child_log_path)
+        return row
     if payload.get("ok") and isinstance(payload.get("row"), dict):
         row = payload["row"]
         row["total_latency_sec"] = total_latency
+        _finalize_row_timing(row)
         return row
     heartbeat = _read_heartbeat(report_dir)
-    return _error_row(item, str(payload.get("error") or "prompt_worker_failed"), total_latency, heartbeat, traceback_text=payload.get("traceback"))
+    row = _error_row(item, str(payload.get("error") or "prompt_worker_failed"), total_latency, heartbeat, traceback_text=payload.get("traceback"))
+    row["child_exitcode"] = getattr(process, "exitcode", None)
+    row["child_log_path"] = str(child_log_path)
+    row["child_stderr_tail"] = _read_text_tail(child_log_path)
+    return row
 
 
-def _prompt_worker(item: dict[str, Any], config: Config, report_dir_text: str, llm_call_timeout_sec: int, queue: Any) -> None:
+def _worker_start_method() -> str:
+    configured = os.getenv("HERMES_SMOKE_MP_START_METHOD")
+    if configured:
+        return configured.strip()
+    if sys.platform == "darwin":
+        return "spawn"
+    if sys.platform == "win32":
+        return "spawn"
+    return "fork"
+
+
+def _bounded_child_llm_timeout(prompt_timeout_sec: int, llm_call_timeout_sec: int) -> int:
+    """Keep SDK calls inside the smoke prompt timeout so the parent remains the outer guard."""
+    try:
+        prompt_timeout = int(prompt_timeout_sec)
+    except Exception:
+        prompt_timeout = DEFAULT_PROMPT_TIMEOUT_SEC
+    try:
+        llm_timeout = int(llm_call_timeout_sec)
+    except Exception:
+        llm_timeout = DEFAULT_LLM_CALL_TIMEOUT_SEC
+    if prompt_timeout <= 2:
+        return 1
+    reserve = 10 if prompt_timeout > 30 else 1
+    return max(1, min(max(1, llm_timeout), prompt_timeout - reserve))
+
+
+def _child_log_path(report_dir: Path, prompt_id: str) -> Path:
+    safe_id = "".join(ch if ch.isalnum() or ch in {"_", "-"} else "_" for ch in str(prompt_id))
+    return report_dir / f"worker_{safe_id}.log"
+
+
+def _read_text_tail(path: Path, *, limit_chars: int = 4000) -> str:
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return ""
+    return text[-limit_chars:]
+
+
+def _prompt_worker(item: dict[str, Any], config: Config, report_dir_text: str, llm_call_timeout_sec: int, queue: Any, child_log_path_text: str | None = None) -> None:
+    if child_log_path_text:
+        log_path = Path(child_log_path_text)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with log_path.open("w", encoding="utf-8", errors="replace") as log_file, redirect_stdout(log_file), redirect_stderr(log_file):
+            _prompt_worker_inner(item, config, report_dir_text, llm_call_timeout_sec, queue)
+        return
+    _prompt_worker_inner(item, config, report_dir_text, llm_call_timeout_sec, queue)
+
+
+def _prompt_worker_inner(item: dict[str, Any], config: Config, report_dir_text: str, llm_call_timeout_sec: int, queue: Any) -> None:
     report_dir = Path(report_dir_text)
     _configure_llm_timeout_env(llm_call_timeout_sec)
     _install_checkpoint_heartbeat(report_dir, str(item["id"]))
@@ -202,6 +298,7 @@ def _prompt_worker(item: dict[str, Any], config: Config, report_dir_text: str, l
         result = executor.run(item["prompt"], strategy=ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2, query_id=f"hermes_toolcall_{item['id']}")
         row = _build_smoke_row(item, result)
         row["total_latency_sec"] = round(time.perf_counter() - started, 3)
+        _finalize_row_timing(row)
         _write_heartbeat(report_dir, item["id"], "prompt_complete")
         queue.put({"ok": True, "row": row})
     except Exception as exc:
@@ -257,7 +354,17 @@ def _build_smoke_row(item: dict[str, Any], result: dict[str, Any]) -> dict[str, 
         "schema_binding_error_type": diagnostics.get("schema_binding_error_type"),
         "schema_binding_repair_attempted": bool(diagnostics.get("schema_binding_repair_attempted")),
         "schema_binding_repair_success": bool(diagnostics.get("schema_binding_repair_success")),
+        "schema_alias_binding_used": bool(diagnostics.get("schema_alias_binding_used")),
+        "schema_alias_binding_count": int(diagnostics.get("schema_alias_binding_count") or 0),
+        "schema_alias_bindings": _list_diagnostic(diagnostics.get("schema_alias_bindings")),
         "semantic_ir_repair_attempted": diagnostics.get("semantic_ir_repair_attempted"),
+        "planner_retry_used": bool(diagnostics.get("planner_retry_used")),
+        "planner_retry_reason": diagnostics.get("planner_retry_reason"),
+        "planner_schema_profile": diagnostics.get("planner_schema_profile"),
+        "planner_tool_choice": diagnostics.get("planner_tool_choice"),
+        "planner_model_timeout_sec": diagnostics.get("planner_model_timeout_sec"),
+        "planner_finish_reason": diagnostics.get("planner_finish_reason"),
+        "planner_tool_calls_count": int(diagnostics.get("planner_tool_calls_count") or 0),
         "backend_formal_compilation_used": diagnostics.get("backend_formal_compilation_used"),
         "backend_semantic_planning_used": diagnostics.get("backend_semantic_planning_used"),
         "atomic_protocol_fallback_used": diagnostics.get("atomic_protocol_fallback_used"),
@@ -276,6 +383,7 @@ def _build_smoke_row(item: dict[str, Any], result: dict[str, Any]) -> dict[str, 
         "runtime_fact_count": fact_metrics["runtime_fact_count"],
         "local_snapshot_fact_count": fact_metrics["local_snapshot_fact_count"],
         "live_api_fact_count": fact_metrics["live_api_fact_count"],
+        "zero_row_local_evidence_count": fact_metrics["zero_row_local_evidence_count"],
         "caveat_or_error_only_count": fact_metrics["caveat_or_error_only_count"],
         "unsupported_claims": unsupported_claims,
         "final_semantic_gate_initial_failures": gate_metrics["final_semantic_gate_initial_failures"],
@@ -296,6 +404,29 @@ def _build_smoke_row(item: dict[str, Any], result: dict[str, Any]) -> dict[str, 
         and row["final_semantic_gate_final_failures"] == 0
         and not row["final_unavailable_with_runtime_facts"]
     )
+    return row
+
+
+def _finalize_row_timing(row: dict[str, Any], total_latency_sec: float | None = None) -> dict[str, Any]:
+    if total_latency_sec is not None:
+        row["total_latency_sec"] = round(float(total_latency_sec), 3)
+    try:
+        total = float(row.get("total_latency_sec") or 0.0)
+    except Exception:
+        total = 0.0
+    instrumented = 0.0
+    for field in LATENCY_FIELDS:
+        if field == "total_latency_sec":
+            continue
+        try:
+            value = float(row.get(field) or 0.0)
+        except Exception:
+            value = 0.0
+        if value > 0:
+            instrumented += value
+    row["instrumented_latency_sec"] = round(instrumented, 3)
+    row["invisible_time_sec"] = round(max(0.0, total - instrumented), 3)
+    row["timing_accounting_error"] = bool(total > 0 and instrumented > total + 0.25)
     return row
 
 
@@ -331,6 +462,7 @@ def _empty_latency_fields() -> dict[str, Any]:
     row = {field: 0.0 for field in LATENCY_FIELDS}
     row["timed_out"] = False
     row["timed_out_stage"] = None
+    row["timeout_phase"] = None
     return row
 
 
@@ -363,6 +495,13 @@ def _timeout_row(item: dict[str, Any], *, timeout_sec: int, total_latency_sec: f
         "sdk_toolcall_semantic_ir_used": None,
         "semantic_ir_validation_passed": None,
         "semantic_ir_repair_attempted": None,
+        "planner_retry_used": False,
+        "planner_retry_reason": None,
+        "planner_schema_profile": None,
+        "planner_tool_choice": None,
+        "planner_model_timeout_sec": None,
+        "planner_finish_reason": None,
+        "planner_tool_calls_count": 0,
         "backend_formal_compilation_used": None,
         "backend_semantic_planning_used": None,
         "atomic_protocol_fallback_used": None,
@@ -384,6 +523,9 @@ def _timeout_row(item: dict[str, Any], *, timeout_sec: int, total_latency_sec: f
         "schema_binding_error_type": None,
         "schema_binding_repair_attempted": False,
         "schema_binding_repair_success": False,
+        "schema_alias_binding_used": False,
+        "schema_alias_binding_count": 0,
+        "schema_alias_bindings": [],
         "task_count": None,
         "plan_paths": [],
         "compiled_sql_count": 0,
@@ -416,6 +558,8 @@ def _timeout_row(item: dict[str, Any], *, timeout_sec: int, total_latency_sec: f
     row["total_latency_sec"] = round(float(total_latency_sec), 3)
     row["timed_out"] = True
     row["timed_out_stage"] = heartbeat.get("current_stage") or "unknown"
+    row["timeout_phase"] = row["timed_out_stage"]
+    _finalize_row_timing(row)
     return redact_secrets(row)
 
 
@@ -434,6 +578,7 @@ def _error_row(
     row["error_type"] = _classify_row_error_type(error)
     row["traceback"] = traceback_text
     row["timed_out_stage"] = (heartbeat or {}).get("current_stage")
+    row["timeout_phase"] = row["timed_out_stage"]
     return redact_secrets(row)
 
 
@@ -507,6 +652,7 @@ def _fact_metrics(result: dict[str, Any]) -> dict[str, int]:
         "runtime_fact_count": 0,
         "local_snapshot_fact_count": 0,
         "live_api_fact_count": 0,
+        "zero_row_local_evidence_count": 0,
         "caveat_or_error_only_count": 0,
     }
     for step in trajectory.get("steps", []) or []:
@@ -516,6 +662,8 @@ def _fact_metrics(result: dict[str, Any]) -> dict[str, int]:
             facts = _successful_sql_fact_count(payload)
             metrics["runtime_fact_count"] += facts
             metrics["local_snapshot_fact_count"] += facts
+            if _successful_zero_row_sql(payload):
+                metrics["zero_row_local_evidence_count"] = max(metrics["zero_row_local_evidence_count"], 1)
             if facts == 0 and _payload_is_error_or_caveat(payload):
                 metrics["caveat_or_error_only_count"] += 1
         elif kind == "api_call":
@@ -531,6 +679,8 @@ def _fact_metrics(result: dict[str, Any]) -> dict[str, int]:
         status = str(item.get("status") or "").upper()
         facts = len(item.get("facts") or []) if isinstance(item.get("facts"), list) else 0
         path = str(item.get("path") or item.get("source") or "").upper()
+        if path in {"DIRECT", "CONCEPT", "NO_EVIDENCE_CONCEPT"}:
+            continue
         if status == "SUCCESS" and facts > 0:
             missing = max(0, facts - metrics["runtime_fact_count"])
             if missing:
@@ -539,6 +689,8 @@ def _fact_metrics(result: dict[str, Any]) -> dict[str, int]:
                     metrics["live_api_fact_count"] += missing
                 else:
                     metrics["local_snapshot_fact_count"] += missing
+        if status == "EMPTY" and path in {"SQL", "LOCAL_QUERY", "LOCAL_SNAPSHOT"}:
+            metrics["zero_row_local_evidence_count"] = max(metrics["zero_row_local_evidence_count"], 1)
         if status in {"API_ERROR", "ERROR", "LIVE_EMPTY", "EMPTY"} and facts == 0:
             metrics["caveat_or_error_only_count"] += 1
     _apply_compacted_slot_fact_metrics(result, metrics)
@@ -554,6 +706,17 @@ def _successful_sql_fact_count(payload: dict[str, Any]) -> int:
         return len(non_empty_rows)
     row_count = int(payload.get("row_count") or 0)
     return max(row_count, 0)
+
+
+def _successful_zero_row_sql(payload: dict[str, Any]) -> bool:
+    if not payload.get("ok"):
+        return False
+    rows = _rows_from_payload(payload)
+    try:
+        row_count = int(payload.get("row_count") or 0)
+    except Exception:
+        row_count = 0
+    return row_count == 0 and not rows
 
 
 def _successful_api_fact_count(payload: dict[str, Any]) -> int:
@@ -708,7 +871,14 @@ def _matches_expectation(expected: str, row: dict[str, Any], diagnostics: dict[s
     if expected == "EVIDENCE_SQL":
         return sql_calls > 0 and semantic_ir_ok and int(row.get("runtime_fact_count") or 0) > 0
     if expected == "EVIDENCE_LOCAL":
-        return sql_calls > 0 and semantic_ir_ok and int(row.get("local_snapshot_fact_count") or 0) > 0
+        local_fact_count = int(row.get("local_snapshot_fact_count") or 0)
+        zero_row_local = int(row.get("zero_row_local_evidence_count") or 0) > 0
+        zero_row_answer_safe = (
+            zero_row_local
+            and int(row.get("final_semantic_gate_final_failures") or 0) == 0
+            and not bool(row.get("final_unavailable_with_runtime_facts"))
+        )
+        return sql_calls > 0 and semantic_ir_ok and (local_fact_count > 0 or zero_row_answer_safe)
     if expected == "EVIDENCE_LIVE_IF_AVAILABLE":
         return sql_calls > 0 and api_calls > 0 and semantic_ir_ok and int(row.get("local_snapshot_fact_count") or 0) > 0
     return (sql_calls + api_calls) > 0 and semantic_ir_ok
@@ -742,6 +912,10 @@ def _write_heartbeat(report_dir: Path, prompt_id: Any, current_stage: str, extra
         tmp = path.with_suffix(path.suffix + ".tmp")
         tmp.write_text(json.dumps(safe, indent=2, sort_keys=True, default=str), encoding="utf-8")
         tmp.replace(path)
+    try:
+        print("HEARTBEAT " + json.dumps(safe, sort_keys=True, default=str), flush=True)
+    except Exception:
+        pass
     return safe
 
 
@@ -785,6 +959,7 @@ def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "runtime_fact_count": sum(int(row.get("runtime_fact_count") or 0) for row in rows),
         "local_snapshot_fact_count": sum(int(row.get("local_snapshot_fact_count") or 0) for row in rows),
         "live_api_fact_count": sum(int(row.get("live_api_fact_count") or 0) for row in rows),
+        "zero_row_local_evidence_count": sum(int(row.get("zero_row_local_evidence_count") or 0) for row in rows),
         "caveat_or_error_only_count": sum(int(row.get("caveat_or_error_only_count") or 0) for row in rows),
         "no_tool_fp": sum(1 for row in rows if row.get("no_tool_fp")),
         "final_semantic_gate_initial_failures": sum(int(row.get("final_semantic_gate_initial_failures") or 0) for row in rows),
@@ -794,6 +969,8 @@ def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "final_unavailable_with_runtime_facts": sum(1 for row in rows if row.get("final_unavailable_with_runtime_facts")),
         "atomic_protocol_fallback_count": sum(1 for row in rows if row.get("atomic_protocol_fallback_used")),
         "raw_sql_fallback_used_count": sum(1 for row in rows if row.get("raw_sql_fallback_used")),
+        "planner_retry_used_count": sum(1 for row in rows if row.get("planner_retry_used")),
+        "planner_schema_profile_counts": _count_values(row.get("planner_schema_profile") for row in rows if row.get("planner_schema_profile")),
         "schema_binding_enabled_count": sum(1 for row in rows if row.get("schema_binding_enabled")),
         "schema_binding_mode_counts": _count_values(row.get("schema_binding_mode") for row in rows if row.get("schema_binding_mode")),
         "schema_binding_used_count": sum(1 for row in rows if row.get("schema_binding_used")),
@@ -806,6 +983,8 @@ def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
         ),
         "schema_binding_repair_attempt_count": sum(1 for row in rows if row.get("schema_binding_repair_attempted")),
         "schema_binding_repair_success_count": sum(1 for row in rows if row.get("schema_binding_repair_success")),
+        "schema_alias_binding_used_count": sum(1 for row in rows if row.get("schema_alias_binding_used")),
+        "schema_alias_binding_count": sum(int(row.get("schema_alias_binding_count") or 0) for row in rows),
         "missing_answer_contract_count": sum(
             1
             for row in rows
@@ -851,6 +1030,7 @@ def _markdown(report: dict[str, Any]) -> str:
         f"- toolcall_supported: `{(report.get('probe') or {}).get('toolcall_supported')}`",
         f"- prompt_timeout_sec: `{report.get('prompt_timeout_sec')}`",
         f"- llm_call_timeout_sec: `{report.get('llm_call_timeout_sec')}`",
+        f"- effective_llm_call_timeout_sec: `{report.get('effective_llm_call_timeout_sec')}`",
         f"- partial_report: `{report.get('partial_report')}`",
         "",
         "## Rows",

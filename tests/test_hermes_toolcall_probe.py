@@ -52,7 +52,8 @@ def test_hermes_toolcall_probe_accepts_native_tool_call(monkeypatch, tmp_path):
     assert report["tool_calls_count"] == 1
     assert report["tool_name"] == "submit_probe_result"
     assert client.calls[0]["tools"][0]["function"]["name"] == "submit_probe_result"
-    assert client.calls[0]["tool_choice"]["function"]["name"] == "submit_probe_result"
+    assert client.calls[0]["tool_choice"] == "auto"
+    assert any("You must call the submit_probe_result tool" in message["content"] for message in client.calls[0]["messages"])
     assert client.calls[0]["parallel_tool_calls"] is False
 
 

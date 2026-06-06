@@ -381,6 +381,9 @@ def safe_llm_final_answer_fallback(
 ) -> str:
     available = _available_runtime_facts(runtime_passes, slots)
     if available:
+        count_answer = _fallback_count_answer(available, runtime_passes)
+        if count_answer:
+            return count_answer
         summary = _fallback_fact_summary(available)
         prefix = "Local snapshot evidence shows" if any(str(item.get("scope") or "").upper() == "LOCAL_SNAPSHOT" for item in available) else "Runtime evidence shows"
         answer = f"{prefix} {summary}."
@@ -404,6 +407,88 @@ def safe_llm_final_answer_fallback(
     if statuses & {"LIVE_EMPTY", "EMPTY"}:
         return "No matching runtime evidence was available for this query/scope."
     return "I could not compose a verified final answer from the available runtime evidence."
+
+
+def _fallback_count_answer(available: list[dict[str, Any]], runtime_passes: list[dict[str, Any]]) -> str | None:
+    for item in available:
+        counts = item.get("counts") if isinstance(item.get("counts"), list) else []
+        if not counts:
+            continue
+        count = counts[0]
+        explicit_count = _count_pass_is_explicit_count(runtime_passes, item)
+        if not explicit_count and not _fact_item_has_count_field(item):
+            continue
+        if _zero_like_count(count) and not explicit_count:
+            continue
+        try:
+            count_text = str(int(count))
+        except Exception:
+            count_text = str(count).strip()
+        if not count_text:
+            continue
+        scope = str(item.get("scope") or "").upper()
+        object_phrase = _count_object_phrase(runtime_passes, item)
+        if scope == "LOCAL_SNAPSHOT":
+            return f"There are {count_text} {object_phrase} in the local snapshot."
+        return f"There are {count_text} {object_phrase}."
+    return None
+
+
+def _zero_like_count(value: Any) -> bool:
+    try:
+        return float(value) == 0.0
+    except Exception:
+        return str(value).strip() in {"0", "0.0"}
+
+
+def _count_pass_is_explicit_count(runtime_passes: list[dict[str, Any]], fact_item: dict[str, Any]) -> bool:
+    task_id = str(fact_item.get("task_id") or "").strip()
+    for item in runtime_passes:
+        if task_id and str(item.get("pass_id") or "") != task_id:
+            continue
+        text = " ".join(str(item.get(key) or "") for key in ["subtask", "expected_result", "description", "operation"]).lower()
+        if "count" in text or "how many" in text:
+            return True
+    return False
+
+
+def _fact_item_has_count_field(item: dict[str, Any]) -> bool:
+    row_previews = item.get("row_previews")
+    if not isinstance(row_previews, list):
+        return False
+    for row in row_previews:
+        if not isinstance(row, dict):
+            continue
+        if any("count" in _normalized_field_name(key) or _normalized_field_name(key) in {"total", "rowcount"} for key in row):
+            return True
+    return False
+
+
+def _count_object_phrase(runtime_passes: list[dict[str, Any]], fact_item: dict[str, Any]) -> str:
+    task_id = str(fact_item.get("task_id") or "").strip()
+    candidates: list[str] = []
+    for item in runtime_passes:
+        if task_id and str(item.get("pass_id") or "") != task_id:
+            continue
+        for key in ["subtask", "expected_result", "description"]:
+            value = str(item.get(key) or "")
+            if value:
+                candidates.append(value)
+    text = " ".join(candidates).lower()
+    ordered = [
+        ("schema record", "schema records"),
+        ("schema", "schemas"),
+        ("journey", "journeys"),
+        ("campaign", "campaigns"),
+        ("dataset", "datasets"),
+        ("segment", "segments"),
+        ("audience", "audience records"),
+        ("field", "fields"),
+    ]
+    for token, phrase in ordered:
+        if token in text:
+            return phrase
+    return "records"
 
 
 def _strip_json_text(text: str) -> str:
@@ -1076,7 +1161,6 @@ def _fallback_fact_summary(available: list[dict[str, Any]]) -> str:
     pieces: list[str] = []
     labels = {"counts": "count", "names": "name", "ids": "id", "statuses": "status", "dates": "date"}
     for item in available[:4]:
-        label = "/".join(part for part in [str(item.get("task_id") or ""), str(item.get("source") or ""), str(item.get("scope") or "")] if part)
         values: list[str] = []
         counts = [value for value in item.get("counts", [])[:1]]
         names = [str(value) for value in item.get("names", [])[:3] if value]
@@ -1098,7 +1182,7 @@ def _fallback_fact_summary(available: list[dict[str, Any]]) -> str:
                 if len(values) >= 6:
                     break
         if values:
-            pieces.append(f"{label}: {'; '.join(values[:6])}")
+            pieces.append("; ".join(values[:6]))
     return " | ".join(pieces) if pieces else "scoped runtime evidence was present"
 
 

@@ -273,6 +273,17 @@ def test_llm_safe_direct_blocks_concrete_factual_claims() -> None:
     assert "CONCRETE_COUNT" in bad["blocked_claims"]
 
 
+def test_llm_safe_direct_allows_conceptual_status_examples_but_blocks_record_status() -> None:
+    conceptual = validate_llm_safe_direct_answer(
+        "An inactive journey is a journey that is not currently active or running."
+    )
+    assert conceptual["ok"] is True
+
+    concrete = validate_llm_safe_direct_answer("Birthday Message is inactive.")
+    assert concrete["ok"] is False
+    assert "CONCRETE_STATUS" in concrete["blocked_claims"]
+
+
 def test_codebook_keeps_runtime_compact_and_reports_explanations() -> None:
     payload = extract_objective_prompt_features("What is a schema?").to_dict()
 

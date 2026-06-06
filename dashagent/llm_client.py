@@ -57,6 +57,20 @@ def _configured_timeout_seconds(default: int, *env_names: str) -> int:
     return int(default)
 
 
+def _configured_nonnegative_int(*env_names: str, default: int = 0) -> int:
+    for name in env_names:
+        raw = os.getenv(name)
+        if not raw:
+            continue
+        try:
+            value = int(raw)
+        except Exception:
+            continue
+        if value >= 0:
+            return value
+    return int(default)
+
+
 class LLMClient:
     def available(self) -> bool:
         raise NotImplementedError
@@ -81,6 +95,9 @@ class LLMClient:
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
         parallel_tool_calls: bool | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        extra_body: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         raise NotImplementedError
 
@@ -120,6 +137,9 @@ class NoOpLLMClient(LLMClient):
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
         parallel_tool_calls: bool | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        extra_body: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         return {
             "ok": False,
@@ -144,11 +164,16 @@ class OpenAILLMClient(LLMClient):
         api_key: str | None = None,
         model: str | None = None,
         base_url: str | None = None,
-        timeout_seconds: int = 60,
+        timeout_seconds: int | None = None,
     ) -> None:
         self.api_key = api_key if api_key is not None else os.getenv("OPENAI_API_KEY")
         self.model = model or os.getenv("OPENAI_MODEL", DEFAULT_OPENAI_MODEL)
-        self.timeout_seconds = _configured_timeout_seconds(timeout_seconds, "HERMES_LLM_CALL_TIMEOUT_SEC", "LLM_TIMEOUT_SECONDS")
+        self.timeout_seconds = (
+            int(timeout_seconds)
+            if timeout_seconds is not None
+            else _configured_timeout_seconds(60, "HERMES_LLM_CALL_TIMEOUT_SEC", "LLM_TIMEOUT_SECONDS")
+        )
+        self.max_retries = _configured_nonnegative_int("OPENAI_MAX_RETRIES", default=0)
         self.base_url = (base_url or os.getenv("OPENAI_BASE_URL") or DEFAULT_OPENAI_BASE_URL).rstrip("/")
         self.provider = "openai"
         self.missing_key_reason = "OPENAI_API_KEY is not set"
@@ -187,6 +212,9 @@ class OpenAILLMClient(LLMClient):
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
         parallel_tool_calls: bool | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        extra_body: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         if not self.available():
             return NoOpLLMClient(reason=self.missing_key_reason, model=self.model).generate_messages(
@@ -207,8 +235,8 @@ class OpenAILLMClient(LLMClient):
                 omitted_for_gemini.remove("max_tokens")
             compatible_tool_choice = "auto" if tools else None
         else:
-            payload["temperature"] = 0
-            payload["max_tokens"] = int(os.getenv("LLM_MAX_TOKENS", "2048"))
+            payload["temperature"] = 0 if temperature is None else float(temperature)
+            payload["max_tokens"] = int(max_tokens if max_tokens is not None else os.getenv("LLM_MAX_TOKENS", "2048"))
             compatible_tool_choice = tool_choice
         if tools:
             payload["tools"] = tools
@@ -216,6 +244,8 @@ class OpenAILLMClient(LLMClient):
                 payload["parallel_tool_calls"] = bool(parallel_tool_calls)
         if compatible_tool_choice is not None:
             payload["tool_choice"] = compatible_tool_choice
+        if extra_body:
+            payload["extra_body"] = extra_body
         payload_keys = list(payload.keys())
         try:
             body = self._create_with_sdk(payload)
@@ -286,12 +316,27 @@ class OpenAILLMClient(LLMClient):
         if OpenAI is None:  # pragma: no cover - guarded by sdk_available.
             raise RuntimeError("OpenAI SDK is not installed")
         if self._sdk_client is None:
-            self._sdk_client = OpenAI(
-                api_key=self.api_key,
-                base_url=self.base_url,
-                timeout=self.timeout_seconds,
-            )
-        completion = self._sdk_client.chat.completions.create(**payload)
+            try:
+                self._sdk_client = OpenAI(
+                    api_key=self.api_key,
+                    base_url=self.base_url,
+                    timeout=self.timeout_seconds,
+                    max_retries=getattr(self, "max_retries", 0),
+                )
+            except TypeError as exc:
+                if "max_retries" not in str(exc):
+                    raise
+                self._sdk_client = OpenAI(
+                    api_key=self.api_key,
+                    base_url=self.base_url,
+                    timeout=self.timeout_seconds,
+                )
+        try:
+            completion = self._sdk_client.chat.completions.create(timeout=self.timeout_seconds, **payload)
+        except TypeError as exc:
+            if "timeout" not in str(exc):
+                raise
+            completion = self._sdk_client.chat.completions.create(**payload)
         if hasattr(completion, "model_dump"):
             return completion.model_dump()
         if hasattr(completion, "dict"):
@@ -333,6 +378,7 @@ class PioneerChatLLMClient(OpenAILLMClient):
         self.model = model or os.getenv("PIONEER_MODEL_ID") or os.getenv("PIONEER_MODEL", DEFAULT_PIONEER_MODEL)
         timeout_value = timeout_seconds if timeout_seconds is not None else int(os.getenv("PIONEER_TIMEOUT_SEC", "60"))
         self.timeout_seconds = timeout_value
+        self.max_retries = _configured_nonnegative_int("PIONEER_MAX_RETRIES", "OPENAI_MAX_RETRIES", default=0)
         self.base_url = (base_url or os.getenv("PIONEER_BASE_URL") or DEFAULT_PIONEER_BASE_URL).rstrip("/")
         self.provider = "pioneer_chat"
         self.missing_key_reason = "PIONEER_API_KEY is not set"
@@ -360,6 +406,7 @@ class PioneerChatLLMClient(OpenAILLMClient):
         parallel_tool_calls: bool | None = None,
         temperature: float = 0.0,
         max_tokens: int | None = None,
+        extra_body: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         if not self.available():
             return NoOpLLMClient(reason=self.missing_key_reason, model=self.model).generate_messages(messages)
@@ -561,6 +608,9 @@ class GeminiLLMClient(LLMClient):
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
         parallel_tool_calls: bool | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        extra_body: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         if not self.available():
             return NoOpLLMClient(reason=self._unavailable_reason(), model=self.model).generate_messages(
@@ -692,6 +742,9 @@ class AnthropicLLMClient(LLMClient):
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
         parallel_tool_calls: bool | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        extra_body: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         if not self.available():
             return NoOpLLMClient(reason=self.missing_key_reason, model=self.model).generate_messages(

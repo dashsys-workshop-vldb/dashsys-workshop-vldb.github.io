@@ -130,6 +130,7 @@ class SemanticIRPlan:
     tasks: list[SemanticIRTask] = field(default_factory=list)
     answer_contract: V2AnswerContract | None = None
     schema_binding: SchemaBindingPlan | None = None
+    schema_alias_bindings: list[dict[str, Any]] = field(default_factory=list)
     aggregation_instruction: str = ""
 
     def to_dict(self) -> dict[str, Any]:
@@ -143,6 +144,7 @@ def semantic_plan_to_dict(plan: SemanticIRPlan) -> dict[str, Any]:
         "tasks": [task.to_dict() for task in plan.tasks],
         "answer_contract": answer_contract_to_dict(plan.answer_contract),
         "schema_binding": schema_binding_plan_to_dict(plan.schema_binding),
+        "schema_alias_bindings": list(plan.schema_alias_bindings),
         "aggregation_instruction": plan.aggregation_instruction,
     }
 

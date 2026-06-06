@@ -103,3 +103,98 @@ def test_unknown_operation_and_post_api_are_unsupported():
     assert result.supported is False
     assert result.unsupported_features == ["NON_GET_API_METHOD"]
     assert result.recommended_action == "FAIL_SAFE"
+
+
+def test_mixed_inactive_journey_api_only_plan_requires_llm_repair_to_local_query():
+    payload = {
+        "route": "EVIDENCE",
+        "direct_answer": None,
+        "tasks": [
+            {
+                "task_id": "t1",
+                "kind": "CONCEPT",
+                "operation": "EXPLAIN",
+                "source": "NONE",
+                "local_query": None,
+                "api_query": None,
+                "depends_on": [],
+                "description": "Explain inactive journey.",
+                "required": True,
+            },
+            {
+                "task_id": "t2",
+                "kind": "LIVE_QUERY",
+                "operation": "LIST",
+                "source": "LIVE_API",
+                "local_query": None,
+                "api_query": {"endpoint_id": "journeys", "method": "GET", "path_params": {}, "query_params": {"limit": 100}},
+                "depends_on": [],
+                "description": "List inactive journeys from live API.",
+                "required": True,
+            },
+        ],
+        "aggregation_instruction": "Explain and show inactive journeys.",
+    }
+    plan = parse_semantic_ir_from_json_or_line_protocol(json.dumps(payload))
+
+    result = check_semantic_ir_support(
+        plan,
+        _schema_card(),
+        _api_card(),
+        user_prompt="Explain what inactive journey means and show inactive journeys.",
+    )
+
+    assert result.supported is False
+    assert result.recommended_action == "LLM_REPAIR_IR"
+    assert result.task_id == "t2"
+    assert result.operation == "LIST"
+    assert result.unsupported_features == ["MISSING_LOCAL_JOURNEY_QUERY"]
+    assert "LOCAL_QUERY" in (result.unsupported_reason or "")
+
+
+def test_mixed_inactive_journey_local_query_plan_is_supported():
+    payload = {
+        "route": "EVIDENCE",
+        "direct_answer": None,
+        "tasks": [
+            {
+                "task_id": "t1",
+                "kind": "CONCEPT",
+                "operation": "EXPLAIN",
+                "source": "NONE",
+                "local_query": None,
+                "api_query": None,
+                "depends_on": [],
+                "description": "Explain inactive journey.",
+                "required": True,
+            },
+            {
+                "task_id": "t2",
+                "kind": "LOCAL_QUERY",
+                "operation": "LIST",
+                "source": "LOCAL_SNAPSHOT",
+                "local_query": {
+                    "table": "dim_campaign",
+                    "fields": ["name", "status"],
+                    "filters": [],
+                    "limit": 50,
+                    "count": False,
+                },
+                "api_query": None,
+                "depends_on": [],
+                "description": "List local journey records and statuses.",
+                "required": True,
+            },
+        ],
+        "aggregation_instruction": "Explain and show inactive journeys.",
+    }
+    plan = parse_semantic_ir_from_json_or_line_protocol(json.dumps(payload))
+
+    result = check_semantic_ir_support(
+        plan,
+        _schema_card(),
+        _api_card(),
+        user_prompt="Explain what inactive journey means and show inactive journeys.",
+    )
+
+    assert result.supported is True

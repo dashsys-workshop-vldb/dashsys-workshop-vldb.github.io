@@ -199,7 +199,43 @@ def test_pioneer_chat_complete_text_uses_openai_sdk_chat_payload(monkeypatch):
         "stream": False,
         "temperature": 0.2,
         "max_tokens": 96,
+        "timeout": 9,
     }
+
+
+def test_openai_client_passes_per_request_timeout_to_sdk(monkeypatch):
+    captured = {}
+
+    class FakeCompletion:
+        def model_dump(self):
+            return {
+                "choices": [{"finish_reason": "stop", "message": {"role": "assistant", "content": "ok"}}],
+                "usage": {"total_tokens": 1},
+            }
+
+    class FakeCompletions:
+        def create(self, **payload):
+            captured["payload"] = payload
+            return FakeCompletion()
+
+    class FakeOpenAI:
+        def __init__(self, **kwargs):
+            captured["init"] = kwargs
+            self.chat = type("Chat", (), {"completions": FakeCompletions()})()
+
+    monkeypatch.setattr("dashagent.llm_client.OpenAI", FakeOpenAI)
+    client = OpenAILLMClient(api_key="unit-test-openai-key", timeout_seconds=17)
+
+    result = client.generate_messages(
+        [{"role": "user", "content": "hello"}],
+        extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+    )
+
+    assert result["ok"] is True
+    assert captured["init"]["timeout"] == 17
+    assert captured["init"]["max_retries"] == 0
+    assert captured["payload"]["timeout"] == 17
+    assert captured["payload"]["extra_body"] == {"chat_template_kwargs": {"enable_thinking": False}}
 
 
 def test_pioneer_chat_complete_json_parses_valid_json(monkeypatch):
@@ -563,7 +599,8 @@ def test_openai_client_uses_gemini_compat_tool_payload(monkeypatch):
     assert is_gemini_openai_compat_base_url("https://generativelanguage.googleapis.com/v1beta/openai/")
     assert not is_gemini_openai_compat_base_url("https://generativelanguage.googleapis.com/v1beta/models")
     assert captured["payload"]["model"] == "gemini-3.5-flash"
-    assert list(captured["payload"].keys()) == ["model", "messages", "tools", "tool_choice"]
+    assert list(captured["payload"].keys()) == ["timeout", "model", "messages", "tools", "tool_choice"]
+    assert captured["payload"]["timeout"] == client.timeout_seconds
     assert captured["payload"]["tool_choice"] == "auto"
     assert "temperature" not in captured["payload"]
     assert "max_tokens" not in captured["payload"]

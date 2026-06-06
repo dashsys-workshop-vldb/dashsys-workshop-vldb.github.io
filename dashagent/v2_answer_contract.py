@@ -202,9 +202,59 @@ def _default_answer_style(required_slots: list[RequiredAnswerSlot]) -> str:
 
 def _enum(value: Any, allowed: set[str], field_name: str) -> str:
     text = str(value or "").strip().upper()
+    if field_name == "zero_rows_semantics":
+        text = _normalize_zero_rows_semantics(text)
+    elif field_name == "if_missing":
+        text = _normalize_if_missing_policy(text)
     if text not in allowed:
         raise ValueError(f"{field_name} must be one of {sorted(allowed)}.")
     return text
+
+
+def _normalize_zero_rows_semantics(text: str) -> str:
+    normalized = text.replace("-", "_").replace(" ", "_")
+    aliases = {
+        "NO_DATA": "NO_MATCH",
+        "NO_RESULTS": "NO_MATCH",
+        "NO_RESULT": "NO_MATCH",
+        "EMPTY": "NO_MATCH",
+        "EMPTY_RESULT": "NO_MATCH",
+        "NO_MATCHES": "NO_MATCH",
+        "ZERO_ROWS": "NO_MATCH",
+        "ZERO_ROWS_IS_ANSWER": "EMPTY_RESULT_IS_ANSWER",
+        "ZERO_IS_ANSWER": "EMPTY_RESULT_IS_ANSWER",
+        "EMPTY_IS_ANSWER": "EMPTY_RESULT_IS_ANSWER",
+        "COUNT_ZERO_IS_ANSWER": "EMPTY_RESULT_IS_ANSWER",
+        "N_A": "NOT_APPLICABLE",
+        "NA": "NOT_APPLICABLE",
+        "NONE": "NOT_APPLICABLE",
+    }
+    if normalized in aliases:
+        return aliases[normalized]
+    if normalized in ZERO_ROWS_SEMANTICS:
+        return normalized
+    return "UNKNOWN"
+
+
+def _normalize_if_missing_policy(text: str) -> str:
+    normalized = text.replace("-", "_").replace(" ", "_")
+    aliases = {
+        "CAVEAT": "SCOPED_UNAVAILABLE_CAVEAT",
+        "SCOPED_CAVEAT": "SCOPED_UNAVAILABLE_CAVEAT",
+        "UNAVAILABLE_CAVEAT": "SCOPED_UNAVAILABLE_CAVEAT",
+        "SCOPED_UNAVAILABLE": "SCOPED_UNAVAILABLE_CAVEAT",
+        "ERROR_CAVEAT": "SCOPED_UNAVAILABLE_CAVEAT",
+        "FAIL": "FAIL_REQUIRED",
+        "REQUIRED": "FAIL_REQUIRED",
+        "FAIL_IF_MISSING": "FAIL_REQUIRED",
+        "PARTIAL": "ALLOW_PARTIAL",
+        "ALLOW_PARTIAL_CAVEAT": "ALLOW_PARTIAL",
+    }
+    if normalized in aliases:
+        return aliases[normalized]
+    if normalized in IF_MISSING_POLICIES:
+        return normalized
+    return "SCOPED_UNAVAILABLE_CAVEAT"
 
 
 def _list(value: Any) -> list[Any]:

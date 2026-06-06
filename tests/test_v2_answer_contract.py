@@ -220,6 +220,31 @@ def test_evidence_contract_maps_count_date_relation_and_api_unavailable_states()
     assert "PUBLISHEDAT" in date_states[0].missing_fields
     assert date_states[0].positive_assertion_allowed is False
 
+    malformed_date_contract = _date_contract()
+    malformed_date_contract["required_slots"][0]["required_fields"] = ["NAME", "STATUS"]
+    malformed_date_contract["required_slots"][0]["acceptable_fallback_fields"] = []
+    malformed_date_states = evaluate_evidence_contract(
+        parse_answer_contract(malformed_date_contract),
+        [
+            {
+                "pass_id": "t1",
+                "status": "SUCCESS",
+                "scope": "LOCAL_SNAPSHOT",
+                "source_results": [
+                    {
+                        "source": "SQL",
+                        "status": "SUCCESS",
+                        "scope": "LOCAL_SNAPSHOT",
+                        "result": {"rows": [{"NAME": "Birthday Message", "STATUS": "updated"}], "row_count": 1},
+                    }
+                ],
+            }
+        ],
+    )
+    assert malformed_date_states[0].status == "PARTIAL"
+    assert malformed_date_states[0].date_values == []
+    assert malformed_date_states[0].positive_assertion_allowed is False
+
     relation_states = evaluate_evidence_contract(
         parse_answer_contract(_relation_contract()),
         [
@@ -241,6 +266,102 @@ def test_evidence_contract_maps_count_date_relation_and_api_unavailable_states()
     assert api_unavailable[0].status == "API_UNAVAILABLE"
     assert isinstance(evidence_slot_state_to_dict(api_unavailable[0]), dict)
     assert isinstance(api_unavailable[0], EvidenceSlotState)
+
+
+def test_evidence_contract_treats_successful_direct_concept_pass_as_satisfied():
+    contract = parse_answer_contract(
+        {
+            "required_slots": [
+                {
+                    "slot_id": "s_concept",
+                    "type": "CONCEPT",
+                    "required": True,
+                    "subject": "inactive journey",
+                    "source_scope": "NONE",
+                    "satisfied_by_tasks": ["t1"],
+                    "zero_rows_semantics": "NOT_APPLICABLE",
+                    "if_missing": "SCOPED_UNAVAILABLE_CAVEAT",
+                }
+            ],
+            "optional_slots": [],
+            "answer_style": "EXPLANATORY",
+            "global_scope": "NONE",
+            "contract_version": "v1",
+        }
+    )
+
+    states = evaluate_evidence_contract(
+        contract,
+        [
+            {
+                "pass_id": "t1",
+                "path": "DIRECT",
+                "source": "DIRECT",
+                "status": "SUCCESS",
+                "scope": "NO_EVIDENCE_CONCEPT",
+                "source_results": [
+                    {
+                        "source": "DIRECT",
+                        "status": "SUCCESS",
+                        "scope": "NO_EVIDENCE_CONCEPT",
+                        "result": {"answer": "An inactive journey is a journey that is not currently active or running."},
+                    }
+                ],
+            }
+        ],
+    )
+
+    assert states[0].status == "SATISFIED"
+    assert states[0].facts == [{"answer": "An inactive journey is a journey that is not currently active or running."}]
+
+
+def test_evidence_contract_treats_empty_direct_concept_pass_as_concept_slot_available():
+    contract = parse_answer_contract(
+        {
+            "required_slots": [
+                {
+                    "slot_id": "s_concept",
+                    "type": "CONCEPT",
+                    "required": True,
+                    "subject": "inactive journey",
+                    "source_scope": "NONE",
+                    "satisfied_by_tasks": ["t1"],
+                    "zero_rows_semantics": "NOT_APPLICABLE",
+                    "if_missing": "SCOPED_UNAVAILABLE_CAVEAT",
+                }
+            ],
+            "optional_slots": [],
+            "answer_style": "EXPLANATORY",
+            "global_scope": "NONE",
+            "contract_version": "v1",
+        }
+    )
+
+    states = evaluate_evidence_contract(
+        contract,
+        [
+            {
+                "pass_id": "t1",
+                "path": "DIRECT",
+                "source": "DIRECT",
+                "status": "ERROR",
+                "scope": "NO_EVIDENCE_CONCEPT",
+                "source_results": [
+                    {
+                        "source": "DIRECT",
+                        "status": "ERROR",
+                        "scope": "NO_EVIDENCE_CONCEPT",
+                        "result": {"answer": ""},
+                        "error": "empty_direct_task_answer",
+                    }
+                ],
+            }
+        ],
+    )
+
+    assert states[0].status == "SATISFIED"
+    assert states[0].source_scope == "NONE"
+    assert states[0].facts == []
 
 
 def test_answer_contract_from_plan_dict_does_not_infer_from_prompt():

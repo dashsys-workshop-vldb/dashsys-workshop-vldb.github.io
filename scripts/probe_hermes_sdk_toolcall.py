@@ -149,7 +149,7 @@ def _probe_messages(openai_compat_provider: str) -> list[dict[str, str]]:
     if openai_compat_provider == "gemini":
         return [{"role": "user", "content": "Classify: What is a schema? You must call the tool."}]
     return [
-        {"role": "system", "content": "Use the submit_probe_result tool. Do not answer in text."},
+        {"role": "system", "content": "You must call the submit_probe_result tool. Do not answer in text."},
         {"role": "user", "content": "Classify this prompt: What is a schema?"},
     ]
 
@@ -157,7 +157,7 @@ def _probe_messages(openai_compat_provider: str) -> list[dict[str, str]]:
 def _probe_tool_choice(openai_compat_provider: str) -> str | dict[str, Any]:
     if openai_compat_provider == "gemini":
         return "auto"
-    return {"type": "function", "function": {"name": PROBE_TOOL_NAME}}
+    return "auto"
 
 
 def _probe_parallel_tool_calls(openai_compat_provider: str) -> bool | None:

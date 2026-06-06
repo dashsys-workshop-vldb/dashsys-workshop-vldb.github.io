@@ -12,6 +12,7 @@ from dashagent.executor import AgentExecutor
 from dashagent.planner import ALL_STRATEGIES, PACKAGED_DEFAULT_STRATEGY, Plan, PlanStep, STRATEGIES, execution_base_strategy
 from dashagent.pre_evidence_routing_boundary import should_bypass_evidence_for_llm_direct
 from dashagent.prompt_semantic_ir import extract_objective_prompt_features
+from tests.test_llm_owned_v2_workflow import _legacy_unified_fixture_to_semantic_ir, _tool_response
 
 
 ROBUST = "ROBUST_GENERALIZED_HARNESS_CANDIDATE"
@@ -65,6 +66,7 @@ class CountingAPIClient:
 class SequencedLLMClient:
     def __init__(self, responses: list[dict]) -> None:
         self.responses = list(responses)
+        self.last_final_answer: str | None = None
 
     def available(self):
         return True
@@ -90,11 +92,33 @@ class SequencedLLMClient:
                 else:
                     answer = "A schema defines the structure and meaning of data fields."
                 return {"ok": True, "provider": self.provider_name(), "model": self.model_name(), "content": answer}
+            if self.last_final_answer:
+                return {"ok": True, "provider": self.provider_name(), "model": self.model_name(), "content": self.last_final_answer}
+            return {"ok": True, "provider": self.provider_name(), "model": self.model_name(), "content": "Runtime evidence was collected."}
         if not self.responses:
             raise AssertionError("Fake LLM called more times than expected")
-        return {"ok": True, "provider": self.provider_name(), "model": self.model_name(), "content": json.dumps(self.responses.pop(0))}
+        payload = self.responses.pop(0)
+        if isinstance(payload, dict) and payload.get("final_answer"):
+            self.last_final_answer = str(payload.get("final_answer") or "")
+        return {"ok": True, "provider": self.provider_name(), "model": self.model_name(), "content": json.dumps(payload)}
 
-    def generate_messages(self, messages, tools=None, tool_choice=None, parallel_tool_calls=None):
+    def generate_messages(self, messages, tools=None, tool_choice=None, parallel_tool_calls=None, **kwargs):
+        tool_names = {
+            str(((tool.get("function") or {}).get("name")) or "")
+            for tool in (tools or [])
+            if isinstance(tool, dict)
+        }
+        if "submit_final_answer" in tool_names:
+            if not self.responses:
+                raise AssertionError("Fake LLM called more times than expected")
+            payload = self.responses.pop(0)
+            self.last_final_answer = str(payload.get("final_answer") or "")
+            return _tool_response("submit_final_answer", payload)
+        if "submit_semantic_ir_plan" in tool_names:
+            if not self.responses:
+                raise AssertionError("Fake LLM called more times than expected")
+            payload = _legacy_unified_fixture_to_semantic_ir(self.responses.pop(0))
+            return _tool_response("submit_semantic_ir_plan", payload)
         return self.generate(messages[0]["content"], messages[-1]["content"], tools=tools)
 
 

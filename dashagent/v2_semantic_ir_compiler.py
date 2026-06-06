@@ -12,11 +12,12 @@ def compile_semantic_ir_to_plan_payload(
     allowed_api_card: list[dict[str, Any]],
 ) -> dict[str, Any]:
     if plan.route == "DIRECT":
+        direct_passes = [_compile_task(task, allowed_schema_card, allowed_api_card) for task in plan.tasks if task.kind == "CONCEPT"]
         return {
             "route": "LLM_DIRECT",
             "evidence_order": "NO_EVIDENCE",
             "direct_answer": plan.direct_answer,
-            "passes": [],
+            "passes": direct_passes,
             "answer_contract": plan.answer_contract.to_dict() if plan.answer_contract else None,
             "aggregation_instruction": plan.aggregation_instruction,
             "reason": "Semantic IR DIRECT route.",
@@ -70,7 +71,7 @@ def compile_api_query_to_request(query: APIQueryIR, allowed_api_card: list[dict[
     unresolved = re.findall(r"\{([^}]+)\}", path)
     if unresolved:
         raise ValueError(f"Unresolved path parameters for endpoint {query.endpoint_id}: {', '.join(unresolved)}")
-    return {"method": "GET", "path": path, "params": dict(query.query_params or {})}
+    return {"method": str(query.method or "GET").upper(), "path": path, "params": dict(query.query_params or {})}
 
 
 def _compile_task(task: SemanticIRTask, allowed_schema_card: list[dict[str, Any]], allowed_api_card: list[dict[str, Any]]) -> dict[str, Any]:

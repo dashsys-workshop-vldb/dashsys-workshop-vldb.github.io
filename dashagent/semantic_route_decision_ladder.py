@@ -173,12 +173,33 @@ def validate_llm_safe_direct_answer(answer: str) -> dict[str, Any]:
         blocked.append("CONCRETE_ID")
     if re.search(r"\b\d{4}-\d{2}-\d{2}(?:[T ][0-9:.Z+-]+)?\b", text):
         blocked.append("CONCRETE_TIMESTAMP")
-    if re.search(r"\b(active|inactive|failed|succeeded|published|deployed)\b", text, re.I):
-        blocked.append("CONCRETE_STATUS")
+    for match in re.finditer(r"\b(active|inactive|failed|succeeded|published|deployed)\b", text, re.I):
+        if not _looks_like_conceptual_status_word(text, match.start(), match.end()):
+            blocked.append("CONCRETE_STATUS")
+            break
     if re.search(r"\b(live|current)\s+(?:platform|sandbox|api|adobe)\b", text, re.I):
         blocked.append("LIVE_PLATFORM_STATE")
     blocked = _dedupe(blocked)
     return {"ok": not blocked, "blocked_claims": blocked}
+
+
+def _looks_like_conceptual_status_word(text: str, start: int, end: int) -> bool:
+    context = str(text or "")[max(0, start - 90) : min(len(str(text or "")), end + 90)].lower()
+    conceptual_signal = bool(
+        re.search(
+            r"\b(is a|means|refers to|defined as|concept|typically|can mean|can include|not currently|not running|status indicator|such as|for example|e\.g\.)\b",
+            context,
+        )
+    )
+    concrete_signal = bool(
+        re.search(
+            r"\b(birthday message|gold tier|you have|your|local snapshot|live api|current platform|records?|schemas?|journeys?:|campaigns?:|there (?:is|are)|count|total)\b",
+            context,
+        )
+        or re.search(r"\b\d{4}-\d{2}-\d{2}\b", context)
+        or re.search(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", context)
+    )
+    return conceptual_signal and not concrete_signal
 
 
 def _classify(

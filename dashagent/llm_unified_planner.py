@@ -176,7 +176,7 @@ def run_llm_unified_planner(
             schema_context=schema_context,
             endpoint_context=endpoint_context,
             repair_context=repair_context,
-            fallback_to_atomic=True,
+            fallback_to_atomic=False,
         )
         parse_source = str(protocol_result.diagnostics.get("planner_parse_source") or "sdk_toolcall_semantic_ir")
         toolcall_attempted = True
@@ -1365,7 +1365,7 @@ def normalize_llm_unified_plan(
     api_request = _normalize_api_request(payload.get("api_request"))
     passes = _normalize_passes(payload.get("passes"), fallback_sql=sql, fallback_api_request=api_request, fallback_evidence_order=evidence_order)
     if route == "LLM_DIRECT":
-        passes = []
+        passes = [item for item in passes if item.path == "DIRECT" and item.sql is None and item.api_request is None]
         sql = None
         api_request = None
     elif passes and len(passes) > 1:

@@ -1687,6 +1687,7 @@ class AgentExecutor:
             "llm_route": plan.route,
             "llm_evidence_order": plan.evidence_order,
             "backend_semantic_planning_used": False,
+            "pass_graph_repair_skipped_reason": execution_summary.get("pass_graph_repair_skipped_reason"),
             **_llm_owned_generation_boundary_summary(execution_summary),
         }
         checkpoint_logger.add_checkpoint(
@@ -2245,6 +2246,7 @@ class AgentExecutor:
         graph_gate = self.pass_graph_gate.check(active_plan)
         pass_graph_repair_attempted = False
         pass_graph_repair_success = False
+        pass_graph_repair_skipped_reason: str | None = None
         initial_graph_gate_error_type = graph_gate.error_type
         checkpoint_logger.add_checkpoint(
             "checkpoint_llm_owned_pass_graph_gate",
@@ -2257,7 +2259,19 @@ class AgentExecutor:
             efficiency_role="bounds pass scheduling to LLM-declared valid graphs",
         )
         if not graph_gate.passed:
+            pass_graph_repair_skipped_reason = _pass_graph_repair_skip_reason(active_plan, graph_gate)
+        if not graph_gate.passed and pass_graph_repair_skipped_reason is None:
             pass_graph_repair_attempted = True
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_llm_owned_pass_graph_repair_start",
+                stage="llm-owned pass graph repair",
+                technique="pre-call heartbeat before pass graph repair",
+                input_summary={"error_type": graph_gate.error_type, "error_message": graph_gate.error_message},
+                output={"current_stage": "llm_pass_graph_repair_call_start"},
+                effect="records the exact boundary before the potentially slow pass-graph repair LLM call",
+                correctness_role="diagnostic only; backend still supplies only graph-shape feedback",
+                efficiency_role="enables smoke timeout localization without extra SQL/API calls",
+            )
             repair_plan = run_llm_unified_planner(
                 user_prompt=query,
                 schema_context=planner_context["schema_context"],
@@ -2304,6 +2318,22 @@ class AgentExecutor:
             else:
                 graph_gate = repaired_graph_gate
                 pass_specs = repair_plan.passes or []
+        elif not graph_gate.passed and pass_graph_repair_skipped_reason is not None:
+            checkpoint_logger.add_checkpoint(
+                "checkpoint_llm_owned_pass_graph_repair_skipped",
+                stage="llm-owned pass graph repair",
+                technique="fail-closed skip after terminal Semantic IR planner failure",
+                input_summary={"error_type": graph_gate.error_type, "error_message": graph_gate.error_message},
+                output={
+                    "pass_graph_repair_attempted": False,
+                    "pass_graph_repair_skipped_reason": pass_graph_repair_skipped_reason,
+                    "planner_timeout": bool(active_plan.diagnostics.get("planner_timeout")),
+                    "semantic_ir_validation_error_type": active_plan.diagnostics.get("semantic_ir_validation_error_type"),
+                },
+                effect="avoids launching a redundant LLM repair call after the Semantic IR planner already timed out or failed to return a toolcall",
+                correctness_role="fails closed without backend-created subtasks, SQL, API, or semantic routing",
+                efficiency_role="prevents a planner timeout from consuming the full smoke query budget in pass-graph repair",
+            )
         run_optimizer = V2ExecutionOptimizer(
             budget_limits=BudgetLimits(
                 max_passes=run_context.budget.max_passes,
@@ -2346,6 +2376,7 @@ class AgentExecutor:
             "pass_graph_gate_passed": graph_gate.passed,
             "pass_graph_repair_attempted": pass_graph_repair_attempted,
             "pass_graph_repair_success": pass_graph_repair_success,
+            "pass_graph_repair_skipped_reason": pass_graph_repair_skipped_reason,
             "pass_graph_gate_error_type": initial_graph_gate_error_type,
             "repaired_pass_count": len(pass_specs) if pass_graph_repair_success else 0,
             **optimization_plan.to_summary(),
@@ -4550,6 +4581,7 @@ def _llm_owned_generation_boundary_summary(summary: dict[str, Any]) -> dict[str,
         "pass_graph_gate_passed",
         "pass_graph_repair_attempted",
         "pass_graph_repair_success",
+        "pass_graph_repair_skipped_reason",
         "pass_graph_gate_error_type",
         "repaired_pass_count",
         "passes_executed",
@@ -4653,6 +4685,18 @@ def _runtime_pass_from_pass_spec(
         "facts": _facts_from_source_results(source_results),
         "caveats": caveats,
     }
+
+
+def _pass_graph_repair_skip_reason(plan: LLMUnifiedPlan, graph_gate: PassGraphGateResult) -> str | None:
+    diagnostics = plan.diagnostics if isinstance(plan.diagnostics, dict) else {}
+    validation_error = str(diagnostics.get("semantic_ir_validation_error_type") or "").lower()
+    planner_timed_out = bool(diagnostics.get("planner_timeout"))
+    missing_toolcall_after_repair = validation_error in {"missing_tool_call", "legacy_content_or_tool_fallback"} and bool(
+        diagnostics.get("semantic_ir_repair_attempted") or diagnostics.get("planner_retry_used")
+    )
+    if not plan.passes and (planner_timed_out or missing_toolcall_after_repair or (plan.parse_error and validation_error == "missing_tool_call")):
+        return "planner_timeout_or_missing_toolcall"
+    return None
 
 
 def _pass_graph_error_runtime_pass(graph_gate: PassGraphGateResult, *, run_context: RunContext | None = None) -> dict[str, Any]:

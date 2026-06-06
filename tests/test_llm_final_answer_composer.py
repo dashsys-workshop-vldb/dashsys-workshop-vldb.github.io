@@ -1397,6 +1397,106 @@ def test_safe_fallback_broad_schema_list_uses_examples_include_and_passes_gate()
     assert gate.passed is True
 
 
+def test_semantic_gate_allows_mixed_concept_plus_local_zero_row_status_wording():
+    runtime_passes = [
+        {
+            "pass_id": "t1",
+            "path": "DIRECT",
+            "source": "DIRECT",
+            "status": "SUCCESS",
+            "scope": "NO_EVIDENCE_CONCEPT",
+            "source_results": [
+                {
+                    "source": "DIRECT",
+                    "status": "SUCCESS",
+                    "scope": "NO_EVIDENCE_CONCEPT",
+                    "result": {"answer": ""},
+                }
+            ],
+        },
+        {
+            "pass_id": "t2",
+            "path": "SQL",
+            "source": "SQL",
+            "status": "EMPTY",
+            "scope": "LOCAL_SNAPSHOT",
+            "source_results": [
+                {
+                    "source": "SQL",
+                    "status": "EMPTY",
+                    "scope": "LOCAL_SNAPSHOT",
+                    "result": {"rows": [], "row_count": 0},
+                }
+            ],
+        },
+    ]
+    bus, slots = _bus_and_slots("Explain what inactive journey means and show inactive journeys.", [_sql_tool_result([])])
+    slots.counts = [0]
+    slots.sql_row_count = 0
+
+    gate = check_final_answer_semantic_grounding(
+        "An inactive journey is a customer journey that has been paused or turned off, meaning it is no longer actively sending communications. No inactive journeys were found.",
+        question="Explain what inactive journey means and show inactive journeys.",
+        runtime_passes=runtime_passes,
+        evidence_bus=bus,
+        slots=slots,
+    )
+
+    assert gate.passed is True
+
+
+def test_safe_fallback_broad_schema_list_does_not_emit_raw_pass_labels():
+    rows = [
+        {"NAME": "Schema Alpha", "SCHEMAID": "schema-alpha"},
+        {"NAME": "Schema Beta", "SCHEMAID": "schema-beta"},
+        {"NAME": "Schema Gamma", "SCHEMAID": "schema-gamma"},
+    ]
+    runtime_passes = [
+        {
+            "pass_id": "schema_list",
+            "path": "SQL",
+            "source": "SQL",
+            "status": "SUCCESS",
+            "scope": "LOCAL_SNAPSHOT",
+            "facts": ["NAME: Schema Alpha", "NAME: Schema Beta", "NAME: Schema Gamma"],
+            "source_results": [{"source": "SQL", "status": "SUCCESS", "scope": "LOCAL_SNAPSHOT", "result": {"rows": rows, "row_count": 50}}],
+        }
+    ]
+
+    answer = safe_llm_final_answer_fallback(runtime_passes)
+
+    assert "schema_list/" not in answer
+    assert "SQL/LOCAL_SNAPSHOT" not in answer
+    assert "Local snapshot evidence shows" in answer
+
+
+def test_safe_fallback_renders_count_fact_as_user_facing_answer():
+    runtime_passes = [
+        {
+            "pass_id": "t1",
+            "path": "SQL",
+            "source": "SQL",
+            "status": "SUCCESS",
+            "scope": "LOCAL_SNAPSHOT",
+            "subtask": "Count schema records in the local snapshot",
+            "source_results": [
+                {
+                    "source": "SQL",
+                    "status": "SUCCESS",
+                    "scope": "LOCAL_SNAPSHOT",
+                    "result": {"ok": True, "row_count": 1, "rows": [{"count": 74}]},
+                }
+            ],
+        }
+    ]
+
+    answer = safe_llm_final_answer_fallback(runtime_passes)
+
+    assert answer == "There are 74 schema records in the local snapshot."
+    assert "t1/" not in answer
+    assert "SQL/" not in answer
+
+
 def test_safe_fallback_ignores_failed_direct_concept_task_when_local_data_succeeds():
     answer = safe_llm_final_answer_fallback(
         [
